@@ -695,6 +695,8 @@ pub struct Sim {
     key: u64,
     state: Mutex<SimState>,
     busy: std::sync::atomic::AtomicBool,
+    /// Every `stride`-th particle is simulated (previews); see `set_stride`.
+    pub stride: usize,
 }
 
 type Targets = (Vec<[f32; 3]>, Vec<f32>, Vec<[f32; 3]>);
@@ -740,7 +742,24 @@ impl Sim {
             key: crate::components::style::fnv(&[&def.key.to_le_bytes(), &fps.to_bits().to_le_bytes(), &floor_y.unwrap_or(f32::NAN).to_bits().to_le_bytes()]),
             state: Mutex::new(SimState { live: None, snaps: HashMap::new(), order: Vec::new(), checkpoints: Vec::new(), steps: 0, sim_ms: 0.0 }),
             busy: std::sync::atomic::AtomicBool::new(false),
+            stride: 1,
         })
+    }
+
+    /// Preview: simulate every `k`-th particle only (exactly the same paths:
+    /// particles don't interact), each drawn with `k` times the weight. Call
+    /// before the first frame.
+    pub fn set_stride(&mut self, k: usize) {
+        let k = k.max(1);
+        if k != self.stride {
+            self.stride = k;
+            self.key = crate::components::style::fnv(&[&self.key.to_le_bytes(), &(k as u64).to_le_bytes()]);
+        }
+    }
+
+    /// Particles actually simulated.
+    fn n_sim(&self) -> usize {
+        self.def.count.div_ceil(self.stride)
     }
 
     /// Objects particles collide with: spheres exactly, everything else as
@@ -789,11 +808,11 @@ impl Sim {
 
     fn init(&self) -> Live {
         use rayon::prelude::*;
-        let n = self.def.count;
-        let pv: Vec<(V3, V3)> = (0..n).into_par_iter().map(|i| self.spawn(i, 0)).collect();
+        let (n, k) = (self.n_sim(), self.stride);
+        let pv: Vec<(V3, V3)> = (0..n).into_par_iter().map(|i| self.spawn(i * k, 0)).collect();
         let mut live = Live {
             frame: 0,
-            id: Arc::new((0..n as u32).collect()),
+            id: Arc::new((0..n).map(|i| (i * k) as u32).collect()),
             px: pv.iter().map(|q| q.0.x).collect(),
             py: pv.iter().map(|q| q.0.y).collect(),
             pz: pv.iter().map(|q| q.0.z).collect(),
@@ -1071,14 +1090,12 @@ impl Sim {
     /// State at video time `t` (rounded to a frame of this system's fps).
     pub fn at(&self, t: f32) -> Arc<Snap> {
         let f = ((t - self.def.start) / self.dt).round().max(0.0) as i64;
-        // Wait for a stepping thread without blocking rayon: help with its work.
-        loop {
-            if !self.busy.swap(true, std::sync::atomic::Ordering::Acquire) {
-                break;
-            }
-            if rayon::yield_now().is_none() {
-                std::thread::yield_now();
-            }
+        // Wait for the thread that is stepping. Don't help with rayon work
+        // meanwhile (`rayon::yield_now`): a stolen task can be another frame
+        // calling `at` on this same Sim. The stepping itself runs on the
+        // simulation pool (`scene3d::sim_blocking`), so it always progresses.
+        while self.busy.swap(true, std::sync::atomic::Ordering::Acquire) {
+            std::thread::yield_now();
         }
         let r = self.at_locked(f);
         self.busy.store(false, std::sync::atomic::Ordering::Release);
@@ -1086,7 +1103,14 @@ impl Sim {
     }
 
     fn at_locked(&self, f: i64) -> Arc<Snap> {
-        let mut st = self.state.lock().unwrap();
+        let mut guard = self.state.lock().unwrap();
+        let st: &mut SimState = &mut guard;
+        // The parallel stepping runs on the simulation pool while the lock is
+        // held (see `scene3d::sim_pool`).
+        super::sim_blocking(move || self.at_locked_in(st, f))
+    }
+
+    fn at_locked_in(&self, st: &mut SimState, f: i64) -> Arc<Snap> {
         if let Some(s) = st.snaps.get(&f) {
             return s.clone();
         }
@@ -1115,7 +1139,7 @@ impl Sim {
             t_step += c0.elapsed().as_secs_f64();
             st.steps += 1;
             if live.frame % CHECK_EVERY == 0 && !st.checkpoints.iter().any(|c| c.frame == live.frame) {
-                if (st.checkpoints.len() + 1) * self.def.count * 24 < CHECK_BUDGET {
+                if (st.checkpoints.len() + 1) * self.n_sim() * 24 < CHECK_BUDGET {
                     st.checkpoints.push(live.clone());
                 }
                 self.save_checkpoint(&live);
@@ -1148,7 +1172,7 @@ impl Sim {
         }
         st.sim_ms += clock.elapsed().as_secs_f64() * 1e3;
         if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() && st.steps > s0 {
-            eprintln!("particles: {} × {} frames in {:.0} ms", self.def.count, st.steps - s0, clock.elapsed().as_secs_f64() * 1e3);
+            eprintln!("particles: {} × {} frames in {:.0} ms", self.n_sim(), st.steps - s0, clock.elapsed().as_secs_f64() * 1e3);
         }
         s
     }
@@ -1187,7 +1211,7 @@ impl Sim {
         let mut k = f - f.rem_euclid(CHECK_EVERY);
         while k > after {
             if let Some(b) = self.checkpoint_path(k).and_then(|p| std::fs::read(p).ok()) {
-                let n = self.def.count;
+                let n = self.n_sim();
                 if b.len() == 16 + n * 28 && &b[..8] == b"AKPART02" && u64::from_le_bytes(b[8..16].try_into().unwrap()) as usize == n {
                     let id: Vec<u32> = b[16..16 + n * 4].chunks_exact(4).map(|x| u32::from_le_bytes(x.try_into().unwrap())).collect();
                     let col = |c: usize| -> Vec<f32> { b[16 + (c + 1) * n * 4..16 + (c + 2) * n * 4].chunks_exact(4).map(|x| f32::from_le_bytes(x.try_into().unwrap())).collect() };
@@ -1340,11 +1364,13 @@ const ST_C: usize = ST_N / 2;
 
 fn stamps() -> &'static (Vec<f32>, Vec<[u8; 4]>) {
     static T: std::sync::OnceLock<(Vec<f32>, Vec<[u8; 4]>)> = std::sync::OnceLock::new();
+    // Built sequentially: a rayon loop inside `get_or_init` deadlocks when a
+    // worker waiting on this lock steals a task that also needs it (critique
+    // and multi-frame renders call this from rayon workers).
     T.get_or_init(|| {
-        use rayon::prelude::*;
         let per = ST_P * ST_P * ST_N * ST_N;
         let mut t = vec![0.0f32; ST_R * per];
-        t.par_chunks_mut(per).enumerate().for_each(|(ri, t)| {
+        t.chunks_mut(per).enumerate().for_each(|(ri, t)| {
         {
             let r = ri as f32 / 16.0;
             for py in 0..ST_P {
@@ -1757,7 +1783,7 @@ impl ShadowMap {
                     Some(e) => e.at(v3(p[0], p[1], p[2]), v3(0.0, 0.0, 0.0), t, sim.age(i, t), i).max(0.0),
                     None => d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0),
                 };
-                let od = op * std::f32::consts::PI * size * size / texel_area;
+                let od = op * std::f32::consts::PI * size * size / texel_area * sim.stride as f32;
                 let e = ext(p);
                 let (fx, fy) = ((e.x - lo.x) * k.x - 0.5, (e.y - lo.y) * k.y - 0.5);
                 // Tent in depth too, so a surface crossing slices doesn't band.
@@ -1952,11 +1978,14 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
         (false, true) => (None, Some(0), 4),
         _ => (Some(0), None, 3),
     };
-    let threads = if rayon::current_thread_index().is_some() { 1 } else { rayon::current_num_threads().max(1) };
+    // Bands are fixed (64 rows), so the output never depends on the thread count;
+    // nested inside a render worker this still spreads over idle cores.
+    let threads = rayon::current_num_threads().max(1);
     let mut pyrs: Vec<Pyr> = Vec::new();
     for (sim, snap) in systems {
         let d = &sim.def;
         let n = snap.pos.len();
+        let spread2 = if sim.stride > 1 { sim.stride as f32 / std::f32::consts::PI } else { 0.0 };
         // Bands of rows (multiples of 64, so every level splits exactly).
         // Threaded: 64-row bands. Pass 1 finds the bands each particle can
         // touch; pass 2 renders each band from just those particles, in order.
@@ -1980,7 +2009,8 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     };
                     let r_px = size * pj.k / z;
                     let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
-                    let foot = (r_px * r_px + coc * coc).sqrt();
+                    // A preview particle stands for `stride` of them: spread it over about that many pixels.
+                let foot = (r_px * r_px + coc * coc + spread2).sqrt();
                     let margin = foot + 4.0;
                     if sx < -margin || sy < -margin || sx > w as f32 + margin || sy > h as f32 + margin {
                         return (255, 0);
@@ -2016,7 +2046,8 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 };
                 let r_px = size * pj.k / z;
                 let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
-                let foot = (r_px * r_px + coc * coc).sqrt();
+                // A preview particle stands for `stride` of them: spread it over about that many pixels.
+                let foot = (r_px * r_px + coc * coc + spread2).sqrt();
                 let margin = foot + 4.0;
                 if sx < -margin || sy < -margin || sx > w as f32 + margin || sy > h as f32 + margin {
                     continue;
@@ -2043,7 +2074,8 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let (kk, lw) = if foot < 4.0 { (usize::MAX, 0.0) } else { kern_of(foot) };
                 let l = if kk == 0 || kk == usize::MAX { 0 } else { BINS[kk - 1].1 };
                 let tex = (1u32 << l) as f32;
-                let ns = ((ml / tex).ceil() as usize).clamp(1, 24);
+                // Streak samples at most half a texel apart (a texel in draft).
+                let ns = if v.draft { ((ml / tex).ceil() as usize).clamp(1, 24) } else { ((ml * 2.0 / tex).ceil() as usize).clamp(1, 48) };
                 // Energy: projected disc area (world size) — in focus it's smaller than a pixel.
                 let area = std::f32::consts::PI * r_px * r_px;
                 // Lit colour.
@@ -2095,6 +2127,13 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                             val[o + 1] = col[1] * e;
                             val[o + 2] = col[2] * e;
                         }
+                    }
+                }
+                if sim.stride > 1 {
+                    // Each simulated particle stands for `stride` of them.
+                    let k = sim.stride as f32;
+                    for x in &mut val {
+                        *x *= k;
                     }
                 }
                 if refm {
@@ -2298,6 +2337,21 @@ mod tests {
         let (a, b) = (run(1), run(4));
         assert_eq!(a.0, b.0, "ids differ");
         assert!(a.1.iter().zip(&b.1).all(|(x, y)| x.iter().zip(y).all(|(p, q)| p.to_bits() == q.to_bits())), "positions differ between 1 and 4 threads");
+    }
+
+    #[test]
+    fn draft_and_exact_splats_emit_the_same_light() {
+        let s = sim(serde_json::json!({ "count": 20000, "emit": { "shape": "ball", "radius": 0.3, "pos": [0, 1, 0] }, "size": 0.002, "size_var": 0 }));
+        let snap = s.at(0.0);
+        let (w, h) = (640usize, 360usize);
+        let depth = vec![1e9f32; w * h];
+        let cam = Camera { pos: v3(0.0, 1.0, 4.0), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus: 4.0, aperture: 0.0, roll: 0.0, shutter: 0.0 };
+        let total = |draft: bool| {
+            let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: 4.0, aperture: 0.0, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)), shadow: None, draft };
+            render(&[(&s, snap.clone())], &v, 0.0).emitted()
+        };
+        let (a, b) = (total(false), total(true));
+        assert!((a - b).abs() / a < 0.01, "exact {a} vs draft {b}");
     }
 
     #[test]

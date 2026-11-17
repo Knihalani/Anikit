@@ -1,0 +1,13 @@
+[
+ {"name": "type-mask-up", "kind": "layer", "about": "Editorial headline that rises out of a mask line by line, flush left.", "json": {"text": "Write *less*.", "font": "Instrument Serif", "size": "14vh", "x": "8%", "y": "50%", "anchor": "left", "enter": "mask by line up"}},
+ {"name": "type-slam", "kind": "layer", "about": "One word slams in from 3x with blur, for beat cuts.", "json": {"text": "FAST", "style": "title", "size": "22vh", "animate": [{"from": {"scale": 3, "blur": 20, "opacity": 0}, "duration": 0.25, "ease": "outExpo"}]}},
+ {"name": "type-tracking", "kind": "layer", "about": "Small caps label whose letter-spacing opens slowly (calm, premium).", "json": {"text": "INTRODUCING", "style": "caption", "x": "8%", "y": "38%", "anchor": "left", "animate": [{"from": {"opacity": 0, "letterSpacing": 0}, "to": {"opacity": 1, "letterSpacing": 12}, "duration": 1.6, "ease": "outQuart"}]}},
+ {"name": "line-draw", "kind": "layer", "about": "A hand-drawn stroke that draws itself on (underline, route, chart line).", "json": {"shape": "path", "d": "M0 200 C 300 0, 600 400, 900 120", "x": "10%", "y": "60%", "stroke": "#FF5A1F", "strokeWidth": 6, "animate": [{"from": {"trimEnd": 0}, "to": {"trimEnd": 1}, "duration": 1, "ease": "inOutCubic"}]}},
+ {"name": "grid-field", "kind": "layer", "about": "A field of 40 dots in a row, each rising with its own delay ($i).", "json": {"shape": "circle", "width": 18, "height": 18, "fill": "#E8E2D4", "repeat": 40, "x": "=120 + $i * 42", "y": "=540 + 60*sin(t*2 + $i*0.4)"}},
+ {"name": "push-in", "kind": "scene-key", "key": "camera", "about": "Slow camera push-in for calm shots.", "json": {"animate": [{"from": {"zoom": 1}, "to": {"zoom": 1.08}, "duration": 3, "ease": "linear"}]}},
+ {"name": "snap-zoom", "kind": "scene-key", "key": "camera", "about": "Snap zoom with an impact shake on the cut (fast pace).", "json": {"animate": [{"from": {"zoom": 1.3}, "to": {"zoom": 1}, "duration": 0.3, "ease": "outExpo"}], "shake": {"amount": 8, "at": 0}}},
+ {"name": "whip-pan", "kind": "scene-key", "key": "camera", "about": "Whip pan in from the side (pair with scene motionBlur).", "json": {"animate": [{"from": {"x": -600}, "to": {"x": 0}, "duration": 0.25, "ease": "outExpo"}]}},
+ {"name": "music-acoustic", "kind": "spec-key", "key": "music", "about": "Warm acoustic score; cut on @beatN / @barN.", "json": {"style": "acoustic", "bpm": 92, "key": "D"}},
+ {"name": "music-orchestral", "kind": "spec-key", "key": "music", "about": "Orchestral score with a hit on bar 5.", "json": {"style": "orchestral", "bpm": 84, "key": "Cm", "hits": ["@bar5"]}},
+ {"name": "grade-film", "kind": "spec-key", "key": "post", "about": "Gentle cinematic grade with restrained bloom.", "json": {"preset": "cinematic", "bloom": 0.15}}
+]

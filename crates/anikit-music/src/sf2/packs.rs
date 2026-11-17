@@ -53,7 +53,7 @@ pub const PACKS: &[Pack] = &[
 ];
 
 /// Friendly name → (pack, SFZ file inside it).
-const INSTRUMENTS: &[(&str, &str, &str)] = &[
+pub const INSTRUMENTS: &[(&str, &str, &str)] = &[
     ("salamander-piano", "salamander", "Salamander Grand Piano V3.sfz"),
     ("salamander", "salamander", "Salamander Grand Piano V3.sfz"),
     ("vsco-violins", "vsco2-ce", "ViolinEnsSusVib.sfz"),

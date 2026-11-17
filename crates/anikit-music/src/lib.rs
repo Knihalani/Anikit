@@ -36,6 +36,7 @@ pub mod instruments;
 pub mod mix;
 pub mod render;
 pub mod custom;
+pub mod compose;
 
 pub use render::{arrange, render, render_arrangement, RenderOpts, Rendered, Stem, Timings};
 pub use seq::Grid;

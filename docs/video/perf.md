@@ -78,7 +78,27 @@ Add an entry when you add a feature with its own fast paths. If a component has 
 
 Same VM throughout: 4 vCPU (Intel Xeon @ 2.1 GHz), 16 GB, Linux 6.18. Wall time is the median of 3 runs. In the fps column, entries marked "(timed)" time the whole spec; the others time the clip.
 
-### Now (`qbench --gate`, after merging main 43f56da; one run each)
+### Phase 2, 16:30 (main 8cf24ac merged; `--runs 3` for the content-heavy rows, `--runs 1` for the rest)
+
+| spec | fps | CPU ms/frame: eval · render · encode | render SSIM min | ΔE p99.9 | flicker | result |
+|---|---:|---|---:|---:|---:|---|
+| ui | 1450–1875 | 0.05 · 0.57 · 1.24 | 1.00000 | 0.00 | 0.0 | PASS (bit-identical) |
+| text | 695–747 | 0.01 · 2.09 · 2.59 | 1.00000 | 0.00 | 0.0 | PASS |
+| explainer | 1386–1709 | 0.01 · 0.61 · 1.45 | 1.00000 | 0.00 | 0.0 | PASS |
+| backdrop | 39 | 50.2 · 20.5 · 16.8 | 0.99795 | 1.21 | 1.1 | **PASS** (the components fix; was KNOWN) |
+| particles | 35 | 17.4 · 36.7 · 23.9 | 0.99911 | 1.67 | 1.4 | **PASS** (the components fix; was KNOWN at ΔE 36) |
+| launch | 115 | 6.5 · 14.6 · 4.7 | 0.99694 | 2.38 | 1.6 | KNOWN (1 frame) |
+| scene3d | 2 | 515 · 12 · 11 | 0.99893 | 5.24 | 7.8 | KNOWN (3D's reference mode now wired; its default differs visibly) |
+| shader-hero | 9–14 | – · 133 · 6 | 0.99955 | 1.17 | 2.8 | PASS |
+| shader (aurora) | 1 | – · 1711 · 40 | 0.95376 | 2.71 | 1.6 | KNOWN (SHADER: aliasing) |
+| post | 12 | – · 216 · 18 | 0.99864 | 1.03 | 1.5 | PASS (motion-blur strip fixed by RENDER) |
+| audio | 94–107 | 0.05 · 17.5 · 11.2 | 0.99957 | 1.51 | 0.9 | PASS |
+
+The components' quality fixes cost speed: backdrop eval went 10.5 → 50–73 ms per frame, and backdrop 73 → 39 fps. Their speed pass is in progress.
+
+**Time to first still** (CLI → PNG, 1080p): product.json 21 ms. The music spec (pulse) went 750 → ~200 ms on repeat runs with the new on-disk analysis cache (`diskcache`), with byte-identical output. Fixed along the way: a visualizer's relative `src` wasn't resolved against the spec's folder, so from any other folder it silently showed a synthetic groove instead of the music.
+
+### Earlier: after merging main 43f56da (`qbench --gate`, after merging main 43f56da; one run each)
 
 | spec | frames (timed) | wall s | fps | CPU ms/frame: eval · render · copy · encode · idle* | startup · 1st frame ms | render SSIM min | ΔE p99.9 / max | flicker | delivered SSIM min / PSNR-Y | result |
 |---|---:|---:|---:|---|---|---:|---:|---:|---|---|
@@ -158,3 +178,23 @@ Open items, with their owners (all messaged with numbers):
 - `examples/post_cost.rs`: one frame's cost by stage (render, post, motion blur). `OPS=1` gives the cost of each top-level op (or layer subtree) by cumulative prefixes. `FIELD=1` gives the share of the gradient field.
 - `anikit-video render … --profile`: stage profile of a real render.
 - `cargo test -p anikit-video --lib upscale_timing -- --ignored --nocapture` and `blur_timing`: kernel timings.
+
+## Incremental re-render (render cache)
+
+`anikit-video render` caches each encoded GOP chunk on disk (`diskcache`: `$ANIKIT_CACHE_DIR`, `$XDG_CACHE_HOME/anikit` or `~/.cache/anikit`). A chunk's key covers:
+- the encoder config;
+- the chunk's index and length;
+- this binary (size and mtime);
+- for every frame in it, the evaluated display list, with image ids replaced by content identities (shader-job key, per-frame image key, pixel hash for stored images), plus the post look and motion-blur flag.
+
+A re-render splices unchanged chunks back in byte for byte and renders only the rest. An audio-only change reuses every video chunk; only the mux runs again. A frame with an image whose content can't be identified without rendering makes its chunk uncacheable, so it is simply rendered. `ANIKIT_RENDER_CACHE=0` turns the cache off. Progress output prints `render cache: reused N/M chunks`.
+
+Measured on the Tern launch spec (20 s, 1080p30, 4 vCPU):
+
+| render | time | md5 |
+|---|---:|---|
+| full, cache off | 148.3 s | 15becf74… |
+| cold cache (fills it) | 154.5 s | 15becf74… |
+| unchanged spec again | **1.7 s** (16/16 chunks reused) | 15becf74… |
+| one font size changed in the last scene | **32.8 s** (13/16 reused) | 2b3ea57d… |
+| the same edit, full render, cache off | 148.2 s | 2b3ea57d… |

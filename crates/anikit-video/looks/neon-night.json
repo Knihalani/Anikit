@@ -1,7 +1,7 @@
 {
  "title": "Neon night",
  "summary": "Rain-dark city night, magenta and cyan neon glow, perspective grid, bokeh, glitch cuts.",
- "direction": "A city at 2am. Deep blue-black, neon magenta and cyan type that glows, a perspective floor grid, out-of-focus bokeh. Motion flickers and scrambles in, glitch transitions, a slow drift on the camera. Keep text bright and short.",
+ "direction": "A city at 2am. Deep blue-black, neon magenta and cyan type that glows, a perspective floor grid, out-of-focus bokeh. Motion flickers and scrambles in, glitch transitions, a slow drift on the camera. Keep text bright and short. Note: neon magenta/cyan on blue-black with a grid floor is the synthwave cliché (TASTE.md §2, §9). Fits only a subject that truly lives at night or in the 80s (music, nightlife, retro games). Not for: SaaS launches. Keep text crisp: glow behind words, never on them.",
  "mode": "dark",
  "theme": {
   "colors": {

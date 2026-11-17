@@ -504,3 +504,37 @@ fn update_script_cost() {
     let (a, b) = (time(&ev, &mut dl), time(&plain, &mut dl));
     eprintln!("update script: {:.1} µs per layer per frame", a - b);
 }
+
+#[test]
+fn text_expressions_render_numbers() {
+    let ev = build(r##"{ "scenes": [ { "duration": 3, "layers": [ { "text": "=t < 1 ? 10 : floor(t * 100)", "style": "title" } ] } ] }"##);
+    let glyphs = |t: f32| ev.eval(t).ops.iter().map(|o| match o { Op::Glyphs { glyphs, .. } => glyphs.len(), _ => 0 }).sum::<usize>();
+    assert_eq!(glyphs(0.5), 2); // "10"
+    assert_eq!(glyphs(2.5), 3); // "250"
+    assert!(!ev.is_static(0.5, 2.5));
+}
+
+#[test]
+fn cut_on_the_music_grid_and_stack() {
+    let ev = build(r##"{ "music": { "style": "lofi", "bpm": 120 }, "cut": "2 bars", "transition": "cut", "scenes": [
+        { "stack": true, "layers": [ { "text": "A", "style": "title" }, { "text": "B" } ] }, { "duration": "1 bar", "layers": [ "C" ] }, { "duration": "4b", "layers": [ "D" ] } ] }"##);
+    let s = ev.scenes();
+    assert_eq!(s.len(), 3);
+    assert!((s[0].end - s[0].start - 4.0).abs() < 1e-3 && (s[1].end - s[1].start - 2.0).abs() < 1e-3 && (s[2].end - s[2].start - 2.0).abs() < 1e-3);
+    // Stacked: the two text layers are at different heights (one column), not both centred.
+    let ys: Vec<f32> = ev.eval(1.0).ops.iter().filter_map(|o| match o { Op::Glyphs { transform, .. } => Some(transform[5]), _ => None }).collect();
+    assert!(ys.len() >= 2 && (ys[0] - ys[1]).abs() > 20.0, "{ys:?}");
+}
+
+#[test]
+fn dots_from_data_with_appear() {
+    let ev = build(r##"{ "size": [100, 100], "motionBlur": false, "scenes": [ { "duration": 2, "background": "#000000", "layers": [
+        { "dots": { "data": [[10, 10], [50, 50, "#ff0000"], [90, 90]], "size": 8, "color": "#ffffff", "appear": "=clamp(t * 3 - i, 0, 1)" } } ] } ] }"##);
+    let (w, _, p) = anikit_video::pipeline::render_rgba(&ev, 1.5, 1.0);
+    let px = |x: u32, y: u32| { let i = ((y * w + x) * 4) as usize; [p[i], p[i + 1], p[i + 2]] };
+    assert_eq!(px(10, 10), [255, 255, 255]);
+    assert_eq!(px(50, 50), [255, 0, 0]);
+    assert!(!ev.is_static(0.0, 1.0));
+    let (_, _, p0) = anikit_video::pipeline::render_rgba(&ev, 0.0, 1.0);
+    assert!(p0.chunks(4).all(|c| c[0] < 5), "nothing has appeared at t = 0");
+}

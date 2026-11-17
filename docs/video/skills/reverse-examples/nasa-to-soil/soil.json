@@ -1,0 +1,287 @@
+{
+ "size": "9:16",
+ "fps": 30,
+ "background": "#000000",
+ "intent": {
+  "pace": "calm",
+  "genre": "data"
+ },
+ "scenes": [
+  {
+   "id": "one-take",
+   "duration": 30.0,
+   "notes": "REF: single 30 s take, two stacked globes, year-stepped diverging field, legend left, timeline bottom.",
+   "layers": [
+    {
+     "shader": "\nfloat h(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }\nfloat vn(vec3 x){ vec3 i = floor(x); vec3 f = fract(x); f = f*f*(3.0-2.0*f);\n  return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x), mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),\n             mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x), mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y), f.z); }\nfloat fbm(vec3 p){ float a = 0.5, s = 0.0; for (int k = 0; k < 4; k++) { s += a*vn(p); p = p*2.03 + 1.7; a *= 0.5; } return s; }\n// Brown-white-teal diverging map (dry = brown, wet = teal).\nvec3 cmap(float v){\n  v = clamp(v, -1.0, 1.0);\n  vec3 c0 = vec3(0.30,0.14,0.01), c1 = vec3(0.70,0.42,0.10), c2 = vec3(0.84,0.74,0.52), c3 = vec3(0.80,0.81,0.80),\n       c4 = vec3(0.60,0.80,0.77), c5 = vec3(0.13,0.52,0.49), c6 = vec3(0.0,0.24,0.19);\n  float x = (v + 1.0)*3.0;\n  if (x < 1.0) return mix(c0,c1,x); if (x < 2.0) return mix(c1,c2,x-1.0); if (x < 3.0) return mix(c2,c3,x-2.0);\n  if (x < 4.0) return mix(c3,c4,x-3.0); if (x < 5.0) return mix(c4,c5,x-4.0); return mix(c5,c6,x-5.0);\n}\nfloat field(vec3 p, float yr){\n  float k = floor(yr); float f = smoothstep(0.75, 1.0, fract(yr));\n  float a = fbm(p*1.35 + vec3(k*0.23, k*0.07, 0.0)), b = fbm(p*1.35 + vec3((k+1.0)*0.23, (k+1.0)*0.07, 0.0));\n  float n = mix(a, b, f);\n  float trend = mix(0.25, -0.55, smoothstep(0.0, 1.0, (yr - 1950.0)/74.0));\n  return (n - 0.5)*3.4 + trend + 0.15*sin(p.y*4.0);\n}\nvec3 globe(vec2 q, float lon0, float lat0, float yr, out float a){\n  float r2 = dot(q,q); a = 1.0 - smoothstep(0.995, 1.0, sqrt(r2));\n  if (r2 >= 1.0) return vec3(0.0);\n  vec3 n = vec3(q.x, q.y, sqrt(1.0 - r2));\n  float cl = cos(lat0), sl = sin(lat0);\n  vec3 m = vec3(n.x, cl*n.y + sl*n.z, -sl*n.y + cl*n.z);\n  float lat = asin(clamp(m.y, -1.0, 1.0)), lon = atan(m.x, m.z) + lon0;\n  vec3 p = vec3(cos(lat)*sin(lon), sin(lat), cos(lat)*cos(lon));\n  vec3 c = cmap(field(p, yr));\n  // Invented geography (not Earth): coastlines and borders as thin dark linework, relief hillshade on land.\n  vec3 gp = p*1.6 + vec3(3.1, 0.7, 5.3);\n  float land = fbm(gp) + 0.06*fbm(p*14.0 + 4.0) - 0.03;\n  float isl = step(0.5, land);\n  float coast = 1.0 - smoothstep(0.0012, 0.0035, abs(land - 0.5));\n  float rel = fbm(p*7.0 + 2.0), rel2 = fbm(p*7.0 + 2.0 + vec3(0.02, 0.02, 0.0));\n  c *= 1.0 + isl*clamp((rel2 - rel)*7.0, -0.07, 0.07);\n  float bd = fbm(p*3.3 + 9.0);\n  float border = isl*(1.0 - smoothstep(0.001, 0.0028, abs(bd - 0.5)));\n  c = mix(c, vec3(0.04), 0.85*coast + 0.4*border);\n  c *= mix(0.62, 1.0, pow(n.z, 0.45));\n  return c;\n}\nvoid mainImage(out vec4 o, in vec2 fc){\n  vec2 R = iResolution.xy; vec2 px = vec2(fc.x, R.y - fc.y) / R.x * 1080.0;\n  float yr = 1950.0 + 74.0*clamp(iTime/28.5, 0.0, 1.0) + 0.0001;\n  float rad = 412.0; vec3 col = vec3(0.0); float a;\n  vec3 g1 = globe((px - vec2(540.0, 440.0))/rad*vec2(1.0,-1.0), -1.1, 0.15, yr, a); col = mix(col, g1, a);\n  vec3 g2 = globe((px - vec2(540.0, 1320.0))/rad*vec2(1.0,-1.0), 1.75, 0.35, yr, a); col = mix(col, g2, a);\n  // Slim vertical legend at the left.\n  if (px.x > 74.0 && px.x < 92.0 && px.y > 720.0 && px.y < 1060.0) col = cmap(1.0 - 2.0*(px.y - 720.0)/340.0);\n  o = vec4(col, 1.0);\n}\n",
+     "width": "100%",
+     "height": "100%"
+    },
+    {
+     "text": "mm",
+     "font": "Inter",
+     "size": 30,
+     "weight": 600,
+     "color": "#E0E0E0",
+     "x": 70,
+     "y": 700,
+     "anchor": "bottomLeft"
+    },
+    {
+     "text": "+40",
+     "font": "Inter",
+     "size": 24,
+     "color": "#BDBDBD",
+     "x": 102,
+     "y": 724,
+     "anchor": "left"
+    },
+    {
+     "text": "+20",
+     "font": "Inter",
+     "size": 24,
+     "color": "#BDBDBD",
+     "x": 102,
+     "y": 805,
+     "anchor": "left"
+    },
+    {
+     "text": "0",
+     "font": "Inter",
+     "size": 24,
+     "color": "#BDBDBD",
+     "x": 102,
+     "y": 890,
+     "anchor": "left"
+    },
+    {
+     "text": "\u221220",
+     "font": "Inter",
+     "size": 24,
+     "color": "#BDBDBD",
+     "x": 102,
+     "y": 975,
+     "anchor": "left"
+    },
+    {
+     "text": "\u221240",
+     "font": "Inter",
+     "size": 24,
+     "color": "#BDBDBD",
+     "x": 102,
+     "y": 1056,
+     "anchor": "left"
+    },
+    {
+     "shape": "rect",
+     "width": 912.0,
+     "height": 12,
+     "fill": "#3C3C3C",
+     "x": 84.0,
+     "y": 1840.0,
+     "anchor": "left"
+    },
+    {
+     "shape": "rect",
+     "height": 12,
+     "fill": "#BDBDBD",
+     "x": 84.0,
+     "y": 1840.0,
+     "anchor": "left",
+     "width": 912.0,
+     "scaleX": "=max(0.002, clamp(t / 28.5, 0, 1))"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 10,
+     "fill": "#7A7A7A",
+     "x": 84.0,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "text": "1950",
+     "font": "Inter",
+     "size": 18,
+     "color": "#8A8A8A",
+     "x": 84.0,
+     "y": 1862.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 6,
+     "fill": "#7A7A7A",
+     "x": 145.6,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 10,
+     "fill": "#7A7A7A",
+     "x": 207.2,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 6,
+     "fill": "#7A7A7A",
+     "x": 268.9,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 10,
+     "fill": "#7A7A7A",
+     "x": 330.5,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "text": "1970",
+     "font": "Inter",
+     "size": 18,
+     "color": "#8A8A8A",
+     "x": 330.5,
+     "y": 1862.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 6,
+     "fill": "#7A7A7A",
+     "x": 392.1,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 10,
+     "fill": "#7A7A7A",
+     "x": 453.7,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 6,
+     "fill": "#7A7A7A",
+     "x": 515.4,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 10,
+     "fill": "#7A7A7A",
+     "x": 577.0,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "text": "1990",
+     "font": "Inter",
+     "size": 18,
+     "color": "#8A8A8A",
+     "x": 577.0,
+     "y": 1862.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 6,
+     "fill": "#7A7A7A",
+     "x": 638.6,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 10,
+     "fill": "#7A7A7A",
+     "x": 700.2,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 6,
+     "fill": "#7A7A7A",
+     "x": 761.8,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 10,
+     "fill": "#7A7A7A",
+     "x": 823.5,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "text": "2010",
+     "font": "Inter",
+     "size": 18,
+     "color": "#8A8A8A",
+     "x": 823.5,
+     "y": 1862.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 6,
+     "fill": "#7A7A7A",
+     "x": 885.1,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "shape": "rect",
+     "width": 2,
+     "height": 10,
+     "fill": "#7A7A7A",
+     "x": 946.7,
+     "y": 1848.0,
+     "anchor": "top"
+    },
+    {
+     "text": "=floor(1950 + 74 * clamp(t / 28.5, 0, 1))",
+     "font": "Inter",
+     "size": 34,
+     "weight": 400,
+     "color": "#D6D6D6",
+     "x": "=84.0 + 912.0 * clamp(t / 28.5, 0, 1)",
+     "y": 1826.0,
+     "anchor": "bottom"
+    },
+    {
+     "text": "Soil moisture \u00b7 illustrative",
+     "font": "Inter",
+     "size": 18,
+     "color": "#7A7A7A",
+     "x": 70,
+     "y": 1100,
+     "anchor": "topLeft"
+    }
+   ]
+  }
+ ]
+}

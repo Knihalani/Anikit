@@ -1,0 +1,523 @@
+{
+ "about": "Physical 3D with motivated light: three ceramic vessels turned from lathe profiles on a dark oak table, lit only by one warm low window spot through haze (shafts, ~8:1 key to fill), seen through an 85 mm lens with a slow push and shallow focus; the caption is crisp 2D type set flush-left over the dark side of the frame. Taste decision it demonstrates: 3D because the subject is a physical object, a light you can point to, low-key mood chosen on purpose, a long lens instead of a wide orbit, matte and glazed materials instead of chrome, and a cello over piano instead of a synth bed (TASTE.md §4, §7, §8). Replace the vessels with the brief's own object (lathe, extrude or a glTF). It tends not to suit software with no physical form, or for a bright, friendly brand.",
+ "cost": "draft ~45 s (measured), final ~3 min (estimated at 4× draft) (1080p, 4 cores)",
+ "spec": {
+  "size": "16:9",
+  "intent": {
+   "pace": "calm",
+   "genre": "brand-film"
+  },
+  "music": {
+   "style": "piano",
+   "bpm": 68,
+   "key": "Dm",
+   "mood": "calm",
+   "instruments": {
+    "lead": "cello"
+   }
+  },
+  "scenes": [
+   {
+    "duration": 4,
+    "layers": [
+     {
+      "component": "scene3d",
+      "props": {
+       "env": {
+        "preset": "studio",
+        "color": "#0d0a08"
+       },
+       "exposure": 0.9,
+       "camera": {
+        "keys": [
+         {
+          "t": 0,
+          "pos": [
+           0.2,
+           0.9,
+           7.6
+          ],
+          "target": [
+           0.45,
+           0.45,
+           0
+          ],
+          "focal": 85,
+          "fstop": 2.8
+         },
+         {
+          "t": 4,
+          "pos": [
+           0.15,
+           0.85,
+           7.0
+          ],
+          "target": [
+           0.45,
+           0.45,
+           0
+          ],
+          "focal": 85,
+          "fstop": 2.8
+         }
+        ]
+       },
+       "floor": {
+        "color": "#2a1d14",
+        "roughness": 0.55,
+        "reflect": 0.15
+       },
+       "objects": [
+        {
+         "type": "lathe",
+         "points": [
+          [
+           0,
+           0
+          ],
+          [
+           0.07,
+           0.005
+          ],
+          [
+           0.0811,
+           0.0289
+          ],
+          [
+           0.0984,
+           0.0578
+          ],
+          [
+           0.1178,
+           0.0867
+          ],
+          [
+           0.1375,
+           0.1156
+          ],
+          [
+           0.1562,
+           0.1444
+          ],
+          [
+           0.1728,
+           0.1733
+          ],
+          [
+           0.1863,
+           0.2022
+          ],
+          [
+           0.1963,
+           0.2311
+          ],
+          [
+           0.2023,
+           0.26
+          ],
+          [
+           0.2041,
+           0.2889
+          ],
+          [
+           0.2018,
+           0.3178
+          ],
+          [
+           0.1957,
+           0.3467
+          ],
+          [
+           0.1862,
+           0.3756
+          ],
+          [
+           0.1738,
+           0.4044
+          ],
+          [
+           0.1593,
+           0.4333
+          ],
+          [
+           0.1434,
+           0.4622
+          ],
+          [
+           0.1269,
+           0.4911
+          ],
+          [
+           0.1108,
+           0.52
+          ],
+          [
+           0.0958,
+           0.5489
+          ],
+          [
+           0.0829,
+           0.5778
+          ],
+          [
+           0.0732,
+           0.6067
+          ],
+          [
+           0.07,
+           0.6356
+          ],
+          [
+           0.1,
+           0.6644
+          ],
+          [
+           0.1,
+           0.6933
+          ],
+          [
+           0.1,
+           0.7222
+          ],
+          [
+           0.1,
+           0.7511
+          ],
+          [
+           0.1,
+           0.78
+          ],
+          [
+           0,
+           0.78
+          ]
+         ],
+         "segments": 128,
+         "pos": [
+          0.0,
+          0,
+          0.1
+         ],
+         "material": {
+          "base": "#d9d2c4",
+          "roughness": 0.25,
+          "metallic": 0,
+          "clearcoat": 0.6
+         }
+        },
+        {
+         "type": "lathe",
+         "points": [
+          [
+           0,
+           0
+          ],
+          [
+           0.18,
+           0.005
+          ],
+          [
+           0.209,
+           0.0096
+          ],
+          [
+           0.224,
+           0.0193
+          ],
+          [
+           0.236,
+           0.0289
+          ],
+          [
+           0.2464,
+           0.0385
+          ],
+          [
+           0.2556,
+           0.0481
+          ],
+          [
+           0.2641,
+           0.0578
+          ],
+          [
+           0.2718,
+           0.0674
+          ],
+          [
+           0.2789,
+           0.077
+          ],
+          [
+           0.2856,
+           0.0867
+          ],
+          [
+           0.2917,
+           0.0963
+          ],
+          [
+           0.2974,
+           0.1059
+          ],
+          [
+           0.3027,
+           0.1156
+          ],
+          [
+           0.3076,
+           0.1252
+          ],
+          [
+           0.3122,
+           0.1348
+          ],
+          [
+           0.3164,
+           0.1444
+          ],
+          [
+           0.3202,
+           0.1541
+          ],
+          [
+           0.3236,
+           0.1637
+          ],
+          [
+           0.3268,
+           0.1733
+          ],
+          [
+           0.3296,
+           0.183
+          ],
+          [
+           0.332,
+           0.1926
+          ],
+          [
+           0.3341,
+           0.2022
+          ],
+          [
+           0.3359,
+           0.2119
+          ],
+          [
+           0.3374,
+           0.2215
+          ],
+          [
+           0.3385,
+           0.2311
+          ],
+          [
+           0.3394,
+           0.2407
+          ],
+          [
+           0.3398,
+           0.2504
+          ],
+          [
+           0.34,
+           0.26
+          ],
+          [
+           0,
+           0.26
+          ]
+         ],
+         "segments": 128,
+         "pos": [
+          0.75,
+          0,
+          -0.15
+         ],
+         "material": {
+          "base": "#6b3a26",
+          "roughness": 0.6,
+          "metallic": 0
+         }
+        },
+        {
+         "type": "lathe",
+         "points": [
+          [
+           0,
+           0
+          ],
+          [
+           0.0799,
+           0.005
+          ],
+          [
+           0.0905,
+           0.0407
+          ],
+          [
+           0.1024,
+           0.0815
+          ],
+          [
+           0.1148,
+           0.1222
+          ],
+          [
+           0.127,
+           0.163
+          ],
+          [
+           0.138,
+           0.2037
+          ],
+          [
+           0.1468,
+           0.2444
+          ],
+          [
+           0.1527,
+           0.2852
+          ],
+          [
+           0.155,
+           0.3259
+          ],
+          [
+           0.1535,
+           0.3667
+          ],
+          [
+           0.1483,
+           0.4074
+          ],
+          [
+           0.1399,
+           0.4481
+          ],
+          [
+           0.1293,
+           0.4889
+          ],
+          [
+           0.1173,
+           0.5296
+          ],
+          [
+           0.1048,
+           0.5704
+          ],
+          [
+           0.0928,
+           0.6111
+          ],
+          [
+           0.0819,
+           0.6519
+          ],
+          [
+           0.0725,
+           0.6926
+          ],
+          [
+           0.0648,
+           0.7333
+          ],
+          [
+           0.0588,
+           0.7741
+          ],
+          [
+           0.0542,
+           0.8148
+          ],
+          [
+           0.051,
+           0.8556
+          ],
+          [
+           0.0487,
+           0.8963
+          ],
+          [
+           0.0473,
+           0.937
+          ],
+          [
+           0.0463,
+           0.9778
+          ],
+          [
+           0.0577,
+           1.0185
+          ],
+          [
+           0.0574,
+           1.0593
+          ],
+          [
+           0.0572,
+           1.1
+          ],
+          [
+           0,
+           1.1
+          ]
+         ],
+         "segments": 128,
+         "pos": [
+          1.35,
+          0,
+          0.3
+         ],
+         "material": "ceramic"
+        }
+       ],
+       "lights": [
+        {
+         "pos": [
+          -3.6,
+          2.4,
+          1.2
+         ],
+         "target": [
+          0.6,
+          0.35,
+          0
+         ],
+         "angle": 30,
+         "penumbra": 0.5,
+         "intensity": 70,
+         "color": "#ffcf9a"
+        }
+       ],
+       "fog": {
+        "density": 0.025,
+        "color": "#0d0a08",
+        "shafts": true
+       }
+      }
+     },
+     {
+      "text": "Thrown by hand,\nfired twice.",
+      "font": "Instrument Serif",
+      "size": "8vh",
+      "lineHeight": 1.0,
+      "color": "#EFE7DA",
+      "x": "6%",
+      "y": "84%",
+      "anchor": "bottomLeft",
+      "start": 1.0,
+      "enter": {
+       "preset": "mask by line up",
+       "duration": 0.5,
+       "ease": "outExpo"
+      },
+      "align": "left"
+     }
+    ]
+   }
+  ]
+ }
+}

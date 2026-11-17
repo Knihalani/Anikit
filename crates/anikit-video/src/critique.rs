@@ -22,6 +22,9 @@ use serde_json::{Map, Value};
 
 use crate::templates::{color, expr, Format};
 
+#[path = "critique_taste.rs"]
+mod taste;
+
 /// One finding.
 #[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct Note {
@@ -55,8 +58,8 @@ pub struct Report {
 pub fn category(check: &str) -> &'static str {
     match check {
         "pace" | "dead-air" | "rhythm" | "arc" | "ending" | "beat" | "pacing" | "length" => "time",
-        "reading-time" | "legibility" | "contrast" | "render-contrast" | "typography" | "density" | "render-overlap" => "text",
-        "hook" | "structure" | "placeholder" | "copy" => "story",
+        "reading-time" | "legibility" | "contrast" | "render-contrast" | "typography" | "density" | "render-overlap" | "type-scale" | "text-crisp" => "text",
+        "hook" | "structure" | "placeholder" | "copy" | "music" => "story",
         "frame-fill" | "layout" => "composition",
         "flicker" | "judder" | "banding" | "audio" | "render-frame" => "technical",
         _ => "composition",
@@ -500,7 +503,9 @@ pub fn critique(raw: &Value) -> Report {
     }
     sameness(raw, spec, &mut cx);
     recipe_copy(raw, &mut cx);
+    medium(raw, &mut cx);
     bar(spec, &mut cx);
+    taste::run(raw, spec, &mut cx);
     if applied.is_some() {
         let off = crate::looks::layer_offsets(raw);
         for n in &mut cx.notes {
@@ -634,8 +639,17 @@ fn walk_layer(cx: &mut Ctx, layer: &Value, path: &str, scene_dur: f64, bg: color
     f(cx, l, path, start + enter_delay, end, bg_here);
     for key in ["children", "layers"] {
         if let Some(kids) = l.get(key).and_then(|k| k.as_array()) {
+            // A filled shape inside a group backs the siblings drawn after it
+            // (a pill or card behind its label).
+            let mut backing = bg_here;
             for (i, k) in kids.iter().enumerate() {
-                walk_layer(cx, k, &format!("{path}.{key}[{i}]"), scene_dur, bg_here, start, f);
+                walk_layer(cx, k, &format!("{path}.{key}[{i}]"), scene_dur, backing, start, f);
+                if k.get("shape").is_some() && k.get("text").is_none() {
+                    if let Some(mut c) = k.get("fill").or_else(|| k.get("color")).and_then(|c| cx.color(c)) {
+                        c[3] *= k.get("opacity").and_then(|o| o.as_f64()).unwrap_or(1.0).clamp(0.0, 1.0);
+                        backing = color::over(c, backing);
+                    }
+                }
             }
         }
     }
@@ -702,7 +716,7 @@ fn bar(spec: &Value, cx: &mut Ctx) {
         walk(v)
     };
     if scenes.len() >= 2 && !dims(spec) {
-        cx.note("warning", "bar", "scenes", "flat 2D only: no 3D, light, lens or real imagery anywhere (BAR #5)".into(), "give the film a world with depth: a shader or text-3d/model/scene3d subject, camera depth + aperture, or real photos");
+        cx.note("tip", "bar", "scenes", "flat 2D only: no light, lens, texture or real imagery anywhere (BAR #5)".into(), "flat 2D is a valid choice when it is designed (strict grid, scale contrast, value structure, real UI or photos); if the concept is spatial, add depth (camera depth + aperture, a shader or scene3d world). Don't force 3D (TASTE.md §3, §8)");
     }
 }
 
@@ -751,6 +765,59 @@ fn recipe_copy(raw: &Value, cx: &mut Ctx) {
             cx.note("warning", "recipe", "scenes", format!("{:.0}% of this spec's design is the `{name}` recipe with new words", shared * 100.0), "build the shots from this brief's own nouns: its object as the 3D hero, its data as particles or physics, its world as the shader; borrow the recipe's technique, not its shots");
             return;
         }
+    }
+}
+
+/// 3D and music chosen by habit rather than by the idea: the same set and
+/// materials in every 3D scene, words traced under defocus or at reduced
+/// resolution, and electronic music on a calm piece.
+fn medium(raw: &Value, cx: &mut Ctx) {
+    let scenes = raw.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
+    let mut sets = Vec::new();
+    for (si, sc) in scenes.iter().enumerate() {
+        let Some(layers) = sc.get("layers").and_then(|l| l.as_array()) else { continue };
+        for (li, l) in layers.iter().enumerate() {
+            if !l.get("component").and_then(|c| c.as_str()).is_some_and(|c| c == "scene3d" || c == "scene-3d") {
+                continue;
+            }
+            let p = l.get("props").cloned().unwrap_or(Value::Null);
+            let env = p.get("env").map(|e| e.to_string()).unwrap_or_default();
+            let mut mats = std::collections::BTreeSet::new();
+            let mut text = false;
+            if let Some(objs) = p.get("objects").and_then(|o| o.as_array()) {
+                for o in objs {
+                    if let Some(m) = o.get("material") {
+                        mats.insert(m.as_str().map(str::to_string).unwrap_or_else(|| m.to_string()));
+                    }
+                    text |= o.get("text").is_some();
+                }
+            }
+            let path = format!("scenes[{si}].layers[{li}]");
+            let res = p.get("resolution").and_then(|r| r.as_f64()).unwrap_or(1.0);
+            let defocus = ["aperture", "dof", "focus"].iter().any(|k| p.get(*k).is_some() || p.get("camera").and_then(|c| c.get(*k)).is_some());
+            if text && (res < 1.0 || defocus) {
+                cx.note("warning", "legibility", &path, format!("3D words are traced {}; type must be crisp at full resolution while it is read", if res < 1.0 { format!("at resolution {res}") } else { "under depth of field".into() }),
+                    "drop `resolution` (drafts reduce it automatically) and keep the words in the focal plane, or set the words as a 2D text layer over the 3D");
+            }
+            sets.push((path, env, mats));
+        }
+    }
+    let studio = |e: &str| ["studio", "cyc"].iter().any(|k| e.contains(k));
+    let shiny = |m: &std::collections::BTreeSet<String>| m.iter().any(|x| ["chrome", "glass", "gold", "metal"].iter().any(|k| x.contains(k)));
+    if sets.len() >= 2 && sets.iter().all(|(_, e, m)| *e == sets[0].1 && *m == sets[0].2) {
+        cx.note("warning", "sameness", &sets[0].0, format!("every 3D scene uses the same set and materials ({} {})", sets[0].1, sets[0].2.iter().cloned().collect::<Vec<_>>().join(", ")),
+            "use 3D only where the idea is physical, and give each 3D shot its own world; tell the rest in 2D type, illustration or shaders");
+    } else if let Some((p, _, _)) = sets.iter().find(|(_, e, m)| studio(e) && shiny(m)) {
+        cx.note("tip", "sameness", p, "a studio/cyc set with chrome or glass is the default 3D look".into(), "build the set from the brief's world (its materials, place and light), or tell this shot in 2D");
+    }
+    let style = match raw.get("music") {
+        Some(Value::String(s)) => s.clone(),
+        Some(m) => m.get("style").and_then(|s| s.as_str()).unwrap_or("").to_string(),
+        None => String::new(),
+    };
+    let pace = raw.get("intent").and_then(|i| i.get("pace")).and_then(|p| p.as_str()).unwrap_or("");
+    if ["synthwave", "house", "trap", "dnb", "tech"].contains(&style.as_str()) && matches!(pace, "calm" | "steady") {
+        cx.note("tip", "audio", "music", format!("electronic `{style}` score on a {pace} piece"), "acoustic, orchestral, piano or ambient usually suit a calm or brand piece; keep electronic for electronic concepts");
     }
 }
 
@@ -897,6 +964,26 @@ pub fn all_text(v: &Value) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn text_on_a_backing_shape_in_a_group_uses_the_shape() {
+        let spec = serde_json::json!({ "scenes": [{ "duration": 3, "background": "#f4f1ea", "layers": [
+            { "layers": [ { "shape": "rect", "width": 400, "height": 90, "fill": "#111111" }, { "text": "Ship it", "color": "#f4f1ea" } ] }
+        ] }] });
+        let r = critique(&spec);
+        assert!(!r.notes.iter().any(|n| n.check == "contrast"), "{}", r.to_text());
+    }
+
+    #[test]
+    fn habitual_3d_and_music_are_flagged() {
+        let sc = |m: &str| serde_json::json!({ "duration": 2, "layers": [{ "component": "scene3d", "props": { "env": "studio", "aperture": 2.8, "objects": [{ "text": "SIFT", "material": m }] } }] });
+        let spec = serde_json::json!({ "intent": {"pace": "calm"}, "music": "synthwave", "scenes": [sc("chrome"), sc("chrome")] });
+        let r = critique(&spec);
+        let checks: Vec<_> = r.notes.iter().map(|n| (n.check, n.message.clone())).collect();
+        assert!(r.notes.iter().any(|n| n.check == "legibility" && n.message.contains("depth of field")), "{checks:?}");
+        assert!(r.notes.iter().any(|n| n.check == "sameness" && n.message.contains("same set")), "{checks:?}");
+        assert!(r.notes.iter().any(|n| n.check == "audio" && n.message.contains("synthwave")), "{checks:?}");
+    }
+
     #[test]
     fn recipe_with_new_words_is_flagged() {
         let (_, spec) = crate::agent_docs::recipe_spec("launch-sting").unwrap();

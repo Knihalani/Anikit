@@ -4,8 +4,8 @@ Install the prebuilt binary (seconds; do not build from source): `curl -fsSL htt
 
 ```bash
 anikit-video docs <topic>        # one compact page per primitive (this list)
-anikit-video still s.json --at 2.4 --width 640 -o f.png   # look at one moment (fast)
-anikit-video sheet s.json -o sheet.png                      # one frame per scene
+anikit-video preview s.json      # THE loop: validate + s-sheet.png (1 frame/s) + critique + pace, ~1 s for 2D
+anikit-video preview s.json --at 2.4 -o f.png               # one moment at full size
 anikit-video render s.json -o out.mp4
 anikit-video critique s.json --render --pack review/        # judged against your "intent"; then LOOK at review/
 ```
@@ -15,6 +15,7 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 
 | Topic | What you get |
 |---|---|
+| `docs taste` | **read before designing:** routes to a striking frame (and the tools for each), what tends to land with a viewer and listener, what tends to fail |
 | `docs primitives` | text, shapes, SVG paths, images, groups: full styling |
 | `docs animation` | keyframes and `=expressions` on any property, presets, kinetic type |
 | `docs camera` | zoom/pan/whip, shake, depth + rack focus, motion blur |
@@ -27,10 +28,12 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 | `docs post` | grades, bloom, halation, grain, motion blur |
 | `docs pacing` | intent, beat-cut timing, holds that stay alive |
 | `docs critique` | the reviewer and the review pack |
+| `docs analyze` | reverse-engineer a reference video: shots, pacing, palette, camera, beats → a draft spec |
+| `docs board` | a look from reference images (paintings, photos, posters): palette, value, texture, composition → theme tokens |
 | `docs make-anything` | escape hatches and how to combine them |
-| `docs launch` | a launch/product video from a brief: concept generator, beat sheet, QA (skill: skills/anikit-launch-video) |
+| `docs launch` | launch/product videos: principles, process, quality checks; no template (skill: skills/anikit-launch-video) |
 | `docs expressions` · `docs script` · `docs draw` | per-frame maths and colours (music-reactive), generator loops, raw paths and points |
 
 Shortcuts (optional): `anikit-video recipes` (drop-in high-end shots), `looks` (art direction),
 `info --components` (prebuilt widgets), `templates` (quick starts).
-Rules that always hold: hook in ≤ 2 s · cut words, not type size · one focal point · judge frames, not scores.
+Rules that always hold: hook in ≤ 2 s · cut words, not type size · one focal point · every choice made for this subject (`docs taste`) · judge frames, not scores.

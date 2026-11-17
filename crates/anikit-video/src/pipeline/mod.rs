@@ -407,7 +407,23 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
     let chunk_start = |k: usize| ranges[ranges.partition_point(|r| r.0 <= k) - 1].0;
     let workers: std::sync::Mutex<std::collections::HashMap<usize, Worker>> = Default::default();
     let pool: std::sync::Mutex<Vec<Worker>> = Default::default();
-    let out = ak264::encode_ranges(cfg, ranges.clone(), |k, buf, hints| {
+    // Incremental re-render: chunks whose frames are identical to a previous render
+    // (same evaluated display lists, image contents, look, encoder settings and
+    // binary) are spliced in from the on-disk cache, byte for byte.
+    let cache_keys: Vec<Option<String>> = if tap.is_none() && std::env::var_os("ANIKIT_RENDER_CACHE").is_none_or(|v| v != "0") {
+        chunk_keys(ev, opts, cfg, f0, &ranges)
+    } else {
+        vec![None; ranges.len()]
+    };
+    let cached: Vec<Option<Vec<u8>>> = cache_keys.iter().map(|k| k.as_deref().and_then(crate::diskcache::get)).collect();
+    let skip: Vec<bool> = cached.iter().map(|c| c.is_some()).collect();
+    let reused = skip.iter().filter(|&&s| s).count();
+    for (k, c) in ranges.iter().zip(&skip) {
+        if *c {
+            done.fetch_add((k.1 - k.0) as u64, Ordering::Relaxed);
+        }
+    }
+    let parts = ak264::encode_ranges_select(cfg, ranges.clone(), &skip, |k, buf, hints| {
         let t = Instant::now();
         let c = chunk_start(k);
         // A chunk starts from a pooled renderer (its caches are history-independent:
@@ -434,6 +450,9 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
             // Held frame: provably identical to the previous one; skip eval and render.
             let fi = (f0 + k) as f32;
             let (post, blur) = frame_look(ev, opts.quality, (f0 + k) as u32);
+            // The film grain post adds (σ of luma grain at mid-grey, 8-bit codes), so the
+            // encoder's SSIM floor doesn't spend bits re-coding random grain.
+            hints.grain = post.as_ref().map_or(0.0, |p| p.grain * 89.4);
             let sh = if blur || ev.shutter_explicit || opts.quality == Quality::Best { ev.shutter * 0.5 } else { 0.0 };
             if continuing && !post.as_ref().is_some_and(|p| p.grain > 0.0) && ev.is_static((fi - 1.0) / ev.fps - sh, fi / ev.fps + sh) {
                 prof.unchanged.fetch_add(1, Ordering::Relaxed);
@@ -452,6 +471,9 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
             let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
             let t = Instant::now();
             r.set_quality(render_quality(opts.quality));
+            // Tell the encoder how much grain the post stack draws (σ in 8-bit luma at mid-grey),
+            // so re-drawn random grain isn't spent bits on.
+            let grain = post.as_ref().map(|p| p.grain * 89.4).unwrap_or(0.0);
             r.set_post(post, (f0 + k) as u64);
             use crate::render::incremental::Update;
             let upd = if blur {
@@ -484,6 +506,7 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
                 copy_yuv(yuv, buf, None);
                 hints.changed = None;
             }
+            hints.grain = grain;
             *last = Some(k);
             prof.copy_ns.fetch_add(ns(t), Ordering::Relaxed);
             w.returned = Some(Instant::now());
@@ -511,7 +534,106 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
     if opts.progress {
         eprintln!();
     }
+    let mut out = Vec::new();
+    for ((part, hit), key) in parts.into_iter().zip(cached).zip(&cache_keys) {
+        match (hit, part) {
+            (Some(bytes), _) => out.extend_from_slice(&bytes),
+            (None, Some(bytes)) => {
+                if let Some(k) = key {
+                    crate::diskcache::put(k, &bytes);
+                }
+                out.extend_from_slice(&bytes);
+            }
+            (None, None) => {}
+        }
+    }
+    if cache_keys.iter().any(|k| k.is_some()) && (opts.progress || opts.profile) {
+        eprintln!("render cache: reused {reused}/{} chunks", ranges.len());
+    }
     out
+}
+
+/// Cache keys for each chunk (`None`: not cacheable, e.g. an image whose content
+/// can't be identified without rendering it). A key covers the encoder settings,
+/// the chunk's index and length, this binary, and for every frame its evaluated
+/// display list (image ids replaced by content identities) and finishing look.
+fn chunk_keys(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, f0: usize, ranges: &[(usize, usize)]) -> Vec<Option<String>> {
+    use std::collections::hash_map::DefaultHasher;
+    let memo: std::sync::Mutex<std::collections::HashMap<u32, u64>> = Default::default();
+    let n = ranges.last().map_or(0, |r| r.1);
+    let frames: Vec<Option<u64>> = (0..n)
+        .into_par_iter()
+        .map(|k| {
+            let i = (f0 + k) as u32;
+            let mut dl = DisplayList::default();
+            eval_frame(ev, i, opts.scale, &mut dl);
+            let mut keys = Vec::new();
+            let mut ok = true;
+            let mut id_key = |id: &mut dl::ImageId| {
+                let stored = !crate::eval::shader::ShaderJobs::owns(*id) && id.0 < crate::eval::assets::VOLATILE_BASE;
+                let k = if stored {
+                    let hit = memo.lock().unwrap().get(&id.0).copied();
+                    hit.or_else(|| {
+                        let k = ev.assets.content_key(*id)?;
+                        memo.lock().unwrap().insert(id.0, k);
+                        Some(k)
+                    })
+                } else {
+                    ev.assets.content_key(*id)
+                };
+                match k {
+                    Some(k) => keys.push(k),
+                    None => ok = false,
+                }
+                *id = dl::ImageId(0);
+            };
+            for op in &mut dl.ops {
+                let paint = match op {
+                    Op::Image { image, .. } => {
+                        id_key(image);
+                        None
+                    }
+                    Op::Fill { paint, .. } | Op::Stroke { paint, .. } | Op::RoundRect { paint, .. } | Op::Glyphs { paint, .. } => Some(paint),
+                    _ => None,
+                };
+                if let Some(dl::Paint::Image { image, .. }) = paint {
+                    id_key(image);
+                }
+            }
+            if !ok {
+                return None;
+            }
+            let mut h = DefaultHasher::new();
+            hash_list(&dl).hash(&mut h);
+            keys.hash(&mut h);
+            let (post, blur) = frame_look(ev, opts.quality, i);
+            format!("{post:?}{blur}").hash(&mut h);
+            ev.shutter.to_bits().hash(&mut h);
+            Some(h.finish())
+        })
+        .collect();
+    let exe = std::env::current_exe().ok().and_then(|p| std::fs::metadata(p).ok()).map(|m| (m.len(), m.modified().ok()));
+    ranges
+        .iter()
+        .enumerate()
+        .map(|(ci, &(a, b))| {
+            let mut h = DefaultHasher::new();
+            ("anikit-chunk-1", format!("{exe:?}"), format!("{cfg:?}"), opts.scale.to_bits(), format!("{:?}", opts.quality), ci, b - a, ranges.len()).hash(&mut h);
+            for f in &frames[a..b] {
+                f.as_ref()?.hash(&mut h);
+            }
+            Some(format!("chunk1-{:016x}", h.finish()))
+        })
+        .collect()
+}
+
+/// Default chunk length for `n` frames: up to 16 chunks of 30–300 frames, or, when the
+/// spec has expensive layers (3D, shaders, video), chunks of 8+ frames (up to 16), so a
+/// short heavy clip keeps every core busy. Depends only on the spec, never the machine.
+pub fn default_gop(n: usize, heavy: bool) -> u32 {
+    let min_len = if heavy { 8 } else { 30 };
+    let count = n.div_ceil(300).max(n.div_ceil(min_len).min(16)).clamp(1, n.max(1));
+    n.div_ceil(count).max(1) as u32
 }
 
 /// Independently encoded chunks for `n` frames. `gop > 0` caps their length;
@@ -748,12 +870,13 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     let n = (f1 - f0) as usize;
     let threads = rayon::current_num_threads().max(1);
     // Chunk length: fixed by the frame count alone (never the machine), so output is identical on any core count.
-    let gop = std::env::var("ANIKIT_GOP").ok().and_then(|g| g.parse().ok()).unwrap_or_else(|| chunk_plan(n, 0).iter().map(|r| r.1 - r.0).max().unwrap_or(1) as u32);
-    let qp = match opts.quality {
+    let gop = std::env::var("ANIKIT_GOP").ok().and_then(|g| g.parse().ok()).unwrap_or_else(|| default_gop(n, ev.has_heavy_layers()));
+    // `--crf` / `encode.crf` (constant quantiser, lower = bigger and better) over the quality default.
+    let qp = ev.encode_crf.unwrap_or(match opts.quality {
         Quality::Draft => 28,
         Quality::Good => 23,
         Quality::Best => 19,
-    };
+    });
     let cfg = ak264::EncoderConfig {
         width: w,
         height: h,

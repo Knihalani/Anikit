@@ -404,6 +404,13 @@ impl ShaderJobs {
         ImageId(id)
     }
 
+    /// The content key a shader image id was submitted with (`None` for unkeyed
+    /// jobs, whose content isn't identified without rendering).
+    pub(crate) fn key_of(&self, id: ImageId) -> Option<u64> {
+        let g = self.inner.lock().unwrap();
+        g.map.get(&id.0).map(|e| e.key).filter(|k| *k != 0)
+    }
+
     /// Pixels for a shader image id (rendering it on first use).
     pub(crate) fn get(&self, id: ImageId) -> Option<Arc<Pixmap>> {
         let e = self.inner.lock().unwrap().map.get(&id.0).cloned()?;
@@ -561,6 +568,7 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> (Pixmap, f64) {
     f.supersample = (job.supersample && !crate::components::style::draft()) || reference;
     f.adaptive = !reference;
     f.threshold = anikit_shader::AA_THRESHOLD;
+    f.max_refine = anikit_shader::AA_MAX_REFINE;
     f.alpha = job.alpha;
     // Smooth shader gradients would band in 8 bits; exact values are untouched.
     f.dither = true;

@@ -1,5 +1,5 @@
 {
- "about": "A word made of 200k glowing particles that ignites, drifts on curl-noise flow and burns out. Change the emitter text, colours and flow.",
+ "about": "A word made of 200k glowing particles that ignites, drifts on curl-noise flow and burns out. Taste decision: an effect with a subject (the word itself transforms), a single warm emissive palette, light that comes from the subject. Change the emitter text, colours and flow. It tends not to suit words meant to be read (particles are never crisp; cut to set type to hold the line), or as the signature of more than one piece (TASTE.md §1, §9: particles over nothing are a tell).",
  "cost": "draft ~16 s, final ~58 s (1080p, 4 cores)",
  "spec": {
   "size": "16:9",

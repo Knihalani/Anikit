@@ -60,10 +60,59 @@ pub fn expand(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
     // keys, notes…): a returned list splices, an object replaces.
     let size = cx.size;
     splice_scripts(&mut v, "", size, &mut cx.errors);
+    stack_scenes(&mut v);
     if cx.errors.is_empty() {
         Ok(v)
     } else {
         Err(cx.errors)
+    }
+}
+
+/// `"stack": true` (or `{ "gap": 24, "align": "start" }`) on a scene: its free-floating
+/// layers (no `x`/`y`, not full-frame components) go into one centred column box, in
+/// order, instead of piling up at the centre.
+pub fn stack_scenes(v: &mut Value) {
+    let Some(scenes) = v.get_mut("scenes").and_then(|s| s.as_array_mut()) else { return };
+    for sc in scenes {
+        let Some(obj) = sc.as_object_mut() else { continue };
+        let Some(stack) = obj.remove("stack") else { continue };
+        let (gap, align) = match &stack {
+            Value::Bool(false) => continue,
+            Value::Object(m) => (m.get("gap").cloned().unwrap_or(Value::from(24)), m.get("align").cloned().unwrap_or(Value::from("center"))),
+            Value::Number(n) => (Value::Number(n.clone()), Value::from("center")),
+            _ => (Value::from(24), Value::from("center")),
+        };
+        let Some(Value::Array(layers)) = obj.get_mut("layers") else { continue };
+        let free = |l: &Value| match l {
+            Value::String(_) => true,
+            Value::Object(m) => !m.contains_key("x") && !m.contains_key("y") && (m.contains_key("text") || m.contains_key("shape") || m.contains_key("src")),
+            _ => false,
+        };
+        let first = layers.iter().position(free);
+        let Some(first) = first else { continue };
+        let mut kids = Vec::new();
+        let mut rest = Vec::new();
+        for (k, l) in std::mem::take(layers).into_iter().enumerate() {
+            if free(&l) {
+                kids.push(l);
+            } else {
+                rest.push((k, l));
+            }
+        }
+        let boxed = serde_json::json!({ "id": "stack", "children": kids, "style": { "direction": "column", "gap": gap, "align": align } });
+        let mut out: Vec<Value> = Vec::new();
+        let mut placed = false;
+        for (k, l) in rest {
+            if !placed && k > first {
+                out.push(boxed.clone());
+                placed = true;
+            }
+            out.push(l);
+        }
+        if !placed {
+            out.push(boxed);
+        }
+        *layers = out;
     }
 }
 
@@ -119,7 +168,7 @@ fn contains_reuse_keys(v: &Map<String, Value>) -> bool {
             _ => false,
         }
     }
-    v.values().any(walk)
+    v.values().any(walk) || v.get("scenes").and_then(|s| s.as_array()).is_some_and(|s| s.iter().any(|x| x.get("stack").is_some()))
 }
 
 /// Frame size for scripts (`w`, `h`): `[w, h]` or a common preset; default 1920×1080.

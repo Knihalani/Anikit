@@ -104,6 +104,12 @@ fn resolve_one(name: &str, base: Option<&Path>) -> Result<Arc<dyn Instrument>, S
     if let Some(i) = crate::sf2::pack_instrument(&lower) {
         return Ok(i);
     }
+    // Deeper samples by default when the pack is in the cache (`anikit-video music fetch salamander`).
+    if matches!(lower.as_str(), "piano" | "grand-piano" | "bright-piano") {
+        if let Some(i) = crate::sf2::pack_instrument("salamander-piano") {
+            return Ok(i);
+        }
+    }
     if let Some(i) = crate::synth::preset(&lower) {
         return Ok(i);
     }
@@ -124,6 +130,46 @@ fn resolve_one(name: &str, base: Option<&Path>) -> Result<Arc<dyn Instrument>, S
     let all: Vec<&str> = bank::NAMES.iter().copied().chain(GM_STANDINS.iter().map(|x| x.0)).collect();
     let hint = crate::spec::closest(&lower, &all).map(|b| format!(" — did you mean '{b}'?")).unwrap_or_default();
     Err(format!("unknown instrument '{name}'{hint} (anikit-video music instruments lists them)"))
+}
+
+/// Where a name resolves (same order as [`resolve`], files excluded):
+/// `"synth"`, `"synth-kit"`, `"physical"`, `"sampled"`, `"sampled-kit"`, `"pack"` or `"unknown"`.
+pub fn source(name: &str) -> &'static str {
+    for n in name.split('|').map(|n| n.trim().to_ascii_lowercase()) {
+        let kind = if n == "drums" || n == "kit" {
+            "sampled-kit"
+        } else if n.starts_with("phys:") {
+            "physical"
+        } else if n.starts_with("synth:") {
+            "synth"
+        } else if let Some(k) = n.strip_prefix("drums:").or_else(|| n.strip_prefix("kit:")) {
+            if crate::synth::KITS.contains(&k) {
+                "synth-kit"
+            } else if KITS.iter().any(|x| x.0 == k) {
+                "sampled-kit"
+            } else {
+                continue;
+            }
+        } else if n.starts_with("gm:") {
+            "sampled"
+        } else if crate::sf2::packs::INSTRUMENTS.iter().any(|x| x.0 == n) && crate::sf2::packs::INSTRUMENTS.iter().find(|x| x.0 == n).is_some_and(|x| crate::sf2::packs::is_cached(x.1)) {
+            "pack"
+        } else if crate::synth::PRESETS.contains(&n.as_str()) {
+            "synth"
+        } else if PREFER_MODEL.contains(&n.as_str()) && crate::physical::PRESETS.contains(&n.as_str()) {
+            "physical"
+        } else if crate::sf2::bank::lookup(&n).is_some() {
+            "sampled"
+        } else if crate::physical::PRESETS.contains(&n.as_str()) {
+            "physical"
+        } else if GM_STANDINS.iter().any(|x| x.0 == n) {
+            "sampled"
+        } else {
+            continue;
+        };
+        return kind;
+    }
+    "unknown"
 }
 
 /// All built-in instrument names, by source (for docs and suggestions).

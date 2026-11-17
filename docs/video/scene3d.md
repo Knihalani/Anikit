@@ -97,6 +97,29 @@ You are not limited to the preset shapes. These types build a mesh from your des
 
 Shapes whose expressions use `t` (seconds) are rebuilt every frame: waves, growing tubes, morphing surfaces (`examples/video/lookdev/wave.json`). This costs about 44 ms per frame for a 160² heightfield plus a 300-segment tube, and turns off the baked floor. Shapes without `t` are built once. Motion blur follows object motion, not deformation. To generate many objects, put `{ "script": "..." }` in `objects`; it expands to the items it returns. Cost: tracing a mesh costs about the same as the preset shapes of similar screen size. A 160×32 surface or a 128² heightfield adds under 5 ms to scene build, and render time is set by pixels covered, not by triangle count.
 
+## Looks and worlds beyond the studio
+
+Not every shot should be a chrome product on a white cyc. One word changes the whole style:
+
+- **`look`** (top level) sets the material of every object that has none. An object's `color` tints it. Stills (JPEG, spec beside each): `docs/video/shots/3d-looks/`.
+  - `toon`: three crisp light bands, a hard highlight, a rim, ink outlines.
+  - `ink`/`hatch`: pen hatching on paper (lines cross in the shadows), with outlines.
+  - `clay`: wrapped soft light, warm subsurface fill, faint fingerprints and sheen.
+  - `paper`/`cardboard`: fibrous matte card; `paper` draws cut-edge outlines.
+  - `gouache`: flat colour fields, a soft two-tone turn, cool shadows, brush strokes.
+  - `photo`: the default PBR look.
+
+  `{ "look": "toon", "objects": [ { "type": "sphere", "color": "#E4572E" }, { "type": "torus", "color": "#29335C" } ] }`
+- **Style materials** work per object too: `"material": "toon"`, or `{ "extends": "clay", "base": "#C96" }`. Mix a clay character with a chrome prop.
+- **`outline`:** `true`, a width in px at 1080p, or `{ "width": 2, "color": "#111" }`. Draws ink lines on silhouettes, creases and depth steps, thicker for near objects. `false` turns off a look's outlines.
+- **New `env` worlds:**
+  - `overcast`: an open landscape under a soft grey sky; grass floor, distant haze.
+  - `interior`: a room lit by one window: a crisp side key, warm bounce, wood floor and a wall.
+  - `city`: night city. Deep blue ambient, a sodium key, neon signage strips and four coloured practicals around the subject (unless you give `lights`), on a wet reflective floor.
+  - `underwater`: teal water, light from the surface, moving caustics on the sand and objects, depth haze.
+
+Cost: the styles shade in the same pass as PBR, so they cost the same or less. Outlines add about 110 ms per 1080p frame (measured: toon 1.19 s with outlines, 1.07 s without). Example 1080p traces on 4 cores: toon 0.70 s, ink 0.97 s, clay/paper/gouache about 0.66 s, city 1.44 s (four shadowed lights).
+
 ## Rules that keep it looking expensive
 
 1. **Chrome needs something dark to reflect.** On `cyc`, add a black `card` in front of the subject or slightly above the camera. On `studio`, it already has contrast.

@@ -266,6 +266,8 @@ pub(crate) enum Kind {
     },
     /// Raw drawing: primitives in the layer's box.
     Draw(Vec<DrawC>),
+    /// Data points: positions grouped by colour, a size, an optional per-dot scale.
+    Dots { groups: Vec<(Rgba, Vec<[f32; 2]>)>, size: f32, appear: Option<Expr>, square: bool },
     /// A nested 2D composition, drawn as vectors in its own clipped layer.
     Comp {
         ev: Arc<Evaluator>,
@@ -433,6 +435,8 @@ pub struct Evaluator {
     pub(crate) groove: Option<Arc<beat_markers::Music>>,
     /// Encoder adaptive-quantisation strength (`encode.aq`), when the spec sets it.
     pub encode_aq: Option<f32>,
+    /// Encoder quantiser (`encode.crf` or `render --crf`), when set.
+    pub encode_crf: Option<u8>,
     /// Motion-blur shutter in seconds (0 = off). Default half a frame (180°).
     pub shutter: f32,
     /// The spec asked for motion blur itself (otherwise only `--quality high` applies it).
@@ -1204,6 +1208,50 @@ impl Evaluator {
                 }
             }
             Kind::Shader(sc) => self.emit_shader(sc, cx, &v, &xf, w, h, alpha, lt, out),
+            Kind::Dots { groups, size, appear, square } => {
+                let n_all: usize = groups.iter().map(|g| g.1.len()).sum();
+                let mut vars = Vars { t: lt as f64, gt: cx.gt as f64, n: n_all as f64, w: self.width as f64, h: self.height as f64, fps: self.fps as f64, ..Default::default() };
+                let mut i = 0usize;
+                for (c, pts) in groups {
+                    let mut path = Path::new();
+                    for p in pts {
+                        let k = match appear {
+                            Some(e) => {
+                                vars.i = i as f64;
+                                e.eval(&vars).clamp(0.0, 1.0) as f32
+                            }
+                            None => 1.0,
+                        };
+                        i += 1;
+                        let r = (size * 0.5 * k) as f64;
+                        if r < 0.05 {
+                            continue;
+                        }
+                        let (x, y) = (p[0] as f64, p[1] as f64);
+                        if *square {
+                            path.move_to((x - r, y - r));
+                            path.line_to((x + r, y - r));
+                            path.line_to((x + r, y + r));
+                            path.line_to((x - r, y + r));
+                            path.close_path();
+                        } else {
+                            // A circle from 4 cubic arcs.
+                            let q = r * 0.552_284_75;
+                            path.move_to((x + r, y));
+                            path.curve_to((x + r, y + q), (x + q, y + r), (x, y + r));
+                            path.curve_to((x - q, y + r), (x - r, y + q), (x - r, y));
+                            path.curve_to((x - r, y - q), (x - q, y - r), (x, y - r));
+                            path.curve_to((x + q, y - r), (x + r, y - q), (x + r, y));
+                            path.close_path();
+                        }
+                    }
+                    if !path.elements().is_empty() {
+                        let mut c = *c;
+                        c.0[3] *= alpha;
+                        out.push(Op::Fill { path, paint: Paint::Solid(c), rule: dl::FillRule::NonZero, transform: xf });
+                    }
+                }
+            }
             Kind::Draw(items) => {
                 let trim = [v[prop::TRIM0].clamp(0.0, 1.0), v[prop::TRIM1].clamp(0.0, 1.0)];
                 let fade = |c: Rgba, k: f32| Rgba([c.0[0], c.0[1], c.0[2], c.0[3] * k]);
@@ -1382,6 +1430,7 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
             sp.tracks.iter().all(|t| t.still(la - md, lb))
         }
         Kind::Video { frames, .. } => frames.len() <= 1,
+        Kind::Dots { appear, .. } => appear.as_ref().is_none_or(|e| !e.dynamic),
         Kind::Comp { ev, time, .. } => {
             let (ca, cb) = (time.map(la, ev.duration), time.map(lb, ev.duration));
             if time.looped && (cb < ca || lb - la >= ev.duration / time.speed.abs().max(1e-6)) {

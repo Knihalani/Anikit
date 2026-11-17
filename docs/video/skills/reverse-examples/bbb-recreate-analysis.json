@@ -1,0 +1,2130 @@
+{
+  "source": "bbb-recreate.mp4",
+  "global": {
+    "width": 960,
+    "height": 540,
+    "aspect": "16:9",
+    "fps": 24.0,
+    "analysed_fps": 24.0,
+    "duration": 32.458,
+    "shot_count": 17,
+    "median_shot": 2.0,
+    "mean_shot": 1.909,
+    "longest_shot": 4.208,
+    "shortest_shot": 0.25,
+    "cuts_per_minute": 29.6,
+    "pace": "steady",
+    "palette": [
+      {
+        "hex": "#FAFAF9",
+        "share": 0.55,
+        "l": 0.99,
+        "c": 0.001
+      },
+      {
+        "hex": "#38516B",
+        "share": 0.23,
+        "l": 0.43,
+        "c": 0.053
+      },
+      {
+        "hex": "#8CBDD0",
+        "share": 0.1,
+        "l": 0.77,
+        "c": 0.059
+      },
+      {
+        "hex": "#121116",
+        "share": 0.08,
+        "l": 0.18,
+        "c": 0.009
+      },
+      {
+        "hex": "#B78F6B",
+        "share": 0.04,
+        "l": 0.68,
+        "c": 0.07
+      },
+      {
+        "hex": "#8B4CC1",
+        "share": 0.0,
+        "l": 0.55,
+        "c": 0.179
+      }
+    ],
+    "transition_mix": [
+      [
+        "cut",
+        13
+      ],
+      [
+        "zoom",
+        3
+      ]
+    ],
+    "technique_mix": [
+      [
+        "kinetic-type",
+        7
+      ],
+      [
+        "2d-motion-graphics",
+        7
+      ],
+      [
+        "scene3d",
+        3
+      ]
+    ],
+    "mean_luma": 0.76,
+    "grain": 0.002,
+    "vignette": 0.0,
+    "glow": 0.0,
+    "style_summary": "16:9 bright clip, 32.5 s, 17 shots (median 2.00 s, longest 4.21 s): steady pace. Transitions: 13 cut, 3 zoom. Palette led by #FAFAF9, #38516B, #8CBDD0. Camera moves in 13/17 shots; text in 3/17. Looks like: kinetic-type ×7, 2d-motion-graphics ×7, scene3d ×3. Music ≈ 123 BPM; 50% of cuts on a beat."
+  },
+  "shots": [
+    {
+      "index": 0,
+      "start": 0.0,
+      "end": 3.875,
+      "duration": 3.875,
+      "transition_in": "start",
+      "palette": [
+        {
+          "hex": "#FDFDFD",
+          "share": 0.96,
+          "l": 0.99,
+          "c": 0.0
+        },
+        {
+          "hex": "#3AA0D5",
+          "share": 0.01,
+          "l": 0.67,
+          "c": 0.121
+        },
+        {
+          "hex": "#88C7E3",
+          "share": 0.01,
+          "l": 0.8,
+          "c": 0.075
+        },
+        {
+          "hex": "#C2E2F0",
+          "share": 0.01,
+          "l": 0.89,
+          "c": 0.039
+        },
+        {
+          "hex": "#64B5DC",
+          "share": 0.01,
+          "l": 0.74,
+          "c": 0.097
+        }
+      ],
+      "luma": 0.99,
+      "contrast": 0.04,
+      "saturation": 0.003,
+      "key": "high-key",
+      "camera": {
+        "pan_x": -0.015,
+        "pan_y": 0.008,
+        "zoom": 2.498,
+        "rotate": 1.41,
+        "shake": 0.05,
+        "label": "push in"
+      },
+      "motion": [
+        1.11,
+        1.29,
+        0.1,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.73,
+        4.28
+      ],
+      "motion_mean": 0.47,
+      "depth": {
+        "sharpness": 0.02,
+        "defocus_share": 0.33,
+        "dof": "shallow"
+      },
+      "look": "flat-2d",
+      "look_score": 0.0,
+      "text": [
+        {
+          "bbox": [
+            0.406,
+            0.464,
+            0.416,
+            0.072
+          ],
+          "height": 0.072,
+          "align": "right",
+          "position": "middle",
+          "confidence": 0.24
+        },
+        {
+          "bbox": [
+            0.128,
+            0.464,
+            0.236,
+            0.072
+          ],
+          "height": 0.072,
+          "align": "left",
+          "position": "middle",
+          "confidence": 0.26
+        },
+        {
+          "bbox": [
+            0.831,
+            0.464,
+            0.039,
+            0.036
+          ],
+          "height": 0.036,
+          "align": "right",
+          "position": "middle",
+          "confidence": 0.23
+        }
+      ],
+      "text_coverage": 0.05,
+      "grain": 0.038,
+      "vignette": 0.0,
+      "glow": 0.0,
+      "points": 1,
+      "technique": [
+        "kinetic-type",
+        "2d-motion-graphics"
+      ],
+      "key_time": 2.0
+    },
+    {
+      "index": 1,
+      "start": 3.875,
+      "end": 6.792,
+      "duration": 2.917,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#1C4559",
+          "share": 0.33,
+          "l": 0.37,
+          "c": 0.056
+        },
+        {
+          "hex": "#3E7794",
+          "share": 0.28,
+          "l": 0.54,
+          "c": 0.075
+        },
+        {
+          "hex": "#65A8C6",
+          "share": 0.19,
+          "l": 0.7,
+          "c": 0.081
+        },
+        {
+          "hex": "#96E7F5",
+          "share": 0.17,
+          "l": 0.88,
+          "c": 0.081
+        },
+        {
+          "hex": "#EBA549",
+          "share": 0.03,
+          "l": 0.77,
+          "c": 0.134
+        }
+      ],
+      "luma": 0.58,
+      "contrast": 0.19,
+      "saturation": 0.074,
+      "key": "mid-key",
+      "camera": {
+        "pan_x": -0.099,
+        "pan_y": -0.044,
+        "zoom": 0.988,
+        "rotate": -3.83,
+        "shake": 0.04,
+        "label": "pan right"
+      },
+      "motion": [
+        1.46,
+        0.5,
+        0.46,
+        0.47,
+        0.49,
+        0.44,
+        0.44,
+        0.49,
+        0.47,
+        0.46,
+        0.49,
+        1.76
+      ],
+      "motion_mean": 0.66,
+      "depth": {
+        "sharpness": 0.037,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.0,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.002,
+      "vignette": 0.29,
+      "glow": 0.19,
+      "points": 0,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 5.25
+    },
+    {
+      "index": 2,
+      "start": 6.792,
+      "end": 9.083,
+      "duration": 2.291,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#FCFDFD",
+          "share": 0.82,
+          "l": 0.99,
+          "c": 0.001
+        },
+        {
+          "hex": "#AABEC6",
+          "share": 0.1,
+          "l": 0.79,
+          "c": 0.025
+        },
+        {
+          "hex": "#C5E1E8",
+          "share": 0.06,
+          "l": 0.89,
+          "c": 0.031
+        },
+        {
+          "hex": "#49A4D1",
+          "share": 0.01,
+          "l": 0.68,
+          "c": 0.108
+        },
+        {
+          "hex": "#3586AD",
+          "share": 0.0,
+          "l": 0.59,
+          "c": 0.098
+        }
+      ],
+      "luma": 0.96,
+      "contrast": 0.07,
+      "saturation": 0.007,
+      "key": "high-key",
+      "camera": {
+        "pan_x": 0.003,
+        "pan_y": -0.021,
+        "zoom": 1.018,
+        "rotate": 1.12,
+        "shake": 0.03,
+        "label": "static"
+      },
+      "motion": [
+        3.23,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_mean": 0.32,
+      "depth": {
+        "sharpness": 0.018,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "minimal",
+      "look_score": 0.0,
+      "text": [
+        {
+          "bbox": [
+            0.263,
+            0.464,
+            0.463,
+            0.072
+          ],
+          "height": 0.072,
+          "align": "center",
+          "position": "middle",
+          "confidence": 0.24
+        }
+      ],
+      "text_coverage": 0.03,
+      "grain": 0.038,
+      "vignette": 0.0,
+      "glow": 0.0,
+      "points": 0,
+      "technique": [
+        "kinetic-type",
+        "2d-motion-graphics"
+      ],
+      "key_time": 8.0
+    },
+    {
+      "index": 3,
+      "start": 9.083,
+      "end": 11.208,
+      "duration": 2.125,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#16151A",
+          "share": 0.64,
+          "l": 0.2,
+          "c": 0.01
+        },
+        {
+          "hex": "#07080B",
+          "share": 0.24,
+          "l": 0.13,
+          "c": 0.007
+        },
+        {
+          "hex": "#313336",
+          "share": 0.07,
+          "l": 0.32,
+          "c": 0.006
+        },
+        {
+          "hex": "#5B6263",
+          "share": 0.03,
+          "l": 0.49,
+          "c": 0.008
+        },
+        {
+          "hex": "#ACB9B7",
+          "share": 0.01,
+          "l": 0.77,
+          "c": 0.014
+        }
+      ],
+      "luma": 0.21,
+      "contrast": 0.09,
+      "saturation": 0.01,
+      "key": "low-key",
+      "camera": {
+        "pan_x": 0.006,
+        "pan_y": -0.002,
+        "zoom": 1.083,
+        "rotate": 1.38,
+        "shake": 0.02,
+        "label": "push in"
+      },
+      "motion": [
+        0.93,
+        0.28,
+        0.35,
+        0.29,
+        0.25,
+        0.21,
+        0.1,
+        0.08,
+        0.19
+      ],
+      "motion_mean": 0.3,
+      "depth": {
+        "sharpness": 0.056,
+        "defocus_share": 0.67,
+        "dof": "shallow"
+      },
+      "look": "flat-2d",
+      "look_score": 0.39,
+      "text": [
+        {
+          "bbox": [
+            0.298,
+            0.483,
+            0.061,
+            0.05
+          ],
+          "height": 0.05,
+          "align": "left",
+          "position": "middle",
+          "confidence": 0.2
+        }
+      ],
+      "text_coverage": 0.0,
+      "grain": 0.0,
+      "vignette": 0.65,
+      "glow": 0.13,
+      "points": 25,
+      "technique": [
+        "2d-motion-graphics"
+      ],
+      "key_time": 10.25
+    },
+    {
+      "index": 4,
+      "start": 11.208,
+      "end": 13.208,
+      "duration": 2.0,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#FDFDFD",
+          "share": 0.98,
+          "l": 0.99,
+          "c": 0.0
+        },
+        {
+          "hex": "#3EA2D7",
+          "share": 0.01,
+          "l": 0.68,
+          "c": 0.12
+        },
+        {
+          "hex": "#CCE7F2",
+          "share": 0.01,
+          "l": 0.91,
+          "c": 0.033
+        },
+        {
+          "hex": "#A2D3E9",
+          "share": 0.0,
+          "l": 0.84,
+          "c": 0.059
+        },
+        {
+          "hex": "#7BC0E1",
+          "share": 0.0,
+          "l": 0.78,
+          "c": 0.084
+        }
+      ],
+      "luma": 0.99,
+      "contrast": 0.03,
+      "saturation": 0.001,
+      "key": "high-key",
+      "camera": {
+        "pan_x": -0.01,
+        "pan_y": 0.005,
+        "zoom": 1.683,
+        "rotate": 1.53,
+        "shake": 0.02,
+        "label": "push in"
+      },
+      "motion": [
+        0.93,
+        0.54,
+        0.05,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_mean": 0.19,
+      "depth": {
+        "sharpness": 0.019,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "minimal",
+      "look_score": 0.0,
+      "text": [
+        {
+          "bbox": [
+            0.336,
+            0.464,
+            0.286,
+            0.072
+          ],
+          "height": 0.072,
+          "align": "center",
+          "position": "middle",
+          "confidence": 0.25
+        },
+        {
+          "bbox": [
+            0.636,
+            0.497,
+            0.041,
+            0.039
+          ],
+          "height": 0.039,
+          "align": "right",
+          "position": "middle",
+          "confidence": 0.22
+        }
+      ],
+      "text_coverage": 0.02,
+      "grain": 0.036,
+      "vignette": 0.0,
+      "glow": 0.0,
+      "points": 1,
+      "technique": [
+        "kinetic-type",
+        "2d-motion-graphics"
+      ],
+      "key_time": 12.25
+    },
+    {
+      "index": 5,
+      "start": 13.208,
+      "end": 13.917,
+      "duration": 0.709,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#2F487E",
+          "share": 0.42,
+          "l": 0.41,
+          "c": 0.095
+        },
+        {
+          "hex": "#E9E3D6",
+          "share": 0.29,
+          "l": 0.92,
+          "c": 0.019
+        },
+        {
+          "hex": "#D47D62",
+          "share": 0.14,
+          "l": 0.68,
+          "c": 0.115
+        },
+        {
+          "hex": "#D3B3A6",
+          "share": 0.09,
+          "l": 0.79,
+          "c": 0.041
+        },
+        {
+          "hex": "#638E86",
+          "share": 0.06,
+          "l": 0.61,
+          "c": 0.049
+        }
+      ],
+      "luma": 0.64,
+      "contrast": 0.22,
+      "saturation": 0.071,
+      "key": "mid-key",
+      "camera": {
+        "pan_x": -0.0,
+        "pan_y": 0.001,
+        "zoom": 0.999,
+        "rotate": 0.11,
+        "shake": 0.01,
+        "label": "static"
+      },
+      "motion": [
+        0.62,
+        0.07,
+        0.05
+      ],
+      "motion_mean": 0.25,
+      "depth": {
+        "sharpness": 0.055,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "flat-2d",
+      "look_score": 0.0,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.0,
+      "vignette": 0.0,
+      "glow": 0.36,
+      "points": 8,
+      "technique": [
+        "2d-motion-graphics"
+      ],
+      "key_time": 13.5
+    },
+    {
+      "index": 6,
+      "start": 13.917,
+      "end": 15.0,
+      "duration": 1.083,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#4B4A4C",
+          "share": 0.91,
+          "l": 0.41,
+          "c": 0.005
+        },
+        {
+          "hex": "#9E7560",
+          "share": 0.04,
+          "l": 0.6,
+          "c": 0.06
+        },
+        {
+          "hex": "#8B4CC1",
+          "share": 0.03,
+          "l": 0.55,
+          "c": 0.178
+        },
+        {
+          "hex": "#D7B8A5",
+          "share": 0.02,
+          "l": 0.8,
+          "c": 0.045
+        }
+      ],
+      "luma": 0.43,
+      "contrast": 0.07,
+      "saturation": 0.016,
+      "key": "mid-key",
+      "camera": {
+        "pan_x": 0.001,
+        "pan_y": -0.0,
+        "zoom": 0.998,
+        "rotate": 0.45,
+        "shake": 0.02,
+        "label": "static"
+      },
+      "motion": [
+        1.33,
+        0.08,
+        0.0,
+        0.01,
+        0.02
+      ],
+      "motion_mean": 0.29,
+      "depth": {
+        "sharpness": 0.042,
+        "defocus_share": 0.25,
+        "dof": "deep"
+      },
+      "look": "flat-2d",
+      "look_score": 0.3,
+      "text": [
+        {
+          "bbox": [
+            0.369,
+            0.708,
+            0.263,
+            0.061
+          ],
+          "height": 0.061,
+          "align": "center",
+          "position": "bottom",
+          "confidence": 0.34
+        }
+      ],
+      "text_coverage": 0.02,
+      "grain": 0.0,
+      "vignette": 0.24,
+      "glow": 0.0,
+      "points": 0,
+      "technique": [
+        "kinetic-type",
+        "2d-motion-graphics"
+      ],
+      "key_time": 14.5
+    },
+    {
+      "index": 7,
+      "start": 15.0,
+      "end": 16.0,
+      "duration": 1.0,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#1C4356",
+          "share": 0.36,
+          "l": 0.36,
+          "c": 0.055
+        },
+        {
+          "hex": "#307190",
+          "share": 0.28,
+          "l": 0.52,
+          "c": 0.082
+        },
+        {
+          "hex": "#52A5C9",
+          "share": 0.17,
+          "l": 0.68,
+          "c": 0.097
+        },
+        {
+          "hex": "#8FE7F5",
+          "share": 0.16,
+          "l": 0.88,
+          "c": 0.087
+        },
+        {
+          "hex": "#EAA03C",
+          "share": 0.03,
+          "l": 0.76,
+          "c": 0.142
+        }
+      ],
+      "luma": 0.56,
+      "contrast": 0.19,
+      "saturation": 0.078,
+      "key": "mid-key",
+      "camera": {
+        "pan_x": -0.034,
+        "pan_y": -0.014,
+        "zoom": 0.988,
+        "rotate": -0.41,
+        "shake": 0.02,
+        "label": "static"
+      },
+      "motion": [
+        1.53,
+        0.49,
+        0.46,
+        0.47
+      ],
+      "motion_mean": 0.74,
+      "depth": {
+        "sharpness": 0.04,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.0,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.002,
+      "vignette": 0.31,
+      "glow": 0.21,
+      "points": 0,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 15.5
+    },
+    {
+      "index": 8,
+      "start": 16.0,
+      "end": 16.625,
+      "duration": 0.625,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#17161B",
+          "share": 0.57,
+          "l": 0.21,
+          "c": 0.01
+        },
+        {
+          "hex": "#08080B",
+          "share": 0.24,
+          "l": 0.14,
+          "c": 0.007
+        },
+        {
+          "hex": "#EEB162",
+          "share": 0.1,
+          "l": 0.8,
+          "c": 0.12
+        },
+        {
+          "hex": "#3B3C3D",
+          "share": 0.07,
+          "l": 0.36,
+          "c": 0.002
+        },
+        {
+          "hex": "#73726A",
+          "share": 0.03,
+          "l": 0.55,
+          "c": 0.013
+        }
+      ],
+      "luma": 0.27,
+      "contrast": 0.2,
+      "saturation": 0.021,
+      "key": "low-key",
+      "camera": {
+        "pan_x": -0.091,
+        "pan_y": -0.044,
+        "zoom": 1.064,
+        "rotate": 5.43,
+        "shake": 0.27,
+        "label": "push in + pan right"
+      },
+      "motion": [
+        1.95,
+        2.23,
+        1.88
+      ],
+      "motion_mean": 2.02,
+      "depth": {
+        "sharpness": 0.033,
+        "defocus_share": 0.05,
+        "dof": "deep"
+      },
+      "look": "flat-2d",
+      "look_score": 0.04,
+      "text": [
+        {
+          "bbox": [
+            0.605,
+            0.472,
+            0.044,
+            0.039
+          ],
+          "height": 0.039,
+          "align": "right",
+          "position": "middle",
+          "confidence": 0.24
+        }
+      ],
+      "text_coverage": 0.0,
+      "grain": 0.0,
+      "vignette": 0.0,
+      "glow": 0.0,
+      "points": 13,
+      "technique": [
+        "2d-motion-graphics"
+      ],
+      "key_time": 16.25
+    },
+    {
+      "index": 9,
+      "start": 16.625,
+      "end": 18.75,
+      "duration": 2.125,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#FDFDFD",
+          "share": 0.97,
+          "l": 0.99,
+          "c": 0.0
+        },
+        {
+          "hex": "#39A0D6",
+          "share": 0.01,
+          "l": 0.67,
+          "c": 0.122
+        },
+        {
+          "hex": "#C6E5F1",
+          "share": 0.01,
+          "l": 0.9,
+          "c": 0.036
+        },
+        {
+          "hex": "#6BB8DD",
+          "share": 0.01,
+          "l": 0.75,
+          "c": 0.093
+        },
+        {
+          "hex": "#90CBE4",
+          "share": 0.0,
+          "l": 0.81,
+          "c": 0.07
+        }
+      ],
+      "luma": 0.99,
+      "contrast": 0.04,
+      "saturation": 0.003,
+      "key": "high-key",
+      "camera": {
+        "pan_x": -0.017,
+        "pan_y": 0.007,
+        "zoom": 2.23,
+        "rotate": 0.5,
+        "shake": 0.05,
+        "label": "push in"
+      },
+      "motion": [
+        1.14,
+        0.89,
+        0.04,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.74
+      ],
+      "motion_mean": 0.53,
+      "depth": {
+        "sharpness": 0.019,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "flat-2d",
+      "look_score": 0.0,
+      "text": [
+        {
+          "bbox": [
+            0.156,
+            0.464,
+            0.686,
+            0.072
+          ],
+          "height": 0.072,
+          "align": "center",
+          "position": "middle",
+          "confidence": 0.25
+        }
+      ],
+      "text_coverage": 0.05,
+      "grain": 0.038,
+      "vignette": 0.0,
+      "glow": 0.0,
+      "points": 3,
+      "technique": [
+        "kinetic-type",
+        "2d-motion-graphics"
+      ],
+      "key_time": 17.75
+    },
+    {
+      "index": 10,
+      "start": 18.75,
+      "end": 22.958,
+      "duration": 4.208,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#344D81",
+          "share": 0.45,
+          "l": 0.43,
+          "c": 0.091
+        },
+        {
+          "hex": "#EAE4D7",
+          "share": 0.29,
+          "l": 0.92,
+          "c": 0.018
+        },
+        {
+          "hex": "#D37F66",
+          "share": 0.12,
+          "l": 0.68,
+          "c": 0.111
+        },
+        {
+          "hex": "#D1B3A7",
+          "share": 0.07,
+          "l": 0.79,
+          "c": 0.039
+        },
+        {
+          "hex": "#53987D",
+          "share": 0.07,
+          "l": 0.63,
+          "c": 0.081
+        }
+      ],
+      "luma": 0.64,
+      "contrast": 0.21,
+      "saturation": 0.07,
+      "key": "mid-key",
+      "camera": {
+        "pan_x": 0.112,
+        "pan_y": 0.057,
+        "zoom": 1.486,
+        "rotate": 2.53,
+        "shake": 0.31,
+        "label": "push in + pan left"
+      },
+      "motion": [
+        1.54,
+        0.85,
+        0.46,
+        0.38,
+        0.61,
+        0.95,
+        0.51,
+        1.14,
+        0.69,
+        0.94,
+        1.04,
+        1.3,
+        0.94,
+        1.22,
+        0.48,
+        0.95,
+        1.1
+      ],
+      "motion_mean": 0.89,
+      "depth": {
+        "sharpness": 0.064,
+        "defocus_share": 0.17,
+        "dof": "deep"
+      },
+      "look": "flat-2d",
+      "look_score": 0.0,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.0,
+      "vignette": 0.0,
+      "glow": 0.07,
+      "points": 17,
+      "technique": [
+        "2d-motion-graphics"
+      ],
+      "key_time": 20.75
+    },
+    {
+      "index": 11,
+      "start": 22.958,
+      "end": 24.958,
+      "duration": 2.0,
+      "transition_in": "zoom",
+      "palette": [
+        {
+          "hex": "#FDFDFD",
+          "share": 0.99,
+          "l": 0.99,
+          "c": 0.0
+        },
+        {
+          "hex": "#3BA1D6",
+          "share": 0.0,
+          "l": 0.67,
+          "c": 0.121
+        },
+        {
+          "hex": "#97CDE6",
+          "share": 0.0,
+          "l": 0.82,
+          "c": 0.066
+        },
+        {
+          "hex": "#6CB9DE",
+          "share": 0.0,
+          "l": 0.75,
+          "c": 0.093
+        },
+        {
+          "hex": "#CBE7F1",
+          "share": 0.0,
+          "l": 0.91,
+          "c": 0.032
+        }
+      ],
+      "luma": 0.99,
+      "contrast": 0.03,
+      "saturation": 0.001,
+      "key": "high-key",
+      "camera": {
+        "pan_x": 0.033,
+        "pan_y": 0.014,
+        "zoom": 2.8,
+        "rotate": 2.65,
+        "shake": 0.08,
+        "label": "push in"
+      },
+      "motion": [
+        1.73,
+        0.08,
+        0.0,
+        0.01,
+        0.03,
+        0.01,
+        0.0,
+        0.0
+      ],
+      "motion_mean": 0.23,
+      "depth": {
+        "sharpness": 0.017,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "minimal",
+      "look_score": 0.0,
+      "text": [
+        {
+          "bbox": [
+            0.317,
+            0.461,
+            0.302,
+            0.078
+          ],
+          "height": 0.078,
+          "align": "center",
+          "position": "middle",
+          "confidence": 0.2
+        }
+      ],
+      "text_coverage": 0.02,
+      "grain": 0.034,
+      "vignette": 0.0,
+      "glow": 0.0,
+      "points": 0,
+      "technique": [
+        "kinetic-type",
+        "2d-motion-graphics"
+      ],
+      "key_time": 24.0
+    },
+    {
+      "index": 12,
+      "start": 24.958,
+      "end": 26.0,
+      "duration": 1.042,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#4C4A4D",
+          "share": 0.87,
+          "l": 0.41,
+          "c": 0.005
+        },
+        {
+          "hex": "#C3C6D8",
+          "share": 0.05,
+          "l": 0.83,
+          "c": 0.026
+        },
+        {
+          "hex": "#A37C68",
+          "share": 0.04,
+          "l": 0.62,
+          "c": 0.057
+        },
+        {
+          "hex": "#8B4CC1",
+          "share": 0.03,
+          "l": 0.55,
+          "c": 0.178
+        }
+      ],
+      "luma": 0.45,
+      "contrast": 0.11,
+      "saturation": 0.018,
+      "key": "mid-key",
+      "camera": {
+        "pan_x": -0.045,
+        "pan_y": -0.17,
+        "zoom": 0.704,
+        "rotate": 13.17,
+        "shake": 0.14,
+        "label": "pull out + tilt down + roll"
+      },
+      "motion": [
+        1.31,
+        0.97,
+        0.98,
+        1.08,
+        0.27
+      ],
+      "motion_mean": 0.92,
+      "depth": {
+        "sharpness": 0.03,
+        "defocus_share": 0.58,
+        "dof": "shallow"
+      },
+      "look": "flat-2d",
+      "look_score": 0.29,
+      "text": [
+        {
+          "bbox": [
+            0.439,
+            0.636,
+            0.13,
+            0.069
+          ],
+          "height": 0.069,
+          "align": "center",
+          "position": "bottom",
+          "confidence": 0.29
+        }
+      ],
+      "text_coverage": 0.01,
+      "grain": 0.0,
+      "vignette": 0.0,
+      "glow": 0.0,
+      "points": 0,
+      "technique": [
+        "2d-motion-graphics"
+      ],
+      "key_time": 25.5
+    },
+    {
+      "index": 13,
+      "start": 26.0,
+      "end": 26.75,
+      "duration": 0.75,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#1C4457",
+          "share": 0.35,
+          "l": 0.37,
+          "c": 0.056
+        },
+        {
+          "hex": "#317191",
+          "share": 0.27,
+          "l": 0.52,
+          "c": 0.082
+        },
+        {
+          "hex": "#A1E4EF",
+          "share": 0.19,
+          "l": 0.88,
+          "c": 0.069
+        },
+        {
+          "hex": "#55A6CA",
+          "share": 0.16,
+          "l": 0.69,
+          "c": 0.095
+        },
+        {
+          "hex": "#E89F3D",
+          "share": 0.03,
+          "l": 0.76,
+          "c": 0.14
+        }
+      ],
+      "luma": 0.57,
+      "contrast": 0.2,
+      "saturation": 0.076,
+      "key": "mid-key",
+      "camera": {
+        "pan_x": -0.044,
+        "pan_y": -0.061,
+        "zoom": 0.993,
+        "rotate": -3.97,
+        "shake": 0.27,
+        "label": "tilt down"
+      },
+      "motion": [
+        2.07,
+        0.78,
+        0.77
+      ],
+      "motion_mean": 1.21,
+      "depth": {
+        "sharpness": 0.038,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.0,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.002,
+      "vignette": 0.14,
+      "glow": 0.23,
+      "points": 1,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 26.25
+    },
+    {
+      "index": 14,
+      "start": 26.75,
+      "end": 30.0,
+      "duration": 3.25,
+      "transition_in": "zoom",
+      "palette": [
+        {
+          "hex": "#FDFDFD",
+          "share": 0.9,
+          "l": 0.99,
+          "c": 0.0
+        },
+        {
+          "hex": "#2A9CD6",
+          "share": 0.05,
+          "l": 0.66,
+          "c": 0.13
+        },
+        {
+          "hex": "#93CDE7",
+          "share": 0.03,
+          "l": 0.82,
+          "c": 0.07
+        },
+        {
+          "hex": "#CBE7F2",
+          "share": 0.02,
+          "l": 0.91,
+          "c": 0.033
+        },
+        {
+          "hex": "#61B4DB",
+          "share": 0.01,
+          "l": 0.73,
+          "c": 0.099
+        }
+      ],
+      "luma": 0.97,
+      "contrast": 0.08,
+      "saturation": 0.01,
+      "key": "high-key",
+      "camera": {
+        "pan_x": 0.009,
+        "pan_y": 0.017,
+        "zoom": 0.813,
+        "rotate": 3.56,
+        "shake": 0.02,
+        "label": "pull out"
+      },
+      "motion": [
+        2.46,
+        0.0,
+        0.01,
+        0.0,
+        0.09,
+        0.12,
+        0.03,
+        0.07,
+        0.15,
+        0.12,
+        0.03,
+        0.01,
+        0.0
+      ],
+      "motion_mean": 0.24,
+      "depth": {
+        "sharpness": 0.024,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "flat-2d",
+      "look_score": 0.0,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.001,
+      "vignette": 0.0,
+      "glow": 0.0,
+      "points": 0,
+      "technique": [
+        "2d-motion-graphics"
+      ],
+      "key_time": 28.25
+    },
+    {
+      "index": 15,
+      "start": 30.0,
+      "end": 30.25,
+      "duration": 0.25,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#19181D",
+          "share": 0.41,
+          "l": 0.21,
+          "c": 0.01
+        },
+        {
+          "hex": "#0C0C0F",
+          "share": 0.28,
+          "l": 0.16,
+          "c": 0.007
+        },
+        {
+          "hex": "#3B3B3E",
+          "share": 0.18,
+          "l": 0.35,
+          "c": 0.005
+        },
+        {
+          "hex": "#EBB46C",
+          "share": 0.09,
+          "l": 0.81,
+          "c": 0.11
+        },
+        {
+          "hex": "#6C6B65",
+          "share": 0.04,
+          "l": 0.53,
+          "c": 0.009
+        }
+      ],
+      "luma": 0.29,
+      "contrast": 0.19,
+      "saturation": 0.019,
+      "key": "low-key",
+      "camera": {
+        "pan_x": 0.025,
+        "pan_y": -0.054,
+        "zoom": 1.123,
+        "rotate": -6.83,
+        "shake": 0.79,
+        "label": "push in + handheld/shake"
+      },
+      "motion": [
+        3.12
+      ],
+      "motion_mean": 3.12,
+      "depth": {
+        "sharpness": 0.042,
+        "defocus_share": 0.6,
+        "dof": "shallow"
+      },
+      "look": "flat-2d",
+      "look_score": 0.06,
+      "text": [
+        {
+          "bbox": [
+            0.623,
+            0.481,
+            0.047,
+            0.036
+          ],
+          "height": 0.036,
+          "align": "right",
+          "position": "middle",
+          "confidence": 0.23
+        }
+      ],
+      "text_coverage": 0.0,
+      "grain": 0.0,
+      "vignette": 0.0,
+      "glow": 0.0,
+      "points": 11,
+      "technique": [
+        "2d-motion-graphics"
+      ],
+      "key_time": 30.0
+    },
+    {
+      "index": 16,
+      "start": 30.25,
+      "end": 32.458,
+      "duration": 2.208,
+      "transition_in": "zoom",
+      "palette": [
+        {
+          "hex": "#FDFDFD",
+          "share": 0.82,
+          "l": 0.99,
+          "c": 0.0
+        },
+        {
+          "hex": "#A7A7A8",
+          "share": 0.12,
+          "l": 0.73,
+          "c": 0.001
+        },
+        {
+          "hex": "#F7E2C4",
+          "share": 0.04,
+          "l": 0.92,
+          "c": 0.046
+        },
+        {
+          "hex": "#B9C6C9",
+          "share": 0.01,
+          "l": 0.82,
+          "c": 0.015
+        },
+        {
+          "hex": "#52ACD9",
+          "share": 0.0,
+          "l": 0.71,
+          "c": 0.108
+        }
+      ],
+      "luma": 0.96,
+      "contrast": 0.09,
+      "saturation": 0.003,
+      "key": "high-key",
+      "camera": {
+        "pan_x": -0.006,
+        "pan_y": -0.021,
+        "zoom": 1.067,
+        "rotate": -8.89,
+        "shake": 0.06,
+        "label": "push in + roll"
+      },
+      "motion": [
+        2.47,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_mean": 0.27,
+      "depth": {
+        "sharpness": 0.016,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "minimal",
+      "look_score": 0.0,
+      "text": [
+        {
+          "bbox": [
+            0.375,
+            0.469,
+            0.25,
+            0.078
+          ],
+          "height": 0.078,
+          "align": "center",
+          "position": "middle",
+          "confidence": 0.21
+        }
+      ],
+      "text_coverage": 0.02,
+      "grain": 0.055,
+      "vignette": 0.0,
+      "glow": 0.0,
+      "points": 1,
+      "technique": [
+        "kinetic-type",
+        "2d-motion-graphics"
+      ],
+      "key_time": 31.25
+    }
+  ],
+  "transitions": [
+    {
+      "at": 3.875,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.42383432
+    },
+    {
+      "at": 6.792,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.39364797
+    },
+    {
+      "at": 9.083,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.9978869
+    },
+    {
+      "at": 11.208,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.9988769
+    },
+    {
+      "at": 13.208,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.84931654
+    },
+    {
+      "at": 13.917,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.834388
+    },
+    {
+      "at": 15.0,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.7264885
+    },
+    {
+      "at": 16.0,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.9465829
+    },
+    {
+      "at": 16.625,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.99937487
+    },
+    {
+      "at": 18.75,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.7040508
+    },
+    {
+      "at": 22.958,
+      "duration": 0.0,
+      "type": "zoom",
+      "direction": null,
+      "strength": 0.8734288
+    },
+    {
+      "at": 24.958,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.9999604
+    },
+    {
+      "at": 26.0,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.75009686
+    },
+    {
+      "at": 26.75,
+      "duration": 0.0,
+      "type": "zoom",
+      "direction": null,
+      "strength": 0.9010068
+    },
+    {
+      "at": 30.0,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.9970592
+    },
+    {
+      "at": 30.25,
+      "duration": 0.0,
+      "type": "zoom",
+      "direction": null,
+      "strength": 0.9588946
+    }
+  ],
+  "flashes": [],
+  "audio": {
+    "bpm": 123.0,
+    "beats": [
+      0.011,
+      0.499,
+      0.987,
+      1.474,
+      1.962,
+      2.45,
+      2.938,
+      3.425,
+      3.913,
+      4.401,
+      4.888,
+      5.376,
+      5.864,
+      6.352,
+      6.839,
+      7.327,
+      7.815,
+      8.302,
+      8.79,
+      9.278,
+      9.766,
+      10.253,
+      10.741,
+      11.229,
+      11.716,
+      12.204,
+      12.692,
+      13.18,
+      13.667,
+      14.155,
+      14.643,
+      15.13,
+      15.618,
+      16.106,
+      16.593,
+      17.081,
+      17.569,
+      18.057,
+      18.544,
+      19.032,
+      19.52,
+      20.007,
+      20.495,
+      20.983,
+      21.471,
+      21.958,
+      22.446,
+      22.934,
+      23.421,
+      23.909,
+      24.397,
+      24.885,
+      25.372,
+      25.86,
+      26.348,
+      26.835,
+      27.323,
+      27.811,
+      28.299,
+      28.786,
+      29.274,
+      29.762,
+      30.249,
+      30.737,
+      31.225,
+      31.712,
+      32.2
+    ],
+    "downbeats": [
+      0.011,
+      1.962,
+      3.913,
+      5.864,
+      7.815,
+      9.766,
+      11.716,
+      13.667,
+      15.618,
+      17.569,
+      19.52,
+      21.471,
+      23.421,
+      25.372,
+      27.323,
+      29.274,
+      31.225
+    ],
+    "onsets": [
+      0.027,
+      0.491,
+      1.234,
+      1.466,
+      1.966,
+      2.442,
+      3.185,
+      3.417,
+      3.928,
+      4.392,
+      5.147,
+      5.367,
+      5.867,
+      6.122,
+      6.238,
+      6.354,
+      6.598,
+      6.714,
+      6.842,
+      7.086,
+      7.213,
+      7.329,
+      7.585,
+      7.701,
+      7.817,
+      8.061,
+      8.189,
+      8.305,
+      8.548,
+      8.676,
+      8.792,
+      9.036,
+      9.164,
+      9.28,
+      9.524,
+      9.651,
+      9.767,
+      10.011,
+      10.139,
+      10.255,
+      10.511,
+      10.627,
+      10.743,
+      10.987,
+      11.114,
+      11.23,
+      11.486,
+      11.602,
+      11.718,
+      11.962,
+      12.089,
+      12.206,
+      12.449,
+      12.577,
+      12.693,
+      12.937,
+      13.065,
+      13.181,
+      13.436,
+      13.552,
+      13.668,
+      13.924,
+      14.04,
+      14.156,
+      14.411,
+      14.528,
+      14.644,
+      14.887,
+      15.015,
+      15.131,
+      15.375,
+      15.503,
+      15.631,
+      15.874,
+      15.99,
+      16.107,
+      16.35,
+      16.478,
+      16.594,
+      16.71,
+      16.838,
+      16.954,
+      17.082,
+      17.337,
+      17.465,
+      17.581,
+      17.813,
+      17.941,
+      18.057,
+      18.301,
+      18.429,
+      18.556,
+      18.788,
+      18.916,
+      19.032,
+      19.276,
+      19.404,
+      19.52,
+      19.764,
+      19.903,
+      20.007,
+      20.251,
+      20.379,
+      20.495,
+      20.739,
+      20.855,
+      20.983,
+      21.227,
+      21.354,
+      21.47,
+      21.714,
+      21.842,
+      21.958,
+      22.062,
+      22.202,
+      22.329,
+      22.446,
+      22.689,
+      22.829,
+      22.933,
+      23.177,
+      23.305,
+      23.421,
+      23.665,
+      23.804,
+      23.908,
+      24.152,
+      24.292,
+      24.396,
+      24.64,
+      24.779,
+      24.884,
+      25.127,
+      25.267,
+      25.371,
+      25.615,
+      25.743,
+      25.859,
+      26.103,
+      26.242,
+      26.347,
+      26.59,
+      26.718,
+      26.834,
+      27.078,
+      27.217,
+      27.809,
+      28.552,
+      28.785,
+      29.307,
+      29.76,
+      30.224,
+      30.735,
+      31.223
+    ],
+    "hits": [
+      8.305,
+      8.792,
+      10.743,
+      11.718,
+      12.693,
+      14.644,
+      17.465,
+      18.429,
+      19.52,
+      20.495,
+      20.983,
+      21.47,
+      24.396,
+      30.224,
+      31.223
+    ],
+    "loudness": [
+      0.42,
+      0.3,
+      0.47,
+      0.28,
+      0.33,
+      0.42,
+      0.46,
+      0.26,
+      0.29,
+      0.39,
+      0.38,
+      0.28,
+      0.26,
+      0.39,
+      0.32,
+      0.4,
+      0.37,
+      0.42,
+      0.38,
+      0.34,
+      0.27,
+      0.36,
+      0.31,
+      0.78,
+      0.41,
+      0.55,
+      0.38,
+      0.78,
+      0.36,
+      0.53,
+      0.41,
+      0.78,
+      0.34,
+      0.57,
+      0.31,
+      0.75,
+      0.31,
+      0.54,
+      0.34,
+      0.8,
+      0.38,
+      0.52,
+      0.73,
+      0.76,
+      0.46,
+      0.56,
+      0.79,
+      0.8,
+      0.58,
+      0.53,
+      0.74,
+      0.53,
+      0.54,
+      0.49,
+      0.82,
+      0.37,
+      0.58,
+      0.44,
+      0.91,
+      0.37,
+      0.51,
+      0.4,
+      0.43,
+      0.47,
+      0.62,
+      0.68,
+      0.72,
+      0.84,
+      0.96,
+      0.98,
+      0.83,
+      0.39,
+      0.82,
+      0.76,
+      0.98,
+      0.42,
+      0.81,
+      0.43,
+      0.79,
+      0.4,
+      0.76,
+      0.66,
+      0.8,
+      0.82,
+      0.77,
+      0.71,
+      0.75,
+      0.79,
+      0.67,
+      0.69,
+      0.5,
+      0.77,
+      0.42,
+      0.77,
+      0.48,
+      0.8,
+      0.46,
+      0.75,
+      0.49,
+      0.7,
+      0.48,
+      0.79,
+      0.38,
+      0.82,
+      0.39,
+      0.76,
+      0.44,
+      0.72,
+      0.37,
+      0.43,
+      0.31,
+      0.4,
+      0.3,
+      0.34,
+      0.26,
+      0.45,
+      0.27,
+      0.35,
+      0.27,
+      0.38,
+      0.86,
+      0.82,
+      0.46,
+      0.42,
+      0.96,
+      0.97,
+      0.25,
+      0.13,
+      0.05,
+      0.01
+    ],
+    "cuts_on_beat": 0.5,
+    "cuts_on_downbeat": 0.06
+  },
+  "timing": {
+    "decode": 1.274,
+    "analyse": 0.16,
+    "audio": 0.078,
+    "total": 1.515
+  },
+  "notes": [
+    "Heuristics, not ground truth: confirm every guess by looking at the sheet and key frames.",
+    "transition types: cut, crossfade, fadeBlack, fadeWhite, flash (bright frame at the cut), whip (blurred fast pan at the cut), zoom, wipe.",
+    "camera: a similarity model (pan, zoom, roll) fitted to 8×8 block motion at 160 px; pan_x/pan_y in frame widths/heights over the shot.",
+    "look: flat-2d = hard edges between flat fills (vector motion graphics); rendered-3d = smooth shading, clean pixels; photographic = smooth shading with grain; minimal = a nearly empty frame.",
+    "text: boxes of dense high-contrast strokes; no OCR. height ×100 ≈ the vh size to use.",
+    "grain/vignette/glow: relative measures; compare shots against each other and against your recreation's analysis."
+  ]
+}

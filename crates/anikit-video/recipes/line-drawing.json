@@ -1,0 +1,196 @@
+{
+ "about": "Illustration from paths: a route drawn on as one signal-yellow line across a field of 34 procedural contour lines (one path repeated with $i offsets, drawn on in a 0.85 s stagger), its ends marked with their real coordinates, then a hard cut to the distance as type. Taste decision it demonstrates: density of considered detail instead of an empty frame (every pixel of the ground is terrain), a 2D medium that comes from the subject (a journey is a line), one signal colour against a dark field read in luma, mono type because this is cartography, motion with weight (draw-on on inOutQuart, dots settling with a 3% overshoot) and an acoustic score (TASTE.md §2, §3, §5, §11). Replace the path and the terrain with the brief's own shape and ground: a route, a signal, a growth curve, an outline of its object. It tends not to suit abstract claims with no shape of their own, and the dark-moss + yellow pairing belongs to this terrain, so take yours from the subject.",
+ "cost": "draft or final ~5 s (1080p, 4 cores)",
+ "spec": {
+  "size": "16:9",
+  "intent": {
+   "pace": "steady",
+   "genre": "explainer"
+  },
+  "music": {
+   "style": "acoustic",
+   "bpm": 96,
+   "key": "D",
+   "mood": "warm"
+  },
+  "scenes": [
+   {
+    "duration": 3.2,
+    "background": "#0E1712",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.06,
+        "x": -40
+       },
+       "to": {
+        "zoom": 1,
+        "x": 0
+       },
+       "duration": 3.2,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    "layers": [
+     {
+      "shape": "path",
+      "d": "M0 60 C 260 0, 520 120, 820 50 S 1380 110, 1700 30 S 2100 80, 2200 40",
+      "stroke": "#C9D6C2",
+      "strokeWidth": 1.6,
+      "fill": "none",
+      "repeat": 34,
+      "opacity": "=0.10 + 0.10*(($i % 5) == 0)",
+      "x": "=-120 - ($i % 7)*23",
+      "y": "=-30 + $i*33",
+      "anchor": "topLeft",
+      "animate": [
+       {
+        "from": {
+         "trimEnd": 0
+        },
+        "to": {
+         "trimEnd": 1
+        },
+        "duration": 1.1,
+        "ease": "outQuart",
+        "at": "=$i*0.025"
+       }
+      ]
+     },
+     {
+      "shape": "path",
+      "d": "M0 330 C 160 300, 220 140, 420 170 S 700 360, 900 250 S 1180 40, 1400 90",
+      "stroke": "#F2B92E",
+      "strokeWidth": 7,
+      "fill": "none",
+      "x": "12%",
+      "y": "22%",
+      "anchor": "topLeft",
+      "start": 0.5,
+      "animate": [
+       {
+        "from": {
+         "trimEnd": 0
+        },
+        "to": {
+         "trimEnd": 1
+        },
+        "duration": 1.6,
+        "ease": "inOutQuart"
+       }
+      ]
+     },
+     {
+      "shape": "circle",
+      "width": 30,
+      "height": 30,
+      "fill": "#F2B92E",
+      "x": "12%",
+      "y": "45.4%",
+      "start": 0.5,
+      "animate": [
+       {
+        "from": {
+         "scale": 0
+        },
+        "to": {
+         "scale": 1
+        },
+        "duration": 0.35,
+        "ease": "outBack"
+       }
+      ]
+     },
+     {
+      "shape": "circle",
+      "width": 30,
+      "height": 30,
+      "fill": "#F2B92E",
+      "x": "84.9%",
+      "y": "23.1%",
+      "start": 2.1,
+      "animate": [
+       {
+        "from": {
+         "scale": 0
+        },
+        "to": {
+         "scale": 1
+        },
+        "duration": 0.35,
+        "ease": "outBack"
+       }
+      ]
+     },
+     {
+      "text": "LISBOA 38.72°N",
+      "font": "JetBrains Mono",
+      "size": "4.6vh",
+      "weight": 700,
+      "letterSpacing": "0.04em",
+      "color": "#EEF2EA",
+      "x": "12%",
+      "y": "50%",
+      "anchor": "topLeft",
+      "start": 0.6
+     },
+     {
+      "text": "PORTO 41.15°N",
+      "font": "JetBrains Mono",
+      "size": "4.6vh",
+      "weight": 700,
+      "letterSpacing": "0.04em",
+      "color": "#EEF2EA",
+      "x": "84.9%",
+      "y": "18%",
+      "anchor": "bottom",
+      "start": 2.2,
+      "enter": {
+       "preset": "mask by line up",
+       "duration": 0.35
+      }
+     },
+     {
+      "text": "313 km by the coast road",
+      "font": "JetBrains Mono",
+      "size": "3.4vh",
+      "color": "#C9D6C2",
+      "x": "12%",
+      "y": "88%",
+      "anchor": "left",
+      "start": 0.2
+     }
+    ]
+   },
+   {
+    "duration": 2.6,
+    "transition": "cut",
+    "background": "#F2B92E",
+    "layers": [
+     {
+      "text": "313 km",
+      "font": "JetBrains Mono",
+      "size": "30vh",
+      "weight": 700,
+      "letterSpacing": "-0.04em",
+      "color": "#0E1712",
+      "x": "7%",
+      "y": "56%",
+      "anchor": "left"
+     },
+     {
+      "text": "4 hours, Atlantic side",
+      "font": "JetBrains Mono",
+      "size": "3.6vh",
+      "color": "#0E1712",
+      "x": "7.6%",
+      "y": "78%",
+      "anchor": "left"
+     }
+    ]
+   }
+  ]
+ }
+}

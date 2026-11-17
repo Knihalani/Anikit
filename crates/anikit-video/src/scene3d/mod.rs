@@ -47,6 +47,23 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
 use trace::{Floor, FloorVis, Inst, Material, Quality, Scene, Shape, Tex};
 
+/// Run `f` (which may use rayon) while the caller holds a simulation lock
+/// (particle stepping, rapier, building particle sims), without letting the
+/// caller run other work meanwhile. A rayon worker that waits on its own
+/// pool, or even in `install` on another pool, steals other frames' tasks,
+/// and one of those can need the lock it holds: a deadlock. So `f` runs on a
+/// separate pool, started from a plain scoped thread that the caller simply
+/// joins (blocking, not stealing). Same thread count as the global pool,
+/// so results match.
+pub(crate) fn sim_blocking<R: Send>(f: impl FnOnce() -> R + Send) -> R {
+    std::thread::scope(|s| s.spawn(|| sim_pool().install(f)).join().unwrap_or_else(|e| std::panic::resume_unwind(e)))
+}
+
+fn sim_pool() -> &'static rayon::ThreadPool {
+    static P: OnceLock<rayon::ThreadPool> = OnceLock::new();
+    P.get_or_init(|| rayon::ThreadPoolBuilder::new().num_threads(rayon::current_num_threads()).thread_name(|i| format!("anikit-sim-{i}")).build().expect("scene3d: can't start the simulation thread pool"))
+}
+
 /// Spec shorthand, applied before parsing:
 /// - a layer `{ "scene3d": {...}, ...layer keys }` becomes
 ///   `{ "component": "scene3d", "props": {...}, ...layer keys }`;
@@ -94,7 +111,7 @@ pub fn shorthand(mut v: Value) -> Value {
 }
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -127,6 +144,10 @@ struct Prepared {
     glow: (V3, V3, f32),
     haze: (f32, V3),
     lights: Vec<trace::Light>,
+    /// Underwater caustics strength (0 = off).
+    caustics: f32,
+    /// Ink outlines: (width in px at 1080p, colour sRGB).
+    outline: Option<(f32, [u8; 3])>,
     /// Volumetric light shafts in the fog.
     shafts: bool,
     camera: CamSpec,
@@ -217,7 +238,7 @@ impl Prepare for Scene3d {
             es.env = e;
             local_lights = loc;
         }
-        let bright = matches!(es.name.as_str(), "cyc" | "sunset");
+        let bright = matches!(es.name.as_str(), "cyc" | "sunset" | "overcast" | "interior" | "underwater");
 
         let mut named: HashMap<String, Material> = HashMap::new();
         if let Some(ms) = m.get("materials") {
@@ -246,6 +267,57 @@ impl Prepare for Scene3d {
                 out
             }
             Some(_) => return Err(Error("`objects` must be an array".into())),
+        };
+        // `look`: a style for the whole scene: the default material of every
+        // object without one, plus ink outlines for the graphic looks.
+        let look = m.get("look").and_then(|l| l.as_str()).map(crate::components::kebab);
+        let (look_mat, look_outline) = match look.as_deref() {
+            None | Some("photo") | Some("pbr") => (None, false),
+            Some("toon") | Some("cel") => (Some("toon"), true),
+            Some("ink") => (Some("hatch"), true),
+            Some("hatch") => (Some("hatch"), true),
+            Some("clay") | Some("plasticine") => (Some("clay"), false),
+            Some("paper") => (Some("paper"), true),
+            Some("cardboard") => (Some("cardboard"), false),
+            Some("gouache") | Some("painted") => (Some("gouache"), false),
+            Some(o) => {
+                let names = ["photo", "toon", "ink", "hatch", "clay", "paper", "cardboard", "gouache"];
+                let hint = crate::components::style::closest(o, &names).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+                return Err(Error(format!("look: unknown look `{o}`{hint}")));
+            }
+        };
+        let objs_v: Vec<Value> = match look_mat {
+            Some(lm) => objs_v
+                .into_iter()
+                .map(|mut o| {
+                    if let Value::Object(om) = &mut o {
+                        let card = om.get("type").and_then(|t| t.as_str()) == Some("card");
+                        if !card && !om.contains_key("material") {
+                            // `color` tints the look's material.
+                            let mat = match om.remove("color") {
+                                Some(c) => serde_json::json!({ "extends": lm, "base": c }),
+                                None => Value::String(lm.into()),
+                            };
+                            om.insert("material".into(), mat);
+                        }
+                    }
+                    o
+                })
+                .collect(),
+            None => objs_v,
+        };
+        let outline = match m.get("outline") {
+            None if look_outline => Some((1.6, [22u8, 20, 24])),
+            None | Some(Value::Bool(false)) => None,
+            Some(Value::Bool(true)) => Some((1.6, [22u8, 20, 24])),
+            Some(Value::Number(n)) => Some((n.as_f64().unwrap_or(1.6) as f32, [22u8, 20, 24])),
+            Some(Value::Object(o)) => {
+                let w = num_or(o, "width", 1.6).map_err(Error)?;
+                let c = o.get("color").map(|c| spec::color(c, "outline.color")).transpose().map_err(Error)?.unwrap_or(v3(0.008, 0.007, 0.009));
+                let g = |x: f32| (x.clamp(0.0, 1.0).powf(1.0 / 2.2) * 255.0).round() as u8;
+                Some((w, [g(c.x), g(c.y), g(c.z)]))
+            }
+            Some(_) => return Err(Error("`outline` must be true, a width in px, or { width, color }".into())),
         };
         let mut shapes = spec::Shapes::new();
         let mut mats = Vec::new();
@@ -277,7 +349,18 @@ impl Prepare for Scene3d {
             Some(Value::Bool(false)) => None,
             v => {
                 let mut fp = if bright {
-                    FloorParams { y: 0.0, color: scale(es.tint, 0.92), roughness: 0.35, mirror: 0.0, reflect: 0.35, pool: (0.0, 0.0, 0.0), fade: (25.0, 250.0) }
+                    let color = match es.name.as_str() {
+                        "overcast" => v3(0.16, 0.19, 0.12),
+                        "interior" => v3(0.32, 0.19, 0.1),
+                        "underwater" => v3(0.5, 0.45, 0.33),
+                        _ => scale(es.tint, 0.92),
+                    };
+                    let (roughness, reflect) = match es.name.as_str() {
+                        "overcast" | "underwater" => (0.9, 0.0),
+                        "interior" => (0.3, 0.5),
+                        _ => (0.35, 0.35),
+                    };
+                    FloorParams { y: 0.0, color, roughness, mirror: 0.0, reflect, pool: (0.0, 0.0, 0.0), fade: (25.0, 250.0) }
                 } else {
                     FloorParams { y: 0.0, color: v3(0.035, 0.035, 0.04), roughness: 0.09, mirror: 0.06, reflect: 1.0, pool: (0.0, 0.0, 5.0), fade: (7.0, 16.0) }
                 };
@@ -331,6 +414,39 @@ impl Prepare for Scene3d {
             let hz = (es.haze, v3(0.006, 0.006, 0.008));
             ((v3(0.006, 0.006, 0.008), v3(0.0015, 0.0015, 0.002)), (norm(v3(0.0, 0.12, -1.0)), v3(0.05, 0.045, 0.06), 0.09), hz, 1.0, post::Tonemap::Aces)
         };
+        // Non-studio environments: a sky, a room wall, open water. Their floors
+        // are dark (grass, wood, sand), so exposure follows the light, not the floor.
+        let floor_l = floor.as_ref().map(|f| luma(f.color)).unwrap_or(0.8).max(0.02);
+        let (backdrop, haze, auto_exp) = match es.name.as_str() {
+            "overcast" | "interior" | "underwater" => {
+                let irr = luma(backdrop.0).max(1e-4) / floor_l;
+                let e = match es.name.as_str() { "overcast" => 0.95, "interior" => 0.8, _ => 0.62 } / irr;
+                let at = |c: V3, l: f32| scale(c, l / luma(c).max(1e-4) / e);
+                match es.name.as_str() {
+                    "overcast" => {
+                        let sky = (at(v3(0.8, 0.82, 0.84), 0.82), at(v3(0.6, 0.65, 0.72), 0.62));
+                        (sky, (0.012, sky.0), e)
+                    }
+                    "interior" => ((at(v3(0.9, 0.86, 0.8), 0.62), at(v3(0.86, 0.82, 0.76), 0.55)), (0.0, backdrop.0), e),
+                    _ => {
+                        let deep = at(v3(0.05, 0.38, 0.46), 0.3);
+                        ((deep, at(v3(0.14, 0.62, 0.68), 0.55)), (0.09, deep), e)
+                    }
+                }
+            }
+            "city" => (backdrop, (0.012, v3(0.01, 0.012, 0.03)), auto_exp),
+            _ => (backdrop, haze, auto_exp),
+        };
+        let caustics = if es.name == "underwater" { 1.0 } else { 0.0 };
+        // Night city: coloured practicals around the subject unless lights are given.
+        if es.name == "city" && local_lights.is_empty() {
+            let (c, r) = bounds;
+            let r = r.max(0.5);
+            for (k, (dx, dy, dz, col)) in [(-1.6, 1.1, 0.6, v3(3.0, 0.35, 2.0)), (1.7, 1.4, 0.2, v3(0.3, 2.2, 3.4)), (0.4, 2.2, -1.8, v3(3.2, 1.7, 0.5)), (-0.8, 0.5, -1.4, v3(3.0, 0.3, 0.3))].into_iter().enumerate() {
+                let _ = k;
+                local_lights.push(trace::Light { pos: add(c, v3(dx * r, dy * r, dz * r)), power: scale(col, r * r * 2.2), dir: v3(0.0, -1.0, 0.0), cos_outer: -1.0, cos_inner: -1.0, shadow: true });
+            }
+        }
         // `fog`: { "density": per metre, "color", "shafts" } overrides the env's haze.
         let mut shafts = false;
         let haze = match m.get("fog") {
@@ -427,6 +543,8 @@ impl Prepare for Scene3d {
             glow,
             haze,
             lights: local_lights,
+            caustics,
+            outline,
             shafts,
             camera,
             default_aperture: num_or(m, "aperture", if lookdev { 26.0 } else { 0.0 }).map_err(Error)?,
@@ -507,7 +625,7 @@ pub fn lint(props: &Value) -> Vec<(String, String)> {
             }
         }
     }
-    if env == "cyc" {
+    if env == "cyc" && props.get("look").and_then(|l| l.as_str()).is_none_or(|l| l == "photo" || l == "pbr") {
         let dark_card = objs.iter().any(|o| o.get("type").and_then(|t| t.as_str()) == Some("card") && o.get("intensity").and_then(|k| k.as_f64()).is_some_and(|k| k < 0.2));
         let chrome = objs.iter().position(|o| matches!(mat_of(o).as_str(), "chrome" | "mirror") && o.get("type").and_then(|t| t.as_str()) != Some("card"));
         if let (Some(i), false) = (chrome, dark_card) {
@@ -515,6 +633,69 @@ pub fn lint(props: &Value) -> Vec<(String, String)> {
         }
     }
     out
+}
+
+/// Ink outlines from the primary pass: silhouettes (object id), creases
+/// (normals) and depth steps, thicker for near objects, anti-aliased by
+/// coverage. The floor and backdrop never draw lines between themselves.
+fn outlines(out: &mut [u8], px: &post::Planes, w: usize, h: usize, width: f32, ink: [u8; 3]) {
+    let scale_px = h as f32 / 1080.0;
+    let bg = |id: u32| id >= u32::MAX - 2;
+    let n_at = |i: usize| v3(px.nx[i], px.ny[i], px.nz[i]);
+    // Median depth of objects sets "near" (thicker) and "far" (thinner) lines.
+    let mut ds: Vec<f32> = (0..w * h).step_by(97).filter(|&i| !bg(px.id[i])).map(|i| px.depth[i]).collect();
+    ds.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let dmed = ds.get(ds.len() / 2).copied().unwrap_or(5.0).max(0.1);
+    let edge = |i: usize, j: usize| -> bool {
+        let (a, b) = (px.id[i], px.id[j]);
+        if bg(a) && bg(b) {
+            return false;
+        }
+        if a != b {
+            return true;
+        }
+        let (da, db) = (px.depth[i], px.depth[j]);
+        if (da - db).abs() > 0.04 * da.min(db) {
+            return true;
+        }
+        dot(n_at(i), n_at(j)) < 0.6
+    };
+    let mut cov = vec![0f32; w * h];
+    use rayon::prelude::*;
+    cov.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+        for x in 0..w {
+            let i = y * w + x;
+            let d = if bg(px.id[i]) { dmed } else { px.depth[i] };
+            let r = (width * scale_px * (dmed / d.max(0.05)).sqrt().clamp(0.6, 1.8)).max(0.6);
+            let ri = r.ceil() as i32;
+            let mut best = f32::MAX;
+            for dy in -ri..=ri {
+                for dx in -ri..=ri {
+                    if dx == 0 && dy == 0 {
+                        continue;
+                    }
+                    let (xx, yy) = (x as i32 + dx, y as i32 + dy);
+                    if xx < 0 || yy < 0 || xx >= w as i32 || yy >= h as i32 {
+                        continue;
+                    }
+                    let dist = ((dx * dx + dy * dy) as f32).sqrt();
+                    if dist < best && dist <= r + 0.5 && edge(i, yy as usize * w + xx as usize) {
+                        best = dist;
+                    }
+                }
+            }
+            // Lines sit on the nearer side of a depth step only.
+            row[x] = if best == f32::MAX { 0.0 } else { (r + 0.5 - best).clamp(0.0, 1.0) };
+        }
+    });
+    for (i, &c) in cov.iter().enumerate() {
+        if c > 0.0 {
+            for k in 0..3 {
+                let o = &mut out[i * 4 + k];
+                *o = (*o as f32 + (ink[k] as f32 - *o as f32) * c).round() as u8;
+            }
+        }
+    }
 }
 
 /// Where simulations are cached: `$ANIKIT_CACHE/sim` (default
@@ -646,6 +827,8 @@ impl Scene3d {
         scene.glow = p.glow;
         scene.haze = p.haze;
         scene.lights = p.lights.clone();
+        scene.caustics = p.caustics;
+        scene.time = t;
         let mut insts = instances(&p.objs, t, dt);
         // Textures need world boxes, so build the hierarchy first.
         scene.insts = std::mem::take(&mut insts);
@@ -696,11 +879,29 @@ impl Scene3d {
             q.ao_rays = q.ao_rays.max(4);
             q.shadow_rays = q.shadow_rays.max(4);
         }
+        // Drafts (`quality: draft` or `--quality draft`) are for iterating on
+        // composition, light direction and colour: one sample per pixel (no
+        // edge supersampling), one traced reflection bounce, few glass layers.
+        // Standard and high quality are untouched.
+        let draft = (p.draft || crate::components::draft()) && !q.full;
+        if draft {
+            q.edge_spp = 0;
+            q.max_depth = q.max_depth.min(1);
+            q.max_glass = q.max_glass.min(4);
+            q.ao_rays = q.ao_rays.min(1);
+            q.shadow_rays = q.shadow_rays.min(1);
+            q.secondary_rays = 0;
+        }
         scene.render_frame(&cam, &prev, w, h, &q, &mut px);
         let t_trace = clock.elapsed();
         let layer = self.particles(t, dt, &cam, &prev, &mut px, w, h, assets);
         let t_parts = clock.elapsed();
-        let pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
+        let mut pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
+        if draft {
+            // Drafts: a lighter denoise and no motion blur (focus blur stays: it is composition).
+            pp.denoise = pp.denoise.min(2);
+            pp.shutter = 0.0;
+        }
         if let Some(path) = std::env::var_os("ANIKIT_SCENE3D_DUMP") {
             // Development aid: the primary pass and post settings, for examples/post_bench.
             post::dump(std::path::Path::new(&path), &px, w, h, &pp);
@@ -712,7 +913,10 @@ impl Scene3d {
         } else {
             None
         };
-        let out = post::process_planes(&px, w, h, &pp, vol.as_ref().map(|v| post::Volume { px: v, w: w.div_ceil(2), h: h.div_ceil(2) }), layer.as_ref());
+        let mut out = post::process_planes(&px, w, h, &pp, vol.as_ref().map(|v| post::Volume { px: v, w: w.div_ceil(2), h: h.div_ceil(2) }), layer.as_ref());
+        if let Some((width, ink)) = p.outline {
+            outlines(&mut out, &px, w, h, width, ink);
+        }
         if prof {
             let ms = |d: std::time::Duration| d.as_secs_f64() * 1e3;
             eprintln!(
@@ -738,7 +942,7 @@ impl Scene3d {
         if p.parts.is_empty() {
             return None;
         }
-        let sims = p.psims.get_or_init(|| {
+        let sims = p.psims.get_or_init(|| sim_blocking(|| {
             let floor_y = p.floor.as_ref().map(|f| f.y);
             let colliders: Vec<spec::ObjDef> = p.objs.iter().filter(|o| o.collide && o.phys.is_none()).cloned().collect();
             p.parts
@@ -746,11 +950,16 @@ impl Scene3d {
                 .map(|d| {
                     particles::Sim::new(d, 1.0 / dt.max(1e-4), floor_y, assets).map(|mut s| {
                         s.set_colliders(colliders.clone());
+                        // Small previews simulate an exact subset of the particles,
+                        // so each pixel sees about the density it would at 1080p.
+                        if h <= 400 {
+                            s.set_stride(((1080.0 / h.max(1) as f32).powi(2) as usize).clamp(1, 16));
+                        }
                         s
                     })
                 })
                 .collect()
-        });
+        }));
         let sims = match sims {
             Ok(s) => s,
             Err(e) => {
@@ -868,9 +1077,10 @@ impl Component for Scene3d {
         let p = self.p();
         // Previews and reviews (`still --width`, `critique --render`) trace at the size they show.
         // `resolution` (0.25–1): trace at a fraction of the layer size and upscale. Unset, it is
-        // full size at standard/high quality and half size in drafts (`--quality draft`), so
-        // iterating is fast and final renders lose nothing.
-        let default_res = if crate::components::draft() { 0.5 } else { 1.0 };
+        // full size at standard/high quality and 0.3 of it in drafts (`--quality draft`,
+        // one sample per pixel: composition, light and colour), so iterating is fast and
+        // final renders lose nothing.
+        let default_res = if crate::components::draft() || p.draft { 0.3 } else { 1.0 };
         let res = self.raw.get("resolution").and_then(|r| r.as_f64()).unwrap_or(default_res).clamp(0.25, 1.0) as f32;
         let ps = crate::eval::shader::preview_scale() * res;
         let (w, h) = ((ctx.width * ps).round().max(2.0) as u32, (ctx.height * ps).round().max(2.0) as u32);
@@ -928,6 +1138,14 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        for look in ["toon", "ink", "clay", "paper", "cardboard", "gouache"] {
+            scene(json!({ "look": look, "objects": [ { "type": "sphere", "color": "#E4572E" } ] })).unwrap();
+        }
+        for env in ["overcast", "interior", "city", "underwater"] {
+            scene(json!({ "env": env, "objects": [ { "type": "sphere", "material": "clay" } ] })).unwrap();
+        }
+        let e = scene(json!({ "look": "tooon", "objects": [] })).err().unwrap();
+        assert!(e.contains("did you mean `toon`"), "{e}");
         assert_eq!(lint(&json!({ "env": "sunset", "objects": [ { "text": "A", "material": "gold" } ] })).len(), 1);
         assert_eq!(lint(&json!({ "objects": [ { "text": "A" } ] })).len(), 1, "chrome on cyc without a flag");
         assert!(lint(&json!({ "objects": [ { "text": "A" }, { "type": "card", "intensity": 0 } ] })).is_empty());

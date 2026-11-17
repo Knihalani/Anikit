@@ -18,7 +18,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|beats|music|docs|recipes|new|templates|looks|prompt|critique|preview|mcp|--version> [spec.json|spec.yaml] [options]
-  render spec.json -o out.mp4   [--quality draft|good|best] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
+  render spec.json -o out.mp4   [--quality draft|good|best] [--crf 0-51] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
                                 [--from S] [--to S] [--scale K] [--no-audio]
   still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
   sheet  spec.json -o sheet.png [--frames N | --cols 4 --rows 3] [--width 480]
@@ -27,6 +27,9 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|b
   schema [-o file]              print the JSON Schema of the spec
   beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
   music  spec.json -o out.wav   generate a mastered soundtrack (anikit-video docs music)
+  analyze ref.mp4 [-o analysis.json] [--sheet sheet.jpg] [--spec draft.json]
+  board  refs/ [-o board.json] [--sheet board.jpg]   palette, value, texture, composition → theme tokens (docs board)
+                                reverse-engineer a reference video (anikit-video docs analyze)
 common: --json (machine-readable output)
 start:  docs [topic] | recipes [name] (-o file) | music | critique --render | looks | templates | preview | mcp | --version";
 
@@ -170,9 +173,97 @@ fn resolve_time(ev: &Evaluator, s: &str) -> Result<f32, String> {
     s.strip_suffix('s').unwrap_or(s).parse::<f32>().map_err(|_| format!("bad time '{s}'"))
 }
 
+/// `set spec.json <path> <value>`: patch one value in place, so agents edit specs in a
+/// few tokens instead of rewriting them. Path segments are keys, array indices, or the
+/// `id` of an item (`scenes.intro.layers.title.text`). The value is JSON, or else a
+/// string. A missing final key is added; `--delete` removes it instead.
+fn set_cmd(args: &[String]) -> Result<(), String> {
+    let delete = args.iter().any(|a| a == "--delete");
+    let pos: Vec<&String> = args.iter().filter(|a| *a != "--delete").collect();
+    let (file, path) = match pos.as_slice() {
+        [f, p, ..] => (f.as_str(), p.as_str()),
+        _ => return Err("usage: anikit-video set spec.json scenes.intro.layers.title.text \"New title\"  (or --delete)".into()),
+    };
+    let value = if delete {
+        None
+    } else {
+        let raw = pos.get(2).ok_or("missing the value")?;
+        Some(serde_json::from_str::<serde_json::Value>(raw).unwrap_or_else(|_| serde_json::Value::String(raw.to_string())))
+    };
+    let src = std::fs::read_to_string(file).map_err(|e| format!("cannot read {file}: {e}"))?;
+    let mut doc: serde_json::Value = serde_json::from_str(&src).map_err(|e| format!("{file} is not JSON: {e}"))?;
+    let segs: Vec<&str> = path.split('.').collect();
+    let mut cur = &mut doc;
+    let mut walked = String::new();
+    for (k, seg) in segs.iter().enumerate() {
+        let last = k + 1 == segs.len();
+        if last {
+            match cur {
+                serde_json::Value::Object(m) => match &value {
+                    Some(v) => {
+                        m.insert(seg.to_string(), v.clone());
+                    }
+                    None => {
+                        m.remove(*seg).ok_or_else(|| format!("{walked}: no key '{seg}'"))?;
+                    }
+                },
+                serde_json::Value::Array(a) => {
+                    let i = index_of(a, seg).ok_or_else(|| format!("{walked}: no item '{seg}' (index or id)"))?;
+                    match &value {
+                        Some(v) => a[i] = v.clone(),
+                        None => {
+                            a.remove(i);
+                        }
+                    }
+                }
+                _ => return Err(format!("{walked} is not an object or a list")),
+            }
+            break;
+        }
+        cur = match cur {
+            serde_json::Value::Object(m) => {
+                let keys: Vec<String> = m.keys().cloned().collect();
+                m.get_mut(*seg).ok_or_else(|| {
+                    let hint = anikit_video::spec::validate::suggest(seg, &keys).map(|s| format!(", did you mean '{s}'?")).unwrap_or_default();
+                    format!("{}: no key '{seg}'{hint}", if walked.is_empty() { "spec" } else { &walked })
+                })?
+            }
+            serde_json::Value::Array(a) => {
+                let i = index_of(a, seg).ok_or_else(|| {
+                    let ids: Vec<String> = a.iter().filter_map(|x| x.get("id").and_then(|i| i.as_str()).map(str::to_string)).collect();
+                    format!("{walked}: no item '{seg}' (indices 0..{}, ids: {})", a.len(), ids.join(", "))
+                })?;
+                &mut a[i]
+            }
+            _ => return Err(format!("{walked} is not an object or a list")),
+        };
+        if !walked.is_empty() {
+            walked.push('.');
+        }
+        walked.push_str(seg);
+    }
+    std::fs::write(file, serde_json::to_string_pretty(&doc).unwrap_or_default() + "\n").map_err(|e| format!("cannot write {file}: {e}"))?;
+    eprintln!("set {path} in {file}");
+    Ok(())
+}
+
+/// An array item by index or by its `id`.
+fn index_of(a: &[serde_json::Value], seg: &str) -> Option<usize> {
+    seg.parse::<usize>().ok().filter(|i| *i < a.len()).or_else(|| a.iter().position(|x| x.get("id").and_then(|i| i.as_str()) == Some(seg)))
+}
+
 fn main() -> ExitCode {
     // Agent commands (new, templates, prompt, critique, preview, mcp) live in the library.
     let raw: Vec<String> = std::env::args().skip(1).collect();
+    if raw.first().map(String::as_str) == Some("set") {
+        return match set_cmd(&raw[1..]) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("anikit-video set: {e}");
+                ExitCode::from(2)
+            }
+        };
+    }
     if matches!(raw.first().map(String::as_str), Some("--version" | "-V" | "version")) {
         println!("anikit-video {}", env!("CARGO_PKG_VERSION"));
         return ExitCode::SUCCESS;
@@ -182,6 +273,15 @@ fn main() -> ExitCode {
     }
     if let Some(code) = anikit_video::agent_cli::run(&raw) {
         return ExitCode::from(code as u8);
+    }
+    if raw.first().is_some_and(|c| c == "board") {
+        return match run_board(&raw[1..]) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("error: {e}");
+                ExitCode::from(1)
+            }
+        };
     }
     let args = match Args::parse() {
         Ok(a) => a,
@@ -202,6 +302,43 @@ fn main() -> ExitCode {
             ExitCode::from(1)
         }
     }
+}
+
+/// `board <images or folders…> [-o board.json] [--sheet board.jpg] [--json]`.
+fn run_board(raw: &[String]) -> Result<(), String> {
+    let (mut inputs, mut out, mut sheet, mut json) = (Vec::new(), None, None, false);
+    let mut it = raw.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "-o" | "--out" => out = it.next().cloned(),
+            "--sheet" => sheet = it.next().cloned(),
+            "--json" => json = true,
+            s if s.starts_with('-') => return Err(format!("board: unknown option '{s}'")),
+            s => inputs.push(s.to_string()),
+        }
+    }
+    if inputs.is_empty() {
+        return Err("usage: anikit-video board <images or a folder> [-o board.json] [--sheet board.jpg]  (anikit-video docs board)".into());
+    }
+    let t = Instant::now();
+    let files = anikit_video::analyze::collect_images(&inputs)?;
+    let b = anikit_video::analyze::board(&files)?;
+    let js = serde_json::to_string_pretty(&b).map_err(|e| e.to_string())?;
+    match &out {
+        Some(o) => std::fs::write(o, js + "\n").map_err(|e| format!("{o}: {e}"))?,
+        None if !json => println!("{js}"),
+        None => {}
+    }
+    if let Some(sh) = &sheet {
+        let (w, h, px) = anikit_video::analyze::board_sheet(&b);
+        image::RgbImage::from_raw(w, h, px).ok_or("sheet buffer")?.save(sh).map_err(|e| format!("{sh}: {e}"))?;
+    }
+    if json {
+        println!("{}", serde_json::json!({ "ok": true, "summary": b.summary, "spec_patch": b.spec_patch }));
+    } else {
+        eprintln!("{}\nspec patch: {}\n{} image(s) in {:.2} s", b.summary, b.spec_patch, b.images.len(), t.elapsed().as_secs_f64());
+    }
+    Ok(())
 }
 
 fn need_input(a: &Args) -> Result<&str, String> {
@@ -305,7 +442,15 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                             println!("{}", serde_json::json!({ "ok": true, "output": out, "at": t, "width": w, "height": h, "ms": ms, "shaders": shaders, "warnings": d }));
                         } else {
                             eprintln!("wrote {} ({w}×{h}, t = {t:.2} s) in {ms:.0} ms", out.display());
-                            for s in ev.shader_stats() {
+                            let stats = ev.shader_stats();
+                            let per_frame: f32 = stats.iter().map(|s| s.ms * full).sum();
+                            if per_frame > 0.0 {
+                                let frames = (ev.duration * ev.fps).round().max(1.0);
+                                let total = frames * per_frame / 1000.0;
+                                let fix = if per_frame > 120.0 { "  ← to cut it: \"supersample\": false on the heaviest layer, fewer march steps / octaves, or a smaller layer" } else { "" };
+                                eprintln!("  estimated render time: up to {total:.0} s of shader work for {frames:.0} frames (≈ {per_frame:.0} ms/frame if every shader is on screen){fix}");
+                            }
+                            for s in stats {
                                 let f = s.ms * full;
                                 let note = if f > 400.0 {
                                     "  ← heavy: cut march steps / noise octaves, bound the scene, or drop supersample (docs/video/shader.md#performance)"
@@ -352,6 +497,32 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             }
             Ok(ExitCode::SUCCESS)
         }
+        "analyze" => {
+            let path = a.input.as_deref().ok_or("missing video (an MP4/WebM/GIF/MOV, a directory of frames, or a frame%04d.png pattern)")?;
+            let opts = anikit_video::analyze::Options { sequence_fps: a.num("--fps")?.map(f64::from).unwrap_or(30.0), audio: !a.has("--no-audio"), ..Default::default() };
+            let an = anikit_video::analyze::analyze(Path::new(path), &opts)?;
+            let js = serde_json::to_string_pretty(&an).map_err(|e| e.to_string())?;
+            match a.get("-o").or(a.get("--out")) {
+                Some(o) => std::fs::write(o, js + "\n").map_err(|e| format!("{o}: {e}"))?,
+                None if !json => println!("{js}"),
+                None => {}
+            }
+            if let Some(sh) = a.get("--sheet") {
+                let (w, h, px) = anikit_video::analyze::contact_sheet(&an);
+                let img = image::RgbImage::from_raw(w, h, px).ok_or("sheet buffer")?;
+                img.save(sh).map_err(|e| format!("{sh}: {e}"))?;
+            }
+            if let Some(sp) = a.get("--spec") {
+                let spec = anikit_video::analyze::draft_spec(&an);
+                std::fs::write(sp, serde_json::to_string_pretty(&spec).map_err(|e| e.to_string())? + "\n").map_err(|e| format!("{sp}: {e}"))?;
+            }
+            if json {
+                println!("{}", serde_json::json!({ "ok": true, "summary": an.global.style_summary, "shots": an.shots.len(), "seconds": an.timing.total }));
+            } else {
+                eprintln!("{}\nanalysed in {:.2} s (decode {:.2}, analyse {:.2}, audio {:.2})", an.global.style_summary, an.timing.total, an.timing.decode, an.timing.analyse, an.timing.audio);
+            }
+            Ok(ExitCode::SUCCESS)
+        }
         "sheet" => {
             let path = need_input(a)?;
             let out = PathBuf::from(a.get("-o").unwrap_or("sheet.png"));
@@ -384,11 +555,17 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
         "render" => {
             let path = need_input(a)?;
             let out = PathBuf::from(a.get("-o").or(a.get("--out")).unwrap_or("out.mp4"));
-            let (ev, d) = match build(path, json, true) {
+            let (mut ev, d) = match build(path, json, true) {
                 Ok(x) => x,
                 Err(c) => return Ok(c),
             };
             warn(&d, json);
+            if let Some(q) = a.num("--crf")? {
+                if !(0.0..=51.0).contains(&q) {
+                    return Err(format!("--crf: use 0..51 (got {q})"));
+                }
+                ev.encode_crf = Some(q.round() as u8);
+            }
             let quality = match a.get("--quality") {
                 None => Quality::Good,
                 Some(q) => Quality::parse(q).ok_or_else(|| format!("--quality: use draft, standard or high (got '{q}')"))?,

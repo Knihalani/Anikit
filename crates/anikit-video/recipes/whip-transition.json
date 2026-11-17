@@ -1,5 +1,5 @@
 {
- "about": "A whip pan between two shots: the camera rips sideways in 0.2 s with real motion blur and cuts at peak speed. Replace the layers with your two shots.",
+ "about": "A whip pan between two shots: the camera rips sideways in 0.2 s with real motion blur and cuts at peak speed. Taste decision: a motivated cut on action that carries the motion vector across, with blur so the move doesn't strobe (TASTE.md §5–6). Replace the layers with your two shots. It tends not to work as glue between every scene: one or two whips per piece; hard cuts and match cuts carry the rest.",
  "cost": "~1 s, draft or final (1080p, 4 cores)",
  "spec": {
   "size": "16:9",
