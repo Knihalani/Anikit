@@ -27,6 +27,12 @@ const LABEL = {
   "hyperframes/fast": "HyperFrames, fast (`--workers 4 --quality draft`)",
 };
 const ORDER = Object.keys(LABEL);
+// Worst-frame PSNR, flagged when it falls far below the mean (a corrupt frame) or frames are missing.
+const worstCell = (x) => {
+  if (x.psnrMin == null) return "–";
+  const bad = x.psnr - x.psnrMin > 10 || (x.framesScored && x.framesScored !== FRAMES[x.comp]);
+  return `${bad ? "⚠ " : ""}${f(x.psnrMin, 2)} (frame ${x.psnrMinFrame})${x.framesScored !== FRAMES[x.comp] ? `, ${x.framesScored} frames` : ""}`;
+};
 const median = (xs) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
 const f = (x, d = 1) => (x == null || Number.isNaN(x) ? "–" : x.toFixed(d));
 const mib = (b) => (b ? (b / 2 ** 20).toFixed(0) : "–");
@@ -55,15 +61,15 @@ out.push("");
 for (const comp of COMPS) {
   out.push(`### ${NAMES[comp]}\n`);
   const ceil = (t) => R.ceiling?.find((c) => c.tool === t && c.comp === comp);
-  out.push("| Tool and settings | Wall (s) | FPS | CPU (cores busy) | Peak RSS, tree (MiB) | Peak PSS, tree (MiB) | Size (MB) | Output | PSNR (dB) | SSIM |");
-  out.push("|---|---:|---:|---:|---:|---:|---:|---|---:|---:|");
+  out.push("| Tool and settings | Wall (s) | FPS | CPU (cores busy) | Peak RSS, tree (MiB) | Peak PSS, tree (MiB) | Size (MB) | Output | PSNR mean (dB) | PSNR worst frame (dB) | SSIM mean / worst |");
+  out.push("|---|---:|---:|---:|---:|---:|---:|---|---:|---:|---:|");
   for (const k of ORDER) {
     const [t, c] = k.split("/");
     const x = row(t, c, comp);
     if (!x) continue;
-    if (!x.wall) { out.push(`| ${LABEL[k]} | failed | | | | | | | | |`); continue; }
+    if (!x.wall) { out.push(`| ${LABEL[k]} | failed | | | | | | | | | |`); continue; }
     const v = x.video || {};
-    out.push(`| ${LABEL[k]} | ${f(x.wall, 2)} | ${f(x.fps, 0)} | ${f(x.cores, 2)} | ${mib(x.peakRss)} | ${mib(x.peakPss)} | ${mb(x.bytes)} | ${v.codec_name} ${v.profile} ${v.width}×${v.height} | ${f(x.psnr, 2)} | ${f(x.ssim, 4)} |`);
+    out.push(`| ${LABEL[k]} | ${f(x.wall, 2)} | ${f(x.fps, 0)} | ${f(x.cores, 2)} | ${mib(x.peakRss)} | ${mib(x.peakPss)} | ${mb(x.bytes)} | ${v.codec_name} ${v.profile} ${v.width}×${v.height} | ${f(x.psnr, 2)} | ${worstCell(x)} | ${f(x.ssim, 4)} / ${f(x.ssimMin, 4)} |`);
   }
   const cs = ["anikit", "remotion", "hyperframes"].map((t) => ceil(t)).filter(Boolean);
   if (cs.length) out.push(`\n4:2:0 ceiling (each tool's PNG frames through lossless 4:2:0, the best any of these MP4s could score): ` +
@@ -90,7 +96,8 @@ if (ex.length) {
   out.push("|---|---|---:|---:|---:|---:|");
   for (const x of ex) {
     const args = x.args.includes("__env_chromium") ? "defaults, full Chromium instead of chrome-headless-shell" : "`" + x.args.join(" ") + "`";
-    out.push(`| ${TOOL[x.tool]} | ${args} | ${x.wall ? f(x.wall, 2) : "failed"} | ${f(x.fps, 0)} | ${f(x.cores, 2)} | ${mb(x.bytes)} |`);
+    if (!x.wall) { out.push(`| ${TOOL[x.tool]} | ${args} | refused: ${x.tool === "remotion" ? "concurrency above the 4 available cores" : "failed"} | | | |`); continue; }
+    out.push(`| ${TOOL[x.tool]} | ${args} | ${f(x.wall, 2)} | ${f(x.fps, 0)} | ${f(x.cores, 2)} | ${mb(x.bytes)} |`);
   }
   out.push("");
 }
@@ -123,7 +130,9 @@ const cost = (t, comp) => {
   const total = own.length + shared.length;
   return `${own.length.toLocaleString("en-US")} B${shared ? ` + ${shared.length.toLocaleString("en-US")} B shared` : ""} ≈ ${Math.round(total / 4).toLocaleString("en-US")} tok`;
 };
-for (const comp of COMPS) out.push(`| ${NAMES[comp]} | ${cost("anikit", comp)} | ${cost("remotion", comp)} | ${cost("hyperframes", comp)} |`);
+const reuse = read("../../docs/video/examples/long-reuse.json");
+const anikitCost = (comp) => cost("anikit", comp) + (comp === "long" && reuse ? `; with spec reuse (\`"repeat": 3\`, \`docs/video/examples/long-reuse.json\`): ${reuse.length.toLocaleString("en-US")} B ≈ ${Math.round(reuse.length / 4).toLocaleString("en-US")} tok` : "");
+for (const comp of COMPS) out.push(`| ${NAMES[comp]} | ${anikitCost(comp)} | ${cost("remotion", comp)} | ${cost("hyperframes", comp)} |`);
 out.push("");
 
 const md = out.join("\n");

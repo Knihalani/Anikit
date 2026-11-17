@@ -182,16 +182,22 @@ function normaliseSequence(dir) {
 /** PSNR (dB, RGB average) and SSIM (all) of an MP4 against a PNG sequence, compared in RGB at 1920×1080.
  *  The MP4 is decoded with its signalled matrix (BT.709 when unsignalled, the HD convention); a smaller
  *  output (draft at half size) is upscaled with bicubic. */
+const PSNR_LOG = path.join(os.tmpdir(), `bench-psnr-${process.pid}.log`), SSIM_LOG = path.join(os.tmpdir(), `bench-ssim-${process.pid}.log`);
 function qualityParse(mp4, ref, info) {
   const matrix = ["bt709", "bt470bg", "smpte170m", "bt2020nc"].includes(info.color_space) ? info.color_space : "bt709";
   const range = info.color_range === "pc" ? "pc" : "tv";
   const fc = `[0:v]scale=${W}:${H}:flags=bicubic:in_color_matrix=${matrix}:in_range=${range},format=gbrp,split[a1][a2];` +
-    `[1:v]format=gbrp,split[b1][b2];[a1][b1]psnr;[a2][b2]ssim`;
+    `[1:v]format=gbrp,split[b1][b2];[a1][b1]psnr=stats_file=${PSNR_LOG};[a2][b2]ssim=stats_file=${SSIM_LOG}`;
   const res = spawnSync("ffmpeg", ["-hide_banner", "-nostats", "-i", mp4, "-framerate", String(FPS), "-i", ref, "-lavfi", fc, "-f", "null", "-"],
     { encoding: "utf8", maxBuffer: 1 << 26 }).stderr;
   const psnr = /PSNR .*average:([\d.inf]+)/.exec(res)?.[1];
   const ssim = /SSIM .*All:([\d.]+)/.exec(res)?.[1];
-  return { psnr: psnr === "inf" ? Infinity : Number(psnr), ssim: Number(ssim), qualityError: psnr ? undefined : res.slice(-500), decodeMatrix: matrix };
+  // Per-frame minimum, so one corrupt frame shows even when the mean is fine.
+  const per = (file, re) => fs.readFileSync(file, "utf8").split("\n").map((l) => re.exec(l)?.[1]).filter(Boolean).map((v) => (v === "inf" ? 100 : Number(v)));
+  const pf = per(PSNR_LOG, /psnr_avg:([\d.inf]+)/), sf = per(SSIM_LOG, /All:([\d.]+)/);
+  const worst = pf.indexOf(Math.min(...pf));
+  return { psnr: psnr === "inf" ? Infinity : Number(psnr), ssim: Number(ssim), psnrMin: Math.min(...pf), psnrMinFrame: worst, ssimMin: Math.min(...sf),
+    framesScored: pf.length, qualityError: psnr ? undefined : res.slice(-500), decodeMatrix: matrix };
 }
 
 // ---------------------------------------------------------------- main
@@ -222,6 +228,20 @@ fs.mkdirSync(path.join(HERE, "remotion/public"), { recursive: true });
 fs.copyFileSync(path.join(HERE, "shared/fonts/InterVariable.ttf"), path.join(HERE, "remotion/public/InterVariable.ttf"));
 
 const log = (...a) => console.error(`[${new Date().toISOString().slice(11, 19)}]`, ...a);
+
+if (flag("rescore")) {
+  // Re-score existing MP4s against existing references (no rendering).
+  for (const r of results.rows.filter((x) => x.wall && !x.explore && TOOLS.includes(x.tool) && COMPS.includes(x.comp))) {
+    [FPS, FRAMES] = COMPDEF[r.comp];
+    const mp4 = path.join(OUT, "mp4", `${r.tool}-${r.config}-${r.comp}.mp4`);
+    const ref = path.join(OUT, "ref", r.tool, r.comp, "ref", "%05d.png");
+    if (!fs.existsSync(mp4)) continue;
+    Object.assign(r, qualityParse(mp4, ref, probe(mp4)));
+    log(`rescored ${r.tool} ${r.config} ${r.comp}: mean ${r.psnr.toFixed(2)} dB, min ${r.psnrMin.toFixed(2)} dB @ frame ${r.psnrMinFrame}, frames ${r.framesScored}`);
+    save();
+  }
+  process.exit(0);
+}
 
 for (const tool of TOOLS) {
   const def = TOOLDEFS[tool];
@@ -286,7 +306,7 @@ for (const tool of TOOLS) {
           video: info,
         });
         if (ref) Object.assign(row, qualityParse(out, ref.pattern, info));
-        log(`  => median ${row.wall.toFixed(2)} s (${row.fps.toFixed(0)} fps), ${(row.bytes / 1e6).toFixed(2)} MB, PSNR ${row.psnr?.toFixed?.(2)} dB, SSIM ${row.ssim}`);
+        log(`  => median ${row.wall.toFixed(2)} s (${row.fps.toFixed(0)} fps), ${(row.bytes / 1e6).toFixed(2)} MB, PSNR ${row.psnr?.toFixed?.(2)} dB (min ${row.psnrMin?.toFixed?.(2)} @ ${row.psnrMinFrame}), SSIM ${row.ssim}`);
       }
       results.rows = results.rows.filter((r) => !(r.tool === tool && r.config === cfg && r.comp === comp));
       results.rows.push(row);
