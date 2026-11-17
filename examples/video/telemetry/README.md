@@ -10,7 +10,7 @@ A broadcast-style data recap of the last laps of a fictional race: the Kessra Gr
 | 3.9 | map | Track drawn on with stroke trim, sector colours, ten cars racing round at ×12 time, a live timing tower with tyres, gaps and position swaps (IVE passes LIN at T7) |
 | 12.5 | onboard | Okafor's lap 56: speed dial, gear, shift lights, throttle/brake, a speed trace drawing over the rival's ghost, live delta, minimap, lower third |
 | 20.5 | overtake | Replay wipe, then a zoomed Turn 1: Marchetti locks up and Okafor goes past in slow motion, with motion trails, live speeds and the interval |
-| 28.2 | fastest | Fastest-lap sting: 1:31.279, purple sectors |
+| 28.2 | fastest | Fastest-lap sting: the timer settles on 1:31.279; purple sectors |
 | 31.3 | analysis | Sector comparison bars (purple / green / yellow) and a lap-time line chart for laps 48–58 |
 | 38.7 | winner | Chrome 3D OKAFOR (`text-3d`), podium, confetti |
 
@@ -38,6 +38,17 @@ target/release/anikit-video still  examples/video/telemetry/spec.json --at 42.3 
 target/release/anikit-video render examples/video/telemetry/spec.json -o telemetry.mp4
 ```
 
+## 9:16 social cut-down
+
+`vertical.json` is a 14.75 s, 1080×1920 cut of the Turn 1 pass, the fastest lap and the winner. It comes from the same race simulation and the same scene code: the replay scene takes a layout dict, so the battle card, banner and caption reflow for portrait instead of being cropped. The fastest-lap and winner scenes are stacked layouts. All text stays inside the 9:16 safe area (top 12% and bottom 20% clear), and `critique` reports no safe-area notes. The score is the film's `score.mp3`, cut into three segments with `trimStart`, so the replay hit still lands on the pass.
+
+```bash
+python3 examples/video/telemetry/vertical.py      # writes vertical.json
+target/release/anikit-video render examples/video/telemetry/vertical.json -o telemetry-vertical.mp4
+```
+
+Measured on the same 4-core VM: 885 frames in 3.4–3.8 s (236–258 fps over 3 runs), giving a 7.1 MB MP4 (7 290 KB) at −13.5 LUFS and −1.7 dBTP. Poster: `vertical-poster.png`.
+
 ## Sound
 
 `score.py` synthesises the music bed with numpy. It runs at 124 BPM in A minor:
@@ -52,8 +63,8 @@ On a 4-core cloud VM (16 GB), with the default ak264 encoder and the AAC audio t
 
 | | |
 |---|---|
-| frames | 2742 (265 deduped) |
-| render wall time | 16.6 s (165 fps); other runs took 15.9–16.6 s (165–172 fps) |
-| output | 18.0 MB MP4 (18 475 KB), 1920×1080, 60 fps, about 3.3 Mbit/s |
+| frames | 2742 (273 deduped) |
+| render wall time | 10.6–12.3 s (224–259 fps) over 4 consecutive runs on main 88ac967 |
+| output | 16.5 MB MP4 (16 876 KB), 1920×1080, 60 fps, about 3.0 Mbit/s |
 | loudness | −14.0 LUFS integrated, −1.4 dBTP true peak (ffmpeg `ebur128`, after AAC) |
 | spec | 542 KB JSON, mostly car-position and trail keyframes |

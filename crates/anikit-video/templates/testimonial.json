@@ -299,8 +299,8 @@
                   "to": {
                     "zoom": 1.04
                   },
-                  "duration": "{{max(4.5, readtime(q.quote) + 1.6)}}",
-                  "ease": "inOutSine"
+                  "duration": 0.9,
+                  "ease": "outExpo"
                 }
               ]
             },

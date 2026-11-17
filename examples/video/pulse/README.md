@@ -32,9 +32,9 @@ These numbers come from a 4-core cloud VM (Intel Xeon @ 2.10 GHz) using the defa
 
 | | |
 |---|---|
-| Render wall time | **10.1 s** for 36 s of video (11.4 s including process start and audio analysis) |
-| Render speed | **107 fps** (1080 frames, 3.6× real time) |
-| Output | 28.5 MB MP4 (H.264 1080×1920 + AAC), mastered to −11.8 LUFS |
+| Render wall time | **8.3 s** for 36 s of video |
+| Render speed | **130 fps** (1080 frames, 4.3× real time) |
+| Output | 28.6 MB MP4 (H.264 1080×1920 + AAC), mastered to −11.8 LUFS |
 | Beat detection | 120.0 BPM; the grid is within 4 ms of the true beat |
 | Sync | All 53 cuts and word reveals are within **3.4 ms** of a detected beat (one frame is 33 ms) |
 

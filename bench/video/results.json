@@ -42,7 +42,11 @@
    },
    "psnr": 44.825584,
    "ssim": 0.995758,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 41.69,
+   "psnrMinFrame": 193,
+   "ssimMin": 0.992475,
+   "framesScored": 600
   },
   {
    "tool": "remotion",
@@ -89,7 +93,11 @@
    },
    "psnr": 44.777826,
    "ssim": 0.995957,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 41.66,
+   "psnrMinFrame": 193,
+   "ssimMin": 0.992857,
+   "framesScored": 600
   },
   {
    "tool": "remotion",
@@ -133,7 +141,11 @@
    },
    "psnr": 42.922938,
    "ssim": 0.991563,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 42.36,
+   "psnrMinFrame": 326,
+   "ssimMin": 0.990647,
+   "framesScored": 600
   },
   {
    "tool": "remotion",
@@ -180,7 +192,11 @@
    },
    "psnr": 42.910644,
    "ssim": 0.991666,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 42.34,
+   "psnrMinFrame": 326,
+   "ssimMin": 0.99083,
+   "framesScored": 600
   },
   {
    "tool": "remotion",
@@ -224,7 +240,11 @@
    },
    "psnr": 45.216835,
    "ssim": 0.996284,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 44.32,
+   "psnrMinFrame": 351,
+   "ssimMin": 0.995657,
+   "framesScored": 600
   },
   {
    "tool": "remotion",
@@ -271,7 +291,11 @@
    },
    "psnr": 45.35791,
    "ssim": 0.996438,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 44.53,
+   "psnrMinFrame": 451,
+   "ssimMin": 0.995866,
+   "framesScored": 600
   },
   {
    "tool": "hyperframes",
@@ -312,7 +336,11 @@
    },
    "psnr": 43.879956,
    "ssim": 0.994586,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 41.47,
+   "psnrMinFrame": 298,
+   "ssimMin": 0.992412,
+   "framesScored": 600
   },
   {
    "tool": "hyperframes",
@@ -358,7 +386,11 @@
    },
    "psnr": 42.108144,
    "ssim": 0.991242,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 39.92,
+   "psnrMinFrame": 278,
+   "ssimMin": 0.987474,
+   "framesScored": 600
   },
   {
    "tool": "hyperframes",
@@ -399,7 +431,11 @@
    },
    "psnr": 44.153716,
    "ssim": 0.995006,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 43.71,
+   "psnrMinFrame": 434,
+   "ssimMin": 0.99456,
+   "framesScored": 600
   },
   {
    "tool": "hyperframes",
@@ -445,7 +481,11 @@
    },
    "psnr": 41.477674,
    "ssim": 0.989414,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 40.89,
+   "psnrMinFrame": 189,
+   "ssimMin": 0.987934,
+   "framesScored": 600
   },
   {
    "tool": "hyperframes",
@@ -486,7 +526,11 @@
    },
    "psnr": 45.317801,
    "ssim": 0.995475,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 45.06,
+   "psnrMinFrame": 303,
+   "ssimMin": 0.995021,
+   "framesScored": 600
   },
   {
    "tool": "hyperframes",
@@ -532,7 +576,11 @@
    },
    "psnr": 42.740477,
    "ssim": 0.992831,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 42,
+   "psnrMinFrame": 351,
+   "ssimMin": 0.991423,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -573,7 +621,11 @@
    },
    "psnr": 46.061492,
    "ssim": 0.997307,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.39,
+   "psnrMinFrame": 321,
+   "ssimMin": 0.99496,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -619,7 +671,11 @@
    },
    "psnr": 34.928405,
    "ssim": 0.985938,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 32.54,
+   "psnrMinFrame": 260,
+   "ssimMin": 0.978731,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -667,7 +723,11 @@
    },
    "psnr": 42.582929,
    "ssim": 0.99429,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 34.88,
+   "psnrMinFrame": 321,
+   "ssimMin": 0.991406,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -713,7 +773,11 @@
    },
    "psnr": 46.928607,
    "ssim": 0.997869,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.6,
+   "psnrMinFrame": 321,
+   "ssimMin": 0.995592,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -761,7 +825,11 @@
    },
    "psnr": 47.371743,
    "ssim": 0.997744,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.5,
+   "psnrMinFrame": 321,
+   "ssimMin": 0.995287,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -807,7 +875,11 @@
    },
    "psnr": 45.446942,
    "ssim": 0.997509,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.47,
+   "psnrMinFrame": 321,
+   "ssimMin": 0.995118,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -853,7 +925,11 @@
    },
    "psnr": 47.168098,
    "ssim": 0.998116,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.63,
+   "psnrMinFrame": 321,
+   "ssimMin": 0.995851,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -894,7 +970,11 @@
    },
    "psnr": 43.886753,
    "ssim": 0.994307,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 40.9,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.993168,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -940,7 +1020,11 @@
    },
    "psnr": 34.011431,
    "ssim": 0.970952,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 33.4,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.968578,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -988,7 +1072,11 @@
    },
    "psnr": 41.290113,
    "ssim": 0.990797,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 39.32,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.988583,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1034,7 +1122,11 @@
    },
    "psnr": 44.49342,
    "ssim": 0.995517,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 41.45,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.994633,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1082,7 +1174,11 @@
    },
    "psnr": 44.900951,
    "ssim": 0.995619,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 41.45,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.994462,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1128,7 +1224,11 @@
    },
    "psnr": 44.209839,
    "ssim": 0.995306,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 41.11,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.994104,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1174,7 +1274,11 @@
    },
    "psnr": 45.210598,
    "ssim": 0.996244,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 41.78,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.995571,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1215,7 +1319,11 @@
    },
    "psnr": 48.170455,
    "ssim": 0.997787,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 46.87,
+   "psnrMinFrame": 354,
+   "ssimMin": 0.996861,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1261,7 +1369,11 @@
    },
    "psnr": 33.696148,
    "ssim": 0.988005,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 32.39,
+   "psnrMinFrame": 353,
+   "ssimMin": 0.985456,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1309,7 +1421,11 @@
    },
    "psnr": 44.136693,
    "ssim": 0.995219,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 43.2,
+   "psnrMinFrame": 307,
+   "ssimMin": 0.992602,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1355,7 +1471,11 @@
    },
    "psnr": 49.708375,
    "ssim": 0.998494,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 48.78,
+   "psnrMinFrame": 305,
+   "ssimMin": 0.997707,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1403,7 +1523,11 @@
    },
    "psnr": 50.367571,
    "ssim": 0.998455,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 46.39,
+   "psnrMinFrame": 458,
+   "ssimMin": 0.996445,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1449,7 +1573,11 @@
    },
    "psnr": 47.732249,
    "ssim": 0.998297,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 45.77,
+   "psnrMinFrame": 159,
+   "ssimMin": 0.99759,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1495,7 +1623,1155 @@
    },
    "psnr": 50.590729,
    "ssim": 0.998696,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 48.28,
+   "psnrMinFrame": 309,
+   "ssimMin": 0.998368,
+   "framesScored": 600
+  },
+  {
+   "tool": "anikit",
+   "config": "default",
+   "comp": "long",
+   "fps": 518.2682645077467,
+   "frames": 3600,
+   "args": [],
+   "runs": [
+    {
+     "wall": 6.920401462,
+     "peakRss": 289435648,
+     "peakPss": 283857920,
+     "cores": 2.7397254486043283,
+     "steal": 0.005076142131979695,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 6.974147499,
+     "peakRss": 289738752,
+     "peakPss": 284132352,
+     "cores": 2.728648914111531,
+     "steal": 0.005054151624548736,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 6.946209611,
+     "peakRss": 290914304,
+     "peakPss": 286752768,
+     "cores": 2.659004123738356,
+     "steal": 0.004366812227074236,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 6.946209611,
+   "peakRss": 289738752,
+   "cores": 2.728648914111531,
+   "steal": 0.005076142131979695,
+   "peakPss": 284132352,
+   "bytes": 13413976,
+   "video": {
+    "codec_name": "h264",
+    "profile": "Main",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "3600"
+   },
+   "psnr": 46.023506,
+   "ssim": 0.997133,
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.33,
+   "psnrMinFrame": 642,
+   "ssimMin": 0.994741,
+   "framesScored": 3600
+  },
+  {
+   "tool": "anikit",
+   "config": "ak264-draft",
+   "comp": "long",
+   "fps": 1329.5376412455548,
+   "frames": 3600,
+   "args": [
+    "--codec",
+    "ak264",
+    "--quality",
+    "draft"
+   ],
+   "runs": [
+    {
+     "wall": 2.846673398,
+     "peakRss": 123645952,
+     "peakPss": 118005760,
+     "cores": 2.5538581296708345,
+     "steal": 0.0052863436123348016,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 2.565224562,
+     "peakRss": 124022784,
+     "peakPss": 118459392,
+     "cores": 2.514399751018757,
+     "steal": 0.002976190476190476,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 2.70770822,
+     "peakRss": 124268544,
+     "peakPss": 118716416,
+     "cores": 2.467030956533418,
+     "steal": 0.007497656982193065,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 2.70770822,
+   "peakRss": 124022784,
+   "cores": 2.514399751018757,
+   "steal": 0.007497656982193065,
+   "peakPss": 118459392,
+   "bytes": 3832543,
+   "video": {
+    "codec_name": "h264",
+    "profile": "Constrained Baseline",
+    "width": 960,
+    "height": 540,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "3600"
+   },
+   "psnr": 34.893918,
+   "ssim": 0.985651,
+   "decodeMatrix": "bt709",
+   "psnrMin": 32.49,
+   "psnrMinFrame": 520,
+   "ssimMin": 0.978055,
+   "framesScored": 3600
+  },
+  {
+   "tool": "anikit",
+   "config": "ak264-draft-full",
+   "comp": "long",
+   "fps": 508.95588895427375,
+   "frames": 3600,
+   "args": [
+    "--codec",
+    "ak264",
+    "--quality",
+    "draft",
+    "--scale",
+    "1"
+   ],
+   "runs": [
+    {
+     "wall": 7.031519345,
+     "peakRss": 283193344,
+     "peakPss": 277551104,
+     "cores": 2.7305620674503026,
+     "steal": 0.005685856432125089,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 7.183007056,
+     "peakRss": 283033600,
+     "peakPss": 277425152,
+     "cores": 2.7356230958434407,
+     "steal": 0.0065653075328265375,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 7.07330454,
+     "peakRss": 279175168,
+     "peakPss": 273591296,
+     "cores": 2.7200864731889514,
+     "steal": 0.00632688927943761,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 7.07330454,
+   "peakRss": 283033600,
+   "cores": 2.7305620674503026,
+   "steal": 0.0065653075328265375,
+   "peakPss": 277425152,
+   "bytes": 10351303,
+   "video": {
+    "codec_name": "h264",
+    "profile": "Constrained Baseline",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "3600"
+   },
+   "psnr": 42.473156,
+   "ssim": 0.993967,
+   "decodeMatrix": "bt709",
+   "psnrMin": 34.74,
+   "psnrMinFrame": 642,
+   "ssimMin": 0.991088,
+   "framesScored": 3600
+  },
+  {
+   "tool": "anikit",
+   "config": "ak264-best",
+   "comp": "long",
+   "fps": 453.37326192658617,
+   "frames": 3600,
+   "args": [
+    "--codec",
+    "ak264",
+    "--quality",
+    "best"
+   ],
+   "runs": [
+    {
+     "wall": 7.917901669,
+     "peakRss": 283303936,
+     "peakPss": 277663744,
+     "cores": 2.7620954280886005,
+     "steal": 0.004428978171464726,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 7.940477091,
+     "peakRss": 286187520,
+     "peakPss": 280546304,
+     "cores": 2.822248555492999,
+     "steal": 0.006828057107386716,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 8.046513491,
+     "peakRss": 281972736,
+     "peakPss": 276409344,
+     "cores": 2.766415544433964,
+     "steal": 0.005294300840859545,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 7.940477091,
+   "peakRss": 283303936,
+   "cores": 2.766415544433964,
+   "steal": 0.006828057107386716,
+   "peakPss": 277663744,
+   "bytes": 15893445,
+   "video": {
+    "codec_name": "h264",
+    "profile": "Main",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "3600"
+   },
+   "psnr": 47.004231,
+   "ssim": 0.997804,
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.57,
+   "psnrMinFrame": 642,
+   "ssimMin": 0.995472,
+   "framesScored": 3600
+  },
+  {
+   "tool": "anikit",
+   "config": "h264-draft",
+   "comp": "long",
+   "fps": 201.67321611070514,
+   "frames": 3600,
+   "args": [
+    "--codec",
+    "h264",
+    "--quality",
+    "draft",
+    "--scale",
+    "1"
+   ],
+   "runs": [
+    {
+     "wall": 17.850659941,
+     "peakRss": 400064512,
+     "peakPss": 394480640,
+     "cores": 2.1209299894309157,
+     "steal": 0.005072463768115942,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 17.966250869,
+     "peakRss": 403521536,
+     "peakPss": 397881344,
+     "cores": 2.0610866602054236,
+     "steal": 0.006403725804104206,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 16.556129467,
+     "peakRss": 413077504,
+     "peakPss": 407483392,
+     "cores": 2.103752575106629,
+     "steal": 0.0053678560151563,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 17.850659941,
+   "peakRss": 403521536,
+   "cores": 2.103752575106629,
+   "steal": 0.006403725804104206,
+   "peakPss": 397881344,
+   "bytes": 20533820,
+   "video": {
+    "codec_name": "h264",
+    "profile": "Constrained Baseline",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "3600"
+   },
+   "psnr": 47.178291,
+   "ssim": 0.997578,
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.42,
+   "psnrMinFrame": 642,
+   "ssimMin": 0.994964,
+   "framesScored": 3600
+  },
+  {
+   "tool": "anikit",
+   "config": "h264-good",
+   "comp": "long",
+   "fps": 191.21307005475188,
+   "frames": 3600,
+   "args": [
+    "--codec",
+    "h264",
+    "--quality",
+    "good"
+   ],
+   "runs": [
+    {
+     "wall": 18.991403136,
+     "peakRss": 605507584,
+     "peakPss": 599900160,
+     "cores": 3.1745942923887815,
+     "steal": 0.007526881720430108,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 18.827164895,
+     "peakRss": 607334400,
+     "peakPss": 601137152,
+     "cores": 3.2107861346693753,
+     "steal": 0.0065005417118093175,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 18.359853844,
+     "peakRss": 617213952,
+     "peakPss": 608542720,
+     "cores": 3.191201874362808,
+     "steal": 0.004885538805136795,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 18.827164895,
+   "peakRss": 607334400,
+   "cores": 3.191201874362808,
+   "steal": 0.007526881720430108,
+   "peakPss": 601137152,
+   "bytes": 3307603,
+   "video": {
+    "codec_name": "h264",
+    "profile": "High",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "3600"
+   },
+   "psnr": 44.620187,
+   "ssim": 0.997126,
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.36,
+   "psnrMinFrame": 642,
+   "ssimMin": 0.994147,
+   "framesScored": 3600
+  },
+  {
+   "tool": "anikit",
+   "config": "h264-best",
+   "comp": "long",
+   "fps": 138.16914148603976,
+   "frames": 3600,
+   "args": [
+    "--codec",
+    "h264",
+    "--quality",
+    "best"
+   ],
+   "runs": [
+    {
+     "wall": 26.296939741,
+     "peakRss": 935297024,
+     "peakPss": 929744896,
+     "cores": 3.3578051617287614,
+     "steal": 0.006905943001653535,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 25.644792566,
+     "peakRss": 921755648,
+     "peakPss": 916185088,
+     "cores": 3.4233070817033027,
+     "steal": 0.009145129224652087,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 26.055021847,
+     "peakRss": 930463744,
+     "peakPss": 924822528,
+     "cores": 3.4204538581210735,
+     "steal": 0.00713029888650127,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 26.055021847,
+   "peakRss": 930463744,
+   "cores": 3.4204538581210735,
+   "steal": 0.009145129224652087,
+   "peakPss": 924822528,
+   "bytes": 5586230,
+   "video": {
+    "codec_name": "h264",
+    "profile": "High",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "3600"
+   },
+   "psnr": 47.082452,
+   "ssim": 0.998028,
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.56,
+   "psnrMinFrame": 642,
+   "ssimMin": 0.995689,
+   "framesScored": 3600
+  },
+  {
+   "tool": "remotion",
+   "config": "default",
+   "comp": "long",
+   "fps": 25.810117324141657,
+   "frames": 3600,
+   "args": [],
+   "runs": [
+    {
+     "wall": 136.875803382,
+     "peakRss": 2112167936,
+     "peakPss": 1643895808,
+     "cores": 2.0985447603062166,
+     "steal": 0.005710508437230311,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 140.211051876,
+     "peakRss": 2195910656,
+     "peakPss": 1720059904,
+     "cores": 2.1297893140698627,
+     "steal": 0.005854234921316934,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 139.480187354,
+     "peakRss": 2178916352,
+     "peakPss": 1700061184,
+     "cores": 2.153209037766518,
+     "steal": 0.005806405077899596,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 139.480187354,
+   "peakRss": 2178916352,
+   "cores": 2.1297893140698627,
+   "steal": 0.005854234921316934,
+   "peakPss": 1700061184,
+   "bytes": 8681203,
+   "video": {
+    "codec_name": "h264",
+    "profile": "High",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuvj420p",
+    "color_range": "pc",
+    "color_space": "bt470bg",
+    "nb_read_frames": "3600",
+    "side_data_list": [
+     {}
+    ]
+   },
+   "psnr": 44.754878,
+   "ssim": 0.995671,
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 41.64,
+   "psnrMinFrame": 2999,
+   "ssimMin": 0.992255,
+   "framesScored": 3600
+  },
+  {
+   "tool": "remotion",
+   "config": "fast",
+   "comp": "long",
+   "fps": 34.88031768737871,
+   "frames": 3600,
+   "args": [
+    "--concurrency=4",
+    "--x264-preset=veryfast"
+   ],
+   "runs": [
+    {
+     "wall": 103.157665422,
+     "peakRss": 2399453184,
+     "peakPss": 1639702528,
+     "cores": 2.636837494210969,
+     "steal": 0.005932906880218761,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 103.210069136,
+     "peakRss": 2044416000,
+     "peakPss": 1290568704,
+     "cores": 2.6241625673471245,
+     "steal": 0.008109824612829157,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 106.110955243,
+     "peakRss": 2441068544,
+     "peakPss": 1675341824,
+     "cores": 2.598412193807754,
+     "steal": 0.008700199676713892,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 103.210069136,
+   "peakRss": 2399453184,
+   "cores": 2.6241625673471245,
+   "steal": 0.008700199676713892,
+   "peakPss": 1639702528,
+   "bytes": 6045798,
+   "video": {
+    "codec_name": "h264",
+    "profile": "High",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuvj420p",
+    "color_range": "pc",
+    "color_space": "bt470bg",
+    "nb_read_frames": "3600",
+    "side_data_list": [
+     {}
+    ]
+   },
+   "psnr": 44.53753,
+   "ssim": 0.99588,
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 41.16,
+   "psnrMinFrame": 2996,
+   "ssimMin": 0.992532,
+   "framesScored": 3600
+  },
+  {
+   "tool": "hyperframes",
+   "config": "default",
+   "comp": "long",
+   "fps": 23.68143783175114,
+   "frames": 3600,
+   "args": [],
+   "runs": [
+    {
+     "wall": 152.017796621,
+     "peakRss": 1358467072,
+     "peakPss": 998965248,
+     "cores": 1.9440487006715037,
+     "steal": 0.004773893993395024,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 151.299422995,
+     "peakRss": 1356328960,
+     "peakPss": 996677632,
+     "cores": 1.9484542251674173,
+     "steal": 0.004514042776710823,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 153.095309754,
+     "peakRss": 1361977344,
+     "peakPss": 1000912896,
+     "cores": 1.94532412833907,
+     "steal": 0.004680616740088106,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 152.017796621,
+   "peakRss": 1358467072,
+   "cores": 1.94532412833907,
+   "steal": 0.004773893993395024,
+   "peakPss": 998965248,
+   "bytes": 8794958,
+   "video": {
+    "codec_name": "h264",
+    "profile": "High",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "3600"
+   },
+   "psnr": 43.839642,
+   "ssim": 0.994545,
+   "decodeMatrix": "bt709",
+   "psnrMin": 41.39,
+   "psnrMinFrame": 458,
+   "ssimMin": 0.992334,
+   "framesScored": 3600
+  },
+  {
+   "tool": "hyperframes",
+   "config": "fast",
+   "comp": "long",
+   "fps": 52.065615467663875,
+   "frames": 3600,
+   "args": [
+    "--workers",
+    "4",
+    "--quality",
+    "draft"
+   ],
+   "runs": [
+    {
+     "wall": 68.402189915,
+     "peakRss": 2704502784,
+     "peakPss": 1086875648,
+     "cores": 3.235568923670768,
+     "steal": 0.007076001497566454,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 69.143521452,
+     "peakRss": 2697457664,
+     "peakPss": 1074818048,
+     "cores": 3.1826553721705864,
+     "steal": 0.008019008019008018,
+     "mhz": [
+      2100,
+      2100
+     ]
+    },
+    {
+     "wall": 73.868276261,
+     "peakRss": 2700750848,
+     "peakPss": 1077590016,
+     "cores": 3.110672288982547,
+     "steal": 0.007828265256419177,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 69.143521452,
+   "peakRss": 2700750848,
+   "cores": 3.1826553721705864,
+   "steal": 0.008019008019008018,
+   "peakPss": 1077590016,
+   "bytes": 8018178,
+   "video": {
+    "codec_name": "h264",
+    "profile": "Constrained Baseline",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "3600"
+   },
+   "psnr": 41.747486,
+   "ssim": 0.991042,
+   "decodeMatrix": "bt709",
+   "psnrMin": 39.41,
+   "psnrMinFrame": 2961,
+   "ssimMin": 0.986455,
+   "framesScored": 3600
+  },
+  {
+   "tool": "remotion",
+   "config": "c4",
+   "comp": "kinetic",
+   "explore": true,
+   "fps": 27.86223699988877,
+   "frames": 600,
+   "args": [
+    "--concurrency=4"
+   ],
+   "runs": [
+    {
+     "wall": 21.534523592,
+     "peakRss": 2606542848,
+     "peakPss": 1847917568,
+     "cores": 2.5935098940729797,
+     "steal": 0.004575316752698263,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 21.534523592,
+   "peakRss": 2606542848,
+   "cores": 2.5935098940729797,
+   "steal": 0.004575316752698263,
+   "peakPss": 1847917568,
+   "bytes": 2383393,
+   "video": {
+    "codec_name": "h264",
+    "profile": "High",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuvj420p",
+    "color_range": "pc",
+    "color_space": "bt470bg",
+    "nb_read_frames": "600",
+    "side_data_list": [
+     {}
+    ]
+   }
+  },
+  {
+   "tool": "remotion",
+   "config": "c8-veryfast",
+   "comp": "kinetic",
+   "explore": true,
+   "fps": 30,
+   "frames": 600,
+   "args": [
+    "--concurrency=8",
+    "--x264-preset=veryfast"
+   ],
+   "runs": [
+    {
+     "wall": 0.526210521,
+     "peakRss": 132726784,
+     "peakPss": 108729344,
+     "failed": true,
+     "cores": 1.5203040761703053,
+     "steal": 0.004608294930875576,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ]
+  },
+  {
+   "tool": "remotion",
+   "config": "c4-ultrafast",
+   "comp": "kinetic",
+   "explore": true,
+   "fps": 29.353440244602663,
+   "frames": 600,
+   "args": [
+    "--concurrency=4",
+    "--x264-preset=ultrafast"
+   ],
+   "runs": [
+    {
+     "wall": 20.440534227,
+     "peakRss": 2168205312,
+     "peakPss": 1418905600,
+     "cores": 2.2988635951564653,
+     "steal": 0.005891016200294551,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 20.440534227,
+   "peakRss": 2168205312,
+   "cores": 2.2988635951564653,
+   "steal": 0.005891016200294551,
+   "peakPss": 1418905600,
+   "bytes": 10631166,
+   "video": {
+    "codec_name": "h264",
+    "profile": "Constrained Baseline",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuvj420p",
+    "color_range": "pc",
+    "color_space": "bt470bg",
+    "nb_read_frames": "600",
+    "side_data_list": [
+     {}
+    ]
+   }
+  },
+  {
+   "tool": "remotion",
+   "config": "c4-veryfast-jpeg50",
+   "comp": "kinetic",
+   "explore": true,
+   "fps": 28.210808627943834,
+   "frames": 600,
+   "args": [
+    "--concurrency=4",
+    "--x264-preset=veryfast",
+    "--jpeg-quality=50"
+   ],
+   "runs": [
+    {
+     "wall": 21.268443876,
+     "peakRss": 2354610176,
+     "peakPss": 1614707712,
+     "cores": 2.495246023141632,
+     "steal": 0.005204636858291933,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 21.268443876,
+   "peakRss": 2354610176,
+   "cores": 2.495246023141632,
+   "steal": 0.005204636858291933,
+   "peakPss": 1614707712,
+   "bytes": 2356515,
+   "video": {
+    "codec_name": "h264",
+    "profile": "High",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuvj420p",
+    "color_range": "pc",
+    "color_space": "bt470bg",
+    "nb_read_frames": "600",
+    "side_data_list": [
+     {}
+    ]
+   }
+  },
+  {
+   "tool": "hyperframes",
+   "config": "w2-draft",
+   "comp": "kinetic",
+   "explore": true,
+   "fps": 33.71255431021914,
+   "frames": 600,
+   "args": [
+    "--workers",
+    "2",
+    "--quality",
+    "draft"
+   ],
+   "runs": [
+    {
+     "wall": 17.797524165,
+     "peakRss": 1495633920,
+     "peakPss": 718507008,
+     "cores": 2.4160663922323717,
+     "steal": 0.005089058524173028,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 17.797524165,
+   "peakRss": 1495633920,
+   "cores": 2.4160663922323717,
+   "steal": 0.005089058524173028,
+   "peakPss": 718507008,
+   "bytes": 2767183,
+   "video": {
+    "codec_name": "h264",
+    "profile": "Constrained Baseline",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "600"
+   }
+  },
+  {
+   "tool": "hyperframes",
+   "config": "w4",
+   "comp": "kinetic",
+   "explore": true,
+   "fps": 33.5518090808494,
+   "frames": 600,
+   "args": [
+    "--workers",
+    "4"
+   ],
+   "runs": [
+    {
+     "wall": 17.882791314,
+     "peakRss": 2954690560,
+     "peakPss": 1334891520,
+     "cores": 3.106897520886655,
+     "steal": 0.007006005147269088,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 17.882791314,
+   "peakRss": 2954690560,
+   "cores": 3.106897520886655,
+   "steal": 0.007006005147269088,
+   "peakPss": 1334891520,
+   "bytes": 2624062,
+   "video": {
+    "codec_name": "h264",
+    "profile": "High",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "600"
+   }
+  },
+  {
+   "tool": "hyperframes",
+   "config": "w8-draft",
+   "comp": "kinetic",
+   "explore": true,
+   "fps": 37.19911868562233,
+   "frames": 600,
+   "args": [
+    "--workers",
+    "8",
+    "--quality",
+    "draft"
+   ],
+   "runs": [
+    {
+     "wall": 16.129414384,
+     "peakRss": 4760256512,
+     "peakPss": 1477022720,
+     "cores": 3.1265859255265567,
+     "steal": 0.008037825059101654,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 16.129414384,
+   "peakRss": 4760256512,
+   "cores": 3.1265859255265567,
+   "steal": 0.008037825059101654,
+   "peakPss": 1477022720,
+   "bytes": 2767183,
+   "video": {
+    "codec_name": "h264",
+    "profile": "Constrained Baseline",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "600"
+   }
+  },
+  {
+   "tool": "hyperframes",
+   "config": "w4-draft-crf30",
+   "comp": "kinetic",
+   "explore": true,
+   "fps": 40.142594022040754,
+   "frames": 600,
+   "args": [
+    "--workers",
+    "4",
+    "--quality",
+    "draft",
+    "--crf",
+    "30"
+   ],
+   "runs": [
+    {
+     "wall": 14.946717187,
+     "peakRss": 2595160064,
+     "peakPss": 982677504,
+     "cores": 2.9223808448045667,
+     "steal": 0.006331279945242984,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 14.946717187,
+   "peakRss": 2595160064,
+   "cores": 2.9223808448045667,
+   "steal": 0.006331279945242984,
+   "peakPss": 982677504,
+   "bytes": 2180595,
+   "video": {
+    "codec_name": "h264",
+    "profile": "Constrained Baseline",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "600"
+   }
+  },
+  {
+   "tool": "hyperframes",
+   "config": "chromium-default",
+   "comp": "kinetic",
+   "explore": true,
+   "fps": 14.278007985188802,
+   "frames": 600,
+   "args": [
+    "__env_chromium"
+   ],
+   "runs": [
+    {
+     "wall": 42.022668752,
+     "peakRss": 1914712064,
+     "peakPss": 1147293696,
+     "cores": 1.633404113505599,
+     "steal": 0.004186567604221947,
+     "mhz": [
+      2100,
+      2100
+     ]
+    }
+   ],
+   "wall": 42.022668752,
+   "peakRss": 1914712064,
+   "cores": 1.633404113505599,
+   "steal": 0.004186567604221947,
+   "peakPss": 1147293696,
+   "bytes": 2624062,
+   "video": {
+    "codec_name": "h264",
+    "profile": "High",
+    "width": 1920,
+    "height": 1080,
+    "pix_fmt": "yuv420p",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "nb_read_frames": "600"
+   }
   }
  ],
  "cold": [
@@ -1591,7 +2867,7 @@
   }
  ],
  "machine": {
-  "date": "2026-11-17T02:47:44.633Z",
+  "date": "2026-11-17T03:55:29.688Z",
   "nproc": 4,
   "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
   "memGB": 16,
@@ -1599,7 +2875,7 @@
   "node": "v22.23.4",
   "ffmpeg": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers",
   "chrome": "Google Chrome for Testing 153.0.8010.12",
-  "anikit": "195b3d4",
+  "anikit": "95d31cf",
   "remotion": "4.0.544",
   "hyperframes": "0.9.59",
   "gsap": "3.15.1",
@@ -1659,6 +2935,24 @@
    "comp": "explainer",
    "psnr": 51.863629,
    "ssim": 0.998819
+  },
+  {
+   "tool": "anikit",
+   "comp": "long",
+   "psnr": 48.412172,
+   "ssim": 0.998372
+  },
+  {
+   "tool": "remotion",
+   "comp": "long",
+   "psnr": 48.165243,
+   "ssim": 0.998334
+  },
+  {
+   "tool": "hyperframes",
+   "comp": "long",
+   "psnr": 48.140264,
+   "ssim": 0.998333
   }
  ]
 }

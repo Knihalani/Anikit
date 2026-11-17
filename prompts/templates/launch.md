@@ -5,7 +5,7 @@ description: How to fill the 'launch' template well.
 
 # Template guide: Product launch (`launch`)
 
-A 15–35 s launch film on a living brand mesh: optional kinetic hook, product reveal in a browser (your screenshot or a generated UI), 2–4 split-screen feature beats (device, code editor or screenshot), an animated proof counter with a rising chart, and a CTA button that bursts into confetti.
+A 20–35 s launch film with a broadcast-style HUD (beat counter, section label, progress bar): optional kinetic hook; product reveal where a search types feature 1 and returns the features as results (or your screenshot in a browser); feature beats that cycle three layouts (split with a camera push, a full-bleed UI crop with callout and lower third, a centred title over feature cards); a proof counter in a brand ring (or a chart of your real series); a CTA with confetti.
 
 **Typical length:** 20–35 s. **Formats:** 16:9, 9:16 and 1:1 (pass `--format`); the layout adapts automatically.
 
@@ -28,6 +28,7 @@ A 15–35 s launch film on a living brand mesh: optional kinetic hook, product r
 | `stat.prefix` | string |  | ≤ 3 chars |  |
 | `stat.suffix` | string |  | ≤ 4 chars |  |
 | `stat.label` | string | yes | ≤ 8 words |  |
+| `stat.series` | array |  |  | Optional real data behind the stat (e.g. monthly values); drawn as a brand-coloured chart. Without it, no chart is invented. |
 | `cta` | string |  | ≤ 4 words | Call to action on the end card. Default: the brand kit's `voice.cta`. |
 | `music` | string |  |  | Optional music file (MP3/WAV). Pick something with a clear beat around 100–124 BPM. |
 
