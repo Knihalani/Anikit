@@ -2158,6 +2158,7 @@
             "dust",
             "particle-text",
             "morph",
+            "fluid",
             "metaballs",
             "god-rays",
             "lens-flare",
@@ -2192,7 +2193,7 @@
             "cutout",
             "lottie"
           ],
-          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, brush, sketch, hatch, paper, cutout, lottie."
+          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, fluid, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, brush, sketch, hatch, paper, cutout, lottie."
         },
         "props": true,
         "progress": {
