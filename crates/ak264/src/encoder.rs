@@ -449,8 +449,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             e.top.copy_from_slice(&self.b.y[i..i + 16]);
         }
         if has_left {
+            let (i, ys) = (self.yi(x0 - 1, y0), self.ys);
+            let col = &self.b.y[i..i + 15 * ys + 1];
             for k in 0..16 {
-                e.left[k] = self.b.y[self.yi(x0 - 1, y0 + k)];
+                e.left[k] = col[k * ys];
             }
         }
         if e.has_tl {
@@ -470,8 +472,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             e.top.copy_from_slice(&pl[i..i + 8]);
         }
         if has_left {
+            let (i, cs) = (self.ci(x0 - 1, y0), self.cs);
+            let col = &pl[i..i + 7 * cs + 1];
             for k in 0..8 {
-                e.left[k] = pl[self.ci(x0 - 1, y0 + k)];
+                e.left[k] = col[k * cs];
             }
         }
         if e.has_tl {
