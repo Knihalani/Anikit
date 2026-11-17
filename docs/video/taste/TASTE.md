@@ -307,6 +307,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
   - solo cello for gravity;
   - a field drum for momentum;
   - clock ticks or tuned percussion for time.
+- **With this engine:** acoustic and sampled styles are `piano`, `acoustic`, `jazz`, `orchestral`, `rock`, `pop`, `lofi` and `cinematic-hybrid`. The synth-led styles are `house`, `synthwave`, `trap`, `tech`, `dnb` and `ambient`. `"instrumentation": "band|acoustic|orchestral|piano|hybrid"` keeps a style's groove but swaps its instruments, and per-role `"instruments"` choose the signature voice.
 - **Synths only when the concept is electronic.** Even then, give the synth one job (pad *or* bass *or* lead), and keep it ≲ 30% of the voices otherwise *(heuristic)* ⚙ (`music` tip).
 - **Vary between pieces.** Change at least 2 of: lead family, tempo (±15 BPM), mode and groove.
 - **Arc.** Start sparse with 1–2 voices, build to 3–5, peak, then drop to near silence before the final hit or name. Plan at least one silence of 0.5–2 s, or a bar's rest, and land the reveal right after it.
