@@ -952,7 +952,14 @@ impl C<'_> {
             ("reveal", l.reveal.is_some()),
         ];
         let shape_only = [("shape", l.shape.is_some()), ("points", l.points.is_some()), ("d", l.d.is_some()), ("sides", l.sides.is_some())];
-        let img_only = [("src", l.src.is_some()), ("fit", l.fit.is_some() && kind != "text")];
+        let img_only = [("src", l.src.is_some() && kind != "shader"), ("fit", l.fit.is_some() && kind != "text")];
+        let shader_only = [
+            ("uniforms", l.uniforms.is_some()),
+            ("channels", l.channels.is_some()),
+            ("filter", l.filter.is_some()),
+            ("supersample", l.supersample.is_some()),
+            ("alpha", l.alpha.is_some()),
+        ];
         let check = |d: &mut Vec<Diagnostic>, list: &[(&str, bool)], ok: bool, owner: &str| {
             if !ok {
                 for (k, set) in list {
@@ -964,6 +971,7 @@ impl C<'_> {
         };
         check(&mut self.d, &text_only, kind == "text", "text");
         check(&mut self.d, &shape_only, kind == "shape", "shape");
+        check(&mut self.d, &shader_only, kind == "shader", "shader");
         check(&mut self.d, &img_only[..1], kind == "image" || kind == "video", "image/video");
         check(&mut self.d, &img_only[1..], kind == "image" || kind == "video" || kind == "composition", "image/video/composition");
         if l.layers.is_some() && kind != "group" {
@@ -2363,7 +2371,26 @@ impl C<'_> {
             let cp = format!("{path}.channels[{i}]");
             let o = self.channel_opts(v, &cp);
             let src = v.as_str().or_else(|| v.get("src").and_then(|s| s.as_str()));
+            let comp_name = src.and_then(|x| x.strip_prefix('#')).or_else(|| v.get("composition").and_then(|x| x.as_str()));
             let c = match (src, v.get("layers")) {
+                _ if comp_name.is_some() => {
+                    let name = comp_name.unwrap_or_default();
+                    match self.comps.iter().find(|c| c.0 == name).cloned() {
+                        Some((_, ev, looped)) => {
+                            let time = super::CompTime {
+                                trim: v.get("trimStart").and_then(|x| x.as_f64()).unwrap_or(0.0) as f32,
+                                speed: v.get("speed").and_then(|x| x.as_f64()).unwrap_or(1.0) as f32,
+                                looped: v.get("loop").and_then(|x| x.as_bool()).unwrap_or(looped),
+                            };
+                            ChannelC::Comp { ev, time }
+                        }
+                        None => {
+                            let names: Vec<&str> = self.comps.iter().map(|c| c.0.as_str()).collect();
+                            self.d.push(Diagnostic::error(cp.clone(), format!("unknown composition '{name}' (define it in top-level 'compositions')")).suggest(suggest(name, &names)));
+                            ChannelC::None
+                        }
+                    }
+                }
                 (Some("below"), _) => ChannelC::Below,
                 (Some("noise"), _) => ChannelC::Noise,
                 (Some("") | Some("none"), _) => ChannelC::None,
@@ -2391,7 +2418,7 @@ impl C<'_> {
                     ChannelC::Layers(kids)
                 }
                 _ => {
-                    self.d.push(Diagnostic::error(cp, "a channel is \"below\", \"noise\", an image/video path or {\"layers\": [...]}"));
+                    self.d.push(Diagnostic::error(cp, "a channel is \"below\", \"noise\", \"#composition\", an image/video path or {\"layers\": [...]}"));
                     ChannelC::None
                 }
             };
@@ -2543,6 +2570,14 @@ impl C<'_> {
                     if let Some(x) = self.anim_val(k, v, &p, refs) {
                         out.push((slot, ch, x));
                     }
+                }
+                None if !self.uniform_slots.is_empty() => {
+                    // A shader layer: the candidates are its uniforms too.
+                    let mut names: Vec<&str> = self.uniform_slots.iter().map(|u| u.0.as_str()).collect();
+                    let list = names.join(", ");
+                    names.extend_from_slice(val::ANIM_PROPS);
+                    let msg = format!("'{k}' is not animatable (this shader's uniforms: {list})");
+                    self.d.push(Diagnostic::error(p, msg).suggest(suggest(k, &names)));
                 }
                 None => {
                     self.d.push(Diagnostic::error(p, format!("'{k}' is not animatable")).suggest(suggest(k, val::ANIM_PROPS)));

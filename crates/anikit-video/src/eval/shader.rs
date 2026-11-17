@@ -38,6 +38,8 @@ pub(crate) enum ChannelC {
     Noise,
     /// A sub-composition (images, videos, text…) rendered at the layer's size.
     Layers(Vec<Node>),
+    /// A named composition (`"#name"`), through the shared `CompTextures` cache.
+    Comp { ev: Arc<Evaluator>, time: super::CompTime },
 }
 
 #[derive(Clone, Copy)]
@@ -109,6 +111,8 @@ pub(crate) enum ChanData {
     None,
     Noise,
     List(DisplayList),
+    /// Named composition at its own time (weak: the root evaluator owns it).
+    Comp(Weak<Evaluator>, f32),
 }
 
 pub(crate) struct Job {
@@ -284,6 +288,13 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> Pixmap {
     for (c, o) in &job.channels {
         owned.push(match c {
             ChanData::List(dl) => Some(list_texture(dl, assets, *o)),
+            ChanData::Comp(ev, t) => match (ev.upgrade(), assets) {
+                (Some(ev), Some(a)) => {
+                    let pm = a.textures().get(&ev, *t, 0);
+                    Some(finish_texture(Texture::from_rgba8(pm.width() as u32, pm.height() as u32, pm.data_as_u8_slice(), true), *o))
+                }
+                _ => None,
+            },
             _ => None,
         });
     }
@@ -292,7 +303,7 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> Pixmap {
         chans[i] = match c {
             ChanData::None => None,
             ChanData::Noise => Some(noise_texture()),
-            ChanData::List(_) => owned[i].as_ref(),
+            ChanData::List(_) | ChanData::Comp(..) => owned[i].as_ref(),
         };
     }
     let unis: Vec<(&str, &[f32])> = job.uniforms.iter().map(|(n, v)| (n.as_str(), v.as_slice())).collect();
@@ -329,6 +340,13 @@ impl Evaluator {
         // Content key: generators without composited inputs render once per distinct input.
         let key = if chans.iter().all(|(c, _)| !matches!(c, ChanData::List(_))) {
             let mut h = std::collections::hash_map::DefaultHasher::new();
+            for (c, _) in &chans {
+                if let ChanData::Comp(ev, t) = c {
+                    if let Some(ev) = ev.upgrade() {
+                        (Arc::as_ptr(&ev) as usize, crate::pipeline::textures::CompTextures::frame_index(&ev, *t)).hash(&mut h);
+                    }
+                }
+            }
             sc.id.hash(&mut h);
             size.hash(&mut h);
             for (_, u) in &uniforms {
@@ -389,6 +407,7 @@ impl Evaluator {
                         }
                         ChanData::List(DisplayList { width: dw as u32, height: dh as u32, background: Rgba([0.0; 4]), ops })
                     }
+                    ChannelC::Comp { ev, time } => ChanData::Comp(Arc::downgrade(ev), time.map(lt, ev.duration)),
                 },
                 *o,
             ));

@@ -1231,8 +1231,14 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
             }
         }
         Kind::Component(c, _) => c.duration().is_some_and(|d| la >= d),
+        // A shader is static only if it ignores time and every input is static
+        // (animated uniforms are tracks and expressions, checked above).
         Kind::Shader(sc) => !sc.dynamic && sc.channels.iter().all(|(c, _)| match c {
             shader::ChannelC::Layers(ns) => ns.iter().all(|c| node_static(c, a, b)),
+            shader::ChannelC::Comp { ev, time } => {
+                let (ca, cb) = (time.map(la, ev.duration), time.map(lb, ev.duration));
+                ev.is_static(ca.min(cb), ca.max(cb)) && !(time.looped && cb < ca)
+            }
             _ => true,
         }),
         _ => true,

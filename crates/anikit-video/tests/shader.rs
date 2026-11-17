@@ -128,3 +128,45 @@ fn static_shader_renders_once() {
     assert!(!ev.is_static(0.1, 1.9));
     assert_ne!(ev.eval(0.1), ev.eval(1.5));
 }
+
+#[test]
+fn named_composition_channel() {
+    let ev = build(
+        r##"{ "size": [32, 32], "compositions": { "card": { "size": [16, 16], "duration": 1, "layers": [ { "shape": "rect", "fill": "#00ff00", "width": "100%", "height": "100%" } ] } },
+            "scenes": [ { "layers": [ { "shader": "void mainImage(out vec4 c, in vec2 p) { c = texture(iChannel0, p / iResolution.xy).gbra; }", "channels": [ "#card" ] } ] } ] }"##,
+    );
+    assert!(near(px(&ev, 0.1, 16, 16), [255, 0, 0, 255], 1), "{:?}", px(&ev, 0.1, 16, 16));
+    let d = diags(r##"{ "compositions": { "card": { "duration": 1, "layers": [ "x" ] } }, "scenes": [ { "layers": [ { "shader": "aurora", "channels": [ "#cards" ] } ] } ] }"##);
+    assert!(d.iter().any(|d| d.contains("card")), "{d:?}");
+}
+
+#[test]
+fn uniform_names_and_misplaced_keys() {
+    let d = diags(r#"{ "scenes": [ { "layers": [ { "shader": "aurora", "animate": [ { "to": { "intensty": 2 } } ] } ] } ] }"#);
+    assert!(d.iter().any(|d| d.contains("intensty") && d.contains("intensity")), "{d:?}");
+    let d = diags(r#"{ "scenes": [ { "layers": [ { "text": "hi", "uniforms": { "a": 1 } } ] } ] }"#);
+    assert!(d.iter().any(|d| d.starts_with("warning") && d.contains("uniforms")), "{d:?}");
+    let d = diags(r#"{ "scenes": [ { "layers": [ { "src": "missing.glsl" } ] } ] }"#);
+    assert!(d.iter().all(|d| !d.contains("only applies")), "{d:?}");
+}
+
+/// Static spans never hide a change: animated uniforms and time-reading shaders aren't static.
+#[test]
+fn is_static_never_lies_for_shaders() {
+    for src in [
+        r#"{ "size": [16, 16], "scenes": [ { "duration": 2, "layers": [ { "shader": "uniform float k;\nvoid mainImage(out vec4 c, in vec2 p) { c = vec4(k); }", "animate": [ { "to": { "k": 1 }, "at": 0.5, "duration": 1 } ] } ] } ] }"#,
+        r#"{ "size": [16, 16], "scenes": [ { "duration": 2, "layers": [ { "shader": "void mainImage(out vec4 c, in vec2 p) { c = vec4(k); }", "uniforms": { "k": "=t * 0.3" } } ] } ] }"#,
+        r##"{ "size": [16, 16], "compositions": { "m": { "duration": 2, "layers": [ { "shape": "rect", "fill": "#fff", "width": 8, "height": 8, "animate": [ { "to": { "x": 12 }, "duration": 2 } ] } ] } },
+            "scenes": [ { "duration": 2, "layers": [ { "shader": "void mainImage(out vec4 c, in vec2 p) { c = texture(iChannel0, p / iResolution.xy); }", "channels": [ "#m" ] } ] } ] }"##,
+    ] {
+        let ev = build(src);
+        let frames: Vec<_> = (0..20).map(|i| render_rgba(&ev, 0.1 + i as f32 * 0.09, 1.0).2).collect();
+        for i in 1..frames.len() {
+            let (a, b) = (0.1 + (i - 1) as f32 * 0.09, 0.1 + i as f32 * 0.09);
+            if ev.is_static(a, b) {
+                assert_eq!(frames[i - 1], frames[i], "claimed static {a}..{b}: {src}");
+            }
+        }
+        assert!(frames.windows(2).any(|w| w[0] != w[1]), "nothing changed: {src}");
+    }
+}
