@@ -568,8 +568,8 @@ Music ducks smoothly under voice tracks. The master bus has a soft limiter.
 
 ## Cost per frame
 
-1080p, single thread, from `cargo run --release -p anikit-video --example component_cost`:
-- **eval** builds the ops;
+1080p from `cargo run --release -p anikit-video --example component_cost`:
+- **eval** builds the ops (3D kinds rasterise on all cores here);
 - **full render** rasterises every frame from scratch;
 - **incremental YUV** is the pipeline's path, which redraws only what changed since the previous frame;
 - **static frames** counts frames identical to the one before (from 0.5 s to 1.5 s). Those are deduplicated and encode as P_Skip almost free.
@@ -623,8 +623,8 @@ Slow ambient effects step their time (backgrounds 6–15 updates per second, amb
 | `metaballs` | 0.089 | 15.19 | 9.09 | 14/29 |
 | `god-rays` | 0.040 | 20.33 | 10.93 | 14/29 |
 | `lens-flare` | 0.003 | 10.34 | 6.21 | 14/29 |
-| `model` | 53.881 | 2.09 | 2.57 | 0/29 |
-| `text-3d` | 32.220 | 2.79 | 2.43 | 0/29 |
+| `model` | 32.984 | 2.01 | 2.80 | 0/29 |
+| `text-3d` | 19.773 | 1.68 | 2.08 | 0/29 |
 | `globe` | 0.316 | 9.81 | 11.84 | 0/29 |
 | `wipe` | 0.001 | 2.02 | 2.52 | 9/29 |
 | `iris` | 0.001 | 0.60 | 1.08 | 13/29 |
