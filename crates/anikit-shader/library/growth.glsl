@@ -2,6 +2,7 @@
 // frame. Spots divide, labyrinths fold, coral branches, then it is lit as a
 // relief: soft key light, ambient occlusion in the grooves, a glossy wet sheen.
 // Multi-pass: buffers A–D each take one simulation step.
+// anikit:aa off (the relief is smooth: no edges to anti-alias)
 // Uniforms: feed, kill, scale, color, color2, light, speed.
 uniform float feed;   // = 0.0545 feed rate: 0.030 spots … 0.062 coral (with kill)
 uniform float kill;   // = 0.062 kill rate: 0.057 labyrinths … 0.065 spots
@@ -15,7 +16,9 @@ uniform float speed;  // = 1.0 0 freezes the growth
 vec2 cellOf(vec2 p) { float s = max(1.0, floor(scale * iResolution.y / 1080.0 + 0.5)); return floor(p / s) * s + 0.5 * s; }
 vec2 at(vec2 c, vec2 d) {
     float s = max(1.0, floor(scale * iResolution.y / 1080.0 + 0.5));
-    return texture(iChannel0, (c + d * s) / iResolution.xy).rg;
+    // Exact texel reads (one load each); the edges wrap so the pattern tiles.
+    ivec2 q = ivec2(mod(c + d * s, iResolution.xy));
+    return texelFetch(iChannel0, q, 0).rg;
 }
 
 vec4 simStep(vec2 fragCoord) {
