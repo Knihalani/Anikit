@@ -8,6 +8,7 @@
 //! foreshortened into ellipses and batched into a handful of fills by
 //! brightness, so a frame is a few dozen ops however many dots there are.
 
+use super::fxkit;
 use super::style::*;
 use super::{rgba, Component, Ctx, Error, Prepare};
 use crate::dl::{FillRule, Op, Paint, Path, IDENTITY};
@@ -33,9 +34,9 @@ pub struct Globe {
     pub tilt: f32,
     /// Longitude facing the camera at the start (defaults to the middle of the arcs and markers).
     pub lon: Option<f32>,
-    /// Dot and atmosphere colour (defaults to a cool tint of the accent).
+    /// Dot and atmosphere colour (defaults to a cool sky blue with a touch of the accent).
     pub color: Option<Color>,
-    /// Arc colours: one colour, or a gradient from start to end (defaults to cyan → pink).
+    /// Arc colours: one colour, or a gradient from start to end (defaults to the theme accent warming to white).
     pub arc_color: Vec<Color>,
     /// Marker colour (defaults to the end of the arc gradient).
     pub marker_color: Option<Color>,
@@ -267,9 +268,11 @@ impl Component for Globe {
         let tilt = self.tilt.to_radians();
         let v = View { cs: (-spin).sin_cos(), ct: tilt.sin_cos(), cx: w * 0.5, cy: h * 0.5, r };
         let dark = ctx.theme.dark;
-        let base = self.color.map(|c| c.0).unwrap_or_else(|| mix(rgba(0.62, 0.78, 1.0, 1.0), ctx.theme.accent, 0.25));
-        let arc_a = self.arc_color.first().map(|c| c.0).unwrap_or(rgba(0.35, 0.9, 1.0, 1.0));
-        let arc_b = self.arc_color.get(1).map(|c| c.0).unwrap_or(if self.arc_color.len() == 1 { arc_a } else { rgba(1.0, 0.42, 0.75, 1.0) });
+        // Defaults: a cool (Rayleigh) blue atmosphere and dots, arcs in the theme accent warming to white.
+        let base = self.color.map(|c| c.0).unwrap_or_else(|| mix(rgba(0.55, 0.75, 1.0, 1.0), ctx.theme.accent, 0.12));
+        let acc = ctx.theme.accent;
+        let arc_a = self.arc_color.first().map(|c| c.0).unwrap_or_else(|| mix(acc, rgba(1.0, 1.0, 1.0, 1.0), 0.25));
+        let arc_b = self.arc_color.get(1).map(|c| c.0).unwrap_or(if self.arc_color.len() == 1 { arc_a } else { fxkit::hot(acc, 0.7) });
         let mark_c = self.marker_color.map(|c| c.0).unwrap_or(arc_b);
         let fade = intro;
         let mut out = Vec::new();
@@ -393,7 +396,9 @@ impl Component for Globe {
             let wid = (r * 0.0075).max(1.4);
             let (path, _) = arc_path(&v, samples, 0.0, head);
             if !path.is_empty() {
-                glow_ops.push(Op::Stroke { path: path.clone(), paint: paint(0.3 * fade), stroke: line_style(wid * 4.5), transform: IDENTITY });
+                // Soft glow: two wide faint strokes falling off from the core.
+                glow_ops.push(Op::Stroke { path: path.clone(), paint: paint(0.07 * fade), stroke: line_style(wid * 8.0), transform: IDENTITY });
+                glow_ops.push(Op::Stroke { path: path.clone(), paint: paint(0.16 * fade), stroke: line_style(wid * 3.6), transform: IDENTITY });
                 out.push(Op::Stroke { path, paint: paint(0.9 * fade), stroke: line_style(wid), transform: IDENTITY });
             }
             // A comet-like pulse runs along each drawn arc every 2.6 s.
@@ -401,11 +406,22 @@ impl Component for Globe {
                 let ph = ((p0 - self.draw) / 2.6).fract();
                 let tip = ease_in_out(ph / 0.8);
                 if ph < 0.8 {
-                    for (len, wk, al) in [(0.22, 1.6, 0.45), (0.1, 2.2, 0.95)] {
-                        let (pp, _) = arc_path(&v, samples, (tip - len).max(0.0), tip);
+                    // Comet: a tail that tapers and fades behind a glowing head.
+                    let len = 0.24;
+                    let fade_in = ease_out(clamp01(ph / 0.08)) * (1.0 - ease_in(clamp01((ph - 0.7) / 0.1)));
+                    let pc = mix(arc_b, rgba(1.0, 1.0, 1.0, 1.0), 0.55);
+                    const N: usize = 8;
+                    for s in 0..N {
+                        let (f0, f1) = (s as f32 / N as f32, (s + 1) as f32 / N as f32);
+                        let (pp, _) = arc_path(&v, samples, (tip - len * (1.0 - f0)).max(0.0), (tip - len * (1.0 - f1)).max(0.0));
                         if !pp.is_empty() {
-                            out.push(Op::Stroke { path: pp, paint: solid(alpha(mix(arc_b, rgba(1.0, 1.0, 1.0, 1.0), 0.5), al * fade)), stroke: line_style(wid * wk), transform: IDENTITY });
+                            let a = f1 * f1;
+                            out.push(Op::Stroke { path: pp, paint: solid(alpha(pc, a * fade * fade_in)), stroke: line_style(wid * (0.8 + 1.6 * a)), transform: IDENTITY });
                         }
+                    }
+                    if let (_, Some((x, y))) = arc_path(&v, samples, tip, tip) {
+                        glow_ops.push(fxkit::light(x, y, wid * 9.0, fxkit::gauss(pc, 0.75 * fade * fade_in)));
+                        out.push(circle(x, y, wid * 1.5, solid(alpha(rgba(1.0, 1.0, 1.0, 1.0), fade * fade_in))));
                     }
                 }
             }
