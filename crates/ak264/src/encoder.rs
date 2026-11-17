@@ -436,17 +436,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
             return;
         }
-        let (w00, w01, w10, w11) = ((8 - fx) * (8 - fy), fx * (8 - fy), (8 - fx) * fy, fx * fy);
-        let (w00, w01, w10, w11) = (w00 as u16, w01 as u16, w10 as u16, w11 as u16);
-        for y in 0..8 {
-            let r0: &[u8; 9] = d[o + y * s..o + y * s + 9].try_into().unwrap();
-            let r1: &[u8; 9] = d[o + (y + 1) * s..o + (y + 1) * s + 9].try_into().unwrap();
-            let row = &mut out[y * 8..y * 8 + 8];
-            for x in 0..8 {
-                let v = w00 * r0[x] as u16 + w01 * r0[x + 1] as u16 + w10 * r1[x] as u16 + w11 * r1[x + 1] as u16;
-                row[x] = ((v + 32) >> 6) as u8;
-            }
-        }
+        crate::simd::chroma_bilin8(d, o, s, fx, fy, out);
     }
 
     fn edges16(&self, mbx: usize, mby: usize) -> Edges<16> {

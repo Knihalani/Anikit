@@ -609,6 +609,46 @@ pub fn avg16(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     core::array::from_fn(|i| ((a[i] as u16 + b[i] as u16 + 1) >> 1) as u8)
 }
 
+/// Chroma bilinear MC of an 8×8 block at 1/8-sample phase (fx, fy) (8.4.2.2.2):
+/// `((8−fx)(8−fy)·A + fx(8−fy)·B + (8−fx)fy·C + fx·fy·D + 32) >> 6`, rows from
+/// `d[o ..]` with stride `s`.
+pub fn chroma_bilin8(d: &[u8], o: usize, s: usize, fx: i32, fy: i32, out: &mut [u8; 64]) {
+    assert!(o + 8 * s + 9 <= d.len() && (0..8).contains(&fx) && (0..8).contains(&fy));
+    let (w00, w01, w10, w11) = ((8 - fx) * (8 - fy), fx * (8 - fy), (8 - fx) * fy, fx * fy);
+    #[cfg(target_arch = "x86_64")]
+    if level() >= 1 {
+        #[target_feature(enable = "ssse3")]
+        unsafe fn f(p: *const u8, s: usize, w: [i32; 4], out: &mut [u8; 64]) {
+            use std::arch::x86_64::*;
+            // weights as (A, B) byte pairs for maddubs; every sum fits i16 (Σw = 64)
+            let wa = _mm_set1_epi16(((w[1] << 8) | w[0]) as i16);
+            let wb = _mm_set1_epi16(((w[3] << 8) | w[2]) as i16);
+            let r32 = _mm_set1_epi16(32);
+            let pair = |q: *const u8| _mm_unpacklo_epi8(_mm_loadl_epi64(q as *const __m128i), _mm_loadl_epi64(q.add(1) as *const __m128i));
+            let mut top = pair(p);
+            for y in 0..8 {
+                let bot = pair(p.add((y + 1) * s));
+                let v = _mm_add_epi16(_mm_maddubs_epi16(top, wa), _mm_maddubs_epi16(bot, wb));
+                let v = _mm_srli_epi16::<6>(_mm_add_epi16(v, r32));
+                _mm_storel_epi64(out.as_mut_ptr().add(y * 8) as *mut __m128i, _mm_packus_epi16(v, v));
+                top = bot;
+            }
+        }
+        // SAFETY: the assert bounds every read (9 bytes × 9 rows); SSSE3 detected.
+        unsafe { f(d.as_ptr().add(o), s, [w00, w01, w10, w11], out) };
+        return;
+    }
+    let (w00, w01, w10, w11) = (w00 as u16, w01 as u16, w10 as u16, w11 as u16);
+    for y in 0..8 {
+        let r0 = &d[o + y * s..o + y * s + 9];
+        let r1 = &d[o + (y + 1) * s..o + (y + 1) * s + 9];
+        for x in 0..8 {
+            let v = w00 * r0[x] as u16 + w01 * r0[x + 1] as u16 + w10 * r1[x] as u16 + w11 * r1[x + 1] as u16;
+            out[y * 8 + x] = ((v + 32) >> 6) as u8;
+        }
+    }
+}
+
 /// Sum of |second differences| of a 16×16 block, horizontally (x 1..15) and
 /// vertically (y 1..15).
 #[inline]
@@ -811,6 +851,25 @@ unsafe fn max_sad4_16_ssse3(a: *const u8, b: *const u8, h: usize) -> u32 {
 
 #[cfg(test)]
 mod maxsad_test {
+    #[test]
+    fn chroma_bilin8_matches() {
+        let d: Vec<u8> = (0..20 * 12).map(|i| (i * 53 % 256) as u8).collect();
+        for fy in 0..8 {
+            for fx in 0..8 {
+                let mut a = [0u8; 64];
+                super::chroma_bilin8(&d, 3, 20, fx, fy, &mut a);
+                let (w00, w01, w10, w11) = ((8 - fx) * (8 - fy), fx * (8 - fy), (8 - fx) * fy, fx * fy);
+                for y in 0..8 {
+                    for x in 0..8 {
+                        let p = |xx: usize, yy: usize| d[3 + yy * 20 + xx] as i32;
+                        let v = (w00 * p(x, y) + w01 * p(x + 1, y) + w10 * p(x, y + 1) + w11 * p(x + 1, y + 1) + 32) >> 6;
+                        assert_eq!(a[y * 8 + x] as i32, v, "{fx},{fy} {x},{y}");
+                    }
+                }
+            }
+        }
+    }
+
     #[test]
     fn sum_sq_matches() {
         let p: Vec<u8> = (0..256).map(|i| (i * 97 % 256) as u8).collect();
