@@ -319,6 +319,7 @@ pub(crate) struct Band<'a> {
 }
 
 /// Result of motion search (quarter-pel units).
+#[derive(Clone)]
 struct Inter {
     mv: (i32, i32),
     /// SATD + lambda * MV bits.
@@ -731,6 +732,14 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
         let base = best.1;
         let base_q = (base.0 * 4, base.1 * 4);
+        // The full search often ends where its seed (a quick search) did; the seed
+        // already holds that prediction and its SATD cost (seeds reaching here have
+        // SAD above the quick-exit bound, so their cost is SATD-based).
+        if let Some(q) = seed {
+            if !quick && q.mv == base_q && q.sad > lambda * 24 {
+                return q.clone();
+            }
+        }
         let mut pred = [0u8; 256];
         {
             let (r, rs) = self.luma_ref_int(mbx, mby, base);
