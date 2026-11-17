@@ -119,7 +119,7 @@ scenes.append({"duration": b(2), "layers": [
 # 9. b18-20  Plunge.
 scenes.append({"duration": b(2), "camera": {"shake": {"amount": 18, "frequency": 14, "at": 0.0, "duration": 0.4}},
   "layers": [
-    {"src": "shaders/quench.glsl", "uniforms": dict(Q, dip=0.1, camA=0.2, camH=0.42, camD=2.4, camY=0.3),
+    {"src": "shaders/quench.glsl", "uniforms": dict(Q, dip=0.1, camA=0.15, camH=1.05, camD=2.3, camY=0.1),
      "animate": [{"to": {"dip": 0.85}, "duration": 0.18, "ease": "outExpo"},
                  {"to": {"steam": 1.0}, "duration": 0.25, "ease": "outCubic"},
                  {"to": {"cool": 0.45}, "duration": b(2), "ease": "outCubic"},
@@ -131,7 +131,7 @@ scenes.append({"duration": b(2), "camera": {"shake": {"amount": 18, "frequency":
 ]})
 # 10. b20-22  Closer, the cooling front climbs.
 scenes.append({"duration": b(2), "layers": [
-    {"src": "shaders/quench.glsl", "uniforms": dict(Q, dip=0.85, steam=1.0, cool=0.45, camA=0.75, camH=0.3, camD=1.7, camY=0.35, lens=1.6),
+    {"src": "shaders/quench.glsl", "uniforms": dict(Q, dip=0.85, steam=1.0, cool=0.45, camA=1.05, camH=0.06, camD=1.25, camY=0.32, lens=1.3),
      "animate": [{"to": {"cool": 1.0, "steam": 0.8, "camY": 0.42}, "duration": b(2), "ease": "inOutSine"}]},
 ]})
 
@@ -156,16 +156,16 @@ scenes.append({"duration": b(7), "transition": {"type": "fadeWhite", "duration":
                          {"to": {"zoom": 0.88}, "at": b(3) + 0.6, "duration": b(4) - 0.6, "ease": "linear"}]},
   "layers": [
     {"src": "shaders/forge.glsl", "uniforms": {"heat": 0.75, "zoom": 1.4, "flare": 0.0, "rise": 0.7}, "depth": 2.0, "opacity": 0.55},
-    {"component": "sparks", "props": {"bursts": [0.0, b(3)], "origin": [0.5, 0.62], "count": 900, "power": 1.3, "gravity": 1100,
-                                       "life": 1.4, "direction": -90, "spread": 360, "colors": ["#FFF6DC", "#FF5A12"], "seed": 41}},
+    {"component": "sparks", "props": {"bursts": [0.0, b(3)], "origin": [0.5, 0.7], "count": 700, "power": 1.3, "gravity": 1100,
+                                       "life": 1.4, "direction": -90, "spread": 150, "colors": ["#FFF6DC", "#FF5A12"], "seed": 41}},
     {"component": "text-3d", "props": {"text": "HALDEN", "font": SERIF, "weight": 400, "color": "#D8C9B2", "metallic": 0.95, "roughness": 0.2,
                                         "tracking": 0.06, "depth": 0.16, "intro": "drop", "stagger": 0.05, "sway": 4, "shine": 1.5, "angle": -8, "tilt": 6},
      "width": 1700, "height": 520, "y": 470},
-    {"text": "Hand-forged knives · Sheffield, since 1911", "font": SERIF, "size": 54, "color": BONE, "y": 800,
+    {"text": "Hand-forged knives · Sheffield, since 1911", "font": SERIF, "size": 54, "color": BONE, "y": 860, "shadow": {"x": 0, "y": 4, "blur": 24, "color": "#000000E0"},
      "enter": {"preset": "mask by line up", "delay": b(3)}},
-    {"shape": "line", "points": [[760, 870], [1160, 870]], "stroke": MOLTEN, "strokeWidth": 2,
+    {"shape": "line", "points": [[760, 925], [1160, 925]], "stroke": MOLTEN, "strokeWidth": 2,
      "animate": [{"from": {"trimEnd": 0}, "at": b(3.5), "duration": 0.5, "ease": "outExpo"}]},
-    label("One knife. For life.", 960, 900, b(4), anchor="top", color="#EDE6D890"),
+    label("One knife. For life.", 960, 950, b(4), anchor="top", color="#EDE6D890"),
 ]})
 
 spec = {

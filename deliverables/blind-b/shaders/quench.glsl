@@ -36,7 +36,7 @@ float sdBlade(vec3 p) {
 }
 
 float tempAt(vec3 p) {
-  float crust = smoothstep(0.5, 0.75, 0.6 * fbm(p.xy * vec2(14.0, 9.0)) + 0.4 * vnoise(p.xy * 60.0));
+  float crust = smoothstep(0.52, 0.78, 0.75 * fbm(p.xy * vec2(14.0, 9.0)) + 0.25 * fbm(p.xy * 31.0 + 5.0));
   float tt = heat * (1.0 - 0.45 * crust) * (1.05 - 0.4 * smoothstep(-0.3, 1.0, p.y));
   // a cooling front climbs the blade from the oil line
   float front = cool * 1.5 - 0.15 + 0.05 * fbm(p.xy * 12.0);
@@ -127,14 +127,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec2 es = vec2(dot(e, rt), dot(e, up)) * lens / dot(e, fw);
     vec2 sv = uv - es;
     float hgt = max(sv.y, 0.0);
-    float wid = 0.06 + hgt * 0.55;
+    float wid = 0.08 + hgt * 0.8;
     vec2 sp = vec2(sv.x / wid * 0.6, hgt * 2.2 - t * 1.6);
     float d = fbm(sp * 1.8 + 1.4 * vec2(fbm(sp * 2.4 + vec2(0.0, -t * 0.7)), fbm(sp * 2.4 + 7.0)));
     float prof = exp(-pow(sv.x / wid, 2.0) * 1.5);
-    float dens = smoothstep(0.32, 0.78, d) * prof * steam * smoothstep(-0.01, 0.05, sv.y) * exp(-hgt * 1.2);
+    float dens = smoothstep(0.26, 0.72, d) * prof * steam * smoothstep(-0.01, 0.05, sv.y) * exp(-hgt * 0.7);
     vec3 sc = mix(vec3(0.66, 0.68, 0.72), glowC * 1.3 + vec3(0.1), exp(-hgt * 6.0) * (1.0 - cool * 0.5));
     sc *= 0.6 + 0.6 * smoothstep(0.3, 0.9, d);
-    col = mix(col, sc, clamp(dens * 1.5, 0.0, 0.92));
+    col = mix(col, sc, clamp(dens * 2.3, 0.0, 0.95));
   }
   col *= 1.0 - 0.4 * dot(uv, uv);
   fragColor = vec4(col, 1.0);
