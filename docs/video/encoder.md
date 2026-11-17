@@ -42,7 +42,7 @@ Other entry points:
 | `cabac` | `true` | Main profile with CABAC. `false` gives Constrained Baseline with CAVLC: 35–60% larger files, slightly faster. |
 | `deblock` | `false` | The in-loop filter. It helps only at QP ≥ 34 (+0.1–0.2 dB) and costs about 25% speed; at QP ≤ 28 it *lowers* PSNR on this content (sharp edges, and copied macroblocks next to changing areas get re-filtered every frame). | With `threads > 1`, each slice deblocks its own rows in parallel (`disable_deblocking_filter_idc` 2).
 | `subpel` | `true` | Quarter-pel motion refinement (exact 6-tap interpolation, half-pel planes kept up to date incrementally). It saves 16–46% on real renderer clips with sub-pixel motion, for 15–25% more time. |
-| `aq_strength` | `0.5` | Adaptive quantisation: flat, dark macroblocks get a lower QP (up to −(4 + 3)·strength), everything else keeps `qp`. It stops dark dithered gradients from turning into blocks. 0 = constant QP. |
+| `aq_strength` | `0` | Adaptive quantisation: flat, dark macroblocks get a lower QP (up to −(4 + 3)·strength), everything else keeps `qp`. At 0.5 it stops dark dithered gradients from turning into grid-aligned blocks, at +8–17% size on dark UI content. 0 = constant QP. |
 | `skip_threshold` | `0` | Perceptual skip: code a changed macroblock as a copy when every sample is within this distance of the reconstructed reference. Off by default (see the measurements below). |
 | `threads` | 1 | Slices per frame for `encode()`. Chunk-parallel modes ignore it. |
 | `full_range` | `false` | Signals the colour range (BT.709 primaries/matrix are always signalled). |
@@ -401,7 +401,7 @@ The x264-style symmetric variant (raising QP on busy macroblocks) was measured
 first and rejected. On launch at QP 23 it doubled the size and lost 1.5 dB,
 because it moves bits from text to the background.
 
-Effect at QP 23, 4 cores, AQ 0 → 0.5 (the default):
+Effect at QP 23, 4 cores, AQ 0 → 0.5:
 
 | Clip | fps | Size | PSNR-Y |
 |---|---|---|---|
@@ -415,6 +415,17 @@ On the dark clip, QP 23 with AQ 0.5 matches QP 19 without AQ: 37 vs 36 KB,
 and 4×4-smoothed PSNR 63.95 vs 64.07 dB. That is the `--quality best` level
 that showed no blocking, while busy content stays at QP 23. AQ 1.0 goes further
 (69 KB, 67.3 dB smoothed) for about +45% on launch.
+
+AQ is off by default. The cheaper fix is upstream: a temporally stable dither
+(the same pattern every frame) lets P_Skip and inter prediction preserve it at
+no cost. Use AQ 0.5 where delivered quality shows banding.
+
+Two cheaper encoder-side fixes were tried for isolated one-level squares that
+pop when flat areas are refreshed. Neither was kept:
+- Penalising intra coding in flat P-frame macroblocks cut that flicker 4× but
+  let the gradient drift by 3.3 dB (4×4-smoothed).
+- Keeping DC-only corrections out of decimation had no effect at QP 23, because
+  the zero-residual bounds already handle those blocks.
 
 No QP short of near-lossless keeps the dither itself: a ±0.5-level pattern is
 below the quantiser step. What AQ fixes is the block structure: band edges follow
