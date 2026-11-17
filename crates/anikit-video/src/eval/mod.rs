@@ -1237,7 +1237,8 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
             shader::ChannelC::Layers(ns) => ns.iter().all(|c| node_static(c, a, b)),
             shader::ChannelC::Comp { ev, time } => {
                 let (ca, cb) = (time.map(la, ev.duration), time.map(lb, ev.duration));
-                ev.is_static(ca.min(cb), ca.max(cb)) && !(time.looped && cb < ca)
+                let wraps = time.looped && (cb < ca || lb - la >= ev.duration / time.speed.abs().max(1e-6));
+                if wraps { ev.is_static(0.0, ev.duration) } else { ev.is_static(ca.min(cb), ca.max(cb)) }
             }
             _ => true,
         }),
