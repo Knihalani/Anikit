@@ -56,6 +56,7 @@ pub fn ext_box(var: f64) -> (usize, f32) {
 /// `r ≤ 126` plus edge rows at weight `a`. Fixed point (weights × 2¹⁶; the sum
 /// stays below 2³²: inner ≤ 255·2¹⁶, edges ≤ 510·2¹⁶), one fused pass per row.
 #[inline(always)]
+#[allow(clippy::too_many_arguments)]
 fn ext_box_rows(src: &[u8], dst: &mut [u8], row: usize, n: usize, r: usize, a: f32, sums: &mut Vec<u16>, zero: &mut Vec<u8>) {
     if a <= 0.0 {
         return box_rows(src, dst, row, n, r, sums);

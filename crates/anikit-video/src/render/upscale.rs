@@ -16,6 +16,8 @@ pub struct Upscaler {
     /// Mitchell otherwise); `Some(true)` forces B-spline, `Some(false)` Mitchell.
     pub bspline: Option<bool>,
     hrows: Vec<i32>,
+    /// Rounding offsets (dither + ½) for the 64 dither rows, spread over channels.
+    zrows: Vec<i32>,
     xtab: Vec<(u32, u32, u32)>,
     rows: [Vec<u8>; 2],
     row_ids: [usize; 2],
@@ -269,6 +271,15 @@ impl Upscaler {
         let row_len = ow * C;
         let dtab = dither_table();
         let x0 = ox as usize;
+        let mut zrows = std::mem::take(&mut self.zrows);
+        zrows.clear();
+        for ty in 0..64usize {
+            let dt = &dtab[ty * 64..ty * 64 + 64];
+            zrows.extend((0..row_len).map(|k| if C == 4 && k % 4 == 3 { 1 << 19 } else { dt[(x0 + k / C) & 63] }));
+        }
+        let zrows_ref = &zrows;
+        #[cfg(target_arch = "x86_64")]
+        let avx2 = std::arch::is_x86_feature_detected!("avx2");
         use rayon::prelude::*;
         out.par_chunks_mut(stride).take(oh).enumerate().for_each(|(y, orow)| {
             let v = ((oy + y as i64) as f64 + 0.5 - dev.y0) * sy - 0.5;
@@ -285,31 +296,78 @@ impl Upscaler {
                 &hrows[rs[3] * row_len..(rs[3] + 1) * row_len],
             );
             let yy = (oy + y as i64) as usize;
-            let dt = &dtab[(yy & 63) * 64..(yy & 63) * 64 + 64];
+            // The rounding offset (dither + ½) for this row, spread over channels
+            // (no dither on alpha): one of 64 rows, built once per call.
+            let z = &zrows_ref[(yy & 63) * row_len..(yy & 63) * row_len + row_len];
             let d = &mut orow[..row_len];
-            for (x, (((o, a), b), (c, e))) in d.chunks_exact_mut(C).zip(r0.chunks_exact(C)).zip(r1.chunks_exact(C)).zip(r2.chunks_exact(C).zip(r3.chunks_exact(C))).enumerate() {
-                let dz = dt[(x0 + x) & 63];
-                for k in 0..C {
-                    let v = wq[0] * a[k] + wq[1] * b[k] + wq[2] * c[k] + wq[3] * e[k];
-                    // No dither on alpha.
-                    let z = if C == 4 && k == 3 { 1 << 19 } else { dz };
-                    o[k] = ((v + z) >> 20).clamp(0, 255) as u8;
-                }
-                // Premultiplied: overshoot (Mitchell's lobes) must not exceed alpha.
-                if C == 4 {
-                    let al = o[3];
-                    for v in &mut o[..3] {
-                        *v = (*v).min(al);
-                    }
-                }
+            #[cfg(target_arch = "x86_64")]
+            if avx2 {
+                // SAFETY: feature checked above.
+                unsafe { vrow_avx2::<C>([r0, r1, r2, r3], wq, z, d) };
+                return;
             }
+            vrow::<C>([r0, r1, r2, r3], wq, z, d);
         });
         self.hrows = hrows;
+        self.zrows = zrows;
     }
 }
 
 /// 64×64 tile of rounding offsets in 1/2^20 units: 0.5 (round) plus a
 /// triangular dither of ±0.5 LSB, fixed per pixel position.
+/// One output row of the vertical pass: flat element-wise loops (they vectorise;
+/// a per-pixel loop over `chunks_exact(C)` didn't). `z` is the rounding offset
+/// (dither + ½, ×2²⁰) per element.
+#[inline(always)]
+fn vrow<const C: usize>(r: [&[i32]; 4], wq: [i32; 4], z: &[i32], d: &mut [u8]) {
+    let n = d.len();
+    let (r0, r1, r2, r3, z) = (&r[0][..n], &r[1][..n], &r[2][..n], &r[3][..n], &z[..n]);
+    for k in 0..n {
+        let v = wq[0] * r0[k] + wq[1] * r1[k] + wq[2] * r2[k] + wq[3] * r3[k];
+        d[k] = ((v + z[k]) >> 20).clamp(0, 255) as u8;
+    }
+    // Premultiplied: overshoot (Mitchell's lobes) must not exceed alpha.
+    if C == 4 {
+        for o in d.chunks_exact_mut(4) {
+            let al = o[3];
+            o[0] = o[0].min(al);
+            o[1] = o[1].min(al);
+            o[2] = o[2].min(al);
+        }
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn vrow_avx2<const C: usize>(r: [&[i32]; 4], wq: [i32; 4], z: &[i32], d: &mut [u8]) {
+    if C != 4 {
+        return vrow::<C>(r, wq, z, d);
+    }
+    use std::arch::x86_64::*;
+    let n = d.len();
+    let (r0, r1, r2, r3, z) = (&r[0][..n], &r[1][..n], &r[2][..n], &r[3][..n], &z[..n]);
+    for k in 0..n {
+        let v = wq[0] * r0[k] + wq[1] * r1[k] + wq[2] * r2[k] + wq[3] * r3[k];
+        d[k] = ((v + z[k]) >> 20).clamp(0, 255) as u8;
+    }
+    // min(colour, alpha) per pixel, 8 pixels at a time: broadcast each pixel's
+    // alpha byte over its 4 bytes and take the byte-wise minimum (alpha stays).
+    let bcast = _mm256_setr_epi8(3, 3, 3, 3, 7, 7, 7, 7, 11, 11, 11, 11, 15, 15, 15, 15, 3, 3, 3, 3, 7, 7, 7, 7, 11, 11, 11, 11, 15, 15, 15, 15);
+    let mut i = 0;
+    while i + 32 <= n {
+        let p = _mm256_loadu_si256(d.as_ptr().add(i) as *const __m256i);
+        let a = _mm256_shuffle_epi8(p, bcast);
+        _mm256_storeu_si256(d.as_mut_ptr().add(i) as *mut __m256i, _mm256_min_epu8(p, a));
+        i += 32;
+    }
+    for o in d[i..].chunks_exact_mut(4) {
+        let al = o[3];
+        o[0] = o[0].min(al);
+        o[1] = o[1].min(al);
+        o[2] = o[2].min(al);
+    }
+}
+
 fn dither_table() -> &'static [i32] {
     static T: std::sync::OnceLock<Vec<i32>> = std::sync::OnceLock::new();
     T.get_or_init(|| {

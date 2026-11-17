@@ -76,16 +76,6 @@ impl View<'_> {
     }
 }
 
-/// `x.clamp(0.0, 255.0) as u8`, bit for bit (NaN → 0), but vectorisable: Rust's
-/// saturating float → int cast stops LLVM from vectorising a loop (measured 4×).
-#[inline(always)]
-pub(crate) fn sat_u8(x: f32) -> u8 {
-    // max/min map NaN to 0 and keep the value in 0..=255, so the cast is in range.
-    let v = x.max(0.0).min(255.0);
-    // SAFETY: v is finite and in [0, 255].
-    unsafe { v.to_int_unchecked::<i32>() as u8 }
-}
-
 /// Speed/quality trade-off.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum Quality {

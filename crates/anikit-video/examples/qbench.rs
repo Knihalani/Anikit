@@ -722,7 +722,11 @@ fn main() {
         let t_audio0 = e.from.unwrap_or(0.0);
         let dur = e.to.unwrap_or(ev.duration) - t_audio0;
         // 1. Timed default renders (fresh evaluator each time, so no warm caches carry over).
+        // `--exact-components`: the default pipeline with only the components' own
+        // shortcuts off (what would switching them to exact cost?).
+        let exact_components = has("--exact-components");
         anikit_video::components::set_draft(false);
+        anikit_video::components::set_reference(exact_components);
         let mut walls = Vec::new();
         let runs = e.runs.unwrap_or(runs).min(runs);
         for run in 0..runs {
@@ -757,6 +761,7 @@ fn main() {
             }
         }
         eprintln!("   default: {:.3} s, {:.0} fps", row.wall_s, row.fps);
+        anikit_video::components::set_reference(false);
         // 2. Reference.
         let t = Instant::now();
         let ev_r = build(&spec_path).unwrap();
@@ -765,6 +770,7 @@ fn main() {
         row.reference_s = t.elapsed().as_secs_f64();
         eprintln!("   reference: {:.1} s", row.reference_s);
         // 3. Render fidelity: tap the default pipeline's frames.
+        anikit_video::components::set_reference(exact_components);
         let ev_t = build(&spec_path).unwrap();
         let slots: Mutex<Vec<Option<Frame>>> = Mutex::new(vec![None; n]);
         let tap = |k: usize, b: &ak264::YuvBuffer| {
@@ -801,6 +807,7 @@ fn main() {
             }
         }
         let _ = std::fs::remove_file(&tmp);
+        anikit_video::components::set_reference(false);
         for k in get("--dump").into_iter().flat_map(|v| v.split(',').filter_map(|x| x.parse::<usize>().ok()).collect::<Vec<_>>()) {
             if k < n {
                 dump(&out_dir.join(format!("{}-f{k}", e.name)), &test[k], &refs[k], k.checked_sub(1).map(|j| (&test[j], &refs[j])));
