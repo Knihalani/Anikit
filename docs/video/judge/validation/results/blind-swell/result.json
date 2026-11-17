@@ -1,0 +1,522 @@
+{
+  "name": "blind-swell",
+  "tags": [
+    "editorial-data",
+    "3d-cg",
+    "motion-design"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "cosmos-spacetime-odyssey",
+    "jpmorgan-payments"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 5,
+      "composition": 4,
+      "typography": 3,
+      "colour": 5,
+      "light_texture": 4,
+      "motion": 4,
+      "craft": 3,
+      "originality": 3
+    },
+    "overall": 3.88,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find one visual metaphor (for example the water parcel's orbit as the through-line) and build every frame from it, instead of switching between stock footage and line effects",
+      "Replace the default serif-plus-mono label pairing with a typographic system that has scale contrast and actually interacts with the waves",
+      "Commit to one material world with real light (simulated water, physical texture) rather than stock ocean plates mixed with flat vector lines",
+      "Build one visual system that carries the wave from wind to shore, instead of alternating vector line fields and unrelated photographic plates",
+      "Give the type a real idea: let it ride, break or be carried by the swell, with expressive scale. At present it is a fixed caption block",
+      "Fix the craft basics (truncated labels, repeated layout) and add material depth (spray, foam, real water light) where the subject demands it",
+      "Build typography with a point of view: integrate the type into the water and lines with real scale contrast, instead of the same label-plus-serif slide every frame",
+      "Commit to one visual world (either the line-field diagram or photographic water) and choreograph continuous motion through it, the way B moves through its single built map",
+      "Push the strong orbital-motion idea into the central concept and give the water real material, light and texture instead of generic line fields and stock sunsets"
+    ],
+    "tells": [
+      "The textbook 'tasteful AI' system: a dark ground, a small tracked monospace caps data label above an editorial serif headline with the key word in italics, a single coral accent, and a mostly empty frame",
+      "Slide-deck structure: the headline sits top-left or bottom-left in the same slot in nearly every frame while the background changes, so it reads as one layout with the words swapped",
+      "Generic line-field and wireframe-terrain effects plus stock sunset ocean and caustics plates; the stock plates are mixed with vector diagrams without a unified material world",
+      "Data labels are truncated or meaningless ('FETCH 1,', 'WAVELENGTH 3', 'DEPTH < 1.3 \u00d7 HEIGHT \u00b7 TH'), a sign of auto-generated filler",
+      "The ending is a literal end card ('Swell.' plus a tracked subtitle and duration) with no surprise; the idea is a literal illustrated explainer of how waves form",
+      "Textbook 'tasteful AI' formula: dark navy ground, small tracked monospace caps label above a generic editorial serif headline with one italic word, a single coral accent",
+      "Slide-deck structure: the same label-plus-headline block sits top-left in five of six frames, one layout with the words swapped",
+      "Truncated and broken data labels ('FETCH 1,', 'WAVELENGTH 3', 'HEIGHT \u00b7 TH') show automated text fitting with no human proofing",
+      "Line-field wave graphics are default generative effects. The underwater and sunset plates look like stock or AI footage, unrelated to the line language",
+      "The ending is a centred-left 'Swell.' wordmark over a sun-on-water gradient with the tagline 'THE LIFE OF A WAVE \u00b7 15 SECONDS'. It is literal and forgettable",
+      "The textbook 'tasteful AI' recipe: a dark ground, a small tracked monospace caps label above an editorial-serif headline with one italic word, and a single coral accent",
+      "The same layout in every frame (label top-left, sentence below, image behind) with the words swapped, like a slide deck",
+      "The data labels are broken or truncated ('FETCH 1,', 'WAVELENGTH 3', 'DEPTH < 1.3 \u00d7 HEIGHT \u00b7 TH'), meaning text was generated rather than proofed",
+      "Line-field wave visuals are a generic effect without a subject; the sunset ocean stills are stock-like with flat, unmotivated light",
+      "The end card is a centred serif word, a period and a caps subtitle over a sunset: the default sign-off",
+      "Redeeming element: the shrinking orbital-motion circles in frame 4 are a real explanatory idea"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.38,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "cosmos-spacetime-odyssey": {
+      "overall": 7.88,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "jpmorgan-payments": {
+      "overall": 4.75,
+      "judged_professional": "1/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 7.34,
+  "delta": -3.46,
+  "trials": [
+    {
+      "key": {
+        "A": "jpmorgan-payments",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "cosmos-spacetime-odyssey"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "One material system is held across all six frames: champagne-gold metal, frosted glass and a warm cream ground, lit by hard raking window light with long, believable cast shadows",
+              "The brand application is consistent and the small UI type is legible and correct ($2.45M balance, chart axes, 'MONTHLY SUMMARY', J.P.Morgan lockups), which generated or template output rarely gets right",
+              "The frames vary: the coin rides a wave, sits on a device, becomes a hub in a tiled floor, runs along a conveyor of coins, sits behind a glass tablet with stylus, then stacks into a lock. That implies a choreographed object journey, not one layout repeated",
+              "Against it: this is the familiar 'premium fintech glass and gold' look, and the metaphors (conveyor equals flow, lock equals security) are literal",
+              "Type is incidental: UI type sits on the devices and there is no typographic idea"
+            ],
+            "gaps": [
+              "Swap the stock fintech metaphors (lock, conveyor, chart) for one ownable visual idea about what JPM Payments actually changes",
+              "Give the typography a role: a voice or title system integrated into the material world, not just UI decals",
+              "Break the cream-and-gold safety with one surprising palette or scale shift so the piece is memorable, not just expensive-looking"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea that only this piece could have: the world is a clockwork map, and the cities wind up out of it as mechanical models seen from an astrolabe",
+              "Real material language: tooled leather and brass bands with engraved heraldry, carved wood, verdigris, and an inner sun as a warm light source that motivates the flares and glow",
+              "Credits sit inside the world, each with a small heraldic glyph and a classical caps serif, placed beside the mechanisms rather than slapped on centre",
+              "Implied choreography: a camera flight across the map, gears raising towers, armillary rings sweeping, and a pull-back to the title band that echoes the opening frame (a bookend)",
+              "The palette is deliberate: sepia, brass and slate-green map, sun-bleached highlights"
+            ],
+            "gaps": [
+              "It is the benchmark here; the remaining gap is mostly the conventional, trailer-style serif treatment of the main title",
+              "Credit type is small and sometimes fights busy mechanical backgrounds",
+              "The heavy bloom on the bookend frames edges toward a generic 'epic' finish"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' system: a dark ground, a small tracked monospace caps data label above an editorial serif headline with the key word in italics, a single coral accent, and a mostly empty frame",
+              "Slide-deck structure: the headline sits top-left or bottom-left in the same slot in nearly every frame while the background changes, so it reads as one layout with the words swapped",
+              "Generic line-field and wireframe-terrain effects plus stock sunset ocean and caustics plates; the stock plates are mixed with vector diagrams without a unified material world",
+              "Data labels are truncated or meaningless ('FETCH 1,', 'WAVELENGTH 3', 'DEPTH < 1.3 \u00d7 HEIGHT \u00b7 TH'), a sign of auto-generated filler",
+              "The ending is a literal end card ('Swell.' plus a tracked subtitle and duration) with no surprise; the idea is a literal illustrated explainer of how waves form"
+            ],
+            "gaps": [
+              "Find one visual metaphor (for example the water parcel's orbit as the through-line) and build every frame from it, instead of switching between stock footage and line effects",
+              "Replace the default serif-plus-mono label pairing with a typographic system that has scale contrast and actually interacts with the waves",
+              "Commit to one material world with real light (simulated water, physical texture) rather than stock ocean plates mixed with flat vector lines"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A clear conceptual spine of scale and origin: a nebula held in a rock crater, a ship reflected in a human iris, a nautilus spiral, a protoplanetary disk, DNA, and finally the Helix Nebula as an eye",
+              "Visual rhymes between frames (eye to galaxy to shell spiral to DNA helix) imply match-cut choreography across scales",
+              "Photographic lighting and texture: wet rock, iris fibres, sand grain, translucent shell, dust in the DNA frame",
+              "Credits are small spaced caps placed in compositional negative space, and the title uses widely tracked caps over the eye, an earned echo of the cosmic-eye motif",
+              "The palette moves from cold blue-grey to warm sand to nebula orange and teal"
+            ],
+            "gaps": [
+              "The main title is a tracked sans over a centred image, close to the very convention flagged as a tell; it needs a more ownable treatment",
+              "Several frames (the DNA, the accretion disk) lean on familiar science-doc stock imagery rather than an invented visual",
+              "The credit type is generic and lives apart from the imagery; it could be woven into the match-cuts the way B's credits sit inside the world"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 33.6,
+        "cost_usd": 0.16316840000000002,
+        "tokens": 72339,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "jpmorgan-payments",
+        "B": "game-of-thrones",
+        "C": "cosmos-spacetime-odyssey",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 4,
+              "composition": 6,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 7,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "Generic 'premium fintech' look: cream ground, gold and frosted glass, one raking window-light shadow repeated in every frame with no change in light design",
+              "The hero object is a stock glass coin or lens with a generic ring icon. It is cloned onto a conveyor, a stack and a floor tile. These are stock 3D primitives standing in for an idea",
+              "Placeholder UI: '$2.45M' balance, a 'MONTHLY SUMMARY' pill, grey nav labels and a sparkline. It reads as filler dashboard, not designed interface",
+              "The idea is literal: payments equal coin, phone, conveyor belt, padlock. Each frame shows a feature, and there is no narrative or surprise",
+              "The frames feel like separate stills rather than choreographed shots. Nothing carries over between cuts except the colour grade",
+              "Some details are physically incoherent: a stylus writing on a floating glass tablet, a glowing ring set into wood tiles with gold seams. This is typical of image-model compositing"
+            ],
+            "gaps": [
+              "Find a single specific metaphor for moving money and build a continuous camera journey through it, instead of six unrelated icon vignettes",
+              "Replace the default UI and the generic lock and ring icons with designed interface and typography that has a point of view and works with the material world",
+              "Vary the light and scale across shots (macro to wide, warm to cool, a reveal) so the sequence has rhythm and a climax, as B does with its map-to-sigil build"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "An idea only this piece could have: the world as a clockwork map, with cities built by mechanisms and an astrolabe sun linking every location",
+              "Dense, tactile material work: engraved metal band with dragon relief, wood and brass cogs, carved city models, aged parchment map",
+              "Clear choreography: the astrolabe band opens and closes the sequence, and the camera flies over the map between mechanical builds. The structure is circular and motivated",
+              "Typography is a carved period serif with house sigils as bullets beside each credit. The title lockup is set into the metal ring and lit from behind",
+              "Deliberate narrow palette of bronze, bone, verdigris and smoky blue-grey, with hot backlight flares as punctuation"
+            ],
+            "gaps": [
+              "Credit type is small and occasionally fights busy mid-tones (e.g. over the gearwork); a touch more local contrast would help",
+              "The map frame is flatter in light than the mechanical builds around it",
+              "Little left to close: this is the benchmark entry"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Clear conceptual through-line of cosmic to biological rhymes: a nebula in a crater, an iris, a nautilus spiral, an accretion disc, DNA, a nebula-eye. The match-cuts on circles and spirals are deliberate",
+              "Real texture and specific light: wet sand, shell pearlescence, macro iris fibres, volumetric dust",
+              "Varied scale and camera across frames (macro, wide cosmic, organic close-up), which implies choreographed transitions rather than a repeated layout",
+              "Restrained credit type, small and tracked, placed in negative space. The title spreads widely across the eye-nebula as a final payoff"
+            ],
+            "gaps": [
+              "The eye-equals-universe and DNA imagery is a well-worn science-title vocabulary; B's world-specific invention is more original",
+              "Typography is a clean but generic sans with little character. It has no integration with the imagery comparable to B's sigils and carved lockup",
+              "The palette shifts shot to shot (blue-grey, sand, orange). A tighter grade would make it feel as authored as B's bronze world"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "Textbook 'tasteful AI' formula: dark navy ground, small tracked monospace caps label above a generic editorial serif headline with one italic word, a single coral accent",
+              "Slide-deck structure: the same label-plus-headline block sits top-left in five of six frames, one layout with the words swapped",
+              "Truncated and broken data labels ('FETCH 1,', 'WAVELENGTH 3', 'HEIGHT \u00b7 TH') show automated text fitting with no human proofing",
+              "Line-field wave graphics are default generative effects. The underwater and sunset plates look like stock or AI footage, unrelated to the line language",
+              "The ending is a centred-left 'Swell.' wordmark over a sun-on-water gradient with the tagline 'THE LIFE OF A WAVE \u00b7 15 SECONDS'. It is literal and forgettable"
+            ],
+            "gaps": [
+              "Build one visual system that carries the wave from wind to shore, instead of alternating vector line fields and unrelated photographic plates",
+              "Give the type a real idea: let it ride, break or be carried by the swell, with expressive scale. At present it is a fixed caption block",
+              "Fix the craft basics (truncated labels, repeated layout) and add material depth (spray, foam, real water light) where the subject demands it"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.8,
+        "cost_usd": 0.1658284,
+        "tokens": 72451,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "game-of-thrones",
+        "C": "jpmorgan-payments",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "One clear idea runs through every shot: the eye/iris as a cosmos, linking crater, iris, nautilus, accretion disc, DNA and the Helix-nebula eye in the title card",
+              "Every frame is a different object at a different scale (geological, biological, galactic), all inside one consistent cinematic grade",
+              "Real material detail: the crater's rock surface, wet iris stroma, sand with footprints, the nacre of the shell",
+              "The end title lands the idea: the nebula reads as an iris, so the whole opening was building to that card",
+              "Credit typography is restrained and placed with care against the image, though it's close to a standard broadcast sans"
+            ],
+            "gaps": [
+              "The credits use a tracked caps label over a name in a generic sans; they sit on top of the image instead of being built into it the way B's credits are",
+              "The shots are a sequence of hero objects; B moves its camera through one continuous built world",
+              "The 'COSMOS' wordmark, widely tracked caps over a nebula, is the expected solution and doesn't match the visual invention of the shots before it"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea that couldn't belong to any other show: the world is a clockwork map, an astrolabe that builds the political geography of the story",
+              "Real tactile material throughout: carved brass bands, wood and gear mechanisms, the Winterfell spike tree, a parchment map with ink rivers",
+              "Clear choreography: the camera flies continuously from the sun-lit astrolabe band down over mechanical cities that unfold, and the opening band returns as the title card",
+              "Each credit carries a house sigil and sits in a classical serif chosen to fit the world, with names placed inside the geography",
+              "A deliberate palette of warm brass and sunburst against cold slate map tones, with motivated light from the central sun"
+            ],
+            "gaps": [
+              "The bloom on the sunburst frames is heavy and flattens detail in frames 1 and 6",
+              "The credit serif is set small and low-contrast over busy machinery, which hurts legibility in frames 3 and 4",
+              "The map frame (5) is flatter and less sculptural than the mechanical cities, so the material language dips for a moment"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 4,
+              "composition": 6,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The generic 'premium fintech' look: a cream ground, a single gold/glass accent, a hard window-blind shadow repeated in nearly every frame",
+              "One stock primitive, a glass coin with concentric rings, does all the work in every frame; there's no subject beyond the 'payment token'",
+              "Placeholder UI: lock icon, cart icon, a $2.45M balance card with grey nav labels, a 'MONTHLY SUMMARY' pill and a generic line chart",
+              "Literal idea: brand name plus diagrams of features (flow, tap to pay, network node, conveyor, dashboard, security); nothing a viewer would remember",
+              "The frames are product stills with the same lighting setup and camera height; little sense of choreography between them",
+              "Default grotesk UI type with no typographic idea"
+            ],
+            "gaps": [
+              "Find a real idea specific to this brand instead of 'glass coin does feature X'. B turns its subject into a world; this turns its product into icons",
+              "Replace the placeholder UI and stock icons with designed typography and real information design that has scale contrast and a point of view",
+              "Vary the light, scale and camera across shots and build continuity between them, so it reads as one choreographed film rather than six product renders"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' recipe: a dark ground, a small tracked monospace caps label above an editorial-serif headline with one italic word, and a single coral accent",
+              "The same layout in every frame (label top-left, sentence below, image behind) with the words swapped, like a slide deck",
+              "The data labels are broken or truncated ('FETCH 1,', 'WAVELENGTH 3', 'DEPTH < 1.3 \u00d7 HEIGHT \u00b7 TH'), meaning text was generated rather than proofed",
+              "Line-field wave visuals are a generic effect without a subject; the sunset ocean stills are stock-like with flat, unmotivated light",
+              "The end card is a centred serif word, a period and a caps subtitle over a sunset: the default sign-off",
+              "Redeeming element: the shrinking orbital-motion circles in frame 4 are a real explanatory idea"
+            ],
+            "gaps": [
+              "Build typography with a point of view: integrate the type into the water and lines with real scale contrast, instead of the same label-plus-serif slide every frame",
+              "Commit to one visual world (either the line-field diagram or photographic water) and choreograph continuous motion through it, the way B moves through its single built map",
+              "Push the strong orbital-motion idea into the central concept and give the water real material, light and texture instead of generic line fields and stock sunsets"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.9,
+        "cost_usd": 0.16196539999999998,
+        "tokens": 72267,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 4,
+        "craft": 6
+      },
+      "defects": [
+        "Pace fails the measured bar: the longest shot is 5.0s and the median is 2.5s. Three of the 14 seconds are nearly static, and the 'swell' line-field shot and the closing title card overstay.",
+        "The hairline wave fields (the 'swell' and 'shore' shots) only drift a few pixels in 1/6 s. The lines carry no weight or easing, and the motion reads as a looping procedural noise field, not a wave building.",
+        "Every scene uses the same text entry: mono metadata typed out character by character ('WAVELENGTH 3' \u2192 '306 M', 'TH' \u2192 'THE WA') plus a fade-up serif line. The idea is repeated five times with no variation.",
+        "The underwater shot's headline enters with a heavy vertical blur and smear (pair 2). It reads as a default text-animator preset, and the letterforms are illegible for several frames.",
+        "The orbit-diagram dots advance at a near-constant angular speed. They are clean, but they don't track the light and particulate motion of the underwater plate behind them.",
+        "The orange accent line in the sunset shot sits on top of the photoreal water with no depth, lighting or motion relationship to it. It looks like a 2D layer composited over the plate.",
+        "At 100%, the crossing hairlines in the crop shift colour slightly along their length, and the dense convergence zones show faint stair-stepping and moir\u00e9 where lines overlap.",
+        "In the soundtrack, the high-frequency ceiling jumps in hard steps (about 12k \u2192 16k \u2192 19k Hz at 2.6s, 5.0s and 7.0s). These look like filtered noise beds switched on and off, not mixed transitions.",
+        "The riser from 8 to 10.1s is a textbook white-noise sweep that hard-cuts to silence-level content. It drives the 10s hit, but it is the only real dynamic gesture.",
+        "The spectrogram shows few sustained tonal partials. The low band is a static drone with almost no melodic or harmonic movement, which suggests thin generated pads over noise layers.",
+        "The bed cuts off abruptly at about 12.8s, and the end tail is very sparse. There is no designed sound under the title card, apart from a single tick at about 14s."
+      ],
+      "gaps": [
+        "Choreography and transitions. Top studio work would carry one continuous transformation (wind \u2192 line \u2192 swell \u2192 orbit \u2192 breaking wave) through morphs and match-cuts. Here, scenes crossfade between unrelated treatments: a vector line field, a photoreal ocean and an underwater plate. The wave fields also lack mass and anticipation, and the shore-break moment never actually breaks.",
+        "Sound design and score. Top work would have layered, produced water foley, a real musical arc and a hit landing on each cut. Here there are stepped noise beds, one stock riser and a static drone, synced to picture only at about 10s and 12.8s.",
+        "Finish and typographic system. Text animation is one repeated preset (typewriter mono plus blur-in serif), the vector and photoreal looks never unify, and the hairline renders show moir\u00e9 and stepping. Best-in-class work would need bespoke type motion per beat and cleaner line rendering."
+      ]
+    },
+    "meta": {
+      "seconds": 24.5,
+      "cost_usd": 0.1540712,
+      "tokens": 70611,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "swell.mp4: 15.0s, 5 shots, median 2.50s, longest 5.00s\nper-second change: [7.7, 5.2, 16.2, 13.6, 74.5, 7.8, 8.5, 55.3, 8.1, 80.2, 8.2, 47.7, 3.6, 2.9]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s; median shot 2.5s > 1.5s; 3/14 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 5,
+    "composition": 4,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 4,
+    "motion": 4.5,
+    "craft": 4.5,
+    "originality": 3,
+    "sound": 4
+  },
+  "full_overall": 4.11,
+  "cost_usd": 0.645,
+  "judge_seconds": 125.8,
+  "verdict": "FAIL"
+}

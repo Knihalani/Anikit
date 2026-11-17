@@ -1,0 +1,511 @@
+{
+  "name": "margin",
+  "tags": [
+    "product-launch",
+    "kinetic-type"
+  ],
+  "refs": [
+    "coinbase-system-update",
+    "thank-you-for-smoking",
+    "fitc-tokyo-2015"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 3,
+      "typography": 4,
+      "colour": 3,
+      "light_texture": 2,
+      "motion": 2,
+      "craft": 5,
+      "originality": 2
+    },
+    "overall": 3.12,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find a surprising idea, not the product name made literal. D turns the subject into the whole visual world",
+      "Break the template: vary scale, framing and structure from frame to frame, and let the type take over the frame instead of sitting like slide copy",
+      "Add material and a palette with character (real paper, ink, handwriting, a pen hitting the page) so it is not a flat cream background with one accent",
+      "Find an idea beyond illustrating the product name, such as real manuscript material, a writer's handwriting, or an edit that physically transforms the page",
+      "Break the single template with scale changes, camera moves and frames that look nothing alike",
+      "Introduce material and a typographic point of view, such as paper, ink, real marks or a chosen face, instead of a default serif and grotesk on flat cream",
+      "It needs an image or concept beyond typed copy: show real manuscripts, handwriting, ink or paper and make the margin a physical place",
+      "Break the single layout: vary scale, cropping and pacing so each frame is a poster and the 'Margin' reveal feels earned",
+      "Bring material and light (paper grain, pencil marks, real editing gestures) and a typographic point of view in place of default serif-plus-caps"
+    ],
+    "tells": [
+      "The textbook 'tasteful AI' formula: cream ground, small tracked-caps labels ('CUTS THE FILLER', 'KEEPS YOUR VOICE') above a generic editorial serif, one rust accent, and a mostly empty frame",
+      "One layout repeated in all six frames: a left text block and a right margin rule with an italic note, with only the words changed. The last two frames are near-identical. It is a slide deck",
+      "The idea is literal: an app called Margin shown as notes in a margin, with strike-throughs on 'mess' and 'very'. Product name plus a diagram of the feature",
+      "No texture, light, image or depth. Motion is limited to text swaps and a strike-through",
+      "The textbook 'tasteful AI' look: cream ground, small tracked-caps labels ('CUTS THE FILLER', 'KEEPS YOUR VOICE') above a generic editorial serif, one rust accent colour",
+      "The same layout in all six frames (a left text block plus a vertical margin rule with an italic note) with only the words swapped; frames 5 and 6 are almost identical",
+      "The idea is literal: an app called Margin shown as notes in a margin, with strikethroughs as the only gesture",
+      "No image, light, texture or depth anywhere; the frame is mostly empty",
+      "The end card is the product name next to the URL, like a slide",
+      "The textbook 'tasteful AI' look: cream ground, a generic editorial serif headline, small tracked-caps labels ('CUTS THE FILLER', 'KEEPS YOUR VOICE'), and one muted red accent",
+      "Every frame uses the same layout (text left, vertical rule, red italic note right), so it plays like a slide deck with the words swapped",
+      "The last two frames are almost identical, so very little happens in motion",
+      "A literal product-name idea (an app called Margin, shown with notes in a margin) plus a feature list and a URL end card",
+      "No image, light, texture or depth; a strikethrough is the only graphic device",
+      "Default-feeling typography: the serif headline, a generic grotesk for labels and monospace for the URL, with no custom craft"
+    ]
+  },
+  "refs_summary": {
+    "coinbase-system-update": {
+      "overall": 6.38,
+      "judged_professional": "2/3",
+      "mean_rank": 3
+    },
+    "thank-you-for-smoking": {
+      "overall": 8.62,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "fitc-tokyo-2015": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.58,
+  "delta": -4.46,
+  "trials": [
+    {
+      "key": {
+        "A": "fitc-tokyo-2015",
+        "B": "coinbase-system-update",
+        "C": "candidate",
+        "D": "thank-you-for-smoking"
+      },
+      "answer": {
+        "entries": {
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "One idea that only this film could have: every credit is set as a different period cigarette pack, so the title sequence is the film's satire, with the branding itself as the subject",
+              "The typography is in character for each pack: a banner-script title, a brush script for Cameron Bright, a condensed serif with a 'LIGHTS' sub-line, wide grotesk caps with a sunburst, a deco menthol face, and bold sans with italic script for the director",
+              "Real printed-paper texture, foil gold, worn registration and halftone. The light reads as close-up macro photography of physical objects",
+              "Each frame uses a different palette (navy/gold, orange/cream, Americana red-white-blue, red, menthol green, red/filter-tip orange) but they all hold together as one mid-century packaging world",
+              "Small details like 'UNDERAGE SALE PROHIBITED', 'HONEY-TOASTED', the eagle, the bloodhound and the row of filters show heavy research and finish",
+              "Tight, cropped framing suggests a camera tracking across packs, with clear changes from frame to frame"
+            ],
+            "gaps": [
+              "It is the benchmark here. It could still push more variety in camera grammar between packs (scale changes, reveals, a pull-out to the full carton)",
+              "Some framings are similar edge-on crops. One frame that breaks the pattern would add surprise",
+              "The palette could build toward a stronger climax on the director card so the ending lands"
+            ]
+          },
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Kinetic type system that mixes Latin and katakana fragments, building toward 'TOKYO' across the sequence. The frames show real choreography, with letters fragmenting, scattering and resolving",
+              "Every frame has a different structure: a macro letter crop, a horizontal band, a framed grid, a diagonal slash, a pixel matrix, and a dense layered collage",
+              "Deliberate neon palette (coral, cyan, acid green, violet, yellow) on near-black with paper-grain and scan-line texture",
+              "Custom modular, stencil-like letterforms built from geometric parts, not default type"
+            ],
+            "gaps": [
+              "The idea stays within a familiar 'Tokyo glitch/neon' genre. Compared with D it needs a concept rooted in something specific, not a city mood",
+              "Texture and light are digital-flat next to D's physical materiality. Real print, scan or optical artefacts would add depth",
+              "The palette is busy and close to stock cyber-neon. Restricting it would make the frames feel more authored"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A committed ASCII/character-render system on International Klein\u2013style blue, with real figure work (a running character, a ringed planet of glyphs, padlocks, a coin grid) and varied compositions",
+              "Shows choreography: the figure becomes a stream of $ signs, then a planet, then a code wall, then locks, then a coin array",
+              "The messaging is literal crypto/payment-speed copy ('Crypto is...', 'Faster', pseudo-code about Direct Payment), which is close to a feature explainer",
+              "Monospace type is the expected default for the code aesthetic. The highlighted label chips are the only typographic gesture"
+            ],
+            "gaps": [
+              "The idea is literal (coins, locks, 'faster'). It needs one memorable metaphor like D's packs-as-credits, not a list of crypto icons",
+              "The single-blue monochrome flattens hierarchy. Add a second value or accent and some depth so focal points read",
+              "The typography has no point of view. The code-dump frame reads as filler, so set the type with scale contrast and intent"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' formula: cream ground, small tracked-caps labels ('CUTS THE FILLER', 'KEEPS YOUR VOICE') above a generic editorial serif, one rust accent, and a mostly empty frame",
+              "One layout repeated in all six frames: a left text block and a right margin rule with an italic note, with only the words changed. The last two frames are near-identical. It is a slide deck",
+              "The idea is literal: an app called Margin shown as notes in a margin, with strike-throughs on 'mess' and 'very'. Product name plus a diagram of the feature",
+              "No texture, light, image or depth. Motion is limited to text swaps and a strike-through"
+            ],
+            "gaps": [
+              "Find a surprising idea, not the product name made literal. D turns the subject into the whole visual world",
+              "Break the template: vary scale, framing and structure from frame to frame, and let the type take over the frame instead of sitting like slide copy",
+              "Add material and a palette with character (real paper, ink, handwriting, a pen hitting the page) so it is not a flat cream background with one accent"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.5,
+        "cost_usd": 0.1564682,
+        "tokens": 71982,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "fitc-tokyo-2015",
+        "B": "coinbase-system-update",
+        "C": "thank-you-for-smoking",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Each credit gets its own invented cigarette-pack design, so the film's satire lives in the type itself: 'David Koechner LIGHTS', 'Rob Lowe' with a sunburst, menthol palm and airplane for Kim Dickens",
+              "A different period-correct type system in every frame: Western-banner slab, script, Clarendon-style serif, condensed gothic, art-deco caps",
+              "Real print texture: paper tooth, gold foil, slightly off registration, ribbing on the foil",
+              "Palette comes from mid-century packaging (cobalt/gold, orange/cream, red/navy, mint/green) and changes from card to card",
+              "Tight crops on the packs and the final row of filters suggest a camera moving over physical objects, not slides"
+            ],
+            "gaps": [
+              "The motion is probably a fairly steady pan or push across each pack; a more varied camera, like reveals or turning the packs, would give it more weight",
+              "Some frames are cropped so tight that the composition depends on the move to complete it",
+              "It leans on pastiche; a single original intervention that breaks the vintage system could raise the surprise even more"
+            ]
+          },
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Custom modular letterforms that break apart into segments, with katakana and Latin glyphs mixed into one constructed system (TOKYO built from the two scripts)",
+              "The structure changes completely from frame to frame: a huge cropped D with a target, a horizontal scan band, a framed letter grid, a diagonal shear, an LED dot-matrix, a dense collage",
+              "A deliberate neon palette (coral, mint, chartreuse, violet) on near-black, with grain and halftone/LED texture",
+              "The density and layering point to real choreography and cut rhythm"
+            ],
+            "gaps": [
+              "The glitch/cyber-Tokyo language is familiar territory, so the idea is less specific than C's",
+              "The final frames get busy enough that the hierarchy disappears and the eye has no resting point",
+              "It needs one anchoring concept beyond 'Tokyo as signal noise' that a viewer would remember"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 5,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "The 'code' text reads like a leaked prompt: 'Matching Cut Transition(\"circular\") \u2014 CenterLocked: TRUE', 'Broadcasting Visual Layer'",
+              "Markdown bold markers appear on screen ('**Direct Payment**', '**Secure **Secure'), a strong sign of LLM-generated copy",
+              "Generic ASCII-filter treatment applied to stock crypto clich\u00e9s: $ signs, padlocks, a globe with orbit rings, a grid of coin icons",
+              "Only one IKB-blue colour with no variation; default monospace type and small label boxes ('<<Crypto is...', 'Faster') placed like captions",
+              "The literal message is 'crypto is faster/secure', with nothing a viewer would remember"
+            ],
+            "gaps": [
+              "Replace the clich\u00e9d crypto icons and prompt-like filler code with a specific visual idea",
+              "Design the type: give it scale contrast and a hierarchy instead of default mono captions in boxes",
+              "Add a palette or light change and some material depth so the frames aren't a single flat filter pass"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 5,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook 'tasteful AI' look: cream ground, small tracked-caps labels ('CUTS THE FILLER', 'KEEPS YOUR VOICE') above a generic editorial serif, one rust accent colour",
+              "The same layout in all six frames (a left text block plus a vertical margin rule with an italic note) with only the words swapped; frames 5 and 6 are almost identical",
+              "The idea is literal: an app called Margin shown as notes in a margin, with strikethroughs as the only gesture",
+              "No image, light, texture or depth anywhere; the frame is mostly empty",
+              "The end card is the product name next to the URL, like a slide"
+            ],
+            "gaps": [
+              "Find an idea beyond illustrating the product name, such as real manuscript material, a writer's handwriting, or an edit that physically transforms the page",
+              "Break the single template with scale changes, camera moves and frames that look nothing alike",
+              "Introduce material and a typographic point of view, such as paper, ink, real marks or a chosen face, instead of a default serif and grotesk on flat cream"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.6,
+        "cost_usd": 0.1576816,
+        "tokens": 72091,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "coinbase-system-update",
+        "C": "fitc-tokyo-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "The idea belongs to this film alone: each credit is set as a period cigarette pack, so the film's subject is in every frame",
+              "Each frame uses its own type: an arched ribbon wordmark, brush script, a Clarendon-style serif with spaced caps, wide caps beside a sunburst, art-deco caps, and a script line over heavy sans",
+              "Pack fine print (UNDERAGE SALE PROHIBITED, HONEY-TOASTED TOBACCO LIGHTS, MENTHOL CIGARETTES) shows research and wit, not filler",
+              "Printed-paper grain, foil-gold inks, offset-style colour and cropped edges give real material texture",
+              "Each frame has a different palette (royal blue/gold, orange/cream, red-white-blue, red, mint/green) drawn from real pack design",
+              "Tight crops and the closing row of filters suggest a camera tracking across physical objects"
+            ],
+            "gaps": [
+              "The motion appears to be mostly lateral pans across flat artwork; one or two frames with depth or a reveal would add weight",
+              "The layout repeats (one pack face per credit), so the structure is predictable after the second card",
+              "There is little scale change between frames; one extreme close-up or a full-pack pullback would add rhythm"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.78,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A full ASCII and glyph-field system rendered over one saturated International Klein-style blue, carried through every frame",
+              "Frames are dense and layered: a walking figure built from characters, a flow field with $ particles, a glyph planet with an orbit, padlocks, a grid of coin tokens",
+              "Composition and density change from frame to frame, which implies choreographed transitions (the code even mentions a 'MatchCut Transition circular')",
+              "Inverted highlight labels ('<<Crypto is...', 'Faster', '--Direct--') act as a typographic voice inside the system"
+            ],
+            "gaps": [
+              "The theme is the familiar crypto/fintech set (coins, padlocks, '$', 'Faster') and too literal; it needs a less obvious metaphor",
+              "The frame of code is a wall of monospace with no hierarchy; it reads as texture, not a designed moment",
+              "The ASCII-on-blue look is a well-known trend; a second colour or a change of material at a key beat would make it the studio's own"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A modular, deconstructed type system that mixes Latin letters with katakana-like fragments, building up to 'TOKYO' across the sequence",
+              "An unusual, deliberate palette (hot pink, cyan, acid lime, violet, mustard on near-black) used differently in each frame",
+              "Halftone and print grain plus layered scan-line and pixel-grid textures give depth; this is not flat vector work",
+              "Frames vary strongly (a big 'D' with a target, a horizontal band, a framed grid, diagonal scatter, a pixel matrix, a dense collage), which implies energetic choreography with assembly and disassembly"
+            ],
+            "gaps": [
+              "The concept is the familiar neon-Tokyo glitch language; it needs a sharper idea about the city than 'Japanese characters + cyber'",
+              "Some frames (the pixel matrix) lose legibility and focus; one clear anchor image per beat would help",
+              "Visual noise competes with the type; tighter hierarchy would make the payoff word land harder"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 5,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook 'tasteful AI' look: cream ground, a generic editorial serif headline, small tracked-caps labels ('CUTS THE FILLER', 'KEEPS YOUR VOICE'), and one muted red accent",
+              "Every frame uses the same layout (text left, vertical rule, red italic note right), so it plays like a slide deck with the words swapped",
+              "The last two frames are almost identical, so very little happens in motion",
+              "A literal product-name idea (an app called Margin, shown with notes in a margin) plus a feature list and a URL end card",
+              "No image, light, texture or depth; a strikethrough is the only graphic device",
+              "Default-feeling typography: the serif headline, a generic grotesk for labels and monospace for the URL, with no custom craft"
+            ],
+            "gaps": [
+              "It needs an image or concept beyond typed copy: show real manuscripts, handwriting, ink or paper and make the margin a physical place",
+              "Break the single layout: vary scale, cropping and pacing so each frame is a poster and the 'Margin' reveal feels earned",
+              "Bring material and light (paper grain, pencil marks, real editing gestures) and a typographic point of view in place of default serif-plus-caps"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.4,
+        "cost_usd": 0.1556886,
+        "tokens": 71954,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 3,
+        "sound": 4,
+        "craft": 5
+      },
+      "defects": [
+        "The film is one 15 s locked-off shot. 10 of 14 seconds read as near-identical to the previous second, so pace and change are effectively zero.",
+        "In the pairs taken 1/6 s apart, frames are almost static: only a 1\u20132 px drift and small opacity changes on the margin notes ('yes.' fades in). There is no visible easing, overshoot, weight or motion blur.",
+        "The red vertical rule breaks and steps where the stacked panel tiles meet (around y=360 and y=720), and the panels drift a few pixels out of line with each other. This reads as a compositing seam, not a design choice.",
+        "The end-card and lockup ('Margin' / 'Edits in the margin.' / margin.app) appears twice, in neighbouring panels, cropped differently. This looks like a duplicated layout, not an intentional rhyme.",
+        "The strike-through lines on 'mess' and 'very' are flat red bars with no hand-drawn stroke reveal or pen quality. They sit on top of the glyphs with no interaction.",
+        "The faded margin notes ('yes.', 'honest.') have weak contrast against the cream background and are close to unreadable at small sizes.",
+        "The audio has a tonal, piano/pluck-like bed with evenly spaced transients and two isolated broadband ticks (~0.9 s and ~5.4 s). The ticks do not line up with any cut, because the film has no cuts. The track stays at one density with no build and ends in a plain fade."
+      ],
+      "gaps": [
+        "Motion: there is no choreography. Top studio work would animate the editorial idea itself: live strike-throughs drawn like a pen, words being cut and the line re-flowing with eased kerning, margin notes written in. This film tiles near-static type cards and drifts them.",
+        "Pacing and structure: one unbroken 15 s grid with no hierarchy shifts, scale changes, transitions or hero moment. The 'Margin' reveal gets no build or payoff, and the duplicated end-cards dilute it.",
+        "Sound and finish: the music is a generic, even bed with nothing designed to the action (no pen scratches, paper sounds or hits on the strike-throughs). The panel seams and broken rule mean the frame would not survive a 100% finishing review, even though the type itself is cleanly anti-aliased."
+      ]
+    },
+    "meta": {
+      "seconds": 18.4,
+      "cost_usd": 0.1455982,
+      "tokens": 70210,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "margin.mp4: 15.0s, 1 shots, median 15.00s, longest 15.00s\nper-second change: [5.4, 6.4, 5.1, 6.2, 5.6, 4.0, 5.6, 5.2, 6.2, 9.6, 4.3, 4.2, 4.3, 4.4]\nPACE: FAIL \u2014 longest shot 15.0s > 2.5s; median shot 15.0s > 1.5s; 10/14 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 3,
+    "typography": 4,
+    "colour": 3,
+    "light_texture": 2,
+    "motion": 2.5,
+    "craft": 5.0,
+    "originality": 2,
+    "sound": 4
+  },
+  "full_overall": 3.28,
+  "cost_usd": 0.615,
+  "judge_seconds": 107.9,
+  "verdict": "FAIL"
+}

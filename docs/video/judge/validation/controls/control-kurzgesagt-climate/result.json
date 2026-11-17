@@ -1,0 +1,459 @@
+{
+  "name": "control-kurzgesagt-climate",
+  "tags": [
+    "explainer",
+    "editorial-data",
+    "illustration"
+  ],
+  "refs": [
+    "kurzgesagt-short",
+    "cosmos-spacetime-odyssey",
+    "tintin-titles"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 6,
+      "composition": 8,
+      "typography": 5,
+      "colour": 8,
+      "light_texture": 6,
+      "motion": 7,
+      "craft": 8,
+      "originality": 6
+    },
+    "overall": 6.75,
+    "judged_professional": "3/3",
+    "pro_rate": 1.0,
+    "mean_rank": 3,
+    "gaps": [
+      "The idea is a literal explainer (CO2 sources, a renewables map, a 'Goodbye CO2' slide), with no single memorable conceit",
+      "Typography is almost absent and generic where it appears (a rounded sans on a screen). It contributes nothing",
+      "Light and texture are flat by design. Material depth or a less familiar palette would push it past house-style competence",
+      "The idea illustrates a script instead of being a visual concept of its own, so nothing makes it memorable the way A's chase is",
+      "The typography is purely utilitarian; it needs a display treatment integrated into the scenes",
+      "Light is flat and stylised, with no grain or material; a texture pass or more dramatic lighting moments like A's spotlit alley would add depth",
+      "There is almost no typography. Develop a typographic voice as strong as the illustration system",
+      "The concept literally illustrates the script (burger = emissions, car = emissions). It needs one central visual metaphor that carries the argument",
+      "The lighting is flat house-style gradient shading. Motivated light (dusk, glow, smog haze) would give the subject weight and atmosphere"
+    ],
+    "tells": [
+      "A coherent, owned house illustration style (flat vector with glows, saturated violet, cyan and lime, a recurring bird cast) drawn with real density: traffic, isometric energy islands, smoke blobs",
+      "Every frame uses a different structure (isometric diorama, triptych, four-panel split, stage scene, UI-bar callout), which shows real choreography across the explainer",
+      "Detail and consistency are high: lighting accents on the car, emissive bulb glow, character acting",
+      "A recognisable house style for explainers, executed consistently: isometric worlds, a bird cast, a saturated violet/cyan/yellow palette",
+      "Varied staging across frames: a dense traffic diorama, a triptych of objects, an isometric map, a four-panel grid, a stage scene, a UI-style meter. That variety points to real choreography",
+      "Detailed illustration with consistent rim light, smoke shapes and small gags (birds on stage, a CO2 jar)",
+      "Literal explainer logic (burger and factory equal emissions, a chart going up); the type is a rounded default sans used only for labels",
+      "Dense, highly polished flat-vector world: an isometric island grid, a traffic jam with soot clouds, and a split triptych of emission sources",
+      "The palette is saturated violets, cyans and yellows, very controlled. The bird-character system is consistent and full of personality",
+      "There is real variety in the layouts across frames (isometric, split panels, 2x2 grid, stage set, product with UI sliders), which suggests real choreography",
+      "The idea is an explainer's literal mapping of CO2 sources to icons and birds. The only type, 'Goodbye CO2!', is a friendly rounded default on a screen",
+      "The slider and check-mark UI panel in the last frame comes close to placeholder UI"
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-short": {
+      "overall": 5.62,
+      "judged_professional": "3/3",
+      "mean_rank": 4
+    },
+    "cosmos-spacetime-odyssey": {
+      "overall": 7.38,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "tintin-titles": {
+      "overall": 8.88,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.29,
+  "delta": -0.54,
+  "trials": [
+    {
+      "key": {
+        "A": "tintin-titles",
+        "B": "kurzgesagt-short",
+        "C": "candidate",
+        "D": "cosmos-spacetime-odyssey"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.96,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea: a silhouette chase caper where the hero, the dog and the villain run through the whole sequence, staged like a 1960s Saul Bass-style title. It belongs to this film and no other",
+              "The palette changes on every frame (dusty rose, teal and cream, aubergine and green, acid lime, peach against black, slate blue), but it stays one coherent, deliberate system",
+              "Credits are built into the world: a name painted on the ground at an angle, a name on a park gate sign, chunky hand-feel caps that fit the cartoon idiom",
+              "Composition keeps changing: a wide establishing shot, a high-angle alley, a hypnotic spiral, a rooftop run in full silhouette, flat graphic planes against a rendered 3D-ish space",
+              "Light is designed for the story: lamp-post pools, a moon disc, a doorway spill, cast shadows that act as characters",
+              "The frames clearly chain together as one continuous chase: the same characters move through different spaces, with the dog's white silhouette as a recurring anchor"
+            ],
+            "gaps": [
+              "Paper or print texture is light. A bit more grain or misregistration would make the retro-print reference richer",
+              "The silhouette-chase-with-credits language follows a well-known mid-century tradition, so it reads as a homage more than a new form",
+              "Some credit blocks (the stacked supervisor credits) sit fairly plainly over the image and are less integrated than the ground-painted names"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A clear conceptual thread of match cuts between the cosmic and the biological: a crater holding a nebula, a ship reflected in an iris, a nautilus, an accretion disc, DNA, and finally a nebula that is an eye",
+              "High-end photoreal CG with real material: rock, sand with footprints, a wet iris, a pearlescent shell, fibrous DNA strands",
+              "Cinematic light: rim lights, volumetric haze, and a depth of field that motivates each scale shift",
+              "Wide-tracked caps for the title over the Helix-nebula eye is a strong final poster; the credits are small and recede on purpose"
+            ],
+            "gaps": [
+              "Typography is safe: tracked thin sans credits placed in the lower thirds is close to the 'tasteful' default, with no typographic idea",
+              "The cosmic-eye / micro-macro match cut is a familiar science-documentary trope, so the idea is less specific to the piece than A's",
+              "The palette leans on standard teal-and-orange space grading. It needs a more authored colour stance"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent, owned house illustration style (flat vector with glows, saturated violet, cyan and lime, a recurring bird cast) drawn with real density: traffic, isometric energy islands, smoke blobs",
+              "Every frame uses a different structure (isometric diorama, triptych, four-panel split, stage scene, UI-bar callout), which shows real choreography across the explainer",
+              "Detail and consistency are high: lighting accents on the car, emissive bulb glow, character acting"
+            ],
+            "gaps": [
+              "The idea is a literal explainer (CO2 sources, a renewables map, a 'Goodbye CO2' slide), with no single memorable conceit",
+              "Typography is almost absent and generic where it appears (a rounded sans on a screen). It contributes nothing",
+              "Light and texture are flat by design. Material depth or a less familiar palette would push it past house-style competence"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 4,
+              "colour": 8,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "The same well-crafted flat house style as C (bespoke characters, a glowing topographic map, a stylised mammoth), with clear professional drawing ability",
+              "It is a vertical social cut: only 4 frames with burned-in auto-caption subtitles in small default type, which cheapens the frame",
+              "The title card 'Europe's Next Ice Age' is a centred bold rounded sans with an outline on a map. Functional, not expressive"
+            ],
+            "gaps": [
+              "The subtitle captions are generic, tiny and placed like defaults. They need typography designed into the frame, as in A",
+              "The vertical crop puts the compositions in a squeeze and makes them centred and static. Restage for the format instead of reframing the horizontal art",
+              "There is no through-line image or conceptual device. It is a sequence of explainer illustrations rather than a film with an idea"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 28.7,
+        "cost_usd": 0.15266800000000003,
+        "tokens": 71491,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "tintin-titles",
+        "B": "kurzgesagt-short",
+        "C": "cosmos-spacetime-odyssey",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific narrative idea: a silhouette chase that unfolds as a continuous caper, with the credits set inside the story world (on a park gate arch, on the ground plane, on a paving slab in a dramatic perspective shot)",
+              "Strong palette that changes per scene (dusty pink, teal and ochre, bruised violet, acid green spiral, apricot moon, steel blue), each one keyed to a mood",
+              "Saul Bass-style flat silhouettes paired with papery grain, cast shadows and spotlight pools, so the light is motivated and does narrative work",
+              "Choreography across frames: camera angles shift from street level to top-down to a hypnotic spiral to a moon-lit rooftop run; the dog is a recurring white accent that ties the cuts together",
+              "The type has a point of view: a chunky period sans used with consistent spacing, scaled and placed as part of the image instead of over it"
+            ],
+            "gaps": [
+              "The rooftop frames (5\u20136) go back to a flatter side-on staging, and the busy middle frames had more invention",
+              "In frame 5 the credit block is partly hidden behind the figures, which costs legibility",
+              "A few backgrounds (frame 2's dock) are less dense and textured than the alley and spiral frames"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "High-end photoreal CG with real material detail: cracked crater rim, wet iris fibres, nautilus shell nacre, sand micro-texture, DNA strands with fibrous surfaces",
+              "A clear visual rhyme that runs through the piece (crater, eye, shell spiral, accretion disc, helix, then the Helix Nebula as an eye), building to the title card",
+              "Shallow depth of field, volumetric light and lens behaviour give each frame the feel of a photographed object",
+              "Credits are small spaced-out caps in a thin sans, set lower-left. Restrained and correct, but generic"
+            ],
+            "gaps": [
+              "The match-cut idea of eye and cosmos rhymed with spirals is well known; it needs one image nobody has seen before",
+              "The typography is close to the clich\u00e9 of a small tracked-caps label over a name; there is no relationship between type and image like A's integrated credits",
+              "The palette sits in the default range of cool teal-grey with an orange accent, where A gives each scene its own colour mood"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "A recognisable house style for explainers, executed consistently: isometric worlds, a bird cast, a saturated violet/cyan/yellow palette",
+              "Varied staging across frames: a dense traffic diorama, a triptych of objects, an isometric map, a four-panel grid, a stage scene, a UI-style meter. That variety points to real choreography",
+              "Detailed illustration with consistent rim light, smoke shapes and small gags (birds on stage, a CO2 jar)",
+              "Literal explainer logic (burger and factory equal emissions, a chart going up); the type is a rounded default sans used only for labels"
+            ],
+            "gaps": [
+              "The idea illustrates a script instead of being a visual concept of its own, so nothing makes it memorable the way A's chase is",
+              "The typography is purely utilitarian; it needs a display treatment integrated into the scenes",
+              "Light is flat and stylised, with no grain or material; a texture pass or more dramatic lighting moments like A's spotlit alley would add depth"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 3,
+              "colour": 7,
+              "light_texture": 5,
+              "motion": 5,
+              "craft": 6,
+              "originality": 4
+            },
+            "tells": [
+              "The illustration itself is studio-grade house style: a villain at a control desk, a contour-map title, bird characters playing a memory game, a stylised mammoth",
+              "It has been repurposed for a vertical social feed: tiny auto-caption-style subtitles in a default sans ('completely due', 'misconception') sit over the art with no layout thought",
+              "The title card 'Europe's Next Ice Age' is centred, stacked, outlined bold sans over a blob map, the closest of the four to a template",
+              "Only four frames come through, and the framing is cropped from horizontal masters, which leaves awkward edges (the mammoth cut off at the right)"
+            ],
+            "gaps": [
+              "Reframe for vertical properly instead of cropping horizontal art, and compose each frame as a poster",
+              "Remove the default caption type and design a typographic system with scale contrast, placement and integration with the art",
+              "Find a single visual idea for the ice age (a continuous transformation, a cold palette shift) instead of disconnected illustrative vignettes"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 28.7,
+        "cost_usd": 0.1539912,
+        "tokens": 71546,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "kurzgesagt-short",
+        "C": "tintin-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Strong match-cut idea: a crater opens onto a nebula, an iris becomes a cosmic eye, and the nautilus shell and DNA helix tie the cosmic to the biological",
+              "Well-handled photoreal CG: rim light on the shell, believable sand and rock surfaces, volumetric light in the accretion disc",
+              "The credits are small tracked caps with a tiny label above each name, placed politely in the lower third. That is the genre's default, not a typographic idea",
+              "The final COSMOS lockup is widely spaced caps over a Helix Nebula with an eye inside. It is effective, but the eye-as-universe image is a familiar trope"
+            ],
+            "gaps": [
+              "The type plays no part in the image. Build the credits into the objects, the way C stages names as signage, floor paint and set dressing",
+              "The palette is the standard deep-space teal and orange. Pick a distinctive colour world that only this show would have",
+              "The motifs (eye, DNA, galaxy, nautilus) are science-documentary stock imagery. Find a stranger or more specific visual metaphor that people would remember"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Consistent, recognisable studio character design: the villain at the control desk, a pair of birds and a stylised mammoth, all with a confident palette and well-judged shading",
+              "The isotherm-style map behind the bold outlined title is a considered house style, not a template",
+              "This is a vertical social cut-down: burned-in auto-style subtitles ('completely due', 'misconception') sit over the art and weaken the frames",
+              "Only 4 frames are shown and the compositions are mostly centred single subjects. The work is explainer-functional rather than award-ambitious"
+            ],
+            "gaps": [
+              "The burned-in captions are default-looking. Design subtitle typography that belongs to the illustration system, or integrate it into the scene",
+              "Each frame is a single centred subject. Build layered compositions that work across the vertical canvas with depth and scale contrast",
+              "The visual gags are literal (a mammoth for ice age, a STOP button). Find a more surprising idea that only this film could have"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Silhouette-chase concept with a specific point of view: the credits become the chase itself, with cast names on a gate arch, painted on the alley floor and hidden in the spotlight",
+              "Each frame has a different, deliberate palette (dusty rose, teal and ochre, nocturnal violet, acid green spiral, warm moon, deep blue), yet the system stays consistent",
+              "Expressive staging: a hypnotic spiral vortex, a high-angle alley under a lamp, layered silhouettes against a full moon, the white dog as a recurring accent",
+              "Paper grain, lamplight pools and projected shadows give tactile depth. Every frame works as a poster, and the choreography clearly carries from frame to frame",
+              "A custom-feeling bold sans with retro character is set at varying scales and integrated into the space"
+            ],
+            "gaps": [
+              "It leans heavily on Saul Bass and 1960s caper-title references. Push it further away from homage",
+              "The two-tier role and name credits in frames 5 and 6 fall back to standard stacked lockups. Carry the spatial integration through every card",
+              "The texture is mostly flat paper grain. It could take more variation in print imperfection or light interplay in the closing frames"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Dense, highly polished flat-vector world: an isometric island grid, a traffic jam with soot clouds, and a split triptych of emission sources",
+              "The palette is saturated violets, cyans and yellows, very controlled. The bird-character system is consistent and full of personality",
+              "There is real variety in the layouts across frames (isometric, split panels, 2x2 grid, stage set, product with UI sliders), which suggests real choreography",
+              "The idea is an explainer's literal mapping of CO2 sources to icons and birds. The only type, 'Goodbye CO2!', is a friendly rounded default on a screen",
+              "The slider and check-mark UI panel in the last frame comes close to placeholder UI"
+            ],
+            "gaps": [
+              "There is almost no typography. Develop a typographic voice as strong as the illustration system",
+              "The concept literally illustrates the script (burger = emissions, car = emissions). It needs one central visual metaphor that carries the argument",
+              "The lighting is flat house-style gradient shading. Motivated light (dusk, glow, smog haze) would give the subject weight and atmosphere"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 28.5,
+        "cost_usd": 0.15249980000000002,
+        "tokens": 71481,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.459,
+  "judge_seconds": 85.9,
+  "verdict": "PASS"
+}

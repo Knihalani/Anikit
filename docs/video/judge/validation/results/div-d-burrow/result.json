@@ -1,0 +1,520 @@
+{
+  "name": "div-d-burrow",
+  "tags": [
+    "illustration",
+    "product-launch"
+  ],
+  "refs": [
+    "osko-launch",
+    "tintin-titles",
+    "new-yorker-festival"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 3,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 2,
+      "motion": 3,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 2.88,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Give the illustration an authored voice (texture, a distinctive palette, character design) instead of stock children's-app vector",
+      "Break the repeating caption-bar layout. Let the words become part of the image, as D's credits are part of the set",
+      "Find an idea beyond a feature demo: for example, a story that really comes alive through reading aloud, with choreography between scenes",
+      "No idea beyond showing the feature. Find a visual concept (for example, the words physically turning into the scene) that only a read-aloud product could have",
+      "Replace the stock vector world and default type with a drawn illustrative voice and a characterful typeface integrated into the image, not parked in a caption bar",
+      "Add light, texture and staging: night that feels like night, depth, paper or print texture, and camera movement in place of a fixed slide frame",
+      "Replace the demo-as-film approach with a specific story or visual idea; the burrow and moon could become a world the camera travels through, as in A",
+      "Commission an illustration style with texture, light and an authored hand instead of default vector shapes; the night sky and moon need actual glow and depth",
+      "Give the type a point of view: integrate the read-aloud words into the scene (letters that splash, pop, dig) instead of captioning them in a white bar"
+    ],
+    "tells": [
+      "Slide-deck structure: the same picture-over-caption-bar layout repeats across five frames with the words swapped",
+      "Generic rounded grotesk caption with a yellow pill highlight. The end card is a bold-sans 'Burrow' with a tagline and a pill badge, which is the template app-promo format",
+      "Placeholder UI: a 'Reading' pill with a waveform",
+      "Clip-art vector illustration: lollipop tree, evenly spaced balloons, a smiling whale with bubbles, a flat sun. Symmetrical, default shapes",
+      "Flat, unmotivated light with no texture or material. The idea is literal: the product feature shown as a demo",
+      "The same slide layout repeats: illustration panel on top, a white caption bar with one centred sentence below, and one word highlighted in a yellow pill",
+      "Generic grotesk set at default size and tracking, with no typographic idea; the 'Reading' recording pill is placeholder UI",
+      "Clip-art vector world: lollipop tree, puffy clouds, smiling whale, a balloon row in rainbow primaries, a flat sun circle",
+      "Flat, unmotivated light; the glowing moon is a gradient blob",
+      "Literal end card: product name 'Burrow' in bold sans, a tagline, and a pill label centred on the background",
+      "Little real change between frames 1 and 3 other than a hole and a moon appearing",
+      "Slide-deck structure: the same layout of an illustration panel above a white caption bar repeats across five frames, with only the highlighted word changing",
+      "Clip-art vector default illustration (lollipop tree, primitive clouds, row of symmetric balloons, smiley whale) with flat, unmotivated light",
+      "Placeholder UI: a 'Reading' pill with a fake waveform, plus a yellow pill tag 'Picture books for ages 4\u20137'",
+      "End card is a centred bold-grotesk product name, a tagline and a pill on a gradient; a textbook template lockup",
+      "Literal idea: the product name plus a demo of the feature (word highlighting); nothing a viewer would remember"
+    ]
+  },
+  "refs_summary": {
+    "osko-launch": {
+      "overall": 5.62,
+      "judged_professional": "2/3",
+      "mean_rank": 3
+    },
+    "tintin-titles": {
+      "overall": 8.75,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "new-yorker-festival": {
+      "overall": 7.12,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.16,
+  "delta": -4.28,
+  "trials": [
+    {
+      "key": {
+        "A": "new-yorker-festival",
+        "B": "osko-launch",
+        "C": "candidate",
+        "D": "tintin-titles"
+      },
+      "answer": {
+        "entries": {
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Silhouette chase that moves through a whole world: park gates, docks, an alley, a hypnotic spiral, a rooftop at moonrise. Each scene is its own poster",
+              "The palette changes deliberately in every frame (dusty rose, teal and ochre, bruised violet, acid green, apricot, slate blue) while the silhouette language stays consistent",
+              "Credits are built into the set: a name painted on an alley floor, the director credit on a wrought-iron arch sign, condensed slab caps placed in the action",
+              "Motivated light: a lamppost pool, a doorway spill, a moon disc, long cast shadows. Paper grain and printed-ink texture throughout",
+              "Choreography carries across frames: pursuer and pursued swap roles, the dog recurs as a white accent, and depth and camera angle vary from high overhead to a flat profile",
+              "The rocket and the comic-book period setting give it a specific source that only this piece could have"
+            ],
+            "gaps": [
+              "Nothing major. The later credit cards (frames 5 and 6) go back to plainer centred type blocks after the set-integrated credits earlier on",
+              "A few frames lean on silhouette-against-a-disc staging that is familiar from 1960s title homage",
+              "The type stays within one condensed-slab voice, and more scale contrast in key moments would give it more punch"
+            ]
+          },
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "Real gouache or dry-brush texture with visible bristle drag, overlapping strokes and uneven opacity, which is not a vector default",
+              "A deliberate primary palette (ultramarine, cadmium yellow, signal red, cornflower, green) that holds together across frames",
+              "Changing frame formats (tall, square, wide) suggest a designed formal device",
+              "Moves from a figurative subject (Chrysler-style spire, a commuter in a train window) to abstraction (plaid, crossing tracks, a grid with yellow-black markers), which reads as a choreographed transformation of city into pattern",
+              "No type is visible. Its absence suits a painterly city poem"
+            ],
+            "gaps": [
+              "The abstract middle frames (plaid, crossing lines) feel like sketchbook pages more than finished posters, with less density and layering than D",
+              "No lighting or depth system: everything sits on one flat plane, where D builds atmosphere with motivated light",
+              "The narrative thread is thin. A clearer through-line (a character or journey) would give the abstraction a reason and payoff"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "Each frame is in a different rendering style (glossy dark 3D van, plasticky AI-looking shelf still life, flat vector golfer, flat pink car, emoji icon grid, retro fridge render) with no unifying art direction",
+              "The shelf frame has the smeared, soft generic 3D of AI image tools: ambiguous labels and a melted glyph on the bottle",
+              "The emoji grid (coffee, beer, winged cash, heart, gift) is stock icon content laid out like a slide",
+              "The 'I.O.U' sticky note is the only idea, and it is literal: a hand-lettered default repeated as a gag",
+              "Frame formats change without purpose. There is no sign of choreography between shots"
+            ],
+            "gaps": [
+              "Commit to one visual language. D's coherent silhouette system is what makes its variety feel authored",
+              "Replace the stock emoji grid and generic 3D props with designed, specific objects and motivated light",
+              "Develop the IOU concept beyond a repeated sticky note: build a typographic or narrative escalation across the frames"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Slide-deck structure: the same picture-over-caption-bar layout repeats across five frames with the words swapped",
+              "Generic rounded grotesk caption with a yellow pill highlight. The end card is a bold-sans 'Burrow' with a tagline and a pill badge, which is the template app-promo format",
+              "Placeholder UI: a 'Reading' pill with a waveform",
+              "Clip-art vector illustration: lollipop tree, evenly spaced balloons, a smiling whale with bubbles, a flat sun. Symmetrical, default shapes",
+              "Flat, unmotivated light with no texture or material. The idea is literal: the product feature shown as a demo"
+            ],
+            "gaps": [
+              "Give the illustration an authored voice (texture, a distinctive palette, character design) instead of stock children's-app vector",
+              "Break the repeating caption-bar layout. Let the words become part of the image, as D's credits are part of the set",
+              "Find an idea beyond a feature demo: for example, a story that really comes alive through reading aloud, with choreography between scenes"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 32.2,
+        "cost_usd": 0.17303220000000002,
+        "tokens": 72107,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "new-yorker-festival",
+        "B": "osko-launch",
+        "C": "tintin-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 7,
+              "originality": 8
+            },
+            "tells": [
+              "Hand-painted dry-brush marks with visible bristle texture and uneven pressure, not a vector or filter default",
+              "Narrow, committed palette of cobalt, sky blue, cadmium yellow, vermilion, black and off-white, held across every frame",
+              "The frames move from figurative to abstract: Chrysler spire, then a subway window with a passenger, then plaid, then crossing beams, then road lines, then a grid. That looks like a planned transition from city to pure mark-making",
+              "Aspect ratio and framing change from frame to frame (portrait square, framed window, landscape), so the format itself is being played with",
+              "Asymmetric compositions with real tension, e.g. the red diagonal wedges cutting across the grid"
+            ],
+            "gaps": [
+              "No typographic layer. The absence works for a mood piece, but C shows how type woven into the image raises a sequence; even one hand-lettered title would anchor it",
+              "The abstract middle frames (plaid, beams) lose the subject. Keep a figurative thread, such as the passenger, running through so the abstraction reads as story and not filler",
+              "No light or depth: everything sits on one flat plane. C gets drama from spotlights, cast shadows and night/day shifts, and a single lighting beat here would add weight"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "A clear narrative device (the I.O.U. sticky note left in a bowl, then in an empty fridge) that pays off as a joke and a theme",
+              "Deliberate collage of rendering styles (moody 3D van at night, glossy product-shot 3D, flat character animation, emoji-like icon grid) reads as a commissioned mixed-technique ad and not a single tool's default",
+              "The retro fridge has a real rim light and floor reflection, and the open door spills warm light",
+              "Against that: the icon grid (coffee, beer, winged cash, heart, gift) is close to stock emoji and laid out like a slide; the golf character is generic flat corporate illustration; and the plastic 3D bowl edges toward AI-render softness"
+            ],
+            "gaps": [
+              "No single visual world: six frames in four unrelated styles makes the piece look assembled and not authored. Choose one language or make the style switches part of the idea",
+              "Typography is limited to a handwritten 'I.O.U.' with no title or brand system. Build a typographic voice the way C turns credits into set dressing",
+              "Generic components (the emoji grid, the stock golfer, the centred pink car on grey) should be replaced with bespoke, character-driven images that only this story could have"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 10,
+              "originality": 8
+            },
+            "tells": [
+              "A title sequence where a chase choreographed in silhouette carries the credits as part of the story",
+              "Credits live inside the world: the opening card is a wrought-iron park sign, a name lies on the alley floor in the spotlight's perspective, and names are set alongside the action",
+              "A bold palette that changes per scene (dusty rose, teal and cream, violet night, acid green spiral, peach moon, steel blue) while silhouettes keep it unified",
+              "Real light design: streetlamp pools, a doorway glow, cast shadows on the pavement, a backlit moon",
+              "Paper-grain texture and screen-print flatness mixed with 3D-staged camera angles such as the overhead alley",
+              "Strong gags and variety from frame to frame: the hypnotic spiral, the umbrella-sword, the dog in white against dark figures, the rocket silhouette",
+              "Weakness: the style openly builds on 1960s Saul Bass / Pink Panther title-sequence idioms, which caps originality"
+            ],
+            "gaps": [
+              "The 1960s silhouette-title vocabulary is well known. Push one or two moments past homage into a device the genre hasn't seen",
+              "Small type passages (the stacked supervisor credits) are partly hidden behind figures. Choreograph the reveals so every name gets its moment",
+              "Compositions sometimes centre on the hero and dog in the same way. Vary scale more (extreme close-up, tiny figure in a vast set) for rhythm"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The same slide layout repeats: illustration panel on top, a white caption bar with one centred sentence below, and one word highlighted in a yellow pill",
+              "Generic grotesk set at default size and tracking, with no typographic idea; the 'Reading' recording pill is placeholder UI",
+              "Clip-art vector world: lollipop tree, puffy clouds, smiling whale, a balloon row in rainbow primaries, a flat sun circle",
+              "Flat, unmotivated light; the glowing moon is a gradient blob",
+              "Literal end card: product name 'Burrow' in bold sans, a tagline, and a pill label centred on the background",
+              "Little real change between frames 1 and 3 other than a hole and a moon appearing"
+            ],
+            "gaps": [
+              "No idea beyond showing the feature. Find a visual concept (for example, the words physically turning into the scene) that only a read-aloud product could have",
+              "Replace the stock vector world and default type with a drawn illustrative voice and a characterful typeface integrated into the image, not parked in a caption bar",
+              "Add light, texture and staging: night that feels like night, depth, paper or print texture, and camera movement in place of a fixed slide frame"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.6,
+        "cost_usd": 0.1632648,
+        "tokens": 72320,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "tintin-titles",
+        "B": "osko-launch",
+        "C": "new-yorker-festival",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.96,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Silhouette chase with a clear story runs through the credits: the characters travel from park gates to docks, alley, spiral and rooftops, so every credit card is a new set piece",
+              "Palette changes deliberately from scene to scene (dusty rose, teal and cream, bruised purple, acid green spiral, peach moon, steel blue) and stays in one paper-printed world",
+              "Credits are part of the image: 'Andy Serkis' is a pool of light on the cobbles, the director's credit is cast into the gate's ironwork sign, and names sit in negative space next to the action",
+              "Real staging and depth: raking perspective in the alley, a spotlight pool, long cast shadows, a vertigo spiral, silhouettes layered over a moon disc",
+              "Choreography between frames: the dog and hero follow a continuous pursuit, figures change scale and the camera angle shifts from shot to shot",
+              "Paper grain and a mid-century print texture give the illustration material"
+            ],
+            "gaps": [
+              "Typography is a single condensed-caps face set fairly conventionally; one more typographic gesture (scale break, type acting as set piece) would push it further",
+              "A few frames (rooftop chase) fall back on flat silhouette-over-sky staging that is less inventive than the alley and spiral",
+              "The pastiche of a well-known graphic idiom (Saul Bass / Catch Me If You Can lineage) slightly limits originality"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 8
+            },
+            "tells": [
+              "Hand-painted, gouache-like brushwork with dry edges and visible strokes; this kind of authored mark is hard to fake with a template",
+              "Strong restricted palette of ultramarine, cobalt, cadmium yellow, red and black, used consistently",
+              "City subject (Chrysler spire, subway window with commuter, street-grid and traffic abstractions) dissolves into pure pattern, showing an idea of the city as rhythm",
+              "Frames change format and density (portrait spire, framed window, plaid, crossing lines, grid), which implies energetic cut-based choreography",
+              "No type; the absence suits a painterly, music-led piece"
+            ],
+            "gaps": [
+              "Abstract middle frames risk reading as effect without subject; it needs a stronger through-line or payoff so a viewer remembers it",
+              "Mixed aspect ratios and loose framing feel more like a sketchbook than a finished film; the finish is less resolved than A",
+              "No light or depth model; everything is flat paint, while A uses light as a storytelling device"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "A single campaign idea ('I.O.U.' for favours you owe: coffee, beer, gift, ride, golf) holds together very different executions",
+              "Polished 3D product renders (fridge shelf, retro fridge with interior glow and floor reflection) next to flat character animation, an emoji-like icon grid and a moody van-at-night shot; reads as a multi-director brand campaign",
+              "Golf swing sequence shows real character-animation key poses with comic timing (swing \u2192 facepalm)",
+              "Wildly inconsistent aspect ratios and styles; this could be a curated deliverables reel, but it weakens the case as one film"
+            ],
+            "gaps": [
+              "No unified visual language; the jumps between 3D, flat vector and emoji make it feel like a stock-asset collage instead of one authored world",
+              "The icon grid and isolated pink car on a cream ground are slide-like and generic; it needs dense, staged frames like A's",
+              "Typography is limited to a handwritten 'I.O.U.' sticky note; a typographic idea could carry the concept and tie the styles together"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Slide-deck structure: the same layout of an illustration panel above a white caption bar repeats across five frames, with only the highlighted word changing",
+              "Clip-art vector default illustration (lollipop tree, primitive clouds, row of symmetric balloons, smiley whale) with flat, unmotivated light",
+              "Placeholder UI: a 'Reading' pill with a fake waveform, plus a yellow pill tag 'Picture books for ages 4\u20137'",
+              "End card is a centred bold-grotesk product name, a tagline and a pill on a gradient; a textbook template lockup",
+              "Literal idea: the product name plus a demo of the feature (word highlighting); nothing a viewer would remember"
+            ],
+            "gaps": [
+              "Replace the demo-as-film approach with a specific story or visual idea; the burrow and moon could become a world the camera travels through, as in A",
+              "Commission an illustration style with texture, light and an authored hand instead of default vector shapes; the night sky and moon need actual glow and depth",
+              "Give the type a point of view: integrate the read-aloud words into the scene (letters that splash, pop, dig) instead of captioning them in a white bar"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.3,
+        "cost_usd": 0.1590606,
+        "tokens": 72119,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 5,
+        "craft": 5
+      },
+      "defects": [
+        "The burrow/fox shot runs about 10s while almost nothing changes. The only motion is a karaoke word highlight moving across a static illustration, and the moon and stars just fade in.",
+        "The highlight pill bumps into the next word. On 'under', the pill's left edge touches 'burrow' and the word spacing collapses, so the line visibly reflows as the pill moves.",
+        "The whale scene starts with the sky and sea empty. Between the paired frames the sun and clouds shift and rescale like a camera reposition with no easing or parallax, so it reads as a pop rather than a move.",
+        "The balloon pop is a uniform radial confetti ring with even density and generic particles. It has no anticipation or squash before the burst, and the other balloons don't react.",
+        "The whale is a flat blob with random white dots and simple water. There's no splash animation to match the 'SPLASH!' payoff.",
+        "The fake 'Reading' waveform pill animates as decoration and isn't tied to the voice. In the last fox frame it collapses to dots.",
+        "The film is assembled from stock vector parts: rounded-rect clouds, lollipop flowers, a two-circle tree. The parts have no consistent line weight, and the scenes have no depth or lighting.",
+        "The texture grain on the end-card wordmark is very faint and close to noise. The swoosh underline has a soft, uneven taper.",
+        "Cuts are hard swaps between unrelated palettes (night, then day sky, then flat yellow) with no shared visual motif or match cut."
+      ],
+      "gaps": [
+        "Choreography and pace: one 10s static shot carries the first half, and every scene animates only one element at a time. Top studio work would layer secondary and follow-through motion (wind in the grass, a fox dig cycle with soil debris, a camera push into the burrow), use real easing and overlap, and cut to the phrase rhythm.",
+        "Payoff animation: SPLASH and POP are the hero beats, but they get a missing or weak splash and a stock radial confetti ring. Best-in-class work would build each into a crafted moment with anticipation, a smear or squash, a shaped burst and a settle, and would link the hit to the type, for example the word itself bouncing or bursting.",
+        "Sound: the spectrogram shows a busy, loop-like rhythmic bed of evenly spaced transients across the whole piece. It has two generic noise risers or whooshes around 9.5s and 13s and little dynamic arc. It is produced, not thin synth, but it appears to be library music with stock swooshes rather than scored sound design synced to the word highlights, the dig, the splash and the pop."
+      ]
+    },
+    "meta": {
+      "seconds": 21.7,
+      "cost_usd": 0.15009999999999998,
+      "tokens": 70453,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "burrow.mp4: 20.0s, 5 shots, median 2.03s, longest 9.97s\nper-second change: [7.5, 4.7, 7.2, 7.7, 6.1, 4.9, 9.0, 2.3, 41.9, 101.4, 5.5, 81.8, 14.5, 81.5, 8.8, 124.8, 6.9, 1.2, 0.3]\nPACE: FAIL \u2014 longest shot 10.0s > 2.5s; median shot 2.0s > 1.5s; 6/19 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 3,
+    "colour": 3,
+    "light_texture": 2,
+    "motion": 3.5,
+    "craft": 4.5,
+    "originality": 2,
+    "sound": 5
+  },
+  "full_overall": 3.22,
+  "cost_usd": 0.645,
+  "judge_seconds": 119.8,
+  "verdict": "FAIL"
+}
