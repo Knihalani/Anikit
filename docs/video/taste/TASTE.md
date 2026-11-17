@@ -347,6 +347,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 
 **Rules.**
 - **Write the idea as one sentence** with a metaphor taken from the subject's own data, mechanism, history or physical material. Swap-test it.
+- **Look outside the category for references.** Take them from print, title design, scientific illustration, posters, documentary or architecture, never from other tech launch videos (they are where the clichés come from). Write down what you take from each.
 - **Include at least 3 subject-only elements:** the real UI, real data, real names and numbers, the product's own shapes and sounds.
 - **The medium follows the idea.** Set type, illustration and paths, real UI, photography-style compositing, shader worlds and ray-traced 3D are equal options. Use 3D only where depth carries meaning, for one or two moments or for the whole piece if the idea *is* spatial. Never use the same environment, material or motif as a previous piece.
 - **One motion idea per piece.** Animate the signified: a word that builds is built.
@@ -392,6 +393,13 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 
 Restraint swapped for 3D clichés is still a cliché. Restraint must be rich (§11), never empty.
 
+**The SaaS layout** (the fifth verdict, "generic, boring and samey"):
+- a UI screenshot or phone sitting beside a block of copy in an empty frame, which is a landing page in motion;
+- a dark teal/navy + amber "data dashboard" palette;
+- "UI on dark with one accent" as the default world.
+
+Use a UI only when the brief is literally a UI demo, and even then stage it: extreme scale contrast, crops into the detail, the camera moving *through* it, the UI as a texture on the world.
+
 **Motion.**
 - Fade-and-rise or scale-0 entrances on everything.
 - One ease and one duration everywhere.
@@ -419,7 +427,7 @@ Restraint swapped for 3D clichés is still a cliché. Restraint must be rich (§
 
 Step 1 happens before designing; the rest happen on the `critique --pack` strip, its cut pairs and three full-size stills, listening once muted and once audio-only.
 
-1. **Diverge.** From the brief, write 3 genuinely different directions, each with a medium, a world, a palette, a type choice, a motion character and a sound. Make them differ on every axis, not just in colour. Pick the one most specific to this brief. List what earlier pieces in this project used (medium, world, motif, palette, type, light, music) and make sure the chosen direction differs from all of them.
+1. **References, then diverge.** Before designing, find and describe 3 real-world visual references *outside* tech and SaaS that fit the brief: print, film title design, editorial or scientific illustration, posters, nature documentary, architecture, craft. For each, write what you take from it (structure, texture, palette logic, type behaviour), not what it looks like. Derive 3 genuinely different directions from them, each with a medium, a world, a palette, a type choice, a motion character and a sound. Pick the one most specific to this brief, and check it differs from every earlier piece in this project. "UI on dark with one accent" is not a direction; it's the default.
 2. **Swap test.** With a competitor's name it would stop working. The idea fits in one sentence, and there are ≥ 3 subject-only elements (real UI, data, names, the product's own shapes or sounds).
 3. **Medium.** It follows from the idea: type, 2D, UI, photo, shader or 3D. 3D only where depth means something.
 4. **Focal point.** Each still names its subject in < 1 s at thumbnail size, and the eye knows where to go next.
