@@ -63,13 +63,15 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [The Imaginary Friend Society // Finding Out You Have Cancer](explainer-2d/giant-ant-imaginary-friend-society-2017.md) | Giant Ant (CD: Jay Grandin; animation director: Conor Whelan; AD: Rafael Mayani) | 2017 | 1:59 | steady | 2d-illustrated, cel | [watch](https://vimeo.com/235372654) |
 | [Optimistic Nihilism](explainer-2d/kurzgesagt-optimistic-nihilism-2017.md) | Kurzgesagt – In a Nutshell | 2017 | ? | steady | 2d-vector | [watch](https://www.youtube.com/watch?v=MBRqu0YOH14) |
 
-### 3D / CG product & abstract (`cg-3d/`, 5)
+### 3D / CG product & abstract (`cg-3d/`, 7)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
 |---|---|---|---|---|---|---|
+| [Manifold](cg-3d/panoply-manifold-2024.md) | Panoply (CD: Mark Lindner) | 2024 | 1:29 | steady | 3d-cg, sim, ui | [watch](https://vimeo.com/1022123584) |
 | [Hublot MP-10 Launch Film](cg-3d/tendril-hublot-mp-10-2024.md) | Tendril (director: Joey Recoskie; CD: Chris Bahry) | 2024 | 1:08 | fast | photoreal-cg, 3d-cg, kinetic-type | [watch](https://vimeo.com/904510310) |
 | [CHARGE - Blender Open Movie](cg-3d/blender-studio-charge-2022.md) | Blender Studio (director: Hjalti Hjálmarsson) | 2022 | ? | steady | photoreal-cg, 3d-cg | [watch](https://www.youtube.com/watch?v=UXqq0ZvbOnk) |
 | [Eternal Installations](cg-3d/andreas-wannerstedt-eternal-installations-2020.md) | Andreas Wannerstedt | 2020 | 1:00 | steady | photoreal-cg, 3d-cg | [watch](https://vimeo.com/454900647) |
+| [Max Cooper - Emptyset - Official video by Julius Horsthuis](cg-3d/julius-horsthuis-emptyset-2019.md) | Julius Horsthuis | 2019 | 5:14 | calm | 3d-cg, generative | [watch](https://vimeo.com/321969608) |
 | [Baidu Raven "H" TVC - Director Cut](cg-3d/builders-club-baidu-raven-h-2017.md) | Builders Club (Jonas Hegi, Julien Simshauser) | 2017 | 1:11 | fast | 3d-cg, photoreal-cg, sim | [watch](https://vimeo.com/244013457) |
 | [Plume](cg-3d/futuredeluxe-plume-2017.md) | FutureDeluxe (art direction and lead CG: Twistedpoly / Nejc Polovsak) | 2017 | 0:58 | steady | 3d-cg, generative | [watch](https://vimeo.com/229537127) |
 
@@ -84,11 +86,27 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [Skyline](generative/raven-kwok-skyline-2015.md) | Raven Kwok | 2015 | 4:56 | fast | generative, 2d-vector | [watch](https://vimeo.com/139977231) |
 | [Walking City](generative/universal-everything-walking-city-2014.md) | Universal Everything (creative director: Matt Pyke; animation: Chris Perry) | 2014 | 7:48 | calm | 3d-cg, generative, sim | [watch](https://vimeo.com/85596568) |
 
-### Sports & broadcast packages (`broadcast-sports/`, 4)
+### Data storytelling (`data-story/`, 4)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [The Fallen of World War II](data-story/halloran-fallen-of-wwii-2015.md) | Neil Halloran (writer, director, coder, narrator) | 2015 | ? | calm | data-viz, 3d-cg | [watch](https://www.youtube.com/watch?v=DwKPFT-RioU) |
+| [How many trees are there in the world?](data-story/nature-tulp-how-many-trees-2015.md) | Nature Video (data visualization: Jan Willem Tulp; art direction: Kelly Krause) | 2015 | ? | steady | data-viz, 3d-cg, generative | [watch](https://www.youtube.com/watch?v=jqdOkXQngw8) |
+| [NASA | A Year in the Life of Earth's CO2](data-story/nasa-year-in-the-life-of-co2-2014.md) | NASA Goddard (GMAO; animator/scientist: Bill Putman) | 2014 | ? | calm | data-viz, sim | [watch](https://www.youtube.com/watch?v=x1SgmFa0r04) |
+| [Hans Rosling's 200 Countries, 200 Years, 4 Minutes - The Joy of Stats - BBC](data-story/bbc-rosling-200-countries-2010.md) | BBC Four, The Joy of Stats (presenter: Hans Rosling; data: Gapminder) | 2010 | ? | steady | data-viz, live-action, mixed | [watch](https://www.youtube.com/watch?v=jbkSRLYSojo) |
+
+### Music videos & lyric videos (`music-video/`, 1)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [Pharrell Williams - Cash In Cash Out (Official Video) ft. 21 Savage, Tyler, The Creator](music-video/rousselet-pharrell-cash-in-cash-out-2022.md) | Division (director: François Rousselet); animation/VFX: Electric Theatre Collective | 2022 | 3:56 | fast | photoreal-cg, stylised-3d | [watch](https://www.youtube.com/watch?v=cKEwnhc8ItY) |
+
+### Sports & broadcast packages (`broadcast-sports/`, 5)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
 |---|---|---|---|---|---|---|
 | [FIFA World Cup 2026 - Let's Make It Iconic | Official Trailer - BBC](broadcast-sports/blinkink-bbc-world-cup-2026.md) | Blinkink (director: Nicos Livesey; lead designer Dan Evans) | 2026 | 0:52 | fast | mixed, stop-motion, live-action | [watch](https://www.youtube.com/watch?v=ff2k22F4qNM) |
+| [FIFA Men's World Cup 2026 | FOX Sports |](broadcast-sports/drive-studio-fox-world-cup-2026.md) | Drive Studio | 2026 | 1:24 | fast | 3d-cg, kinetic-type, mixed | [watch](https://vimeo.com/1206272473) |
 | [Paris 2024 Olympic Games - BBC Official Trailer | Directed by Fx Goby | Nexus Studios](broadcast-sports/nexus-fx-goby-bbc-paris-2024.md) | Nexus Studios (director: Fx Goby) | 2024 | 1:00 | fast | 2d-illustrated, cel | [watch](https://www.youtube.com/watch?v=j7wDrDsMJhU) |
 | [#Paris2024 - Look of the Games](broadcast-sports/w-conran-paris-2024-look-of-the-games.md) | W Conran Design with the Paris 2024 brand team | 2023 | 2:01 | steady | 2d-vector, kinetic-type, mixed | [watch](https://www.youtube.com/watch?v=08aeo0WZMOY) |
 | [BBC Tokyo 2020](broadcast-sports/factory-fifteen-bbc-tokyo-2020.md) | Factory Fifteen (directors: Paul Nicholls, Jonathan Gales, Kibwe Tavares), produced by Nexus Studios | 2021 | 1:00 | fast | mixed, live-action, 3d-cg | [watch](https://vimeo.com/566015251) |

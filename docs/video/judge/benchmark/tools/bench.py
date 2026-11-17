@@ -554,7 +554,7 @@ def cmd_measure(a):
     an = json.loads(aj.read_text())
     if an.get("audio"):
         au = an["audio"]
-        keep["audio"] = {k: au.get(k) for k in ("tempo", "bpm", "cuts_on_beat", "cuts_on_beat_share", "lufs", "loudness") if k in au}
+        keep["audio"] = {k: au.get(k) for k in ("bpm", "cuts_on_beat", "cuts_on_downbeat") if k in au and not isinstance(au[k], list)}
     mf = ROOT / "measured.json"
     mm = json.loads(mf.read_text()) if mf.exists() else {}
     mm[a.slug] = keep

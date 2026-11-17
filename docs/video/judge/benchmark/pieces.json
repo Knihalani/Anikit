@@ -1513,7 +1513,66 @@
    "https://i.ytimg.com/vi/UXqq0ZvbOnk/hq2.jpg",
    "https://i.ytimg.com/vi/UXqq0ZvbOnk/hq3.jpg"
   ],
-  "measured": null,
+  "measured": {
+   "aspect": "21:9",
+   "audio": {
+    "bpm": 120.1,
+    "cuts_on_beat": 0.36,
+    "cuts_on_downbeat": 0.11
+   },
+   "cuts_per_minute": 10.3,
+   "duration": 262.708,
+   "glow": 0.0,
+   "grain": 0.001,
+   "longest_shot": 86.5,
+   "mean_luma": 0.25,
+   "mean_shot": 5.711,
+   "median_shot": 1.625,
+   "pace": "steady",
+   "palette": [
+    "#161511",
+    "#42392F",
+    "#000000",
+    "#7D695D",
+    "#B1B2A6",
+    "#3E2695"
+   ],
+   "shot_count": 46,
+   "style_summary": "21:9 dark clip, 262.7 s, 46 shots (median 1.62 s, longest 86.50 s): steady pace. Transitions: 33 cut, 11 zoom, 1 crossfade. Palette led by #161511, #42392F, #000000. Camera moves in 36/46 shots; text in 3/46. Looks like: scene3d ×35, 2d-motion-graphics ×8, particles ×2, kinetic-type ×1. Finish: vignette. Music ≈ 120 BPM; 36% of cuts on a beat.",
+   "technique_mix": [
+    [
+     "scene3d",
+     35
+    ],
+    [
+     "2d-motion-graphics",
+     8
+    ],
+    [
+     "particles",
+     2
+    ],
+    [
+     "kinetic-type",
+     1
+    ]
+   ],
+   "transition_mix": [
+    [
+     "cut",
+     33
+    ],
+    [
+     "zoom",
+     11
+    ],
+    [
+     "crossfade",
+     1
+    ]
+   ],
+   "vignette": 0.6
+  },
   "path": "docs/video/judge/benchmark/cg-3d/blender-studio-charge-2022.md"
  },
  {
@@ -1639,6 +1698,122 @@
   ],
   "measured": null,
   "path": "docs/video/judge/benchmark/cg-3d/futuredeluxe-plume-2017.md"
+ },
+ {
+  "slug": "julius-horsthuis-emptyset-2019",
+  "category": "cg-3d",
+  "title": "Max Cooper - Emptyset - Official video by Julius Horsthuis",
+  "studio": "Julius Horsthuis",
+  "client": "Max Cooper (One Hundred Billion Sparks)",
+  "year": 2019,
+  "url": "https://vimeo.com/321969608",
+  "alt_urls": [
+   "https://www.onehundredbillionsparks.net"
+  ],
+  "length_s": 314,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "generative"
+  ],
+  "pace": "calm",
+  "palette": [
+   "mono",
+   "light",
+   "limited"
+  ],
+  "type_role": "none",
+  "mood": [
+   "calm",
+   "eerie",
+   "technical"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "shader",
+   "noise-field",
+   "camera-move",
+   "long-take",
+   "depth-of-field",
+   "beat-sync"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "shader",
+   "camera",
+   "post",
+   "audio",
+   "GAP: none fundamental: raymarched fractals run in the shader layer; a fly-through camera path for a shader (uniform-driven) is manual today"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/764809882-3f0f1517ebc6fca1e1487bbc9fe133fc2d9025d21b20306f148d21e9d7cab4eb-d_1280?region=us"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/cg-3d/julius-horsthuis-emptyset-2019.md"
+ },
+ {
+  "slug": "panoply-manifold-2024",
+  "category": "cg-3d",
+  "title": "Manifold",
+  "studio": "Panoply (CD: Mark Lindner)",
+  "client": "Self-initiated",
+  "year": 2024,
+  "url": "https://vimeo.com/1022123584",
+  "alt_urls": [
+   "https://www.stashmedia.tv/data-dimensions-panoply-drops-manifold-short-film/"
+  ],
+  "length_s": 89,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "sim",
+   "ui"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "limited",
+   "high-contrast"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "technical",
+   "minimal",
+   "eerie"
+  ],
+  "purpose": "art",
+  "techniques": [
+   "cloth",
+   "sim",
+   "morph",
+   "hard-cut",
+   "camera-move",
+   "3d-type",
+   "flash-frame",
+   "grid"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "scene3d",
+   "scene3d.physics",
+   "composition",
+   "text",
+   "camera",
+   "post",
+   "motionBlur",
+   "audio",
+   "GAP: cloth (vellum-style) sim driven by an external field",
+   "GAP: polygon slice-and-displace type effect on 3D text"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1941015928-3482f0ccb1e173e546994220c38c7d3469d3d8d66fe68165167771cb8575d8aa-d_1280?region=us"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/cg-3d/panoply-manifold-2024.md"
  },
  {
   "slug": "tendril-hublot-mp-10-2024",
@@ -2054,6 +2229,310 @@
   "path": "docs/video/judge/benchmark/generative/universal-everything-walking-city-2014.md"
  },
  {
+  "slug": "bbc-rosling-200-countries-2010",
+  "category": "data-story",
+  "title": "Hans Rosling's 200 Countries, 200 Years, 4 Minutes - The Joy of Stats - BBC",
+  "studio": "BBC Four, The Joy of Stats (presenter: Hans Rosling; data: Gapminder)",
+  "client": "BBC Four",
+  "year": 2010,
+  "url": "https://www.youtube.com/watch?v=jbkSRLYSojo",
+  "alt_urls": [],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "data-viz",
+   "live-action",
+   "mixed"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "saturated"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "energetic",
+   "editorial",
+   "witty"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "chart-build",
+   "long-take",
+   "camera-move",
+   "rhythmic-edit"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "video",
+   "component (scatter/bubble chart: GAP)",
+   "text value (year counter)",
+   "camera",
+   "audio",
+   "GAP: animated bubble/scatter chart with size+colour encodings and interpolated yearly data",
+   "GAP: chart composited into a tracked live-action plate"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/jbkSRLYSojo/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/jbkSRLYSojo/hq1.jpg",
+   "https://i.ytimg.com/vi/jbkSRLYSojo/hq2.jpg",
+   "https://i.ytimg.com/vi/jbkSRLYSojo/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/bbc-rosling-200-countries-2010.md"
+ },
+ {
+  "slug": "halloran-fallen-of-wwii-2015",
+  "category": "data-story",
+  "title": "The Fallen of World War II",
+  "studio": "Neil Halloran (writer, director, coder, narrator)",
+  "client": "Self-initiated",
+  "year": 2015,
+  "url": "https://www.youtube.com/watch?v=DwKPFT-RioU",
+  "alt_urls": [
+   "https://www.neilfilms.com/ww2/",
+   "https://informationisbeautifulawards.com/showcase?award=2015"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "data-viz",
+   "3d-cg"
+  ],
+  "pace": "calm",
+  "palette": [
+   "dark",
+   "limited",
+   "high-contrast"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "emotional",
+   "editorial",
+   "epic"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "chart-build",
+   "scale-contrast",
+   "camera-move",
+   "instancing",
+   "long-take"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "scene3d",
+   "component bar-chart",
+   "text value counters",
+   "camera",
+   "mograph.repeat (instanced figures)",
+   "post vignette/grain",
+   "audio",
+   "GAP: thousands of instanced figure glyphs stacked into bars with a long camera crane up the stack"
+  ],
+  "awards": [
+   "Information is Beautiful Awards 2015, Motion Infographic Gold"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/DwKPFT-RioU/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/DwKPFT-RioU/hq1.jpg",
+   "https://i.ytimg.com/vi/DwKPFT-RioU/hq2.jpg",
+   "https://i.ytimg.com/vi/DwKPFT-RioU/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/halloran-fallen-of-wwii-2015.md"
+ },
+ {
+  "slug": "nasa-year-in-the-life-of-co2-2014",
+  "category": "data-story",
+  "title": "NASA | A Year in the Life of Earth's CO2",
+  "studio": "NASA Goddard (GMAO; animator/scientist: Bill Putman)",
+  "client": "NASA",
+  "year": 2014,
+  "url": "https://www.youtube.com/watch?v=x1SgmFa0r04",
+  "alt_urls": [
+   "https://svs.gsfc.nasa.gov/11719"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "data-viz",
+   "sim"
+  ],
+  "pace": "calm",
+  "palette": [
+   "saturated",
+   "high-contrast"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "technical",
+   "epic",
+   "calm"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "map",
+   "fluid",
+   "noise-field",
+   "long-take",
+   "camera-move"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "shader",
+   "shader buffers (advection/feedback)",
+   "image (map plates)",
+   "text value (date counter)",
+   "camera",
+   "scene3d",
+   "audio",
+   "GAP: colour-mapped scalar-field renderer with legend (rainbow/diverging LUT)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/x1SgmFa0r04/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/x1SgmFa0r04/hq1.jpg",
+   "https://i.ytimg.com/vi/x1SgmFa0r04/hq2.jpg",
+   "https://i.ytimg.com/vi/x1SgmFa0r04/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/nasa-year-in-the-life-of-co2-2014.md"
+ },
+ {
+  "slug": "nature-tulp-how-many-trees-2015",
+  "category": "data-story",
+  "title": "How many trees are there in the world?",
+  "studio": "Nature Video (data visualization: Jan Willem Tulp; art direction: Kelly Krause)",
+  "client": "Nature",
+  "year": 2015,
+  "url": "https://www.youtube.com/watch?v=jqdOkXQngw8",
+  "alt_urls": [
+   "https://informationisbeautifulawards.com/showcase/772-how-many-trees-are-there-in-the-world"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "data-viz",
+   "3d-cg",
+   "generative"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "technical",
+   "calm",
+   "editorial"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "map",
+   "instancing",
+   "particles",
+   "camera-move",
+   "scale-contrast",
+   "kinetic-type"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "scene3d",
+   "text value (counter)",
+   "camera",
+   "particles/instancing (point globe)",
+   "glow",
+   "audio",
+   "GAP: data-driven point-cloud globe (lat/long density → instanced points)"
+  ],
+  "awards": [
+   "Information is Beautiful Awards 2015, Motion Infographic Silver"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/jqdOkXQngw8/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/jqdOkXQngw8/hq1.jpg",
+   "https://i.ytimg.com/vi/jqdOkXQngw8/hq2.jpg",
+   "https://i.ytimg.com/vi/jqdOkXQngw8/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/nature-tulp-how-many-trees-2015.md"
+ },
+ {
+  "slug": "rousselet-pharrell-cash-in-cash-out-2022",
+  "category": "music-video",
+  "title": "Pharrell Williams - Cash In Cash Out (Official Video) ft. 21 Savage, Tyler, The Creator",
+  "studio": "Division (director: François Rousselet); animation/VFX: Electric Theatre Collective",
+  "client": "Pharrell Williams / Columbia",
+  "year": 2022,
+  "url": "https://www.youtube.com/watch?v=cKEwnhc8ItY",
+  "alt_urls": [
+   "https://www.annecyfestival.com/en/node/532/commissioned-films/pharrell-feat-21-savage-tyler-the-creator-cash-cash-out"
+  ],
+  "length_s": 236,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "photoreal-cg",
+   "stylised-3d"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "neon",
+   "dark"
+  ],
+  "type_role": "none",
+  "mood": [
+   "playful",
+   "witty",
+   "energetic"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "loop",
+   "stop-motion-feel",
+   "macro",
+   "depth-of-field",
+   "beat-sync",
+   "camera-move",
+   "instancing"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "depth",
+   "motionBlur",
+   "post",
+   "GAP: strobe/zoetrope temporal sampling (per-figure pose sequences on a rotating platter seen through a shutter)",
+   "GAP: miniature-scale photoreal materials (3D-print layer lines, fingerprints, clay cloth)",
+   "GAP: lip-synced character performance"
+  ],
+  "awards": [
+   "UK Music Video Awards 2022: Video of the Year",
+   "UK Music Video Awards 2022: Best Animation in a Video",
+   "UK Music Video Awards 2022: Best VFX in a Video",
+   "UK Music Video Awards 2022: Best Hip Hop/Grime/Rap Video International",
+   "D&AD 2023 Pencils (animation and visual effects; level not checked)",
+   "Annecy 2023 official selection, commissioned films"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/cKEwnhc8ItY/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/cKEwnhc8ItY/hq1.jpg",
+   "https://i.ytimg.com/vi/cKEwnhc8ItY/hq2.jpg",
+   "https://i.ytimg.com/vi/cKEwnhc8ItY/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/rousselet-pharrell-cash-in-cash-out-2022.md"
+ },
+ {
   "slug": "blinkink-bbc-world-cup-2026",
   "category": "broadcast-sports",
   "title": "FIFA World Cup 2026 - Let's Make It Iconic | Official Trailer - BBC",
@@ -2113,6 +2592,70 @@
   ],
   "measured": null,
   "path": "docs/video/judge/benchmark/broadcast-sports/blinkink-bbc-world-cup-2026.md"
+ },
+ {
+  "slug": "drive-studio-fox-world-cup-2026",
+  "category": "broadcast-sports",
+  "title": "FIFA Men's World Cup 2026 | FOX Sports |",
+  "studio": "Drive Studio",
+  "client": "FOX Sports",
+  "year": 2026,
+  "url": "https://vimeo.com/1206272473",
+  "alt_urls": [
+   "https://vimeo.com/1211433063",
+   "https://www.stashmedia.tv/?p=121328"
+  ],
+  "length_s": 84,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "kinetic-type",
+   "mixed"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "brand-colour",
+   "high-contrast"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "energetic",
+   "epic"
+  ],
+  "purpose": "broadcast",
+  "techniques": [
+   "3d-type",
+   "camera-move",
+   "cloth",
+   "grid",
+   "kinetic-type",
+   "rhythmic-edit",
+   "beat-sync",
+   "light-sweep"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "text",
+   "camera",
+   "mograph",
+   "mask",
+   "transitions",
+   "motionBlur",
+   "post",
+   "audio",
+   "GAP: cloth sim for scarves and flags",
+   "GAP: template system for 48 team variants"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/2175076916-1dd784142027ef070f50e7c740c921ee6eb41b11b70debee1f4bda0f6e350790-d_1280",
+   "https://i.vimeocdn.com/video/2181606149-3d8d5d0f40e5eac8420c74b8719d29566180f4ee91787f6e42980faaae3cb67e-d_1280"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/broadcast-sports/drive-studio-fox-world-cup-2026.md"
  },
  {
   "slug": "factory-fifteen-bbc-tokyo-2020",
