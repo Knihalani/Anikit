@@ -1971,6 +1971,11 @@ fn fast_acos(x: f32) -> f32 {
 }
 
 /// Splat every live system into one layer.
+fn streak_gap() -> f32 {
+    static G: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    *G.get_or_init(|| std::env::var("ANIKIT_STREAK_GAP").ok().and_then(|v| v.parse().ok()).unwrap_or(0.5))
+}
+
 /// One splat with the kernel picked for a footprint (`kk`, blend `lw`; see `render`).
 #[inline(always)]
 #[allow(clippy::too_many_arguments)]
@@ -2169,6 +2174,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 })
                 .collect()
         });
+        let t_ranges = clock.elapsed();
         let work = |band: (i32, i32), bi: Option<u8>| -> Pyr {
             let mut py = if band == (0, i32::MAX) { Pyr::new(w, h, levels, c) } else { Pyr::new_band(w, h, levels, c, band) };
             for j in 0..n {
@@ -2220,7 +2226,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let l = if kk == 0 || kk == usize::MAX { 0 } else { BINS[kk - 1].1 };
                 let tex = (1u32 << l) as f32;
                 // Streak samples at most half a texel apart (a texel in draft).
-                let ns = if v.draft { ((ml / tex).ceil() as usize).clamp(1, 24) } else { ((ml * 2.0 / tex).ceil() as usize).clamp(1, 48) };
+                let ns = if v.draft { ((ml / tex).ceil() as usize).clamp(1, 24) } else { ((ml / (tex * streak_gap())).ceil() as usize).clamp(1, 48) };
                 // Energy: projected disc area (world size) — in focus it's smaller than a pixel.
                 let area = std::f32::consts::PI * r_px * r_px;
                 // Lit colour.
@@ -2355,11 +2361,15 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
         } else {
             use rayon::prelude::*;
             let parts: Vec<Pyr> = (0..nb).into_par_iter().map(|b| work(((b * BAND) as i32, if b + 1 == nb { i32::MAX } else { ((b + 1) * BAND) as i32 }), Some(b as u8))).collect();
+            let t_bands = clock.elapsed();
             let mut full = Pyr::new(w, h, levels, c);
             for p in parts {
                 full.absorb(p);
             }
             pyrs.push(full);
+            if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
+                eprintln!("  splat passes: ranges {:.0} ms, bands {:.0} ms, absorb {:.0} ms", t_ranges.as_secs_f64() * 1e3, (t_bands - t_ranges).as_secs_f64() * 1e3, (clock.elapsed() - t_bands).as_secs_f64() * 1e3);
+            }
         }
     }
     let t_splat = clock.elapsed();
