@@ -273,7 +273,7 @@ impl FloorVis {
         if fx < -1.0 || fz < -1.0 || fx > self.nx as f32 || fz > self.nz as f32 {
             return [1.0, 1.0];
         }
-        let (ix, iz) = (fx.floor(), fz.floor());
+        let (ix, iz) = (ffloor(fx), ffloor(fz));
         let (tx, tz) = (fx - ix, fz - iz);
         let at = |i: i32, k: i32| -> [f32; 2] {
             if i < 0 || k < 0 || i >= self.nx as i32 || k >= self.nz as i32 {
@@ -389,6 +389,12 @@ pub struct Scene {
     pub haze: (f32, V3),
     /// Local point and spot lights.
     pub lights: Vec<Light>,
+    /// Per instance: world → object transform as three rows of
+    /// diag(1/s)·Rᵀ plus the translation (built by [`Scene::rebuild`]), so
+    /// ray transforms need no divisions.
+    inv: Vec<[V3; 4]>,
+    /// Ambient and unshadowed key diffuse light for an upward normal (the floor).
+    up_light: (V3, V3),
 }
 
 #[derive(Clone, Copy)]
@@ -551,7 +557,7 @@ impl Scene {
                 .collect()
         };
         use rayon::prelude::*;
-        let rows: Vec<Vec<[f32; 3]>> = if rayon::current_thread_index().is_some() { (0..hh).map(row).collect() } else { (0..hh).into_par_iter().map(row).collect() };
+        let rows: Vec<Vec<[f32; 3]>> = if !super::kernel::par::parallel() { (0..hh).map(row).collect() } else { (0..hh).into_par_iter().map(row).collect() };
         let raw: Vec<[f32; 3]> = rows.into_iter().flatten().collect();
         // Two 5×5 binomial passes remove the jitter (shafts are smooth).
         let mut out = raw.clone();
@@ -771,7 +777,11 @@ impl Scene {
             glow: (v3(0.0, 0.0, -1.0), v3(0.0, 0.0, 0.0), 0.1),
             haze: (0.0, v3(0.0, 0.0, 0.0)),
             lights: Vec::new(),
+            inv: Vec::new(),
+            up_light: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)),
         };
+        let up = v3(0.0, 1.0, 0.0);
+        s.up_light = (s.env.diffuse(up), s.key_diffuse(up));
         s.rebuild();
         s
     }
@@ -780,6 +790,23 @@ impl Scene {
     pub fn rebuild(&mut self) {
         let boxes: Vec<(V3, V3)> = self.insts.iter().map(|i| self.world_box(i)).collect();
         self.tlas = Tlas::new(&boxes);
+        self.inv = self.insts.iter().map(|i| [scale(i.xf.r[0], 1.0 / i.xf.s.x), scale(i.xf.r[1], 1.0 / i.xf.s.y), scale(i.xf.r[2], 1.0 / i.xf.s.z), i.xf.t]).collect();
+    }
+
+    /// A world ray in instance `k`'s object space (direction unnormalised,
+    /// so `t` is preserved).
+    #[inline]
+    fn to_object(&self, k: usize, o: V3, d: V3) -> (V3, V3) {
+        match self.inv.get(k) {
+            Some(m) => {
+                let q = sub(o, m[3]);
+                (v3(dot(m[0], q), dot(m[1], q), dot(m[2], q)), v3(dot(m[0], d), dot(m[1], d), dot(m[2], d)))
+            }
+            None => {
+                let xf = &self.insts[k].xf;
+                (xf.point_inv(o), xf.dir_inv(d))
+            }
+        }
     }
 
     pub fn world_box(&self, i: &Inst) -> (V3, V3) {
@@ -821,8 +848,7 @@ impl Scene {
             if camera && !ob.cam {
                 return tm;
             }
-            let lo = ob.xf.point_inv(o);
-            let ld = ob.xf.dir_inv(d);
+            let (lo, ld) = self.to_object(k as usize, o, d);
             if let Some(hh) = self.shapes[ob.shape as usize].hit_t(lo, ld, EPS, tm) {
                 obj = Some((k, lo, ld, hh));
                 hh.0
@@ -857,8 +883,7 @@ impl Scene {
             if !ob.shadow {
                 return tm;
             }
-            let lo = ob.xf.point_inv(o);
-            let ld = ob.xf.dir_inv(d);
+            let (lo, ld) = self.to_object(k as usize, o, d);
             if self.shapes[ob.shape as usize].occluded(lo, ld, EPS, tm) {
                 let m = &self.mats[ob.mat as usize];
                 if m.transmission > 0.0 {
@@ -986,7 +1011,7 @@ impl Scene {
         let r2d = dx * dx + dz * dz;
         let pool = if f.pool.2 > 0.0 { (-r2d / (f.pool.2 * f.pool.2)).exp() } else { 1.0 };
         let (ll, _) = if self.lights.is_empty() { (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) } else { self.local_lights(p, up, scale(d, -1.0), 1.0, v3(0.0, 0.0, 0.0)) };
-        let dif = Diffuse { alb: f.color, amb: add(self.env.diffuse(up), ll), key: scale(self.key_diffuse(up), pool), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
+        let dif = Diffuse { alb: f.color, amb: add(self.up_light.0, ll), key: scale(self.up_light.1, pool), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
         let fade = if f.fade.1 > f.fade.0 { smoothstep(f.fade.0, f.fade.1, r2d.sqrt()) } else { 0.0 };
         // Reflection: Fresnel lacquer plus an optional mirror boost.
         let nv = (-d.y).clamp(1e-4, 1.0);
@@ -1308,7 +1333,7 @@ impl Scene {
     /// centre sample per pixel, then `edge_spp` more where a pixel disagrees
     /// with a neighbour, resolved into `out` (`w × h`). Fine-grained rows keep
     /// the cores evenly loaded, and no centre sample is computed twice.
-    pub fn render_frame(&self, cam: &Camera, prev: &Camera, w: usize, h: usize, q: &Quality, out: &mut [Px]) {
+    pub fn render_frame(&self, cam: &Camera, prev: &Camera, w: usize, h: usize, q: &Quality, out: &mut super::kernel::post::Planes) {
         use super::kernel::{par, pool::Buf};
         let (rig, prev) = (&Rig::new(cam, w, h), &Rig::new(prev, w, h));
         let clock = std::time::Instant::now();
@@ -1332,7 +1357,9 @@ impl Scene {
         let t_centre = clock.elapsed();
         let refined = std::sync::atomic::AtomicU64::new(0);
         let (centre, tms) = (&centre, &tms);
-        par::rows(out, w, |y, row| {
+        assert_eq!(out.len(), w * h);
+        let wr = out.writer();
+        par::each_row(h, |y| {
             let mut samples: Vec<Sample> = Vec::with_capacity(q.edge_spp as usize + 1);
             let mut nref = 0u64;
             for x in 0..w {
@@ -1363,7 +1390,11 @@ impl Scene {
                     while i < q.edge_spp {
                         let (a, b) = r2(i, rot);
                         let srot = (u01(hash2(hs, i * 2 + 1)), u01(hash2(hs, i * 2 + 2)));
-                        samples.push(self.primary(rig, prev, x as f32 + a, y as f32 + b, q, srot, 0));
+                        // Every other sub-sample skips the floor reflection and the
+                        // shadow/AO rays (as the centre samples do on the
+                        // checkerboard): resolve and post weight them out.
+                        let sk = if !q.full && i & 1 == (x + y) as u32 & 1 { (rough_floor as u8) | 2 } else { 0 };
+                        samples.push(self.primary(rig, prev, x as f32 + a, y as f32 + b, q, srot, sk));
                         i += 1;
                         if i == half {
                             let id0 = samples[0].id;
@@ -1381,7 +1412,8 @@ impl Scene {
                         }
                     }
                 }
-                row[x] = resolve(&samples);
+                // SAFETY: pixel (x, y) belongs to this row's task; `out` outlives the loop.
+                unsafe { wr.put(ci, &resolve(&samples)) };
             }
             refined.fetch_add(nref, std::sync::atomic::Ordering::Relaxed);
         });
@@ -1469,7 +1501,7 @@ impl Scene {
                 .collect()
         };
         use rayon::prelude::*;
-        let rows: Vec<Vec<[f32; 2]>> = if rayon::current_thread_index().is_some() { (0..nz).map(row).collect() } else { (0..nz).into_par_iter().map(row).collect() };
+        let rows: Vec<Vec<[f32; 2]>> = if !super::kernel::par::parallel() { (0..nz).map(row).collect() } else { (0..nz).into_par_iter().map(row).collect() };
         let raw: Vec<[f32; 2]> = rows.into_iter().flatten().collect();
         let mut data = raw.clone();
         for k in 0..nz {

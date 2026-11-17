@@ -76,7 +76,9 @@ pub struct StageProfile {
     pub render_ms: f64,
     pub copy_ms: f64,
     pub encode_ms: f64,
-    /// Cores waiting (load imbalance, startup), ms per frame.
+    /// Cores waiting (load imbalance, startup), ms per frame. Also counts work a
+    /// stage hands to other threads (nested parallelism in shaders, 3D, post): it
+    /// is wall × threads minus the per-frame stage times, so it overstates idling there.
     pub idle_ms: f64,
     /// Wall ms per frame for render + encode (excludes mux).
     pub wall_ms: f64,
@@ -500,7 +502,8 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
                 if lr.elapsed().as_secs_f32() > 0.5 {
                     *lr = Instant::now();
                     let el = t0.elapsed().as_secs_f32();
-                    eprint!("\rrender {d}/{n} frames  {:.0} fps  {:.1}s", d as f32 / el.max(1e-6), el);
+                    let fps = d as f32 / el.max(1e-6);
+                    eprint!("\rrender {d}/{n} frames  {fps:.0} fps  {el:.1}s  ETA {:.0}s   ", (n as f32 - d as f32) / fps.max(1e-6));
                 }
             }
         }
@@ -763,6 +766,7 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         full_range: false,
         cabac: opts.quality != Quality::Draft,
         subpel: opts.quality != Quality::Draft,
+        aq_strength: ev.encode_aq.unwrap_or(0.0),
         ..Default::default()
     };
     let prof = Profile::default();
@@ -851,7 +855,7 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     };
     if opts.profile {
         eprintln!(
-            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting: load imbalance, mux, startup)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
+            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting, or nested parallel work in shaders/3D/post: not counted per stage)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
             unchanged,
             sp.held,
             sp.partial,
@@ -1050,7 +1054,8 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
             if opts.progress && (last_report.elapsed().as_secs_f32() > 0.5 || end == f1) {
                 last_report = Instant::now();
                 let el = t0.elapsed().as_secs_f32();
-                eprint!("\rrender {done}/{n} frames  {:.0} fps  {:.1}s", done as f32 / el.max(1e-6), el);
+                let fps = done as f32 / el.max(1e-6);
+                eprint!("\rrender {done}/{n} frames  {fps:.0} fps  {el:.1}s  ETA {:.0}s   ", (n as f32 - done as f32) / fps.max(1e-6));
             }
             start = end;
         }
@@ -1118,6 +1123,21 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
     let changing = (f0..f1).filter(|&i| i == f0 || !ev.is_static((i as f32 - 1.0) / ev.fps, i as f32 / ev.fps)).count() as u32;
     let threads = rayon::current_num_threads().max(1);
     let n = f1 - f0;
+    // Quick look first: one full frame in the middle. Most renders stop here (a few ms).
+    let mid = f0 + n / 2;
+    let t = Instant::now();
+    let mut dl = ev.eval(frame_time(ev, mid));
+    scale_list(&mut dl, opts.scale);
+    with_renderer(ev, |r, _| {
+        r.set_quality(render_quality(opts.quality));
+        r.render(&dl);
+    });
+    let quick_ms = t.elapsed().as_secs_f64() * 1e3;
+    // A full frame is an upper bound for an incremental one, and other frames render alongside.
+    let quick = quick_ms * changing as f64 / threads as f64 / 1e3 + 0.3;
+    if quick < heavy_after * 0.5 {
+        return Estimate { secs: quick, frame_ms: quick_ms, changing, threads, heaviest: None };
+    }
     // Render one sample frame per thread, concurrently, as the pipeline does: layers that
     // parallelise internally (shaders, 3D) then show their real throughput.
     let k = threads.clamp(2, 8) as u32;

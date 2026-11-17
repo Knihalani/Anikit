@@ -6,13 +6,15 @@ Start with [`skills/anikit-video/SKILL.md`](../../skills/anikit-video/SKILL.md) 
 
 ```bash
 anikit-video docs                                    # topics
-anikit-video recipes [name]                          # drop-in high-end shots and the shader library
+anikit-video recipes [name]                          # high-end shots to borrow techniques from, and the shader library
 anikit-video still s.json --at 2.4 --width 640 -o f.png
 anikit-video render s.json -o out.mp4
 anikit-video critique s.json --render --pack rv/     # judged against "intent"; open rv/review.md and look
 ```
 
 **MCP** (`anikit-video mcp`): `docs`, `recipes`, `list_looks`, `validate_spec`, `critique_spec` (`render`, `detail`), `render_still`, `render_contact_sheet`, `render_video`, `get_prompt`, `list_templates`, `get_template_schema`, `create_from_template`.
+
+**Launch videos:** [`skills/anikit-launch-video/SKILL.md`](../../skills/anikit-launch-video/SKILL.md) (`anikit-video docs launch`); worked examples in [`skills/launch-examples/`](skills/launch-examples/).
 
 **Reference video?** "Make one like this": `anikit-video analyze ref.mp4 --sheet s.jpg --spec draft.json` (shots, transitions, pacing, palette, camera, beats → a draft spec), then [`skills/anikit-reverse-video/SKILL.md`](../../skills/anikit-reverse-video/SKILL.md). Examples: [`skills/reverse-examples/`](skills/reverse-examples/).
 

@@ -286,19 +286,16 @@ pub fn sparkle(p: &mut Path, cx: f32, cy: f32, r: f32, rot: f32, pinch: f32) {
 
 // ---------------------------------------------------------------- speed shortcuts
 
-/// Whether to render the ground-truth version of every speed shortcut in
-/// the effect components. `false` (the default) uses the shortcuts:
-/// - gaussian discs/ellipses (radial gradients) stand in for per-frame
-///   blurred layers of out-of-focus particles (sparks, snow, dust,
-///   particle-text), for spark bloom and for the metaball glow and inner
-///   glow; near confetti pieces are a baked soft-rectangle image;
-/// - light layers (rays, flare, sparks, dust, snow glints) and the metaball
-///   rim and inner glow composite with source-over instead of Add/Screen;
-/// - god-ray slices up to ~9 px wide at their far end (2 px exact);
-/// - metaball iso-contours on a `detail` px grid.
+/// Whether to render the vector reference of the effect kinds that have a
+/// faster, equivalent direct path (reference mode, see `qbench`). The look
+/// is the same either way; the approximate shortcuts this used to gate
+/// (gaussian discs for defocus and bloom, source-over light, wide god-ray
+/// slices) were visible and are gone. Direct paths, off when this is true:
+/// - god-rays: the slice fan rasterised per scanline into image strips;
+/// - particle-text: dots, glow and the blurred near dots splatted into one image;
+/// - ken-burns: film grade and vignette baked into one static image.
 ///
-/// `true` renders blurred layers and gradients exactly, so the quality
-/// cost of each shortcut can be measured.
+/// Still approximate: metaball iso-contours on a `detail` px grid.
 #[inline]
 pub fn exact() -> bool {
     // qbench reference renders (`components::reference()`).
@@ -345,13 +342,8 @@ pub fn stamp_affine(id: crate::dl::ImageId, x: f32, y: f32, a: [f32; 2], b: [f32
 
 /// Begin an additive (light) layer, or a normal one on light themes where
 /// adding light would wash out. Returns whether a layer was pushed (pop it
-/// with [`pop_if`]). Shortcut: unless [`exact`], light is drawn straight
-/// onto the frame with source-over (no full-frame layer composite); faint
-/// light over a dark scene looks the same.
+/// with [`pop_if`]; always true).
 pub fn push_light(out: &mut Vec<Op>, opacity: f32, additive: bool) -> bool {
-    if !exact() && opacity >= 0.999 {
-        return false;
-    }
     push_layer(out, opacity, if additive { Blend::Add } else { Blend::Normal }, Vec::new());
     true
 }

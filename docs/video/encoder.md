@@ -43,6 +43,8 @@ Other entry points:
 | `deblock` | `false` | The in-loop filter. It helps only at QP ≥ 34 (+0.1–0.2 dB) and costs about 25% speed; at QP ≤ 28 it *lowers* PSNR on this content (sharp edges, and copied macroblocks next to changing areas get re-filtered every frame). | With `threads > 1`, each slice deblocks its own rows in parallel (`disable_deblocking_filter_idc` 2).
 | `subpel` | `true` | Quarter-pel motion refinement (exact 6-tap interpolation, half-pel planes kept up to date incrementally). It saves 16–46% on real renderer clips with sub-pixel motion, for 15–25% more time. |
 | `aq_strength` | `-0.5` (auto) | Adaptive quantisation: smooth macroblocks (fades, lit floors) get a lower QP, −(4 + up to 7)·strength, with a wide AC dead zone; busy ones keep `qp`. ≥ 0 is used as given. Negative is automatic per frame: \|value\| on frames dominated by smooth textured content (3D renders, video), 0 on UI and motion graphics. |
+| `ssim_floor` | `0.985` | Per-frame quality floor. After each frame the luma SSIM of the reconstruction is estimated; while it is below the floor the next frames use a lower slice QP (`slice_qp_delta`), and an IDR below the floor is coded a second time at the estimated QP. The QP comes back up towards `qp` when there is margin. It is deterministic: it depends only on frames already coded in the stream or chunk. 0 = constant QP. Content above the floor (all UI, text and motion-graphics clips tested) is bit-identical to constant QP. |
+| `ssim_max_drop` | `8` | Lowest QP the floor may use, as an offset below `qp`. It bounds the size on content where SSIM rises slowly with bits, such as per-frame film grain. |
 | `skip_threshold` | `0` | Perceptual skip: code a changed macroblock as a copy when every sample is within this distance of the reconstructed reference. Off by default (see the measurements below). |
 | `threads` | 1 | Slices per frame for `encode()`. Chunk-parallel modes ignore it. |
 | `full_range` | `false` | Signals the colour range (BT.709 primaries/matrix are always signalled). |
@@ -58,6 +60,8 @@ macroblocks are trusted to be identical to the previous frame and are never read
 Flagged ones are still compared exactly, so a loose box costs only a compare.
 Without hints, every macroblock is compared (fused with the copy into the encoder's
 buffer), which costs about 10% of a mostly static frame.
+
+`FrameHints.grain` is the film grain the renderer added: the standard deviation of the luma grain at mid-grey, in 8-bit code values. For anikit-video's post grain this is `grain × 219 / √6`, about 3.1 for `cinematic`. The SSIM floor then treats that much missing source variance as free, so grain that is re-drawn every frame doesn't drive the QP down, while lost detail still does.
 
 `FrameHints.motions` lists known translations, e.g. layer `(x, y, w, h)` moved by
 `(dx, dy)`. They seed motion search for the macroblocks they cover.
@@ -395,9 +399,11 @@ with deblocking on:
 
 | Clip | Before | After | Change |
 |---|---|---|---|
-| launch | 11.16 G | 9.06 G | −19% |
-| tutorial | 4.93 G | 4.01 G | −19% |
-| spec-to-screen | 13.30 G | 10.91 G | −18% |
+| launch | 11.16 G | 8.93 G | −20% |
+| tutorial | 4.93 G | 3.98 G | −19% |
+| spec-to-screen | 13.30 G | 10.65 G | −20% |
+
+The final builds include automatic AQ; its per-frame measurement costs about 1%.
 
 What changed:
 - **Sub-pel refinement:** AVX2 SAD two rows per step, one call per candidate
@@ -408,8 +414,11 @@ What changed:
   which is exact and uses fewer operations.
 - **Chroma MC:** SSSE3 `pmaddubsw` bilinear interpolation.
 - **Deblocking:** one bounds check per edge and an SSE2 8×4 transpose for chroma
-  vertical edges. Internal-edge strengths come from a coefficient bitmask, and
-  edges without bS 4 skip the strong filter at compile time.
+  vertical edges. Cb and Cr edges are filtered together as one 16-lane pass.
+  Internal-edge strengths come from a coefficient bitmask, and edges without
+  bS 4 skip the strong filter at compile time.
+- **Motion search:** the full search returns its seed when it ends on the seed's
+  vector, with no second prediction copy and no second SATD.
 - **CABAC:** decisions renormalise only when `range < 256`, with no bounds checks;
   empty 4×4 blocks are a single bin; the residual coder walks a nonzero bitmask.
 - **Smaller items:**
@@ -490,6 +499,14 @@ Applied everywhere, smooth-heavy UI content pays heavily (QP 23, 300 frames):
 - **Strength:** 0.5 already removes the cyc patchwork; 1.0 looks the same there
   at +9%.
 
+On the PERF corpus (`qbench`), automatic AQ was compared with the earlier
+encoder:
+- **Fidelity:** delivered quality is equal or better on every spec. Backdrop goes
+  46.96 → 47.42 dB, launch 48.12 → 48.47 dB, scene3d 50.72 → 51.08 dB (min
+  PSNR-Y). Minimum SSIM rises with them, and particles moves by −0.0001.
+- **Size:** where AQ fires, files grow: backdrop +35%, launch +23%, scene3d
+  +39%. Everything else changes by 0–4%.
+
 The x264 size gap on cyc: x264 at CRF 23 is 791 KB but 42.5 dB, five dB below
 ak264 at QP 23. At matched PSNR ak264 needs about 1080 KB (1.36×), the usual gap
 from B-frames and RD tools on busy content. A wide AC dead zone on smooth inter
@@ -513,6 +530,28 @@ skip for free.
 Reproduce with `cargo run --release -p ak264 --example dark`. For a rendered
 clip: `FILE=clip.yuv AQ=1 FRAME=60 OUT=dir CROP=x,y LIFT=lo,gain` writes a
 lifted crop, and `DUMP=frame.yuv` writes the reconstructed frame.
+
+### Quality floor (SSIM)
+
+At a constant QP 23, two renderer specs delivered a visibly lower SSIM than the others: `shader` (0.933 min, 39.8 dB) and `post` (0.950 min, 42.7 dB). Every other spec is ≥ 0.993. The error has two sources:
+
+- **`shader`: high-frequency procedural detail that moves.** It is spread over the whole frame, with a mean |Laplacian| of 17. Constant QP 19 reaches 0.968 and QP 15 reaches 0.984.
+- **`post`: film grain.** The frame is dark (mean luma 40) and covered in grain of about ±2 levels that is re-drawn every frame. 34% of the pixels change by more than 2 between frames where nothing moves. An inter frame can't predict new noise, so at QP 23 the grain is smoothed away, which costs SSIM everywhere. x264 behaves the same way: `medium` at CRF 18 delivers 0.950 at 5.5 MB, and `-tune grain` doesn't help.
+
+`ssim_floor` (default 0.985) handles both with per-frame feedback. The results are for 90 frames at 1080p30 and `qp` 23; SSIM-Y and PSNR-Y are from ffmpeg on the decoded stream:
+
+| Spec | Constant QP 23 | Floor 0.985, max drop 8 (default) | Floor, max drop 12 |
+|---|---|---|---|
+| shader | 0.933 min / 0.939 mean, 39.8 dB, 2.7 MB | 0.984 / 0.984, 46.0 dB, 12.1 MB | – |
+| post | 0.950 / 0.951, 42.8 dB, 1.1 MB | 0.977 / 0.981, 47.0 dB, 21.6 MB | 0.977 / 0.988, 49.0 dB, 31.7 MB |
+| particles, UI, text, … | ≥ 0.993 | unchanged (bit-identical) | – |
+
+The floor removes the visible loss on `shader` for 4.4× the bytes. For reference, x264 `medium` without B-frames reaches about 0.97 at 3.0–3.4 MB, so a coding-efficiency gap of about 2× on this kind of content remains: x264 has RD mode decision, several references, 8×8 transforms and trellis quantisation. On `post`, without a hint, the bytes go to coding random grain, which is expensive with any encoder. With `FrameHints.grain` = 3.1 (the `cinematic` grain), `post` stays at QP 23: 1.1 MB, 1.0× the size.
+
+- Its grain-compensated SSIM is 0.994 min. This is the floor's own measure: the source variance minus the grain's, per 8×8 block.
+- Its 2×2-downsampled SSIM is 0.982. That measure still contains half the grain amplitude, so it would need QP 20, at 5× the size, to reach 0.985.
+
+The same compensation applied to grain-free `shader` still reads 0.975 at QP 23, so real detail loss is still caught. Synthesising the grain at playback, or rendering it with a fixed pattern, would be far cheaper than encoding it.
 
 ## Limitations and next steps
 

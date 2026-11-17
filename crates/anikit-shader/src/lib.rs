@@ -35,6 +35,92 @@ pub fn set_lane_groups(n: usize) {
     LANE_GROUPS.store(n.clamp(1, 2), std::sync::atomic::Ordering::Relaxed);
 }
 
+/// Directory for compiled kernels: `ANIKIT_SHADER_CACHE` (`0` turns the cache
+/// off), else `$XDG_CACHE_HOME/anikit/shaders`, else `~/.cache/anikit/shaders`.
+fn disk_dir() -> Option<std::path::PathBuf> {
+    // Unit tests compile for real unless a test points the cache somewhere.
+    if cfg!(test) && std::env::var_os("ANIKIT_SHADER_CACHE").is_none() {
+        return None;
+    }
+    match std::env::var_os("ANIKIT_SHADER_CACHE") {
+        Some(v) if v == "0" || v.is_empty() => None,
+        Some(v) => Some(v.into()),
+        None => std::env::var_os("XDG_CACHE_HOME")
+            .map(std::path::PathBuf::from)
+            .or_else(|| std::env::var_os("HOME").map(|h| std::path::Path::new(&h).join(".cache")))
+            .map(|d| d.join("anikit").join("shaders")),
+    }
+}
+
+/// Cache key: the source and declared uniforms, the lane groups, this
+/// build's code generator (its own source text) and the CPU's vector features.
+fn disk_key(src: &str, extra: &[(&str, UType)]) -> Option<u64> {
+    use std::hash::{Hash, Hasher};
+    static GEN: std::sync::OnceLock<u64> = std::sync::OnceLock::new();
+    let gen = *GEN.get_or_init(|| {
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        (env!("CARGO_PKG_VERSION"), include_str!("jit.rs"), include_str!("vmath.rs"), include_str!("texture.rs"), include_str!("front.rs"), include_str!("lib.rs")).hash(&mut h);
+        #[cfg(target_arch = "x86_64")]
+        {
+            for f in [
+                std::arch::is_x86_feature_detected!("sse4.1"),
+                std::arch::is_x86_feature_detected!("sse4.2"),
+                std::arch::is_x86_feature_detected!("avx"),
+                std::arch::is_x86_feature_detected!("avx2"),
+                std::arch::is_x86_feature_detected!("fma"),
+                std::arch::is_x86_feature_detected!("bmi1"),
+                std::arch::is_x86_feature_detected!("bmi2"),
+                std::arch::is_x86_feature_detected!("lzcnt"),
+                std::arch::is_x86_feature_detected!("popcnt"),
+                std::arch::is_x86_feature_detected!("avx512f"),
+                std::arch::is_x86_feature_detected!("avx512vl"),
+            ] {
+                f.hash(&mut h);
+            }
+        }
+        h.finish()
+    });
+    disk_dir()?;
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    (gen, src, lane_groups()).hash(&mut h);
+    for (n, t) in extra {
+        (n, format!("{t:?}")).hash(&mut h);
+    }
+    Some(h.finish())
+}
+
+fn disk_path(key: u64) -> Option<std::path::PathBuf> {
+    Some(disk_dir()?.join(format!("{key:016x}.bin")))
+}
+
+/// Best effort: a failed write just means compiling next time.
+fn disk_store(key: u64, blob: &[u8]) {
+    let Some(path) = disk_path(key) else { return };
+    let Some(dir) = path.parent() else { return };
+    if std::fs::create_dir_all(dir).is_err() {
+        return;
+    }
+    let tmp = dir.join(format!("{key:016x}.{}.tmp", std::process::id()));
+    if std::fs::write(&tmp, blob).is_ok() {
+        let _ = std::fs::rename(&tmp, &path);
+    }
+    // Keep the cache bounded: past MAX entries, drop the oldest quarter.
+    const MAX: usize = 400;
+    if let Ok(rd) = std::fs::read_dir(dir) {
+        let mut files: Vec<(std::time::SystemTime, std::path::PathBuf)> = rd
+            .flatten()
+            .filter(|e| e.path().extension().is_some_and(|x| x == "bin"))
+            .filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path())))
+            .collect();
+        if files.len() > MAX {
+            files.sort();
+            for (_, f) in files.iter().take(files.len() - MAX * 3 / 4) {
+                let _ = std::fs::remove_file(f);
+            }
+        }
+    }
+}
+
 /// See [`set_lane_groups`].
 pub fn lane_groups() -> usize {
     match std::env::var("ANIKIT_SHADER_GROUPS").ok().as_deref() {
@@ -78,6 +164,9 @@ pub struct Frame<'a> {
     /// pixels that differ from one of their 8 neighbours by more than [`ADAPTIVE_THRESHOLD`]
     /// (edges, highlights, fine detail). Smooth regions keep the centre sample.
     pub adaptive: bool,
+    /// With `adaptive`: refine a pixel when a channel differs from one of its
+    /// 8 neighbours by more than this (0..1). Default [`ADAPTIVE_THRESHOLD`].
+    pub threshold: f32,
     /// Treat `fragColor.a` as coverage (straight alpha). When false the
     /// output is opaque, as on Shadertoy.
     pub alpha: bool,
@@ -103,6 +192,7 @@ impl<'a> Frame<'a> {
             channels: [None; 4],
             supersample: false,
             adaptive: true,
+            threshold: ADAPTIVE_THRESHOLD,
             alpha: false,
             dither: false,
         }
@@ -216,12 +306,25 @@ impl Shader {
         for (_, f) in p.module.functions.iter() {
             mark(f);
         }
-        let kernel = jit::compile(&p.module, &p.info, p.entry, p.kind, &layout).map_err(|mut e| {
-            if e.line.is_none() {
-                e.message = format!("{} (while compiling)", e.message);
+        // Compiled kernels are cached on disk, so a fresh process (`still`)
+        // doesn't pay the JIT again for a shader it has seen.
+        let key = disk_key(src, extra);
+        let cached = key.and_then(|k| std::fs::read(disk_path(k)?).ok()).and_then(|b| jit::Kernel::from_blob(&b));
+        let kernel = match cached {
+            Some(k) => k,
+            None => {
+                let mut k = jit::compile(&p.module, &p.info, p.entry, p.kind, &layout).map_err(|mut e| {
+                    if e.line.is_none() {
+                        e.message = format!("{} (while compiling)", e.message);
+                    }
+                    e
+                })?;
+                if let (Some(key), Some(blob)) = (key, k.blob.take()) {
+                    disk_store(key, &blob);
+                }
+                k
             }
-            e
-        })?;
+        };
         Ok(Shader {
             insts: kernel.insts,
             kernel,
@@ -317,7 +420,7 @@ impl Shader {
     /// Adaptive supersampling: re-shade, with 2×2 sub-samples, every pixel that
     /// differs from any of its 8 neighbours by more than the threshold in any channel.
     fn refine(&self, f: &Frame, out: &mut [[f32; 4]], w: usize, h: usize) {
-        let th = ADAPTIVE_THRESHOLD;
+        let th = f.threshold;
         let src: &[[f32; 4]] = out;
         let differs = |a: [f32; 4], b: [f32; 4]| (0..4).any(|k| (a[k].clamp(0.0, 1.0) - b[k].clamp(0.0, 1.0)).abs() > th);
         let flags: Vec<bool> = (0..w * h)
@@ -473,6 +576,17 @@ fn dither_thresholds(x: u32, y: u32) -> [f32; 3] {
 /// Adaptive supersampling re-shades a pixel when any channel differs from a
 /// neighbour by more than this (in output units; 1.5 / 255).
 pub const ADAPTIVE_THRESHOLD: f32 = 1.5 / 255.0;
+
+/// The default anti-aliasing threshold for shader layers: the loosest that
+/// keeps every library shader within SSIM 0.995 and ΔE76 p99.9 2.3 of full
+/// 2×2 supersampling (`examples/aa_check.rs`).
+pub const AA_THRESHOLD: f32 = 4.0 / 255.0;
+
+/// True when the source opts out of default anti-aliasing with a
+/// `// anikit:aa off` comment (soft fields, intentional per-pixel grain).
+pub fn aa_off(src: &str) -> bool {
+    src.lines().any(|l| l.trim_start().starts_with("//") && l.contains("anikit:aa off"))
+}
 
 fn sanitize(v: f32) -> f32 {
     if v.is_nan() {

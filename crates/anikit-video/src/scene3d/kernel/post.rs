@@ -60,104 +60,154 @@ impl<T> Out<T> {
     }
 }
 
-/// The primary pass's output as planes.
-struct Planes {
-    col: Img,
+/// The primary pass's output as planes (structure of arrays): the trace
+/// writes them through [`PlanesOut`], post reads only what each stage needs.
+pub struct Planes {
+    pub col: Img,
     /// Floor reflection (rgb) and the coverage of samples that traced it.
-    refl: Buf<[f32; 4]>,
-    cov: Buf<f32>,
-    rad: Buf<f32>,
-    rf: Buf<f32>,
+    pub refl: Buf<[f32; 4]>,
+    pub cov: Buf<f32>,
+    pub rad: Buf<f32>,
+    pub rf: Buf<f32>,
     /// Diffuse albedo × ambient, albedo × key, and AO-occluded specular.
-    da: Img,
-    dk: Img,
-    sp: Img,
-    ao: Buf<f32>,
-    vk: Buf<f32>,
-    depth: Buf<f32>,
-    nx: Buf<f32>,
-    ny: Buf<f32>,
-    nz: Buf<f32>,
-    id: Buf<u32>,
+    pub da: Img,
+    pub dk: Img,
+    pub sp: Img,
+    pub ao: Buf<f32>,
+    pub vk: Buf<f32>,
+    /// View depth (distance along the camera axis).
+    pub depth: Buf<f32>,
+    pub nx: Buf<f32>,
+    pub ny: Buf<f32>,
+    pub nz: Buf<f32>,
+    pub id: Buf<u32>,
     /// 1 where the pixel has diffuse albedo or occludable specular (else 0).
-    lit: Buf<f32>,
+    pub lit: Buf<f32>,
     /// Weight of the traced visibility (0: checkerboard gap, filled by the denoiser).
-    vw: Buf<f32>,
-    vel: Buf<[f32; 2]>,
+    pub vw: Buf<f32>,
+    pub vel: Buf<[f32; 2]>,
+}
+
+/// Writes pixels into [`Planes`] from several threads (disjoint pixels).
+#[derive(Clone, Copy)]
+pub struct PlanesOut {
+    col: Out<[f32; 3]>,
+    refl: Out<[f32; 4]>,
+    cov: Out<f32>,
+    rad: Out<f32>,
+    rf: Out<f32>,
+    da: Out<[f32; 3]>,
+    dk: Out<[f32; 3]>,
+    sp: Out<[f32; 3]>,
+    ao: Out<f32>,
+    vk: Out<f32>,
+    depth: Out<f32>,
+    nx: Out<f32>,
+    ny: Out<f32>,
+    nz: Out<f32>,
+    id: Out<u32>,
+    lit: Out<f32>,
+    vw: Out<f32>,
+    vel: Out<[f32; 2]>,
+}
+
+impl PlanesOut {
+    /// Store pixel `i`.
+    ///
+    /// # Safety
+    /// `i` is inside the planes, no other thread writes pixel `i`, and the
+    /// planes outlive every write (nothing else touches them meanwhile).
+    #[inline]
+    pub unsafe fn put(&self, i: usize, q: &Px) {
+        unsafe {
+            self.col.put(i, q.col);
+            self.refl.put(i, [q.refl[0], q.refl[1], q.refl[2], q.rcov]);
+            self.cov.put(i, q.cov);
+            self.rad.put(i, q.rad);
+            self.rf.put(i, q.rf);
+            self.da.put(i, [q.alb[0] * q.amb[0], q.alb[1] * q.amb[1], q.alb[2] * q.amb[2]]);
+            self.dk.put(i, [q.alb[0] * q.key[0], q.alb[1] * q.key[1], q.alb[2] * q.key[2]]);
+            self.sp.put(i, q.spec);
+            self.ao.put(i, q.ao);
+            self.vk.put(i, q.vk);
+            self.depth.put(i, q.depth);
+            self.nx.put(i, q.nrm[0]);
+            self.ny.put(i, q.nrm[1]);
+            self.nz.put(i, q.nrm[2]);
+            self.id.put(i, q.id);
+            let l = q.alb[0] + q.alb[1] + q.alb[2] + q.spec[0] + q.spec[1] + q.spec[2] > 1e-5;
+            self.lit.put(i, if l { 1.0 } else { 0.0 });
+            self.vel.put(i, q.vel);
+            self.vw.put(i, q.vw);
+        }
+    }
 }
 
 impl Planes {
-    fn unpack(px: &[Px]) -> Planes {
-        let n = px.len();
-        // Every plane is written exactly once below.
-        fn alloc<T: Pod>(n: usize) -> Buf<T> {
-            Buf::uninit(n)
+    /// `n` pixels, contents unspecified until written (pooled storage).
+    pub fn new(n: usize) -> Planes {
+        Planes {
+            col: Buf::uninit(n),
+            refl: Buf::uninit(n),
+            cov: Buf::uninit(n),
+            rad: Buf::uninit(n),
+            rf: Buf::uninit(n),
+            da: Buf::uninit(n),
+            dk: Buf::uninit(n),
+            sp: Buf::uninit(n),
+            ao: Buf::uninit(n),
+            vk: Buf::uninit(n),
+            depth: Buf::uninit(n),
+            nx: Buf::uninit(n),
+            ny: Buf::uninit(n),
+            nz: Buf::uninit(n),
+            id: Buf::uninit(n),
+            lit: Buf::uninit(n),
+            vw: Buf::uninit(n),
+            vel: Buf::uninit(n),
         }
-        let mut p = Planes {
-            col: alloc(n),
-            refl: alloc(n),
-            cov: alloc(n),
-            rad: alloc(n),
-            rf: alloc(n),
-            da: alloc(n),
-            dk: alloc(n),
-            sp: alloc(n),
-            ao: alloc(n),
-            vk: alloc(n),
-            depth: alloc(n),
-            nx: alloc(n),
-            ny: alloc(n),
-            nz: alloc(n),
-            id: alloc(n),
-            lit: alloc(n),
-            vw: alloc(n),
-            vel: alloc(n),
-        };
-        let o = (
-            Out(p.col.as_mut_ptr()),
-            Out(p.refl.as_mut_ptr()),
-            Out(p.cov.as_mut_ptr()),
-            Out(p.rad.as_mut_ptr()),
-            Out(p.rf.as_mut_ptr()),
-            Out(p.da.as_mut_ptr()),
-            Out(p.dk.as_mut_ptr()),
-            Out(p.sp.as_mut_ptr()),
-            Out(p.ao.as_mut_ptr()),
-            Out(p.vk.as_mut_ptr()),
-            Out(p.depth.as_mut_ptr()),
-            Out(p.nx.as_mut_ptr()),
-            Out(p.ny.as_mut_ptr()),
-            Out(p.nz.as_mut_ptr()),
-            Out(p.id.as_mut_ptr()),
-            Out(p.lit.as_mut_ptr()),
-            Out(p.vel.as_mut_ptr()),
-            Out(p.vw.as_mut_ptr()),
-        );
+    }
+
+    pub fn len(&self) -> usize {
+        self.col.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.col.is_empty()
+    }
+
+    /// A writer for filling the planes from parallel tasks.
+    pub fn writer(&mut self) -> PlanesOut {
+        PlanesOut {
+            col: Out(self.col.as_mut_ptr()),
+            refl: Out(self.refl.as_mut_ptr()),
+            cov: Out(self.cov.as_mut_ptr()),
+            rad: Out(self.rad.as_mut_ptr()),
+            rf: Out(self.rf.as_mut_ptr()),
+            da: Out(self.da.as_mut_ptr()),
+            dk: Out(self.dk.as_mut_ptr()),
+            sp: Out(self.sp.as_mut_ptr()),
+            ao: Out(self.ao.as_mut_ptr()),
+            vk: Out(self.vk.as_mut_ptr()),
+            depth: Out(self.depth.as_mut_ptr()),
+            nx: Out(self.nx.as_mut_ptr()),
+            ny: Out(self.ny.as_mut_ptr()),
+            nz: Out(self.nz.as_mut_ptr()),
+            id: Out(self.id.as_mut_ptr()),
+            lit: Out(self.lit.as_mut_ptr()),
+            vw: Out(self.vw.as_mut_ptr()),
+            vel: Out(self.vel.as_mut_ptr()),
+        }
+    }
+
+    /// From per-pixel records.
+    pub fn unpack(px: &[Px]) -> Planes {
+        let mut p = Planes::new(px.len());
+        let o = p.writer();
         let body = |i0: usize, chunk: &[Px]| {
             for (j, q) in chunk.iter().enumerate() {
-                let i = i0 + j;
-                // SAFETY: each index is written by exactly one chunk.
-                unsafe {
-                    o.0.put(i, q.col);
-                    o.1.put(i, [q.refl[0], q.refl[1], q.refl[2], q.rcov]);
-                    o.2.put(i, q.cov);
-                    o.3.put(i, q.rad);
-                    o.4.put(i, q.rf);
-                    o.5.put(i, [q.alb[0] * q.amb[0], q.alb[1] * q.amb[1], q.alb[2] * q.amb[2]]);
-                    o.6.put(i, [q.alb[0] * q.key[0], q.alb[1] * q.key[1], q.alb[2] * q.key[2]]);
-                    o.7.put(i, q.spec);
-                    o.8.put(i, q.ao);
-                    o.9.put(i, q.vk);
-                    o.10.put(i, q.depth);
-                    o.11.put(i, q.nrm[0]);
-                    o.12.put(i, q.nrm[1]);
-                    o.13.put(i, q.nrm[2]);
-                    o.14.put(i, q.id);
-                    let l = q.alb[0] + q.alb[1] + q.alb[2] + q.spec[0] + q.spec[1] + q.spec[2] > 1e-5;
-                    o.15.put(i, if l { 1.0 } else { 0.0 });
-                    o.16.put(i, q.vel);
-                    o.17.put(i, q.vw);
-                }
+                // SAFETY: each index is written by exactly one chunk; `p` outlives this.
+                unsafe { o.put(i0 + j, q) };
             }
         };
         const CH: usize = 8192;
@@ -537,6 +587,9 @@ fn depth_of_field(hdr: &mut Img, depth: &[f32], w: usize, h: usize, p: &Post, s:
         let cc = coc[i];
         [c[0], c[1], c[2], hd[i], cc, smoothstep(0.4, 1.2, cc), 1.0 / (cc * cc).max(1.0), 0.0]
     });
+    // The same sets as lanes (dx, dy, radius), for the AVX2 gather.
+    let soa: Vec<[Vec<f32>; 3]> = sets.iter().map(|v| [v.iter().map(|p| p.0).collect(), v.iter().map(|p| p.1).collect(), v.iter().map(|p| p.2).collect()]).collect();
+    let avx = super::wide::avx2();
     // Half-res result: colour plus how much of it is blur (alpha).
     let out4: Buf<[f32; 4]> = par::image(hw, hh, |y, row: &mut [[f32; 4]]| {
         for x in 0..hw {
@@ -559,6 +612,21 @@ fn depth_of_field(hdr: &mut Img, depth: &[f32], w: usize, h: usize, p: &Post, s:
             }];
             let ang = u01(hash2(x as u32, y as u32 ^ 0xdead)) * std::f32::consts::TAU;
             let (ca, sa) = (ang.cos(), ang.sin());
+            #[cfg(target_arch = "x86_64")]
+            if avx {
+                let k = if rmax < 2.5 {
+                    0
+                } else if rmax < 5.0 {
+                    1
+                } else if rmax < 9.0 {
+                    2
+                } else {
+                    3
+                };
+                // SAFETY: the CPU has AVX2; taps holds hw × hh records.
+                row[x] = unsafe { dof_gather_avx2(&taps, hw, hh, x, y, &soa[k], rmax, ca, sa, c0) };
+                continue;
+            }
             let wt0 = ic;
             let mut acc = [c0[0] * wt0, c0[1] * wt0, c0[2] * wt0, sc * wt0];
             let mut wsum = wt0;
@@ -635,6 +703,65 @@ fn depth_of_field(hdr: &mut Img, depth: &[f32], w: usize, h: usize, p: &Post, s:
     });
 }
 
+/// The depth-of-field gather for one half-res pixel, eight taps at a time
+/// with AVX2 gathers: the scalar loop's arithmetic per tap (accumulated in
+/// eight partial sums, so the last bits can differ from the scalar order).
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2,fma")]
+#[allow(clippy::too_many_arguments)]
+unsafe fn dof_gather_avx2(taps: &[[f32; 8]], hw: usize, hh: usize, x: usize, y: usize, set: &[Vec<f32>; 3], rmax: f32, ca: f32, sa: f32, c0: [f32; 8]) -> [f32; 4] {
+    use std::arch::x86_64::*;
+    let (dc, cc, sc, ic) = (c0[3], c0[4], c0[5], c0[6]);
+    let n = set[0].len();
+    debug_assert!(n.is_multiple_of(8) && taps.len() >= hw * hh);
+    let base = taps.as_ptr() as *const f32;
+    // SAFETY: (caller) AVX2 is available; every gathered index is clamped into the image.
+    unsafe {
+        let (vca, vsa, vr) = (_mm256_set1_ps(ca), _mm256_set1_ps(sa), _mm256_set1_ps(rmax));
+        let (vx, vy) = (_mm256_set1_ps(x as f32 + 0.5), _mm256_set1_ps(y as f32 + 0.5));
+        let zero = _mm256_setzero_ps();
+        let (xm, ym) = (_mm256_set1_ps(hw as f32 - 0.5), _mm256_set1_ps(hh as f32 - 0.5));
+        let (vdc, vcc, vsc, vic) = (_mm256_set1_ps(dc), _mm256_set1_ps(cc), _mm256_set1_ps(sc), _mm256_set1_ps(ic));
+        let (half, one) = (_mm256_set1_ps(0.5), _mm256_set1_ps(1.0));
+        let vhw = _mm256_set1_epi32(hw as i32);
+        let mut a = [zero; 5];
+        let mut k = 0;
+        while k < n {
+            let dx = _mm256_loadu_ps(set[0].as_ptr().add(k));
+            let dy = _mm256_loadu_ps(set[1].as_ptr().add(k));
+            let r = _mm256_loadu_ps(set[2].as_ptr().add(k));
+            let fx = _mm256_mul_ps(_mm256_sub_ps(_mm256_mul_ps(dx, vca), _mm256_mul_ps(dy, vsa)), vr);
+            let fy = _mm256_mul_ps(_mm256_add_ps(_mm256_mul_ps(dx, vsa), _mm256_mul_ps(dy, vca)), vr);
+            let sx = _mm256_cvttps_epi32(_mm256_min_ps(_mm256_max_ps(_mm256_add_ps(vx, fx), zero), xm));
+            let sy = _mm256_cvttps_epi32(_mm256_min_ps(_mm256_max_ps(_mm256_add_ps(vy, fy), zero), ym));
+            // Record index × 8 floats.
+            let idx = _mm256_slli_epi32::<3>(_mm256_add_epi32(_mm256_mullo_epi32(sy, vhw), sx));
+            let g = |f: i32| _mm256_i32gather_ps::<4>(base.add(f as usize), idx);
+            let (t0, t1, t2, t3, t4, t5, t6) = (g(0), g(1), g(2), g(3), g(4), g(5), g(6));
+            let dist = _mm256_mul_ps(r, vr);
+            let behind = _mm256_cmp_ps::<_CMP_GT_OQ>(t3, vdc);
+            let ct = _mm256_blendv_ps(t4, _mm256_min_ps(t4, vcc), behind);
+            let cover = _mm256_min_ps(_mm256_max_ps(_mm256_add_ps(_mm256_mul_ps(_mm256_sub_ps(ct, dist), half), half), zero), one);
+            let st = _mm256_blendv_ps(t5, _mm256_min_ps(t5, vsc), behind);
+            let it = _mm256_blendv_ps(t6, _mm256_max_ps(t6, vic), behind);
+            let wt = _mm256_mul_ps(cover, it);
+            a[0] = _mm256_add_ps(a[0], _mm256_mul_ps(t0, wt));
+            a[1] = _mm256_add_ps(a[1], _mm256_mul_ps(t1, wt));
+            a[2] = _mm256_add_ps(a[2], _mm256_mul_ps(t2, wt));
+            a[3] = _mm256_add_ps(a[3], _mm256_mul_ps(st, wt));
+            a[4] = _mm256_add_ps(a[4], wt);
+            k += 8;
+        }
+        let hsum = |v: __m256| {
+            let mut l = [0.0f32; 8];
+            _mm256_storeu_ps(l.as_mut_ptr(), v);
+            ((l[0] + l[1]) + (l[2] + l[3])) + ((l[4] + l[5]) + (l[6] + l[7]))
+        };
+        let wsum = ic + hsum(a[4]);
+        [(c0[0] * ic + hsum(a[0])) / wsum, (c0[1] * ic + hsum(a[1])) / wsum, (c0[2] * ic + hsum(a[2])) / wsum, (sc * ic + hsum(a[3])) / wsum]
+    }
+}
+
 /// Motion blur along each pixel's motion vector.
 fn motion_blur(hdr: &mut Img, vel: &[[f32; 2]], w: usize, h: usize, shutter: f32) {
     let moving = |v: &[f32; 2]| {
@@ -645,6 +772,7 @@ fn motion_blur(hdr: &mut Img, vel: &[[f32; 2]], w: usize, h: usize, shutter: f32
         return;
     }
     let src = hdr.clone();
+    let avx = super::wide::avx2();
     par::rows(hdr, w, |y, row| {
         for x in 0..w {
             let v = vel[y * w + x];
@@ -653,7 +781,13 @@ fn motion_blur(hdr: &mut Img, vel: &[[f32; 2]], w: usize, h: usize, shutter: f32
             if l < 0.35 {
                 continue;
             }
-            let n = (l * 1.2).ceil().clamp(3.0, 16.0) as usize;
+            let n = super::super::math::fceil(l * 1.2).clamp(3.0, 16.0) as usize;
+            #[cfg(target_arch = "x86_64")]
+            if avx {
+                // SAFETY: the CPU has AVX2; `src` is w × h.
+                row[x] = unsafe { mblur_avx2(&src, w, h, x, y, vx, vy, n) };
+                continue;
+            }
             let mut acc = [0.0f32; 3];
             for i in 0..n {
                 let t = (i as f32 + 0.5) / n as f32 - 0.5;
@@ -665,6 +799,64 @@ fn motion_blur(hdr: &mut Img, vel: &[[f32; 2]], w: usize, h: usize, shutter: f32
             row[x] = acc.map(|a| a / n as f32);
         }
     });
+}
+
+/// [`motion_blur`]'s taps for one pixel, eight at a time with AVX2 gathers
+/// (the same clamped bilinear fetch per tap; summed in lanes).
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2,fma")]
+#[allow(clippy::too_many_arguments)]
+unsafe fn mblur_avx2(src: &[[f32; 3]], w: usize, h: usize, x: usize, y: usize, vx: f32, vy: f32, n: usize) -> [f32; 3] {
+    use std::arch::x86_64::*;
+    debug_assert!(src.len() >= w * h && n <= 16);
+    let base = src.as_ptr() as *const f32;
+    // SAFETY: (caller) AVX2; every gathered index is clamped into the image.
+    unsafe {
+        let lane = _mm256_setr_ps(0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0);
+        let (fx0, fy0) = (_mm256_set1_ps(x as f32), _mm256_set1_ps(y as f32));
+        let (vvx, vvy) = (_mm256_set1_ps(vx), _mm256_set1_ps(vy));
+        let (xm, ym) = (_mm256_set1_ps(w as f32 - 1.001), _mm256_set1_ps(h as f32 - 1.001));
+        let zero = _mm256_setzero_ps();
+        let one = _mm256_set1_ps(1.0);
+        let (half, nf) = (_mm256_set1_ps(0.5), _mm256_set1_ps(n as f32));
+        let w3 = _mm256_set1_epi32(w as i32 * 3);
+        let three = _mm256_set1_epi32(3);
+        let mut acc = [zero; 3];
+        let mut k = 0usize;
+        while k < n {
+            let i = _mm256_add_ps(lane, _mm256_set1_ps(k as f32));
+            let valid = _mm256_cmp_ps::<_CMP_LT_OQ>(i, nf);
+            let t = _mm256_sub_ps(_mm256_div_ps(_mm256_add_ps(i, half), nf), half);
+            let px = _mm256_min_ps(_mm256_max_ps(_mm256_sub_ps(fx0, _mm256_mul_ps(vvx, t)), zero), xm);
+            let py = _mm256_min_ps(_mm256_max_ps(_mm256_sub_ps(fy0, _mm256_mul_ps(vvy, t)), zero), ym);
+            let ix = _mm256_cvttps_epi32(px);
+            let iy = _mm256_cvttps_epi32(py);
+            let tx = _mm256_sub_ps(px, _mm256_cvtepi32_ps(ix));
+            let ty = _mm256_sub_ps(py, _mm256_cvtepi32_ps(iy));
+            let (ux, uy) = (_mm256_sub_ps(one, tx), _mm256_sub_ps(one, ty));
+            // Float offsets of the four corners (× 3 channels).
+            let i00 = _mm256_add_epi32(_mm256_mullo_epi32(iy, w3), _mm256_mullo_epi32(ix, three));
+            let i01 = _mm256_add_epi32(i00, three);
+            let i10 = _mm256_add_epi32(i00, w3);
+            let i11 = _mm256_add_epi32(i10, three);
+            for c in 0..3 {
+                let b = base.add(c);
+                let (a, bb, cc, d) = (_mm256_i32gather_ps::<4>(b, i00), _mm256_i32gather_ps::<4>(b, i01), _mm256_i32gather_ps::<4>(b, i10), _mm256_i32gather_ps::<4>(b, i11));
+                let top = _mm256_add_ps(_mm256_mul_ps(a, ux), _mm256_mul_ps(bb, tx));
+                let bot = _mm256_add_ps(_mm256_mul_ps(cc, ux), _mm256_mul_ps(d, tx));
+                let v = _mm256_add_ps(_mm256_mul_ps(top, uy), _mm256_mul_ps(bot, ty));
+                acc[c] = _mm256_add_ps(acc[c], _mm256_and_ps(v, valid));
+            }
+            k += 8;
+        }
+        let hsum = |v: __m256| {
+            let mut l = [0.0f32; 8];
+            _mm256_storeu_ps(l.as_mut_ptr(), v);
+            ((l[0] + l[1]) + (l[2] + l[3])) + ((l[4] + l[5]) + (l[6] + l[7]))
+        };
+        let inv = n as f32;
+        [hsum(acc[0]) / inv, hsum(acc[1]) / inv, hsum(acc[2]) / inv]
+    }
 }
 
 /// Bloom: a pyramid of blurred levels, mostly from highlights, summed back
@@ -841,35 +1033,82 @@ fn debug() -> u8 {
     })
 }
 
-/// Write a primary pass and its post settings to `path` (see [`load`]).
-pub fn dump(path: &std::path::Path, px: &[Px], w: usize, h: usize, p: &Post) {
-    let mut b: Vec<u8> = Vec::with_capacity(std::mem::size_of_val(px) + 64);
+/// Write a primary pass (planes) and its post settings to `path` (see [`load`]).
+pub fn dump(path: &std::path::Path, pl: &Planes, w: usize, h: usize, p: &Post) {
+    let mut b: Vec<u8> = Vec::new();
     for v in [w as f32, h as f32, p.focus, p.aperture, p.shutter, p.bloom, p.exposure, p.vignette, (p.tonemap == Tonemap::Neutral) as u32 as f32, p.denoise as f32] {
         b.extend_from_slice(&v.to_le_bytes());
     }
-    // SAFETY: `Px` is plain `repr(C)` data without padding.
-    b.extend_from_slice(unsafe { std::slice::from_raw_parts(px.as_ptr() as *const u8, std::mem::size_of_val(px)) });
+    fn raw<T: Pod>(b: &mut Vec<u8>, v: &[T]) {
+        // SAFETY: plain data.
+        b.extend_from_slice(unsafe { std::slice::from_raw_parts(v.as_ptr() as *const u8, std::mem::size_of_val(v)) });
+    }
+    raw(&mut b, &pl.col);
+    raw(&mut b, &pl.refl);
+    raw(&mut b, &pl.cov);
+    raw(&mut b, &pl.rad);
+    raw(&mut b, &pl.rf);
+    raw(&mut b, &pl.da);
+    raw(&mut b, &pl.dk);
+    raw(&mut b, &pl.sp);
+    raw(&mut b, &pl.ao);
+    raw(&mut b, &pl.vk);
+    raw(&mut b, &pl.depth);
+    raw(&mut b, &pl.nx);
+    raw(&mut b, &pl.ny);
+    raw(&mut b, &pl.nz);
+    raw(&mut b, &pl.id);
+    raw(&mut b, &pl.lit);
+    raw(&mut b, &pl.vw);
+    raw(&mut b, &pl.vel);
     let _ = std::fs::write(path, b);
 }
 
 /// Read what [`dump`] wrote.
-pub fn load(path: &std::path::Path) -> Option<(Vec<Px>, usize, usize, Post)> {
+pub fn load(path: &std::path::Path) -> Option<(Planes, usize, usize, Post)> {
     let b = std::fs::read(path).ok()?;
     let f = |i: usize| f32::from_le_bytes(b[i * 4..i * 4 + 4].try_into().unwrap());
     let (w, h) = (f(0) as usize, f(1) as usize);
     let p = Post { focus: f(2), aperture: f(3), shutter: f(4), bloom: f(5), exposure: f(6), vignette: f(7), tonemap: if f(8) > 0.5 { Tonemap::Neutral } else { Tonemap::Aces }, denoise: f(9) as u32 };
-    let body = &b[40..];
-    let n = w * h;
-    if body.len() != n * std::mem::size_of::<Px>() {
-        return None;
+    let mut pl = Planes::new(w * h);
+    let mut at = 40usize;
+    fn fill<T: Pod>(b: &[u8], at: &mut usize, v: &mut [T]) -> Option<()> {
+        let n = std::mem::size_of_val(v);
+        let src = b.get(*at..*at + n)?;
+        // SAFETY: sizes match and `T` accepts any bits.
+        unsafe { std::ptr::copy_nonoverlapping(src.as_ptr(), v.as_mut_ptr() as *mut u8, n) };
+        *at += n;
+        Some(())
     }
-    let mut px = vec![Px::default(); n];
-    // SAFETY: sizes match and `Px` accepts any bits.
-    unsafe { std::ptr::copy_nonoverlapping(body.as_ptr(), px.as_mut_ptr() as *mut u8, body.len()) };
-    Some((px, w, h, p))
+    fill(&b, &mut at, &mut pl.col)?;
+    fill(&b, &mut at, &mut pl.refl)?;
+    fill(&b, &mut at, &mut pl.cov)?;
+    fill(&b, &mut at, &mut pl.rad)?;
+    fill(&b, &mut at, &mut pl.rf)?;
+    fill(&b, &mut at, &mut pl.da)?;
+    fill(&b, &mut at, &mut pl.dk)?;
+    fill(&b, &mut at, &mut pl.sp)?;
+    fill(&b, &mut at, &mut pl.ao)?;
+    fill(&b, &mut at, &mut pl.vk)?;
+    fill(&b, &mut at, &mut pl.depth)?;
+    fill(&b, &mut at, &mut pl.nx)?;
+    fill(&b, &mut at, &mut pl.ny)?;
+    fill(&b, &mut at, &mut pl.nz)?;
+    fill(&b, &mut at, &mut pl.id)?;
+    fill(&b, &mut at, &mut pl.lit)?;
+    fill(&b, &mut at, &mut pl.vw)?;
+    fill(&b, &mut at, &mut pl.vel)?;
+    Some((pl, w, h, p))
 }
 
+/// The post stack on per-pixel records (see [`process_planes`]).
 pub fn process(px: &[Px], w: usize, h: usize, p: &Post, vol: Option<Volume>, parts: Option<&super::super::particles::Layer>) -> Vec<u8> {
+    process_planes(&Planes::unpack(px), w, h, p, vol, parts)
+}
+
+/// The post stack: floor-reflection blur, denoise, compose, depth of field,
+/// motion blur, particles, bloom, tone mapping.
+pub fn process_planes(pl: &Planes, w: usize, h: usize, p: &Post, vol: Option<Volume>, parts: Option<&super::super::particles::Layer>) -> Vec<u8> {
     let s = h as f32 / 1080.0;
     let mut clock = std::time::Instant::now();
     let mut stages: Vec<(&str, f64)> = Vec::new();
@@ -877,13 +1116,12 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post, vol: Option<Volume>, par
         stages.push((name, clock.elapsed().as_secs_f64() * 1e3));
         clock = std::time::Instant::now();
     };
-    let pl = Planes::unpack(px);
     tick("unpack");
     // 1. Glossy floor reflection.
-    let rv = floor_reflection(&pl, w, h, s);
+    let rv = floor_reflection(pl, w, h, s);
     tick("refl");
     // 1b. Denoise AO and key visibility, then light the diffuse albedo with them.
-    let (ao, vk) = denoise_vis(&pl, w, h, p.denoise);
+    let (ao, vk) = denoise_vis(pl, w, h, p.denoise);
     tick("denoise");
     let (dc, dr, dd) = match debug() {
         1 => (0.0, 1.0, 0.0),

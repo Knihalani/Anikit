@@ -8,6 +8,7 @@
 //! edges inside one additive layer, so there is no overdraw and no seams.
 //! The flare is a few dozen gradient-filled vector ops in one additive layer.
 
+use super::fxpix;
 use super::fxkit::{self, bloom, chroma_ring, gauss, hot, kelvin, light, needle, polygon};
 use super::style::*;
 use super::{Component, Ctx, Error, Prepare};
@@ -114,6 +115,325 @@ impl GodRays {
     }
 }
 
+/// Gradient stop offsets along each god-ray slice.
+const SLICE_STOPS: [f32; 6] = [0.0, 0.05, 0.18, 0.4, 0.7, 1.0];
+/// Stop alphas along a slice relative to its brightness `a`: `a·(B0 + h1·B1 + h2·B2)`.
+const SLICE_B0: [f32; 6] = [1.0, 0.92, 0.0, 0.0, 0.0, 0.0];
+const SLICE_B1: [f32; 6] = [0.0, 0.0, 0.62, 0.0, 0.11, 0.0];
+const SLICE_B2: [f32; 6] = [0.0, 0.0, 0.0, 0.32, 0.0, 0.0];
+
+/// Per-slice data of a god-ray fan for direct evaluation: the three basis
+/// weights (`a`, `a·h1`, `a·h2`; zero for unlit slices) and 1 / length.
+/// Reused per thread.
+#[derive(Default)]
+struct FanTable {
+    /// `[a, a·h1, a·h2, 1/l]`.
+    slices: Vec<[f32; 4]>,
+}
+
+thread_local! {
+    static FAN_TABLE: std::cell::Cell<FanTable> = std::cell::Cell::new(FanTable::default());
+}
+
+impl FanTable {
+    fn take() -> FanTable {
+        let mut t = FAN_TABLE.with(|c| c.take());
+        t.slices.clear();
+        t
+    }
+    fn give_back(self) {
+        FAN_TABLE.with(|c| c.set(self));
+    }
+}
+
+/// The slices of a god-ray fan, rasterised directly: each slice is a linear
+/// gradient along its length and flat across its angle, exactly as the
+/// wedge fills draw them, composited source-over in premultiplied sRGB.
+///
+/// Scanline evaluation: along a row, the slice weights are piecewise
+/// constant in x, changing where the row crosses a slice boundary. Each
+/// crossing adds its jump through a linear ramp as wide as the boundary's
+/// footprint in that row (the area coverage a wedge edge gets), so no
+/// per-pixel angle is needed: only `r` (for the gradient position) per pixel.
+/// Output is a stack of row strips cropped to the lit part of the fan.
+struct Fan {
+    at: (f32, f32),
+    a0: f32,
+    da: f32,
+    cols: [Rgba; 6],
+}
+
+/// Scratch rows for [`Fan::pixels`].
+type FanRows = (Vec<[f32; 4]>, Vec<f32>);
+
+/// Rows per image strip.
+const FAN_STRIP: usize = 32;
+
+/// One slice boundary, prepared for a frame.
+#[derive(Clone, Copy)]
+struct Edge {
+    cot: f32,
+    /// Ramp width in px (`max(1, |cot|)`).
+    wid: f32,
+    /// Jump in `[a, a·h1, a·h2, a/l]` crossing it left → right in a row below the source.
+    jump: [f32; 4],
+    /// Crosses rows below (`1`) or above (`-1`) the source, or neither (`0`).
+    side: i8,
+}
+
+thread_local! {
+    static FAN_SCRATCH: std::cell::Cell<(Vec<Edge>, FanRows)> = const { std::cell::Cell::new((Vec::new(), (Vec::new(), Vec::new()))) };
+}
+
+impl Fan {
+    /// The strips (image ops) for `tab`, inside the `w × h` box.
+    fn strips(&self, ctx: &Ctx, tab: &FanTable, out: &mut Vec<Op>) {
+        let (w, h) = (ctx.width, ctx.height);
+        let (sx, sy) = self.at;
+        let ns = tab.slices.len();
+        let full = self.da * ns as f32 >= TAU * 0.999;
+        let lit = |s: &[f32; 4]| s[0] > 0.0;
+        let (Some(first), Some(last)) = (tab.slices.iter().position(lit), tab.slices.iter().rposition(lit)) else { return };
+        let lmax = tab.slices.iter().filter(|s| lit(s)).fold(0.0f32, |m, s| m.max(1.0 / s[3])) * 1.001 + 2.0;
+        // Vertical extent: the lit sector out to the longest slice.
+        let (al, ah) = (self.a0 + first as f32 * self.da, self.a0 + (last + 1) as f32 * self.da);
+        let (mut ylo, mut yhi) = (sy, sy);
+        let mut add = |a: f32| {
+            let y = sy + a.sin() * lmax;
+            (ylo, yhi) = (ylo.min(y), yhi.max(y));
+        };
+        add(al);
+        add(ah);
+        for q in [1.0f32, 3.0] {
+            let a = q * PI * 0.5;
+            if full || (a - al).rem_euclid(TAU) <= ah - al {
+                add(a);
+            }
+        }
+        let y0 = (ylo.max(0.0).floor() as usize).min(h as usize);
+        let y1 = (yhi.min(h).ceil().max(0.0) as usize).min(h as usize);
+        let (xlo, xhi) = ((sx - lmax).max(0.0), (sx + lmax).min(w));
+        if y1 <= y0 || xhi <= xlo {
+            return;
+        }
+        // Frame data shared by every strip: one hash and the edges.
+        let mut hs = fxpix::Hash::new();
+        hs.bytes(b"god-rays-fan");
+        hs.f32s(&[sx, sy, self.a0, self.da, w, h]);
+        for s in &tab.slices {
+            hs.f32s(s);
+        }
+        for c in &self.cols {
+            hs.f32s(&c.0);
+        }
+        let key = hs.finish();
+        let (mut edges, mut rows) = FAN_SCRATCH.with(|c| c.take());
+        self.edges(tab, full, &mut edges);
+        // Where angle π (x → -∞ along any row) falls: the weights there.
+        let start = self.start(tab, full, &edges);
+        for ys in (y0..y1).step_by(FAN_STRIP) {
+            let ye = (ys + FAN_STRIP).min(y1);
+            // Columns: the hull of the lit angular range across these rows.
+            let (mut cx0, mut cx1) = (f32::MAX, f32::MIN);
+            for y in ys..ye {
+                let dy = y as f32 + 0.5 - sy;
+                let (a, b) = self.row_extent(dy, al, ah, full, w);
+                (cx0, cx1) = (cx0.min(a), cx1.max(b));
+            }
+            let x0 = cx0.max(xlo).floor().max(0.0);
+            let x1 = cx1.min(xhi).ceil().min(w);
+            if x1 <= x0 {
+                continue;
+            }
+            let (iw, ih) = ((x1 - x0) as usize, ye - ys);
+            let mut hs = fxpix::Hash::new();
+            hs.u32(key as u32);
+            hs.u32((key >> 32) as u32);
+            hs.f32s(&[x0, ys as f32, iw as f32, ih as f32]);
+            let id = ctx.assets.image_premul(hs.finish(), iw as u32, ih as u32, &mut || self.pixels(&edges, start, &mut rows, x0, ys, iw, ih));
+            out.push(Op::Image { image: id, dst: [x0, ys as f32, iw as f32, ih as f32], opacity: 1.0, transform: IDENTITY });
+        }
+        FAN_SCRATCH.with(|c| c.set((edges, rows)));
+    }
+
+    /// Slice boundaries with their jumps; a full circle wraps (boundary `ns` is boundary 0).
+    fn edges(&self, tab: &FanTable, full: bool, edges: &mut Vec<Edge>) {
+        let ns = tab.slices.len();
+        let wt = |i: isize| -> [f32; 4] {
+            let i = if full { i.rem_euclid(ns as isize) } else { i };
+            if i < 0 || i >= ns as isize {
+                return [0.0; 4];
+            }
+            let s = tab.slices[i as usize];
+            [s[0], s[1], s[2], s[0] * s[3]]
+        };
+        edges.clear();
+        let nb = if full { ns } else { ns + 1 };
+        for b in 0..nb {
+            // Which half of the circle the boundary points into, decided once
+            // (both the crossings and the start value use it).
+            let d = (self.a0 + b as f32 * self.da).rem_euclid(TAU);
+            let side = if d > 0.0 && d <= PI { 1 } else if d > PI { -1 } else { 0 };
+            let (s, c) = (self.a0 + b as f32 * self.da).sin_cos();
+            let cot = (c / if s.abs() < 1e-7 { 1e-7f32.copysign(s) } else { s }).clamp(-1e6, 1e6);
+            let (lo, hi) = (wt(b as isize - 1), wt(b as isize));
+            edges.push(Edge { cot, wid: cot.abs().max(1.0), jump: std::array::from_fn(|k| lo[k] - hi[k]), side });
+        }
+    }
+
+    /// Weights at angle π: the slice whose lower boundary points into the
+    /// lower half-plane while the next one does not.
+    fn start(&self, tab: &FanTable, full: bool, edges: &[Edge]) -> [f32; 4] {
+        let ns = tab.slices.len();
+        for i in 0..ns {
+            let next = if full { edges[(i + 1) % ns].side } else { edges[i + 1].side };
+            if edges[i].side == 1 && next != 1 {
+                let s = tab.slices[i];
+                return [s[0], s[1], s[2], s[0] * s[3]];
+            }
+        }
+        [0.0; 4]
+    }
+
+    /// x range (box px) a row `dy` below the source sees of the lit angles `[al, ah]`.
+    fn row_extent(&self, dy: f32, al: f32, ah: f32, full: bool, w: f32) -> (f32, f32) {
+        if full || dy.abs() < 1.0 {
+            return (0.0, w);
+        }
+        let sx = self.at.0;
+        let u1 = al.rem_euclid(TAU);
+        let u2 = u1 + (ah - al);
+        // Angles this row sees (absolute, unwrapped copies).
+        let halves: [(f32, f32); 2] = if dy > 0.0 { [(0.0, PI), (TAU, TAU + PI)] } else { [(PI, TAU), (TAU + PI, 2.0 * TAU)] };
+        let x_at = |a: f32| {
+            let (s, c) = a.sin_cos();
+            (sx + dy * (c / s)).clamp(-1e6, 1e6)
+        };
+        let (mut lo, mut hi) = (f32::MAX, f32::MIN);
+        for (p, q) in halves {
+            let (a, b) = (u1.max(p), u2.min(q));
+            if a >= b {
+                continue;
+            }
+            // x is monotonic in the angle; the half's own ends are at ±∞.
+            let xa = if a <= p { if dy > 0.0 { f32::MAX } else { f32::MIN } } else { x_at(a) };
+            let xb = if b >= q { if dy > 0.0 { f32::MIN } else { f32::MAX } } else { x_at(b) };
+            // Ramp half-widths at the ends.
+            let cot = |a: f32| (a.cos() / a.sin()).abs().min(1e6);
+            let m = 2.0 + 0.5 * cot(a).max(cot(b)).max(1.0);
+            lo = lo.min(xa.min(xb) - m);
+            hi = hi.max(xa.max(xb) + m);
+        }
+        (lo.max(0.0), hi.min(w))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn pixels(&self, edges: &[Edge], start: [f32; 4], rows: &mut FanRows, x0: f32, ys: usize, iw: usize, ih: usize) -> Vec<u8> {
+        #[cfg(target_arch = "x86_64")]
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: the CPU supports AVX2 (checked above). Same arithmetic, wider lanes.
+            return unsafe { self.pixels_avx2(edges, start, rows, x0, ys, iw, ih) };
+        }
+        self.pixels_any(edges, start, rows, x0, ys, iw, ih)
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "avx2")]
+    #[allow(clippy::too_many_arguments)]
+    unsafe fn pixels_avx2(&self, edges: &[Edge], start: [f32; 4], rows: &mut FanRows, x0: f32, ys: usize, iw: usize, ih: usize) -> Vec<u8> {
+        self.pixels_any(edges, start, rows, x0, ys, iw, ih)
+    }
+
+    #[inline(always)]
+    #[allow(clippy::too_many_arguments)]
+    fn pixels_any(&self, edges: &[Edge], start: [f32; 4], rows: &mut FanRows, x0: f32, ys: usize, iw: usize, ih: usize) -> Vec<u8> {
+        use fxpix::{mn, mx};
+        let (sx, sy) = self.at;
+        let pc = |b: &[f32; 6], k: usize| fxpix::premul(alpha(self.cols[k], b[k]));
+        let (p00, p01, p12, p14, p23) = (pc(&SLICE_B0, 0), pc(&SLICE_B0, 1), pc(&SLICE_B1, 2), pc(&SLICE_B1, 4), pc(&SLICE_B2, 3));
+        let [t1, t2, t3, t4] = [SLICE_STOPS[1], SLICE_STOPS[2], SLICE_STOPS[3], SLICE_STOPS[4]];
+        let g = [1.0 / t1, 1.0 / (t2 - t1), 1.0 / (t3 - t2), 1.0 / (t4 - t3), 1.0 / (1.0 - t4)];
+        let n = iw;
+        let nf = n as f32;
+        let mut px = vec![0u8; iw * ih * 4];
+        // Jumps per pixel (first differences of the weights; consumed back to zero) and 4 planar rows.
+        let (d, planar) = (&mut rows.0, &mut rows.1);
+        d.clear();
+        d.resize(n + 1, [0.0; 4]);
+        planar.resize(4 * n, 0.0);
+        let ox = sx - x0;
+        for (y, out) in px.chunks_exact_mut(iw * 4).enumerate() {
+            let dy = (ys + y) as f32 + 0.5 - sy;
+            let side: i8 = if dy > 0.0 { 1 } else { -1 };
+            let sgn = side as f32;
+            let mut base = start;
+            let add = |d: &mut [f32; 4], j: &[f32; 4], f: f32| {
+                for k in 0..4 {
+                    d[k] += j[k] * f;
+                }
+            };
+            for e in edges {
+                if e.side != side {
+                    continue;
+                }
+                // Crossing (pixel i is centred at i + 0.5) and its ramp [a, end).
+                let a = ox + dy * e.cot - 0.5 * e.wid;
+                let end = a + e.wid;
+                if end <= 0.5 {
+                    add(&mut base, &e.jump, sgn);
+                    continue;
+                }
+                if a >= nf - 0.5 {
+                    continue;
+                }
+                let i_full = ((end - 0.5).ceil().max(0.0) as usize).min(n);
+                let i_beg = (((a - 0.5).floor() + 1.0).max(0.0) as usize).min(i_full);
+                let inv = 1.0 / e.wid;
+                // Ramp values f_i = (i + 0.5 - a) / wid, as differences.
+                let mut prev = 0.0;
+                for i in i_beg..i_full {
+                    let f = (i as f32 + 0.5 - a) * inv;
+                    add(&mut d[i], &e.jump, sgn * (f - prev));
+                    prev = f;
+                }
+                add(&mut d[i_full], &e.jump, sgn * (1.0 - prev));
+            }
+            let (w0, rest) = planar.split_at_mut(n);
+            let (w1, rest) = rest.split_at_mut(n);
+            let (w2, wl) = rest.split_at_mut(n);
+            let (w0, w1, w2, wl, dd) = (&mut w0[..n], &mut w1[..n], &mut w2[..n], &mut wl[..n], &mut d[..n + 1]);
+            // Weights along the row: running sum of the jumps (zeroing them for the next row).
+            let mut acc = base;
+            for i in 0..n {
+                for k in 0..4 {
+                    acc[k] += dd[i][k];
+                }
+                dd[i] = [0.0; 4];
+                (w0[i], w1[i], w2[i], wl[i]) = (acc[0], acc[1], acc[2], acc[3]);
+            }
+            dd[n] = [0.0; 4];
+            // Colour (vectorised): tau = r · (a/l) / a, then the gradient basis.
+            for i in 0..n {
+                let dx = i as f32 + 0.5 - ox;
+                let r = (dx * dx + dy * dy).sqrt();
+                let a = w0[i];
+                let t = r * wl[i] / mx(a, 1e-9);
+                let t = if a > 1e-6 { t } else { 2.0 };
+                let h0 = mx(1.0 - t * g[0], 0.0);
+                let h1 = mx(mn(t * g[0], (t2 - t) * g[1]), 0.0);
+                let h2 = mx(mn((t - t1) * g[1], (t3 - t) * g[2]), 0.0);
+                let h3 = mx(mn((t - t2) * g[2], (t4 - t) * g[3]), 0.0);
+                let h4 = mx(mn((t - t3) * g[3], (1.0 - t) * g[4]), 0.0);
+                let (c0, c1, c2, c3, c4) = (h0 * a, h1 * a, h2 * w1[i], h3 * w2[i], h4 * w1[i]);
+                let s = |j: usize| c0 * p00[j] + c1 * p01[j] + c2 * p12[j] + c3 * p23[j] + c4 * p14[j];
+                (w0[i], w1[i], w2[i], wl[i]) = (s(0), s(1), s(2), mn(s(3), 1.0));
+            }
+            fxpix::pack_row(w0, w1, w2, wl, out);
+        }
+        px
+    }
+}
+
 impl Component for GodRays {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let t = step(t, AMBIENT_RATE);
@@ -133,22 +453,26 @@ impl Component for GodRays {
         let lp = fxkit::push_light(&mut out, 1.0, true);
 
         // Haze: a broad bloom around the source, wider than the beams.
-        if self.haze > 0.0 {
-            let br = diag * (0.35 + 0.3 * self.haze);
-            out.push(light(sx, sy, br, bloom(c, 1.3 * ink * self.haze, 0.16)));
+        let haze = (self.haze > 0.0).then(|| (diag * (0.35 + 0.3 * self.haze), bloom(c, 1.3 * ink * self.haze, 0.16)));
+        // Shortcut: unless exact, the slices are rasterised directly into
+        // image strips (see [`Fan`]) instead of hundreds of gradient-filled wedges.
+        let direct = !fxkit::exact();
+        if let Some((br, st)) = &haze {
+            out.push(light(sx, sy, *br, st.clone()));
         }
 
-        // Slices: each at most ~5 px wide at its far end.
-        // Shortcut: slices up to ~9 px wide where the shafts fade out (2 px when exact).
-        let slice = ((if fxkit::exact() { 2.0 } else { 9.0 }) * k / len).atan().max(1e-4);
+        // Slices: each at most 2 px wide at its far end.
+        let slice = (2.0 * k / len).atan().max(1e-4);
         let ns = ((spread / slice).ceil() as usize).clamp(48, 1400);
         let da = spread / ns as f32;
         let a0 = fan - spread * 0.5;
         let warm = hot(c, 0.35);
+        let cols = [warm, mix(warm, c, 0.5), c, mix(c, cf, 0.5), cf, cf];
+        let mut fan_tab = if direct { FanTable::take() } else { FanTable::default() };
         for i in 0..ns {
             let u = (i as f32 + 0.5) / ns as f32 - 0.5;
             let d = self.density(&n, u, t);
-            if d < 0.004 {
+            if d < 0.004 && !direct {
                 continue;
             }
             // Shaft length and haze patches vary with noise too.
@@ -158,6 +482,13 @@ impl Component for GodRays {
             let h1 = 0.7 + 0.6 * (0.5 + 0.5 * nh.noise2(ud * 0.9 + 9.0, z * 1.3 + 3.0) as f32);
             let h2 = 0.6 + 0.8 * (0.5 + 0.5 * nh.noise2(ud * 0.7 + 23.0, z * 1.1 + 7.0) as f32);
             let l = len * lk;
+            let a = 0.75 * ink * d;
+            if direct {
+                let a = if d < 0.004 { 0.0 } else { a };
+                fan_tab.slices.push([a, a * h1, a * h2, 1.0 / l]);
+                continue;
+            }
+            let al: [f32; 6] = std::array::from_fn(|j| a * (SLICE_B0[j] + h1 * SLICE_B1[j] + h2 * SLICE_B2[j]));
             let (aa, ab) = (a0 + i as f32 * da, a0 + (i + 1) as f32 * da);
             let am = (aa + ab) * 0.5;
             let mut p = Path::new();
@@ -167,19 +498,15 @@ impl Component for GodRays {
             p.line_to(((sx + aa.cos() * lf) as f64, (sy + aa.sin() * lf) as f64));
             p.line_to(((sx + ab.cos() * lf) as f64, (sy + ab.sin() * lf) as f64));
             p.close_path();
-            let a = 0.75 * ink * d;
-            let stops = vec![
-                (0.0, alpha(warm, a)),
-                (0.05, alpha(mix(warm, c, 0.5), a * 0.92)),
-                (0.18, alpha(c, a * 0.62 * h1)),
-                (0.4, alpha(mix(c, cf, 0.5), a * 0.32 * h2)),
-                (0.7, alpha(cf, a * 0.11 * h1)),
-                (1.0, alpha(cf, 0.0)),
-            ];
+            let stops = (0..6).map(|j| (SLICE_STOPS[j], alpha(cols[j], al[j]))).collect();
             let (dx, dy) = (am.cos(), am.sin());
             out.push(Op::Fill { path: p, paint: Paint::Linear { p0: [sx, sy], p1: [sx + dx * l, sy + dy * l], stops }, rule: FillRule::NonZero, transform: IDENTITY });
         }
 
+        if direct {
+            Fan { at: (sx, sy), a0, da, cols }.strips(ctx, &fan_tab, &mut out);
+            fan_tab.give_back();
+        }
         // Hot source.
         out.push(light(sx, sy, diag * 0.12, bloom(hot(c, 0.6), 0.9 * ink, 0.08)));
         fxkit::pop_if(&mut out, lp);

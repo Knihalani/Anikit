@@ -421,6 +421,8 @@ pub struct Evaluator {
     pub(crate) ctheme: crate::components::Theme,
     /// Beat grid and loudness of the music, when expressions read them.
     pub(crate) groove: Option<Arc<beat_markers::Music>>,
+    /// Encoder adaptive-quantisation strength (`encode.aq`), when the spec sets it.
+    pub encode_aq: Option<f32>,
     /// Motion-blur shutter in seconds (0 = off). Default half a frame (180°).
     pub shutter: f32,
     /// The spec asked for motion blur itself (otherwise only `--quality high` applies it).
@@ -558,6 +560,15 @@ impl Evaluator {
 
     /// Spec path and kind of a tagged layer (`("scenes[1].layers[3]", "component:browser")`);
     /// `("captions", "caption")` for `u32::MAX`.
+    /// Whether the video has layers whose frames are expensive (shaders, 3D, video):
+    /// the ones worth estimating before a render.
+    pub fn has_heavy_layers(&self) -> bool {
+        const HEAVY: &[&str] = &["shader", "video"];
+        const HEAVY_COMPONENTS: &[&str] = &["scene3d", "scene-3d", "model", "product-shot", "text-3d", "globe", "lottie"];
+        self.layer_info.iter().any(|(_, k)| HEAVY.contains(&k.as_str()) || k.strip_prefix("component:").is_some_and(|c| HEAVY_COMPONENTS.contains(&c)))
+            || self.comps.iter().any(|(_, c)| c.has_heavy_layers())
+    }
+
     pub fn layer_info(&self, tag: u32) -> (&str, &str) {
         match self.layer_info.get(tag as usize) {
             Some((p, k)) => (p, k),

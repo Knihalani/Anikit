@@ -1,5 +1,6 @@
 {
  "about": "Beat-cut kinetic type: one word per beat at 128 BPM, colour flips, snap zoom and impact shake on every cut. Swap the words; add \"music\" and set durations to \"@beat\" for an exact grid.",
+ "cost": "~3 s, draft or final (1080p, 4 cores)",
  "spec": {
   "size": "16:9",
   "intent": {

@@ -135,6 +135,8 @@ pub struct Spec {
     /// `{ "preset": "cinematic", "bloom": 0.4, … }`. Default none.
     #[schemars(with = "Option<PostValue>")]
     pub post: Option<serde_json::Value>,
+    /// Encoder tuning (the built-in ak264 MP4 encoder): `{ "aq": 0.8 }`.
+    pub encode: Option<EncodeSpec>,
     /// Motion blur on moving content: `true` (180° shutter), `false`, or `{ "shutter": 90 }` (degrees).
     /// Default: on at `--quality high` only (it renders several sub-frames per moving frame).
     pub motion_blur: Option<MotionBlur>,
@@ -184,6 +186,15 @@ pub enum PostValue {
     Preset(String),
     /// `{ "preset": "cinematic", …any post setting… }`.
     Custom(serde_json::Map<String, serde_json::Value>),
+}
+
+/// `encode`: encoder tuning.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct EncodeSpec {
+    /// Adaptive quantisation strength, 0 (off, default) to 2: spends bits on flat areas
+    /// (gradients, skies) and saves them on busy texture.
+    pub aq: Option<f64>,
 }
 
 /// `motionBlur`: on/off, or a shutter angle.
@@ -561,7 +572,8 @@ pub struct Layer {
     pub channels: Option<Vec<serde_json::Value>>,
     /// Shader as a filter: `iChannel0` is everything drawn below, and the output replaces the frame.
     pub filter: Option<bool>,
-    /// Shader: 2×2 supersampling (4 samples per pixel).
+    /// Shader: anti-aliasing (adaptive 2×2 where neighbours differ). Default on for shader layers
+    /// unless the source says `// anikit:aa off`; off for filters. `false` is up to 2× faster.
     pub supersample: Option<bool>,
     /// Shader: use `fragColor.a` as alpha (default: opaque, like Shadertoy).
     pub alpha: Option<bool>,

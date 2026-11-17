@@ -29,6 +29,7 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 | `docs critique` | the reviewer and the review pack |
 | `docs analyze` | reverse-engineer a reference video: shots, pacing, palette, camera, beats → a draft spec |
 | `docs make-anything` | escape hatches and how to combine them |
+| `docs launch` | a launch/product video from a brief: concept generator, beat sheet, QA (skill: skills/anikit-launch-video) |
 | `docs expressions` · `docs script` · `docs draw` | per-frame maths and colours (music-reactive), generator loops, raw paths and points |
 
 Shortcuts (optional): `anikit-video recipes` (drop-in high-end shots), `looks` (art direction),

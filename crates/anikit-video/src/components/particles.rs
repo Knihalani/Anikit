@@ -317,15 +317,6 @@ impl Component for Confetti {
                 hull(&mut sp, &pts);
                 bands[b].push(fill(sp, solid(alpha(col(lit), (0.45 * s / (s + moved)).min(0.4)))));
             }
-            if b == 2 && !fxkit::exact() {
-                // Out of focus: a baked soft rectangle (no per-frame blur).
-                let bl = 6.0 * k * self.depth;
-                let lv = (clamp01(lit) * 3.0).round() / 3.0;
-                let id = fxkit::soft_rect(ctx.assets, col(0.4 + 0.6 * lv));
-                let (su, sv) = (2.0 * hu.max(bl), 2.0 * hv.max(bl));
-                bands[b].push(fxkit::stamp_affine(id, x, y, [u[0] * su, u[1] * su], [v[0] * sv, v[1] * sv], 0.9));
-                continue;
-            }
             bands[b].push(fill(path, paint));
         }
         let mut o = Vec::new();
@@ -334,7 +325,7 @@ impl Component for Confetti {
                 continue;
             }
             let dim = if b == 0 { 0.85 } else { 1.0 };
-            let pushed = fxkit::exact() && fxkit::push_blur(&mut o, band_blur(self.depth)[b] * k, Blend::Normal);
+            let pushed = fxkit::push_blur(&mut o, band_blur(self.depth)[b] * k, Blend::Normal);
             o.extend(super::with_opacity(ops, dim));
             fxkit::pop_if(&mut o, pushed);
         }
@@ -426,7 +417,6 @@ impl Component for Sparks {
         let bursts = if self.bursts.is_empty() { vec![0.0] } else { self.bursts.clone() };
         let shutter = 0.045 * self.streak;
         let mut core: Vec<Path> = vec![Path::new(); BANDS * HEAT];
-        let mut sprites: Vec<(usize, f32, f32, f32, f32, f32, f32)> = Vec::new();
         let mut halo: Vec<Path> = vec![Path::new(); BANDS * HEAT];
         let mut flashes = Vec::new();
         for (bi, &bt) in bursts.iter().enumerate() {
@@ -467,23 +457,9 @@ impl Component for Sparks {
                 let wd = (1.3 + 2.0 * z) * scale.max(0.5) * (0.55 + 0.45 * heat);
                 let wtail = wd * 0.25;
                 let _ = vel;
-                let (tx, ty) = trail[0];
-                let len = ((x - tx).powi(2) + (y - ty).powi(2)).sqrt();
-                let rot = (y - ty).atan2(x - tx);
-                let (mx, my) = ((x + tx) * 0.5, (y + ty) * 0.5);
-                if b == 2 && !fxkit::exact() {
-                    // Out of focus: a soft stretched glow instead of a crisp trail.
-                    let bl = 7.0 * k * self.depth;
-                    sprites.push((lvl, mx, my, len * 0.5 + bl + wd, bl + wd, rot, 0.5 + 0.4 * heat_l));
-                    continue;
-                }
                 fxkit::trail_path(&mut core[b * HEAT + lvl], &trail, wtail, wd);
-                if self.glow && heat_l > 0.25 && fxkit::exact() {
+                if self.glow && heat_l > 0.25 {
                     fxkit::trail_path(&mut halo[b * HEAT + lvl], &trail, wd * 1.5, wd * 4.0);
-                } else if self.glow && heat_l > 0.25 {
-                    // Bloom: a gaussian ellipse stretched along the trail (no blurred layer).
-                    let gr = wd * 4.0 + 6.0 * k;
-                    sprites.push((lvl, mx, my, len * 0.5 + gr, gr, rot, 0.12 + 0.22 * heat_l));
                 }
             }
         }
@@ -497,10 +473,6 @@ impl Component for Sparks {
             o.push(light(x, y, 320.0 * k, fxkit::bloom(c, f * f, 0.06)));
             o.push(light(x, y, 50.0 * k, gauss(hot(c, 0.7), f.sqrt())));
         }
-        for (l, x, y, rx, ry, rot, a) in sprites {
-            let heat = (l as f32 + 0.5) / HEAT as f32;
-            o.push(fxkit::ellipse(x, y, rx, ry, rot, gauss(color_at(heat), a)));
-        }
         if halo.iter().any(|p| !p.is_empty()) {
             // Exact bloom: the wide trails, blurred together.
             push_layer(&mut o, 1.0, Blend::Add, vec![crate::dl::Filter::Blur(7.0 * k)]);
@@ -511,7 +483,7 @@ impl Component for Sparks {
             o.push(Op::PopLayer);
         }
         for b in 0..BANDS {
-            let pushed = fxkit::exact() && fxkit::push_blur(&mut o, band_blur(self.depth)[b] * k * 1.4, Blend::Add);
+            let pushed = fxkit::push_blur(&mut o, band_blur(self.depth)[b] * k * 1.4, Blend::Add);
             for l in 0..HEAT {
                 let heat = (l as f32 + 0.5) / HEAT as f32;
                 let c = color_at(heat);
@@ -606,7 +578,6 @@ impl Component for Snow {
         let mut rng = Rng::new(self.seed as u64);
         const LV: usize = 4;
         let mut paths: Vec<Path> = vec![Path::new(); BANDS * LV];
-        let mut soft = Vec::new();
         let mut glints = Vec::new();
         for i in 0..self.count {
             let (a, b, z0, ph) = (rng.f(), rng.f(), rng.f(), rng.f() * TAU);
@@ -624,13 +595,6 @@ impl Component for Snow {
             let y = (b * (h + 2.0 * pad) + fall * t + ty).rem_euclid(h + 2.0 * pad) - pad;
             let bd = band(z, self.depth);
             let lv = (((0.35 + 0.65 * depth) * (0.7 + 0.3 * rs)) * LV as f32).min(LV as f32 - 1.0) as usize;
-            if bd == 2 && !fxkit::exact() {
-                // Out of focus: a gaussian disc (as wide as the blurred dot) instead of a blurred layer.
-                let sg = 7.0 * k * self.depth;
-                let rr = r + 2.2 * sg;
-                soft.push((x, y, rr, ([0.3, 0.5, 0.72, 0.92][lv] * 1.5 * (r + sg * 0.5) / rr).min(0.9)));
-                continue;
-            }
             if self.shape == "crystal" && bd == 1 && z > 0.45 {
                 crystal(&mut paths[bd * LV + lv], x, y, r * 2.2 + 2.0 * k, ph + t * (0.3 + rs) * if i % 2 == 0 { 1.0 } else { -1.0 });
             } else {
@@ -644,17 +608,12 @@ impl Component for Snow {
         }
         let mut o = Vec::new();
         for b in 0..BANDS {
-            let pushed = fxkit::exact() && fxkit::push_blur(&mut o, band_blur(self.depth)[b] * k * 1.3, Blend::Normal);
+            let pushed = fxkit::push_blur(&mut o, band_blur(self.depth)[b] * k * 1.3, Blend::Normal);
             for l in 0..LV {
                 let a = [0.3, 0.5, 0.72, 0.92][l] * if b == 2 { 0.75 } else { 1.0 };
                 fxkit::fill_solid(&mut o, std::mem::take(&mut paths[b * LV + l]), alpha(c, a));
             }
             fxkit::pop_if(&mut o, pushed);
-        }
-        if !soft.is_empty() {
-            for (x, y, r, a) in soft {
-                o.push(light(x, y, r, gauss(c, a)));
-            }
         }
         if !glints.is_empty() && dark {
             let lp = fxkit::push_light(&mut o, 1.0, true);
@@ -742,12 +701,6 @@ impl Component for Dust {
             let r = self.size * k * (0.4 + 0.9 * z) * (0.75 + 0.25 * tw);
             let bd = band(z, self.depth);
             let lv = ((tw * (0.4 + 0.6 * z)) * LV as f32).min(LV as f32 - 1.0) as usize;
-            if bd == 2 && !fxkit::exact() {
-                let sg = 6.0 * k * self.depth;
-                let rr = r + 2.2 * sg;
-                halos.push((x, y, rr / 6.5, (0.22 + 0.78 * (lv as f32 + 0.5) / LV as f32) * 1.5 * (r + sg * 0.5) / rr * 2.0));
-                continue;
-            }
             fxkit::dot(&mut sharp[bd * LV + lv], x, y, r.max(0.35));
             if self.glow && (tw > 0.65 || look == "fireflies") {
                 halos.push((x, y, r, tw));
@@ -770,7 +723,7 @@ impl Component for Dust {
             }
         }
         for b in 0..BANDS {
-            let pushed = fxkit::exact() && fxkit::push_blur(&mut o, band_blur(self.depth)[b] * k, Blend::Normal);
+            let pushed = fxkit::push_blur(&mut o, band_blur(self.depth)[b] * k, Blend::Normal);
             for l in 0..LV {
                 let a = 0.22 + 0.78 * (l as f32 + 0.5) / LV as f32;
                 let col = if look == "fireflies" && l >= 3 { hot(c, 0.5) } else { c };
