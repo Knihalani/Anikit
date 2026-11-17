@@ -468,23 +468,23 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         }
 
-        let mut cd = Coded::new();
         let try_i4 = best_cost > lambda as u32 * 24 + 256 && (c.idr || kind != Kind::P16 || best_cost > lambda as u32 * 64 + 1024);
         if try_i4 {
             // Encode I4x4 tentatively (writes recon).
+            let mut cd = Coded::new();
             let (cost4, modes) = self.code_i4(mbx, mby, src_y, &mut cd, true);
             if cost4 < best_cost {
                 self.finish_intra(mbx, mby, src_c, &mut cd, Kind::I4, Some(modes), None);
                 return;
             }
-            cd = Coded::new();
         }
         match kind {
             Kind::P16 => {
-                let it = inter.unwrap();
-                self.code_inter(mbx, mby, src_y, src_c, &it);
+                let it = inter.as_ref().unwrap();
+                self.code_inter(mbx, mby, src_y, src_c, it);
             }
             Kind::I16(_) | Kind::I4 => {
+                let mut cd = Coded::new();
                 self.finish_intra(mbx, mby, src_c, &mut cd, kind, None, Some((src_y, &pred16)));
             }
         }
@@ -698,23 +698,29 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
     fn code_inter(&mut self, mbx: usize, mby: usize, src_y: &[u8; 256], src_c: &[[u8; 64]; 2], it: &Inter) {
         let (mv, mvp, skip_mv) = (it.mv, it.mvp, it.skip_mv);
-        let pred = it.pred;
+        let pred = &it.pred;
         let mut predc = [[0u8; 64]; 2];
         self.mc_chroma(0, mbx, mby, mv, &mut predc[0]);
         self.mc_chroma(1, mbx, mby, mv, &mut predc[1]);
         let mut cd = Coded::new();
 
         // Residuals that provably quantise to zero are not transformed.
-        let mut recon = pred;
-        if crate::simd::sad16(src_y, 16, &pred, 16) > self.c.zero_sad.0 {
-            luma_inter(src_y, &pred, &self.c.qs, &mut cd, &mut recon);
-        }
-        let mut reconc = predc;
+        let mut recon = [0u8; 256];
+        let ry = if crate::simd::sad16(src_y, 16, pred, 16) > self.c.zero_sad.0 {
+            luma_inter(src_y, pred, &self.c.qs, &mut cd, &mut recon);
+            &recon
+        } else {
+            pred
+        };
+        let mut reconc = [[0u8; 64]; 2];
         let zc = self.c.zero_sad.1;
-        if crate::simd::sad64(&src_c[0], &predc[0]) > zc || crate::simd::sad64(&src_c[1], &predc[1]) > zc {
+        let rc = if crate::simd::sad64(&src_c[0], &predc[0]) > zc || crate::simd::sad64(&src_c[1], &predc[1]) > zc {
             chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, false, &mut cd, &mut reconc);
-        }
-        self.store_recon(mbx, mby, &recon, &reconc);
+            &reconc
+        } else {
+            &predc
+        };
+        self.store_recon(mbx, mby, ry, rc);
         let skip = cd.cbp == 0 && mv == skip_mv;
         let mvd = if skip { (0, 0) } else { (mv.0 - mvp.0, mv.1 - mvp.1) };
         let i = (mby - self.b.mby0) * self.c.mbw + mbx;
