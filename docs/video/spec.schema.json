@@ -2639,6 +2639,17 @@
             "null"
           ]
         },
+        "axes": {
+          "description": "Variable-font axis values at full selection, e.g. `{\"wght\": 900, \"wdth\": 125}`\n(a weight wave across the units). Spacing stays that of the base text.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          }
+        },
         "start": {
           "description": "Range start / end as fractions of the units (0..1). Defaults 0 and 1. Animatable as `rangeStart` / `rangeEnd`.",
           "anyOf": [

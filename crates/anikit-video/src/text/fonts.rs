@@ -274,6 +274,30 @@ impl FontStore {
         Some(ax.default_value())
     }
 
+    /// The face `id` moved a fraction `t` (0..1) toward the axis values
+    /// `targets` (user units), interpolated in normalised space and quantised
+    /// to 1/128 so a sweep reuses a bounded set of instances.
+    pub fn toward_axes(&self, id: FontId, targets: &[(String, f32)], t: f32) -> FontId {
+        use skrifa::MetadataProvider;
+        let face = self.face(id);
+        let Ok(f) = skrifa::FontRef::from_index(face.data.data.as_ref(), face.data.index) else { return id };
+        let axes = f.axes();
+        if axes.is_empty() {
+            return id;
+        }
+        let mut coords: Vec<i16> = (0..axes.len()).map(|i| face.coords.get(i).copied().unwrap_or(0)).collect();
+        for (tag, target) in targets {
+            let tb = tag.as_bytes();
+            if let Some(ax) = axes.iter().find(|a| a.tag().to_be_bytes() == [tb[0], tb[1], tb[2], tb[3]]) {
+                let i = ax.index();
+                let to = ax.normalize(*target).to_bits() as f32;
+                let v = coords[i] as f32 + (to - coords[i] as f32) * t.clamp(0.0, 1.0);
+                coords[i] = ((v / 128.0).round() * 128.0).clamp(-16384.0, 16384.0) as i16;
+            }
+        }
+        self.intern(&face.data, &coords, face.embolden, face.skew)
+    }
+
     /// Horizontal advance of glyph `gid` at `size` px (variation-aware).
     pub fn advance(&self, id: FontId, gid: u16, size: f32) -> f32 {
         use skrifa::MetadataProvider;
