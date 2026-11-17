@@ -140,6 +140,43 @@ impl Args {
     }
 }
 
+/// `recipes [name] [-o file.json]`: with `-o`, write the ready spec; piped, print only its JSON.
+fn cmd_recipes(rest: &[String]) -> Result<(), String> {
+    use std::io::IsTerminal;
+    let mut name = None;
+    let mut out = None;
+    let mut i = 0;
+    while i < rest.len() {
+        match rest[i].as_str() {
+            "-o" | "--out" => {
+                out = Some(rest.get(i + 1).ok_or("-o needs a file name")?.clone());
+                i += 1;
+            }
+            a => name = Some(a.to_string()),
+        }
+        i += 1;
+    }
+    let Some(n) = name else {
+        print!("{}", crate::agent_docs::recipes(None)?);
+        return Ok(());
+    };
+    let piped = !std::io::stdout().is_terminal();
+    if out.is_some() || piped {
+        let spec = crate::agent_docs::recipe_spec(&n).ok_or_else(|| crate::agent_docs::recipes(Some(&n)).err().unwrap_or_default())?;
+        let text = serde_json::to_string_pretty(&spec).unwrap_or_default();
+        match out {
+            Some(path) => {
+                std::fs::write(&path, text + "\n").map_err(|e| format!("cannot write {path}: {e}"))?;
+                eprintln!("wrote {path} (recipe {n}); render: anikit-video render {path} -o out.mp4");
+            }
+            None => println!("{text}"),
+        }
+        return Ok(());
+    }
+    print!("{}", crate::agent_docs::recipes(Some(&n))?);
+    Ok(())
+}
+
 fn read(path: &str) -> Result<String, String> {
     std::fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))
 }
