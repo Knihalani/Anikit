@@ -265,7 +265,7 @@ fn main() -> ExitCode {
         };
     }
     if matches!(raw.first().map(String::as_str), Some("--version" | "-V" | "version")) {
-        println!("anikit-video {} ({})", env!("CARGO_PKG_VERSION"), option_env!("ANIKIT_BUILD").unwrap_or("dev build"));
+        println!("anikit-video {} ({} {})", env!("CARGO_PKG_VERSION"), env!("ANIKIT_GIT"), env!("ANIKIT_GIT_DATE"));
         return ExitCode::SUCCESS;
     }
     // `<command> --help` (or -h) prints that command's usage and succeeds, so
