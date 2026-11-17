@@ -138,3 +138,107 @@ pub fn prefix(ops: &[Op], w: f64, h: f64, image_size: &dyn Fn(crate::dl::ImageId
         0
     }
 }
+
+/// One smooth op as a per-pixel colour field.
+struct FieldOp {
+    /// Device → paint coordinates.
+    inv: Affine,
+    kind: u8, // 0 solid, 1 linear, 2 radial
+    a: [f64; 2],
+    d: [f64; 2],
+    inv_len2: f64,
+    /// Premultiplied straight-sRGB colour ramp over t ∈ 0..1.
+    ramp: Vec<[f32; 4]>,
+}
+
+const RAMP: usize = 1024;
+
+fn ramp(stops: &[(f32, Rgba)]) -> Vec<[f32; 4]> {
+    (0..=RAMP)
+        .map(|i| {
+            let t = i as f32 / RAMP as f32;
+            let c = match stops.iter().position(|s| s.0 >= t) {
+                None => stops.last().map_or([0.0; 4], |s| s.1 .0),
+                Some(0) => stops[0].1 .0,
+                Some(k) => {
+                    let (a, b) = (&stops[k - 1], &stops[k]);
+                    let f = if b.0 > a.0 { (t - a.0) / (b.0 - a.0) } else { 1.0 };
+                    std::array::from_fn(|j| a.1 .0[j] + (b.1 .0[j] - a.1 .0[j]) * f)
+                }
+            };
+            [c[0] * c[3], c[1] * c[3], c[2] * c[3], c[3]]
+        })
+        .collect()
+}
+
+/// Whether [`render_field`] can evaluate these ops (gradients and solids only).
+pub fn field_ok(ops: &[Op]) -> bool {
+    ops.iter().all(|o| match o {
+        Op::Fill { paint, .. } | Op::RoundRect { paint, .. } => !matches!(paint, Paint::Image { .. }),
+        _ => false,
+    })
+}
+
+/// Evaluate a smooth prefix (see [`prefix`]) as unbounded colour fields in
+/// float, composite source-over onto `bg`, and write dithered 8-bit RGBA:
+/// no 8-bit steps inside the gradients, so dark backgrounds don't band.
+pub fn render_field(ops: &[Op], w: usize, h: usize, bg: Rgba, out: &mut [u8]) {
+    assert!(out.len() >= w * h * 4);
+    let fields: Vec<FieldOp> = ops
+        .iter()
+        .filter_map(|o| {
+            let (paint, t) = match o {
+                Op::Fill { paint, transform, .. } | Op::RoundRect { paint, transform, .. } => (paint, affine(transform)),
+                _ => return None,
+            };
+            let inv = t.inverse();
+            Some(match paint {
+                Paint::Solid(c) => FieldOp { inv, kind: 0, a: [0.0; 2], d: [0.0; 2], inv_len2: 0.0, ramp: ramp(&[(0.0, *c)]) },
+                Paint::Linear { p0, p1, stops } => {
+                    let d = [(p1[0] - p0[0]) as f64, (p1[1] - p0[1]) as f64];
+                    let l2 = d[0] * d[0] + d[1] * d[1];
+                    FieldOp { inv, kind: 1, a: [p0[0] as f64, p0[1] as f64], d, inv_len2: if l2 > 0.0 { 1.0 / l2 } else { 0.0 }, ramp: ramp(stops) }
+                }
+                Paint::Radial { c, r, stops } => {
+                    FieldOp { inv, kind: 2, a: [c[0] as f64, c[1] as f64], d: [0.0; 2], inv_len2: 1.0 / (*r as f64).max(1e-6), ramp: ramp(stops) }
+                }
+                Paint::Image { .. } => return None,
+            })
+        })
+        .collect();
+    let bgp = [bg.0[0] * bg.0[3], bg.0[1] * bg.0[3], bg.0[2] * bg.0[3], bg.0[3]];
+    use rayon::prelude::*;
+    out.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
+        for (x, px) in row.chunks_exact_mut(4).enumerate() {
+            let p = kurbo::Point::new(x as f64 + 0.5, y as f64 + 0.5);
+            let mut acc = bgp;
+            for f in &fields {
+                let t = match f.kind {
+                    0 => 0.0,
+                    1 => {
+                        let q = f.inv * p;
+                        ((q.x - f.a[0]) * f.d[0] + (q.y - f.a[1]) * f.d[1]) * f.inv_len2
+                    }
+                    _ => {
+                        let q = f.inv * p;
+                        ((q.x - f.a[0]).hypot(q.y - f.a[1])) * f.inv_len2
+                    }
+                };
+                let s = (t.clamp(0.0, 1.0) * RAMP as f64) as f32;
+                let i = (s as usize).min(RAMP - 1);
+                let fr = s - i as f32;
+                let (c0, c1) = (f.ramp[i], f.ramp[(i + 1).min(RAMP)]);
+                let c: [f32; 4] = std::array::from_fn(|k| c0[k] + (c1[k] - c0[k]) * fr);
+                let ia = 1.0 - c[3];
+                for k in 0..4 {
+                    acc[k] = c[k] + acc[k] * ia;
+                }
+            }
+            let d = super::post::tri_dither(x as u32, y as u32) * 0.5;
+            for k in 0..3 {
+                px[k] = (acc[k] * 255.0 + d + 0.5).clamp(0.0, 255.0) as u8;
+            }
+            px[3] = (acc[3] * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
+        }
+    });
+}

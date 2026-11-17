@@ -268,17 +268,19 @@ pub struct Wipe {
     pub direction: String,
     /// Slant of the panel edge in degrees.
     pub slant: f32,
+    /// Motion-blurred leading edges while panels move fast.
+    pub blur: bool,
 }
 impl Default for Wipe {
     fn default() -> Self {
-        Wipe { at: 0.0, duration: 0.45, hold: 0.1, colors: Vec::new(), direction: "right".into(), slant: 12.0 }
+        Wipe { at: 0.0, duration: 0.45, hold: 0.1, colors: Vec::new(), direction: "right".into(), slant: 12.0, blur: true }
     }
 }
 impl Prepare for Wipe {}
 impl Component for Wipe {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let (w, h) = (ctx.width, ctx.height);
-        let cols: Vec<Rgba> = if self.colors.is_empty() { vec![ctx.theme.accent, ctx.theme.pal(2), ctx.theme.surface] } else { self.colors.iter().map(|c| c.0).collect() };
+        let cols: Vec<Rgba> = if self.colors.is_empty() { vec![ctx.theme.accent, shade(ctx.theme.accent, -0.45), ctx.theme.surface] } else { self.colors.iter().map(|c| c.0).collect() };
         let angle = match self.direction.as_str() {
             "left" => 180.0,
             "down" => 90.0,
@@ -293,6 +295,23 @@ impl Component for Wipe {
             let uncover = ease_in_out(seg(t, self.at + self.duration + self.hold + (n - 1 - i) as f32 * 0.07, self.duration));
             if cover <= 0.0 || uncover >= 1.0 {
                 continue;
+            }
+            // Motion blur: translucent echoes ahead of a fast-moving leading
+            // edge (and behind a fast trailing one).
+            if self.blur {
+                let dt = 1.0 / ctx.fps.max(1.0);
+                let v_in = cover - ease_in_out(seg(t - dt, self.at + lag, self.duration));
+                let un_t = self.at + self.duration + self.hold + (n - 1 - i) as f32 * 0.07;
+                let v_out = uncover - ease_in_out(seg(t - dt, un_t, self.duration));
+                for (k, a) in [(0.6f32, 0.4f32), (1.3, 0.18)] {
+                    let lead_e = cover * 1.15 + v_in * 1.15 * k;
+                    let trail_e = 1.0 - uncover * 1.15 + v_out * 1.15 * k;
+                    if v_in > 0.004 || v_out > 0.004 {
+                        let lead = wipe_path(w, h, angle, lead_e.min(1.2));
+                        let trail = wipe_path(w, h, angle + 180.0, (if uncover > 0.0 { trail_e } else { 1.2 }).min(1.2));
+                        o.extend(layer(Some(lead), a, Blend::Normal, vec![], layer(Some(trail), 1.0, Blend::Normal, vec![], vec![rect(-w, -h, w * 3.0, h * 3.0, 0.0, solid(*c))])));
+                    }
+                }
             }
             // Region between the trailing (uncover) and leading (cover) edges.
             let lead = wipe_path(w, h, angle, cover * 1.15);
@@ -322,10 +341,14 @@ pub struct Iris {
     pub hold: f32,
     pub color: Option<Color>,
     pub center: [f32; 2],
+    /// Glowing rim colour on the iris edge (none by default).
+    pub edge: Option<Color>,
+    /// Soft (feathered) edge width in px; 0 = hard.
+    pub feather: f32,
 }
 impl Default for Iris {
     fn default() -> Self {
-        Iris { at: 0.0, duration: 0.5, hold: 0.15, color: None, center: [0.5, 0.5] }
+        Iris { at: 0.0, duration: 0.5, hold: 0.15, color: None, center: [0.5, 0.5], edge: None, feather: 0.0 }
     }
 }
 impl Prepare for Iris {}
@@ -342,9 +365,23 @@ impl Component for Iris {
         let (cx, cy) = (self.center[0] * w, self.center[1] * h);
         let far = [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)].iter().map(|(x, y)| ((x - cx).powi(2) + (y - cy).powi(2)).sqrt()).fold(0.0, f32::max);
         let r = far * (1.0 - k);
-        let mut p = rrect_path(-2.0, -2.0, w + 4.0, h + 4.0, 0.0);
-        p.extend(circle_path(cx, cy, r));
-        vec![Op::Fill { path: p, paint: solid(c), rule: crate::dl::FillRule::EvenOdd, transform: IDENTITY }]
+        let mut o = Vec::new();
+        let steps = if self.feather > 0.5 { 4 } else { 1 };
+        for s in 0..steps {
+            let e = if steps == 1 { 0.0 } else { self.feather * (s as f32 / (steps - 1) as f32 - 0.5) };
+            let mut p = rrect_path(-2.0, -2.0, w + 4.0, h + 4.0, 0.0);
+            p.extend(circle_path(cx, cy, (r + e).max(0.0)));
+            o.push(Op::Fill { path: p, paint: solid(alpha(c, 1.0 / steps as f32)), rule: crate::dl::FillRule::EvenOdd, transform: IDENTITY });
+        }
+        if let Some(ec) = self.edge {
+            if r > 1.0 {
+                push_layer(&mut o, 1.0, Blend::Screen, vec![Filter::Blur(8.0)]);
+                o.push(Op::Stroke { path: circle_path(cx, cy, r), paint: solid(alpha(ec.0, 0.9)), stroke: line(8.0, [0.0, 1.0]), transform: IDENTITY });
+                o.push(Op::PopLayer);
+                o.push(Op::Stroke { path: circle_path(cx, cy, r), paint: solid(ec.0), stroke: line(2.0, [0.0, 1.0]), transform: IDENTITY });
+            }
+        }
+        o
     }
     fn duration(&self) -> Option<f32> {
         Some(self.at + 2.0 * self.duration + self.hold)

@@ -369,7 +369,7 @@ impl Component for ParticleText {
             x += tt.sin() * 0.9 * k * settle;
             y += (tt * 1.3).cos() * 0.9 * k * settle;
             // Twinkle steps 10×/s so held text repeats frames (cheap downstream).
-            let tw_t = (t * 10.0).floor() / 10.0;
+            let tw_t = step(t, 10.0);
             let twinkle = 0.75 + 0.25 * (tw_t * 3.1 + p.phase * 3.0).sin();
             if exiting {
                 let xs = clamp01((x - (cx - half_w)) / (2.0 * half_w).max(1.0));

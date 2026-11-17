@@ -12,6 +12,9 @@
 //! s.render(&Frame::new(64, 32, 0.0), &mut px);
 //! ```
 
+// Polynomial coefficients are written as published (Cephes); slot loops index parallel arrays.
+#![allow(clippy::excessive_precision, clippy::needless_range_loop)]
+
 pub mod front;
 pub mod jit;
 pub mod library;
@@ -216,16 +219,18 @@ impl Shader {
     fn env(&self, f: &Frame) -> Env {
         let mut sizes = [[0i32; 2]; 4];
         let mut channels = [std::ptr::null(); 4];
+        let mut chan = [texture::ChanInfo::NONE; 4];
         for (i, c) in f.channels.iter().enumerate() {
             if let Some(t) = c {
                 sizes[i] = [t.width() as i32, t.height() as i32];
                 channels[i] = *t as *const Texture;
+                chan[i] = texture::ChanInfo::of(t);
             }
         }
         if f.supersample {
-            Env { lane_dx: [-0.25, 0.25, -0.25, 0.25], lane_dy: [0.25, 0.25, -0.25, -0.25], qstep: 1.0, _pad: [0.0; 3], sizes, channels }
+            Env { lane_dx: [-0.25, 0.25, -0.25, 0.25], lane_dy: [0.25, 0.25, -0.25, -0.25], qstep: 1.0, _pad: [0.0; 3], sizes, channels, chan }
         } else {
-            Env { lane_dx: [0.0, 1.0, 0.0, 1.0], lane_dy: [0.0, 0.0, -1.0, -1.0], qstep: 2.0, _pad: [0.0; 3], sizes, channels }
+            Env { lane_dx: [0.0, 1.0, 0.0, 1.0], lane_dy: [0.0, 0.0, -1.0, -1.0], qstep: 2.0, _pad: [0.0; 3], sizes, channels, chan }
         }
     }
 
@@ -271,7 +276,7 @@ impl Shader {
 
     /// Run the kernel over the frame; `put` writes one output pixel.
     fn run<P: Send>(&self, f: &Frame, out: &mut [P], w: usize, put: impl Fn(&mut P, [f32; 4]) + Sync) {
-        let h = if w == 0 { 0 } else { out.len() / w };
+        let h = out.len().checked_div(w).unwrap_or(0);
         if w == 0 || h == 0 {
             return;
         }
@@ -352,3 +357,19 @@ fn scalar_ints(m: &naga::Module, t: &naga::TypeInner) -> Vec<bool> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod layout {
+    #[test]
+    fn env_offsets_match_the_jit() {
+        let e = std::mem::MaybeUninit::<crate::texture::Env>::uninit();
+        let p = e.as_ptr();
+        // SAFETY: only field addresses are taken.
+        let off = |f: *const u8| f as usize - p as usize;
+        unsafe {
+            assert_eq!(off(std::ptr::addr_of!((*p).sizes) as _), crate::texture::ENV_SIZES as usize);
+            assert_eq!(off(std::ptr::addr_of!((*p).chan) as _), crate::texture::ENV_CHAN as usize);
+        }
+        assert_eq!(std::mem::size_of::<crate::texture::ChanInfo>(), crate::texture::CHAN_SIZE as usize);
+    }
+}

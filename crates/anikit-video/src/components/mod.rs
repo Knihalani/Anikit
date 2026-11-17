@@ -26,6 +26,7 @@ use serde_json::{Map, Value};
 use std::sync::Arc;
 
 pub mod style;
+pub mod polish;
 pub mod host;
 pub mod text;
 
@@ -46,6 +47,7 @@ pub mod three;
 pub mod globe;
 pub mod transitions;
 pub mod ui;
+pub mod uikit;
 pub mod visualizer;
 pub mod ken_burns;
 pub mod tiles;
@@ -55,7 +57,7 @@ pub mod card_stack;
 #[cfg(test)]
 pub(crate) mod preview;
 
-pub use style::Theme;
+pub use style::{set_draft, Theme};
 pub use text::{Face, TextStyle};
 
 /// What a component can ask the engine for while evaluating.
@@ -72,6 +74,27 @@ pub trait Assets: Sync {
     fn text(&self, s: &str, style: &TextStyle, x: f32, y: f32) -> (Vec<Op>, f32);
     /// Advance width of one line of text, without drawing it.
     fn measure(&self, s: &str, style: &TextStyle) -> f32;
+    /// A named 2D sub-composition (top-level `compositions`): size, clock and loop default.
+    fn composition_info(&self, _name: &str) -> Option<CompInfo> {
+        None
+    }
+    /// Its frame at composition time `t` (snapped to its frame grid) as premultiplied
+    /// RGBA8, downscaled by `2^lod`. Deterministic, cached and shared across threads.
+    fn composition_frame(&self, _name: &str, _t: f32, _lod: u8) -> Option<std::sync::Arc<vello_cpu::Pixmap>> {
+        None
+    }
+}
+
+/// Size and clock of a named sub-composition (see [`Assets::composition_info`]).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CompInfo {
+    pub width: u32,
+    pub height: u32,
+    pub fps: f32,
+    /// Seconds.
+    pub duration: f32,
+    /// The composition's own `loop` default.
+    pub looped: bool,
 }
 
 /// Per-frame context handed to [`Component::eval`].

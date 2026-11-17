@@ -1129,6 +1129,23 @@ impl<'m, 'b> Lower<'m, 'b> {
                 (texture::MODE_AUTO, zero, Some([gx[0], gx[1], gy[0], gy[1]]))
             }
         };
+        // Plain level-0 bilinear/nearest with clamp or repeat runs inline (no
+        // call, so no register spills); mipmaps and mirror go through the sampler.
+        let fl = MemFlagsData::trusted();
+        let base = texture::ENV_CHAN + ch as i32 * texture::CHAN_SIZE;
+        let simple = self.b.ins().load(I32, fl, self.env, base + 32);
+        let out: Vec<Variable> = (0..4).map(|_| self.b.declare_var(F32X4)).collect();
+        let inl = self.b.create_block();
+        let slow = self.b.create_block();
+        let merge = self.b.create_block();
+        self.b.ins().brif(simple, inl, &[], slow, &[]);
+        self.b.switch_to_block(inl);
+        let r = self.sample_inline(base, u, v);
+        for (var, val) in out.iter().zip(r) {
+            self.b.def_var(*var, val);
+        }
+        self.b.ins().jump(merge, &[]);
+        self.b.switch_to_block(slow);
         let grads = match grads {
             Some(g) => g,
             None if mode == texture::MODE_AUTO => {
@@ -1139,14 +1156,125 @@ impl<'m, 'b> Lower<'m, 'b> {
             None => [zero; 4],
         };
         let addr = self.b.ins().stack_addr(self.ptr_ty, self.scratch, 0);
-        let fl = MemFlagsData::trusted();
         for (i, val) in [u, v, lod, grads[0], grads[1], grads[2], grads[3]].into_iter().enumerate() {
             self.b.ins().store(fl, val, addr, (i * 16) as i32);
         }
         let chv = self.b.ins().iconst(I32, ch as i64);
         let mv = self.b.ins().iconst(I32, mode as i64);
         self.b.ins().call(self.sample_ref, &[self.env, chv, addr, mv]);
-        Ok((0..4).map(|i| self.b.ins().load(F32X4, fl, addr, i * 16)).collect())
+        for (i, var) in out.iter().enumerate() {
+            let x = self.b.ins().load(F32X4, fl, addr, i as i32 * 16);
+            self.b.def_var(*var, x);
+        }
+        self.b.ins().jump(merge, &[]);
+        self.b.switch_to_block(merge);
+        Ok(out.iter().map(|v| self.b.use_var(*v)).collect())
+    }
+
+    /// Texel index (0..n-1) along one axis: clamp, or repeat when `rep` is set.
+    fn wrap_axis(&mut self, f: Value, nf: Value, n: Value, rep: Value) -> Value {
+        // Repeat in float (exact below 2^24), then clamp as a backstop for NaN/huge.
+        let q = self.b.ins().fdiv(f, nf);
+        let q = self.b.ins().floor(q);
+        let m = self.b.ins().fmul(q, nf);
+        let r = self.b.ins().fsub(f, m);
+        let f = sel(&mut self.b, rep, r, f);
+        let i = self.b.ins().fcvt_to_sint_sat(I32X4, f);
+        let z = isplat(&mut self.b, 0);
+        let one = isplat(&mut self.b, 1);
+        let hi = self.b.ins().isub(n, one);
+        let i = self.b.ins().smax(i, z);
+        self.b.ins().smin(i, hi)
+    }
+
+    /// Four RGBA8 texels at byte offsets `off` from `data`, as packed lanes.
+    fn gather(&mut self, data: Value, off: Value) -> Value {
+        let fl = MemFlagsData::trusted();
+        let mut out = isplat(&mut self.b, 0);
+        for l in 0..4u8 {
+            let o = self.b.ins().extractlane(off, l);
+            let o = self.b.ins().uextend(I64, o);
+            let a = self.b.ins().iadd(data, o);
+            let x = self.b.ins().load(I32, fl, a, 0);
+            out = self.b.ins().insertlane(out, x, l);
+        }
+        out
+    }
+
+    fn unpack(&mut self, px: Value) -> [Value; 4] {
+        let k = fsplat(&mut self.b, 1.0 / 255.0);
+        let m = isplat(&mut self.b, 0xff);
+        std::array::from_fn(|c| {
+            let s = if c == 0 { px } else { self.b.ins().ushr_imm_s(px, 8 * c as i64) };
+            let s = if c == 3 { s } else { self.b.ins().band(s, m) };
+            let f = self.b.ins().fcvt_from_sint(F32X4, s);
+            self.b.ins().fmul(f, k)
+        })
+    }
+
+    fn sample_inline(&mut self, base: i32, u: Value, v: Value) -> Vec<Value> {
+        let fl = MemFlagsData::trusted();
+        let env = self.env;
+        let data = self.b.ins().load(self.ptr_ty, fl, env, base);
+        let ld_i = |s: &mut Self, o: i32| {
+            let x = s.b.ins().load(I32, fl, env, base + o);
+            s.b.ins().splat(I32X4, x)
+        };
+        let ld_f = |s: &mut Self, o: i32| {
+            let x = s.b.ins().load(F32, fl, env, base + o);
+            s.b.ins().splat(F32X4, x)
+        };
+        let (w, h, wf, hf) = (ld_i(self, 8), ld_i(self, 12), ld_f(self, 16), ld_f(self, 20));
+        let zero_i = isplat(&mut self.b, 0);
+        let rep = ld_i(self, 24);
+        let rep = self.b.ins().icmp(IntCC::NotEqual, rep, zero_i);
+        let near = ld_i(self, 28);
+        let near = self.b.ins().icmp(IntCC::NotEqual, near, zero_i);
+        // Same arithmetic as `Texture::sample_level`.
+        let one = fsplat(&mut self.b, 1.0);
+        let half = fsplat(&mut self.b, 0.5);
+        let zero = fsplat(&mut self.b, 0.0);
+        let x = self.b.ins().fmul(u, wf);
+        let iv = self.b.ins().fsub(one, v);
+        let y = self.b.ins().fmul(iv, hf);
+        let hoff = sel(&mut self.b, near, zero, half);
+        let x = self.b.ins().fsub(x, hoff);
+        let y = self.b.ins().fsub(y, hoff);
+        let fx = self.b.ins().floor(x);
+        let fy = self.b.ins().floor(y);
+        let tx = self.b.ins().fsub(x, fx);
+        let ty = self.b.ins().fsub(y, fy);
+        let tx = sel(&mut self.b, near, zero, tx);
+        let ty = sel(&mut self.b, near, zero, ty);
+        let fx1 = self.b.ins().fadd(fx, one);
+        let fy1 = self.b.ins().fadd(fy, one);
+        let xa = self.wrap_axis(fx, wf, w, rep);
+        let xb = self.wrap_axis(fx1, wf, w, rep);
+        let ya = self.wrap_axis(fy, hf, h, rep);
+        let yb = self.wrap_axis(fy1, hf, h, rep);
+        let ra = self.b.ins().imul(ya, w);
+        let rb = self.b.ins().imul(yb, w);
+        let mut corners = Vec::with_capacity(4);
+        for (r, c) in [(ra, xa), (ra, xb), (rb, xa), (rb, xb)] {
+            let i = self.b.ins().iadd(r, c);
+            let off = self.b.ins().ishl_imm_s(i, 2);
+            let g = self.gather(data, off);
+            corners.push(self.unpack(g));
+        }
+        (0..4)
+            .map(|k| {
+                let (p00, p10, p01, p11) = (corners[0][k], corners[1][k], corners[2][k], corners[3][k]);
+                let d = self.b.ins().fsub(p10, p00);
+                let t = self.b.ins().fmul(d, tx);
+                let top = self.b.ins().fadd(p00, t);
+                let d = self.b.ins().fsub(p11, p01);
+                let t = self.b.ins().fmul(d, tx);
+                let bot = self.b.ins().fadd(p01, t);
+                let d = self.b.ins().fsub(bot, top);
+                let t = self.b.ins().fmul(d, ty);
+                self.b.ins().fadd(top, t)
+            })
+            .collect()
     }
 
     fn fetch(&mut self, sc: Sc, image: Handle<E>, coord: Handle<E>, level: Option<Handle<E>>) -> R<Vec<Value>> {
@@ -1916,7 +2044,17 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
         b.finalize(tcfg);
     }
     let insts = ctx.func.dfg.num_insts();
+    let dump = std::env::var_os("ANIKIT_SHADER_DUMP").is_some();
+    if dump {
+        ctx.set_disasm(true);
+        eprintln!("{}", ctx.func.display());
+    }
     module.define_function(fid, &mut ctx).map_err(|e| err(format!("JIT: {e:?}")))?;
+    if dump {
+        if let Some(c) = ctx.compiled_code() {
+            eprintln!("{}", c.vcode.as_deref().unwrap_or(""));
+        }
+    }
     module.clear_context(&mut ctx);
     module.finalize_definitions().map_err(|e| err(format!("JIT: {e}")))?;
     let code = module.get_finalized_function(fid);

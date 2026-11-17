@@ -1,0 +1,30 @@
+{ "fps": 30, "scenes": [
+  { "duration": 2.5, "layers": [
+    { "shader": "sdf-scene" },
+    { "text": "sdf-scene", "style": "label", "x": 160, "y": 1000, "color": "#222" } ] },
+  { "duration": 2.5, "transition": "burn", "layers": [
+    { "shader": "liquid-chrome", "supersample": false, "uniforms": { "warmth": 0.7 } },
+    { "text": "liquid-chrome", "style": "label", "x": 160, "y": 1000 } ] },
+  { "duration": 2.5, "transition": "ripple", "layers": [
+    { "shader": "aurora", "uniforms": { "intensity": 0.8 }, "animate": [ { "to": { "intensity": 1.5 }, "duration": 2 } ] },
+    { "text": "aurora", "style": "label", "x": 160, "y": 1000 } ] },
+  { "duration": 2.5, "transition": "ink-bleed", "layers": [
+    { "shader": "caustics" },
+    { "text": "caustics", "style": "label", "x": 160, "y": 1000 } ] },
+  { "duration": 2.5, "transition": "swirl", "layers": [
+    { "shader": "flow-ink" },
+    { "text": "flow-ink", "style": "label", "x": 160, "y": 1000, "color": "#111" } ] },
+  { "duration": 2.5, "transition": "pixelate", "layers": [
+    { "shader": "turing", "uniforms": { "balance": -0.6 }, "animate": [ { "to": { "balance": 0.6 }, "duration": 2.5, "ease": "linear" } ] },
+    { "text": "turing", "style": "label", "x": 160, "y": 1000 } ] },
+  { "duration": 2.5, "transition": "warp-wipe", "background": "#101820", "layers": [
+    { "text": "Film burn", "style": "title" },
+    { "text": "a filter over the layers below", "style": "subtitle", "y": "62%" },
+    { "shader": "film-burn", "filter": true, "uniforms": { "amount": 0 }, "animate": [ { "to": { "amount": 1 }, "at": 0.6, "duration": 1.9, "ease": "inQuad" } ] } ] },
+  { "duration": 2.5, "transition": "luma-melt", "background": "#1b1036", "layers": [
+    { "text": "GLITCH", "style": "title", "size": 220 },
+    { "shader": "glitch", "filter": true, "uniforms": { "amount": 0.9, "rate": 3 } } ] },
+  { "duration": 2.0, "transition": { "type": "zoom-blur", "duration": 0.6 }, "layers": [
+    { "shader": "void mainImage(out vec4 c, in vec2 p) {\n  vec2 uv = (p - 0.5 * iResolution.xy) / iResolution.y;\n  float r = length(uv), a = atan(uv.y, uv.x);\n  float rings = sin(18.0 * r - 4.0 * iTime + 3.0 * sin(5.0 * a));\n  vec3 col = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + r + 0.1 * iTime));\n  c = vec4(col * smoothstep(-0.2, 0.2, rings) * exp(-1.5 * r), 1.0);\n}" },
+    { "text": "your own GLSL", "style": "label", "x": 160, "y": 1000 } ] }
+] }

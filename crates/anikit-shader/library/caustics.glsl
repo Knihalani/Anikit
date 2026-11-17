@@ -25,18 +25,18 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float t = iTime * speed;
     vec2 p = uv * 3.0;
     // Where light through this surface point lands on the floor.
-    vec2 land = p + grad(p, t) * 0.07 * depth;
+    vec2 land = p + grad(p, t) * 0.11 * depth;
     // Ray density = 1 / |det J| of the surface→floor map.
     float area = abs(dFdx(land.x) * dFdy(land.y) - dFdx(land.y) * dFdy(land.x));
     float px = abs(dFdx(p.x) * dFdy(p.y));
-    float light = clamp(px / max(area, 1e-7), 0.0, 6.0);
-    light = pow(light, 1.6);
+    float light = px / max(area, 1e-7);
+    light = 1.0 - exp(-light * 0.55);          // compress the focal lines' peaks
     // Floor tiles under the light.
     vec2 g = abs(fract(uv * 6.0) - 0.5);
     float grout = smoothstep(0.47, 0.5, max(g.x, g.y));
     vec3 floorc = mix(vec3(0.75, 0.86, 0.9), vec3(0.55, 0.68, 0.74), grout);
-    vec3 col = floorc * tint * (0.35 + 0.65 * light);
-    col += vec3(1.0, 0.98, 0.9) * 0.12 * max(light - 1.5, 0.0);
+    vec3 col = floorc * tint * (0.25 + 1.1 * light);
+    col += vec3(1.0, 0.98, 0.9) * 0.35 * smoothstep(0.75, 0.98, light);
     col *= 1.0 - 0.3 * length(uv - vec2(0.5 * iResolution.x / iResolution.y, 0.5));
     fragColor = vec4(pow(col, vec3(0.9)), 1.0);
 }

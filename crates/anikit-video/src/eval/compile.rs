@@ -86,10 +86,12 @@ struct C<'a> {
     audio_extra: Vec<crate::audio::Track>,
     layer_info: Vec<(String, String)>,
     beat_marks: super::beat_markers::BeatMarkers,
-    /// Compiled sub-compositions by name, with their own `loop` default.
-    comps: Vec<(String, Arc<Evaluator>, bool)>,
     /// Uniform name → (slot after `prop::U0`, components) of the shader layer being compiled.
     uniform_slots: Vec<(String, usize, usize)>,
+    /// Compiled sub-compositions by name, with their own `loop` default.
+    comps: Vec<(String, Arc<Evaluator>, bool)>,
+    /// The spec's theme as written (nested compositions inherit it).
+    spec_theme: Option<spec::Theme>,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -147,6 +149,7 @@ impl Evaluator {
             beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
             assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
             comps,
+            spec_theme: spec.theme.clone(),
             uniform_slots: Vec::new(),
         };
         c.assets.shaders.bind(&c.assets);
@@ -185,8 +188,19 @@ impl Evaluator {
             }
         }
         if let Some(defs) = &spec.compositions {
-            c.compositions(spec, defs);
+            c.compositions(defs);
         }
+        let gpost = spec.post.as_ref().and_then(|p| c.post(p, "post"));
+        let shutter = match &spec.motion_blur {
+            None | Some(spec::MotionBlur::On(true)) => 0.5 / c.fps,
+            Some(spec::MotionBlur::On(false)) => 0.0,
+            Some(spec::MotionBlur::Shutter { shutter }) => {
+                if !(0.0..=720.0).contains(shutter) {
+                    c.d.push(Diagnostic::error("motionBlur.shutter", format!("{shutter}° is out of range (0..720)")));
+                }
+                (shutter.clamp(0.0, 720.0) as f32 / 360.0) / c.fps
+            }
+        };
         let default_bg = spec.background.clone().unwrap_or(spec::Paint::Css("$bg".into()));
         let default_trans = spec.transition.clone();
         if spec.scenes.is_empty() {
@@ -270,7 +284,11 @@ impl Evaluator {
                     covers && still && n.start <= 0.0 && n.exprs.is_empty() && !matches!(n.kind, Kind::Text { .. })
                 })
                 .count();
-            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers });
+            let post = match &s.post {
+                Some(p) => c.post(p, &format!("{path}.post")),
+                None => gpost.clone(),
+            };
+            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers, post });
             t = start + dur;
             prev_dur = dur;
         }
@@ -307,6 +325,8 @@ impl Evaluator {
             ctheme: components_theme(&c.theme),
             theme: c.theme,
             comps: c.comps.into_iter().map(|(n, e, _)| (n, e)).collect(),
+            shutter,
+            shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
         };
         (Some(ev), c.d)
     }
@@ -935,7 +955,14 @@ impl C<'_> {
             ("reveal", l.reveal.is_some()),
         ];
         let shape_only = [("shape", l.shape.is_some()), ("points", l.points.is_some()), ("d", l.d.is_some()), ("sides", l.sides.is_some())];
-        let img_only = [("src", l.src.is_some()), ("fit", l.fit.is_some() && kind != "text")];
+        let img_only = [("src", l.src.is_some() && kind != "shader"), ("fit", l.fit.is_some() && kind != "text")];
+        let shader_only = [
+            ("uniforms", l.uniforms.is_some()),
+            ("channels", l.channels.is_some()),
+            ("filter", l.filter.is_some()),
+            ("supersample", l.supersample.is_some()),
+            ("alpha", l.alpha.is_some()),
+        ];
         let check = |d: &mut Vec<Diagnostic>, list: &[(&str, bool)], ok: bool, owner: &str| {
             if !ok {
                 for (k, set) in list {
@@ -947,6 +974,7 @@ impl C<'_> {
         };
         check(&mut self.d, &text_only, kind == "text", "text");
         check(&mut self.d, &shape_only, kind == "shape", "shape");
+        check(&mut self.d, &shader_only, kind == "shader", "shader");
         check(&mut self.d, &img_only[..1], kind == "image" || kind == "video", "image/video");
         check(&mut self.d, &img_only[1..], kind == "image" || kind == "video" || kind == "composition", "image/video/composition");
         if l.layers.is_some() && kind != "group" {
@@ -1039,8 +1067,8 @@ impl C<'_> {
                 (Kind::Group { children: kids }, size)
             }
             "box" => self.box_layer(l, path, given_w, given_h, start, end, pc, &mut n),
-            "composition" => self.comp_layer(l, path)?,
             "shader" => self.shader_layer(l, path, given_w, given_h, start, end, &mut n)?,
+            "composition" => self.comp_layer(l, path)?,
             _ => self.component_layer(l, path, given_w, given_h)?,
         };
         n.kind = kind_v;
@@ -1321,7 +1349,19 @@ impl C<'_> {
         };
         let mut raw = l.text.clone().unwrap_or_default();
         if st.uppercase == Some(true) {
-            raw = raw.to_uppercase();
+            // Not inside `[word]{$token}` markup: colour tokens stay as written.
+            let mut depth = 0;
+            raw = raw
+                .chars()
+                .flat_map(|c| {
+                    match c {
+                        '{' => depth += 1,
+                        '}' => depth = (depth - 1).max(0),
+                        _ => {}
+                    }
+                    if depth > 0 { vec![c] } else { c.to_uppercase().collect() }
+                })
+                .collect();
         }
         let col = st.color.clone().unwrap_or(spec::Paint::Css("$text".into()));
         let (paint, c) = self.paint(&col, &format!("{path}.color")).unwrap_or((PaintC::Solid, Rgba([1.0; 4])));
@@ -1907,8 +1947,47 @@ impl C<'_> {
         Some(p)
     }
 
+    /// Resolve a `post` value (RENDER's presets and settings); `"none"` gives `None`.
+    fn post(&mut self, v: &serde_json::Value, path: &str) -> Option<crate::render::post::PostSettings> {
+        use crate::render::post::{PostSettings, PostSpec, PRESETS};
+        // The spec is camelCase (`bloomThreshold`); the settings are snake_case.
+        let snake = |k: &str| k.chars().fold(String::new(), |mut o, ch| {
+            if ch.is_ascii_uppercase() {
+                o.push('_');
+                o.push(ch.to_ascii_lowercase());
+            } else {
+                o.push(ch);
+            }
+            o
+        });
+        let camel = |k: &str| k.split('_').enumerate().map(|(i, w)| if i == 0 { w.to_string() } else { w[..1].to_uppercase() + &w[1..] }).collect::<String>();
+        let v = match v {
+            serde_json::Value::Object(m) => serde_json::Value::Object(m.iter().map(|(k, x)| (snake(k), x.clone())).collect()),
+            x => x.clone(),
+        };
+        let r = serde_json::from_value::<PostSpec>(v).map_err(|e| e.to_string()).and_then(|p| p.resolve());
+        match r {
+            Ok(s) => (!s.is_identity()).then_some(s),
+            Err(e) => {
+                let word = e.split('"').nth(1).unwrap_or_default().to_string();
+                let (msg, sug) = if e.contains("field") {
+                    let fields: Vec<String> = serde_json::to_value(PostSettings::preset("clean"))
+                        .ok()
+                        .and_then(|v| v.as_object().map(|m| m.keys().map(|k| camel(k)).collect()))
+                        .unwrap_or_default();
+                    let w = camel(&word);
+                    (format!("unknown post setting '{w}'"), suggest(&w, &fields))
+                } else {
+                    (e, suggest(&word, PRESETS))
+                };
+                self.d.push(Diagnostic::error(path, msg).suggest(sug));
+                None
+            }
+        }
+    }
+
     /// Compile `compositions` in dependency order, each as a nested evaluator sharing this one's assets.
-    fn compositions(&mut self, spec: &Spec, defs: &BTreeMap<String, spec::Composition>) {
+    fn compositions(&mut self, defs: &BTreeMap<String, spec::Composition>) {
         // Names each composition references through `"composition": "…"` layers.
         fn refs(v: &serde_json::Value, out: &mut Vec<String>) {
             match v {
@@ -1935,19 +2014,21 @@ impl C<'_> {
             let ready = defs.keys().find(|k| !done.contains(&k.as_str()) && deps[k.as_str()].iter().all(|d| done.contains(&d.as_str()) || !defs.contains_key(d)));
             let Some(name) = ready else { break };
             done.push(name);
-            self.composition(spec, name, &defs[name]);
+            self.composition(name, &defs[name]);
         }
         for k in defs.keys().filter(|k| !done.contains(&k.as_str())) {
             self.d.push(Diagnostic::error(format!("compositions.{k}"), "compositions refer to each other in a cycle"));
         }
     }
 
-    fn composition(&mut self, spec: &Spec, name: &str, cdef: &spec::Composition) {
+    /// Compile one composition (also usable for anonymous inline ones: pass a unique
+    /// `name`, e.g. the layer path). Returns its evaluator; it is also registered by name.
+    pub(crate) fn composition(&mut self, name: &str, cdef: &spec::Composition) -> Option<Arc<Evaluator>> {
         let path = format!("compositions.{name}");
         let (scenes, from) = match (&cdef.layers, &cdef.scenes) {
             (Some(_), Some(_)) => {
                 self.d.push(Diagnostic::error(&path, "a composition has 'layers' or 'scenes', not both"));
-                return;
+                return None;
             }
             (_, Some(s)) => (s.clone(), "scenes"),
             (l, None) => (
@@ -1963,7 +2044,7 @@ impl C<'_> {
             size: cdef.size.clone().or(Some(spec::Size::Wh([self.w as u32, self.h as u32]))),
             fps: Some(self.fps as f64),
             background: Some(cdef.background.clone().unwrap_or(spec::Paint::Css("#00000000".into()))),
-            theme: spec.theme.clone(),
+            theme: self.spec_theme.clone(),
             scenes,
             transition: cdef.transition.clone(),
             duration: if from == "scenes" { cdef.duration.clone() } else { None },
@@ -1980,8 +2061,12 @@ impl C<'_> {
             self.d.push(x);
         }
         if let Some(ev) = ev {
-            self.comps.push((name.to_string(), Arc::new(ev), cdef.loop_.unwrap_or(false)));
+            let ev = Arc::new(ev);
+            self.assets.register_composition(name, &ev, cdef.loop_.unwrap_or(false));
+            self.comps.push((name.to_string(), ev.clone(), cdef.loop_.unwrap_or(false)));
+            return Some(ev);
         }
+        None
     }
 
     fn comp_layer(&mut self, l: &Layer, path: &str) -> Option<(Kind, [f32; 2])> {
@@ -2265,7 +2350,7 @@ impl C<'_> {
         let mut fixed = Vec::new();
         let mut off = 0;
         for u in &shader.uniforms {
-            let len = u.ty.len();
+            let len = u.ty.components();
             let given = vals.iter().find(|(k, _)| *k == u.name).map(|(_, v)| v.clone());
             if off + len > UNIFORM_SLOTS {
                 if let Some(Ok(v)) = given.clone().or(u.default.clone().map(Ok)) {
@@ -2305,7 +2390,26 @@ impl C<'_> {
             let cp = format!("{path}.channels[{i}]");
             let o = self.channel_opts(v, &cp);
             let src = v.as_str().or_else(|| v.get("src").and_then(|s| s.as_str()));
+            let comp_name = src.and_then(|x| x.strip_prefix('#')).or_else(|| v.get("composition").and_then(|x| x.as_str()));
             let c = match (src, v.get("layers")) {
+                _ if comp_name.is_some() => {
+                    let name = comp_name.unwrap_or_default();
+                    match self.comps.iter().find(|c| c.0 == name).cloned() {
+                        Some((_, ev, looped)) => {
+                            let time = super::CompTime {
+                                trim: v.get("trimStart").and_then(|x| x.as_f64()).unwrap_or(0.0) as f32,
+                                speed: v.get("speed").and_then(|x| x.as_f64()).unwrap_or(1.0) as f32,
+                                looped: v.get("loop").and_then(|x| x.as_bool()).unwrap_or(looped),
+                            };
+                            ChannelC::Comp { ev, time }
+                        }
+                        None => {
+                            let names: Vec<&str> = self.comps.iter().map(|c| c.0.as_str()).collect();
+                            self.d.push(Diagnostic::error(cp.clone(), format!("unknown composition '{name}' (define it in top-level 'compositions')")).suggest(suggest(name, &names)));
+                            ChannelC::None
+                        }
+                    }
+                }
                 (Some("below"), _) => ChannelC::Below,
                 (Some("noise"), _) => ChannelC::Noise,
                 (Some("") | Some("none"), _) => ChannelC::None,
@@ -2333,7 +2437,7 @@ impl C<'_> {
                     ChannelC::Layers(kids)
                 }
                 _ => {
-                    self.d.push(Diagnostic::error(cp, "a channel is \"below\", \"noise\", an image/video path or {\"layers\": [...]}"));
+                    self.d.push(Diagnostic::error(cp, "a channel is \"below\", \"noise\", \"#composition\", an image/video path or {\"layers\": [...]}"));
                     ChannelC::None
                 }
             };
@@ -2485,6 +2589,14 @@ impl C<'_> {
                     if let Some(x) = self.anim_val(k, v, &p, refs) {
                         out.push((slot, ch, x));
                     }
+                }
+                None if !self.uniform_slots.is_empty() => {
+                    // A shader layer: the candidates are its uniforms too.
+                    let mut names: Vec<&str> = self.uniform_slots.iter().map(|u| u.0.as_str()).collect();
+                    let list = names.join(", ");
+                    names.extend_from_slice(val::ANIM_PROPS);
+                    let msg = format!("'{k}' is not animatable (this shader's uniforms: {list})");
+                    self.d.push(Diagnostic::error(p, msg).suggest(suggest(k, &names)));
                 }
                 None => {
                     self.d.push(Diagnostic::error(p, format!("'{k}' is not animatable")).suggest(suggest(k, val::ANIM_PROPS)));

@@ -364,6 +364,8 @@ pub(crate) struct SceneC {
     pub depth: bool,
     /// How many leading layers are the backdrop (full-frame backgrounds).
     pub bg_layers: usize,
+    /// Effective finishing look (the scene's or the video's).
+    pub post: Option<crate::render::post::PostSettings>,
 }
 
 /// One layer's ops in a tagged evaluation.
@@ -407,6 +409,10 @@ pub struct Evaluator {
     pub(crate) captions: Option<(crate::text::captions::CaptionTrack, [f32; 2])>,
     pub(crate) theme: theme::Theme,
     pub(crate) ctheme: crate::components::Theme,
+    /// Motion-blur shutter in seconds (0 = off). Default half a frame (180°).
+    pub shutter: f32,
+    /// The spec asked for motion blur itself (otherwise only `--quality high` applies it).
+    pub shutter_explicit: bool,
     /// Named sub-compositions (top-level `compositions`), in dependency order.
     pub(crate) comps: Vec<(String, Arc<Evaluator>)>,
 }
@@ -561,17 +567,15 @@ impl Evaluator {
         let local = t - s.start;
         let in_trans = cur > 0 && s.trans.kind != TransKind::Cut && local < s.trans.dur && s.trans.dur > 0.0;
         let black = Rgba([0.0, 0.0, 0.0, 1.0]);
+        if !bg_rect {
+            // Filters composite "below" onto the frame's background (shader.rs).
+            shader::set_frame_bg(if !in_trans && matches!(s.bg, PaintC::Solid) { s.bg_color } else { black });
+        }
         let background = if !in_trans {
             let solid = matches!(s.bg, PaintC::Solid);
-            if !bg_rect {
-                shader::set_frame_bg(if solid { s.bg_color } else { black });
-            }
             self.emit_scene(s, t, &dl::IDENTITY, solid && !(bg_rect && s.bg_color.0[3] > 0.0), out);
             if solid { s.bg_color } else { black }
         } else {
-            if !bg_rect {
-                shader::set_frame_bg(black);
-            }
             let prev = &self.scenes[cur - 1];
             let p = (local / s.trans.dur).clamp(0.0, 1.0);
             let e = self.easings[s.trans.ease as usize].ease(p as f64) as f32;
@@ -595,6 +599,18 @@ impl Evaluator {
             }
         }
         background
+    }
+
+    /// The finishing look at `t` (the incoming scene's during a transition), or `None`.
+    pub fn post_at(&self, t: f32) -> Option<&crate::render::post::PostSettings> {
+        let i = self.scenes.iter().rposition(|s| s.start <= t).unwrap_or(0);
+        self.scenes.get(i).and_then(|s| s.post.as_ref())
+    }
+
+    /// Whether frame time `t` needs motion blur: a shutter is set and something moves while it is open.
+    /// Pass `default_on` for renders where motion blur is on unless the spec says otherwise.
+    pub fn needs_blur(&self, t: f32, default_on: bool) -> bool {
+        (default_on || self.shutter_explicit) && self.shutter > 0.0 && !self.is_static(t - self.shutter * 0.5, t + self.shutter * 0.5)
     }
 
     /// Named sub-composition (top-level `compositions`). Evaluate it like any video:
@@ -1066,6 +1082,7 @@ impl Evaluator {
                     out.push(Op::Image { image: frames[k], dst, opacity: alpha, transform: xf });
                 }
             }
+            Kind::Shader(sc) => self.emit_shader(sc, cx, &v, &xf, w, h, alpha, lt, out),
             Kind::Comp { ev, natural, fit, time } => {
                 let ct = time.map(lt, ev.duration);
                 let dst = fit_rect(*natural, [w, h], *fit);
@@ -1085,7 +1102,6 @@ impl Evaluator {
                 }
                 out.push(Op::PopLayer);
             }
-            Kind::Shader(sc) => self.emit_shader(sc, cx, &v, &xf, w, h, alpha, lt, out),
             Kind::Group { children } => {
                 let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0 };
                 for c in children {
@@ -1215,8 +1231,15 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
             }
         }
         Kind::Component(c, _) => c.duration().is_some_and(|d| la >= d),
+        // A shader is static only if it ignores time and every input is static
+        // (animated uniforms are tracks and expressions, checked above).
         Kind::Shader(sc) => !sc.dynamic && sc.channels.iter().all(|(c, _)| match c {
             shader::ChannelC::Layers(ns) => ns.iter().all(|c| node_static(c, a, b)),
+            shader::ChannelC::Comp { ev, time } => {
+                let (ca, cb) = (time.map(la, ev.duration), time.map(lb, ev.duration));
+                let wraps = time.looped && (cb < ca || lb - la >= ev.duration / time.speed.abs().max(1e-6));
+                if wraps { ev.is_static(0.0, ev.duration) } else { ev.is_static(ca.min(cb), ca.max(cb)) }
+            }
             _ => true,
         }),
         _ => true,

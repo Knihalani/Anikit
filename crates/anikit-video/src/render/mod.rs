@@ -14,7 +14,9 @@ pub mod blur;
 pub mod diff;
 pub mod filter;
 pub mod glyphs;
+pub mod post;
 pub mod incremental;
+pub mod motion;
 pub mod resample;
 pub mod smooth;
 pub mod trim;
@@ -74,6 +76,19 @@ impl View<'_> {
     }
 }
 
+/// Speed/quality trade-off.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum Quality {
+    /// Fastest: smooth backgrounds render at ¼ resolution with bilinear upscaling.
+    Draft,
+    /// Default: gradients at full resolution; low-res fields upscale with a
+    /// smooth cubic B-spline and dither.
+    #[default]
+    Standard,
+    /// As standard (reserved for heavier AA and filtering).
+    High,
+}
+
 /// A rendered frame: premultiplied RGBA8, `width × height`, tightly packed.
 pub type FrameRgba = Pixmap;
 
@@ -119,6 +134,9 @@ struct State {
     scaled: HashMap<u64, CacheEntry>,
     seen: HashMap<u64, u64>,
     resample_buf: Vec<u8>,
+    /// Smooth cubic upscaling for enlarged images (standard quality and up).
+    cubic: bool,
+    up: upscale::Upscaler,
     /// Frame-space position of the current context's pixel (0, 0).
     org: (i32, i32),
     frame_size: (u32, u32),
@@ -144,6 +162,13 @@ pub struct Renderer {
     frame_images: Arc<HashMap<dl::ImageId, Arc<Pixmap>>>,
     dynamic: Option<Arc<dyn DynamicImages>>,
     upscaler: upscale::Upscaler,
+    /// Post / film look applied to every frame (see [`post`]), and the frame index seeding its grain.
+    post: Option<post::PostSettings>,
+    post_frame: u64,
+    pp: post::PostProcessor,
+    /// Motion-blur accumulator (linear RGB).
+    motion_acc: Vec<f32>,
+    quality: Quality,
     /// Low-res backdrop as Y, Cb, Cr planes (fused backdrop → YUV path).
     lo: [Vec<u8>; 3],
     /// Overlay op bounds and macroblock map (multi-box fused path).
@@ -164,7 +189,7 @@ fn round_out(r: Rect) -> Rect {
 
 impl Renderer {
     pub fn new(assets: Arc<Assets>) -> Self {
-        Self {
+        let mut r = Self {
             assets,
             ctx: RenderContext::new(1, 1),
             frame: Pixmap::new(1, 1),
@@ -174,6 +199,11 @@ impl Renderer {
             dynamic: None,
             upscaler: Default::default(),
             lo: Default::default(),
+            post: None,
+            post_frame: 0,
+            pp: Default::default(),
+            motion_acc: Vec::new(),
+            quality: Quality::Standard,
             box_rects: Vec::new(),
             box_map: MbMap::default(),
             lctx: None,
@@ -191,6 +221,8 @@ impl Renderer {
                 scaled: HashMap::new(),
                 seen: HashMap::new(),
                 resample_buf: Vec::new(),
+                cubic: true,
+                up: upscale::Upscaler::cubic(),
                 org: (0, 0),
                 frame_size: (1, 1),
                 frame_no: 0,
@@ -201,7 +233,9 @@ impl Renderer {
                 run: BezPath::new(),
                 cache_hits: 0,
             },
-        }
+        };
+        r.upscaler.cubic = true;
+        r
     }
 
     pub fn assets(&self) -> &Arc<Assets> {
@@ -242,7 +276,36 @@ impl Renderer {
     /// Render `list` and return the frame (premultiplied RGBA8).
     pub fn render(&mut self, list: &DisplayList) -> &FrameRgba {
         self.render_region(list, None, true, None, None);
+        if let Some(p) = &self.post {
+            let (w, h) = (self.frame.width() as usize, self.frame.height() as usize);
+            self.pp.apply(self.frame.data_as_u8_slice_mut(), w, h, p, self.post_frame);
+        }
         &self.frame
+    }
+
+    /// Speed/quality trade-off for the following frames (default [`Quality::Standard`]).
+    pub fn set_quality(&mut self, q: Quality) {
+        if q != self.quality {
+            self.invalidate();
+            self.smooth_key = None;
+        }
+        self.quality = q;
+        let cubic = q != Quality::Draft;
+        self.upscaler.cubic = cubic;
+        self.st.cubic = cubic;
+        self.st.up.cubic = cubic;
+    }
+
+    /// Film look for the following frames (`None` = off). `frame_index` seeds
+    /// the animated grain: pass the video frame number so output is
+    /// deterministic whichever worker renders it.
+    pub fn set_post(&mut self, post: Option<post::PostSettings>, frame_index: u64) {
+        let post = post.filter(|p| !p.is_identity());
+        if post != self.post {
+            self.invalidate();
+        }
+        self.post = post;
+        self.post_frame = frame_index;
     }
 
     /// Render all of `list`, or only the pixels of `region` (`[x0, y0, x1, y1)`,
@@ -284,14 +347,20 @@ impl Renderer {
         let mut backdrop = backdrop(&list.ops, &assets, w as f64, h as f64);
         let mut from_smooth = false;
         // Or: a smooth leading run (gradients, glows, fields) rendered at ¼ resolution.
-        let n_smooth = smooth::prefix(&list.ops, w as f64, h as f64, &|id| assets.image(id).map(|p| (p.width() as u32, p.height() as u32)));
+        let mut n_smooth = smooth::prefix(&list.ops, w as f64, h as f64, &|id| assets.image(id).map(|p| (p.width() as u32, p.height() as u32)));
+        // Standard quality: evaluate gradient backdrops exactly, in float, at full
+        // resolution (dithered: no banding); Draft: ¼ resolution through vello.
+        let field = self.quality != Quality::Draft;
+        if field && !smooth::field_ok(&list.ops[..n_smooth]) {
+            n_smooth = 0;
+        }
         if n_smooth > 0 && backdrop.as_ref().is_none_or(|(k, _, _)| *k < n_smooth) {
             let f = smooth::FACTOR;
             let (lw, lh) = ((w as u32).div_ceil(f).max(2), (h as u32).div_ceil(f).max(2));
             let key = {
                 let mut hs = incremental::Fx::default();
                 use std::hash::Hasher;
-                hs.write_u64(((w as u64) << 32) | h as u64);
+                hs.write_u64(((w as u64) << 32) | h as u64 | (field as u64) << 63);
                 hs.write_u64(list.background.0.iter().fold(0u64, |a, v| a.rotate_left(16) ^ v.to_bits() as u64));
                 for op in &list.ops[..n_smooth] {
                     hs.write_u64(incremental::hash_op(op));
@@ -304,7 +373,12 @@ impl Renderer {
                 }
                 hs.finish()
             };
-            if self.smooth_key != Some(key) {
+            if field && self.smooth_key != Some(key) {
+                self.smooth_lo.resize(w, h);
+                smooth::render_field(&list.ops[..n_smooth], w as usize, h as usize, list.background, self.smooth_lo.data_as_u8_slice_mut());
+                self.smooth_lo.recompute_may_have_transparency();
+                self.smooth_key = Some(key);
+            } else if self.smooth_key != Some(key) {
                 let lctx = self.lctx.get_or_insert_with(|| RenderContext::new(lw as u16, lh as u16));
                 lctx.reset_and_resize(lw as u16, lh as u16);
                 st.org = (0, 0);
@@ -372,6 +446,8 @@ impl Renderer {
             let (cw, ch) = (wu.div_ceil(2), hu.div_ceil(2));
             let cdev = Rect::new(dev.x0 / 2.0, dev.y0 / 2.0, dev.x1 / 2.0, dev.y1 / 2.0);
             let (ys, cs) = (yuv.y_stride, yuv.c_stride);
+            // One kernel for all three planes, chosen from the luma scale.
+            self.upscaler.bspline = Some(dev.width() >= 12.0 * pw as f64 && dev.height() >= 12.0 * ph as f64);
             self.upscaler.run_plane(&self.lo[0], pw, ph, *dev, &mut yuv.y, ys, wu, hu, 0, 0);
             self.upscaler.run_plane(&self.lo[1], pw, ph, cdev, &mut yuv.u, cs, cw, ch, 0, 0);
             self.upscaler.run_plane(&self.lo[2], pw, ph, cdev, &mut yuv.v, cs, cw, ch, 0, 0);
@@ -434,6 +510,7 @@ impl Renderer {
                     yuv::convert_into(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, [0, 0, rw as usize, rh as usize], yuv, (x0, y0));
                 }
             }
+            self.upscaler.bspline = None;
             yuv::pad(yuv);
         } else if full {
             st.org = (0, 0);
@@ -546,6 +623,11 @@ impl Renderer {
     /// produced directly from upscaled rows, and the RGBA [`Self::frame`] is not
     /// fully updated: call [`Self::render`] when you need the RGBA pixels.
     pub fn render_yuv(&mut self, list: &DisplayList, out: &mut YuvFrame) {
+        if self.post.is_some() {
+            self.render(list);
+            rgba_to_yuv420(&self.frame, out);
+            return;
+        }
         if !self.render_region(list, None, true, None, Some(out)) {
             rgba_to_yuv420(&self.frame, out);
         }
@@ -805,6 +887,7 @@ fn draw_cached_run(
             let mut pm = st.pix_pool.pop().unwrap_or_else(|| Pixmap::new(w, h));
             pm.resize(w, h);
             sub.render_with(&mut pm, &mut st.res, RasterizerSettings::default());
+            text_gamma(&mut pm, c);
             sub.reset();
             st.pool.push(sub);
             st.run = run;
@@ -856,19 +939,78 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
         return true;
     }
     // Only pay for resampling once the same placement shows up in consecutive frames.
+    // Enlarged images (low-res fields, small textures) get the smooth cubic
+    // filter at standard quality, every time; others are resampled once they repeat.
+    let enlarge = st.cubic && (qw >= 2.0 * iw || qh >= 2.0 * ih);
     let seen_last = st.seen.insert(key, now).is_some_and(|f| f + 1 >= now);
-    if !seen_last {
+    if !seen_last && !enlarge {
         return false;
     }
     let (ow, oh) = ((px + qw).ceil() as usize, (py + qh).ceil() as usize);
-    resample::resample(pix.data_as_u8_slice(), iw as usize, ih as usize, px, py, qw, qh, ow, oh, &mut st.resample_buf);
+    if enlarge {
+        st.resample_buf.resize(ow * oh * 4, 0);
+        st.up.invalidate();
+        st.up.run(pix.data_as_u8_slice(), iw as usize, ih as usize, Rect::new(px, py, px + qw, py + qh), &mut st.resample_buf, ow, oh, 0, 0);
+        // Edge pixels the image only partly covers: scale by coverage.
+        let cov = |o: usize, a: f64, b: f64| ((o as f64 + 1.0).min(b) - (o as f64).max(a)).clamp(0.0, 1.0) as f32;
+        for y in [0, oh - 1] {
+            let cy = cov(y, py, py + qh);
+            if cy < 1.0 {
+                for p in st.resample_buf[y * ow * 4..(y + 1) * ow * 4].iter_mut() {
+                    *p = (*p as f32 * cy + 0.5) as u8;
+                }
+            }
+        }
+        for x in [0, ow - 1] {
+            let cx = cov(x, px, px + qw);
+            if cx < 1.0 {
+                for y in 0..oh {
+                    for p in st.resample_buf[(y * ow + x) * 4..(y * ow + x) * 4 + 4].iter_mut() {
+                        *p = (*p as f32 * cx + 0.5) as u8;
+                    }
+                }
+            }
+        }
+    } else {
+        resample::resample(pix.data_as_u8_slice(), iw as usize, ih as usize, px, py, qw, qh, ow, oh, &mut st.resample_buf);
+    }
     let mut pm = Pixmap::new(ow as u16, oh as u16);
-    pm.data_as_u8_slice_mut().copy_from_slice(&st.resample_buf);
+    pm.data_as_u8_slice_mut().copy_from_slice(&st.resample_buf[..ow * oh * 4]);
     pm.recompute_may_have_transparency();
     let p = Arc::new(pm);
     st.scaled.insert(key, CacheEntry { pix: p.clone(), x: 0, y: 0, last_used: now });
     blit(ctx, p, fx, fy, alpha);
     true
+}
+
+/// Gamma-aware text coverage. Blending in sRGB makes light-on-dark text look
+/// thin and dark-on-light text look heavy; re-shape edge coverage by a power
+/// chosen from the text's luminance (as Skia/FreeType "contrast" hinting does).
+fn text_gamma(pm: &mut Pixmap, c: Rgba) {
+    let lum = 0.2126 * c.0[0] + 0.7152 * c.0[1] + 0.0722 * c.0[2];
+    let e = 1.2 - 0.46 * lum.clamp(0.0, 1.0);
+    if (e - 1.0).abs() < 0.02 {
+        return;
+    }
+    let ca = (c.0[3].clamp(0.0, 1.0) * 255.0).round().max(1.0);
+    let lut: Vec<u8> = (0..=255u32)
+        .map(|a| {
+            let cov = (a as f32 / ca).min(1.0);
+            (cov.powf(e) * ca).round().min(255.0) as u8
+        })
+        .collect();
+    for p in pm.data_as_u8_slice_mut().chunks_exact_mut(4) {
+        let a = p[3];
+        if a == 0 || a as f32 >= ca {
+            continue;
+        }
+        let na = lut[a as usize];
+        let k = na as u32 * 256 / a as u32;
+        for v in &mut p[..3] {
+            *v = ((*v as u32 * k + 128) >> 8).min(na as u32) as u8;
+        }
+        p[3] = na;
+    }
 }
 
 struct Card {

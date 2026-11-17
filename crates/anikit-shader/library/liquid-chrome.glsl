@@ -16,7 +16,7 @@ float map(vec3 p) {
         vec3 c = vec3(sin(t * (0.7 + 0.13 * fi) + fi * 1.7) * 1.3,
                       cos(t * (0.9 + 0.11 * fi) + fi * 2.3) * 0.75,
                       sin(t * (0.5 + 0.07 * fi) + fi * 0.9) * 0.6);
-        d = smin(d, length(p - c) - (0.42 + 0.1 * sin(fi * 3.1)), 0.65);
+        d = smin(d, length(p - c) - (0.55 + 0.12 * sin(fi * 3.1)), 0.7);
     }
     return d;
 }
@@ -26,14 +26,17 @@ vec3 normal(vec3 p) {
     return normalize(vec3(map(p + e.xyy) - map(p - e.xyy), map(p + e.yxy) - map(p - e.yxy), map(p + e.yyx) - map(p - e.yyx)));
 }
 
-// The studio the metal reflects.
+// The studio the metal reflects: black void, a bright horizon band, sharp
+// softboxes. Chrome is all contrast, so the environment is too.
 vec3 env(vec3 d) {
-    vec3 warm = mix(vec3(0.95, 0.97, 1.0), vec3(1.0, 0.82, 0.6), warmth);
-    vec3 col = mix(vec3(0.08, 0.08, 0.1), vec3(0.32, 0.34, 0.4), smoothstep(-0.3, 0.6, d.y));
-    col += warm * 4.0 * smoothstep(0.86, 0.9, d.y) * smoothstep(0.55, 0.5, abs(d.x));            // overhead strip
-    col += vec3(0.35, 0.6, 1.0) * 2.2 * smoothstep(0.06, 0.0, abs(d.x - 0.92)) * smoothstep(-0.2, 0.3, d.y); // cool side box
-    col += warm * 1.6 * smoothstep(0.08, 0.0, abs(d.z + 0.95)) * step(0.0, d.y);               // back light
-    col += vec3(1.0, 0.35, 0.2) * 0.5 * smoothstep(0.0, -0.4, d.y);                             // warm floor bounce
+    vec3 warm = mix(vec3(0.95, 0.97, 1.0), vec3(1.0, 0.78, 0.52), warmth);
+    float hor = exp(-abs(d.y) * 9.0);
+    vec3 col = mix(vec3(0.015), vec3(0.22, 0.23, 0.26), smoothstep(-0.2, 0.9, d.y));
+    col += warm * 1.4 * hor;                                                                       // horizon
+    col += warm * 5.0 * smoothstep(0.02, 0.0, abs(d.y - 0.62) - 0.07) * smoothstep(0.75, 0.6, abs(d.x)); // overhead strip
+    col += vec3(0.45, 0.7, 1.0) * 3.5 * smoothstep(0.015, 0.0, abs(d.x - 0.78) - 0.04) * smoothstep(-0.3, 0.1, d.y); // cool side box
+    col += warm * 3.0 * smoothstep(0.02, 0.0, abs(d.x + 0.7) - 0.02) * smoothstep(0.0, 0.3, d.y) * smoothstep(0.9, 0.5, d.y);
+    col *= 0.25 + 0.75 * smoothstep(-0.7, -0.05, d.y);                                             // dark floor
     return col;
 }
 
@@ -51,15 +54,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             vec3 n = normal(p);
             vec3 r = reflect(rd, n);
             float fre = pow(1.0 - max(dot(-rd, n), 0.0), 5.0);
-            vec3 metal = vec3(0.96, 0.95, 0.93);
+            vec3 metal = vec3(0.9, 0.9, 0.92);
             col = env(r) * mix(metal, vec3(1.0), fre);
-            col *= 0.6 + 0.4 * smoothstep(-1.0, 0.4, n.y);
             break;
         }
         t += d;
         if (t > 10.0) break;
     }
-    col = col / (1.0 + col);              // filmic-ish tone map
-    col = pow(col, vec3(0.85));
+    col = 1.0 - exp(-col * 1.4);          // tone map
+    col = pow(col, vec3(0.4545));
     fragColor = vec4(col, 1.0);
 }

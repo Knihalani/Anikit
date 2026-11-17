@@ -150,7 +150,8 @@ fn builtins_exact() {
 /// Transcendentals against f64, over the ranges shaders use.
 #[test]
 fn builtins_accuracy() {
-    let cases: &[(&str, fn(f64) -> f64, f32, f32)] = &[
+    type Case = (&'static str, fn(f64) -> f64, f32, f32);
+    let cases: &[Case] = &[
         ("sin", f64::sin, -100.0, 100.0),
         ("cos", f64::cos, -100.0, 100.0),
         ("tan", f64::tan, -1.5, 1.5),
@@ -236,7 +237,8 @@ fn texture_sampling() {
     let mut f = Frame::new(2, 2, 0.0);
     f.channels[0] = Some(&tex3);
     let s = Shader::compile("void mainImage(out vec4 c, in vec2 p) { c = textureLod(iChannel0, vec2(0.3), 1.0); }").unwrap();
-    assert_eq!(s.render_f32(&f)[0], [0.5, 0.5, 0.5, 1.0]);
+    // Texels are 8-bit: the mip average is 128/255.
+    assert_eq!(s.render_f32(&f)[0], [128.0 / 255.0, 128.0 / 255.0, 128.0 / 255.0, 1.0]);
 }
 
 #[test]
@@ -335,4 +337,25 @@ fn channel_usage() {
     assert_eq!(s.channels_used, [false, true, false, false]);
     let s = Shader::compile("void mainImage(out vec4 c, in vec2 p) { c = vec4(1); }").unwrap();
     assert_eq!(s.channels_used, [false; 4]);
+}
+
+/// The JIT's inline bilinear path matches `Texture::sample` exactly.
+#[test]
+fn inline_sampling_matches_reference() {
+    let px: Vec<[f32; 4]> = (0..7 * 5).map(|i| [((i * 37) % 11) as f32 / 10.0, ((i * 13) % 7) as f32 / 6.0, (i % 5) as f32 / 4.0, 1.0]).collect();
+    for (wrap, filter) in [(Wrap::Clamp, Filter::Linear), (Wrap::Repeat, Filter::Linear), (Wrap::Clamp, Filter::Nearest), (Wrap::Repeat, Filter::Nearest)] {
+        let t = Texture::from_f32(7, 5, px.clone()).with_wrap(wrap).with_filter(filter);
+        let s = Shader::compile("void mainImage(out vec4 c, in vec2 p) { vec2 uv = (p - vec2(20.0, 12.0)) * vec2(0.037, -0.029) + 0.013; c = texture(iChannel0, uv); }").unwrap();
+        let mut f = Frame::new(41, 23, 0.0);
+        f.channels[0] = Some(&t);
+        let out = s.render_f32(&f);
+        for (i, got) in out.iter().enumerate() {
+            let (x, y) = ((i % 41) as f32 + 0.5, (23 - i / 41) as f32 - 0.5);
+            let uv = [(x - 20.0) * 0.037 + 0.013, (y - 12.0) * -0.029 + 0.013];
+            let want = t.sample(uv[0], uv[1], 0.0);
+            for k in 0..4 {
+                assert!((got[k] - want[k]).abs() < 1e-6, "{wrap:?} {filter:?} px {i}: {got:?} vs {want:?}");
+            }
+        }
+    }
 }

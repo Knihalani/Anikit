@@ -38,14 +38,16 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float t = iTime * speed;
     // Trace the dye backwards along the flow.
     vec2 p = uv * 2.2;
-    for (int i = 0; i < 24; i++) {
-        p -= curl(p, t) * 0.012;
+    for (int i = 0; i < 12; i++) {
+        p -= curl(p, t) * 0.024;
     }
     // Initial dye: stripes that the flow then marbles.
     float s = sin(p.x * 7.0 + 1.3 * sin(p.y * 2.0));
-    float band = smoothstep(-0.12, 0.12, s);
-    float edge = 1.0 - smoothstep(0.0, 0.18, abs(s));
-    float fil = smoothstep(0.55, 0.98, sin(p.y * 23.0 + p.x * 3.0) * 0.5 + 0.5);
+    float aa = fwidth(s) + 1e-4;
+    float band = smoothstep(-aa, aa, s);
+    float edge = 1.0 - smoothstep(0.0, 0.12 + aa, abs(s));
+    float f2 = sin(p.y * 23.0 + p.x * 3.0);
+    float fil = smoothstep(0.55 - fwidth(f2), 0.55 + fwidth(f2), f2);
     vec3 col = mix(paper, ink, band * 0.85);
     col = mix(col, ink2, (1.0 - band) * fil * 0.75);
     col = mix(col, paper * 0.98, edge * 0.5);

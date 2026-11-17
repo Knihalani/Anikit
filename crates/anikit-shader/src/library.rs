@@ -34,7 +34,7 @@ lib! {
     "aurora", Image, "Aurora curtains over stars, mirrored in a lake.";
     "caustics", Image, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
     "flow-ink", Image, "Two inks marbled by a curl-noise flow field on paper.";
-    "turing", Image, "Reaction–diffusion style spots and labyrinths (band-passed noise, no simulation).";
+    "turing", Image, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
     "film-burn", Filter, "Scorches the frame below from hot spots; animate `amount` 0 → 1.";
     "glitch", Filter, "Codec-style block displacement, row smears, RGB split and scanlines in bursts.";
     "burn", Transition, "Old scene burns away along a noisy ember edge.";

@@ -45,7 +45,7 @@ fn back(x: f32) -> f32 {
 /// Gradient palette, or the theme's default.
 fn colors(cols: &[Color], ctx: &Ctx) -> Vec<Rgba> {
     if cols.is_empty() {
-        vec![ctx.theme.accent, ctx.theme.pal(2), ctx.theme.pal(1)]
+        vec![shade(ctx.theme.accent, -0.25), ctx.theme.accent, shade(ctx.theme.accent, 0.5)]
     } else {
         cols.iter().map(|c| c.0).collect()
     }
@@ -227,7 +227,7 @@ pub struct KineticGrid {
     pub shape: String,
     /// `radial`, `diagonal`, `linear` or `interference`.
     pub wave: String,
-    /// Colour cycle; default accent → pink → cyan.
+    /// Colour cycle; default: a ramp of the theme accent.
     pub colors: Vec<Color>,
     /// Wave speed multiplier.
     pub speed: f32,

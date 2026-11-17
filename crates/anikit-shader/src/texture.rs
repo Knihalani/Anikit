@@ -21,10 +21,23 @@ pub enum Filter {
     Nearest,
 }
 
+/// Texels are stored as straight RGBA8 (the sources are 8-bit): a 1080p
+/// channel is 8 MB instead of 33, which matters for scattered reads.
 struct Level {
     w: usize,
     h: usize,
-    px: Vec<[f32; 4]>,
+    px: Vec<[u8; 4]>,
+}
+
+const INV255: f32 = 1.0 / 255.0;
+
+#[inline]
+fn texel(p: [u8; 4]) -> [f32; 4] {
+    [p[0] as f32 * INV255, p[1] as f32 * INV255, p[2] as f32 * INV255, p[3] as f32 * INV255]
+}
+
+fn quantize(c: [f32; 4]) -> [u8; 4] {
+    c.map(|v| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8)
 }
 
 /// One bound channel.
@@ -39,26 +52,24 @@ impl Texture {
     pub fn from_rgba8(w: u32, h: u32, rgba: &[u8], premultiplied: bool) -> Texture {
         let (w, h) = (w.max(1) as usize, h.max(1) as usize);
         let mut px = Vec::with_capacity(w * h);
-        const INV: f32 = 1.0 / 255.0;
         for p in rgba.chunks_exact(4).take(w * h) {
-            let a = p[3] as f32 * INV;
-            let mut c = [p[0] as f32 * INV, p[1] as f32 * INV, p[2] as f32 * INV, a];
-            if premultiplied && a > 0.0 && a < 1.0 {
-                for v in &mut c[..3] {
-                    *v = (*v / a).min(1.0);
-                }
+            let a = p[3];
+            if premultiplied && a > 0 && a < 255 {
+                let un = |c: u8| ((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8;
+                px.push([un(p[0]), un(p[1]), un(p[2]), a]);
+            } else {
+                px.push([p[0], p[1], p[2], a]);
             }
-            px.push(c);
         }
-        px.resize(w * h, [0.0; 4]);
+        px.resize(w * h, [0; 4]);
         Texture { levels: vec![Level { w, h, px }], wrap: Wrap::Clamp, filter: Filter::Linear }
     }
 
-    /// From straight-alpha float texels (top row first).
+    /// From straight-alpha float texels (top row first; stored as 8-bit).
     pub fn from_f32(w: u32, h: u32, px: Vec<[f32; 4]>) -> Texture {
         let (w, h) = (w.max(1) as usize, h.max(1) as usize);
-        let mut px = px;
-        px.resize(w * h, [0.0; 4]);
+        let mut px: Vec<[u8; 4]> = px.into_iter().map(quantize).collect();
+        px.resize(w * h, [0; 4]);
         Texture { levels: vec![Level { w, h, px }], wrap: Wrap::Clamp, filter: Filter::Linear }
     }
 
@@ -94,7 +105,7 @@ impl Texture {
         } {
             let l = self.levels.last().unwrap();
             let (w, h) = ((l.w / 2).max(1), (l.h / 2).max(1));
-            let mut px = vec![[0.0f32; 4]; w * h];
+            let mut px = vec![[0u8; 4]; w * h];
             for y in 0..h {
                 for x in 0..w {
                     let mut s = [0.0f32; 4];
@@ -103,10 +114,10 @@ impl Texture {
                     for (xx, yy) in [(x0, y0), (x1, y0), (x0, y1), (x1, y1)] {
                         let p = l.px[yy * l.w + xx];
                         for k in 0..4 {
-                            s[k] += p[k];
+                            s[k] += p[k] as f32;
                         }
                     }
-                    px[y * w + x] = s.map(|v| v * 0.25);
+                    px[y * w + x] = s.map(|v| (v * 0.25 + 0.5) as u8);
                 }
             }
             self.levels.push(Level { w, h, px });
@@ -138,7 +149,7 @@ impl Texture {
         if self.filter == Filter::Nearest {
             let xi = self.wrap_i(x.floor() as i64, l.w);
             let yi = self.wrap_i(y.floor() as i64, l.h);
-            return l.px[yi * l.w + xi];
+            return texel(l.px[yi * l.w + xi]);
         }
         let (x, y) = (x - 0.5, y - 0.5);
         let (fx, fy) = (x.floor(), y.floor());
@@ -148,7 +159,7 @@ impl Texture {
         let xb = self.wrap_i(x0 + 1, l.w);
         let ya = self.wrap_i(y0, l.h) * l.w;
         let yb = self.wrap_i(y0 + 1, l.h) * l.w;
-        let (p00, p10, p01, p11) = (l.px[ya + xa], l.px[ya + xb], l.px[yb + xa], l.px[yb + xb]);
+        let (p00, p10, p01, p11) = (texel(l.px[ya + xa]), texel(l.px[ya + xb]), texel(l.px[yb + xa]), texel(l.px[yb + xb]));
         let mut o = [0.0; 4];
         for k in 0..4 {
             let top = p00[k] + (p10[k] - p00[k]) * tx;
@@ -163,7 +174,7 @@ impl Texture {
         let (u, v) = (if u.is_finite() { u } else { 0.0 }, if v.is_finite() { v } else { 0.0 });
         // Keep huge coordinates from overflowing the integer conversion.
         let (u, v) = (u.clamp(-1.0e6, 1.0e6), v.clamp(-1.0e6, 1.0e6));
-        if self.levels.len() == 1 || !(lod > 0.0) {
+        if self.levels.len() == 1 || lod.is_nan() || lod <= 0.0 {
             return self.sample_level(0, u, v);
         }
         let max = (self.levels.len() - 1) as f32;
@@ -184,7 +195,7 @@ impl Texture {
         if x < 0 || y < 0 || x as usize >= l.w || y as usize >= l.h {
             return [0.0; 4];
         }
-        l.px[(l.h - 1 - y as usize) * l.w + x as usize]
+        texel(l.px[(l.h - 1 - y as usize) * l.w + x as usize])
     }
 }
 
@@ -200,7 +211,50 @@ pub struct Env {
     /// Channel sizes (w, h) for `textureSize`.
     pub sizes: [[i32; 2]; 4],
     pub channels: [*const Texture; 4],
+    /// What the JIT's inline bilinear path needs per channel.
+    pub chan: [ChanInfo; 4],
 }
+
+/// Per-channel data for inline sampling (`#[repr(C)]`, offsets baked into the JIT).
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct ChanInfo {
+    /// Level-0 RGBA8 texels, row 0 at the top.
+    pub data: *const u8,
+    pub w: i32,
+    pub h: i32,
+    pub wf: f32,
+    pub hf: f32,
+    /// 1 = repeat wrap (else clamp).
+    pub repeat: i32,
+    /// 1 = nearest filtering.
+    pub nearest: i32,
+    /// 1 = the inline path applies (bound, no mipmaps, no mirror wrap).
+    pub simple: i32,
+    pub _pad: i32,
+}
+
+impl ChanInfo {
+    pub const NONE: ChanInfo = ChanInfo { data: std::ptr::null(), w: 1, h: 1, wf: 1.0, hf: 1.0, repeat: 0, nearest: 0, simple: 0, _pad: 0 };
+
+    pub fn of(t: &Texture) -> ChanInfo {
+        let l = &t.levels[0];
+        ChanInfo {
+            data: l.px.as_ptr() as *const u8,
+            w: l.w as i32,
+            h: l.h as i32,
+            wf: l.w as f32,
+            hf: l.h as f32,
+            repeat: (t.wrap == Wrap::Repeat) as i32,
+            nearest: (t.filter == Filter::Nearest) as i32,
+            simple: (t.levels.len() == 1 && t.wrap != Wrap::Mirror) as i32,
+            _pad: 0,
+        }
+    }
+}
+
+pub const ENV_CHAN: i32 = 112;
+pub const CHAN_SIZE: i32 = 40;
 
 pub const ENV_LANE_DX: i32 = 0;
 pub const ENV_LANE_DY: i32 = 16;

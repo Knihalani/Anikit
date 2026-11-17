@@ -37,7 +37,7 @@ pub enum UType {
 }
 
 impl UType {
-    pub fn len(self) -> usize {
+    pub fn components(self) -> usize {
         match self {
             UType::Vec(n) => n as usize,
             _ => 1,

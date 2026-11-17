@@ -22,7 +22,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec3 src = texture(iChannel0, uv).rgb;
     // Burn front: noisy distance from two hot spots, grown by `amount`.
     float d = min(length(q - vec2(0.25, 0.8)), length(q - vec2(1.5, 0.15)) * 1.2);
-    float front = d * 0.9 + 0.35 * fbm(q * 4.0 + seed) - amount * 2.1 + 0.15;
+    float front = d * 0.9 + 0.35 * fbm(q * 4.0 + seed) - amount * 1.5 + 0.12;
     float burnt = smoothstep(0.02, -0.02, front);
     float rim = smoothstep(0.08, 0.0, abs(front)) * (1.0 - burnt);
     float heat = smoothstep(0.35, 0.0, front) * (1.0 - burnt);

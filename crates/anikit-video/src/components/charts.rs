@@ -3,6 +3,7 @@
 //! Every chart builds on over `duration` seconds after `delay`, with a
 //! per-item `stagger`. Value labels count up with their bars.
 
+use super::polish::{spring_z, Motion, Surface};
 use super::style::*;
 use super::text::{draw, Face, TextStyle};
 use super::ui::arc_path;
@@ -50,6 +51,67 @@ fn small(th: &super::Theme, size: f32) -> TextStyle {
     TextStyle::new(Face::Sans, size, 500, th.muted)
 }
 
+// ------------------------------------------------------------------ shared
+
+/// A callout pinned to a data point: `{ "index": 5, "text": "Launch" }`
+/// (`series` picks the line for line charts).
+#[derive(Deserialize, Clone, Default)]
+#[serde(default, deny_unknown_fields)]
+pub struct Note {
+    pub index: usize,
+    pub text: String,
+    pub series: usize,
+}
+
+/// Axis value labels and hairline gridlines.
+fn grid_lines(o: &mut Vec<Op>, ctx: &Ctx, fmt: &Format, fs: f32, a: f32, horizontal: bool, plot: [f32; 4], lo: f32, hi: f32, step: f32, dashed: bool) {
+    let th = ctx.theme;
+    let [px, py, pw, ph] = plot;
+    let mut g = Path::new();
+    let ticks = ((hi - lo) / step).round().max(1.0) as i32;
+    let ls = small(th, fs * 0.8).tabular().color(alpha(th.muted, a * 0.85));
+    for i in 0..=ticks {
+        let v = lo + i as f32 * step;
+        let f = (v - lo) / (hi - lo);
+        if horizontal {
+            let x = (px + pw * f).round() + 0.5;
+            g.move_to((x as f64, py as f64));
+            g.line_to((x as f64, (py + ph) as f64));
+            draw(o, ctx.assets, &fmt.fmt(v as f64), &ls, x, py + ph + fs * 1.4, 0.5);
+        } else {
+            let y = (py + ph - ph * f).round() + 0.5;
+            g.move_to((px as f64, y as f64));
+            g.line_to(((px + pw) as f64, y as f64));
+            draw(o, ctx.assets, &fmt.fmt(v as f64), &ls, px - fs * 0.7, y + fs * 0.28, 1.0);
+        }
+    }
+    let dash = if dashed { vec![2.0, 5.0] } else { vec![] };
+    o.push(Op::Stroke { path: g, paint: solid(alpha(th.text, 0.075 * a)), stroke: crate::dl::Stroke { width: 1.0, cap: 0, join: 0, miter_limit: 4.0, dash, dash_offset: 0.0, trim: [0.0, 1.0] }, transform: IDENTITY });
+}
+
+/// A value pill (rounded label with a small pointer) above `(x, y)`.
+fn value_pill(o: &mut Vec<Op>, ctx: &Ctx, txt: &str, x: f32, y: f32, fs: f32, fillc: Rgba, a: f32) {
+    if a <= 0.0 {
+        return;
+    }
+    let st = TextStyle::new(Face::Sans, fs * 0.82, 650, on_color(&[fillc])).tabular();
+    let tw = ctx.assets.measure(txt, &st);
+    let (w, h) = (tw + fs * 0.9, fs * 1.55);
+    let (x0, y0) = (x - w * 0.5, y - h - fs * 0.45);
+    let mut e = Vec::new();
+    shadow(&mut e, x0, y0, w, h, h * 0.5, 3.0, 8.0, 0.35);
+    e.push(rect(x0, y0, w, h, h * 0.5, solid(fillc)));
+    let mut tri = Path::new();
+    tri.move_to(((x - fs * 0.28) as f64, (y0 + h - 0.5) as f64));
+    tri.line_to((x as f64, (y0 + h + fs * 0.3) as f64));
+    tri.line_to(((x + fs * 0.28) as f64, (y0 + h - 0.5) as f64));
+    tri.close_path();
+    e.push(fill(tri, solid(fillc)));
+    draw(&mut e, ctx.assets, txt, &st, x, y0 + h * 0.5 + st.size * 0.36, 0.5);
+    transform_ops(&mut e, &scale_about(lerp(0.85, 1.0, a.min(1.0)), x, y));
+    o.extend(with_opacity(e, clamp01(a * 1.5)));
+}
+
 // ------------------------------------------------------------------ bar chart
 
 #[derive(Deserialize)]
@@ -75,10 +137,21 @@ pub struct BarChart {
     /// Bar width as a fraction of its slot.
     pub bar_width: f32,
     pub font_size: f32,
+    /// Bar shape: "rounded" (default: rounded top), "square", "pill".
+    pub shape: String,
+    /// Fill: "gradient" (default: lit top, deeper base), "solid", "outline".
+    pub fill: String,
+    /// Soft bloom under bars (off by default).
+    pub glow: bool,
+    /// Dashed gridlines instead of hairlines.
+    pub dashed: bool,
+    /// Pinned callouts: `[{ "index": 5, "text": "+38%" }]`.
+    pub notes: Vec<Note>,
+    pub motion: Motion,
 }
 impl Default for BarChart {
     fn default() -> Self {
-        BarChart { values: Vec::new(), labels: Vec::new(), colors: Vec::new(), multicolor: false, horizontal: false, max: None, delay: 0.0, duration: 0.9, stagger: 0.08, values_shown: true, grid: true, highlight: None, format: Format::default(), bar_width: 0.62, font_size: 22.0 }
+        BarChart { values: Vec::new(), labels: Vec::new(), colors: Vec::new(), multicolor: false, horizontal: false, max: None, delay: 0.0, duration: 0.9, stagger: 0.08, values_shown: true, grid: true, highlight: None, format: Format::default(), bar_width: 0.62, font_size: 22.0, shape: "rounded".into(), fill: "gradient".into(), glow: false, dashed: false, notes: Vec::new(), motion: Motion::Smooth }
     }
 }
 impl Prepare for BarChart {
@@ -88,6 +161,12 @@ impl Prepare for BarChart {
         }
         if self.values.iter().any(|v| !v.is_finite()) {
             return Err(Error("bar-chart values must be finite numbers".into()));
+        }
+        if !["rounded", "square", "pill"].contains(&self.shape.as_str()) {
+            return Err(Error(format!("bar-chart shape must be rounded, square or pill, not {:?}", self.shape)));
+        }
+        if !["gradient", "solid", "outline"].contains(&self.fill.as_str()) {
+            return Err(Error(format!("bar-chart fill must be gradient, solid or outline, not {:?}", self.fill)));
         }
         Ok(())
     }
@@ -103,86 +182,133 @@ impl Component for BarChart {
             None => nice(vmax, 4),
         };
         let fs = self.font_size;
+        let m = self.motion;
         let mut o = Vec::new();
         let has_labels = !self.labels.is_empty();
+        let label_st = small(th, fs * 0.9);
         // Plot rectangle.
         let (px, py, pw, ph) = if self.horizontal {
-            let lw = self.labels.iter().map(|l| ctx.assets.measure(l, &small(th, fs))).fold(0.0, f32::max);
+            let lw = self.labels.iter().map(|l| ctx.assets.measure(l, &label_st)).fold(0.0, f32::max);
             let lw = if has_labels { lw + fs } else { 0.0 };
             (lw, 0.0, w - lw - fs * 4.0, h - if self.grid { fs * 1.8 } else { 0.0 })
         } else {
-            let left = if self.grid { ctx.assets.measure(&self.format.fmt(top as f64), &small(th, fs * 0.85)) + fs * 0.8 } else { 0.0 };
-            (left, fs * 1.8, w - left, h - fs * 1.8 - if has_labels { fs * 2.2 } else { 0.0 })
+            let left = if self.grid { ctx.assets.measure(&self.format.fmt(top as f64), &small(th, fs * 0.8)) + fs * 0.9 } else { 0.0 };
+            (left, fs * 2.4, w - left, h - fs * 2.4 - if has_labels { fs * 2.2 } else { 0.0 })
         };
         let grid_in = ease_out(seg(t, self.delay - 0.2, 0.6));
         if self.grid && grid_in > 0.0 {
-            let mut g = Path::new();
-            let ticks = (top / step).round() as i32;
-            for i in 0..=ticks {
-                let v = i as f32 * step;
-                let f = v / top;
-                if self.horizontal {
-                    let x = (px + pw * f).round() + 0.5;
-                    g.move_to((x as f64, py as f64));
-                    g.line_to((x as f64, (py + ph) as f64));
-                    draw(&mut o, ctx.assets, &self.format.fmt(v as f64), &small(th, fs * 0.85).color(alpha(th.muted, grid_in)), x, py + ph + fs * 1.4, 0.5);
-                } else {
-                    let y = (py + ph - ph * f).round() + 0.5;
-                    g.move_to((px as f64, y as f64));
-                    g.line_to(((px + pw) as f64, y as f64));
-                    draw(&mut o, ctx.assets, &self.format.fmt(v as f64), &small(th, fs * 0.85).color(alpha(th.muted, grid_in)), px - fs * 0.6, y + fs * 0.3, 1.0);
-                }
+            grid_lines(&mut o, ctx, &self.format, fs, grid_in, self.horizontal, [px, py, pw, ph], 0.0, top, step, self.dashed);
+        }
+        // Baseline axis.
+        if grid_in > 0.0 {
+            if self.horizontal {
+                o.push(rect(px, py, 1.0, ph * grid_in, 0.0, solid(alpha(th.text, 0.22))));
+            } else {
+                o.push(rect(px, py + ph - 0.5, pw * grid_in, 1.0, 0.0, solid(alpha(th.text, 0.22))));
             }
-            o.push(Op::Stroke { path: g, paint: solid(alpha(th.text, 0.07 * grid_in)), stroke: crate::dl::Stroke { width: 1.0, cap: 0, join: 0, miter_limit: 4.0, dash: vec![3.0, 4.0], dash_offset: 0.0, trim: [0.0, 1.0] }, transform: IDENTITY });
         }
         let slot = if self.horizontal { ph / n as f32 } else { pw / n as f32 };
         let bw = slot * self.bar_width.clamp(0.1, 1.0);
+        let speed = 0.9 / self.duration.max(0.1);
         for (i, &v) in self.values.iter().enumerate() {
-            let k = spring(t - self.delay - i as f32 * self.stagger, 0.9 / self.duration.max(0.1)).max(0.0);
+            let tt = t - self.delay - i as f32 * self.stagger * m.pace();
+            let k = match m {
+                Motion::Snappy => spring_z(tt, speed * 1.6, 1.0),
+                Motion::Soft => ease_in_out(seg(tt, 0.0, self.duration * 1.3)),
+                Motion::Bouncy => spring_z(tt, speed, 0.45),
+                Motion::Smooth => spring_z(tt, speed * 0.9, 0.82),
+            }
+            .max(0.0);
             let shown = v * k;
             let f = (shown / top).max(0.0);
             let base_c = if self.multicolor || self.colors.len() > 1 { colors(&self.colors, th, i) } else { self.colors.first().map(|c| c.0).unwrap_or(th.accent) };
             let dimmed = self.highlight.is_some_and(|hi| hi != i);
-            let c = if dimmed { mix(base_c, th.surface2, 0.65) } else { base_c };
-            let r = (bw * 0.18).min(10.0);
-            let label_a = clamp01(k * 3.0 - 1.0);
+            let c = if dimmed { mix(base_c, th.surface2, 0.7) } else { base_c };
+            let r = match self.shape.as_str() {
+                "square" => (bw * 0.04).min(2.0),
+                "pill" => bw * 0.5,
+                _ => (bw * 0.2).min(12.0),
+            };
+            let label_a = clamp01(k * 3.0 - 1.2);
+            let lc = if dimmed { alpha(th.muted, 0.55) } else { th.muted };
+            let paint_for = |p0: [f32; 2], p1: [f32; 2]| -> Paint {
+                match self.fill.as_str() {
+                    "solid" | "outline" => solid(c),
+                    _ => Paint::Linear { p0, p1, stops: vec![(0.0, shade(c, -0.22)), (1.0, shade(c, 0.12))] },
+                }
+            };
+            let bar = |o: &mut Vec<Op>, path: Path, paint: Paint, glow_box: [f32; 4]| {
+                if self.glow && !dimmed {
+                    let [gx, gy, gw, gh] = glow_box;
+                    super::polish::bloom(o, vec![rect(gx, gy, gw, gh, r, solid(alpha(c, 0.8)))], bw * 0.35, 0.45);
+                }
+                if self.fill == "outline" {
+                    o.push(Op::Fill { path: path.clone(), paint: solid(alpha(c, 0.14)), rule: crate::dl::FillRule::NonZero, transform: IDENTITY });
+                    o.push(Op::Stroke { path, paint, stroke: line(1.5, [0.0, 1.0]), transform: IDENTITY });
+                } else {
+                    o.push(Op::Fill { path, paint, rule: crate::dl::FillRule::NonZero, transform: IDENTITY });
+                }
+            };
             if self.horizontal {
                 let y = py + slot * i as f32 + (slot - bw) * 0.5;
                 let len = pw * f;
                 if len > 0.5 {
-                    o.push(rect(px, y, len, bw, r.min(len * 0.5), Paint::Linear { p0: [px, 0.0], p1: [px + len, 0.0], stops: vec![(0.0, shade(c, -0.15)), (1.0, shade(c, 0.12))] }));
+                    let rr = r.min(len * 0.5);
+                    bar(&mut o, rrect4(px, y, len, bw, [if self.shape == "pill" { rr } else { 0.0 }, rr, rr, if self.shape == "pill" { rr } else { 0.0 }]), paint_for([px, 0.0], [px + len, 0.0]), [px, y, len, bw]);
+                    if self.fill == "gradient" && !dimmed {
+                        o.push(rect(px, y, len, 1.0f32.max(bw * 0.04), 0.0, solid(Rgba([1.0, 1.0, 1.0, 0.18]))));
+                    }
                 }
                 if let Some(l) = self.labels.get(i) {
-                    draw(&mut o, ctx.assets, l, &small(th, fs).color(if dimmed { alpha(th.muted, 0.6) } else { th.muted }), px - fs * 0.6, y + bw * 0.5 + fs * 0.35, 1.0);
+                    draw(&mut o, ctx.assets, l, &label_st.clone().color(lc), px - fs * 0.6, y + bw * 0.5 + fs * 0.32, 1.0);
                 }
                 if self.values_shown && label_a > 0.0 {
-                    draw(&mut o, ctx.assets, &self.format.fmt(shown as f64), &TextStyle::new(Face::Sans, fs, 600, alpha(th.text, label_a)).tabular(), px + len + fs * 0.5, y + bw * 0.5 + fs * 0.35, 0.0);
+                    let vs = TextStyle::new(Face::Display, fs * 1.05, 650, alpha(th.text, label_a * if dimmed { 0.6 } else { 1.0 })).tabular();
+                    draw(&mut o, ctx.assets, &self.format.fmt(shown as f64), &vs, px + len + fs * 0.5, y + bw * 0.5 + fs * 0.36, 0.0);
                 }
             } else {
                 let x = px + slot * i as f32 + (slot - bw) * 0.5;
                 let len = ph * f;
                 let y = py + ph - len;
                 if len > 0.5 {
-                    o.push(rect(x, y, bw, len, r.min(len * 0.5), vgrad(y, py + ph, shade(c, 0.12), shade(c, -0.18))));
-                    // Squared-off bottom corners.
-                    o.push(rect(x, (py + ph - r).max(y + len * 0.5), bw, r.min(len * 0.5), 0.0, solid(shade(c, -0.18))));
-                    if !dimmed {
-                        o.push(rect(x, y, bw, 2.0f32.min(len), r.min(len * 0.5), solid(Rgba([1.0, 1.0, 1.0, 0.25]))));
+                    let rr = r.min(len * 0.5).min(bw * 0.5);
+                    let br = if self.shape == "pill" { rr } else { 0.0 };
+                    bar(&mut o, rrect4(x, y, bw, len, [rr, rr, br, br]), paint_for([0.0, py + ph], [0.0, y]), [x, y, bw, len]);
+                    if self.fill == "gradient" && !dimmed {
+                        // Lit top edge.
+                        o.push(Op::Stroke { path: rrect4(x + 0.5, y + 0.5, bw - 1.0, len - 1.0, [rr, rr, br, br]), paint: vgrad(y, y + rr.max(8.0) * 2.0, Rgba([1.0, 1.0, 1.0, 0.35]), Rgba([1.0, 1.0, 1.0, 0.0])), stroke: line(1.0, [0.0, 1.0]), transform: IDENTITY });
                     }
                 }
                 if let Some(l) = self.labels.get(i) {
-                    draw(&mut o, ctx.assets, l, &small(th, fs).color(if dimmed { alpha(th.muted, 0.6) } else { th.muted }), x + bw * 0.5, py + ph + fs * 1.6, 0.5);
+                    draw(&mut o, ctx.assets, l, &label_st.clone().color(lc), x + bw * 0.5, py + ph + fs * 1.55, 0.5);
                 }
                 if self.values_shown && label_a > 0.0 {
-                    draw(&mut o, ctx.assets, &self.format.fmt(shown as f64), &TextStyle::new(Face::Sans, fs, 600, alpha(th.text, label_a * if dimmed { 0.6 } else { 1.0 })).tabular(), x + bw * 0.5, y - fs * 0.6, 0.5);
+                    let vs = TextStyle::new(Face::Display, fs * 1.05, 650, alpha(if dimmed { th.muted } else { th.text }, label_a)).tabular();
+                    let mut e = Vec::new();
+                    draw(&mut e, ctx.assets, &self.format.fmt(shown as f64), &vs, x + bw * 0.5, y - fs * 0.55, 0.5);
+                    transform_ops(&mut e, &translate(0.0, (1.0 - label_a) * fs * 0.4));
+                    o.extend(e);
+                }
+                for note in self.notes.iter().filter(|nt| nt.index == i) {
+                    let a = ease_out(seg(t, self.delay + self.duration + n as f32 * self.stagger * m.pace() + 0.1, 0.5));
+                    let lift = if self.values_shown { fs * 1.6 } else { 0.0 };
+                    value_pill(&mut o, ctx, &note.text, x + bw * 0.5, y - lift, fs, if dimmed { th.surface2 } else { shade(base_c, 0.1) }, a);
                 }
             }
         }
         o
     }
     fn duration(&self) -> Option<f32> {
-        Some(self.delay + self.duration + self.stagger * self.values.len() as f32)
+        Some(self.delay + self.duration + self.stagger * self.motion.pace() * self.values.len() as f32 + if self.notes.is_empty() { 0.0 } else { 0.6 })
     }
+}
+
+/// Rounded rect with per-corner radii (tl, tr, br, bl).
+fn rrect4(x: f32, y: f32, w: f32, h: f32, r: [f32; 4]) -> Path {
+    use kurbo::Shape;
+    let m = (w.min(h) * 0.5).max(0.0);
+    let c = |v: f32| v.clamp(0.0, m) as f64;
+    kurbo::RoundedRect::from_rect(kurbo::Rect::new(x as f64, y as f64, (x + w) as f64, (y + h) as f64), kurbo::RoundedRectRadii::new(c(r[0]), c(r[1]), c(r[2]), c(r[3]))).to_path(0.1)
 }
 
 // ------------------------------------------------------------------ line / area
@@ -213,10 +339,19 @@ pub struct LineChart {
     pub width: f32,
     pub format: Format,
     pub font_size: f32,
+    /// Soft bloom along the lines (off by default).
+    pub glow: bool,
+    /// Dashed gridlines instead of hairlines.
+    pub dashed: bool,
+    /// Pinned callouts on data points: `[{ "index": 4, "text": "Launch", "series": 0 }]`.
+    pub notes: Vec<Note>,
+    /// Vertical guide line following the drawing head.
+    pub crosshair: bool,
+    pub motion: Motion,
 }
 impl Default for LineChart {
     fn default() -> Self {
-        LineChart { series: Vec::new(), names: Vec::new(), labels: Vec::new(), colors: Vec::new(), area: None, dots: false, end_label: true, smooth: true, min: None, max: None, grid: true, delay: 0.0, duration: 1.6, stagger: 0.2, width: 4.0, format: Format::default(), font_size: 22.0 }
+        LineChart { series: Vec::new(), names: Vec::new(), labels: Vec::new(), colors: Vec::new(), area: None, dots: false, end_label: true, smooth: true, min: None, max: None, grid: true, delay: 0.0, duration: 1.6, stagger: 0.2, width: 4.0, format: Format::default(), font_size: 22.0, glow: false, dashed: false, notes: Vec::new(), crosshair: false, motion: Motion::Soft }
     }
 }
 impl Prepare for LineChart {
@@ -243,88 +378,95 @@ impl Component for LineChart {
                 (lo + n, s)
             }
         };
-        let left = if self.grid { ctx.assets.measure(&self.format.fmt(hi as f64), &small(th, fs * 0.85)) + fs * 0.8 } else { 0.0 };
+        let left = if self.grid { ctx.assets.measure(&self.format.fmt(hi as f64), &small(th, fs * 0.8)) + fs * 0.9 } else { 0.0 };
         let right = if self.end_label { fs * 4.5 } else { fs };
         let legend = if self.names.is_empty() { 0.0 } else { fs * 2.2 };
         let (px, py, pw, ph) = (left, fs + legend, w - left - right, h - fs - legend - if self.labels.is_empty() { fs } else { fs * 2.4 });
         let mut o = Vec::new();
         let gi = ease_out(seg(t, self.delay - 0.2, 0.6));
         if self.grid && gi > 0.0 {
-            let mut g = Path::new();
-            let ticks = ((hi - lo) / step).round() as i32;
-            for i in 0..=ticks {
-                let v = lo + i as f32 * step;
-                let y = (py + ph - ph * (v - lo) / (hi - lo)).round() + 0.5;
-                g.move_to((px as f64, y as f64));
-                g.line_to(((px + pw) as f64, y as f64));
-                draw(&mut o, ctx.assets, &self.format.fmt(v as f64), &small(th, fs * 0.85).color(alpha(th.muted, gi)), px - fs * 0.6, y + fs * 0.3, 1.0);
-            }
-            o.push(Op::Stroke { path: g, paint: solid(alpha(th.text, 0.07 * gi)), stroke: crate::dl::Stroke { width: 1.0, cap: 0, join: 0, miter_limit: 4.0, dash: vec![3.0, 4.0], dash_offset: 0.0, trim: [0.0, 1.0] }, transform: IDENTITY });
+            grid_lines(&mut o, ctx, &self.format, fs, gi, false, [px, py, pw, ph], lo, hi, step, self.dashed);
         }
         let n = self.series[0].len();
         for (i, l) in self.labels.iter().enumerate().take(n) {
             let x = px + pw * i as f32 / (n - 1).max(1) as f32;
-            draw(&mut o, ctx.assets, l, &small(th, fs).color(alpha(th.muted, gi)), x, py + ph + fs * 1.7, 0.5);
+            draw(&mut o, ctx.assets, l, &small(th, fs * 0.9).color(alpha(th.muted, gi)), x, py + ph + fs * 1.7, 0.5);
         }
         let mut lx = px;
         for (si, name) in self.names.iter().enumerate() {
             let c = colors(&self.colors, th, si);
-            o.push(rect(lx, fs * 0.2, fs * 0.9, fs * 0.9, fs * 0.25, solid(c)));
-            lx += fs * 1.4;
-            lx += draw(&mut o, ctx.assets, name, &small(th, fs).color(alpha(th.text, gi)), lx, fs * 0.98, 0.0) + fs * 1.4;
+            o.push(rect(lx, fs * 0.42, fs * 1.1, fs * 0.36, fs * 0.18, solid(alpha(c, gi))));
+            lx += fs * 1.6;
+            lx += draw(&mut o, ctx.assets, name, &small(th, fs * 0.9).color(alpha(th.text, gi)), lx, fs * 0.9, 0.0) + fs * 1.6;
         }
         let area = self.area.unwrap_or(false);
+        let yv = |v: f32| py + ph - ph * (v - lo) / (hi - lo);
         for (si, s) in self.series.iter().enumerate() {
-            let k = ease_in_out(seg(t, self.delay + si as f32 * self.stagger, self.duration));
+            let k = self.motion.ease(seg(t, self.delay + si as f32 * self.stagger, self.duration)).min(1.0);
             if k <= 0.0 {
                 continue;
             }
             let c = colors(&self.colors, th, si);
-            let pts: Vec<(f32, f32)> = s.iter().enumerate().map(|(i, v)| (px + pw * i as f32 / (s.len() - 1) as f32, py + ph - ph * (v - lo) / (hi - lo))).collect();
+            let pts: Vec<(f32, f32)> = s.iter().enumerate().map(|(i, v)| (px + pw * i as f32 / (s.len() - 1) as f32, yv(*v))).collect();
             let path = if self.smooth { smooth_path(&pts, 1.0) } else { poly(&pts) };
             // Current head position along x.
             let xf = (s.len() - 1) as f32 * k;
             let i0 = (xf.floor() as usize).min(s.len() - 2);
             let fr = xf - i0 as f32;
             let head_v = s[i0] + (s[i0 + 1] - s[i0]) * fr;
-            let head = (px + pw * k, py + ph - ph * (head_v - lo) / (hi - lo));
+            let head = (px + pw * k, yv(head_v));
+            let clip = Some((rrect_path(px - 12.0, py - 40.0, pw * k + 12.0, ph + 52.0, 0.0), IDENTITY));
             if area {
                 let mut a = path.clone();
                 a.line_to(((px + pw) as f64, (py + ph) as f64));
                 a.line_to((px as f64, (py + ph) as f64));
                 a.close_path();
-                o.push(Op::PushLayer { opacity: 1.0, blend: crate::dl::Blend::Normal, filters: vec![], clip: Some((rrect_path(px - 2.0, py - 10.0, pw * k + 2.0, ph + 12.0, 0.0), IDENTITY)), cache_key: None });
+                o.push(Op::PushLayer { opacity: 1.0, blend: crate::dl::Blend::Normal, filters: vec![], clip: clip.clone(), cache_key: None });
                 let top_y = pts.iter().fold(f32::MAX, |m, p| m.min(p.1));
-                o.push(fill(a, vgrad(top_y, py + ph, alpha(c, 0.38), alpha(c, 0.0))));
+                o.push(fill(a, Paint::Linear { p0: [0.0, top_y], p1: [0.0, py + ph], stops: vec![(0.0, alpha(c, 0.42)), (0.55, alpha(c, 0.12)), (1.0, alpha(c, 0.0))] }));
                 o.push(Op::PopLayer);
             }
-            // Glow pass + crisp line, drawn on by x (clip), so curves draw at even speed in time.
-            o.push(Op::PushLayer { opacity: 1.0, blend: crate::dl::Blend::Normal, filters: vec![], clip: Some((rrect_path(px - 10.0, py - 20.0, pw * k + 10.0, ph + 40.0, 0.0), IDENTITY)), cache_key: None });
-            // Soft glow from layered translucent strokes (no blur pass).
-            o.push(stroke_op(path.clone(), solid(alpha(c, 0.07)), self.width * 6.0, [0.0, 1.0]));
-            o.push(stroke_op(path.clone(), solid(alpha(c, 0.12)), self.width * 3.2, [0.0, 1.0]));
-            o.push(stroke_op(path, solid(c), self.width, [0.0, 1.0]));
+            if self.crosshair && k < 1.0 {
+                o.push(rect(head.0 - 0.5, py, 1.0, ph, 0.0, Paint::Linear { p0: [0.0, py], p1: [0.0, py + ph], stops: vec![(0.0, alpha(c, 0.0)), (0.5, alpha(c, 0.5)), (1.0, alpha(c, 0.0))] }));
+            }
+            o.push(Op::PushLayer { opacity: 1.0, blend: crate::dl::Blend::Normal, filters: vec![], clip, cache_key: None });
+            if self.glow {
+                super::polish::bloom(&mut o, vec![stroke_op(path.clone(), solid(c), self.width * 2.0, [0.0, 1.0])], self.width * 2.5, 0.7);
+            }
+            o.push(stroke_op(path, Paint::Linear { p0: [px, 0.0], p1: [px + pw, 0.0], stops: vec![(0.0, shade(c, -0.15)), (1.0, shade(c, 0.12))] }, self.width, [0.0, 1.0]));
             o.push(Op::PopLayer);
             if self.dots {
                 for (i, p) in pts.iter().enumerate() {
-                    let d = spring(t - self.delay - si as f32 * self.stagger - self.duration * i as f32 / (s.len() - 1) as f32, 1.4);
-                    if d > 0.0 {
+                    let d = spring_z(t - self.delay - si as f32 * self.stagger - self.duration * i as f32 / (s.len() - 1) as f32 * 0.8, 1.4, 0.5);
+                    if d > 0.0 && p.0 <= head.0 + 1.0 {
                         o.push(circle(p.0, p.1, self.width * 1.9 * d, solid(th.background)));
-                        o.push(circle(p.0, p.1, self.width * 1.2 * d, solid(c)));
+                        o.push(Op::Stroke { path: circle_path(p.0, p.1, self.width * 1.3 * d), paint: solid(c), stroke: line(self.width * 0.6, [0.0, 1.0]), transform: IDENTITY });
                     }
                 }
             }
             // Head dot with halo.
-            o.push(circle(head.0, head.1, self.width * 4.0, solid(alpha(c, 0.25))));
-            o.push(circle(head.0, head.1, self.width * 1.8, solid(Rgba([1.0, 1.0, 1.0, 1.0]))));
-            o.push(circle(head.0, head.1, self.width * 1.1, solid(c)));
+            o.push(circle(head.0, head.1, self.width * 4.2, solid(alpha(c, 0.18))));
+            o.push(circle(head.0, head.1, self.width * 2.0, solid(th.background)));
+            o.push(circle(head.0, head.1, self.width * 1.3, solid(c)));
             if self.end_label {
                 let txt = self.format.fmt(head_v as f64);
-                let st = TextStyle::new(Face::Sans, fs * 0.9, 600, Rgba([1.0, 1.0, 1.0, 1.0])).tabular();
-                let tw = ctx.assets.measure(&txt, &st);
-                let (bx, by) = (head.0 + fs * 0.8, head.1 - fs * 0.85);
-                o.push(rect(bx, by, tw + fs, fs * 1.7, fs * 0.5, solid(c)));
-                draw(&mut o, ctx.assets, &txt, &st, bx + fs * 0.5, by + fs * 1.17, 0.0);
+                let st = TextStyle::new(Face::Sans, fs * 0.85, 650, on_color(&[c])).tabular();
+                let tw = ctx.assets.measure(&self.format.fmt(s.iter().fold(f32::MIN, |m, v| m.max(*v)) as f64), &st).max(ctx.assets.measure(&txt, &st));
+                let (bx, by) = (head.0 + fs * 0.9, head.1 - fs * 0.8);
+                let mut e = Vec::new();
+                shadow(&mut e, bx, by, tw + fs, fs * 1.6, fs * 0.8, 3.0, 8.0, 0.3);
+                e.push(rect(bx, by, tw + fs, fs * 1.6, fs * 0.8, solid(c)));
+                draw(&mut e, ctx.assets, &txt, &st, bx + fs * 0.5, by + fs * 0.8 + st.size * 0.36, 0.0);
+                o.extend(e);
+            }
+            for note in self.notes.iter().filter(|nt| nt.series == si && nt.index < s.len()) {
+                let p = pts[note.index];
+                let reached = note.index as f32 / (s.len() - 1) as f32;
+                let a = spring_z(t - self.delay - si as f32 * self.stagger - self.duration * reached, 1.1, 0.7);
+                if a > 0.0 && k >= reached {
+                    o.push(Op::Stroke { path: circle_path(p.0, p.1, self.width * 2.4), paint: solid(c), stroke: line(2.0, [0.0, 1.0]), transform: IDENTITY });
+                    value_pill(&mut o, ctx, &note.text, p.0, p.1 - self.width * 2.4, fs, th.text, a);
+                }
             }
         }
         o
@@ -546,16 +688,20 @@ pub struct Counter {
     pub align: f32,
     /// Caption under the number.
     pub label: String,
+    /// Number face: display (default), sans, serif, mono.
+    pub face: Option<Face>,
+    /// Count curve: smooth (expo, default), snappy, soft (ease in-out), bouncy.
+    pub motion: Motion,
 }
 impl Default for Counter {
     fn default() -> Self {
-        Counter { from: 0.0, to: 100.0, prefix: String::new(), suffix: String::new(), decimals: 0, compact: false, separator: true, size: 160.0, color: None, gradient: None, weight: 700, delay: 0.0, duration: 1.8, align: 0.5, label: String::new() }
+        Counter { from: 0.0, to: 100.0, prefix: String::new(), suffix: String::new(), decimals: 0, compact: false, separator: true, size: 160.0, color: None, gradient: None, weight: 700, delay: 0.0, duration: 1.8, align: 0.5, label: String::new(), face: None, motion: Motion::Smooth }
     }
 }
 impl Prepare for Counter {}
 impl Counter {
     pub fn text_at(&self, t: f32) -> String {
-        let k = ease_out(seg(t, self.delay, self.duration)) as f64;
+        let k = self.motion.ease(seg(t, self.delay, self.duration)) as f64;
         let v = self.from + (self.to - self.from) * k;
         let body = if self.compact { compact_number(v) } else { format_number(v, self.decimals, self.separator) };
         format!("{}{}{}", self.prefix, body, self.suffix)
@@ -569,7 +715,12 @@ impl Component for Counter {
             return Vec::new();
         }
         let txt = self.text_at(t);
-        let st = TextStyle::new(Face::Display, self.size, self.weight, self.color.map(|c| c.0).unwrap_or(th.text)).tracking(-0.03).tabular();
+        let ink = self.color.map(|c| c.0).unwrap_or(th.text);
+        let st = match self.face {
+            None => TextStyle::new(Face::Display, self.size, self.weight, ink).tracking(-0.03),
+            f => super::polish::face_style(f, self.size, self.weight, ink),
+        }
+        .tabular();
         // Measure the final value so the number does not jitter while counting.
         let fw = ctx.assets.measure(&self.text_at(f32::MAX), &st).max(ctx.assets.measure(&txt, &st));
         let x = ctx.width * self.align - fw * self.align;
@@ -610,10 +761,16 @@ pub struct Stat {
     pub color: Option<Color>,
     pub delay: f32,
     pub duration: f32,
+    /// Tile finish: solid, glass, outline, flat, paper.
+    pub surface: Surface,
+    /// Value face: display (default), sans, serif, mono.
+    pub face: Option<Face>,
+    pub radius: Option<f32>,
+    pub motion: Motion,
 }
 impl Default for Stat {
     fn default() -> Self {
-        Stat { label: String::new(), value: 0.0, prefix: String::new(), suffix: String::new(), decimals: 0, compact: false, delta: None, spark: Vec::new(), color: None, delay: 0.0, duration: 1.4 }
+        Stat { label: String::new(), value: 0.0, prefix: String::new(), suffix: String::new(), decimals: 0, compact: false, delta: None, spark: Vec::new(), color: None, delay: 0.0, duration: 1.4, surface: Surface::Solid, face: None, radius: None, motion: Motion::Smooth }
     }
 }
 impl Prepare for Stat {}
@@ -621,19 +778,24 @@ impl Component for Stat {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let th = ctx.theme;
         let (w, h) = (ctx.width.min(4000.0), ctx.height.min(4000.0));
-        let p = spring(t - self.delay, 1.0);
+        let p = self.motion.enter(t - self.delay);
         if p <= 0.0 {
             return Vec::new();
         }
         let mut o = Vec::new();
-        surface(&mut o, th, 0.0, 0.0, w, h, th.radius, 1.0);
+        super::polish::finish(&mut o, th, self.surface, 0.0, 0.0, w, h, self.radius.unwrap_or(th.radius), 1.0, None);
         let pad = (h * 0.14).clamp(16.0, 32.0);
         let ls = TextStyle::new(Face::Sans, (h * 0.1).clamp(13.0, 22.0), 500, th.muted);
         draw(&mut o, ctx.assets, &self.label, &ls, pad, pad + ls.size * 0.8, 0.0);
-        let k = ease_out(seg(t, self.delay + 0.1, self.duration)) as f64;
+        let k = super::polish::ease_out_expo(seg(t, self.delay + 0.1, self.duration)) as f64;
         let v = self.value * k;
         let body = if self.compact { compact_number(v) } else { format_number(v, self.decimals, true) };
-        let vs = TextStyle::new(Face::Display, (h * 0.3).clamp(24.0, 96.0), 700, th.text).tracking(-0.03).tabular();
+        let vsz = (h * 0.3).clamp(24.0, 96.0);
+        let vs = match self.face {
+            None => super::polish::headline(vsz, 700, th.text),
+            f => super::polish::face_style(f, vsz, 700, th.text),
+        }
+        .tabular();
         let vy = pad + ls.size * 1.4 + vs.size * 0.85;
         let vw = draw(&mut o, ctx.assets, &format!("{}{}{}", self.prefix, body, self.suffix), &vs, pad, vy, 0.0);
         if let Some(d) = self.delta {
@@ -642,11 +804,11 @@ impl Component for Stat {
             let txt = format!("{}{:.1}%", if d >= 0.0 { "▲ " } else { "▼ " }, d.abs());
             let ds = TextStyle::new(Face::Sans, ls.size * 0.9, 600, alpha(c, a));
             let tw = ctx.assets.measure(&txt, &ds);
-            let (bx, by) = (pad + vw + pad * 0.5, vy - vs.size * 0.5 - ds.size * 0.9);
-            if bx + tw + ds.size < w {
-                o.push(rect(bx, by, tw + ds.size, ds.size * 1.8, ds.size * 0.9, solid(alpha(c, 0.15 * a))));
-                draw(&mut o, ctx.assets, &txt, &ds, bx + ds.size * 0.5, by + ds.size * 1.25, 0.0);
-            }
+            let fits = pad + vw + pad * 0.5 + tw + ds.size < w - pad * 0.5;
+            // Beside the value when it fits, else pinned top-right next to the label.
+            let (bx, by) = if fits { (pad + vw + pad * 0.5, vy - vs.size * 0.5 - ds.size * 0.9) } else { (w - pad - tw - ds.size, pad + ls.size * 0.8 - ds.size * 1.25) };
+            o.push(rect(bx, by, tw + ds.size, ds.size * 1.8, ds.size * 0.9, solid(alpha(c, 0.15 * a))));
+            draw(&mut o, ctx.assets, &txt, &ds, bx + ds.size * 0.5, by + ds.size * 1.25, 0.0);
         }
         if self.spark.len() >= 2 {
             let c = self.color.map(|c| c.0).unwrap_or(th.accent);

@@ -399,6 +399,24 @@ impl Renderer {
     /// passed to the previous call (anything else forces a full frame).
     /// `changed` receives the exact changed-macroblock map versus that frame.
     pub fn render_yuv_incremental(&mut self, list: &DisplayList, yuv: &mut YuvFrame, changed: &mut MbMap) -> Update {
+        if self.post.is_some() {
+            // Post effects are global (bloom, grain): render whole frames.
+            let (w, h) = (list.width.max(1), list.height.max(1));
+            self.render(list);
+            let had = yuv.width == w && yuv.height == h;
+            let mut inc = std::mem::take(&mut self.inc);
+            inc.valid = false;
+            inc.spare.resize(w, h);
+            convert_region(self.frame.data_as_u8_slice(), w as usize, h as usize, [0, 0, w as usize, h as usize], &mut inc.spare);
+            if had {
+                super::diff::diff_mb_into(yuv, &inc.spare, changed);
+            } else {
+                changed.reset((w as usize).div_ceil(16), (h as usize).div_ceil(16), true);
+            }
+            std::mem::swap(yuv, &mut inc.spare);
+            self.inc = inc;
+            return Update::Full;
+        }
         let (w, h) = (list.width.max(1), list.height.max(1));
         let bg = list.background.0.map(f32::to_bits);
         let mut inc = std::mem::take(&mut self.inc);
