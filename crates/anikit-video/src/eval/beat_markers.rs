@@ -17,6 +17,45 @@ use std::path::{Path, PathBuf};
 pub struct BeatMarkers {
     src: Option<(PathBuf, f64, f64)>,
     beats: Option<Result<Beats, String>>,
+    level: Option<Vec<f32>>,
+}
+
+/// The music as expressions see it (`beat`, `bar`, `level`, `bpm`), on the global timeline.
+pub struct Music {
+    beats: Vec<f64>,
+    bars: Vec<f64>,
+    bpm: f64,
+    /// Loudness 0..1 every 1/100 s from global time `start`.
+    level: Vec<f32>,
+    start: f64,
+}
+
+/// Fractional count along a sorted grid: 0 at the first mark, 1 at the second…
+/// extrapolated at the ends with the mean spacing.
+fn along(grid: &[f64], t: f64) -> f64 {
+    match grid.len() {
+        0 => 0.0,
+        1 => t - grid[0],
+        n => {
+            let i = grid.partition_point(|&g| g <= t);
+            if i == 0 || i == n {
+                let step = (grid[n - 1] - grid[0]) / (n - 1) as f64;
+                let (k, g) = if i == 0 { (0, grid[0]) } else { (n - 1, grid[n - 1]) };
+                k as f64 + (t - g) / step.max(1e-6)
+            } else {
+                (i - 1) as f64 + (t - grid[i - 1]) / (grid[i] - grid[i - 1]).max(1e-6)
+            }
+        }
+    }
+}
+
+impl Music {
+    /// (beat, bar, level, bpm) at global time `t`.
+    pub fn at(&self, t: f64) -> (f64, f64, f64, f64) {
+        let k = ((t - self.start) * 100.0).floor();
+        let level = if k < 0.0 { 0.0 } else { self.level.get(k as usize).copied().unwrap_or(0.0) as f64 };
+        (along(&self.beats, t), along(&self.bars, t), level, self.bpm)
+    }
 }
 
 fn secs(n: &Option<Num>) -> f64 {
@@ -42,7 +81,36 @@ impl BeatMarkers {
         let src = spec.audio.iter().flatten().find(|c| c.src.is_some() && c.voice != Some(true)).map(|c| {
             (base.join(c.src.as_deref().unwrap_or_default()), secs(&c.at), secs(&c.trim_start))
         });
-        BeatMarkers { src, beats: None }
+        BeatMarkers { src, beats: None, level: None }
+    }
+
+    /// Beat grid and loudness envelope for expressions (decoded and analysed once).
+    pub fn music(&mut self) -> Result<std::sync::Arc<Music>, String> {
+        let Some((path, at, trim)) = self.src.clone() else {
+            return Err("add an `audio` track with a `src` to use beat, bar, level or bpm".into());
+        };
+        let pcm = decode_file(&path)?;
+        if self.beats.is_none() {
+            self.beats = Some(Ok(refine(&analyze_pcm(&pcm))));
+        }
+        let b = self.beats.as_ref().unwrap().as_ref().map_err(|e| e.clone())?;
+        // RMS per 10 ms, normalised by the 95th percentile, quick attack and slower release.
+        let mono = pcm.mono();
+        let hop = (pcm.rate as usize / 100).max(1);
+        let skip = (trim * pcm.rate as f64) as usize;
+        let mut rms: Vec<f32> = mono.get(skip..).unwrap_or(&[]).chunks(hop).map(|c| (c.iter().map(|x| x * x).sum::<f32>() / c.len() as f32).sqrt()).collect();
+        let mut sorted = rms.clone();
+        sorted.sort_by(|a, b| a.total_cmp(b));
+        let p95 = sorted.get(sorted.len() * 95 / 100).copied().unwrap_or(1.0).max(1e-4);
+        let mut env = 0.0f32;
+        for r in &mut rms {
+            let x = (*r / p95).min(1.0);
+            env = if x > env { env + (x - env) * 0.6 } else { env + (x - env) * 0.15 };
+            *r = env;
+        }
+        self.level = Some(rms.clone());
+        let shift = |v: &Vec<f64>| v.iter().map(|t| t - trim + at).collect::<Vec<f64>>();
+        Ok(std::sync::Arc::new(Music { beats: shift(&b.beats), bars: shift(&b.downbeats), bpm: b.bpm, level: rms, start: at }))
     }
 
     /// `None` when `name` is not a beat marker; otherwise its global time or an error.

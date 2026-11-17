@@ -16,7 +16,7 @@ You are the director. A video that looks like every other generated video has fa
 
 **3. Build the world from the brief's own nouns.** Sailing means water, tide lines and rope; coffee means cherries, hands, soil and a map; horror means sea, rock and fog. Draw them with shapes and paths (`shape: "path"` with `d`, lines that draw on with `trimEnd`, `morph`) or with real photos. Stock effects (a halftone or kinetic grid, bokeh, a mesh) are seasoning, never the subject, and never the same one across your videos.
 
-**Then build one signature image** that no template has, and give it the longest hold:
+**Then build one signature image** that no template has, and give it the longest hold (`docs/video/authoring.md`: expressions, `script` loops, raw `draw` paths):
 - a shader world: `{"type": "shader", "src": "scene.glsl"}` (Shadertoy GLSL, raymarched light, fog and water; `docs/video/shader.md`). Animate its uniforms hard, and cut between angles;
 - 3D: `text-3d` (extruded chrome or matte type), `model` (rounded box, torus, knot, an extruded logo or an `.obj`), `globe`, and `scene3d` when `anikit-video info --components` lists it;
 - generative: `particle-text`, `metaballs`, `kinetic-grid`, `morph`, `god-rays`, `tile-reveal`;

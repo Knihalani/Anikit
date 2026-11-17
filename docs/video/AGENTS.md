@@ -2,6 +2,8 @@
 
 **Install:** `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh` (prebuilt binary, seconds). Don't build from source to render.
 
+**Make anything:** templates and components are shortcuts, not limits. [`authoring.md`](authoring.md) covers per-frame expressions (numbers and colours, music-reactive), `script` blocks (loops and logic that generate layers and scenes) and `draw` layers (raw paths and points).
+
 JSON spec → MP4, rendered natively (no browser). You direct; the engine renders; the critic checks every frame. Read [`skills/anikit-video/SKILL.md`](../../skills/anikit-video/SKILL.md) first (a 1-page method) and [`spec.md`](spec.md) (a 1-page spec).
 
 ```bash
