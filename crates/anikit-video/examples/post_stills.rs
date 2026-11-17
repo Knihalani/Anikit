@@ -14,6 +14,9 @@ fn main() {
     let presets: Vec<String> = if a.len() > 4 { a[4..].to_vec() } else { vec!["none".into(), "cinematic".into(), "dreamy".into(), "punchy".into(), "noir".into(), "vintage".into()] };
     let l = ev.eval(t);
     let mut r = Renderer::new(ev.assets.snapshot());
+    if std::env::var("AK_QUALITY").as_deref() == Ok("draft") {
+        r.set_quality(anikit_video::render::Quality::Draft);
+    }
     for name in presets {
         r.set_post(PostSettings::preset(&name), (t * ev.fps) as u64);
         let t0 = Instant::now();

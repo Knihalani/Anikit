@@ -26,6 +26,7 @@ use serde_json::{Map, Value};
 use std::sync::Arc;
 
 pub mod style;
+pub mod polish;
 pub mod host;
 pub mod text;
 
@@ -46,6 +47,7 @@ pub mod three;
 pub mod globe;
 pub mod transitions;
 pub mod ui;
+pub mod uikit;
 pub mod visualizer;
 pub mod ken_burns;
 pub mod tiles;
@@ -55,7 +57,7 @@ pub mod card_stack;
 #[cfg(test)]
 pub(crate) mod preview;
 
-pub use style::Theme;
+pub use style::{set_draft, Theme};
 pub use text::{Face, TextStyle};
 
 /// What a component can ask the engine for while evaluating.

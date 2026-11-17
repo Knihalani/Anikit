@@ -1,5 +1,6 @@
 {
   "name": "launch",
+  "look": "daylight-lab",
   "title": "Product launch",
   "description": "A 20–35 s launch film with a broadcast-style HUD (beat counter, section label, progress bar): optional kinetic hook; product reveal where a search types feature 1 and returns the features as results (or your screenshot in a browser); feature beats that cycle three layouts (split with a camera push, a full-bleed UI crop with callout and lower third, a centred title over feature cards); a proof counter in a brand ring (or a chart of your real series); a CTA with confetti.",
   "duration": "20–35 s",
@@ -371,7 +372,7 @@
                     "$let": {
                       "tw": "fmt.landscape ? fmt.w * 0.36 : fmt.safe.w",
                       "ts": "fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4",
-                      "lines": "ceil(len(f.title) * 0.52 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.36 : fmt.safe.w))",
+                      "lines": "ceil(len(f.title) * cw * 1.04 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.36 : fmt.safe.w))",
                       "top": "fmt.landscape ? fmt.h * 0.5 - (ceil(len(f.title) * 0.52 * fmt.u * 6.4 / (fmt.w * 0.36)) * fmt.u * 6.4 * 1.1 + fmt.u * 12) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1)",
                       "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
                       "an": "fmt.landscape ? 'topLeft' : 'top'",
