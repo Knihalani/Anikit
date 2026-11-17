@@ -32,3 +32,5 @@ pub mod layout;
 pub mod text;
 pub mod scene3d;
 pub mod pipeline;
+pub mod qmetrics;
+pub mod diskcache;

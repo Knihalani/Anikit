@@ -14,7 +14,7 @@ fn main() {
     let mut out = Vec::new();
     for _ in 0..runs {
         let c = Instant::now();
-        out = post::process(&px, w, h, &p, None, None);
+        out = post::process_planes(&px, w, h, &p, None, None);
         best = best.min(c.elapsed().as_secs_f64() * 1e3);
     }
     println!("post {w}x{h}: best {best:.1} ms of {runs}");

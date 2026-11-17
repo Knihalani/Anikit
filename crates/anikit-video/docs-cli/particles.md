@@ -2,7 +2,7 @@
 
 ```json
 { "scenes": [ { "duration": 4, "layers": [ { "component": "scene3d", "props": {
-  "env": "night", "quality": "draft", "camera": "static",
+  "env": "night", "camera": "static",
   "objects": [ { "type": "particles", "count": 300000,
     "emit": { "text": "IGNITE", "height": 1.0, "pos": [0, 0.6, 0] },
     "flow": { "strength": 0.8, "scale": 0.8, "evolve": 0.2 }, "gravity": 0.15, "drag": 0.4, "life": 4,

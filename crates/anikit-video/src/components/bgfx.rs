@@ -118,6 +118,15 @@ pub fn hash2(x: i32, y: i32, seed: u32) -> f32 {
     (h >> 8) as f32 * (2.0 / (1u32 << 24) as f32) - 1.0
 }
 
+/// `x.floor()` without the libm call the x86-64 baseline makes for it (no
+/// SSE4.1 `roundps`): truncate, then step down for negative fractions.
+/// Identical to `floor` for |x| < 2³¹ (all noise coordinates); vectorises.
+#[inline(always)]
+pub fn ffloor(x: f32) -> f32 {
+    let t = x as i32 as f32;
+    t - if t > x { 1.0 } else { 0.0 }
+}
+
 #[inline]
 fn quintic(t: f32) -> f32 {
     t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
@@ -126,7 +135,7 @@ fn quintic(t: f32) -> f32 {
 /// Smooth 2D value noise in `[-1, 1]` (C² continuous).
 #[inline]
 pub fn vnoise2(x: f32, y: f32, seed: u32) -> f32 {
-    let (xf, yf) = (x.floor(), y.floor());
+    let (xf, yf) = (ffloor(x), ffloor(y));
     let (xi, yi) = (xf as i32, yf as i32);
     let (u, v) = (quintic(x - xf), quintic(y - yf));
     let a = hash2(xi, yi, seed);
@@ -136,6 +145,43 @@ pub fn vnoise2(x: f32, y: f32, seed: u32) -> f32 {
     let ab = a + (b - a) * u;
     let cd = c + (d - c) * u;
     ab + (cd - ab) * v
+}
+
+/// [`vnoise2`] with its analytic gradient: `(value, d/dx, d/dy)`.
+#[inline]
+pub fn vnoise2_d(x: f32, y: f32, seed: u32) -> (f32, f32, f32) {
+    let (xf, yf) = (ffloor(x), ffloor(y));
+    let (xi, yi) = (xf as i32, yf as i32);
+    let (fx, fy) = (x - xf, y - yf);
+    let (u, v) = (quintic(fx), quintic(fy));
+    let dq = |t: f32| 30.0 * t * t * (t - 1.0) * (t - 1.0);
+    let (du, dv) = (dq(fx), dq(fy));
+    let a = hash2(xi, yi, seed);
+    let b = hash2(xi + 1, yi, seed);
+    let c = hash2(xi, yi + 1, seed);
+    let d = hash2(xi + 1, yi + 1, seed);
+    let ab = a + (b - a) * u;
+    let cd = c + (d - c) * u;
+    let val = ab + (cd - ab) * v;
+    let gx = ((b - a) + ((d - c) - (b - a)) * v) * du;
+    let gy = (cd - ab) * dv;
+    (val, gx, gy)
+}
+
+/// [`fbm2`] with its analytic gradient: `(value, d/dx, d/dy)`.
+pub fn fbm2_d(x: f32, y: f32, octaves: u32, seed: u32) -> (f32, f32, f32) {
+    let (mut s, mut gx, mut gy, mut a, mut f, mut n) = (0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
+    for o in 0..octaves {
+        let (rx, ry) = (x * f * 0.96 - y * f * 0.28, x * f * 0.28 + y * f * 0.96);
+        let (v, dx, dy) = vnoise2_d(rx + o as f32 * 17.13, ry - o as f32 * 7.7, seed.wrapping_add(o * 101));
+        s += a * v;
+        gx += a * f * (dx * 0.96 + dy * 0.28);
+        gy += a * f * (-dx * 0.28 + dy * 0.96);
+        n += a;
+        a *= 0.5;
+        f *= 2.03;
+    }
+    (s / n, gx / n, gy / n)
 }
 
 /// Gradient-free 1D noise that evolves with time `t`: value noise over (x, t).
@@ -158,6 +204,26 @@ pub fn fbm2(x: f32, y: f32, octaves: u32, seed: u32) -> f32 {
     s / n
 }
 
+/// `min` as compare-and-select (vectorises; no NaN handling).
+#[inline(always)]
+pub fn fmin(a: f32, b: f32) -> f32 {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// `max` as compare-and-select (vectorises; no NaN handling).
+#[inline(always)]
+pub fn fmax(a: f32, b: f32) -> f32 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
 #[inline]
 pub fn smoothstep(a: f32, b: f32, x: f32) -> f32 {
     let t = ((x - a) / (b - a)).clamp(0.0, 1.0);
@@ -167,6 +233,7 @@ pub fn smoothstep(a: f32, b: f32, x: f32) -> f32 {
 // ---------------------------------------------------------------- images
 
 /// A linear-light RGB float image.
+#[derive(Clone)]
 pub struct Lin {
     pub w: usize,
     pub h: usize,
@@ -211,29 +278,160 @@ impl Lin {
         out
     }
 
-    /// Quantise to straight RGBA8 (opaque) with an ordered dither of ±½ LSB
-    /// in sRGB, so no gradient bands at 8 bits.
-    pub fn to_rgba8(&self) -> Vec<u8> {
-        let lut = srgb_lut();
-        let tile = dither_tile();
-        let mut out = vec![255u8; self.w * self.h * 4];
-        let lut = &lut[..=LUT_N];
+    /// `self.upsample(dw, dh).to_rgba8()` (bit for bit) without the
+    /// full-size float image: each output row is interpolated and quantised in turn.
+    pub fn upsample_rgba8(&self, dw: usize, dh: usize) -> Vec<u8> {
+        #[cfg(target_arch = "x86_64")]
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: AVX2 checked above. Same arithmetic (no FMA), wider lanes and gathers.
+            return unsafe { self.upsample_rgba8_avx2(dw, dh) };
+        }
+        self.upsample_rgba8_any(dw, dh)
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "avx2")]
+    unsafe fn upsample_rgba8_avx2(&self, dw: usize, dh: usize) -> Vec<u8> {
+        self.upsample_rgba8_any(dw, dh)
+    }
+
+    #[inline(always)]
+    fn upsample_rgba8_any(&self, dw: usize, dh: usize) -> Vec<u8> {
+        let tx = cubic_taps(self.w, dw);
+        let ty = cubic_taps(self.h, dh);
+        let row = dw * 3;
+        let sw3 = self.w * 3;
+        let mut mid = vec![0.0f32; row * self.h];
+        // Horizontal pass. For an integer enlargement m the taps repeat with
+        // the phase x % m, so interior columns read contiguous source pixels
+        // (no gathers); the border columns take the general path. Same sums,
+        // same order as `upsample`.
+        let m = dw / self.w.max(1);
+        let poly = m >= 1 && m * self.w == dw && self.w >= 8;
         for y in 0..self.h {
-            let src = &self.px[y * self.w * 3..(y + 1) * self.w * 3];
-            let dst = &mut out[y * self.w * 4..(y + 1) * self.w * 4];
-            let trow = &tile[(y % DT) * DT..(y % DT + 1) * DT];
-            for (x, (s, d)) in src.chunks_exact(3).zip(dst.chunks_exact_mut(4)).enumerate() {
-                // TPDF offset around ½: `floor` below then rounds to nearest on average.
-                let dz = trow[x % DT];
-                for k in 0..3 {
-                    // Nearest entry: the table is dense enough (≤ 0.05 LSB per step).
-                    let i = ((s[k] * LUT_N as f32 + 0.5) as usize).min(LUT_N);
-                    d[k] = (lut[i] + dz).clamp(0.0, 255.0) as u8;
+            let src = &self.px[y * sw3..(y + 1) * sw3];
+            let dst = &mut mid[y * row..(y + 1) * row];
+            let general = |x: usize, dst: &mut [f32]| {
+                let (i, w) = &tx[x];
+                let mut acc = [0.0f32; 3];
+                for k in 0..4 {
+                    let s = &src[i[k] * 3..i[k] * 3 + 3];
+                    acc[0] += s[0] * w[k];
+                    acc[1] += s[1] * w[k];
+                    acc[2] += s[2] * w[k];
+                }
+                dst[x * 3..x * 3 + 3].copy_from_slice(&acc);
+            };
+            if !poly {
+                for x in 0..dw {
+                    general(x, dst);
+                }
+                continue;
+            }
+            // Interior source steps q: every tap of every phase inside 0..w.
+            let (q0, q1) = (2, self.w - 3);
+            for x in (0..q0 * m).chain(q1 * m..dw) {
+                general(x, dst);
+            }
+            for p in 0..m {
+                let (i, w) = &tx[q0 * m + p];
+                let base = i[0] as isize - q0 as isize; // source index of tap 0 relative to q
+                for q in q0..q1 {
+                    let s0 = ((q as isize + base) * 3) as usize;
+                    let s = &src[s0..s0 + 12];
+                    let o = (q * m + p) * 3;
+                    let d = &mut dst[o..o + 3];
+                    for c in 0..3 {
+                        d[c] = 0.0 + s[c] * w[0] + s[3 + c] * w[1] + s[6 + c] * w[2] + s[9 + c] * w[3];
+                    }
                 }
             }
         }
+        let mut line = vec![0.0f32; row];
+        let mut out = vec![255u8; dw * dh * 4];
+        for (y, (i, w)) in ty.iter().enumerate() {
+            let (r0, r1, r2, r3) = (&mid[i[0] * row..][..row], &mid[i[1] * row..][..row], &mid[i[2] * row..][..row], &mid[i[3] * row..][..row]);
+            for x in 0..row {
+                line[x] = fmax(r0[x] * w[0] + r1[x] * w[1] + r2[x] * w[2] + r3[x] * w[3], 0.0);
+            }
+            quantise_row(&line, &mut out[y * dw * 4..(y + 1) * dw * 4], y);
+        }
         out
     }
+
+    /// Quantise to straight RGBA8 (opaque) with an ordered dither of ±½ LSB
+    /// in sRGB, so no gradient bands at 8 bits.
+    pub fn to_rgba8(&self) -> Vec<u8> {
+        let mut out = vec![255u8; self.w * self.h * 4];
+        for y in 0..self.h {
+            quantise_row(&self.px[y * self.w * 3..(y + 1) * self.w * 3], &mut out[y * self.w * 4..(y + 1) * self.w * 4], y);
+        }
+        out
+    }
+}
+
+/// One row of linear RGB to opaque RGBA8 with the ordered dither of row `y`.
+#[inline]
+fn quantise_row(src: &[f32], dst: &mut [u8], y: usize) {
+    #[cfg(target_arch = "x86_64")]
+    if std::arch::is_x86_feature_detected!("avx2") {
+        // SAFETY: AVX2 checked above. Same arithmetic, wider lanes and gathers.
+        return unsafe { quantise_row_avx2(src, dst, y) };
+    }
+    quantise_row_any(src, dst, y)
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn quantise_row_avx2(src: &[f32], dst: &mut [u8], y: usize) {
+    quantise_row_any(src, dst, y)
+}
+
+#[inline(always)]
+fn quantise_row_any(src: &[f32], dst: &mut [u8], y: usize) {
+    let lut = &srgb_sqrt_lut()[..SQ_N + 2];
+    let tile3 = dither_tile3();
+    let trow = &tile3[(y % DT) * DT * 3..(y % DT + 1) * DT * 3];
+    let n = src.len() / 3;
+    // Channels as one flat stream (vectorises), 64 pixels at a time so the
+    // dither row lines up; then spread into RGBA.
+    let mut tmp = [0u8; DT * 3];
+    for (c, chunk) in src[..n * 3].chunks(DT * 3).enumerate() {
+        let m = chunk.len();
+        let (t, dz) = (&mut tmp[..m], &trow[..m]);
+        for j in 0..m {
+            // sRGB·255 from a small table over √c (dense where sRGB is steep),
+            // linearly interpolated: within 0.01 LSB, and L1-resident.
+            let u = fmin(fmax(chunk[j], 0.0), 1.0).sqrt() * SQ_N as f32;
+            let i = u as i32 as usize;
+            let f = u - i as f32;
+            // SAFETY: 0 ≤ u ≤ SQ_N, so i + 1 ≤ SQ_N + 1 < lut.len().
+            let (a, b) = unsafe { (*lut.get_unchecked(i), *lut.get_unchecked(i + 1)) };
+            // TPDF offset around ½: truncation then rounds to nearest on average.
+            t[j] = fmin(fmax(a + (b - a) * f + dz[j], 0.0), 255.0) as i32 as u8;
+        }
+        let o = c * DT * 4;
+        for (p, d) in t.chunks_exact(3).zip(dst[o..o + m / 3 * 4].chunks_exact_mut(4)) {
+            d[..3].copy_from_slice(p);
+        }
+    }
+}
+
+/// The dither tile with each value repeated for the three channels.
+fn dither_tile3() -> &'static [f32] {
+    static T: OnceLock<Vec<f32>> = OnceLock::new();
+    T.get_or_init(|| dither_tile().iter().flat_map(|v| [*v; 3]).collect())
+}
+
+const SQ_N: usize = 4096;
+
+/// sRGB·255 of `(i / SQ_N)²`, `SQ_N + 2` entries (the last repeated).
+fn srgb_sqrt_lut() -> &'static [f32] {
+    static L: OnceLock<Vec<f32>> = OnceLock::new();
+    L.get_or_init(|| (0..SQ_N + 2).map(|i| {
+        let u = (i.min(SQ_N)) as f32 / SQ_N as f32;
+        to_srgb(u * u) * 255.0
+    }).collect())
 }
 
 /// Interleaved gradient noise in `[0, 1)`: a cheap, blue-ish ordered dither.
@@ -261,21 +459,12 @@ fn dither_tile() -> &'static [f32] {
     })
 }
 
-const LUT_N: usize = 65536;
-
-/// Linear light → sRGB·255, sampled densely enough (≤ 0.05 LSB per step)
-/// to read without interpolation.
-fn srgb_lut() -> &'static [f32] {
-    static L: OnceLock<Vec<f32>> = OnceLock::new();
-    L.get_or_init(|| (0..=LUT_N).map(|i| to_srgb(i as f32 / LUT_N as f32) * 255.0).collect())
-}
-
 /// `1 - e^(-x)` for `x ≥ 0`, accurate to ~1e-4 and vectorisable.
 #[inline]
 pub fn one_minus_exp_neg(x: f32) -> f32 {
     // e^-x = 2^(-x·log2 e); split into integer and fractional parts.
     let y = (-x * std::f32::consts::LOG2_E).max(-126.0);
-    let fl = y.floor();
+    let fl = ffloor(y);
     let f = y - fl;
     // 2^f on [0, 1): degree-4 polynomial.
     let p = 1.0 + f * (std::f32::consts::LN_2 + f * (0.240_226_5 + f * (0.055_504_11 + f * 0.009_618_13)));
@@ -337,6 +526,22 @@ pub fn blur1(a: &mut [f32], r: usize, passes: usize) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn fbm_gradient_matches_finite_differences() {
+        for k in 0..200 {
+            let (x, y) = (k as f32 * 0.137 - 9.0, k as f32 * 0.071 + 3.0);
+            let (v, gx, gy) = super::fbm2_d(x, y, 3, 21);
+            assert!((v - super::fbm2(x, y, 3, 21)).abs() < 1e-6);
+            let e = 1e-3;
+            let fx = (super::fbm2(x + e, y, 3, 21) - super::fbm2(x - e, y, 3, 21)) / (2.0 * e);
+            let fy = (super::fbm2(x, y + e, 3, 21) - super::fbm2(x, y - e, 3, 21)) / (2.0 * e);
+            assert!((gx - fx).abs() < 0.02 && (gy - fy).abs() < 0.02, "{k}: {gx} {fx} {gy} {fy}");
+        }
+        assert_eq!(super::ffloor(-1.5), -2.0);
+        assert_eq!(super::ffloor(2.0), 2.0);
+        assert_eq!(super::ffloor(-3.0), -3.0);
+    }
+
     use super::*;
     #[test]
     fn oklab_roundtrip() {

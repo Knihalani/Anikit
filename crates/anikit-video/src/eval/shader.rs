@@ -545,7 +545,12 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> (Pixmap, f64) {
     f.audio = job.audio;
     f.beat = job.beat;
     f.channels = chans;
-    f.supersample = job.supersample;
+    // Reference mode (the quality harness) shades every pixel with the full 2×2
+    // grid; draft mode skips anti-aliasing; otherwise adaptive at AA_THRESHOLD.
+    let reference = crate::components::reference();
+    f.supersample = (job.supersample && !crate::components::style::draft()) || reference;
+    f.adaptive = !reference;
+    f.threshold = anikit_shader::AA_THRESHOLD;
     f.alpha = job.alpha;
     // Smooth shader gradients would band in 8 bits; exact values are untouched.
     f.dither = true;
@@ -615,7 +620,7 @@ impl Evaluator {
             progress,
             uniforms,
             channels: chans,
-            supersample: sc.supersample,
+            supersample: sc.supersample || crate::components::reference(),
             alpha: sc.alpha,
             label: sc.label.clone(),
             audio,

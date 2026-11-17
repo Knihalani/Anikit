@@ -232,10 +232,34 @@ Cost per 1080p frame on this VM: about 0 ms for `clean` (identity on 8-bit frame
 
 ### Motion blur (`render::motion`)
 
-`render_yuv_motion_blur(&mut |t| eval(t), t, shutter_seconds, &mut yuv)`:
-- If the shutter's open and close match the centre frame, it renders once.
-- Otherwise it takes 2–24 sub-frames, spaced evenly over the open shutter. The count comes from the largest on-screen displacement of matched ops, aiming for about 1.5 px per step.
-- Samples are averaged in linear light and dithered; post then runs once on the result.
+`render_yuv_motion_blur(&mut |t| eval(t), t, shutter_seconds, &mut yuv)` (or `render_motion_blur` for RGBA):
+- **What changes.** The lists at the shutter's open, centre and close are compared op by op (matched by kind from both ends). For each changed op it measures:
+  - how far it moves on screen: its bounds' edges *and* its local bounds' corners under both transforms, so rotation and scale count;
+  - whether it only translates (its velocity);
+  - whether it is a discrete change: a glyph swapped (counters), an op appearing or vanishing.
+
+  A smooth leading backdrop isn't judged (blurred or not, it looks the same) and is rendered once.
+- **Where.** Changes are clustered into at most 8 macroblock-aligned boxes. Outside them the frame is the centre render. Static frames render once.
+- **How many samples.** Each box takes as many sub-frames as its fastest content needs: steps ≤ 1.25 px, 2–32 samples, 16 for discrete changes. Streaks longer than 40 px (at 1080p) are clamped by shortening the effective shutter, so very fast moves never strobe.
+- **Slides.** When everything moving in a box translates together over a smooth, still backdrop, it takes samples δ ≤ 8 px apart, then applies a δ box filter along the motion: the continuous streak, exactly, at a fraction of the samples. δ shrinks with acceleration, keeping slot error ≤ ¼ px. Axis-aligned filters use prefix sums.
+- **Cheap samples.**
+  - Blurred layers (glows, shadows) sample only every σ/2.
+  - Sub-pixel drift in scale (< 0.05 px of movement) or layer opacity (< 1%) is held at the centre value, so cached glyph runs and filtered layers are reused.
+  - Image content (shader layers, 3D scenes, video) is made **once per frame**: samples reuse the centre frame's pixels and blur only by the layer's own movement.
+- Samples are averaged in linear light per box, dithered, and post runs once on the result.
+- **Ground truth.** `set_brute_force_motion(true)` or `Quality::Reference` renders whole frames at ~0.5 px steps (8–96 samples) with true per-sample image content. `cargo run --release -p anikit-video --example mb_bench -- docs/video/examples/showcase.json 10` prints each moving frame's cost and its error against that reference. On the showcase, motion blur went from 9.8× to 6.4× of the plain render, at PSNR 57 dB vs the reference. The remaining cost is clip wipes (an iris re-renders its whole bounding box per sample) and scene cuts inside the shutter.
+
+### Film grain fast path (`render::grain`)
+
+Trailing full-frame tiled-image layers blended with Overlay or Soft Light (the `grain` component and grain looks) are blended straight into the finished frame: one 256×256 lookup per channel, the W3C blend in 8-bit sRGB at vello's nearest texels. The rest of the list keeps every backdrop fast path; drawn by vello, a non-Normal blend needs the background inside the layer stack. A 1080p grain frame went from 15.7 to 5.4 ms (within 4 levels of vello's blend, mean 0.4; tested).
+
+### Plain-colour backgrounds
+
+An opaque `background` colour is a backdrop like a field: YUV planes are filled from it and only the ops' boxes rasterise, with no full-frame clear and RGBA→YUV conversion. An empty 1080p frame went from 1.5 to 0.13 ms. Pixels are identical to vello's clear (tested).
+
+### Long strokes
+
+A stroke whose bounds reach far past the frame (perspective grids, long guides) is clipped to the view, inflated by the stroke's reach, before vello sees it. Line segments are clipped exactly; curves whose control hull misses are dropped. Pixels are identical (tested). Dashed strokes are left alone, since clipping would shift the dash phase.
 
 ### Quality (`Renderer::set_quality`)
 
@@ -263,4 +287,19 @@ Renders are **byte-identical across runs and thread counts** (test `render_is_by
 - workers' incremental state followed whatever frames rayon scheduled on a thread: now each chunk renders with its own state, fresh at the chunk start;
 - a worker's renderer was recreated when another thread interned a new font face, dropping its incremental state at a moment set by scheduling: now the newer font snapshot is swapped into the same renderer (`Renderer::update_assets`).
 
+Output is also **independent of what a renderer drew before** (test `output_is_independent_of_render_history`). Every cache draws its entry from its key alone; card-shadow sprites, for example, are drawn from their quantised size, radius, blur and colour, not from the exact values of whichever frame filled them. So renderers can be pooled across chunks.
+
 Cost: a fresh renderer per chunk, about 10% on `launch` (about 4.8–5.0 s against 4.4 s). Some renderer caches still change pixels depending on what they drew before, so renderers can't yet be reused across chunks. Fixing that would recover the 10%.
+
+## Phase 2 table (15:40 UTC, 4-vCPU VM, `--quality standard`, best of 3)
+
+| spec | frames | render | fps | wall | outside the render (startup, estimate, mux) |
+|---|---|---|---|---|---|
+| `docs/video/examples/showcase.json` | 222 | 1.05 s | 211 | 1.09 s | 38 ms |
+| `launch` template (`anikit-video new launch`) | 868 | 4.30 s | 202 | 4.39 s | 87 ms |
+| `bench/video/anikit/kinetic.json` | 600 | 1.00 s | 599 | 1.02 s | 15 ms |
+| `raymarch-world` recipe, `--to 1` | 30 | 16.3 s | 1.8 | 16.7 s | 410 ms (shader JIT 121 ms + estimate) |
+
+- Startup: the estimate runs only for specs with heavy layers (shader, 3D, video) or over 3,600 frames; elsewhere startup and mux take 15–87 ms. The progress line shows an ETA.
+- MP4s are byte-identical across thread counts, with renderers pooled across chunks.
+- Tried and dropped: shorter chunks for heavy specs (4+ frames, up to 32 chunks). The raymarch range went 22.1 → 23.7 s, because the shader already parallelises within each frame (1 thread: 88 s).

@@ -158,8 +158,23 @@ fn grid(pts: Vec<V3>, nu: usize, nv: usize, close_u: bool) -> Mesh {
     m
 }
 
+/// Whether an open-geometry description reads time (`t`), so its mesh is
+/// rebuilt every frame.
+pub fn is_dynamic(m: &Map<String, Value>) -> bool {
+    ["x", "y", "z", "path", "radius", "expr"].iter().any(|k| match m.get(*k) {
+        Some(Value::String(s)) => {
+            let b = s.as_bytes();
+            (0..b.len()).any(|i| {
+                b[i] == b't' && (i == 0 || !(b[i - 1].is_ascii_alphanumeric() || b[i - 1] == b'_')) && b.get(i + 1).is_none_or(|c| !(c.is_ascii_alphanumeric() || *c == b'_' || *c == b'('))
+            })
+        }
+        _ => false,
+    })
+}
+
 /// Build the mesh of an open-geometry object type, or `None` for other types.
-pub fn build(ty: &str, m: &Map<String, Value>, path: &str) -> Res<Option<Mesh>> {
+pub fn build(ty: &str, m: &Map<String, Value>, path: &str, t: f32) -> Res<Option<Mesh>> {
+    let t = t as f64;
     let gf = |k: &str, d: f32| -> Res<f32> { m.get(k).map(|x| f(x, &format!("{path}.{k}"))).transpose().map(|o| o.unwrap_or(d)) };
     let res = |k: &str, d: usize| -> Res<usize> { Ok(gf(k, d as f32)?.clamp(2.0, 2048.0) as usize) };
     Ok(Some(match ty {
@@ -214,7 +229,7 @@ pub fn build(ty: &str, m: &Map<String, Value>, path: &str) -> Res<Option<Mesh>> 
                     let rs = match m.get("radius") {
                         Some(Value::String(e)) => {
                             let n = compile_as(e, &smap)?;
-                            (0..pts.len()).map(|k| n.at(&Vars { p: k as f64 / (pts.len().max(2) - 1) as f64, ..Vars::default() })).collect()
+                            (0..pts.len()).map(|k| n.at(&Vars { t, p: k as f64 / (pts.len().max(2) - 1) as f64, ..Vars::default() })).collect()
                         }
                         _ => vec![gf("radius", 0.05)?; pts.len()],
                     };
@@ -226,7 +241,7 @@ pub fn build(ty: &str, m: &Map<String, Value>, path: &str) -> Res<Option<Mesh>> 
                     let rn = m.get("radius").map(|r| num_as(r, &smap, &format!("{path}.radius"))).transpose()?.unwrap_or(Num::C(0.05));
                     (0..=n)
                         .map(|k| {
-                            let vars = Vars { p: k as f64 / n as f64, ..Vars::default() };
+                            let vars = Vars { t, p: k as f64 / n as f64, ..Vars::default() };
                             (eval3(&e, &vars), rn.at(&vars))
                         })
                         .unzip()
@@ -297,7 +312,7 @@ pub fn build(ty: &str, m: &Map<String, Value>, path: &str) -> Res<Option<Mesh>> 
                 for i in 0..=nu {
                     let u = u0 + (u1 - u0) * i as f32 / nu as f32;
                     let v = v0b + (v1b - v0b) * j as f32 / nvb as f32;
-                    let vars = Vars { p: u as f64, gt: v as f64, ..Vars::default() };
+                    let vars = Vars { t, p: u as f64, gt: v as f64, ..Vars::default() };
                     pts.push(v3(ex.at(&vars), ey.at(&vars), ez.at(&vars)));
                 }
             }
@@ -320,7 +335,7 @@ pub fn build(ty: &str, m: &Map<String, Value>, path: &str) -> Res<Option<Mesh>> 
                 for i in 0..=n {
                     let x = (i as f32 / n as f32 - 0.5) * w;
                     let z = (j as f32 / n as f32 - 0.5) * d;
-                    pts.push(v3(x, e.at(&Vars { p: x as f64, gt: z as f64, ..Vars::default() }), z));
+                    pts.push(v3(x, e.at(&Vars { t, p: x as f64, gt: z as f64, ..Vars::default() }), z));
                 }
             }
             grid(pts, n, n, false)
@@ -371,7 +386,7 @@ mod tests {
     use serde_json::json;
 
     fn mesh(ty: &str, v: Value) -> Mesh {
-        build(ty, v.as_object().unwrap(), "o").unwrap().unwrap()
+        build(ty, v.as_object().unwrap(), "o", 0.0).unwrap().unwrap()
     }
 
     #[test]
@@ -390,7 +405,11 @@ mod tests {
         assert_eq!(h.idx.len(), 8 * 8 * 6);
         let m = mesh("mesh", json!({ "vertices": [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]], "faces": [[0, 1, 2, 3]] }));
         assert_eq!(m.idx, vec![0, 1, 2, 0, 2, 3]);
+        let w = json!({ "expr": "=0.1*sin(x*4+t*3)", "size": 2, "res": 4 });
+        assert!(is_dynamic(w.as_object().unwrap()) && !is_dynamic(json!({ "expr": "=sqrt(x)" }).as_object().unwrap()));
+        let (a, b) = (build("heightfield", w.as_object().unwrap(), "o", 0.0).unwrap().unwrap(), build("heightfield", w.as_object().unwrap(), "o", 0.5).unwrap().unwrap());
+        assert_ne!(a.pos, b.pos);
         assert!((m.nrm[2] - 1.0).abs() < 1e-5);
-        assert!(build("mesh", json!({ "vertices": [[0, 0, 0]], "faces": [[0, 1, 2]] }).as_object().unwrap(), "o").is_err());
+        assert!(build("mesh", json!({ "vertices": [[0, 0, 0]], "faces": [[0, 1, 2]] }).as_object().unwrap(), "o", 0.0).is_err());
     }
 }

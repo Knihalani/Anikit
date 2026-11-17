@@ -214,6 +214,13 @@ impl Evaluator {
                 (shutter.clamp(0.0, 720.0) as f32 / 360.0) / c.fps
             }
         };
+        let encode_aq = spec.encode.as_ref().and_then(|e| e.aq).filter(|a| {
+            let ok = (0.0..=2.0).contains(a);
+            if !ok {
+                c.d.push(Diagnostic::error("encode.aq", format!("{a} is out of range (0..2)")));
+            }
+            ok
+        });
         let default_bg = spec.background.clone().unwrap_or(spec::Paint::Css("$bg".into()));
         let default_trans = spec.transition.clone();
         if spec.scenes.is_empty() {
@@ -350,6 +357,7 @@ impl Evaluator {
             theme: c.theme,
             comps: c.comps.into_iter().map(|(n, e, _)| (n, e)).collect(),
             shutter,
+            encode_aq: encode_aq.map(|a| a as f32),
             groove: c.groove.and_then(|m| m.ok()),
             shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
         };
@@ -2748,7 +2756,10 @@ impl C<'_> {
             fixed,
             channels,
             filter,
-            supersample: l.supersample.unwrap_or(false),
+            // Anti-aliased by default (adaptive 2×2 where neighbours differ), except
+            // filters, which would soften the frame they read, and sources that
+            // opt out with `// anikit:aa off`.
+            supersample: l.supersample.unwrap_or(!filter && !anikit_shader::aa_off(&text)),
             alpha: l.alpha.unwrap_or(false),
             label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
             audio: self.shader_audio(&text, path),
@@ -2895,9 +2906,31 @@ impl C<'_> {
         if let Ok(m) = serde_json::to_value(&self.theme.material) {
             props = crate::components::with_material(&name, &props, &m);
         }
+        // Audio files a component reads itself (the visualizer's `src`) resolve
+        // against the spec's folder, like every other asset; otherwise a relative
+        // path only worked from that folder and the visualizer silently fell back
+        // to its synthetic groove.
+        if let Some(obj) = props.as_object_mut() {
+            if let Some(serde_json::Value::String(src)) = obj.get("src") {
+                let l = src.to_ascii_lowercase();
+                let audio = [".mp3", ".wav", ".flac", ".ogg", ".m4a", ".aac", ".mp4"].iter().any(|e| l.ends_with(e));
+                let p = std::path::Path::new(src);
+                if audio && p.is_relative() {
+                    let full = self.o.base_dir.join(p);
+                    if full.exists() {
+                        obj.insert("src".into(), serde_json::Value::String(full.to_string_lossy().into_owned()));
+                    }
+                }
+            }
+        }
         // Load the images the component refers to, so `Assets::media` finds them.
         for src in crate::components::media_srcs(&props) {
             self.load_media(&src, &format!("{path}.props"));
+        }
+        if name == "scene-3d" {
+            for (sub, msg) in crate::scene3d::lint(&props) {
+                self.d.push(Diagnostic::warning(format!("{path}.props{sub}"), msg));
+            }
         }
         match crate::components::build(&name, &props) {
             Ok(p) => {

@@ -38,6 +38,9 @@ struct Processed {
     reverb: f32,
     delay: f32,
     stem: &'static str,
+    /// Automated sends (per-sample levels), when the track automates them.
+    reverb_env: Option<Vec<f32>>,
+    delay_env: Option<Vec<f32>>,
 }
 
 pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: usize, opts: &RenderOpts, tm: &mut Timings) -> Result<MixOut, String> {
@@ -65,10 +68,22 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
         .map(|((mut l, mut r), t)| {
             let t0 = Instant::now();
             process_track(&mut l, &mut r, &t.mix, rate, pump.as_deref())?;
+            let (mut reverb_env, mut delay_env) = (None, None);
+            // Custom per-track effects and automation (only when the track asks).
+            if let Some(fx) = &t.fx {
+                let mut chain = crate::custom::fx_chain(fx, rate, a.grid.bpm, &format!("tracks.{}.fx", t.name))?;
+                crate::custom::apply_chain(&mut chain, &mut l, &mut r, rate);
+            }
+            if let Some(v) = &t.automate {
+                let au = crate::custom::TrackAuto::parse(v, &a.grid, &format!("tracks.{}.automate", t.name))?;
+                au.apply(&mut l, &mut r, rate);
+                reverb_env = au.reverb.as_ref().map(|x| x.render(l.len(), rate));
+                delay_env = au.delay.as_ref().map(|x| x.render(l.len(), rate));
+            }
             if std::env::var_os("ANIKIT_MUSIC_PROFILE").is_some() {
                 eprintln!("  track {} ({}): {:.3}s", t.name, t.inst, t0.elapsed().as_secs_f64());
             }
-            Ok(Processed { l, r, reverb: t.mix.reverb, delay: t.mix.delay, stem: stem_of(&t.role) })
+            Ok(Processed { l, r, reverb: t.mix.reverb, delay: t.mix.delay, stem: stem_of(&t.role), reverb_env, delay_env })
         })
         .collect::<Result<_, String>>()?;
     let prof = std::env::var_os("ANIKIT_MUSIC_PROFILE").is_some();
@@ -103,12 +118,20 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
             for p in tracks.iter().filter(|p| g == "all" || p.stem == g) {
                 add(&mut l, &p.l, 1.0);
                 add(&mut r, &p.r, 1.0);
-                if p.reverb > 0.0 {
+                if let Some(e) = &p.reverb_env {
+                    add_env(&mut rl, &p.l, e);
+                    add_env(&mut rr, &p.r, e);
+                    any_r = true;
+                } else if p.reverb > 0.0 {
                     add(&mut rl, &p.l, p.reverb);
                     add(&mut rr, &p.r, p.reverb);
                     any_r = true;
                 }
-                if p.delay > 0.0 {
+                if let Some(e) = &p.delay_env {
+                    add_env(&mut dl, &p.l, e);
+                    add_env(&mut dr, &p.r, e);
+                    any_d = true;
+                } else if p.delay > 0.0 {
                     add(&mut dl, &p.l, p.delay);
                     add(&mut dr, &p.r, p.delay);
                     any_d = true;
@@ -136,6 +159,9 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
             Stem { name: g.to_string(), l, r }
         })
         .collect();
+    if prof {
+        eprintln!("mix: buses {:.3}s", t.elapsed().as_secs_f64());
+    }
     let mut stems = stems;
     if let Some((fl, fr)) = fx {
         if opts.stems {
@@ -155,7 +181,12 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
         add(&mut r, &s.r, 1.0);
     }
     fades(a, &mut l, &mut r, rate);
+    let tp = Instant::now();
     let rep = dsp::master(&mut l, &mut r, rate, a.master.lufs as f32, a.master.ceiling as f32);
+    let prof = std::env::var_os("ANIKIT_MUSIC_PROFILE").is_some();
+    if prof {
+        eprintln!("  sum+fades {:.1} ms, master() {:.1} ms", (tp - t).as_secs_f64() * 1e3, tp.elapsed().as_secs_f64() * 1e3);
+    }
     // Stems carry the master's static gain (not its limiter) so they line up with the mix.
     let g = 10f32.powf(rep.gain_db as f32 / 20.0);
     let mut stems = if opts.stems { stems } else { Vec::new() };
@@ -163,7 +194,11 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
         s.l.iter_mut().chain(s.r.iter_mut()).for_each(|x| *x *= g);
         fades(a, &mut s.l, &mut s.r, rate);
     }
+    let ta = Instant::now();
     let report = dsp::analyze(&l, &r, rate as f32);
+    if prof {
+        eprintln!("  analyze {:.1} ms", ta.elapsed().as_secs_f64() * 1e3);
+    }
     tm.master = t.elapsed().as_secs_f64();
     let mut report = serde_json::to_value(&report).unwrap_or_default();
     report["lufs"] = serde_json::json!(rep.output.integrated);
@@ -253,6 +288,12 @@ pub(crate) fn reverb_ir(rate: u32, p: &dsp::ReverbParams) -> std::sync::Arc<(dsp
     }
     cache.lock().unwrap().insert(key, ir.clone());
     ir
+}
+
+fn add_env(dst: &mut [f32], src: &[f32], g: &[f32]) {
+    for ((d, s), g) in dst.iter_mut().zip(src).zip(g) {
+        *d += s * g.max(0.0);
+    }
 }
 
 fn add(dst: &mut [f32], src: &[f32], g: f32) {

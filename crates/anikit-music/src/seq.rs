@@ -74,6 +74,9 @@ pub struct Part {
     pub seed: u64,
     /// Ignore swing (e.g. straight hats against a swung groove).
     pub straight: bool,
+    /// A custom synth with per-note automation (voices built with the patch
+    /// parameters at each note's start time).
+    pub custom: Option<Arc<crate::custom::CustomSynth>>,
 }
 
 /// A timed note, in seconds and frames, ready to render.
@@ -149,7 +152,12 @@ pub fn render_part(part: &Part, grid: &Grid, rate: u32, frames: usize) -> (Vec<f
     // Create voices in parallel (first use of a sample decodes it), then
     // resolve mono and choke groups in a sequential pass, in note order.
     let live: Vec<&Event> = evs.iter().take_while(|e| e.start < frames).collect();
-    let voices: Vec<Box<dyn Voice>> = live.par_iter().map(|e| part.inst.voice(&e.on)).collect();
+    let make = |e: &&Event| match &part.custom {
+        Some(c) => c.voice_at(&e.on, e.start as f64 / rate as f64),
+        None => part.inst.voice(&e.on),
+    };
+    // Instruments with shared per-note state (glide) need note order.
+    let voices: Vec<Box<dyn Voice>> = if part.inst.ordered_voices() { live.iter().map(make).collect() } else { live.par_iter().map(make).collect() };
     let mut jobs: Vec<Job> = Vec::with_capacity(live.len());
     let mut last_in_class: std::collections::HashMap<u32, usize> = Default::default();
     for (e, voice) in live.into_iter().zip(voices) {
@@ -306,7 +314,7 @@ mod tests {
     #[test]
     fn renders_sample_accurately_and_deterministically() {
         let notes: Vec<Note> = (0..200).map(|i| Note { t: i as f64 * 0.25, len: 0.2, key: 60.0 + (i % 12) as f32, vel: 0.8 }).collect();
-        let part = Part { name: "t".into(), inst: Arc::new(Sine), notes, humanize: 0.0, seed: 1, straight: false };
+        let part = Part { name: "t".into(), inst: Arc::new(Sine), notes, humanize: 0.0, seed: 1, straight: false, custom: None };
         let grid = Grid { bpm: 120.0, ..Default::default() };
         let (l, _) = render_part(&part, &grid, 48_000, 48_000 * 30);
         // The first note starts exactly at frame 0, the second at 6000 (0.125 s).
@@ -322,7 +330,7 @@ mod tests {
     #[test]
     fn choke_groups_cut_open_hats() {
         let notes = vec![Note { t: 0.0, len: 4.0, key: 46.0, vel: 1.0 }, Note { t: 1.0, len: 0.1, key: 42.0, vel: 0.0 }];
-        let part = Part { name: "h".into(), inst: Arc::new(Sine), notes, humanize: 0.0, seed: 1, straight: false };
+        let part = Part { name: "h".into(), inst: Arc::new(Sine), notes, humanize: 0.0, seed: 1, straight: false, custom: None };
         let grid = Grid::default();
         let (l, _) = render_part(&part, &grid, 48_000, 48_000 * 3);
         // After the choke (0.5 s) plus the kill window, the open hat is silent.

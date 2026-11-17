@@ -1,5 +1,6 @@
 {
  "about": "A raymarched still-life world from the shader library with flush-left type and a cinematic grade. Swap the shader for any library entry (anikit-video recipes) or your own GLSL.",
+ "cost": "draft ~25 s, final ~38 s (1080p, 4 cores)",
  "spec": {
   "size": "16:9",
   "post": {

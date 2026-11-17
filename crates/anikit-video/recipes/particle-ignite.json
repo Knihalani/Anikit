@@ -1,5 +1,6 @@
 {
- "about": "A word made of 400k glowing particles that ignites, drifts on curl-noise flow and burns out. Change the emitter text, colours and flow.",
+ "about": "A word made of 200k glowing particles that ignites, drifts on curl-noise flow and burns out. Change the emitter text, colours and flow.",
+ "cost": "draft ~16 s, final ~58 s (1080p, 4 cores)",
  "spec": {
   "size": "16:9",
   "scenes": [
@@ -79,9 +80,7 @@
          "emissive": 3,
          "blend": "add"
         }
-       ],
-       "quality": "draft",
-       "resolution": 0.5
+       ]
       }
      }
     ]
