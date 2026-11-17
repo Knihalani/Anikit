@@ -32,17 +32,17 @@ These numbers come from a 4-core cloud VM (Intel Xeon @ 2.10 GHz) using the defa
 
 | | |
 |---|---|
-| Render wall time | **10.9 s** for 36 s of video (12.3 s including process start and audio analysis) |
-| Render speed | **100 fps** (1080 frames, 3.3× real time) |
-| Output | 34.1 MB MP4 (H.264 1080×1920 + AAC), mastered to −11.8 LUFS |
+| Render wall time | **10.1 s** for 36 s of video (11.4 s including process start and audio analysis) |
+| Render speed | **107 fps** (1080 frames, 3.6× real time) |
+| Output | 28.5 MB MP4 (H.264 1080×1920 + AAC), mastered to −11.8 LUFS |
 | Beat detection | 120.0 BPM; the grid is within 4 ms of the true beat |
-| Sync | All 49 cuts and word reveals are within **3.4 ms** of a detected beat (one frame is 33 ms) |
+| Sync | All 53 cuts and word reveals are within **3.4 ms** of a detected beat (one frame is 33 ms) |
 
 ## Structure (bar = 2 s)
 
 | Time | Bars | Music | Picture |
 |---|---|---|---|
-| 0–4 | 1–2 | Filtered kick, pad, lead teaser | `PULSE` glitches in over a beat-pulsing dot grid; "TURN IT UP" karaoke, one word per beat |
+| 0–4 | 1–2 | Filtered kick, pad, lead teaser | `PULSE` glitches in, then snaps cyan, pink, lime and white on successive beats over a dot grid that steps with the kick; "TURN IT UP" karaoke, one word per beat |
 | 4–12 | 3–6 | Verse: kick, bass, claps | One lyric per bar, cut on the downbeat: bars visualizer, radial visualizer, metaballs, diagonal grid; mask, pop, slide and drop styles |
 | 12–16 | 7–8 | Snare roll and riser; the kick drops out on the last beat | `PULSE` forms from 7,000 particles while the camera creeps in; 4·3·2·1 lands on the last four beats |
 | **16** | **9** | **Drop** | The palette flips from violet/cyan night to acid lime with ink and hot pink. The particle word bursts, a shockwave ring fires, confetti bursts, the camera shakes and `DROP` pops in, pulsing on every beat |
@@ -50,13 +50,14 @@ These numbers come from a 4-core cloud VM (Intel Xeon @ 2.10 GHz) using the defa
 | 28–32 | 15–16 | Breakdown | God rays and slow metaballs; "FEEL IT IN YOUR CHEST" karaoke |
 | 32–36 | 17–18 | Final hit and tail | Sparks, a lens-flare sweep and the wordmark; the credits land on beats 69 and 70 |
 
-The camera zoom pulses on every beat with an expression: `"zoom": "=1 + 0.03 * exp(-7 * (gt * 2 - floor(gt * 2)))"`.
+The camera zoom pulses on every beat with an expression: `"zoom": "=1 + 0.03 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)"`. The punch returns to exactly 1 within a fifth of a beat, so the frames between kicks repeat.
 
 ## Engine additions made for this film
 
 These are small and additive, with tests and doc lines:
 
 - **Beat markers.** `"@beat17"` and `"@bar9+0.5"` resolve to the beat grid detected in the spec's music track (`src/eval/beat_markers.rs`). The detector's grid is refitted to the onsets, which removed about 60 ms of drift over 36 s.
+- **`kinetic-grid` `step`:** the wave snaps forward once per beat and then holds, so frames between kicks are identical. It reads as more rhythmic, and the file is 16% smaller.
 - **`anikit-video beats music.wav [--json]`** prints the tempo, beats and bars.
 - **`particle-text`** has two new props:
   - `blend: "normal"` gives dark particles on a light background;

@@ -299,6 +299,7 @@ Put the same file in the spec's `audio` so you hear what you see; use `offset` w
 | `size`, `min` | `0.8`, `0.16` | Shape size at the crest and trough, as fractions of a cell. |
 | `rotate` | `90` (`0` for dots) | Degrees of turn at the crest. |
 | `delay` | `0` | Cells pop in from the centre. |
+| `step` | `0` | Seconds per step (e.g. `0.5` = one beat at 120 BPM): the wave snaps forward at each step and holds, so it moves on the beat and frames in between are identical (smaller files). |
 
 ### `reactions`: live-stream reaction burst
 ```json

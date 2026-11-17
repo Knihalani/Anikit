@@ -28,12 +28,12 @@
       "id": "intro",
       "duration": "@bar3",
       "background": "radial-gradient(#1b1240, $ink)",
-      "camera": {"zoom": "=1 + 0.025 * exp(-7 * (gt * 2 - floor(gt * 2)))"},
+      "camera": {"zoom": "=1 + 0.025 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)"},
       "layers": [
         {
           "component": "kinetic-grid",
           "opacity": 0.4,
-          "props": {"shape": "dot", "wave": "radial", "colors": ["#7b5cff", "#22e4ff"], "speed": 2, "cols": 14}
+          "props": {"shape": "dot", "wave": "radial", "colors": ["#7b5cff", "#22e4ff"], "speed": 2, "cols": 14, "step": 0.5}
         },
         {
           "shape": "circle",
@@ -42,12 +42,12 @@
           "fill": "none",
           "stroke": {"color": "#22e4ff", "width": 6},
           "glow": {"radius": 30, "color": "#22e4ff"},
-          "scale": "=0.8 + 0.25 * exp(-6 * (gt * 2 - floor(gt * 2)))",
-          "opacity": "=0.25 + 0.6 * exp(-6 * (gt * 2 - floor(gt * 2)))"
+          "scale": "=0.8 + 0.25 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)",
+          "opacity": "=0.25 + 0.6 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)"
         },
         {
           "type": "group",
-          "scale": "=1 + 0.07 * exp(-7 * (gt * 2 - floor(gt * 2)))",
+          "scale": "=1 + 0.1 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)",
           "layers": [
             {
               "text": "PULSE",
@@ -55,7 +55,47 @@
               "size": "12.5vh",
               "kinetic": {"style": {"type": "glitch", "amount": 0.2}, "unit": "char", "stagger": 0.06, "duration": 0.45},
               "glow": {"radius": 40, "intensity": 0.8, "color": "#7b5cff"},
-              "y": "44%"
+              "y": "44%",
+              "end": "@beat2"
+            },
+            {
+              "text": "PULSE",
+              "style": "mega",
+              "size": "12.5vh",
+              "glow": {"radius": 40, "intensity": 0.8, "color": "#7b5cff"},
+              "y": "44%",
+              "color": "#22e4ff",
+              "start": "@beat2",
+              "end": "@beat3"
+            },
+            {
+              "text": "PULSE",
+              "style": "mega",
+              "size": "12.5vh",
+              "glow": {"radius": 40, "intensity": 0.8, "color": "#7b5cff"},
+              "y": "44%",
+              "color": "#ff2e88",
+              "start": "@beat3",
+              "end": "@beat4"
+            },
+            {
+              "text": "PULSE",
+              "style": "mega",
+              "size": "12.5vh",
+              "glow": {"radius": 40, "intensity": 0.8, "color": "#7b5cff"},
+              "y": "44%",
+              "color": "#c8ff1a",
+              "start": "@beat4",
+              "end": "@beat5"
+            },
+            {
+              "text": "PULSE",
+              "style": "mega",
+              "size": "12.5vh",
+              "glow": {"radius": 40, "intensity": 0.8, "color": "#7b5cff"},
+              "y": "44%",
+              "color": "#f6f4ff",
+              "start": "@beat5"
             }
           ]
         },
@@ -75,7 +115,7 @@
       "id": "lights",
       "duration": 2,
       "background": "#07060f",
-      "camera": {"zoom": "=1 + 0.03 * exp(-7 * (gt * 2 - floor(gt * 2)))"},
+      "camera": {"zoom": "=1 + 0.03 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)"},
       "layers": [
         {
           "component": "visualizer",
@@ -107,7 +147,7 @@
       "id": "signal",
       "duration": 2,
       "background": "linear-gradient(160deg, #3a1cff, #12083a)",
-      "camera": {"zoom": "=1 + 0.03 * exp(-7 * (gt * 2 - floor(gt * 2)))"},
+      "camera": {"zoom": "=1 + 0.03 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)"},
       "layers": [
         {
           "component": "visualizer",
@@ -139,7 +179,7 @@
       "id": "city",
       "duration": 2,
       "background": "#07060f",
-      "camera": {"zoom": "=1 + 0.03 * exp(-7 * (gt * 2 - floor(gt * 2)))"},
+      "camera": {"zoom": "=1 + 0.03 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)"},
       "layers": [
         {"component": "metaballs", "opacity": 0.85, "props": {"count": 7, "colors": ["#7b5cff", "#ff2e88"], "size": 0.1, "speed": 2.2}},
         {
@@ -155,9 +195,13 @@
       "id": "noise",
       "duration": 2,
       "background": "#ff2e88",
-      "camera": {"zoom": "=1 + 0.03 * exp(-7 * (gt * 2 - floor(gt * 2)))"},
+      "camera": {"zoom": "=1 + 0.03 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)"},
       "layers": [
-        {"component": "kinetic-grid", "opacity": 0.35, "props": {"shape": "square", "wave": "diagonal", "colors": ["#07060f", "#7b5cff"], "speed": 3}},
+        {
+          "component": "kinetic-grid",
+          "opacity": 0.35,
+          "props": {"shape": "square", "wave": "diagonal", "colors": ["#07060f", "#7b5cff"], "speed": 3, "step": 0.5}
+        },
         {
           "text": "WE’RE\nTHE\nNOISE",
           "style": "mega",
@@ -186,13 +230,13 @@
           "height": 900,
           "props": {
             "text": "PULSE",
-            "count": 7000,
+            "count": 5000,
             "colors": ["#22e4ff", "#7b5cff", "#ff2e88"],
             "form": 1.8,
             "hold": 3,
             "exit": "none",
             "exitTime": 1.4,
-            "size": 3.2
+            "size": 3.6
           },
           "end": "@bar9"
         },
@@ -278,12 +322,12 @@
         },
         {
           "type": "group",
-          "scale": "=1 + 0.09 * exp(-7 * (gt * 2 - floor(gt * 2)))",
+          "scale": "=1 + 0.09 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)",
           "layers": [
             {
               "text": "DROP",
               "style": "mega",
-              "size": "18vh",
+              "size": "16.2vh",
               "color": "#07060f",
               "y": "46%",
               "start": "@bar9+0.5",
@@ -309,7 +353,7 @@
       "id": "frequency",
       "duration": 4,
       "background": "#c8ff1a",
-      "camera": {"zoom": "=1 + 0.05 * exp(-8 * (gt * 2 - floor(gt * 2)))"},
+      "camera": {"zoom": "=1 + 0.05 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)"},
       "layers": [
         {
           "component": "visualizer",
@@ -327,11 +371,18 @@
             "radius": 0.42
           }
         },
-        {"shape": "circle", "y": "40%", "width": 520, "height": 520, "fill": "#07060f", "scale": "=0.93 + 0.1 * exp(-8 * (gt * 2 - floor(gt * 2)))"},
+        {
+          "shape": "circle",
+          "y": "40%",
+          "width": 520,
+          "height": 520,
+          "fill": "#07060f",
+          "scale": "=0.93 + 0.1 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)"
+        },
         {
           "text": "WE ARE THE\nFREQUENCY",
           "style": "big",
-          "size": "8.5vh",
+          "size": "7.8vh",
           "color": "#07060f",
           "y": "73%",
           "kinetic": {"style": {"type": "karaoke", "active": "#ff2e88", "dim": 0.22}, "unit": "word", "stagger": 0.5}
@@ -342,7 +393,7 @@
       "id": "shape",
       "duration": 2,
       "background": "#07060f",
-      "camera": {"zoom": "=1 + 0.05 * exp(-8 * (gt * 2 - floor(gt * 2)))"},
+      "camera": {"zoom": "=1 + 0.05 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)"},
       "layers": [
         {
           "component": "morph",
@@ -363,7 +414,8 @@
           "style": "big",
           "color": "#c8ff1a",
           "y": "76%",
-          "kinetic": {"style": "flip", "unit": "word", "stagger": 0.5, "duration": 0.35}
+          "kinetic": {"style": "flip", "unit": "word", "stagger": 0.5, "duration": 0.35},
+          "size": "9.6vh"
         }
       ]
     },
@@ -371,38 +423,38 @@
       "id": "louder",
       "duration": 2,
       "background": "#ff2e88",
-      "camera": {"zoom": "=1 + 0.06 * exp(-8 * (gt * 2 - floor(gt * 2)))"},
+      "camera": {"zoom": "=1 + 0.06 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)"},
       "layers": [
         {
           "component": "kinetic-grid",
           "opacity": 0.5,
-          "props": {"shape": "rounded", "wave": "interference", "colors": ["#07060f", "#ff5a1f"], "speed": 3}
+          "props": {"shape": "rounded", "wave": "interference", "colors": ["#07060f", "#ff5a1f"], "speed": 3, "step": 0.5}
         },
         {
           "text": "LOUDER",
           "style": "mega",
-          "size": "14vh",
+          "size": "12.2vh",
           "color": "#07060f",
           "start": 0,
           "end": 0.5,
           "enter": {"preset": "zoomIn", "duration": 0.2}
         },
-        {"text": "THAN", "style": "mega", "size": "19vh", "color": "#f6f4ff", "start": 0.5, "end": 1, "enter": {"preset": "zoomIn", "duration": 0.2}},
+        {"text": "THAN", "style": "mega", "size": "17vh", "color": "#f6f4ff", "start": 0.5, "end": 1, "enter": {"preset": "zoomIn", "duration": 0.2}},
         {"text": "THE", "style": "mega", "size": "22vh", "color": "#07060f", "start": 1, "end": 1.5, "enter": {"preset": "zoomIn", "duration": 0.2}},
-        {"text": "CITY", "style": "mega", "size": "22vh", "color": "#f6f4ff", "start": 1.5, "enter": {"preset": "zoomIn", "duration": 0.2}}
+        {"text": "CITY", "style": "mega", "size": "20.2vh", "color": "#f6f4ff", "start": 1.5, "enter": {"preset": "zoomIn", "duration": 0.2}}
       ]
     },
     {
       "id": "allnight",
       "duration": 2,
       "background": "#c8ff1a",
-      "camera": {"zoom": "=1 + 0.05 * exp(-8 * (gt * 2 - floor(gt * 2)))"},
+      "camera": {"zoom": "=1 + 0.05 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)"},
       "layers": [
         {"component": "metaballs", "props": {"count": 10, "colors": ["#ff2e88", "#ff5a1f"], "size": 0.09, "speed": 3}},
         {
           "text": "ALL\nNIGHT",
           "style": "mega",
-          "size": "18vh",
+          "size": "15.7vh",
           "color": "#07060f",
           "kinetic": {"style": "rise", "unit": "word", "stagger": 0.5, "duration": 0.35, "ease": "outExpo"}
         },
@@ -432,7 +484,7 @@
           "type": "group",
           "y": "70%",
           "height": 700,
-          "scale": "=1 + 0.04 * exp(-7 * (gt * 2 - floor(gt * 2)))",
+          "scale": "=1 + 0.04 * pow(max(0, 1 - 2.5 * (gt * 2 - floor(gt * 2))), 3)",
           "layers": [
             {
               "text": "FEEL IT\nIN YOUR\nCHEST",
