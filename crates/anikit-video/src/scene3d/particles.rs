@@ -2108,8 +2108,8 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     }
                 }
                 if refm {
-                    // Exact: a box-filtered disc of the full footprint at 32 instants.
-                    let nt = if ml > 0.01 { 32 } else { 1 };
+                    // Exact: the full footprint at 32–128 instants (at most 0.5 px apart).
+                    let nt = if ml > 0.01 { ((ml * 2.0).ceil() as usize).clamp(32, 128) } else { 1 };
                     let vv = val.map(|x| x / nt as f32);
                     for k in 0..nt {
                         let u = if nt == 1 { 0.0 } else { (k as f32 + 0.5) / nt as f32 - 0.5 };
