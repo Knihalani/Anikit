@@ -240,6 +240,7 @@ Files here (read every one with the Read tool):
 {audio_line}
 Measured pace (shot lengths, change per second):
 {pace}
+World-class median shot for this kind of piece (REFS benchmark): {pace_hint}. Judge dead air (anything static > ~1 s without a reason) more than cut count.
 
 Scale (integers 1-10): 10 = among the best of the year; 8 = strong studio work; 6 = competent professional; 4 = template / student; 2 = obvious AI or automated output.
 Score: motion (choreography, timing, weight, variety of movement, transitions), sound ({sound_rule}), craft (finish at 100%, defects: stepping, banding, aliasing, clipped or soft text, pops).
@@ -251,11 +252,13 @@ Also answer these yes/no checks strictly (yes only if clearly true from what you
 - type_meaning: is some type property (weight, width, size, placement, timing) mapped to meaning, beyond fade/slide in?
 - freeze_frame: would each of the 6 frames work as a poster?
 - ending: does the end pay off and settle, ideally rhyming with the opening?
+- restraint: one subject per frame, 2-4 colours plus an accent, one deliberate type family?
+- material: at the 100% crop, is there texture and light with falloff?
 - sync: do visible impacts/cuts appear to land on audio transients? (null if silent)
 Checks never raise a score; a "no" is a gap.
 
 Answer with ONLY one fenced ```json block:
-{{"scores": {{"motion": n, "sound": n or null, "craft": n}}, "checks": {{"idea": bool, "invariant": bool, "arc": bool, "type_meaning": bool, "freeze_frame": bool, "ending": bool, "sync": bool or null}},
+{{"scores": {{"motion": n, "sound": n or null, "craft": n}}, "checks": {{"idea": bool, "invariant": bool, "arc": bool, "type_meaning": bool, "freeze_frame": bool, "ending": bool, "restraint": bool, "material": bool, "sync": bool or null}},
  "defects": ["..."], "gaps": ["the 3 biggest motion/sound/finish gaps vs top studio work"]}}"""
 
 # ---------------------------------------------------------------- stage 1
@@ -314,7 +317,17 @@ def summarise(trials):
 
 # ---------------------------------------------------------------- stage 2
 
-def critic(src, workdir):
+PACE_HINTS = [("broadcast-sports", "about 1.0 s"), ("social-vertical", "1.5 s or less"), ("brand-idents", "1.5 s or less"),
+              ("ui-product", "1.5 s or less"), ("product-launch", "about 2 s"), ("explainer-2d", "3-4 s with in-shot motion"),
+              ("kinetic-type", "3-4 s with in-shot motion"), ("title-sequence", "3-4 s with in-shot motion")]
+
+
+def pace_hint(tags):
+    tags = set(tags) | {SYNONYMS[t] for t in tags if t in SYNONYMS}
+    return next((h for t, h in PACE_HINTS if t in tags), "about 2.5 s overall, every shot alive")
+
+
+def critic(src, workdir, tags=()):
     info = ffprobe(src)
     blind = Path(tempfile.mkdtemp(prefix="c"))
     fr = video_frames(src)
@@ -359,7 +372,7 @@ def critic(src, workdir):
                       "You cannot hear it: infer arrangement density, dynamics, hit sync with cuts, and whether it is "
                       "thin generated synth (few partials, static) or produced music and sound design.")
         sound_rule = "from the spectrogram: arrangement, dynamics, sync to picture, sound design; be conservative"
-    ans, meta = claude(CRITIC_PROMPT.format(audio_line=audio_line, pace=pace, sound_rule=sound_rule), blind)
+    ans, meta = claude(CRITIC_PROMPT.format(audio_line=audio_line, pace=pace, sound_rule=sound_rule, pace_hint=pace_hint(tags)), blind)
     shutil.copytree(blind, workdir / "critic", dirs_exist_ok=True)
     shutil.rmtree(blind, ignore_errors=True)
     return {"answer": ans, "meta": meta, "pace": pace}
@@ -382,7 +395,7 @@ def judge(name, frames, tags, args, exclude=(), video=None):
               "ref_mean": ref_mean, "delta": round(cand["overall"] - ref_mean, 2) if ref_mean and cand.get("overall") else None,
               "trials": trials}
     if video and not args.no_critic:
-        c = critic(video, out)
+        c = critic(video, out, tags)
         result["critic"] = c
         s = c["answer"].get("scores", {})
         dims = dict(cand.get("scores", {}))
