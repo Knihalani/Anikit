@@ -2,8 +2,8 @@
 //!
 //! A look bundles a palette, a type pairing and text styles, materials (radius,
 //! text shadow or glow), a motion grammar (default text entrance), the default
-//! transition, camera language and world layers (a backdrop under every scene
-//! and post layers over it: grain, vignette).
+//! transition, camera language, world layers (a backdrop under every scene and
+//! overlay layers over it, e.g. grain) and the finishing grade (`post`, `motionBlur`).
 //!
 //! In a spec: `"look": "noir"`, composed `"look": ["editorial", "noir"]`
 //! (later wins), or overridden `"look": {"base": "swiss", "theme": {"colors": {"primary": "#0050FF"}}}`.
@@ -148,12 +148,15 @@ pub fn apply(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
         }
         root.insert("theme".into(), theme);
     }
-    if let Some(t) = look.get("transition") {
-        root.entry("transition").or_insert_with(|| t.clone());
+    // Finishing: the colour grade and motion blur, unless the spec sets its own.
+    for k in ["transition", "post", "motionBlur"] {
+        if let Some(t) = look.get(k).filter(|x| !x.is_null()) {
+            root.entry(k).or_insert_with(|| t.clone());
+        }
     }
     let empty = Vec::new();
     let backdrop = look.get("backdrop").and_then(|x| x.as_array()).unwrap_or(&empty);
-    let post = look.get("post").and_then(|x| x.as_array()).unwrap_or(&empty);
+    let overlay = look.get("overlay").and_then(|x| x.as_array()).unwrap_or(&empty);
     let some = |k: &str| look.get(k).filter(|x| !x.is_null());
     let enter = some("enter");
     let shadow = some("textShadow");
@@ -215,7 +218,7 @@ pub fn apply(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
                     ls.insert(i, b.clone());
                 }
             }
-            ls.extend(post.iter().cloned());
+            ls.extend(overlay.iter().cloned());
         }
     }
     Ok(v)
@@ -341,6 +344,7 @@ mod tests {
         assert_eq!(s0[0]["id"], "look-rays");
         assert_eq!(s0[1]["enter"], "fade");
         assert_eq!(s0.last().unwrap()["id"], "look-grain");
+        assert_eq!(v["post"]["preset"], "noir");
         assert_eq!(v["scenes"][1]["layers"].as_array().unwrap().len(), 1);
         let raw = json!({ "look": "neon-night", "scenes": [ { "layers": [ { "text": "a" } ] }, { "look": false, "layers": [] } ] });
         let off = layer_offsets(&raw);

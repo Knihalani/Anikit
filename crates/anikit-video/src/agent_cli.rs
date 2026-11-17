@@ -597,7 +597,7 @@ pub fn looks_text(name: Option<&str>, full: bool) -> Result<String, String> {
     let f = &l["theme"]["fonts"];
     let comp = |k: &str| l.get(k).and_then(|x| x.as_array()).map(|a| a.iter().filter_map(|x| x["component"].as_str()).collect::<Vec<_>>().join(", ")).unwrap_or_default();
     Ok(format!(
-        "{} ({n}, {})\n{}\npalette: bg {} · text {} · primary {} · accent {}\ntype: {} / {}\nmotion: enter {} · transition {}\nworld: {} · post: {}\nOverride anything: {{\"look\": {{\"base\": \"{n}\", \"theme\": {{\"colors\": {{\"primary\": \"#...\"}}}}}}}}; --json prints it all.\n",
+        "{} ({n}, {})\n{}\npalette: bg {} · text {} · primary {} · accent {}\ntype: {} / {}\nmotion: enter {} · transition {}\nworld: {} · over: {}\nOverride anything: {{\"look\": {{\"base\": \"{n}\", \"theme\": {{\"colors\": {{\"primary\": \"#...\"}}}}}}}}; --json prints it all.\n",
         g("title"),
         g("mode"),
         g("direction"),
@@ -610,7 +610,11 @@ pub fn looks_text(name: Option<&str>, full: bool) -> Result<String, String> {
         compact(&l["enter"]),
         compact(&l["transition"]),
         comp("backdrop"),
-        { let p = comp("post"); if p.is_empty() { "none".into() } else { p } },
+        {
+            let p = comp("overlay");
+            let g = compact(&l["post"]);
+            if p.is_empty() { format!("grade {g}") } else { format!("{p} · grade {g}") }
+        },
         n = l["name"].as_str().unwrap_or(n),
     ))
 }

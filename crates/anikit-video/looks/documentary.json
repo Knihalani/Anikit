@@ -87,7 +87,7 @@
    "height": "100%"
   }
  ],
- "post": [
+ "overlay": [
   {
    "id": "look-grain",
    "component": "grain",
@@ -98,5 +98,8 @@
    "width": "100%",
    "height": "100%"
   }
- ]
+ ],
+ "post": {
+  "preset": "cinematic"
+ }
 }

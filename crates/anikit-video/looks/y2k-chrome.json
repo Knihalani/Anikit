@@ -71,5 +71,11 @@
    "height": "100%"
   }
  ],
- "post": []
+ "overlay": [],
+ "post": {
+  "preset": "dreamy",
+  "bloom": 0.45,
+  "aberration": 0.25
+ },
+ "motionBlur": true
 }

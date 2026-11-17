@@ -71,5 +71,6 @@
    "height": "100%"
   }
  ],
- "post": []
+ "overlay": [],
+ "post": "clean"
 }
