@@ -45,6 +45,10 @@ pub const RECIPES: &[(&str, &str)] = &[
     ("particle-ignite", include_str!("../recipes/particle-ignite.json")),
     ("domino-cascade", include_str!("../recipes/domino-cascade.json")),
     ("raymarch-world", include_str!("../recipes/raymarch-world.json")),
+    ("swiss-grid-poster", include_str!("../recipes/swiss-grid-poster.json")),
+    ("riso-overprint", include_str!("../recipes/riso-overprint.json")),
+    ("torn-collage", include_str!("../recipes/torn-collage.json")),
+    ("op-art-field", include_str!("../recipes/op-art-field.json")),
 ];
 
 const ALIASES: &[(&str, &str)] = &[
