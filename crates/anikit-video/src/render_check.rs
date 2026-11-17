@@ -184,7 +184,7 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
             let large = b.size / SCALE >= fmt.width.min(fmt.height) as f32 * 0.03;
             let need = if large { 3.0 } else { 4.5 };
             if let Some(c) = worst_contrast(&bg, w, h, b.rect, b.color) {
-                if c < need {
+                if c + 0.05 < need {
                     push(format!("c{where_}{i}"), Note {
                         severity: if c < 2.0 { "error" } else { "warning" },
                         check: "render-contrast",
