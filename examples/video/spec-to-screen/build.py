@@ -67,15 +67,18 @@ scenes = []
 # 0 – 4 s. Two hard beats of type: "This film" / "is a JSON file."
 scenes.append({
     "id": "hook", "duration": 4.5, "background": INK,
+    "camera": {"animate": [{"from": {"zoom": 1.0}, "to": {"zoom": 1.07}, "duration": 4.5, "ease": "inOutSine"}]},
     "layers": [
+        {"shape": "circle", "width": 1100, "height": 520, "fill": ICE, "opacity": 0, "blur": 160, "y": "52%",
+         "animate": [{"to": {"opacity": 0.10}, "duration": 1.6, "ease": "outCubic"},
+                     {"to": {"opacity": 0.22, "fill": LILAC}, "at": 2.0, "duration": 1.2}]},
         comp("dots", {"spacing": 44, "radius": 1.4, "color": "#ffffff14", "fade": 0.9}),
         text("This film", style="title", size="12vh", letterSpacing="-0.035em",
              kinetic="mask by word up 0.7s 90ms outExpo", end=1.9,
              exit={"preset": "blurOut", "duration": 0.25}),
         text("is a [JSON file.]{%s}" % ICE, style="title", size="11vh", letterSpacing="-0.035em",
              start=2.0, kinetic="mask by word up 0.7s 90ms outExpo"),
-        text("{ }", font="$mono", size="3vh", color=MUTED, y="74%", start=2.6, enter="fadeUp"),
-        grain,
+                grain,
     ],
 })
 
@@ -95,35 +98,49 @@ CODE = """{
 CPS, TYPE_AT = 26.0, 0.6
 sched = typing_schedule(CODE, CPS)
 done = lambda i: round(TYPE_AT + sched[i][1] + 0.05, 2)  # line i finished typing
-SPEC_DUR = round(done(11) + 2.6, 1)
+SPEC_DUR = 11.0  # cut on the beat at 15.5 s
 
 # stage: the "screen" on the right that the spec compiles into
-SW, SH, SX, SY = 860, 484, 1390, 560
-stage_layers = [
-    rect(SW, SH, radius=18, fill="#0b0d14", opacity=0, x="50%", y="50%",
-         animate=[{"to": {"opacity": 1}, "at": done(4), "duration": 0.4}]),
-    comp("aurora", {"colors": [ICE, LILAC, MINT], "intensity": 0.7, "seed": 3},
-         start=done(6), enter={"preset": "fadeIn", "duration": 0.8}),
-    comp("globe", {"arcs": [[37.8, -122.4, 51.5, -0.1], [51.5, -0.1, 35.7, 139.7], [37.8, -122.4, -33.9, 151.2]],
-                   "markers": [[37.8, -122.4], [51.5, -0.1]], "scale": 0.9, "stagger": 0.3, "draw": 1.0},
-         width=SW, height=SH * 1.6, y="88%", start=done(8), enter={"preset": "fadeUp", "duration": 0.7}),
-    text("Spec to Screen", style="title", size=64, letterSpacing="-0.03em", y="40%",
-         start=done(7), kinetic="rise by char 0.6s 25ms outExpo"),
-]
+SW, SH, SX, SY = 840, 472.5, 1345, 560
+ARCS = [[37.8, -122.4, 51.5, -0.1], [51.5, -0.1, 35.7, 139.7], [37.8, -122.4, -33.9, 151.2],
+        [35.7, 139.7, 1.35, 103.8]]
+
+
+def screen_layers(t_bg=None, t_aurora=None, t_title=None, t_globe=None, globe_age=0.0):
+    """The 'Spec to Screen' frame, full size. Used full-frame in scene 3 and,
+    scaled down, as the live stage in scene 2 (so the push-in matches exactly)."""
+    def at(t, enter):
+        return {} if t is None else {"start": t, "enter": enter}
+    return [
+        rect(1920, 1080, fill="#0b0d14", **({} if t_bg is None else
+             {"opacity": 0, "animate": [{"to": {"opacity": 1}, "at": t_bg, "duration": 0.4}]})),
+        comp("aurora", {"colors": [ICE, LILAC, MINT], "intensity": 0.75, "seed": 3},
+             **at(t_aurora, {"preset": "fadeIn", "duration": 0.8})),
+        comp("globe", {"arcs": ARCS, "markers": [[37.8, -122.4], [51.5, -0.1], [35.7, 139.7]], "scale": 1.0,
+                       "stagger": 0.25, "draw": 1.0}, height=1700, y="96%",
+             **(at(t_globe, {"preset": "fadeUp", "duration": 0.7}) if t_globe is not None else {"start": -globe_age})),
+        text("Spec to Screen", style="title", size="12vh", letterSpacing="-0.035em", y="36%",
+             shadow={"x": 0, "y": 8, "blur": 40, "color": "#0009"},
+             **({} if t_title is None else {"start": t_title, "kinetic": "rise by char 0.6s 25ms outExpo"})),
+    ]
+
+
+ZOOM = 1920 / SW
+stage_layers = screen_layers(t_bg=done(4), t_aurora=done(6), t_title=done(7), t_globe=done(8))
 scenes.append({
     "id": "spec", "duration": SPEC_DUR, "background": INK,
     "transition": {"type": "cut"},
     "camera": {"animate": [
         {"from": {"zoom": 1.0}, "to": {"zoom": 1.03}, "at": 0, "duration": SPEC_DUR - 1.4, "ease": "linear"},
-        {"to": {"zoom": 2.15, "x": SX - 960, "y": SY - 540}, "at": SPEC_DUR - 1.4, "duration": 1.4, "ease": "inOutQuart"},
+        {"to": {"zoom": ZOOM, "x": SX - 960, "y": SY - 540}, "at": SPEC_DUR - 1.4, "duration": 1.4, "ease": "inOutQuart"},
     ]},
     "layers": [
         comp("grid", {"cell": 64, "color": "#ffffff0a", "fade": 0.8}),
                 comp("code", {"code": CODE, "language": "json", "title": "spec.json", "fontSize": 25, "typing": CPS,
                       "delay": TYPE_AT, "chrome": "mac", "glow": "#7cc4ff30",
-                      "highlights": [{"lines": [i + 1], "at": done(i) - TYPE_AT, "until": done(i) - TYPE_AT + 0.7}
+                      "highlights": [{"lines": [i + 1], "at": done(i) - TYPE_AT, "until": done(i) - TYPE_AT + 0.7, "dim": False}
                                      for i in (1, 2, 4, 6, 7, 8)]},
-             x=520, y=SY, width=800, height=520, enter={"preset": "fadeUp", "duration": 0.6}),
+             x=495, y=SY, width=770, height=600, enter={"preset": "fadeUp", "duration": 0.6}),
         # the stage frame draws on when "size" is typed
         rect(SW + 2, SH + 2, radius=19, fill="none", stroke={"color": "#ffffff33", "width": 2}, x=SX, y=SY,
              start=done(1) - 0.6, enter={"preset": "drawOn", "duration": 0.6}),
@@ -131,8 +148,8 @@ scenes.append({
              start=done(1), enter="fadeIn"),
         text("60 fps", font="$mono", size=24, color=ICE, x=SX + SW / 2, y=SY - SH / 2 - 26, anchor="right",
              start=done(2), enter="popIn"),
-        {"type": "group", "x": SX, "y": SY, "width": SW, "height": SH, "clip": True, "radius": 18,
-         "layers": stage_layers},
+        {"type": "group", "x": SX, "y": SY, "width": 1920, "height": 1080, "scale": SW / 1920, "clip": True,
+         "radius": 40, "layers": stage_layers},
         grain,
     ],
 })
@@ -140,15 +157,10 @@ scenes.append({
 # ================================================================ 3. the screen it described
 scenes.append({
     "id": "screen", "duration": 4.0, "background": "#0b0d14",
-    "transition": {"type": "crossfade", "duration": 0.3},
-    "camera": {"animate": [{"from": {"zoom": 1.06}, "to": {"zoom": 1.0}, "duration": 4, "ease": "outCubic"}]},
+    "transition": {"type": "cut"},
+    "camera": {"animate": [{"from": {"zoom": 1.0}, "to": {"zoom": 1.04}, "duration": 4, "ease": "inOutSine"}]},
     "layers": [
-        comp("aurora", {"colors": [ICE, LILAC, MINT], "intensity": 0.75, "seed": 3}),
-        comp("globe", {"arcs": [[37.8, -122.4, 51.5, -0.1], [51.5, -0.1, 35.7, 139.7], [37.8, -122.4, -33.9, 151.2],
-                                [35.7, 139.7, 1.35, 103.8]],
-                       "markers": [[37.8, -122.4], [51.5, -0.1], [35.7, 139.7]], "scale": 1.0, "stagger": 0.25,
-                       "draw": 1.0}, height=1700, y="96%"),
-        text("Spec to Screen", style="title", size="12vh", letterSpacing="-0.035em", y="36%"),
+        *screen_layers(globe_age=round(SPEC_DUR - done(8), 3)),
         text("one file  →  one film", font="$mono", size="2.6vh", color=MUTED, y="50%",
              enter={"preset": "fadeUp", "delay": 0.6}),
         grain,
@@ -157,27 +169,27 @@ scenes.append({
 
 # ================================================================ 4. kinetic: write / check / render
 words = [("Write it.", "spec.json"), ("Check it.", "anikit-video check spec.json"),
-         ("Render it.", "anikit-video render spec.json -o film.mp4")]
+         ("Render it.", "anikit-video render spec.json")]
 kin_layers = [comp("dots", {"spacing": 44, "radius": 1.4, "color": "#ffffff12", "fade": 0.9})]
 for i, (w, cmd) in enumerate(words):
-    s, e = i * 1.25, i * 1.25 + 1.25
+    s, e = i * 2.0, i * 2.0 + 2.0
     kin_layers += [
         text(w, style="title", size="16vh", letterSpacing="-0.04em", start=s, end=e, y="46%",
              kinetic="mask by char up 0.45s 22ms outExpo",
              color=[TEXT, TEXT, ICE][i]),
-        text(cmd, font="$mono", size="2.6vh", color=MUTED, start=s + 0.15, end=e, y="62%",
+        text(cmd, font="$mono", size="3vh", color=MUTED, start=s, end=e, y="62%",
              enter={"preset": "fadeIn", "duration": 0.2}),
     ]
 kin_layers += [
-    text("No browser.", style="title", size="11vh", letterSpacing="-0.035em", start=3.75, y="40%",
+    text("No browser.", style="title", size="11vh", letterSpacing="-0.035em", start=6.0, y="40%",
          kinetic="blur by word 0.6s 80ms outCubic", color=TEXT),
-    text("No screen capture.", style="title", size="11vh", letterSpacing="-0.035em", start=4.25, y="54%",
+    text("No screen capture.", style="title", size="11vh", letterSpacing="-0.035em", start=6.5, y="54%",
          kinetic="blur by word 0.6s 80ms outCubic", color=MUTED),
-    text("Native Rust, straight to H.264.", style="subtitle", start=5.0, y="70%",
+    text("Native Rust → H.264.", style="subtitle", start=7.0, y="70%",
          enter="fadeUp"),
     grain,
 ]
-scenes.append({"id": "kinetic", "duration": 8.0, "background": INK, "transition": {"type": "cut"},
+scenes.append({"id": "kinetic", "duration": 9.5, "background": INK, "transition": {"type": "cut"},
                "layers": kin_layers})
 
 # ================================================================ 5. devices
@@ -194,8 +206,6 @@ scenes.append({
                         "shadow": True}, width=1180, height=720, x="44%", y="58%"),
         comp("phone", {"screen": "chat", "title": "Relay", "accent": LILAC, "delay": 1.1, "float": 6,
                        "time": "9:41"}, width=360, height=700, x="77%", y="60%"),
-        comp("toast", {"title": "film.mp4 ready", "body": "1080p · 60 fps", "kind": "success", "delay": 3.6,
-                       "hold": 2.4, "from": "right", "width": 420}, width=1920, height=1080),
         comp("badge", {"label": '"screen": "dashboard"', "color": ICE, "delay": 2.2}, width=420, height=56,
              x="30%", y="93%"),
         comp("badge", {"label": '"screen": "chat"', "color": LILAC, "delay": 2.5}, width=320, height=56,
@@ -210,10 +220,10 @@ scenes.append({
     "layers": [
         comp("grid", {"cell": 80, "color": "#ffffff08", "fade": 0.85}),
         text("MEASURED · 1080p · 4 CPU CORES", style="label", size=26, y="17%", enter="fadeIn"),
-        comp("counter", {"to": 935, "suffix": " fps", "size": 190, "label": "frames rendered per second", "duration": 1.6,
-                         "gradient": [TEXT, ICE]}, width=860, height=420, x="28%", y="50%"),
-        comp("counter", {"to": 1268, "suffix": " fps", "size": 190, "label": "frames encoded per second", "duration": 1.6,
-                         "delay": 0.4, "gradient": [TEXT, LILAC]}, width=860, height=420, x="72%", y="50%"),
+        comp("counter", {"to": 935, "suffix": " fps", "size": 150, "label": "frames rendered per second", "duration": 1.6,
+                         "gradient": [TEXT, ICE]}, width=760, height=420, x="27%", y="50%"),
+        comp("counter", {"to": 1268, "suffix": " fps", "size": 150, "label": "frames encoded per second", "duration": 1.6,
+                         "delay": 0.4, "gradient": [TEXT, LILAC]}, width=760, height=420, x="73%", y="50%"),
         text("ak264: our own H.264 encoder.", style="subtitle", y="80%",
              enter={"preset": "fadeUp", "delay": 1.6}),
         grain,
@@ -229,10 +239,10 @@ scenes.append({
         comp("bar-chart", {"values": [147, 1268, 1389], "labels": ["x264 veryfast", "ak264", "ak264 + renderer hints"],
                            "horizontal": True, "highlight": 2, "colors": [MUTED, ICE, LILAC], "fontSize": 30,
                            "delay": 0.4, "stagger": 0.15, "grid": False},
-             width=1120, height=520, x=160 + 560, y="58%"),
+             width=1000, height=520, x=160 + 500, y="58%"),
         comp("counter", {"from": 1, "to": 9.4, "decimals": 1, "suffix": "×", "size": 220, "delay": 1.2,
                          "duration": 1.4, "gradient": [TEXT, LILAC], "label": "faster than x264 veryfast"},
-             width=560, height=420, x="83%", y="56%"),
+             width=480, height=420, x=1500, y="56%"),
         text("Source: docs/video/encoder.md", font="$mono", size=24, color=MUTED, x=160, y="89%", anchor="left",
              enter={"preset": "fadeIn", "delay": 1.0}),
         grain,
@@ -241,7 +251,7 @@ scenes.append({
 
 # ================================================================ 7. particles
 scenes.append({
-    "id": "particles", "duration": 5.0, "background": INK, "transition": {"type": "crossfade", "duration": 0.4},
+    "id": "particles", "duration": 5.0, "background": INK, "transition": {"type": "crossfade", "duration": 0.5},
     "layers": [
         comp("particleText", {"words": ["JSON in.", "Film out."], "count": 9000, "size": 2.8, "colors": [ICE, LILAC],
                               "form": 1.1, "hold": 0.9, "exit": "explode", "exitTime": 1.0, "seed": 4}),
@@ -252,16 +262,16 @@ scenes.append({
 LOGO = 8.0
 scenes.append({
     "id": "logo", "duration": LOGO, "background": "radial-gradient(#10131d, #040508)",
-    "transition": {"type": "fadeWhite", "duration": 0.35},
+    "transition": {"type": "fadeWhite", "duration": 0.5},
     "camera": {"animate": [{"from": {"zoom": 1.08}, "to": {"zoom": 1.0}, "duration": LOGO, "ease": "outCubic"}]},
     "layers": [
         comp("godRays", {"at": [0.5, -0.15], "angle": 90, "spread": 60, "color": "#cfe3ff", "intensity": 0.35,
                          "dust": 80}),
         comp("text-3d", {"text": "ANIKIT", "gradient": ["#dfe9ff", "#e9e0ff"], "intro": "rise", "stagger": 0.08,
                         "delay": 0.2, "tilt": 10, "sway": 4, "scale": 0.78}, y="45%"),
-        comp("lensFlare", {"path": [[0.12, 0.36], [0.88, 0.40]], "times": [1.6, 3.6], "intensity": 0.9},
+        comp("lensFlare", {"path": [[0.12, 0.36], [0.88, 0.40]], "times": [1.6, 3.6], "intensity": 0.8, "ghosts": 3},
              start=0, blend="screen"),
-        text("VIDEO", style="label", size="3.2vh", letterSpacing="0.6em", color=TEXT, y="64%",
+        text("VIDEO", style="label", size="3.2vh", letterSpacing="0.6em", color=TEXT, y="67%",
              enter={"preset": "fadeIn", "delay": 1.6, "duration": 0.8}),
         text("anikit-video render spec.json", font="$mono", size="2.4vh", color=MUTED, y="80%",
              enter={"preset": "fadeUp", "delay": 2.8}),
@@ -278,19 +288,12 @@ for k, s in enumerate(scenes):
     t += s["duration"]
 
 audio = [
-    {"sfx": "whoosh", "at": 1.95, "volume": 0.35},
-    {"sfx": "typing", "at": starts["spec"] + TYPE_AT, "duration": sched[-1][1], "volume": 0.4},
-    {"sfx": "riser", "at": starts["spec"] + SPEC_DUR - 1.6, "duration": 1.6, "volume": 0.5},
-    {"sfx": "impact", "at": starts["screen"] + 0.1, "volume": 0.6},
-    {"sfx": "tick", "at": starts["kinetic"], "volume": 0.6},
-    {"sfx": "tick", "at": starts["kinetic"] + 1, "volume": 0.6},
-    {"sfx": "tick", "at": starts["kinetic"] + 2, "volume": 0.6},
-    {"sfx": "swoosh", "at": starts["devices"], "volume": 0.4},
-    {"sfx": "ding", "at": starts["speed"] + 1.7, "volume": 0.35},
-    {"sfx": "swoosh", "at": starts["chart"], "volume": 0.35},
-    {"sfx": "whoosh", "at": starts["particles"] + 3.4, "volume": 0.4},
-    {"sfx": "impact", "at": starts["logo"] + 0.3, "volume": 0.6},
-    {"sfx": "chime", "at": starts["logo"] + 1.7, "volume": 0.4},
+    {"src": "music.mp3", "volume": 0.9},  # python3 music.py (120 BPM; cuts land on beats)
+    {"sfx": "typing", "at": starts["spec"] + TYPE_AT, "duration": sched[-1][1], "volume": 0.3},
+    {"sfx": "whoosh", "at": starts["screen"] - 0.35, "volume": 0.3},
+    {"sfx": "swoosh", "at": starts["devices"] - 0.2, "volume": 0.3},
+    {"sfx": "swoosh", "at": starts["chart"] - 0.2, "volume": 0.25},
+    {"sfx": "whoosh", "at": starts["particles"] + 3.4, "volume": 0.3},
 ]
 
 spec = {
