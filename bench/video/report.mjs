@@ -130,7 +130,9 @@ const cost = (t, comp) => {
   const total = own.length + shared.length;
   return `${own.length.toLocaleString("en-US")} B${shared ? ` + ${shared.length.toLocaleString("en-US")} B shared` : ""} ≈ ${Math.round(total / 4).toLocaleString("en-US")} tok`;
 };
-for (const comp of COMPS) out.push(`| ${NAMES[comp]} | ${cost("anikit", comp)} | ${cost("remotion", comp)} | ${cost("hyperframes", comp)} |`);
+const reuse = read("../../docs/video/examples/long-reuse.json");
+const anikitCost = (comp) => cost("anikit", comp) + (comp === "long" && reuse ? `; with spec reuse (\`"repeat": 3\`, \`docs/video/examples/long-reuse.json\`): ${reuse.length.toLocaleString("en-US")} B ≈ ${Math.round(reuse.length / 4).toLocaleString("en-US")} tok` : "");
+for (const comp of COMPS) out.push(`| ${NAMES[comp]} | ${anikitCost(comp)} | ${cost("remotion", comp)} | ${cost("hyperframes", comp)} |`);
 out.push("");
 
 const md = out.join("\n");
