@@ -819,9 +819,11 @@ mod tests {
         let a = p.eval(0.6, 320.0, 240.0, 30.0, &theme, assets);
         let op = a.iter().find_map(|o| if let Op::Image { opacity, .. } = o { Some(*opacity) } else { None }).unwrap();
         assert!(op > 0.0 && op < 1.0);
-        let n = assets.image_count();
-        p.eval(0.6, 320.0, 240.0, 30.0, &theme, assets);
-        assert_eq!(assets.image_count(), n, "same frame reuses the image");
+        // Compare image ids, not the shared host's image count: other tests add
+        // images to the same preview host concurrently.
+        let id = |ops: &[Op]| ops.iter().find_map(|o| if let Op::Image { image, .. } = o { Some(*image) } else { None });
+        let b = p.eval(0.6, 320.0, 240.0, 30.0, &theme, assets);
+        assert_eq!(id(&a), id(&b), "same frame reuses the image");
     }
 
     #[test]

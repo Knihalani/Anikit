@@ -964,9 +964,9 @@
      }
     },
     {
-     "x": 864,
+     "x": 836,
      "y": 575,
-     "anchor": "bottomLeft",
+     "anchor": "bottomRight",
      "text": "2021: lanes become\nprotected; parking removed",
      "font": "Familjen Grotesk",
      "size": 26,
@@ -977,7 +977,7 @@
       "delay": 1.1,
       "duration": 0.25
      },
-     "align": "left"
+     "align": "right"
     }
    ]
   },

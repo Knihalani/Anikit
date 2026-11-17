@@ -25,7 +25,7 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 /// Sources `src` strings may name.
-pub const PROVIDERS: &[&str] = &["polyhaven", "ambientcg", "khronos", "anikit"];
+pub const PROVIDERS: &[&str] = &["polyhaven", "ambientcg", "khronos", "kenney", "anikit"];
 /// Asset types (`assets search --type`).
 pub const TYPES: &[&str] = &["hdri", "texture", "model", "lut", "image"];
 
@@ -107,6 +107,30 @@ pub fn index() -> &'static [Entry] {
         }
         v
     })
+}
+
+/// Curated HDRI moods: `"env": {"hdri": "sunset"}`. `(mood, ref, why)`.
+pub const HDRI_MOODS: &[(&str, &str, &str)] = &[
+    ("studio", "polyhaven:hdri/studio_small_09", "bright product studio, soft overhead panels, clean reflections"),
+    ("studio-warm", "polyhaven:hdri/brown_photostudio_02", "daylight photo studio with warm wood and big windows"),
+    ("studio-dark", "polyhaven:hdri/studio_small_08", "darker studio with a few strong lamps: contrasty chrome"),
+    ("sunrise", "polyhaven:hdri/spruit_sunrise", "low golden sun, mist, long shadows"),
+    ("golden-hour", "polyhaven:hdri/lilienstein", "warm late sun over a meadow, partly cloudy"),
+    ("sunset", "polyhaven:hdri/venice_sunset", "golden horizon over water, soft warm light"),
+    ("dramatic-sky", "polyhaven:hdri/the_sky_is_on_fire", "fiery twilight clouds over the sea"),
+    ("noon", "polyhaven:hdri/noon_grass", "hard overhead sun, blue sky, open field"),
+    ("park", "polyhaven:hdri/je_gray_park", "contrasty morning sun through trees"),
+    ("overcast", "polyhaven:hdri/canary_wharf", "soft grey sky, gentle shadows, urban reflections"),
+    ("sky", "polyhaven:hdri/kloofendal_48d_partly_cloudy_puresky", "clean partly cloudy sky with no ground"),
+    ("interior", "polyhaven:hdri/artist_workshop", "soft window light in a cluttered studio room"),
+    ("night", "polyhaven:hdri/satara_night", "starry sky, warm village lamps"),
+    ("night-city", "polyhaven:hdri/hansaplatz", "night plaza with warm streetlights and shop windows"),
+];
+
+/// The library ref for a curated mood name, if `s` is one.
+pub fn hdri_mood(s: &str) -> Option<&'static str> {
+    let k = s.trim().to_lowercase().replace([' ', '_'], "-");
+    HDRI_MOODS.iter().find(|m| m.0 == k).map(|m| m.1)
 }
 
 /// Whether `src` names a library asset (`provider:…`) rather than a file.

@@ -1315,7 +1315,8 @@ impl Evaluator {
                         if a <= 0.002 {
                             continue;
                         }
-                        let ts = tk + r.stagger * i as f32;
+                        let rank = r.ranks.get(i as usize).copied().unwrap_or(i);
+                        let ts = tk + r.stagger * rank as f32;
                         let c = Cx { scene_t: cx.scene_t - ts, gt: cx.gt - ts, amul: cx.amul * a, ..*cx };
                         let px = dl::mul(parent, &r.xf(i, ctr));
                         self.emit_node_inner(n, &c, &px, psize, po, out);
@@ -1543,12 +1544,27 @@ impl Evaluator {
                 let oy = (h - lsize[1]) * 0.5;
                 let bxf = if ox.abs() > 0.01 || oy.abs() > 0.01 { dl::mul(&xf, &translate(ox, oy)) } else { xf };
                 if let Some(k) = kinetic {
+                    // Gradient fills: draw the fill, keep it only where the
+                    // kinetic glyphs are (their animated alpha included).
+                    let grad = !matches!(paint, PaintC::Solid);
+                    if grad {
+                        out.push(Op::PushLayer { opacity: alpha, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
+                        let p = self.paint(paint, &v, prop::FILL, lsize, 1.0);
+                        // Oversized so units flying in from outside the box are filled too.
+                        let (mx, my) = (lsize[0].max(64.0), lsize[1].max(64.0));
+                        out.push(Op::RoundRect { x: -mx, y: -my, w: lsize[0] + 2.0 * mx, h: lsize[1] + 2.0 * my, radius: 0.0, paint: p, transform: bxf });
+                        out.push(Op::PushLayer { opacity: 1.0, blend: Blend::DestIn, filters: Vec::new(), clip: None, cache_key: None });
+                    }
                     let at = out.len();
                     k.ops(lt, bxf, out);
-                    if alpha < 1.0 {
+                    if alpha < 1.0 && !grad {
                         for op in &mut out[at..] {
                             retransform(op, &dl::IDENTITY, alpha);
                         }
+                    }
+                    if grad {
+                        out.push(Op::PopLayer);
+                        out.push(Op::PopLayer);
                     }
                 } else {
                     let fill = (!*run_colors).then(|| self.paint(paint, &v, prop::FILL, lsize, alpha));

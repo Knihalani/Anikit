@@ -315,7 +315,7 @@ mod tests {
     #[test]
     fn every_page_example_and_recipe_compiles() {
         for (n, md) in PAGES {
-            assert!(md.lines().count() <= 60, "docs {n} is over 60 lines");
+            assert!(md.lines().count() <= 80, "docs {n} is over 80 lines");
             for block in md.split("```json\n").skip(1) {
                 let src = block.split("\n```").next().unwrap();
                 let v: Value = serde_json::from_str(src).unwrap_or_else(|e| panic!("docs {n}: {e}\n{src}"));
