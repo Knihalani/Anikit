@@ -301,6 +301,8 @@ pub struct ObjDef {
     pub tex: Vec<TexSpec>,
     /// Visible to the camera (false: a reflector card).
     pub cam: bool,
+    /// For camera targeting.
+    pub name: Option<String>,
     pub thin: bool,
     pub shadow: bool,
     /// Half width of the shape in metres (texture LOD).
@@ -608,7 +610,8 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
     let end = m.get("end").map(|x| f(x, &format!("{path}.end"))).transpose()?.unwrap_or(f32::INFINITY);
     let scale_mul = if ty == "sphere" { extent } else { 1.0 };
     let extent = if ty == "sphere" { 1.0 } else { extent };
-    Ok(ObjDef { parts, cam, pos, rot, scale: scale_n, keys, spin, count, lanes, tex, thin, shadow, extent, start, end, scale_mul })
+    let name = m.get("name").and_then(|n| n.as_str()).map(|n| n.to_string());
+    Ok(ObjDef { parts, cam, name, pos, rot, scale: scale_n, keys, spin, count, lanes, tex, thin, shadow, extent, start, end, scale_mul })
 }
 
 fn texture(v: &Value, path: &str) -> Res<TexSpec> {
@@ -669,6 +672,10 @@ pub struct CamSpec {
     pub linear: bool,
     /// Ease the whole move in and out (smooth mode only).
     pub ease: bool,
+    /// Aim at (and with `follow`, move with) a named object: key targets
+    /// (and positions) become offsets from its centre.
+    pub target_obj: Option<String>,
+    pub follow: bool,
     /// Handheld shake: amplitude (m) and frequency (Hz).
     pub shake: (f32, f32),
 }
@@ -687,7 +694,8 @@ fn cam_key(v: &Value, path: &str) -> Res<CamKey> {
     Ok(CamKey {
         t: of("t")?.or(of("at")?).unwrap_or(0.0),
         pos: v3c("pos")?,
-        target: v3c("target")?,
+        // Optional when the camera targets a named object (then it's an offset).
+        target: if m.contains_key("target") { v3c("target")? } else { v3(0.0, 0.0, 0.0) },
         fov: of("fov")?,
         focal: of("focal")?,
         focus: of("focus")?,
@@ -723,7 +731,7 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
                 return Err(format!("{path}: unknown camera preset `{other}`{hint}"));
             }
         };
-        Ok(CamSpec { keys, linear: matches!(name, "orbit" | "flyby"), ease: !matches!(name, "orbit" | "flyby"), shake: (0.0, 0.0) })
+        Ok(CamSpec { target_obj: None, follow: false, keys, linear: matches!(name, "orbit" | "flyby"), ease: !matches!(name, "orbit" | "flyby"), shake: (0.0, 0.0) })
     };
     match v {
         // Defaults are brisk: 5 s, 70° for an orbit.
@@ -734,10 +742,10 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
             if keys.is_empty() {
                 return Err(format!("{path}: at least one key"));
             }
-            Ok(CamSpec { keys, linear: false, ease: true, shake: (0.0, 0.0) })
+            Ok(CamSpec { target_obj: None, follow: false, keys, linear: false, ease: true, shake: (0.0, 0.0) })
         }
         Value::Object(m) => {
-            check_keys(m, &["keys", "interp", "ease", "shake", "preset", "duration", "degrees", "height"], path)?;
+            check_keys(m, &["keys", "interp", "ease", "shake", "preset", "duration", "degrees", "height", "target", "follow"], path)?;
             let mut spec = if let Some(p) = m.get("preset").and_then(|p| p.as_str()) {
                 let dur = m.get("duration").and_then(|x| x.as_f64()).unwrap_or(5.0) as f32;
                 let deg = m.get("degrees").and_then(|x| x.as_f64()).unwrap_or(70.0) as f32;
@@ -749,7 +757,7 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
                 if keys.is_empty() {
                     return Err(format!("{path}.keys: at least one key"));
                 }
-                CamSpec { keys, linear: false, ease: false, shake: (0.0, 0.0) }
+                CamSpec { target_obj: None, follow: false, keys, linear: false, ease: false, shake: (0.0, 0.0) }
             };
             if let Some(i) = m.get("interp") {
                 spec.linear = match i.as_str() {
@@ -760,6 +768,10 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
             }
             if let Some(e) = m.get("ease") {
                 spec.ease = e.as_bool().ok_or_else(|| format!("{path}.ease: expected true or false"))?;
+            }
+            if let Some(t) = m.get("target") {
+                spec.target_obj = Some(t.as_str().ok_or_else(|| format!("{path}.target: expected an object name"))?.to_string());
+                spec.follow = m.get("follow").and_then(|f| f.as_bool()).unwrap_or(false);
             }
             match m.get("shake") {
                 None => {}

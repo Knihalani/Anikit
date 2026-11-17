@@ -223,6 +223,13 @@ impl Prepare for Scene3d {
         let bounds = if probe.insts.is_empty() { (v3(0.0, 0.5, 0.0), 1.0) } else { (scale(add(lo, hi), 0.5), len(sub(hi, lo)) * 0.5) };
         let cam_v = m.get("camera").cloned().unwrap_or(if lookdev { lookdev_camera() } else { Value::Null });
         let camera = spec::camera(&cam_v, bounds, "camera").map_err(Error)?;
+        if let Some(n) = &camera.target_obj {
+            if !objs.iter().any(|o| o.name.as_deref() == Some(n)) {
+                let names: Vec<&str> = objs.iter().filter_map(|o| o.name.as_deref()).collect();
+                let hint = crate::components::style::closest(n, &names).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+                return Err(Error(format!("camera.target: no object named `{n}`{hint}")));
+            }
+        }
 
         // Backdrop, haze and exposure.
         let up = v3(0.0, 1.0, 0.0);
@@ -358,7 +365,7 @@ impl Scene3d {
         if let Some(s) = p.shutter {
             cam.shutter = s;
         }
-        let prev = p.camera.at(t - dt, aspect, p.default_aperture);
+        let mut prev_cam = p.camera.at(t - dt, aspect, p.default_aperture);
         let mut scene = Scene::new(p.shapes.clone(), p.mats.clone(), Vec::new(), p.env.clone(), p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
         scene.backdrop = p.backdrop;
         scene.glow = p.glow;
@@ -367,6 +374,33 @@ impl Scene3d {
         let mut insts = instances(&p.objs, t, dt);
         // Textures need world boxes, so build the hierarchy first.
         scene.insts = std::mem::take(&mut insts);
+        // A camera aimed at (or following) a named object.
+        if let Some(name) = &p.camera.target_obj {
+            if let Some(oi) = p.objs.iter().position(|o| o.name.as_deref() == Some(name)) {
+                let centre = |prev: bool| -> Option<V3> {
+                    let inst = scene.insts.iter().find(|i| i.obj as usize == oi)?;
+                    let mut i2 = inst.clone();
+                    if prev {
+                        i2.xf = inst.prev;
+                    }
+                    let (lo, hi) = scene.world_box(&i2);
+                    Some(scale(add(lo, hi), 0.5))
+                };
+                let explicit_focus = p.camera.keys.iter().any(|k| k.focus.is_some());
+                for (c, prev) in [(&mut cam, false), (&mut prev_cam, true)] {
+                    if let Some(o) = centre(prev) {
+                        c.target = add(c.target, o);
+                        if p.camera.follow {
+                            c.pos = add(c.pos, o);
+                        }
+                        if !explicit_focus {
+                            c.focus = len(sub(c.target, c.pos));
+                        }
+                    }
+                }
+            }
+        }
+        let prev = prev_cam;
         let n_tex = self.assign_textures(&mut scene, &cam, t, w, h, assets);
         scene.rebuild();
         let t_setup = clock.elapsed();
@@ -617,6 +651,19 @@ mod tests {
         assert!(spot.p().lights[0].cos_outer > 0.9 && spot.p().lights[1].cos_outer == -1.0);
         let e = scene(json!({ "objects": [], "lights": [ { "dir": [0, 0, 0] } ] })).err().unwrap();
         assert!(e.contains("must not be zero"), "{e}");
+    }
+
+    #[test]
+    fn camera_follows_named_objects() {
+        let s = scene(json!({
+            "quality": "draft",
+            "camera": { "target": "car", "follow": true, "keys": [ { "t": 0, "pos": [0, 1, 5] } ] },
+            "objects": [ { "type": "box", "name": "car", "pos": "=[2*t, 0.5, 0]" } ]
+        }))
+        .unwrap();
+        let _ = s.render(1.0, 1.0 / 30.0, 32, 18, None);
+        let e = scene(json!({ "camera": { "target": "cra", "keys": [ { "t": 0, "pos": [0, 1, 5] } ] }, "objects": [ { "type": "box", "name": "car" } ] })).err().unwrap();
+        assert!(e.contains("did you mean `car`"), "{e}");
     }
 
     #[test]
