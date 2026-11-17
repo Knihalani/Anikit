@@ -448,6 +448,7 @@ fn empty_node(kind: Kind) -> Node {
         treat: Vec::new(),
         treat_slot: 0,
         live_pattern: None,
+        brush: None,
         step: 0.0,
         boil: None,
         clip: false,
@@ -1729,6 +1730,29 @@ impl C<'_> {
                 }
             } else {
                 self.d.push(Diagnostic::warning(path, "shape modifiers (roundCorners, zigzag, puckerBloat, offsetPath, twist, wigglePath) apply to shape layers"));
+            }
+        }
+        if let Some(bv) = &l.brush {
+            let o = match bv {
+                spec::BrushValue::On(false) => None,
+                spec::BrushValue::On(true) => Some(spec::BrushSpec::default()),
+                spec::BrushValue::Full(f) => Some(f.clone()),
+            };
+            if let Some(o) = o {
+                let (w, h) = (n.base[prop::W] as f64, n.base[prop::H] as f64);
+                match &n.kind {
+                    Kind::Shape { shape, path: p, stroke: Some(_), .. } => {
+                        let src = match shape {
+                            ShapeKind::Rect => kurbo::Shape::to_path(&kurbo::RoundedRect::new(0.0, 0.0, w, h, (n.base[prop::RADIUS] as f64).min(w.min(h) * 0.5).max(0.0)), 0.1),
+                            ShapeKind::Ellipse => kurbo::Shape::to_path(&kurbo::Ellipse::new((w * 0.5, h * 0.5), (w * 0.5, h * 0.5), 0.0), 0.1),
+                            ShapeKind::Path => p.clone(),
+                        };
+                        let t = o.taper.unwrap_or([0.12, 0.25]);
+                        n.brush = super::graphic::Brush::new(&src, [t[0] as f32, t[1] as f32], o.pressure.unwrap_or(0.35) as f32, o.dry.unwrap_or(0.0) as f32, o.seed.unwrap_or(1)).map(Arc::new);
+                    }
+                    Kind::Shape { .. } => self.d.push(Diagnostic::warning(format!("{path}.brush"), "a brush paints the stroke: add \"stroke\" (and \"strokeWidth\")")),
+                    _ => self.d.push(Diagnostic::warning(format!("{path}.brush"), "brush applies to shape layers (lines, paths, any outline)")),
+                }
             }
         }
         if let Some(a) = &l.animator {

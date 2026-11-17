@@ -2032,6 +2032,17 @@
             }
           ]
         },
+        "brush": {
+          "description": "Paint the stroke as a brush: `true`, or `{ \"taper\": [start, end], \"pressure\": 0..1, \"dry\": 0..1, \"seed\" }`.\nWidth from `strokeWidth`; tapered ends, pressure wobble, dry-brush bristles; `trimEnd` paints it on.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BrushValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "src": {
           "type": [
             "string",
@@ -3527,6 +3538,60 @@
             "string",
             "null"
           ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "BrushValue": {
+      "description": "`brush`: on, or the full settings.",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/$defs/BrushSpec"
+        }
+      ]
+    },
+    "BrushSpec": {
+      "type": "object",
+      "properties": {
+        "taper": {
+          "description": "Taper lengths at the start and end, as fractions of the stroke. Default `[0.12, 0.25]`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "pressure": {
+          "description": "Width wobble (0..1). Default 0.35.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "dry": {
+          "description": "Dry brush (0..1): bristles that skip, more towards the end. Default 0.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
         }
       },
       "additionalProperties": false
