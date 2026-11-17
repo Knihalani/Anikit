@@ -71,7 +71,17 @@ planning would fit any product, it is wrong: design it from this product's own s
   physical or material. The fix for flat, slide-like design is *design*, not an extra dimension.
 - **Never repeat a look.** Before designing, list what the previous films in this folder and in
   `docs/video/skills/launch-examples/` used (medium, world, motif, materials, light, palette, music), then avoid
-  all of it. No default cyc, no chrome or lacquer type, no falling tiles or dominoes.
+  all of it. No default cyc, no chrome or lacquer type, no falling tiles or dominoes, and no cream paper with an
+  editorial serif and a red accent (Margin).
+- **Name the trend.** Write down which trend or stock look the piece resembles ("tasteful AI editorial",
+  "Apple-style product orbit", "SaaS gradient", "Y2K chrome" …). If you can name one, it fails: redesign it
+  (BAR.md, last section).
+- **Frames are rich with considered craft, not empty restraint.** Every frame has a clear subject, layered detail
+  (texture, secondary motion, typographic hierarchy, light) and something to look at the whole time it is on screen.
+  Sparse, mostly empty, static frames read as unfinished, not minimal.
+- **Copy is specific to this product.** Real nouns, numbers and actions from the brief: what it does, for whom, in
+  what situation. No aphorisms or slogans that could sit on any brand ("Your first draft is a mess", "Built to
+  last").
 - **Every word is crisp and instantly readable:**
   - rendered at full resolution: 2D text layers, or `scene3d` at `"resolution": 1` and never `"quality": "draft"`
     in a final;

@@ -1,4 +1,33 @@
-# Launch-video skill: two end-to-end runs (REJECTED, kept as cautionary examples)
+# Launch-video skill examples
+
+## Margin: 2D editorial typography, solo piano (REJECTED)
+
+> **Rejected by the user:** "margin also looks like complete AI slop." The combination of cream paper, an editorial
+> serif, a red accent, aphorism copy ("Your first draft is a mess") and sparse, mostly static frames is the
+> "tasteful AI" look (BAR.md, last section). It was crisp and readable, but generic: the copy could belong to any
+> writing app, and the frames were empty restraint rather than rich craft. Kept as a cautionary example; don't copy it.
+
+`margin/` (`make.py`, `margin.json`, `margin.mp4`, `margin-contact.jpg`).
+- **Product:** a fictional writing app that edits in the margin.
+- **Idea:** the film is one manuscript page that the camera reads down, one passage per bar. The product shows up
+  as red pencil in the margin: a strike, then a note. The motif is the red margin rule, which becomes the logo's
+  axis at the end.
+- **Medium:** 2D type only. `Instrument Serif` at 150 px for hero lines and 96 px for body, `Inter` 50 px tracked
+  labels, `JetBrains Mono` for the URL. One accent (#B8321C on #F4EFE6, about 5:1); ink on paper is about 15:1.
+- **Music:** generated `piano`, 96 BPM, F; each move to the next passage lands on a downbeat (bar = 2.5 s).
+  The final MP4 measures −14.0 LUFS (ffmpeg ebur128).
+- **Results:**
+  - rendered at 1080p in 1.6 s with `render --crf 16` (7.4 MB);
+  - every word was checked at 100% crop from the MP4 itself: crisp, with no blur or grain on type;
+  - holds are at least 0.3 s + 0.06 s per character.
+- **Honest notes:**
+  - `critique --render` calls 93% of seconds static. The only motion between passages is a slow per-bar drift and
+    push plus the pencil marks, so it reads as a very calm piece. Give it more motion if the brief is energetic.
+  - The end card's two lines sit slightly outside title-safe (warning).
+  - Spec-level contrast warnings on the margin notes are false positives: the render-level check passes.
+  - `critique`'s audio estimate said −28 LUFS while the MP4 measures −14.0 LUFS, which looks like a critique bug.
+
+## Sift and Fernway: two end-to-end runs (REJECTED, kept as cautionary examples)
 
 > **The user rejected Sift.** Their words: "the text is hard to read and looks low resolution, I'm hearing too much
 > synthesizer in the music, and the lighting is off … Don't force 3D where it doesn't fit and don't use the same 3D
