@@ -61,6 +61,7 @@ lib! {
     "ocean", Image, 191, "Open sea to the horizon under a low sun: swell and chop, Fresnel sky reflection, glitter path, crest glow, foam.";
     "growth", Image, 75, "A living reaction-diffusion simulation (spots, labyrinths, coral) lit as a glossy relief. Multi-pass.";
     "flow-lines", Image, 449, "Curves grow from seeds along a swirling flow field and draw themselves on paper in a weighted palette.";
+    "ink", Image, 340, "A drop of ink blooming in backlit water: billows, torn tendrils, a second ink curling through.";
     "caustics", Image, 51, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
     "flow-ink", Image, 151, "Two inks marbled by a curl-noise flow field on paper.";
     "turing", Image, 25, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
