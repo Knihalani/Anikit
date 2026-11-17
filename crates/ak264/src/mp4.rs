@@ -60,6 +60,73 @@ impl B {
 
 const MATRIX: [u32; 9] = [0x10000, 0, 0, 0, 0x10000, 0, 0, 0, 0x4000_0000];
 
+/// Exp-Golomb / fixed-width reader over a NAL unit's RBSP (emulation
+/// prevention bytes removed), enough for SPS and slice header prefixes.
+struct Rbsp {
+    b: Vec<u8>,
+    pos: usize,
+}
+
+impl Rbsp {
+    fn new(nal: &[u8]) -> Rbsp {
+        let mut b = Vec::with_capacity(nal.len());
+        let mut zeros = 0;
+        for &x in &nal[1..] {
+            if zeros >= 2 && x == 3 {
+                zeros = 0;
+                continue;
+            }
+            zeros = if x == 0 { zeros + 1 } else { 0 };
+            b.push(x);
+        }
+        Rbsp { b, pos: 0 }
+    }
+    fn bit(&mut self) -> u32 {
+        let v = self.b.get(self.pos / 8).map_or(0, |x| (x >> (7 - self.pos % 8)) & 1);
+        self.pos += 1;
+        v as u32
+    }
+    fn u(&mut self, n: u32) -> u32 {
+        (0..n).fold(0, |v, _| (v << 1) | self.bit())
+    }
+    fn ue(&mut self) -> u32 {
+        let mut z = 0;
+        while self.bit() == 0 && z < 32 {
+            z += 1;
+        }
+        (1u32 << z) - 1 + self.u(z)
+    }
+}
+
+/// (log2_max_frame_num, pic_order_cnt_type, log2_max_pic_order_cnt_lsb) of an
+/// SPS without High-profile fields (what [`crate::Encoder`] writes).
+fn sps_poc(sps: &[u8]) -> (u32, u32, u32) {
+    let mut r = Rbsp::new(sps);
+    let profile = r.u(8);
+    r.u(16);
+    r.ue();
+    if matches!(profile, 100 | 110 | 122 | 244 | 44 | 83 | 86 | 118 | 128 | 138 | 139 | 134 | 135) {
+        return (4, 2, 4); // not written by this encoder: assume no reordering
+    }
+    let fn_bits = r.ue() + 4;
+    let poc_type = r.ue();
+    let poc_bits = if poc_type == 0 { r.ue() + 4 } else { 0 };
+    (fn_bits, poc_type, poc_bits)
+}
+
+/// pic_order_cnt_lsb of a slice (POC type 0).
+fn slice_poc(nal: &[u8], fn_bits: u32, poc_bits: u32) -> u32 {
+    let mut r = Rbsp::new(nal);
+    r.ue();
+    r.ue();
+    r.ue();
+    r.u(fn_bits);
+    if nal[0] & 0x1f == 5 {
+        r.ue();
+    }
+    r.u(poc_bits)
+}
+
 /// Wrap an Annex-B stream (as produced by [`crate::Encoder`] / [`crate::encode_chunks`])
 /// into an MP4 file.
 pub fn mux(annexb: &[u8], width: u32, height: u32, fps: f64) -> Vec<u8> {
@@ -68,6 +135,9 @@ pub fn mux(annexb: &[u8], width: u32, height: u32, fps: f64) -> Vec<u8> {
     let mut pps: Option<&[u8]> = None;
     // samples: (offset in mdat payload, size, key)
     let mut samples: Vec<(usize, usize, bool)> = Vec::new();
+    // POC of each sample (streams with B pictures), and its stream's SPS fields
+    let mut pocs: Vec<u32> = Vec::new();
+    let mut poc_fields = (4, 2, 4);
     let mut mdat: Vec<u8> = Vec::with_capacity(annexb.len() + nals.len() * 4);
     for n in &nals {
         if n.is_empty() {
@@ -77,6 +147,7 @@ pub fn mux(annexb: &[u8], width: u32, height: u32, fps: f64) -> Vec<u8> {
         match t {
             7 => {
                 sps.get_or_insert(n);
+                poc_fields = sps_poc(n);
             }
             8 => {
                 pps.get_or_insert(n);
@@ -86,6 +157,8 @@ pub fn mux(annexb: &[u8], width: u32, height: u32, fps: f64) -> Vec<u8> {
                 let first = n.len() > 1 && n[1] & 0x80 != 0;
                 if first || samples.is_empty() {
                     samples.push((mdat.len(), 0, t == 5));
+                    let (fb, ty, pb) = poc_fields;
+                    pocs.push(if ty == 0 { slice_poc(n, fb, pb) } else { 0 });
                 }
                 mdat.extend_from_slice(&(n.len() as u32).to_be_bytes());
                 mdat.extend_from_slice(n);
@@ -104,6 +177,25 @@ pub fn mux(annexb: &[u8], width: u32, height: u32, fps: f64) -> Vec<u8> {
     };
     let n = samples.len() as u64;
     let dur_ts = n * delta as u64;
+    // Display order: by POC within each IDR period (POC type 0 restarts at
+    // every IDR; LSB wrap is not expected within one period).
+    let mut disp = vec![0u64; samples.len()];
+    let mut start = 0;
+    while start < samples.len() {
+        let mut end = start + 1;
+        while end < samples.len() && !samples[end].2 {
+            end += 1;
+        }
+        let mut order: Vec<usize> = (start..end).collect();
+        order.sort_by_key(|&i| (pocs[i], i));
+        for (rank, &i) in order.iter().enumerate() {
+            disp[i] = (start + rank) as u64;
+        }
+        start = end;
+    }
+    // Composition offsets (in frames): display index + delay − decode index ≥ 0.
+    let delay = (0..samples.len()).map(|i| i as i64 - disp[i] as i64).max().unwrap_or(0).max(0) as u64;
+    let ctts: Vec<u32> = (0..samples.len()).map(|i| (disp[i] + delay - i as u64) as u32 * delta).collect();
     let dur_ms = dur_ts * 1000 / timescale as u64;
     let big = mdat.len() as u64 + 4096 > u32::MAX as u64;
 
@@ -123,12 +215,13 @@ pub fn mux(annexb: &[u8], width: u32, height: u32, fps: f64) -> Vec<u8> {
         b.u32(2);
         b.close(p);
         let trak = b.open(b"trak");
+        let tkhd_dur = dur_ms as u32;
         let p = b.full(b"tkhd", 0, 3);
         b.u32(0);
         b.u32(0);
         b.u32(1);
         b.u32(0);
-        b.u32(dur_ms as u32);
+        b.u32(tkhd_dur);
         b.u64(0);
         b.u16(0);
         b.u16(0);
@@ -138,6 +231,17 @@ pub fn mux(annexb: &[u8], width: u32, height: u32, fps: f64) -> Vec<u8> {
         b.u32(width << 16);
         b.u32(height << 16);
         b.close(p);
+        if delay > 0 {
+            // present from the first frame in display order
+            let edts = b.open(b"edts");
+            let p = b.full(b"elst", 0, 0);
+            b.u32(1);
+            b.u32(dur_ms as u32);
+            b.u32((delay * delta as u64) as u32);
+            b.u32(0x10000);
+            b.close(p);
+            b.close(edts);
+        }
         let mdia = b.open(b"mdia");
         let p = b.full(b"mdhd", 0, 0);
         b.u32(0);
@@ -203,6 +307,22 @@ pub fn mux(annexb: &[u8], width: u32, height: u32, fps: f64) -> Vec<u8> {
         b.u32(n as u32);
         b.u32(delta);
         b.close(p);
+        if delay > 0 {
+            let p = b.full(b"ctts", 0, 0);
+            let mut runs: Vec<(u32, u32)> = Vec::new();
+            for &c in &ctts {
+                match runs.last_mut() {
+                    Some(r) if r.1 == c => r.0 += 1,
+                    _ => runs.push((1, c)),
+                }
+            }
+            b.u32(runs.len() as u32);
+            for (k, c) in runs {
+                b.u32(k);
+                b.u32(c);
+            }
+            b.close(p);
+        }
         let keys: Vec<u32> = samples.iter().enumerate().filter(|s| s.1 .2).map(|(i, _)| i as u32 + 1).collect();
         if keys.len() < samples.len() {
             let p = b.full(b"stss", 0, 0);

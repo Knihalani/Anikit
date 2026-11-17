@@ -305,6 +305,8 @@ pub(crate) struct FrameCtx<'a> {
     /// identical in the B frame and both references' sources.
     pub bslice: bool,
     pub col: &'a [MbInfo],
+    /// B slice: (distance to the L0 reference, distance between the references).
+    pub bdist: (i32, i32),
     pub changed: &'a [bool],
     pub stale: &'a [bool],
     pub hint: &'a [(i16, i16)],
@@ -328,17 +330,18 @@ pub(crate) struct FrameCtx<'a> {
 pub(crate) const NO_HINT: (i16, i16) = (i16::MIN, i16::MIN);
 
 /// A frame held for a B picture: pixels, display index in the GOP, input
-/// index, change map since the previous input frame, quarter-resolution luma.
+/// index, change map since the previous input frame, grain hint.
 struct Held {
     buf: crate::frame::YuvBuffer,
     disp: u64,
     gidx: u64,
     changed: Option<Vec<bool>>,
-    lr: crate::lookahead::Lowres,
+    grain: f32,
 }
 
-/// B pictures' estimated cost relative to P pictures' (they use a higher QP).
-const B_WEIGHT: u64 = 80;
+/// A B picture whose SSIM estimate is this far below the following P
+/// picture's is coded again at the P QP.
+const B_SSIM_SLACK: f64 = 0.001;
 
 /// QP of B pictures above the P pictures'.
 const B_QP_OFFSET: i32 = 2;
@@ -430,6 +433,14 @@ struct SliceEnc<'a, 'b> {
     dqp_prev_nz: bool,
     /// Reference list that prediction helpers and motion search use (B slices).
     rsel: usize,
+    /// Motion search: integer positions already evaluated in this search
+    /// (direct-mapped; entries hold the search's generation and the vector).
+    seen: Vec<std::cell::Cell<(u32, (i32, i32))>>,
+    seen_gen: std::cell::Cell<u32>,
+    /// B slices: an extra search candidate (the co-located vector, scaled) and
+    /// no long-range rings (the P picture already found the motion).
+    extra_cand: Option<(i32, i32)>,
+    no_rings: bool,
 }
 
 #[inline(always)]
@@ -756,9 +767,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         };
         let round = |q: (i32, i32)| ((q.0 + 2) >> 2, (q.1 + 2) >> 2);
         let mut best = (u32::MAX, (0, 0));
-        let mut cands = [(0i32, 0i32); 7];
+        let mut cands = [(0i32, 0i32); 9];
         let mut n = 0;
-        fn push_c(cands: &mut [(i32, i32); 7], n: &mut usize, mv: (i32, i32)) {
+        fn push_c(cands: &mut [(i32, i32); 9], n: &mut usize, mv: (i32, i32)) {
             if !cands[..*n].contains(&mv) {
                 cands[*n] = mv;
                 *n += 1;
@@ -775,6 +786,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let h = c.hint[mbi];
         if h != NO_HINT {
             push!(round((h.0 as i32, h.1 as i32)));
+        }
+        if let Some(e) = self.extra_cand {
+            push!(round(e));
         }
         let (x, y) = (mbx as isize, mby as isize);
         // A quick search already evaluated the candidates above.
@@ -804,7 +818,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             // 8 neighbours.
             const RING: [(i32, i32); 8] = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)];
             let c0 = best.1;
-            for r in [4, 8, 12, 16] {
+            let rings: &[i32] = if self.no_rings { &[] } else { &[4, 8, 12, 16] };
+            for &r in rings {
                 for d in RING {
                     let mv = clamp((c0.0 + d.0 * r, c0.1 + d.1 * r));
                     let s = eval(mv);
@@ -813,11 +828,26 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                     }
                 }
             }
+            // Positions already evaluated in this search can't improve on `best`.
+            let g = self.seen_gen.get().wrapping_add(1);
+            self.seen_gen.set(g);
+            let fresh = |mv: (i32, i32)| {
+                let e = &self.seen[((mv.0 & 31) | ((mv.1 & 31) << 5)) as usize];
+                if e.get() == (g, mv) {
+                    return false;
+                }
+                e.set((g, mv));
+                true
+            };
+            fresh(best.1);
             const HEX: [(i32, i32); 6] = [(-2, 0), (-1, -2), (1, -2), (2, 0), (1, 2), (-1, 2)];
             for _ in 0..16 {
                 let cur = best;
                 for d in HEX {
                     let mv = clamp((cur.1 .0 + d.0, cur.1 .1 + d.1));
+                    if !fresh(mv) {
+                        continue;
+                    }
                     let s = eval(mv);
                     if s < best.0 {
                         best = (s, mv);
@@ -831,6 +861,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 let cur = best;
                 for d in RING {
                     let mv = clamp((cur.1 .0 + d.0, cur.1 .1 + d.1));
+                    if !fresh(mv) {
+                        continue;
+                    }
                     let s = eval(mv);
                     if s < best.0 {
                         best = (s, mv);
@@ -2099,6 +2132,10 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
         dqp_nz: false,
         dqp_prev_nz: false,
         rsel: 0,
+        seen: vec![std::cell::Cell::new((0, (0, 0))); 1024],
+        seen_gen: std::cell::Cell::new(0),
+        extra_cand: None,
+        no_rings: false,
     };
     if c.cabac {
         while !s.w.byte_aligned() {
@@ -2224,8 +2261,7 @@ pub struct Encoder {
     /// change map since the last reference, and the B picture's state.
     bf: usize,
     pend: Vec<Held>,
-    /// Quarter-resolution luma of the last reference picture (B decision).
-    lr_ref: crate::lookahead::Lowres,
+
     pend_pool: Vec<crate::frame::YuvBuffer>,
     acc: Option<Vec<bool>>,
     src_prev: Pic,
@@ -2240,6 +2276,11 @@ pub struct Encoder {
     last_p_swapped: bool,
     /// frame_num of the next reference picture; POC of the picture being coded.
     ref_num: u32,
+    /// Display indices of the previous and the latest reference picture.
+    ref_disp: u64,
+    /// SSIM estimate of the latest P picture (B pictures' quality guard).
+    p_ssim: f64,
+    p_disp: u64,
     cur_poc: Option<u32>,
     frames_in: u64,
     keep_recons: bool,
@@ -2290,7 +2331,7 @@ impl Encoder {
             skip_cache: Vec::new(),
             bf: if cfg.cabac && threads == 1 { cfg.bframes as usize } else { 0 },
             pend: Vec::new(),
-            lr_ref: Default::default(),
+
             pend_pool: Vec::new(),
             acc: None,
             src_prev: Pic::new(mbw, mbh, 0),
@@ -2303,6 +2344,9 @@ impl Encoder {
             hpel1: None,
             last_p_swapped: true,
             ref_num: 0,
+            ref_disp: 0,
+            p_disp: 0,
+            p_ssim: 0.0,
             cur_poc: None,
             frames_in: 0,
             keep_recons: false,
@@ -2388,12 +2432,10 @@ impl Encoder {
             self.frame_in_gop += 1;
             return &self.out;
         }
-        let lr = crate::lookahead::Lowres::from_luma(f.y, f.y_stride, f.width as usize, f.height as usize);
         if idr {
             self.flush_pending();
             self.frame_in_gop = 0;
             self.code_frame(f, hints, true, 0, gidx);
-            self.lr_ref = lr;
             self.acc_reset();
             self.frame_in_gop += 1;
             return &self.out;
@@ -2406,59 +2448,38 @@ impl Encoder {
             b.copy_from(f);
             let n = self.mbw * self.mbh;
             let changed = hints.changed.clone().filter(|c| c.len() == n);
-            self.pend.push(Held { buf: b, disp, gidx, changed, lr });
+            self.pend.push(Held { buf: b, disp, gidx, changed, grain: hints.grain });
             return &self.out;
         }
-        if self.b_pays(Some(&lr)) {
+        if self.b_pays(Some(hints.grain)) {
             self.acc_merge(hints);
             let h = FrameHints { changed: self.acc.clone(), motions: Vec::new(), grain: hints.grain };
             self.src_prev.clone_from(&self.cur);
             self.code_frame(f, &h, false, disp, gidx);
-            self.lr_ref = lr;
             self.acc_reset();
             self.code_pending_b(hints.grain);
         } else {
             self.code_pending_p();
             self.code_frame(f, hints, false, disp, gidx);
-            self.lr_ref = lr;
             self.acc_reset();
         }
         &self.out
     }
 
-    /// Are the held frames (and `next`, the frame after them) cheaper as B
-    /// pictures before a P picture than as a chain of P pictures?
-    fn b_pays(&self, next: Option<&crate::lookahead::Lowres>) -> bool {
-        use crate::lookahead::{cost_b, cost_p};
-
-        let mut g: Vec<&crate::lookahead::Lowres> = self.pend.iter().map(|h| &h.lr).collect();
-        if let Some(n) = next {
-            g.push(n);
-        }
-        if g.len() < 2 {
-            return false;
-        }
-        let r = &self.lr_ref;
-        let (mut chain, mut prev) = (0u64, r);
-        for &x in &g {
-            chain += cost_p(x, prev);
-            prev = x;
-        }
-        let last = g[g.len() - 1];
-        let mut bs = cost_p(last, r) * 100;
-        for &x in &g[..g.len() - 1] {
-            bs += cost_b(x, r, last) * B_WEIGHT;
-        }
-        bs < chain * 100
+    /// Code the held frames (and the next frame, with grain hint `next`) as B
+    /// pictures before a P picture, or as a chain of P pictures? B pictures
+    /// unless the frames carry film grain: re-drawn grain is unpredictable, and
+    /// a B picture's higher QP smooths it away.
+    fn b_pays(&self, next: Option<f32>) -> bool {
+        self.pend.len() + next.is_some() as usize >= 2 && self.pend.iter().all(|h| h.grain <= 0.0) && next.is_none_or(|g| g <= 0.0)
     }
 
     /// Code the held frames as a chain of P pictures.
     fn code_pending_p(&mut self) {
         let pend = std::mem::take(&mut self.pend);
         for h in pend {
-            let hints = FrameHints { changed: h.changed, ..Default::default() };
+            let hints = FrameHints { changed: h.changed, grain: h.grain, ..Default::default() };
             self.code_frame(&h.buf.frame(), &hints, false, h.disp, h.gidx);
-            self.lr_ref = h.lr;
             self.pend_pool.push(h.buf);
         }
         self.acc_reset();
@@ -2481,7 +2502,6 @@ impl Encoder {
         let h = FrameHints { changed: self.acc.clone(), ..Default::default() };
         self.src_prev.clone_from(&self.cur);
         self.code_frame(&last.buf.frame(), &h, false, last.disp, last.gidx);
-        self.lr_ref = last.lr;
         self.pend_pool.push(last.buf);
         self.acc_reset();
         self.code_pending_b(0.0);
@@ -2568,54 +2588,69 @@ impl Encoder {
             }
         }
         let mut stats = FrameStats::default();
-        let ctx = FrameCtx {
-            mbw: self.mbw,
-            qp: (self.cfg.qp as i32 + self.qp_adj + B_QP_OFFSET).clamp(0, 51) as u8,
-            base_qp: self.cfg.qp,
-            qsets: &self.qsets,
-            qsets_smooth: &self.qsets_smooth,
-            aq: self.aq_for_frame(),
-            src: &self.bsrc,
-            refp: if swapped { &self.recon } else { &self.refp },
-            refp1: &self.refp,
-            bslice: true,
-            col: &self.info,
-            changed: &self.bchanged,
-            stale: &self.stale,
-            hint: &self.bhint,
-            idr: false,
-            max_mvy: max_mv_y(self.level),
-            subpel: self.cfg.subpel,
-            skip_t: 0,
-            hpel: if self.cfg.subpel { self.hpel.as_ref() } else { None },
-            hpel1: if self.cfg.subpel { if swapped { self.hpel1.as_ref() } else { self.hpel.as_ref() } } else { None },
-            cabac: true,
-            hdr_frame_num: self.ref_num,
-            poc: Some((2 * disp) as u32),
-            idr_id: 0,
-            deblock: self.cfg.deblock,
-            slice_deblock: false,
+        // B pictures use a higher QP, unless that leaves this one visibly worse
+        // than the P picture after it: then it is coded again at the P QP.
+        let mut off = B_QP_OFFSET;
+        let res = loop {
+            let ctx = FrameCtx {
+                mbw: self.mbw,
+                qp: (self.cfg.qp as i32 + self.qp_adj + off).clamp(0, 51) as u8,
+                base_qp: self.cfg.qp,
+                qsets: &self.qsets,
+                qsets_smooth: &self.qsets_smooth,
+                aq: self.aq_for_frame(),
+                src: &self.bsrc,
+                refp: if swapped { &self.recon } else { &self.refp },
+                refp1: &self.refp,
+                bslice: true,
+                col: &self.info,
+                bdist: ((disp - self.ref_disp) as i32, (self.p_disp - self.ref_disp) as i32),
+                changed: &self.bchanged,
+                stale: &self.stale,
+                hint: &self.bhint,
+                idr: false,
+                max_mvy: max_mv_y(self.level),
+                subpel: self.cfg.subpel,
+                skip_t: 0,
+                hpel: if self.cfg.subpel { self.hpel.as_ref() } else { None },
+                hpel1: if self.cfg.subpel { if swapped { self.hpel1.as_ref() } else { self.hpel.as_ref() } } else { None },
+                cabac: true,
+                hdr_frame_num: self.ref_num,
+                poc: Some((2 * disp) as u32),
+                idr_id: 0,
+                deblock: self.cfg.deblock,
+                slice_deblock: false,
+            };
+            let r = &mut self.brecon;
+            let (ys, yp) = (r.y.stride, r.y.pad);
+            let (cs, cp) = (r.u.stride, r.u.pad);
+            let band = Band {
+                y: &mut r.y.data[yp * ys..],
+                u: &mut r.u.data[cp * cs..],
+                v: &mut r.v.data[cp * cs..],
+                info: &mut self.binfo,
+                touched: &mut self.btouched,
+                mby0: 0,
+                mby1: self.mbh,
+            };
+            let res = encode_slice(&ctx, band, &mut self.writers[0]);
+            if off > 0 && self.p_ssim > 0.0 {
+                let (sb, _) = ssim_luma(&self.bsrc.y, &self.brecon.y, w, h, grain);
+                if sb < self.p_ssim - B_SSIM_SLACK {
+                    off = 0;
+                    continue;
+                }
+            }
+            break res;
         };
-        let r = &mut self.brecon;
-        let (ys, yp) = (r.y.stride, r.y.pad);
-        let (cs, cp) = (r.u.stride, r.u.pad);
-        let band = Band {
-            y: &mut r.y.data[yp * ys..],
-            u: &mut r.u.data[cp * cs..],
-            v: &mut r.v.data[cp * cs..],
-            info: &mut self.binfo,
-            touched: &mut self.btouched,
-            mby0: 0,
-            mby1: self.mbh,
-        };
-        let res = encode_slice(&ctx, band, &mut self.writers[0]);
+        let out0 = self.out.len();
         write_nal(&mut self.out, 0, 1, &self.writers[0].buf);
         stats.skip = res.skip;
         stats.inter = res.inter;
         stats.intra16 = res.intra16;
         stats.intra4 = res.intra4;
         stats.changed = res.changed;
-        stats.bytes = self.out.len();
+        stats.bytes = self.out.len() - out0;
         self.last = stats;
         if self.keep_recons {
             let b = pic_to_yuv(&self.brecon, w, h);
@@ -2631,6 +2666,9 @@ impl Encoder {
             self.ref_num = 0;
         }
         self.cur_poc = if self.bf > 0 { Some((2 * disp) as u32) } else { None };
+        self.ref_disp = if idr { disp } else { self.p_disp };
+        self.p_disp = disp;
+        let out0 = self.out.len();
         self.grain = hints.grain.max(0.0);
         let mut stats = FrameStats { idr, ..Default::default() };
         let nmb = self.mbw * self.mbh;
@@ -2814,7 +2852,11 @@ impl Encoder {
         if idr {
             self.idr_count = self.idr_count.wrapping_add(1);
         }
-        stats.bytes = self.out.len();
+        let bytes = self.out.len() - out0;
+        if self.bf > 0 {
+            self.p_ssim = ssim_luma(&self.cur.y, &self.refp.y, w, h, self.grain).0;
+        }
+        stats.bytes = bytes;
         self.last = stats;
         if self.keep_recons {
             let b = pic_to_yuv(&self.refp, w, h);
@@ -2917,6 +2959,7 @@ impl Encoder {
             refp1: &self.refp,
             bslice: false,
             col: &[],
+            bdist: (1, 1),
             changed: &self.changed,
             stale: &self.stale,
             hint: &self.hint,

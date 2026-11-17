@@ -171,10 +171,18 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             best = (dsp::satd(src_y, &dpy, 16, 16) + lambda, BMode::Direct);
         }
 
-        // One search per list, seeded with the direct vectors.
+        // One search per list, seeded with the direct vectors and the
+        // co-located P vector scaled to this picture's distance from each
+        // reference; no long-range rings (the P picture searched those).
+        let col = &c.col[mbi];
+        let (tb, td) = c.bdist;
+        let colmv = if col.kind == 0 { (col.mv.0 as i32, col.mv.1 as i32) } else { (0, 0) };
+        let scaled = [(colmv.0 * tb / td, colmv.1 * tb / td), (colmv.0 * (tb - td) / td, colmv.1 * (tb - td) / td)];
+        self.no_rings = true;
         let mut its: [Option<Inter>; 2] = [None, None];
         for (l, dmv) in [(0usize, dmv0), (1, dmv1)] {
             self.rsel = l;
+            self.extra_cand = Some(scaled[l]);
             let mvp = self.mvp_l(mbx, mby, l);
             let mut it = self.motion_search(mbx, mby, src_y, mvp, dmv, mbi, false, None);
             if c.subpel && it.cost > lambda * 8 {
@@ -187,6 +195,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             its[l] = Some(it);
         }
         self.rsel = 0;
+        self.extra_cand = None;
+        self.no_rings = false;
         let (i0, i1) = (its[0].take().unwrap(), its[1].take().unwrap());
         let mvc = |it: &Inter| lambda * (se_len(it.mv.0 - it.mvp.0) + se_len(it.mv.1 - it.mvp.1));
         let mut bpy = i0.pred;
