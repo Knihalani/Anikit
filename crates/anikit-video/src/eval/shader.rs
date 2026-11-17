@@ -315,6 +315,8 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> Pixmap {
     f.channels = chans;
     f.supersample = job.supersample;
     f.alpha = job.alpha;
+    // Smooth shader gradients would band in 8 bits; exact values are untouched.
+    f.dither = true;
     let mut pm = Pixmap::new(job.w.clamp(1, 65535) as u16, job.h.clamp(1, 65535) as u16);
     let opaque = job.shader.render(&f, pm.data_as_u8_slice_mut());
     pm.set_may_have_transparency(!opaque);

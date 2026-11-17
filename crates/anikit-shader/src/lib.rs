@@ -52,6 +52,10 @@ pub struct Frame<'a> {
     /// Treat `fragColor.a` as coverage (straight alpha). When false the
     /// output is opaque, as on Shadertoy.
     pub alpha: bool,
+    /// Dither the 8-bit output (`render`): `floor(v·255 + r)` with a fixed
+    /// per-pixel threshold `r` in [0, 1). Removes banding from smooth
+    /// gradients; values that are exactly representable are unchanged.
+    pub dither: bool,
 }
 
 impl<'a> Frame<'a> {
@@ -68,6 +72,7 @@ impl<'a> Frame<'a> {
             channels: [None; 4],
             supersample: false,
             alpha: false,
+            dither: false,
         }
     }
 }
@@ -239,7 +244,7 @@ impl Shader {
     pub fn render_f32(&self, f: &Frame) -> Vec<[f32; 4]> {
         let (w, h) = (f.width as usize, f.height as usize);
         let mut out = vec![[0.0f32; 4]; w * h];
-        self.run(f, &mut out, w, |dst, px| *dst = px);
+        self.run(f, &mut out, w, |dst, px, _, _| *dst = px);
         out
     }
 
@@ -249,9 +254,10 @@ impl Shader {
         let (w, h) = (f.width as usize, f.height as usize);
         assert!(out.len() >= w * h * 4, "output buffer too small");
         let alpha = f.alpha;
+        let dither = f.dither;
         let opaque = std::sync::atomic::AtomicBool::new(true);
         let px: &mut [[u8; 4]] = bytemuck_rgba(&mut out[..w * h * 4]);
-        self.run(f, px, w, |dst, c| {
+        self.run(f, px, w, |dst, c, x, y| {
             let q = |v: f32| -> f32 {
                 if v > 0.0 {
                     v.min(1.0)
@@ -260,12 +266,13 @@ impl Shader {
                 }
             };
             let a = if alpha { q(c[3]) } else { 1.0 };
-            *dst = [
-                (q(c[0]) * a * 255.0 + 0.5) as u8,
-                (q(c[1]) * a * 255.0 + 0.5) as u8,
-                (q(c[2]) * a * 255.0 + 0.5) as u8,
-                (a * 255.0 + 0.5) as u8,
-            ];
+            let vals = [q(c[0]) * a, q(c[1]) * a, q(c[2]) * a, a];
+            *dst = if dither {
+                let r = dither_thresholds(x as u32, y as u32);
+                std::array::from_fn(|k| (vals[k] * 255.0 + if k == 3 { 0.5 } else { r[k] }).min(255.0) as u8)
+            } else {
+                vals.map(|v| (v * 255.0 + 0.5) as u8)
+            };
         });
         if alpha {
             let any_t = out[..w * h * 4].par_chunks(4 * 1024).any(|c| c.chunks_exact(4).any(|p| p[3] != 255));
@@ -275,7 +282,7 @@ impl Shader {
     }
 
     /// Run the kernel over the frame; `put` writes one output pixel.
-    fn run<P: Send>(&self, f: &Frame, out: &mut [P], w: usize, put: impl Fn(&mut P, [f32; 4]) + Sync) {
+    fn run<P: Send>(&self, f: &Frame, out: &mut [P], w: usize, put: impl Fn(&mut P, [f32; 4], usize, usize) + Sync) {
         let h = out.len().checked_div(w).unwrap_or(0);
         if w == 0 || h == 0 {
             return;
@@ -311,12 +318,12 @@ impl Shader {
                                 s[k] += sanitize(c[k]);
                             }
                         }
-                        put(&mut rows[q], s.map(|v| v * 0.25));
+                        put(&mut rows[q], s.map(|v| v * 0.25), q, py);
                     } else {
                         for (l, (dx, dy)) in [(0, 0), (1, 0), (0, 1), (1, 1)].into_iter().enumerate() {
                             let x = q * 2 + dx;
                             if x < w && dy < nrows {
-                                put(&mut rows[dy * w + x], lane(l).map(sanitize));
+                                put(&mut rows[dy * w + x], lane(l).map(sanitize), x, py + dy);
                             }
                         }
                     }
@@ -324,6 +331,19 @@ impl Shader {
             },
         );
     }
+}
+
+/// Per-pixel dither thresholds in [0, 1) for r, g, b (a fixed hash pattern).
+fn dither_thresholds(x: u32, y: u32) -> [f32; 3] {
+    let mut h = x.wrapping_mul(0x8da6_b343) ^ y.wrapping_mul(0xd816_3841);
+    std::array::from_fn(|_| {
+        h ^= h >> 15;
+        h = h.wrapping_mul(0x2c1b_3c6d);
+        h ^= h >> 12;
+        h = h.wrapping_mul(0x297a_2d39);
+        h ^= h >> 15;
+        (h >> 8) as f32 * (1.0 / 16_777_216.0)
+    })
 }
 
 fn sanitize(v: f32) -> f32 {

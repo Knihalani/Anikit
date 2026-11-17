@@ -359,3 +359,18 @@ fn inline_sampling_matches_reference() {
         }
     }
 }
+
+#[test]
+fn dither_keeps_exact_values_and_breaks_bands() {
+    let s = Shader::compile("void mainImage(out vec4 c, in vec2 p) { c = vec4(p.x < 32.0 ? 128.0 / 255.0 : 0.3017, 0.0, 1.0, 1.0); }").unwrap();
+    let mut f = Frame::new(64, 64, 0.0);
+    f.dither = true;
+    let mut px = vec![0u8; 64 * 64 * 4];
+    s.render(&f, &mut px);
+    let left: Vec<u8> = (0..64 * 64).filter(|i| i % 64 < 32).map(|i| px[i * 4]).collect();
+    assert!(left.iter().all(|&v| v == 128));
+    let right: Vec<f32> = (0..64 * 64).filter(|i| i % 64 >= 32).map(|i| px[i * 4] as f32).collect();
+    let mean = right.iter().sum::<f32>() / right.len() as f32;
+    assert!((mean - 0.3017 * 255.0).abs() < 0.05, "{mean}");
+    assert!(right.iter().any(|&v| v == 76.0) && right.iter().any(|&v| v == 77.0));
+}
