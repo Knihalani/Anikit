@@ -282,7 +282,7 @@ impl Renderer {
         let n_smooth = smooth::prefix(&list.ops, w as f64, h as f64, &|id| assets.image(id).map(|p| (p.width() as u32, p.height() as u32)));
         if n_smooth > 0 && backdrop.as_ref().is_none_or(|(k, _, _)| *k < n_smooth) {
             let f = smooth::FACTOR;
-            let (lw, lh) = ((w as u32).div_ceil(f) + 1, (h as u32).div_ceil(f) + 1);
+            let (lw, lh) = ((w as u32).div_ceil(f).max(2), (h as u32).div_ceil(f).max(2));
             let key = {
                 let mut hs = incremental::Fx::default();
                 use std::hash::Hasher;
@@ -303,7 +303,7 @@ impl Renderer {
                 let lctx = self.lctx.get_or_insert_with(|| RenderContext::new(lw as u16, lh as u16));
                 lctx.reset_and_resize(lw as u16, lh as u16);
                 st.org = (0, 0);
-                draw_ops(st, &assets, lctx, &list.ops[..n_smooth], Affine::scale(1.0 / f as f64));
+                draw_ops(st, &assets, lctx, &list.ops[..n_smooth], Affine::scale_non_uniform(lw as f64 / w as f64, lh as f64 / h as f64));
                 lctx.flush();
                 self.smooth_lo.resize(lw as u16, lh as u16);
                 lctx.render_with(&mut self.smooth_lo, &mut st.res, settings);
@@ -312,7 +312,7 @@ impl Renderer {
                 self.smooth_key = Some(key);
             }
             let lo = Arc::new(std::mem::replace(&mut self.smooth_lo, Pixmap::new(1, 1)));
-            backdrop = Some((n_smooth - 1, lo, Rect::new(0.0, 0.0, (lw * f) as f64, (lh * f) as f64)));
+            backdrop = Some((n_smooth - 1, lo, Rect::new(0.0, 0.0, w as f64, h as f64)));
             from_smooth = true;
         }
         let (ops, skip) = match &backdrop {
@@ -334,7 +334,21 @@ impl Renderer {
             (r[2] > r[0] && r[3] > r[1]).then_some(r)
         });
         let small = rgn.is_none_or(|r| ((r[2] - r[0]) * (r[3] - r[1])) as f64 <= 0.6 * (wu * hu) as f64);
-        if let (true, true, Some(yuv), Some((_, pix, dev))) = (full, small, yuv, &backdrop) {
+        // Ops whose top-level layers all blend normally can be drawn on a
+        // transparent box and composited over the backdrop in YUV space.
+        let mut depth = 0usize;
+        let normal_only = ops.iter().all(|o| match o {
+            Op::PushLayer { blend, .. } => {
+                depth += 1;
+                depth > 1 || *blend == Blend::Normal
+            }
+            Op::PopLayer => {
+                depth = depth.saturating_sub(1);
+                true
+            }
+            _ => true,
+        });
+        if let (true, true, Some(yuv), Some((_, pix, dev))) = (full, small || normal_only, yuv, &backdrop) {
             // Fused: YUV straight from the upscaled backdrop planes, with RGBA +
             // vello only inside the macroblock-aligned box of the ops on top.
             fused = true;
@@ -346,6 +360,10 @@ impl Renderer {
             let (pw, ph) = (pix.width() as usize, pix.height() as usize);
             let [ly, lu, lv] = &mut self.lo;
             yuv::rgba_to_yuv444(pix.data_as_u8_slice(), ly, lu, lv);
+            // Padding for the gather path's 4-byte reads.
+            for p in [ly, lu, lv] {
+                p.extend_from_slice(&[0; 4]);
+            }
             let (cw, ch) = (wu.div_ceil(2), hu.div_ceil(2));
             let cdev = Rect::new(dev.x0 / 2.0, dev.y0 / 2.0, dev.x1 / 2.0, dev.y1 / 2.0);
             let (ys, cs) = (yuv.y_stride, yuv.c_stride);
@@ -370,17 +388,26 @@ impl Renderer {
             if let Some([x0, y0, x1, y1]) = rgn {
                 let (rw, rh) = ((x1 - x0) as u16, (y1 - y0) as u16);
                 self.rpix.resize(rw, rh);
-                self.upscaler.run(pix.data_as_u8_slice(), pw, ph, *dev, self.rpix.data_as_u8_slice_mut(), rw as usize, rh as usize, x0 as i64, y0 as i64);
-                self.rpix.set_may_have_transparency(false);
+                let box_settings = if normal_only {
+                    RasterizerSettings { target_init: TargetInit::Clear(AlphaColor::TRANSPARENT), ..Default::default() }
+                } else {
+                    self.upscaler.run(pix.data_as_u8_slice(), pw, ph, *dev, self.rpix.data_as_u8_slice_mut(), rw as usize, rh as usize, x0 as i64, y0 as i64);
+                    self.rpix.set_may_have_transparency(false);
+                    settings
+                };
                 let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
                 rctx.reset_and_resize(rw, rh);
                 st.org = (x0 as i32, y0 as i32);
                 draw_ops(st, &assets, rctx, ops, Affine::translate((-(x0 as f64), -(y0 as f64))));
                 rctx.flush();
-                rctx.render_with(&mut self.rpix, &mut st.res, settings);
+                rctx.render_with(&mut self.rpix, &mut st.res, box_settings);
                 rctx.reset();
                 st.org = (0, 0);
-                yuv::convert_into(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, [0, 0, rw as usize, rh as usize], yuv, (x0, y0));
+                if normal_only {
+                    yuv::composite_over(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, (x0, y0), yuv);
+                } else {
+                    yuv::convert_into(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, [0, 0, rw as usize, rh as usize], yuv, (x0, y0));
+                }
             }
             yuv::pad(yuv);
         } else if full {

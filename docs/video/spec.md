@@ -23,7 +23,7 @@ A scene string is a title card (`"Title | subtitle"`); a layer string is centred
 
 ## Top level
 
-`size` (`"16:9"` `"9:16"` `"1:1"` `"4:5"` `"720p"` `"4k"` or `[w, h]`) · `fps` · `background` · `theme { colors, fonts, radius, styles }` · `scenes` · `transition` · `markers { name: time }` · `audio [...]` · `captions` · `fonts { family: file }` · `duration`.
+`size` (`"16:9"` `"9:16"` `"1:1"` `"4:5"` `"720p"` `"4k"` or `[w, h]`) · `fps` · `background` · `theme { colors, fonts, radius, styles }` · `scenes` · `transition` · `markers { name: time }` (plus automatic `"@beat17"`, `"@bar5+0.25"` from the first music track) · `audio [...]` · `captions` · `fonts { family: file }` · `duration`.
 
 Theme colours (used as `$name`): `primary secondary accent bg surface text muted`. Text styles: `title heading subtitle body caption label code`.
 
@@ -86,6 +86,7 @@ anikit-video check  spec.json [--json]          errors and warnings with paths a
 anikit-video still  spec.json --at 2.5 -o f.png [--width 640] [--watch]
 anikit-video sheet  spec.json -o sheet.png [--frames 12]
 anikit-video render spec.json -o out.mp4 [--quality draft|standard|high] [--from 2 --to 5] [--profile]
+anikit-video beats  music.wav [--json]           tempo, beat and bar times ("@beatN" / "@barN")
 ```
 
 `--json` prints one compact line, for example `{"ok":false,"errors":["scenes[0].layers[1].type: unknown layer type 'txt', did you mean 'text'?"],"warnings":[]}`. Output by extension: `.mp4` (our ak264 encoder; x264 with `--quality high`), `.webm`, `.mov`, `.gif`, `.png` sequence.

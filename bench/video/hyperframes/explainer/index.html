@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" />
+<script src="assets/gsap.min.js"></script>
+<link rel="stylesheet" href="assets/base.css" />
+<style>
+  .l { transform: translateY(-50%); }
+  .num { left: 160px; top: 120px; font-size: 22px; font-weight: 600; color: #9a9ab0; }
+  .title { left: 160px; top: 260px; font-size: 72px; font-weight: 700; }
+  .bul { left: 168px; font-size: 36px; }
+  .bul::before { content: ""; position: absolute; left: 0; top: 50%; margin-top: -7px; width: 14px; height: 14px; border-radius: 50%; background: #7c5cff; }
+  .bul span { margin-left: 42px; }
+  .panel { left: 1160px; top: 360px; width: 560px; height: 400px; border-radius: 24px; background: #171725; }
+  .ball { left: 1400px; top: 520px; width: 80px; height: 80px; border-radius: 50%; background: #ff5ca8; }
+  .rule { left: 160px; top: 998px; width: 1600px; height: 4px; border-radius: 2px; background: #ffffff14; }
+</style></head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1920" data-height="1080"></div>
+<script>
+  const slides = [
+    ["Why native rendering", ["Browsers lay out a DOM per frame", "Screenshots cost more than drawing", "Native code uses every core"]],
+    ["Frames are pure functions", ["f(spec, t) gives a display list", "No shared state between frames", "Render frames in any order"]],
+    ["The encoder knows what changed", ["Unchanged blocks are skipped", "Moved layers become motion vectors", "Static slides cost almost nothing"]],
+    ["JSON in, MP4 out", ["One file describes the video", "Validate before you render", "Agents write it in one shot"]],
+  ];
+  const root = document.getElementById("root");
+  const tl = gsap.timeline({ paused: true });
+  slides.forEach(([title, bullets], k) => {
+    const s = document.createElement("div");
+    const start = k * 5, dur = k === 3 ? 5 : 5.5;
+    s.className = "scene clip";
+    Object.assign(s.dataset, { start, duration: dur });
+    s.innerHTML = `<div class="abs l num">0${k + 1} / 04</div><div class="abs l d title">${title}</div>` +
+      bullets.map((b, i) => `<div class="abs l bul" style="top:${420 + i * 100}px"><span>${b}</span></div>`).join("") +
+      `<div class="abs panel"></div><div class="abs ball"></div><div class="abs rule"></div>`;
+    root.appendChild(s);
+    if (k > 0) tl.from(s, { opacity: 0, duration: 0.5, ease: "power3.inOut" }, start);
+    tl.from(s.querySelector(".title"), { opacity: 0, y: 40, duration: 0.6, ease: "power3.out" }, start);
+    tl.from(s.querySelectorAll(".bul"), { opacity: 0, y: 40, duration: 0.6, ease: "power3.out", stagger: 0.4 }, start + 0.5);
+    const ball = s.querySelector(".ball");
+    tl.to({ t: 0 }, { t: dur, duration: dur, ease: "none", onUpdate() { gsap.set(ball, { y: 12 * Math.sin(this.targets()[0].t * 2) }); } }, start);
+  });
+  window.__timelines = window.__timelines || {};
+  window.__timelines["main"] = tl;
+</script>
+</body></html>

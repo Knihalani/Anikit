@@ -197,6 +197,12 @@ pub struct ParticleText {
     pub delay: f32,
     pub glow: bool,
     pub seed: u32,
+    /// `screen` (default: glowing light on dark) or `normal` (solid dots, for
+    /// dark particles on a light background).
+    pub blend: String,
+    /// How much the exit sweeps left to right, 0..1 (1 = default wave, 0 =
+    /// every particle leaves at once, a burst).
+    pub stagger: f32,
     #[serde(skip)]
     plan: Vec<Word>,
     #[serde(skip)]
@@ -221,6 +227,8 @@ impl Default for ParticleText {
             delay: 0.0,
             glow: true,
             seed: 1,
+            blend: "screen".into(),
+            stagger: 1.0,
             plan: Vec::new(),
             parts: Vec::new(),
         }
@@ -240,6 +248,10 @@ impl Prepare for ParticleText {
         if !["blow", "explode", "fade", "none"].contains(&self.exit.as_str()) {
             return Err(Error(format!("exit must be blow, explode, fade or none, not {:?}", self.exit)));
         }
+        if !["screen", "normal"].contains(&self.blend.as_str()) {
+            return Err(Error(format!("blend must be screen or normal, not {:?}", self.blend)));
+        }
+        self.stagger = self.stagger.clamp(0.0, 1.0);
         if self.count == 0 || self.count > 50_000 {
             return Err(Error("count must be 1..50000".into()));
         }
@@ -361,7 +373,7 @@ impl Component for ParticleText {
             let twinkle = 0.75 + 0.25 * (tw_t * 3.1 + p.phase * 3.0).sin();
             if exiting {
                 let xs = clamp01((x - (cx - half_w)) / (2.0 * half_w).max(1.0));
-                let qd = (0.5 * xs + 0.3 * p.e[0]) * self.exit_time * 0.55;
+                let qd = (0.5 * xs + 0.3 * p.e[0]) * self.exit_time * 0.55 * self.stagger;
                 let qq = clamp01((exit_t - qd) / (self.exit_time * 0.6));
                 if qq > 0.0 {
                     let q2 = qq * qq;
@@ -425,7 +437,8 @@ impl Component for ParticleText {
             dots.push((ai == NA - 1, fill(p, solid(alpha(c, [0.45, 0.8, 1.0][ai])))));
         }
         let mut out = Vec::new();
-        push_layer(&mut out, 1.0, Blend::Screen, Vec::new());
+        let blend = if self.blend == "normal" { Blend::Normal } else { Blend::Screen };
+        push_layer(&mut out, 1.0, blend, Vec::new());
         // Bloom while the text is formed (blurring a frame-wide scatter costs
         // far more and reads as haze anyway).
         let bloom = if exiting {
@@ -477,5 +490,11 @@ mod tests {
         let ops = c.eval(2.0, 1920.0, 1080.0, 30.0, &th, a);
         preview::snapshot("particle-text-1080", 1920, 1080, th.background, ops, a);
         assert!(build("particle-text", &json!({"text": "a", "exit": "boom"})).is_err());
+        // Solid dots for light backgrounds, and a burst exit (no sweep).
+        let c = build("particle-text", &json!({"text": "Go", "blend": "normal", "stagger": 0, "exit": "explode", "form": 0.1, "hold": 0})).unwrap();
+        let ops = c.eval(0.15, 960.0, 540.0, 30.0, &th, a);
+        preview::validate(&ops).unwrap();
+        assert!(!ops.is_empty());
+        assert!(build("particle-text", &json!({"text": "a", "blend": "add"})).is_err());
     }
 }

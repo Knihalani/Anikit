@@ -1,0 +1,6 @@
+node_modules/
+out/
+remotion/public/InterVariable.ttf
+hyperframes/*/.hyperframes/
+hyperframes/*/renders/
+*.mp4

@@ -5,9 +5,9 @@ description: How to fill the 'changelog' template well.
 
 # Template guide: Changelog / what's new (`changelog`)
 
-A 12–25 s release recap: a version badge and kinetic title beside the product UI, then the changes as icon cards (New ✦, Improved ⚡, Fixed ✓) building in three at a time, then a CTA with confetti.
+A 12–30 s release recap: the version badge and headline beside the product's app screen, then one beat per change with a solid NEW / IMPROVED / FIXED chip, the change in big type and a progress ring counting through the release, then a version end card with a CTA and a sparks burst.
 
-**Typical length:** 12–25 s. **Formats:** 16:9, 9:16 and 1:1 (pass `--format`); the layout adapts automatically.
+**Typical length:** 12–30 s. **Formats:** 16:9, 9:16 and 1:1 (pass `--format`); the layout adapts automatically.
 
 ## Parameters
 

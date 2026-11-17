@@ -25,6 +25,7 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema> 
   check  spec.json              validate; print errors, warnings and timing
   info   [--components]         version, encoders, component catalogue
   schema [-o file]              print the JSON Schema of the spec
+  beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
 common: --json (machine-readable output)
 agents: new | templates | prompt | critique | preview | mcp   (anikit-video templates, anikit-video prompt)";
 
@@ -298,6 +299,17 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                     }
                 }
             }
+        }
+        "beats" => {
+            let path = a.input.as_deref().ok_or("missing audio file")?;
+            let b = anikit_video::eval::beat_markers::refine(&anikit_video::audio::analyze_pcm(&anikit_video::audio::decode_file(path)?));
+            if json {
+                println!("{}", serde_json::json!({ "bpm": b.bpm, "beats": b.beats, "downbeats": b.downbeats }));
+            } else {
+                let f = |v: &[f64]| v.iter().map(|t| format!("{t:.3}")).collect::<Vec<_>>().join(" ");
+                println!("bpm {:.1}\nbeats ({}): {}\nbars ({}): {}", b.bpm, b.beats.len(), f(&b.beats), b.downbeats.len(), f(&b.downbeats));
+            }
+            Ok(ExitCode::SUCCESS)
         }
         "sheet" => {
             let path = need_input(a)?;

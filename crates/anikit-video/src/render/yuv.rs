@@ -341,6 +341,82 @@ pub(crate) fn rgba_to_yuv444(src: &[u8], y: &mut Vec<u8>, u: &mut Vec<u8>, v: &m
     }
 }
 
+/// Composite a premultiplied RGBA8 box (`rw × rh`) source-over onto `out` at
+/// (`x0`, `y0`) (even), in YUV space: conversion is affine, so
+/// `Y = (Yb − 16)(1 − α) + 16 + luma(src)` (chroma likewise, per 2×2 block).
+/// Fully transparent 16-pixel spans are skipped. Opaque pixels give exactly the
+/// 4:2:0 kernel's values; transparent ones leave `out` untouched.
+pub(crate) fn composite_over(src: &[u8], rw: usize, rh: usize, (x0, y0): (usize, usize), out: &mut YuvFrame) {
+    #[cfg(target_arch = "x86_64")]
+    if std::arch::is_x86_feature_detected!("avx2") {
+        // SAFETY: feature checked above.
+        return unsafe { composite_over_avx2(src, rw, rh, (x0, y0), out) };
+    }
+    composite_over_inner(src, rw, rh, (x0, y0), out)
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn composite_over_avx2(src: &[u8], rw: usize, rh: usize, o: (usize, usize), out: &mut YuvFrame) {
+    composite_over_inner(src, rw, rh, o, out)
+}
+
+/// `v / 255`, rounded, for `v` in `0..=65535`.
+#[inline(always)]
+fn div255(v: i32) -> i32 {
+    let v = v + 128;
+    (v + (v >> 8)) >> 8
+}
+
+#[inline(always)]
+fn composite_over_inner(src: &[u8], rw: usize, rh: usize, (x0, y0): (usize, usize), out: &mut YuvFrame) {
+    let (ys, cs) = (out.y_stride, out.c_stride);
+    let row = rw * 4;
+    // Luma.
+    for y in 0..rh {
+        let s = &src[y * row..(y + 1) * row];
+        let d = &mut out.y[(y0 + y) * ys + x0..(y0 + y) * ys + x0 + rw];
+        for (sc, dc) in s.chunks(64).zip(d.chunks_mut(16)) {
+            if sc.chunks_exact(4).all(|p| p[3] == 0) {
+                continue;
+            }
+            for (p, yb) in sc.chunks_exact(4).zip(dc.iter_mut()) {
+                let a = p[3] as i32;
+                let l = (YR * p[0] as i32 + YG * p[1] as i32 + YB * p[2] as i32 + (1 << 14)) >> 15;
+                let bg = *yb as i32 - 16;
+                *yb = (16 + l + div255(bg.max(0) * (255 - a)) - div255((-bg).max(0) * (255 - a))) as u8;
+            }
+        }
+    }
+    // Chroma, per 2×2 block (edge blocks duplicate the last row/column).
+    let (cw, ch) = (rw.div_ceil(2), rh.div_ceil(2));
+    for cy in 0..ch {
+        let (ra, rb) = (cy * 2, (cy * 2 + 1).min(rh - 1));
+        let (sa, sb) = (&src[ra * row..(ra + 1) * row], &src[rb * row..(rb + 1) * row]);
+        let o = (y0 / 2 + cy) * cs + x0 / 2;
+        for cx in 0..cw {
+            let (xa, xb) = (cx * 2 * 4, ((cx * 2 + 1).min(rw - 1)) * 4);
+            let at = |k: usize| sa[xa + k] as i32 + sa[xb + k] as i32 + sb[xa + k] as i32 + sb[xb + k] as i32;
+            let asum = at(3);
+            if asum == 0 {
+                continue;
+            }
+            let (r, g, b) = (at(0), at(1), at(2));
+            let cu = (UR * r + UG * g + UB * b + (1 << 14)) >> 15;
+            let cv = (VR * r + VG * g + VB * b + (1 << 14)) >> 15;
+            let keep = 1020 - asum;
+            let mix = |c: u8, s: i32| {
+                let d = c as i32 - 128;
+                // d · keep / 1020, rounded half away from zero.
+                let m = (d.abs() * keep + 510) / 1020;
+                (128 + s + if d < 0 { -m } else { m }).clamp(0, 255) as u8
+            };
+            out.u[o + cx] = mix(out.u[o + cx], cu);
+            out.v[o + cx] = mix(out.v[o + cx], cv);
+        }
+    }
+}
+
 /// Scalar reference (floating point), for tests.
 pub fn reference_pixel(r: f64, g: f64, b: f64) -> (f64, f64, f64) {
     let y = 16.0 + 219.0 / 255.0 * (0.2126 * r + 0.7152 * g + 0.0722 * b);
