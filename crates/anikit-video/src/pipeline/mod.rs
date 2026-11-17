@@ -623,29 +623,39 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
             }
             prev_hash = ph;
             // Render changed frames; diff display lists for renderer-aware encoders.
+            // Contiguous runs per worker, so each renderer's incremental state follows the timeline.
+            let per = lists.len().div_ceil(threads as usize).max(1);
             let frames: Vec<(Option<YuvFrame>, Option<Vec<bool>>)> = (0..lists.len())
-                .into_par_iter()
-                .map(|k| {
-                    if same[k] {
-                        return (None, None);
-                    }
-                    let dl = &lists[k].0;
-                    let hint = if wants_hints {
-                        let prev = if k == 0 { last_dl.as_ref() } else { Some(&lists[k - 1].0) };
-                        prev.map(|prev| {
-                            let mut m = crate::render::MbMap::new(0, 0);
-                            crate::render::diff::diff_mb_ops(prev, dl, &mut m);
-                            (0..m.mb_width * m.mb_height).map(|i| m.get(i % m.mb_width, i / m.mb_width)).collect()
+                .collect::<Vec<_>>()
+                .par_chunks(per)
+                .flat_map_iter(|ks| {
+                    ks.iter()
+                        .map(|&k| {
+                            if same[k] {
+                                return (None, None);
+                            }
+                            let dl = &lists[k].0;
+                            let hint = if wants_hints {
+                                let prev = if k == 0 { last_dl.as_ref() } else { Some(&lists[k - 1].0) };
+                                prev.map(|prev| {
+                                    let mut m = crate::render::MbMap::new(0, 0);
+                                    crate::render::diff::diff_mb_ops(prev, dl, &mut m);
+                                    (0..m.mb_width * m.mb_height).map(|i| m.get(i % m.mb_width, i / m.mb_width)).collect()
+                                })
+                            } else {
+                                None
+                            };
+                            with_renderer(ev, |_, _| {});
+                            let f = WORKER.with(|w| {
+                                let mut w = w.borrow_mut();
+                                let Worker { renderer, yuv, map, last, .. } = &mut *w;
+                                renderer.as_mut().unwrap().render_yuv_incremental(dl, yuv, map);
+                                *last = None; // the fused path must not reuse this state as its chunk continuation
+                                yuv.clone()
+                            });
+                            (Some(f), hint)
                         })
-                    } else {
-                        None
-                    };
-                    let f = with_renderer(ev, |r, _| {
-                        let mut f = YuvFrame::new(dl.width, dl.height);
-                        r.render_yuv(dl, &mut f);
-                        f
-                    });
-                    (Some(f), hint)
+                        .collect::<Vec<_>>()
                 })
                 .collect();
             let mut items = Vec::with_capacity(frames.len());
