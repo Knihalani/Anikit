@@ -87,9 +87,11 @@ fn caption_pill_background_and_outline_helpers() {
     assert!(d < 0.5, "golden diff {d}");
     common::save(pm, "captions_pill");
     // Helpers for callers that emit glyphs themselves.
-    let mut style = TextStyle::default();
-    style.outline = Some(anikit_video::text::layout::Outline { width: 0.03, color: None, hollow: true });
-    style.background = Some(anikit_video::text::layout::LineBackground::default());
+    let style = TextStyle {
+        outline: Some(anikit_video::text::layout::Outline { width: 0.03, color: None, hollow: true }),
+        background: Some(anikit_video::text::layout::LineBackground::default()),
+        ..Default::default()
+    };
     let l = fonts.layout(&TextSpec::plain("Outlined", style));
     assert!(l.hollow());
     let mut o = vec![];
