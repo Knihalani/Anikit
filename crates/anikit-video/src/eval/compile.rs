@@ -2219,7 +2219,7 @@ impl C<'_> {
             self.d.push(x);
         }
         if let Some(ev) = ev {
-            if ev.layer_info.iter().any(|(_, k)| k == "shader") {
+            if (ev.width, ev.height) != (self.w as u32, self.h as u32) && ev.layer_info.iter().any(|(_, k)| k == "shader") {
                 self.d.push(Diagnostic::warning(&path, format!("shader layers inside a composition render at the composition's size: iResolution is {}×{}, not the video's", ev.width, ev.height)));
             }
             let ev = Arc::new(ev);
