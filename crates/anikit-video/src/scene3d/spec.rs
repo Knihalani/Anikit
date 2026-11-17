@@ -423,8 +423,9 @@ impl ObjDef {
 
 pub const OBJ_KEYS: &[&str] = &[
     "type", "src", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name", "camera", "align", "color", "intensity", "speed", "collide",
+    "d", "path", "points", "segments", "sides", "x", "y", "z", "u", "v", "expr", "res", "vertices", "faces", "flat",
 ];
-const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model", "card"];
+const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model", "card", "extrude", "lathe", "tube", "surface", "heightfield", "mesh"];
 
 /// Shapes are deduplicated by their JSON description.
 pub struct Shapes {
@@ -600,6 +601,16 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
                 model_anim = Some(Arc::new(ModelAnim { anim: a, nodes, k, centre, speed }));
             }
             (first.unwrap(), ext.x.max(ext.z) * k * 0.5)
+        }
+        "extrude" | "lathe" | "tube" | "surface" | "heightfield" | "mesh" => {
+            // Open geometry: deduplicated by its whole description.
+            let gkey = format!("{ty}|{}", serde_json::to_string(m).unwrap_or_default());
+            let mesh = super::authoring::build(&ty, m, path)?.unwrap();
+            let mut r: f32 = 0.0;
+            for q in mesh.pos.chunks_exact(3) {
+                r = r.max((q[0] * q[0] + q[2] * q[2]).sqrt());
+            }
+            (shapes.add(gkey, || Ok(mesh_shape(mesh)))?, r)
         }
         _ => unreachable!(),
     };

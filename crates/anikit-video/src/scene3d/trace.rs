@@ -952,7 +952,9 @@ impl Scene {
             let fr = fresnel_dielectric(nv.min(1.0), if ob.thin { 1.0 / m.ior } else { eta });
             let rough = m.roughness.clamp(0.0, 1.0);
             let r = reflect(d, n);
-            let refl_l = if depth < q.max_depth.min(2) && entering { self.radiance(madd(s.p, ng, 1e-4), r, depth + 1, glass + 1, q, rough, rot) } else { self.sky(r, rough.max(0.05)) };
+            // Only the first glass interface along a path traces its reflection:
+            // otherwise reflection × transmission branching grows as 2^layers.
+            let refl_l = if depth < q.max_depth.min(2) && entering && glass == 0 { self.radiance(madd(s.p, ng, 1e-4), r, depth + 1, glass + 1, q, rough, rot) } else { self.sky(r, rough.max(0.05)) };
             let mut c = scale(refl_l, fr);
             if glass < q.max_glass {
                 let dir = if ob.thin { Some(d) } else { refract(d, n, eta) };
