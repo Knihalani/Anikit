@@ -264,7 +264,7 @@ impl Template {
     }
 
     /// Notes about an expansion an agent should know (length out of range, placeholder UI).
-    pub fn expansion_notes(&self, params: &Value, spec: &Value, duration: f64) -> Vec<String> {
+    pub fn expansion_notes(&self, params: &Value, spec: &Value, _duration: f64) -> Vec<String> {
         let mut v = Vec::new();
         let text = spec.to_string();
         let has_screen = text.contains("\"screen\":");
