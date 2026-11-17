@@ -92,8 +92,8 @@
    "id": "look-grain",
    "component": "grain",
    "props": {
-    "amount": 0.045,
-    "rate": 2
+    "amount": 0.035,
+    "rate": 24
    },
    "width": "100%",
    "height": "100%"

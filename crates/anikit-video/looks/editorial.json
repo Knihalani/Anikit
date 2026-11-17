@@ -1,7 +1,7 @@
 {
  "title": "Editorial",
  "summary": "Warm paper, high-contrast serif display, oxblood accent, slow considered fades; a magazine spread in motion.",
- "direction": "A printed magazine come to life. Huge serif display type (Instrument Serif) set tight, italics for emphasis, small tracked sans labels. Warm paper with grain, a single oxblood accent, hairline rules. Asymmetric layouts with generous margins. Motion is slow and literary: lines reveal from a mask, crossfades breathe. Camera barely moves.",
+ "direction": "A printed magazine come to life. Huge serif display type (Instrument Serif) set tight, italics for emphasis, small tracked sans labels. Warm paper, a single oxblood accent, hairline rules. Asymmetric layouts with generous margins. Motion is slow and literary: lines reveal from a mask, crossfades breathe. Camera barely moves.",
  "mode": "light",
  "theme": {
   "colors": {
@@ -62,18 +62,7 @@
    "height": "100%"
   }
  ],
- "overlay": [
-  {
-   "id": "look-grain",
-   "component": "grain",
-   "props": {
-    "amount": 0.045,
-    "rate": 2
-   },
-   "width": "100%",
-   "height": "100%"
-  }
- ],
+ "overlay": [],
  "post": {
   "preset": "vintage",
   "saturation": 0.95

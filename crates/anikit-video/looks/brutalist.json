@@ -63,18 +63,7 @@
    "height": "100%"
   }
  ],
- "overlay": [
-  {
-   "id": "look-grain",
-   "component": "grain",
-   "props": {
-    "amount": 0.045,
-    "rate": 2
-   },
-   "width": "100%",
-   "height": "100%"
-  }
- ],
+ "overlay": [],
  "post": {
   "preset": "punchy"
  }
