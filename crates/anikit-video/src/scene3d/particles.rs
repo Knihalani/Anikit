@@ -37,7 +37,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 const KEYS: &[&str] = &[
-    "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch",
+    "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch", "shadows", "force",
 ];
 const EMIT_KEYS: &[&str] = &["shape", "pos", "position", "radius", "size", "surface", "axis", "image", "composition", "frame", "threshold", "rot", "rotation"];
 
@@ -70,6 +70,8 @@ enum Emit {
     Image { pts: Arc<Vec<(V3, [f32; 3])>>, cdf: Arc<Vec<f32>>, texel: f32, normal: V3 },
     /// An image or composition, resolved on first render.
     Pending(Arc<Map<String, Value>>),
+    /// Custom: position (and optionally velocity) as expressions of `i`, `age` (the spawn cycle), `t`.
+    Expr { pos: Arc<[PExpr; 3]>, vel: Option<Arc<[PExpr; 3]>> },
 }
 
 #[derive(Clone)]
@@ -122,6 +124,11 @@ pub struct Def {
     pub shadows: bool,
     /// Hash of the description (disk cache key).
     key: u64,
+    /// Custom acceleration field, size, colour and opacity per particle.
+    force: Option<Arc<[PExpr; 3]>>,
+    size_e: Option<PExpr>,
+    color_e: Option<Arc<[PExpr; 3]>>,
+    opacity_e: Option<PExpr>,
 }
 
 fn gf(m: &Map<String, Value>, k: &str, d: f32, path: &str) -> Res<f32> {
@@ -147,6 +154,12 @@ fn emit(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, named: &
         return emit(o, shapes, mats, named, objects, path);
     }
     let m = v.as_object().ok_or_else(|| format!("{path}: expected an emitter like {{ \"shape\": \"sphere\", \"radius\": 1 }} or an object like {{ \"text\": \"ANIKIT\" }}"))?;
+    // Custom spawn rule: "pos": "=[…]" expressions.
+    if let Some(Value::String(ps)) = m.get("pos").or(m.get("position")) {
+        spec::check_keys(m, &["pos", "position", "vel", "velocity"], path)?;
+        let vel = m.get("vel").or(m.get("velocity")).map(|x| pexpr3(x, &format!("{path}.vel"))).transpose()?.map(Arc::new);
+        return Ok(Emit::Expr { pos: Arc::new(pexpr3(&Value::String(ps.clone()), &format!("{path}.pos"))?), vel });
+    }
     let pos = m.get("pos").or(m.get("position")).map(|x| v3c(x, &format!("{path}.pos"))).transpose()?;
     if m.contains_key("image") || m.contains_key("composition") {
         spec::check_keys(m, EMIT_KEYS, path)?;
@@ -236,8 +249,13 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
             Some(Target { emit: emit(&Value::Object(tm), shapes, mats, named, objects, &p)?, from, to: to.max(from + 1e-3) })
         }
     };
+    let color_e = match m.get("color") {
+        Some(Value::String(c)) if c.trim_start().starts_with('=') => Some(Arc::new(pexpr3(&Value::String(c.clone()), &format!("{path}.color"))?)),
+        _ => None,
+    };
     let colors = match m.get("color") {
         None => vec![v3(1.0, 1.0, 1.0)],
+        Some(_) if color_e.is_some() => vec![v3(1.0, 1.0, 1.0)],
         Some(Value::Array(a)) if a.iter().all(|x| x.is_string()) => a.iter().enumerate().map(|(k, x)| spec::color(x, &format!("{path}.color[{k}]"))).collect::<Res<Vec<_>>>()?,
         Some(x) => vec![spec::color(x, &format!("{path}.color"))?],
     };
@@ -289,12 +307,18 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
         collide: m.get("collide").and_then(|x| x.as_bool()).unwrap_or(true),
         bounce: gf(m, "bounce", 0.3, path)?,
         friction: gf(m, "friction", 0.3, path)?.clamp(0.0, 1.0),
-        size: gf(m, "size", 0.004, path)?.max(1e-5),
+        size: match m.get("size") {
+            Some(Value::String(_)) => 0.004,
+            _ => gf(m, "size", 0.004, path)?.max(1e-5),
+        },
         size_var: gf(m, "size_var", 0.5, path)?.clamp(0.0, 1.0),
         colors,
         color_by,
         speed_range: sr,
-        opacity: gf(m, "opacity", 1.0, path)?.clamp(0.0, 1.0),
+        opacity: match m.get("opacity") {
+            Some(Value::String(_)) => 1.0,
+            _ => gf(m, "opacity", 1.0, path)?.clamp(0.0, 1.0),
+        },
         emissive: gf(m, "emissive", if blend == Blend::Add { 1.0 } else { 0.0 }, path)?,
         blend,
         lit: m.get("lit").and_then(|x| x.as_bool()).unwrap_or(blend == Blend::Over),
@@ -303,12 +327,99 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
         substeps: gf(m, "substeps", 2.0, path)?.clamp(1.0, 16.0) as u32,
         stretch: gf(m, "stretch", 1.0, path)?.max(0.0),
         shadows: m.get("shadows").and_then(|x| x.as_bool()).unwrap_or(blend == Blend::Over),
+        force: m.get("force").map(|x| pexpr3(x, &format!("{path}.force"))).transpose()?.map(Arc::new),
+        size_e: match m.get("size") {
+            Some(Value::String(x)) => Some(PExpr::compile(x, &format!("{path}.size"))?),
+            _ => None,
+        },
+        color_e,
+        opacity_e: match m.get("opacity") {
+            Some(Value::String(x)) => Some(PExpr::compile(x, &format!("{path}.opacity"))?),
+            _ => None,
+        },
         key: {
             // An image emitter's file can change under the same spec.
             let stamp = emit_v.get("image").and_then(|x| x.as_str()).and_then(|f| std::fs::metadata(f).ok()).and_then(|m| m.modified().ok()).map(|t| format!("{t:?}")).unwrap_or_default();
             crate::components::style::fnv(&[b"anikit-particles-v1", v.to_string().as_bytes(), emit_v.to_string().as_bytes(), stamp.as_bytes()])
         },
     })
+}
+
+// ------------------------------------------------------------------ expressions
+
+/// A per-particle expression. Variables: `x`, `y`, `z` (position, m), `vx`,
+/// `vy`, `vz` (velocity, m/s), `t` (seconds), `age` (0–1 over a life, or
+/// seconds / 4 without `life`), `i` (particle id), plus every expression
+/// function (`sin`, `noise`, `rand`, `clamp`, `mix` …). In emitters, `i` is the
+/// particle and `age` the spawn cycle.
+#[derive(Clone)]
+pub struct PExpr(Arc<crate::eval::expr::Expr>);
+
+/// Particle variables onto the expression engine's slots.
+const PVARS: &[(&str, &str)] = &[("vx", "T"), ("vy", "gt"), ("vz", "p"), ("age", "n"), ("x", "w"), ("y", "h"), ("z", "fps")];
+
+impl PExpr {
+    fn compile(src: &str, path: &str) -> Res<PExpr> {
+        let src = src.strip_prefix('=').unwrap_or(src);
+        let b = src.as_bytes();
+        let mut out = String::with_capacity(src.len());
+        let mut i = 0;
+        'scan: while i < b.len() {
+            let start_ok = i == 0 || !(b[i - 1].is_ascii_alphanumeric() || b[i - 1] == b'_');
+            if start_ok {
+                for (from, to) in PVARS {
+                    let e = i + from.len();
+                    if src[i..].starts_with(from) && b.get(e).is_none_or(|c| !(c.is_ascii_alphanumeric() || *c == b'_')) {
+                        out.push_str(to);
+                        i = e;
+                        continue 'scan;
+                    }
+                }
+            }
+            out.push(b[i] as char);
+            i += 1;
+        }
+        crate::eval::expr::Expr::compile(&out, 1.0, 1920.0, 1080.0).map(|e| PExpr(Arc::new(e))).map_err(|e| format!("{path}: expression `{src}`: {e}"))
+    }
+
+    #[inline]
+    fn at(&self, p: V3, v: V3, t: f32, age: f32, i: usize) -> f32 {
+        let vars = Vars { t: t as f64, scene_t: v.x as f64, gt: v.y as f64, p: v.z as f64, i: i as f64, n: age as f64, w: p.x as f64, h: p.y as f64, fps: p.z as f64 };
+        self.0.eval(&vars) as f32
+    }
+}
+
+/// `"=[a, b, c]"`: three per-particle expressions.
+fn pexpr3(v: &Value, path: &str) -> Res<[PExpr; 3]> {
+    let s = v.as_str().ok_or_else(|| format!("{path}: expected \"=[x, y, z]\" (expressions of x, y, z, vx, vy, vz, t, age, i)"))?;
+    let body = s.strip_prefix('=').unwrap_or(s).trim();
+    let inner = body.strip_prefix('[').and_then(|b| b.strip_suffix(']')).ok_or_else(|| format!("{path}: expected \"=[x, y, z]\""))?;
+    let mut parts = Vec::new();
+    let (mut depth, mut cur) = (0, String::new());
+    for c in inner.chars() {
+        match c {
+            '(' | '[' => {
+                depth += 1;
+                cur.push(c)
+            }
+            ')' | ']' => {
+                depth -= 1;
+                cur.push(c)
+            }
+            ',' if depth == 0 => parts.push(std::mem::take(&mut cur)),
+            _ => cur.push(c),
+        }
+    }
+    parts.push(cur);
+    if parts.len() != 3 {
+        return Err(format!("{path}: expected 3 expressions, got {}", parts.len()));
+    }
+    Ok([PExpr::compile(&parts[0], path)?, PExpr::compile(&parts[1], path)?, PExpr::compile(&parts[2], path)?])
+}
+
+#[inline]
+fn eval3p(e: &[PExpr; 3], p: V3, v: V3, t: f32, age: f32, i: usize) -> V3 {
+    v3(e[0].at(p, v, t, age, i), e[1].at(p, v, t, age, i), e[2].at(p, v, t, age, i))
 }
 
 // ------------------------------------------------------------------ emitters
@@ -364,6 +475,7 @@ fn sample(e: &Emit, seed: u32, i: u32, k: u32) -> (V3, V3, Option<[f32; 3]>) {
             (add(p, j), *normal, Some(c))
         }
         Emit::Pending(_) => (v3(0.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), None),
+        Emit::Expr { pos, .. } => (eval3p(pos, v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0), 0.0, k as f32, i as usize), v3(0.0, 1.0, 0.0), None),
     }
 }
 
@@ -656,7 +768,10 @@ impl Sim {
         let d = &self.def;
         let (p, n, _) = sample(&self.emit, d.seed, i as u32, k);
         let r = |j: u32| hu(d.seed ^ k.wrapping_mul(0x27d4_eb2f), i as u32, j) * 2.0 - 1.0;
-        let v = add(add(d.vel, scale(n, d.normal_speed)), scale(v3(r(11), r(12), r(13)), d.spread));
+        let mut v = add(add(d.vel, scale(n, d.normal_speed)), scale(v3(r(11), r(12), r(13)), d.spread));
+        if let Emit::Expr { vel: Some(e), .. } = &self.emit {
+            v = add(v, eval3p(e, p, v3(0.0, 0.0, 0.0), self.birth(i), k as f32, i));
+        }
         (p, v)
     }
 
@@ -784,6 +899,16 @@ impl Sim {
                         }
                         let (x, y, z) = (px[j], py[j], pz[j]);
                         let (mut ax, mut ay, mut az) = (g.x, g.y, g.z);
+                        if let Some(fe) = &d.force {
+                            let age = match life {
+                                Some(l) => ((t - (d.start + hu(d.seed, i as u32, 17) * l)) / l).rem_euclid(1.0),
+                                None => ((t - d.start) / 4.0).clamp(0.0, 0.999),
+                            };
+                            let f = eval3p(fe, v3(x, y, z), v3(vx[j], vy[j], vz[j]), t, age, i);
+                            ax += f.x;
+                            ay += f.y;
+                            az += f.z;
+                        }
                         let (mut ux, mut uy, mut uz) = (vx[j], vy[j], vz[j]);
                         if let Some(fg) = flow {
                             let a = fg.sample((x + off.x) * inv, (y + off.y) * inv, (z + off.z) * inv);
@@ -1000,12 +1125,13 @@ impl Sim {
 
     /// Colour (linear) and opacity of particle `i` at `t`, given its speed.
     #[inline]
-    fn look(&self, i: usize, t: f32, p: V3, speed: f32) -> ([f32; 3], f32) {
+    fn look(&self, i: usize, t: f32, p: V3, vel: V3) -> ([f32; 3], f32) {
         let d = &self.def;
         let age = self.age(i, t);
         if age < 0.0 {
             return ([0.0; 3], 0.0);
         }
+        let speed = len(vel);
         let x = match d.color_by {
             ColorBy::Random => hu(d.seed, i as u32, 41),
             ColorBy::Age => age,
@@ -1013,7 +1139,10 @@ impl Sim {
             ColorBy::Height => (p.y / 3.0).clamp(0.0, 1.0),
             ColorBy::Source => 0.0,
         };
-        let c = if let (ColorBy::Source, Some(sc)) = (d.color_by, &self.src_col) {
+        let c = if let Some(e) = &d.color_e {
+            let c = eval3p(e, p, vel, t, age, i);
+            [c.x.max(0.0), c.y.max(0.0), c.z.max(0.0)]
+        } else if let (ColorBy::Source, Some(sc)) = (d.color_by, &self.src_col) {
             sc[i]
         } else if d.colors.len() == 1 {
             [d.colors[0].x, d.colors[0].y, d.colors[0].z]
@@ -1027,7 +1156,11 @@ impl Sim {
             Some(_) => smoothstep(0.0, 0.08, age) * (1.0 - smoothstep(0.75, 1.0, age)),
             None => 1.0,
         };
-        (c, a * d.opacity)
+        let op = match &d.opacity_e {
+            Some(e) => e.at(p, vel, t, age, i).clamp(0.0, 1.0),
+            None => d.opacity,
+        };
+        (c, a * op)
     }
 }
 
@@ -1428,7 +1561,10 @@ impl ShadowMap {
                 if op <= 0.0 {
                     continue;
                 }
-                let size = d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0);
+                let size = match &d.size_e {
+                    Some(e) => e.at(v3(p[0], p[1], p[2]), v3(0.0, 0.0, 0.0), t, sim.age(i, t), i).max(0.0),
+                    None => d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0),
+                };
                 let od = op * std::f32::consts::PI * size * size / texel_area;
                 let e = ext(p);
                 let (fx, fy) = ((e.x - lo.x) * k.x - 0.5, (e.y - lo.y) * k.y - 0.5);
@@ -1637,7 +1773,10 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 if z < 0.05 {
                     continue;
                 }
-                let size = d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0);
+                let size = match &d.size_e {
+                    Some(e) => e.at(p, snap.vel(j), t, sim.age(i, t), i).max(0.0),
+                    None => d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0),
+                };
                 let r_px = size * pj.k / z;
                 let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
                 let foot = (r_px * r_px + coc * coc).sqrt();
@@ -1651,8 +1790,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     continue;
                 }
                 let vel = snap.vel(j);
-                let speed = len(vel);
-                let (col, a) = sim.look(i, t, p, speed);
+                let (col, a) = sim.look(i, t, p, vel);
                 if a <= 0.0 {
                     continue;
                 }
