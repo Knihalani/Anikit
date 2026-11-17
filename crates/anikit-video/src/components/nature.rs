@@ -851,8 +851,8 @@ fn riso_print(hand: &Hand, out: &mut [f32], w: usize, h: usize, f: Finish, seed:
             let fa = if amax >= 0.98 {
                 1.0
             } else {
-                let u = (px + py) * 0.7071 / cell;
-                let v = (py - px) * 0.7071 / cell;
+                let u = (px + py) * std::f32::consts::FRAC_1_SQRT_2 / cell;
+                let v = (py - px) * std::f32::consts::FRAC_1_SQRT_2 / cell;
                 let spot = 0.5 + 0.25 * ((u * tau).cos() + (v * tau).cos());
                 smoothstep(-0.07, 0.07, amax + spot - 1.0) * amax.min(1.0).sqrt().max(amax)
             };
@@ -2360,7 +2360,7 @@ fn grow(sp: Species, h: f32, rng: &mut Rng, c: &PlantCols, sc: f32) -> Vec<Prim>
                     ps.push(Prim::Limb { a: [x, 0.0], b: tip, ra: 1.2 * sc + h * 0.012, rb: 0.8 * sc, col: c.fol[0], lit: -0.2, dark: 0.3 });
                     let pr = h * rng.range(0.06, 0.09) + 2.0 * sc;
                     let mass = [tip[0], tip[1], pr * 1.8];
-                    let rot = rng.f() * 6.28;
+                    let rot = rng.f() * std::f32::consts::TAU;
                     for k in 0..5 {
                         let a = rot + k as f32 / 5.0 * std::f32::consts::TAU;
                         ps.push(Prim::Disc { c: [tip[0] + a.cos() * pr, tip[1] + a.sin() * pr * 0.8], r: pr * 0.75, col: c.accent, mass });
@@ -3039,7 +3039,7 @@ impl Water {
                     len: (10.0 + 70.0 * depth) * sc * rng.range(0.5, 1.3),
                     th: (1.0 + 3.5 * depth) * sc * rng.range(0.7, 1.2),
                     v: (4.0 + 18.0 * depth) * sc * rng.range(0.6, 1.4) * self.speed * if rng.f() < 0.5 { -1.0 } else { 1.0 },
-                    ph: rng.f() * 6.28,
+                    ph: rng.f() * std::f32::consts::TAU,
                     glint: false,
                 });
             }
@@ -3054,7 +3054,7 @@ impl Water {
                     len: (6.0 + 40.0 * depth) * sc * rng.range(0.5, 1.2),
                     th: (1.2 + 3.0 * depth) * sc,
                     v: (2.0 + 6.0 * depth) * sc * if rng.f() < 0.5 { -1.0 } else { 1.0 } * self.speed,
-                    ph: rng.f() * 6.28,
+                    ph: rng.f() * std::f32::consts::TAU,
                     glint: true,
                 });
             }

@@ -977,5 +977,9 @@ Motion is evaluated at the exact frame time; nothing steps outside `--quality dr
 | `product-shot` | 1242.126 | 0.84 | 11.96 | 0/29 |
 | `now-playing` | 0.111 | 11.37 | 1.65 | 0/29 |
 | `lottie` | 0.000 | 0.78 | 0.00 | 29/29 |
+| `landscape` | 0.001 | 7.71 | 5.89 | 2/29 |
+| `plants` | 0.003 | 4.48 | 3.91 | 0/29 |
+| `clouds` | 0.001 | 1.49 | 0.56 | 0/29 |
+| `water` | 0.698 | 6.35 | 8.56 | 0/29 |
 
 Totals: eval 56.01 ms, full render 178.56 ms, incremental 157.14 ms
