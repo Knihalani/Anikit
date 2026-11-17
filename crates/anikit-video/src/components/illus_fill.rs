@@ -210,7 +210,7 @@ impl Prepare for Hatch {
     fn prepare(&mut self) -> Result<(), Error> {
         check_one("hatch style", &self.style, &["hatch", "crosshatch", "stipple", "scribble"])?;
         check_one("hatch shape", &self.shape, &["rect", "circle", "blob"])?;
-        if !(self.spacing > 0.5) {
+        if self.spacing.is_nan() || self.spacing <= 0.5 {
             return Err(Error("hatch spacing must be > 0.5 px".into()));
         }
         self.path = parse_d(&self.d)?;
@@ -235,7 +235,7 @@ fn hand_line(p: &mut Path, a: (f32, f32), b: (f32, f32), jit: f32, rng: &mut Rng
     let mut prev = at(0.0);
     for i in 1..=k {
         let q = at(i as f32 / k as f32);
-        p.quad_to(prev.midpoint(q) + kurbo::Vec2::new(0.0, 0.0), q);
+        p.quad_to(prev.midpoint(q), q);
         prev = q;
     }
 }
@@ -343,8 +343,7 @@ impl Hatch {
                             let t = self.tone_at(mx, my, bb);
                             // Bit-reversed order over lines so dark areas get every line, light every 2nd/4th.
                             let order = (k as u32).reverse_bits() as f32 / u32::MAX as f32;
-                            let thr = gate + (1.0 - gate) * order;
-                            if t > 0.02 && (t - gate) / (1.0 - gate).max(1e-3) > order * 0.98 && t >= thr * 0.0 {
+                            if t > 0.02 && (t - gate) / (1.0 - gate).max(1e-3) > order * 0.98 {
                                 let a0 = u + rng.range(-0.08, 0.1) * seg;
                                 let a1 = u1 - rng.range(-0.05, 0.15) * seg;
                                 let mut p = Path::new();
