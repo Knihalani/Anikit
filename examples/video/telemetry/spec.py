@@ -548,7 +548,7 @@ def scene_onboard():
 
 
 # ---- replay wipe (two halves straddling a cut) ------------------------------------
-WIPE = {"duration": 0.4, "hold": 0.32, "colors": [PANEL2, "#FFFFFF", RED], "direction": "right", "slant": 14}
+WIPE = {"duration": 0.4, "hold": 0.32, "colors": [PANEL2, "#8E1422", RED], "direction": "right", "slant": 14}
 
 
 def replay_wipe_out(scene_dur):
@@ -753,8 +753,12 @@ def scene_fastest():
              letterSpacing="0.06em", enter={"preset": "fadeUp", "delay": 0.4}),
     ]
     # replace the {value} counter with a lap-time string reveal (mono, scrambled)
-    layers[-2] = text(fmt_lap(fl["time"]), M + 96, 540, 140, PURPLE, MONO, 800, "left",
-                      glow={"radius": 30, "intensity": 0.9, "color": PURPLE}, enter="scramble")
+    # a timer settling: minutes fixed, seconds count up to the lap time (digits only)
+    mins = int(fl["time"] // 60)
+    secs_v = fl["time"] - 60 * mins
+    layers[-2] = text(f"{mins}:{{value:00.000}}", M + 96, 540, 140, PURPLE, MONO, 800, "left", value=r(secs_v, 3),
+                      glow={"radius": 30, "intensity": 0.9, "color": PURPLE},
+                      animate=[{"from": {"value": r(secs_v - 6.5, 3)}, "at": 0.1, "duration": 0.45, "ease": "outExpo"}])
     for k, s in enumerate(secs):
         x = 1240 + k * 0
         y = 360 + k * 110

@@ -10,7 +10,7 @@ A broadcast-style data recap of the last laps of a fictional race: the Kessra Gr
 | 3.9 | map | Track drawn on with stroke trim, sector colours, ten cars racing round at ×12 time, a live timing tower with tyres, gaps and position swaps (IVE passes LIN at T7) |
 | 12.5 | onboard | Okafor's lap 56: speed dial, gear, shift lights, throttle/brake, a speed trace drawing over the rival's ghost, live delta, minimap, lower third |
 | 20.5 | overtake | Replay wipe, then a zoomed Turn 1: Marchetti locks up and Okafor goes past in slow motion, with motion trails, live speeds and the interval |
-| 28.2 | fastest | Fastest-lap sting: 1:31.279, purple sectors |
+| 28.2 | fastest | Fastest-lap sting: the timer settles on 1:31.279; purple sectors |
 | 31.3 | analysis | Sector comparison bars (purple / green / yellow) and a lap-time line chart for laps 48–58 |
 | 38.7 | winner | Chrome 3D OKAFOR (`text-3d`), podium, confetti |
 
@@ -52,8 +52,8 @@ On a 4-core cloud VM (16 GB), with the default ak264 encoder and the AAC audio t
 
 | | |
 |---|---|
-| frames | 2742 (265 deduped) |
-| render wall time | 16.6 s (165 fps); other runs took 15.9–16.6 s (165–172 fps) |
-| output | 18.0 MB MP4 (18 475 KB), 1920×1080, 60 fps, about 3.3 Mbit/s |
+| frames | 2742 (273 deduped) |
+| render wall time | 11.8 s (232 fps) after checkpoint 4; the parent measured 10.8 s (254 fps) on main |
+| output | 16.8 MB MP4 (17 250 KB), 1920×1080, 60 fps, about 3.0 Mbit/s |
 | loudness | −14.0 LUFS integrated, −1.4 dBTP true peak (ffmpeg `ebur128`, after AAC) |
 | spec | 542 KB JSON, mostly car-position and trail keyframes |
