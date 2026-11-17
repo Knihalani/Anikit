@@ -123,6 +123,19 @@ Source: `cargo run --release -p anikit-video --example parts_bench`. Single thre
 | Blur layer 400×300, σ 8 / full-frame blur, σ 20 | 1.19 / 8.2 |
 | YUV conversion alone (AVX2) | 0.75 |
 
+### End to end (templates, after the speed phase)
+
+`anikit-video render` at 1080p30 with the `ak264` encoder, on a restarted VM that measures about 1.5–2× slower than the one used for the tables above:
+
+| Template | Frames | Wall time | Throughput |
+|---|---|---|---|
+| launch | 752 | 2.38 s | 315 fps (was 167 before the backdrop paths) |
+| testimonial | 699 | 2.11 s | 332 fps |
+| tutorial | 818 | 2.04 s | 400 fps |
+| logo-reveal | 120 | 0.51 s | 235 fps |
+
+Single-thread `render_yuv` on these templates now costs 4–5 ms per frame. Most of that is the 1080p plane writes, the overlay boxes and text; the background gradients are nearly free.
+
 ### What moved the numbers
 
 Before → after, same benchmarks:
