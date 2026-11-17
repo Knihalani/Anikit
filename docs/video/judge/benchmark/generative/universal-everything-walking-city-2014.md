@@ -6,7 +6,7 @@ studio: "Universal Everything (creative director: Matt Pyke; animation: Chris Pe
 client: "Self-initiated"
 year: 2014
 url: https://vimeo.com/85596568
-alt_urls: [https://www.universaleverything.com/art/walking-city, https://vimeo.com/718724283]
+alt_urls: ["https://www.universaleverything.com/art/walking-city", "https://vimeo.com/718724283"]
 length_s: 468
 verified: oembed
 aspect: "16:9"                      # est.

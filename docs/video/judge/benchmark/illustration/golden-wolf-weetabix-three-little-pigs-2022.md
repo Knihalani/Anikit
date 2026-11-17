@@ -6,7 +6,7 @@ studio: "Golden Wolf (animation lead/storyboard: Stephanie Mercier), with Stink 
 client: "Weetabix (agency: BBH London)"
 year: 2022
 url: https://vimeo.com/710889465
-alt_urls: [https://goldenwolf.tv/work/three-little-pigs]
+alt_urls: ["https://goldenwolf.tv/work/three-little-pigs"]
 length_s: 30
 verified: oembed
 aspect: "16:9"

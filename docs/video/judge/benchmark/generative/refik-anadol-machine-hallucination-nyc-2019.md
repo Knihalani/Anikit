@@ -6,7 +6,7 @@ studio: "Refik Anadol Studio"
 client: "Artechouse New York (commission)"
 year: 2019
 url: https://vimeo.com/450313024
-alt_urls: [https://refikanadol.com/works/machine-hallucination/]
+alt_urls: ["https://refikanadol.com/works/machine-hallucination/"]
 length_s: 336
 verified: oembed
 aspect: "16:9"                      # the documentation video; the installation was 13689 × 7418 px across 18 channels

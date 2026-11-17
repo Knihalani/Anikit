@@ -6,7 +6,7 @@ studio: "BUCK (CD: Ryan Honey; animation director: Steve Day; AD: Joe Mullen)"
 client: "Good Books (agency: String Theory)"
 year: 2012
 url: https://vimeo.com/52422865
-alt_urls: [https://buck.co/work/goodbooks, https://motionographer.com/2012/03/26/interview-buck-good-books-metamorphosis/]
+alt_urls: ["https://buck.co/work/goodbooks", "https://motionographer.com/2012/03/26/interview-buck-good-books-metamorphosis/"]
 length_s: 162
 verified: oembed
 aspect: "16:9"

@@ -6,7 +6,7 @@ studio: "Panoply (CD: Mark Lindner)"
 client: "Self-initiated"
 year: 2024
 url: https://vimeo.com/1022123584
-alt_urls: [https://www.stashmedia.tv/data-dimensions-panoply-drops-manifold-short-film/]
+alt_urls: ["https://www.stashmedia.tv/data-dimensions-panoply-drops-manifold-short-film/"]
 length_s: 89
 verified: oembed
 aspect: "16:9"                      # est.

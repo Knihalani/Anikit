@@ -6,7 +6,7 @@ studio: "Tendril (director: Joey Recoskie; CD: Chris Bahry)"
 client: "Hublot"
 year: 2024
 url: https://vimeo.com/904510310
-alt_urls: [https://vimeo.com/904619597, https://www.stashmedia.tv/precision-complexity-tendril-launchs-the-hublot-mp-10/]
+alt_urls: ["https://vimeo.com/904619597", "https://www.stashmedia.tv/precision-complexity-tendril-launchs-the-hublot-mp-10/"]
 length_s: 68
 verified: oembed
 aspect: "16:9"                      # est.

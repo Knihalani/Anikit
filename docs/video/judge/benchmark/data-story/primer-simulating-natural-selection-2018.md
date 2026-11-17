@@ -6,7 +6,7 @@ studio: "Primer (Justin Helps)"
 client: "Self-initiated"
 year: 2018
 url: https://www.youtube.com/watch?v=0ZGbIKd0XrM
-alt_urls: [https://github.com/Helpsypoo/primer, https://flowingdata.com/2019/07/31/natural-selection-simulation/]
+alt_urls: ["https://github.com/Helpsypoo/primer", "https://flowingdata.com/2019/07/31/natural-selection-simulation/"]
 length_s: null
 verified: oembed
 aspect: "16:9"

@@ -6,7 +6,7 @@ studio: "Pleas Call Me Champ Studio (director: Champ Panupong Techawongthawon)"
 client: "TED-Ed (educator: Briana Brownell)"
 year: 2021
 url: https://vimeo.com/522542250
-alt_urls: [https://www.pleasecallmechamp.com]
+alt_urls: ["https://www.pleasecallmechamp.com"]
 length_s: 278
 verified: oembed
 aspect: "16:9"

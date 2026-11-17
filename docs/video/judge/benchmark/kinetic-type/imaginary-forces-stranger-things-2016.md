@@ -6,7 +6,7 @@ studio: "Imaginary Forces (creative director: Michelle Dougherty; lead animator:
 client: "Netflix"
 year: 2016
 url: https://vimeo.com/174870794
-alt_urls: [https://imaginaryforces.com/project/stranger-things, https://www.artofthetitle.com/title/stranger-things/]
+alt_urls: ["https://imaginaryforces.com/project/stranger-things", "https://www.artofthetitle.com/title/stranger-things/"]
 length_s: 53
 verified: oembed
 aspect: "other"

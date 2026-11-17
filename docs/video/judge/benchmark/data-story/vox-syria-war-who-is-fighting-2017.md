@@ -6,7 +6,7 @@ studio: "Vox (Johnny Harris, Max Fisher)"
 client: "Vox"
 year: 2017
 url: https://www.youtube.com/watch?v=JFpanWNgfQY
-alt_urls: [http://www.vox.com/2015/10/14/9525469/syrias-war-a-5-minute-history]
+alt_urls: ["http://www.vox.com/2015/10/14/9525469/syrias-war-a-5-minute-history"]
 length_s: null
 verified: oembed
 aspect: "16:9"

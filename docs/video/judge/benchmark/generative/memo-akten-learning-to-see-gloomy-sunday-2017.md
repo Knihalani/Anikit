@@ -6,7 +6,7 @@ studio: "Memo Akten"
 client: "Self-initiated"
 year: 2017
 url: https://vimeo.com/260612034
-alt_urls: [https://www.memo.tv/works/learning-to-see/]
+alt_urls: ["https://www.memo.tv/works/learning-to-see/"]
 length_s: 182
 verified: oembed
 aspect: "16:9"                      # est.

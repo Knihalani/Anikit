@@ -6,7 +6,7 @@ studio: "Andreas Wannerstedt"
 client: "Self-initiated"
 year: 2020
 url: https://vimeo.com/454900647
-alt_urls: [https://www.instagram.com/andreaswannerstedt/]
+alt_urls: ["https://www.instagram.com/andreaswannerstedt/"]
 length_s: 60
 verified: oembed
 aspect: "16:9"                      # est.

@@ -6,7 +6,7 @@ studio: "extraweg (director/3D: Oliver Latta); title typography: Teddy Blanks, C
 client: "Apple TV+ / Red Hour (Ben Stiller)"
 year: 2022
 url: https://vimeo.com/680855862
-alt_urls: [https://www.artofthetitle.com/title/severance/]
+alt_urls: ["https://www.artofthetitle.com/title/severance/"]
 length_s: 86
 verified: oembed
 aspect: "2.39:1"

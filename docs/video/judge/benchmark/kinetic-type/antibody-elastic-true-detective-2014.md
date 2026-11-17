@@ -6,7 +6,7 @@ studio: "Elastic / Antibody (director: Patrick Clair; senior designer: Raoul Mar
 client: "HBO"
 year: 2014
 url: https://vimeo.com/84017154
-alt_urls: [https://www.artofthetitle.com/title/true-detective/, https://motionographer.com/2014/01/24/patrick-clair-elastic-hbos-true-detective]
+alt_urls: ["https://www.artofthetitle.com/title/true-detective/", "https://motionographer.com/2014/01/24/patrick-clair-elastic-hbos-true-detective"]
 length_s: 94
 verified: oembed
 aspect: "16:9"

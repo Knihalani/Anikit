@@ -6,7 +6,7 @@ studio: "NOMINT (director: Yannis Konstantinidis; CD: Yannis Konstantinidis, Chr
 client: "WWF"
 year: 2023
 url: https://vimeo.com/889840444
-alt_urls: [https://vimeo.com/889845779, https://www.annecyfestival.com/en/wwf-smoke]
+alt_urls: ["https://vimeo.com/889845779", "https://www.annecyfestival.com/en/wwf-smoke"]
 length_s: 102
 verified: oembed
 aspect: "16:9"

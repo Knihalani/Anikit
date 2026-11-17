@@ -6,7 +6,7 @@ studio: "Prologue (director: Kyle Cooper; designer: Nadia Tzuo; animator: Marghe
 client: "FX Networks (creative director: Ryan Murphy)"
 year: 2017
 url: https://vimeo.com/205161349
-alt_urls: [https://prologue.com/portfolio-item/feud/, https://www.artofthetitle.com/title/feud-bette-and-joan/]
+alt_urls: ["https://prologue.com/portfolio-item/feud/", "https://www.artofthetitle.com/title/feud-bette-and-joan/"]
 length_s: 76
 verified: oembed
 aspect: "16:9"

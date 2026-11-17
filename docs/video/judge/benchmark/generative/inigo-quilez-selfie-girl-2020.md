@@ -6,7 +6,7 @@ studio: "Inigo Quilez"
 client: "Self-initiated"
 year: 2020
 url: https://www.youtube.com/watch?v=8--5LwHRhjk
-alt_urls: [https://www.shadertoy.com/view/WsSBzh]
+alt_urls: ["https://www.shadertoy.com/view/WsSBzh"]
 length_s: null                      # making-of is about 25 min (MetaFilter, via search; not opened); the shader itself is a short real-time loop
 verified: oembed
 aspect: "16:9"

@@ -6,7 +6,7 @@ studio: "Art Camp (directors: Saad Moosajee with Art Camp; technical director: J
 client: "Thom Yorke / XL Recordings"
 year: 2019
 url: https://www.youtube.com/watch?v=I03xFqbxUp8
-alt_urls: [https://www.dandad.org/awards/professional/2020/231860/thom-yorke-last-i-heard-he-was-circling-the-drain]
+alt_urls: ["https://www.dandad.org/awards/professional/2020/231860/thom-yorke-last-i-heard-he-was-circling-the-drain"]
 length_s: 308
 verified: oembed
 aspect: "16:9"

@@ -6,7 +6,7 @@ studio: "NASA Goddard (GMAO; animator/scientist: Bill Putman)"
 client: "NASA"
 year: 2014
 url: https://www.youtube.com/watch?v=x1SgmFa0r04
-alt_urls: [https://svs.gsfc.nasa.gov/11719]
+alt_urls: ["https://svs.gsfc.nasa.gov/11719"]
 length_s: null
 verified: oembed
 aspect: "16:9"

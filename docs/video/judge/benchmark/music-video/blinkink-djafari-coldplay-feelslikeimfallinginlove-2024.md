@@ -6,7 +6,7 @@ studio: "Blinkink (director: Raman Djafari) with 14 guest animators"
 client: "Coldplay / Parlophone"
 year: 2024
 url: https://www.youtube.com/watch?v=V3IVdLo-2NM
-alt_urls: [https://www.stashmedia.tv/raman-djafari-and-friends-collab-for-coldplay/]
+alt_urls: ["https://www.stashmedia.tv/raman-djafari-and-friends-collab-for-coldplay/"]
 length_s: 261
 verified: oembed
 aspect: "16:9"

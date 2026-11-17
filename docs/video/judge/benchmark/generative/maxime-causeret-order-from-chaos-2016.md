@@ -6,7 +6,7 @@ studio: "Maxime Causeret (Teresuac)"
 client: "Max Cooper (album: Emergence)"
 year: 2016
 url: https://vimeo.com/196269431
-alt_urls: [https://maxcooper.net/order-from-chaos, https://www.thisiscolossal.com/2016/12/order-from-chaos-video-maxime-causeret/]
+alt_urls: ["https://maxcooper.net/order-from-chaos", "https://www.thisiscolossal.com/2016/12/order-from-chaos-video-maxime-causeret/"]
 length_s: 258
 verified: oembed
 aspect: "16:9"                      # est.

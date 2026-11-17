@@ -6,7 +6,7 @@ studio: "3Blue1Brown (Grant Sanderson)"
 client: "Self-initiated"
 year: 2019
 url: https://www.youtube.com/watch?v=r6sGWTCMz2k
-alt_urls: [https://github.com/3b1b/manim]
+alt_urls: ["https://github.com/3b1b/manim"]
 length_s: null
 verified: oembed
 aspect: "16:9"

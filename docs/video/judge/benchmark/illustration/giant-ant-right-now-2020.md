@@ -6,7 +6,7 @@ studio: "Giant Ant (written by Jay Grandin; storyboard: Esther Cheung)"
 client: "Self-initiated"
 year: 2020
 url: https://vimeo.com/453482133
-alt_urls: [https://giantant.ca/giant-ant-right-now]
+alt_urls: ["https://giantant.ca/giant-ant-right-now"]
 length_s: 106
 verified: oembed
 aspect: "16:9"
