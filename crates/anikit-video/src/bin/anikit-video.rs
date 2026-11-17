@@ -40,7 +40,7 @@ impl Args {
         let cmd = it.next().ok_or(USAGE)?;
         let mut input = None;
         let mut flags = Vec::new();
-        const BOOL: &[&str] = &["--json", "--watch", "--no-audio", "--components", "--quiet"];
+        const BOOL: &[&str] = &["--json", "--watch", "--no-audio", "--components", "--quiet", "--profile"];
         while let Some(a) = it.next() {
             if a.starts_with('-') && a.len() > 1 {
                 let (k, v) = match a.split_once('=') {
@@ -324,7 +324,7 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             warn(&d, json);
             let quality = match a.get("--quality") {
                 None => Quality::Good,
-                Some(q) => Quality::parse(q).ok_or_else(|| format!("--quality: use draft, good or best (got '{q}')"))?,
+                Some(q) => Quality::parse(q).ok_or_else(|| format!("--quality: use draft, standard or high (got '{q}')"))?,
             };
             let codec = match a.get("--codec") {
                 // Our encoder by default for MP4; x264 for `--quality best` (smallest files).
@@ -337,15 +337,18 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             let from = a.get("--from").map(|s| resolve_time(&ev, s)).transpose()?;
             let to = a.get("--to").map(|s| resolve_time(&ev, s)).transpose()?;
             let scale = a.num("--scale")?.unwrap_or(if quality == Quality::Draft { 0.5 } else { 1.0 });
-            let opts = RenderOptions { codec, quality, from, to, scale, progress: !json && !a.has("--quiet"), audio: !a.has("--no-audio") };
+            let opts = RenderOptions { codec, quality, from, to, scale, progress: !json && !a.has("--quiet"), audio: !a.has("--no-audio"), profile: a.has("--profile") };
             let w = ((ev.width as f32 * scale).round() as u32).max(2);
             let h = ((ev.height as f32 * scale).round() as u32).max(2);
             let t0 = from.unwrap_or(0.0);
             let dur = to.unwrap_or(ev.duration) - t0;
             let wav = std::env::temp_dir().join(format!("anikit-video-{}.wav", std::process::id()));
             let audio = if opts.audio { pipeline::mix_audio(&ev, t0, dur, &wav)? } else { None };
-            let mut enc = FfmpegEncoder::new(&out, w, h, ev.fps, codec, quality, audio.as_deref())?;
-            let s = pipeline::render_video(&ev, &opts, &mut enc);
+            let s = if codec == Codec::Ak264 {
+                pipeline::render_ak264(&ev, &opts, &out, audio.as_deref())
+            } else {
+                FfmpegEncoder::new(&out, w, h, ev.fps, codec, quality, audio.as_deref()).and_then(|mut enc| pipeline::render_video(&ev, &opts, &mut enc))
+            };
             if audio.is_some() {
                 let _ = std::fs::remove_file(&wav);
             }

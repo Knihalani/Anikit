@@ -14,6 +14,7 @@ use crate::render::{Renderer, YuvFrame};
 use rayon::prelude::*;
 use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -33,11 +34,13 @@ pub struct RenderOptions {
     pub progress: bool,
     /// Mux audio.
     pub audio: bool,
+    /// Print a per-stage timing breakdown to stderr.
+    pub profile: bool,
 }
 
 impl Default for RenderOptions {
     fn default() -> Self {
-        RenderOptions { codec: Codec::H264, quality: Quality::Good, from: None, to: None, scale: 1.0, progress: false, audio: true }
+        RenderOptions { codec: Codec::H264, quality: Quality::Good, from: None, to: None, scale: 1.0, progress: false, audio: true, profile: false }
     }
 }
 
@@ -218,24 +221,165 @@ struct Worker {
     version: u64,
     renderer: Option<Renderer>,
     dl: DisplayList,
+    /// Fused mode: this thread's incremental YUV frame, change map and last frame index.
+    yuv: YuvFrame,
+    map: crate::render::MbMap,
+    last: Option<usize>,
 }
 
 thread_local! {
-    static WORKER: RefCell<Worker> = RefCell::new(Worker { version: 0, renderer: None, dl: DisplayList::default() });
+    static WORKER: RefCell<Worker> = RefCell::new(Worker {
+        version: 0,
+        renderer: None,
+        dl: DisplayList::default(),
+        yuv: YuvFrame::default(),
+        map: crate::render::MbMap::new(0, 0),
+        last: None,
+    });
 }
 
 /// Run `f` with this thread's renderer, (re)creating it when assets changed.
 fn with_renderer<R>(ev: &Evaluator, f: impl FnOnce(&mut Renderer, &mut DisplayList) -> R) -> R {
     WORKER.with(|w| {
         let mut w = w.borrow_mut();
-        let v = ev.assets.version() ^ (Arc::as_ptr(&ev.assets) as u64);
+        // Only new font faces need a new renderer; images come from a live source.
+        let v = (ev.assets.font_count() as u64) ^ ((Arc::as_ptr(&ev.assets) as u64) << 16);
         if w.renderer.is_none() || w.version != v {
-            w.renderer = Some(Renderer::new(ev.assets.snapshot()));
+            let mut r = Renderer::new(ev.assets.snapshot_fonts());
+            let a = ev.assets.clone();
+            r.set_image_source(Arc::new(move |id| a.pixmap(id)));
+            w.renderer = Some(r);
             w.version = v;
+            w.last = None;
         }
         let Worker { renderer, dl, .. } = &mut *w;
         f(renderer.as_mut().unwrap(), dl)
     })
+}
+
+/// Per-stage CPU time (summed over threads), for `--profile`.
+#[derive(Default)]
+pub struct Profile {
+    pub eval_ns: AtomicU64,
+    pub render_ns: AtomicU64,
+    pub copy_ns: AtomicU64,
+    pub unchanged: AtomicU64,
+    pub partial: AtomicU64,
+    pub full: AtomicU64,
+}
+
+fn ns(t: Instant) -> u64 {
+    t.elapsed().as_nanos() as u64
+}
+
+/// Copy macroblock `(mx, my)` (or every one when `map` is `None`) from a padded render frame into a tight buffer.
+fn copy_yuv(src: &YuvFrame, dst: &mut ak264::YuvBuffer, map: Option<&crate::render::MbMap>) {
+    let (w, h) = (dst.width as usize, dst.height as usize);
+    let (cw, ch) = (w.div_ceil(2), h.div_ceil(2));
+    match map {
+        None => {
+            for y in 0..h {
+                dst.y[y * w..y * w + w].copy_from_slice(&src.y[y * src.y_stride..y * src.y_stride + w]);
+            }
+            for y in 0..ch {
+                dst.u[y * cw..y * cw + cw].copy_from_slice(&src.u[y * src.c_stride..y * src.c_stride + cw]);
+                dst.v[y * cw..y * cw + cw].copy_from_slice(&src.v[y * src.c_stride..y * src.c_stride + cw]);
+            }
+        }
+        Some(m) => {
+            for my in 0..m.mb_height.min(h.div_ceil(16)) {
+                let mut mx = 0;
+                let mbw = m.mb_width.min(w.div_ceil(16));
+                while mx < mbw {
+                    if !m.get(mx, my) {
+                        mx += 1;
+                        continue;
+                    }
+                    // Copy a horizontal run of changed macroblocks at once.
+                    let start = mx;
+                    while mx < mbw && m.get(mx, my) {
+                        mx += 1;
+                    }
+                    let (x0, x1) = (start * 16, (mx * 16).min(w));
+                    for y in my * 16..((my + 1) * 16).min(h) {
+                        dst.y[y * w + x0..y * w + x1].copy_from_slice(&src.y[y * src.y_stride + x0..y * src.y_stride + x1]);
+                    }
+                    let (c0, c1) = (x0 / 2, x1.div_ceil(2).min(cw));
+                    for y in my * 8..((my + 1) * 8).min(ch) {
+                        dst.u[y * cw + c0..y * cw + c1].copy_from_slice(&src.u[y * src.c_stride + c0..y * src.c_stride + c1]);
+                        dst.v[y * cw + c0..y * cw + c1].copy_from_slice(&src.v[y * src.c_stride + c0..y * src.c_stride + c1]);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Fused render + encode with ak264: frames are split into GOP chunks; each
+/// worker evaluates, renders incrementally (only changed regions are
+/// rasterised) and encodes its chunk, and unchanged macroblocks skip both
+/// rasterising and encoding. Returns the Annex-B stream.
+pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, prof: &Profile) -> Vec<u8> {
+    let total = ev.frames();
+    let f0 = opts.from.map(|t| (t * ev.fps).round() as u32).unwrap_or(0).min(total) as usize;
+    let f1 = opts.to.map(|t| (t * ev.fps).round() as u32).unwrap_or(total).clamp(f0 as u32, total) as usize;
+    let gop = cfg.gop.max(1) as usize;
+    let done = AtomicU64::new(0);
+    let t0 = Instant::now();
+    let last_report = std::sync::Mutex::new(Instant::now());
+    let n = f1 - f0;
+    let out = ak264::encode_parallel(cfg, n, |k, buf, hints| {
+        let t = Instant::now();
+        with_renderer(ev, |_, _| {});
+        WORKER.with(|w| {
+            let mut w = w.borrow_mut();
+            let Worker { renderer, dl, yuv, map, last, .. } = &mut *w;
+            let r = renderer.as_mut().unwrap();
+            eval_frame(ev, (f0 + k) as u32, opts.scale, dl);
+            prof.eval_ns.fetch_add(ns(t), Ordering::Relaxed);
+            let t = Instant::now();
+            let upd = r.render_yuv_incremental(dl, yuv, map);
+            prof.render_ns.fetch_add(ns(t), Ordering::Relaxed);
+            let t = Instant::now();
+            let continuing = k % gop != 0 && *last == Some(k.wrapping_sub(1));
+            use crate::render::incremental::Update;
+            match upd {
+                Update::Unchanged => prof.unchanged.fetch_add(1, Ordering::Relaxed),
+                Update::Partial { .. } => prof.partial.fetch_add(1, Ordering::Relaxed),
+                Update::Full => prof.full.fetch_add(1, Ordering::Relaxed),
+            };
+            if continuing {
+                // `map` is exact versus the previous frame, which `buf` still holds.
+                let n_mb = map.mb_width * map.mb_height;
+                match upd {
+                    Update::Unchanged => hints.changed = Some(vec![false; n_mb]),
+                    _ => {
+                        copy_yuv(yuv, buf, Some(map));
+                        hints.changed = Some((0..n_mb).map(|i| map.get(i % map.mb_width, i / map.mb_width)).collect());
+                    }
+                }
+            } else {
+                copy_yuv(yuv, buf, None);
+                hints.changed = None;
+            }
+            *last = Some(k);
+            prof.copy_ns.fetch_add(ns(t), Ordering::Relaxed);
+        });
+        let d = done.fetch_add(1, Ordering::Relaxed) + 1;
+        if opts.progress {
+            if let Ok(mut lr) = last_report.try_lock() {
+                if lr.elapsed().as_secs_f32() > 0.5 {
+                    *lr = Instant::now();
+                    let el = t0.elapsed().as_secs_f32();
+                    eprint!("\rrender {d}/{n} frames  {:.0} fps  {:.1}s", d as f32 / el.max(1e-6), el);
+                }
+            }
+        }
+    });
+    if opts.progress {
+        eprintln!();
+    }
+    out
 }
 
 /// Evaluate frame `i` into `out` at `scale`.
@@ -329,6 +473,92 @@ pub fn mix_audio(ev: &Evaluator, t0: f32, dur: f32, wav: &std::path::Path) -> Re
     let pcm = audio::mix(&tracks, dur as f64, audio::DEFAULT_RATE, None)?;
     audio::write_wav(wav, &pcm, audio::WavFormat::Pcm16)?;
     Ok(Some(wav.to_path_buf()))
+}
+
+/// Render to an MP4 with ak264 in fused mode (see [`render_fused`]); muxes
+/// without ffmpeg when there is no audio.
+pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path, audio: Option<&std::path::Path>) -> Result<Summary, String> {
+    let t0 = Instant::now();
+    let w = (((ev.width as f32 * opts.scale).round() as u32).max(2)) & !1;
+    let h = (((ev.height as f32 * opts.scale).round() as u32).max(2)) & !1;
+    let total = ev.frames();
+    let f0 = opts.from.map(|t| (t * ev.fps).round() as u32).unwrap_or(0).min(total);
+    let f1 = opts.to.map(|t| (t * ev.fps).round() as u32).unwrap_or(total).clamp(f0, total);
+    let n = (f1 - f0) as usize;
+    let threads = rayon::current_num_threads().max(1);
+    // Enough chunks to keep every core busy, long enough to compress well.
+    let gop = (n / (threads * 3)).clamp(30, 300) as u32;
+    let qp = match opts.quality {
+        Quality::Draft => 28,
+        Quality::Good => 23,
+        Quality::Best => 19,
+    };
+    let cfg = ak264::EncoderConfig {
+        width: w,
+        height: h,
+        fps: ev.fps as f64,
+        qp,
+        gop,
+        deblock: false,
+        threads: 1,
+        full_range: false,
+        cabac: opts.quality != Quality::Draft,
+        subpel: opts.quality == Quality::Best,
+    };
+    let prof = Profile::default();
+    let annexb = render_fused(ev, opts, &cfg, &prof);
+    let t_enc = t0.elapsed();
+    let tm = Instant::now();
+    match audio {
+        None => std::fs::write(out, ak264::mp4::mux(&annexb, w, h, ev.fps as f64)).map_err(|e| format!("can't write {}: {e}", out.display()))?,
+        Some(a) => {
+            use std::io::Write;
+            let mut c = std::process::Command::new("ffmpeg")
+                .args(["-hide_banner", "-loglevel", "error", "-y", "-f", "h264", "-r", &format!("{}", ev.fps), "-i", "-", "-i"])
+                .arg(a)
+                .args(["-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart"])
+                .arg(out)
+                .stdin(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()
+                .map_err(|e| format!("can't start ffmpeg for the audio mux: {e}"))?;
+            c.stdin.take().unwrap().write_all(&annexb).map_err(|e| e.to_string())?;
+            let o = c.wait_with_output().map_err(|e| e.to_string())?;
+            if !o.status.success() {
+                return Err(format!("ffmpeg failed: {}", String::from_utf8_lossy(&o.stderr).trim()));
+            }
+        }
+    }
+    let t_mux = tm.elapsed();
+    let secs = t0.elapsed().as_secs_f32();
+    let unchanged = prof.unchanged.load(Ordering::Relaxed) as u32;
+    if opts.profile {
+        let per = |x: &AtomicU64| x.load(Ordering::Relaxed) as f64 / 1e6 / n.max(1) as f64;
+        let (e, r, c) = (per(&prof.eval_ns), per(&prof.render_ns), per(&prof.copy_ns));
+        let wall = t_enc.as_secs_f64() * 1e3 / n.max(1) as f64;
+        let enc = (wall * threads as f64 - e - r - c).max(0.0);
+        eprintln!(
+            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged, {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}  (remainder)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
+            unchanged,
+            prof.partial.load(Ordering::Relaxed),
+            prof.full.load(Ordering::Relaxed),
+            1000.0 / wall,
+            t_mux.as_secs_f64() * 1e3
+        );
+    }
+    Ok(Summary {
+        output: out.display().to_string(),
+        width: w,
+        height: h,
+        fps: round3(ev.fps as f64),
+        frames: n as u32,
+        deduped: unchanged,
+        duration: round3((n as f32 / ev.fps) as f64),
+        seconds: round3(secs as f64),
+        render_fps: (n as f64 / secs.max(1e-6) as f64).round(),
+        bytes: std::fs::metadata(out).map(|m| m.len()).unwrap_or(0),
+        codec: "ak264".into(),
+    })
 }
 
 /// Render the video (or a range of it) into `enc`.

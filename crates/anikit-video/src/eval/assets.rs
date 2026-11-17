@@ -66,6 +66,27 @@ impl SharedAssets {
         self.images.read().unwrap().get(id.0 as usize).map(|p| (p.width() as u32, p.height() as u32))
     }
 
+    /// Number of font faces (grows when layouts intern new face instances).
+    pub fn font_count(&self) -> usize {
+        self.fonts.face_count()
+    }
+
+    /// An image by id (for `render::Renderer::set_image_source`).
+    pub fn pixmap(&self, id: ImageId) -> Option<Arc<Pixmap>> {
+        self.images.read().unwrap().get(id.0 as usize).cloned()
+    }
+
+    /// Fonts only; images come through [`Self::pixmap`] as a dynamic source,
+    /// so a renderer survives images being added while frames are evaluated.
+    pub fn snapshot_fonts(&self) -> Arc<render::Assets> {
+        let mut fonts = render::FontStore::new();
+        for i in 0..self.fonts.face_count() {
+            let f = self.fonts.face(dl::FontId(i as u32));
+            fonts.insert_face(dl::FontId(i as u32), render::Face { data: f.data.clone(), coords: Arc::from(&*f.coords), embolden: f.embolden, skew: f.skew });
+        }
+        Arc::new(render::Assets { images: render::ImageStore::new(), fonts })
+    }
+
     /// A snapshot for `render::Renderer` (cheap: every image and face is an `Arc`).
     pub fn snapshot(&self) -> Arc<render::Assets> {
         let mut images = render::ImageStore::new();
