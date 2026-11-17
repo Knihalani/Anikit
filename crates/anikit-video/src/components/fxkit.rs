@@ -284,12 +284,75 @@ pub fn sparkle(p: &mut Path, cx: f32, cy: f32, r: f32, rot: f32, pinch: f32) {
     p.close_path();
 }
 
+// ---------------------------------------------------------------- speed shortcuts
+
+/// Whether to render the ground-truth version of every speed shortcut in
+/// the effect components. `false` (the default) uses the shortcuts:
+/// - gaussian discs/ellipses (radial gradients) stand in for per-frame
+///   blurred layers of out-of-focus particles (sparks, snow, dust,
+///   particle-text), for spark bloom and for the metaball glow and inner
+///   glow; near confetti pieces are a baked soft-rectangle image;
+/// - light layers (rays, flare, sparks, dust, snow glints) and the metaball
+///   rim and inner glow composite with source-over instead of Add/Screen;
+/// - god-ray slices up to ~9 px wide at their far end (2 px exact);
+/// - metaball iso-contours on a `detail` px grid.
+///
+/// `true` renders blurred layers and gradients exactly, so the quality
+/// cost of each shortcut can be measured.
+#[inline]
+pub fn exact() -> bool {
+    false
+}
+
+// ---------------------------------------------------------------- sprites
+
+/// A defocused rectangle baked once per colour as a small image (the rect
+/// fills the middle half; draw it twice the size of the sharp rectangle)
+/// and stamped with [`stamp_affine`]. Round soft shapes need no image:
+/// radial gradients ([`light`], [`ellipse`]) render faster than images.
+pub fn soft_rect(assets: &dyn super::Assets, c: Rgba) -> crate::dl::ImageId {
+    const N: u32 = 64;
+    let q = c.0.map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8);
+    let key = fnv(&[b"fxkit-soft-rect", &q[..3]]);
+    let n = N as usize;
+    assets.image(key, N, N, &mut || {
+        let mut px = vec![0u8; n * n * 4];
+        let ss = |x: f32| x * x * (3.0 - 2.0 * x);
+        let f = |d: f32| ss(clamp01(1.0 - d));
+        for j in 0..n {
+            for i in 0..n {
+                let u = (i as f32 + 0.5) / n as f32 * 2.0 - 1.0;
+                let v = (j as f32 + 0.5) / n as f32 * 2.0 - 1.0;
+                // Edge at |u| = 0.5, blurred over ±0.5.
+                let a = f(u.abs()) * f(v.abs());
+                let o = (j * n + i) * 4;
+                px[o..o + 3].copy_from_slice(&q[..3]);
+                px[o + 3] = (a * 255.0 + 0.5) as u8;
+            }
+        }
+        px
+    })
+}
+
+/// Stamp an image under a 2×2 map (`a` and `b` are where its unit x and y
+/// axes go), centred at `(x, y)`.
+pub fn stamp_affine(id: crate::dl::ImageId, x: f32, y: f32, a: [f32; 2], b: [f32; 2], opacity: f32) -> Op {
+    Op::Image { image: id, dst: [-1.0, -1.0, 2.0, 2.0], opacity: opacity.clamp(0.0, 1.0), transform: [a[0], a[1], b[0], b[1], x, y] }
+}
+
 // ---------------------------------------------------------------- layers
 
 /// Begin an additive (light) layer, or a normal one on light themes where
-/// adding light would wash out.
-pub fn push_light(out: &mut Vec<Op>, opacity: f32, additive: bool) {
+/// adding light would wash out. Returns whether a layer was pushed (pop it
+/// with [`pop_if`]). Shortcut: unless [`exact`], light is drawn straight
+/// onto the frame with source-over (no full-frame layer composite); faint
+/// light over a dark scene looks the same.
+pub fn push_light(out: &mut Vec<Op>, opacity: f32, additive: bool) -> bool {
+    if !exact() && opacity >= 0.999 {
+        return false;
+    }
     push_layer(out, opacity, if additive { Blend::Add } else { Blend::Normal }, Vec::new());
+    true
 }
 
 /// Begin a layer blurred by `sigma` px (skipped when `sigma` is tiny);
@@ -358,6 +421,41 @@ mod tests {
         assert!(cool.0[2] >= cool.0[0]);
         let d = kelvin(6500.0);
         assert!(d.0.iter().take(3).all(|v| *v > 0.9), "{d:?}");
+    }
+
+    /// Eval and full-render cost at 1080p of the effect kinds (and variants).
+    /// `FX='[["metaballs",{"rim":0}]]' cargo test --release -p anikit-video fxkit::tests::cost -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn cost() {
+        use super::super::{build, preview};
+        let cases: Vec<(String, serde_json::Value)> = match std::env::var("FX") {
+            Ok(s) => serde_json::from_str(&s).unwrap(),
+            Err(_) => ["god-rays", "lens-flare", "confetti", "sparks", "snow", "dust", "particle-text", "metaballs", "globe", "morph", "reactions"]
+                .iter()
+                .map(|k| (k.to_string(), serde_json::json!({})))
+                .collect(),
+        };
+        let th = Theme::default();
+        let host = preview::host();
+        for (kind, props) in cases {
+            let p = build(&kind, &props).unwrap();
+            let t0 = p.component.duration().map_or(1.0, |d| d * 0.4);
+            for f in 0..5 {
+                let _ = p.eval(t0 + f as f32 / 60.0, 1920.0, 1080.0, 60.0, &th, host);
+            }
+            let n = 40;
+            let s = std::time::Instant::now();
+            let lists: Vec<_> = (0..n).map(|f| p.eval(t0 + f as f32 / 60.0, 1920.0, 1080.0, 60.0, &th, host)).collect();
+            let e = s.elapsed().as_secs_f64() * 1e3 / n as f64;
+            let mut r = crate::render::Renderer::new(std::sync::Arc::new(host.render_assets(None)));
+            let s = std::time::Instant::now();
+            for ops in &lists {
+                r.render(&crate::dl::DisplayList { width: 1920, height: 1080, background: th.background, ops: ops.clone() });
+            }
+            let rr = s.elapsed().as_secs_f64() * 1e3 / n as f64;
+            println!("{kind:14} {props:40} eval {e:6.2} ms  render {rr:6.2} ms");
+        }
     }
 
     #[test]

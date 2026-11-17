@@ -361,7 +361,7 @@ impl ParticleText {
         match self.flow.as_str() {
             "spiral" => {
                 // Orbit into place: the offset from the target turns as it shrinks.
-                let ang = left * left * (2.4 + 1.6 * p.bow) * if i % 2 == 0 { 1.0 } else { -1.0 };
+                let ang = left * left * (2.4 + 1.6 * p.bow) * if i.is_multiple_of(2) { 1.0 } else { -1.0 };
                 let (sn, cs) = ang.sin_cos();
                 let (ox, oy) = (-dx * left, -dy * left);
                 x = target[0] + ox * cs - oy * sn;
@@ -464,6 +464,7 @@ impl Component for ParticleText {
         let mut dots: Vec<Path> = vec![Path::new(); 2 * NB * NA];
         let mut streaks: Vec<Path> = vec![Path::new(); 2 * NB];
         let mut glow = Path::new();
+        let mut soft = Vec::new();
         let mut sparks = Vec::new();
         let tw_t = step(t, 30.0);
         for i in 0..self.parts.len() {
@@ -489,6 +490,13 @@ impl Component for ParticleText {
                 }
             }
             let ai = ((a * NA as f32) as usize).min(NA - 1);
+            if band == 1 && !fxkit::exact() {
+                // Out of focus: a gaussian disc instead of a blurred layer.
+                let sg = 3.5 * k;
+                let rr = pl.r + 2.2 * sg;
+                soft.push((ci, pl.x, pl.y, rr, ([0.35, 0.6, 0.82, 1.0][ai] * 1.6 * (pl.r + sg * 0.4) / rr).min(1.0)));
+                continue;
+            }
             fxkit::dot(&mut dots[(band * NB + ci) * NA + ai], pl.x, pl.y, pl.r.max(0.3));
             if self.glow && band == 0 && ai >= NA - 2 {
                 fxkit::dot(&mut glow, pl.x, pl.y, pl.r * 1.8);
@@ -534,6 +542,9 @@ impl Component for ParticleText {
             out.push(fill(glow, solid(alpha(grad(NB / 2), 0.55 * bloom))));
             out.push(Op::PopLayer);
         }
+        for (ci, x, y, r, a) in soft {
+            out.push(fxkit::light(x, y, r, fxkit::gauss(grad(ci), a)));
+        }
         for band in [1usize, 0] {
             let pushed = if band == 1 { fxkit::push_blur(&mut out, 3.5 * k, Blend::Normal) } else { false };
             for ci in 0..NB {
@@ -569,7 +580,7 @@ mod tests {
     fn forms_reforms_and_leaves() {
         let th = Theme::default();
         let a = preview::host();
-        let c = build("particle-text", &json!({"words": ["Hello", "World"], "exit": "blow"})).unwrap();
+        let c = build("particle-text", &json!({"words": ["Hello", "World"], "exit": "blow", "form": 1.6})).unwrap();
         let end = c.component.duration().unwrap();
         assert!((end - (2.0 * 3.0 + 1.6 * 1.6)).abs() < 1e-3, "{end}");
         for (tag, t) in [("start", 0.4f32), ("hello", 2.5), ("between", 3.8), ("world", 5.6), ("exit", 6.5)] {

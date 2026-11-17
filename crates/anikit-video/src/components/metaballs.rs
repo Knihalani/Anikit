@@ -1,11 +1,11 @@
 //! `metaballs`: liquid blobs that drift, merge and split.
 //!
-//! The scalar field `Σ r²/d²` is sampled on a coarse grid (about 14 px cells
-//! at 1080p) and its iso-contour is extracted with marching squares into one
-//! vector path, so edges stay crisp and anti-aliased at any resolution while
-//! a frame costs a few thousand field samples. Cells fully inside are merged
-//! into row runs; all cell polygons share one winding, so interior edges
-//! cancel exactly in the rasteriser.
+//! A compact scalar field is sampled on a coarse grid and its iso-contour
+//! is extracted with marching squares, chained into closed loops and drawn
+//! as smooth splines, so edges stay crisp at any resolution while a frame
+//! costs a few thousand field samples. Higher iso-levels of the same field
+//! are nested outlines that follow the merged shape exactly; they shade the
+//! liquid (rim light, inner glow, caustics, mirror bands).
 
 use super::fxkit::{self, hot, kelvin};
 use super::style::*;
@@ -14,62 +14,92 @@ use crate::dl::{Blend, FillRule, Filter, Op, Paint, Path, Rgba};
 use serde::Deserialize;
 use std::f32::consts::TAU;
 
-/// Inside parts of the grid cells where `v >= iso`, as one path.
-/// `v` holds `(nx + 1) × (ny + 1)` corner samples, row-major.
+/// The iso-contour `v = iso` as closed, smooth outlines (one path).
+/// `v` holds `(nx + 1) × (ny + 1)` corner samples, row-major. Marching
+/// squares gives oriented segments (inside on the right, clockwise on
+/// screen); they are chained into loops through the grid edges they share
+/// and drawn as quadratic splines through segment midpoints, so the edge is
+/// smooth at any size and the path has only a few hundred elements.
 fn contour(v: &[f32], nx: usize, ny: usize, cell: f32, iso: f32, off: (f32, f32)) -> Path {
-    let mut p = Path::new();
-    let at = |i: usize, j: usize| v[j * (nx + 1) + i];
-    let pt = |x: f32, y: f32| ((x * cell + off.0) as f64, (y * cell + off.1) as f64);
-    for j in 0..ny {
-        let mut run: Option<usize> = None;
-        let flush = |p: &mut Path, run: &mut Option<usize>, end: usize| {
-            if let Some(s) = run.take() {
-                p.move_to(pt(s as f32, j as f32));
-                p.line_to(pt(end as f32, j as f32));
-                p.line_to(pt(end as f32, (j + 1) as f32));
-                p.line_to(pt(s as f32, (j + 1) as f32));
-                p.close_path();
-            }
-        };
-        for i in 0..nx {
-            // Corners clockwise on screen: TL, TR, BR, BL.
+    // Pad with an empty border so every loop closes inside the grid.
+    let (px, py) = (nx + 3, ny + 3);
+    let at = |i: usize, j: usize| -> f32 {
+        if i == 0 || j == 0 || i > nx + 1 || j > ny + 1 {
+            0.0
+        } else {
+            v[(j - 1) * (nx + 1) + (i - 1)]
+        }
+    };
+    // Edge ids: horizontal (i, j)→(i+1, j) = 2·(j·px + i), vertical (i, j)→(i, j+1) = +1.
+    let hid = |i: usize, j: usize| 2 * (j * px + i);
+    let vid = |i: usize, j: usize| 2 * (j * px + i) + 1;
+    let mut pos: std::collections::HashMap<usize, (f32, f32)> = std::collections::HashMap::new();
+    let mut next: std::collections::HashMap<usize, usize> = std::collections::HashMap::new();
+    for j in 0..py - 1 {
+        for i in 0..px - 1 {
             let c = [at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)];
             let ins = c.map(|x| x >= iso);
-            if ins.iter().all(|&b| b) {
-                run.get_or_insert(i);
+            if ins.iter().all(|&b| b) || !ins.iter().any(|&b| b) {
                 continue;
             }
-            flush(&mut p, &mut run, i);
-            if !ins.iter().any(|&b| b) {
-                continue;
-            }
-            let pos = [(i as f32, j as f32), ((i + 1) as f32, j as f32), ((i + 1) as f32, (j + 1) as f32), (i as f32, (j + 1) as f32)];
-            let mut first = true;
+            let corner = [(i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)];
+            let edge = [hid(i, j), vid(i + 1, j), hid(i, j + 1), vid(i, j)];
+            // Walk clockwise; crossings alternate leaving and entering.
+            let mut cross: Vec<(usize, bool)> = Vec::with_capacity(4);
             for k in 0..4 {
                 let n = (k + 1) % 4;
-                if ins[k] {
-                    let q = pt(pos[k].0, pos[k].1);
-                    if first {
-                        p.move_to(q);
-                        first = false;
-                    } else {
-                        p.line_to(q);
-                    }
-                }
                 if ins[k] != ins[n] {
                     let f = ((iso - c[k]) / (c[n] - c[k])).clamp(0.0, 1.0);
-                    let q = pt(pos[k].0 + (pos[n].0 - pos[k].0) * f, pos[k].1 + (pos[n].1 - pos[k].1) * f);
-                    if first {
-                        p.move_to(q);
-                        first = false;
-                    } else {
-                        p.line_to(q);
-                    }
+                    let (a, b) = (corner[k], corner[n]);
+                    let q = (a.0 as f32 + (b.0 as f32 - a.0 as f32) * f, a.1 as f32 + (b.1 as f32 - a.1 as f32) * f);
+                    pos.insert(edge[k], q);
+                    cross.push((edge[k], ins[k]));
                 }
             }
-            p.close_path();
+            // Inside the cell the contour cuts from each leaving crossing to
+            // the next entering one (clockwise); in the neighbour across that
+            // edge the entering crossing is a leaving one, so segments chain.
+            let m = cross.len();
+            for s in 0..m {
+                let (e, leaving) = cross[s];
+                if leaving {
+                    next.insert(e, cross[(s + 1) % m].0);
+                }
+            }
         }
-        flush(&mut p, &mut run, nx);
+    }
+    let mut p = Path::new();
+    let mut seen = std::collections::HashSet::new();
+    let pt = |q: (f32, f32)| (((q.0 - 1.0) * cell + off.0) as f64, ((q.1 - 1.0) * cell + off.1) as f64);
+    let mut starts: Vec<usize> = next.keys().copied().collect();
+    starts.sort_unstable();
+    let mut loop_pts: Vec<(f32, f32)> = Vec::new();
+    for s in starts {
+        if seen.contains(&s) {
+            continue;
+        }
+        loop_pts.clear();
+        let mut e = s;
+        loop {
+            if !seen.insert(e) {
+                break;
+            }
+            loop_pts.push(pos[&e]);
+            match next.get(&e) {
+                Some(&n) => e = n,
+                None => break,
+            }
+        }
+        let n = loop_pts.len();
+        if n < 3 {
+            continue;
+        }
+        let mid = |a: (f32, f32), b: (f32, f32)| ((a.0 + b.0) * 0.5, (a.1 + b.1) * 0.5);
+        p.move_to(pt(mid(loop_pts[n - 1], loop_pts[0])));
+        for k in 0..n {
+            p.quad_to(pt(loop_pts[k]), pt(mid(loop_pts[k], loop_pts[(k + 1) % n])));
+        }
+        p.close_path();
     }
     p
 }
@@ -227,10 +257,21 @@ impl Component for Metaballs {
         // Glow: the body itself, blurred and added.
         if self.glow && mat != "chrome" {
             let a = if mat == "glass" { 0.18 } else { 0.32 };
-            push_layer(&mut out, 1.0, if th.dark { Blend::Add } else { Blend::Normal }, vec![Filter::Blur(mean_r * 0.45)]);
-            let stops: Vec<(f32, Rgba)> = cols.iter().enumerate().map(|(i, c)| (i as f32 / n, alpha(*c, a))).collect();
-            out.push(fill(body.clone(), lin(stops)));
-            out.push(Op::PopLayer);
+            let blend = if th.dark { Blend::Add } else { Blend::Normal };
+            if fxkit::exact() {
+                push_layer(&mut out, 1.0, blend, vec![Filter::Blur(mean_r * 0.45)]);
+                let stops: Vec<(f32, Rgba)> = cols.iter().enumerate().map(|(i, c)| (i as f32 / n, alpha(*c, a))).collect();
+                out.push(fill(body.clone(), lin(stops)));
+            } else {
+                // One baked gaussian per blob sums to the same soft halo
+                // (straight onto the frame: no blend layer to composite).
+                for &(x, y, r) in &blobs {
+                    out.push(fxkit::light(x, y, r * 2.3, fxkit::gauss(ramp_at(x, y), a)));
+                }
+            }
+            if fxkit::exact() {
+                out.push(Op::PopLayer);
+            }
         }
 
         // Base body.
@@ -286,11 +327,19 @@ impl Component for Metaballs {
             }
             _ => {
                 // Inner glow (glossy) or soft clay light (matte).
-                let (blend, a) = if mat == "matte" { (Blend::Normal, 0.22) } else { (Blend::Screen, 0.32) };
-                push_layer(&mut out, 1.0, blend, vec![Filter::Blur(mean_r * 0.22)]);
+                let (blend, a) = if mat == "matte" || !fxkit::exact() { (Blend::Normal, 0.22) } else { (Blend::Screen, 0.32) };
                 let (dx, dy) = if mat == "matte" { (-0.18, -0.24) } else { (0.06, 0.1) };
-                for lv in [0.45, 0.7, 1.0] {
-                    out.push(fill(iso(lv, dx, dy), solid(alpha(hot(ramp_at(w * 0.5, h * 0.5), 0.4), a))));
+                let lc = hot(ramp_at(w * 0.5, h * 0.5), 0.4);
+                if fxkit::exact() {
+                    push_layer(&mut out, 1.0, blend, vec![Filter::Blur(mean_r * 0.22)]);
+                    for lv in [0.45, 0.7, 1.0] {
+                        out.push(fill(iso(lv, dx, dy), solid(alpha(lc, a))));
+                    }
+                } else {
+                    push_layer(&mut out, 1.0, blend, Vec::new());
+                    for &(x, y, r) in &blobs {
+                        out.push(fxkit::light(x + dx * r * 1.6, y + dy * r * 1.6, r * 1.15, fxkit::gauss(lc, a * 2.2)));
+                    }
                 }
                 out.push(Op::PopLayer);
             }
@@ -311,7 +360,9 @@ impl Component for Metaballs {
                 "chrome" => (white, 0.4),
                 _ => (hot(c0, 0.6), 0.55),
             };
-            push_layer(&mut out, (ra * self.rim).min(1.0), Blend::Screen, vec![Filter::Blur(mean_r * 0.06)]);
+            // (Screen is exact; a plain layer of light over the body looks the same and composites faster.)
+            let blend = if fxkit::exact() { Blend::Screen } else { Blend::Normal };
+            push_layer(&mut out, (ra * self.rim).min(1.0), blend, vec![Filter::Blur(mean_r * 0.06)]);
             out.push(tint(even_odd(body.clone(), iso(0.4, 0.0, 0.0)), rc));
             out.push(Op::PopLayer);
         }

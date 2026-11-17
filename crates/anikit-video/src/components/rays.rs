@@ -11,7 +11,7 @@
 use super::fxkit::{self, bloom, chroma_ring, gauss, hot, kelvin, light, needle, polygon};
 use super::style::*;
 use super::{Component, Ctx, Error, Prepare};
-use crate::dl::{Blend, FillRule, Op, Paint, Path, Rgba, IDENTITY};
+use crate::dl::{FillRule, Op, Paint, Path, Rgba, IDENTITY};
 use anikit_core::noise::Noise;
 use serde::Deserialize;
 use std::f32::consts::{PI, TAU};
@@ -130,7 +130,7 @@ impl Component for GodRays {
         let spread = self.spread.to_radians();
         let ink = self.intensity;
         let mut out = Vec::new();
-        fxkit::push_light(&mut out, 1.0, true);
+        let lp = fxkit::push_light(&mut out, 1.0, true);
 
         // Haze: a broad bloom around the source, wider than the beams.
         if self.haze > 0.0 {
@@ -139,7 +139,8 @@ impl Component for GodRays {
         }
 
         // Slices: each at most ~5 px wide at its far end.
-        let slice = (5.0 * k / len).atan().max(1e-4);
+        // Shortcut: slices up to ~9 px wide where the shafts fade out (2 px when exact).
+        let slice = ((if fxkit::exact() { 2.0 } else { 9.0 }) * k / len).atan().max(1e-4);
         let ns = ((spread / slice).ceil() as usize).clamp(48, 1400);
         let da = spread / ns as f32;
         let a0 = fan - spread * 0.5;
@@ -181,7 +182,7 @@ impl Component for GodRays {
 
         // Hot source.
         out.push(light(sx, sy, diag * 0.12, bloom(hot(c, 0.6), 0.9 * ink, 0.08)));
-        out.push(Op::PopLayer);
+        fxkit::pop_if(&mut out, lp);
 
         if self.dust > 0 {
             self.dust_ops(&mut out, t, ctx, &n, c, (sx, sy), fan, spread, len);
@@ -240,7 +241,7 @@ impl GodRays {
                 }
             }
         }
-        fxkit::push_light(out, 1.0, true);
+        let lp = fxkit::push_light(out, 1.0, true);
         let mc = hot(c, 0.4);
         for (x, y, r, a) in soft {
             out.push(light(x, y, r, vec![(0.0, alpha(mc, a * 0.55)), (0.7, alpha(mc, a * 0.62)), (0.88, alpha(mc, a * 0.8)), (1.0, alpha(mc, 0.0))]));
@@ -251,7 +252,7 @@ impl GodRays {
         for (lv, p) in sharp.into_iter().enumerate() {
             fxkit::fill_solid(out, p, alpha(mc, (lv as f32 + 0.6) / LV as f32));
         }
-        out.push(Op::PopLayer);
+        fxkit::pop_if(out, lp);
     }
 }
 
@@ -403,7 +404,7 @@ impl Component for LensFlare {
         let k = self.intensity * fl * vis;
         let kc = k * (1.0 - 0.25 * off);
         let mut out = Vec::new();
-        fxkit::push_light(&mut out, 1.0, true);
+        let lp = fxkit::push_light(&mut out, 1.0, true);
 
         // Veiling glare: lifts the whole frame a touch around the light.
         out.push(light(lx, ly, u * 1.1, bloom(c, 0.16 * kc, 0.06)));
@@ -414,7 +415,7 @@ impl Component for LensFlare {
 
         // Starburst: a few long blade spikes with chromatic edges, plus fine hair.
         if spikes > 0 {
-            let n = if spikes % 2 == 0 { spikes / 2 } else { spikes } as usize;
+            let n = if spikes.is_multiple_of(2) { spikes / 2 } else { spikes } as usize;
             let rot = self.rotation.to_radians();
             let sl = u * if vintage { 0.22 } else { 0.48 };
             let sw = u * 0.006;
@@ -422,8 +423,6 @@ impl Component for LensFlare {
             for i in 0..n {
                 let a = rot + i as f32 * PI / n as f32;
                 let lk = 0.85 + 0.3 * rng.f();
-                let full = if spikes % 2 == 1 { 1.0 } else { 1.0 };
-                let _ = full;
                 out.push(needle(lx, ly, a, sl * lk * 1.08, sw * 3.2, Rgba([1.0, 0.45, 0.3, 1.0]), 0.1 * kc * self.chroma.min(1.0)));
                 out.push(needle(lx, ly, a, sl * lk * 0.92, sw * 2.6, Rgba([0.3, 0.55, 1.0, 1.0]), 0.1 * kc * self.chroma.min(1.0)));
                 out.push(needle(lx, ly, a, sl * lk, sw * 1.6, hot(c, 0.5), 0.55 * kc));
@@ -449,7 +448,7 @@ impl Component for LensFlare {
         if streak > 0.0 {
             let sl = w * streak * 0.5;
             let thick = if ana { 1.0 } else { 0.6 };
-            out.push(fxkit::ellipse(lx, ly, sl * 1.1, u * 0.03 * thick, 0.0, bloom(sc, 0.32 * kc, 0.12)));
+            out.push(fxkit::ellipse(lx, ly, sl * 1.1, u * 0.03 * thick, 0.0, bloom(sc, if ana { 0.55 } else { 0.32 } * kc, 0.12)));
             out.push(fxkit::ellipse(lx, ly, sl * 0.8, u * 0.008 * thick, 0.0, bloom(hot(sc, 0.3), 0.55 * kc, 0.1)));
             out.push(needle(lx, ly, 0.0, sl * 0.75, u * 0.0035, hot(sc, 0.8), 0.9 * kc.min(1.0)));
         }
@@ -502,8 +501,7 @@ impl Component for LensFlare {
         // A broad, faint secondary glow at the mirrored position.
         let (mx, my) = (lx + vx * 2.0, ly + vy * 2.0);
         out.push(light(mx, my, u * 0.22, bloom(mix(c, sc, 0.5), 0.05 * k * off, 0.25)));
-        out.push(Op::PopLayer);
-        let _ = Blend::Add;
+        fxkit::pop_if(&mut out, lp);
         out
     }
 
