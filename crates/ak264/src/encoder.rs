@@ -45,7 +45,7 @@ pub struct EncoderConfig {
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: false, cabac: true, skip_threshold: 0 }
+        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0 }
     }
 }
 
