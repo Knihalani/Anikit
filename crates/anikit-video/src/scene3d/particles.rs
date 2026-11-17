@@ -1042,21 +1042,26 @@ impl Sim {
             });
         live.frame += 1;
         if live.frame % SORT_EVERY == 0 {
+            let c = std::time::Instant::now();
             self.sort(live);
+            if std::env::var_os("ANIKIT_PARTICLES_PROFILE").is_some() {
+                eprintln!("particles: sort {:.0} ms", c.elapsed().as_secs_f64() * 1e3);
+            }
         }
     }
 
     fn snap(&self, live: &Live) -> Snap {
         use rayon::prelude::*;
         let n = live.px.len();
-        let m = (0..n).into_par_iter().with_min_len(1 << 14).map(|i| live.vx[i].abs().max(live.vy[i].abs()).max(live.vz[i].abs())).reduce(|| 1e-6f32, f32::max);
+        const CH: usize = 1 << 15;
+        let m = live.vx.par_chunks(CH).zip(live.vy.par_chunks(CH)).zip(live.vz.par_chunks(CH)).map(|((a, b), c)| a.iter().zip(b).zip(c).fold(1e-6f32, |m, ((x, y), z)| m.max(x.abs()).max(y.abs()).max(z.abs()))).reduce(|| 1e-6f32, f32::max);
         let vs = m / 32767.0;
         let iv = 1.0 / vs;
         let q = |v: f32| (v * iv).round().clamp(-32767.0, 32767.0) as i16;
         Snap {
             id: live.id.clone(),
-            pos: (0..n).into_par_iter().with_min_len(1 << 14).map(|i| [live.px[i], live.py[i], live.pz[i]]).collect(),
-            vel: (0..n).into_par_iter().with_min_len(1 << 14).map(|i| [q(live.vx[i]), q(live.vy[i]), q(live.vz[i])]).collect(),
+            pos: (0..n).into_par_iter().with_min_len(CH).map(|i| [live.px[i], live.py[i], live.pz[i]]).collect(),
+            vel: (0..n).into_par_iter().with_min_len(CH).map(|i| [q(live.vx[i]), q(live.vy[i]), q(live.vz[i])]).collect(),
             vscale: vs,
             t: self.def.start + live.frame as f32 * self.dt,
         }
@@ -1101,8 +1106,12 @@ impl Sim {
             }
         };
         let s0 = st.steps;
+        let prof = std::env::var_os("ANIKIT_PARTICLES_PROFILE").is_some();
+        let (mut t_step, mut t_snap) = (0.0f64, 0.0f64);
         while live.frame < f {
+            let c0 = std::time::Instant::now();
             self.step_frame(&mut live);
+            t_step += c0.elapsed().as_secs_f64();
             st.steps += 1;
             if live.frame % CHECK_EVERY == 0 && !st.checkpoints.iter().any(|c| c.frame == live.frame) {
                 if (st.checkpoints.len() + 1) * self.def.count * 24 < CHECK_BUDGET {
@@ -1112,12 +1121,19 @@ impl Sim {
             }
             // Frames close behind the target are likely asked for next (render batches).
             if f - live.frame <= 24 && live.frame < f {
+                let c1 = std::time::Instant::now();
                 let s = Arc::new(self.snap(&live));
+                t_snap += c1.elapsed().as_secs_f64();
                 st.snaps.insert(live.frame, s);
                 st.order.push(live.frame);
             }
         }
+        let c1 = std::time::Instant::now();
         let s = Arc::new(self.snap(&live));
+        t_snap += c1.elapsed().as_secs_f64();
+        if prof {
+            eprintln!("particles: step {:.0} ms, snapshots {:.0} ms", t_step * 1e3, t_snap * 1e3);
+        }
         st.snaps.insert(f, s.clone());
         st.order.push(f);
         if st.live.as_ref().is_none_or(|l| l.frame <= live.frame) {
@@ -1297,6 +1313,8 @@ struct Pyr {
     /// Threads split the image into bands, so every texel is summed by one
     /// thread in particle order: byte-identical at any thread count.
     band: (i32, i32),
+    /// First row held in each level's buffer (band pyramids hold only their rows).
+    off: [i32; 8],
 }
 
 /// Defocus bins: disc radius (px at full resolution) and the pyramid level it
@@ -1433,13 +1451,50 @@ impl Pyr {
             cw = cw.div_ceil(2).max(1);
             ch = ch.div_ceil(2).max(1);
         }
-        Pyr { c, lv, used: [false; 8], bins: vec![None; BINS.len()], band: (0, i32::MAX) }
+        Pyr { c, lv, used: [false; 8], bins: vec![None; BINS.len()], band: (0, i32::MAX), off: [0; 8] }
+    }
+
+    /// A pyramid holding only the rows of `band` at each level.
+    fn new_band(w: usize, h: usize, levels: usize, c: usize, band: (i32, i32)) -> Pyr {
+        let mut p = Pyr { c, lv: Vec::new(), used: [false; 8], bins: vec![None; BINS.len()], band, off: [0; 8] };
+        let (mut cw, mut ch) = (w, h);
+        for l in 0..levels {
+            let (r0, r1) = p.rows(l);
+            let (r0, r1) = (r0.clamp(0, ch as i32), r1.clamp(0, ch as i32));
+            p.off[l] = r0;
+            p.lv.push((cw, ch, vec![0.0f32; (r1 - r0) as usize * cw * c]));
+            cw = cw.div_ceil(2).max(1);
+            ch = ch.div_ceil(2).max(1);
+        }
+        p
+    }
+
+    /// Copy a band pyramid's rows into this full one.
+    fn absorb(&mut self, b: Pyr) {
+        let c = self.c;
+        for (l, (cw, _, buf)) in b.lv.into_iter().enumerate() {
+            if b.used[l] {
+                self.used[l] = true;
+                let o = b.off[l] as usize * cw * c;
+                self.lv[l].2[o..o + buf.len()].copy_from_slice(&buf);
+            }
+        }
+        for (k, bin) in b.bins.into_iter().enumerate() {
+            if let Some(buf) = bin {
+                let l = BINS[k].1;
+                let (cw, ch) = (self.lv[l].0, self.lv[l].1);
+                let dst = self.bins[k].get_or_insert_with(|| vec![0.0; cw * ch * c]);
+                let o = b.off[l] as usize * cw * c;
+                dst[o..o + buf.len()].copy_from_slice(&buf);
+            }
+        }
     }
     /// Reference splat: a disc of radius `r` (px) at full resolution seen
     /// through the tent pixel filter (the fast path's reconstruction), by
     /// dense sampling of the disc.
     fn disc(&mut self, x: f32, y: f32, r: f32, v: &[f32; 8]) {
         let (r0, r1) = self.rows(0);
+        let off = self.off[0];
         let c = self.c;
         self.used[0] = true;
         let (w, h, buf) = &mut self.lv[0];
@@ -1469,7 +1524,7 @@ impl Pyr {
                 continue;
             }
             let wt = n / total;
-            let o = &mut buf[(py * w + px) as usize * c..][..c];
+            let o = &mut buf[((py - off) * w + px) as usize * c..][..c];
             for k in 0..c {
                 o[k] += v[k] * wt;
             }
@@ -1491,6 +1546,7 @@ impl Pyr {
     #[inline(always)]
     fn stamp_c<const C: usize>(&mut self, x: f32, y: f32, r: f32, v: &[f32; 8]) {
         let (r0, r1) = self.rows(0);
+        let off = self.off[0];
         let c = C;
         self.used[0] = true;
         let (tab, boxes) = stamps();
@@ -1525,7 +1581,7 @@ impl Pyr {
                 continue;
             }
             let base = sy as usize * ST_N;
-            let row = &mut buf[(yy * w + ox + xa) as usize * c..(yy * w + ox + xb + 1) as usize * c];
+            let row = &mut buf[((yy - off) * w + ox + xa) as usize * c..((yy - off) * w + ox + xb + 1) as usize * c];
             let vv: [f32; C] = std::array::from_fn(|j| v[j]);
             for (k, o) in row.chunks_exact_mut(C).enumerate() {
                 let i = base + xa as usize + k;
@@ -1544,7 +1600,9 @@ impl Pyr {
         let c = self.c;
         let l = BINS[b].1;
         let (w, h) = (self.lv[l].0, self.lv[l].1);
-        let buf = self.bins[b].get_or_insert_with(|| vec![0.0; w * h * c]);
+        let (b0, b1) = (r0.clamp(0, h as i32), r1.clamp(0, h as i32));
+        let off = b0;
+        let buf = self.bins[b].get_or_insert_with(|| vec![0.0; (b1 - b0) as usize * w * c]);
         let f = 1.0 / (1u32 << l) as f32;
         let (fx, fy) = (x * f - 0.5, y * f - 0.5);
         let (ix, iy) = (fx.floor(), fy.floor());
@@ -1556,7 +1614,7 @@ impl Pyr {
             if xx < 0 || yy < r0.max(0) || xx >= w || yy >= h.min(r1) {
                 continue;
             }
-            let o = &mut buf[(yy * w + xx) as usize * c..][..c];
+            let o = &mut buf[((yy - off) * w + xx) as usize * c..][..c];
             for k in 0..c {
                 o[k] += v[k] * wt;
             }
@@ -1611,6 +1669,7 @@ impl Pyr {
     #[inline(always)]
     fn splat_c<const C: usize>(&mut self, l: usize, x: f32, y: f32, v: &[f32; 8]) {
         let (r0, r1) = self.rows(l);
+        let off = self.off[l];
         let c = C;
         self.used[l] = true;
         let (w, h, buf) = &mut self.lv[l];
@@ -1625,7 +1684,7 @@ impl Pyr {
             if xx < 0 || yy < r0.max(0) || xx >= w || yy >= h.min(r1) {
                 continue;
             }
-            let o = &mut buf[(yy * w + xx) as usize * c..][..C];
+            let o = &mut buf[((yy - off) * w + xx) as usize * c..][..C];
             for k in 0..C {
                 o[k] += v[k] * wt;
             }
@@ -1898,12 +1957,52 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
         let d = &sim.def;
         let n = snap.pos.len();
         // Bands of rows (multiples of 64, so every level splits exactly).
-        let band_h = (h.div_ceil(threads).div_ceil(64) * 64) as i32;
-        let work = |band: (i32, i32)| -> Pyr {
-            let range = 0..n;
-            let mut py = Pyr::new(w, h, levels, c);
-            py.band = band;
-            for j in range {
+        // Threaded: 64-row bands. Pass 1 finds the bands each particle can
+        // touch; pass 2 renders each band from just those particles, in order.
+        const BAND: usize = 64;
+        let nb = h.div_ceil(BAND);
+        let ranges: Option<Vec<(u8, u8)>> = (threads > 1).then(|| {
+            use rayon::prelude::*;
+            (0..n)
+                .into_par_iter()
+                .with_min_len(1 << 14)
+                .map(|j| {
+                    let i = snap.id[j] as usize;
+                    let p = v3(snap.pos[j][0], snap.pos[j][1], snap.pos[j][2]);
+                    let (sx, sy, z) = pj.at(p);
+                    if z < 0.05 {
+                        return (255, 0);
+                    }
+                    let size = match &d.size_e {
+                        Some(e) => e.at(p, snap.vel(j), t, sim.age(i, t), i).max(0.0),
+                        None => d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0),
+                    };
+                    let r_px = size * pj.k / z;
+                    let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
+                    let foot = (r_px * r_px + coc * coc).sqrt();
+                    let margin = foot + 4.0;
+                    if sx < -margin || sy < -margin || sx > w as f32 + margin || sy > h as f32 + margin {
+                        return (255, 0);
+                    }
+                    let vel = snap.vel(j);
+                    let back = madd(p, vel, -v.shutter * sim.dt * d.stretch);
+                    let by = if v.shutter > 0.0 { pp.at(back).1 } else { sy };
+                    let reach = foot + 7.0 + (sy - by).abs() * 0.5;
+                    let lo = ((sy - reach).max(0.0) as usize / BAND).min(nb - 1);
+                    let hi = (((sy + reach).max(0.0) as usize) / BAND).min(nb - 1);
+                    (lo as u8, hi as u8)
+                })
+                .collect()
+        });
+        let work = |band: (i32, i32), bi: Option<u8>| -> Pyr {
+            let mut py = if band == (0, i32::MAX) { Pyr::new(w, h, levels, c) } else { Pyr::new_band(w, h, levels, c, band) };
+            for j in 0..n {
+                if let (Some(b), Some(rg)) = (bi, &ranges) {
+                    let (lo, hi) = rg[j];
+                    if b < lo || b > hi {
+                        continue;
+                    }
+                }
                 let i = snap.id[j] as usize;
                 let p = v3(snap.pos[j][0], snap.pos[j][1], snap.pos[j][2]);
                 let (sx, sy, z) = pj.at(p);
@@ -2009,8 +2108,8 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     }
                 }
                 if refm {
-                    // Exact: a box-filtered disc of the full footprint at 32 instants.
-                    let nt = if ml > 0.01 { 32 } else { 1 };
+                    // Exact: the full footprint at 32–128 instants (at most 0.5 px apart).
+                    let nt = if ml > 0.01 { ((ml * 2.0).ceil() as usize).clamp(32, 128) } else { 1 };
                     let vv = val.map(|x| x / nt as f32);
                     for k in 0..nt {
                         let u = if nt == 1 { 0.0 } else { (k as f32 + 0.5) / nt as f32 - 0.5 };
@@ -2047,11 +2146,15 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
             py
         };
         if threads == 1 {
-            pyrs.push(work((0, i32::MAX)));
+            pyrs.push(work((0, i32::MAX), None));
         } else {
             use rayon::prelude::*;
-            let parts: Vec<Pyr> = (0..threads as i32).into_par_iter().map(|k| work((k * band_h, if k as usize + 1 == threads { i32::MAX } else { (k + 1) * band_h }))).collect();
-            pyrs.extend(parts);
+            let parts: Vec<Pyr> = (0..nb).into_par_iter().map(|b| work(((b * BAND) as i32, if b + 1 == nb { i32::MAX } else { ((b + 1) * BAND) as i32 }), Some(b as u8))).collect();
+            let mut full = Pyr::new(w, h, levels, c);
+            for p in parts {
+                full.absorb(p);
+            }
+            pyrs.push(full);
         }
     }
     let t_splat = clock.elapsed();

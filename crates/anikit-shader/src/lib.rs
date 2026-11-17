@@ -35,6 +35,73 @@ pub fn set_lane_groups(n: usize) {
     LANE_GROUPS.store(n.clamp(1, 2), std::sync::atomic::Ordering::Relaxed);
 }
 
+/// Directory for compiled kernels: `ANIKIT_SHADER_CACHE` (`0` turns the cache
+/// off), else `$XDG_CACHE_HOME/anikit/shaders`, else `~/.cache/anikit/shaders`.
+fn disk_dir() -> Option<std::path::PathBuf> {
+    match std::env::var_os("ANIKIT_SHADER_CACHE") {
+        Some(v) if v == "0" || v.is_empty() => None,
+        Some(v) => Some(v.into()),
+        None => std::env::var_os("XDG_CACHE_HOME")
+            .map(std::path::PathBuf::from)
+            .or_else(|| std::env::var_os("HOME").map(|h| std::path::Path::new(&h).join(".cache")))
+            .map(|d| d.join("anikit").join("shaders")),
+    }
+}
+
+/// Cache key: the source and declared uniforms, the lane groups, this
+/// build's code generator (its own source text) and the CPU's vector features.
+fn disk_key(src: &str, extra: &[(&str, UType)]) -> Option<u64> {
+    use std::hash::{Hash, Hasher};
+    static GEN: std::sync::OnceLock<u64> = std::sync::OnceLock::new();
+    let gen = *GEN.get_or_init(|| {
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        (env!("CARGO_PKG_VERSION"), include_str!("jit.rs"), include_str!("vmath.rs"), include_str!("texture.rs"), include_str!("front.rs"), include_str!("lib.rs")).hash(&mut h);
+        #[cfg(target_arch = "x86_64")]
+        {
+            for f in [
+                std::arch::is_x86_feature_detected!("sse4.1"),
+                std::arch::is_x86_feature_detected!("sse4.2"),
+                std::arch::is_x86_feature_detected!("avx"),
+                std::arch::is_x86_feature_detected!("avx2"),
+                std::arch::is_x86_feature_detected!("fma"),
+                std::arch::is_x86_feature_detected!("bmi1"),
+                std::arch::is_x86_feature_detected!("bmi2"),
+                std::arch::is_x86_feature_detected!("lzcnt"),
+                std::arch::is_x86_feature_detected!("popcnt"),
+                std::arch::is_x86_feature_detected!("avx512f"),
+                std::arch::is_x86_feature_detected!("avx512vl"),
+            ] {
+                f.hash(&mut h);
+            }
+        }
+        h.finish()
+    });
+    disk_dir()?;
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    (gen, src, lane_groups()).hash(&mut h);
+    for (n, t) in extra {
+        (n, format!("{t:?}")).hash(&mut h);
+    }
+    Some(h.finish())
+}
+
+fn disk_path(key: u64) -> Option<std::path::PathBuf> {
+    Some(disk_dir()?.join(format!("{key:016x}.bin")))
+}
+
+/// Best effort: a failed write just means compiling next time.
+fn disk_store(key: u64, blob: &[u8]) {
+    let Some(path) = disk_path(key) else { return };
+    let Some(dir) = path.parent() else { return };
+    if std::fs::create_dir_all(dir).is_err() {
+        return;
+    }
+    let tmp = dir.join(format!("{key:016x}.{}.tmp", std::process::id()));
+    if std::fs::write(&tmp, blob).is_ok() {
+        let _ = std::fs::rename(&tmp, &path);
+    }
+}
+
 /// See [`set_lane_groups`].
 pub fn lane_groups() -> usize {
     match std::env::var("ANIKIT_SHADER_GROUPS").ok().as_deref() {
@@ -216,12 +283,25 @@ impl Shader {
         for (_, f) in p.module.functions.iter() {
             mark(f);
         }
-        let kernel = jit::compile(&p.module, &p.info, p.entry, p.kind, &layout).map_err(|mut e| {
-            if e.line.is_none() {
-                e.message = format!("{} (while compiling)", e.message);
+        // Compiled kernels are cached on disk, so a fresh process (`still`)
+        // doesn't pay the JIT again for a shader it has seen.
+        let key = disk_key(src, extra);
+        let cached = key.and_then(|k| std::fs::read(disk_path(k)?).ok()).and_then(|b| jit::Kernel::from_blob(&b));
+        let kernel = match cached {
+            Some(k) => k,
+            None => {
+                let mut k = jit::compile(&p.module, &p.info, p.entry, p.kind, &layout).map_err(|mut e| {
+                    if e.line.is_none() {
+                        e.message = format!("{} (while compiling)", e.message);
+                    }
+                    e
+                })?;
+                if let (Some(key), Some(blob)) = (key, k.blob.take()) {
+                    disk_store(key, &blob);
+                }
+                k
             }
-            e
-        })?;
+        };
         Ok(Shader {
             insts: kernel.insts,
             kernel,

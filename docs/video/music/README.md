@@ -26,6 +26,21 @@ These are 20–24 s Vorbis renders at q2. Each comes from a one-line spec, with
 | [synthwave.ogg](synthwave.ogg) | `{"style":"synthwave","key":"Am"}` |
 | [corporate.ogg](corporate.ogg) | `{"style":"corporate"}` |
 
+## Make anything: custom instruments, effects, automation
+
+Agents are not limited to the presets. [custom.json](custom.json) (rendered as [custom.ogg](custom.ogg))
+defines its own instruments, gives each track its own effect chain, and automates parameters over time:
+
+- **`define`** names custom instruments:
+  - `{"synth": {…}}`: up to three oscillators (saw, square, tri, sine, supersaw; unison voices and detune), sub, noise, filter, amp and filter envelopes, LFO, pitch envelope and glide. A definition can start from any synth preset via `base`.
+  - `{"sampler": {"zones": […]}}`: your own audio files with key range, root note, velocity layers, loop points, tuning and round robin.
+- **`fx`** is a per-track effect chain. Available types: eq, comp, delay (tempo-synced `note`), reverb (wet/dry insert), chorus, saturate, widener, transient, filter and gain.
+- **`automate`** changes values over time, as keyframes in beats or `@bar`/`@beat` times, or as `"=expr"` written in `beat`, `bar` and `t`. It can drive two kinds of target:
+  - track parameters (volume, pan, swept low-pass and high-pass filters, reverb and delay sends), applied continuously;
+  - patch parameters of a custom synth (`synth.cutoff`, `synth.res`, `synth.drive`, `synth.env`, `synth.vib`, …), applied at each note-on.
+
+Tests: `tests/timing.rs::custom_instruments_fx_and_automation`, which covers a sampler zone from a WAV file, determinism, a cutoff sweep that measurably brightens the line, and the error messages.
+
 ## Listening-proxy metrics (all 15 styles)
 
 Produced by `cargo run --release -p anikit-music --example demos -- out/`. Two caveats:

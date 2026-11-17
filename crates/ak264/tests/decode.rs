@@ -410,3 +410,36 @@ fn adaptive_quant_is_bit_exact() {
         }
     }
 }
+
+#[test]
+fn ssim_floor_lowers_qp_and_stays_bit_exact() {
+    // Busy noise at QP 32 is far below an SSIM floor of 0.99: the IDR is
+    // re-coded and later frames use a lower slice QP (slice_qp_delta < 0, with
+    // per-MB AQ deltas on top), with both entropy coders and with slices.
+    let (w, h) = (176u32, 112u32);
+    let frames: Vec<YuvBuffer> = (0..8u32)
+        .map(|t| {
+            let mut b = YuvBuffer::new(w, h);
+            for y in 0..h as usize {
+                for x in 0..w as usize {
+                    let r = (x as u32 * 7919 + y as u32 * 104729 + t * 31337).wrapping_mul(2654435761) >> 27;
+                    b.y[y * w as usize + x] = (60 + r * 3 + (x as u32 + t) % 40) as u8;
+                }
+            }
+            b.u.fill(128);
+            b.v.fill(129);
+            b
+        })
+        .collect();
+    for cabac in [false, true] {
+        for threads in [1, 3] {
+            let base = EncoderConfig { cabac, threads, deblock: true, qp: 32, gop: 4, ..cfg(w, h) };
+            let (b0, p0) = roundtrip(EncoderConfig { ssim_floor: 0.0, ..base.clone() }, &frames, &format!("sf0{}{}", cabac as u8, threads));
+            let (b1, p1) = roundtrip(EncoderConfig { ssim_floor: 0.99, ..base }, &frames, &format!("sf1{}{}", cabac as u8, threads));
+            assert!(b1.len() > b0.len(), "{} {}", b1.len(), b0.len());
+            if have_ffmpeg() {
+                assert!(p1 > p0 + 2.0, "{p1} {p0}");
+            }
+        }
+    }
+}
