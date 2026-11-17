@@ -135,6 +135,9 @@ pub struct Spec {
     /// `{ "preset": "cinematic", "bloom": 0.4, … }`. Default none.
     #[schemars(with = "Option<PostValue>")]
     pub post: Option<serde_json::Value>,
+    /// Default scene length: `"bar"`, `"2 beats"`, `"4 bars"` (at the music's tempo) or seconds.
+    /// Scenes without a `duration` cut on that grid.
+    pub cut: Option<Num>,
     /// Encoder tuning (the built-in ak264 MP4 encoder): `{ "aq": 0.8 }`.
     pub encode: Option<EncodeSpec>,
     /// Motion blur on moving content: `true` (180° shutter), `false`, or `{ "shutter": 90 }` (degrees).
@@ -143,6 +146,23 @@ pub struct Spec {
     /// Named 2D sub-compositions: placed with a `composition` layer, or used as a texture in 3D.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compositions: Option<BTreeMap<String, Composition>>,
+}
+
+/// `dots`: many points from an array or a CSV file (`x,y[,colour]` per line).
+#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DotsSpec {
+    /// `[[x, y], …]` or `[[x, y, "#colour"], …]` in frame pixels, or a CSV path.
+    pub data: serde_json::Value,
+    /// Dot diameter in px (default 4).
+    pub size: Option<f64>,
+    /// Colour of dots without their own (default `$text`).
+    pub color: Option<String>,
+    /// Per-dot scale 0..1, an expression of `i` (index), `n` (count), `t`… e.g.
+    /// `"=clamp(t * 2000 - i, 0, 1)"` to reveal dots in order. Default 1.
+    pub appear: Option<String>,
+    /// `circle` (default) or `square` (faster for very many tiny dots).
+    pub shape: Option<String>,
 }
 
 /// One primitive of a `draw` layer: exactly one of `d`, `points`, `circle`, `rect`, `line`.
@@ -347,6 +367,10 @@ pub struct Scene {
     pub post: Option<serde_json::Value>,
     /// Times relative to the scene start.
     pub markers: Option<BTreeMap<String, Num>>,
+    /// Lay out the scene's free-floating layers (no `x`/`y`) as one centred column:
+    /// `true`, a gap in px, or `{ "gap": 24, "align": "start|center|end" }`. Expanded at load.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stack: Option<serde_json::Value>,
     /// Drawn bottom to top.
     #[serde(deserialize_with = "de::layers")]
     #[schemars(with = "Vec<de::LayerItem>")]
@@ -551,6 +575,10 @@ pub struct Layer {
     /// Per-frame script: returns props to set this frame, e.g. `"#{ x: 960 + 200 * sin(t), fill: hsl(t * 90, 80, 60) }"`.
     /// Sees `t T gt p i n w h fps frame beat bar level bpm`. Runs every frame (a few µs).
     pub update: Option<serde_json::Value>,
+
+    /// Data points drawn as dots in frame pixels (thousands are fine: one path per colour):
+    /// `{ "data": [[x, y], …] | "points.csv", "size": 4, "color": "$accent", "appear": "=t * 800 - i" }`.
+    pub dots: Option<DotsSpec>,
 
     // ---- draw
     /// Raw drawing: primitives in frame pixels (the layer defaults to the parent's box), each

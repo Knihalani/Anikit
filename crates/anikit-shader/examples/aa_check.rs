@@ -67,6 +67,7 @@ fn main() {
             f.supersample = ss;
             f.adaptive = adaptive;
             f.threshold = th / 255.0;
+            f.max_refine = std::env::var("CAP").ok().and_then(|v| v.parse().ok()).unwrap_or(1.0);
             let mut px = vec![0u8; (w * h * 4) as usize];
             let t0 = std::time::Instant::now();
             s.render(&f, &mut px);
