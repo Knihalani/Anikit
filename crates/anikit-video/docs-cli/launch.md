@@ -32,7 +32,7 @@ Two deliberately different fragments (not starting points):
       "animate": [ { "from": { "scaleX": 0 }, "duration": 0.6, "ease": "inOutExpo" } ] } ] } ] }
 ```
 
-Quality checks (BAR.md, "Third rejection"): the medium comes from the concept; 2D typography is first-class, 3D only
+Taste first (`docs taste`): 3 references outside tech, 3 directions, no screenshot-beside-copy or "UI on dark with one accent", frames dense with made imagery. Quality checks (BAR.md): the medium comes from the concept; 2D typography is first-class, 3D only
 where the idea is physical · never repeat a previous film's medium, world, motif, materials or music · every word
 at full resolution (no scene3d `resolution` < 1 or `draft` in finals; no DOF, blur, bloom or grain on words being
 read), ≥ 4.5:1 contrast, held ≥ 0.3 s + 0.06 s per character · motivated key, fill and rim, with exposure checked

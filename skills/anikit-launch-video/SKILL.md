@@ -66,6 +66,9 @@ planning would fit any product, it is wrong: design it from this product's own s
 
 ## Quality checks (must pass before the final render; see BAR.md, "Third rejection")
 
+- **Taste canon first:** run `anikit-video docs taste` before designing; the numbers and sources are in `docs/video/taste/TASTE.md` (Type §1 · Colour §2 · Composition §3 · Light §4 · Motion §5 · Editing §6 · Sound §7 · Concept §8 · Tells §9 · Ambition §11). Start with 3 real-world references *outside* tech and SaaS (print, title design, scientific or editorial illustration, posters, nature documentary, architecture), then 3 directions that differ on every axis.
+- **No landing page in motion:** no UI screenshot or phone beside copy in an empty frame, and no "UI on dark with one accent" or teal + amber dashboard by default. When the product is a UI, stage it: extreme scale, crops into the detail, the camera through it, the UI as a texture on a world. Fill frames with made imagery (paths, shaders, particles and sims, texture), which is the density of §11, not sparse, tasteful emptiness.
+
 - **The medium comes from the concept.** Well-designed 2D typography (a deliberate typeface, size, grid, kerning
   and motion), UI, illustration, compositing and shader work are first-class. Use 3D only where the idea is
   physical or material. The fix for flat, slide-like design is *design*, not an extra dimension.
