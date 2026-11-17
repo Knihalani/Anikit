@@ -570,7 +570,7 @@ impl Scene3d {
 
         let mut px: kernel::pool::Buf<trace::Px> = kernel::pool::Buf::uninit(w * h);
         let mut q = p.quality;
-        if std::env::var_os("ANIKIT_SCENE3D_REFERENCE").is_some() {
+        if crate::components::reference() || std::env::var_os("ANIKIT_SCENE3D_REFERENCE").is_some() {
             // Converged sampling with the same image model: 1 + 24 samples per
             // pixel everywhere, 4 shadow and AO rays per sample.
             q.full = true;
