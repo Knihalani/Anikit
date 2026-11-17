@@ -6,7 +6,7 @@ studio: "Julius Horsthuis"
 client: "Max Cooper (One Hundred Billion Sparks)"
 year: 2019
 url: https://vimeo.com/321969608
-alt_urls: [https://www.onehundredbillionsparks.net]
+alt_urls: ["https://www.onehundredbillionsparks.net"]
 length_s: 314
 verified: oembed
 aspect: "16:9"                      # est.
@@ -22,6 +22,7 @@ anikit_features: [shader, camera, post, audio, "GAP: none fundamental: raymarche
 awards: []
 stills:
   - https://i.vimeocdn.com/video/764809882-3f0f1517ebc6fca1e1487bbc9fe133fc2d9025d21b20306f148d21e9d7cab4eb-d_1280?region=us
+  - https://images.squarespace-cdn.com/content/v1/553fb34be4b01d70400fc6dd/1551976407719-NPLQS7FXMOGJZUM09OLP/Emptyset_WIDE_FINAL+%280-02-25-00%29.jpg
 measured: null
 ---
 

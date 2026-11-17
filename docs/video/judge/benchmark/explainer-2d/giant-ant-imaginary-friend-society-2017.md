@@ -6,7 +6,7 @@ studio: "Giant Ant (CD: Jay Grandin; animation director: Conor Whelan; AD: Rafae
 client: "Pediatric Brain Tumor Foundation (agency: RPA)"
 year: 2017
 url: https://vimeo.com/235372654
-alt_urls: [https://giantant.ca/imaginary-friends-finding-out, https://2017.motionawards.com/winner/visual-essay-social-good]
+alt_urls: ["https://giantant.ca/imaginary-friends-finding-out", "https://2017.motionawards.com/winner/visual-essay-social-good"]
 length_s: 119
 verified: oembed
 aspect: "16:9"

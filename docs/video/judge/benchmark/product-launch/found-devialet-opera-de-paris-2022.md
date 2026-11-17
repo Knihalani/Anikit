@@ -22,6 +22,11 @@ anikit_features: [scene3d, camera, motionBlur, post, text, audio, "GAP: mechanic
 awards: []
 stills:
   - https://i.vimeocdn.com/video/1563213537-750a7396215b5e9979bc41dc39c498aa57fef06ff7a1c515cd7f323e69f4d6cb-d_1280
+  - https://www.stashmedia.tv/wp-content/uploads/Devialet-Ope%CC%81ra-De-Paris-speakers-by-Found-Studio.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Devialet-Ope%CC%81ra-De-Paris-speakers-by-Found-Studio2.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Devialet-Ope%CC%81ra-De-Paris-speakers-by-Found-Studio3.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Devialet-Ope%CC%81ra-De-Paris-speakers-by-Found-Studio4.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Devialet-Ope%CC%81ra-De-Paris-speakers-by-Found-Studio5.jpg
 measured: null
 ---
 

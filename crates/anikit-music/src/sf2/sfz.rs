@@ -355,6 +355,10 @@ fn builtin(name: &str) -> Option<SampleBuf> {
 pub struct SfzOptions {
     /// Drop regions whose sample file is missing instead of failing.
     pub skip_missing: bool,
+    /// Stretch the lowest and highest attack regions to keys 0 and 127, so
+    /// a pack recorded over a narrow range never falls silent (out-of-range
+    /// notes are resampled from the nearest edge sample).
+    pub extend: bool,
 }
 
 impl SfzInstrument {
@@ -518,6 +522,19 @@ impl SfzInstrument {
         }
         if regions.is_empty() {
             return Err("no playable regions".into());
+        }
+        if opt.extend {
+            let attack = |r: &&Region| matches!(r.trigger, Trigger::Attack | Trigger::First);
+            let lo = regions.iter().filter(attack).map(|r| r.keys.0).min().unwrap_or(0);
+            let hi = regions.iter().filter(attack).map(|r| r.keys.1).max().unwrap_or(127);
+            for r in &mut regions {
+                if r.keys.0 == lo {
+                    r.keys.0 = 0;
+                }
+                if r.keys.1 == hi {
+                    r.keys.1 = 127;
+                }
+            }
         }
         // Choke mapping (see `Voice::exclusive`): a region with off_by=N is
         // choked by notes of group N; give both the class N.
@@ -918,10 +935,33 @@ mod tests {
         let d = dir("missing");
         let e = SfzInstrument::from_str("<region> sample=nope.wav", &d, SfzOptions::default()).unwrap_err();
         assert!(e.contains("not found"), "{e}");
-        let e = SfzInstrument::from_str("<region> sample=nope.wav", &d, SfzOptions { skip_missing: true }).unwrap_err();
+        let e = SfzInstrument::from_str("<region> sample=nope.wav", &d, SfzOptions { skip_missing: true, ..Default::default() }).unwrap_err();
         assert!(e.contains("no playable regions"), "{e}");
         assert!(load_sfz(d.join("none.sfz")).is_err());
         let _ = std::fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn sfz_extend_covers_every_key() {
+        // `*sine` sounds middle C at its keycenter.
+        let text = "<region> sample=*sine lokey=40 hikey=45 pitch_keycenter=60 ampeg_release=0.01\n<region> sample=*sine lokey=46 hikey=50 pitch_keycenter=60";
+        let strict = SfzInstrument::from_str(text, ".", SfzOptions::default()).unwrap();
+        let wide = SfzInstrument::from_str(text, ".", SfzOptions { extend: true, ..Default::default() }).unwrap();
+        let peak = |i: &SfzInstrument, key: f32| {
+            let mut v = i.voice(&NoteOn { key, vel: 0.8, rate: 48_000.0, seed: 0, rr: 0, len: 1.0 });
+            let (l, _, _) = crate::sf2::tests::render(v.as_mut(), 1.0, 0.9, 128);
+            (l.iter().fold(0f32, |m, v| m.max(v.abs())), l)
+        };
+        for key in [30.0, 57.0] {
+            assert_eq!(peak(&strict, key).0, 0.0, "strict: key {key} is outside every region");
+            let (p, l) = peak(&wide, key);
+            assert!(p > 0.1, "extended: key {key} plays ({p})");
+            let want = 440.0 * ((key as f64 - 69.0) / 12.0).exp2();
+            let f = crate::sf2::tests::measure_freq(&l[2_400..40_000], want, 48_000.0);
+            assert!((1200.0 * (f / want).log2()).abs() < 5.0, "key {key}: {f} Hz, want {want}");
+        }
+        // Inside the recorded range nothing changes.
+        assert_eq!(peak(&strict, 44.0).1, peak(&wide, 44.0).1);
     }
 
     #[test]

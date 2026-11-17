@@ -22,6 +22,11 @@ anikit_features: [scene3d, camera, motionBlur, post, glow, text, audio, "GAP: fl
 awards: []
 stills:
   - https://i.vimeocdn.com/video/2094062481-afb9eb195eef5463e8c2ef72dedb81d502f43030432f1de56169f5aea9e732b6-d_1280
+  - https://www.stashmedia.tv/wp-content/uploads/XREAL-1S-3D-AR-glasses-ad-by-Morph-Studio-STASH-MAGAZINE.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/XREAL-1S-3D-AR-glasses-ad-by-Morph-Studio-STASH-MAGAZINE2.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/XREAL-1S-3D-AR-glasses-ad-by-Morph-Studio-STASH-MAGAZINE4.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/XREAL-1S-3D-AR-glasses-ad-by-Morph-Studio-STASH-MAGAZINE5.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/XREAL-1S-3D-AR-glasses-ad-by-Morph-Studio-STASH-MAGAZINE6.jpg
 measured: null
 ---
 
