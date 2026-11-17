@@ -376,6 +376,18 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 - aphorism copy, and small-caps tracked labels over a serif line;
 - sparse, near-static frames where a slow drift is the only motion;
 - a Notion/Linear/Arc-style landing page turned into a video.
+- Its documented tells (Jim Nielsen's "The AI Aesthetic" and its HN thread; capitalandcompute; claudecodehq):
+  - a cream ground around #F4F1EA, Instrument Serif or Fraunces, and a terracotta accent near #D97757;
+  - tracked all-caps or mono micro-labels;
+  - 01/02/03 numbering on things that aren't a sequence;
+  - one accented word per headline.
+- The wider 2026 tired list:
+  - bento grids ("cards all asking for the same amount of attention");
+  - mesh gradients ("until every site looked like Stripe's");
+  - the dark "Linear look" of gradient, glass and bold sans;
+  - "lazy minimalism: minimalism without soul" (Creative Boom);
+  - count-up numbers;
+  - floaty camera drift, which AI-video vendors recommend *because* it hides artifacts.
 
 Restraint swapped for 3D clichés is still a cliché. Restraint must be rich (§11), never empty.
 
@@ -424,24 +436,36 @@ Step 1 happens before designing; the rest happen on the `critique --pack` strip,
 
 ## 11. Ambition: amazing, not merely correct
 
-Correct is not enough. The fourth rejection (Margin) passed every rule above and was still "complete AI slop", because it was empty and recognisable as a trend. Amazing work is dense with considered decisions and does something the viewer hasn't seen.
+Correct is not enough. The fourth rejection (Margin) passed every rule above and was still "complete AI slop", because it was empty and recognisable as a trend. Vimeo's Staff Pick tenets are concept, craft, execution and originality, with one question: "Does it look and sound amazing?" Award work can be restrained in palette, but never in idea, world logic, detail per frame or choreography.
 
-**What amazing requires.**
-- **Density of craft per frame.** Several layers of considered detail: a subject, a world it lives in, texture at the edges, a secondary motion, light that models form. Restraint is a choice about *what* is in the frame, never about leaving it empty. Title sequences are restrained and still rich in every frame.
-- **Real imagery, made.** Illustration, simulation, texture, photographic-grade compositing. With this engine:
-  - paths drawn and repeated procedurally (`repeat` with `$i`, `script` loops);
-  - shader worlds (your own GLSL);
-  - particles and rigid-body physics;
-  - ray-traced objects lit by motivated sources.
-  Never gradients standing in for imagery.
-- **Choreography with weight.** Elements hand off to each other: a shape becomes the next shot's subject (match cut), a camera move continues through a cut, a transition is an idea (a morph, a reveal) rather than a wipe.
-- **One specific idea executed at a very high level,** rather than five ideas at a medium level. Take the idea further than the first version: more detail, more variation, more finish.
-- **Surprise.** At least one moment the viewer didn't predict: a reversal, a change of scale, a rule broken once.
-- **Sound and picture designed together.** Hits, textures and silences that belong to this world's materials.
+**Principles.**
+- **Idea first, polish last.** Clair (Elastic): the idea is the core of the apple; style is only the skin. Holmedal (ManvsMachine): don't get "distracted with execution (garnish) until the foundation is in place", and "make sure everything is motivated and has purpose."
+- **A world with its own logic.**
+  - *Game of Thrones* (Elastic) is one mechanical map, whose burning sun is also the key light. Gears grow the cities, the materials are wood, metal and leather, and the camera is motion control rather than a "magic camera".
+  - Apple's M1 Max film (Shane Griffin): "I didn't want any piece to just turn on from nowhere"; everything "had to come from something".
+- **Density of considered detail.** *Stranger Things* is purely typographic, yet it carries scanned 35 mm grain, light jitter, red colour shifts and "a few too many inconsistencies on purpose". Cooper etched *Se7en*'s type by hand. Buck calls the handmade "earned"; ManvsMachine 3D-scans every Nike shoe. Restraint chooses *what* is in the frame and never leaves it empty.
+- **Transitions are ideas.** Match cuts keep the subject in the same screen position, match similar shapes, and carry momentum: cut mid-move, then resume (School of Motion). Contrast tempi, and allow one deliberately disorienting cut.
+- **Surprise.** Elastic's Semi-Permanent film "start[s] dark before it completely changes". Golden Wolf: "there's always space for the weird".
+- **Sound from the start.** Antfood joins "from concept and pre-production" and explores "30, 50 or 100 ideas"; sound "won't save mediocre direction".
+- **Iterate past "working".** Apple's crystal-to-chip system was refined over days, and *Game of Thrones* went through four variants. Watch at full speed and in chunks, and review contact sheets.
+
+**With this engine.**
+- **Real imagery, made:**
+  - paths drawn and repeated procedurally (`repeat` with `$i`, `script` loops: terrain, a field of glyphs, a data landscape);
+  - your own GLSL worlds;
+  - particles and rigid-body physics with a cause on screen;
+  - ray-traced objects in a motivated key;
+  - compositions used as textures.
+- Gradients never stand in for imagery.
+- **Texture at the edges:** grain, halation, slight jitter or misregistration chosen for the world, kept off words while they are read.
+- **Choreography:**
+  - one element's exit is the next one's entrance;
+  - a camera move continues through a cut;
+  - a shape becomes the next shot's subject.
 
 **Checks.**
-- In any random frame, name ≥ 3 layers of intentional detail and the job each one does.
-- Measure how much of the frame is doing something intended (subject, world, texture, type). A small cluster in a mostly empty frame fails unless the emptiness *is* the idea and is shaped.
-- Count the transitions that are ideas (match, morph, continuous move) rather than cuts or wipes. Plan at least one.
-- Find the surprise and name it.
+- Pause on a random frame. It holds up as a still: a hero, a supporting structure, texture, and ≥ 3 layers of intentional detail you can name with their jobs.
+- Every entrance has a cause already on screen.
+- At least one transition is an idea (a match, a morph or a continuous move), and you can name the surprise.
+- Mute it, then listen with your eyes closed: each half still shows the structure.
 - Would a senior motion designer stop scrolling on Vimeo? Name the trend it resembles; if you can, change the direction (§10, step 1).
