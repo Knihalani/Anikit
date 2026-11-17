@@ -116,7 +116,7 @@ Per-component speed (single thread, × real time):
 
 - **Instruments.**
   - Sampled: the bundled GeneralUser GS General MIDI bank, re-encoded as compact Vorbis SF3 (5.9 MB). SF2, SF3 and SFZ files also load.
-  - Optional packs: `anikit-video music fetch essentials` (≈210 MB: Splendid grand, Wurlitzer/CP80/Pianet, FreePats CC0 bass, nylon and clean electric guitars). Once cached, they replace the GM samples for piano, bass, pick-bass, nylon-guitar and clean-guitar automatically. Bigger packs: `fetch salamander`, `fetch vsco2-ce`.
+  - Optional packs: `anikit-video music fetch essentials` (≈210 MB: Splendid grand, Wurlitzer/CP80/Pianet, FreePats CC0 bass, nylon and clean electric guitars). Once cached, they replace the GM samples for piano, bass, pick-bass, nylon-guitar and clean-guitar automatically. Bigger packs: `fetch salamander`, `fetch vsco2-ce`, and `fetch virtuosity` (≈250 MB download: a real acoustic kit, stereo mid-room mic, velocity layers and round robins, which replaces the GM kit for standard, room, rock, power, pop and lofi kits once cached).
   - Physical and modal models: Karplus-Strong guitars, harp and koto; modal marimba, vibraphone, bells, kalimba and handpan.
   - Synths and drum machines.
   - See `LICENSES.md` for every licence.

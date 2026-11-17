@@ -29,6 +29,9 @@ pub struct Pack {
     /// Sparse-checkout patterns (gitignore syntax, e.g. `/*.sfz`); empty =
     /// the whole repository.
     pub sparse: &'static [&'static str],
+    /// Files derived after download: (new file, source file, find, replace),
+    /// e.g. a program pointed at a different keymap.
+    pub derive: &'static [(&'static str, &'static str, &'static str, &'static str)],
 }
 
 /// Known packs.
@@ -42,6 +45,7 @@ pub const PACKS: &[Pack] = &[
         branch: "master",
         credit: "",
         sparse: &[],
+        derive: &[],
     },
     Pack {
         name: "epianos",
@@ -52,6 +56,7 @@ pub const PACKS: &[Pack] = &[
         branch: "master",
         credit: "E-Pianos by Greg Sullivan (CC BY 3.0), SFZ mapping by kinwie",
         sparse: &[],
+        derive: &[],
     },
     Pack {
         name: "vsco2-ce",
@@ -63,6 +68,7 @@ pub const PACKS: &[Pack] = &[
         branch: "SFZ",
         credit: "",
         sparse: &[],
+        derive: &[],
     },
     Pack {
         name: "salamander",
@@ -74,6 +80,7 @@ pub const PACKS: &[Pack] = &[
         branch: "master",
         credit: "Salamander Grand Piano V3 by Alexander Holm (CC BY 3.0), SFZ mapping by kinwie",
         sparse: &[],
+        derive: &[],
     },
     Pack {
         name: "freepats-bass",
@@ -84,6 +91,7 @@ pub const PACKS: &[Pack] = &[
         branch: "2019-09-30",
         credit: "",
         sparse: &[],
+        derive: &[],
     },
     Pack {
         name: "freepats-nylon",
@@ -94,6 +102,7 @@ pub const PACKS: &[Pack] = &[
         branch: "v1.0.0",
         credit: "",
         sparse: &[],
+        derive: &[],
     },
     Pack {
         name: "freepats-eguitar",
@@ -104,16 +113,72 @@ pub const PACKS: &[Pack] = &[
         branch: "2026-08-07",
         credit: "",
         sparse: &["/*.sfz", "/*.txt", "/samples/bridge/small/"],
+        derive: &[],
+    },
+    Pack {
+        name: "virtuosity",
+        description: "Virtuosity Drums — a real acoustic kit, stereo mid-room mic, many velocity layers and \
+                      round robins (kick, snare, toms, hi-hat, ride, crash) (SFZ, WAV)",
+        license: "CC0 1.0 (public domain dedication)",
+        size: "≈250 MB download (only the mid-mic samples), ≈510 MB on disk",
+        url: "https://github.com/sfzinstruments/virtuosity_drums",
+        branch: "v0.925",
+        credit: "",
+        sparse: &["/Programs/", "/LICENSE", "/README.md", "/Samples/mid/"],
+        // The shipped program uses the e-kit keymap (open hat = key 42 + pedal);
+        // the default keymap puts it on GM key 46.
+        derive: &[("Programs/anikit-mid-kit.sfz", "Programs/06-mid-mic.sfz", "#include \"keymaps/keymap.sfz\"", "#include \"keymaps/default/keymap.sfz\"")],
     },
 ];
 
 /// Packs recorded over a narrow range: their edge samples are stretched to
 /// cover every key (see [`SfzOptions::extend`]).
+/// Write a pack's derived files (idempotent; also run for caches fetched
+/// before a derivation existed).
+fn derive_files(pack: &Pack, dir: &std::path::Path) {
+    for (new, src, find, replace) in pack.derive {
+        let out = dir.join(new);
+        if out.is_file() {
+            continue;
+        }
+        if let Ok(text) = std::fs::read_to_string(dir.join(src)) {
+            let _ = std::fs::write(&out, text.replacen(find, replace, 1));
+        }
+    }
+}
+
+/// Packs recorded with distant mics: the first milliseconds of every sample
+/// are travel time (the Virtuosity mid mic is about 3 m from the kit, ≈8 ms),
+/// skipped so hits land on the grid. A millisecond of lead-in is kept.
+const TRIM_MS: &[(&str, f32)] = &[("virtuosity", 7.0)];
+
+/// Skips the first `n` frames of every voice.
+struct Trimmed {
+    inner: SfzInstrument,
+    n: usize,
+}
+
+impl Instrument for Trimmed {
+    fn voice(&self, note: &crate::voice::NoteOn) -> Box<dyn crate::voice::Voice> {
+        let mut v = self.inner.voice(note);
+        let n = (self.n as f32 * note.rate / 48_000.0) as usize;
+        let (mut l, mut r) = ([0f32; crate::voice::BLOCK], [0f32; crate::voice::BLOCK]);
+        let mut left = n;
+        while left > 0 {
+            let m = left.min(crate::voice::BLOCK);
+            v.render(&mut l[..m], &mut r[..m]);
+            left -= m;
+        }
+        v
+    }
+}
+
 const EXTEND: &[&str] = &["freepats-bass", "freepats-nylon", "freepats-eguitar"];
 
 /// Friendly name → (pack, SFZ file inside it).
 pub const INSTRUMENTS: &[(&str, &str, &str)] = &[
     ("splendid-piano", "splendid", "Splendid Grand Piano.sfz"),
+    ("virtuosity-kit", "virtuosity", "Programs/anikit-mid-kit.sfz"),
     ("finger-bass-yr", "freepats-bass", "FingerBassYR 20190930.sfz"),
     ("picked-bass-yr", "freepats-bass", "PickedBassYR 20190930.sfz"),
     ("nylon-guitar-fp", "freepats-nylon", "SpanishClassicalGuitar-20190618.sfz"),
@@ -235,6 +300,7 @@ pub fn fetch(name: &str) -> Result<PathBuf, String> {
     }
     std::fs::rename(&tmp, &dir).map_err(|e| format!("cannot move pack into place: {e}"))?;
     let _ = std::fs::write(dir.join(".anikit-complete"), pack.license);
+    derive_files(pack, &dir);
     Ok(dir)
 }
 
@@ -253,6 +319,11 @@ pub fn pack_instrument(name: &str) -> Option<Arc<dyn Instrument>> {
         }
     };
     let path = pack_dir(&pack).join(&file);
+    if !path.is_file() && is_cached(&pack) {
+        if let Some(p) = PACKS.iter().find(|k| k.name == pack) {
+            derive_files(p, &pack_dir(&pack));
+        }
+    }
     if !path.is_file() {
         return None;
     }
@@ -263,7 +334,11 @@ pub fn pack_instrument(name: &str) -> Option<Arc<dyn Instrument>> {
     }
     // Lenient: a sparse or partial checkout still plays what it has.
     let opt = SfzOptions { skip_missing: true, extend: EXTEND.contains(&pack.as_str()) };
-    let inst: Arc<dyn Instrument> = Arc::new(SfzInstrument::load_with(&path, opt).ok()?);
+    let sfz = SfzInstrument::load_with(&path, opt).ok()?;
+    let inst: Arc<dyn Instrument> = match TRIM_MS.iter().find(|t| t.0 == pack) {
+        Some(&(_, ms)) => Arc::new(Trimmed { inner: sfz, n: (ms * 48.0) as usize }),
+        None => Arc::new(sfz),
+    };
     cache.lock().ok()?.insert(path, inst.clone());
     Some(inst)
 }
@@ -287,12 +362,12 @@ mod tests {
     #[ignore]
     fn sf2_packs_load_cached_instruments() {
         use crate::sf2::tests::{measure_freq, note, render};
-        for name in ["vsco-violins", "vsco-timpani", "salamander-piano", "splendid-piano", "wurlitzer", "finger-bass-yr", "picked-bass-yr", "nylon-guitar-fp", "clean-guitar-fsbs"] {
+        for name in ["vsco-violins", "vsco-timpani", "salamander-piano", "splendid-piano", "wurlitzer", "finger-bass-yr", "picked-bass-yr", "nylon-guitar-fp", "clean-guitar-fsbs", "virtuosity-kit"] {
             let Some(inst) = pack_instrument(name) else {
                 eprintln!("{name}: pack not cached, skipped");
                 continue;
             };
-            let key = if name.contains("timpani") || name.contains("bass") { 43.0 } else { 69.0 };
+            let key = if name.contains("timpani") || name.contains("bass") { 43.0 } else if name.contains("kit") { 38.0 } else { 69.0 };
             let mut v = inst.voice(&note(key, 0.7));
             let (l, r, _) = render(v.as_mut(), 2.0, 1.5, 128);
             let m: Vec<f32> = l.iter().zip(&r).map(|(a, b)| a + b).collect();

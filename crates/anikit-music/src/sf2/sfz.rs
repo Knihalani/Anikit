@@ -8,7 +8,7 @@
 //! - `default_path`, `note_offset`, `octave_offset`, `set_ccN`, `set_hdccN`;
 //! - `sample` (WAV/FLAC/Ogg; `*sine`, `*silence`), `lokey/hikey/key`,
 //!   `lovel/hivel`, `pitch_keycenter`, `pitch_keytrack`, `tune`, `transpose`,
-//!   `volume`, `amplitude`, `amp_veltrack`, `pan`, `offset`, `end`,
+//!   `volume`, `amplitude`, `amp_veltrack`, `amp_velcurve_N`, `pan`, `offset`, `end`,
 //!   `loop_mode` (`no_loop`, `one_shot`, `loop_continuous`, `loop_sustain`),
 //!   `loop_start/loop_end` (else the WAV `smpl` loop), `ampeg_delay/attack/
 //!   hold/decay/sustain/release`, `fil_type` (`lpf_*`, `hpf_*`, `bpf_*`,
@@ -294,6 +294,9 @@ struct Region {
     volume: f32,
     amplitude: f32,
     veltrack: f32,
+    /// `amp_velcurve_N` points (velocity 0–127 → amplitude), sorted; empty =
+    /// the `amp_veltrack` curve.
+    velcurve: Vec<(f32, f32)>,
     pan: f32,
     offset: u32,
     end: Option<u32>,
@@ -566,7 +569,13 @@ impl SfzInstrument {
         let le = r.loop_end.unwrap_or(fle).min(len);
         let cents = (note.key - r.keycenter) * r.keytrack + r.tune;
         let ratio = (cents as f64 / 1200.0).exp2() * buf.rate as f64 / note.rate as f64;
-        let vel_cb = if vel > 0.0 { -400.0 * vel.log10() * r.veltrack / 100.0 } else { 1440.0 };
+        let vel_cb = if !r.velcurve.is_empty() {
+            -200.0 * velcurve_gain(&r.velcurve, vel * 127.0).max(1e-5).log10()
+        } else if vel > 0.0 {
+            -400.0 * vel.log10() * r.veltrack / 100.0
+        } else {
+            1440.0
+        };
         let atten = -10.0 * r.volume - 200.0 * (r.amplitude / 100.0).max(1e-5).log10() + vel_cb.max(0.0);
         let (filter, fc, q) = match r.cutoff {
             Some(hz) if r.filter != FilterKind::Off => {
@@ -740,6 +749,14 @@ fn compile(
         volume: f("volume", 0.0),
         amplitude: num(m, "amplitude").unwrap_or(100.0),
         veltrack: f("amp_veltrack", 100.0).clamp(-100.0, 100.0),
+        velcurve: {
+            let mut pts: Vec<(f32, f32)> = m
+                .iter()
+                .filter_map(|(k, v)| Some((k.strip_prefix("amp_velcurve_")?.parse::<f32>().ok()?.clamp(0.0, 127.0), v.trim().parse::<f32>().ok()?.clamp(0.0, 1.0))))
+                .collect();
+            pts.sort_by(|a, b| a.0.total_cmp(&b.0));
+            pts
+        },
         pan: f("pan", 0.0),
         offset: f("offset", 0.0).max(0.0) as u32,
         end: num(m, "end").map(|e| e.max(0.0) as u32 + 1),
@@ -800,6 +817,21 @@ impl Instrument for SfzInstrument {
         let exclusive = oscs.iter().chain(rel.iter()).map(|o| o.exclusive()).find(|&e| e != 0).unwrap_or(0);
         Box::new(SamplerVoice::with_exclusive(oscs, rel, decay, note.rate, exclusive))
     }
+}
+
+/// Amplitude at velocity `v` (0–127) from `amp_velcurve_N` points: linear
+/// between points, with (0, 0) and (127, 1) as the defaults at the ends.
+fn velcurve_gain(pts: &[(f32, f32)], v: f32) -> f32 {
+    let first = if pts.first().is_some_and(|p| p.0 <= 0.0) { None } else { Some((0.0, 0.0)) };
+    let last = if pts.last().is_some_and(|p| p.0 >= 127.0) { None } else { Some((127.0, 1.0)) };
+    let all: Vec<(f32, f32)> = first.into_iter().chain(pts.iter().copied()).chain(last).collect();
+    for w in all.windows(2) {
+        if v <= w[1].0 {
+            let f = if w[1].0 > w[0].0 { ((v - w[0].0) / (w[1].0 - w[0].0)).clamp(0.0, 1.0) } else { 1.0 };
+            return w[0].1 + f * (w[1].1 - w[0].1);
+        }
+    }
+    all.last().map(|p| p.1).unwrap_or(1.0)
 }
 
 /// Load an SFZ instrument (samples decoded lazily on first use).
@@ -939,6 +971,25 @@ mod tests {
         assert!(e.contains("no playable regions"), "{e}");
         assert!(load_sfz(d.join("none.sfz")).is_err());
         let _ = std::fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn sfz_amp_velcurve() {
+        let pts = [(31.0, 1.0)];
+        assert!((velcurve_gain(&pts, 31.0) - 1.0).abs() < 1e-6);
+        assert!((velcurve_gain(&pts, 15.5) - 0.5).abs() < 1e-6);
+        assert!((velcurve_gain(&[(1.0, 0.4)], 64.0) - (0.4 + 0.6 * 63.0 / 126.0)).abs() < 1e-6);
+        // A layer whose curve peaks at its top velocity plays at full level there,
+        // where the default curve (vel²) would be −12 dB at velocity 63.
+        let a = SfzInstrument::from_str("<region> sample=*sine pitch_keycenter=60 hivel=63 amp_velcurve_63=1", ".", SfzOptions::default()).unwrap();
+        let b = SfzInstrument::from_str("<region> sample=*sine pitch_keycenter=60 hivel=63", ".", SfzOptions::default()).unwrap();
+        let peak = |i: &SfzInstrument| {
+            let mut v = i.voice(&NoteOn { key: 60.0, vel: 63.0 / 127.0, rate: 48_000.0, seed: 0, rr: 0, len: 0.3 });
+            let (l, _, _) = crate::sf2::tests::render(v.as_mut(), 0.3, 0.25, 128);
+            l.iter().fold(0f32, |m, v| m.max(v.abs()))
+        };
+        let db = 20.0 * (peak(&a) / peak(&b)).log10();
+        assert!((db - 40.0 * (127.0f32 / 63.0).log10()).abs() < 0.3, "{db}");
     }
 
     #[test]
