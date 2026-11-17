@@ -59,6 +59,7 @@ pub(super) fn run(raw: &Value, spec: &Value, cx: &mut Ctx) {
     rhythm(&scenes, cx);
     music(raw, spec, cx);
     easing(spec, cx);
+    motion_tells(spec, cx);
     copy(spec, cx);
 }
 
@@ -237,6 +238,80 @@ fn easing(spec: &Value, cx: &mut Ctx) {
             cx.note("tip", "motion", "scenes", format!("{n} of {total} tweens use the same ease and duration ({pair}); one register everywhere tends to read as a template"),
                 "consider snappier moves (150–300 ms) for small things and longer, eased hero moves (0.5–1 s), with exits shorter than entrances (TASTE.md §5)");
         }
+    }
+}
+
+/// Motion tells from docs/video/craft/motion-design.md: linear moves, everything entering on one frame,
+/// and no follow-through anywhere.
+fn motion_tells(spec: &Value, cx: &mut Ctx) {
+    fn tweens(l: &Value) -> Vec<&Value> {
+        match l.get("animate") {
+            Some(Value::Array(a)) => a.iter().collect(),
+            Some(o @ Value::Object(_)) => vec![o],
+            _ => Vec::new(),
+        }
+    }
+    let moves = |t: &Value| ["from", "to", "keyframes"].iter().any(|k| t.get(*k).and_then(|m| m.as_object()).is_some_and(|m| m.keys().any(|p| matches!(p.as_str(), "x" | "y" | "scale" | "rotation"))));
+    let mut linear: Option<String> = None;
+    let mut follow = false;
+    let mut n_tweens = 0usize;
+    fn walk<'a>(v: &'a Value, p: String, f: &mut dyn FnMut(&'a Value, &str)) {
+        if let Some(m) = v.as_object() {
+            if m.contains_key("text") || m.contains_key("shape") || m.contains_key("layers") || m.contains_key("animate") {
+                f(v, &p);
+            }
+            if let Some(ls) = m.get("layers").and_then(|l| l.as_array()) {
+                for (i, l) in ls.iter().enumerate() {
+                    walk(l, format!("{p}.layers[{i}]"), f);
+                }
+            }
+        }
+    }
+    let scenes = spec.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
+    let mut crowded: Option<(String, usize)> = None;
+    for (si, scene) in scenes.iter().enumerate() {
+        let mut at_zero = 0usize;
+        for (li, layer) in scene.get("layers").and_then(|l| l.as_array()).into_iter().flatten().enumerate() {
+            let top = layer.get("animator").is_some()
+                || layer.get("stagger").is_some()
+                || layer.get("drag").is_some()
+                || layer.get("repeat").and_then(|r| r.get("stagger")).is_some();
+            let starts = layer.get("start").is_some() || layer.get("enter").and_then(|e| e.get("delay")).is_some();
+            let first_at = tweens(layer).first().and_then(|t| t.get("at")).is_some();
+            if !top && !starts && !first_at && (layer.get("enter").is_some() || !tweens(layer).is_empty()) {
+                at_zero += 1;
+            }
+            walk(layer, format!("scenes[{si}].layers[{li}]"), &mut |l, p| {
+                if l.get("inertia").is_some() || l.get("drag").is_some() || l.get("spring").is_some() {
+                    follow = true;
+                }
+                for t in tweens(l) {
+                    n_tweens += 1;
+                    let e = t.get("ease").and_then(|e| e.as_str()).unwrap_or("");
+                    if t.get("spring").is_some() || e.contains("Back") || e.contains("back") || e.contains("Elastic") || e.contains("elastic") {
+                        follow = true;
+                    }
+                    if e == "linear" && moves(t) && linear.is_none() {
+                        linear = Some(p.to_string());
+                    }
+                }
+            });
+        }
+        if at_zero >= 4 && crowded.is_none() {
+            crowded = Some((format!("scenes[{si}]"), at_zero));
+        }
+    }
+    if let Some(p) = linear {
+        cx.note("tip", "motion", &p, "a move (x, y, scale or rotation) with a linear ease: constant speed with hard starts and stops tends to read as mechanical or unfinished".into(),
+            "consider a curve with intent: \"glide\" (expo out) for arrivals, \"launch\" for exits, \"snap\" for transitions; keep linear for constant drifts and loops (docs/video/craft/motion-design.md)");
+    }
+    if let Some((p, n)) = crowded {
+        cx.note("tip", "motion", &p, format!("{n} layers start animating on the same frame; when everything moves at once nothing leads"),
+            "consider one lead move, then the rest following 2–4 frames apart (a group `stagger`, `drag`, or a text `animator`; docs/video/craft/motion-design.md §2.3)");
+    }
+    if n_tweens >= 8 && !follow {
+        cx.note("tip", "motion", "scenes", format!("{n_tweens} tweens and none with follow-through (no inertia, spring, back/elastic ease or drag): every move stops dead"),
+            "consider `\"inertia\": \"tight\"` on hero elements or `\"drag\": 0.04` on a moving group so parts overshoot and settle (docs mograph)");
     }
 }
 

@@ -2323,6 +2323,20 @@
           ],
           "format": "double"
         },
+        "order": {
+          "description": "Stagger order: `forward` (default), `reverse`, `center` (middle first), `random` (with `seed`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "seed": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
         "center": {
           "description": "Rotation/scale centre `[x, y]` in parent pixels (default: the layer's own position).",
           "type": [

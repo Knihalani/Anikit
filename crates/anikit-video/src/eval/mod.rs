@@ -1273,7 +1273,8 @@ impl Evaluator {
                         if a <= 0.002 {
                             continue;
                         }
-                        let ts = tk + r.stagger * i as f32;
+                        let rank = r.ranks.get(i as usize).copied().unwrap_or(i);
+                        let ts = tk + r.stagger * rank as f32;
                         let c = Cx { scene_t: cx.scene_t - ts, gt: cx.gt - ts, amul: cx.amul * a, ..*cx };
                         let px = dl::mul(parent, &r.xf(i, ctr));
                         self.emit_node_inner(n, &c, &px, psize, po, out);

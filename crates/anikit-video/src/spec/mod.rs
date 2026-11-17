@@ -811,6 +811,9 @@ pub struct RepeaterSpec {
     pub offset: Option<RepeatOffset>,
     /// Seconds of delay per copy (copy i plays i × stagger later).
     pub stagger: Option<f64>,
+    /// Stagger order: `forward` (default), `reverse`, `center` (middle first), `random` (with `seed`).
+    pub order: Option<String>,
+    pub seed: Option<f64>,
     /// Rotation/scale centre `[x, y]` in parent pixels (default: the layer's own position).
     pub center: Option<[f64; 2]>,
 }

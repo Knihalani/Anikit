@@ -20,6 +20,8 @@ pub(crate) struct RepC {
     pub scale: [f32; 2],
     pub opacity: f32,
     pub stagger: f32,
+    /// Stagger rank of each copy (empty = in order).
+    pub ranks: Vec<u32>,
     /// Rotation/scale centre in parent pixels; `None` = the layer's position.
     pub center: Option<[f32; 2]>,
 }
@@ -799,7 +801,7 @@ mod tests {
 
     #[test]
     fn repeater_transform() {
-        let r = RepC { count: 4, d: [10.0, 0.0], rot: 90.0, scale: [1.0, 1.0], opacity: -0.25, stagger: 0.0, center: None };
+        let r = RepC { count: 4, d: [10.0, 0.0], rot: 90.0, scale: [1.0, 1.0], opacity: -0.25, stagger: 0.0, ranks: vec![], center: None };
         let m = r.xf(1, [0.0, 0.0]);
         // (0,0) → translated by 10 then rotated 90° about the origin → (0, 10).
         let x = m[0] * 0.0 + m[2] * 0.0 + m[4];

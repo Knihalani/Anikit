@@ -988,6 +988,24 @@ mod tests {
     }
 
     #[test]
+    fn motion_tells_are_flagged() {
+        let t = |extra: serde_json::Value| {
+            let mut l = serde_json::json!({ "text": "A", "enter": "fadeUp" });
+            l.as_object_mut().unwrap().extend(extra.as_object().unwrap().clone());
+            l
+        };
+        let spec = serde_json::json!({ "scenes": [{ "duration": 3, "layers": [
+            t(serde_json::json!({ "animate": { "to": { "x": 900 }, "ease": "linear" } })), t(serde_json::json!({})), t(serde_json::json!({})), t(serde_json::json!({})) ] }] });
+        let r = critique(&spec);
+        let m: Vec<_> = r.notes.iter().filter(|n| n.check == "motion").map(|n| n.message.clone()).collect();
+        assert!(m.iter().any(|x| x.contains("linear ease")), "{m:?}");
+        assert!(m.iter().any(|x| x.contains("same frame")), "{m:?}");
+        let calm = serde_json::json!({ "scenes": [{ "duration": 3, "layers": [ { "type": "group", "stagger": 0.08, "layers": [
+            { "text": "A", "enter": "fadeUp", "inertia": "tight" }, { "text": "B", "enter": "fadeUp" } ] } ] }] });
+        assert!(!critique(&calm).notes.iter().any(|n| n.check == "motion"), "{}", critique(&calm).to_text());
+    }
+
+    #[test]
     fn habitual_3d_and_music_are_flagged() {
         let sc = |m: &str| serde_json::json!({ "duration": 2, "layers": [{ "component": "scene3d", "props": { "env": "studio", "aperture": 2.8, "objects": [{ "text": "SIFT", "material": m }] } }] });
         let spec = serde_json::json!({ "intent": {"pace": "calm"}, "music": "synthwave", "scenes": [sc("chrome"), sc("chrome")] });
