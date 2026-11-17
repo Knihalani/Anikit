@@ -52,9 +52,9 @@ Every layer: `x y` (default centre) · `anchor` (`center`, `topLeft`, …) · `w
 | group | `layers` |
 | composition | `composition` (a name from top-level `"compositions": { "ui": { "size": [800, 500], "duration": 4, "background": "#111", "layers": [...] } }`, or `scenes`) · `fit` · `trimStart speed` · `loop: true`. It has its own clock and is clipped to its box; 3D layers use it as a texture |
 | component | `component` (`bar-chart line-chart donut-chart counter stat code terminal phone laptop browser card button toast cursor lower-third title-card mesh-gradient aurora grid confetti model lottie …`; `anikit-video info --components`) · `props` |
-| shader | `shader` (Shadertoy GLSL `mainImage`, WGSL, or a built-in: `sdf-scene liquid-chrome aurora caustics flow-ink turing film-burn glitch`) or `src: "fx.glsl"` · `uniforms` (animatable by name) · `channels` (`below noise` · image/video · `#composition` · `{layers}`) · `filter` · `supersample` · `alpha` |
+| shader | `shader` (Shadertoy GLSL `mainImage`, WGSL, or a built-in: `hero mesh-gradient light-shafts particles liquid-chrome sdf-scene aurora caustics flow-ink turing film-burn glitch lake-mirror`, see `info --shaders`) or `src: "fx.glsl"` · `uniforms` (animatable by name) · `channels` (`below noise` · image/video · `#composition` · `{layers}` · buffers `A`–`D`) · `buffers` (multi-pass, feedback) · `filter` · `supersample` · `alpha` |
 
-**Shaders** run JIT-compiled on the CPU at full resolution: `{ "shader": "aurora", "uniforms": { "intensity": 1.4 } }`. `"filter": true` reads the composited layers below as `iChannel0` and replaces them. Guide, built-ins, costs and limits: [`shader.md`](shader.md).
+**Shaders** run JIT-compiled on the CPU at full resolution: `{ "shader": "aurora", "uniforms": { "intensity": 1.4 } }`. `"filter": true` reads the composited layers below as `iChannel0` and replaces them. `iAudio`/`iBeat` follow the music; `still` prints each shader's ms/frame. Guide, built-ins, costs and limits: [`shader.md`](shader.md).
 
 ## Animation
 
