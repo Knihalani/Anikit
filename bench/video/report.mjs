@@ -90,7 +90,8 @@ if (ex.length) {
   out.push("|---|---|---:|---:|---:|---:|");
   for (const x of ex) {
     const args = x.args.includes("__env_chromium") ? "defaults, full Chromium instead of chrome-headless-shell" : "`" + x.args.join(" ") + "`";
-    out.push(`| ${TOOL[x.tool]} | ${args} | ${x.wall ? f(x.wall, 2) : "failed"} | ${f(x.fps, 0)} | ${f(x.cores, 2)} | ${mb(x.bytes)} |`);
+    if (!x.wall) { out.push(`| ${TOOL[x.tool]} | ${args} | refused: ${x.tool === "remotion" ? "concurrency above the 4 available cores" : "failed"} | | | |`); continue; }
+    out.push(`| ${TOOL[x.tool]} | ${args} | ${f(x.wall, 2)} | ${f(x.fps, 0)} | ${f(x.cores, 2)} | ${mb(x.bytes)} |`);
   }
   out.push("");
 }

@@ -34,7 +34,7 @@ Side-by-side frames (Anikit Video | Remotion | HyperFrames, same time code, from
 ## Results
 
 <!-- results:start -->
-Measured 2026-11-17 02:47 UTC on 4 vCPU (Intel(R) Xeon(R) Processor @ 2.10GHz), 16 GB RAM, Linux 6.18.44-fc-v553. Anikit `195b3d4`, Remotion 4.0.544, HyperFrames 0.9.59 (GSAP 3.15.1), React 19.3.1, Google Chrome for Testing 153.0.8010.12, ffmpeg version 6.1.1-3ubuntu5, Node v22.23.4. Each cell is the median of 3 runs; 600 frames (20 s at 30 fps, 1920×1080) per render.
+Measured 2026-11-17 03:37 UTC on 4 vCPU (Intel(R) Xeon(R) Processor @ 2.10GHz), 16 GB RAM, Linux 6.18.44-fc-v553. Anikit `f8b235f`, Remotion 4.0.544, HyperFrames 0.9.59 (GSAP 3.15.1), React 19.3.1, Google Chrome for Testing 153.0.8010.12, ffmpeg version 6.1.1-3ubuntu5, Node v22.23.4. Each cell is the median of 3 runs. Compositions (a)–(c) are 600 frames (20 s at 30 fps), (d) is 3,600 frames (60 s at 60 fps), all 1920×1080.
 
 ### Headline: wall time to a finished 1080p H.264 MP4 (seconds, lower is better)
 
@@ -43,60 +43,79 @@ Measured 2026-11-17 02:47 UTC on 4 vCPU (Intel(R) Xeon(R) Processor @ 2.10GHz), 
 | (a) kinetic type | 1.37 | 26.7 | 29.8 | 10× faster than HyperFrames fast (14.1 s) |
 | (b) product UI | 0.87 | 28.0 | 25.8 | 15× faster than HyperFrames fast (13.3 s) |
 | (c) held-heavy explainer | 1.05 | 27.2 | 26.0 | 12× faster than HyperFrames fast (12.8 s) |
+| (d) long: kinetic ×3, **60 fps, 60 s** | 6.95 | 139.5 | 152.0 | 10× faster than HyperFrames fast (69.1 s) |
 
 ### (a) kinetic type
 
-| Tool and settings | Wall (s) | FPS | Peak RSS, tree (MiB) | Peak PSS, tree (MiB) | Size (MB) | Output | PSNR (dB) | SSIM |
-|---|---:|---:|---:|---:|---:|---|---:|---:|
-| Anikit Video, default (`ak264`, good) | 1.37 | 437 | 269 | 263 | 3.07 | h264 Main 1920×1080 | 46.06 | 0.9973 |
-| Anikit Video, `ak264` draft (**960×540**) | 0.53 | 1141 | 114 | 108 | 0.96 | h264 Constrained Baseline 960×540 | 34.93 | 0.9859 |
-| Anikit Video, `ak264` draft `--scale 1` | 1.37 | 439 | 273 | 267 | 2.45 | h264 Constrained Baseline 1920×1080 | 42.58 | 0.9943 |
-| Anikit Video, `ak264` best | 1.43 | 419 | 269 | 264 | 3.46 | h264 Main 1920×1080 | 46.93 | 0.9979 |
-| Anikit Video, `h264` (x264) draft `--scale 1` | 2.15 | 279 | 384 | 378 | 5.03 | h264 Constrained Baseline 1920×1080 | 47.37 | 0.9977 |
-| Anikit Video, `h264` (x264) good | 3.52 | 170 | 577 | 571 | 0.91 | h264 High 1920×1080 | 45.45 | 0.9975 |
-| Anikit Video, `h264` (x264) best | 5.18 | 116 | 870 | 865 | 1.35 | h264 High 1920×1080 | 47.17 | 0.9981 |
-| Remotion, default | 26.71 | 22 | 2044 | 1595 | 2.38 | h264 High 1920×1080 | 44.83 | 0.9958 |
-| Remotion, fast (`--concurrency=4 --x264-preset=veryfast`) | 20.76 | 29 | 2250 | 1541 | 1.90 | h264 High 1920×1080 | 44.78 | 0.9960 |
-| HyperFrames, default | 29.76 | 20 | 1241 | 897 | 2.62 | h264 High 1920×1080 | 43.88 | 0.9946 |
-| HyperFrames, fast (`--workers 4 --quality draft`) | 14.07 | 43 | 2472 | 935 | 2.77 | h264 Constrained Baseline 1920×1080 | 42.11 | 0.9912 |
+| Tool and settings | Wall (s) | FPS | CPU (cores busy) | Peak RSS, tree (MiB) | Peak PSS, tree (MiB) | Size (MB) | Output | PSNR (dB) | SSIM |
+|---|---:|---:|---:|---:|---:|---:|---|---:|---:|
+| Anikit Video, default (`ak264`, good) | 1.37 | 437 | – | 269 | 263 | 3.07 | h264 Main 1920×1080 | 46.06 | 0.9973 |
+| Anikit Video, `ak264` draft (**960×540**) | 0.53 | 1141 | – | 114 | 108 | 0.96 | h264 Constrained Baseline 960×540 | 34.93 | 0.9859 |
+| Anikit Video, `ak264` draft `--scale 1` | 1.37 | 439 | – | 273 | 267 | 2.45 | h264 Constrained Baseline 1920×1080 | 42.58 | 0.9943 |
+| Anikit Video, `ak264` best | 1.43 | 419 | – | 269 | 264 | 3.46 | h264 Main 1920×1080 | 46.93 | 0.9979 |
+| Anikit Video, `h264` (x264) draft `--scale 1` | 2.15 | 279 | – | 384 | 378 | 5.03 | h264 Constrained Baseline 1920×1080 | 47.37 | 0.9977 |
+| Anikit Video, `h264` (x264) good | 3.52 | 170 | – | 577 | 571 | 0.91 | h264 High 1920×1080 | 45.45 | 0.9975 |
+| Anikit Video, `h264` (x264) best | 5.18 | 116 | – | 870 | 865 | 1.35 | h264 High 1920×1080 | 47.17 | 0.9981 |
+| Remotion, default | 26.71 | 22 | – | 2044 | 1595 | 2.38 | h264 High 1920×1080 | 44.83 | 0.9958 |
+| Remotion, fast (`--concurrency=4 --x264-preset=veryfast`) | 20.76 | 29 | – | 2250 | 1541 | 1.90 | h264 High 1920×1080 | 44.78 | 0.9960 |
+| HyperFrames, default | 29.76 | 20 | – | 1241 | 897 | 2.62 | h264 High 1920×1080 | 43.88 | 0.9946 |
+| HyperFrames, fast (`--workers 4 --quality draft`) | 14.07 | 43 | – | 2472 | 935 | 2.77 | h264 Constrained Baseline 1920×1080 | 42.11 | 0.9912 |
 
 4:2:0 ceiling (each tool's PNG frames through lossless 4:2:0, the best any of these MP4s could score): Anikit Video 48.42 dB / 0.9984, Remotion 48.18 dB / 0.9983, HyperFrames 48.15 dB / 0.9983.
 
 ### (b) product UI
 
-| Tool and settings | Wall (s) | FPS | Peak RSS, tree (MiB) | Peak PSS, tree (MiB) | Size (MB) | Output | PSNR (dB) | SSIM |
-|---|---:|---:|---:|---:|---:|---|---:|---:|
-| Anikit Video, default (`ak264`, good) | 0.87 | 692 | 264 | 258 | 0.45 | h264 Main 1920×1080 | 43.89 | 0.9943 |
-| Anikit Video, `ak264` draft (**960×540**) | 0.30 | 2002 | 113 | 108 | 0.20 | h264 Constrained Baseline 960×540 | 34.01 | 0.9710 |
-| Anikit Video, `ak264` draft `--scale 1` | 0.79 | 758 | 260 | 254 | 0.44 | h264 Constrained Baseline 1920×1080 | 41.29 | 0.9908 |
-| Anikit Video, `ak264` best | 0.83 | 725 | 260 | 254 | 0.53 | h264 Main 1920×1080 | 44.49 | 0.9955 |
-| Anikit Video, `h264` (x264) draft `--scale 1` | 2.42 | 248 | 381 | 376 | 0.68 | h264 Constrained Baseline 1920×1080 | 44.90 | 0.9956 |
-| Anikit Video, `h264` (x264) good | 3.24 | 185 | 577 | 571 | 0.26 | h264 High 1920×1080 | 44.21 | 0.9953 |
-| Anikit Video, `h264` (x264) best | 4.31 | 139 | 872 | 866 | 0.33 | h264 High 1920×1080 | 45.21 | 0.9962 |
-| Remotion, default | 28.01 | 21 | 2004 | 1569 | 0.43 | h264 High 1920×1080 | 42.92 | 0.9916 |
-| Remotion, fast (`--concurrency=4 --x264-preset=veryfast`) | 21.14 | 28 | 2193 | 1504 | 0.39 | h264 High 1920×1080 | 42.91 | 0.9917 |
-| HyperFrames, default | 25.83 | 23 | 1260 | 919 | 0.42 | h264 High 1920×1080 | 44.15 | 0.9950 |
-| HyperFrames, fast (`--workers 4 --quality draft`) | 13.32 | 45 | 2462 | 930 | 0.50 | h264 Constrained Baseline 1920×1080 | 41.48 | 0.9894 |
+| Tool and settings | Wall (s) | FPS | CPU (cores busy) | Peak RSS, tree (MiB) | Peak PSS, tree (MiB) | Size (MB) | Output | PSNR (dB) | SSIM |
+|---|---:|---:|---:|---:|---:|---:|---|---:|---:|
+| Anikit Video, default (`ak264`, good) | 0.87 | 692 | – | 264 | 258 | 0.45 | h264 Main 1920×1080 | 43.89 | 0.9943 |
+| Anikit Video, `ak264` draft (**960×540**) | 0.30 | 2002 | – | 113 | 108 | 0.20 | h264 Constrained Baseline 960×540 | 34.01 | 0.9710 |
+| Anikit Video, `ak264` draft `--scale 1` | 0.79 | 758 | – | 260 | 254 | 0.44 | h264 Constrained Baseline 1920×1080 | 41.29 | 0.9908 |
+| Anikit Video, `ak264` best | 0.83 | 725 | – | 260 | 254 | 0.53 | h264 Main 1920×1080 | 44.49 | 0.9955 |
+| Anikit Video, `h264` (x264) draft `--scale 1` | 2.42 | 248 | – | 381 | 376 | 0.68 | h264 Constrained Baseline 1920×1080 | 44.90 | 0.9956 |
+| Anikit Video, `h264` (x264) good | 3.24 | 185 | – | 577 | 571 | 0.26 | h264 High 1920×1080 | 44.21 | 0.9953 |
+| Anikit Video, `h264` (x264) best | 4.31 | 139 | – | 872 | 866 | 0.33 | h264 High 1920×1080 | 45.21 | 0.9962 |
+| Remotion, default | 28.01 | 21 | – | 2004 | 1569 | 0.43 | h264 High 1920×1080 | 42.92 | 0.9916 |
+| Remotion, fast (`--concurrency=4 --x264-preset=veryfast`) | 21.14 | 28 | – | 2193 | 1504 | 0.39 | h264 High 1920×1080 | 42.91 | 0.9917 |
+| HyperFrames, default | 25.83 | 23 | – | 1260 | 919 | 0.42 | h264 High 1920×1080 | 44.15 | 0.9950 |
+| HyperFrames, fast (`--workers 4 --quality draft`) | 13.32 | 45 | – | 2462 | 930 | 0.50 | h264 Constrained Baseline 1920×1080 | 41.48 | 0.9894 |
 
 4:2:0 ceiling (each tool's PNG frames through lossless 4:2:0, the best any of these MP4s could score): Anikit Video 45.27 dB / 0.9963, Remotion 45.25 dB / 0.9963, HyperFrames 45.25 dB / 0.9963.
 
 ### (c) held-heavy explainer
 
-| Tool and settings | Wall (s) | FPS | Peak RSS, tree (MiB) | Peak PSS, tree (MiB) | Size (MB) | Output | PSNR (dB) | SSIM |
-|---|---:|---:|---:|---:|---:|---|---:|---:|
-| Anikit Video, default (`ak264`, good) | 1.05 | 573 | 269 | 264 | 1.24 | h264 Main 1920×1080 | 48.17 | 0.9978 |
-| Anikit Video, `ak264` draft (**960×540**) | 0.36 | 1655 | 115 | 109 | 0.43 | h264 Constrained Baseline 960×540 | 33.70 | 0.9880 |
-| Anikit Video, `ak264` draft `--scale 1` | 0.98 | 610 | 269 | 264 | 0.97 | h264 Constrained Baseline 1920×1080 | 44.14 | 0.9952 |
-| Anikit Video, `ak264` best | 1.01 | 593 | 273 | 267 | 1.39 | h264 Main 1920×1080 | 49.71 | 0.9985 |
-| Anikit Video, `h264` (x264) draft `--scale 1` | 2.09 | 287 | 388 | 383 | 1.78 | h264 Constrained Baseline 1920×1080 | 50.37 | 0.9985 |
-| Anikit Video, `h264` (x264) good | 3.31 | 182 | 590 | 585 | 0.46 | h264 High 1920×1080 | 47.73 | 0.9983 |
-| Anikit Video, `h264` (x264) best | 4.24 | 142 | 884 | 878 | 0.71 | h264 High 1920×1080 | 50.59 | 0.9987 |
-| Remotion, default | 27.16 | 22 | 2007 | 1572 | 1.01 | h264 High 1920×1080 | 45.22 | 0.9963 |
-| Remotion, fast (`--concurrency=4 --x264-preset=veryfast`) | 20.29 | 30 | 2190 | 1500 | 0.84 | h264 High 1920×1080 | 45.36 | 0.9964 |
-| HyperFrames, default | 26.00 | 23 | 1246 | 904 | 1.08 | h264 High 1920×1080 | 45.32 | 0.9955 |
-| HyperFrames, fast (`--workers 4 --quality draft`) | 12.80 | 47 | 2478 | 931 | 1.08 | h264 Constrained Baseline 1920×1080 | 42.74 | 0.9928 |
+| Tool and settings | Wall (s) | FPS | CPU (cores busy) | Peak RSS, tree (MiB) | Peak PSS, tree (MiB) | Size (MB) | Output | PSNR (dB) | SSIM |
+|---|---:|---:|---:|---:|---:|---:|---|---:|---:|
+| Anikit Video, default (`ak264`, good) | 1.05 | 573 | – | 269 | 264 | 1.24 | h264 Main 1920×1080 | 48.17 | 0.9978 |
+| Anikit Video, `ak264` draft (**960×540**) | 0.36 | 1655 | – | 115 | 109 | 0.43 | h264 Constrained Baseline 960×540 | 33.70 | 0.9880 |
+| Anikit Video, `ak264` draft `--scale 1` | 0.98 | 610 | – | 269 | 264 | 0.97 | h264 Constrained Baseline 1920×1080 | 44.14 | 0.9952 |
+| Anikit Video, `ak264` best | 1.01 | 593 | – | 273 | 267 | 1.39 | h264 Main 1920×1080 | 49.71 | 0.9985 |
+| Anikit Video, `h264` (x264) draft `--scale 1` | 2.09 | 287 | – | 388 | 383 | 1.78 | h264 Constrained Baseline 1920×1080 | 50.37 | 0.9985 |
+| Anikit Video, `h264` (x264) good | 3.31 | 182 | – | 590 | 585 | 0.46 | h264 High 1920×1080 | 47.73 | 0.9983 |
+| Anikit Video, `h264` (x264) best | 4.24 | 142 | – | 884 | 878 | 0.71 | h264 High 1920×1080 | 50.59 | 0.9987 |
+| Remotion, default | 27.16 | 22 | – | 2007 | 1572 | 1.01 | h264 High 1920×1080 | 45.22 | 0.9963 |
+| Remotion, fast (`--concurrency=4 --x264-preset=veryfast`) | 20.29 | 30 | – | 2190 | 1500 | 0.84 | h264 High 1920×1080 | 45.36 | 0.9964 |
+| HyperFrames, default | 26.00 | 23 | – | 1246 | 904 | 1.08 | h264 High 1920×1080 | 45.32 | 0.9955 |
+| HyperFrames, fast (`--workers 4 --quality draft`) | 12.80 | 47 | – | 2478 | 931 | 1.08 | h264 Constrained Baseline 1920×1080 | 42.74 | 0.9928 |
 
 4:2:0 ceiling (each tool's PNG frames through lossless 4:2:0, the best any of these MP4s could score): Anikit Video 51.86 dB / 0.9988, Remotion 51.87 dB / 0.9988, HyperFrames 51.84 dB / 0.9988.
+
+### (d) long: kinetic ×3, **60 fps, 60 s**
+
+| Tool and settings | Wall (s) | FPS | CPU (cores busy) | Peak RSS, tree (MiB) | Peak PSS, tree (MiB) | Size (MB) | Output | PSNR (dB) | SSIM |
+|---|---:|---:|---:|---:|---:|---:|---|---:|---:|
+| Anikit Video, default (`ak264`, good) | 6.95 | 518 | 2.73 | 276 | 271 | 13.41 | h264 Main 1920×1080 | 46.02 | 0.9971 |
+| Anikit Video, `ak264` draft (**960×540**) | 2.71 | 1330 | 2.51 | 118 | 113 | 3.83 | h264 Constrained Baseline 960×540 | 34.89 | 0.9857 |
+| Anikit Video, `ak264` draft `--scale 1` | 7.07 | 509 | 2.73 | 270 | 265 | 10.35 | h264 Constrained Baseline 1920×1080 | 42.47 | 0.9940 |
+| Anikit Video, `ak264` best | 7.94 | 453 | 2.77 | 270 | 265 | 15.89 | h264 Main 1920×1080 | 47.00 | 0.9978 |
+| Anikit Video, `h264` (x264) draft `--scale 1` | 17.85 | 202 | 2.10 | 385 | 379 | 20.53 | h264 Constrained Baseline 1920×1080 | 47.18 | 0.9976 |
+| Anikit Video, `h264` (x264) good | 18.83 | 191 | 3.19 | 579 | 573 | 3.31 | h264 High 1920×1080 | 44.62 | 0.9971 |
+| Anikit Video, `h264` (x264) best | 26.06 | 138 | 3.42 | 887 | 882 | 5.59 | h264 High 1920×1080 | 47.08 | 0.9980 |
+| Remotion, default | 139.48 | 26 | 2.13 | 2078 | 1621 | 8.68 | h264 High 1920×1080 | 44.75 | 0.9957 |
+| Remotion, fast (`--concurrency=4 --x264-preset=veryfast`) | 103.21 | 35 | 2.62 | 2288 | 1564 | 6.05 | h264 High 1920×1080 | 44.54 | 0.9959 |
+| HyperFrames, default | 152.02 | 24 | 1.95 | 1296 | 953 | 8.79 | h264 High 1920×1080 | 43.84 | 0.9945 |
+| HyperFrames, fast (`--workers 4 --quality draft`) | 69.14 | 52 | 3.18 | 2576 | 1028 | 8.02 | h264 Constrained Baseline 1920×1080 | 41.75 | 0.9910 |
+
+4:2:0 ceiling (each tool's PNG frames through lossless 4:2:0, the best any of these MP4s could score): Anikit Video 48.41 dB / 0.9984, Remotion 48.17 dB / 0.9983, HyperFrames 48.14 dB / 0.9983.
 
 ### Cold start: one still frame (PNG at t = 0) from a fresh process (seconds)
 
@@ -106,15 +125,34 @@ Measured 2026-11-17 02:47 UTC on 4 vCPU (Intel(R) Xeon(R) Processor @ 2.10GHz), 
 | (b) product UI | 0.019 | 3.82 | 1.62 |
 | (c) held-heavy explainer | 0.019 | 4.03 | 1.52 |
 
+### Other browser-tool settings tried on (a) kinetic type (1 run each)
+
+None of these beat the "fast" configurations above, so they are not in the main tables. Best browser result for comparison: Remotion fast 20.8 s, HyperFrames fast 14.1 s.
+
+| Tool | Settings | Wall (s) | FPS | CPU (cores busy) | Size (MB) |
+|---|---|---:|---:|---:|---:|
+| Remotion | `--concurrency=4` | 21.53 | 28 | 2.59 | 2.38 |
+| Remotion | `--concurrency=8 --x264-preset=veryfast` | refused: concurrency above the 4 available cores | | | |
+| Remotion | `--concurrency=4 --x264-preset=ultrafast` | 20.44 | 29 | 2.30 | 10.63 |
+| Remotion | `--concurrency=4 --x264-preset=veryfast --jpeg-quality=50` | 21.27 | 28 | 2.50 | 2.36 |
+| HyperFrames | `--workers 2 --quality draft` | 17.80 | 34 | 2.42 | 2.77 |
+| HyperFrames | `--workers 4` | 17.88 | 34 | 3.11 | 2.62 |
+| HyperFrames | `--workers 8 --quality draft` | 16.13 | 37 | 3.13 | 2.77 |
+| HyperFrames | `--workers 4 --quality draft --crf 30` | 14.95 | 40 | 2.92 | 2.18 |
+| HyperFrames | defaults, full Chromium instead of chrome-headless-shell | 42.02 | 14 | 1.63 | 2.62 |
+
+**Throttling and noise.** Worst CPU steal during any timed run: 0.9%. Spread between the fastest and slowest of the 3 runs: median 4%, worst 19%. Reported clock 2100–2100 MHz (the VM reports a fixed nominal clock, so frequency throttling cannot be observed directly; steal and run-to-run spread are the evidence).
+
 ### Authoring cost for an agent (source written by hand for this benchmark)
 
 Bytes of the composition file, plus the shared files that tool needs (Remotion: `common.tsx`, `Root.tsx`, `index.ts`; HyperFrames: `base.css`). Tokens ≈ characters / 4.
 
 | Composition | Anikit Video (JSON) | Remotion (TSX) | HyperFrames (HTML + GSAP) |
 |---|---:|---:|---:|
-| (a) kinetic type | 2,767 B ≈ 692 tok | 3,402 B + 2,585 B shared ≈ 1,497 tok | 3,306 B + 567 B shared ≈ 968 tok |
-| (b) product UI | 6,223 B ≈ 1,556 tok | 4,518 B + 2,585 B shared ≈ 1,776 tok | 5,559 B + 567 B shared ≈ 1,532 tok |
-| (c) held-heavy explainer | 5,709 B ≈ 1,427 tok | 2,320 B + 2,585 B shared ≈ 1,226 tok | 2,929 B + 567 B shared ≈ 874 tok |
+| (a) kinetic type | 2,767 B ≈ 692 tok | 3,681 B + 2,708 B shared ≈ 1,597 tok | 3,306 B + 567 B shared ≈ 968 tok |
+| (b) product UI | 6,223 B ≈ 1,556 tok | 4,518 B + 2,708 B shared ≈ 1,807 tok | 5,559 B + 567 B shared ≈ 1,532 tok |
+| (c) held-heavy explainer | 5,709 B ≈ 1,427 tok | 2,320 B + 2,708 B shared ≈ 1,257 tok | 2,929 B + 567 B shared ≈ 874 tok |
+| (d) long: kinetic ×3, **60 fps, 60 s** | 11,002 B ≈ 2,751 tok | 3,681 B + 2,708 B shared ≈ 1,597 tok | 4,154 B + 567 B shared ≈ 1,180 tok |
 
 <!-- results:end -->
 
