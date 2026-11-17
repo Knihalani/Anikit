@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Written in HTML</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --ink: #07070b;
+        --paper: #f4f2ec;
+        --acid: #d4ff3a;
+        --red: #ff3b2f;
+        --cobalt: #2b4bff;
+        --display: "Inter", sans-serif;
+        --mono: "JetBrains Mono", monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--ink);
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        font-family: var(--display);
+        background: var(--ink);
+      }
+      .clip {
+        position: absolute;
+        inset: 0;
+      }
+      canvas {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        display: block;
+      }
+
+      /* ---------- scene 1: vortex ---------- */
+      #s1 {
+        z-index: 1;
+        background: #000;
+      }
+      #s1-code {
+        position: absolute;
+        left: 120px;
+        bottom: 110px;
+        font: 500 26px/1.55 var(--mono);
+        color: rgba(244, 242, 236, 0.78);
+        white-space: pre;
+      }
+      #s1-code .k {
+        color: var(--acid);
+      }
+      #s1-caret {
+        display: inline-block;
+        width: 14px;
+        height: 30px;
+        background: var(--acid);
+        vertical-align: -6px;
+        margin-left: 2px;
+      }
+      #s1-label {
+        position: absolute;
+        right: 120px;
+        bottom: 118px;
+        font: 500 22px/1 var(--mono);
+        letter-spacing: 0.2em;
+        color: rgba(244, 242, 236, 0.5);
+      }
+
+      /* ---------- scene 2: manifesto cards ---------- */
+      .card {
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .card .word {
+        font-weight: 900;
+        font-size: 300px;
+        letter-spacing: -0.055em;
+        line-height: 0.82;
+        white-space: nowrap;
+      }
+      .card .ch {
+        display: inline-block;
+      }
+      .mask {
+        display: inline-block;
+        overflow: hidden;
+        padding: 0.06em 0.02em 0.1em;
+        vertical-align: bottom;
+      }
+      .tag {
+        position: absolute;
+        left: 120px;
+        top: 120px;
+        font: 600 24px/1 var(--mono);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      #c1 {
+        background: var(--acid);
+        color: var(--ink);
+      }
+      #c2 {
+        background: var(--red);
+        color: var(--paper);
+      }
+      #c3 {
+        background: var(--cobalt);
+        color: var(--paper);
+        perspective: 1400px;
+      }
+      #c4 {
+        color: var(--paper);
+      }
+      #c4-bg {
+        position: absolute;
+        inset: 0;
+        background: var(--ink);
+      }
+      #c4-just {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 250px;
+        text-align: center;
+        font: 600 44px/1 var(--mono);
+        letter-spacing: 0.5em;
+        color: rgba(244, 242, 236, 0.7);
+        padding-left: 0.5em;
+      }
+      #c4-stack {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .html-word {
+        position: absolute;
+        font-weight: 900;
+        font-size: 380px;
+        letter-spacing: -0.06em;
+        line-height: 1;
+        white-space: nowrap;
+        will-change: transform;
+      }
+      .html-word.echo {
+        color: transparent;
+        -webkit-text-stroke: 3px var(--acid);
+      }
+      #c4-main {
+        color: var(--paper);
+      }
+      #c4-main .br {
+        color: var(--acid);
+      }
+
+      /* ---------- scene 3+4: render tunnel & lockup ---------- */
+      #s3 {
+        z-index: 1;
+        background: #000;
+      }
+      #s3-shade {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.8));
+      }
+      .line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-weight: 700;
+        font-size: 64px;
+        letter-spacing: -0.025em;
+        color: var(--paper);
+      }
+      .line .w {
+        display: inline-block;
+        margin: 0 0.12em;
+      }
+      #s3-l1,
+      #s3-l2 {
+        top: 140px;
+      }
+      #s3-frame {
+        position: absolute;
+        right: 120px;
+        bottom: 100px;
+        text-align: right;
+        font-family: var(--mono);
+        color: var(--acid);
+      }
+      #s3-frame .lbl {
+        font-size: 22px;
+        letter-spacing: 0.3em;
+        color: rgba(244, 242, 236, 0.6);
+        margin-bottom: 8px;
+      }
+      #s3-frame .num {
+        font-size: 150px;
+        font-weight: 700;
+        line-height: 0.9;
+        letter-spacing: -0.04em;
+      }
+      #s3-seek {
+        position: absolute;
+        left: 120px;
+        bottom: 104px;
+        font: 500 26px/1.55 var(--mono);
+        color: rgba(244, 242, 236, 0.8);
+        white-space: pre;
+      }
+      #s3-seek .k {
+        color: var(--acid);
+      }
+
+      #s4-dim {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(7, 7, 11, 0.5), rgba(7, 7, 11, 0.9));
+      }
+      #s4-title {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 330px;
+        text-align: center;
+        font-weight: 900;
+        font-size: 150px;
+        line-height: 1.02;
+        letter-spacing: -0.045em;
+        color: var(--paper);
+      }
+      #s4-title .w {
+        display: inline-block;
+        margin: 0 0.1em;
+      }
+      #s4-title .acc {
+        color: var(--acid);
+      }
+      #s4-rule {
+        position: absolute;
+        left: 660px;
+        width: 600px;
+        top: 712px;
+        height: 2px;
+        background: var(--acid);
+      }
+      #s4-specs {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 748px;
+        text-align: center;
+        font: 500 24px/1 var(--mono);
+        letter-spacing: 0.22em;
+        color: rgba(244, 242, 236, 0.66);
+        text-transform: uppercase;
+      }
+
+      /* ---------- global overlays ---------- */
+      #flash {
+        z-index: 20;
+        background: #fff;
+        pointer-events: none;
+      }
+      #flash-in {
+        position: absolute;
+        inset: 0;
+        background: #fff;
+        opacity: 0;
+      }
+      #hud {
+        z-index: 30;
+        pointer-events: none;
+        mix-blend-mode: difference;
+        color: #fff;
+        font: 500 20px/1 var(--mono);
+        letter-spacing: 0.16em;
+      }
+      #hud-tl {
+        position: absolute;
+        left: 120px;
+        top: 64px;
+      }
+      #hud-tr {
+        position: absolute;
+        right: 120px;
+        top: 64px;
+        text-align: right;
+      }
+      #hud-bar {
+        position: absolute;
+        left: 120px;
+        right: 120px;
+        bottom: 56px;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.25);
+      }
+      #hud-fill {
+        position: absolute;
+        inset: 0;
+        background: #fff;
+        transform-origin: 0 50%;
+      }
+      #outro {
+        z-index: 40;
+        pointer-events: none;
+      }
+      #outro-in {
+        position: absolute;
+        inset: 0;
+        background: #000;
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="15"
+      data-fps="60"
+      data-width="1920"
+      data-height="1080"
+    >
+      <!-- Scene 1 · the vortex (0 – 3 s) -->
+      <div id="s1" class="clip" data-start="0" data-duration="3.05" data-track-index="0" data-layout-allow-overflow>
+        <canvas id="vortex" width="1920" height="1080"></canvas>
+        <div id="s1-code"></div>
+        <div id="s1-label">t = 0.000 s</div>
+      </div>
+
+      <!-- Scene 2 · the manifesto (3 – 6.5 s) -->
+      <div id="c1" class="clip card" data-start="3" data-duration="0.75" data-track-index="1" data-layout-allow-overflow>
+        <div class="tag">01 —</div>
+        <div class="word" id="c1-word">NO CAMERA.</div>
+      </div>
+      <div id="c2" class="clip card" data-start="3.75" data-duration="0.75" data-track-index="1" data-layout-allow-overflow>
+        <div class="tag">02 —</div>
+        <div class="word" id="c2-word">NO TIMELINE.</div>
+      </div>
+      <div id="c3" class="clip card" data-start="4.5" data-duration="0.75" data-track-index="1" data-layout-allow-overflow>
+        <div class="tag">03 —</div>
+        <div class="word" id="c3-word">NO EXPORT.</div>
+      </div>
+      <div id="c4" class="clip card" data-start="5.25" data-duration="1.3" data-track-index="1" data-layout-allow-overflow data-layout-allow-overlap>
+        <div id="c4-bg"></div>
+        <div id="c4-just">JUST</div>
+        <div id="c4-stack">
+          <div class="html-word echo" id="e1">&lt;html&gt;</div>
+          <div class="html-word echo" id="e2">&lt;html&gt;</div>
+          <div class="html-word echo" id="e3">&lt;html&gt;</div>
+          <div class="html-word echo" id="e4">&lt;html&gt;</div>
+          <div class="html-word echo" id="e5">&lt;html&gt;</div>
+          <div class="html-word" id="c4-main"><span class="br">&lt;</span>html<span class="br">&gt;</span></div>
+        </div>
+      </div>
+
+      <!-- Scene 3 · the render tunnel (6.2 – 15 s), with the lockup over it -->
+      <div id="s3" class="clip" data-start="6.2" data-duration="8.8" data-track-index="0" data-layout-allow-overflow data-layout-allow-overlap>
+        <canvas id="gl" width="1280" height="720"></canvas>
+        <div id="s3-shade"></div>
+        <div id="s3-l1" class="line"><span class="w">Every</span><span class="w">frame</span><span class="w">is</span><span class="w">a</span><span class="w">function</span><span class="w">of</span><span class="w" style="color: var(--acid)">time.</span></div>
+        <div id="s3-l2" class="line"><span class="w">Seeked.</span><span class="w">Captured.</span><span class="w" style="color: var(--acid)">Encoded.</span></div>
+        <div id="s3-seek"></div>
+        <div id="s3-frame"><div class="lbl">FRAME</div><div class="num" id="s3-num">0000</div></div>
+
+        <div id="s4-dim"></div>
+        <div id="s4-title">
+          <div><span class="w">Written</span><span class="w">in</span><span class="w">HTML.</span></div>
+          <div><span class="w">Rendered</span><span class="w">as</span><span class="w acc">film.</span></div>
+        </div>
+        <div id="s4-rule"></div>
+        <div id="s4-specs">1920 × 1080 · 60 fps · 900 frames · 1 HTML file</div>
+      </div>
+
+      <div id="flash" class="clip" data-start="0" data-duration="15" data-track-index="2" data-layout-ignore style="background: none">
+        <div id="flash-in"></div>
+      </div>
+
+      <div id="hud" class="clip" data-start="0" data-duration="15" data-track-index="3" data-layout-ignore>
+        <div id="hud-tl">HTML → MP4</div>
+        <div id="hud-tr">00:00.00 · F 000</div>
+        <div id="hud-bar"><div id="hud-fill"></div></div>
+      </div>
+
+      <div id="outro" class="clip" data-start="0" data-duration="15" data-track-index="4" data-layout-ignore>
+        <div id="outro-in"></div>
+      </div>
+
+      <audio id="music" class="clip" data-start="0" data-duration="15" data-track-index="5" data-volume="0.8" src="assets/music.wav"></audio>
+    </div>
+
+    <script>
+      // ------------------------------------------------------------ helpers
+      const FPS = 60;
+      function mulberry32(a) {
+        return function () {
+          a |= 0;
+          a = (a + 0x6d2b79f5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+      const smooth = (a, b, x) => {
+        const t = clamp((x - a) / (b - a), 0, 1);
+        return t * t * (3 - 2 * t);
+      };
+      const pad = (n, w) => String(n).padStart(w, "0");
+      function splitChars(el) {
+        const text = el.textContent;
+        el.innerHTML = "";
+        for (const c of text) {
+          const m = document.createElement("span");
+          m.className = "mask";
+          const s = document.createElement("span");
+          s.className = "ch";
+          s.textContent = c === " " ? " " : c;
+          m.appendChild(s);
+          el.appendChild(m);
+        }
+        return el.querySelectorAll(".ch");
+      }
+
+      // ------------------------------------------------------------ scene 1: vortex (canvas 2D)
+      const vx = document.getElementById("vortex").getContext("2d");
+      const rnd = mulberry32(1337);
+      const NP = 5200;
+      const P = [];
+      const palette = [
+        [212, 255, 58],
+        [43, 75, 255],
+        [255, 59, 47],
+        [244, 242, 236],
+        [244, 242, 236],
+      ];
+      for (let i = 0; i < NP; i++) {
+        const arm = i % 3;
+        const r0 = 140 + Math.pow(rnd(), 0.7) * 1250;
+        P.push({
+          r0,
+          a0: arm * ((Math.PI * 2) / 3) + r0 * 0.0042 + (rnd() - 0.5) * 0.9,
+          w: 0.35 + rnd() * 0.5,
+          z: 0.4 + rnd() * 0.9,
+          lag: rnd() * 0.35,
+          c: palette[Math.floor(rnd() * palette.length)],
+        });
+      }
+      function particleAt(p, t) {
+        // collapse: the radius eases to zero by ~2.95 s
+        const k = clamp((t - 0.2 - p.lag * (p.r0 / 1400)) / (2.75 - p.lag * 0.4), 0, 1);
+        const e = Math.pow(k, 2.6);
+        const r = p.r0 * (1 - e) * (1 + 0.04 * Math.sin(t * 3 + p.a0 * 5));
+        // spin faster as the radius shrinks
+        const ang = p.a0 + t * p.w * 0.6 + 2.4 * e * e * (1.5 + p.w);
+        return [960 + Math.cos(ang) * r * 1.08, 540 + Math.sin(ang) * r * 0.62, r];
+      }
+      function drawVortex(t) {
+        vx.globalCompositeOperation = "source-over";
+        vx.fillStyle = "#000";
+        vx.fillRect(0, 0, 1920, 1080);
+        vx.globalCompositeOperation = "lighter";
+        vx.lineCap = "round";
+        const dt = 0.05;
+        const fadeIn = smooth(0, 0.6, t);
+        for (let i = 0; i < NP; i++) {
+          const p = P[i];
+          const a = particleAt(p, t);
+          const b = particleAt(p, Math.max(0, t - dt));
+          const near = 1 - a[2] / 1400;
+          const alpha = clamp(0.18 + 0.7 * near * near, 0, 1) * fadeIn;
+          vx.strokeStyle = `rgba(${p.c[0]},${p.c[1]},${p.c[2]},${alpha.toFixed(3)})`;
+          vx.lineWidth = 1.2 + p.z * 1.6;
+          vx.beginPath();
+          vx.moveTo(b[0], b[1]);
+          vx.lineTo(a[0] + 0.01, a[1]);
+          vx.stroke();
+        }
+        // the singularity
+        const g = smooth(1.2, 2.95, t);
+        const rad = 40 + 520 * g * g;
+        const grd = vx.createRadialGradient(960, 540, 0, 960, 540, rad);
+        grd.addColorStop(0, `rgba(255,255,255,${(0.15 + 0.85 * g).toFixed(3)})`);
+        grd.addColorStop(0.18, `rgba(212,255,58,${(0.5 * g).toFixed(3)})`);
+        grd.addColorStop(1, "rgba(43,75,255,0)");
+        vx.fillStyle = grd;
+        vx.fillRect(0, 0, 1920, 1080);
+      }
+      // the code that draws this scene, typed out as it plays
+      const CODE_TXT = [
+        '<canvas id="vortex"></canvas>',
+        "<script>",
+        '  addEventListener("hf-seek", e =>',
+        "    draw(e.detail.time))",
+        "</scr" + "ipt>",
+      ];
+      const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const codeEl = document.getElementById("s1-code");
+      const labelEl = document.getElementById("s1-label");
+      const CODE_TOTAL = CODE_TXT.reduce((n, l) => n + l.length + 1, 0);
+      function drawCode(t) {
+        let n = Math.floor(clamp((t - 0.25) / 2.1, 0, 1) * CODE_TOTAL);
+        let html = "";
+        for (const line of CODE_TXT) {
+          const take = Math.min(n, line.length);
+          let s = esc(line.slice(0, take));
+          s = s.replace(/(&lt;\/?[a-z]*(&gt;)?)/g, '<span class="k">$1</span>');
+          html += s;
+          n -= take;
+          if (n <= 0) break;
+          html += "\n";
+          n -= 1;
+        }
+        const blink = Math.floor(t * 4) % 2 === 0 ? 1 : 0;
+        codeEl.innerHTML = html + `<span id="s1-caret" style="opacity:${blink}"></span>`;
+        labelEl.textContent = `t = ${t.toFixed(3)} s`;
+      }
+
+      // ------------------------------------------------------------ scene 3: raymarched tunnel (WebGL)
+      const glc = document.getElementById("gl");
+      const gl = glc.getContext("webgl", { preserveDrawingBuffer: true, antialias: false, alpha: false });
+      const VS = "attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";
+      const FS = `
+precision highp float;
+uniform vec2 uRes; uniform float uT, uZ, uDim, uFlash, uWarm, uRoll;
+mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
+float sdBox(vec3 p, vec3 b){vec3 q=abs(p)-b;return length(max(q,0.))+min(max(q.x,max(q.y,q.z)),0.);}
+vec3 pal(float i){
+  float k=mod(i,3.);
+  vec3 acid=vec3(.83,1.,.23), cob=vec3(.17,.29,1.), red=vec3(1.,.23,.18);
+  vec3 c = k<1.?cob:(k<2.?acid:red);
+  return mix(c, vec3(1.,.55,.25), uWarm*.6);
+}
+float cid;
+float frameD(vec3 p){
+  // square portals every 2 units, each turned a little further
+  float c=floor(p.z*.5+.5); cid=c;
+  vec3 q=p; q.z=mod(p.z+1.,2.)-1.;
+  q.xy*=rot(c*.2618+uT*.25);
+  return max(sdBox(q,vec3(2.25,2.25,.035)),-sdBox(q,vec3(2.16,2.16,1.)));
+}
+float tubeD(vec3 p){
+  // a square corridor with ribs every unit
+  float m=max(abs(p.x),abs(p.y));
+  float rz=mod(p.z,1.)-.5;
+  return min(3.6-m, max(abs(rz)-.06, 3.3-m));
+}
+float map(vec3 p){return min(frameD(p),tubeD(p));}
+vec3 normal(vec3 p){vec2 e=vec2(.002,0.);return normalize(vec3(map(p+e.xyy)-map(p-e.xyy),map(p+e.yxy)-map(p-e.yxy),map(p+e.yyx)-map(p-e.yyx)));}
+void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*uRes)/uRes.y;
+  vec3 ro=vec3(.35*sin(uZ*.21),.25*cos(uZ*.17),uZ);
+  vec3 rd=normalize(vec3(uv,1.1));
+  rd.xy*=rot(uRoll);
+  float t=0.; vec3 glow=vec3(0.); float hit=0.; float hc=0.; float hitFrame=0.;
+  for(int i=0;i<96;i++){
+    vec3 p=ro+rd*t;
+    float fd=frameD(p); float c=cid;
+    float td=tubeD(p);
+    float d=min(fd,td);
+    float pulse=.35+.65*pow(.5+.5*sin(c*1.3-uT*7.),3.);
+    glow+=pal(c)*(.003/(.0006+fd*fd))*pulse*exp(-t*.04);
+    // the corridor ribs glow faintly too
+    glow+=pal(c+1.)*(.00025/(.0006+td*td))*exp(-t*.08);
+    if(d<.0015){hit=1.;hc=c;hitFrame=step(fd,td);break;}
+    t+=d*.85;
+    if(t>80.)break;
+  }
+  vec3 col=vec3(0.);
+  if(hit>.5){
+    vec3 p=ro+rd*t; vec3 n=normal(p);
+    float fres=pow(1.-abs(dot(n,-rd)),4.);
+    float l=max(dot(n,normalize(vec3(.3,.6,-1.))),0.);
+    col=vec3(.02,.022,.035)*(.3+l)+pal(hc+1.)*fres*.25;
+    col=mix(col, pal(hc)*2.6+vec3(.22), hitFrame);
+  }
+  col=mix(col, vec3(0.), 1.-exp(-t*.035));
+  col+=glow*.06;
+  // a hot core at the vanishing point
+  col+=vec3(.95,1.,.7)*.007/(length(uv)+.012);
+  col=1.-exp(-col*1.8);
+  col=pow(col,vec3(.95));
+  col*=1.-.55*dot(uv,uv);
+  col=mix(col, col*.42, uDim);
+  col+=uFlash;
+  gl_FragColor=vec4(col,1.);
+}`;
+      function sh(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+        return s;
+      }
+      const prog = gl.createProgram();
+      gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS));
+      gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(prog, "p");
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      const U = {};
+      for (const n of ["uRes", "uT", "uZ", "uDim", "uFlash", "uWarm", "uRoll"]) U[n] = gl.getUniformLocation(prog, n);
+      gl.viewport(0, 0, glc.width, glc.height);
+      gl.uniform2f(U.uRes, glc.width, glc.height);
+
+      // camera speed (units/s); z(t) is its integral, tabulated once so every frame stays a pure function of t
+      function speed(t) {
+        if (t < 6.2) return 0;
+        const launch = 3 + 9 * smooth(6.2, 6.9, t);
+        const surge = 7 * smooth(8.6, 10.4, t);
+        const glide = smooth(10.4, 11.8, t);
+        return (launch + surge) * (1 - glide) + 1.2 * glide;
+      }
+      const ZSTEP = 1 / 240;
+      const ZTAB = [0];
+      for (let i = 1; i <= 15 * 240; i++) ZTAB.push(ZTAB[i - 1] + speed((i - 0.5) * ZSTEP) * ZSTEP);
+      const zAt = (t) => {
+        const f = clamp(t / ZSTEP, 0, ZTAB.length - 1);
+        const i = Math.floor(f);
+        return ZTAB[i] + (ZTAB[Math.min(i + 1, ZTAB.length - 1)] - ZTAB[i]) * (f - i);
+      };
+      function drawGL(t) {
+        gl.uniform1f(U.uT, t);
+        gl.uniform1f(U.uZ, zAt(t) + 0.6);
+        gl.uniform1f(U.uDim, smooth(10.5, 11.4, t) * 0.5);
+        gl.uniform1f(U.uWarm, smooth(10.5, 12.5, t));
+        gl.uniform1f(U.uRoll, 0.5 * Math.sin(t * 0.7) * (1 - smooth(10.5, 12, t)) + 0.12 * Math.sin(t * 0.3));
+        const f1 = Math.max(0, 1 - Math.abs(t - 6.5) / 0.15) * 0.5;
+        const f2 = t >= 10.5 ? Math.max(0, 1 - (t - 10.5) / 0.4) * 0.7 : 0;
+        gl.uniform1f(U.uFlash, f1 + f2);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+      const seekEl = document.getElementById("s3-seek");
+      const numEl = document.getElementById("s3-num");
+      function drawSeek(t) {
+        const f = Math.min(899, Math.round(t * FPS));
+        numEl.textContent = pad(f, 4);
+        seekEl.innerHTML =
+          `<span class="k">timeline</span>.seek(${t.toFixed(3)})\n` +
+          `<span class="k">page</span>.screenshot() → frame_${pad(f, 4)}\n` +
+          `<span class="k">ffmpeg</span> ← ${pad(f + 1, 3)} / 900`;
+      }
+
+      // ------------------------------------------------------------ HUD
+      const hudTR = document.getElementById("hud-tr");
+      function drawHud(t) {
+        const f = Math.min(899, Math.round(t * FPS));
+        const s = Math.floor(t);
+        const cs = Math.floor((t - s) * 100);
+        hudTR.textContent = `00:${pad(s, 2)}.${pad(cs, 2)} · F ${pad(f, 3)}`;
+      }
+
+      // ------------------------------------------------------------ the frame function
+      function renderAt(t) {
+        drawHud(t);
+        if (t < 3.05) {
+          drawVortex(t);
+          drawCode(t);
+        }
+        if (t >= 6.2) {
+          drawGL(t);
+          drawSeek(t);
+        }
+      }
+      window.addEventListener("hf-seek", (e) => renderAt(e.detail.time));
+
+      // ------------------------------------------------------------ GSAP timeline (DOM motion)
+      const tl = gsap.timeline({ paused: true });
+
+      // global
+      tl.fromTo("#hud-fill", { scaleX: 0 }, { scaleX: 1, duration: 15, ease: "none" }, 0);
+      tl.fromTo("#hud-tl, #hud-tr", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 0.2);
+      tl.fromTo("#flash-in", { opacity: 0 }, { opacity: 1, duration: 0.1, ease: "power2.in" }, 2.9);
+      tl.to("#flash-in", { opacity: 0, duration: 0.35, ease: "power3.out" }, 3.0);
+
+      // scene 1: the code fades up, everything rushes into the flash
+      tl.fromTo("#s1-code, #s1-label", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 0.15);
+      tl.to("#s1-code, #s1-label", { opacity: 0, filter: "blur(8px)", duration: 0.3, ease: "power2.in" }, 2.55);
+
+      // card 1: letters rise out of a mask
+      const c1 = splitChars(document.getElementById("c1-word"));
+      tl.fromTo(c1, { yPercent: 115 }, { yPercent: 0, duration: 0.42, ease: "expo.out", stagger: 0.022 }, 3.0);
+      tl.fromTo("#c1 .tag", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 3.05);
+      tl.fromTo("#c1-word", { scale: 1.08 }, { scale: 1, duration: 0.7, ease: "expo.out" }, 3.0);
+
+      // card 2: horizontal whip in, lands blurred and sharpens
+      tl.fromTo(
+        "#c2-word",
+        { x: 900, filter: "blur(28px)", scaleX: 1.25 },
+        { x: 0, filter: "blur(0px)", scaleX: 1, duration: 0.32, ease: "expo.out" },
+        3.75,
+      );
+      tl.fromTo("#c2 .tag", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 3.8);
+
+      // card 3: letters flip down in 3D
+      const c3 = splitChars(document.getElementById("c3-word"));
+      tl.fromTo(
+        c3,
+        { rotationX: -95, opacity: 0, transformOrigin: "50% 0% -60px" },
+        { rotationX: 0, opacity: 1, duration: 0.45, ease: "back.out(1.6)", stagger: 0.025 },
+        4.5,
+      );
+      tl.fromTo("#c3 .tag", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 4.55);
+
+      // card 4: JUST … <html> slams in, echoes fan out, then we fly through it
+      tl.fromTo("#c4-just", { opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, ease: "power2.out" }, 5.25);
+      tl.to("#c4-just", { opacity: 0, y: -30, duration: 0.2, ease: "power2.in" }, 5.95);
+      tl.fromTo(
+        "#c4-main",
+        { scale: 2.6, x: 0, opacity: 0, filter: "blur(20px)" },
+        { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.22, ease: "expo.out" },
+        5.5,
+      );
+      ["#e1", "#e2", "#e3", "#e4", "#e5"].forEach((id, i) => {
+        tl.fromTo(
+          id,
+          { scale: 1, opacity: 0 },
+          { scale: 1.18 + i * 0.22, opacity: 0.85 - i * 0.14, duration: 0.5, ease: "expo.out" },
+          5.52 + i * 0.012,
+        );
+        tl.to(id, { scale: 6 + i * 2, opacity: 0, duration: 0.4, ease: "power3.in" }, 6.08);
+      });
+      tl.to("#c4-main", { scale: 26, x: 1450, duration: 0.42, ease: "power4.in" }, 6.12);
+      tl.to("#c4-main", { opacity: 0, duration: 0.08, ease: "none" }, 6.45);
+      tl.fromTo("#c4-bg", { opacity: 1 }, { opacity: 0, duration: 0.25, ease: "power2.in" }, 6.25);
+
+      // scene 3: the tunnel. Lines blur in word by word, then blur out
+      const l1 = document.querySelectorAll("#s3-l1 .w");
+      const l2 = document.querySelectorAll("#s3-l2 .w");
+      tl.fromTo(l1, { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.07, ease: "power2.out" }, 6.95);
+      tl.to(l1, { opacity: 0, filter: "blur(8px)", duration: 0.16, stagger: 0.03, ease: "power2.in" }, 8.4);
+      tl.fromTo(l2, { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.25, ease: "power2.out" }, 8.75);
+      tl.to(l2, { opacity: 0, filter: "blur(10px)", duration: 0.12, ease: "power2.in" }, 10.3);
+      tl.fromTo("#s3-seek, #s3-frame", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" }, 6.6);
+      tl.to("#s3-seek, #s3-frame", { opacity: 0, duration: 0.15, ease: "power2.in" }, 10.32);
+      tl.fromTo("#s3-shade", { opacity: 0.3 }, { opacity: 0.75, duration: 0.8, ease: "power2.inOut" }, 6.5);
+
+      // scene 4: lockup
+      const tw = document.querySelectorAll("#s4-title .w");
+      tl.fromTo("#s4-dim", { opacity: 0 }, { opacity: 1, duration: 0.9, ease: "power2.inOut" }, 10.5);
+      tl.fromTo(
+        tw,
+        { opacity: 0, filter: "blur(14px)", scale: 1.08 },
+        { opacity: 1, filter: "blur(0px)", scale: 1, duration: 0.22, stagger: 0.17, ease: "expo.out" },
+        10.62,
+      );
+      tl.fromTo("#s4-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "expo.out" }, 11.95);
+      tl.fromTo("#s4-specs", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 12.05);
+
+      // out
+      tl.fromTo("#outro-in", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power2.in" }, 14.5);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      renderAt(0);
+      tl.seek(0);
+    </script>
+  </body>
+</html>
