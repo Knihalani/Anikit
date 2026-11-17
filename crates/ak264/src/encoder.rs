@@ -586,8 +586,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let try_i4 = best_cost > lambda as u32 * 24 + 256 && (c.idr || best_cost > lambda as u32 * 64 + 1024)
             // Smooth ramps (fades, soft gradients): 4×4 predictions turn them into a
             // staircase of 4×4 squares; I16 (plane) and inter keep them smooth.
-            // (At QP < 12 the steps are below one level, and I4 is more precise.)
-            && (self.mb_qp < 12 || crate::simd::second_diff16(src_y) >= SMOOTH_HF);
+            // (CAVLC at QP < 2: I16 DC levels would pass CAVLC's ±2047 escape.)
+            && ((!c.cabac && self.mb_qp < 2) || crate::simd::second_diff16(src_y) >= SMOOTH_HF);
         if try_i4 {
             // Encode I4x4 tentatively (writes recon).
             let mut cd = Coded::new();
@@ -889,7 +889,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 && crate::simd::max_sad4(&src_c[0], &predc[0], 8, 8) <= self.p.zero_sad4.1
                 && crate::simd::max_sad4(&src_c[1], &predc[1], 8, 8) <= self.p.zero_sad4.1)
         {
-            chroma_resid(src_c, &predc, &self.p.qc, &self.p.qcs, false, &mut cd, &mut reconc);
+            chroma_resid(src_c, &predc, &self.p.qc, &self.p.qcs, false, self.dc_max(), &mut cd, &mut reconc);
             &reconc
         } else {
             &predc
@@ -1075,7 +1075,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             let sad = crate::simd::sad16(src, 16, pred, 16);
             let (b4, dcl) = (self.p.zero_sad4_intra.0, self.p.zero_dc_intra.0);
             if sad > self.p.zero_sad_intra.0 && !(sad < 2 * dcl && crate::simd::max_sad4(src, pred, 16, 16) <= b4) {
-                luma_i16(src, pred, &q, &self.p.qs, cd, &mut recon);
+                luma_i16(src, pred, &q, &self.p.qs, self.dc_max(), cd, &mut recon);
             }
             let base = self.yi(mbx * 16, mby * 16);
             for y in 0..16 {
@@ -1125,7 +1125,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             && crate::simd::max_sad4(&src_c[0], &predc[0], 8, 8) <= b4
             && crate::simd::max_sad4(&src_c[1], &predc[1], 8, 8) <= b4;
         if (s0 > zc || s1 > zc) && !zero_c {
-            chroma_resid(src_c, &predc, &self.p.qc, &self.p.qcs, true, cd, &mut reconc);
+            chroma_resid(src_c, &predc, &self.p.qc, &self.p.qcs, true, self.dc_max(), cd, &mut reconc);
         } else {
             reconc = predc;
         }
@@ -1197,6 +1197,13 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         } else {
             self.skip_run += 1;
         }
+    }
+
+    /// Largest DC level: CAVLC escapes reach ±2047 in Main/Baseline; CABAC codes
+    /// the full ±2^15 range (which QP 0–3 needs for flat-area DCs).
+    #[inline]
+    fn dc_max(&self) -> i32 {
+        if self.c.cabac { 32767 } else { 2047 }
     }
 
     /// mb_qp_delta (CAVLC); the macroblock now has QP `mb_qp`.
@@ -1653,8 +1660,8 @@ macro_rules! multiversion {
 }
 
 multiversion!(luma_inter => luma_inter_impl(src: &[u8; 256], pred: &[u8; 256], qs: &QuantS, cd: &mut Coded, recon: &mut [u8; 256]));
-multiversion!(luma_i16 => luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, cd: &mut Coded, recon: &mut [u8; 256]));
-multiversion!(chroma_resid => chroma_resid_impl(src: &[[u8; 64]; 2], pred: &[[u8; 64]; 2], qc: &Quant, qcs: &QuantS, intra: bool, cd: &mut Coded, recon: &mut [[u8; 64]; 2]));
+multiversion!(luma_i16 => luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, dc_max: i32, cd: &mut Coded, recon: &mut [u8; 256]));
+multiversion!(chroma_resid => chroma_resid_impl(src: &[[u8; 64]; 2], pred: &[[u8; 64]; 2], qc: &Quant, qcs: &QuantS, intra: bool, dc_max: i32, cd: &mut Coded, recon: &mut [[u8; 64]; 2]));
 
 #[inline(always)]
 fn luma_inter_impl(src: &[u8; 256], pred: &[u8; 256], qs: &QuantS, cd: &mut Coded, recon: &mut [u8; 256]) {
@@ -1697,7 +1704,7 @@ fn luma_inter_impl(src: &[u8; 256], pred: &[u8; 256], qs: &QuantS, cd: &mut Code
 }
 
 #[inline(always)]
-fn luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, cd: &mut Coded, recon: &mut [u8; 256]) {
+fn luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, dc_max: i32, cd: &mut Coded, recon: &mut [u8; 256]) {
     let (mut c, ps) = soa::gather16(src, pred);
     soa::fdct(&mut c);
     let mut dc = [0i32; 16];
@@ -1716,8 +1723,7 @@ fn luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, cd: 
             }
         }
     }
-    let mut dcl = luma_dc_forward(&dc, q);
-    clamp_levels(&mut dcl);
+    let dcl = luma_dc_forward(&dc, q).map(|v| v.clamp(-dc_max, dc_max));
     cd.dc = dcl;
     if any_ac {
         cd.cbp |= 15;
@@ -1737,6 +1743,7 @@ fn chroma_resid_impl(
     qc: &Quant,
     qcs: &QuantS,
     intra: bool,
+    dc_max: i32,
     cd: &mut Coded,
     recon: &mut [[u8; 64]; 2],
 ) {
@@ -1763,7 +1770,7 @@ fn chroma_resid_impl(
     }
     let mut any_dc = false;
     for comp in 0..2 {
-        let l = chroma_dc_forward(&dc[comp], qc, intra).map(|v| v.clamp(-2047, 2047));
+        let l = chroma_dc_forward(&dc[comp], qc, intra).map(|v| v.clamp(-dc_max, dc_max));
         cd.cdc[comp] = l;
         any_dc |= l.iter().any(|&v| v != 0);
     }
