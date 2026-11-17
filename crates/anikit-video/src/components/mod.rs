@@ -78,6 +78,23 @@ pub trait Assets: Sync {
     fn frame_image(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> ImageId {
         self.image(key, w, h, make)
     }
+    /// Like [`Assets::image`], for pixels already in the renderer's format:
+    /// premultiplied RGBA8 (each colour byte ≤ its alpha). Per-frame images
+    /// made by components skip two conversion passes this way.
+    fn image_premul(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> ImageId {
+        self.image(key, w, h, &mut || {
+            let mut px = make();
+            for p in px.chunks_exact_mut(4) {
+                let a = p[3] as u32;
+                if a != 0 && a != 255 {
+                    for c in &mut p[..3] {
+                        *c = ((*c as u32 * 255 + a / 2) / a).min(255) as u8;
+                    }
+                }
+            }
+            px
+        })
+    }
     /// A user image (or the current frame of a user video) by its spec `src`,
     /// with its pixel size. `t` is the component's local time (for videos).
     fn media(&self, src: &str, t: f32) -> Option<(ImageId, u32, u32)>;

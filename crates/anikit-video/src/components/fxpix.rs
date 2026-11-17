@@ -133,19 +133,26 @@ pub fn byte(v: f32) -> u8 {
     (mn(mx(v, 0.0), 255.0) + 8_388_608.0).to_bits() as u8
 }
 
-/// Premultiplied float RGBA (planar rows) to straight RGBA8, rounded (vectorises).
+/// Premultiplied float RGBA (planar rows, 0..1) to premultiplied RGBA8,
+/// rounded, colour bytes kept ≤ alpha (vectorises). For [`super::Assets::image_premul`].
 #[inline(always)]
 pub fn pack_row(r: &[f32], g: &[f32], b: &[f32], a: &[f32], out: &mut [u8]) {
     let n = out.len() / 4;
     let (r, g, b, a, out) = (&r[..n], &g[..n], &b[..n], &a[..n], &mut out[..n * 4]);
     for i in 0..n {
-        let al = mn(mx(a[i], 0.0), 1.0);
-        let k = 255.0 / mx(al, 1e-6);
-        out[i * 4] = byte(r[i] * k);
-        out[i * 4 + 1] = byte(g[i] * k);
-        out[i * 4 + 2] = byte(b[i] * k);
-        out[i * 4 + 3] = byte(al * 255.0);
+        let al = mn(mx(a[i], 0.0), 1.0) * 255.0;
+        out[i * 4] = byte(mn(r[i] * 255.0, al));
+        out[i * 4 + 1] = byte(mn(g[i] * 255.0, al));
+        out[i * 4 + 2] = byte(mn(b[i] * 255.0, al));
+        out[i * 4 + 3] = byte(al);
     }
+}
+
+/// One premultiplied float pixel (0..1) as premultiplied RGBA8.
+#[inline(always)]
+pub fn pack(c: [f32; 4]) -> [u8; 4] {
+    let al = mn(mx(c[3], 0.0), 1.0) * 255.0;
+    [byte(mn(c[0] * 255.0, al)), byte(mn(c[1] * 255.0, al)), byte(mn(c[2] * 255.0, al)), byte(al)]
 }
 
 /// Fast 64-bit hash of `f32` slices (image cache keys from computed tables).

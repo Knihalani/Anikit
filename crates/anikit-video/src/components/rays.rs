@@ -250,7 +250,7 @@ impl Fan {
             hs.u32(key as u32);
             hs.u32((key >> 32) as u32);
             hs.f32s(&[x0, ys as f32, iw as f32, ih as f32]);
-            let id = ctx.assets.image(hs.finish(), iw as u32, ih as u32, &mut || self.pixels(&edges, start, &mut rows, x0, ys, iw, ih));
+            let id = ctx.assets.image_premul(hs.finish(), iw as u32, ih as u32, &mut || self.pixels(&edges, start, &mut rows, x0, ys, iw, ih));
             out.push(Op::Image { image: id, dst: [x0, ys as f32, iw as f32, ih as f32], opacity: 1.0, transform: IDENTITY });
         }
         FAN_SCRATCH.with(|c| c.set((edges, rows)));
