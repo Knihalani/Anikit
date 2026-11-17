@@ -128,6 +128,8 @@ Source: `cargo run --release -p anikit-video --example parts_bench`. Single thre
 
 ### End to end (templates, after the speed phase)
 
+(See also **End-to-end pipeline** at the end of this page for the fused render+encode path and per-stage profiles.)
+
 `anikit-video render` at 1080p30 with the `ak264` encoder, on a restarted VM that measures about 1.5–2× slower than the one used for the tables above:
 
 | Template | Frames | Wall time | Throughput |
@@ -182,3 +184,22 @@ History of the benchmark of record: 63 fps (22:55) → 109 → 143 (fused) → 1
 `--profile` on the benchmark of record (CPU ms per frame, summed over 4 threads): eval 0.1 · render 6.9 · copy 0.15 · encode 2.9 · idle 1.0. Render time is almost all from the ~424 Full frames (about 13 ms each). `CHURN_DETAIL=1 cargo run --release -p anikit-video --example dl_churn -- spec.json` shows what forces them. Mostly it's a clip layer (no filter, opacity 1) that moved by a pixel or grew (device screens, wipes), which `render_yuv_incremental` treats as a full-frame change. Bounding those by the clip would make them Partial.
 
 Correctness: fused output decodes with ffmpeg and matches x264 `--quality high` at ≥ 48.6 dB on every frame of the launch template, and at 53.6 dB average on the showcase. `tests/pipeline_e2e.rs` compares fused and plain paths frame by frame, including a many-chunk stress case.
+
+### Every template through the fused pipeline (04:45 UTC)
+
+`anikit-video new <template> --dir t && anikit-video render t/spec.json` (16:9, 1080p30, ak264), on the 4-core container:
+
+| Template | Frames | Wall | Throughput | Frames skipped |
+|---|---|---|---|---|
+| launch | 868 | 2.33 s | 372 fps | 417 |
+| tutorial | 807 | 2.48 s | 325 fps | 217 |
+| changelog | 680 | 2.12 s | 321 fps | 302 |
+| data-story | 616 | 2.01 s | 307 fps | 133 |
+| demo | 665 | 2.45 s | 271 fps | 158 |
+| testimonial | 532 | 2.12 s | 251 fps | 0 |
+| feature | 560 | 3.01 s | 186 fps | 0 |
+| teaser | 275 | 2.07 s | 133 fps | 0 |
+| countdown | 466 | 4.31 s | 108 fps | 0 |
+| logo-reveal | 120 | 1.55 s | 77 fps | 0 |
+
+The slow ones are dominated by per-frame effect components. logo-reveal (`text-3d`, `god-rays`, `lens-flare`): eval 15.8 + render 25.0 CPU ms per frame. countdown (`globe`, `particle-text`, `sparks`): render 21.6 per frame.
