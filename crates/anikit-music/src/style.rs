@@ -119,7 +119,7 @@ pub static STYLES: &[StyleDef] = &[
         name: "house",
         about: "four-on-the-floor, offbeat hats, pumping sidechain, piano/organ stabs, rolling bass",
         bpm: 124.0,
-        swing: 0.08,
+        swing: 0.2,
         minor: true,
         key_major: "A",
         key_minor: "Am",
@@ -319,7 +319,7 @@ pub static STYLES: &[StyleDef] = &[
         name: "pop",
         about: "modern pop: punchy drums, piano + synth chords, plucks, catchy top line",
         bpm: 112.0,
-        swing: 0.0,
+        swing: 0.12,
         minor: false,
         key_major: "G",
         key_minor: "Em",
@@ -487,7 +487,7 @@ pub static STYLES: &[StyleDef] = &[
         name: "jazz",
         about: "swung piano trio: walking bass, ride and brushes, comping 7th chords",
         bpm: 132.0,
-        swing: 0.6,
+        swing: 0.85,
         minor: false,
         key_major: "Bb",
         key_minor: "Cm",
@@ -992,6 +992,12 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                     "guitar2" | "picking" => 0.4,
                     _ => 0.0,
                 };
+            }
+            // Mono keys and beds get real stereo from a gentle ensemble/chorus (the classic
+            // Rhodes and pad treatment) in styles whose parts are otherwise centre-heavy.
+            if tr.fx.is_none() && !electronic && matches!(tr.role.as_str(), "keys" | "pad" | "comp" | "piano" | "strings" | "choir" | "picking") {
+                let mix = if tr.role == "keys" || tr.role == "comp" { 0.35 } else { 0.25 };
+                tr.fx = Some(serde_json::json!([{ "type": "chorus", "mode": "ensemble", "rate": 0.6, "depth": 2.5, "spread": 1.0, "mix": mix }]));
             }
             tr.mix.width = match tr.role.as_str() {
                 "pad" | "glass" | "choir" | "strings" => 1.5,

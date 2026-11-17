@@ -117,7 +117,7 @@ CHOOSING (your call; see docs/video/taste/TASTE.md §7): pick from the film's co
   avoid: a generic synth bed under a calm brand or people film; a busy beat under voice-over; four-on-the-floor under slow footage.
   "instrumentation": "acoustic|orchestral|band|piano|electronic|hybrid" keeps a style's groove and swaps its instruments,
   e.g. {"style":"house","instrumentation":"band"}; per-part {"instruments":{"lead":"violin"}} wins over both.
-KEYS    instrumentation  bpm  key "Am" "F# dorian"  meter "6/8"  swing 0..1  mood "dark epic"  length "15s"|"8 bars"  seed N
+KEYS    instrumentation  bpm  key "Am" "F# dorian"  meter "6/8"  swing 0..1 (0.16 loose, 0.45 lofi, 0.667 triplet)  mood "dark epic"  length "15s"|"8 bars"  seed N
         sections ["intro:4","build:4","drop:8","outro:2"] or [{"name":"drop","bars":8,"energy":1}]
         hits ["@2.0","@bar9"] → impact + section change there; tempo nudged (±8%) so hits land on beats (fit:false to keep bpm)
         chords "vi IV I V" | "Am F C G"   instruments {"lead":"violin","drums":"drums:909"}   mute ["lead"]

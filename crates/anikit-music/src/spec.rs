@@ -218,7 +218,7 @@ pub struct MusicSpec {
     pub key: Option<String>,
     /// `"4/4"`, `"3/4"`, `"6/8"`.
     pub meter: Option<String>,
-    /// 0 (straight) … 1 (hard swing); 0.33 ≈ triplet feel.
+    /// 0 straight · 0.16 ≈ 54 % loose · 0.45 ≈ 61 % lofi · 0.667 triplet · 1 = 75 % (off-beat = 50 % + 25 % × swing).
     pub swing: Option<f64>,
     /// Free words: dark, happy, epic, chill, tense, sad, dreamy, uplifting, aggressive, mysterious…
     pub mood: Option<String>,

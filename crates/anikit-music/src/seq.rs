@@ -18,7 +18,8 @@ pub struct Grid {
     pub bpm: f64,
     /// Beats (quarter notes) per bar: 4 for 4/4, 3 for 3/4, 3 for 6/8.
     pub beats_per_bar: f64,
-    /// 0 = straight, 1 = hard swing (75 %); 0.33 ≈ triplet feel.
+    /// Off-beat position = 50 % + 25 % × swing: 0 straight, 0.16 ≈ 54 % (loose, not "swung"),
+    /// 0.45 ≈ 61 % (lofi), 0.667 = triplet (66.7 %), 1 = 75 %.
     pub swing: f64,
     /// Swing subdivision in beats: 0.25 (16ths) or 0.5 (8ths).
     pub swing_unit: f64,
