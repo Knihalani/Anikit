@@ -54,6 +54,7 @@ def r(x, k=2):
 # ---- layer helpers -------------------------------------------------------------
 def text(s, x, y, size, color=TEXT, font=MONO, weight=500, anchor="left", **kw):
     al = {"left": "left", "right": "right"}.get(anchor.lower().replace("top", "").replace("bottom", "") or "center", "center")
+    size = max(size, 18)
     d = {"text": s, "x": r(x), "y": r(y), "size": size, "color": color, "font": font, "weight": weight, "anchor": anchor, "align": al}
     d.update(kw)
     return d
@@ -220,7 +221,10 @@ def scene_open():
 
 
 # ---- timing tower ------------------------------------------------------------------
-ROW = 46
+ROW = 54
+MAP_IVE_PASS = 5.6  # map-scene time of the IVE/LIN pass
+OT_PASS = 3.6  # overtake-scene time of the OKA/MAR pass
+TW = 420
 TYRE = {"MAR": "H", "OKA": "S", "LIN": "M", "IVE": "M", "NOV": "H", "FER": "M", "WEN": "H", "DUF": "M", "CAS": "H", "HOL": "M"}
 TYRE_COL = {"S": "#FF3B47", "M": "#FFD23F", "H": "#E8ECF2"}
 
@@ -231,12 +235,12 @@ def tower(t_video, T_of, t_end, x=M, y=150, n_rows=10, header="LAP"):
     orders = [(t, API["order_at"](T)) for t, T in samples]
     rows = []
     # header
-    rows.append(rect(x, y - 54, 380, 46, PANEL2))
+    rows.append(rect(x, y - 54, TW, 46, PANEL2))
     rows.append(text("POS", x + 14, y - 31, 16, MUTED, MONO, 700, "left", letterSpacing="0.1em"))
-    rows.append(text("GAP TO LEADER", x + 366, y - 31, 16, MUTED, MONO, 700, "right", letterSpacing="0.1em"))
+    rows.append(text("GAP TO LEADER", x + TW - 16, y - 31, 16, MUTED, MONO, 700, "right", letterSpacing="0.1em"))
     for i in range(n_rows):
-        rows.append(rect(x, y + i * ROW, 380, ROW - 2, PANEL if i % 2 == 0 else "#0D131D"))
-        rows.append(text(str(i + 1), x + 26, y + i * ROW + ROW / 2 - 1, 22, TEXT, MONO, 700, "center"))
+        rows.append(rect(x, y + i * ROW, TW, ROW - 2, PANEL if i % 2 == 0 else "#0D131D"))
+        rows.append(text(str(i + 1), x + 26, y + i * ROW + ROW / 2 - 1, 26, TEXT, MONO, 700, "center"))
     # per-driver rows that move
     for code in CODES:
         pos = [(t, o.index(code)) for t, o in orders]
@@ -254,28 +258,28 @@ def tower(t_video, T_of, t_end, x=M, y=150, n_rows=10, header="LAP"):
         gap_changes = gap_series(code, samples)
         lay = [
             rect(48, ROW / 2 - 1, 6, ROW - 14, COL[code], anchor="left"),
-            text(code, 66, ROW / 2 - 1, 24, TEXT, HEAD, 800, "left", letterSpacing="0.04em"),
-            {"shape": "circle", "width": 22, "height": 22, "x": 164, "y": r(ROW / 2 - 1), "fill": "#05070B",
+            text(code, 66, ROW / 2 - 1, 30, TEXT, HEAD, 800, "left", letterSpacing="0.04em"),
+            {"shape": "circle", "width": 28, "height": 28, "x": 180, "y": r(ROW / 2 - 1), "fill": "#05070B",
              "stroke": {"color": TYRE_COL[TYRE[code]], "width": 3}},
-            text(TYRE[code], 164, ROW / 2 - 1, 13, TYRE_COL[TYRE[code]], MONO, 800, "center"),
+            text(TYRE[code], 180, ROW / 2 - 1, 18, TYRE_COL[TYRE[code]], MONO, 800, "center"),
         ]
         if gap_changes:
             first_val = gap_changes[0][1]
             if first_val < 0.0005:
-                lay.append(text("LEADER", 366, ROW / 2 - 1, 18, MUTED, MONO, 700, "right"))
+                lay.append(text("LEADER", TW - 16, ROW / 2 - 1, 22, MUTED, MONO, 700, "right"))
             else:
-                lay.append(text("+{value:0.000}", 366, ROW / 2 - 1, 21, TEXT, MONO, 500, "right", value=r(first_val, 3),
+                lay.append(text("+{value:0.000}", TW - 16, ROW / 2 - 1, 26, TEXT, MONO, 500, "right", value=r(first_val, 3),
                                 animate=[kf({"value": steps(gap_changes, t_end, tween=0.3)}, t_end)]))
         # gain/loss flash
         for (t0, p0), (t1, p1) in zip(changes[:-1], changes[1:]):
             up = p1 < p0
             c = GREEN if up else RED
-            lay.append(rect(0, 0, 380, ROW - 2, c, opacity=0, start=r(t1),
+            lay.append(rect(0, 0, TW, ROW - 2, c, opacity=0, start=r(t1),
                             animate=[{"keyframes": {"opacity": [0, 0.35, 0.35, 0]}, "duration": 1.6, "ease": "linear"}]))
             pts = [[0, -7], [8, 6], [-8, 6]] if up else [[0, 7], [8, -6], [-8, 6]]
-            lay.append({"shape": "polygon", "points": pts, "x": 196, "y": r(ROW / 2 - 1), "width": 16, "height": 14,
+            lay.append({"shape": "polygon", "points": pts, "x": 216, "y": r(ROW / 2 - 1), "width": 16, "height": 14,
                         "fill": c, "start": r(t1), "enter": "popIn", "end": r(t1 + 3.5), "exit": "fadeOut"})
-        rows.append(group(lay, x=x, y=0, anchor="topLeft", width=380, height=ROW,
+        rows.append(group(lay, x=x, y=0, anchor="topLeft", width=TW, height=ROW,
                           animate=[kf({"y": [(t, v - ROW / 2 + 1) for t, v in ys]}, t_end, ease="outCubic")]))
     return rows
 
@@ -305,7 +309,7 @@ def scene_map():
     d = track_d(xf)
     PLAY0, SPEEDUP = 1.1, 12.0
     T_pass = DATA["overtakes"]["IVE_LIN"]["t"]
-    T0 = T_pass - (5.6 - PLAY0) * SPEEDUP
+    T0 = T_pass - (MAP_IVE_PASS - PLAY0) * SPEEDUP
 
     def T_of(t):
         return T0 + max(0.0, t - PLAY0) * SPEEDUP
@@ -313,15 +317,16 @@ def scene_map():
     ts = [i / 30 for i in range(int(dur * 30) + 1)]
     layers = backdrop()
     layers += [
-        path(d, "#1A2332", 30, animate=[{"from": {"trimEnd": 0}, "duration": 1.3, "ease": "inOutCubic"}]),
-        path(d, "#DDE3EC", 7, animate=[{"from": {"trimEnd": 0}, "duration": 1.3, "ease": "inOutCubic"}]),
+        path(d, "#141B27", 30),
+        path(d, "#1A2332", 30, animate=[{"from": {"trimEnd": 0}, "duration": 0.9, "ease": "outCubic"}]),
+        path(d, "#DDE3EC", 7, animate=[{"from": {"trimEnd": 0}, "duration": 0.9, "ease": "outCubic"}]),
     ]
     # sector colouring on top (thin)
     sc = [RED, "#3D7BFF", YELLOW]
     for k in range(3):
         f0, f1 = race.SECTORS[k], race.SECTORS[k + 1]
         layers.append(path(track_d(xf, f0, f1, 2), sc[k], 3, opacity=0.9,
-                           animate=[{"from": {"trimEnd": 0}, "at": 0.9 + 0.15 * k, "duration": 0.6, "ease": "outCubic"}]))
+                           animate=[{"from": {"trimEnd": 0}, "at": 0.5 + 0.12 * k, "duration": 0.5, "ease": "outCubic"}]))
         px, py = track_point(f0, xf)
         layers.append(text(f"S{k + 1}", px, py - 34, 18, sc[k], MONO, 800, "center", enter={"preset": "popIn", "delay": 1.0 + 0.15 * k}))
     # start/finish
@@ -565,7 +570,7 @@ def replay_wipe_in():
 def scene_overtake():
     dur = 8.0
     T_pass = DATA["overtakes"]["OKA_MAR"]["t"]
-    t_pass = 3.6  # video time of the pass
+    t_pass = OT_PASS  # video time of the pass
     # piecewise playback: 1x, slow-mo 0.35x around the pass, 1x
     def T_of(t):
         a, b = t_pass - 0.9, t_pass + 1.0
@@ -576,7 +581,7 @@ def scene_overtake():
         return T_pass + 1.0 * 0.35 + (t - b)
 
     f_pass = frac_at("OKA", T_pass) % 1.0
-    scale = 3.0
+    scale = 4.2
     px, py = TRACK[sample_idx(f_pass)]
     xf = lambda x, y: (W / 2 + (x - px) * scale + 120, H / 2 + (y - py) * scale - 40)
     ts = [i / 60 for i in range(int(dur * 60) + 1)]
@@ -585,7 +590,7 @@ def scene_overtake():
     zoom_layers = []
     lo, hi = f_pass - 0.13, f_pass + 0.12
     d = track_d(xf, lo, hi, 1)
-    zoom_layers += [path(d, "#151D2B", 120), path(d, "#2A3446", 104), path(d, "#FFFFFF22", 2, stroke={"color": "#FFFFFF30", "width": 2, "dash": [30, 30]})]
+    zoom_layers += [path(d, "#151D2B", 168), path(d, "#2A3446", 148), path(d, "#FFFFFF22", 2, stroke={"color": "#FFFFFF30", "width": 2, "dash": [30, 30]})]
     # kerbs at the apex
     ax, ay = xf(*TRACK[sample_idx(0.215)])
     zoom_layers.append({"shape": "circle", "width": 30, "height": 30, "fill": RED, "x": r(ax), "y": r(ay), "opacity": 0.0})
@@ -593,11 +598,11 @@ def scene_overtake():
     for k, m in enumerate((150, 100, 50)):
         bf = 0.2 - m / race.TRACK_M - 0.012
         bx, by = xf(*TRACK[sample_idx(bf)])
-        zoom_layers.append(text(str(m), bx, by + 128, 22, MUTED, MONO, 800, "center"))
-        zoom_layers.append(rect(bx, by + 100, 3, 22, "#FFFFFF40", anchor="center"))
+        zoom_layers.append(text(str(m), bx, by + 150, 24, MUTED, MONO, 800, "center"))
+        zoom_layers.append(rect(bx, by + 118, 3, 24, "#FFFFFF40", anchor="center"))
     for code in ("MAR", "OKA"):
         pts = [(t, xf(*track_point(frac_at(code, T_of(t)), lambda a, b: (a, b)))) for t in ts]
-        off = 22 if code == "OKA" else -22  # lateral line: OKA on the inside
+        off = 30 if code == "OKA" else -30  # lateral line: OKA on the inside
         # offset perpendicular to the track direction
         pp = []
         for t, (x, y) in pts:
@@ -620,12 +625,12 @@ def scene_overtake():
         for k in range(6, 0, -1):
             lag = 0.07 * k
             gp = [(t, at_T(T_of(t) - lag)) for t in ts[::2]]
-            zoom_layers.append({"shape": "circle", "width": r(22 - 2.2 * k), "height": r(22 - 2.2 * k), "fill": COL[code],
+            zoom_layers.append({"shape": "circle", "width": r(30 - 3 * k), "height": r(30 - 3 * k), "fill": COL[code],
                                 "opacity": r(0.5 - 0.07 * k, 2), "x": r(gp[0][1][0]), "y": r(gp[0][1][1]),
                                 "animate": [kf({"x": [(t, p[0]) for t, p in gp], "y": [(t, p[1]) for t, p in gp]}, dur)]})
-        tag_y = -46 if code == "MAR" else 46
+        tag_y = -60 if code == "MAR" else 60
         car = [
-            {"shape": "rect", "width": 62, "height": 24, "radius": 8, "fill": COL[code], "stroke": {"color": "#05070B", "width": 3},
+            {"shape": "rect", "width": 86, "height": 34, "radius": 10, "fill": COL[code], "stroke": {"color": "#05070B", "width": 3},
              "glow": {"radius": 18, "intensity": 0.8, "color": COL[code]}},
             rect(0, tag_y, 62, 34, "#05070BDD", anchor="center", radius=4, stroke={"color": COL[code], "width": 2}),
             text(code, 0, tag_y, 20, TEXT, MONO, 800, "center"),
@@ -654,7 +659,13 @@ def scene_overtake():
                                           kf({"rotation": rots}, dur)]))
         zoom_layers.append(group(car[1:], width=0, height=0, x=r(pp[0][1][0]), y=r(pp[0][1][1]),
                                  animate=[kf({"x": [(t, p[0]) for t, p in pp], "y": [(t, p[1]) for t, p in pp]}, dur)]))
-    layers.append(group(zoom_layers, animate=[{"from": {"scale": 0.82}, "to": {"scale": 1.05}, "duration": dur, "ease": "inOutSine"}]))
+    for k in range(16):  # speed lines
+        yk = 60 + (k * 389) % 960
+        lw = 300 + (k * 137) % 500
+        layers.append(rect(W + 200, yk, lw, 2 + k % 3, "#FFFFFF", anchor="left", opacity=0.05 + 0.02 * (k % 3),
+                           animate=[{"from": {"x": W + 100 + (k * 211) % 900}, "to": {"x": -lw - 200}, "duration": 0.9 + 0.1 * (k % 5),
+                                     "at": 0.0, "ease": "linear", "repeat": -1}]))
+    layers.append(group(zoom_layers, animate=[{"from": {"scale": 0.95}, "to": {"scale": 1.12}, "duration": dur, "ease": "inOutSine"}]))
 
     # battle card (right): live speeds and gap
     def spd(code, t):
@@ -774,8 +785,8 @@ def scene_analysis():
     layers.append(rect(x0, y0, pw, 760, PANEL, opacity=0.9, enter={"preset": "fadeIn", "duration": 0.3}))
     layers.append(text("SECTOR TIMES", x0 + 32, y0 + 44, 22, TEXT, MONO, 800, "left", letterSpacing="0.1em"))
     for k2, (lab, c) in enumerate((("OVERALL BEST", PURPLE), ("PERSONAL BEST", GREEN), ("SLOWER", YELLOW))):
-        layers.append(rect(x0 + 300 + k2 * 160, y0 + 44, 12, 12, c, anchor="left"))
-        layers.append(text(lab, x0 + 318 + k2 * 160, y0 + 44, 13, MUTED, MONO, 700, "left"))
+        layers.append(rect(x0 + 270 + k2 * 175, y0 + 44, 12, 12, c, anchor="left"))
+        layers.append(text(lab, x0 + 288 + k2 * 175, y0 + 44, 13, MUTED, MONO, 700, "left"))
     for k in range(3):
         yk = y0 + 110 + k * 210
         layers.append(text(f"SECTOR {k + 1}", x0 + 32, yk, 18, MUTED, MONO, 700, "left", letterSpacing="0.12em",
@@ -809,8 +820,8 @@ def scene_analysis():
     layers.append({"component": "lineChart", "x": cx0 + 20, "y": y0 + 90, "anchor": "topLeft", "width": cw - 40, "height": 640,
                    "props": {"series": series, "names": ["OKA", "MAR", "IVE"], "labels": [f"L{l}" for l in laps],
                              "colors": [COL["OKA"], COL["MAR"], COL["IVE"]], "min": 91.0, "max": 92.8, "smooth": False,
-                             "dots": True, "area": False, "width": 4, "delay": 0.6, "duration": 3.2, "stagger": 0.25,
-                             "format": {"decimals": 3}, "fontSize": 18}})
+                             "dots": False, "area": False, "width": 5, "delay": 0.6, "duration": 3.2, "stagger": 0.25,
+                             "format": {"decimals": 3}, "fontSize": 22}})
     fl = DATA["fastest_lap"]
     return {"id": "analysis", "duration": dur, "background": BG,
             "transition": {"type": "slide", "direction": "up", "duration": 0.5, "ease": "inOutQuart"}, "layers": layers}
@@ -870,6 +881,31 @@ def build():
         "background": BG,
         "scenes": [scene_open(), scene_map(), onboard, scene_overtake(), scene_fastest(), scene_analysis(), scene_winner()],
     }
+    # scene start times (transitions overlap scenes)
+    starts, t = [], 0.0
+    for i, sc in enumerate(spec["scenes"]):
+        tr = sc.get("transition")
+        td = 0.0 if i == 0 or tr in (None, "cut") else (tr.get("duration", 0.5) if isinstance(tr, dict) else 0.5)
+        t -= td
+        starts.append(t)
+        t += sc["duration"]
+    S = dict(zip([sc["id"] for sc in spec["scenes"]], starts))
+    ive_pass = S["map"] + MAP_IVE_PASS
+    spec["audio"] = [
+        {"src": "score.mp3", "volume": 0.75, "fadeOut": 1.0},
+        {"sfx": "whoosh", "at": r(S["map"] - 0.05), "volume": 0.5},
+        {"sfx": "tick", "at": r(ive_pass), "volume": 0.6},
+        {"sfx": "pop", "at": r(ive_pass + 0.1), "volume": 0.4},
+        {"sfx": "swoosh", "at": r(S["onboard"] - 0.05), "volume": 0.45},
+        {"sfx": "pop", "at": r(S["onboard"] + 1.0), "volume": 0.35},
+        {"sfx": "whoosh", "at": r(S["overtake"] - 0.55), "volume": 0.6},
+        {"sfx": "swoosh", "at": r(S["overtake"] + 0.3), "volume": 0.45},
+        {"sfx": "impact", "at": r(S["overtake"] + OT_PASS), "volume": 0.55},
+        {"sfx": "swoosh", "at": r(S["overtake"] + OT_PASS + 0.15), "volume": 0.4},
+        {"sfx": "chime", "at": r(S["fastest"] + 0.1), "volume": 0.5},
+        {"sfx": "whoosh", "at": r(S["analysis"] - 0.1), "volume": 0.4},
+        {"sfx": "success", "at": r(S["winner"] + 0.4), "volume": 0.45},
+    ]
     with open(os.path.join(HERE, "spec.json"), "w") as f:
         json.dump(spec, f, separators=(",", ":"))
     print("wrote spec.json", os.path.getsize(os.path.join(HERE, "spec.json")) // 1024, "KB")

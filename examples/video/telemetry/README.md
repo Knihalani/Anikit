@@ -30,6 +30,7 @@ A broadcast-style data recap of the last laps of a fictional race: the Kessra Gr
 
 ```bash
 cargo build --release -p anikit-video
+python3 examples/video/telemetry/score.py         # synthesises the score → score.mp3 (~2 s; committed, so optional)
 python3 examples/video/telemetry/spec.py          # runs the simulation → race.json + spec.json (~1 s)
 target/release/anikit-video check  examples/video/telemetry/spec.json
 target/release/anikit-video sheet  examples/video/telemetry/spec.json -o sheet.png --cols 4 --rows 4 --width 480
@@ -37,15 +38,21 @@ target/release/anikit-video still  examples/video/telemetry/spec.json --at 42.3 
 target/release/anikit-video render examples/video/telemetry/spec.json -o telemetry.mp4
 ```
 
+## Sound
+
+`score.py` synthesises the music bed with numpy. It runs at 124 BPM in A minor:
+- four-on-the-floor kick, offbeat hats, a pulsing sub bass and a 16th-note arpeggio;
+- the sections follow the cuts: an intro swell, the groove, a half-time drone for the replay with a hit on the pass, a lift for the fastest lap, then a C-major resolve for the winner.
+
+The spec layers the engine's built-in SFX on top: whooshes on the wipes, a tick and pop on the tower swap, an impact on the pass, a chime for the fastest lap and a success cue for the winner. `spec.py` computes their times from the scene starts.
+
 ## Measured
 
-On a 4-core cloud VM (16 GB), using the default ak264 encoder:
+On a 4-core cloud VM (16 GB), with the default ak264 encoder and the AAC audio track:
 
 | | |
 |---|---|
-| frames | 2742 (185 deduped) |
-| render wall time | 26.2 s (105 fps); other runs took 25.2–26.6 s (103–109 fps) |
-| output | 16.4 MB MP4 (16 758 KB), 1920×1080, 60 fps, about 2.9 Mbit/s |
-| spec | 527 KB JSON, mostly car-position and trail keyframes |
-
-The film is silent. With an `audio` track, the render sometimes hangs in the ffmpeg mux step. Separately, about one full render in two hangs before the first frame, even without audio; re-running works. Both have been reported upstream.
+| frames | 2742 (265 deduped) |
+| render wall time | 16.4 s (167 fps); three earlier runs took 15.9–16.3 s (168–172 fps) |
+| output | 18.0 MB MP4 (18 472 KB), 1920×1080, 60 fps, about 3.3 Mbit/s |
+| spec | 542 KB JSON, mostly car-position and trail keyframes |
