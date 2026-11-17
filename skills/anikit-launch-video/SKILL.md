@@ -10,7 +10,7 @@ Open `docs 3d`, `docs particles`, `docs physics`, `docs shader` and `docs music`
 Companion files: `concepts.md` (how to find the film's idea) and `beats.md` (how to time picture to music).
 
 **There is no template.** No fixed act structure, tempo, length, palette or shot list. If the film you are
-planning would fit any product, it is wrong: design it from this product's own story.
+planning would fit any product, rethink it: design it from this product's own story.
 
 ## Principles (what makes launch films work)
 
@@ -33,7 +33,7 @@ planning would fit any product, it is wrong: design it from this product's own s
    brief, URL, README or screenshots: features, audience, brand colours and fonts, length, aspect (9:16 for
    Reels/TikTok/Shorts, 1:1 for feed) and mood. Default to 15–30 s at 16:9 only when nothing says otherwise.
 2. **Find the idea** (`concepts.md`): the product's nouns and verbs, its before → after, one motif. Write it down
-   in `concept.txt` next to the spec. Never reuse the concept or look of a previous video in the folder.
+   in `concept.txt` next to the spec. Look at what previous videos in the folder used, and go somewhere new.
 3. **Design the film's structure from that idea.** Decide what the viewer must understand, in what order, and where
    the turn is. Shapes that have worked, **as inspiration only** (don't pick one; invent the one this product needs):
    - one continuous, impossible camera move through the product's world;
@@ -64,46 +64,54 @@ planning would fit any product, it is wrong: design it from this product's own s
   timing, `beat`/`bar`/`level` expressions, and sfx (`whoosh`, `impact`, `riser`, `click`, `chime` …).
 - **Camera:** keyed 3D cameras, whips, snap zooms, shake, rack focus and real motion blur.
 
-## Quality checks (must pass before the final render; see BAR.md, "Third rejection")
+## Craft guidance: what works, what to avoid, and why
 
-- **The medium comes from the concept.** Well-designed 2D typography (a deliberate typeface, size, grid, kerning
-  and motion), UI, illustration, compositing and shader work are first-class. Use 3D only where the idea is
-  physical or material. The fix for flat, slide-like design is *design*, not an extra dimension.
-- **Never repeat a look.** Before designing, list what the previous films in this folder and in
-  `docs/video/skills/launch-examples/` used (medium, world, motif, materials, light, palette, music), then avoid
-  all of it. No default cyc, no chrome or lacquer type, no falling tiles or dominoes, and no cream paper with an
-  editorial serif and a red accent (Margin).
-- **Name the trend.** Write down which trend or stock look the piece resembles ("tasteful AI editorial",
-  "Apple-style product orbit", "SaaS gradient", "Y2K chrome" …). If you can name one, it fails: redesign it
-  (BAR.md, last section).
-- **Frames are rich with considered craft, not empty restraint.** Every frame has a clear subject, layered detail
-  (texture, secondary motion, typographic hierarchy, light) and something to look at the whole time it is on screen.
-  Sparse, mostly empty, static frames read as unfinished, not minimal.
-- **Copy is specific to this product.** Real nouns, numbers and actions from the brief: what it does, for whom, in
-  what situation. No aphorisms or slogans that could sit on any brand ("Your first draft is a mess", "Built to
-  last").
-- **Every word is crisp and instantly readable:**
-  - rendered at full resolution: 2D text layers, or `scene3d` at `"resolution": 1` and never `"quality": "draft"`
-    in a final;
-  - no DOF, motion blur, bloom or grain on words while they are being read;
-  - ≥ 4.5:1 contrast against what is behind them;
-  - minimum sizes: 16:9 ≥ 4.5 vh for body and ≥ 9 vh for hero words; 9:16 ≥ 5 vw and ≥ 11 vw; 1:1 ≥ 4.5 vw and ≥ 10 vw;
-  - held for at least the reading time, ≈ 0.3 s + 0.06 s per character, before any cut or exit.
-- **Motivated light:** a key, a fill and a rim that fit the world, with the key's direction readable. Check exposure
-  on stills at 100%: no clipped whites on type or product and no crushed blacks.
-- **Music suits the brand and the concept:**
-  - acoustic or organic first: `piano`, `acoustic`, `orchestral`, `cinematic`, `jazz`, `rock`, `pop` styles, or your
-    own `tracks` with piano, strings, cello, nylon or steel guitar, harp, marimba, kalimba, timpani, brass or GM drums;
-  - synths (`house`, `synthwave`, `tech`, `dnb`, `trap`; the `pad-*`, `lead-saw`, `supersaw`, `bass-808` instruments)
-    only when the concept is electronic. Sift used `house` and the user heard "too much synthesizer";
-  - `anikit-video music instruments` lists everything.
-- **The end logo owns the frame**, and every frame passes BAR (`docs/video/quality/BAR.md`), judged at 100% crop.
-- **Loop:** `anikit-video check s.json` → `still --at 0.3` (is frame 1 intriguing with no context?) → stills of every
-  word at 100% crop → `render --quality draft --scale 0.5` → `pace.py` for fast intents →
-  `critique s.json --render --pack rv/` (look at every image) → final `render` at full quality, then check frames
+The depth lives in `docs/video/taste/TASTE.md`: Type §1, Colour §2, Composition §3, Light §4, Motion §5, Editing §6,
+Sound §7, Concept §8, tells §9, the taste pass §10. These notes are the launch-specific lessons. They are advice
+with reasons, not bans: break one when the concept truly needs it, and say why in `concept.txt`.
+
+- **Medium.** *Works:* choosing the medium the idea lives in. A physical product or material idea earns ray-traced
+  3D; an idea about words earns typography; an idea about data earns simulation or instancing. *Avoid:* reaching for
+  3D (or for flat 2D) by default. *Why:* Sift forced every word into 3D and the user said "don't force 3D where it
+  doesn't fit"; a flat headline on a fill reads as a slide (BAR #1). Design solves both.
+- **Freshness.** *Works:* listing what previous films used (medium, world, motif, materials, light, palette, music;
+  see `docs/video/skills/launch-examples/`), then deliberately going somewhere else. *Avoid:* landing on looks the
+  user has rejected: tile storms and dominoes on a cyc, chrome or lacquer type (Sift); fogged terrain (Fernway);
+  cream paper with an editorial serif, a red accent and aphorism copy (Margin, "complete AI slop"). *Why:* each one
+  read as a template the second time.
+- **Trends.** *Works:* naming the trend the piece resembles ("tasteful AI editorial", "Apple-style product orbit",
+  "SaaS gradient", "Y2K chrome" …). If you can name it, rethink the piece until the idea, not the trend, sets the
+  look. *Why:* a recognisable trend is what makes a film read as generic (TASTE §9, BAR's last section).
+- **Density.** *Works:* frames with a clear subject plus layered detail (texture, secondary motion, typographic
+  hierarchy, light) and something to look at the whole time they are on screen. *Avoid:* sparse, static frames
+  presented as minimalism. *Why:* Margin's empty restraint read as unfinished.
+- **Copy.** *Works:* the brief's real nouns, numbers and actions: what it does, for whom, in what situation.
+  *Avoid:* aphorisms that could sit on any brand ("Your first draft is a mess", "Built to last"). *Why:* specific
+  copy is proof; generic copy is a tell.
+- **Legibility.** *Works:* every word rendered at full resolution (2D layers, or `scene3d` at `"resolution": 1` and
+  not `draft`), in focus with no motion blur, bloom or grain while it is read, about 4.5:1 contrast or more, at
+  sizes that hold on a phone (roughly ≥ 4.5 vh for body and ≥ 9 vh for hero words at 16:9; ≥ 5 and ≥ 11 vw at 9:16),
+  and held for about 0.3 s + 0.06 s per character. *Why:* the user found Sift's type "hard to read and low
+  resolution" (cause in Gotchas). Type sets the perceived quality of the whole film.
+- **Light.** *Works:* a motivated key, fill and rim that belong to the world, with the key's direction readable;
+  exposure checked on stills at 100%. *Avoid:* clipped whites on type or product, crushed blacks, flat ambient fill.
+  *Why:* the user said Sift's "lighting is off" (TASTE §4).
+- **Music.** *Works:* instrumentation chosen from the brand and the idea. Acoustic and organic palettes (the
+  `piano`, `acoustic`, `orchestral`, `cinematic`, `jazz`, `rock` and `pop` styles, or `tracks` with piano, strings,
+  guitars, harp, marimba, brass or GM drums) suit most products; synth styles (`house`, `synthwave`, `tech`, `dnb`,
+  `trap`) suit electronic ideas. *Avoid:* a synth bed by default. *Why:* Sift used `house` and the user heard "too
+  much synthesizer". `anikit-video music instruments` lists everything (TASTE §7).
+- **Ending.** *Works:* the logo owning the frame as the idea resolves. *Avoid:* a small wordmark in a corner.
+
+## Checks (process)
+
+- **The loop:** `anikit-video check s.json` → `still --at 0.3` (is frame 1 intriguing with no context?) → stills of
+  every word at 100% crop → `render --quality draft --scale 0.5` → `pace.py` for fast intents →
+  `critique s.json --render --pack rv/` (look at every image) → final `render` at full quality, then look at frames
   from the MP4 itself at 100%.
-- Then ask: can you name the idea from the strip alone? Would this film fit a different product? (If yes, redesign
-  it.) Would the brand's team ship it?
+- **The taste pass** (TASTE §10) and BAR.md before showing anyone.
+- **Ask yourself:** can you name the idea from the strip alone? Would this film fit a different product (if yes,
+  rethink it)? Which trend does it resemble? Would the brand's team ship it?
 
 ## Gotchas
 

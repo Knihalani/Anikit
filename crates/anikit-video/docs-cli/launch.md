@@ -32,10 +32,10 @@ Two deliberately different fragments (not starting points):
       "animate": [ { "from": { "scaleX": 0 }, "duration": 0.6, "ease": "inOutExpo" } ] } ] } ] }
 ```
 
-Quality checks (BAR.md, "Third rejection"): the medium comes from the concept; 2D typography is first-class, 3D only
-where the idea is physical · never repeat a previous film's medium, world, motif, materials or music · every word
-at full resolution (no scene3d `resolution` < 1 or `draft` in finals; no DOF, blur, bloom or grain on words being
-read), ≥ 4.5:1 contrast, held ≥ 0.3 s + 0.06 s per character · motivated key, fill and rim, with exposure checked
-at 100% · acoustic or organic music first, synths only for electronic concepts · the logo owns the end ·
-`check` → stills at 100% → draft → `pace.py` (fast intents) → `critique --render --pack rv/` → final render.
+What works and why (advice, not bans; depth in docs/video/taste/TASTE.md): choose the medium the idea lives in
+(3D for physical ideas, type for word ideas) · go somewhere previous films didn't · if you can name the trend it
+resembles, rethink it · rich, layered frames over empty restraint · copy from the brief's real nouns, not aphorisms
+· crisp type (full resolution, in focus, ~4.5:1, held ~0.3 s + 0.06 s/char) · motivated light checked at 100% ·
+music chosen from the brand (acoustic for most, synths for electronic ideas) · the logo owns the end.
+Checks: `check` → stills at 100% → draft → `pace.py` (fast intents) → `critique --render --pack rv/` → TASTE §10 → final.
 Examples (rejected by the user, kept as cautionary examples): docs/video/skills/launch-examples/.
