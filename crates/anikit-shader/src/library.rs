@@ -51,6 +51,7 @@ lib! {
     "sdf-scene", Image, 303, "Portals at golden hour: concrete frames down a reflecting pool, backlit sun, soft shadows, AO, haze, slow dolly.";
     "liquid-chrome", Image, 286, "Liquid metal: a heavy mass with drops that merge and tear away, mirror chrome in a studio or night sky; cut-out with background = 0.";
     "aurora", Image, 968, "Aurora curtains over a ridge, mirrored in a lake. Heavy; lake = 0 + lake-mirror is faster.";
+    "hero", Image, 69, "Product shot: one object (torus, cube, pill, gem, sphere, twisted bar) on a glossy studio floor, plastic or metal.";
     "caustics", Image, 55, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
     "flow-ink", Image, 161, "Two inks marbled by a curl-noise flow field on paper.";
     "turing", Image, 156, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
