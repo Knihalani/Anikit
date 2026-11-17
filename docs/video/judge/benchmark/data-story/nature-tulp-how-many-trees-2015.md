@@ -6,7 +6,7 @@ studio: "Nature Video (data visualization: Jan Willem Tulp; art direction: Kelly
 client: "Nature"
 year: 2015
 url: https://www.youtube.com/watch?v=jqdOkXQngw8
-alt_urls: [https://informationisbeautifulawards.com/showcase/772-how-many-trees-are-there-in-the-world]
+alt_urls: ["https://informationisbeautifulawards.com/showcase/772-how-many-trees-are-there-in-the-world"]
 length_s: null
 verified: oembed
 aspect: "16:9"
@@ -25,6 +25,7 @@ stills:
   - https://i.ytimg.com/vi/jqdOkXQngw8/hq1.jpg
   - https://i.ytimg.com/vi/jqdOkXQngw8/hq2.jpg
   - https://i.ytimg.com/vi/jqdOkXQngw8/hq3.jpg
+  - https://tulpinteractive.com/img/trillions-of-trees.png
 measured: null
 ---
 

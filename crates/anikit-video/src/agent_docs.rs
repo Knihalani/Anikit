@@ -27,6 +27,7 @@ pub const PAGES: &[(&str, &str)] = &[
     ("script", include_str!("../docs-cli/script.md")),
     ("draw", include_str!("../docs-cli/draw.md")),
     ("mograph", include_str!("../docs-cli/mograph.md")),
+    ("type", include_str!("../docs-cli/type.md")),
     ("graphic", include_str!("../docs-cli/graphic.md")),
     ("launch", include_str!("../docs-cli/launch.md")),
     ("analyze", include_str!("../docs-cli/analyze.md")),
@@ -45,11 +46,15 @@ pub const RECIPES: &[(&str, &str)] = &[
     ("particle-ignite", include_str!("../recipes/particle-ignite.json")),
     ("domino-cascade", include_str!("../recipes/domino-cascade.json")),
     ("raymarch-world", include_str!("../recipes/raymarch-world.json")),
+    ("swiss-grid-poster", include_str!("../recipes/swiss-grid-poster.json")),
+    ("riso-overprint", include_str!("../recipes/riso-overprint.json")),
+    ("torn-collage", include_str!("../recipes/torn-collage.json")),
+    ("op-art-field", include_str!("../recipes/op-art-field.json")),
 ];
 
 const ALIASES: &[(&str, &str)] = &[
     ("scene3d", "3d"), ("ink", "fluid"), ("smoke", "fluid"), ("fire", "fluid"), ("scene-3d", "3d"), ("three", "3d"), ("shaders", "shader"), ("glsl", "shader"), ("audio", "music"),
-    ("sound", "music"), ("sfx", "music"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("motion-graphics", "mograph"), ("repeater", "mograph"), ("trails", "mograph"), ("echo", "mograph"), ("grid", "graphic"), ("pattern", "graphic"), ("patterns", "graphic"), ("halftone", "graphic"), ("duotone", "graphic"), ("print", "graphic"), ("graphic-design", "graphic"), ("layout", "graphic"), ("text", "primitives"),
+    ("sound", "music"), ("sfx", "music"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("motion-graphics", "mograph"), ("typography", "type"), ("fonts", "type"), ("font", "type"), ("axes", "type"), ("variable", "type"), ("features", "type"), ("opentype", "type"), ("repeater", "mograph"), ("trails", "mograph"), ("echo", "mograph"), ("grid", "graphic"), ("pattern", "graphic"), ("patterns", "graphic"), ("halftone", "graphic"), ("duotone", "graphic"), ("print", "graphic"), ("graphic-design", "graphic"), ("layout", "graphic"), ("text", "primitives"),
     ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"),
     ("review", "critique"), ("pace", "pacing"), ("index", "start"), ("anything", "make-anything"),
     ("launch-video", "launch"), ("product", "launch"), ("announcement", "launch"),
@@ -76,7 +81,7 @@ pub fn docs(topic: Option<&str>) -> Result<String, String> {
     }
     if t == "essentials" || t == "all" {
         // Everything a typical piece needs in one read (about 13k characters).
-        let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique).\n\n");
+        let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique, graphic: grids, patterns, print treatments).\n\n");
         for p in ["primitives", "animation", "expressions", "compositions", "shader"] {
             if let Some((_, md)) = PAGES.iter().find(|(n, _)| *n == p) {
                 s += md;

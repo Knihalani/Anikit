@@ -14,6 +14,7 @@ pub mod color;
 pub mod fonts;
 pub mod kinetic;
 pub mod layout;
+pub mod library;
 
 pub use color::Color;
 pub use fonts::{Face, FontStore};

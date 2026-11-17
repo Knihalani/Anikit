@@ -1,0 +1,7 @@
+{ "size": "720p", "scenes": [ { "layers": [
+  { "id": "title", "text": "Relative layout", "style": "title", "anchor": "topLeft", "x": 80, "y": 120 },
+  { "id": "sub", "text": "Each block reads the box of the one above it", "style": "subtitle", "anchor": "topLeft", "x": "=title.left", "y": "=title.bottom + 16" },
+  { "id": "card", "shape": "rect", "radius": 18, "fill": "$surface", "anchor": "topLeft", "x": "=sub.left", "y": "=sub.bottom + 48", "width": 360, "height": 200 },
+  { "id": "card-2", "shape": "rect", "radius": 18, "fill": "$accent", "anchor": "topLeft", "x": "=card.right + 32", "y": "=card.top", "width": "=card.width / 2", "height": "=card.height" },
+  { "text": "=card-2.right", "style": "caption", "anchor": "topLeft", "x": "=card-2.left", "y": "=card-2.bottom + 12" }
+] } ] }

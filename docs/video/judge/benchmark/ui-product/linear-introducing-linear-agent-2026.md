@@ -25,6 +25,7 @@ stills:
   - https://i.ytimg.com/vi/mRql2VJ99gM/hq1.jpg
   - https://i.ytimg.com/vi/mRql2VJ99gM/hq2.jpg
   - https://i.ytimg.com/vi/mRql2VJ99gM/hq3.jpg
+  - https://webassets.linear.app/images/ornj730p/production/7f2d7219355b015e6b32632ae3827b2e0f50aa8e-1920x960.png
 measured: null
 ---
 

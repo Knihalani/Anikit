@@ -6,7 +6,7 @@ studio: "Robertino Zambrano (director), KAPWA Studioworks (Sydney)"
 client: "TED-Ed (There's a Poem for That)"
 year: 2019
 url: https://www.youtube.com/watch?v=84ZcT1jDCjk
-alt_urls: [https://ed.ted.com/lessons/accents-by-denice-frohman, https://www.annecyfestival.com/about/archives/2019/award-winners]
+alt_urls: ["https://ed.ted.com/lessons/accents-by-denice-frohman", "https://www.annecyfestival.com/about/archives/2019/award-winners"]
 length_s: 153
 verified: oembed
 aspect: "16:9"

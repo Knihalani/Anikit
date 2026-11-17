@@ -6,7 +6,7 @@ studio: "Blender Studio (director: Hjalti Hjálmarsson)"
 client: "Self-initiated (Blender Studio Open Movie #14)"
 year: 2022
 url: https://www.youtube.com/watch?v=UXqq0ZvbOnk
-alt_urls: [https://studio.blender.org/films/charge/, https://studio.blender.org/projects/charge/]
+alt_urls: ["https://studio.blender.org/films/charge/", "https://studio.blender.org/projects/charge/"]
 length_s: null                      # official page: "3-minutes-long"; YouTube oEmbed gives no duration
 verified: oembed
 aspect: "16:9"                      # est.; check on analysis
@@ -25,6 +25,8 @@ stills:
   - https://i.ytimg.com/vi/UXqq0ZvbOnk/hq1.jpg
   - https://i.ytimg.com/vi/UXqq0ZvbOnk/hq2.jpg
   - https://i.ytimg.com/vi/UXqq0ZvbOnk/hq3.jpg
+  - https://studio.blender.org/files/public/header/project/f6/76/f67601c6f69b2d7f65a5e5d97e73c4d7.png
+  - https://studio.blender.org/files/public/header/blog/d5/65/d565eedccd5967feda7081ecd3d6f141.png
 measured: null
 ---
 
