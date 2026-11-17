@@ -1313,6 +1313,23 @@ impl C<'_> {
         } else if let Some(d) = &l.duration {
             end = start + self.time_raw(d, &format!("{path}.duration"));
         }
+        let start = match &l.frames {
+            Some(f) => {
+                if l.start.is_some() || l.end.is_some() || l.duration.is_some() {
+                    self.d.push(Diagnostic::warning(format!("{path}.frames"), "'frames' replaces start/end/duration; drop one of them"));
+                }
+                let [a, b] = match f {
+                    spec::Frames::One(a) => [*a, a + 1.0],
+                    spec::Frames::Range(r) => *r,
+                };
+                if b <= a {
+                    self.d.push(Diagnostic::error(format!("{path}.frames"), format!("empty range [{a}, {b}): the end frame is excluded, so use [{a}, {}] for one frame", a + 1.0)));
+                }
+                end = pc.t0 + (b / self.fps as f64) as f32;
+                pc.t0 + (a / self.fps as f64) as f32
+            }
+            None => start,
+        };
         if start >= self.scene_dur && self.scene_dur < 1e5 && pc.t0 == 0.0 {
             self.d.push(Diagnostic::warning(
                 format!("{path}.start"),
@@ -3499,6 +3516,7 @@ impl C<'_> {
         self.shader_layer_inner(l, path, gw, gh, start, end, n)
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn shader_layer_inner(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>, start: f32, end: f32, n: &mut Node) -> Option<(Kind, [f32; 2])> {
         use super::shader::{ChannelC, ShaderC, UNIFORM_SLOTS};
         let (shader, text, vals) = self.compile_shader(l.shader.as_deref(), l.src.as_deref(), l.uniforms.as_ref(), path)?;

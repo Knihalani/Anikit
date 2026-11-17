@@ -538,6 +538,14 @@ pub enum Scale {
     Xy([Num; 2]),
 }
 
+/// `frames`: one frame number, or a half-open range `[first, end)` (frames into the scene).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum Frames {
+    One(f64),
+    Range([f64; 2]),
+}
+
 /// A layer. One flat type for every kind; `type` picks the kind (and is
 /// inferred when obvious). Keys that don't apply to the kind are warned about.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
@@ -641,6 +649,8 @@ pub struct Layer {
     pub start: Option<Num>,
     pub end: Option<Num>,
     pub duration: Option<Num>,
+    /// Timing in frames instead of seconds: `"frames": 12` (only frame 12) or `[12, 18]` (frames 12–17).
+    pub frames: Option<Frames>,
     pub enter: Option<Preset>,
     pub exit: Option<Preset>,
     /// Repeating motion: `float`, `pulse`, `spin`, `wiggle`, `breathe`, `blink`

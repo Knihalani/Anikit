@@ -599,3 +599,20 @@ fn relative_layout_refers_to_earlier_siblings() {
     let e = errors(r##"{ "scenes": [ { "layers": [ { "id": "card", "shape": "rect" }, { "text": "x", "y": "=crad.bottom + 10" } ] } ] }"##);
     assert!(e.iter().any(|m| m.contains("crad") && m.contains("card")), "{e:?}");
 }
+
+#[test]
+fn one_frame_layers_show_on_exactly_one_frame() {
+    // `start + 1/fps` used to land a hair after the next frame time in f32, showing the layer twice.
+    let ev = build(r##"{ "fps": 30, "scenes": [ { "duration": 2, "layers": [
+        { "shape": "rect", "start": 0.7, "duration": 0.0333333 },
+        { "shape": "rect", "start": "=7/30", "end": "=8/30" } ] } ] }"##);
+    let shown = |k: u32| ev.eval(k as f32 / 30.0).ops.iter().filter(|o| matches!(o, Op::RoundRect { .. })).count();
+    let on: Vec<u32> = (0..60).filter(|&k| shown(k) > 0).collect();
+    assert_eq!(on, vec![7, 21]);
+    // Frame timing: one frame, or a half-open range.
+    let ev = build(r##"{ "fps": 10, "scenes": [ { "layers": [ { "shape": "rect", "frames": 3 }, { "shape": "circle", "frames": [4, 6] } ] } ] }"##);
+    let kinds = |k: u32| ev.eval(k as f32 / 10.0).ops.iter().filter(|o| matches!(o, Op::RoundRect { .. } | Op::Fill { .. })).count();
+    assert_eq!((0..8).map(kinds).collect::<Vec<_>>(), vec![0, 0, 0, 1, 1, 1, 0, 0]);
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "frames": [4, 4] } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("[4, 5]")), "{e:?}");
+}
