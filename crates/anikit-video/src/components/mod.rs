@@ -57,7 +57,7 @@ pub mod card_stack;
 #[cfg(test)]
 pub(crate) mod preview;
 
-pub use style::{set_draft, Theme};
+pub use style::{reference, set_draft, set_reference, Theme};
 pub use text::{Face, TextStyle};
 
 /// What a component can ask the engine for while evaluating.
@@ -245,6 +245,7 @@ kinds! {
     "lens-flare" => rays::LensFlare, "Anamorphic lens flare: streak, halo and ghosts along the axis through the centre; `at` can travel a path.", r##"{"at":[0.3,0.3]}"##;
     // 3D
     "model" => three::Model, "Product spin/orbit of a 3D primitive (rounded box, sphere, torus, knot, extruded logo).", r##"{"shape":"torus"}"##;
+    "scene-3d" => crate::scene3d::Scene3d, "Ray-traced studio product shot: chrome wordmark, primitives, glossy floor, soft shadows, depth of field, motion blur and bloom.", r##"{"text":"ANIKIT","quality":"draft"}"##;
     "text-3d" => text3d::Text3d, "Extruded, bevelled chrome 3D text or logo whose letters rise in, with studio lighting, sway and a glint sweep.", r##"{"text":"ANIKIT"}"##;
     "globe" => globe::Globe, "Rotating dot-matrix globe with glowing great-circle arcs, travelling pulses, pulsing markers and an atmosphere.", r##"{"arcs":[[37.8,-122.4,51.5,-0.1]]}"##;
     // Transitions
@@ -353,6 +354,7 @@ pub fn canonical(kind: &str) -> String {
         "fx.snow" => "snow",
         "fx.dust" => "dust",
         "3d" | "3d.model" => "model",
+        "3d.scene" | "scene" => "scene-3d",
         "code-block" | "editor" => "code",
         "shell" | "console" => "terminal",
         "testimonial" => "quote",

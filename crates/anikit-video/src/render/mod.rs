@@ -87,6 +87,13 @@ pub enum Quality {
     Standard,
     /// As standard (reserved for heavier AA and filtering).
     High,
+    /// Ground truth for the quality harness (`qbench`, `--quality reference`):
+    /// every speed-only approximation off. Glyph runs and scaled images at their
+    /// exact sub-pixel positions (no quarter-pixel snapping, no caches), card
+    /// shadows through the general blur (no sprites), blurs at full resolution
+    /// (no decimation), no layer cache, no fused YUV or incremental regions, and
+    /// the most motion-blur samples. Slow; never the default.
+    Reference,
 }
 
 /// A rendered frame: premultiplied RGBA8, `width × height`, tightly packed.
@@ -136,6 +143,8 @@ struct State {
     resample_buf: Vec<u8>,
     /// Smooth cubic upscaling for enlarged images (standard quality and up).
     cubic: bool,
+    /// [`Quality::Reference`]: no speed-only approximations.
+    reference: bool,
     up: upscale::Upscaler,
     /// Frame-space position of the current context's pixel (0, 0).
     org: (i32, i32),
@@ -222,6 +231,7 @@ impl Renderer {
                 seen: HashMap::new(),
                 resample_buf: Vec::new(),
                 cubic: true,
+                reference: false,
                 up: upscale::Upscaler::cubic(),
                 org: (0, 0),
                 frame_size: (1, 1),
@@ -283,6 +293,11 @@ impl Renderer {
         &self.frame
     }
 
+    /// The current speed/quality trade-off.
+    pub fn quality(&self) -> Quality {
+        self.quality
+    }
+
     /// Speed/quality trade-off for the following frames (default [`Quality::Standard`]).
     pub fn set_quality(&mut self, q: Quality) {
         if q != self.quality {
@@ -294,6 +309,8 @@ impl Renderer {
         self.upscaler.cubic = cubic;
         self.st.cubic = cubic;
         self.st.up.cubic = cubic;
+        self.st.reference = q == Quality::Reference;
+        self.st.filters.set_exact(q == Quality::Reference);
     }
 
     /// Film look for the following frames (`None` = off). `frame_index` seeds
@@ -623,7 +640,7 @@ impl Renderer {
     /// produced directly from upscaled rows, and the RGBA [`Self::frame`] is not
     /// fully updated: call [`Self::render`] when you need the RGBA pixels.
     pub fn render_yuv(&mut self, list: &DisplayList, out: &mut YuvFrame) {
-        if self.post.is_some() {
+        if self.post.is_some() || self.st.reference {
             self.render(list);
             rgba_to_yuv420(&self.frame, out);
             return;
@@ -722,7 +739,7 @@ fn draw_ops_culled(st: &mut State, assets: &View, ctx: &mut RenderContext, ops: 
                 if misses(start + 1, end) {
                     continue;
                 }
-                if let [dl::Filter::Shadow { dx, dy, blur, color: sc }] = filters.as_slice() {
+                if let (false, [dl::Filter::Shadow { dx, dy, blur, color: sc }]) = (st.reference, filters.as_slice()) {
                     if let Some(card) = card_shadow(inner, base) {
                         let trivial = opacity >= 1.0 && *blend == Blend::Normal && clip.is_none();
                         if !trivial {
@@ -842,7 +859,29 @@ fn draw_cached_run(
     ty: f64,
 ) -> bool {
     let (fx, fy) = (tx.floor(), ty.floor());
+    if st.reference {
+        // Exact sub-pixel phase, same coverage shaping, nothing cached.
+        let mut run = std::mem::take(&mut st.run);
+        if !st.glyphs.run_path(font_id, font, size, glyphs, &mut run) {
+            st.run = run;
+            return false;
+        }
+        let ok = run.is_empty() || {
+            let (ox, oy) = (tx - fx, ty - fy);
+            let bb = run.bounding_box();
+            let (x0, y0) = ((bb.x0 + ox).floor() - 1.0, (bb.y0 + oy).floor() - 1.0);
+            let (w, h) = ((bb.x1 + ox).ceil() + 1.0 - x0, (bb.y1 + oy).ceil() + 1.0 - y0);
+            w <= 4096.0 && h <= 4096.0 && {
+                let pix = text_bitmap(st, &run, c, ox - x0, oy - y0, w as u16, h as u16);
+                blit(ctx, Arc::new(pix), fx + x0, fy + y0, 1.0);
+                true
+            }
+        };
+        st.run = run;
+        return ok;
+    }
     let (qx, qy) = (((tx - fx) * 4.0).round() as u8, ((ty - fy) * 4.0).round() as u8);
+    let (ox, oy) = (qx as f64 / 4.0, qy as f64 / 4.0);
     let key = {
         use std::hash::{Hash, Hasher};
         let mut hs = std::collections::hash_map::DefaultHasher::new();
@@ -864,7 +903,6 @@ fn draw_cached_run(
                 st.run = run;
                 return false;
             }
-            let (ox, oy) = (qx as f64 / 4.0, qy as f64 / 4.0);
             if run.is_empty() {
                 st.run = run;
                 return true;
@@ -876,22 +914,8 @@ fn draw_cached_run(
                 st.run = run;
                 return false;
             }
-            let (w, h) = (w as u16, h as u16);
-            let mut sub = st.pool.pop().unwrap_or_else(|| RenderContext::new(w, h));
-            sub.reset_and_resize(w, h);
-            sub.set_paint(color(c));
-            sub.set_fill_rule(Fill::NonZero);
-            sub.set_transform(Affine::translate((ox - x0, oy - y0)));
-            sub.fill_path(&run);
-            sub.flush();
-            let mut pm = st.pix_pool.pop().unwrap_or_else(|| Pixmap::new(w, h));
-            pm.resize(w, h);
-            sub.render_with(&mut pm, &mut st.res, RasterizerSettings::default());
-            text_gamma(&mut pm, c);
-            sub.reset();
-            st.pool.push(sub);
+            let pm = text_bitmap(st, &run, c, ox - x0, oy - y0, w as u16, h as u16);
             st.run = run;
-            pm.set_may_have_transparency(true);
             let pix = Arc::new(pm);
             let (x0, y0) = (x0 as i32, y0 as i32);
             st.text.insert(key, CacheEntry { pix: pix.clone(), x: x0, y: y0, last_used: now });
@@ -900,6 +924,26 @@ fn draw_cached_run(
     };
     blit(ctx, pix, fx + x0 as f64, fy + y0 as f64, 1.0);
     true
+}
+
+/// Rasterise a glyph run (already a path) into a `w × h` bitmap at offset
+/// `(dx, dy)`, with gamma-aware coverage.
+fn text_bitmap(st: &mut State, run: &BezPath, c: Rgba, dx: f64, dy: f64, w: u16, h: u16) -> Pixmap {
+    let mut sub = st.pool.pop().unwrap_or_else(|| RenderContext::new(w, h));
+    sub.reset_and_resize(w, h);
+    sub.set_paint(color(c));
+    sub.set_fill_rule(Fill::NonZero);
+    sub.set_transform(Affine::translate((dx, dy)));
+    sub.fill_path(run);
+    sub.flush();
+    let mut pm = st.pix_pool.pop().unwrap_or_else(|| Pixmap::new(w, h));
+    pm.resize(w, h);
+    sub.render_with(&mut pm, &mut st.res, RasterizerSettings::default());
+    text_gamma(&mut pm, c);
+    sub.reset();
+    st.pool.push(sub);
+    pm.set_may_have_transparency(true);
+    pm
 }
 
 /// Axis-aligned images: 1:1 at integer positions blit directly; scaled ones
@@ -919,7 +963,8 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
         blit(ctx, pix.clone(), x0, y0, alpha);
         return true;
     }
-    let q = |v: f64| (v * 4.0).round() / 4.0;
+    let reference = st.reference;
+    let q = |v: f64| if reference { v } else { (v * 4.0).round() / 4.0 };
     let (fx, fy) = (x0.floor(), y0.floor());
     let (px, py, qw, qh) = (q(x0 - fx), q(y0 - fy), q(ew), q(eh));
     if qw < 1.0 || qh < 1.0 || qw > 8192.0 || qh > 8192.0 {
@@ -932,7 +977,7 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
         hs.finish()
     };
     let now = st.frame_no;
-    if let Some(e) = st.scaled.get_mut(&key) {
+    if let (false, Some(e)) = (reference, st.scaled.get_mut(&key)) {
         e.last_used = now;
         let p = e.pix.clone();
         blit(ctx, p, fx, fy, alpha);
@@ -942,7 +987,7 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
     // Enlarged images (low-res fields, small textures) get the smooth cubic
     // filter at standard quality, every time; others are resampled once they repeat.
     let enlarge = st.cubic && (qw >= 2.0 * iw || qh >= 2.0 * ih);
-    let seen_last = st.seen.insert(key, now).is_some_and(|f| f + 1 >= now);
+    let seen_last = reference || st.seen.insert(key, now).is_some_and(|f| f + 1 >= now);
     if !seen_last && !enlarge {
         return false;
     }
@@ -978,7 +1023,9 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
     pm.data_as_u8_slice_mut().copy_from_slice(&st.resample_buf[..ow * oh * 4]);
     pm.recompute_may_have_transparency();
     let p = Arc::new(pm);
-    st.scaled.insert(key, CacheEntry { pix: p.clone(), x: 0, y: 0, last_used: now });
+    if !reference {
+        st.scaled.insert(key, CacheEntry { pix: p.clone(), x: 0, y: 0, last_used: now });
+    }
     blit(ctx, p, fx, fy, alpha);
     true
 }
@@ -1203,6 +1250,7 @@ fn draw_offscreen(
         let frame_base = Affine::translate((org.0 as f64, org.1 as f64)) * base;
         incremental::auto_layer_key(inner, filters, &frame_base)
     });
+    let cache_key = cache_key.filter(|_| !st.reference);
     let cached = cache_key.and_then(|k| st.cache.get_mut(&k)).map(|e| {
         e.last_used = now;
         (e.pix.clone(), e.x - org.0, e.y - org.1)

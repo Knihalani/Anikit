@@ -14,6 +14,8 @@ pub struct BlurScratch {
     c: Vec<u8>,
     sums16: Vec<u16>,
     sums32: Vec<u32>,
+    /// Reference quality: no decimation (only as much as the u16 box sums need).
+    pub exact: bool,
 }
 
 /// Box radii approximating a Gaussian of std-dev `sigma` with three passes.
@@ -167,8 +169,8 @@ fn transpose<const B: usize>(src: &[u8], dst: &mut Vec<u8>, w: usize, h: usize) 
 }
 
 /// Decimation factor for a blur of std-dev `sigma`.
-fn factor(sigma: f32) -> usize {
-    let mut f = if sigma < 4.0 {
+fn factor(sigma: f32, exact: bool) -> usize {
+    let mut f = if sigma < 4.0 || exact {
         1
     } else if sigma < 8.0 {
         2
@@ -191,7 +193,7 @@ pub fn blur<const B: usize>(buf: &mut [u8], w: usize, h: usize, sigma: f32, s: &
         return;
     }
     let sigma = sigma.min(1000.0);
-    let f = factor(sigma).min(w.max(1)).min(h.max(1));
+    let f = factor(sigma, s.exact).min(w.max(1)).min(h.max(1));
     let radii = box_radii(sigma / f as f32).map(|r| r.min(127));
     // 1. decimate rows (y).
     let hs = down_rows(buf, &mut s.a, w * B, h, f, &mut s.sums32);

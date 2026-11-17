@@ -487,6 +487,29 @@ An anamorphic flare: hot core, halo, faint rainbow ring, a blue horizontal strea
 
 ## 3D
 
+### `scene3d`: ray-traced studio product shot (lookdev, phase 1)
+A software ray tracer for premium 3D: a chrome (or `gold`, `black`) extruded wordmark with a 10-segment bevel, optional primitives (glossy black sphere, gold ring, chrome and satin spheres), a glossy reflective floor, and a slow camera move with a rack focus. Kind names: `scene3d`, `scene-3d`, `3d.scene`. Example: `examples/video/lookdev/chrome.json`.
+
+- **Shading:** GGX/Schlick split-sum specular against an analytic HDR studio (`env`: `studio`, `night`, `neon`, `sunset`), whose softboxes and strips are pre-filtered per roughness by widening their edges. Reflections of the scene are traced (chrome reflects the floor and the other objects, up to 3 bounces).
+- **Shadows:** the key softbox is an area light sampled with shadow rays; AO is traced. On the floor both are baked once into a smooth texture.
+- **Floor:** a lacquer with Fresnel reflections, blurred by the distance to what they reflect. It fades into a backdrop with a soft glow.
+- **Image:** 4–16 adaptive samples per pixel, resolved in tone-mapped space; depth of field (scatter-as-gather), per-pixel motion blur from motion vectors, a bloom pyramid, an ACES tone map, a vignette and dithered sRGB.
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `text` | `ANIKIT` | |
+| `font`, `weight` | `Inter`, `800` | |
+| `env` | `studio` | `studio`, `night`, `neon`, `sunset`. |
+| `material` | `chrome` | `chrome`, `gold`, `black`. |
+| `primitives` | `true` | The four supporting objects. |
+| `camera` | lookdev move | Keys `[{ "at": 0, "pos": [x, y, z], "target": [x, y, z], "fov": 30, "focus": 7.9 }]`; Catmull-Rom between keys, eased overall; `focus` `null` = the target. |
+| `aperture` | `26` | Blur radius (px at 1080p) for points at infinity. |
+| `shutter` | `0.5` | Motion-blur shutter (0.5 = 180°). |
+| `bloom`, `exposure` | `0.06`, `1` | |
+| `quality` | `standard` | `draft`, `standard`, `high`. |
+
+**Cost:** about 6 s per 1920×1080 frame on 4 cores at `standard`. It is built for quality, not speed; use `draft` for previews.
+
 ### `model`: product spin and orbit
 Rendered with `anikit-core`'s CPU rasteriser at native resolution, supersampled 2× for anti-aliasing, with studio lighting and a transparent background.
 
