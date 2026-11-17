@@ -28,3 +28,7 @@
 - **Dashes**: `stroke.dash` + `dashOffset` (animatable: `"=t*-60"` marches) — combine with `trimEnd` for write-ons.
 - **Easing**: any name (`outExpo`, `inOutBack`, `elastic.out(1, 0.3)`, `steps(4)`), `"ease": [x1, y1, x2, y2]` (cubic-bezier),
   `"spring": {"stiffness": 300, "damping": 18}`; per keyframe: `"keyframes": {"x": [[0, 200], [0.5, 960, "outBack"], [1, 1700, [0.9, 0, 0.1, 1]]]}` (the ease *into* that key).
+- **Text animator** (AE range selector) on plain text: `"animator": {"by": "char|word|line", "y": 60, "opacity": 0, "rotation": 20, "scale": 0.6,
+  "blur": 6, "color": "#f36", "smooth": 0.3, "order": "forward|reverse|center|random", "seed": 7, "duration": 1.2, "delay": 0.2, "ease": "outExpo"}`.
+  Units in the range take the props; with no `offset` the range sweeps away (a reveal). Drive it yourself with `start`/`end`/`offset`
+  (0..1, or animate `rangeStart`/`rangeEnd`/`rangeOffset`): `"offset": "=sin(t*2)"` makes a travelling wave.

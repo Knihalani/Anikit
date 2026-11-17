@@ -62,8 +62,12 @@ pub(crate) mod prop {
     /// Text-on-a-path shift (px) and stroke dash offset (px).
     pub const PATH_OFF: usize = 33;
     pub const DASH_OFF: usize = 34;
+    /// Text animator range selector: start, end, offset (fractions of the units).
+    pub const RANGE0: usize = 35;
+    pub const RANGE1: usize = 36;
+    pub const RANGE_OFF: usize = 37;
     /// Shader uniforms: `UNIFORM_SLOTS` floats, mapped per layer by name.
-    pub const U0: usize = 35;
+    pub const U0: usize = 38;
     pub const N: usize = U0 + super::shader::UNIFORM_SLOTS;
 
     /// Default values.
@@ -78,6 +82,7 @@ pub(crate) mod prop {
         d[WIPE] = 1.0;
         d[FILL + 3] = 1.0;
         d[STROKE + 3] = 1.0;
+        d[RANGE1] = 1.0;
         d
     };
 
@@ -112,6 +117,9 @@ pub(crate) mod prop {
             "aperture" => (APERTURE, 1),
             "pathOffset" => (PATH_OFF, 1),
             "dashOffset" => (DASH_OFF, 1),
+            "rangeStart" => (RANGE0, 1),
+            "rangeEnd" => (RANGE1, 1),
+            "rangeOffset" => (RANGE_OFF, 1),
             "fill" | "color" => (FILL, 4),
             "stroke" => (STROKE, 4),
             _ => return None,
@@ -1175,6 +1183,54 @@ impl Evaluator {
                     };
                     let tpath = n.fx.as_deref().and_then(|f| f.text_path.as_ref());
                     match split {
+                        None if n.fx.as_deref().is_some_and(|f| f.animator.is_some()) => {
+                            let an = n.fx.as_deref().unwrap().animator.as_ref().unwrap();
+                            let units = layout.units(an.by);
+                            let off = match an.auto {
+                                Some((delay, dur, e)) => self.easings[e as usize].ease(((lt - delay) / dur.max(1e-3)).clamp(0.0, 1.0) as f64) as f32 * (1.0 + an.smooth),
+                                None => v[prop::RANGE_OFF],
+                            };
+                            let (lo, hi) = (v[prop::RANGE0] + off, v[prop::RANGE1] + off);
+                            let nu = units.len().max(1) as f32;
+                            let base_c = [v[prop::FILL], v[prop::FILL + 1], v[prop::FILL + 2], v[prop::FILL + 3]];
+                            for (u, unit) in units.iter().enumerate() {
+                                let rank = an.order.get(u).map_or(u as f32, |r| *r as f32);
+                                let a = an.amount((rank + 0.5) / nu, lo, hi);
+                                let ua = (1.0 + (an.opacity - 1.0) * a).clamp(0.0, 1.0);
+                                if ua <= 0.0005 {
+                                    continue;
+                                }
+                                let [x0, y0, uw, uh] = unit.rect;
+                                let (cxu, cyu) = (x0 + uw * 0.5, y0 + uh * 0.5);
+                                let s = 1.0 + (an.scale - 1.0) * a;
+                                let m = dl::mul(&translate(cxu + an.dx * a, cyu + an.dy * a), &dl::mul(&rotate(an.rot * a), &dl::mul(&scale(s, s), &translate(-cxu, -cyu))));
+                                let uxf = dl::mul(&bxf, &m);
+                                let f2 = match (an.color, &fill) {
+                                    (Some(c), Some(Paint::Solid(_))) => {
+                                        let mut k = [0.0f32; 4];
+                                        for i in 0..4 {
+                                            k[i] = base_c[i] + (c[i] - base_c[i]) * a;
+                                        }
+                                        let mut c = oklab_to_rgba(k);
+                                        c.0[3] *= ua * alpha;
+                                        Some(Paint::Solid(c))
+                                    }
+                                    _ => fill.as_ref().map(|f| {
+                                        let mut f = f.clone();
+                                        scale_alpha(&mut f, ua);
+                                        f
+                                    }),
+                                };
+                                let ublur = an.blur * a;
+                                if ublur > 0.05 {
+                                    out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::Blur(ublur)], clip: None, cache_key: None });
+                                }
+                                emit_glyphs(out, layout, unit.glyphs.clone(), limit, f2.as_ref(), alpha * ua, &uxf);
+                                if ublur > 0.05 {
+                                    out.push(Op::PopLayer);
+                                }
+                            }
+                        }
                         None if tpath.is_some() => {
                             // Text on a path: each character rides the path at its x (+ pathOffset), baseline on the line.
                             let mp = tpath.unwrap();

@@ -1562,6 +1562,52 @@ impl C<'_> {
                 self.d.push(Diagnostic::warning(path, "shape modifiers (roundCorners, zigzag, puckerBloat, offsetPath, twist, wigglePath) apply to shape layers"));
             }
         }
+        if let Some(a) = &l.animator {
+            let units = match &n.kind {
+                Kind::Text { kinetic: None, split: None, layout, .. } => Some(layout.clone()),
+                _ => None,
+            };
+            match units {
+                None => self.d.push(Diagnostic::warning(format!("{path}.animator"), "'animator' applies to plain text layers (no split/kinetic)")),
+                Some(layout) => {
+                    let by = match a.by.as_deref().unwrap_or("char") {
+                        "char" | "chars" => crate::text::UnitKind::Char,
+                        "word" | "words" => crate::text::UnitKind::Word,
+                        "line" | "lines" => crate::text::UnitKind::Line,
+                        x => {
+                            self.d.push(Diagnostic::error(format!("{path}.animator.by"), format!("unknown unit '{x}'")).suggest(suggest(x, &["char", "word", "line"])));
+                            crate::text::UnitKind::Char
+                        }
+                    };
+                    let order = a.order.as_deref().unwrap_or("forward");
+                    if !["forward", "reverse", "center", "random"].contains(&order) {
+                        self.d.push(Diagnostic::error(format!("{path}.animator.order"), format!("unknown order '{order}'")).suggest(suggest(order, &["forward", "reverse", "center", "random"])));
+                    }
+                    let color = a.color.as_ref().and_then(|c| self.color(c, &format!("{path}.animator.color"))).map(rgba_to_oklab);
+                    self.set(n, prop::RANGE0, a.start.as_ref(), &format!("{path}.animator.start"), 1.0);
+                    self.set(n, prop::RANGE1, a.end.as_ref(), &format!("{path}.animator.end"), 1.0);
+                    self.set(n, prop::RANGE_OFF, a.offset.as_ref(), &format!("{path}.animator.offset"), 1.0);
+                    let animated = n.tracks.iter().any(|t| t.slot as usize == prop::RANGE_OFF);
+                    let auto = (a.offset.is_none() && !animated).then(|| {
+                        let e = self.ease(a.ease.as_deref(), "outCubic", &format!("{path}.animator.ease"));
+                        (a.delay.unwrap_or(0.0) as f32, a.duration.unwrap_or(1.0) as f32, e)
+                    });
+                    f.animator = Some(fx::AnimatorC {
+                        by,
+                        dx: a.x.unwrap_or(0.0) as f32,
+                        dy: a.y.unwrap_or(0.0) as f32,
+                        rot: a.rotation.unwrap_or(0.0) as f32,
+                        scale: a.scale.unwrap_or(1.0) as f32,
+                        opacity: a.opacity.unwrap_or(1.0) as f32,
+                        blur: a.blur.unwrap_or(0.0) as f32,
+                        color,
+                        smooth: a.smooth.unwrap_or(0.25).max(0.0) as f32,
+                        order: fx::order_ranks(layout.units(by).len(), order, a.seed.unwrap_or(1.0)),
+                        auto,
+                    });
+                }
+            }
+        }
         if l.matte.is_some() {
             self.d.push(Diagnostic::warning(format!("{path}.matte"), "track mattes are not rendered yet; use 'mask' (shape) for now"));
         }
