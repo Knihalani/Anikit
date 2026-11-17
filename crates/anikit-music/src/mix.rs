@@ -178,7 +178,8 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
 pub(crate) fn reverb_ir(rate: u32, p: &dsp::ReverbParams) -> std::sync::Arc<(dsp::Ir, dsp::Ir)> {
     use std::collections::HashMap;
     use std::sync::{Arc, Mutex, OnceLock};
-    static CACHE: OnceLock<Mutex<HashMap<(String, u32), Arc<(dsp::Ir, dsp::Ir)>>>> = OnceLock::new();
+    type Cache = Mutex<HashMap<(String, u32), Arc<(dsp::Ir, dsp::Ir)>>>;
+    static CACHE: OnceLock<Cache> = OnceLock::new();
     let key = (format!("{p:?}"), rate);
     let cache = CACHE.get_or_init(Default::default);
     if let Some(ir) = cache.lock().unwrap().get(&key) {
@@ -194,7 +195,7 @@ pub(crate) fn reverb_ir(rate: u32, p: &dsp::ReverbParams) -> std::sync::Arc<(dsp
     };
     if let Ok(b) = std::fs::read(&file) {
         let v: Vec<f32> = b.chunks_exact(4).map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect();
-        if v.len() % 4 == 0 && !v.is_empty() {
+        if v.len().is_multiple_of(4) && !v.is_empty() {
             let n = v.len() / 4;
             let ir = Arc::new((dsp::Ir { l: v[..n].to_vec(), r: v[n..2 * n].to_vec(), rate }, dsp::Ir { l: v[2 * n..3 * n].to_vec(), r: v[3 * n..].to_vec(), rate }));
             cache.lock().unwrap().insert(key, ir.clone());
@@ -316,7 +317,9 @@ fn process_track(l: &mut [f32], r: &mut [f32], m: &TrackMix, rate: u32, pump: Op
 }
 
 /// Place every SFX so its hit point lands on its time.
-fn render_sfx(a: &Arrangement, rate: u32, frames: usize) -> Result<Option<(Vec<f32>, Vec<f32>)>, String> {
+type StereoBuf = (Vec<f32>, Vec<f32>);
+
+fn render_sfx(a: &Arrangement, rate: u32, frames: usize) -> Result<Option<StereoBuf>, String> {
     if a.sfx.is_empty() {
         return Ok(None);
     }
@@ -375,32 +378,47 @@ fn fades(a: &Arrangement, l: &mut [f32], r: &mut [f32], rate: u32) {
     }
 }
 
-/// Timing accuracy: mean and max |onset − expected| (ms) for each expected
-/// hit time, detecting the onset as the first sample within ±30 ms where the
-/// signal rises above 25 % of the local peak.
+/// Timing accuracy of hits against their expected times (ms): for each
+/// expected time, the onset is the steepest rise of a 1 ms energy envelope
+/// within ±30 ms (robust to the tails of earlier hits still ringing).
 pub fn onset_error(l: &[f32], r: &[f32], rate: u32, times: &[f64]) -> serde_json::Value {
-    let w = (0.03 * rate as f64) as i64;
+    let n = l.len().min(r.len());
+    let w = (0.001 * rate as f64).round() as usize; // 1 ms
+    // Energy in 1 ms frames, hop 0.25 ms.
+    let hop = (w / 4).max(1);
+    let frames = n / hop;
+    let mut e = vec![0.0f32; frames];
+    for (k, v) in e.iter_mut().enumerate() {
+        let a = k * hop;
+        let b = (a + w).min(n);
+        *v = (a..b).map(|i| l[i] * l[i] + r[i] * r[i]).sum::<f32>();
+    }
     let mut errs = Vec::new();
     for &t in times {
-        let c = (t * rate as f64).round() as i64;
-        let (a, b) = ((c - w).max(0) as usize, ((c + w) as usize).min(l.len()));
-        if a >= b {
+        let c = t * rate as f64 / hop as f64;
+        let span = 0.03 * rate as f64 / hop as f64;
+        let (a, b) = (((c - span).max(4.0)) as usize, ((c + span) as usize).min(frames));
+        if a + 8 >= b {
             continue;
         }
-        // Energy before the window start must be lower (a real onset).
-        let peak = (a..b).map(|i| l[i].abs().max(r[i].abs())).fold(0.0f32, f32::max);
-        if peak < 1e-3 {
-            continue;
-        }
-        if let Some(i) = (a..b).find(|&i| l[i].abs().max(r[i].abs()) > 0.25 * peak) {
-            errs.push((i as f64 - c as f64) / rate as f64 * 1000.0);
+        // Steepest rise in dB: log energy difference over 1 ms.
+        let lg = |k: usize| 10.0 * (e[k] + 1e-12).log10();
+        let lag = w / hop;
+        let best = (a..b).max_by(|&i, &j| (lg(i) - lg(i - lag)).total_cmp(&(lg(j) - lg(j - lag))));
+        if let Some(k) = best {
+            if lg(k) - lg(k - lag) < 6.0 {
+                continue; // no clear onset
+            }
+            // The rise ends at frame k (window k..k+w ends ~1 ms later): the onset is near its start.
+            let onset = (k as f64 - lag as f64 * 0.5) * hop as f64 / rate as f64;
+            errs.push((onset - t) * 1000.0);
         }
     }
-    let n = errs.len().max(1) as f64;
+    let m = errs.len().max(1) as f64;
     serde_json::json!({
         "hits": errs.len(),
-        "meanMs": errs.iter().sum::<f64>() / n,
-        "meanAbsMs": errs.iter().map(|e| e.abs()).sum::<f64>() / n,
+        "meanMs": errs.iter().sum::<f64>() / m,
+        "meanAbsMs": errs.iter().map(|e| e.abs()).sum::<f64>() / m,
         "maxAbsMs": errs.iter().map(|e| e.abs()).fold(0.0, f64::max),
     })
 }
