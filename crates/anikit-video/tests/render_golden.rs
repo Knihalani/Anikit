@@ -982,3 +982,39 @@ fn same_pixels_in_a_new_allocation_are_unchanged() {
     r.set_frame_image(ImageId(5), frame(41));
     assert!(matches!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Partial { .. }));
 }
+
+/// Large gradients are evaluated in float and dithered: within a level of
+/// vello's gradient, but without its 8-bit bands.
+#[test]
+fn large_gradients_are_dithered_not_banded() {
+    use anikit_video::render::Quality;
+    let assets = Arc::new(Assets::default());
+    // A dark, slow ramp across 300 px: 8-bit steps would be ~25 px wide bands.
+    let l = DisplayList {
+        width: 300,
+        height: 60,
+        background: rgba(0.0, 0.0, 0.0, 1.0),
+        // A sharp op first: the gradient is drawn over content, not as a
+        // leading backdrop (which has its own float field).
+        ops: vec![card(2.0, 2.0, 6.0, 6.0, solid(1.0, 1.0, 1.0)), Op::RoundRect {
+            x: 0.0,
+            y: 0.0,
+            w: 300.0,
+            h: 60.0,
+            radius: 0.0,
+            paint: Paint::Linear { p0: [0.0, 0.0], p1: [300.0, 0.0], stops: vec![(0.0, rgba(0.02, 0.03, 0.05, 1.0)), (1.0, rgba(0.07, 0.08, 0.12, 1.0))] },
+            transform: IDENTITY,
+        }],
+    };
+    let got = Renderer::new(assets.clone()).render(&l).data_as_u8_slice().to_vec();
+    let mut vr = Renderer::new(assets.clone());
+    vr.set_quality(Quality::Reference);
+    let vello = vr.render(&l).data_as_u8_slice().to_vec();
+    let worst = got.iter().zip(&vello).map(|(a, b)| a.abs_diff(*b)).max().unwrap();
+    assert!(worst <= 2, "max diff vs vello {worst}");
+    // Column averages follow the exact ramp; vello's 8-bit steps don't.
+    let col_mean = |px: &[u8], x: usize| (0..60).map(|y| px[(y * 300 + x) * 4 + 2] as f64).sum::<f64>() / 60.0;
+    let ideal = |x: usize| (0.05 + (0.12 - 0.05) * (x as f64 + 0.5) / 300.0) * 255.0;
+    let err = |px: &[u8]| (0..300).map(|x| (col_mean(px, x) - ideal(x)).abs()).fold(0.0, f64::max);
+    assert!(err(&got) < 0.3 && err(&vello) > 0.4, "dithered {:.2}, vello {:.2}", err(&got), err(&vello));
+}
