@@ -557,7 +557,7 @@ impl Scene {
                 .collect()
         };
         use rayon::prelude::*;
-        let rows: Vec<Vec<[f32; 3]>> = if rayon::current_thread_index().is_some() { (0..hh).map(row).collect() } else { (0..hh).into_par_iter().map(row).collect() };
+        let rows: Vec<Vec<[f32; 3]>> = if !super::kernel::par::parallel() { (0..hh).map(row).collect() } else { (0..hh).into_par_iter().map(row).collect() };
         let raw: Vec<[f32; 3]> = rows.into_iter().flatten().collect();
         // Two 5×5 binomial passes remove the jitter (shafts are smooth).
         let mut out = raw.clone();
@@ -1501,7 +1501,7 @@ impl Scene {
                 .collect()
         };
         use rayon::prelude::*;
-        let rows: Vec<Vec<[f32; 2]>> = if rayon::current_thread_index().is_some() { (0..nz).map(row).collect() } else { (0..nz).into_par_iter().map(row).collect() };
+        let rows: Vec<Vec<[f32; 2]>> = if !super::kernel::par::parallel() { (0..nz).map(row).collect() } else { (0..nz).into_par_iter().map(row).collect() };
         let raw: Vec<[f32; 2]> = rows.into_iter().flatten().collect();
         let mut data = raw.clone();
         for k in 0..nz {

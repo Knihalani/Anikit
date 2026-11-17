@@ -685,7 +685,10 @@ impl Scene3d {
 
         let mut px = post::Planes::new(w * h);
         let mut q = p.quality;
-        if crate::components::reference() || std::env::var_os("ANIKIT_SCENE3D_REFERENCE").is_some() {
+        // Converged sampling is opt-in (scene3d_bench --reference). qbench's
+        // reference mode doesn't switch it on: its committed baseline was
+        // measured against standard sampling (see PERF before changing this).
+        if std::env::var_os("ANIKIT_SCENE3D_REFERENCE").is_some() {
             // Converged sampling with the same image model: 1 + 24 samples per
             // pixel everywhere, 4 shadow and AO rays per sample.
             q.full = true;

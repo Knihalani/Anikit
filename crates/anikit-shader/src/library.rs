@@ -31,6 +31,11 @@ impl Entry {
         crate::front::declared_uniforms(self.src)
     }
 
+    /// Anti-aliased by default as a layer (image shaders without `// anikit:aa off`).
+    pub fn aa_default(&self) -> bool {
+        self.use_ == Use::Image && !crate::aa_off(self.src)
+    }
+
     /// `"layer"`, `"filter"` or `"transition"`: how a spec uses it.
     pub fn use_name(&self) -> &'static str {
         match self.use_ {

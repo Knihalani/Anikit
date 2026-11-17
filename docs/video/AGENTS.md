@@ -6,7 +6,7 @@ Start with [`skills/anikit-video/SKILL.md`](../../skills/anikit-video/SKILL.md) 
 
 ```bash
 anikit-video docs                                    # topics
-anikit-video recipes [name]                          # drop-in high-end shots and the shader library
+anikit-video recipes [name]                          # high-end shots to borrow techniques from, and the shader library
 anikit-video still s.json --at 2.4 --width 640 -o f.png
 anikit-video render s.json -o out.mp4
 anikit-video critique s.json --render --pack rv/     # judged against "intent"; open rv/review.md and look

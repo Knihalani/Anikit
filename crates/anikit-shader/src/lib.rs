@@ -38,6 +38,10 @@ pub fn set_lane_groups(n: usize) {
 /// Directory for compiled kernels: `ANIKIT_SHADER_CACHE` (`0` turns the cache
 /// off), else `$XDG_CACHE_HOME/anikit/shaders`, else `~/.cache/anikit/shaders`.
 fn disk_dir() -> Option<std::path::PathBuf> {
+    // Unit tests compile for real unless a test points the cache somewhere.
+    if cfg!(test) && std::env::var_os("ANIKIT_SHADER_CACHE").is_none() {
+        return None;
+    }
     match std::env::var_os("ANIKIT_SHADER_CACHE") {
         Some(v) if v == "0" || v.is_empty() => None,
         Some(v) => Some(v.into()),
@@ -100,6 +104,21 @@ fn disk_store(key: u64, blob: &[u8]) {
     if std::fs::write(&tmp, blob).is_ok() {
         let _ = std::fs::rename(&tmp, &path);
     }
+    // Keep the cache bounded: past MAX entries, drop the oldest quarter.
+    const MAX: usize = 400;
+    if let Ok(rd) = std::fs::read_dir(dir) {
+        let mut files: Vec<(std::time::SystemTime, std::path::PathBuf)> = rd
+            .flatten()
+            .filter(|e| e.path().extension().is_some_and(|x| x == "bin"))
+            .filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path())))
+            .collect();
+        if files.len() > MAX {
+            files.sort();
+            for (_, f) in files.iter().take(files.len() - MAX * 3 / 4) {
+                let _ = std::fs::remove_file(f);
+            }
+        }
+    }
 }
 
 /// See [`set_lane_groups`].
@@ -145,6 +164,9 @@ pub struct Frame<'a> {
     /// pixels that differ from one of their 8 neighbours by more than [`ADAPTIVE_THRESHOLD`]
     /// (edges, highlights, fine detail). Smooth regions keep the centre sample.
     pub adaptive: bool,
+    /// With `adaptive`: refine a pixel when a channel differs from one of its
+    /// 8 neighbours by more than this (0..1). Default [`ADAPTIVE_THRESHOLD`].
+    pub threshold: f32,
     /// Treat `fragColor.a` as coverage (straight alpha). When false the
     /// output is opaque, as on Shadertoy.
     pub alpha: bool,
@@ -170,6 +192,7 @@ impl<'a> Frame<'a> {
             channels: [None; 4],
             supersample: false,
             adaptive: true,
+            threshold: ADAPTIVE_THRESHOLD,
             alpha: false,
             dither: false,
         }
@@ -397,7 +420,7 @@ impl Shader {
     /// Adaptive supersampling: re-shade, with 2×2 sub-samples, every pixel that
     /// differs from any of its 8 neighbours by more than the threshold in any channel.
     fn refine(&self, f: &Frame, out: &mut [[f32; 4]], w: usize, h: usize) {
-        let th = ADAPTIVE_THRESHOLD;
+        let th = f.threshold;
         let src: &[[f32; 4]] = out;
         let differs = |a: [f32; 4], b: [f32; 4]| (0..4).any(|k| (a[k].clamp(0.0, 1.0) - b[k].clamp(0.0, 1.0)).abs() > th);
         let flags: Vec<bool> = (0..w * h)
@@ -553,6 +576,17 @@ fn dither_thresholds(x: u32, y: u32) -> [f32; 3] {
 /// Adaptive supersampling re-shades a pixel when any channel differs from a
 /// neighbour by more than this (in output units; 1.5 / 255).
 pub const ADAPTIVE_THRESHOLD: f32 = 1.5 / 255.0;
+
+/// The default anti-aliasing threshold for shader layers: the loosest that
+/// keeps every library shader within SSIM 0.995 and ΔE76 p99.9 2.3 of full
+/// 2×2 supersampling (`examples/aa_check.rs`).
+pub const AA_THRESHOLD: f32 = 4.0 / 255.0;
+
+/// True when the source opts out of default anti-aliasing with a
+/// `// anikit:aa off` comment (soft fields, intentional per-pixel grain).
+pub fn aa_off(src: &str) -> bool {
+    src.lines().any(|l| l.trim_start().starts_with("//") && l.contains("anikit:aa off"))
+}
 
 fn sanitize(v: f32) -> f32 {
     if v.is_nan() {
