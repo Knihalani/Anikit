@@ -30,6 +30,7 @@ pub mod host;
 pub mod text;
 
 pub mod backgrounds;
+pub mod bgfx;
 pub mod blocks;
 pub mod charts;
 pub mod code;
