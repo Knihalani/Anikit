@@ -125,6 +125,17 @@ pub fn recipe_spec(name: &str) -> Option<(String, Value)> {
     Some((about, v["spec"].clone()))
 }
 
+/// A list line: the first clause, cut at a word near 90 characters (the
+/// full text is one `recipes <name>` away).
+fn short(about: &str) -> String {
+    let first = about.split(". ").next().unwrap_or(about).trim_end_matches('.');
+    if first.chars().count() <= 90 {
+        return first.to_string();
+    }
+    let cut: String = first.chars().take(90).collect();
+    format!("{}…", cut.rsplit_once(' ').map(|(a, _)| a).unwrap_or(&cut).trim_end_matches([',', ';']))
+}
+
 /// The recipe list, or one recipe: its notes and a ready spec.
 pub fn recipes(name: Option<&str>) -> Result<String, String> {
     let lib = anikit_shader::library::ALL;
@@ -134,11 +145,11 @@ pub fn recipes(name: Option<&str>) -> Result<String, String> {
             let v: Value = serde_json::from_str(src).unwrap();
             let about = v["about"].as_str().unwrap_or("");
             let cost = v["cost"].as_str().map(|c| format!(" [{}]", c.split(" (").next().unwrap_or(c))).unwrap_or_default();
-            s += &format!("  {n:20} {}{cost}\n", about.split(". ").next().unwrap_or(about).trim_end_matches('.'));
+            s += &format!("  {n:20} {}{cost}\n", short(about));
         }
         s += "Shaders (one line in a spec: {\"shader\": \"<name>\", \"uniforms\": {...}}; filters add \"filter\": true; transitions: \"transition\": \"<name>\"):\n";
         for e in lib {
-            s += &format!("  {:13} {:10} {}\n", e.name, format!("{:?}", e.use_).to_lowercase(), e.about);
+            s += &format!("  {:13} {:10} {}\n", e.name, format!("{:?}", e.use_).to_lowercase(), short(e.about));
         }
         return Ok(s);
     };
