@@ -33,6 +33,7 @@ macro_rules! outln {
 pub const HELP: &str = "\
 Start: anikit-video docs   (compact pages per primitive; docs 3d, docs shader, docs particles, ...)
        anikit-video recipes (drop-in high-end shots and the shader library)
+       anikit-video snippets [name] (paste-able fragments: type treatments, camera moves, music and grade blocks)
 Agent commands:
   anikit-video new <template> [--brand brand.json] [--from README.md] [--format 16:9] [--dir DIR]
                                     scaffold a project: params.json, brand.json, spec.json, NEXT.md
@@ -53,7 +54,7 @@ Agent commands:
 ";
 
 /// Commands this module handles.
-pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "looks", "look", "critique", "preview", "mcp", "docs", "doc", "recipes", "recipe"];
+pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "looks", "look", "critique", "preview", "mcp", "docs", "doc", "recipes", "recipe", "snippets", "snippet"];
 
 /// Run an agent command. `args` excludes the program name.
 pub fn run(args: &[String]) -> Option<i32> {
@@ -77,6 +78,7 @@ pub fn run(args: &[String]) -> Option<i32> {
         "looks" | "look" => cmd_looks(rest),
         "docs" | "doc" => crate::agent_docs::docs((!rest.is_empty()).then(|| rest.join(" ")).as_deref()).map(|s| out!("{s}")),
         "recipes" | "recipe" => cmd_recipes(rest),
+        "snippets" | "snippet" => crate::agent_docs::snippets(rest.first().map(|s| s.as_str())).map(|s| out!("{s}")),
         "critique" => cmd_critique(rest),
         "preview" => cmd_preview(rest),
         "mcp" => mcp::serve_stdio().map_err(|e| e.to_string()),
