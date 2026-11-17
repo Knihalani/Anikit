@@ -82,7 +82,6 @@ pub fn decode_audio(src: Box<dyn symphonia::core::io::MediaSource>, ext: Option<
             Err(e) => return Err(format!("audio decode error: {e}")),
         };
         let spec = *decoded.spec();
-        let n = decoded.frames();
         let mut buf = AudioBuffer::<f32>::new(decoded.capacity() as u64, spec);
         decoded.convert(&mut buf);
         let nc = spec.channels.count();

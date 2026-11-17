@@ -418,6 +418,7 @@ fn dot8(a: &[f32], x: &[f32; 8]) -> f32 {
 }
 
 impl Svf {
+    #[allow(clippy::needless_range_loop)]
     fn set(&mut self, kind: FilterKind, fc_hz: f32, q: f32, rate: f32) {
         let fc = (fc_hz as f64).clamp(5.0, 0.45 * rate as f64);
         let g = (std::f64::consts::PI * fc / rate as f64).tan();
@@ -627,6 +628,11 @@ impl Osc {
         self.p.exclusive
     }
 
+    /// Make this layer quieter by `cb` centibels (e.g. SFZ `rt_decay`).
+    pub fn add_atten(&mut self, cb: f32) {
+        self.p.atten += cb;
+    }
+
     /// Advance the control state by one period; returns the gain target.
     fn control(&mut self) -> f32 {
         let dt = SUB as f32 / self.p.rate;
@@ -653,7 +659,7 @@ impl Osc {
         if self.vol.stage == Stage::Done {
             return 0.0;
         }
-        let cb = (self.p.atten - mlfo * self.p.mod_lfo_vol).max(-200.0);
+        let cb = (self.p.atten - mlfo * self.p.mod_lfo_vol).max(-600.0);
         self.p.gain * self.vol.value() * cb_to_amp(cb)
     }
 
@@ -818,24 +824,43 @@ impl Osc {
 pub struct SamplerVoice {
     oscs: Vec<Osc>,
     on_release: Vec<Osc>,
+    /// dB per second of note length subtracted from each release layer.
+    rt_decay: Vec<f32>,
     live: Vec<bool>,
     exclusive: u32,
     released: bool,
+    held: u64,
+    rate: f32,
 }
 
 impl SamplerVoice {
     /// Build a voice from its layers. `on_release` layers start at note-off.
     pub fn new(oscs: Vec<Osc>, on_release: Vec<Osc>) -> SamplerVoice {
+        let n = on_release.len();
+        Self::with_release_decay(oscs, on_release, vec![0.0; n], 48_000.0)
+    }
+
+    /// Like [`SamplerVoice::new`], with a per-release-layer attenuation in
+    /// dB per second the note was held (SFZ `rt_decay`).
+    pub fn with_release_decay(oscs: Vec<Osc>, on_release: Vec<Osc>, rt_decay: Vec<f32>, rate: f32) -> SamplerVoice {
         let exclusive = oscs.iter().chain(on_release.iter()).map(|o| o.exclusive()).find(|&e| e != 0).unwrap_or(0);
+        Self::with_exclusive(oscs, on_release, rt_decay, rate, exclusive)
+    }
+
+    /// Full constructor with an explicit exclusive (choke) class.
+    pub fn with_exclusive(oscs: Vec<Osc>, on_release: Vec<Osc>, rt_decay: Vec<f32>, rate: f32, exclusive: u32) -> SamplerVoice {
         let n = oscs.len() + on_release.len();
         let mut oscs = oscs;
         oscs.reserve(on_release.len());
-        SamplerVoice { live: vec![true; n], oscs, on_release, exclusive, released: false }
+        SamplerVoice { live: vec![true; n], oscs, on_release, rt_decay, exclusive, released: false, held: 0, rate }
     }
 }
 
 impl Voice for SamplerVoice {
     fn render(&mut self, l: &mut [f32], r: &mut [f32]) -> bool {
+        if !self.released {
+            self.held += l.len() as u64;
+        }
         let mut any = false;
         for (o, live) in self.oscs.iter_mut().zip(self.live.iter_mut()) {
             if *live {
@@ -852,6 +877,10 @@ impl Voice for SamplerVoice {
         self.released = true;
         for o in &mut self.oscs {
             o.release();
+        }
+        let secs = self.held as f32 / self.rate;
+        for (o, d) in self.on_release.iter_mut().zip(&self.rt_decay) {
+            o.add_atten(10.0 * d * secs);
         }
         // Capacity was reserved at note-on: this moves without allocating.
         self.oscs.append(&mut self.on_release);

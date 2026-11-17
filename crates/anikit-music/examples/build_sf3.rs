@@ -106,8 +106,8 @@ fn compare(a: &[f32], b: &[f32]) -> Stats {
         s.sig += (a[i] as f64).powi(2);
         s.err += (a[i] as f64 - b[i] as f64).powi(2);
     }
-    for i in n..a.len() {
-        s.err += (a[i] as f64).powi(2);
+    for v in &a[n..] {
+        s.err += (*v as f64).powi(2);
     }
     // Log-spectral distance over 1024-frame Hann windows, bins within 60 dB of the frame peak.
     use rustfft::num_complex::Complex;
