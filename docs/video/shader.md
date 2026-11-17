@@ -1,6 +1,6 @@
 # Shader layers
 
-Write a fragment shader the way you would on Shadertoy, and Anikit Video runs it on the CPU at full 1080p, compiled to native SIMD code. Use one as a layer, as a filter over everything below it, or as a scene transition.
+Write a fragment shader the way you would on Shadertoy, and Anikit Video runs it on the CPU at full 1080p: compiled to native SIMD code, anti-aliased by default and deterministic. Use one as a layer, as a filter over everything below it, or as a scene transition. Multi-pass buffers and music-reactive uniforms are supported.
 
 ```json
 { "shader": "aurora", "uniforms": { "intensity": 1.2 } }
@@ -272,7 +272,7 @@ What costs time is pixels × work per pixel:
 
 ## Limits
 
-- One pass per shader: no Shadertoy Buffer A–D feedback, keyboard or audio channels, or cube maps. Chain effects by stacking filters instead.
+- Buffers A–D are supported (see Multi-pass buffers). There are no keyboard or cube-map channels, and no audio texture: music arrives as the `iAudio` and `iBeat` uniforms instead.
 - `sampler2D` can't be passed to user functions. Sample `iChannelN` directly (inside helpers, refer to `iChannelN` itself).
 - `double` is computed as `float`. These are unsupported: `textureOffset`, `textureGather`, shadow samplers, `bitfieldExtract`/`Insert`/`Reverse`, `findLSB`/`MSB`, and the pack/unpack built-ins (`bitCount` works).
 - `pow(x, y)` with `x < 0` is exact for integral `y` (as GPU compilers effectively do) and NaN otherwise. NaN or out-of-range colours are written as 0 / clamped.
