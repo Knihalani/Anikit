@@ -605,7 +605,7 @@ fn one_frame_layers_show_on_exactly_one_frame() {
     // `start + 1/fps` used to land a hair after the next frame time in f32, showing the layer twice.
     let ev = build(r##"{ "fps": 30, "scenes": [ { "duration": 2, "layers": [
         { "shape": "rect", "start": 0.7, "duration": 0.0333333 },
-        { "shape": "rect", "start": "=7/30", "end": "=8/30" } ] } ] }"##);
+        { "shape": "rect", "start": 0.2333333, "end": 0.2666667 } ] } ] }"##);
     let shown = |k: u32| ev.eval(k as f32 / 30.0).ops.iter().filter(|o| matches!(o, Op::RoundRect { .. })).count();
     let on: Vec<u32> = (0..60).filter(|&k| shown(k) > 0).collect();
     assert_eq!(on, vec![7, 21]);

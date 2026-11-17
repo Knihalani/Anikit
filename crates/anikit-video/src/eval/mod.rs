@@ -508,7 +508,7 @@ impl CompTime {
             t.rem_euclid(dur)
         } else {
             // Hold the last frame (layers end exclusively at the duration).
-            t.clamp(0.0, (dur - 1e-4).max(0.0))
+            t.clamp(0.0, (dur - 5e-4).max(0.0))
         }
     }
 }
