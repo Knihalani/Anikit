@@ -703,7 +703,11 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
     let mut rng = Rng::new(seed ^ 0xA11CE);
 
     // Sections: explicit or from the style's form, with the first hit starting the peak.
-    let total_bars = (length / grid.bar()).floor().max(if length > 0.0 { 1.0 } else { 0.0 });
+    // A ringing ending gets room: the last downbeat (the "button") lands early
+    // enough for the final chord to ring out (15 % of the length, 1–3 s).
+    let ringing = style.is_some() && spec.end.as_deref().unwrap_or("ring") == "ring" && spec.sections.is_empty();
+    let ring_room = if ringing { (length * 0.15).clamp(1.0, 3.0) } else { 0.0 };
+    let total_bars = ((length - ring_room) / grid.bar()).floor().max(if length > 0.0 { 1.0 } else { 0.0 });
     let hit_bars: Vec<f64> = hits.iter().map(|&h| (h / grid.bar()).round()).collect();
     let mut sections = if !spec.sections.is_empty() {
         explicit_sections(&spec.sections, total_bars)?
@@ -1141,10 +1145,27 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
             let tail: Vec<Note> = match tr.role.as_str() {
                 "drums" => vec![Note { t, len: 2.0, key: 36.0, vel: 0.9 }, Note { t, len: 4.0, key: 49.0, vel: 0.8 }],
                 "bass" | "808" | "low" | "basses" | "sub" => vec![Note { t, len: 6.0, key: (36 + key.tonic - if key.tonic > 7 { 12 } else { 0 }) as f32, vel: 0.8 }],
-                "lead" | "melody" | "bells" | "glock" | "pluck" | "arp" | "right" | "ostinato" | "timpani" => continue,
+                "lead" | "melody" | "right" => vec![Note { t, len: 4.0, key: (72 + key.tonic - if key.tonic > 7 { 12 } else { 0 }) as f32, vel: 0.75 }],
+                "bells" | "glock" | "pluck" | "arp" | "ostinato" | "timpani" | "counter" => continue,
                 _ => arrange::play_chords(std::slice::from_ref(&tonic), &Play::Pad, 62, 4, 0.7, seed),
             };
             tr.notes.extend(tail);
+        }
+        if let Some(st) = style {
+            let button = grid.secs(t) - grid.offset;
+            // Short pieces end on a hit: an impact under the button and a breath before it.
+            if length <= 30.0 && !sfx.iter().any(|x| (x.at - button).abs() < 0.05) {
+                sfx.push(SfxPlan { name: st.impact.into(), at: button, gain: -9.0, params: serde_json::json!({ "seed": seed }) });
+            }
+            if length <= 20.0 && t >= 2.0 {
+                let w0 = t - 0.5;
+                for tr in tracks.iter_mut() {
+                    tr.notes.retain(|n| !(n.t >= w0 - 1e-9 && n.t < t - 1e-9));
+                    for n in tr.notes.iter_mut().filter(|n| n.t < w0 && n.t + n.len > w0) {
+                        n.len = (w0 - n.t).max(0.05);
+                    }
+                }
+            }
         }
     }
     Ok(Arrangement {
@@ -1255,9 +1276,27 @@ pub fn auto_sections(st: &StyleDef, bars: f64, hit_bars: &[f64]) -> Vec<Section>
     if bars <= 0.0 {
         return Vec::new();
     }
-    if bars <= 4.0 {
-        let peak = st.form.iter().map(|f| f.2).fold(0.0f32, f32::max);
-        return vec![Section { name: "main".into(), bar: 0.0, bars, energy: (peak * 0.85).max(0.6) }];
+    if bars < 8.0 {
+        // Short forms (idents, stings, 5–15 s spots): still an arc — set-up, lift, payoff.
+        let (pi, peak) = st.form.iter().enumerate().max_by(|a, b| a.1 .2.total_cmp(&b.1 .2)).map(|(i, f)| (i, f.2)).unwrap_or((0, 1.0));
+        let peak_name = st.form.get(pi).map(|f| f.0).unwrap_or("main");
+        let intro_e = st.form.first().map(|f| f.2).unwrap_or(0.35);
+        let plan: Vec<(&str, f64, f32)> = match bars as usize {
+            0 | 1 => vec![(peak_name, bars, peak)],
+            2 => vec![("build", 1.0, 0.7), (peak_name, 1.0, peak)],
+            3 => vec![("intro", 1.0, intro_e), ("build", 1.0, 0.7), (peak_name, 1.0, peak)],
+            4 => vec![("intro", 1.0, intro_e), ("build", 1.0, 0.7), (peak_name, 2.0, peak)],
+            n => vec![("intro", 1.0, intro_e), ("build", 2.0, 0.7), (peak_name, (n - 3) as f64, peak)],
+        };
+        let mut bar = 0.0;
+        return plan
+            .into_iter()
+            .map(|(n, b, e)| {
+                let s = Section { name: n.into(), bar, bars: b, energy: e };
+                bar += b;
+                s
+            })
+            .collect();
     }
     // Integer bars per section, at least 1, rounded to even counts when long enough.
     let mut sizes: Vec<f64> = st.form.iter().map(|f| (f.1 * bars).round().max(1.0)).collect();
@@ -1370,7 +1409,8 @@ mod tests {
             assert!(a.tracks.iter().all(|t| !t.notes.is_empty()), "{}", s.name);
             assert_eq!(a.length, 20.0);
             let bars: f64 = a.sections.iter().map(|x| x.bars).sum();
-            assert_eq!(bars, (20.0 / a.grid.bar()).floor(), "{}: {:?}", s.name, a.sections);
+            // The button lands early enough for a 3 s ring-out (15 % of 20 s).
+            assert_eq!(bars, ((20.0 - 3.0) / a.grid.bar()).floor(), "{}: {:?}", s.name, a.sections);
             // Everything stays in MIDI range.
             for t in &a.tracks {
                 assert!(t.notes.iter().all(|n| (0.0..=127.0).contains(&n.key)), "{} {}", s.name, t.name);
@@ -1403,7 +1443,7 @@ mod tests {
         let drop = s.iter().find(|x| x.name == "drop").unwrap();
         assert_eq!(drop.bar, 8.0);
         assert_eq!(s.iter().map(|x| x.bars).sum::<f64>(), 16.0);
-        for b in [1.0, 2.0, 3.0, 5.0, 7.0, 9.0, 33.0] {
+        for b in [1.0, 2.0, 3.0, 4.0, 5.0, 7.0, 9.0, 33.0] {
             let s = auto_sections(st, b, &[]);
             assert_eq!(s.iter().map(|x| x.bars).sum::<f64>(), b, "{b}: {s:?}");
         }
