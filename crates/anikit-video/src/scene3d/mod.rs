@@ -311,6 +311,49 @@ fn make_floor(f: &FloorParams, vis: Option<Arc<FloorVis>>) -> Floor {
     Floor { y: f.y, color: f.color, roughness: f.roughness, mirror: f.mirror, reflect: f.reflect, pool: f.pool, fade: f.fade, vis }
 }
 
+/// Where simulations are cached: `$ANIKIT_CACHE/sim` (default
+/// `$XDG_CACHE_HOME/anikit/sim` or `~/.cache/anikit/sim`); `ANIKIT_CACHE=off`
+/// disables caching.
+pub fn sim_cache_dir() -> Option<std::path::PathBuf> {
+    use std::path::PathBuf;
+    let base = match std::env::var("ANIKIT_CACHE") {
+        Ok(v) if v == "off" || v == "0" => return None,
+        Ok(v) if !v.is_empty() => PathBuf::from(v),
+        _ => match std::env::var_os("XDG_CACHE_HOME") {
+            Some(x) => PathBuf::from(x).join("anikit"),
+            None => PathBuf::from(std::env::var_os("HOME")?).join(".cache").join("anikit"),
+        },
+    };
+    let dir = base.join("sim");
+    std::fs::create_dir_all(&dir).ok()?;
+    Some(dir)
+}
+
+/// Keep the simulation cache under `ANIKIT_CACHE_MAX_GB` (default 8 GB) by
+/// deleting the least recently written files.
+pub fn prune_sim_cache() {
+    let Some(dir) = sim_cache_dir() else { return };
+    let max = std::env::var("ANIKIT_CACHE_MAX_GB").ok().and_then(|v| v.parse::<f64>().ok()).unwrap_or(8.0) * 1e9;
+    let Ok(rd) = std::fs::read_dir(&dir) else { return };
+    let mut files: Vec<(std::time::SystemTime, u64, std::path::PathBuf)> = rd
+        .filter_map(|e| e.ok())
+        .filter_map(|e| {
+            let m = e.metadata().ok()?;
+            m.is_file().then(|| (m.modified().unwrap_or(std::time::UNIX_EPOCH), m.len(), e.path()))
+        })
+        .collect();
+    let mut total: u64 = files.iter().map(|f| f.1).sum();
+    files.sort();
+    for (_, len, path) in files {
+        if (total as f64) <= max {
+            break;
+        }
+        if std::fs::remove_file(&path).is_ok() {
+            total -= len;
+        }
+    }
+}
+
 /// Every object's instances at time `t` (with transforms at `t - dt` for motion).
 fn instances(objs: &[ObjDef], t: f32, dt: f32) -> Vec<Inst> {
     let mut out = Vec::new();
