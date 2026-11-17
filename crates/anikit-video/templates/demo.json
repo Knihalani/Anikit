@@ -363,8 +363,10 @@
               "ease": "inOutQuart"
             },
             "else": {
-              "type": "crossfade",
-              "duration": 0.4
+              "type": "push",
+              "direction": "{{fmt.portrait ? 'up' : 'left'}}",
+              "duration": 0.5,
+              "ease": "inOutQuart"
             }
           },
           "duration": "{{readtime(st.title) + 2.6}}",

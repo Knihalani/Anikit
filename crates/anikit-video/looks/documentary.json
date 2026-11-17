@@ -1,7 +1,7 @@
 {
  "title": "Documentary",
  "summary": "Real photos with slow Ken Burns, warm film grade and light leaks, restrained sans, lower thirds; human and true.",
- "direction": "Observational documentary. Real photographs or footage carry the story (ken-burns with a film grade), restrained white sans with lower thirds and small tracked labels, warm light leaks and grain. Slow crossfades, slow drifting camera, long holds on faces and places. Words are facts and quotes, never slogans.",
+ "direction": "Observational documentary. Real photographs or footage carry the story (ken-burns with a film grade), restrained white sans with lower thirds and small tracked labels, warm light leaks and grain. Slow dips to black, slow drifting camera, long holds on faces and places. Words are facts and quotes, never slogans.",
  "mode": "dark",
  "theme": {
   "colors": {
@@ -32,12 +32,17 @@
     "letterSpacing": "0.2em",
     "size": "2.4vh"
    }
+  },
+  "material": {
+   "surface": "flat",
+   "shadow": 0.4,
+   "glow": 0,
+   "motion": "soft"
   }
  },
  "transition": {
-  "type": "crossfade",
-  "duration": 1.0,
-  "ease": "inOutSine"
+  "type": "fadeBlack",
+  "duration": 0.8
  },
  "enter": {
   "preset": "fadeIn",

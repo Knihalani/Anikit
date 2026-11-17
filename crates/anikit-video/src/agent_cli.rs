@@ -271,6 +271,7 @@ fn cmd_critique(args: &[String]) -> Result<(), String> {
         out!("{}", pretty(&serde_json::to_value(&r).unwrap()));
     } else {
         out!("{}", r.to_text());
+        out!("A score is not evidence of quality: look at full-size frames against docs/video/quality/BAR.md.\n");
     }
     Ok(())
 }

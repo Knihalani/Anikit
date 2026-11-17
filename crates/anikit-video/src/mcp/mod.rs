@@ -530,7 +530,8 @@ mod tests {
         let out = s.workdir.join("t.json");
         let r = call(&mut s, "tools/call", json!({ "name": "create_from_template", "arguments": { "template": "launch", "params": schema["example"], "format": "9:16", "out": out, "brand": { "name": "Acme", "colors": { "primary": "#FF5500" } } } }));
         assert_eq!(r["result"]["isError"], false, "{r}");
-        assert!(t(&r).contains("valid · critique 100/100"), "{}", t(&r));
+        // 94: the quality bar flags templates as flat 2D (BAR #5), and nothing else.
+        assert!(t(&r).contains("valid · critique 94/100") && t(&r).contains("BAR #5"), "{}", t(&r));
         let spec: Value = serde_json::from_str(&std::fs::read_to_string(&out).unwrap()).unwrap();
         assert_eq!(spec["size"], json!([1080, 1920]));
         assert_eq!(spec["theme"]["colors"]["primary"], "#FF5500");
@@ -538,7 +539,7 @@ mod tests {
         let r = call(&mut s, "tools/call", json!({ "name": "validate_spec", "arguments": { "spec": { "scenes": [ { "layers": [ { "type": "txt", "text": "x" } ] } ] } } }));
         assert!(t(&r).starts_with("invalid\nerror scenes[0].layers[0]"), "{}", t(&r));
         let r = call(&mut s, "tools/call", json!({ "name": "critique_spec", "arguments": { "path": out } }));
-        assert!(t(&r).starts_with("score 100/100"), "{}", t(&r));
+        assert!(t(&r).starts_with("score 94/100"), "{}", t(&r));
 
         // Errors are tool errors with actionable text, not protocol errors.
         let r = call(&mut s, "tools/call", json!({ "name": "create_from_template", "arguments": { "template": "lanch", "params": {} } }));

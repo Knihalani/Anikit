@@ -38,6 +38,8 @@ Every one of them was a single 6–7 s slow dolly, with the same composition in 
 
 ### Pace: run `python3 docs/video/quality/pace.py clip.mp4 --strip strip.png`
 
+These thresholds are for **fast intents** (hype, launch, music, social), which is what this user wants for the flagship. Calm intents (brand films, explainers) may hold longer, but every hold must stay *alive*: motion, light change or parallax, with no dead air. `critique` judges pace against the spec's declared `intent`.
+
 It FAILS if any of these is true:
 - any shot holds longer than 2.5 s without a major change;
 - the median shot is longer than 1.5 s;

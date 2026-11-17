@@ -45,6 +45,12 @@
    "subtitle": {
     "align": "left"
    }
+  },
+  "material": {
+   "surface": "outline",
+   "shadow": 0,
+   "glow": 0,
+   "motion": "mechanical"
   }
  },
  "transition": "cut",

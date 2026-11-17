@@ -7,7 +7,7 @@ description: Turns a script into timed beats (layout, motion, transitions) that 
 
 For each beat, give: id, **what the viewer understands** after it, hold (entrance ≈0.6 s + words/3 + 1 s), transition in, focal element, and the layers in z-order with their motion. Vary the layout beat to beat and plan one signature image (3D, generative or real footage).
 
-- **Holds:** hook 2–3 s, reveal 3–4 s, features 3–5 s, end card 3.5 s or more. Total = Σ holds − Σ transitions.
+- **Lengths in beats** (120–140 BPM): most shots 1–3 beats (0.5–1.5 s), none over 2.5 s. The end card may hold 2 s. Use 1–4 words per shot, and let a line run across cuts.
 - **Focal point:** it enters first and is the largest; the rest follows 0.15–0.5 s later.
 - **Layout:**
   - 16:9: text left at about 38% width with the visual right, or centred text for statements.

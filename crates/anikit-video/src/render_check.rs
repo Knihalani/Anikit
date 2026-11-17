@@ -64,7 +64,13 @@ fn user_text(ev: &Evaluator, n: usize, tags: &[crate::eval::OpTag]) -> Vec<Optio
 /// Text blocks with their effective opacity ≥ 0.6 (settled, not mid-fade).
 /// Only glyphs of user text layers count (`who`, from [`user_text`]).
 fn text_blocks(dl: &DisplayList, who: &[Option<String>]) -> Vec<Block> {
+    text_blocks_min(dl, who, 0.6)
+}
+
+fn text_blocks_min(dl: &DisplayList, who: &[Option<String>], min_alpha: f32) -> Vec<Block> {
     let mut opacity = vec![1.0f32];
+    // Out-of-focus text (depth of field, blurIn) is decoration, not something to read.
+    let mut blurred = vec![false];
     let mut runs: Vec<Block> = Vec::new();
     for (k, op) in dl.ops.iter().enumerate() {
         let layer = match who.get(k) {
@@ -73,15 +79,20 @@ fn text_blocks(dl: &DisplayList, who: &[Option<String>]) -> Vec<Block> {
             _ => String::new(),
         };
         match op {
-            Op::PushLayer { opacity: o, .. } => opacity.push(opacity.last().unwrap() * o),
+            Op::PushLayer { opacity: o, filters, .. } => {
+                opacity.push(opacity.last().unwrap() * o);
+                let b = filters.iter().any(|f| matches!(f, crate::dl::Filter::Blur(r) if *r > 1.5));
+                blurred.push(*blurred.last().unwrap() || b);
+            }
             Op::PopLayer => {
                 if opacity.len() > 1 {
                     opacity.pop();
+                    blurred.pop();
                 }
             }
             Op::Glyphs { size, glyphs, paint: Paint::Solid(c), transform, .. } if !glyphs.is_empty() => {
                 let a = c.0[3] * opacity.last().unwrap();
-                if a < 0.6 {
+                if a < min_alpha || *blurred.last().unwrap() {
                     continue;
                 }
                 let (mut x0, mut x1) = (f32::MAX, f32::MIN);
@@ -242,10 +253,18 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
                 if b.rect[0] < -1.0 || b.rect[1] < -1.0 || b.rect[2] > w as f32 + 1.0 || b.rect[3] > h as f32 + 1.0 {
                     push(format!("f{where_}{i}"), Note { severity: "error", check: "render-frame", path: at(b), message: "text is cut by the frame edge".into(), fix: "move it inside the frame or give it a narrower width".into() });
                 } else if outside_safe {
-                    push(format!("s{where_}{i}"), Note { severity: "warning", check: "render-safe", path: at(b), message: "text extends outside the title-safe area".into(), fix: "keep it inside the safe margins (9:16: top 12%, bottom 20%)".into() });
+                    push(format!("s{where_}{i}"), Note { severity: "warning", check: "render-safe", path: at(b), message: "text extends outside the title-safe area".into(), fix: match fmt.orientation() {
+                        "portrait" => "keep it inside the safe margins (top 12%, bottom 20%, sides 8%)",
+                        "square" => "keep it inside the safe margins (8% on every side)",
+                        _ => "keep it inside the safe margins (top and bottom 9%, sides 7%)",
+                    }.into() });
                 }
             }
-            for (j, o) in blocks.iter().enumerate().skip(i + 1) {
+        }
+        // Overlaps: in a crossfade both texts are half visible and still read as mush.
+        let ov_blocks = if transition { text_blocks_min(&dl, &who, 0.3) } else { blocks.clone() };
+        for (i, b) in ov_blocks.iter().enumerate() {
+            for (j, o) in ov_blocks.iter().enumerate().skip(i + 1) {
                 let ov = inter(b.rect, o.rect);
                 if ov > 0.2 * area(b.rect).min(area(o.rect)) {
                     push(format!("o{where_}{i}{j}"), Note {
@@ -253,7 +272,7 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
                         check: "render-overlap",
                         path: at(b),
                         message: format!("two pieces of text overlap{}", if transition { " during the transition" } else { "" }),
-                        fix: if transition { "let the outgoing text exit before the new text enters, or use a cut".into() } else { "space them apart, or stack them with the line-count spacing".into() },
+                        fix: if transition { "let the outgoing text exit before the new text enters (exit + a cut, a push or slide, or a fadeBlack), not a crossfade".into() } else { "space them apart, or stack them with the line-count spacing".into() },
                     });
                 }
             }
