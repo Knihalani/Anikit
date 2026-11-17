@@ -22,10 +22,13 @@ use std::f32::consts::TAU;
 /// `true` renders the ground-truth version of every effect, with none of the
 /// speed shortcuts below. Off for now; a reference mode can switch it on to
 /// measure what each shortcut costs in quality. The shortcuts it disables:
-/// - mesh-gradient: keyframes cross-faded by the renderer (exact: a field per frame);
-/// - mesh-gradient: field at ⅙ resolution with a cubic upsample to ½ (exact: every pixel);
-/// - aurora: field at ½ × ⅕ resolution (exact: full resolution);
-/// - gradient: image at ½ resolution (exact: full resolution);
+/// - mesh-gradient: field at ⅓ resolution at keyframes, interpolated per
+///   frame in linear light (exact: every pixel of every frame);
+/// - aurora: field at ¾ × ⅕ resolution (exact: full resolution);
+/// - gradient: field at ½ resolution (exact: full resolution);
+///
+/// Reduced fields are upsampled to the box in linear light and dithered at
+/// full resolution (see `field_op`), so the dither matches the exact path's.
 /// - stars, starfield, dots: alpha quantised into a few fills (exact: 256 levels);
 /// - grain: one baked tile moved to a random offset per update (exact: fresh noise every update).
 fn exact() -> bool {
@@ -62,11 +65,27 @@ fn f32s_key(v: &[f32]) -> Vec<u8> {
 }
 
 /// A full-box opaque image from a linear field (quantised with dither).
+/// Fields computed below the box resolution are upsampled (Catmull-Rom, in
+/// linear light) to it before quantising, so the dither is the same per
+/// output pixel as a full-resolution field's and the renderer blits it 1:1
+/// rather than re-filtering (and re-dithering) a small image.
 fn field_op(ctx: &Ctx, key: u64, make: impl FnOnce() -> Lin, size: (usize, usize), opacity: f32) -> Op {
-    let (w, h) = size;
+    let full = (ctx.width.ceil().clamp(16.0, 4096.0) as usize, ctx.height.ceil().clamp(16.0, 4096.0) as usize);
+    let (w, h) = if size.0 <= full.0 && size.1 <= full.1 { full } else { size };
     let mut make = Some(make);
-    let id = ctx.assets.image(key, w as u32, h as u32, &mut || make.take().map(|m| m().to_rgba8()).unwrap_or_else(|| vec![0; w * h * 4]));
-    Op::Image { image: id, dst: [0.0, 0.0, ctx.width, ctx.height], opacity, transform: IDENTITY }
+    let id = ctx.assets.image(key, w as u32, h as u32, &mut || {
+        make.take()
+            .map(|m| {
+                let l = m();
+                if (l.w, l.h) == (w, h) {
+                    l.to_rgba8()
+                } else {
+                    l.upsample_rgba8(w, h)
+                }
+            })
+            .unwrap_or_else(|| vec![0; w * h * 4])
+    });
+    Op::Image { image: id, dst: [0.0, 0.0, w as f32 * ctx.width / full.0 as f32, h as f32 * ctx.height / full.1 as f32], opacity, transform: IDENTITY }
 }
 
 /// Image size for a field at `scale` of the box (clamped).
@@ -75,9 +94,33 @@ fn image_size(ctx: &Ctx, sx: f32, sy: f32) -> (usize, usize) {
     (((ctx.width * sx).ceil() as usize).clamp(16, 2048), ((ctx.height * sy).ceil() as usize).clamp(16, 2048))
 }
 
-/// Slow fields: computed at `rate` keyframes per second and cross-faded by
-/// the renderer, so motion is continuous at any frame rate while only one
-/// new image is made per keyframe.
+/// Recently made keyframe fields, shared by the frames being evaluated in parallel.
+fn keyframe_cache() -> &'static std::sync::Mutex<Vec<(u64, std::sync::Arc<Lin>)>> {
+    static C: std::sync::OnceLock<std::sync::Mutex<Vec<(u64, std::sync::Arc<Lin>)>>> = std::sync::OnceLock::new();
+    C.get_or_init(Default::default)
+}
+
+/// The field for keyframe `key`, made once and kept while it is recent.
+fn keyframe(key: u64, make: impl FnOnce() -> Lin) -> std::sync::Arc<Lin> {
+    if let Some(l) = keyframe_cache().lock().unwrap().iter().find(|e| e.0 == key).map(|e| e.1.clone()) {
+        return l;
+    }
+    // Made outside the lock (a rare duplicate is harmless).
+    let l = std::sync::Arc::new(make());
+    let mut c = keyframe_cache().lock().unwrap();
+    if !c.iter().any(|e| e.0 == key) {
+        if c.len() >= 16 {
+            c.remove(0);
+        }
+        c.push((key, l.clone()));
+    }
+    l
+}
+
+/// Slow fields: computed at `rate` keyframes per second (at the field's own
+/// resolution) and interpolated per frame in linear light, then upsampled
+/// and dithered at full resolution like a field made for that frame, so
+/// motion is continuous and the dither never beats between keyframes.
 fn keyframed(ctx: &Ctx, t: f32, rate: f32, key: impl Fn(f32) -> u64, make: impl Fn(f32) -> Lin, size: (usize, usize)) -> Vec<Op> {
     if exact() {
         return vec![field_op(ctx, key(t), || make(t), size, 1.0)];
@@ -87,14 +130,26 @@ fn keyframed(ctx: &Ctx, t: f32, rate: f32, key: impl Fn(f32) -> u64, make: impl 
     let k0 = x.floor();
     let f = x - k0;
     let t0 = k0 / rate;
-    let mut out = vec![field_op(ctx, key(t0), || make(t0), size, 1.0)];
-    // Opacity quantised to 1/256 (the renderer's precision anyway).
-    let f = (f * 256.0).round() / 256.0;
-    if f > 0.0 && !draft() {
-        let t1 = (k0 + 1.0) / rate;
-        out.push(field_op(ctx, key(t1), || make(t1), size, f));
-    }
-    out
+    // Blend weight quantised to 1/256 (frames inside one step share an image).
+    let f = if draft() { 0.0 } else { (f * 256.0).round() / 256.0 };
+    let t1 = (k0 + 1.0) / rate;
+    let (a, b) = (key(t0), key(t1));
+    let fk = fnv(&[b"kf", &a.to_le_bytes(), &b.to_le_bytes(), &f.to_bits().to_le_bytes()]);
+    vec![field_op(
+        ctx,
+        fk,
+        || {
+            let l0 = keyframe(a, || make(t0));
+            if f <= 0.0 {
+                return Lin { w: l0.w, h: l0.h, px: l0.px.clone() };
+            }
+            let l1 = keyframe(b, || make(t1));
+            let px = l0.px.iter().zip(l1.px.iter()).map(|(p, q)| p + (q - p) * f).collect();
+            Lin { w: l0.w, h: l0.h, px }
+        },
+        size,
+        1.0,
+    )]
 }
 
 // ------------------------------------------------------------------ gradient
@@ -204,7 +259,7 @@ pub struct MeshGradient {
     pub sheen: f32,
     /// Darken the edges (0 = flat).
     pub vignette: f32,
-    /// Keyframes per second (cross-faded; 0 = automatic from `speed`).
+    /// Keyframes per second, at least (interpolated per frame; 0 = automatic from `speed`).
     pub rate: f32,
     /// Kept for old specs; motion is always smooth outside draft mode.
     pub smooth: bool,
@@ -229,7 +284,9 @@ impl Component for MeshGradient {
         let t = if self.speed == 0.0 { 0.0 } else { t };
         let detail = self.detail.clamp(0.25, 4.0) * if draft() { 0.5 } else { 1.0 };
         let size = image_size(ctx, 0.5 * detail, 0.5 * detail);
-        let rate = if self.rate > 0.0 { self.rate } else { (5.0 * self.speed.abs()).clamp(3.0, 30.0) };
+        // Keyframes are interpolated per frame; at least as many as the motion needs.
+        let auto = (12.0 * self.speed.abs()).clamp(6.0, 30.0);
+        let rate = if self.rate > 0.0 { self.rate.max(auto) } else { auto };
         let params = f32s_key(&[self.speed, self.warp, self.intensity, self.scale, self.sheen, self.vignette, ctx.width, ctx.height]);
         let ck = [colors_key(&cols), colors_key(&[base])].concat();
         let key = |tt: f32| fnv(&[b"mesh3", &tt.to_bits().to_le_bytes(), &self.seed.to_le_bytes(), &params, &ck, &(size.0 as u32).to_le_bytes(), &(size.1 as u32).to_le_bytes()]);
@@ -241,7 +298,7 @@ impl MeshGradient {
     fn field(&self, t: f32, ctx: &Ctx, cols: &[Rgba], base: Rgba, size: (usize, usize)) -> Lin {
         let aspect = ctx.width / ctx.height.max(1.0);
         // Coarse field (smooth content), then a cubic upsample to the image.
-        let (cw, ch) = if exact() { size } else { ((size.0 / 3).max(8), (size.1 / 3).max(8)) };
+        let (cw, ch) = if exact() { size } else { ((ctx.width / 3.0).ceil().max(8.0) as usize, (ctx.height / 3.0).ceil().max(8.0) as usize) };
         let s = t * 0.07 * self.speed;
         let seed = self.seed;
         let n = cols.len();
@@ -314,11 +371,7 @@ impl MeshGradient {
                 l.px[(y * cw + x) * 3..][..3].copy_from_slice(&bgfx::oklab_inv(lab));
             }
         }
-        if (cw, ch) == size {
-            l
-        } else {
-            l.upsample(size.0, size.1)
-        }
+        l
     }
 }
 
@@ -397,7 +450,7 @@ impl Component for Aurora {
         let cols = colors_or(&self.colors, &[hx3("#5cffa8"), hx3("#25e6b4"), hx3("#1a9fb8"), hx3("#ff5c86")]);
         let sky = self.sky.map(|s| [s[0].0, s[1].0]).unwrap_or([hx3("#01030a"), hx3("#0a1a2c")]);
         let detail = self.detail.clamp(0.25, 2.0) * if draft() { 0.5 } else { 1.0 };
-        let size = image_size(ctx, 0.5 * detail, 0.2 * detail);
+        let size = image_size(ctx, 0.75 * detail, 0.2 * detail);
         let params = f32s_key(&[
             self.speed, self.intensity, self.horizon, self.height, self.rays, self.density, self.glow, self.fold, self.sway, ctx.width, ctx.height,
         ]);

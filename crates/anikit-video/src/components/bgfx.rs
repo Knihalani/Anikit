@@ -231,29 +231,160 @@ impl Lin {
         out
     }
 
-    /// Quantise to straight RGBA8 (opaque) with an ordered dither of ±½ LSB
-    /// in sRGB, so no gradient bands at 8 bits.
-    pub fn to_rgba8(&self) -> Vec<u8> {
-        let lut = srgb_lut();
-        let tile = dither_tile();
-        let mut out = vec![255u8; self.w * self.h * 4];
-        let lut = &lut[..=LUT_N];
+    /// `self.upsample(dw, dh).to_rgba8()` (bit for bit) without the
+    /// full-size float image: each output row is interpolated and quantised in turn.
+    pub fn upsample_rgba8(&self, dw: usize, dh: usize) -> Vec<u8> {
+        #[cfg(target_arch = "x86_64")]
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: AVX2 checked above. Same arithmetic (no FMA), wider lanes and gathers.
+            return unsafe { self.upsample_rgba8_avx2(dw, dh) };
+        }
+        self.upsample_rgba8_any(dw, dh)
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "avx2")]
+    unsafe fn upsample_rgba8_avx2(&self, dw: usize, dh: usize) -> Vec<u8> {
+        self.upsample_rgba8_any(dw, dh)
+    }
+
+    #[inline(always)]
+    fn upsample_rgba8_any(&self, dw: usize, dh: usize) -> Vec<u8> {
+        let tx = cubic_taps(self.w, dw);
+        let ty = cubic_taps(self.h, dh);
+        let row = dw * 3;
+        let sw3 = self.w * 3;
+        let mut mid = vec![0.0f32; row * self.h];
+        // Horizontal pass. For an integer enlargement m the taps repeat with
+        // the phase x % m, so interior columns read contiguous source pixels
+        // (no gathers); the border columns take the general path. Same sums,
+        // same order as `upsample`.
+        let m = dw / self.w.max(1);
+        let poly = m >= 1 && m * self.w == dw && self.w >= 8;
         for y in 0..self.h {
-            let src = &self.px[y * self.w * 3..(y + 1) * self.w * 3];
-            let dst = &mut out[y * self.w * 4..(y + 1) * self.w * 4];
-            let trow = &tile[(y % DT) * DT..(y % DT + 1) * DT];
-            for (x, (s, d)) in src.chunks_exact(3).zip(dst.chunks_exact_mut(4)).enumerate() {
-                // TPDF offset around ½: `floor` below then rounds to nearest on average.
-                let dz = trow[x % DT];
-                for k in 0..3 {
-                    // Nearest entry: the table is dense enough (≤ 0.05 LSB per step).
-                    let i = ((s[k] * LUT_N as f32 + 0.5) as usize).min(LUT_N);
-                    d[k] = (lut[i] + dz).clamp(0.0, 255.0) as u8;
+            let src = &self.px[y * sw3..(y + 1) * sw3];
+            let dst = &mut mid[y * row..(y + 1) * row];
+            let general = |x: usize, dst: &mut [f32]| {
+                let (i, w) = &tx[x];
+                let mut acc = [0.0f32; 3];
+                for k in 0..4 {
+                    let s = &src[i[k] * 3..i[k] * 3 + 3];
+                    acc[0] += s[0] * w[k];
+                    acc[1] += s[1] * w[k];
+                    acc[2] += s[2] * w[k];
+                }
+                dst[x * 3..x * 3 + 3].copy_from_slice(&acc);
+            };
+            if !poly {
+                for x in 0..dw {
+                    general(x, dst);
+                }
+                continue;
+            }
+            // Interior source steps q: every tap of every phase inside 0..w.
+            let (q0, q1) = (2, self.w - 3);
+            for x in (0..q0 * m).chain(q1 * m..dw) {
+                general(x, dst);
+            }
+            for p in 0..m {
+                let (i, w) = &tx[q0 * m + p];
+                let base = i[0] as isize - q0 as isize; // source index of tap 0 relative to q
+                for q in q0..q1 {
+                    let s0 = ((q as isize + base) * 3) as usize;
+                    let s = &src[s0..s0 + 12];
+                    let o = (q * m + p) * 3;
+                    let d = &mut dst[o..o + 3];
+                    for c in 0..3 {
+                        d[c] = 0.0 + s[c] * w[0] + s[3 + c] * w[1] + s[6 + c] * w[2] + s[9 + c] * w[3];
+                    }
                 }
             }
         }
+        let mut line = vec![0.0f32; row];
+        let mut out = vec![255u8; dw * dh * 4];
+        for (y, (i, w)) in ty.iter().enumerate() {
+            let (r0, r1, r2, r3) = (&mid[i[0] * row..][..row], &mid[i[1] * row..][..row], &mid[i[2] * row..][..row], &mid[i[3] * row..][..row]);
+            for x in 0..row {
+                line[x] = fmax(r0[x] * w[0] + r1[x] * w[1] + r2[x] * w[2] + r3[x] * w[3], 0.0);
+            }
+            quantise_row(&line, &mut out[y * dw * 4..(y + 1) * dw * 4], y);
+        }
         out
     }
+
+    /// Quantise to straight RGBA8 (opaque) with an ordered dither of ±½ LSB
+    /// in sRGB, so no gradient bands at 8 bits.
+    pub fn to_rgba8(&self) -> Vec<u8> {
+        let mut out = vec![255u8; self.w * self.h * 4];
+        for y in 0..self.h {
+            quantise_row(&self.px[y * self.w * 3..(y + 1) * self.w * 3], &mut out[y * self.w * 4..(y + 1) * self.w * 4], y);
+        }
+        out
+    }
+}
+
+/// One row of linear RGB to opaque RGBA8 with the ordered dither of row `y`.
+#[inline]
+fn quantise_row(src: &[f32], dst: &mut [u8], y: usize) {
+    #[cfg(target_arch = "x86_64")]
+    if std::arch::is_x86_feature_detected!("avx2") {
+        // SAFETY: AVX2 checked above. Same arithmetic, wider lanes and gathers.
+        return unsafe { quantise_row_avx2(src, dst, y) };
+    }
+    quantise_row_any(src, dst, y)
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn quantise_row_avx2(src: &[f32], dst: &mut [u8], y: usize) {
+    quantise_row_any(src, dst, y)
+}
+
+#[inline(always)]
+fn quantise_row_any(src: &[f32], dst: &mut [u8], y: usize) {
+    let lut = &srgb_sqrt_lut()[..SQ_N + 2];
+    let tile3 = dither_tile3();
+    let trow = &tile3[(y % DT) * DT * 3..(y % DT + 1) * DT * 3];
+    let n = src.len() / 3;
+    // Channels as one flat stream (vectorises), 64 pixels at a time so the
+    // dither row lines up; then spread into RGBA.
+    let mut tmp = [0u8; DT * 3];
+    for (c, chunk) in src[..n * 3].chunks(DT * 3).enumerate() {
+        let m = chunk.len();
+        let (t, dz) = (&mut tmp[..m], &trow[..m]);
+        for j in 0..m {
+            // sRGB·255 from a small table over √c (dense where sRGB is steep),
+            // linearly interpolated: within 0.01 LSB, and L1-resident.
+            let u = fmin(fmax(chunk[j], 0.0), 1.0).sqrt() * SQ_N as f32;
+            let i = u as i32 as usize;
+            let f = u - i as f32;
+            // SAFETY: 0 ≤ u ≤ SQ_N, so i + 1 ≤ SQ_N + 1 < lut.len().
+            let (a, b) = unsafe { (*lut.get_unchecked(i), *lut.get_unchecked(i + 1)) };
+            // TPDF offset around ½: truncation then rounds to nearest on average.
+            t[j] = fmin(fmax(a + (b - a) * f + dz[j], 0.0), 255.0) as i32 as u8;
+        }
+        let o = c * DT * 4;
+        for (p, d) in t.chunks_exact(3).zip(dst[o..o + m / 3 * 4].chunks_exact_mut(4)) {
+            d[..3].copy_from_slice(p);
+        }
+    }
+}
+
+/// The dither tile with each value repeated for the three channels.
+fn dither_tile3() -> &'static [f32] {
+    static T: OnceLock<Vec<f32>> = OnceLock::new();
+    T.get_or_init(|| dither_tile().iter().flat_map(|v| [*v; 3]).collect())
+}
+
+const SQ_N: usize = 4096;
+
+/// sRGB·255 of `(i / SQ_N)²`, `SQ_N + 2` entries (the last repeated).
+fn srgb_sqrt_lut() -> &'static [f32] {
+    static L: OnceLock<Vec<f32>> = OnceLock::new();
+    L.get_or_init(|| (0..SQ_N + 2).map(|i| {
+        let u = (i.min(SQ_N)) as f32 / SQ_N as f32;
+        to_srgb(u * u) * 255.0
+    }).collect())
 }
 
 /// Interleaved gradient noise in `[0, 1)`: a cheap, blue-ish ordered dither.
@@ -279,15 +410,6 @@ fn dither_tile() -> &'static [f32] {
             })
             .collect()
     })
-}
-
-const LUT_N: usize = 65536;
-
-/// Linear light → sRGB·255, sampled densely enough (≤ 0.05 LSB per step)
-/// to read without interpolation.
-fn srgb_lut() -> &'static [f32] {
-    static L: OnceLock<Vec<f32>> = OnceLock::new();
-    L.get_or_init(|| (0..=LUT_N).map(|i| to_srgb(i as f32 / LUT_N as f32) * 255.0).collect())
 }
 
 /// `1 - e^(-x)` for `x ≥ 0`, accurate to ~1e-4 and vectorisable.
