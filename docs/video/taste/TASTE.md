@@ -16,6 +16,7 @@ TASTE.md is the index and the short pass (§10). Each craft doc in `docs/video/c
 | [`grading.md`](../craft/grading.md) | grading: the invisible grade, the tone curve as the film look, halation and grain physics, no grade for design-led work | §2, §4 |
 | [`award-level.md`](../craft/award-level.md) | 17 winning short-form pieces: one idea, one material pushed to the limit, systems, type that carries meaning | §11 |
 | [`ai-tells.md`](../craft/ai-tells.md) | what reads as generated in 2024–26, and automatable checks | §9 |
+| [`ab-craft-process.md`](../craft/ab-craft-process.md) | A/B: the idea process lifted idea 3→5 on one brief, but execution (type, material, layout repetition) caps scores at ~4 | §8, §11 |
 | [`review-div.md`](../craft/review-div.md) | why the div-a…g films read as boring: seven structural failures | §9, §11 |
 | `typography.md`, `graphic-design.md` (grids at 1080p, spot colour, halftone, shape language), `motion-design.md`, `3d-design.md` (light ratios, look-dev, lenses), `illustration.md` (10 reference hands, clip-art→studio), `sound-design.md`, `music.md` (scoring to picture, per-style numbers), `generative.md` (authored, not demo-scene) | domain depth from the TYPE, GRAPHIC, MOGRAPH, 3D, COMPONENTS, SOUND, MUSIC and SHADER sessions (as they land) | §1–§7, §11 |
 
@@ -492,6 +493,7 @@ Correct is not enough. The fourth rejection (Margin) met every guideline above a
   - compositions used as textures.
 - Gradients standing in for imagery tend to read as placeholder.
 - **Texture at the edges:** grain, halation, slight jitter or misregistration chosen for the world, kept off words while they are read.
+- **The idea's material at full fidelity.** In the A/B (`craft/ab-craft-process.md`), a strong idea (a split-flap board for instant settlement) scored only 4/10 because the board was flat grey tiles. The mechanism, hinge shadow, clatter and light were where a studio would have spent the time.
 - **Choreography:**
   - one element's exit is the next one's entrance;
   - a camera move continues through a cut;
