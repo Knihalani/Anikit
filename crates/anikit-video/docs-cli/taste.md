@@ -4,7 +4,7 @@ Not a style. Every choice is made for *this* subject and you can say why; an unc
 
 **The taste pass (run before any final render):** look at the `critique --pack` strip, its cut pairs and 3 full-size stills; listen muted and audio-only.
 
-1. **Diverge (before designing):** write 3 genuinely different directions (medium, world, palette, type, motion character, sound; differing on every axis), pick the one most specific to the brief, and check it differs from every earlier piece in this project.
+1. **References, then diverge (before designing):** describe 3 real-world references *outside* tech/SaaS (print, title design, scientific or editorial illustration, posters, nature documentary, architecture) and what you take from each; derive 3 directions differing on every axis (medium, world, palette, type, motion, sound); pick the most specific; check it differs from every earlier piece. "UI on dark with one accent" and "screenshot beside copy" are defaults, not directions.
 2. **Swap test:** with a competitor's name it would stop working; the idea is one sentence; ≥ 3 subject-only elements (real UI, data, names).
 3. **Medium from the idea:** type, 2D, real UI, photo, shader or 3D. 3D only where depth means something.
 4. **Focal point:** each still names its subject in < 1 s at thumbnail size.

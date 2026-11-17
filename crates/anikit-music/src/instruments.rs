@@ -104,6 +104,12 @@ fn resolve_one(name: &str, base: Option<&Path>) -> Result<Arc<dyn Instrument>, S
     if let Some(i) = crate::sf2::pack_instrument(&lower) {
         return Ok(i);
     }
+    // Deeper samples by default when the pack is in the cache (`anikit-video music fetch salamander`).
+    if matches!(lower.as_str(), "piano" | "grand-piano" | "bright-piano") {
+        if let Some(i) = crate::sf2::pack_instrument("salamander-piano") {
+            return Ok(i);
+        }
+    }
     if let Some(i) = crate::synth::preset(&lower) {
         return Ok(i);
     }
