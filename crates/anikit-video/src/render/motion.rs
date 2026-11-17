@@ -663,6 +663,7 @@ impl Renderer {
                 .collect()
         };
         let mut slots: Vec<(u32, DisplayList)> = Vec::new();
+        let mut sample_rects = Vec::new();
         // Boxes with the same sample count share their sub-frame lists.
         let mut counts: Vec<usize> = boxes.iter().map(|b| b.1).collect();
         counts.sort_unstable();
@@ -705,8 +706,10 @@ impl Renderer {
                 if full {
                     self.render(&l);
                 } else {
+                    // Op bounds once per sample, for culling in every box.
+                    op_rects(&l.ops, &mut sample_rects);
                     for (k, (r, _)) in regions.iter().enumerate() {
-                        self.render_region(&l, Some([r[0] as u32, r[1] as u32, r[2] as u32, r[3] as u32]), k == 0, None, None);
+                        self.render_region(&l, Some([r[0] as u32, r[1] as u32, r[2] as u32, r[3] as u32]), k == 0, Some(&sample_rects), None);
                     }
                 }
                 let px = self.frame.data_as_u8_slice();
