@@ -24,7 +24,7 @@ fn rays(n: usize, lo: V3, hi: V3) -> Vec<(V3, V3)> {
 }
 
 fn main() {
-    let meshes = [("slab", geom::rounded_box([1.6, 0.9, 0.008], 0.027, 0.0024)), ("glass", geom::text("GLASS", "Inter", 800.0, 0.02, 0.22, 0.06, 0.0099).unwrap()), ("text", geom::text("ANIKIT", "", 700.0, 0.0, 1.0, 0.34, 0.045).unwrap()), ("torus", geom::torus(0.7, 0.112))];
+    let meshes = [("slab", geom::rounded_box([1.6, 0.9, 0.008], 0.027, 0.0024)), ("glass", geom::text("GLASS", "Inter", 800.0, 0.02, 0.22, 0.06, 0.0099, 0.0).unwrap()), ("text", geom::text("ANIKIT", "", 700.0, 0.0, 1.0, 0.34, 0.045, 0.0).unwrap()), ("torus", geom::torus(0.7, 0.112))];
     for (name, m) in meshes {
         let b = Bvh::with_uv(&m.pos, &m.nrm, &m.uv, &m.idx);
         let rs = rays(1_000_000, b.lo, b.hi);
