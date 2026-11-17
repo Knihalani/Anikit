@@ -387,7 +387,7 @@ string_or_struct!(Transition, TransitionObj, |s| TransitionObj { kind: Some(s.to
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct TransitionObj {
-    /// `cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`.
+    /// `cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`, `zoomThrough`, `reveal`, `blinds`, `split`, `whip`.
     #[serde(rename = "type")]
     pub kind: Option<String>,
     pub duration: Option<Num>,
@@ -402,6 +402,12 @@ pub struct TransitionObj {
     /// `type: "shader"`: a gl-transitions style shader (`vec4 transition(vec2 uv)` with
     /// `progress`, `getFromColor`, `getToColor`) or a built-in transition name.
     pub shader: Option<String>,
+    /// `zoomThrough`: the `id` of a layer in the outgoing scene to fly into (the new scene shows through its shape).
+    pub layer: Option<String>,
+    /// `reveal`: `circle`, `diamond`, `square`, `star`, `blob`.
+    pub shape: Option<String>,
+    /// `blinds`: number of bars (default 8).
+    pub count: Option<u32>,
     /// Uniforms for a shader transition.
     pub uniforms: Option<BTreeMap<String, serde_json::Value>>,
 }
@@ -502,6 +508,13 @@ pub struct Layer {
     /// Text animator with a range selector (After Effects style): units inside the range take these props.
     /// `{"by": "char", "y": 40, "opacity": 0, "duration": 0.8}` sweeps a reveal; see `docs mograph`.
     pub animator: Option<AnimatorSpec>,
+    /// Follow-through: a spring chases the layer's own motion, so every move overshoots and settles.
+    /// `true`, a preset (`soft`, `bouncy`, `tight`, `heavy`) or `{"stiffness": 170, "damping": 12, "mass": 1, "props": ["x", "y", "rotation", "scale"]}`.
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub inertia: Option<serde_json::Value>,
+    /// Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default).
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub smear: Option<serde_json::Value>,
     /// Track matte: another layer of the scene (by `id`) whose alpha or luma shows this one.
     pub matte: Option<MatteSpec>,
 

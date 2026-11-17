@@ -10,7 +10,7 @@ pub const LAYER_TYPES: &[&str] = &["text", "shape", "image", "video", "group", "
 pub const SHAPES: &[&str] = &["rect", "circle", "ellipse", "line", "arrow", "polygon", "star", "path"];
 pub const TRANSITIONS: &[&str] = &[
     "cut", "crossfade", "fade", "fadeBlack", "fadeWhite", "slide", "push", "zoom", "wipe", "iris", "blur", "glitch",
-    "morphCut", "shader",
+    "morphCut", "shader", "zoomThrough", "reveal", "blinds", "split", "whip",
 ];
 pub const DIRECTIONS: &[&str] = &["left", "right", "up", "down"];
 pub const ENTER_PRESETS: &[&str] = &[

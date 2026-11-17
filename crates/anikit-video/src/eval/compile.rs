@@ -252,7 +252,7 @@ impl Evaluator {
             let path = format!("scenes[{i}]");
             let id = s.id.clone().unwrap_or_else(|| format!("scene{}", i + 1));
             let trans = if i == 0 {
-                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None }
+                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None, layer: None, shape: 0, count: 0 }
             } else {
                 let (tr, tp) = match (&s.transition, &default_trans) {
                     (Some(t), _) => (Some(t), format!("{path}.transition")),
@@ -446,8 +446,10 @@ fn empty_node(kind: Kind) -> Node {
         index: 0.0,
         count: 1.0,
         tag: u32::MAX,
+        id: None,
         fx: None,
         matte: None,
+        inertia: None,
     }
 }
 
@@ -858,6 +860,11 @@ impl C<'_> {
             "glitch" => TransKind::Glitch,
             "morphCut" => TransKind::MorphCut,
             "shader" => TransKind::Shader,
+            "zoomThrough" => TransKind::ZoomThrough,
+            "reveal" => TransKind::Reveal,
+            "blinds" => TransKind::Blinds,
+            "split" => TransKind::Split,
+            "whip" => TransKind::Whip,
             k if anikit_shader::library::get(k).is_some_and(|e| e.use_ == anikit_shader::library::Use::Transition) => TransKind::Shader,
             k => {
                 self.d.push(Diagnostic::error(format!("{path}.type"), format!("unknown transition '{k}'")).suggest(suggest(k, val::TRANSITIONS)));
@@ -868,13 +875,20 @@ impl C<'_> {
             TransKind::Cut => 0.0,
             TransKind::Glitch => 0.3,
             TransKind::MorphCut => 0.25,
+            TransKind::Whip => 0.35,
+            TransKind::ZoomThrough => 0.8,
             _ => 0.5,
         };
         let dur = match &o.duration {
             Some(d) if kind != TransKind::Cut => self.time_raw(d, &format!("{path}.duration")).max(0.0),
             _ => def,
         };
-        let ease = self.ease(o.ease.as_deref(), "inOutCubic", &format!("{path}.ease"));
+        let def_ease = match kind {
+            TransKind::ZoomThrough => "inQuad",
+            TransKind::Reveal | TransKind::Blinds | TransKind::Split | TransKind::Whip => "inOutExpo",
+            _ => "inOutCubic",
+        };
+        let ease = self.ease(o.ease.as_deref(), def_ease, &format!("{path}.ease"));
         let dir = match o.direction.as_deref() {
             None | Some("left") => [-1.0, 0.0],
             Some("right") => [1.0, 0.0],
@@ -906,7 +920,22 @@ impl C<'_> {
             None
         };
         let kind = if kind == TransKind::Shader && shader.is_none() { TransKind::Crossfade } else { kind };
-        TransC { kind, dur, ease, dir, color, origin, amount, shader }
+        let shape = match o.shape.as_deref() {
+            None | Some("circle") => 0,
+            Some("diamond") => 1,
+            Some("square") => 2,
+            Some("star") => 3,
+            Some("blob") => 4,
+            Some(x) => {
+                let names = ["circle", "diamond", "square", "star", "blob"];
+                self.d.push(Diagnostic::error(format!("{path}.shape"), format!("unknown reveal shape '{x}'")).suggest(suggest(x, &names)));
+                0
+            }
+        };
+        if kind == TransKind::ZoomThrough && o.layer.is_none() {
+            self.d.push(Diagnostic::error(format!("{path}.layer"), "zoomThrough needs 'layer': the id of a layer in the previous scene to fly into"));
+        }
+        TransC { kind, dur, ease, dir, color, origin, amount, shader, layer: o.layer.clone(), shape, count: o.count.unwrap_or(8).clamp(1, 64) }
     }
 
     fn scene(&mut self, s: &spec::Scene, path: &str, dur: f32, default_bg: &spec::Paint) -> Built {
@@ -1204,6 +1233,7 @@ impl C<'_> {
         n.index = pc.index as f32;
         n.tag = tag;
         n.count = pc.count as f32;
+        n.id = l.id.as_deref().map(Into::into);
 
         // Size (explicit).
         let given_w = l.width.as_ref().map(|v| self.len_c(v, &format!("{path}.width"), pw, 16.0));
@@ -1669,6 +1699,72 @@ impl C<'_> {
                 }
             }
         }
+        if let Some(iv) = &l.inertia {
+            let p = format!("{path}.inertia");
+            // (stiffness, damping, mass): damping ratio ≈ damping / (2·sqrt(stiffness·mass)).
+            let preset = |name: &str| match name {
+                "soft" => Some((90.0, 9.0, 1.0)),
+                "bouncy" => Some((220.0, 9.0, 1.0)),
+                "tight" => Some((400.0, 30.0, 1.0)),
+                "heavy" => Some((120.0, 16.0, 2.2)),
+                "" | "default" => Some((170.0, 14.0, 1.0)),
+                _ => None,
+            };
+            let mut props: Vec<String> = vec!["x".into(), "y".into(), "scaleX".into(), "scaleY".into(), "rotation".into()];
+            let params = match iv {
+                serde_json::Value::Bool(true) => preset(""),
+                serde_json::Value::Bool(false) => None,
+                serde_json::Value::String(s) => {
+                    let r = preset(s);
+                    if r.is_none() {
+                        self.d.push(Diagnostic::error(&p, format!("unknown inertia preset '{s}'")).suggest(suggest(s, &["soft", "bouncy", "tight", "heavy"])));
+                    }
+                    r
+                }
+                serde_json::Value::Object(m) => {
+                    for k in m.keys() {
+                        if !["stiffness", "damping", "mass", "props", "preset"].contains(&k.as_str()) {
+                            self.d.push(Diagnostic::warning(format!("{p}.{k}"), "unknown key (ignored)").suggest(suggest(k, &["stiffness", "damping", "mass", "props", "preset"])));
+                        }
+                    }
+                    let (k0, c0, m0) = m.get("preset").and_then(|x| x.as_str()).and_then(preset).unwrap_or((170.0, 14.0, 1.0));
+                    if let Some(serde_json::Value::Array(a)) = m.get("props") {
+                        props = a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect();
+                    }
+                    let g = |k: &str, d: f64| m.get(k).and_then(|x| x.as_f64()).unwrap_or(d);
+                    Some((g("stiffness", k0), g("damping", c0), g("mass", m0).max(0.01)))
+                }
+                _ => {
+                    self.d.push(Diagnostic::error(&p, "inertia is true, a preset name or {stiffness, damping, mass, props}"));
+                    None
+                }
+            };
+            if let Some((k, c, m)) = params {
+                let mut slots = Vec::new();
+                for name in &props {
+                    match prop::lookup(if name == "scale" { "scaleX" } else { name }) {
+                        Some((s, ch)) if ch <= 2 && !(prop::FILL..prop::FILL + 8).contains(&s) => {
+                            slots.push(s as u8);
+                            if name == "scale" {
+                                slots.push(prop::SY as u8);
+                            }
+                        }
+                        _ => self.d.push(Diagnostic::error(format!("{p}.props"), format!("'{name}' can't follow a spring (use x, y, rotation, scale, opacity, …)"))),
+                    }
+                }
+                slots.dedup();
+                n.inertia = Some(Box::new(fx::InertiaC { slots, stiffness: k as f32, damping: c as f32, mass: m as f32, table: Default::default() }));
+            }
+        }
+        f.smear = match &l.smear {
+            None | Some(serde_json::Value::Bool(false)) => None,
+            Some(serde_json::Value::Bool(true)) => Some(1.0),
+            Some(serde_json::Value::Number(x)) => Some(x.as_f64().unwrap_or(1.0).clamp(0.0, 10.0) as f32),
+            Some(_) => {
+                self.d.push(Diagnostic::error(format!("{path}.smear"), "smear is true or a strength (1 = default)"));
+                None
+            }
+        };
         if !f.is_empty() {
             n.fx = Some(Box::new(f));
         }

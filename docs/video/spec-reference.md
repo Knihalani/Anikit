@@ -158,8 +158,13 @@ That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the 
 | `blur` | Blur out, blur in | `amount` (px, default 40) |
 | `glitch` | Sliced offsets and RGB split, then cut | `intensity` 0..1 |
 | `morphCut` | Short soft blend with a slight scale, to hide a jump | |
+| `zoomThrough` | Fly into a layer of the outgoing scene; the new scene shows through its shape, then fills the frame | `layer` (an `id` in the previous scene; required). 0.8 s, `inQuad` |
+| `reveal` | The new scene grows out of a shape | `shape`: `circle` `diamond` `square` `star` `blob`; `amount` (spin °); `origin` |
+| `blinds` | Staggered bars open onto the new scene | `count` (8), `direction` |
+| `split` | The old frame splits in two and the halves part | `direction`: `left`/`right` part sideways, `up`/`down` vertically |
+| `whip` | Whip pan: both scenes travel a frame, blurred and stretched by speed | `direction`, `amount` (extra blur). 0.35 s |
 
-Defaults: duration 0.5 s (glitch 0.3 s), ease `inOutCubic`.
+Defaults: duration 0.5 s (glitch 0.3 s), ease `inOutCubic` (`reveal`, `blinds`, `split`, `whip`: `inOutExpo`).
 
 ### Camera
 
@@ -424,6 +429,9 @@ Render-time, per layer (examples: `examples/video/mograph/`):
 | `textPath`, `pathOffset` | Text on a path (layer-local px; never wraps); `pathOffset` slides it (px, animatable). |
 | `roundCorners`, `offsetPath`, `puckerBloat`, `zigzag: {size, ridges, smooth}`, `twist`, `wigglePath: {amount, detail, speed, seed}` | Shape modifiers, applied in this order (rects and ellipses become paths). `wigglePath` animates, deterministically. |
 | `matte: "id"` or `{layer, mode}` | Track matte through a sibling layer (`alpha`, `alphaInverted`, `luma`, `lumaInverted`); the matte layer is not drawn itself. |
+| `inertia: true \| "soft" \| "bouncy" \| "tight" \| "heavy" \| {stiffness, damping, mass, props}` | Follow-through: a spring (simulated once at 240 Hz, deterministic) chases the layer's own `x`, `y`, `scaleX`, `scaleY`, `rotation` (or `props`), so every move overshoots and settles. |
+| `smear: true \| strength` | Stretch along the direction of travel in proportion to speed (volume kept); still frames are untouched. |
+| transitions `zoomThrough` (`layer`), `reveal` (`shape`, `amount` spin, `origin`), `blinds` (`count`, `direction`), `split` (`direction`), `whip` (`direction`, `amount`) | Idea transitions: fly into a layer of the outgoing scene (the next scene shows through its shape), shape reveals, staggered bars, the frame splitting apart, a whip pan blurred by its speed. |
 | `dashOffset` | Added to `stroke.dashOffset`; animatable (`"=t*-60"` marches ants). |
 | `animator: {by, x, y, rotation, scale, opacity, blur, color, start, end, offset, smooth, order, seed, duration, delay, ease}` | Text animator with a range selector (plain text). Units in `[start, end] + offset` take the props (soft edges `smooth`); with no `offset` the range sweeps away over `duration` (a reveal). `order`: `forward`, `reverse`, `center`, `random` (+`seed`). |
 

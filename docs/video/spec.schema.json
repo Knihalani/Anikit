@@ -624,7 +624,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "`cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`. One of: cut, crossfade, fade, fadeBlack, fadeWhite, slide, push, zoom, wipe, iris, blur, glitch, morphCut, shader.",
+          "description": "`cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`, `zoomThrough`, `reveal`, `blinds`, `split`, `whip`. One of: cut, crossfade, fade, fadeBlack, fadeWhite, slide, push, zoom, wipe, iris, blur, glitch, morphCut, shader, zoomThrough, reveal, blinds, split, whip.",
           "type": [
             "string",
             "null"
@@ -643,7 +643,12 @@
             "blur",
             "glitch",
             "morphCut",
-            "shader"
+            "shader",
+            "zoomThrough",
+            "reveal",
+            "blinds",
+            "split",
+            "whip"
           ]
         },
         "duration": {
@@ -719,6 +724,29 @@
             "string",
             "null"
           ]
+        },
+        "layer": {
+          "description": "`zoomThrough`: the `id` of a layer in the outgoing scene to fly into (the new scene shows through its shape).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "shape": {
+          "description": "`reveal`: `circle`, `diamond`, `square`, `star`, `blob`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "count": {
+          "description": "`blinds`: number of bars (default 8).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
         },
         "uniforms": {
           "description": "Uniforms for a shader transition.",
@@ -1217,6 +1245,12 @@
               "type": "null"
             }
           ]
+        },
+        "inertia": {
+          "description": "Follow-through: a spring chases the layer's own motion, so every move overshoots and settles.\n`true`, a preset (`soft`, `bouncy`, `tight`, `heavy`) or `{\"stiffness\": 170, \"damping\": 12, \"mass\": 1, \"props\": [\"x\", \"y\", \"rotation\", \"scale\"]}`."
+        },
+        "smear": {
+          "description": "Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default)."
         },
         "matte": {
           "description": "Track matte: another layer of the scene (by `id`) whose alpha or luma shows this one.",
@@ -1941,9 +1975,14 @@
             "card-stack",
             "product-shot",
             "now-playing",
+            "brush",
+            "sketch",
+            "hatch",
+            "paper",
+            "cutout",
             "lottie"
           ],
-          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, lottie."
+          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, brush, sketch, hatch, paper, cutout, lottie."
         },
         "props": true,
         "progress": {

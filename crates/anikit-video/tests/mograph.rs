@@ -61,3 +61,58 @@ fn deterministic_frames() {
     let (a, b) = (ev(src), ev(src));
     assert_eq!(format!("{:?}", a.eval(0.7).ops), format!("{:?}", b.eval(0.7).ops));
 }
+
+fn rect_x(e: &Evaluator, t: f32) -> f32 {
+    e.eval(t).ops.iter().find_map(|o| if let Op::RoundRect { transform, .. } = o { Some(transform[4]) } else { None }).expect("rect")
+}
+
+#[test]
+fn inertia_overshoots_and_settles() {
+    let src = |extra: &str| format!(r#"{{ "scenes": [ {{ "duration": 3, "layers": [ {{ "shape": "rect", "x": 100, "width": 10, "height": 10, {extra}
+        "animate": {{ "to": {{ "x": 1100 }}, "duration": 0.3, "ease": "linear" }} }} ] }} ] }}"#);
+    let plain = ev(&src(""));
+    let sprung = ev(&src(r#""inertia": "bouncy","#));
+    // Lags behind while moving, overshoots after, and comes to rest on the target.
+    assert!(rect_x(&sprung, 0.15) < rect_x(&plain, 0.15));
+    let peak = (30..90).map(|k| rect_x(&sprung, k as f32 / 60.0)).fold(f32::MIN, f32::max);
+    assert!(peak > rect_x(&plain, 1.0) + 20.0, "peak {peak}");
+    assert!((rect_x(&sprung, 2.9) - rect_x(&plain, 2.9)).abs() < 1.0);
+    // Deterministic: a fresh evaluator gives the same frame, in any order.
+    let again = ev(&src(r#""inertia": "bouncy","#));
+    assert_eq!(rect_x(&again, 0.7), rect_x(&sprung, 0.7));
+}
+
+#[test]
+fn smear_stretches_fast_moves_only() {
+    let e = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "x": 100, "width": 40, "height": 40, "smear": true,
+        "animate": { "to": { "x": 1800 }, "duration": 0.3, "ease": "linear" } } ] } ] }"#);
+    let sx = |t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::RoundRect { transform, .. } = o { Some(transform[0]) } else { None }).unwrap();
+    assert!(sx(0.15) > 1.5, "{}", sx(0.15));
+    assert!((sx(1.5) - 1.0).abs() < 1e-3);
+}
+
+#[test]
+fn idea_transitions_render_both_scenes() {
+    for tr in [
+        r#"{ "type": "zoomThrough", "layer": "w" }"#,
+        r#"{ "type": "reveal", "shape": "star", "amount": 90 }"#,
+        r#"{ "type": "reveal", "shape": "blob" }"#,
+        r#"{ "type": "blinds", "count": 6 }"#,
+        r#"{ "type": "split", "direction": "up" }"#,
+        r#"{ "type": "whip" }"#,
+    ] {
+        let src = format!(
+            r##"{{ "scenes": [ {{ "duration": 1, "background": "#123456", "layers": [ {{ "id": "w", "text": "ONE", "size": 200 }} ] }},
+                {{ "duration": 1, "background": "#654321", "transition": {tr}, "layers": [ {{ "text": "TWO", "size": 200 }} ] }} ] }}"##
+        );
+        let e = ev(&src);
+        // Mid-transition: glyphs from both scenes are in the frame.
+        let ops = e.eval(0.85).ops;
+        let glyphs = count(&ops, |o| matches!(o, Op::Glyphs { .. }));
+        assert!(glyphs >= 2, "{tr}: {glyphs} glyph runs");
+        let a = format!("{:?}", e.eval(0.85).ops);
+        assert_eq!(a, format!("{:?}", ev(&src).eval(0.85).ops), "{tr}: deterministic");
+    }
+    let bad = parse_json(r#"{ "scenes": [ { "layers": ["a"] }, { "transition": "zoomThrough", "layers": ["b"] } ] }"#).unwrap();
+    assert!(Evaluator::new(&bad.spec, Options::default()).is_err(), "zoomThrough without a layer is an error");
+}

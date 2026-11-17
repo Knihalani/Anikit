@@ -1,0 +1,62 @@
+{
+  "size": "16:9", "fps": 30, "background": "#f3f3f0",
+  "intent": "fast",
+  "theme": { "colors": { "paper": "#f3f3f0", "ink": "#0c0c0c", "red": "#ff2e2e" } },
+  "transition": "cut",
+  "scenes": [
+    { "id": "slam", "duration": 1.1, "notes": "SNAPPY register: letters slam in from the right on expo-out, smeared at speed, landing with follow-through",
+      "layers": [
+        { "text": "VELO", "size": 520, "weight": 900, "letterSpacing": -30, "color": "$ink", "x": 960, "y": 560,
+          "animator": { "by": "char", "x": 1400, "duration": 0.42, "smooth": 0.5, "ease": [0.16, 1, 0.3, 1] } },
+        { "shape": "rect", "x": 2800, "y": 800, "width": 1180, "height": 22, "fill": "$red", "smear": 1.2, "inertia": "tight",
+          "animate": { "to": { "x": 960 }, "at": 0.28, "duration": 0.3, "ease": [0.16, 1, 0.3, 1] } },
+        { "text": "DROP 09 — 11.21", "font": "JetBrains Mono", "size": 24, "letterSpacing": 6, "color": "$ink", "x": 120, "y": 90, "anchor": "left",
+          "animator": { "opacity": 0, "order": "random", "seed": 4, "duration": 0.4, "delay": 0.3, "smooth": 0.05 } }
+      ] },
+    { "id": "fast", "duration": 1.0, "background": "#ff2e2e", "transition": { "type": "whip", "direction": "left" },
+      "notes": "speed lines (a repeater) stream left; the word lands with an overshoot",
+      "layers": [
+        { "shape": "rect", "x": 2100, "y": 120, "width": 520, "height": 22, "radius": 11, "fill": "$ink", "smear": 1,
+          "repeat": { "count": 9, "offset": { "x": -180, "y": 105 }, "stagger": 0.035 },
+          "animate": { "to": { "x": -400 }, "duration": 0.7, "ease": [0.7, 0, 0.84, 0] } },
+        { "id": "word", "text": "FAST", "size": 600, "weight": 900, "letterSpacing": -28, "color": "$paper", "x": 960, "y": 560, "inertia": "bouncy",
+          "animate": { "from": { "scale": 0.6, "rotation": -6 }, "duration": 0.25, "ease": [0.16, 1, 0.3, 1] } }
+      ] },
+    { "id": "sole", "duration": 1.3, "background": "#0c0c0c", "transition": { "type": "zoomThrough", "layer": "word", "duration": 0.45 },
+      "notes": "fly through the letters into a tread pattern: two counter-rotating repeater rings, the number lands on the beat",
+      "layers": [
+        { "shape": "rect", "x": 960, "y": 540, "width": 12, "height": 120, "radius": 6, "fill": "$paper", "anchor": [0.5, 3.3], "rotation": "=t*40",
+          "repeat": { "count": 40, "offset": { "rotate": 9 }, "stagger": 0.008 }, "animate": { "from": { "scaleY": 0 }, "duration": 0.3, "ease": [0.16, 1, 0.3, 1] } },
+        { "shape": "rect", "x": 960, "y": 540, "width": 6, "height": 50, "fill": "$red", "anchor": [0.5, 10.5], "rotation": "=t*-25",
+          "repeat": { "count": 72, "offset": { "rotate": 5 } } },
+        { "text": "9", "size": 560, "weight": 900, "color": "$paper", "x": 960, "y": 560, "inertia": "bouncy",
+          "animate": { "from": { "scale": 0 }, "at": 0.15, "duration": 0.2, "ease": [0.16, 1, 0.3, 1] } }
+      ] },
+    { "id": "specs", "duration": 1.2, "background": "#f3f3f0", "transition": { "type": "blinds", "count": 12, "direction": "right", "duration": 0.4 },
+      "notes": "three numbers count up and slide in with overlap (staggered starts, one lead)",
+      "layers": [
+        { "type": "group", "stagger": 0.07, "layers": [
+          { "text": "{value:0}g", "value": "=min(182, floor(t*600))", "size": 210, "weight": 900, "letterSpacing": -8, "color": "$ink", "x": 140, "y": 330, "anchor": "left",
+            "inertia": "tight", "animate": { "from": { "x": 40, "opacity": 0 }, "duration": 0.3, "ease": [0.16, 1, 0.3, 1] } },
+          { "text": "{value:0}mm", "value": "=min(38, floor(t*140))", "size": 210, "weight": 900, "letterSpacing": -8, "color": "$red", "x": 140, "y": 560, "anchor": "left",
+            "inertia": "tight", "animate": { "from": { "x": 40, "opacity": 0 }, "duration": 0.3, "ease": [0.16, 1, 0.3, 1] } },
+          { "text": "{value:0}%", "value": "=min(91, floor(t*320))", "size": 210, "weight": 900, "letterSpacing": -8, "color": "$ink", "x": 140, "y": 790, "anchor": "left",
+            "inertia": "tight", "animate": { "from": { "x": 40, "opacity": 0 }, "duration": 0.3, "ease": [0.16, 1, 0.3, 1] } } ] },
+        { "type": "group", "stagger": 0.07, "layers": [
+          { "text": "WEIGHT", "font": "JetBrains Mono", "size": 30, "letterSpacing": 8, "color": "$ink", "x": 1780, "y": 330, "anchor": "right", "enter": { "preset": "fadeIn", "delay": 0.2 } },
+          { "text": "STACK", "font": "JetBrains Mono", "size": 30, "letterSpacing": 8, "color": "$ink", "x": 1780, "y": 560, "anchor": "right", "enter": { "preset": "fadeIn", "delay": 0.2 } },
+          { "text": "RETURN", "font": "JetBrains Mono", "size": 30, "letterSpacing": 8, "color": "$ink", "x": 1780, "y": 790, "anchor": "right", "enter": { "preset": "fadeIn", "delay": 0.2 } } ] },
+        { "shape": "rect", "x": 960, "y": 445, "width": 1640, "height": 3, "fill": "$ink", "animate": { "from": { "scaleX": 0 }, "duration": 0.5, "ease": [0.16, 1, 0.3, 1] } },
+        { "shape": "rect", "x": 960, "y": 675, "width": 1640, "height": 3, "fill": "$ink", "animate": { "from": { "scaleX": 0 }, "at": 0.07, "duration": 0.5, "ease": [0.16, 1, 0.3, 1] } }
+      ] },
+    { "id": "lockup", "duration": 1.6, "background": "#0c0c0c", "transition": { "type": "reveal", "shape": "square", "amount": 45, "duration": 0.45 },
+      "notes": "button: wordmark lands, rule writes on, date marches",
+      "layers": [
+        { "text": "VELO 9", "size": 330, "weight": 900, "letterSpacing": -16, "color": "$paper", "x": 960, "y": 470,
+          "animator": { "by": "char", "y": 160, "opacity": 0, "duration": 0.45, "smooth": 0.35, "ease": [0.16, 1, 0.3, 1] } },
+        { "shape": "rect", "x": 960, "y": 650, "width": 980, "height": 10, "fill": "$red", "animate": { "from": { "scaleX": 0 }, "at": 0.25, "duration": 0.5, "ease": [0.87, 0, 0.13, 1] } },
+        { "text": "11.21 — 09:00 CET", "font": "JetBrains Mono", "size": 34, "letterSpacing": 8, "color": "$paper", "x": 960, "y": 730,
+          "animator": { "opacity": 0, "order": "random", "seed": 8, "delay": 0.5, "duration": 0.5, "smooth": 0.05 } }
+      ] }
+  ]
+}

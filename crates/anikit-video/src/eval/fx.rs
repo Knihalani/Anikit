@@ -111,6 +111,75 @@ impl MPath {
     }
 }
 
+/// Inertia: a damped spring chasing the layer's own animated values.
+#[derive(Debug)]
+pub(crate) struct InertiaC {
+    /// Property slots the spring follows.
+    pub slots: Vec<u8>,
+    pub stiffness: f32,
+    pub damping: f32,
+    pub mass: f32,
+    /// Spring output per sample (`slots.len()` values each), at `RATE` Hz from the layer start.
+    pub table: std::sync::OnceLock<Vec<f32>>,
+}
+
+impl InertiaC {
+    pub const RATE: f32 = 240.0;
+
+    /// Run the spring over `life` seconds against `target(t)` (the layer's own values at local time t).
+    pub fn simulate(&self, life: f32, mut target: impl FnMut(f32) -> [f32; super::prop::N]) -> Vec<f32> {
+        let k = self.slots.len();
+        let n = (life * Self::RATE).ceil().max(1.0) as usize + 1;
+        let mut out = Vec::with_capacity(n * k);
+        let first = target(0.0);
+        let mut x: Vec<f32> = self.slots.iter().map(|&s| first[s as usize]).collect();
+        let mut vel = vec![0.0f32; k];
+        let dt = 1.0 / Self::RATE;
+        let sub = 4;
+        let h = dt / sub as f32;
+        let mut prev = x.clone();
+        for j in 0..n {
+            let t = j as f32 * dt;
+            let tv = if j == 0 { first } else { target(t) };
+            let goal: Vec<f32> = self.slots.iter().map(|&s| tv[s as usize]).collect();
+            if j > 0 {
+                // Semi-implicit Euler, the goal interpolated across the substeps.
+                for q in 1..=sub {
+                    let f = q as f32 / sub as f32;
+                    for i in 0..k {
+                        let g = prev[i] + (goal[i] - prev[i]) * f;
+                        let a = (-self.stiffness * (x[i] - g) - self.damping * vel[i]) / self.mass;
+                        vel[i] += a * h;
+                        x[i] += vel[i] * h;
+                    }
+                }
+            }
+            prev.copy_from_slice(&goal);
+            out.extend_from_slice(&x);
+        }
+        out
+    }
+
+    /// Replace the followed slots of `v` with the spring's value at local time `lt`.
+    #[inline]
+    pub fn apply(&self, table: &[f32], lt: f32, v: &mut [f32; super::prop::N]) {
+        let k = self.slots.len();
+        let n = table.len() / k.max(1);
+        if n == 0 {
+            return;
+        }
+        let f = (lt * Self::RATE).max(0.0);
+        let j = (f.floor() as usize).min(n - 1);
+        let j1 = (j + 1).min(n - 1);
+        let u = (f - j as f32).clamp(0.0, 1.0);
+        for (i, &s) in self.slots.iter().enumerate() {
+            let a = table[j * k + i];
+            let b = table[j1 * k + i];
+            v[s as usize] = a + (b - a) * u;
+        }
+    }
+}
+
 /// Per-layer motion-graphics extras (boxed on `Node`, `None` for ordinary layers).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Fx {
@@ -126,6 +195,8 @@ pub(crate) struct Fx {
     pub wiggle: Option<[f32; 4]>,
     /// Text animator with a range selector.
     pub animator: Option<AnimatorC>,
+    /// Smear strength (stretch along velocity).
+    pub smear: Option<f32>,
     /// The outline resampled for `wiggle`.
     pub wiggle_src: Vec<(Vec<Point>, bool)>,
 }
