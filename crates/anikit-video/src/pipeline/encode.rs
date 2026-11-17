@@ -260,10 +260,10 @@ impl Encoder for FfmpegEncoder {
             let fr = ak264::YuvFrame { width: self.w, height: self.h, y: &f.y, u: &f.u, v: &f.v, y_stride: f.y_stride, c_stride: f.c_stride };
             let hints = if repeat {
                 let (mw, mh) = ak.mb_size();
-                ak264::FrameHints { changed: Some(vec![false; mw * mh]), motions: Vec::new() }
+                ak264::FrameHints { changed: Some(vec![false; mw * mh]), motions: Vec::new(), ..Default::default() }
             } else {
                 let (mw, mh) = ak.mb_size();
-                ak264::FrameHints { changed: changed.filter(|c| c.len() == mw * mh), motions: Vec::new() }
+                ak264::FrameHints { changed: changed.filter(|c| c.len() == mw * mh), motions: Vec::new(), ..Default::default() }
             };
             let bytes = ak.encode(&fr, &hints);
             let r = self.stdin.as_mut().ok_or("encoder finished")?.write_all(bytes);
