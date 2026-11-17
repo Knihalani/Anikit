@@ -49,13 +49,15 @@ pub struct EncoderConfig {
     /// for smoothness + up to 3 for darkness) × strength, with a wide AC dead
     /// zone so their noise is not coded. Busy macroblocks keep `qp`.
     /// 0 = constant QP. It stops gradients turning into a patchwork of blocks, but
-    /// costs size on smooth-heavy content (see docs/video/encoder.md).
+    /// costs size on smooth-heavy UI content (see docs/video/encoder.md).
+    /// Negative (the default, −0.5): automatic per frame — |value| on frames
+    /// dominated by smooth textured content (3D renders, video), 0 elsewhere.
     pub aq_strength: f32,
 }
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: 0.0 }
+        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: -0.5 }
     }
 }
 
@@ -2243,6 +2245,37 @@ impl Encoder {
         rows
     }
 
+    /// AQ strength for the current frame. `aq_strength ≥ 0` is used as given.
+    /// Negative means automatic: |aq_strength| when the frame is dominated by
+    /// smooth, textured content (renders of 3D scenes, video, soft photographic
+    /// gradients: second differences between 0.25 and 2 per sample on at least
+    /// 60% of a 2×2-subsampled macroblock grid), else 0. Decided from the
+    /// frame's own samples only, so it is deterministic and independent of
+    /// chunking and thread count.
+    fn aq_for_frame(&self) -> f32 {
+        let a = self.cfg.aq_strength;
+        if a >= 0.0 {
+            return a;
+        }
+        let y = &self.cur.y;
+        let (mut smooth, mut n) = (0u32, 0u32);
+        let mut blk = [0u8; 256];
+        for my in (0..self.mbh).step_by(2) {
+            for mx in (0..self.mbw).step_by(2) {
+                let o = y.off(mx as isize * 16, my as isize * 16);
+                crate::simd::copy_block::<16>(&mut blk, 0, 16, &y.data, o, y.stride, 16);
+                let hf = crate::simd::second_diff16(&blk);
+                smooth += (SMOOTH_HF / 8..SMOOTH_HF).contains(&hf) as u32;
+                n += 1;
+            }
+        }
+        if smooth * 10 >= n * 6 {
+            -a
+        } else {
+            0.0
+        }
+    }
+
     fn encode_slices(&mut self, idr: bool, frame_num: u32, stats: &mut FrameStats) {
         // Sub-pel refinement: keep the half-sample planes of the reference up
         // to date, recomputing only the MB rows that changed.
@@ -2296,7 +2329,7 @@ impl Encoder {
             qp: self.cfg.qp,
             qsets: &self.qsets,
             qsets_smooth: &self.qsets_smooth,
-            aq: self.cfg.aq_strength,
+            aq: self.aq_for_frame(),
             src: &self.cur,
             refp: &self.refp,
             changed: &self.changed,

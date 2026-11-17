@@ -42,7 +42,7 @@ Other entry points:
 | `cabac` | `true` | Main profile with CABAC. `false` gives Constrained Baseline with CAVLC: 35–60% larger files, slightly faster. |
 | `deblock` | `false` | The in-loop filter. It helps only at QP ≥ 34 (+0.1–0.2 dB) and costs about 25% speed; at QP ≤ 28 it *lowers* PSNR on this content (sharp edges, and copied macroblocks next to changing areas get re-filtered every frame). | With `threads > 1`, each slice deblocks its own rows in parallel (`disable_deblocking_filter_idc` 2).
 | `subpel` | `true` | Quarter-pel motion refinement (exact 6-tap interpolation, half-pel planes kept up to date incrementally). It saves 16–46% on real renderer clips with sub-pixel motion, for 15–25% more time. |
-| `aq_strength` | `0` | Adaptive quantisation: smooth macroblocks (fades, lit floors) get a lower QP, −(4 + up to 7)·strength, with a wide AC dead zone; busy ones keep `qp`. 1.0 removes the flat-tile patchwork on 3D floors for +9% there, but costs +36–110% on smooth UI content (see below). |
+| `aq_strength` | `-0.5` (auto) | Adaptive quantisation: smooth macroblocks (fades, lit floors) get a lower QP, −(4 + up to 7)·strength, with a wide AC dead zone; busy ones keep `qp`. ≥ 0 is used as given. Negative is automatic per frame: \|value\| on frames dominated by smooth textured content (3D renders, video), 0 on UI and motion graphics. |
 | `skip_threshold` | `0` | Perceptual skip: code a changed macroblock as a copy when every sample is within this distance of the reconstructed reference. Off by default (see the measurements below). |
 | `threads` | 1 | Slices per frame for `encode()`. Chunk-parallel modes ignore it. |
 | `full_range` | `false` | Signals the colour range (BT.709 primaries/matrix are always signalled). |
@@ -445,7 +445,7 @@ Two encoder effects made those steps look like blocks:
    - The result is 1-level steps on the macroblock grid. QP 19 and x264 at
      CRF 23 show the same.
 
-**`aq_strength` (opt-in, default 0)** targets the second effect.
+**`aq_strength`** targets the second effect.
 - **Which macroblocks:** smooth ones, bright or dark.
 - **QP:** −(4 + up to 4 for smoothness + up to 3 for darkness) × strength,
   coded with `mb_qp_delta` (CABAC and CAVLC); deblocking uses each edge's
@@ -455,7 +455,7 @@ Two encoder effects made those steps look like blocks:
 - **Effect:** at 1.0 the cyc floor turns from a patchwork into clean bands that
   follow the gradient.
 
-It is opt-in because smooth-heavy UI content pays heavily (QP 23, 300 frames):
+Applied everywhere, smooth-heavy UI content pays heavily (QP 23, 300 frames):
 
 | Clip | AQ 0 | AQ 0.5 | AQ 1.0 |
 |---|---|---|---|
@@ -465,7 +465,30 @@ It is opt-in because smooth-heavy UI content pays heavily (QP 23, 300 frames):
 | spec-to-screen | 4080 KB, 44.39 dB | 4485 KB (+10%), 44.48 dB | 5972 KB (+46%), 44.60 dB |
 | full (synthetic) | 1296 KB, 51.44 dB | 1333 KB (+3%), 52.09 dB | 1577 KB (+22%), 52.92 dB |
 
-Recommendation: AQ 1.0 for 3D/cyc looks, 0 for UI and motion graphics.
+**The default is automatic (`-0.5`).**
+- **Rule:** per frame, from that frame's own samples, so it is deterministic and
+  independent of chunking and thread count. AQ 0.5 applies when at least 60% of
+  a 2×2-subsampled macroblock grid is smooth but textured (second differences
+  between 0.25 and 2 per sample), as in renders of 3D scenes and video. UI
+  backgrounds are mostly exactly flat and stay at constant QP.
+- **Effect at QP 23:**
+
+  | Clip | Size change | Result |
+  |---|---|---|
+  | launch, tutorial, full | 0% (auto stays off) | unchanged |
+  | spec-to-screen | +1.8% (some frames qualify) | |
+  | cyc floor | +4% | patchwork gone |
+  | COMPONENTS' dark aurora | +29% (580 → 747 KB) | smoothed PSNR 56.8 → 57.8 dB, the QP 19 level at fewer bytes than QP 19 (789 KB) |
+
+- **Cost:** the measurement adds about 1% instructions.
+- **Strength:** 0.5 already removes the cyc patchwork; 1.0 looks the same there
+  at +9%.
+
+The x264 size gap on cyc: x264 at CRF 23 is 791 KB but 42.5 dB, five dB below
+ak264 at QP 23. At matched PSNR ak264 needs about 1080 KB (1.36×), the usual gap
+from B-frames and RD tools on busy content. A wide AC dead zone on smooth inter
+macroblocks (coding less denoiser noise) changed the size by only 0.2%, so the
+bits are not going into floor noise.
 
 Variants that were measured and rejected:
 - **x264-style symmetric AQ** (raising QP on busy macroblocks): launch doubled
