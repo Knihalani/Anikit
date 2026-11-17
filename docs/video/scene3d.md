@@ -57,7 +57,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - flags: `camera: false` (a reflector card), `shadow`, `thin`.
 - **`materials`:**
   - named custom materials, e.g. `{ "ink": { "extends": "matte", "base": "#15171A" } }`;
-  - built-ins: `chrome`, `glass`, `aluminium`, `aluminium-bead`, `matte`/`white`, `ceramic`, `plastic`, `rubber`, `black`, `gold`, `emissive`;
+  - built-ins: `chrome`, `mirror`, `glass`, `aluminium`, `aluminium-bead`, `titanium`, `copper`, `gold`, `matte`/`white`, `ceramic`, `plastic`, `rubber`, `black`, `car-paint`, `lacquer`, `emissive`;
   - keys: `base`, `metallic`, `roughness`, `specular`, `clearcoat`, `emissive`, `emissiveStrength`, `transmission`, `ior`, `tint` + `tintDistance`, `glow` (how much a texture glows like a screen).
 - **Look:** `quality` (`draft`, `standard`, `high`), `bloom`, `exposure`, `tonemap` (`neutral`, `aces`), `vignette`, `floor` (`false` or `{ color, roughness, reflect, mirror, y }`).
 

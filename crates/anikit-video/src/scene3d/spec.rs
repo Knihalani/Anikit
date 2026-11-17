@@ -176,7 +176,7 @@ fn check_keys(m: &Map<String, Value>, allowed: &[&str], path: &str) -> Res<()> {
 
 // ------------------------------------------------------------ materials
 
-pub const MATERIALS: &[&str] = &["chrome", "glass", "aluminium", "aluminum", "aluminium-bead", "matte", "white", "black", "gold", "emissive", "plastic", "ceramic", "rubber"];
+pub const MATERIALS: &[&str] = &["chrome", "mirror", "glass", "aluminium", "aluminum", "aluminium-bead", "titanium", "copper", "gold", "matte", "white", "black", "plastic", "ceramic", "rubber", "car-paint", "lacquer", "emissive"];
 
 pub fn builtin_material(name: &str) -> Option<Material> {
     let c = Material::chrome();
@@ -200,6 +200,13 @@ pub fn builtin_material(name: &str) -> Option<Material> {
         "rubber" => Material { base: v3(0.02, 0.02, 0.022), metallic: 0.0, roughness: 0.8, specular: 0.5, ..c },
         "black" => Material { base: v3(0.01, 0.01, 0.012), metallic: 0.0, roughness: 0.08, specular: 1.2, ..c },
         "gold" => Material { base: v3(1.0, 0.71, 0.38), metallic: 1.0, roughness: 0.12, ..c },
+        "mirror" => Material { base: v3(0.97, 0.97, 0.97), roughness: 0.02, ..c },
+        "titanium" => Material { base: v3(0.62, 0.6, 0.57), metallic: 1.0, roughness: 0.3, ..c },
+        "copper" => Material { base: v3(0.96, 0.64, 0.54), metallic: 1.0, roughness: 0.18, ..c },
+        // Deep red base under a glossy clear coat.
+        "car-paint" => Material { base: v3(0.45, 0.02, 0.03), metallic: 0.3, roughness: 0.35, clearcoat: 1.0, ..c },
+        // Glossy black piano lacquer.
+        "lacquer" => Material { base: v3(0.012, 0.012, 0.014), metallic: 0.0, roughness: 0.3, clearcoat: 1.0, ..c },
         "emissive" => Material { base: v3(0.02, 0.02, 0.02), metallic: 0.0, roughness: 0.4, emissive: v3(4.0, 4.0, 4.0), ..c },
         _ => return None,
     })
