@@ -13,9 +13,16 @@ pub struct Upscaler {
     xtab: Vec<(u32, u32, u32)>,
     rows: [Vec<u8>; 2],
     row_ids: [usize; 2],
+    /// What `xtab` and the cached rows were built for.
+    key: Option<(usize, usize, usize, [u64; 4], usize, i64)>,
 }
 
 impl Upscaler {
+    /// Forget cached rows (the source pixels changed in place).
+    pub fn invalidate(&mut self) {
+        self.key = None;
+    }
+
     /// Write `src` (`sw × sh` premultiplied RGBA8), placed at device rect `dev`,
     /// into `out` (`ow × oh` pixels, tightly packed), whose pixel (0,0) is
     /// frame pixel (`ox`, `oy`). Samples are clamped at the image edges.
@@ -48,12 +55,18 @@ impl Upscaler {
             let w = ((u - i0 as f64) * 256.0).round() as u32;
             (i0, i1, w)
         };
-        self.xtab.clear();
-        self.xtab.extend((0..ow).map(|x| lerp_tab((ox + x as i64) as f64 - dev.x0, sx, sw)));
-        for r in &mut self.rows {
-            r.resize(ow * 4, 0);
+        // Repeated calls on the same image and columns (row-pair streaming) keep
+        // the column table and the cached source rows.
+        let key = (src.as_ptr() as usize, sw, sh, [dev.x0, dev.y0, dev.x1, dev.y1].map(f64::to_bits), ow, ox);
+        if self.key != Some(key) {
+            self.xtab.clear();
+            self.xtab.extend((0..ow).map(|x| lerp_tab((ox + x as i64) as f64 - dev.x0, sx, sw)));
+            for r in &mut self.rows {
+                r.resize(ow * 4, 0);
+            }
+            self.row_ids = [usize::MAX; 2];
+            self.key = Some(key);
         }
-        self.row_ids = [usize::MAX; 2];
         let srow = sw * 4;
         for y in 0..oh {
             let (j0, j1, wy) = lerp_tab((oy + y as i64) as f64 - dev.y0, sy, sh);

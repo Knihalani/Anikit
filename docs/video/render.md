@@ -65,6 +65,10 @@ A leading run of top-level ops with no visible edge inside the frame is rendered
 
 This applies once the run paints a frame's worth of pixels with a gradient or image. The launch template's background (a full-frame radial plus two moving glows) went from 118 to about 195 fps on one thread at 1080p (8-bit intermediate rows; the vertical lerp runs in 16-bit lanes). The result is within 6 LSB of a full-resolution render (tested).
 
+### Fused backdrop → YUV
+
+When `render_yuv` has a backdrop and the ops drawn over it fit in a macroblock-aligned box covering at most 60% of the frame, the YUV comes straight from upscaled row pairs that stay in cache. Only the box goes through RGBA and vello: it is seeded from the same rows. The full RGBA frame is never written, so `frame()` is stale afterwards; call `render()` when you need RGBA. The output is within 2 LSB of `render()` followed by RGBA→YUV conversion (tested). On the launch template this is about 8% faster than the unfused path.
+
 ### Incremental frames
 
 `render_yuv_incremental` is the fastest path for real videos. Each worker keeps its previous frame and does the following:

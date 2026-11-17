@@ -144,6 +144,8 @@ pub struct Renderer {
     frame_images: Arc<HashMap<dl::ImageId, Arc<Pixmap>>>,
     dynamic: Option<Arc<dyn DynamicImages>>,
     upscaler: upscale::Upscaler,
+    /// Two upscaled rows (fused backdrop → YUV path).
+    pair: Vec<u8>,
     /// Low-resolution smooth backdrop, its context and content key.
     lctx: Option<RenderContext>,
     smooth_lo: Pixmap,
@@ -168,6 +170,7 @@ impl Renderer {
             frame_images: Default::default(),
             dynamic: None,
             upscaler: Default::default(),
+            pair: Vec::new(),
             lctx: None,
             smooth_lo: Pixmap::new(1, 1),
             smooth_key: None,
@@ -233,13 +236,22 @@ impl Renderer {
 
     /// Render `list` and return the frame (premultiplied RGBA8).
     pub fn render(&mut self, list: &DisplayList) -> &FrameRgba {
-        self.render_region(list, None, true, None);
+        self.render_region(list, None, true, None, None);
         &self.frame
     }
 
     /// Render all of `list`, or only the pixels of `region` (`[x0, y0, x1, y1)`,
     /// clipped to the frame) — the rest of the frame keeps its previous pixels.
-    pub(crate) fn render_region(&mut self, list: &DisplayList, region: Option<[u32; 4]>, new_frame: bool, rects: Option<&[Option<Rect>]>) {
+    /// Returns true when it wrote `yuv` directly (fused backdrop path; the RGBA
+    /// frame is then only partly updated).
+    pub(crate) fn render_region(
+        &mut self,
+        list: &DisplayList,
+        region: Option<[u32; 4]>,
+        new_frame: bool,
+        rects: Option<&[Option<Rect>]>,
+        yuv: Option<&mut YuvFrame>,
+    ) -> bool {
         let (w, h) = (list.width.clamp(1, u16::MAX as u32) as u16, list.height.clamp(1, u16::MAX as u32) as u16);
         if self.ctx.width() != w || self.ctx.height() != h {
             self.ctx = RenderContext::new(w, h);
@@ -308,22 +320,118 @@ impl Renderer {
             None => (&list.ops[..], 0),
         };
         let settings = if backdrop.is_some() { RasterizerSettings { target_init: TargetInit::SrcOver, ..Default::default() } } else { settings };
-        if full {
+        if backdrop.is_some() {
+            // The backdrop's pixels may have changed in place (cached low-res buffer).
+            self.upscaler.invalidate();
+        }
+        let mut fused = false;
+        let (wu, hu) = (w as usize, h as usize);
+        // Macroblock-aligned box of the ops drawn over a backdrop.
+        let rgn = backdrop.as_ref().and_then(|_| ops_bounds(ops, Affine::IDENTITY)).and_then(|r| {
+            let a = |v: f64, hi: usize| ((v.max(0.0) / 16.0).floor() as usize * 16).min(hi);
+            let b = |v: f64, hi: usize| ((v.max(0.0) / 16.0).ceil() as usize * 16).min(hi);
+            let r = [a(r.x0, wu), a(r.y0, hu), b(r.x1, wu), b(r.y1, hu)];
+            (r[2] > r[0] && r[3] > r[1]).then_some(r)
+        });
+        let small = rgn.is_none_or(|r| ((r[2] - r[0]) * (r[3] - r[1])) as f64 <= 0.6 * (wu * hu) as f64);
+        if let (true, true, Some(yuv), Some((_, pix, dev))) = (full, small, yuv, &backdrop) {
+            // Fused: YUV straight from upscaled row pairs (cache-resident), with
+            // RGBA + vello only inside the macroblock-aligned box of the ops on top.
+            fused = true;
+            yuv.resize(w as u32, h as u32);
+            self.pair.resize(wu * 2 * 4, 0);
+            if let Some([x0, y0, x1, y1]) = rgn {
+                self.rpix.resize((x1 - x0) as u16, (y1 - y0) as u16);
+            }
+            let (pw, ph) = (pix.width() as usize, pix.height() as usize);
+            for y in (0..hu).step_by(2) {
+                let rows = (hu - y).min(2);
+                let band = rgn.filter(|r| y >= r[1] && y < r[3]);
+                let pair = &mut self.pair[..wu * rows * 4];
+                self.upscaler.run(pix.data_as_u8_slice(), pw, ph, *dev, pair, wu, rows, 0, y as i64);
+                match band {
+                    Some(r) => {
+                        // Seed the box's backdrop pixels from these rows.
+                        let (bw, rpw) = ((r[2] - r[0]) * 4, self.rpix.width() as usize * 4);
+                        let rp = self.rpix.data_as_u8_slice_mut();
+                        for k in 0..rows {
+                            let o = (y + k - r[1]) * rpw;
+                            rp[o..o + bw].copy_from_slice(&pair[(k * wu + r[0]) * 4..(k * wu + r[0]) * 4 + bw]);
+                        }
+                        if r[0] > 0 {
+                            yuv::convert_into(pair, wu, rows, [0, 0, r[0], rows], yuv, (0, y));
+                        }
+                        if r[2] < wu {
+                            yuv::convert_into(pair, wu, rows, [r[2], 0, wu, rows], yuv, (0, y));
+                        }
+                    }
+                    None => yuv::convert_into(pair, wu, rows, [0, 0, wu, rows], yuv, (0, y)),
+                }
+            }
+            if let Some([x0, y0, x1, y1]) = rgn {
+                let (rw, rh) = ((x1 - x0) as u16, (y1 - y0) as u16);
+                self.rpix.set_may_have_transparency(false);
+                let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
+                rctx.reset_and_resize(rw, rh);
+                st.org = (x0 as i32, y0 as i32);
+                draw_ops(st, &assets, rctx, ops, Affine::translate((-(x0 as f64), -(y0 as f64))));
+                rctx.flush();
+                rctx.render_with(&mut self.rpix, &mut st.res, settings);
+                rctx.reset();
+                st.org = (0, 0);
+                yuv::convert_into(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, [0, 0, rw as usize, rh as usize], yuv, (x0, y0));
+            }
+            yuv::pad(yuv);
+        } else if full {
             st.org = (0, 0);
             if let Some((_, pix, dev)) = &backdrop {
                 self.upscaler.run(pix.data_as_u8_slice(), pix.width() as usize, pix.height() as usize, *dev, self.frame.data_as_u8_slice_mut(), w as usize, h as usize, 0, 0);
                 self.frame.set_may_have_transparency(false);
             }
-            self.ctx.reset();
-            draw_ops(st, &assets, &mut self.ctx, ops, Affine::IDENTITY);
-            self.ctx.flush();
-            self.ctx.render_with(&mut self.frame, &mut st.res, settings);
-            // Release the paints that referenced offscreen bitmaps.
-            self.ctx.reset();
+            // Over a backdrop, only the ops' bounding box needs vello.
+            let sub = backdrop.as_ref().map(|_| {
+                ops_bounds(ops, Affine::IDENTITY).map(|r| round_out(r.intersect(Rect::new(0.0, 0.0, w as f64, h as f64))))
+            });
+            match sub {
+                // Nothing on top of the backdrop.
+                Some(None) => {}
+                Some(Some(r)) if r.width() < 1.0 || r.height() < 1.0 => {}
+                Some(Some(r)) if r.area() < 0.7 * w as f64 * h as f64 => {
+                    let (x0, y0, rw, rh) = (r.x0 as usize, r.y0 as usize, r.width() as u16, r.height() as u16);
+                    let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
+                    rctx.reset_and_resize(rw, rh);
+                    st.org = (x0 as i32, y0 as i32);
+                    draw_ops(st, &assets, rctx, ops, Affine::translate((-(x0 as f64), -(y0 as f64))));
+                    rctx.flush();
+                    self.rpix.resize(rw, rh);
+                    let (fw, rwb) = (w as usize * 4, rw as usize * 4);
+                    let frame = self.frame.data_as_u8_slice_mut();
+                    for (i, row) in self.rpix.data_as_u8_slice_mut().chunks_exact_mut(rwb).enumerate() {
+                        let o = (y0 + i) * fw + x0 * 4;
+                        row.copy_from_slice(&frame[o..o + rwb]);
+                    }
+                    self.rpix.set_may_have_transparency(false);
+                    rctx.render_with(&mut self.rpix, &mut st.res, settings);
+                    rctx.reset();
+                    st.org = (0, 0);
+                    for (i, row) in self.rpix.data_as_u8_slice().chunks_exact(rwb).enumerate() {
+                        let o = (y0 + i) * fw + x0 * 4;
+                        frame[o..o + rwb].copy_from_slice(row);
+                    }
+                }
+                _ => {
+                    self.ctx.reset();
+                    draw_ops(st, &assets, &mut self.ctx, ops, Affine::IDENTITY);
+                    self.ctx.flush();
+                    self.ctx.render_with(&mut self.frame, &mut st.res, settings);
+                    // Release the paints that referenced offscreen bitmaps.
+                    self.ctx.reset();
+                }
+            }
         } else {
             let [x0, y0, x1, y1] = region.unwrap_or_default();
             if x1 <= x0 || y1 <= y0 {
-                return;
+                return false;
             }
             let (rw, rh) = ((x1 - x0) as u16, (y1 - y0) as u16);
             let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
@@ -376,12 +484,18 @@ impl Renderer {
         if st.sprites.len() > 256 {
             st.sprites.retain(|_, e| e.last_used + 30 >= now);
         }
+        fused
     }
 
     /// Render and convert to YUV 4:2:0 (BT.709 limited range) in one call.
+    ///
+    /// Over a full-frame backdrop (image field or smooth gradients) the YUV is
+    /// produced directly from upscaled rows, and the RGBA [`Self::frame`] is not
+    /// fully updated: call [`Self::render`] when you need the RGBA pixels.
     pub fn render_yuv(&mut self, list: &DisplayList, out: &mut YuvFrame) {
-        self.render(list);
-        rgba_to_yuv420(&self.frame, out);
+        if !self.render_region(list, None, true, None, Some(out)) {
+            rgba_to_yuv420(&self.frame, out);
+        }
     }
 }
 

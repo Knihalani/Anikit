@@ -599,3 +599,33 @@ fn smooth_backdrop_matches_full_res() {
         assert!(max <= 6 && mean < 0.6, "frame {k}: max {max} mean {mean}");
     }
 }
+
+#[test]
+fn fused_backdrop_yuv_matches_rgba_path() {
+    use anikit_video::render::{rgba_to_yuv420, YuvFrame};
+    let mut assets = Assets::default();
+    let field: Vec<u8> = (0..20 * 12).flat_map(|i| [(i * 37 % 256) as u8, (i * 11 % 256) as u8, (255 - i % 256) as u8, 255]).collect();
+    assets.images.insert_rgba8(ImageId(5), 20, 12, field).unwrap();
+    let assets = Arc::new(assets);
+    for (w, h) in [(160u32, 96u32), (157, 91)] {
+        let image_bg = Op::Image { image: ImageId(5), dst: [0.0, 0.0, w as f32, h as f32], opacity: 1.0, transform: IDENTITY };
+        let grad_bg = Op::RoundRect { x: 0.0, y: 0.0, w: w as f32, h: h as f32, radius: 0.0, paint: Paint::Radial { c: [80.0, 48.0], r: 120.0, stops: vec![(0.0, rgba(0.2, 0.1, 0.4, 1.0)), (1.0, rgba(0.0, 0.05, 0.1, 1.0))] }, transform: IDENTITY };
+        for bg in [image_bg, grad_bg] {
+            for top in [vec![], vec![card(37.0, 21.0, 40.0, 30.0, Paint::Solid(rgba(1.0, 1.0, 1.0, 0.8)))], vec![card(-10.0, 0.0, 400.0, 20.0, solid(1.0, 0.0, 0.0))]] {
+                let mut ops = vec![bg.clone()];
+                ops.extend(top);
+                let l = DisplayList { width: w, height: h, background: rgba(0.0, 0.0, 0.0, 1.0), ops };
+                let mut r = Renderer::new(assets.clone());
+                let mut fused = YuvFrame::default();
+                r.render_yuv(&l, &mut fused);
+                let mut reference = YuvFrame::default();
+                rgba_to_yuv420(Renderer::new(assets.clone()).render(&l), &mut reference);
+                assert_eq!((fused.width, fused.padded_height), (reference.width, reference.padded_height));
+                for (a, b) in [(&fused.y, &reference.y), (&fused.u, &reference.u), (&fused.v, &reference.v)] {
+                    let max = a.iter().zip(b.iter()).map(|(p, q)| p.abs_diff(*q)).max().unwrap();
+                    assert!(max <= 2, "{w}x{h}: fused YUV differs by {max}");
+                }
+            }
+        }
+    }
+}
