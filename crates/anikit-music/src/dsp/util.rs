@@ -78,6 +78,27 @@ pub fn fast_tanh(x: f32) -> f32 {
     (e - 1.0) / (e + 1.0)
 }
 
+/// Dot product with eight independent accumulators (fixed summation order, so
+/// deterministic, and vectorisable without fast-math).
+#[inline(always)]
+pub fn dot(a: &[f32], b: &[f32]) -> f32 {
+    let n = a.len().min(b.len());
+    let (a, b) = (&a[..n], &b[..n]);
+    let mut acc = [0.0f32; 8];
+    let (ca, cb) = (a.chunks_exact(8), b.chunks_exact(8));
+    let (ra, rb) = (ca.remainder(), cb.remainder());
+    for (x, y) in ca.zip(cb) {
+        for k in 0..8 {
+            acc[k] += x[k] * y[k];
+        }
+    }
+    let mut s = ((acc[0] + acc[4]) + (acc[1] + acc[5])) + ((acc[2] + acc[6]) + (acc[3] + acc[7]));
+    for (x, y) in ra.iter().zip(rb) {
+        s += x * y;
+    }
+    s
+}
+
 /// Cubic Hermite (Catmull-Rom) interpolation between `x1` and `x2`.
 #[inline(always)]
 pub fn hermite(x0: f32, x1: f32, x2: f32, x3: f32, t: f32) -> f32 {
@@ -115,19 +136,24 @@ impl DelayLine {
     /// Fractional read `d ≥ 1` samples back (cubic Hermite).
     #[inline(always)]
     pub fn read(&self, d: f32) -> f32 {
-        let di = d as usize;
+        self.read_ahead(0, d)
+    }
+    /// [`DelayLine::read`] as if `k` more samples had been pushed (for block
+    /// processing of feedback loops whose delay exceeds the block); requires
+    /// `d ≥ k + 1`.
+    #[inline(always)]
+    pub fn read_ahead(&self, k: usize, d: f32) -> f32 {
+        let di = d as i32 as usize;
         let t = d - di as f32;
-        // Between tap(di) (t = 0) and tap(di + 1) (t = 1).
-        let x0 = self.tap(di.wrapping_sub(1));
-        let x1 = self.tap(di);
-        let x2 = self.tap(di + 1);
-        let x3 = self.tap(di + 2);
-        hermite(x0, x1, x2, x3, t)
+        let p = self.pos + k;
+        let at = |j: usize| self.buf[p.wrapping_sub(j) & self.mask];
+        // Between at(di) (t = 0) and at(di + 1) (t = 1).
+        hermite(at(di.wrapping_sub(1)), at(di), at(di + 1), at(di + 2), t)
     }
     /// Linear-interpolated read.
     #[inline(always)]
     pub fn read_linear(&self, d: f32) -> f32 {
-        let di = d as usize;
+        let di = d as i32 as usize;
         let t = d - di as f32;
         let a = self.tap(di);
         a + (self.tap(di + 1) - a) * t

@@ -81,7 +81,7 @@ impl Processor for TransientShaper {
             let att = ((ed - fast_gain_to_db(self.slow.step(e)) - DEAD) / SPAN).clamp(0.0, 1.0);
             let sus = ((fast_gain_to_db(self.hold.step(e)) - ed - DEAD) / SPAN).clamp(0.0, 1.0);
             let target = self.p.attack * att + self.p.sustain * sus;
-            self.g = target + self.smooth * (self.g - target);
+            self.g = flush(target + self.smooth * (self.g - target));
             let g = fast_db_to_gain(self.g);
             *a *= g;
             *b *= g;

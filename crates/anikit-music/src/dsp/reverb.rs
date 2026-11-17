@@ -226,7 +226,7 @@ fn shelf(rate: f32, fc: f32, low: bool, g: f32) -> (f32, f32, f32) {
 #[derive(Debug, Clone)]
 pub struct Reverb {
     s: ReverbSettings,
-    pre: [DelayLine; 2],
+    pre: [DelayLine; 3],
     pre_d: usize,
     diff: [[DelayLine; 4]; 2],
     diff_d: [[usize; 4]; 2],
@@ -237,8 +237,13 @@ pub struct Reverb {
     lines: Vec<DelayLine>,
     len: [f32; N],
     gain: [f32; N],
-    ls: [(f32, f32, f32); N],
-    hs: [(f32, f32, f32); N],
+    lb0: [f32; N],
+    lb1: [f32; N],
+    la1: [f32; N],
+    hb0: [f32; N],
+    hb1: [f32; N],
+    ha1: [f32; N],
+    blk: usize,
     lz: [f32; N],
     hz: [f32; N],
     lfo: [(f32, f32); N],
@@ -280,7 +285,7 @@ impl Reverb {
             *e = (ms(t).round() as usize, g * gl, g * gr);
         }
         let er_max = er.iter().map(|e| e.0).max().unwrap_or(0);
-        let pre = [DelayLine::new(pre_d + er_max + 8), DelayLine::new(pre_d + er_max + 8)];
+        let pre = [DelayLine::new(pre_d + 8), DelayLine::new(pre_d + 8), DelayLine::new(pre_d + er_max + 8)];
         let dscale = s.size.sqrt().clamp(0.5, 1.4);
         let mut diff_d = [[0usize; 4]; 2];
         for c in 0..2 {
@@ -297,8 +302,8 @@ impl Reverb {
             lines.push(DelayLine::new(len[i] as usize + depth as usize + 8));
         }
         let mut gain = [0.0f32; N];
-        let mut ls = [(1.0, 0.0, 0.0); N];
-        let mut hs = [(1.0, 0.0, 0.0); N];
+        let (mut lb0, mut lb1, mut la1) = ([1.0f32; N], [0.0f32; N], [0.0f32; N]);
+        let (mut hb0, mut hb1, mut ha1) = ([1.0f32; N], [0.0f32; N], [0.0f32; N]);
         let mut lfo = [(1.0, 0.0); N];
         let mut rot = [(1.0, 0.0); N];
         let rt = |t: f32, d: f32| 10f32.powf(-3.0 * d / (t * rate));
@@ -309,8 +314,8 @@ impl Reverb {
             let gl = rt(s.decay * s.low_ratio, d);
             let gh = rt(s.decay * s.high_ratio, d);
             gain[i] = gm;
-            ls[i] = shelf(rate, s.low_cross, true, gl / gm);
-            hs[i] = shelf(rate, s.high_cross, false, gh / gm);
+            (lb0[i], lb1[i], la1[i]) = shelf(rate, s.low_cross, true, gl / gm);
+            (hb0[i], hb1[i], ha1[i]) = shelf(rate, s.high_cross, false, gh / gm);
             let ph = rng.range(0.0, std::f32::consts::TAU);
             lfo[i] = (ph.cos(), ph.sin());
             let w = std::f32::consts::TAU * (0.13 + 0.07 * i as f32 + rng.range(0.0, 0.05)) / rate;
@@ -339,8 +344,13 @@ impl Reverb {
             lines,
             len,
             gain,
-            ls,
-            hs,
+            lb0,
+            lb1,
+            la1,
+            hb0,
+            hb1,
+            ha1,
+            blk: ((len.iter().fold(f32::MAX, |a, b| a.min(*b)) - depth.ceil() - 3.0) as usize).clamp(1, BLK),
             lz: [0.0; N],
             hz: [0.0; N],
             lfo,
@@ -367,20 +377,23 @@ impl Reverb {
         self.dry = dry;
     }
 
+    /// 16-point Walsh-Hadamard transform as H4 ⊗ H4 on a 4×4 view: butterflies
+    /// within each row, then 4-wide vector butterflies across rows.
     #[inline(always)]
     fn fwht(v: &mut [f32; N]) {
-        let mut h = 1;
-        while h < N {
-            let mut i = 0;
-            while i < N {
-                for j in i..i + h {
-                    let (a, b) = (v[j], v[j + h]);
-                    v[j] = a + b;
-                    v[j + h] = a - b;
-                }
-                i += 2 * h;
-            }
-            h *= 2;
+        let mut m = [[0.0f32; 4]; 4];
+        for (r, row) in m.iter_mut().enumerate() {
+            let (a, b, c, d) = (v[4 * r], v[4 * r + 1], v[4 * r + 2], v[4 * r + 3]);
+            let (s0, s1, d0, d1) = (a + b, c + d, a - b, c - d);
+            *row = [s0 + s1, d0 + d1, s0 - s1, d0 - d1];
+        }
+        let [r0, r1, r2, r3] = m;
+        for c in 0..4 {
+            let (s0, s1, d0, d1) = (r0[c] + r1[c], r2[c] + r3[c], r0[c] - r1[c], r2[c] - r3[c]);
+            v[c] = s0 + s1;
+            v[4 + c] = d0 + d1;
+            v[8 + c] = s0 - s1;
+            v[12 + c] = d0 - d1;
         }
     }
 }
@@ -392,75 +405,12 @@ const IN_SIGN: [f32; N] = [1., 1., -1., 1., 1., -1., -1., 1., -1., 1., 1., -1., 
 
 impl Processor for Reverb {
     fn process(&mut self, l: &mut [f32], r: &mut [f32]) {
-        let (wet, dry) = (self.wet, self.dry);
-        let er_g = self.s.early * 0.7;
-        let out_scale = 1.0 / (N as f32).sqrt();
-        let half_w = 0.5 * self.width;
-        let g_ap = self.diff_g;
-        for (a, b) in l.iter_mut().zip(r.iter_mut()) {
-            let (xl, xr) = (*a, *b);
-            self.pre[0].push(xl);
-            self.pre[1].push(xr);
-            let pl = self.pre[0].tap(self.pre_d);
-            let pr = self.pre[1].tap(self.pre_d);
-            // Early reflections (cross-fed, lightly low-passed).
-            let (mut el, mut erv) = (0.0f32, 0.0f32);
-            for &(d, gl, gr) in &self.er {
-                let v = self.pre[0].tap(self.pre_d + d) + self.pre[1].tap(self.pre_d + d);
-                el += v * gl;
-                erv += v * gr;
-            }
-            self.er_lp[0] = flush(el + self.er_c * (self.er_lp[0] - el));
-            self.er_lp[1] = flush(erv + self.er_c * (self.er_lp[1] - erv));
-            // Input diffusion.
-            let mut d = [pl, pr];
-            for c in 0..2 {
-                let mut x = d[c];
-                for k in 0..4 {
-                    let line = &mut self.diff[c][k];
-                    let z = line.tap(self.diff_d[c][k] - 1);
-                    let w = x + g_ap * z;
-                    x = z - g_ap * w;
-                    line.push(flush(w));
-                }
-                d[c] = x;
-            }
-            // FDN.
-            let mut v = [0.0f32; N];
-            for i in 0..N {
-                let (c, s) = self.lfo[i];
-                let (rc, rs) = self.rot[i];
-                self.lfo[i] = (c * rc - s * rs, c * rs + s * rc);
-                v[i] = self.lines[i].read(self.len[i] + self.depth * s);
-            }
-            let (mut ol, mut or) = (0.0f32, 0.0f32);
-            for i in 0..N {
-                let x = v[i] * self.gain[i];
-                let (b0, b1, a1) = self.ls[i];
-                let y = b0 * x + self.lz[i];
-                self.lz[i] = flush(b1 * x - a1 * y);
-                let (c0, c1, e1) = self.hs[i];
-                let z = c0 * y + self.hz[i];
-                self.hz[i] = flush(c1 * y - e1 * z);
-                v[i] = z;
-                ol += z * OUT_L[i];
-                or += z * OUT_R[i];
-            }
-            Self::fwht(&mut v);
-            let inj = [d[0] * self.in_gain, d[1] * self.in_gain];
-            for i in 0..N {
-                self.lines[i].push(flush(v[i] * 0.25 + inj[i & 1] * IN_SIGN[i]));
-            }
-            let wl = ol * out_scale + self.er_lp[0] * er_g;
-            let wr = or * out_scale + self.er_lp[1] * er_g;
-            let wl = self.eq[0].tick(0, wl);
-            let wl = self.eq[1].tick(0, wl);
-            let wr = self.eq[0].tick(1, wr);
-            let wr = self.eq[1].tick(1, wr);
-            let m = 0.5 * (wl + wr);
-            let s = half_w * (wl - wr);
-            *a = xl * dry + (m + s) * wet;
-            *b = xr * dry + (m - s) * wet;
+        let n = l.len().min(r.len());
+        let mut start = 0;
+        while start < n {
+            let m = (n - start).min(self.blk);
+            self.block(&mut l[start..start + m], &mut r[start..start + m]);
+            start += m;
         }
         for p in self.lfo.iter_mut() {
             let n = 1.0 / (p.0 * p.0 + p.1 * p.1).sqrt();
@@ -480,6 +430,116 @@ impl Processor for Reverb {
     }
 }
 
+/// Largest FDN block: every line is longer than this, so a whole block can be
+/// read before any of it is written back.
+const BLK: usize = 64;
+
+impl Reverb {
+    /// One block (≤ `self.blk` samples): input stage per sample, then the FDN
+    /// reads for all lines, the per-sample matrix/filter math across lines
+    /// (vectorised over the 16 lines), the writes, and the output stage.
+    fn block(&mut self, l: &mut [f32], r: &mut [f32]) {
+        let m = l.len();
+        let (wet, dry) = (self.wet, self.dry);
+        let er_g = self.s.early * 0.7;
+        let out_scale = 1.0 / (N as f32).sqrt();
+        let half_w = 0.5 * self.width;
+        let g_ap = self.diff_g;
+        let mut din = [[0.0f32; 2]; BLK];
+        let mut ers = [[0.0f32; 2]; BLK];
+        // Input: pre-delay, early reflections, diffusion.
+        for k in 0..m {
+            let (xl, xr) = (l[k], r[k]);
+            self.pre[0].push(xl);
+            self.pre[1].push(xr);
+            self.pre[2].push(xl + xr);
+            let mut d = [self.pre[0].tap(self.pre_d), self.pre[1].tap(self.pre_d)];
+            let (mut el, mut erv) = (0.0f32, 0.0f32);
+            if er_g > 0.0 {
+                for &(dd, gl, gr) in &self.er {
+                    let v = self.pre[2].tap(self.pre_d + dd);
+                    el += v * gl;
+                    erv += v * gr;
+                }
+            }
+            self.er_lp[0] = flush(el + self.er_c * (self.er_lp[0] - el));
+            self.er_lp[1] = flush(erv + self.er_c * (self.er_lp[1] - erv));
+            ers[k] = self.er_lp;
+            for c in 0..2 {
+                let mut x = d[c];
+                for j in 0..4 {
+                    let line = &mut self.diff[c][j];
+                    let z = line.tap(self.diff_d[c][j] - 1);
+                    let w = x + g_ap * z;
+                    x = z - g_ap * w;
+                    line.push(flush(w));
+                }
+                d[c] = x * self.in_gain;
+            }
+            din[k] = d;
+        }
+        // FDN reads for the whole block: even lines modulated (cubic), odd
+        // lines at fixed integer delays.
+        let mut v = [[0.0f32; N]; BLK];
+        for i in 0..N {
+            let line = &self.lines[i];
+            if i % 2 == 1 || self.depth == 0.0 {
+                let d = self.len[i] as usize;
+                for (k, row) in v.iter_mut().enumerate().take(m) {
+                    row[i] = line.tap(d - k);
+                }
+                continue;
+            }
+            let (mut c, mut s) = self.lfo[i];
+            let (rc, rs) = self.rot[i];
+            for (k, row) in v.iter_mut().enumerate().take(m) {
+                let nc = c * rc - s * rs;
+                s = c * rs + s * rc;
+                c = nc;
+                row[i] = line.read_ahead(k, self.len[i] + self.depth * s);
+            }
+            self.lfo[i] = (c, s);
+        }
+        // Absorption, output taps, Hadamard feedback, injection.
+        let mut out = [[0.0f32; 2]; BLK];
+        for k in 0..m {
+            let mut x = v[k];
+            for i in 0..N {
+                let g = x[i] * self.gain[i];
+                let y = self.lb0[i] * g + self.lz[i];
+                self.lz[i] = flush(self.lb1[i] * g - self.la1[i] * y);
+                let z = self.hb0[i] * y + self.hz[i];
+                self.hz[i] = flush(self.hb1[i] * y - self.ha1[i] * z);
+                x[i] = z;
+            }
+            out[k] = [super::util::dot(&x, &OUT_L), super::util::dot(&x, &OUT_R)];
+            Self::fwht(&mut x);
+            let inj = din[k];
+            for i in 0..N {
+                v[k][i] = flush(x[i] * 0.25 + inj[i & 1] * IN_SIGN[i]);
+            }
+        }
+        for i in 0..N {
+            let line = &mut self.lines[i];
+            for row in v.iter().take(m) {
+                line.push(row[i]);
+            }
+        }
+        // Output: wet EQ, width, mix.
+        for k in 0..m {
+            let wl = out[k][0] * out_scale + ers[k][0] * er_g;
+            let wr = out[k][1] * out_scale + ers[k][1] * er_g;
+            let wl = self.eq[0].tick(0, wl);
+            let wl = self.eq[1].tick(0, wl);
+            let wr = self.eq[0].tick(1, wr);
+            let wr = self.eq[1].tick(1, wr);
+            let mid = 0.5 * (wl + wr);
+            let side = half_w * (wl - wr);
+            l[k] = l[k] * dry + (mid + side) * wet;
+            r[k] = r[k] * dry + (mid - side) * wet;
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

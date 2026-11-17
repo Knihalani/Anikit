@@ -5,6 +5,8 @@
 
 use serde::Serialize;
 
+use super::util::dot;
+
 /// Half-length (in input samples) of the true-peak interpolator.
 pub const TP_HALF: usize = 16;
 const TP_TAPS: usize = 2 * TP_HALF;
@@ -67,10 +69,7 @@ impl TruePeak {
         let h = &self.hist[self.pos..self.pos + TP_TAPS];
         let mut m = h[TP_HALF].abs();
         for ph in self.c.iter() {
-            let mut acc = 0.0f32;
-            for (a, b) in h.iter().zip(ph) {
-                acc += a * b;
-            }
+            let acc = dot(h, ph);
             m = m.max(acc.abs());
         }
         self.peak = self.peak.max(m);
