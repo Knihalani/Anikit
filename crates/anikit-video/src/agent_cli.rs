@@ -40,7 +40,8 @@ Agent commands:
   anikit-video templates expand <name> [params.json] [--brand brand.json] [--format 9:16] [--look noir] [-o spec.json]
   anikit-video prompt [name]        list prompts, or print one (e.g. director)
   anikit-video looks [name] [--json] art-direction looks (palette, type, motion, world); a spec takes \"look\": \"noir\"
-  anikit-video critique <spec.json> [--render] [--json]  design review; --render also checks rendered frames
+  anikit-video critique <spec.json> [--render] [--detail] [--json]  review; --render also checks rendered frames
+                                    and the timeline against the spec's \"intent\" (pace, dead air, beats, arc)
                                     (contrast against real pixels, overlaps, cut text, empty frames)
   anikit-video preview <spec.json|template> [--at T] [--width W] [-o out.png] [--format 9:16] [--brand b.json] [--params p.json]
                                     contact sheet (one frame per scene), or one still with --at
@@ -201,14 +202,9 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
             match a.get("o").or(a.get("out")) {
                 Some(o) => {
                     write(Path::new(o), &pretty(&spec))?;
-                    let mut r = crate::critique::critique_in_range(&spec, t.duration_range());
                     let base = Path::new(o).parent().map(Path::to_path_buf).unwrap_or_default();
-                    // Pixel checks too, so the printed score is the honest one.
-                    if let Ok(p) = crate::preview::Preview::new(spec.clone(), &if base.as_os_str().is_empty() { PathBuf::from(".") } else { base.clone() }) {
-                        let extra = crate::render_check::check_spec(&spec, &p.ev);
-                        r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
-                        r.notes.extend(extra);
-                    }
+                    // Pixel and timeline checks too, so the printed score is the honest one.
+                    let r = crate::critique::review(&spec, &base, t.duration_range(), true);
                     let v = mcp::validate(spec.clone(), &base);
                     for k in ["errors", "warnings"] {
                         for d in v[k].as_array().into_iter().flatten() {
@@ -256,21 +252,15 @@ fn cmd_prompt(args: &[String]) -> Result<(), String> {
 }
 
 fn cmd_critique(args: &[String]) -> Result<(), String> {
-    let a = parse(args, &[], &["json", "render"])?;
-    let path = a.pos.first().ok_or("usage: critique <spec.json> [--render] [--json]")?;
+    let a = parse(args, &[], &["json", "render", "detail"])?;
+    let path = a.pos.first().ok_or("usage: critique <spec.json> [--render] [--detail] [--json]")?;
     let spec = read_json(path)?;
-    let mut r = critique(&spec);
-    if a.has("render") {
-        let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
-        let p = crate::preview::Preview::new(spec.clone(), &base)?;
-        let extra = crate::render_check::check_spec(&spec, &p.ev);
-        r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
-        r.notes.extend(extra);
-    }
+    let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
+    let r = crate::critique::review(&spec, &base, None, a.has("render"));
     if a.has("json") {
         out!("{}", pretty(&serde_json::to_value(&r).unwrap()));
     } else {
-        out!("{}", r.to_text());
+        out!("{}", r.to_text_detail(a.has("detail")));
         out!("A score is not evidence of quality: look at full-size frames against docs/video/quality/BAR.md.\n");
     }
     Ok(())

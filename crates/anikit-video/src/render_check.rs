@@ -202,78 +202,13 @@ fn sample_times(ev: &Evaluator) -> Vec<(f32, String)> {
     v
 }
 
-/// Pace (BAR.md, "Pace"; the same rules as `docs/video/quality/pace.py`):
-/// small frames are sampled 6 times a second. Shots are split at scene starts
-/// and at hard visual changes. The check fails when:
-/// - any shot is over 2.5 s;
-/// - the median shot is over 1.5 s;
-/// - more than 20% of seconds look like the second before.
-pub fn pace(ev: &Evaluator) -> Vec<Note> {
-    const STEP: f32 = 1.0 / 6.0;
-    let scale = (160.0 / ev.width.max(1) as f32).min(1.0);
-    let dur = ev.duration;
-    if dur < 3.0 {
-        return Vec::new();
-    }
-    let n = (dur / STEP).floor() as usize + 1;
-    let frames: Vec<Vec<f32>> = (0..n)
-        .map(|i| {
-            let mut dl = ev.eval((i as f32 * STEP).min(dur - 0.01));
-            pipeline::scale_list(&mut dl, scale);
-            let (_, _, px) = pipeline::render_list_rgba(ev, &dl);
-            px.chunks_exact(4).flat_map(|p| [p[0] as f32, p[1] as f32, p[2] as f32]).collect()
-        })
-        .collect();
-    let diff = |a: &[f32], b: &[f32]| a.iter().zip(b).map(|(x, y)| (x - y).abs()).sum::<f32>() / a.len().max(1) as f32;
-    // Shot boundaries: scene starts, plus hard changes between consecutive samples.
-    let mut bounds: Vec<f32> = vec![0.0];
-    bounds.extend(ev.scenes().iter().map(|s| s.start).filter(|&t| t > 0.05));
-    for i in 1..n {
-        if diff(&frames[i - 1], &frames[i]) > 32.0 {
-            bounds.push(i as f32 * STEP);
-        }
-    }
-    bounds.push(dur);
-    bounds.sort_by(|a, b| a.total_cmp(b));
-    bounds.dedup_by(|a, b| (*a - *b).abs() < 0.2);
-    let mut shots: Vec<f32> = bounds.windows(2).map(|w| w[1] - w[0]).filter(|d| *d > 0.05).collect();
-    // Seconds that look like the second before.
-    let per = (1.0 / STEP).round() as usize;
-    let secs: Vec<f32> = (per..n).step_by(per).map(|i| diff(&frames[i - per], &frames[i])).collect();
-    let same = secs.iter().filter(|d| **d < 6.0).count();
-    let longest = shots.iter().cloned().fold(0.0f32, f32::max);
-    shots.sort_by(|a, b| a.total_cmp(b));
-    let median = shots.get(shots.len() / 2).copied().unwrap_or(dur);
-    let mut fails = Vec::new();
-    if longest > 2.5 {
-        fails.push(format!("longest shot {longest:.1} s > 2.5 s"));
-    }
-    if median > 1.5 {
-        fails.push(format!("median shot {median:.1} s > 1.5 s"));
-    }
-    if !secs.is_empty() && same * 5 > secs.len() {
-        fails.push(format!("{same}/{} seconds look like the second before", secs.len()));
-    }
-    if fails.is_empty() {
-        return Vec::new();
-    }
-    vec![Note {
-        severity: "warning",
-        check: "pace",
-        path: format!("timeline ({} shots, median {median:.1} s)", shots.len()),
-        message: format!("slow: {} (BAR pace test)", fails.join("; ")),
-        fix: "cut or make a major change on the beat every 0.5-1.5 s (\"@beat17\"), with whips, snaps, speed ramps, impacts and match cuts; 1-4 words per shot".into(),
-    }]
-}
-
-/// [`check`] and [`pace`], with paths in the author's own spec (a look's backdrop layers removed).
+/// [`check`], with paths in the author's own spec (a look's backdrop layers removed).
 pub fn check_spec(raw: &serde_json::Value, ev: &Evaluator) -> Vec<Note> {
     let off = crate::looks::layer_offsets(raw);
     let mut n = check(ev);
     for x in &mut n {
         x.path = crate::looks::remap_path(&off, &x.path);
     }
-    n.extend(pace(ev));
     n
 }
 
@@ -366,16 +301,6 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn pace_flags_slow_and_passes_beat_cuts() {
-        let slow = ev(json!({ "size": [320, 180], "scenes": [ { "duration": 6, "background": "#202020", "layers": [ { "text": "Hold", "color": "#ffffff" } ] } ] }));
-        let n = pace(&slow);
-        assert!(n.len() == 1 && n[0].message.contains("longest shot"), "{n:?}");
-        let colors = ["#101010", "#f0f0f0", "#d03020", "#2040d0"];
-        let scenes: Vec<_> = (0..12).map(|i| json!({ "duration": 0.7, "transition": "cut", "background": colors[i % 4], "layers": [ { "text": format!("{i}"), "x": 40 + i * 20 } ] })).collect();
-        let fast = ev(json!({ "size": [320, 180], "scenes": scenes }));
-        assert!(pace(&fast).is_empty(), "{:?}", pace(&fast));
-    }
     use crate::eval::Options;
     use serde_json::json;
 

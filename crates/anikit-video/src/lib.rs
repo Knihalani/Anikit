@@ -21,6 +21,7 @@ pub mod mcp;
 pub mod preview;
 pub mod prompts;
 pub mod render_check;
+pub mod review;
 pub mod templates;
 pub mod spec;
 pub mod eval;
