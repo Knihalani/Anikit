@@ -99,7 +99,7 @@ pub enum Quality {
 /// A rendered frame: premultiplied RGBA8, `width × height`, tightly packed.
 pub type FrameRgba = Pixmap;
 
-fn affine(a: &dl::Affine) -> Affine {
+pub(crate) fn affine(a: &dl::Affine) -> Affine {
     Affine::new(a.map(|v| v as f64))
 }
 
@@ -177,6 +177,8 @@ pub struct Renderer {
     pp: post::PostProcessor,
     /// Motion-blur accumulator (linear RGB).
     motion_acc: Vec<f32>,
+    motion_tmp: Vec<f32>,
+    motion_brute: bool,
     quality: Quality,
     /// Low-res backdrop as Y, Cb, Cr planes (fused backdrop → YUV path).
     lo: [Vec<u8>; 3],
@@ -212,6 +214,8 @@ impl Renderer {
             post_frame: 0,
             pp: Default::default(),
             motion_acc: Vec::new(),
+            motion_tmp: Vec::new(),
+            motion_brute: false,
             quality: Quality::Standard,
             box_rects: Vec::new(),
             box_map: MbMap::default(),
@@ -252,9 +256,11 @@ impl Renderer {
         &self.assets
     }
 
-    /// Replace the font table with a superset of the current one (faces are
-    /// append-only: existing ids must keep their faces). Caches stay valid.
-    pub fn set_fonts(&mut self, assets: Arc<Assets>) {
+    /// Swap in a newer snapshot of the same asset store (e.g. after fonts were
+    /// added; ids are stable, so caches and incremental state stay valid). The
+    /// pipeline uses this instead of a new renderer, keeping output independent
+    /// of when other threads intern fonts.
+    pub fn update_assets(&mut self, assets: Arc<Assets>) {
         self.assets = assets;
     }
 
@@ -317,6 +323,13 @@ impl Renderer {
         self.st.up.cubic = cubic;
         self.st.reference = q == Quality::Reference;
         self.st.filters.set_exact(q == Quality::Reference);
+    }
+
+    /// Motion blur by brute force (64 full frames per blurred frame): the
+    /// ground truth the fast path is tested against. Also on at [`Quality::Reference`].
+    #[doc(hidden)]
+    pub fn set_brute_force_motion(&mut self, on: bool) {
+        self.motion_brute = on;
     }
 
     /// Speed-only backdrop shortcuts (¼-res smooth backdrops, bilinear
@@ -389,6 +402,25 @@ impl Renderer {
         if field && !smooth::field_ok(&list.ops[..n_smooth]) {
             n_smooth = 0;
         }
+        // vello treats the clear colour and pixels already in the target as an
+        // isolated backdrop, so a non-Normal blend (Overlay grain, Screen glow…)
+        // would blend against transparency. With such a layer, draw the background
+        // inside the scene and skip the pre-filled backdrop paths.
+        let blends = list.ops.iter().any(|o| matches!(o, Op::PushLayer { blend, .. } if *blend != Blend::Normal));
+        if blends {
+            backdrop = None;
+            n_smooth = 0;
+        }
+        let with_bg: Vec<Op>;
+        let list_ops: &[Op] = if blends {
+            with_bg = std::iter::once(Op::RoundRect { x: 0.0, y: 0.0, w: w as f32, h: h as f32, radius: 0.0, paint: Paint::Solid(list.background), transform: dl::IDENTITY })
+                .chain(list.ops.iter().cloned())
+                .collect();
+            &with_bg
+        } else {
+            &list.ops
+        };
+        let rects = if blends { None } else { rects };
         if n_smooth > 0 && backdrop.as_ref().is_none_or(|(k, _, _)| *k < n_smooth) {
             let f = smooth::FACTOR;
             let (lw, lh) = ((w as u32).div_ceil(f).max(2), (h as u32).div_ceil(f).max(2));
@@ -431,7 +463,7 @@ impl Renderer {
         }
         let (ops, skip) = match &backdrop {
             Some((k, _, _)) => (&list.ops[k + 1..], k + 1),
-            None => (&list.ops[..], 0),
+            None => (list_ops, 0),
         };
         let settings = if backdrop.is_some() { RasterizerSettings { target_init: TargetInit::SrcOver, ..Default::default() } } else { settings };
         if backdrop.is_some() {
@@ -866,9 +898,9 @@ fn blit(ctx: &mut RenderContext, pix: Arc<Pixmap>, x: f64, y: f64, alpha: f32) {
     ctx.fill_rect(&Rect::new(0.0, 0.0, w, h));
 }
 
-/// Draw a solid-colour, translation-only glyph run from a cached bitmap
-/// (rendered once per content and quarter-pixel phase). Returns false if the
-/// run can't be cached (colour font) and must be drawn as outlines.
+/// Draw a solid-colour glyph run from a cached bitmap (rendered once per
+/// content, linear transform `lin` and quarter-pixel phase). Returns false if
+/// the run can't be cached (colour font, huge) and must be drawn as outlines.
 #[allow(clippy::too_many_arguments)]
 fn draw_cached_run(
     st: &mut State,
@@ -878,10 +910,17 @@ fn draw_cached_run(
     size: f32,
     glyphs: &[dl::Glyph],
     c: Rgba,
+    lin: [f64; 4],
     tx: f64,
     ty: f64,
 ) -> bool {
     let (fx, fy) = (tx.floor(), ty.floor());
+    let identity = lin == [1.0, 0.0, 0.0, 1.0];
+    let shape = |run: &mut BezPath| {
+        if !identity {
+            run.apply_affine(Affine::new([lin[0], lin[1], lin[2], lin[3], 0.0, 0.0]));
+        }
+    };
     if st.reference {
         // Exact sub-pixel phase, same coverage shaping, nothing cached.
         let mut run = std::mem::take(&mut st.run);
@@ -889,6 +928,7 @@ fn draw_cached_run(
             st.run = run;
             return false;
         }
+        shape(&mut run);
         let ok = run.is_empty() || {
             let (ox, oy) = (tx - fx, ty - fy);
             let bb = run.bounding_box();
@@ -910,7 +950,7 @@ fn draw_cached_run(
     let key = {
         use std::hash::{Hash, Hasher};
         let mut hs = std::collections::hash_map::DefaultHasher::new();
-        (font_id.0, size.to_bits(), ox.to_bits(), oy.to_bits(), c.0.map(f32::to_bits)).hash(&mut hs);
+        (font_id.0, size.to_bits(), ox.to_bits(), oy.to_bits(), c.0.map(f32::to_bits), lin.map(f64::to_bits)).hash(&mut hs);
         for g in glyphs {
             (g.id, g.x.to_bits(), g.y.to_bits()).hash(&mut hs);
         }
@@ -928,6 +968,7 @@ fn draw_cached_run(
                 st.run = run;
                 return false;
             }
+            shape(&mut run);
             if run.is_empty() {
                 st.run = run;
                 return true;
@@ -1546,8 +1587,8 @@ fn draw_op(st: &mut State, assets: &View, ctx: &mut RenderContext, op: &Op, base
             if let Paint::Solid(c) = paint {
                 let t = base * affine(transform);
                 let k = t.as_coeffs();
-                if k[0] == 1.0 && k[1] == 0.0 && k[2] == 0.0 && k[3] == 1.0 {
-                    if draw_cached_run(st, ctx, *font_id, font, *size, glyphs, *c, k[4], k[5]) {
+                if k[0] * k[3] - k[1] * k[2] != 0.0 {
+                    if draw_cached_run(st, ctx, *font_id, font, *size, glyphs, *c, [k[0], k[1], k[2], k[3]], k[4], k[5]) {
                         return;
                     }
                     ctx.set_transform(t);

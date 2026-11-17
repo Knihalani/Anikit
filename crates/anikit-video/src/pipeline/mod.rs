@@ -246,8 +246,8 @@ pub fn scale_list(dl: &mut DisplayList, s: f32) {
 
 struct Worker {
     version: u64,
-    /// Font faces in the renderer's table.
-    fonts: usize,
+    /// The asset store the renderer draws from.
+    store: Arc<crate::eval::SharedAssets>,
     renderer: Option<Renderer>,
     dl: DisplayList,
     /// Fused mode: this thread's incremental YUV frame, change map and last frame index.
@@ -262,19 +262,9 @@ thread_local! {
     static WORKER: RefCell<Worker> = RefCell::new(new_worker());
 }
 
-/// Run `f` with a chunk's worker state (created on first use), keeping it for the chunk's next frame if `keep`.
-fn with_chunk_worker<R>(slot: &std::sync::Mutex<Option<Worker>>, keep: bool, f: impl FnOnce(&mut Worker) -> R) -> R {
-    let mut w = slot.lock().unwrap_or_else(|e| e.into_inner()).take().unwrap_or_else(new_worker);
-    let r = f(&mut w);
-    if keep {
-        *slot.lock().unwrap_or_else(|e| e.into_inner()) = Some(w);
-    }
-    r
-}
-
 /// Run `f` with this thread's renderer, (re)creating it when assets changed.
 fn new_worker() -> Worker {
-    Worker { version: 0, fonts: 0, renderer: None, dl: DisplayList::default(), yuv: YuvFrame::default(), map: crate::render::MbMap::new(0, 0), last: None, returned: None }
+    Worker { version: 0, store: Arc::default(), renderer: None, dl: DisplayList::default(), yuv: YuvFrame::default(), map: crate::render::MbMap::new(0, 0), last: None, returned: None }
 }
 
 /// This thread's worker state. A nested call (rayon work-stealing while the state is
@@ -289,33 +279,25 @@ fn with_worker<R>(f: impl FnOnce(&mut Worker) -> R) -> R {
 
 /// Create (or re-create, when fonts were added) this worker's renderer.
 fn ensure_renderer(ev: &Evaluator, w: &mut Worker) {
-    // A new asset store needs a new renderer; images come from a live source.
-    let v = Arc::as_ptr(&ev.assets) as u64;
-    let fonts = ev.assets.font_count();
+    // Only new font faces need new assets; images come from a live source. New faces are
+    // swapped into the existing renderer (ids are stable), never a new renderer: dropping
+    // its incremental state at a moment set by other threads made output nondeterministic.
+    let v = (ev.assets.font_count() as u64) ^ ((Arc::as_ptr(&ev.assets) as u64) << 16);
     match &mut w.renderer {
-        Some(r) if w.version == v => {
-            // New font faces (interned by any thread while evaluating): faces are
-            // append-only, so swap the table in and keep every cache and the
-            // incremental state. (Re-creating the renderer here made output depend
-            // on when other threads interned fonts.)
-            if w.fonts != fonts {
-                r.set_fonts(ev.assets.snapshot_fonts());
-                w.fonts = fonts;
-            }
-        }
+        Some(r) if w.version != v && Arc::ptr_eq(&ev.assets, &w.store) => r.update_assets(ev.assets.snapshot_fonts()),
+        Some(_) if w.version == v => {}
         _ => {
             let mut r = Renderer::new(ev.assets.snapshot_fonts());
             let a = ev.assets.clone();
             r.set_image_source(Arc::new(move |id| a.pixmap(id)));
             w.renderer = Some(r);
-            w.version = v;
-            w.fonts = fonts;
+            w.store = ev.assets.clone();
             w.last = None;
         }
     }
+    w.version = v;
 }
 
-/// Run `f` with this thread's renderer, (re)creating it when assets changed.
 fn with_renderer<R>(ev: &Evaluator, f: impl FnOnce(&mut Renderer, &mut DisplayList) -> R) -> R {
     with_worker(|w| {
         ensure_renderer(ev, w);
@@ -415,19 +397,20 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
         }
         v
     };
-    let ranges = ak264::chunk_ranges(n, cfg.gop);
+    // Deterministic output: chunk ranges don't depend on the thread count, and each
+    // chunk renders with its own state (fresh at the chunk start, then incremental
+    // frame by frame), whichever thread runs it.
+    let ranges = chunk_plan(n, cfg.gop);
     let starts: std::collections::HashSet<usize> = ranges.iter().map(|r| r.0).collect();
-    // Renderer state belongs to the chunk, not the thread: a thread that waits in
-    // nested parallel work (post, fields, 3D) may steal another chunk, and that
-    // chunk must continue with its own state. So every chunk renders the same
-    // way whichever threads run it, and stealing never costs a cold renderer.
-    let workers: Vec<std::sync::Mutex<Option<Worker>>> = ranges.iter().map(|_| Default::default()).collect();
-    let out = ak264::encode_parallel(cfg, n, |k, buf, hints| {
+    let chunk_start = |k: usize| ranges[ranges.partition_point(|r| r.0 <= k) - 1].0;
+    let workers: std::sync::Mutex<std::collections::HashMap<usize, Worker>> = Default::default();
+    let out = ak264::encode_ranges(cfg, ranges.clone(), |k, buf, hints| {
         let t = Instant::now();
-        let ci = ranges.partition_point(|r| r.0 <= k) - 1;
-        let last_in_chunk = k + 1 >= ranges[ci].1;
-        // One worker for the whole frame (eval and render must share its state).
-        with_chunk_worker(&workers[ci], !last_in_chunk, |w| {
+        let c = chunk_start(k);
+        // A fresh renderer per chunk: some renderer caches still change pixels depending on
+        // what they drew before, so reusing one across chunks isn't deterministic.
+        let mut wk = if k == c { None } else { workers.lock().unwrap().remove(&c) }.unwrap_or_else(new_worker);
+        (|w: &mut Worker| {
             ensure_renderer(ev, w);
             if let (Some(r), Some(l)) = (w.returned.take(), w.last) {
                 if l + 1 == k && !starts.contains(&k) {
@@ -491,7 +474,10 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
             *last = Some(k);
             prof.copy_ns.fetch_add(ns(t), Ordering::Relaxed);
             w.returned = Some(Instant::now());
-        });
+        })(&mut wk);
+        if ranges.iter().any(|r| r.0 == c && k + 1 < r.1) {
+            workers.lock().unwrap().insert(c, wk);
+        }
         if let Some(tap) = tap {
             tap(k, buf);
         }
@@ -510,6 +496,14 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
         eprintln!();
     }
     out
+}
+
+/// Independently encoded chunks for `n` frames. `gop > 0` caps their length;
+/// otherwise up to 16 equal chunks of 30–300 frames (enough to keep 16 cores busy).
+/// Depends only on its arguments, never on the machine.
+pub fn chunk_plan(n: usize, gop: u32) -> Vec<(usize, usize)> {
+    let count = if gop > 0 { n.div_ceil(gop as usize) } else { n.div_ceil(300).max(n.div_ceil(30).min(16)) }.clamp(1, n.max(1));
+    (0..count).map(|i| (i * n / count, (i + 1) * n / count)).filter(|r| r.1 > r.0).collect()
 }
 
 /// Frame `i`'s finishing look, and whether it gets motion blur (never in drafts; by default only at high quality).
@@ -630,44 +624,95 @@ pub fn contact_sheet(ev: &Evaluator, cols: u32, rows: u32, cell_w: u32) -> (u32,
     (sw, sh, out)
 }
 
+/// A deferred audio mix (music generation included): run it on any thread to write the WAV.
+pub struct AudioJob {
+    pub wav: std::path::PathBuf,
+    run: Box<dyn FnOnce() -> Result<(), String> + Send>,
+}
+
+impl AudioJob {
+    /// Mix now; returns the WAV path.
+    pub fn run(self) -> Result<std::path::PathBuf, String> {
+        (self.run)()?;
+        Ok(self.wav)
+    }
+    /// A job for a WAV that already exists.
+    pub fn ready(wav: &std::path::Path) -> AudioJob {
+        AudioJob { wav: wav.to_path_buf(), run: Box::new(|| Ok(())) }
+    }
+}
+
+/// The audio mix for `[t0, t0 + dur)` as a job writing a WAV at `wav`; `None` if the video is silent.
+/// Generated music is rendered inside the job, so running it on a thread renders
+/// the soundtrack in parallel with the video frames.
+pub fn audio_job(ev: &Evaluator, t0: f32, dur: f32, wav: &std::path::Path) -> Option<AudioJob> {
+    use crate::audio::{self, Role, Source};
+    if ev.audio.is_empty() && ev.music.is_none() {
+        return None;
+    }
+    let cues = ev.audio.clone();
+    let music = ev.music.clone();
+    let video_len = ev.duration as f64;
+    let out = wav.to_path_buf();
+    let run = move || -> Result<(), String> {
+        let mut all = cues;
+        let music_wav = out.with_extension("music.wav");
+        if let Some(m) = &music {
+            let has_voice = all.iter().any(|t| t.role() == Role::Voice);
+            all.push(crate::music::render_track(m, video_len, &music_wav, has_voice)?);
+        }
+        let mut tracks = Vec::new();
+        for t in &all {
+            let mut t = t.clone();
+            t.start -= t0 as f64;
+            if t.start < 0.0 {
+                match &t.src {
+                    Source::File(_) => {
+                        let tr = t.trim.unwrap_or([0.0, 0.0]);
+                        t.trim = Some([tr[0] - t.start, tr[1]]);
+                        if let Some(d) = &mut t.duration {
+                            *d += t.start;
+                        }
+                        t.start = 0.0;
+                    }
+                    Source::Sfx { .. } => continue,
+                }
+            }
+            tracks.push(t);
+        }
+        let pcm = audio::mix(&tracks, dur as f64, audio::DEFAULT_RATE, None);
+        if music.is_some() {
+            let _ = std::fs::remove_file(&music_wav);
+        }
+        audio::write_wav(&out, &pcm?, audio::WavFormat::Pcm16)
+    };
+    Some(AudioJob { wav: wav.to_path_buf(), run: Box::new(run) })
+}
+
 /// Mix the video's audio for `[t0, t0 + dur)` into a WAV at `wav`; `None` if the video is silent.
 pub fn mix_audio(ev: &Evaluator, t0: f32, dur: f32, wav: &std::path::Path) -> Result<Option<std::path::PathBuf>, String> {
-    use crate::audio::{self, Source};
-    if ev.audio.is_empty() {
-        return Ok(None);
-    }
-    let mut tracks = Vec::new();
-    for t in &ev.audio {
-        let mut t = t.clone();
-        t.start -= t0 as f64;
-        if t.start < 0.0 {
-            match &t.src {
-                Source::File(_) => {
-                    let tr = t.trim.unwrap_or([0.0, 0.0]);
-                    t.trim = Some([tr[0] - t.start, tr[1]]);
-                    if let Some(d) = &mut t.duration {
-                        *d += t.start;
-                    }
-                    t.start = 0.0;
-                }
-                Source::Sfx { .. } => continue,
-            }
-        }
-        tracks.push(t);
-    }
-    let pcm = audio::mix(&tracks, dur as f64, audio::DEFAULT_RATE, None)?;
-    audio::write_wav(wav, &pcm, audio::WavFormat::Pcm16)?;
-    Ok(Some(wav.to_path_buf()))
+    audio_job(ev, t0, dur, wav).map(AudioJob::run).transpose()
 }
 
 /// Render to an MP4 with ak264 in fused mode (see [`render_fused`]); muxes
 /// without ffmpeg when there is no audio.
 pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path, audio: Option<&std::path::Path>) -> Result<Summary, String> {
-    render_ak264_tap(ev, opts, out, audio, None)
+    render_ak264_job_tap(ev, opts, out, audio.map(AudioJob::ready), None)
 }
 
 /// [`render_ak264`], showing each frame to `tap` as it goes to the encoder (for the quality harness).
 pub fn render_ak264_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path, audio: Option<&std::path::Path>, tap: Option<Tap>) -> Result<Summary, String> {
+    render_ak264_job_tap(ev, opts, out, audio.map(AudioJob::ready), tap)
+}
+
+/// [`render_ak264`] with the audio mixed (and music generated) on a thread
+/// while the frames render, then encoded to AAC there too.
+pub fn render_ak264_job(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path, audio: Option<AudioJob>) -> Result<Summary, String> {
+    render_ak264_job_tap(ev, opts, out, audio, None)
+}
+
+/// [`render_ak264_job`] with a frame `tap` (see [`render_ak264_tap`]).
+pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path, audio: Option<AudioJob>, tap: Option<Tap>) -> Result<Summary, String> {
     let t0 = Instant::now();
     let w = (((ev.width as f32 * opts.scale).round() as u32).max(2)) & !1;
     let h = (((ev.height as f32 * opts.scale).round() as u32).max(2)) & !1;
@@ -676,8 +721,8 @@ pub fn render_ak264_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::path::P
     let f1 = opts.to.map(|t| (t * ev.fps).round() as u32).unwrap_or(total).clamp(f0, total);
     let n = (f1 - f0) as usize;
     let threads = rayon::current_num_threads().max(1);
-    // Enough chunks to keep every core busy, long enough to compress well.
-    let gop = std::env::var("ANIKIT_GOP").ok().and_then(|g| g.parse().ok()).unwrap_or((n / (threads * 3)).clamp(30, 300) as u32);
+    // Chunk length: fixed by the frame count alone (never the machine), so output is identical on any core count.
+    let gop = std::env::var("ANIKIT_GOP").ok().and_then(|g| g.parse().ok()).unwrap_or_else(|| chunk_plan(n, 0).iter().map(|r| r.1 - r.0).max().unwrap_or(1) as u32);
     let qp = match opts.quality {
         Quality::Draft => 28,
         Quality::Good => 23,
@@ -699,11 +744,13 @@ pub fn render_ak264_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::path::P
     };
     let prof = Profile::default();
     // Encode the audio to AAC while the frames render, so the final mux is a stream copy.
-    let m4a = audio.map(|_| out.with_extension(format!("audio-{}.m4a", std::process::id())));
+    let m4a = audio.as_ref().map(|_| out.with_extension(format!("audio-{}.m4a", std::process::id())));
+    let has_audio = audio.is_some();
     let aac_job = match (audio, &m4a) {
-        (Some(a), Some(m)) => {
-            let (a, m) = (a.to_path_buf(), m.clone());
-            Some(std::thread::spawn(move || {
+        (Some(job), Some(m)) => {
+            let m = m.clone();
+            Some(std::thread::spawn(move || -> Result<std::process::Output, String> {
+                let a = job.run()?;
                 std::process::Command::new("ffmpeg")
                     .args(["-hide_banner", "-loglevel", "error", "-y", "-i"])
                     .arg(&a)
@@ -711,6 +758,7 @@ pub fn render_ak264_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::path::P
                     .arg(&m)
                     .stdin(std::process::Stdio::null())
                     .output()
+                    .map_err(|e| format!("can't start ffmpeg for audio: {e}"))
             }))
         }
         _ => None,
@@ -718,15 +766,21 @@ pub fn render_ak264_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::path::P
     let annexb = render_fused_tap(ev, opts, &cfg, &prof, tap);
     let t_enc = t0.elapsed();
     let tm = Instant::now();
-    match audio {
-        None => std::fs::write(out, ak264::mp4::mux(&annexb, w, h, ev.fps as f64)).map_err(|e| format!("can't write {}: {e}", out.display()))?,
-        Some(_) => {
+    match has_audio {
+        false => std::fs::write(out, ak264::mp4::mux(&annexb, w, h, ev.fps as f64)).map_err(|e| format!("can't write {}: {e}", out.display()))?,
+        true => {
             // Mux from a temp MP4 (real timestamps), not a raw H.264 pipe: ffmpeg can stall
             // draining a timestamp-less pipe while it waits on the audio input.
             let tmp = out.with_extension(format!("video-{}.mp4", std::process::id()));
             std::fs::write(&tmp, ak264::mp4::mux(&annexb, w, h, ev.fps as f64)).map_err(|e| format!("can't write {}: {e}", tmp.display()))?;
             let m4a = m4a.clone().unwrap();
-            let aac = aac_job.unwrap().join().map_err(|_| "audio encoder thread panicked".to_string())?.map_err(|e| format!("can't start ffmpeg for audio: {e}"))?;
+            let aac = match aac_job.unwrap().join().map_err(|_| "audio thread panicked".to_string())? {
+                Ok(o) => o,
+                Err(e) => {
+                    let _ = std::fs::remove_file(&tmp);
+                    return Err(e);
+                }
+            };
             if !aac.status.success() {
                 let _ = std::fs::remove_file(&tmp);
                 return Err(format!("ffmpeg (audio) failed: {}", String::from_utf8_lossy(&aac.stderr).trim()));
@@ -860,8 +914,8 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
     let f0 = opts.from.map(|t| (t * ev.fps).round() as u32).unwrap_or(0).min(total);
     let f1 = opts.to.map(|t| (t * ev.fps).round() as u32).unwrap_or(total).clamp(f0, total);
     let n = f1 - f0;
-    let threads = rayon::current_num_threads().max(1) as u32;
-    let batch = (threads * 4).max(8);
+    // Fixed batch and run sizes (never the core count), so output is identical on any machine.
+    let batch = 64;
     let wants_hints = enc.wants_hints();
     type Item = (Arc<YuvFrame>, bool, Option<Vec<bool>>);
     // The encoder runs on its own thread, one batch behind the renderers.
@@ -906,12 +960,13 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
             }
             prev_hash = ph;
             // Render changed frames; diff display lists for renderer-aware encoders.
-            // Contiguous runs per worker, so each renderer's incremental state follows the timeline.
-            let per = lists.len().div_ceil(threads as usize).max(1);
+            // Contiguous runs of 16 frames, each with its own state (a full render first,
+            // then incremental), so the pixels don't depend on which thread ran what.
             let frames: Vec<(Option<YuvFrame>, Option<Vec<bool>>)> = (0..lists.len())
                 .collect::<Vec<_>>()
-                .par_chunks(per)
+                .par_chunks(16)
                 .flat_map_iter(|ks| {
+                    let mut wk = new_worker();
                     ks.iter()
                         .map(|&k| {
                             if same[k] {
@@ -928,7 +983,8 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
                             } else {
                                 None
                             };
-                            let f = with_worker(|w| {
+                            let f = {
+                                let w = &mut wk;
                                 ensure_renderer(ev, w);
                                 let Worker { renderer, yuv, map, last, .. } = &mut *w;
                                 let r = renderer.as_mut().unwrap();
@@ -938,9 +994,9 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
                                 } else {
                                     r.render_yuv_incremental(dl, yuv, map);
                                 }
-                                *last = None; // the fused path must not reuse this state as its chunk continuation
+                                *last = None;
                                 yuv.clone()
-                            });
+                            };
                             (Some(f), hint)
                         })
                         .collect::<Vec<_>>()

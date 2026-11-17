@@ -26,6 +26,7 @@ use serde_json::{Map, Value};
 use std::sync::Arc;
 
 pub mod style;
+pub mod docs;
 pub mod fxkit;
 pub mod polish;
 pub mod host;
@@ -55,6 +56,8 @@ pub mod ken_burns;
 pub mod tiles;
 pub mod reactions;
 pub mod card_stack;
+pub mod now_playing;
+pub mod product_shot;
 
 #[cfg(test)]
 pub(crate) mod preview;
@@ -68,6 +71,12 @@ pub trait Assets: Sync {
     /// identified by `key` (a hash of everything that determines its
     /// content). `make` is only called the first time a key is seen.
     fn image(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> ImageId;
+    /// Like [`Assets::image`], for an image that only this frame uses (a
+    /// full-frame render): the store may drop it once the frame is drawn, so
+    /// per-frame renders don't accumulate. Defaults to [`Assets::image`].
+    fn frame_image(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> ImageId {
+        self.image(key, w, h, make)
+    }
     /// A user image (or the current frame of a user video) by its spec `src`,
     /// with its pixel size. `t` is the component's local time (for videos).
     fn media(&self, src: &str, t: f32) -> Option<(ImageId, u32, u32)>;
@@ -108,9 +117,6 @@ pub struct Ctx<'a> {
     pub fps: f32,
     pub theme: &'a Theme,
     pub assets: &'a dyn Assets,
-    /// The evaluator running this component, when there is one: gives
-    /// access to the spec's `compositions` (e.g. as 3D textures).
-    pub root: Option<&'a crate::eval::Evaluator>,
 }
 
 /// A preprocessed component, evaluated once per frame.
@@ -146,7 +152,6 @@ impl Placed {
             fps,
             theme: self.theme.as_ref().unwrap_or(theme),
             assets,
-            root: None,
         };
         let mut ops = self.component.eval(t.max(0.0), &ctx);
         if self.x != 0.0 || self.y != 0.0 {
@@ -275,6 +280,9 @@ kinds! {
     "kinetic-grid" => tiles::KineticGrid, "Mesmerising grid of rounded squares or dots whose size, rotation and colour ripple with a wave.", r##"{}"##;
     "reactions" => reactions::Reactions, "Live-stream reactions (hearts, likes, fire, stars, sparkles, 100, laugh) floating up with wobble, pop and fade.", r##"{"kinds":["heart","like","fire"]}"##;
     "card-stack" => card_stack::CardStack, "2.5D stack of image or titled cards; the front card swipes away every interval and the stack advances.", r##"{"cards":["Design","Build","Ship"]}"##;
+    // Product
+    "product-shot" => product_shot::ProductShot, "A phone on a stone plinth lit by low sun through window blinds: ray-traced device (titanium frame, Fresnel glass, the screen from a named composition), volumetric light shafts, dust, slow weighted camera move.", r##"{"screen":"ui"}"##;
+    "now-playing" => now_playing::NowPlaying, "A music app's Now Playing screen (390 pt grid): printed cover art, serif title, live scrubber with real timecodes, transport, volume.", r##"{"title":"Salt & Glass","artist":"Maren Holt"}"##;
     // Lottie
     "lottie" => lottie::Lottie, "Minimal Lottie player (shape layers, transforms, trim paths).", r##"{"src":"anim.json"}"##;
 }
@@ -518,7 +526,7 @@ fn shorthand(kind: &str, obj: &mut Map<String, Value>) {
 
 /// camelCase keys → snake_case, recursively (except inside `data`, which is
 /// foreign JSON such as a Lottie file).
-fn snake_keys(m: Map<String, Value>) -> Map<String, Value> {
+pub fn snake_keys(m: Map<String, Value>) -> Map<String, Value> {
     fn conv(v: Value) -> Value {
         match v {
             Value::Object(m) => Value::Object(snake_keys(m)),

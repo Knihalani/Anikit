@@ -1,8 +1,8 @@
 // Transition: the old scene melts away darkest-first (a luma key), so the
 // new scene appears through the shadows before the highlights.
 // Uniforms: softness, invert (1 = brightest first).
-uniform float softness; // = 0.15
-uniform float invert;   // = 0.0
+uniform float softness; // = 0.15  width of the melt edge
+uniform float invert;   // = 0.0  1 melts brightest-first
 
 vec4 transition(vec2 uv) {
     vec4 a = getFromColor(uv);

@@ -1,6 +1,6 @@
 // Transition: punch-in zoom blur with chromatic fringes; the cut happens at
 // peak blur. Uniforms: strength.
-uniform float strength; // = 0.35
+uniform float strength; // = 0.35  zoom amount at the cut
 
 // One scene per frame: the branch is uniform, so only one texture is read.
 vec4 tap(vec2 q) {

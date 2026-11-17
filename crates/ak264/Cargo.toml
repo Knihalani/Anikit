@@ -28,5 +28,9 @@ name = "yuv2mp4"
 path = "examples/yuv2mp4.rs"
 
 [[example]]
+name = "dark"
+path = "examples/dark.rs"
+
+[[example]]
 name = "slices"
 path = "examples/slices.rs"

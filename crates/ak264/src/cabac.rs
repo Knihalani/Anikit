@@ -108,8 +108,10 @@ impl Cabac {
 
     #[inline(always)]
     pub fn decision(&mut self, _w: &mut BitWriter, ctx: usize, bin: u32) {
-        let c = &mut self.ctx[ctx];
-        let s = *c as usize;
+        debug_assert!(ctx < self.ctx.len());
+        // SAFETY: context indices are compile-time table offsets below 460.
+        let c = unsafe { self.ctx.get_unchecked_mut(ctx) };
+        let s = (*c & 127) as usize; // states are 7-bit; the mask lets the tables skip bounds checks
         // NEXT[s][bin]: full state transition including the MPS flip
         let lps = LPS[s][((self.range >> 6) & 3) as usize] as u32;
         self.range -= lps;
@@ -118,7 +120,10 @@ impl Cabac {
             self.range = lps;
         }
         *c = NEXT[s][bin as usize];
-        self.renorm();
+        // most MPS decisions leave range ≥ 256: nothing to shift or emit
+        if self.range < 256 {
+            self.renorm();
+        }
     }
 
     #[inline(always)]
@@ -212,6 +217,12 @@ impl Cabac {
 
     /// A residual block (`coeffs` in scan order, len 16/15/4) with its coded_block_flag
     /// context increment.
+    /// coded_block_flag = 0 for a block with no coefficients.
+    #[inline]
+    pub fn residual_empty(&mut self, w: &mut BitWriter, cat: Cat, cbf_inc: usize) {
+        self.decision(w, 85 + CBF_OFF[cat as usize] + cbf_inc, 0);
+    }
+
     pub fn residual(&mut self, w: &mut BitWriter, coeffs: &[i32], cat: Cat, cbf_inc: usize) {
         let c = cat as usize;
         let n = coeffs.len();

@@ -1,0 +1,151 @@
+{
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "compositions": {
+    "film": {
+      "size": [
+        360,
+        640
+      ],
+      "duration": 4,
+      "background": "linear-gradient(160deg, #0b1d3a, #1f6fff 55%, #ff7a3c)",
+      "layers": [
+        {
+          "shape": "circle",
+          "width": 220,
+          "height": 220,
+          "fill": "#ffd23f",
+          "x": "=180 + 90*sin(t*2.4)",
+          "y": "=250 + 120*cos(t*1.7)"
+        },
+        {
+          "text": "{value}",
+          "value": "=floor(t*30) % 100",
+          "style": "title",
+          "color": "#ffffff",
+          "y": 520
+        }
+      ]
+    }
+  },
+  "scenes": [
+    {
+      "duration": 8,
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "cyc",
+            "quality": "standard",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    1.3,
+                    0.75,
+                    2.4
+                  ],
+                  "target": [
+                    0.0,
+                    0.85,
+                    -1.2
+                  ],
+                  "focal": 35,
+                  "fstop": 2.8
+                },
+                {
+                  "t": 1.4,
+                  "pos": [
+                    2.2,
+                    1.3,
+                    1.4
+                  ],
+                  "target": [
+                    0.0,
+                    0.6,
+                    -4.5
+                  ],
+                  "focal": 32,
+                  "fstop": 4
+                },
+                {
+                  "t": 3.0,
+                  "pos": [
+                    4.5,
+                    4.0,
+                    -9
+                  ],
+                  "target": [
+                    0.0,
+                    0.5,
+                    -24
+                  ],
+                  "focal": 30,
+                  "fstop": 5.6
+                },
+                {
+                  "t": 5.0,
+                  "pos": [
+                    6.0,
+                    6.5,
+                    -31
+                  ],
+                  "target": [
+                    0.0,
+                    0.5,
+                    -52
+                  ],
+                  "focal": 30,
+                  "fstop": 5.6
+                },
+                {
+                  "t": 8.0,
+                  "pos": [
+                    8.0,
+                    10.0,
+                    -62
+                  ],
+                  "target": [
+                    0.0,
+                    0.5,
+                    -94
+                  ],
+                  "focal": 28,
+                  "fstop": 8
+                }
+              ]
+            },
+            "objects": [],
+            "physics": {
+              "timeScale": "=1 + 2.2*smoothstep(1.0, 1.8, t)",
+              "bodies": [
+                {
+                  "type": "pane",
+                  "count": 10000,
+                  "layout": "dominoes",
+                  "path": "fan",
+                  "angle": 110,
+                  "size": [
+                    0.9,
+                    1.6,
+                    0.03
+                  ],
+                  "material": "glass",
+                  "texture": {
+                    "composition": "film",
+                    "frame": "=(i*7 + t*30) % 120",
+                    "face": "both"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

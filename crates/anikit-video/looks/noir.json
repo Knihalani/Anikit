@@ -92,7 +92,8 @@
    "component": "grain",
    "props": {
     "amount": 0.035,
-    "rate": 24
+    "rate": 24,
+    "blend": "normal"
    },
    "width": "100%",
    "height": "100%"

@@ -73,8 +73,18 @@ pub fn encode_parallel<F>(cfg: &EncoderConfig, frames: usize, render: F) -> Vec<
 where
     F: Fn(usize, &mut YuvBuffer, &mut FrameHints) + Sync,
 {
+    encode_ranges(cfg, chunk_ranges(frames, cfg.gop), render)
+}
+
+/// [`encode_parallel`] over explicit chunk ranges (each starts with an IDR). With
+/// ranges that don't depend on the machine, the output is identical on any number
+/// of threads.
+pub fn encode_ranges<F>(cfg: &EncoderConfig, ranges: Vec<(usize, usize)>, render: F) -> Vec<u8>
+where
+    F: Fn(usize, &mut YuvBuffer, &mut FrameHints) + Sync,
+{
     use rayon::prelude::*;
-    let parts: Vec<Vec<u8>> = chunk_ranges(frames, cfg.gop)
+    let parts: Vec<Vec<u8>> = ranges
         .into_par_iter()
         .enumerate()
         .map(|(ci, (a, b))| {

@@ -242,3 +242,33 @@ fn long_render_with_audio_does_not_hang() {
     assert!(s.contains("h264,60.0") && s.contains("aac,60.0"), "{s}");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// Output must be byte-identical across runs and thread counts. Text faces that are
+/// first used mid-render (an emoji, a counter) used to recreate a worker's renderer at
+/// a moment set by other threads, and chunk sizes depended on the core count.
+#[test]
+fn render_is_byte_identical_across_runs_and_thread_counts() {
+    let src = r##"{ "size": [320, 180], "fps": 30, "scenes": [
+        { "duration": 2, "layers": [ { "text": "Launch day", "style": "title", "enter": "wave by char" },
+            { "text": "=floor(t * 40) + 1000", "y": 140, "size": 20 },
+            { "shape": "circle", "width": 30, "fill": "$accent", "x": "=40 + 240 * fract(t / 1.5)", "y": 40 } ] },
+        { "duration": 2, "transition": "push", "layers": [ { "text": "Ship it 🚀", "style": "heading", "enter": "pop by word" },
+            { "component": "bar-chart", "props": { "values": [3, 7, 5, 9] }, "width": 200, "height": 60, "y": 140 } ] } ] }"##;
+    let dir = std::env::temp_dir().join(format!("akv-det-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let render = |threads: usize, k: usize| {
+        let pool = rayon::ThreadPoolBuilder::new().num_threads(threads).build().unwrap();
+        pool.install(|| {
+            let ev = Evaluator::new(&parse_json(src).unwrap().spec, Options::default()).unwrap();
+            let out = dir.join(format!("d{threads}-{k}.mp4"));
+            pipeline::render_ak264(&ev, &RenderOptions::default(), &out, None).unwrap();
+            std::fs::read(&out).unwrap()
+        })
+    };
+    let a = render(4, 0);
+    assert!(a.len() > 1000);
+    assert!(a == render(4, 1), "two 4-thread renders differ");
+    assert!(a == render(1, 0), "1-thread and 4-thread renders differ");
+    assert!(a == render(3, 0), "3-thread and 4-thread renders differ");
+    let _ = std::fs::remove_dir_all(&dir);
+}
