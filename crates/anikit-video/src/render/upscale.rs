@@ -11,7 +11,7 @@ use kurbo::Rect;
 #[derive(Default, Debug)]
 pub struct Upscaler {
     xtab: Vec<(u32, u32, u32)>,
-    rows: [Vec<u16>; 2],
+    rows: [Vec<u8>; 2],
     row_ids: [usize; 2],
 }
 
@@ -76,8 +76,8 @@ impl Upscaler {
                     unsafe {
                         let a = std::ptr::read_unaligned(sp.add(i0 as usize * 4) as *const [u8; 4]);
                         let b = std::ptr::read_unaligned(sp.add(i1 as usize * 4) as *const [u8; 4]);
-                        let o: [u16; 4] = std::array::from_fn(|c| (a[c] as u32 * (256 - w) + b[c] as u32 * w) as u16);
-                        std::ptr::write_unaligned(rp.add(x * 4) as *mut [u16; 4], o);
+                        let o: [u8; 4] = std::array::from_fn(|c| ((a[c] as u32 * (256 - w) + b[c] as u32 * w + 128) >> 8) as u8);
+                        std::ptr::write_unaligned(rp.add(x * 4) as *mut [u8; 4], o);
                     }
                 }
                 self.row_ids[slot] = j;
@@ -86,12 +86,11 @@ impl Upscaler {
             let d = &mut out[y * ow * 4..(y + 1) * ow * 4];
             let iw = 256 - wy;
             if wy == 0 {
-                for (d, &a) in d.iter_mut().zip(a.iter()) {
-                    *d = ((a as u32 + 128) >> 8) as u8;
-                }
+                d.copy_from_slice(a);
             } else {
+                let (iw, wy) = (iw as u16, wy as u16);
                 for ((d, &a), &b) in d.iter_mut().zip(a.iter()).zip(b.iter()) {
-                    *d = ((a as u32 * iw + b as u32 * wy + (1 << 15)) >> 16) as u8;
+                    *d = ((a as u16 * iw + b as u16 * wy + 128) >> 8) as u8;
                 }
             }
         }

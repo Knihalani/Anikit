@@ -63,7 +63,7 @@ A leading run of top-level ops with no visible edge inside the frame is rendered
 - radial "glows" whose gradient reaches zero alpha before their path edge (checked geometrically);
 - gradients whose stops are at least 24 px apart on screen.
 
-This applies once the run paints a frame's worth of pixels with a gradient or image. The launch template's background (a full-frame radial plus two moving glows) went from 118 to about 155 fps on one thread at 1080p. The result is within 6 LSB of a full-resolution render (tested).
+This applies once the run paints a frame's worth of pixels with a gradient or image. The launch template's background (a full-frame radial plus two moving glows) went from 118 to about 195 fps on one thread at 1080p (8-bit intermediate rows; the vertical lerp runs in 16-bit lanes). The result is within 6 LSB of a full-resolution render (tested).
 
 ### Incremental frames
 
