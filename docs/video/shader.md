@@ -254,7 +254,7 @@ One-sample times are from `cargo run --release -p anikit-shader --example librar
 | `luma-melt` | transition | 5 | 20 | 20 |
 | `zoom-blur` | transition | 14 | 129 | 129 |
 
-Compiled kernels are also cached on disk, in `~/.cache/anikit/shaders` (or `$XDG_CACHE_HOME`, or `ANIKIT_SHADER_CACHE=dir`; `0` turns it off). The key is the source, the declared uniforms, the code generator's own source and the CPU's vector features, so a stale entry is never used. A new `still` process loads machine code instead of compiling it: an sdf-scene + particles still went from 238 to 119 ms, with an identical image.
+Compiled kernels are also cached on disk, in `~/.cache/anikit/shaders` (or `$XDG_CACHE_HOME`, or `ANIKIT_SHADER_CACHE=dir`; `0` turns it off). The key is the source, the declared uniforms, the code generator's own source and the CPU's vector features, so a stale entry is never used. The cache keeps the 400 most recent kernels. A new `still` process loads machine code instead of compiling it: an sdf-scene + particles still went from 238 to 119 ms, with an identical image.
 
 Compiling is a one-off. Kernels are cached process-wide by source and uniform set, so a shader used by many layers, compositions or transitions compiles once. Every shader in a spec is JIT-compiled in parallel before the first frame is evaluated, which took the showcase spec's build from 1114 ms to 114 ms.
 

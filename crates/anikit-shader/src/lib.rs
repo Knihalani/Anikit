@@ -100,6 +100,21 @@ fn disk_store(key: u64, blob: &[u8]) {
     if std::fs::write(&tmp, blob).is_ok() {
         let _ = std::fs::rename(&tmp, &path);
     }
+    // Keep the cache bounded: past MAX entries, drop the oldest quarter.
+    const MAX: usize = 400;
+    if let Ok(rd) = std::fs::read_dir(dir) {
+        let mut files: Vec<(std::time::SystemTime, std::path::PathBuf)> = rd
+            .flatten()
+            .filter(|e| e.path().extension().is_some_and(|x| x == "bin"))
+            .filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path())))
+            .collect();
+        if files.len() > MAX {
+            files.sort();
+            for (_, f) in files.iter().take(files.len() - MAX * 3 / 4) {
+                let _ = std::fs::remove_file(f);
+            }
+        }
+    }
 }
 
 /// See [`set_lane_groups`].
