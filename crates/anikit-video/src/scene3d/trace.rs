@@ -383,6 +383,8 @@ pub struct Px {
     /// Weighted floor coverage and reflection blur radius (pixels).
     pub cov: f32,
     pub rad: f32,
+    /// Floor reflection fade × haze (applied after the blur).
+    pub rf: f32,
     /// View depth (distance along the camera axis) and motion (pixels per frame).
     pub depth: f32,
     pub vel: [f32; 2],
@@ -398,6 +400,8 @@ struct Sample {
     refl: V3,
     floor: bool,
     rad: f32,
+    /// Floor reflection fade × haze, applied after the blur.
+    rf: f32,
     depth: f32,
     vel: (f32, f32),
     nrm: V3,
@@ -639,7 +643,8 @@ impl Scene {
         // Reflection: Fresnel lacquer plus an optional mirror boost.
         let nv = (-d.y).clamp(1e-4, 1.0);
         let fr = 0.04 + 0.96 * (1.0 - nv).powi(5);
-        let k = (fr + f.mirror * (1.0 - fr)) * (1.0 - fade) * f.reflect;
+        // (The fade to backdrop is applied by the caller, after any blur.)
+        let k = (fr + f.mirror * (1.0 - fr)) * f.reflect;
         let mut refl = v3(0.0, 0.0, 0.0);
         let mut dist = 0.0;
         if k > 1e-3 {
@@ -826,7 +831,7 @@ impl Scene {
             let Some(s) = self.trace(o, d, 1e6) else {
                 let b = mul(self.backdrop(d), thr);
                 let (depth, nrm, id, vel) = first.unwrap_or((1e4, none, usize::MAX - 1, (0.0, 0.0)));
-                return Sample { col: add(col, b), dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, depth, vel, nrm, id };
+                return Sample { col: add(col, b), dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, rf: 1.0, depth, vel, nrm, id };
             };
             let dist = travelled + s.t;
             let haze_f = if self.haze.0 > 0.0 { (-self.haze.0 * dist).exp() } else { 1.0 };
@@ -875,7 +880,7 @@ impl Scene {
                     }
                     thr = tthr;
                     if luma(thr) < 0.004 {
-                        return Sample { col, dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, depth: fd, vel: fvel, nrm: fnrm, id: fid };
+                        return Sample { col, dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, rf: 1.0, depth: fd, vel: fvel, nrm: fnrm, id: fid };
                     }
                     o = madd(s.p, d, 1e-4);
                     travelled = dist;
@@ -894,9 +899,11 @@ impl Scene {
                 let focal = h as f32 * 0.5 / th;
                 let rad = (fl.roughness * rdist.min(50.0) / depth_v.max(1e-3) * focal * 0.5).min(48.0);
                 let direct = first.is_none();
-                // Seen through glass, the reflection isn't blurred separately.
-                let (refl, col) = if direct { (mul(scale(refl, haze_f), thr), col) } else { (none, add(col, mul(scale(refl, haze_f), thr))) };
-                return Sample { col, dif, refl, floor: direct, rad, depth: fd, vel: fvel, nrm: fnrm, id: fid };
+                // The reflection is blurred in post before its fade/haze factor
+                // applies (so far, hazed floor can't gather near reflections).
+                // Seen through glass, it isn't blurred separately.
+                let (refl, col) = if direct { (mul(refl, thr), col) } else { (none, add(col, mul(scale(refl, keepf), thr))) };
+                return Sample { col, dif, refl, floor: direct, rad, rf: keepf, depth: fd, vel: fvel, nrm: fnrm, id: fid };
             }
             let (c, mut dif) = self.shade_obj(&s, d, 0, layer, q, rot, false);
             if luma(dif.alb) > 0.0 || luma(dif.spec) > 0.0 {
@@ -909,10 +916,10 @@ impl Scene {
             dif.alb = mul(dif.alb, scale(thr, haze_f));
             dif.spec = mul(dif.spec, scale(thr, haze_f));
             let col = add(col, mul(thr, add(scale(c, haze_f), haze_add)));
-            return Sample { col, dif, refl: none, floor: false, rad: 0.0, depth: fd, vel: fvel, nrm: fnrm, id: fid };
+            return Sample { col, dif, refl: none, floor: false, rad: 0.0, rf: 1.0, depth: fd, vel: fvel, nrm: fnrm, id: fid };
         }
         let (depth, nrm, id, vel) = first.unwrap_or((1e4, none, usize::MAX - 1, (0.0, 0.0)));
-        Sample { col, dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, depth, vel, nrm, id }
+        Sample { col, dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, rf: 1.0, depth, vel, nrm, id }
     }
 
     /// Render the primary pass for rows `y0..y1`: one centre sample per pixel,
@@ -1061,6 +1068,7 @@ fn resolve(samples: &[Sample]) -> Px {
         if s.floor {
             px.cov += wt;
             px.rad += s.rad * wt;
+            px.rf += s.rf * wt;
             fl_w += wt;
         }
         if s.depth < best_d {
@@ -1089,6 +1097,7 @@ fn resolve(samples: &[Sample]) -> Px {
     }
     if fl_w > 0.0 {
         px.rad /= fl_w;
+        px.rf /= fl_w;
     }
     px.cov /= wsum;
     px.depth = best_d;

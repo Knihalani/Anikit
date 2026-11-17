@@ -381,9 +381,11 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post) -> Vec<u8> {
             // Colour per unit coverage, times this pixel's own coverage.
             if m[3] > 1e-6 {
                 let f = c[3] / m[3];
-                [m[0] * f, m[1] * f, m[2] * f, c[3]]
+                let r = px[i].rf;
+                [m[0] * f * r, m[1] * f * r, m[2] * f * r, c[3]]
             } else {
-                c
+                let r = px[i].rf;
+                [c[0] * r, c[1] * r, c[2] * r, c[3]]
             }
         })
         .collect();

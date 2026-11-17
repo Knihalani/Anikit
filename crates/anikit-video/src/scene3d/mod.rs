@@ -179,7 +179,7 @@ impl Prepare for Scene3d {
             Some(Value::Bool(false)) => None,
             v => {
                 let mut fp = if bright {
-                    FloorParams { y: 0.0, color: scale(es.tint, 0.92), roughness: 0.35, mirror: 0.0, reflect: 0.35, pool: (0.0, 0.0, 0.0), fade: (0.0, 0.0) }
+                    FloorParams { y: 0.0, color: scale(es.tint, 0.92), roughness: 0.35, mirror: 0.0, reflect: 0.35, pool: (0.0, 0.0, 0.0), fade: (25.0, 250.0) }
                 } else {
                     FloorParams { y: 0.0, color: v3(0.035, 0.035, 0.04), roughness: 0.09, mirror: 0.06, reflect: 1.0, pool: (0.0, 0.0, 5.0), fade: (7.0, 16.0) }
                 };
