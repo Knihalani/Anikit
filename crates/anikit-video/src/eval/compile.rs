@@ -2748,7 +2748,10 @@ impl C<'_> {
             fixed,
             channels,
             filter,
-            supersample: l.supersample.unwrap_or(false),
+            // Anti-aliased by default (adaptive 2×2 where neighbours differ), except
+            // filters, which would soften the frame they read, and sources that
+            // opt out with `// anikit:aa off`.
+            supersample: l.supersample.unwrap_or(!filter && !anikit_shader::aa_off(&text)),
             alpha: l.alpha.unwrap_or(false),
             label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
             audio: self.shader_audio(&text, path),

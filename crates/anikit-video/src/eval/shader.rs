@@ -546,6 +546,7 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> (Pixmap, f64) {
     f.beat = job.beat;
     f.channels = chans;
     f.supersample = job.supersample;
+    f.threshold = anikit_shader::AA_THRESHOLD;
     f.alpha = job.alpha;
     // Smooth shader gradients would band in 8 bits; exact values are untouched.
     f.dither = true;

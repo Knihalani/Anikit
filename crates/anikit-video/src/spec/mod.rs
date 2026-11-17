@@ -561,7 +561,8 @@ pub struct Layer {
     pub channels: Option<Vec<serde_json::Value>>,
     /// Shader as a filter: `iChannel0` is everything drawn below, and the output replaces the frame.
     pub filter: Option<bool>,
-    /// Shader: 2×2 supersampling (4 samples per pixel).
+    /// Shader: anti-aliasing (adaptive 2×2 where neighbours differ). Default on for shader layers
+    /// unless the source says `// anikit:aa off`; off for filters. `false` is up to 2× faster.
     pub supersample: Option<bool>,
     /// Shader: use `fragColor.a` as alpha (default: opaque, like Shadertoy).
     pub alpha: Option<bool>,
