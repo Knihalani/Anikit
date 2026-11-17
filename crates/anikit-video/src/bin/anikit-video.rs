@@ -412,7 +412,7 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             let job = if opts.audio { pipeline::audio_job(&ev, t0, dur, &wav) } else { None };
             let had_audio = job.is_some();
             // Before a long render, say how long and why (stderr; stdout stays JSON).
-            if !a.has("--quiet") {
+            if !a.has("--quiet") && (ev.has_heavy_layers() || ev.frames() > 3600) {
                 let est = pipeline::estimate(&ev, &opts, 20.0);
                 if est.secs >= 20.0 {
                     eprintln!("{est}. Faster: --quality draft, or --from/--to for a range.");
