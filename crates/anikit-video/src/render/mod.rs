@@ -16,7 +16,9 @@ pub mod filter;
 pub mod glyphs;
 pub mod incremental;
 pub mod resample;
+pub mod smooth;
 pub mod trim;
+pub mod upscale;
 pub mod yuv;
 
 use std::collections::HashMap;
@@ -141,6 +143,11 @@ pub struct Renderer {
     /// Per-frame image overrides (video frames, live textures).
     frame_images: Arc<HashMap<dl::ImageId, Arc<Pixmap>>>,
     dynamic: Option<Arc<dyn DynamicImages>>,
+    upscaler: upscale::Upscaler,
+    /// Low-resolution smooth backdrop, its context and content key.
+    lctx: Option<RenderContext>,
+    smooth_lo: Pixmap,
+    smooth_key: Option<u64>,
     inc: incremental::Tracker,
     st: State,
 }
@@ -160,6 +167,10 @@ impl Renderer {
             rpix: Pixmap::new(1, 1),
             frame_images: Default::default(),
             dynamic: None,
+            upscaler: Default::default(),
+            lctx: None,
+            smooth_lo: Pixmap::new(1, 1),
+            smooth_key: None,
             inc: Default::default(),
             st: State {
                 res: Resources::new(),
@@ -251,10 +262,60 @@ impl Renderer {
         let dynamic = self.dynamic.clone();
         let assets = View { assets: &shared, frame: &frame_images, dynamic: dynamic.as_deref() };
         let settings = RasterizerSettings { target_init: TargetInit::Clear(color(list.background)), ..Default::default() };
+        // A full-frame opaque image hides everything before it: upscale it
+        // straight into the target and draw only the ops above it.
+        let mut backdrop = backdrop(&list.ops, &assets, w as f64, h as f64);
+        let mut from_smooth = false;
+        // Or: a smooth leading run (gradients, glows, fields) rendered at ¼ resolution.
+        let n_smooth = smooth::prefix(&list.ops, w as f64, h as f64, &|id| assets.image(id).map(|p| (p.width() as u32, p.height() as u32)));
+        if n_smooth > 0 && backdrop.as_ref().is_none_or(|(k, _, _)| *k < n_smooth) {
+            let f = smooth::FACTOR;
+            let (lw, lh) = ((w as u32).div_ceil(f) + 1, (h as u32).div_ceil(f) + 1);
+            let key = {
+                let mut hs = incremental::Fx::default();
+                use std::hash::Hasher;
+                hs.write_u64(((w as u64) << 32) | h as u64);
+                hs.write_u64(list.background.0.iter().fold(0u64, |a, v| a.rotate_left(16) ^ v.to_bits() as u64));
+                for op in &list.ops[..n_smooth] {
+                    hs.write_u64(incremental::hash_op(op));
+                }
+                // Images can change pixels under the same id.
+                for op in &list.ops[..n_smooth] {
+                    if let Op::Image { image, .. } = op {
+                        hs.write_u64(assets.image(*image).map_or(0, |p| Arc::as_ptr(&p) as u64));
+                    }
+                }
+                hs.finish()
+            };
+            if self.smooth_key != Some(key) {
+                let lctx = self.lctx.get_or_insert_with(|| RenderContext::new(lw as u16, lh as u16));
+                lctx.reset_and_resize(lw as u16, lh as u16);
+                st.org = (0, 0);
+                draw_ops(st, &assets, lctx, &list.ops[..n_smooth], Affine::scale(1.0 / f as f64));
+                lctx.flush();
+                self.smooth_lo.resize(lw as u16, lh as u16);
+                lctx.render_with(&mut self.smooth_lo, &mut st.res, settings);
+                lctx.reset();
+                self.smooth_lo.recompute_may_have_transparency();
+                self.smooth_key = Some(key);
+            }
+            let lo = Arc::new(std::mem::replace(&mut self.smooth_lo, Pixmap::new(1, 1)));
+            backdrop = Some((n_smooth - 1, lo, Rect::new(0.0, 0.0, (lw * f) as f64, (lh * f) as f64)));
+            from_smooth = true;
+        }
+        let (ops, skip) = match &backdrop {
+            Some((k, _, _)) => (&list.ops[k + 1..], k + 1),
+            None => (&list.ops[..], 0),
+        };
+        let settings = if backdrop.is_some() { RasterizerSettings { target_init: TargetInit::SrcOver, ..Default::default() } } else { settings };
         if full {
             st.org = (0, 0);
+            if let Some((_, pix, dev)) = &backdrop {
+                self.upscaler.run(pix.data_as_u8_slice(), pix.width() as usize, pix.height() as usize, *dev, self.frame.data_as_u8_slice_mut(), w as usize, h as usize, 0, 0);
+                self.frame.set_may_have_transparency(false);
+            }
             self.ctx.reset();
-            draw_ops(st, &assets, &mut self.ctx, &list.ops, Affine::IDENTITY);
+            draw_ops(st, &assets, &mut self.ctx, ops, Affine::IDENTITY);
             self.ctx.flush();
             self.ctx.render_with(&mut self.frame, &mut st.res, settings);
             // Release the paints that referenced offscreen bitmaps.
@@ -268,10 +329,14 @@ impl Renderer {
             let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
             rctx.reset_and_resize(rw, rh);
             st.org = (x0 as i32, y0 as i32);
-            let cull = rects.map(|rects| Cull { region: Rect::new(0.0, 0.0, rw as f64, rh as f64), rects, org: (x0 as f64, y0 as f64) });
-            draw_ops_culled(st, &assets, rctx, &list.ops, Affine::translate((-(x0 as f64), -(y0 as f64))), cull);
+            let cull = rects.map(|rects| Cull { region: Rect::new(0.0, 0.0, rw as f64, rh as f64), rects: &rects[skip.min(rects.len())..], org: (x0 as f64, y0 as f64) });
+            draw_ops_culled(st, &assets, rctx, ops, Affine::translate((-(x0 as f64), -(y0 as f64))), cull);
             rctx.flush();
             self.rpix.resize(rw, rh);
+            if let Some((_, pix, dev)) = &backdrop {
+                self.upscaler.run(pix.data_as_u8_slice(), pix.width() as usize, pix.height() as usize, *dev, self.rpix.data_as_u8_slice_mut(), rw as usize, rh as usize, x0 as i64, y0 as i64);
+                self.rpix.set_may_have_transparency(false);
+            }
             rctx.render_with(&mut self.rpix, &mut st.res, settings);
             rctx.reset();
             st.org = (0, 0);
@@ -281,6 +346,12 @@ impl Renderer {
             for (i, row) in src.chunks_exact(rwb).enumerate() {
                 let o = (y0 as usize + i) * fw + x0 as usize * 4;
                 dst[o..o + rwb].copy_from_slice(row);
+            }
+        }
+        // Keep the low-res backdrop for the next frame.
+        if from_smooth {
+            if let Some((_, p, _)) = backdrop {
+                self.smooth_lo = Arc::try_unwrap(p).unwrap_or_else(|p| (*p).clone());
             }
         }
         // Recycle offscreen bitmaps.
@@ -312,6 +383,38 @@ impl Renderer {
         self.render(list);
         rgba_to_yuv420(&self.frame, out);
     }
+}
+
+/// The last top-level op that is an opaque, axis-aligned image covering the
+/// whole `w × h` frame: (index, image, device rect). Everything before it is hidden.
+fn backdrop(ops: &[Op], assets: &View, w: f64, h: f64) -> Option<(usize, Arc<Pixmap>, Rect)> {
+    let mut depth = 0usize;
+    let mut found: Option<(usize, dl::ImageId, Rect)> = None;
+    for (i, op) in ops.iter().enumerate() {
+        match op {
+            Op::PushLayer { .. } => depth += 1,
+            Op::PopLayer => depth = depth.saturating_sub(1),
+            Op::Image { image, dst, opacity, transform } if depth == 0 && *opacity >= 1.0 => {
+                let [a, b, c, d, e, f] = *transform;
+                if b != 0.0 || c != 0.0 || a <= 0.0 || d <= 0.0 || !op_ok(op, Affine::IDENTITY) {
+                    continue;
+                }
+                let r = Rect::new(
+                    (a * dst[0] + e) as f64,
+                    (d * dst[1] + f) as f64,
+                    (a * (dst[0] + dst[2]) + e) as f64,
+                    (d * (dst[1] + dst[3]) + f) as f64,
+                );
+                if r.x0 <= 0.0 && r.y0 <= 0.0 && r.x1 >= w && r.y1 >= h && r.width() > 0.0 && r.height() > 0.0 {
+                    found = Some((i, *image, r));
+                }
+            }
+            _ => {}
+        }
+    }
+    let (i, id, r) = found?;
+    let pix = assets.image(id)?;
+    (!pix.may_have_transparency()).then_some((i, pix, r))
 }
 
 /// Index of the `PopLayer` matching the `PushLayer` at `ops[0]`, or `ops.len()`.
