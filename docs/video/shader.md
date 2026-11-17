@@ -224,6 +224,28 @@ Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) ->
 
 Reel of the newer recipes and a feedback buffer: [`shots/recipes.mp4`](shots/recipes.mp4) (spec [`examples/recipes.json`](examples/recipes.json); 13 s of 1080p rendered in 60 s on 4 cores). `anikit-video info --shaders` lists every built-in with its measured cost and each uniform's default and meaning. `info --json` has the same under `"shader_library"`. The sources live in `crates/anikit-shader/library/*.glsl`. Copy one as a starting point: they are short and commented.
 
+## Style filters
+
+One line turns everything below into a distinct, printed or photographed look. Put the filter last in the layer list:
+
+```json
+{ "shader": "risograph", "filter": true, "uniforms": { "ink1": "#ff4f79", "ink2": "#2b59c3" } }
+```
+
+| Filter | Look | Key uniforms | ms/frame 1080p |
+|---|---|---|---|
+| `halftone` | CMYK dot screens at classic angles, or one black screen | `size`, `mono`, `angle`, `paper`, `contrast` | 60 (mono ≈ 20) |
+| `risograph` | two or three spot inks, off register, stencil grain | `ink1`, `ink2`, `ink3`, `use3`, `offset`, `grain`, `paper` | 28 |
+| `linocut` | carved block print: solid ink, tone-following gouges, bold outlines | `ink`, `paper`, `threshold`, `lines`, `edge` | 19 |
+| `watercolour` | washes that bleed and pool dark at their edges, paper granulation | `bleed`, `edges`, `granulation`, `paper`, `wash` | 80 |
+| `crosshatch` | pen or pencil hatching, more directions for darker tones | `ink`, `paper`, `spacing`, `pencil`, `edge` | 25 |
+| `film` | photochemical stock: filmic curve, lifted blacks, red halation, gate weave, midtone grain | `stock`, `halation`, `grain`, `weave`, `fade` | 25 |
+| `dither` | ordered Bayer dither into a 2- or 3-colour palette | `pixel`, `dark`, `light`, `mid`, `levels` | 18 |
+| `screenprint` | flat poster colour in 1–3 ink layers, off register | `inks`, `ink1`…`ink3`, `paper`, `offset`, `texture_` | 30 |
+| `print-offset` | CMY plates drifting apart on fibrous paper | `amount`, `angle`, `paper`, `fibre` | 33 |
+
+Before and after (left original, right filtered) for each one is in [`shots/filters/`](shots/filters/), and all nine are in [`shots/filters/all.jpg`](shots/filters/all.jpg). The filters are deterministic. Grain and gate weave follow `iFrame`, so they move every frame but repeat exactly. Like all filters they run at one sample per pixel. Sizes are given in pixels at 1080p and scale with the frame. Mix them: `film` over `screenprint` gives a printed poster scanned on film. `anikit-video info --shaders` lists every uniform with its default.
+
 ## Performance
 
 Milliseconds per frame at **1920×1080**, on **4 cores** (Xeon @ 2.1 GHz, AVX2), release build. Compile time is the one-off parse + validate + JIT with the disk cache off (`ANIKIT_SHADER_CACHE=0`; a cached kernel loads in 1–3 ms), for the two-quad kernels renders use (`still` compiles one-quad kernels in about half the time). Filters and transitions are timed with full-HD channel textures already bound.
