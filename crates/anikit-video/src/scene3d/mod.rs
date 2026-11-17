@@ -590,7 +590,7 @@ impl Scene3d {
         let vol = if p.shafts && p.haze.0 > 0.0 {
             let depth: &[f32] = &px.depth;
             let steps = match p.quality.edge_spp { 0..=3 => 8, 4..=8 => 16, _ => 32 };
-            Some(scene.volumetrics(&cam, w, h, &depth, p.haze.0, steps))
+            Some(scene.volumetrics(&cam, w, h, depth, p.haze.0, steps))
         } else {
             None
         };
