@@ -369,8 +369,9 @@ impl Component for Badge {
         }
         if self.dot {
             let (cx, cy) = (px + fs * 0.25, h * 0.5);
-            let ph = (t * 1.2).fract();
-            o.push(circle(cx, cy, fs * 0.25 + ph * fs * 0.5, solid(alpha(c, 0.5 * (1.0 - ph)))));
+            if let Some(ph) = pulse(t - self.delay, 1.2) {
+                o.push(circle(cx, cy, fs * 0.25 + ph * fs * 0.5, solid(alpha(c, 0.5 * (1.0 - ph)))));
+            }
             o.push(circle(cx, cy, fs * 0.25, solid(if self.solid { fg } else { c })));
         }
         draw(&mut o, ctx.assets, &self.label, &st, px + dw, h * 0.5 + fs * 0.36, 0.0);
@@ -894,8 +895,9 @@ impl Component for Callout {
         let [tx, ty] = self.to;
         let mut o = Vec::new();
         let dot = spring(t, 1.2);
-        let ph = (t * 0.9).fract();
-        o.push(circle(fx, fy, 6.0 + ph * 18.0, solid(alpha(c, 0.4 * (1.0 - ph)))));
+        if let Some(ph) = pulse(t, 0.9) {
+            o.push(circle(fx, fy, 6.0 + ph * 18.0, solid(alpha(c, 0.4 * (1.0 - ph)))));
+        }
         o.push(circle(fx, fy, 6.0 * dot, solid(c)));
         o.push(circle(fx, fy, 2.5 * dot, solid(Rgba([1.0, 1.0, 1.0, 1.0]))));
         // Elbow leader: diagonal then horizontal.

@@ -305,6 +305,15 @@ pub fn spring(t: f32, speed: f32) -> f32 {
 /// cheap for incremental render, dedupe and the encoder.
 pub const AMBIENT_RATE: f32 = 15.0;
 
+/// Phase (0..1) of an attention pulse at `rate` cycles/s, for the first
+/// three cycles only: afterwards `None`, so the element holds still and its
+/// frames repeat (dedupe and P_Skip downstream).
+#[inline]
+pub fn pulse(t: f32, rate: f32) -> Option<f32> {
+    let x = t * rate;
+    (0.0..3.0).contains(&x).then(|| x.fract())
+}
+
 /// `t` stepped down to `rate` updates per second.
 #[inline]
 pub fn step(t: f32, rate: f32) -> f32 {
