@@ -325,11 +325,12 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
     let total = ev.frames();
     let f0 = opts.from.map(|t| (t * ev.fps).round() as u32).unwrap_or(0).min(total) as usize;
     let f1 = opts.to.map(|t| (t * ev.fps).round() as u32).unwrap_or(total).clamp(f0 as u32, total) as usize;
-    let gop = cfg.gop.max(1) as usize;
     let done = AtomicU64::new(0);
     let t0 = Instant::now();
     let last_report = std::sync::Mutex::new(Instant::now());
     let n = f1 - f0;
+    // Chunk starts exactly as the encoder splits them (each starts with a fresh buffer and an IDR).
+    let starts: std::collections::HashSet<usize> = ak264::chunk_ranges(n, cfg.gop).into_iter().map(|r| r.0).collect();
     let out = ak264::encode_parallel(cfg, n, |k, buf, hints| {
         let t = Instant::now();
         with_renderer(ev, |_, _| {});
@@ -337,7 +338,7 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
             let mut w = w.borrow_mut();
             let Worker { renderer, dl, yuv, map, last, .. } = &mut *w;
             let r = renderer.as_mut().unwrap();
-            let continuing = k % gop != 0 && *last == Some(k.wrapping_sub(1));
+            let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
             // Held frame: provably identical to the previous one; skip eval and render.
             let fi = (f0 + k) as f32;
             if continuing && ev.is_static((fi - 1.0) / ev.fps, fi / ev.fps) {
