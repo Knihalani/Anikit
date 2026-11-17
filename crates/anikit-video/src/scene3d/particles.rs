@@ -2043,7 +2043,8 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let (kk, lw) = if foot < 4.0 { (usize::MAX, 0.0) } else { kern_of(foot) };
                 let l = if kk == 0 || kk == usize::MAX { 0 } else { BINS[kk - 1].1 };
                 let tex = (1u32 << l) as f32;
-                let ns = ((ml / tex).ceil() as usize).clamp(1, 24);
+                // Streak samples at most half a texel apart (a texel in draft).
+                let ns = if v.draft { ((ml / tex).ceil() as usize).clamp(1, 24) } else { ((ml * 2.0 / tex).ceil() as usize).clamp(1, 48) };
                 // Energy: projected disc area (world size) — in focus it's smaller than a pixel.
                 let area = std::f32::consts::PI * r_px * r_px;
                 // Lit colour.
@@ -2298,6 +2299,21 @@ mod tests {
         let (a, b) = (run(1), run(4));
         assert_eq!(a.0, b.0, "ids differ");
         assert!(a.1.iter().zip(&b.1).all(|(x, y)| x.iter().zip(y).all(|(p, q)| p.to_bits() == q.to_bits())), "positions differ between 1 and 4 threads");
+    }
+
+    #[test]
+    fn draft_and_exact_splats_emit_the_same_light() {
+        let s = sim(serde_json::json!({ "count": 20000, "emit": { "shape": "ball", "radius": 0.3, "pos": [0, 1, 0] }, "size": 0.002, "size_var": 0 }));
+        let snap = s.at(0.0);
+        let (w, h) = (640usize, 360usize);
+        let depth = vec![1e9f32; w * h];
+        let cam = Camera { pos: v3(0.0, 1.0, 4.0), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus: 4.0, aperture: 0.0, roll: 0.0, shutter: 0.0 };
+        let total = |draft: bool| {
+            let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: 4.0, aperture: 0.0, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)), shadow: None, draft };
+            render(&[(&s, snap.clone())], &v, 0.0).emitted()
+        };
+        let (a, b) = (total(false), total(true));
+        assert!((a - b).abs() / a < 0.01, "exact {a} vs draft {b}");
     }
 
     #[test]
