@@ -75,12 +75,13 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [New Raycast. Coming 2026](ui-product/raycast-new-raycast-coming-2026-2025.md) | Raycast (in-house; individual credits not published) | 2025 | 0:39 | fast | ui, 3d-cg | [watch](https://www.youtube.com/watch?v=Mi173xGb0ZA) |
 | [Introducing the new Notion AI](ui-product/notion-introducing-the-new-notion-ai-2024.md) | Notion (in-house; individual credits not published) | 2024 | 0:57 | fast | ui, 2d-vector, kinetic-type | [watch](https://www.youtube.com/watch?v=S92KX8-Hmlc) |
 
-### Illustration-led animation (`illustration/`, 5)
+### Illustration-led animation (`illustration/`, 6)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
 |---|---|---|---|---|---|---|
 | [Naive New Beaters, Star Feminine Band - Ye Kou Si Kuo](illustration/miyu-lefevre-naive-new-beaters-ye-kou-si-kuo-2024.md) | Miyu Productions (director: Lola Lefèvre; producers: Pierre Baussaron, Emmanuel-Alain Raynal) | 2024 | 2:28 | fast | 2d-illustrated, frame-by-frame | [watch](https://www.youtube.com/watch?v=1SXCE5NB4WA) |
 | [Weetabix: Three Little Pigs](illustration/golden-wolf-weetabix-three-little-pigs-2022.md) | Golden Wolf (animation lead/storyboard: Stephanie Mercier), with Stink Films | 2022 | 0:30 | fast | cel, 2d-illustrated, frame-by-frame | [watch](https://vimeo.com/710889465) |
+| [Imagine Dragons & JID - Enemy (from the series Arcane: League of Legends) | Official Music Video](illustration/fortiche-arcane-imagine-dragons-enemy-2021.md) | Fortiche Production (with Riot Games) | 2021 | 3:34 | fast | stylised-3d, 2d-illustrated, mixed | [watch](https://www.youtube.com/watch?v=F5tSoaJ93ac) |
 | [Right Now // A Giant Ant Short](illustration/giant-ant-right-now-2020.md) | Giant Ant (written by Jay Grandin; storyboard: Esther Cheung) | 2020 | 1:46 | steady | 2d-illustrated, cel, frame-by-frame | [watch](https://vimeo.com/453482133) |
 | [John Lewis Christmas Advert 2013 - The Bear & The Hare](illustration/blinkink-hornet-john-lewis-bear-and-hare-2013.md) | Blinkink / Hornet (directors: Elliot Dear, Yves Geleyn) | 2013 | ? | calm | 2d-illustrated, cel, stop-motion | [watch](https://www.youtube.com/watch?v=XqWig2WARb0) |
 | [Honda Grrr | Animated Commercial | Nexus Studios](illustration/nexus-smith-foulkes-honda-grrr-2004.md) | Nexus Productions (directors: Smith & Foulkes — Alan Smith, Adam Foulkes) | 2004 | 1:30 | steady | 2d-illustrated, 3d-cg | [watch](https://www.youtube.com/watch?v=AF4iLRb0a90) |
@@ -120,7 +121,7 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [NASA | A Year in the Life of Earth's CO2](data-story/nasa-year-in-the-life-of-co2-2014.md) | NASA Goddard (GMAO; animator/scientist: Bill Putman) | 2014 | ? | calm | data-viz, sim | [watch](https://www.youtube.com/watch?v=x1SgmFa0r04) |
 | [Hans Rosling's 200 Countries, 200 Years, 4 Minutes - The Joy of Stats - BBC](data-story/bbc-rosling-200-countries-2010.md) | BBC Four, The Joy of Stats (presenter: Hans Rosling; data: Gapminder) | 2010 | ? | steady | data-viz, live-action, mixed | [watch](https://www.youtube.com/watch?v=jbkSRLYSojo) |
 
-### Music videos & lyric videos (`music-video/`, 6)
+### Music videos & lyric videos (`music-video/`, 7)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
 |---|---|---|---|---|---|---|
@@ -130,6 +131,7 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [Aphex Twin - T69 Collapse](music-video/weirdcore-aphex-twin-t69-collapse-2018.md) | Weirdcore | 2018 | 5:19 | frantic | generative, 3d-cg, photo | [watch](https://www.youtube.com/watch?v=SqayDnQ2wmw) |
 | [The Chemical Brothers - Wide Open (Official Music Video) ft. Beck](music-video/domnic-chemical-brothers-wide-open-2016.md) | Outsider (directors: Dom&Nic); VFX: The Mill; choreography: Wayne McGregor | 2016 | 5:31 | calm | live-action, photoreal-cg | [watch](https://www.youtube.com/watch?v=BC2dRkm8ATU) |
 | [Radiohead - Burn The Witch](music-video/hopewell-radiohead-burn-the-witch-2016.md) | Jacknife (director: Chris Hopewell) | 2016 | 4:00 | steady | stop-motion | [watch](https://www.youtube.com/watch?v=yI2oS2hoL0k) |
+| [Prince - Sign O' The Times (Official Music Video)](music-video/konersman-prince-sign-o-the-times-1987.md) | Bill Konersman (director/animator) | 1987 | 3:44 | steady | kinetic-type, 2d-vector | [watch](https://www.youtube.com/watch?v=8EdxM72EZ94) |
 
 ### Sports & broadcast packages (`broadcast-sports/`, 7)
 

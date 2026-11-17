@@ -1897,6 +1897,66 @@
   "path": "docs/video/judge/benchmark/illustration/blinkink-hornet-john-lewis-bear-and-hare-2013.md"
  },
  {
+  "slug": "fortiche-arcane-imagine-dragons-enemy-2021",
+  "category": "illustration",
+  "title": "Imagine Dragons & JID - Enemy (from the series Arcane: League of Legends) | Official Music Video",
+  "studio": "Fortiche Production (with Riot Games)",
+  "client": "Riot Games / Netflix (Arcane)",
+  "year": 2021,
+  "url": "https://www.youtube.com/watch?v=F5tSoaJ93ac",
+  "alt_urls": [],
+  "length_s": 214,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stylised-3d",
+   "2d-illustrated",
+   "mixed"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "warm",
+   "dark"
+  ],
+  "type_role": "none",
+  "mood": [
+   "epic",
+   "energetic",
+   "emotional"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "camera-move",
+   "beat-sync",
+   "smear",
+   "depth-of-field",
+   "particles",
+   "hard-cut",
+   "match-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "post",
+   "shader",
+   "motionBlur",
+   "GAP: hand-painted textures on 3D characters with toon/painterly shading",
+   "GAP: 2D hand-drawn FX (smoke, sparks, smears) over 3D",
+   "GAP: stepped (on twos) character animation inside smooth camera moves"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/F5tSoaJ93ac/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/F5tSoaJ93ac/hq1.jpg",
+   "https://i.ytimg.com/vi/F5tSoaJ93ac/hq2.jpg",
+   "https://i.ytimg.com/vi/F5tSoaJ93ac/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/illustration/fortiche-arcane-imagine-dragons-enemy-2021.md"
+ },
+ {
   "slug": "giant-ant-right-now-2020",
   "category": "illustration",
   "title": "Right Now // A Giant Ant Short",
@@ -3632,6 +3692,60 @@
   ],
   "measured": null,
   "path": "docs/video/judge/benchmark/music-video/hopewell-radiohead-burn-the-witch-2016.md"
+ },
+ {
+  "slug": "konersman-prince-sign-o-the-times-1987",
+  "category": "music-video",
+  "title": "Prince - Sign O' The Times (Official Music Video)",
+  "studio": "Bill Konersman (director/animator)",
+  "client": "Prince / Paisley Park / Warner Bros. Records",
+  "year": 1987,
+  "url": "https://www.youtube.com/watch?v=8EdxM72EZ94",
+  "alt_urls": [],
+  "length_s": 224,
+  "verified": "oembed",
+  "aspect": "other",
+  "medium": [
+   "kinetic-type",
+   "2d-vector"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "dark",
+   "limited"
+  ],
+  "type_role": "only",
+  "mood": [
+   "retro",
+   "raw",
+   "editorial"
+  ],
+  "purpose": "lyric-video",
+  "techniques": [
+   "kinetic-type",
+   "beat-sync",
+   "colour-swap",
+   "hard-cut"
+  ],
+  "audio": "lyric",
+  "anikit_features": [
+   "text",
+   "text.kinetic",
+   "shape",
+   "transitions",
+   "audio",
+   "captions"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/8EdxM72EZ94/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/8EdxM72EZ94/hq1.jpg",
+   "https://i.ytimg.com/vi/8EdxM72EZ94/hq2.jpg",
+   "https://i.ytimg.com/vi/8EdxM72EZ94/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/konersman-prince-sign-o-the-times-1987.md"
  },
  {
   "slug": "rousselet-pharrell-cash-in-cash-out-2022",
