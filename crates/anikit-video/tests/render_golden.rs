@@ -650,8 +650,23 @@ fn fused_backdrop_yuv_matches_rgba_path() {
 /// incremental frames equal to full renders.
 #[test]
 fn incremental_random_edits_match_full() {
+    let partial: usize = (1..=6u32).map(|s| random_edits_run(s.wrapping_mul(0x9e37_79b9) | 1)).sum();
+    assert!(partial >= 120, "only {partial} partial frames over 6 runs");
+}
+
+/// Soak test: `cargo test --release -p anikit-video --test render_golden -- --ignored soak`.
+#[test]
+#[ignore]
+fn incremental_random_edits_soak() {
+    for s in 1..=200u32 {
+        random_edits_run(s.wrapping_mul(0x85eb_ca6b) | 1);
+    }
+}
+
+/// One randomized run; returns the number of partial frames.
+fn random_edits_run(seed0: u32) -> usize {
     use anikit_video::render::{rgba_to_yuv420, MbMap, YuvFrame};
-    let mut seed = 0x9e3779b9u32;
+    let mut seed = seed0;
     let mut rnd = move |n: u32| {
         seed ^= seed << 13;
         seed ^= seed >> 17;
@@ -678,6 +693,7 @@ fn incremental_random_edits_match_full() {
         }
     };
     let mut present: Vec<bool> = (0..14).map(|k| k % 3 != 0).collect();
+    let mut order: Vec<usize> = (0..14).collect();
     let mut offs = [0.0f32; 14];
     let mut grow = [0.0f32; 14];
     let assets = Arc::new(Assets::default());
@@ -688,15 +704,19 @@ fn incremental_random_edits_match_full() {
     for f in 0..40 {
         for _ in 0..2 {
             let k = rnd(14) as usize;
-            match rnd(4) {
+            match rnd(5) {
                 0 => present[k] = !present[k],
                 1 => offs[k] += 1.0 + rnd(3) as f32,
                 2 => grow[k] += 5.0 + rnd(20) as f32,
+                3 => {
+                    let k2 = rnd(14) as usize;
+                    order.swap(k, k2);
+                }
                 _ => {}
             }
         }
         let mut ops = vec![Op::Fill { path: kurbo::Rect::new(0.0, 0.0, w as f64, h as f64).to_path(0.1), paint: solid(0.1, 0.1, 0.2), rule: FillRule::NonZero, transform: IDENTITY }];
-        for k in 0..14 {
+        for &k in &order {
             if present[k] {
                 ops.extend(item(k as u32, offs[k], grow[k]));
             }
@@ -710,12 +730,12 @@ fn incremental_random_edits_match_full() {
         for (pa, pb) in [(&yi.y, &yf.y), (&yi.u, &yf.u), (&yi.v, &yf.v)] {
             let max = pa.iter().zip(pb.iter()).map(|(a, b)| a.abs_diff(*b)).max().unwrap_or(0);
             let bad = pa.iter().zip(pb.iter()).filter(|(a, b)| a != b).count();
-            assert!(max <= 1 && bad * 100 < pa.len(), "frame {f}: max {max}, {bad} differing samples");
+            assert!(max <= 1 && bad * 100 < pa.len(), "seed {seed0:#x} frame {f}: max {max}, {bad} differing samples");
         }
         if let Some(p) = &prev {
-            assert_eq!(changed, anikit_video::render::diff_mb(p, &yi), "frame {f}: changed map not exact");
+            assert_eq!(changed, anikit_video::render::diff_mb(p, &yi), "seed {seed0:#x} frame {f}: changed map not exact");
         }
         prev = Some(yi.clone());
     }
-    assert!(partial >= 20, "only {partial} partial frames");
+    partial
 }
