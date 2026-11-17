@@ -75,6 +75,33 @@ pub struct FrameHints {
     pub motions: Vec<MotionHint>,
 }
 
+impl FrameHints {
+    /// Per-macroblock motion hints from a global camera transform (zoom, pan,
+    /// rotation), for frames where every macroblock changes.
+    ///
+    /// `prev_of` maps a current-frame luma position to where that content was in
+    /// the previous frame: `(px, py) = (a·x + b·y + c, d·x + e·y + f)` with
+    /// `[a, b, c, d, e, f]`. Each macroblock gets the integer motion of its
+    /// centre; quarter-pel refinement (on by default) finishes the job.
+    /// Macroblocks that don't move get no hint.
+    pub fn from_affine(width: u32, height: u32, prev_of: [f64; 6]) -> FrameHints {
+        let [a, b, c, d, e, f] = prev_of;
+        let (mbw, mbh) = (width.div_ceil(16), height.div_ceil(16));
+        let mut motions = Vec::new();
+        for my in 0..mbh {
+            for mx in 0..mbw {
+                let (x, y) = (mx as f64 * 16.0 + 8.0, my as f64 * 16.0 + 8.0);
+                let (px, py) = (a * x + b * y + c, d * x + e * y + f);
+                let (dx, dy) = ((x - px).round() as i32, (y - py).round() as i32);
+                if (dx, dy) != (0, 0) {
+                    motions.push(MotionHint { x: mx * 16, y: my * 16, w: 16, h: 16, dx, dy });
+                }
+            }
+        }
+        FrameHints { changed: None, motions }
+    }
+}
+
 /// Per-frame statistics.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct FrameStats {
@@ -1902,9 +1929,11 @@ impl Encoder {
         } else {
             let mbw = self.mbw;
             let Pic { y, u, v } = &mut self.cur;
-            match &hints.changed {
+            // A change map of the wrong length is a caller bug; compare every
+            // macroblock instead of failing the encode.
+            debug_assert!(hints.changed.as_ref().is_none_or(|c| c.len() == nmb), "ak264: changed map must have one entry per macroblock");
+            match hints.changed.as_ref().filter(|c| c.len() == nmb) {
                 Some(c) => {
-                    assert_eq!(c.len(), nmb, "ak264: changed map must have one entry per macroblock");
                     // Only macroblocks that may have changed are compared (exactly).
                     for (i, (dst, &maybe)) in self.changed.iter_mut().zip(c.iter()).enumerate() {
                         *dst = maybe && crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, true);
