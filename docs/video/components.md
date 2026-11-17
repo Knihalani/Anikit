@@ -784,6 +784,60 @@ Computed once per size and cached as one dithered image: free after the first fr
 
 Examples: `examples/video/illustration/{hatch,paper,cutout}.json`; stills in `docs/video/shots/illustration/`.
 
+## Illustrated environments
+
+Whole illustrated worlds from a few props: `landscape` (sky, sun or moon and layered ranges), `plants`, `clouds` and `water`. All four draw in the same **hand**, so pieces from different components belong to one picture. Shapes are painted with a shading value and then finished by the style. Texture is computed in each object's own coordinates, so grain, halftone and fibres move with the layer instead of sitting on the screen. Finished layers are cached images, so after the first frame each frame costs a few blits.
+
+**Shared props** (all four kinds):
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `style` | `"flat"` | `"flat"` gives cel-shaded vector shapes with grain. `"risograph"` splits colours into 3 spot-ink plates, each with its own halftone angle, misregistration and patchy ink. `"painterly"` gives broken soft edges, domain-warped brush strokes and wet blooms. `"ink"` gives watercolour washes, brush outlines and hatching that follows the shading. `"papercut"` gives torn edges with a white fibrous rim and a soft lifted shadow. |
+| `palette` | from `time` | `dawn day golden dusk night forest desert riso`, or colours `[skyTop, skyHorizon, far, near, sun?, foliage?, accent?]`. |
+| `time` | `dusk`/`day` | `dawn day golden dusk night`. Sets the default palette and, for `landscape`, the sun's position. |
+| `grain`, `light`, `seed` | `0.5`, varies, `1` | Texture amount; light direction in degrees (0 = from above, negative = from the left); seed. |
+| `boil` | `0` | Edge re-draws per second (edges are re-seeded; 3 variants cycle). |
+| `onTwos` / `stepFps` | off | Step the component's own animation (sway, glints, drift, boil) at 12 fps or at any rate. Camera parallax and push stay smooth. |
+| `hand` | `{}` | Every knob behind the preset, so a spec can go past it: `shade` (shadow multiply tint), `highlight`, `paper`, `ink`, `inks` (3), `halftone` (cell px), `angles` (3 degrees), `misregister` (3 `[dx, dy]`), `tints` (riso tint steps, 0 = continuous), `solid` (snap thin plates to paper and dense ones to solid ink), `edge`, `edgeScale`, `soften`, `cel`, `contrast`, `brush`, `hatch` (spacing, 0 = off), `hatchAngle`, `outline` (0 = off), `rim`, `lift`, `liftBlur`, `liftOffset`. |
+
+Shadows multiply towards a cool or complementary tint, and lit faces lift towards the light colour; neither is plain darkening. `flat`, `risograph` and `papercut` quantise shading into cel steps (`hand.cel` toggles this).
+
+### `landscape`
+| Prop | Default | Meaning |
+|---|---|---|
+| `terrain` | `"mixed"` | `mountains hills dunes mesas forest woods`, or a list cycled from far to near. `mixed` gives far mountains, hills and a forest. |
+| `layers` | `5` | Number of ranges. Each nearer range is darker and more saturated, and farther ranges take on the haze (atmospheric perspective). |
+| `horizon`, `depth`, `relief` | `0.62`, `0.75`, `1` | Horizon height (fraction of the box), how far down the frame the nearest range reaches (0 = all ranges at the horizon, as for a lake), and a height multiplier. |
+| `mist` | `0.4` | Haze pooled at the foot of each range, plus drifting fog bands between ranges. |
+| `parallax`, `push` | `18`, `0` | Pan speed of the nearest range in px/s (farther ranges move less, and the ranges tile seamlessly), and a multiplane push-in per second. |
+| `sun`, `sunSize`, `sky` | by `time`, `1`, `true` | Sun or moon centre `[x, y]` as fractions; size; `sky: false` draws the ranges over your own background. |
+| `ranges` | `[]` | Per-range overrides, far to near: `terrain`, `color`, `amp` and `base` (fractions of the box), `d` (an SVG path in box px whose top edge becomes the ridgeline), `jag`, `density`, `speed`, `stepFps`, `mist`, `seed`. |
+
+### `plants`
+| Prop | Default | Meaning |
+|---|---|---|
+| `species` | `"mixed"` | `pine broadleaf birch cypress bush grass flowers`, or a list to pick from. |
+| `count`, `spread`, `ground` | `9`, `[0.02, 0.98]`, `0.94` | How many plants, the span they cover (fractions of the box) and the ground line. |
+| `size`, `depth` | `380`, `0.4` | Tallest plant in px at 1080p; depth spread (farther plants are smaller, higher and hazier). |
+| `wind`, `swayFreq`, `gust` | `0.4`, `1`, `1` | Sway amplitude (bending from the root), its frequency and the strength of gusts that roll across the frame. |
+| `fill`, `color`, `colors` | `false` | A ground mound under the plants; one foliage colour; or exact `{foliage: [dark, mid, light], trunk, bark, accent}`. |
+
+### `clouds`
+`look` is `cumulus` (lobed with a flat bottom, a lit shape set towards the light and a rim), `stratus` (long lenses) or `puffs`. The other props are `count`, `band` (`[top, bottom]` fractions), `size` (px), `speed` (px/s; farther clouds are slower), `depth` and `colors` (`[lit, shadow, rim]`).
+
+### `water`
+This kind draws a banded depth gradient (`bands`, 0 = smooth), a shore reflection broken by ripples (`reflect` colour or `"none"`, `reflectHeight`), a sun path at `sun` (x fraction) and drifting wave dashes and glints (`waves`, `speed`, `glints`, `dash`). `colors` sets them exactly: `{top, deep, wave, glint}`.
+
+```json
+{ "layers": [
+  { "component": "landscape", "props": { "style": "risograph", "time": "dusk", "terrain": "mountains", "layers": 4, "horizon": 0.6, "depth": 0.06, "mist": 0.55, "sun": [0.42, 0.36] } },
+  { "component": "water", "props": { "style": "risograph", "time": "dusk", "sun": 0.42, "onTwos": true }, "x": 960, "y": 864, "width": 1920, "height": 432 },
+  { "component": "plants", "props": { "style": "risograph", "time": "dusk", "species": ["pine", "bush"], "count": 6, "spread": [0, 0.8], "fill": true, "wind": 0.35, "onTwos": true }, "x": 320, "y": 540, "width": 640, "height": 1080 }
+] }
+```
+
+Examples: `examples/video/illustration/nature-{riso-lake,painterly-forest,papercut-dunes}.json`. Stills and 100 % crops are in `docs/video/shots/illustration/nature-*.png`. Rust code can reuse the hand through `components::nature::{Hand, HandOpts, Canvas, finish}`, and `components::step_time` is the shared stepping helper.
+
 ## Lottie
 
 ### `lottie`
@@ -923,5 +977,9 @@ Motion is evaluated at the exact frame time; nothing steps outside `--quality dr
 | `product-shot` | 1242.126 | 0.84 | 11.96 | 0/29 |
 | `now-playing` | 0.111 | 11.37 | 1.65 | 0/29 |
 | `lottie` | 0.000 | 0.78 | 0.00 | 29/29 |
+| `landscape` | 0.001 | 7.71 | 5.89 | 2/29 |
+| `plants` | 0.003 | 4.48 | 3.91 | 0/29 |
+| `clouds` | 0.001 | 1.49 | 0.56 | 0/29 |
+| `water` | 0.698 | 6.35 | 8.56 | 0/29 |
 
 Totals: eval 56.01 ms, full render 178.56 ms, incremental 157.14 ms
