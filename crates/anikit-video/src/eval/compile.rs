@@ -3514,6 +3514,7 @@ impl C<'_> {
         self.shader_layer_inner(l, path, gw, gh, start, end, n)
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn shader_layer_inner(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>, start: f32, end: f32, n: &mut Node) -> Option<(Kind, [f32; 2])> {
         use super::shader::{ChannelC, ShaderC, UNIFORM_SLOTS};
         let (shader, text, vals) = self.compile_shader(l.shader.as_deref(), l.src.as_deref(), l.uniforms.as_ref(), path)?;
