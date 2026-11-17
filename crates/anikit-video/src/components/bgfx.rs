@@ -217,19 +217,18 @@ impl Lin {
         let lut = srgb_lut();
         let tile = dither_tile();
         let mut out = vec![255u8; self.w * self.h * 4];
-        let top = LUT_N as f32 - 1e-3;
+        let lut = &lut[..=LUT_N];
         for y in 0..self.h {
             let src = &self.px[y * self.w * 3..(y + 1) * self.w * 3];
             let dst = &mut out[y * self.w * 4..(y + 1) * self.w * 4];
             let trow = &tile[(y % DT) * DT..(y % DT + 1) * DT];
             for (x, (s, d)) in src.chunks_exact(3).zip(dst.chunks_exact_mut(4)).enumerate() {
-                // Rounding offset in [0, 1) (floor below makes it round-to-nearest on average).
+                // TPDF offset around ½: `floor` below then rounds to nearest on average.
                 let dz = trow[x % DT];
                 for k in 0..3 {
-                    let xf = (s[k] * LUT_N as f32).clamp(0.0, top);
-                    let i = xf as usize;
-                    let v = lut[i] + (lut[i + 1] - lut[i]) * (xf - i as f32) + dz;
-                    d[k] = v.clamp(0.0, 255.0) as u8;
+                    // Nearest entry: the table is dense enough (≤ 0.05 LSB per step).
+                    let i = ((s[k] * LUT_N as f32 + 0.5) as usize).min(LUT_N);
+                    d[k] = (lut[i] + dz).clamp(0.0, 255.0) as u8;
                 }
             }
         }
@@ -262,10 +261,10 @@ fn dither_tile() -> &'static [f32] {
     })
 }
 
-const LUT_N: usize = 16384;
+const LUT_N: usize = 65536;
 
-/// Linear light → sRGB·255, sampled densely enough that linear
-/// interpolation is exact to well under ¹⁄₁₀₀ LSB.
+/// Linear light → sRGB·255, sampled densely enough (≤ 0.05 LSB per step)
+/// to read without interpolation.
 fn srgb_lut() -> &'static [f32] {
     static L: OnceLock<Vec<f32>> = OnceLock::new();
     L.get_or_init(|| (0..=LUT_N).map(|i| to_srgb(i as f32 / LUT_N as f32) * 255.0).collect())
@@ -279,7 +278,7 @@ pub fn one_minus_exp_neg(x: f32) -> f32 {
     let fl = y.floor();
     let f = y - fl;
     // 2^f on [0, 1): degree-4 polynomial.
-    let p = 1.0 + f * (0.693_147_2 + f * (0.240_226_5 + f * (0.055_504_11 + f * 0.009_618_13)));
+    let p = 1.0 + f * (std::f32::consts::LN_2 + f * (0.240_226_5 + f * (0.055_504_11 + f * 0.009_618_13)));
     let scale = f32::from_bits(((fl as i32 + 127) as u32) << 23);
     1.0 - p * scale
 }

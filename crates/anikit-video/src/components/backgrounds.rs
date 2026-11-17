@@ -23,11 +23,11 @@ use std::f32::consts::TAU;
 /// speed shortcuts below. Off for now; a reference mode can switch it on to
 /// measure what each shortcut costs in quality. The shortcuts it disables:
 /// - mesh-gradient: keyframes cross-faded by the renderer (exact: a field per frame);
-/// - mesh-gradient: field at ⅛ resolution with a cubic upsample to ½ (exact: every pixel);
-/// - aurora: field at ½ × ¼ resolution (exact: full resolution);
+/// - mesh-gradient: field at ⅙ resolution with a cubic upsample to ½ (exact: every pixel);
+/// - aurora: field at ½ × ⅕ resolution (exact: full resolution);
 /// - gradient: image at ½ resolution (exact: full resolution);
 /// - stars, starfield, dots: alpha quantised into a few fills (exact: 256 levels);
-/// - grain: 8 noise tiles reused at random offsets (exact: fresh noise every update).
+/// - grain: one baked tile moved to a random offset per update (exact: fresh noise every update).
 fn exact() -> bool {
     false
 }
@@ -211,7 +211,7 @@ pub struct MeshGradient {
 }
 impl Default for MeshGradient {
     fn default() -> Self {
-        MeshGradient { colors: Vec::new(), base: None, speed: 1.0, warp: 0.8, seed: 7, detail: 1.0, intensity: 0.8, scale: 1.0, sheen: 0.25, vignette: 0.25, rate: 0.0, smooth: true }
+        MeshGradient { colors: Vec::new(), base: None, speed: 1.0, warp: 0.8, seed: 7, detail: 1.0, intensity: 0.8, scale: 1.0, sheen: 0.85, vignette: 0.25, rate: 0.0, smooth: true }
     }
 }
 impl Prepare for MeshGradient {}
@@ -241,7 +241,7 @@ impl MeshGradient {
     fn field(&self, t: f32, ctx: &Ctx, cols: &[Rgba], base: Rgba, size: (usize, usize)) -> Lin {
         let aspect = ctx.width / ctx.height.max(1.0);
         // Coarse field (smooth content), then a cubic upsample to the image.
-        let (cw, ch) = if exact() { size } else { ((size.0 / 4).max(8), (size.1 / 4).max(8)) };
+        let (cw, ch) = if exact() { size } else { ((size.0 / 3).max(8), (size.1 / 3).max(8)) };
         let s = t * 0.07 * self.speed;
         let seed = self.seed;
         let n = cols.len();
@@ -293,13 +293,13 @@ impl MeshGradient {
                 }
                 if sheen > 0.0 {
                     // Satin: a soft height field of folds, lit from the top left.
-                    let hf = |x: f32, y: f32| bgfx::fbm2(x * 1.25 + wx * 0.6, y * 1.25 + wy * 0.6 + s * 0.8, 3, seed + 21);
+                    let hf = |x: f32, y: f32| bgfx::fbm2(x * 1.7 + wx * 0.6, y * 1.7 + wy * 0.6 + s * 0.8, 3, seed + 21);
                     let e = 0.02;
                     let h0 = hf(px, py);
                     let (gx, gy) = ((hf(px + e, py) - h0) / e, (hf(px, py + e) - h0) / e);
-                    let lit = (-(gx * 0.6 + gy * 0.8) * 0.35).tanh();
-                    let spec = lit.max(0.0).powi(3);
-                    lab[0] += sheen * (0.06 * lit + 0.12 * spec);
+                    let lit = (-(gx * 0.6 + gy * 0.8) * 0.7).tanh();
+                    let spec = lit.max(0.0).powi(6);
+                    lab[0] = (lab[0] * (1.0 + sheen * 0.22 * lit) + sheen * 0.2 * spec).max(0.0);
                     let desat = 1.0 - 0.3 * sheen.min(1.0) * spec;
                     lab[1] *= desat;
                     lab[2] *= desat;
@@ -373,7 +373,7 @@ impl Default for Aurora {
             curtains: 3,
             horizon: 0.6,
             height: 0.55,
-            rays: 0.8,
+            rays: 0.9,
             density: 1.0,
             glow: 0.7,
             fold: 1.0,
@@ -393,7 +393,7 @@ impl Component for Aurora {
         let cols = colors_or(&self.colors, &[hx3("#5cffa8"), hx3("#25e6b4"), hx3("#1a9fb8"), hx3("#ff5c86")]);
         let sky = self.sky.map(|s| [s[0].0, s[1].0]).unwrap_or([hx3("#01030a"), hx3("#0a1a2c")]);
         let detail = self.detail.clamp(0.25, 2.0) * if draft() { 0.5 } else { 1.0 };
-        let size = image_size(ctx, 0.5 * detail, 0.25 * detail);
+        let size = image_size(ctx, 0.5 * detail, 0.2 * detail);
         let params = f32s_key(&[
             self.speed, self.intensity, self.horizon, self.height, self.rays, self.density, self.glow, self.fold, self.sway, ctx.width, ctx.height,
         ]);
@@ -508,7 +508,7 @@ impl Aurora {
             // folds bunch the samples, which brightens them, as in real aurorae.
             let s_lo = -0.35f32;
             let s_hi = aspect + 0.35;
-            let ns = ((s_hi - s_lo) * ppu * 3.0) as usize;
+            let ns = ((s_hi - s_lo) * ppu * 2.0) as usize;
             let ds = (s_hi - s_lo) / ns as f32;
             let wpx = ds * ppu;
             // i, b·i, h·i, w, b·w, h·w
@@ -678,22 +678,22 @@ impl Aurora {
 #[derive(Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Grain {
-    /// Strength (0.04–0.1 is subtle film grain).
+    /// Strength (default 0.016: fine and cheap to encode; 0.04+ is visible film grain, 0.08+ heavy).
     pub amount: f32,
     /// Grain size in pixels.
     pub size: f32,
-    /// New grain pattern this many times per second (0 = static).
-    pub rate: f32,
+    /// New grain positions per second (default: every frame; 0 = static).
+    pub rate: Option<f32>,
     pub seed: u32,
     /// `"overlay"` (default: luminance-weighted, strongest in mid-tones, like
     /// film), `"soft-light"` (gentler) or `"normal"` (even, also in blacks).
     pub blend: Option<String>,
-    /// Softness of each grain (0 = digital-sharp, 1 = soft film clumps).
+    /// Softness of each grain (0 = crisp blue noise, 1 = soft film clumps).
     pub softness: f32,
 }
 impl Default for Grain {
     fn default() -> Self {
-        Grain { amount: 0.06, size: 1.0, rate: 24.0, seed: 1, blend: None, softness: 0.35 }
+        Grain { amount: 0.016, size: 1.0, rate: None, seed: 1, blend: None, softness: 0.3 }
     }
 }
 impl Prepare for Grain {
@@ -704,12 +704,46 @@ impl Prepare for Grain {
         }
     }
 }
+
+/// One baked 256² tile of fine blue noise (white noise minus its local mean,
+/// so no low-frequency blotches), unit variance.
+fn blue_tile(seed: u32, soft: f32, salt: u32) -> Vec<f32> {
+    const T: usize = 256;
+    let mut rng = Rng::new(((seed as u64) << 20) ^ salt as u64 ^ 0x5eed);
+    let raw: Vec<f32> = (0..T * T).map(|_| rng.f() + rng.f() - 1.0).collect();
+    let at = |v: &[f32], x: usize, y: usize| v[(y % T) * T + (x % T)];
+    // Local mean over a 5×5 window (toroidal), removed: a high-pass.
+    let mut mean = vec![0.0f32; T * T];
+    for y in 0..T {
+        for x in 0..T {
+            let mut s = 0.0;
+            for dy in 0..5 {
+                for dx in 0..5 {
+                    s += at(&raw, x + T + dx - 2, y + T + dy - 2);
+                }
+            }
+            mean[y * T + x] = s / 25.0;
+        }
+    }
+    let hp: Vec<f32> = raw.iter().zip(&mean).map(|(r, m)| r - m).collect();
+    // Softness: a small blur of the high-passed noise (film clumps of ~1.5 px).
+    let g: Vec<f32> = (0..T * T)
+        .map(|i| {
+            let (x, y) = (i % T + T, i / T + T);
+            let nb = (at(&hp, x + 1, y) + at(&hp, x - 1, y) + at(&hp, x, y + 1) + at(&hp, x, y - 1)) * 0.25;
+            hp[i] * (1.0 - 0.5 * soft) + nb * 0.5 * soft
+        })
+        .collect();
+    let var = g.iter().map(|x| x * x).sum::<f32>() / g.len() as f32;
+    let k = 1.0 / var.sqrt().max(1e-6);
+    g.into_iter().map(|v| v * k).collect()
+}
+
 impl Component for Grain {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
-        const TILE: usize = 256;
-        let variants: u32 = if exact() { u32::MAX } else { 8 };
-        let frame = if self.rate > 0.0 { (t * self.rate).floor() as u32 } else { 0 };
-        let v = (self.seed.wrapping_add(frame)) % variants;
+        const TILE: u32 = 256;
+        let rate = self.rate.unwrap_or(ctx.fps.max(1.0));
+        let frame = if rate > 0.0 { (t * rate + 1e-3).floor() as u32 } else { 0 };
         let mode = match self.blend.as_deref() {
             Some("normal") => 0u8,
             Some("soft-light") => 2,
@@ -717,30 +751,19 @@ impl Component for Grain {
         };
         let amt = self.amount.clamp(0.0, 1.0);
         let soft = self.softness.clamp(0.0, 1.0);
-        let key = fnv(&[b"grain3", &v.to_le_bytes(), &self.seed.to_le_bytes(), &f32s_key(&[amt, soft]), &[mode]]);
+        // One baked tile, moved to a fresh random offset every update; the
+        // exact path makes fresh noise every update instead.
+        let salt = if exact() { frame } else { 0 };
+        let key = fnv(&[b"grain4", &salt.to_le_bytes(), &self.seed.to_le_bytes(), &f32s_key(&[amt, soft]), &[mode]]);
         let seed = self.seed;
-        let id = ctx.assets.image(key, TILE as u32, TILE as u32, &mut || {
-            let mut rng = Rng::new(((seed as u64) << 8) ^ v as u64 ^ 0x5eed);
-            // Gaussian-ish white noise, softened by a small (toroidal) blur
-            // and renormalised to unit variance.
-            let raw: Vec<f32> = (0..TILE * TILE).map(|_| (rng.f() + rng.f() + rng.f() + rng.f() - 2.0) * 1.732).collect();
-            let at = |x: usize, y: usize| raw[(y % TILE) * TILE + (x % TILE)];
-            let mut g = vec![0.0f32; TILE * TILE];
-            for y in 0..TILE {
-                for x in 0..TILE {
-                    let nb = (at(x + 1, y) + at(x + TILE - 1, y) + at(x, y + 1) + at(x, y + TILE - 1)) * 0.25;
-                    g[y * TILE + x] = at(x, y) * (1.0 - 0.5 * soft) + nb * 0.5 * soft;
-                }
-            }
-            let var = g.iter().map(|x| x * x).sum::<f32>() / g.len() as f32;
-            let k = 1.0 / var.sqrt().max(1e-6);
-            let mut px = vec![0u8; TILE * TILE * 4];
+        let id = ctx.assets.image(key, TILE, TILE, &mut || {
+            let g = blue_tile(seed, soft, salt);
+            let mut px = vec![0u8; (TILE * TILE * 4) as usize];
             for (p, n) in px.chunks_mut(4).zip(&g) {
-                let n = n * k;
                 if mode == 0 {
                     // Light specks white, dark specks black, strength in alpha.
-                    let c = if n > 0.0 { 255 } else { 0 };
-                    let a = (n.abs() * amt * 0.9 * 255.0).min(255.0) as u8;
+                    let c = if *n > 0.0 { 255 } else { 0 };
+                    let a = (n.abs() * amt * 0.9 * 255.0 + 0.5).min(255.0) as u8;
                     p.copy_from_slice(&[c, c, c, a]);
                 } else {
                     // Mid-grey ± noise, blended as overlay / soft light.
@@ -750,8 +773,8 @@ impl Component for Grain {
             }
             px
         });
-        let off = (hash01(frame.wrapping_mul(7919)) * TILE as f32).floor();
-        let offy = (hash01(frame.wrapping_mul(104_729) ^ 99) * TILE as f32).floor();
+        let off = (hash01(frame.wrapping_mul(7919) ^ self.seed) * TILE as f32).floor();
+        let offy = (hash01(frame.wrapping_mul(104_729) ^ 99 ^ self.seed) * TILE as f32).floor();
         let s = self.size.max(0.25);
         let paint = Paint::Image { image: id, transform: [1.0 / s, 0.0, 0.0, 1.0 / s, off, offy], opacity: 1.0 };
         let r = rect(0.0, 0.0, ctx.width, ctx.height, 0.0, paint);
