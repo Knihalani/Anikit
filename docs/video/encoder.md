@@ -395,9 +395,11 @@ with deblocking on:
 
 | Clip | Before | After | Change |
 |---|---|---|---|
-| launch | 11.16 G | 9.06 G | −19% |
-| tutorial | 4.93 G | 4.01 G | −19% |
-| spec-to-screen | 13.30 G | 10.91 G | −18% |
+| launch | 11.16 G | 8.93 G | −20% |
+| tutorial | 4.93 G | 3.98 G | −19% |
+| spec-to-screen | 13.30 G | 10.65 G | −20% |
+
+The final builds include automatic AQ; its per-frame measurement costs about 1%.
 
 What changed:
 - **Sub-pel refinement:** AVX2 SAD two rows per step, one call per candidate
@@ -408,8 +410,11 @@ What changed:
   which is exact and uses fewer operations.
 - **Chroma MC:** SSSE3 `pmaddubsw` bilinear interpolation.
 - **Deblocking:** one bounds check per edge and an SSE2 8×4 transpose for chroma
-  vertical edges. Internal-edge strengths come from a coefficient bitmask, and
-  edges without bS 4 skip the strong filter at compile time.
+  vertical edges. Cb and Cr edges are filtered together as one 16-lane pass.
+  Internal-edge strengths come from a coefficient bitmask, and edges without
+  bS 4 skip the strong filter at compile time.
+- **Motion search:** the full search returns its seed when it ends on the seed's
+  vector, with no second prediction copy and no second SATD.
 - **CABAC:** decisions renormalise only when `range < 256`, with no bounds checks;
   empty 4×4 blocks are a single bin; the residual coder walks a nonzero bitmask.
 - **Smaller items:**

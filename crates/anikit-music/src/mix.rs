@@ -136,6 +136,9 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
             Stem { name: g.to_string(), l, r }
         })
         .collect();
+    if prof {
+        eprintln!("mix: buses {:.3}s", t.elapsed().as_secs_f64());
+    }
     let mut stems = stems;
     if let Some((fl, fr)) = fx {
         if opts.stems {
@@ -155,7 +158,12 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
         add(&mut r, &s.r, 1.0);
     }
     fades(a, &mut l, &mut r, rate);
+    let tp = Instant::now();
     let rep = dsp::master(&mut l, &mut r, rate, a.master.lufs as f32, a.master.ceiling as f32);
+    let prof = std::env::var_os("ANIKIT_MUSIC_PROFILE").is_some();
+    if prof {
+        eprintln!("  sum+fades {:.1} ms, master() {:.1} ms", (tp - t).as_secs_f64() * 1e3, tp.elapsed().as_secs_f64() * 1e3);
+    }
     // Stems carry the master's static gain (not its limiter) so they line up with the mix.
     let g = 10f32.powf(rep.gain_db as f32 / 20.0);
     let mut stems = if opts.stems { stems } else { Vec::new() };
@@ -163,7 +171,11 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
         s.l.iter_mut().chain(s.r.iter_mut()).for_each(|x| *x *= g);
         fades(a, &mut s.l, &mut s.r, rate);
     }
+    let ta = Instant::now();
     let report = dsp::analyze(&l, &r, rate as f32);
+    if prof {
+        eprintln!("  analyze {:.1} ms", ta.elapsed().as_secs_f64() * 1e3);
+    }
     tm.master = t.elapsed().as_secs_f64();
     let mut report = serde_json::to_value(&report).unwrap_or_default();
     report["lufs"] = serde_json::json!(rep.output.integrated);
