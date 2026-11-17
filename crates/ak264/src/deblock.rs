@@ -72,11 +72,11 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
             }
         }
     } else {
-        for l in 0..N {
-            let b = o + l * ls - 2;
-            for j in 0..4 {
-                // SAFETY: within the asserted range.
-                v[2 + j][l] = unsafe { *d.get_unchecked(b + j) } as i16;
+        // chroma, vertical edge: 8 lines × (p1 p0 q0 q1)
+        let t = crate::simd::load_t8x4(d, o - 2, ls);
+        for j in 0..4 {
+            for l in 0..N {
+                v[2 + j][l] = t[j][l] as i16;
             }
         }
     }
@@ -174,14 +174,8 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
             }
         }
     } else {
-        for l in 0..N {
-            let b = o + l * ls - 1;
-            // SAFETY: within the asserted range.
-            unsafe {
-                *d.get_unchecked_mut(b) = out[3][l] as u8;
-                *d.get_unchecked_mut(b + 1) = out[4][l] as u8;
-            }
-        }
+        let (p0, q0): ([u8; 8], [u8; 8]) = (core::array::from_fn(|l| out[3][l] as u8), core::array::from_fn(|l| out[4][l] as u8));
+        crate::simd::store_t8x2(d, o - 1, ls, &p0, &q0);
     }
 }
 
