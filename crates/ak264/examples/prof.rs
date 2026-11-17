@@ -8,7 +8,11 @@ fn main() {
     let deblock = std::env::var("DEBLOCK").map(|v| v == "1").unwrap_or(false);
     let (w, h) = (1920, 1080);
     let s = Scene::preset(&scene, w, h);
-    let bufs: Vec<YuvBuffer> = (0..n).map(|t| s.frame(t)).collect();
+    let bufs: Vec<YuvBuffer> = if let Some(p) = scene.strip_prefix("file:") {
+        let data = std::fs::read(p).unwrap();
+        let (ys, cs) = ((w * h) as usize, (w * h / 4) as usize);
+        data.chunks_exact(ys + 2 * cs).take(n as usize).map(|f| YuvBuffer { width: w, height: h, y: f[..ys].to_vec(), u: f[ys..ys + cs].to_vec(), v: f[ys + cs..].to_vec() }).collect()
+    } else { (0..n).map(|t| s.frame(t)).collect() };
     let cfg = EncoderConfig { width: w, height: h, qp: 22, gop: 1000, deblock, ..Default::default() };
     let mut best = (f64::MAX, 0.0);
     for rep in 0..5 {
