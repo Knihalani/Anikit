@@ -422,18 +422,24 @@ def harbour():
         txt("LIVE · SATURDAY 20:00", 960, 870, 34, WHITE, weight=700, letterSpacing="0.3em", skewX=-12),
     ]})
     # the window 22-26: team slams, crests, versus, score bug
-    team = {"type": "group", "start": 21.8, "end": SECONDS, "layers": [
+    team = {"type": "group", "start": 21.8, "end": SECONDS,
+            "animate": [{"from": {"scale": 1.0}, "to": {"scale": 1.12}, "at": 0.0, "duration": 4.5, "ease": "linear"},
+                        {"keyframes": {"x": [960, 975, 948, 966, 957, 960], "y": [540, 530, 548, 536, 543, 540]},
+                         "at": 1.3, "duration": 0.35, "ease": "linear"}],
+            "layers": [
         {"type": "group", "animate": [{"from": {"x": "-900"}, "at": 0.2, "duration": 0.45, "ease": "outExpo"}],
          "layers": [
-             {"shape": "polygon", "x": 520, "y": 470, "width": 300, "height": 340, "sides": 6, "fill": WHITE, "rotation": 30},
-             txt("N", 520, 480, 200, NAVY, font="Inter Display", weight=900, skewX=-10),
-             txt("NORTHPORT", 520, 760, 80, WHITE, font="Inter Display", weight=900, skewX=-12)]},
+             {"shape": "polygon", "x": 500, "y": 450, "width": 400, "height": 450, "sides": 6, "fill": WHITE, "rotation": 30,
+              "glow": {"radius": 40, "intensity": 0.6, "color": "#9FC2FF"}},
+             txt("N", 500, 462, 270, NAVY, font="Inter Display", weight=900, skewX=-10),
+             txt("NORTHPORT", 500, 790, 96, WHITE, font="Inter Display", weight=900, skewX=-12)]},
         {"type": "group", "animate": [{"from": {"x": "+900"}, "at": 0.7, "duration": 0.45, "ease": "outExpo"}],
          "layers": [
-             {"shape": "polygon", "x": 1400, "y": 470, "width": 300, "height": 340, "sides": 6, "fill": RED, "rotation": 30},
-             txt("S", 1400, 480, 200, WHITE, font="Inter Display", weight=900, skewX=-10),
-             txt("SALT BAY", 1400, 760, 80, WHITE, font="Inter Display", weight=900, skewX=-12)]},
-        txt("VS", 960, 490, 150, GOLD, font="Inter Display", weight=900, skewX=-12,
+             {"shape": "polygon", "x": 1420, "y": 450, "width": 400, "height": 450, "sides": 6, "fill": RED, "rotation": 30,
+              "glow": {"radius": 40, "intensity": 0.7, "color": RED}},
+             txt("S", 1420, 462, 270, WHITE, font="Inter Display", weight=900, skewX=-10),
+             txt("SALT BAY", 1420, 790, 96, WHITE, font="Inter Display", weight=900, skewX=-12)]},
+        txt("VS", 960, 470, 190, GOLD, font="Inter Display", weight=900, skewX=-12,
             animate=[{"from": {"scale": 2.5, "opacity": 0}, "at": 1.3, "duration": 0.35, "ease": "outExpo"}]),
         # score bug
         {"type": "group", "animate": [{"from": {"y": "+200"}, "at": 2.2, "duration": 0.5, "ease": "outExpo"}],
@@ -447,7 +453,13 @@ def harbour():
              txt("LIVE", 790, 975, 26, RED, weight=800, letterSpacing="0.2em")]},
     ]}
     layers.append(team)
-    mid = {"type": "group", "start": 6.0, "end": 21.8, "layers": [
+    layers.append({"type": "group", "start": 24.6, "end": SECONDS, "layers": [
+        rect(960, 540, W, 230, f"linear-gradient(90deg, {RED}, #C8102E)", skewY=-4,
+             animate=[{"from": {"scaleX": 0}, "duration": 0.3, "ease": "outExpo"}]),
+        txt("KICK-OFF 20:00", 960, 548, 150, WHITE, font="Inter Display", weight=900, skewX=-12,
+            animate=[{"from": {"x": "+600", "opacity": 0}, "at": 0.08, "duration": 0.35, "ease": "outExpo"}]),
+    ]})
+    mid = {"type": "group", "start": 6.0, "end": 22.1, "exit": {"preset": "zoomOut", "duration": 0.3}, "layers": [
         txt("ONE NIGHT.", 960, 480, 220, WHITE, font="Inter Display", weight=900, skewX=-12,
             kinetic="pop by char from center 0.4s 30ms outBack"),
         txt("ONE CUP.", 960, 700, 220, RED, font="Inter Display", weight=900, skewX=-12,
