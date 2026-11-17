@@ -89,7 +89,7 @@ def sundial():
     sun_x, sun_y = f"={CX} + {R} * sin({a})", f"={CY} - {R} * cos({a})"
     day0 = (SUNRISE - 12) / 24 * 360
     day_frac = (SUNSET - SUNRISE) / 24
-    dial = {"type": "group", "start": 1.2, "end": 7.4, "exit": {"preset": "fadeOut", "duration": 0.4}, "layers": [
+    dial = {"type": "group", "start": 1.9, "end": 7.4, "exit": {"preset": "fadeOut", "duration": 0.4}, "layers": [
         {"shape": "circle", "x": CX, "y": CY, "width": 2 * R, "height": 2 * R, "fill": "none",
          "stroke": {"color": "#ffffff26", "width": 3}, "enter": {"preset": "drawOn", "duration": 0.9}},
         {"shape": "circle", "x": CX, "y": CY, "width": 2 * R, "height": 2 * R, "fill": "none", "rotation": day0 - 90,
@@ -111,7 +111,7 @@ def sundial():
         txt("SUNSET 19:58", CX, CY + 70, 22, "#ffffffa8", letterSpacing="0.14em",
             enter={"preset": "fadeIn", "delay": 0.4}),
     ]}
-    ui = {"type": "group", "start": 1.2, "end": 7.4, "exit": {"preset": "fadeOut", "duration": 0.4}, "layers": [
+    ui = {"type": "group", "start": 1.9, "end": 7.4, "exit": {"preset": "fadeOut", "duration": 0.4}, "layers": [
         txt("Sundial", 140, 150, 54, CREAM, font="Inter Display", weight=800, anchor="left"),
         {"shape": "circle", "x": 112, "y": 150, "width": 26, "height": 26, "fill": SUN, "glow": {"radius": 14, "color": GOLD}},
         txt("TODAY · THURSDAY", 140, 222, 22, "#ffffff99", letterSpacing="0.14em", anchor="left"),
@@ -125,18 +125,14 @@ def sundial():
              {"shape": "circle", "x": 52, "y": 48, "width": 30, "height": 30, "fill": CORAL},
              txt("Golden hour starts in 15 min", 86, 48, 30, INK, weight=650, anchor="left")]},
     ]}
-    title = {"type": "group", "start": 0, "end": 1.9, "layers": [
-        {"shape": "circle", "x": 960, "y": "=860 - 120 * smoothstep(0, 2, t)", "width": 900, "height": 900,
-         "fill": "radial-gradient(#FFD98A55, #FFB45F00)", "exit": {"preset": "fadeOut", "duration": 0.6}},
-        {"shape": "circle", "x": 960, "y": "=880 - 140 * smoothstep(0, 2, t)", "width": 260, "height": 260,
-         "fill": "radial-gradient(#FFF1C8, #FFC15E)", "glow": {"radius": 60, "intensity": 1.3, "color": GOLD},
-         "exit": {"preset": "scaleOut", "duration": 0.5}},
-        rect(960, 900, W, 360, "linear-gradient(180deg, #2A1E22, #120E14)", anchor="top",
-             exit={"preset": "fadeOut", "duration": 0.5}),
-        txt("Sundial", 960, 430, 230, CREAM, font="Inter Display", weight=800, letterSpacing="-0.02em",
-            exit={"preset": "blurOut", "duration": 0.5}),
-        txt("Plan your day by the light.", 960, 580, 44, "#FFF4E3cc", weight=500,
-            exit={"preset": "fadeOut", "duration": 0.4}),
+    title = {"type": "group", "start": 0, "end": 2.15, "exit": {"preset": "fadeOut", "duration": 0.25}, "layers": [
+        {"component": "scene3d", "width": W, "height": H,
+         "props": {"text": "Sundial", "font": "Inter Display", "weight": 800, "env": "sunset", "material": "gold",
+                   "primitives": False, "aperture": 18, "bloom": 0.12, "quality": "standard",
+                   "camera": [{"at": 0.0, "pos": [-2.6, 0.9, 8.6], "target": [0.0, 0.45, 0.0], "fov": 30},
+                              {"at": 2.2, "pos": [-1.5, 0.7, 7.4], "target": [0.0, 0.42, 0.0], "fov": 29}]}},
+        txt("Plan your day by the light.", 960, 860, 44, "#FFF4E3e0", weight=500,
+            exit={"preset": "fadeOut", "duration": 0.3}),
     ]}
     phone = {"type": "group", "start": 7.0, "end": 16.4, "enter": {"preset": "fadeIn", "duration": 0.5},
              "exit": {"preset": "fadeOut", "duration": 0.4}, "layers": [
@@ -190,7 +186,9 @@ def maison():
         # fabric panel: a tall plate on the left that breathes, a second plate slides in for the window
         {"type": "group", "x": 520, "y": 540, "width": 640, "height": 860, "clip": True,
          "animate": [{"from": {"scale": 1.0}, "to": {"scale": 1.02}, "duration": SECONDS, "ease": "linear"}],
-         "layers": [fabric,
+         "layers": [{"shader": (HERE / "shaders" / "silk.glsl").read_text(), "width": 640, "height": 860,
+                     "uniforms": {"speed": 1.0, "light": "=smoothstep(8.7, 9.0, gt) * (1 - smoothstep(10.0, 10.3, gt))",
+                                  "slit": "=0.1 + 0.8 * smoothstep(8.8, 10.1, gt)"}},
                     {"shape": "rect", "x": 320, "y": 430, "width": 640, "height": 860,
                      "fill": "linear-gradient(160deg, #ffffff22, #00000000 40%, #00000055)"}]},
         # per-word treatments of the plate (clipped to it)
@@ -200,17 +198,10 @@ def maison():
              "animate": [{"from": {"scale": 1.08}, "to": {"scale": 1.0}, "duration": 1.45, "ease": "outCubic"}],
              "layers": [rect(320, 4 + 8 * r, 640, 3, "#00000030") for r in range(108)]
                        + [rect(4 + 8 * c, 430, 2, 860, "#ffffff10") for c in range(80)]},
-            # silk: glossy bands sliding across on the bias
+            # silk: one slow gloss pass on the bias
             {"type": "group", "start": 7.25, "end": 8.7, "layers": [
-                rect(f"=-300 + 1300 * (t / 1.45) + {o}", 430, 120, 1400,
-                     "linear-gradient(90deg, #ffffff00, #ffd9e055, #ffffff00)", skewX=-30, blend="screen")
-                for o in (0, 260, 520)]},
-            # shadow: the plate goes dark, a slit of light crosses it
-            {"type": "group", "start": 8.7, "end": 10.2, "layers": [
-                rect(320, 430, 640, 860, "#0A0204", opacity="=0.75 * smoothstep(0, 0.3, t)"),
-                rect("=40 + 560 * smoothstep(0.1, 1.4, t)", 430, 26, 860,
-                     "linear-gradient(90deg, #ff6a7a00, #ffb3bd, #ff6a7a00)", blend="screen",
-                     glow={"radius": 30, "color": "#ff6a7a"})]},
+                rect("=-300 + 1300 * (t / 1.45)", 430, 160, 1400,
+                     "linear-gradient(90deg, #ffffff00, #ffd9e033, #ffffff00)", skewX=-30, blend="screen")]},
         ]},
         rect(520, 540, 640, 860, "none", stroke={"color": INK, "width": 1}),
         # masthead
@@ -253,19 +244,20 @@ def maison():
 
 def rain():
     BLUE, BLACK, WHITE, GREY = "#1F3BFF", "#0B0B0C", "#FAFAF7", "#D7D9DE"
-    layers = [rect(960, 540, W, H, WHITE)]
+    layers = [rect(960, 540, W, H, WHITE),
+              {"shader": (HERE / "shaders" / "rain.glsl").read_text(), "width": W, "height": H, "end": 10.4,
+               "uniforms": {"density": "=1.0 - 0.6 * smoothstep(2.4, 3.2, gt)", "ground": 0.9},
+               "exit": {"preset": "fadeOut", "duration": 0.4}}]
     # Swiss grid
     for i in range(1, 12):
         layers.append(rect(160 * i, 540, 1, H, "#0000000d"))
     layers += [
         {"type": "group", "end": 2.7, "exit": {"preset": "fadeOut", "duration": 0.35}, "layers": [
-            txt("Where the\nRain Goes", 160, 300, 150, BLACK, font="Inter Display", weight=800, lineHeight=0.92,
+            txt("Where the\nRain Goes", 160, 380, 210, BLACK, font="Inter Display", weight=800, lineHeight=0.92,
                 letterSpacing="-0.03em", anchor="left", align="left"),
-            txt("One year of rain on one city, followed drop by drop.", 166, 520, 34, BLACK, weight=500,
+            txt("One year of rain on one city, followed drop by drop.", 168, 660, 38, BLACK, weight=500,
                 anchor="left")]},
-        {"shape": "circle", "x": 1500, "y": 420, "width": 360, "height": 360, "fill": BLUE, "end": 10.0,
-         "animate": [{"to": {"scale": 0.12, "x": 1240, "y": 900}, "at": 2.0, "duration": 1.0, "ease": "inOutExpo"},
-                     {"to": {"opacity": 0}, "at": 3.0, "duration": 0.2}]},
+
         txt("01", 160, 980, 20, BLACK, font="JetBrains Mono", weight=500, anchor="left"),
         txt("Source: illustrative", 1760, 980, 18, "#00000080", weight=500, anchor="right"),
     ]
@@ -386,6 +378,10 @@ def nosleep():
         layers.append(g)
         t += beat
         i += 1
+    for k in range(int((SECONDS - 1.88) / (beat * 4))):
+        tb = 1.88 + k * beat * 4 - 0.06
+        layers.append({"shader": "glitch", "filter": True, "start": round(tb, 4), "end": round(tb + 0.2, 4),
+                       "uniforms": {"amount": 0.9, "rate": 8.0}})
     layers.append({"component": "grain", "props": {"amount": 0.08, "rate": 24}})
     return comp(layers, BLACK)
 
@@ -396,7 +392,7 @@ def nosleep():
 
 def fold():
     BG = "#03100C"
-    glsl = (HERE / "fold.glsl").read_text()
+    glsl = (HERE / "shaders" / "fold.glsl").read_text()
     layers = [
         {"shader": glsl, "width": W, "height": H,
          "uniforms": {"fold": "=0.75 + 0.25 * smoothstep(0, 4, gt) + 0.12 * sin(gt * 0.3)", "spin": 1.0,
@@ -419,8 +415,8 @@ def harbour():
         rect(960, 540, W, H, f"linear-gradient(160deg, #13306E, {NAVY} 55%, #050C20)"),
         # stadium light flares
         *[l for i, x in enumerate((180, 620, 1300, 1740)) for l in (
-            {"shape": "circle", "x": x, "y": 70, "width": 520, "height": 520,
-             "fill": "radial-gradient(#9FC2FF40, #9FC2FF00)", "opacity": f"=0.7 + 0.3 * sin(gt * 1.3 + {i})"},
+            {"shape": "circle", "x": x, "y": 70, "width": 360, "height": 360,
+             "fill": "#9FC2FF30", "blur": 90, "opacity": f"=0.7 + 0.3 * sin(gt * 1.3 + {i})"},
             {"shape": "rect", "x": x, "y": 70, "width": 120, "height": 34, "radius": 8, "fill": "#F4F8FF",
              "glow": {"radius": 40, "intensity": 1.4, "color": "#BFD6FF"}})],
         rect(960, 1000, W, 300, "linear-gradient(180deg, #05102800, #050C20)"),
@@ -435,10 +431,22 @@ def harbour():
     layers += sweeps
     # frame 0 lockup
     layers.append({"type": "group", "end": 6.0, "exit": {"preset": "fadeOut", "duration": 0.3}, "layers": [
-        txt("HARBOUR", 960, 420, 240, WHITE, font="Inter Display", weight=900, skewX=-12, letterSpacing="-0.02em"),
-        txt("CUP FINAL", 960, 640, 240, RED, font="Inter Display", weight=900, skewX=-12, letterSpacing="-0.02em"),
-        rect(960, 800, 900, 10, GOLD, skewX=-24),
-        txt("LIVE · SATURDAY 20:00", 960, 870, 34, WHITE, weight=700, letterSpacing="0.3em", skewX=-12),
+        {"component": "scene3d", "width": W, "height": H,
+         "props": {"text": "HARBOUR", "font": "Inter Display", "weight": 900, "env": "studio", "material": "chrome",
+                   "primitives": False, "aperture": 12, "bloom": 0.2, "exposure": 1.25, "quality": "standard",
+                   "camera": [{"at": 0.0, "pos": [3.0, 0.2, 10.5], "target": [0.0, 0.62, 0.0], "fov": 30},
+                              {"at": 6.0, "pos": [-2.2, 0.5, 9.4], "target": [0.0, 0.62, 0.0], "fov": 29}]}},
+        rect(960, 540, W, H, "linear-gradient(180deg, #6C8BE0, #2A4FB0)", blend="multiply"),
+        *[l for i, x in enumerate((180, 620, 1300, 1740)) for l in (
+            {"shape": "circle", "x": x, "y": 40, "width": 380, "height": 380,
+             "fill": "#BFD6FF38", "blur": 90, "opacity": f"=0.7 + 0.3 * sin(gt * 1.3 + {i})"},
+            {"shape": "rect", "x": x, "y": 40, "width": 140, "height": 34, "radius": 8, "fill": "#F4F8FF",
+             "glow": {"radius": 50, "intensity": 1.6, "color": "#BFD6FF"}})],
+        rect(960, 760, 1100, 120, RED, skewX=-18, animate=[{"from": {"scaleX": 0}, "at": 0.3, "duration": 0.4,
+                                                             "ease": "outExpo"}]),
+        txt("CUP FINAL", 960, 768, 110, WHITE, font="Inter Display", weight=900, skewX=-12, letterSpacing="0.1em",
+            animate=[{"from": {"opacity": 0, "x": "-200"}, "at": 0.45, "duration": 0.35, "ease": "outExpo"}]),
+        txt("LIVE · SATURDAY 20:00", 960, 880, 34, WHITE, weight=700, letterSpacing="0.3em", skewX=-12),
     ]})
     # the window 22-26: team slams, crests, versus, score bug
     team = {"type": "group", "start": 21.8, "end": SECONDS,
