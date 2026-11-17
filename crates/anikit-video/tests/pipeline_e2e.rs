@@ -163,3 +163,21 @@ fn fused_many_chunks_match_plain_path() {
     }
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn fused_odd_size_and_range() {
+    if !ffmpeg() {
+        return;
+    }
+    let src = r#"{ "size": [161, 91], "fps": 24, "scenes": [ { "duration": 2, "layers": [ { "shape": "circle", "width": 30, "x": "=20 + 120 * t / 2" } ] } ] }"#;
+    let ev = Evaluator::new(&parse_json(src).unwrap().spec, Options::default()).unwrap();
+    let dir = std::env::temp_dir().join(format!("akv-odd-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let out = dir.join("o.mp4");
+    let opts = RenderOptions { from: Some(0.5), to: Some(1.5), ..Default::default() };
+    let s = pipeline::render_ak264(&ev, &opts, &out, None).unwrap();
+    assert_eq!((s.width, s.height, s.frames), (160, 90, 24));
+    let o = Command::new("ffprobe").args(["-v", "error", "-count_frames", "-show_entries", "stream=nb_read_frames,width,height", "-of", "csv=p=0"]).arg(&out).output().unwrap();
+    assert_eq!(String::from_utf8_lossy(&o.stdout).trim(), "160,90,24");
+    let _ = std::fs::remove_dir_all(&dir);
+}

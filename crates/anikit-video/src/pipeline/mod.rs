@@ -335,6 +335,17 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
     let last_report = std::sync::Mutex::new(Instant::now());
     let n = f1 - f0;
     // Chunk starts exactly as the encoder splits them (each starts with a fresh buffer and an IDR).
+    // Hints use the encoder's macroblock grid (its size is cropped to even dimensions).
+    let (emw, emh) = ((cfg.width as usize).div_ceil(16), (cfg.height as usize).div_ceil(16));
+    let hint_map = |map: &crate::render::MbMap| -> Vec<bool> {
+        let mut v = vec![false; emw * emh];
+        for y in 0..emh.min(map.mb_height) {
+            for x in 0..emw.min(map.mb_width) {
+                v[y * emw + x] = map.get(x, y);
+            }
+        }
+        v
+    };
     let starts: std::collections::HashSet<usize> = ak264::chunk_ranges(n, cfg.gop).into_iter().map(|r| r.0).collect();
     let out = ak264::encode_parallel(cfg, n, |k, buf, hints| {
         let t = Instant::now();
@@ -346,14 +357,14 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
                     prof.encode_ns.fetch_add((t - r).as_nanos() as u64, Ordering::Relaxed);
                 }
             }
-            let Worker { dl, map, last, returned, .. } = &mut *w;
+            let Worker { dl, last, returned, .. } = &mut *w;
             let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
             // Held frame: provably identical to the previous one; skip eval and render.
             let fi = (f0 + k) as f32;
             if continuing && ev.is_static((fi - 1.0) / ev.fps, fi / ev.fps) {
                 prof.unchanged.fetch_add(1, Ordering::Relaxed);
                 prof.held.fetch_add(1, Ordering::Relaxed);
-                hints.changed = Some(vec![false; map.mb_width * map.mb_height]);
+                hints.changed = Some(vec![false; emw * emh]);
                 *last = Some(k);
                 *returned = Some(Instant::now());
                 return true;
@@ -384,12 +395,11 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
             };
             if continuing {
                 // `map` is exact versus the previous frame, which `buf` still holds.
-                let n_mb = map.mb_width * map.mb_height;
                 match upd {
-                    Update::Unchanged => hints.changed = Some(vec![false; n_mb]),
+                    Update::Unchanged => hints.changed = Some(vec![false; emw * emh]),
                     _ => {
                         copy_yuv(yuv, buf, Some(map));
-                        hints.changed = Some((0..n_mb).map(|i| map.get(i % map.mb_width, i / map.mb_width)).collect());
+                        hints.changed = Some(hint_map(map));
                     }
                 }
             } else {
