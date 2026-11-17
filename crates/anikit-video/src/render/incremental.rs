@@ -25,6 +25,7 @@ struct Print {
     hash: u64,
     rect: Option<Rect>,
     layer: bool,
+    is_push: bool,
 }
 
 /// Previous-frame state for [`Renderer::render_yuv_incremental`].
@@ -371,16 +372,16 @@ fn fingerprint(list: &DisplayList, out: &mut Vec<Print>, image_gen: &dyn Fn(crat
                         m[k] += fm[k];
                     }
                 }
-                out.push(Print { hash, rect: None, layer: true });
+                out.push(Print { hash, rect: None, layer: true, is_push: true });
             }
             Op::PopLayer => {
                 m = stack.pop().unwrap_or([0.0; 4]);
-                out.push(Print { hash, rect: None, layer: true });
+                out.push(Print { hash, rect: None, layer: true, is_push: false });
             }
             _ => {
                 let rect = ops_bounds(std::slice::from_ref(op), Affine::IDENTITY)
                     .map(|r| Rect::new(r.x0 - m[0] as f64 - 1.0, r.y0 - m[1] as f64 - 1.0, r.x1 + m[2] as f64 + 1.0, r.y1 + m[3] as f64 + 1.0));
-                out.push(Print { hash, rect, layer: false });
+                out.push(Print { hash, rect, layer: false, is_push: false });
             }
         }
     }
@@ -420,47 +421,27 @@ impl Renderer {
         inc.bg = bg;
         let (mbw, mbh) = (w.div_ceil(16) as usize, h.div_ceil(16) as usize);
         // Dirty rect in pixels, or None for "full".
-        let mut dirty: Option<Option<Rect>> = if usable { Some(None) } else { None };
-        if let Some(acc) = dirty.as_mut() {
-            for i in 0..inc.prev.len().max(inc.cur.len()) {
-                let (a, b) = (inc.prev.get(i), inc.cur.get(i));
-                if let (Some(a), Some(b)) = (a, b) {
-                    if a.hash == b.hash {
-                        continue;
-                    }
-                }
-                if a.is_some_and(|p| p.layer) || b.is_some_and(|p| p.layer) {
-                    dirty = None;
-                    break;
-                }
-                for r in [a, b].into_iter().flatten().filter_map(|p| p.rect) {
-                    *acc = Some(acc.map_or(r, |d: Rect| d.union(r)));
-                }
-            }
-        }
+        // Dirty rects from an insertion-tolerant alignment of the two op lists.
+        let dirty: Option<Vec<Rect>> = usable.then(|| align_dirty(&inc.prev, &inc.cur));
         let regions: Option<Vec<[u32; 4]>> = match dirty {
             None => None,
-            Some(None) => Some(Vec::new()),
-            Some(Some(_)) => {
+            Some(d) if d.is_empty() => Some(Vec::new()),
+            Some(d) => {
                 // Cluster the dirty macroblocks into a few rectangles.
                 let mut map = std::mem::take(&mut inc.map);
                 map.reset(mbw, mbh, false);
-                for i in 0..inc.prev.len().max(inc.cur.len()) {
-                    let (a, b) = (inc.prev.get(i), inc.cur.get(i));
-                    if let (Some(a), Some(b)) = (a, b) {
-                        if a.hash == b.hash {
-                            continue;
-                        }
-                    }
-                    for r in [a, b].into_iter().flatten().filter_map(|p| p.rect) {
-                        map.mark_rect(r.inflate(-1.0, -1.0));
-                    }
+                for r in &d {
+                    map.mark_rect(r.inflate(-1.0, -1.0));
                 }
                 let boxes = cluster(&map, 8);
                 inc.map = map;
                 let area: u64 = boxes.iter().map(|b| (b[2] - b[0]) as u64 * (b[3] - b[1]) as u64 * 256).sum();
-                (area * 10 < w as u64 * h as u64 * 6)
-                    .then(|| boxes.iter().map(|b| [b[0] * 16, b[1] * 16, (b[2] * 16).min(w), (b[3] * 16).min(h)]).collect())
+                if boxes.is_empty() {
+                    Some(Vec::new())
+                } else {
+                    (area * 10 < w as u64 * h as u64 * 6)
+                        .then(|| boxes.iter().map(|b| [b[0] * 16, b[1] * 16, (b[2] * 16).min(w), (b[3] * 16).min(h)]).collect())
+                }
             }
         };
         if regions.as_ref().is_some_and(|r| r.is_empty()) {
@@ -469,6 +450,7 @@ impl Renderer {
             return Update::Unchanged;
         }
         let had_yuv = usable;
+        let mut fused = false;
         match &regions {
             Some(rs) => {
                 inc.rects.clear();
@@ -478,20 +460,26 @@ impl Renderer {
                 }
             }
             None => {
-                self.render_region(list, None, true, None, None);
+                // Full frame, straight to YUV when the fused backdrop path applies.
+                let target = if had_yuv { &mut inc.spare } else { &mut *yuv };
+                fused = self.render_region(list, None, true, None, Some(target));
             }
         }
         if !had_yuv {
-            yuv.resize(w, h);
-            convert_region(self.frame.data_as_u8_slice(), w as usize, h as usize, [0, 0, w as usize, h as usize], yuv);
+            if !fused {
+                yuv.resize(w, h);
+                convert_region(self.frame.data_as_u8_slice(), w as usize, h as usize, [0, 0, w as usize, h as usize], yuv);
+            }
             changed.reset(mbw, mbh, true);
             self.inc = inc;
             return Update::Full;
         }
         let Some(rs) = regions.as_deref() else {
             // Full frame: convert into the spare buffer, diff, swap.
-            inc.spare.resize(w, h);
-            convert_region(self.frame.data_as_u8_slice(), w as usize, h as usize, [0, 0, w as usize, h as usize], &mut inc.spare);
+            if !fused {
+                inc.spare.resize(w, h);
+                convert_region(self.frame.data_as_u8_slice(), w as usize, h as usize, [0, 0, w as usize, h as usize], &mut inc.spare);
+            }
             super::diff::diff_mb_into(yuv, &inc.spare, changed);
             std::mem::swap(yuv, &mut inc.spare);
             self.inc = inc;
@@ -509,6 +497,86 @@ impl Renderer {
             None => Update::Full,
         }
     }
+}
+
+/// Bounds of every op, where a layer marker (push or pop) stands for its whole
+/// subtree (whose leaf bounds already include the layer's filter margins).
+fn subtree_bounds(p: &[Print]) -> Vec<Option<Rect>> {
+    let mut out: Vec<Option<Rect>> = p.iter().map(|x| if x.layer { None } else { x.rect }).collect();
+    let mut stack: Vec<(usize, Option<Rect>)> = Vec::new();
+    let join = |a: Option<Rect>, b: Option<Rect>| match (a, b) {
+        (Some(a), Some(b)) => Some(a.union(b)),
+        (a, b) => a.or(b),
+    };
+    for (i, x) in p.iter().enumerate() {
+        if !x.layer {
+            if let Some(top) = stack.last_mut() {
+                top.1 = join(top.1, x.rect);
+            }
+            continue;
+        }
+        // Push and pop prints differ only in hash; a pop closes the innermost push.
+        if x.is_push {
+            stack.push((i, None));
+        } else if let Some((start, acc)) = stack.pop() {
+            out[start] = acc;
+            out[i] = acc;
+            if let Some(top) = stack.last_mut() {
+                top.1 = join(top.1, acc);
+            }
+        }
+    }
+    // Unclosed layers run to the end.
+    while let Some((start, acc)) = stack.pop() {
+        out[start] = acc;
+        if let Some(top) = stack.last_mut() {
+            top.1 = join(top.1, acc);
+        }
+    }
+    out
+}
+
+/// Dirty rectangles between two fingerprinted lists. Ops are aligned by
+/// hash, in order, with a look-ahead resync, so an inserted or removed op
+/// marks only itself. Every op without a partner marks its bounds (a layer
+/// marker marks its whole subtree, before and after), so any pixel outside
+/// the marks is covered by the same ops in the same order in both frames.
+fn align_dirty(prev: &[Print], cur: &[Print]) -> Vec<Rect> {
+    const LOOK: usize = 24;
+    let (pb, cb) = (subtree_bounds(prev), subtree_bounds(cur));
+    let mut out = Vec::new();
+    let (mut i, mut j) = (0, 0);
+    let (np, nc) = (prev.len(), cur.len());
+    while i < np || j < nc {
+        if i < np && j < nc && prev[i].hash == cur[j].hash {
+            i += 1;
+            j += 1;
+            continue;
+        }
+        let ins = (i < np).then(|| (1..=LOOK).find(|&k| j + k < nc && cur[j + k].hash == prev[i].hash)).flatten();
+        let del = (j < nc).then(|| (1..=LOOK).find(|&k| i + k < np && prev[i + k].hash == cur[j].hash)).flatten();
+        match (ins, del) {
+            (Some(k), d) if d.is_none_or(|d| k <= d) => {
+                out.extend(cb[j..j + k].iter().flatten());
+                j += k;
+            }
+            (_, Some(k)) => {
+                out.extend(pb[i..i + k].iter().flatten());
+                i += k;
+            }
+            _ => {
+                if i < np {
+                    out.extend(pb[i]);
+                    i += 1;
+                }
+                if j < nc {
+                    out.extend(cb[j]);
+                    j += 1;
+                }
+            }
+        }
+    }
+    out
 }
 
 /// Convert region `r` of the frame into `yuv`, marking macroblocks whose YUV changed.

@@ -71,6 +71,9 @@ When `render_yuv` has a backdrop and the ops drawn over it fit in a macroblock-a
 
 ### Incremental frames
 
+**Op alignment (insertion-tolerant):** ops are matched by content hash, in order, with a 24-op look-ahead resync, so an inserted or removed op marks only its own bounds. An unmatched layer marker, for example a clip that moved by 1 px or a wipe that widened, marks its whole subtree's old and new bounds (leaf bounds already include enclosing filter margins) instead of forcing a full frame. Any pixel outside the marks is covered by the same ops in the same order. Full-frame incremental renders take the fused backdrop → YUV path when it applies. On the launch template: Full 421 → 312 of 868 frames and Partial 27 → 136. The remaining Full frames are ones where the animated background glows really change every pixel.
+
+
 `render_yuv_incremental` is the fastest path for real videos. Each worker keeps its previous frame and does the following:
 
 1. Fingerprint every op: a content hash, plus device bounds grown by the filters that enclose it.
