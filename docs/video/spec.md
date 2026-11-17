@@ -23,7 +23,7 @@ A scene string is a title card (`"Title | subtitle"`); a layer string is centred
 
 ## Top level
 
-`size` (`"16:9"` `"9:16"` `"1:1"` `"4:5"` `"720p"` `"4k"` or `[w, h]`) · `fps` · `background` · `theme { colors, fonts, radius, styles }` · `scenes` · `transition` · `markers { name: time }` (plus automatic `"@beat17"`, `"@bar5+0.25"` from the first music track) · `audio [...]` · `captions` · `fonts { family: file }` · `duration`.
+`size` (`"16:9"` `"9:16"` `"1:1"` `"4:5"` `"720p"` `"4k"` or `[w, h]`) · `fps` · `background` · `theme { colors, fonts, radius, styles }` · `scenes` · `transition` · `markers { name: time }` (plus automatic `"@beat17"`, `"@bar5+0.25"` from the first music track) · `audio [...]` · `captions` · `fonts { family: file }` · `duration` · `compositions`.
 
 Theme colours (used as `$name`): `primary secondary accent bg surface text muted`. Text styles: `title heading subtitle body caption label code`.
 
@@ -50,6 +50,7 @@ Every layer: `x y` (default centre) · `anchor` (`center`, `topLeft`, …) · `w
 | image / video | `src` · `fit` (`contain cover fill none`) · `radius` · video: `trimStart speed volume loop` |
 | box | flexbox: `style { direction gap padding align justify wrap background radius border columns }` · `children` |
 | group | `layers` |
+| composition | `composition` (a name from top-level `"compositions": { "ui": { "size": [800, 500], "duration": 4, "background": "#111", "layers": [...] } }`, or `scenes`) · `fit` · `trimStart speed` · `loop: true`. It has its own clock and is clipped to its box; 3D layers use it as a texture |
 | component | `component` (`bar-chart line-chart donut-chart counter stat code terminal phone laptop browser card button toast cursor lower-third title-card mesh-gradient aurora grid confetti model lottie …`; `anikit-video info --components`) · `props` |
 
 ## Animation
