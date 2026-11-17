@@ -99,6 +99,8 @@ pub enum Play {
     Broken,
     /// A rhythm grid of 16ths (`x` hit, `X` accent, `.` rest) for block chords.
     Rhythm(String),
+    /// Power chords (root, fifth, octave) chugging every `step` beats.
+    Power(f64),
 }
 
 impl Play {
@@ -121,12 +123,13 @@ impl Play {
             "stabs" | "stab" | "skank" => Play::Stabs,
             "broken" | "ballad" => Play::Broken,
             "pulse" => Play::Pulse(step(suf, 0.5)?),
+            "power" => Play::Power(step(suf, 0.5)?),
             "strum" => Play::Strum("D.DU.UDU".into()),
             h if h.starts_with("strum:") => Play::Strum(h[6..].to_string()),
             "arp" => Play::Arp("up".into(), step(suf, 0.25)?),
             h if h.starts_with("arp-") => Play::Arp(h[4..].to_string(), step(suf, 0.25)?),
             h if !h.is_empty() && h.chars().all(|c| matches!(c, 'x' | 'X' | '.' | '-')) => Play::Rhythm(h.to_string()),
-            _ => return Err(format!("play '{s}': use pad, block, stabs, arp[-up|-down|-updown|-random|-pinky][/16], strum[:D.DU.UDU], pulse[/8], broken or a rhythm like x..x..x.")),
+            _ => return Err(format!("play '{s}': use pad, block, stabs, arp[-up|-down|-updown|-random|-pinky][/16], strum[:D.DU.UDU], pulse[/8], power[/8], broken or a rhythm like x..x..x.")),
         })
     }
 }
@@ -195,6 +198,19 @@ pub fn play_chords(chords: &[ChordAt], play: &Play, center: i32, n: usize, vel: 
                     let accent = if i % 2 == 0 { 1.0 } else { 0.8 };
                     for &k in &v {
                         push(&mut out, t, step * 0.8, k, vel * accent);
+                    }
+                    t += step;
+                    i += 1;
+                }
+            }
+            Play::Power(step) => {
+                let r = center - (center - c.chord.bass_pc()).rem_euclid(12);
+                let mut t = t0;
+                let mut i = 0;
+                while t < t0 + len - 1e-9 {
+                    let accent = if i % 4 == 0 { 1.0 } else if i % 2 == 0 { 0.85 } else { 0.72 };
+                    for k in [r, r + 7, r + 12] {
+                        push(&mut out, t, step * 0.85, k, vel * accent);
                     }
                     t += step;
                     i += 1;
@@ -532,7 +548,7 @@ mod tests {
     fn plays_and_basses_stay_in_their_chords() {
         let k = Key::parse("C").unwrap();
         let c = loop_chords(&chord_line("C Am F G", &k, 4.0).unwrap(), 16.0);
-        for play in ["pad", "block", "stabs", "arp-updown/16", "strum", "pulse/8", "broken", "x..x..x.x..x..x."] {
+        for play in ["pad", "block", "stabs", "arp-updown/16", "strum", "pulse/8", "power", "broken", "x..x..x.x..x..x."] {
             let notes = play_chords(&c, &Play::parse(play).unwrap(), 60, 4, 0.8, 1);
             assert!(!notes.is_empty(), "{play}");
             for n in &notes {

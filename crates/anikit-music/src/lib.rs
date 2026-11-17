@@ -24,5 +24,6 @@ pub mod seq;
 pub mod midi;
 pub mod arrange;
 pub mod spec;
+pub mod style;
 
 pub use voice::{key_to_freq, Instrument, NoteOn, Rng, Voice, BLOCK, RATE};
