@@ -38,7 +38,7 @@ fn main() {
             snap = sim.at(f as f32 / 30.0);
         }
         let sim_ms = t1.elapsed().as_secs_f64() * 1e3 / frames as f64;
-        let view = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key: (v3(0.3, 0.9, 0.3), v3(3.0, 3.0, 3.0)), amb: (v3(0.3, 0.3, 0.3), v3(0.1, 0.1, 0.1)) };
+        let view = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key: (v3(0.3, 0.9, 0.3), v3(3.0, 3.0, 3.0)), amb: (v3(0.3, 0.3, 0.3), v3(0.1, 0.1, 0.1)), shadow: None };
         let t = (6 + frames) as f32 / 30.0;
         let _ = particles::render(&[(&sim, snap.clone())], &view, t);
         let t2 = Instant::now();

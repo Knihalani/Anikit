@@ -380,7 +380,7 @@ impl Scene3d {
             px.par_chunks_mut(band * w).enumerate().for_each(body);
         }
         let t_trace = clock.elapsed();
-        let layer = self.particles(t, dt, &cam, &prev, &px, w, h, root);
+        let layer = self.particles(t, dt, &cam, &prev, &mut px, w, h, root);
         let t_parts = clock.elapsed();
         let pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
         let out = post::process(&px, w, h, &pp, layer.as_ref());
@@ -400,7 +400,7 @@ impl Scene3d {
 
     /// Simulate and splat the particle systems live at `t`.
     #[allow(clippy::too_many_arguments)]
-    fn particles(&self, t: f32, dt: f32, cam: &trace::Camera, prev: &trace::Camera, px: &[trace::Px], w: usize, h: usize, root: Option<&Evaluator>) -> Option<particles::Layer> {
+    fn particles(&self, t: f32, dt: f32, cam: &trace::Camera, prev: &trace::Camera, px: &mut [trace::Px], w: usize, h: usize, root: Option<&Evaluator>) -> Option<particles::Layer> {
         let p = self.p();
         if p.parts.is_empty() {
             return None;
@@ -424,7 +424,28 @@ impl Scene3d {
         let depth: Vec<f32> = px.iter().map(|q| q.depth).collect();
         let up = v3(0.0, 1.0, 0.0);
         let key = p.env.key_box().map(|k| (k.c, scale(k.radiance, p.env.key_solid_angle))).unwrap_or((up, v3(0.0, 0.0, 0.0)));
-        let view = particles::View { cam, prev, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key, amb: (p.env.diffuse(up), p.env.diffuse(scale(up, -1.0))) };
+        // Particle shadows on the scene: dim the key light by the particles' transmittance.
+        let shadow = particles::ShadowMap::build(&live, key.0, t);
+        if let Some(sm) = &shadow {
+            let (fwd, _, _) = cam.basis();
+            let body = |(y, row): (usize, &mut [trace::Px])| {
+                for (x, q) in row.iter_mut().enumerate() {
+                    if q.depth > 1e5 || q.vk <= 0.0 {
+                        continue;
+                    }
+                    let d = Scene::cam_ray(cam, w, h, x as f32 + 0.5, y as f32 + 0.5);
+                    let wp = madd(cam.pos, d, q.depth / dot(d, fwd).max(1e-4));
+                    q.vk *= sm.trans(wp);
+                }
+            };
+            use rayon::prelude::*;
+            if rayon::current_thread_index().is_some() {
+                px.chunks_mut(w).enumerate().for_each(body);
+            } else {
+                px.par_chunks_mut(w).enumerate().for_each(body);
+            }
+        }
+        let view = particles::View { cam, prev, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key, amb: (p.env.diffuse(up), p.env.diffuse(scale(up, -1.0))), shadow: shadow.as_ref() };
         Some(particles::render(&live, &view, t))
     }
 

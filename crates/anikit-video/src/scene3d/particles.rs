@@ -118,6 +118,8 @@ pub struct Def {
     pub end: f32,
     substeps: u32,
     stretch: f32,
+    /// Absorbing particles shadow each other and the scene.
+    pub shadows: bool,
 }
 
 fn gf(m: &Map<String, Value>, k: &str, d: f32, path: &str) -> Res<f32> {
@@ -293,6 +295,7 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
         end: gf(m, "end", f32::INFINITY, path)?,
         substeps: gf(m, "substeps", 2.0, path)?.clamp(1.0, 16.0) as u32,
         stretch: gf(m, "stretch", 1.0, path)?.max(0.0),
+        shadows: m.get("shadows").and_then(|x| x.as_bool()).unwrap_or(blend == Blend::Over),
     })
 }
 
@@ -552,12 +555,15 @@ pub struct Sim {
     emit: Emit,
     /// Per-particle colour from an image emitter (linear RGB).
     src_col: Option<Vec<[f32; 3]>>,
-    tgt: Option<(Vec<[f32; 3]>, Vec<f32>)>,
+    /// Target points, arrival delays, and surface normals (assembled particles shade like the surface).
+    tgt: Option<Targets>,
     flows: Option<(FlowGrid, FlowGrid)>,
     floor_y: Option<f32>,
     state: Mutex<SimState>,
     busy: std::sync::atomic::AtomicBool,
 }
+
+type Targets = (Vec<[f32; 3]>, Vec<f32>, Vec<[f32; 3]>);
 
 const CHECK_EVERY: i64 = 60;
 const SNAP_BUDGET: usize = 3 << 30;
@@ -574,14 +580,14 @@ impl Sim {
         };
         let tgt = target.as_ref().map(|t| {
             use rayon::prelude::*;
-            let pts: Vec<[f32; 3]> = (0..n).into_par_iter().map(|i| {
-                let p = sample(t, def.seed ^ 0x7a3c, i as u32, 0).0;
-                [p.x, p.y, p.z]
-            }).collect();
+            let (pts, nrm): (Vec<[f32; 3]>, Vec<[f32; 3]>) = (0..n).into_par_iter().map(|i| {
+                let (p, q, _) = sample(t, def.seed ^ 0x7a3c, i as u32, 0);
+                ([p.x, p.y, p.z], [q.x, q.y, q.z])
+            }).unzip();
             // Staggered arrival: lower target points settle first.
             let (lo, hi) = pts.iter().fold((f32::MAX, f32::MIN), |(a, b), p| (a.min(p[1]), b.max(p[1])));
             let delay = pts.iter().enumerate().map(|(i, p)| 0.55 * (p[1] - lo) / (hi - lo).max(1e-6) + 0.15 * hu(def.seed, i as u32, 99)).collect();
-            (pts, delay)
+            (pts, delay, nrm)
         });
         let flows = def.flow.map(|_| {
             let (a, b) = rayon::join(|| FlowGrid::new(def.seed.wrapping_mul(3)), || FlowGrid::new(def.seed.wrapping_mul(3) + 1));
@@ -745,7 +751,7 @@ impl Sim {
                         uy = (uy + ay * h) * dampf;
                         uz = (uz + az * h) * dampf;
                         // Assemble: a critically damped spring to the target, per-particle delayed.
-                        if let (Some(sp), Some((tp, delay))) = (spring, tgt) {
+                        if let (Some(sp), Some((tp, delay, _))) = (spring, tgt) {
                             let w = ((sp - delay[i]) * 2.5).clamp(0.0, 1.0);
                             if w > 0.0 {
                                 let q = tp[i];
@@ -859,6 +865,20 @@ impl Sim {
         s
     }
 
+    /// Opacity of particle `i` at `t` (for shadows).
+    #[inline]
+    fn look_alpha(&self, i: usize, t: f32) -> (f32, f32) {
+        let age = self.age(i, t);
+        if age < 0.0 {
+            return (age, 0.0);
+        }
+        let a = match self.def.life {
+            Some(_) => smoothstep(0.0, 0.08, age) * (1.0 - smoothstep(0.75, 1.0, age)),
+            None => 1.0,
+        };
+        (age, a * self.def.opacity)
+    }
+
     /// Colour (linear) and opacity of particle `i` at `t`, given its speed.
     #[inline]
     fn look(&self, i: usize, t: f32, p: V3, speed: f32) -> ([f32; 3], f32) {
@@ -966,6 +986,150 @@ impl Pyr {
     }
 }
 
+/// An opacity shadow map from the key light: optical depth of absorbing
+/// particles, accumulated in slices along the light direction. Particles
+/// read it for self-shadowing (dense clouds darken inside, like volumes) and
+/// the scene reads it for particle shadows on the floor and objects.
+pub struct ShadowMap {
+    a: V3,
+    b: V3,
+    l: V3,
+    lo: V3,
+    k: V3,
+    n: usize,
+    s: usize,
+    /// Optical depth from the light down to the *start* of each slice, per texel.
+    cum: Vec<f32>,
+}
+
+const SM_N: usize = 384;
+const SM_S: usize = 64;
+
+impl ShadowMap {
+    /// Build from the absorbing systems; `l` points towards the light.
+    pub fn build(systems: &[(&Sim, Arc<Snap>)], l: V3, t: f32) -> Option<ShadowMap> {
+        use rayon::prelude::*;
+        let casters: Vec<&(&Sim, Arc<Snap>)> = systems.iter().filter(|(s, _)| s.def.blend == Blend::Over && s.def.shadows).collect();
+        if casters.is_empty() {
+            return None;
+        }
+        let l = norm(l);
+        let (a, b) = basis(l);
+        let ext = |p: &[f32; 3]| {
+            let q = v3(p[0], p[1], p[2]);
+            v3(dot(q, a), dot(q, b), dot(q, l))
+        };
+        let inf = (v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN));
+        let (mut lo, mut hi) = inf;
+        for (_, snap) in &casters {
+            let (x, y) = snap.pos.par_iter().with_min_len(1 << 14).map(|p| { let e = ext(p); (e, e) }).reduce(|| inf, |(a0, a1), (b0, b1)| (vmin(a0, b0), vmax(a1, b1)));
+            lo = vmin(lo, x);
+            hi = vmax(hi, y);
+        }
+        if lo.x > hi.x {
+            return None;
+        }
+        // Square texels in the light plane.
+        let span = (hi.x - lo.x).max(hi.y - lo.y).max(1e-3) * 1.04;
+        let c = scale(add(lo, hi), 0.5);
+        let lo = v3(c.x - span * 0.5, c.y - span * 0.5, lo.z - 1e-3);
+        let depth = (hi.z - lo.z).max(1e-3) * 1.02;
+        let (n, sl) = (SM_N, SM_S);
+        let k = v3(n as f32 / span, n as f32 / span, sl as f32 / depth);
+        let texel_area = (span / n as f32).powi(2);
+        let mut grid = vec![0.0f32; n * n * sl];
+        for (sim, snap) in &casters {
+            let d = &sim.def;
+            for (i, p) in snap.pos.iter().enumerate() {
+                let (_, op) = sim.look_alpha(i, t);
+                if op <= 0.0 {
+                    continue;
+                }
+                let size = d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0);
+                let od = op * std::f32::consts::PI * size * size / texel_area;
+                let e = ext(p);
+                let (fx, fy) = ((e.x - lo.x) * k.x - 0.5, (e.y - lo.y) * k.y - 0.5);
+                // Tent in depth too, so a surface crossing slices doesn't band.
+                let fz = ((e.z - lo.z) * k.z - 0.5).clamp(0.0, sl as f32 - 1.0);
+                let (z0, tz) = (fz as usize, fz.fract());
+                let z1 = (z0 + 1).min(sl - 1);
+                let (ix, iy) = (fx.floor(), fy.floor());
+                let (tx, ty) = (fx - ix, fy - iy);
+                let (ix, iy) = (ix as i32, iy as i32);
+                for (dx, dy, wt) in [(0, 0, (1.0 - tx) * (1.0 - ty)), (1, 0, tx * (1.0 - ty)), (0, 1, (1.0 - tx) * ty), (1, 1, tx * ty)] {
+                    let (x, y) = (ix + dx, iy + dy);
+                    if x >= 0 && y >= 0 && (x as usize) < n && (y as usize) < n {
+                        let c = (y as usize * n + x as usize) * sl;
+                        grid[c + z0] += od * wt * (1.0 - tz);
+                        grid[c + z1] += od * wt * tz;
+                    }
+                }
+            }
+        }
+        // Accumulate from the light side (highest slice) down, then soften
+        // across texels (a particle is far smaller than a texel).
+        grid.par_chunks_mut(sl).for_each(|col| {
+            let mut acc = 0.0;
+            for z in (0..sl).rev() {
+                let v = col[z];
+                col[z] = acc + v * 0.5;
+                acc += v;
+            }
+        });
+        let mut cum = grid.clone();
+        cum.par_chunks_mut(n * sl).enumerate().for_each(|(y, row)| {
+            for x in 0..n {
+                for z in 0..sl {
+                    let mut acc = 0.0;
+                    let mut ws = 0.0;
+                    for dy in -1i32..=1 {
+                        for dx in -1i32..=1 {
+                            let (xx, yy) = (x as i32 + dx, y as i32 + dy);
+                            if xx >= 0 && yy >= 0 && (xx as usize) < n && (yy as usize) < n {
+                                let w = if dx == 0 && dy == 0 { 4.0 } else if dx == 0 || dy == 0 { 2.0 } else { 1.0 };
+                                acc += grid[(yy as usize * n + xx as usize) * sl + z] * w;
+                                ws += w;
+                            }
+                        }
+                    }
+                    row[x * sl + z] = acc / ws;
+                }
+            }
+        });
+        Some(ShadowMap { a, b, l, lo, k, n, s: sl, cum })
+    }
+
+    /// Transmittance of the key light reaching `p`.
+    #[inline]
+    pub fn trans(&self, p: V3) -> f32 {
+        // Bias towards the light by two slices, so a surface isn't shadowed by its own layer.
+        let p = madd(p, self.l, 2.0 / self.k.z);
+        let (u, v, w) = ((dot(p, self.a) - self.lo.x) * self.k.x - 0.5, (dot(p, self.b) - self.lo.y) * self.k.y - 0.5, (dot(p, self.l) - self.lo.z) * self.k.z - 0.5);
+        let n = self.n as f32;
+        if u < -1.0 || v < -1.0 || u > n || v > n {
+            return 1.0;
+        }
+        let sl = self.s;
+        let z = w.clamp(0.0, sl as f32 - 1.0);
+        let (iz, tz) = (z as usize, z.fract());
+        let iz1 = (iz + 1).min(sl - 1);
+        let (ix, iy) = (u.floor(), v.floor());
+        let (tx, ty) = (u - ix, v - iy);
+        let (ix, iy) = (ix as i32, iy as i32);
+        let mut od = 0.0;
+        for (dx, dy, wt) in [(0, 0, (1.0 - tx) * (1.0 - ty)), (1, 0, tx * (1.0 - ty)), (0, 1, (1.0 - tx) * ty), (1, 1, tx * ty)] {
+            let (x, y) = (ix + dx, iy + dy);
+            if x >= 0 && y >= 0 && (x as usize) < self.n && (y as usize) < self.n {
+                let c = &self.cum[(y as usize * self.n + x as usize) * sl..];
+                // Below the bottom slice: everything above has been passed.
+                let val = if w > sl as f32 - 0.5 { 0.0 } else if w < -0.5 { c[0] + 0.0 } else { c[iz] + (c[iz1] - c[iz]) * tz };
+                od += val * wt;
+            }
+        }
+        (-od).exp()
+    }
+}
+
 /// Everything the splatter needs from the frame.
 pub struct View<'a> {
     pub cam: &'a Camera,
@@ -981,6 +1145,7 @@ pub struct View<'a> {
     /// Lighting for lit sprites: key direction and irradiance, ambient (up / down).
     pub key: (V3, V3),
     pub amb: (V3, V3),
+    pub shadow: Option<&'a ShadowMap>,
 }
 
 struct Proj {
@@ -1082,7 +1247,21 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     // Lambert sphere phase: (sin α + (π − α) cos α) / π, with π − α = acos(−cos α).
                     let phase = ((1.0 - ca * ca).max(0.0).sqrt() + fast_acos(-ca) * ca) / std::f32::consts::PI;
                     let amb = lerp3(v.amb.1, v.amb.0, 0.5 + 0.5 * to_cam.y.max(0.0));
-                    let l = add(scale(v.key.1, phase * 0.66), amb);
+                    let vis = v.shadow.map(|m| m.trans(p)).unwrap_or(1.0);
+                    let keyc = scale(v.key.1, vis);
+                    let mut l = add(scale(keyc, phase * 0.66), amb);
+                    // Particles that have arrived on a target surface shade like it (two-sided).
+                    if let (Some(tg), Some((_, delay, nrm))) = (&d.target, &sim.tgt) {
+                        let wv = ((((t - tg.from) / (tg.to - tg.from)) - delay[i]) * 2.5).clamp(0.0, 1.0);
+                        if wv > 0.0 {
+                            let mut n = v3(nrm[i][0], nrm[i][1], nrm[i][2]);
+                            if dot(n, to_cam) < 0.0 {
+                                n = scale(n, -1.0);
+                            }
+                            let ls = add(scale(keyc, dot(n, v.key.0).max(0.0)), lerp3(v.amb.1, v.amb.0, 0.5 + 0.5 * n.y));
+                            l = lerp3(l, ls, wv);
+                        }
+                    }
                     [col[0] * l.x, col[1] * l.y, col[2] * l.z]
                 } else {
                     col
@@ -1230,7 +1409,7 @@ mod tests {
         let depth = vec![1e9f32; w * h];
         let total = |focus: f32, ap: f32| {
             let cam = Camera { pos: v3(0.0, 1.0, 4.0), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus, aperture: ap, roll: 0.0, shutter: 0.0 };
-            let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus, aperture: ap, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) };
+            let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus, aperture: ap, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)), shadow: None };
             render(&[(&s, snap.clone())], &v, 0.0).emitted()
         };
         let (sharp, blurred) = (total(4.0, 0.0), total(1.0, 30.0));

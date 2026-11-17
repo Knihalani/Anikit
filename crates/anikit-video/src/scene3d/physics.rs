@@ -590,13 +590,11 @@ impl Sim {
     }
 
     fn build(&self) -> State {
-        let mut world = PhysicsWorld::default();
-        world.gravity = Vector::new(self.gravity.x, self.gravity.y, self.gravity.z);
+        let mut world = PhysicsWorld { gravity: Vector::new(self.gravity.x, self.gravity.y, self.gravity.z), ..PhysicsWorld::default() };
         world.integration_parameters.dt = 1.0 / self.rate;
         world.integration_parameters.num_solver_iterations = self.iterations;
         if let Some(y) = self.ground {
-            let (b, _) = world.insert(RigidBodyBuilder::fixed().translation(Vector::new(0.0, y - 50.0, 0.0)), ColliderBuilder::cuboid(5000.0, 50.0, 5000.0).friction(0.6).restitution(0.05));
-            let _ = b;
+            world.insert(RigidBodyBuilder::fixed().translation(Vector::new(0.0, y - 50.0, 0.0)), ColliderBuilder::cuboid(5000.0, 50.0, 5000.0).friction(0.6).restitution(0.05));
         }
         let mut cache: HashMap<(u32, u32), Option<(SharedShape, V3)>> = HashMap::new();
         let mut handles = Vec::with_capacity(self.bodies.len());

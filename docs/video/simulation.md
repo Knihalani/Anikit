@@ -111,7 +111,8 @@ and only the wave front is solved.
 | `opacity` | `1` | |
 | `emissive` | `1` for `add`, `0` for `over` | Emitted light. |
 | `blend` | `add` | `add`: glowing light. `over`: particles absorb and reflect light (dust, sand, smoke, confetti); dense clouds turn into volumes. |
-| `lit` | `true` for `over` | Shade by the key light and environment, with a sphere phase function. |
+| `lit` | `true` for `over` | Shade by the key light and environment, with a sphere phase function; particles that have arrived on a `target` shade like its surface. |
+| `shadows` | `true` for `over` | Absorbing particles shadow each other (dense clouds darken inside, like volumes) and cast soft shadows on the floor and objects. |
 | `stretch` | `1` | Motion streak length (× shutter). |
 | `substeps` | `2` | Integration steps per frame. |
 | `start`, `end`, `seed` | `0`, ∞, `1` | |
@@ -139,3 +140,10 @@ same as a sharp one; levels are summed with smooth upsampling. Fast particles
 are splatted several times along their screen motion over the shutter
 (motion streaks, camera motion included). Particles are depth tested against
 the traced scene and composited before bloom, so bright ones glow.
+
+Shadows use an opacity shadow map from the key light: 384² texels × 64
+slices along the light, filled with each particle's optical depth (tent
+filtered in all three axes), accumulated from the light side. Particles look
+up their own transmittance (biased two slices towards the light, so a surface
+doesn't shadow itself) and every scene pixel's key light is multiplied by the
+transmittance at its world position before the denoiser.
