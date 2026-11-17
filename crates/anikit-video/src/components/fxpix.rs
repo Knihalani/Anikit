@@ -170,7 +170,7 @@ impl Hash {
     }
     #[inline]
     pub fn u32(&mut self, v: u32) {
-        self.0 = (self.0.rotate_left(5) ^ v as u64).wrapping_mul(0x51_7cc1_b727_220a_95);
+        self.0 = (self.0.rotate_left(5) ^ v as u64).wrapping_mul(0x517c_c1b7_2722_0a95);
     }
     pub fn f32s(&mut self, v: &[f32]) {
         for x in v {
@@ -200,7 +200,7 @@ mod tests {
         for i in 0..20000 {
             let a = i as f32 * 0.000_314_2;
             for r in [0.5f32, 3.0, 1700.0] {
-                let (y, x) = ((a - 3.14).sin() * r, (a - 3.14).cos() * r);
+                let (y, x) = ((a - std::f32::consts::PI).sin() * r, (a - std::f32::consts::PI).cos() * r);
                 worst = worst.max((atan2(y, x) - y.atan2(x)).abs());
             }
         }

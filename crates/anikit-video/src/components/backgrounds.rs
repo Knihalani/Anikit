@@ -94,9 +94,11 @@ fn image_size(ctx: &Ctx, sx: f32, sy: f32) -> (usize, usize) {
     (((ctx.width * sx).ceil() as usize).clamp(16, 2048), ((ctx.height * sy).ceil() as usize).clamp(16, 2048))
 }
 
+type KeyframeCache = std::sync::Mutex<Vec<(u64, std::sync::Arc<Lin>)>>;
+
 /// Recently made keyframe fields, shared by the frames being evaluated in parallel.
-fn keyframe_cache() -> &'static std::sync::Mutex<Vec<(u64, std::sync::Arc<Lin>)>> {
-    static C: std::sync::OnceLock<std::sync::Mutex<Vec<(u64, std::sync::Arc<Lin>)>>> = std::sync::OnceLock::new();
+fn keyframe_cache() -> &'static KeyframeCache {
+    static C: std::sync::OnceLock<KeyframeCache> = std::sync::OnceLock::new();
     C.get_or_init(Default::default)
 }
 
@@ -743,7 +745,7 @@ impl Aurora {
                     let b = at(cb, i0) + (at(cb, i0 + 1) - at(cb, i0)) * f;
                     let ih = at(ci, i0) + (at(ci, i0 + 1) - at(ci, i0)) * f;
                     let h = (b - v) * ih;
-                    let on = near && h >= HLO && h < HHI;
+                    let on = near && (HLO..HHI).contains(&h);
                     let i = if on { at(cr, i0) + (at(cr, i0 + 1) - at(cr, i0)) * f } else { 0.0 };
                     let g = if on { at(cg, i0) + (at(cg, i0 + 1) - at(cg, i0)) * f } else { 0.0 };
                     // The table is fine enough (≈½ px per entry) to sample nearest.
