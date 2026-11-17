@@ -33,6 +33,6 @@ Create: MCP `create_from_template {template: "countdown", params, brand, format}
 
 ## Tips
 
-- A template gives every product the same structure, which is what the user rejected: use it for a fast draft, then make it this product's (a palette from its own assets, a typeface chosen for it, its real UI or object as the hero, a score whose instruments fit it). For an original film, use the `director` prompt or skills/anikit-launch-video. Run the taste pass first: `anikit-video docs taste`.
-- Hold every line for max(0.83 s, chars/15, words × 0.3) after it settles, and keep words crisp (no blur or glow while they are read). Cut words, never type size.
+- A template gives every product the same structure, so used as-is it tends to look like every other video made from it. It works well as a fast draft that you then make this product's own: a palette from its assets, a typeface chosen for it, its real UI or object as the hero, a score whose instruments fit it. For an original film, see the `director` prompt or skills/anikit-launch-video, and `anikit-video docs taste`.
+- Lines read comfortably when held for max(0.83 s, chars/15, words × 0.3) after they settle, sharp, with no blur or glow while read. If a line doesn't fit, cutting words usually works better than shrinking type.
 - Use the globe and particles only when the event really is global. Otherwise, setting the countdown in type is stronger.

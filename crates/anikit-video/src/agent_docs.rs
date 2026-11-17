@@ -195,7 +195,7 @@ mod tests {
     #[test]
     fn lookups_aliases_and_suggestions() {
         assert!(docs(None).unwrap().contains("docs 3d") && docs(None).unwrap().contains("docs taste"));
-        assert!(docs(Some("taste")).unwrap().contains("Swap test") && docs(Some("design")).unwrap().contains("taste pass"));
+        assert!(docs(Some("taste")).unwrap().contains("striking as a still") && docs(Some("design")).unwrap().contains("What tends to land"));
         assert!(docs(Some("scene3d")).unwrap().contains("scene3d"));
         assert!(docs(Some("shadr")).unwrap_err().contains("did you mean 'shader'"));
         assert!(docs(Some("components")).unwrap().contains("terminal"));

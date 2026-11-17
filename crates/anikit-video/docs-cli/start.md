@@ -15,7 +15,7 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 
 | Topic | What you get |
 |---|---|
-| `docs taste` | **read before designing:** the 15-line taste pass (type, colour, composition, light, motion, rhythm, sound, concept) |
+| `docs taste` | **read before designing:** routes to a striking frame (and the tools for each), what tends to land with a viewer and listener, what tends to fail |
 | `docs primitives` | text, shapes, SVG paths, images, groups: full styling |
 | `docs animation` | keyframes and `=expressions` on any property, presets, kinetic type |
 | `docs camera` | zoom/pan/whip, shake, depth + rack focus, motion blur |

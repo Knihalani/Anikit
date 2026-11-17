@@ -5,7 +5,7 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 
 **Setup:** if `anikit-video` isn't on PATH, install the prebuilt binary (seconds; don't compile it): `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh`, then `export PATH="$HOME/.local/bin:$PATH"`.
 
-**Taste first:** before designing, read `anikit-video docs taste` (the 15-line taste pass; canon in `docs/video/taste/TASTE.md`). Every choice made for this subject; no house style, no forced 3D, no repeated look.
+**Taste first:** before designing, read `anikit-video docs taste` (one page: routes to a striking frame and the tools for each, what tends to land and what tends to fail; depth in `docs/video/taste/TASTE.md`).
 
 **The loop:** write `s.json` → `anikit-video check s.json` (errors and the real length: scenes overlap by their transitions) → `anikit-video still s.json --at 2.4 --width 640 -o f.png` (look) → `anikit-video render s.json -o out.mp4` → `anikit-video critique s.json --render --pack rv/` (then look at `rv/`).
 

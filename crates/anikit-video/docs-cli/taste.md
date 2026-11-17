@@ -1,25 +1,25 @@
-# Taste: read before designing
+# Taste: what makes a piece land
 
-Not a style. Every choice is made for *this* subject and you can say why; an unchosen default is the tell. Full canon with numbers and sources: `docs/video/taste/TASTE.md` (§1 type · §2 colour · §3 composition · §4 light · §5 motion · §6 editing · §7 sound · §8 concept · §9 tells · §11 ambition).
+Every frame can be striking as a still, and every second worth hearing, and "incredible" comes in many forms: spectacle, wit, beauty, clarity, rhythm, surprise, craft. Nothing here is a rule or a house style. It is what tends to work, what tends to fail and why, and how to check. Depth and sources: `docs/video/taste/TASTE.md` (§1 type · §2 colour · §3 composition · §4 light · §5 motion · §6 editing · §7 sound · §8 concept · §9 tells · §11 ambition).
 
-**The taste pass (run before any final render):** look at the `critique --pack` strip, its cut pairs and 3 full-size stills; listen muted and audio-only.
+**Routes to a striking frame, and the tools that make each one cheap:**
+- **Illustration and print:** brush, sketch, hatching, paper and cut-out components (`info --components`); one-line style filters `{"shader": "halftone|risograph|linocut|watercolour|crosshatch|screenprint|print-offset|dither|film", "filter": true}`.
+- **Graphic design and data:** paths and `repeat`/`script` for dense fields of real data, type set as the image.
+- **Light and material:** `scene3d` with a motivated key, non-studio environments, NPR looks (toon, ink outline, clay, paper, painted) when "photoreal CG" isn't the point (`docs 3d`).
+- **Spectacle and texture:** your own GLSL worlds, particles and physics as imagery, grain and print texture.
+- **References:** `anikit-video board refs/` turns 3–6 real-world images from outside tech (paintings, posters, prints, film stills, architecture) into palette, value, texture and line tokens (`docs board`).
 
-1. **References, then diverge (before designing):** describe 3 real-world references *outside* tech/SaaS (print, title design, scientific or editorial illustration, posters, nature documentary, architecture) and what you take from each; derive 3 directions differing on every axis (medium, world, palette, type, motion, sound); pick the most specific; check it differs from every earlier piece. "UI on dark with one accent" and "screenshot beside copy" are defaults, not directions.
-2. **Swap test:** with a competitor's name it would stop working; the idea is one sentence; ≥ 3 subject-only elements (real UI, data, names).
-3. **Medium from the idea:** type, 2D, real UI, photo, shader or 3D. 3D only where depth means something.
-4. **Focal point:** each still names its subject in < 1 s at thumbnail size.
-5. **Composition:** off-centre with lead room, or committed symmetry; negative space shaped; shot size varies.
-6. **Scale:** 2–4 type sizes on one ratio (2:1 / 1.618 for statements, 1.25–1.33 only for dense data); hero ≥ 3:1.
-7. **Read:** words crisp at 100% (no blur, DOF, bloom), ≥ 4.5:1 in *luma* (MP4 halves colour detail), ≥ ~36 px at 1080p, held ≥ max(0.83 s, chars/15, words × 0.3) after settling.
-8. **Values:** hierarchy survives greyscale; no mid-grey mumble; no clipped or crushed areas unless intended.
-9. **Palette:** from the subject; one base + one accent, ≤ 4 hue families; it changes with the arc. No default indigo→blue.
-10. **Light:** you can point to the key; ratio fits the mood (2:1 open … 8:1 noir); subject separates from ground.
-11. **Motion:** fast attack, long settle; one thing leads; entrances vary by role; fast moves blurred; overshoot ≤ 5% unless playful.
-12. **Rhythm and arc:** pace matches `intent`; shot lengths vary (CV ≳ 0.6), a breath after the densest run; cut on action or comprehension, beats for key hits; hook by 1 s, peak at ~⅔, land on a held frame or a button.
-13. **Sound:** instruments from the concept (synths only if it's electronic); one planned silence; hits on the frame; rare, material sfx; −14 to −16 LUFS.
-14. **The bar:** would a senior motion designer scroll past it on Vimeo? Name the trend it looks like; if you can, it fails. That includes the "tasteful AI" look (cream paper, editorial serif, terracotta accent, sparse static frames). No placeholder, filler copy or §9 tell without a reason.
-15. **Cut 20%:** remove the weakest shot, word or effect; if it got better, cut again.
+**What tends to land:**
+- **One idea only this brief could have.** Swap in a competitor's name: if it still works, it's probably generic. Ideas often come from references outside the category; writing 3 directions that differ on every axis and keeping the most specific helps.
+- **Density with intent.** A paused frame reads as a designed still: a subject, a world, texture, a reason for each layer. Restraint can be rich, but empty frames tend to read as unfinished.
+- **Legible words.** Brightness contrast of about 4.5:1 or more (colour-only contrast smears in MP4), ~36 px or larger at 1080p, kept sharp while read, held for max(0.83 s, chars/15) after they settle.
+- **Hierarchy and placement.** A few sizes with clear steps; off-centre with room to move, or symmetry that commits; light you could point to.
+- **Motion with weight and choreography.** A fast attack and long settle, one thing leading, transitions that carry an idea (a match, a morph, a continuous move).
+- **Rhythm with contrast.** Varied shot lengths, a breath after the densest run, cuts on action or comprehension, and a surprise somewhere.
+- **Sound that belongs.** Instruments chosen for this world (synths when the idea is electronic), a planned silence, hits on the frame, sfx from the materials, −14 to −16 LUFS.
 
-**Range, not a house style; density, not emptiness** (§11 Ambition). Valid directions differ on every axis, for example: a procedural illustration world drawn from paths · one continuous camera move through a simulation · a dense graphic grid of real data · photographic-grade compositing · a ray-traced object in motivated light · type choreographed as the set. Calm and held is as valid as frantic. Two briefs should look as different as two studios' work.
+**What tends to fail, and why:**
+- Trend looks people recognise instantly: indigo gradients and glass, cream paper + editorial serif + terracotta, a UI screenshot beside copy, "UI on dark with one accent", chrome on a studio floor. They read as defaults, not choices.
+- Constant tempo, one easing everywhere, fade-and-rise on every element, and wall-to-wall stock beds. Without contrast, the attention fades.
 
-`critique` checks the measurable ones (`type-scale`, `text-crisp`, `contrast`, `reading-time`, `palette`, `composition`, `rhythm`, `pace`, `music`, `audio`, `sameness`) as warnings and tips, never a verdict: the frames are.
+**Check before shipping:** pause on 3 random frames at 100% and look at the `critique --pack` strip; listen once muted and once audio-only. Would a senior motion designer stop scrolling for it? If you can name the trend it resembles, consider another direction. `critique` measures the checkable parts and gives advice, not verdicts.
