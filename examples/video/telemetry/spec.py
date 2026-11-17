@@ -221,6 +221,8 @@ def scene_open():
 
 # ---- timing tower ------------------------------------------------------------------
 ROW = 46
+TYRE = {"MAR": "H", "OKA": "S", "LIN": "M", "IVE": "M", "NOV": "H", "FER": "M", "WEN": "H", "DUF": "M", "CAS": "H", "HOL": "M"}
+TYRE_COL = {"S": "#FF3B47", "M": "#FFD23F", "H": "#E8ECF2"}
 
 
 def tower(t_video, T_of, t_end, x=M, y=150, n_rows=10, header="LAP"):
@@ -253,7 +255,9 @@ def tower(t_video, T_of, t_end, x=M, y=150, n_rows=10, header="LAP"):
         lay = [
             rect(48, ROW / 2 - 1, 6, ROW - 14, COL[code], anchor="left"),
             text(code, 66, ROW / 2 - 1, 24, TEXT, HEAD, 800, "left", letterSpacing="0.04em"),
-            text(TEAM[code][:3], 140, ROW / 2 - 1, 15, MUTED, MONO, 500, "left"),
+            {"shape": "circle", "width": 22, "height": 22, "x": 164, "y": r(ROW / 2 - 1), "fill": "#05070B",
+             "stroke": {"color": TYRE_COL[TYRE[code]], "width": 3}},
+            text(TYRE[code], 164, ROW / 2 - 1, 13, TYRE_COL[TYRE[code]], MONO, 800, "center"),
         ]
         if gap_changes:
             first_val = gap_changes[0][1]
@@ -341,9 +345,11 @@ def scene_map():
              "glow": {"radius": 14, "intensity": 0.7, "color": COL[code]}},
         ]
         if top:
-            car.append(rect(34, 20, 64, 28, "#05070BDD", anchor="left", radius=3))
-            car.append(rect(34, 20, 4, 28, COL[code], anchor="left"))
-            car.append(text(code, 70, 20, 18, TEXT, MONO, 800, "center"))
+            left = code in ("OKA", "LIN")
+            lx = -58 if left else 34
+            car.append(rect(lx, 20, 64, 28, "#05070BDD", anchor="left", radius=3))
+            car.append(rect(lx + (60 if left else 0), 20, 4, 28, COL[code], anchor="left"))
+            car.append(text(code, lx + 34, 20, 18, TEXT, MONO, 800, "center"))
         layers.append(group(car, width=40, height=40, x=r(pts[0][1][0]), y=r(pts[0][1][1]),
                             enter={"preset": "popIn", "delay": 1.0 + 0.04 * idx},
                             animate=[kf({"x": [(t, p[0]) for t, p in pts], "y": [(t, p[1]) for t, p in pts]}, dur)]))
@@ -537,21 +543,21 @@ def scene_onboard():
 
 
 # ---- replay wipe (two halves straddling a cut) ------------------------------------
-WIPE = {"duration": 0.4, "hold": 0.12, "colors": [RED, "#FFFFFF", PANEL2], "direction": "right", "slant": 14}
+WIPE = {"duration": 0.4, "hold": 0.32, "colors": [PANEL2, "#FFFFFF", RED], "direction": "right", "slant": 14}
 
 
 def replay_wipe_out(scene_dur):
     cover = WIPE["duration"] + 0.07 * 2
     at = scene_dur - cover
     return [{"component": "wipe", "props": dict(WIPE, at=r(at, 3))},
-            text("REPLAY", W / 2, H / 2, 120, "#05070B", HEAD, 900, "center", italic=True, letterSpacing="0.1em",
+            text("REPLAY", W / 2, H / 2, 120, "#FFFFFF", HEAD, 900, "center", italic=True, letterSpacing="0.1em",
                  start=r(scene_dur - 0.12, 3), enter={"preset": "fadeIn", "duration": 0.08})]
 
 
 def replay_wipe_in():
     cover = WIPE["duration"] + 0.07 * 2
     return [{"component": "wipe", "props": dict(WIPE, at=r(-cover, 3))},
-            text("REPLAY", W / 2, H / 2, 120, "#05070B", HEAD, 900, "center", italic=True, letterSpacing="0.1em",
+            text("REPLAY", W / 2, H / 2, 120, "#FFFFFF", HEAD, 900, "center", italic=True, letterSpacing="0.1em",
                  end=0.14, exit={"preset": "fadeOut", "duration": 0.06})]
 
 
@@ -673,8 +679,8 @@ def scene_overtake():
                        animate=[kf({"value": gaps}, dur)]))
     # pass banner
     layers.append(group([
-        rect(W / 2, H - 170, 760, 96, COL["OKA"], anchor="center", skewX=-10),
-        text("OKAFOR TAKES THE LEAD", W / 2, H - 170, 50, "#05070B", HEAD, 900, "center", italic=True),
+        rect(W / 2 + 120, H - 300, 760, 96, COL["OKA"], anchor="center", skewX=-10),
+        text("OKAFOR TAKES THE LEAD", W / 2 + 120, H - 300, 50, "#05070B", HEAD, 900, "center", italic=True),
     ], start=t_pass + 0.15, enter={"preset": "wipeIn", "direction": "right", "duration": 0.35, "ease": "outExpo"}))
     layers.append(group([
         rect(M, H - 150, 8, 86, RED),
