@@ -92,7 +92,7 @@ pub fn shorthand(mut v: Value) -> Value {
 }
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "vignette", "denoise", "lights", "fog", "physics",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "vignette", "denoise", "lights", "fog", "physics", "glass_layers",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -343,6 +343,12 @@ impl Prepare for Scene3d {
             o => return Err(Error(format!("unknown quality `{o}`; expected draft, standard or high"))),
         };
         let denoise = num_or(m, "denoise", denoise as f32).map_err(Error)? as u32;
+        // `glassLayers`: how many panes a ray may pass through (2 interfaces each).
+        let mut quality = quality;
+        if let Some(g) = m.get("glass_layers") {
+            let g = g.as_f64().filter(|g| *g >= 0.0).ok_or_else(|| Error("`glassLayers` must be a non-negative number".into()))?;
+            quality.max_glass = (g as u32 * 2).min(64);
+        }
 
         // Static layouts get a baked, noise-free floor.
         let total: u64 = objs.iter().map(|o| o.count as u64 * o.lanes as u64).sum();

@@ -70,6 +70,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - named custom materials, e.g. `{ "ink": { "extends": "matte", "base": "#15171A" } }`;
   - built-ins: `chrome`, `mirror`, `glass`, `aluminium`, `aluminium-bead`, `titanium`, `copper`, `gold`, `matte`/`white`, `ceramic`, `plastic`, `rubber`, `black`, `car-paint`, `lacquer`, `emissive`;
   - keys: `base`, `metallic`, `roughness`, `specular`, `clearcoat`, `emissive`, `emissiveStrength`, `transmission`, `ior`, `tint` + `tintDistance`, `glow` (how much a texture glows like a screen).
+- **`glassLayers`:** how many panes a camera ray may pass through (default 5; 3 at `draft`). Lower it for stacks of overlapping glass; each extra pane costs a full trace.
 - **Look:** `quality` (`draft`, `standard`, `high`), `bloom`, `exposure`, `tonemap` (`neutral`, `aces`), `vignette`, `floor` (`false` or `{ color, roughness, reflect, mirror, y }`).
 
 ## Rules that keep it looking expensive
