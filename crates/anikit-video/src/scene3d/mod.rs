@@ -335,8 +335,20 @@ fn instances(objs: &[ObjDef], t: f32, dt: f32) -> Vec<Inst> {
                     continue;
                 }
                 let prev = if dt > 0.0 { o.xf_at(t - dt, i, lane) } else { xf };
-                for &(shape, mat) in &o.parts {
-                    out.push(Inst { shape, xf, prev, mat, tex: Vec::new(), thin: o.thin, shadow: o.shadow, cam: o.cam, obj: oi as u32, i, lane });
+                match &o.anim {
+                    // Animated glTF: each part follows its node.
+                    Some(a) => {
+                        let now = a.parts_at(&xf, t);
+                        let before = a.parts_at(&prev, t - dt);
+                        for (j, &(shape, mat)) in o.parts.iter().enumerate() {
+                            out.push(Inst { shape, xf: now[j], prev: before[j], mat, tex: Vec::new(), thin: o.thin, shadow: o.shadow, cam: o.cam, obj: oi as u32, i, lane });
+                        }
+                    }
+                    None => {
+                        for &(shape, mat) in &o.parts {
+                            out.push(Inst { shape, xf, prev, mat, tex: Vec::new(), thin: o.thin, shadow: o.shadow, cam: o.cam, obj: oi as u32, i, lane });
+                        }
+                    }
                 }
             }
         }
@@ -614,6 +626,14 @@ mod tests {
         assert_eq!(insts.len(), 2);
         // glTF materials come through: red, non-metal.
         assert!(s.p().mats[insts[0].mat as usize].base.x > 0.99 && s.p().mats[insts[0].mat as usize].metallic == 0.0);
+        // Node animation: the part moves from x = 0 to x = 2 over 1 s.
+        let pa = dir.join("anim.gltf");
+        gltf::tests::write_animated_triangle(&pa);
+        let s = scene(json!({ "objects": [ { "type": "model", "src": pa.to_str().unwrap() } ] })).unwrap();
+        assert!(s.p().objs[0].anim.is_some() && s.p().objs[0].dynamic());
+        let a = instances(&s.p().objs, 0.0, 0.0)[0].xf.t.x;
+        let b = instances(&s.p().objs, 0.5, 0.0)[0].xf.t.x;
+        assert!((b - a - 1.0).abs() < 1e-3, "moved {}", b - a);
         let e = scene(json!({ "objects": [ { "src": "missing.glb" } ] })).err().unwrap();
         assert!(e.contains("can't read"), "{e}");
         let _ = std::fs::remove_dir_all(&dir);

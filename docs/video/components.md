@@ -526,7 +526,7 @@ A software ray tracer for product films: PBR materials (chrome, aluminium, glass
   - text has `text`, `font`, `weight`, `tracking`, `height` (cap height, m), `depth`, `bevel`;
   - spheres and cylinders have `radius`; cylinders also `height`;
   - tori have `radius` and `tube`;
-  - a `model` is a glTF 2.0 file: `src` (`.glb`, or `.gltf` with `.bin` files or data URIs, relative to the working directory), fitted to `height` or with its largest side fitted to `size`, standing on y = 0. It keeps its node transforms and per-primitive PBR factors (base colour, metallic, roughness, emission, transmission, IOR); `material` overrides them. Image textures, skins and animations aren't read.
+  - a `model` is a glTF 2.0 file: `src` (`.glb`, or `.gltf` with `.bin` files or data URIs, relative to the working directory), fitted to `height` or with its largest side fitted to `size`, standing on y = 0. It keeps its node transforms and per-primitive PBR factors (base colour, metallic, roughness, emission, transmission, IOR); `material` overrides them. Node animation (translation, rotation, scale channels) plays and loops at `speed`. Image textures and skins aren't read.
 - **Placement:** `pos`, `rot` (degrees, yaw·pitch·roll order Y·X·Z) and `scale`. Each takes a number, `[x, y, z]` whose items may be `"=expr"`, or `"=[a, b, c]"`. Expressions can use `t`, `i` (instance index), `lane` and `n`.
 - **Animation:** `keys: [{ "t", "pos", "rot", "scale", "ease": "smooth|linear|in|out" }]` (added on top of the base placement); `spin` (degrees per second, a number for Y or `[x, y, z]`); `start` and `end`.
 - **Instances:** `count` and `lanes`. A shared mesh is placed per instance, with a top-level hierarchy rebuilt each frame.
@@ -556,7 +556,7 @@ A software ray tracer for product films: PBR materials (chrome, aluminium, glass
 
 **Known limits:**
 - Thick glass resting on the floor reads metallic (the floor plane and the bottom face coincide). Lift it 1 mm.
-- glTF models load geometry and PBR factors only (no image textures or animation).
+- glTF models load geometry, PBR factors and node animation (no image textures or skinning).
 
 ### `model`: product spin and orbit
 Rendered with `anikit-core`'s CPU rasteriser at native resolution, supersampled 2× for anti-aliasing, with studio lighting and a transparent background.

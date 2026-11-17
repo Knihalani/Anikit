@@ -262,6 +262,48 @@ pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res
 
 // ------------------------------------------------------------ objects
 
+/// An animated glTF model: per-part nodes, the fit to the requested size,
+/// and playback speed (the animation loops).
+pub struct ModelAnim {
+    pub anim: super::gltf::Anim,
+    pub nodes: Vec<usize>,
+    pub k: f32,
+    pub centre: V3,
+    pub speed: f32,
+}
+
+impl ModelAnim {
+    /// Each part's transform at time `t`, composed after `obj`.
+    pub fn parts_at(&self, obj: &Xf, t: f32) -> Vec<Xf> {
+        let d = self.anim.duration;
+        let tt = if d > 0.0 { (t * self.speed).rem_euclid(d) } else { 0.0 };
+        let world = self.anim.world(tt);
+        // Object (with fit) as columns: R·S, then translation.
+        let fit = |p: V3| v3((p.x - self.centre.x) * self.k, (p.y - self.centre.y) * self.k, (p.z - self.centre.z) * self.k);
+        self.nodes
+            .iter()
+            .map(|&n| {
+                let w = &world[n];
+                // Columns of fit ∘ W: W's columns scaled by k; origin fitted.
+                let cols = [v3(w[0][0], w[0][1], w[0][2]), v3(w[1][0], w[1][1], w[1][2]), v3(w[2][0], w[2][1], w[2][2])].map(|c| scale(c, self.k));
+                let org = fit(v3(w[3][0], w[3][1], w[3][2]));
+                // Then the object: o = R_o·(S_o∘·) + t_o.
+                let cols = cols.map(|c| obj.rot(mul(c, obj.s)));
+                let org = obj.point(org);
+                // Decompose (orthonormalise; no shear).
+                let sx = len(cols[0]).max(1e-9);
+                let x = scale(cols[0], 1.0 / sx);
+                let y0 = sub(cols[1], scale(x, dot(cols[1], x)));
+                let sy = len(cols[1]).max(1e-9);
+                let y = norm(y0);
+                let z = cross(x, y);
+                let sz = len(cols[2]).max(1e-9) * if dot(z, cols[2]) < 0.0 { -1.0 } else { 1.0 };
+                Xf { r: [x, y, z], s: v3(sx, sy, sz), t: org }
+            })
+            .collect()
+    }
+}
+
 /// A transform key.
 #[derive(Clone, Debug)]
 pub struct TKey {
@@ -303,6 +345,8 @@ pub struct ObjDef {
     pub cam: bool,
     /// For camera targeting.
     pub name: Option<String>,
+    /// glTF node animation for a model's parts.
+    pub anim: Option<Arc<ModelAnim>>,
     pub thin: bool,
     pub shadow: bool,
     /// Half width of the shape in metres (texture LOD).
@@ -316,7 +360,7 @@ pub struct ObjDef {
 
 impl ObjDef {
     pub fn dynamic(&self) -> bool {
-        !self.keys.is_empty() || self.spin != v3(0.0, 0.0, 0.0) || self.pos.iter().chain(self.rot.iter()).chain(self.scale.iter()).any(|n| n.dynamic()) || self.start > 0.0 || self.end.is_finite()
+        self.anim.is_some() || !self.keys.is_empty() || self.spin != v3(0.0, 0.0, 0.0) || self.pos.iter().chain(self.rot.iter()).chain(self.scale.iter()).any(|n| n.dynamic()) || self.start > 0.0 || self.end.is_finite()
     }
 
     pub fn xf_at(&self, t: f32, i: u32, lane: u32) -> Xf {
@@ -362,7 +406,7 @@ impl ObjDef {
 }
 
 const OBJ_KEYS: &[&str] = &[
-    "type", "src", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name", "camera", "align", "color", "intensity",
+    "type", "src", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name", "camera", "align", "color", "intensity", "speed",
 ];
 const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model", "card"];
 
@@ -433,6 +477,7 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
     let key = format!("{ty}|{}|{}|{}|{}|{}|{}|{}|{}|{}", m.get("text").map(|x| x.to_string()).unwrap_or_default(), m.get("font").map(|x| x.to_string()).unwrap_or_default(), m.get("weight").map(|x| x.to_string()).unwrap_or_default(), m.get("tracking").map(|x| x.to_string()).unwrap_or_default(), m.get("height").map(|x| x.to_string()).unwrap_or_default(), m.get("depth").map(|x| x.to_string()).unwrap_or_default(), m.get("bevel").map(|x| x.to_string()).unwrap_or_default(), m.get("size").map(|x| x.to_string()).unwrap_or_default(), m.get("radius").map(|x| x.to_string()).unwrap_or_default());
     let mut thin = false;
     let mut model_mats: Vec<Material> = Vec::new();
+    let mut model_anim: Option<Arc<ModelAnim>> = None;
     let mut extra: Vec<u32> = Vec::new();
     let (shape, extent) = match ty.as_str() {
         "text" => {
@@ -494,12 +539,18 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
             // fitted to `height` (or the largest side to `size`) and standing
             // on y = 0, centred on x and z.
             let src = m.get("src").and_then(|x| x.as_str()).ok_or_else(|| format!("{path}: a model needs `src` (a .glb or .gltf file)"))?;
-            let parts = super::gltf::load(std::path::Path::new(src)).map_err(|e| format!("{path}.src: {e}"))?;
+            let (parts, anim) = super::gltf::load(std::path::Path::new(src)).map_err(|e| format!("{path}.src: {e}"))?;
+            // Rest-pose bounds (animated files: nodes placed at t = 0).
+            let rest = anim.as_ref().map(|a| a.world(0.0));
             let (mut lo, mut hi) = (v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN));
             for pt in &parts {
                 for q in pt.mesh.pos.chunks_exact(3) {
-                    lo = vmin(lo, v3(q[0], q[1], q[2]));
-                    hi = vmax(hi, v3(q[0], q[1], q[2]));
+                    let mut pp = v3(q[0], q[1], q[2]);
+                    if let Some(w) = &rest {
+                        pp = super::gltf::apply(&w[pt.node], pp);
+                    }
+                    lo = vmin(lo, pp);
+                    hi = vmax(hi, pp);
                 }
             }
             let ext = sub(hi, lo);
@@ -508,20 +559,29 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
                 (None, Some(sz)) => f(sz, &format!("{path}.size"))? / ext.x.max(ext.y).max(ext.z).max(1e-6),
                 _ => 1.0,
             };
+            let centre = v3((lo.x + hi.x) * 0.5, lo.y, (lo.z + hi.z) * 0.5);
             let mut first = None;
+            let mut nodes = Vec::new();
             for (j, mut pt) in parts.into_iter().enumerate() {
-                for q in pt.mesh.pos.chunks_exact_mut(3) {
-                    q[0] = (q[0] - (lo.x + hi.x) * 0.5) * k;
-                    q[1] = (q[1] - lo.y) * k;
-                    q[2] = (q[2] - (lo.z + hi.z) * 0.5) * k;
+                if anim.is_none() {
+                    for q in pt.mesh.pos.chunks_exact_mut(3) {
+                        q[0] = (q[0] - centre.x) * k;
+                        q[1] = (q[1] - centre.y) * k;
+                        q[2] = (q[2] - centre.z) * k;
+                    }
                 }
-                let id = shapes.add(format!("{key}|{src}|{j}|{k}"), || Ok(mesh_shape(pt.mesh)))?;
+                nodes.push(pt.node);
+                let id = shapes.add(format!("{key}|{src}|{j}|{k}|{}", anim.is_some()), || Ok(mesh_shape(pt.mesh)))?;
                 if first.is_none() {
                     first = Some(id);
                 } else {
                     extra.push(id);
                 }
                 model_mats.push(pt.mat);
+            }
+            if let Some(a) = anim {
+                let speed = gf("speed", 1.0)?;
+                model_anim = Some(Arc::new(ModelAnim { anim: a, nodes, k, centre, speed }));
             }
             (first.unwrap(), ext.x.max(ext.z) * k * 0.5)
         }
@@ -611,7 +671,7 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
     let scale_mul = if ty == "sphere" { extent } else { 1.0 };
     let extent = if ty == "sphere" { 1.0 } else { extent };
     let name = m.get("name").and_then(|n| n.as_str()).map(|n| n.to_string());
-    Ok(ObjDef { parts, cam, name, pos, rot, scale: scale_n, keys, spin, count, lanes, tex, thin, shadow, extent, start, end, scale_mul })
+    Ok(ObjDef { anim: model_anim, parts, cam, name, pos, rot, scale: scale_n, keys, spin, count, lanes, tex, thin, shadow, extent, start, end, scale_mul })
 }
 
 fn texture(v: &Value, path: &str) -> Res<TexSpec> {
