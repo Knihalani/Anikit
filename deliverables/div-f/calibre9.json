@@ -1,0 +1,475 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "background": "#0B0C0E",
+ "intent": {
+  "pace": "calm"
+ },
+ "music": {
+  "bpm": 100,
+  "key": "Dm",
+  "length": "12s",
+  "end": "ring",
+  "hits": [
+   "@bar2",
+   "@bar4",
+   "@bar5"
+  ],
+  "master": {
+   "reverb": "hall"
+  },
+  "tracks": [
+   {
+    "inst": "piano",
+    "chords": "Dm Bb F C | Dm Bb F A",
+    "play": "broken",
+    "gain": -3
+   },
+   {
+    "inst": "strings",
+    "chords": "Dm Bb F C | Dm Bb F A",
+    "play": "pad",
+    "gain": -8,
+    "at": "@bar2"
+   },
+   {
+    "inst": "cello",
+    "chords": "Dm Bb F C | Dm Bb F A",
+    "bass": "root",
+    "gain": -6,
+    "at": "@bar2"
+   },
+   {
+    "inst": "drums",
+    "drums": {
+     "rim": "x.x.x.x.x.x.x.x."
+    },
+    "gain": -16
+   },
+   {
+    "inst": "drums",
+    "drums": {
+     "kick": "x...............",
+     "rim": "....x.......x..."
+    },
+    "gain": -9,
+    "at": "@bar3"
+   }
+  ],
+  "sfx": [
+   {
+    "sfx": "chime",
+    "at": "@bar5"
+   }
+  ]
+ },
+ "post": {
+  "vignette": 0.15,
+  "grain": 0.0,
+  "contrast": 1.04
+ },
+ "scenes": [
+  {
+   "duration": 12,
+   "layers": [
+    {
+     "src": "dial.glsl",
+     "uniforms": {
+      "uK": "=smoothstep(2.4, 3.7, gt) + 0.6*smoothstep(9.6, 12.0, gt)",
+      "uLight": "=0.5 + 0.55*gt + 6.2832*3*smoothstep(4.9, 7.2, gt)",
+      "uCut": "=smoothstep(0.15, 2.2, gt)",
+      "uCutA": "=1 - smoothstep(2.6, 3.4, gt)",
+      "uHours": "=10.15 + 72*smoothstep(4.9, 7.2, gt)",
+      "uSpin": "=72*6*clamp((gt-4.9)/2.3,0,1)*(1-clamp((gt-4.9)/2.3,0,1))/2.3/30",
+      "uReserve": "=smoothstep(4.9, 7.2, gt)",
+      "uResA": "=smoothstep(4.6, 5.0, gt) * (1 - smoothstep(7.9, 8.2, gt))",
+      "uRing": "=clamp((gt - 8.1) / 0.7, 0, 1)",
+      "uRingA": "=smoothstep(8.0, 8.2, gt) * (1 - 0.0*gt)",
+      "uOne": "=smoothstep(8.9, 9.3, gt)",
+      "uWX": 1280
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 1100,
+     "height": 1080,
+     "x": 0,
+     "y": 0,
+     "anchor": "topLeft",
+     "fill": "linear-gradient(90deg, #0B0C0Eee, #0B0C0E00)",
+     "start": 0,
+     "end": 2.8,
+     "exit": {
+      "preset": "fade",
+      "duration": 0.4
+     }
+    },
+    {
+     "text": "Guilloché dial",
+     "font": "Inter Display",
+     "size": "2.5vh",
+     "weight": 600,
+     "letterSpacing": "0.32em",
+     "uppercase": true,
+     "color": "#F09A72",
+     "x": "7.5%",
+     "y": "60%",
+     "anchor": "left",
+     "start": 0.35,
+     "end": 2.55,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.35
+     },
+     "exit": {
+      "preset": "fade",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "Hand-finished.",
+     "font": "Instrument Serif",
+     "size": "11vh",
+     "color": "#EEF1F4",
+     "letterSpacing": "-0.01em",
+     "x": "7.1%",
+     "y": "69%",
+     "anchor": "left",
+     "start": 0.5,
+     "end": 2.55,
+     "enter": "mask by line up",
+     "exit": {
+      "preset": "fade",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "Steel case",
+     "font": "Inter Display",
+     "size": "2.5vh",
+     "weight": 600,
+     "letterSpacing": "0.32em",
+     "uppercase": true,
+     "color": "#F09A72",
+     "x": "7.5%",
+     "y": "44%",
+     "anchor": "left",
+     "start": 3.55,
+     "end": 4.95,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.35
+     },
+     "exit": {
+      "preset": "fade",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "38 mm.",
+     "font": "Instrument Serif",
+     "size": "14vh",
+     "color": "#EEF1F4",
+     "letterSpacing": "-0.01em",
+     "x": "7.1%",
+     "y": "53%",
+     "anchor": "left",
+     "start": 3.7,
+     "end": 4.95,
+     "enter": "mask by line up",
+     "exit": {
+      "preset": "fade",
+      "duration": 0.25
+     }
+    },
+    {
+     "start": 3.45,
+     "end": 4.95,
+     "enter": "draw",
+     "exit": {
+      "preset": "fade",
+      "duration": 0.25
+     },
+     "draw": [
+      {
+       "line": [
+        919,
+        580,
+        919,
+        979
+       ],
+       "stroke": "#9AA3AD",
+       "width": 1.5
+      },
+      {
+       "line": [
+        1641,
+        580,
+        1641,
+        979
+       ],
+       "stroke": "#9AA3AD",
+       "width": 1.5
+      },
+      {
+       "line": [
+        919,
+        961,
+        1210,
+        961
+       ],
+       "stroke": "#EEF1F4",
+       "width": 2
+      },
+      {
+       "line": [
+        1350,
+        961,
+        1641,
+        961
+       ],
+       "stroke": "#EEF1F4",
+       "width": 2
+      },
+      {
+       "points": [
+        [
+         919,
+         961
+        ],
+        [
+         935,
+         955
+        ],
+        [
+         935,
+         967
+        ]
+       ],
+       "closed": true,
+       "fill": "#EEF1F4"
+      },
+      {
+       "points": [
+        [
+         1641,
+         961
+        ],
+        [
+         1625,
+         955
+        ],
+        [
+         1625,
+         967
+        ]
+       ],
+       "closed": true,
+       "fill": "#EEF1F4"
+      }
+     ]
+    },
+    {
+     "text": "38 mm",
+     "font": "Inter Display",
+     "size": "2.6vh",
+     "weight": 500,
+     "letterSpacing": "0.08em",
+     "color": "#EEF1F4",
+     "x": 1280,
+     "y": 961,
+     "start": 3.7,
+     "end": 4.95,
+     "enter": {
+      "preset": "fade",
+      "duration": 0.3
+     },
+     "exit": {
+      "preset": "fade",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "Power reserve",
+     "font": "Inter Display",
+     "size": "2.5vh",
+     "weight": 600,
+     "letterSpacing": "0.32em",
+     "uppercase": true,
+     "color": "#F09A72",
+     "x": "7.5%",
+     "y": "40%",
+     "anchor": "left",
+     "start": 4.95,
+     "end": 8.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.35
+     },
+     "exit": {
+      "preset": "fade",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "{value} h",
+     "value": "=floor(72*smoothstep(4.9, 7.2, gt) + 0.0001)",
+     "font": "Instrument Serif",
+     "size": "24vh",
+     "color": "#EEF1F4",
+     "x": "7%",
+     "y": "58%",
+     "anchor": "left",
+     "start": 4.85,
+     "end": 8.0,
+     "enter": {
+      "preset": "fade",
+      "duration": 0.2
+     },
+     "exit": {
+      "preset": "fade",
+      "duration": 0.25
+     },
+     "animate": [
+      {
+       "keyframes": {
+        "scale": [
+         1,
+         1.06,
+         1
+        ]
+       },
+       "at": 2.35,
+       "duration": 0.45,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "text": "of running, wound once.",
+     "font": "Instrument Serif",
+     "size": "5vh",
+     "color": "#9AA3AD",
+     "x": "7.5%",
+     "y": "72%",
+     "anchor": "left",
+     "start": 6.7,
+     "end": 8.0,
+     "enter": "mask by line up",
+     "exit": {
+      "preset": "fade",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "Limited run",
+     "font": "Inter Display",
+     "size": "2.5vh",
+     "weight": 600,
+     "letterSpacing": "0.32em",
+     "uppercase": true,
+     "color": "#F09A72",
+     "x": "7.5%",
+     "y": "44%",
+     "anchor": "left",
+     "start": 8.1,
+     "end": 9.55,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.35
+     },
+     "exit": {
+      "preset": "fade",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "One of 150.",
+     "font": "Instrument Serif",
+     "size": "12vh",
+     "color": "#EEF1F4",
+     "letterSpacing": "-0.01em",
+     "x": "7.1%",
+     "y": "53%",
+     "anchor": "left",
+     "start": 8.25,
+     "end": 9.55,
+     "enter": "mask by line up",
+     "exit": {
+      "preset": "fade",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "Atelier Vauclair",
+     "font": "Inter Display",
+     "size": "2.4vh",
+     "weight": 600,
+     "letterSpacing": "0.42em",
+     "uppercase": true,
+     "color": "#EEF1F4",
+     "x": "7.5%",
+     "y": "40%",
+     "anchor": "left",
+     "start": 9.75,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.5
+     }
+    },
+    {
+     "text": "Calibre 9",
+     "font": "Instrument Serif",
+     "size": "17vh",
+     "color": "#EEF1F4",
+     "x": "7%",
+     "y": "51%",
+     "anchor": "left",
+     "start": 9.6,
+     "enter": "mask by line up"
+    },
+    {
+     "shape": "rect",
+     "width": 520,
+     "height": 3,
+     "fill": "#F09A72",
+     "x": "7.5%",
+     "y": "61.5%",
+     "anchor": "left",
+     "start": 10.0,
+     "animate": [
+      {
+       "from": {
+        "scaleX": 0
+       },
+       "to": {
+        "scaleX": 1
+       },
+       "duration": 0.7,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "text": "38 mm · 72 h · 150 pieces",
+     "font": "Inter Display",
+     "size": "2.5vh",
+     "weight": 500,
+     "letterSpacing": "0.04em",
+     "color": "#9AA3AD",
+     "x": "7.5%",
+     "y": "67%",
+     "anchor": "left",
+     "start": 10.0,
+     "enter": {
+      "preset": "fade",
+      "duration": 0.4
+     }
+    }
+   ]
+  }
+ ]
+}

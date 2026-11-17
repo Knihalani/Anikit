@@ -1,0 +1,11 @@
+Atelier Vauclair Calibre 9 - 12 s teaser (16:9)
+Noun: a guilloche dial (engine-turned grooves that throw light around as it moves). Verb: catches light / keeps running.
+Before -> after: a single groove being cut in macro -> the whole finished watch, running for three days.
+Motif: one salmon groove (the "cut") whose colour carries into the seconds hand, the 150th mark and the name rule.
+World: the dial itself, rendered as a GLSL shader with real anisotropic groove shading under a moving raking light;
+ one continuous camera move from macro grooves out to the 38 mm case; 2D technical-drawing marks and type over it.
+Shape: macro (guilloche) -> pull-out + dimension line (38 mm steel) -> hands time-lapse, light circles 3x = 3 days (72 h)
+ -> ring of 150 marks, one stays lit (limited run) -> name.
+Tempo: steady, 100 bpm, 5 bars (2.4 s each); turns on downbeats @bar2/3/4/5; "72" lands on @bar4.
+Music: piano + strings + cello, a quiet rim click on 16ths (~6.7 Hz) as the escapement tick. Acoustic: it's a hand-made object.
+Palette: graphite #0B0C0E, steel greys, one salmon accent #F09A72. Type: Inter Display (tracked caps), Instrument Serif for "Calibre 9".
