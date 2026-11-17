@@ -209,19 +209,22 @@ impl Instrument for CustomSynth {
     fn ordered_voices(&self) -> bool {
         self.synth.ordered_voices()
     }
+    fn voice_legato(&self, note: &NoteOn, legato: bool) -> Box<dyn Voice> {
+        self.synth.voice_ex(&self.synth.patch, note, legato)
+    }
 }
 
 impl CustomSynth {
     /// A voice with the per-note automation evaluated at `secs`.
-    pub fn voice_at(&self, note: &NoteOn, secs: f64) -> Box<dyn Voice> {
+    pub fn voice_at(&self, note: &NoteOn, secs: f64, legato: bool) -> Box<dyn Voice> {
         if self.per_note.is_empty() {
-            return self.synth.voice(note);
+            return self.synth.voice_ex(&self.synth.patch, note, legato);
         }
         let mut p = self.synth.patch.clone();
         for (k, a) in &self.per_note {
             let _ = set_patch_param(&mut p, k, a.at(secs) as f32);
         }
-        self.synth.voice_with(&p, note)
+        self.synth.voice_ex(&p, note, legato)
     }
 }
 
