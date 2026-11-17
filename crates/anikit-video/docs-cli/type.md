@@ -64,10 +64,10 @@ Colour fonts (Nabla, Honk, Bungee Spice) draw their own palette; `color` doesn't
   the gradient is drawn through each glyph's animated alpha.
 - **Anything inside the letters** (footage, image, shader, 3D, a group): give the text an `id` and put the fill layer *after* it with
   `"matte": "<id>"`. The text then becomes the window and isn't drawn itself. Kinetic and split animations still drive the window:
-  ```json
-  { "id": "word", "text": "MOLTEN", "font": "Big Shoulders", "weight": 900, "size": "62vh", "kinetic": "mask by char up 0.7s 50ms outExpo" },
-  { "shader": "liquid-chrome", "width": "100%", "height": "100%", "matte": "word" }
-  ```
+```json
+  [ { "id": "word", "text": "MOLTEN", "font": "Big Shoulders", "weight": 900, "size": "62vh", "kinetic": "mask by char up 0.7s 50ms outExpo" },
+    { "shader": "liquid-chrome", "width": "100%", "height": "100%", "matte": "word" } ]
+```
   `{"layer": "word", "mode": "alphaInverted"}` knocks the word *out* of a plate. Footage inside a 50–70 vh compressed sans is the
   classic title move; use heavy weights (800+) so enough of the image shows.
 - **Outline:** `stroke` + `strokeWidth`; `color: "none"` leaves only the outline. Layering a solid copy with a hollow copy
