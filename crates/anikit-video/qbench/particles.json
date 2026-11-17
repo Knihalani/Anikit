@@ -1,0 +1,15 @@
+{
+  "size": [1920, 1080], "fps": 30, "background": "#07080c",
+  "scenes": [
+    { "duration": 2, "transition": "cut", "layers": [
+      { "component": "starfield", "props": { "fly": true } },
+      { "component": "confetti", "props": { "mode": "burst", "at": 0.2, "count": 220 } },
+      { "component": "sparks", "props": { "bursts": [0.4, 1.2], "count": 80 } }
+    ] },
+    { "duration": 2, "transition": "cut", "layers": [
+      { "component": "bokeh", "props": { "count": 40 } },
+      { "component": "dust" },
+      { "component": "particle-text", "props": { "text": "PARTICLES" } }
+    ] }
+  ]
+}

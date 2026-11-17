@@ -265,6 +265,21 @@ pub(crate) fn linear_to_srgb(v: f32) -> f32 {
     }
 }
 
+/// Linear 0..1 → sRGB 0..255 through a shared table (sqrt-indexed for dark precision).
+#[inline(always)]
+pub(crate) fn encode_srgb255(v: f32) -> f32 {
+    static T: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
+    let lut = T.get_or_init(|| {
+        (0..=SRGB_LUT)
+            .map(|i| {
+                let t = i as f32 / SRGB_LUT as f32;
+                linear_to_srgb(t * t) * 255.0
+            })
+            .collect()
+    });
+    PostProcessor::encode(lut, v)
+}
+
 /// Triangular dither in −1..1 LSB, fixed per pixel.
 #[inline(always)]
 pub(crate) fn tri_dither(x: u32, y: u32) -> f32 {

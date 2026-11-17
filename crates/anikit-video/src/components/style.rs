@@ -325,6 +325,22 @@ pub fn draft() -> bool {
     DRAFT.load(std::sync::atomic::Ordering::Relaxed)
 }
 
+static REFERENCE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Reference mode (the quality harness, `--quality reference`): components
+/// with their own speed/quality knobs (sample counts, internal resolution,
+/// adaptive refinement, caches that approximate) use their most exact
+/// setting. Visual intent (timing, colour, layout) must not change.
+pub fn set_reference(on: bool) {
+    REFERENCE.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Whether reference mode is on.
+#[inline]
+pub fn reference() -> bool {
+    REFERENCE.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 /// `t` stepped down to `rate` updates per second in draft mode; exact otherwise.
 #[inline]
 pub fn step(t: f32, rate: f32) -> f32 {
