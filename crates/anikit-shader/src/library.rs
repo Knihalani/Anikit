@@ -53,6 +53,7 @@ lib! {
     "aurora", Image, 708, "Aurora curtains over a ridge, mirrored in a lake. Heavy; lake = 0 + lake-mirror is faster.";
     "hero", Image, 48, "Product shot: one object (torus, cube, pill, gem, sphere, twisted bar) on a glossy studio floor, plastic or metal.";
     "mesh-gradient", Image, 32, "Soft animated mesh gradient: four colours drifting and folding into each other, with film grain. Backgrounds for titles and products.";
+    "ocean", Image, 191, "Open sea to the horizon under a low sun: swell and chop, Fresnel sky reflection, glitter path, crest glow, foam.";
     "caustics", Image, 51, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
     "flow-ink", Image, 151, "Two inks marbled by a curl-noise flow field on paper.";
     "turing", Image, 25, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";

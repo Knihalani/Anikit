@@ -34,9 +34,9 @@ No limits: expressions on any number or colour (`"=hsl(beat * 30, 80, 60)"`, `le
 
 **Costs (stay on the fast path):**
 - 2D layers render at 100+ fps; shaders cost 50–400 ms a frame (`still` prints it).
-- Ray-traced 3D and particles cost 0.3–1.5 s a frame. Use `"quality": "draft"` and `"resolution": 0.5` on scene3d, and keep 3D shots to 2–4 s.
+- Ray-traced 3D and particles cost 0.5–1.5 s a frame. **Iterate with `render --quality draft`**, which traces 3D at half size automatically, then render the final at the default (standard) quality. Keep 3D shots to 2–4 s.
 - `motionBlur` re-renders 2D layers per sub-frame (shader and 3D images are reused), so turn it on where motion is fast, not globally.
-- While iterating, use `still --width 640` and `render --quality draft --scale 0.5`, never `--quality best`.
+- Preview with `still --width 640` and `render --quality draft`; never iterate at `--quality best`.
 - A layer's own timing is `start`/`end`; `at` is for tweens and `audio` cues.
 
 ## Shortcuts (optional; each is made from the primitives above)

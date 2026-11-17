@@ -37,6 +37,17 @@ fn build(path: &Path) -> Evaluator {
     ev.unwrap_or_else(|| panic!("{}: {:?}", path.display(), d.iter().map(|x| x.message.clone()).collect::<Vec<_>>()))
 }
 
+/// Process CPU time (user + system) in ms, from /proc (Linux); 0 elsewhere.
+fn cpu_ms() -> f64 {
+    let Ok(st) = std::fs::read_to_string("/proc/self/stat") else { return 0.0 };
+    // Fields after the command name (which may contain spaces).
+    let rest = &st[st.rfind(')').map(|i| i + 2).unwrap_or(0)..];
+    let f: Vec<&str> = rest.split_whitespace().collect();
+    let tick = |i: usize| f.get(i).and_then(|v| v.parse::<f64>().ok()).unwrap_or(0.0);
+    // utime and stime are fields 14 and 15 (1-based), i.e. 11 and 12 here, in 1/100 s.
+    (tick(11) + tick(12)) * 10.0
+}
+
 fn load_png(p: &Path) -> Option<(u32, u32, Vec<u8>)> {
     let img = image::open(p).ok()?.to_rgba8();
     Some((img.width(), img.height(), img.into_raw()))
@@ -149,7 +160,7 @@ fn main() {
         // SAFETY: set before any rendering thread starts.
         unsafe { std::env::set_var("ANIKIT_SCENE3D_REFERENCE", "1") };
     }
-    println!("{:<8} {:>9} {:>9} {:>8} {:>8} {:>8} {:>8}", "scene", "ms/frame", "min ms", "SSIM", "ΔE99.9", "ΔEmax", "flicker");
+    println!("{:<8} {:>9} {:>9} {:>8} {:>8} {:>8} {:>8} {:>8}", "scene", "ms/frame", "min ms", "cpu ms", "SSIM", "ΔE99.9", "ΔEmax", "flicker");
     for name in names {
         if only.as_ref().is_some_and(|o| !o.iter().any(|x| x == name)) {
             continue;
@@ -157,6 +168,7 @@ fn main() {
         let ev = build(&root.join(format!("examples/video/lookdev/{name}.json")));
         let f0 = (at * ev.fps).round() as u32;
         let mut times = Vec::new();
+        let mut cpus = Vec::new();
         let mut cmps: Vec<Cmp> = Vec::new();
         // One warm-up frame (textures, bakes) outside the timing.
         if !reference {
@@ -165,8 +177,10 @@ fn main() {
         for k in 0..frames {
             let t = pipeline::frame_time(&ev, f0 + k);
             let c = Instant::now();
+            let c0 = cpu_ms();
             let (w, h, px) = pipeline::render_rgba(&ev, t, scale);
             times.push(c.elapsed().as_secs_f64() * 1e3);
+            cpus.push(cpu_ms() - c0);
             let file = format!("{name}-{k}.png");
             if reference {
                 pipeline::save_png(&refdir.join(&file), w, h, px).unwrap();
@@ -185,8 +199,9 @@ fn main() {
         }
         let mean = times.iter().sum::<f64>() / times.len() as f64;
         let min = times.iter().cloned().fold(f64::MAX, f64::min);
+        let cpu = cpus.iter().sum::<f64>() / cpus.len() as f64;
         if cmps.is_empty() {
-            println!("{name:<8} {mean:>9.1} {min:>9.1}");
+            println!("{name:<8} {mean:>9.1} {min:>9.1} {cpu:>8.0}");
             continue;
         }
         let ssim = cmps.iter().map(|c| c.ssim).fold(1.0, f64::min);
@@ -198,6 +213,6 @@ fn main() {
             flick = flick.max(pct(&mut d, 0.999));
         }
         let ok = ssim >= 0.995 && de <= 2.3 && flick <= 4.0;
-        println!("{name:<8} {mean:>9.1} {min:>9.1} {ssim:>8.4} {de:>8.2} {demax:>8.1} {flick:>8.2} {}", if ok { "ok" } else { "FAIL" });
+        println!("{name:<8} {mean:>9.1} {min:>9.1} {cpu:>8.0} {ssim:>8.4} {de:>8.2} {demax:>8.1} {flick:>8.2} {}", if ok { "ok" } else { "FAIL" });
     }
 }

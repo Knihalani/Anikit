@@ -12,7 +12,8 @@ fn main() {
     let counts: Vec<usize> = std::env::args().skip(1).filter_map(|a| a.parse().ok()).collect();
     let counts = if counts.is_empty() { vec![1_000_000, 4_000_000, 10_000_000] } else { counts };
     let (w, h) = (1920usize, 1080usize);
-    let cam = Camera { pos: v3(0.0, 1.4, 6.5), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus: 6.5, aperture: 6.0, roll: 0.0, shutter: 0.5 };
+    let defocus = std::env::var("BENCH_APERTURE").ok().and_then(|v| v.parse::<f32>().ok()).unwrap_or(6.0);
+    let cam = Camera { pos: v3(0.0, 1.4, 6.5), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus: 6.5, aperture: defocus, roll: 0.0, shutter: 0.5 };
     let depth = vec![1e9f32; w * h];
     for (blend, n) in counts.iter().flat_map(|n| [("add", *n), ("over", *n)]) {
         let spec = serde_json::json!({
@@ -36,7 +37,7 @@ fn main() {
             snap = sim.at(f as f32 / 30.0);
         }
         let sim_ms = t1.elapsed().as_secs_f64() * 1e3 / frames as f64;
-        let view = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key: (v3(0.3, 0.9, 0.3), v3(3.0, 3.0, 3.0)), amb: (v3(0.3, 0.3, 0.3), v3(0.1, 0.1, 0.1)), shadow: None };
+        let view = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key: (v3(0.3, 0.9, 0.3), v3(3.0, 3.0, 3.0)), amb: (v3(0.3, 0.3, 0.3), v3(0.1, 0.1, 0.1)), shadow: None, draft: std::env::var_os("BENCH_DRAFT").is_some() };
         let t = (6 + frames) as f32 / 30.0;
         let _ = particles::render(&[(&sim, snap.clone())], &view, t);
         let t2 = Instant::now();

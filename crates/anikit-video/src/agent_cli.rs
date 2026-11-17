@@ -140,6 +140,7 @@ impl Args {
     }
 }
 
+
 fn read(path: &str) -> Result<String, String> {
     std::fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))
 }

@@ -23,7 +23,7 @@ A scene string is a title card (`"Title | subtitle"`); a layer string is centred
 
 ## Top level
 
-`size` (`"16:9"` `"9:16"` `"1:1"` `"4:5"` `"720p"` `"4k"` or `[w, h]`) · `fps` · `background` · `theme { colors, fonts, radius, styles }` · `scenes` · `transition` · `markers { name: time }` (plus automatic `"@beat17"`, `"@bar5+0.25"` from the first music track) · `audio [...]` · `captions` · `fonts { family: file }` · `duration` · `compositions` · `post` (`clean cinematic dreamy punchy noir vintage`, or `{ "preset": "cinematic", "bloom": 0.4 }`; per scene too) · `motionBlur` (`true`, or `{ "shutter": 90 }`; default only with `--quality high`).
+`size` (`"16:9"` `"9:16"` `"1:1"` `"4:5"` `"720p"` `"4k"` or `[w, h]`) · `fps` · `background` · `theme { colors, fonts, radius, styles }` · `scenes` · `transition` · `markers { name: time }` (plus automatic `"@beat17"`, `"@bar5+0.25"` from the first music track) · `audio [...]` · `captions` · `fonts { family: file }` · `duration` · `compositions` · `post` (`clean cinematic dreamy punchy noir vintage`, or `{ "preset": "cinematic", "bloom": 0.4 }`; per scene too) · `motionBlur` (`true`, or `{ "shutter": 90 }`; default only with `--quality high`) · `encode` (`{ "aq": 0.8 }`: adaptive quantisation 0–2 for gradients and skies).
 
 Theme colours (used as `$name`): `primary secondary accent bg surface text muted`. Text styles: `title heading subtitle body caption label code`.
 
@@ -55,7 +55,7 @@ Every layer: `x y` (default centre) · `anchor` (`center`, `topLeft`, …) · `w
 | draw | `draw: [ { "d": "M0 0 C…", "stroke": "$accent", "width": 4 }, { "points": [[x, y], …], "smooth": true, "colors": [...] }, { "circle": [x, y, r], "fill": "#fff" }, { "rect": [x, y, w, h] }, { "line": [x1, y1, x2, y2] } ]` in frame px |
 | composition | `composition` (a name from top-level `"compositions": { "ui": { "size": [800, 500], "duration": 4, "background": "#111", "layers": [...] } }`, or `scenes`) · `fit` · `trimStart speed` · `loop: true`. It has its own clock and is clipped to its box; 3D layers use it as a texture |
 | component | `component` (`bar-chart line-chart donut-chart counter stat code terminal phone laptop browser card button toast cursor lower-third title-card mesh-gradient aurora grid confetti model lottie …`; `anikit-video info --components`) · `props` |
-| shader | `shader` (Shadertoy GLSL `mainImage`, WGSL, or a built-in: `hero mesh-gradient light-shafts particles liquid-chrome sdf-scene aurora caustics flow-ink turing film-burn glitch lake-mirror`, see `info --shaders`) or `src: "fx.glsl"` · `uniforms` (animatable by name) · `channels` (`below noise` · image/video · `#composition` · `{layers}` · buffers `A`–`D`) · `buffers` (multi-pass, feedback) · `filter` · `supersample` · `alpha` |
+| shader | `shader` (Shadertoy GLSL `mainImage`, WGSL, or a built-in: `hero mesh-gradient ocean light-shafts particles liquid-chrome sdf-scene aurora caustics flow-ink turing film-burn glitch lake-mirror`, see `info --shaders`) or `src: "fx.glsl"` · `uniforms` (animatable by name) · `channels` (`below noise` · image/video · `#composition` · `{layers}` · buffers `A`–`D`) · `buffers` (multi-pass, feedback) · `filter` · `supersample` · `alpha` |
 
 **Shaders** run JIT-compiled on the CPU at full resolution: `{ "shader": "aurora", "uniforms": { "intensity": 1.4 } }`. `"filter": true` reads the composited layers below as `iChannel0` and replaces them. `iAudio`/`iBeat` follow the music; `still` prints each shader's ms/frame. Guide, built-ins, costs and limits: [`shader.md`](shader.md).
 

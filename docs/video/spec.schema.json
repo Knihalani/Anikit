@@ -143,6 +143,17 @@
         }
       ]
     },
+    "encode": {
+      "description": "Encoder tuning (the built-in ak264 MP4 encoder): `{ \"aq\": 0.8 }`.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EncodeSpec"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "motionBlur": {
       "description": "Motion blur on moving content: `true` (180° shutter), `false`, or `{ \"shutter\": 90 }` (degrees).\nDefault: on at `--quality high` only (it renders several sub-frames per moving frame).",
       "anyOf": [
@@ -2825,6 +2836,20 @@
               "type": "null"
             }
           ]
+        }
+      }
+    },
+    "EncodeSpec": {
+      "description": "`encode`: encoder tuning.",
+      "type": "object",
+      "properties": {
+        "aq": {
+          "description": "Adaptive quantisation strength, 0 (off, default) to 2: spends bits on flat areas\n(gradients, skies) and saves them on busy texture.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
         }
       }
     },

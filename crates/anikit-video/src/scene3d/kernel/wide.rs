@@ -247,57 +247,83 @@ pub fn traverse<const AVX: bool>(nodes: &[Node8], o: V3, d: V3, tmin: f32, mut t
     let org = [o.x, o.y, o.z];
     // (child, count, entry distance); uninitialised: only pushed entries are read.
     let mut stack: [MaybeUninit<(u32, u32, f32)>; STACK] = [const { MaybeUninit::uninit() }; STACK];
-    stack[0].write((0, 0, tmin));
-    let mut sp = 1usize;
-    while sp > 0 {
-        sp -= 1;
-        // SAFETY: entries below `sp` were written.
-        let (kid, cnt, tn) = unsafe { stack[sp].assume_init() };
-        if tn > tmax {
-            continue;
-        }
-        if cnt > 0 {
-            tmax = leaf(kid, cnt, tmax);
-            if tmax < 0.0 {
-                return;
+    let mut sp = 0usize;
+    // The entry being visited: descend straight into the nearest hit child
+    // (no stack round trip); the others wait on the stack, far-to-near.
+    let mut cur = (0u32, 0u32, tmin);
+    'walk: loop {
+        let (kid, cnt, tn) = cur;
+        'visit: {
+            if tn > tmax {
+                break 'visit;
             }
-            continue;
-        }
-        // SAFETY: inner-node indices come from `collapse`.
-        let n = unsafe { nodes.get_unchecked(kid as usize) };
-        let (near, mut m) = slab8::<AVX>(n, &org, &inv, tmin, tmax);
-        if m == 0 {
-            continue;
-        }
-        if m & (m - 1) == 0 {
-            let l = m.trailing_zeros() as usize;
-            if sp < STACK {
-                stack[sp].write((n.kid[l], n.cnt[l], near[l]));
-                sp += 1;
+            if cnt > 0 {
+                tmax = leaf(kid, cnt, tmax);
+                if tmax < 0.0 {
+                    return;
+                }
+                break 'visit;
             }
-            continue;
-        }
-        // Several hits: insertion-sort them far-to-near, then push (nearest on top).
-        let mut ord: [(f32, u32); 8] = [(0.0, 0); 8];
-        let mut k = 0usize;
-        while m != 0 {
-            let l = m.trailing_zeros();
+            // SAFETY: inner-node indices come from `collapse`.
+            let n = unsafe { nodes.get_unchecked(kid as usize) };
+            let (near, mut m) = slab8::<AVX>(n, &org, &inv, tmin, tmax);
+            if m == 0 {
+                break 'visit;
+            }
+            let l0 = m.trailing_zeros() as usize;
             m &= m - 1;
-            let t = near[l as usize];
-            let mut j = k;
-            while j > 0 && ord[j - 1].0 < t {
-                ord[j] = ord[j - 1];
-                j -= 1;
+            if m == 0 {
+                cur = (n.kid[l0], n.cnt[l0], near[l0]);
+                continue 'walk;
             }
-            ord[j] = (t, l);
-            k += 1;
-        }
-        for &(t, l) in &ord[..k] {
-            if sp < STACK {
-                stack[sp].write((n.kid[l as usize], n.cnt[l as usize], t));
-                sp += 1;
+            let l1 = m.trailing_zeros() as usize;
+            m &= m - 1;
+            if m == 0 {
+                // Two hits: push the farther, visit the nearer.
+                let (a, b) = if near[l1] < near[l0] { (l1, l0) } else { (l0, l1) };
+                if sp < STACK {
+                    stack[sp].write((n.kid[b], n.cnt[b], near[b]));
+                    sp += 1;
+                }
+                cur = (n.kid[a], n.cnt[a], near[a]);
+                continue 'walk;
             }
+            // Three or more: insertion-sort far-to-near, push all but the nearest.
+            let mut ord: [(f32, u32); 8] = [(0.0, 0); 8];
+            ord[0] = (near[l0], l0 as u32);
+            let mut k = 1usize;
+            let add = |l: usize, ord: &mut [(f32, u32); 8], k: &mut usize| {
+                let t = near[l];
+                let mut j = *k;
+                while j > 0 && ord[j - 1].0 < t {
+                    ord[j] = ord[j - 1];
+                    j -= 1;
+                }
+                ord[j] = (t, l as u32);
+                *k += 1;
+            };
+            add(l1, &mut ord, &mut k);
+            while m != 0 {
+                let l = m.trailing_zeros() as usize;
+                m &= m - 1;
+                add(l, &mut ord, &mut k);
+            }
+            for &(t, l) in &ord[..k - 1] {
+                if sp < STACK {
+                    stack[sp].write((n.kid[l as usize], n.cnt[l as usize], t));
+                    sp += 1;
+                }
+            }
+            let (t, l) = ord[k - 1];
+            cur = (n.kid[l as usize], n.cnt[l as usize], t);
+            continue 'walk;
         }
+        if sp == 0 {
+            return;
+        }
+        sp -= 1;
+        // SAFETY: entries below the old `sp` were written.
+        cur = unsafe { stack[sp].assume_init() };
     }
 }
 
