@@ -20,6 +20,8 @@ anikit-video templates                              # quick starts; expand <t> -
 
 **MCP** (`anikit-video mcp`): `list_looks`, `list_templates`, `get_template_schema`, `create_from_template` (with `look`), `validate_spec`, `critique_spec` (`render: true`), `render_still`, `render_contact_sheet`, `render_video`, `get_prompt` (director, critic, storyboarder, script-writer, copy-guard, brand-kit, motion-rules, launch-video-generator, template:<name>). A full template session costs about 2k tokens (`cargo test -p anikit-video --test token_budget -- --nocapture`).
 
+**3D:** for chrome, glass, a studio, or thousands of textured instances, use the ray-traced `scene3d` component. See [`scene3d.md`](scene3d.md) (a 1-page guide; examples in `examples/video/lookdev/`).
+
 **Builders:** `import { video, template } from 'anikit/video'` and `from anikit.video import video, template`. Scaffold from a README: `anikit-video new launch --from README.md --brand b.json`.
 
 ## Cold-agent dry runs
