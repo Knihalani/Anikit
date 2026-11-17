@@ -811,3 +811,94 @@ fn motion_blur_matches_brute_force() {
         assert!(worst <= 24 && mean < 0.5, "scene {k}: max {worst}, mean {mean:.3}");
     }
 }
+
+/// Image content (shader layers, 3D scenes) is fetched once per blurred
+/// frame, not per sub-frame sample, even when it changes over the shutter.
+#[test]
+fn motion_blur_fetches_image_content_once() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let assets = Arc::new(Assets::default());
+    let mut r = Renderer::new(assets);
+    let fetched = Arc::new(std::sync::Mutex::new(std::collections::HashSet::new()));
+    let calls = Arc::new(AtomicUsize::new(0));
+    let (f2, c2) = (fetched.clone(), calls.clone());
+    r.set_image_source(Arc::new(move |id: ImageId| {
+        c2.fetch_add(1, Ordering::Relaxed);
+        f2.lock().unwrap().insert(id.0);
+        let mut p = vello_cpu::Pixmap::new(16, 16);
+        p.data_as_u8_slice_mut().fill(200);
+        Some(Arc::new(p))
+    }));
+    // A "shader" whose frame id changes with time, moving fast, plus a moving card.
+    let mut eval = |t: f32| {
+        let x = 1200.0 * t;
+        list(vec![
+            Op::Image { image: ImageId(0x7000_0000 + (t * 1e4) as u32), dst: [0.0, 0.0, 16.0, 16.0], opacity: 1.0, transform: [1.0, 0.0, 0.0, 1.0, x, 40.0] },
+            card(x, 10.0, 20.0, 20.0, solid(1.0, 1.0, 1.0)),
+        ])
+    };
+    r.render_motion_blur(&mut eval, 0.05, 1.0 / 60.0);
+    assert_eq!(fetched.lock().unwrap().len(), 1, "image content fetched for {:?}", fetched.lock().unwrap());
+}
+
+/// Output depends only on the display list, never on what the renderer drew
+/// before (cache fills are keyed on everything that affects their pixels).
+#[test]
+fn output_is_independent_of_render_history() {
+    let assets = Arc::new(Assets::default());
+    let shadowed = |w: f32, x: f32| {
+        list(vec![
+            Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::Shadow { dx: 0.0, dy: 4.0, blur: 6.0, color: rgba(0.0, 0.0, 0.0, 0.5) }], clip: None, cache_key: None },
+            card(x, 30.0, w, 30.0, solid(0.9, 0.9, 0.95)),
+            Op::PopLayer,
+        ])
+    };
+    // A, B and C differ by less than the caches' quantisation steps.
+    let (a, b, c) = (shadowed(40.01, 20.0), shadowed(40.03, 20.3), shadowed(40.05, 20.6));
+    let render_after = |prev: &DisplayList| {
+        let mut r = Renderer::new(assets.clone());
+        r.render(prev);
+        r.invalidate();
+        r.render(&b).data_as_u8_slice().to_vec()
+    };
+    let fresh = Renderer::new(assets.clone()).render(&b).data_as_u8_slice().to_vec();
+    assert!(render_after(&a) == fresh, "B after A differs from a fresh render");
+    assert!(render_after(&c) == fresh, "B after C differs from a fresh render");
+}
+
+/// Trailing grain (tiled image under Overlay / Soft Light) blended straight
+/// into the frame matches vello drawing the same layers.
+#[test]
+fn grain_fast_path_matches_vello() {
+    let mut assets = Assets::default();
+    let mut img = image::RgbaImage::new(8, 8);
+    for (x, y, p) in img.enumerate_pixels_mut() {
+        let g = ((x * 37 + y * 91) % 256) as u8;
+        *p = image::Rgba([g, g, g, 255]);
+    }
+    let mut png = Vec::new();
+    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+    assets.images.insert_encoded(ImageId(7), &png).unwrap();
+    let assets = Arc::new(assets);
+    for blend in [Blend::Overlay, Blend::SoftLight] {
+        let mut ops = vec![
+            Op::RoundRect { x: 0.0, y: 0.0, w: 96.0, h: 96.0, radius: 0.0, paint: Paint::Linear { p0: [0.0, 0.0], p1: [96.0, 96.0], stops: vec![(0.0, rgba(0.05, 0.1, 0.3, 1.0)), (1.0, rgba(0.95, 0.8, 0.6, 1.0))] }, transform: IDENTITY },
+            card(20.0, 20.0, 40.0, 30.0, solid(1.0, 1.0, 1.0)),
+            layer(0.7, blend, vec![], None, None),
+            Op::RoundRect { x: 0.0, y: 0.0, w: 96.0, h: 96.0, radius: 0.0, paint: Paint::Image { image: ImageId(7), transform: [1.0, 0.0, 0.0, 1.0, 3.0, 5.0], opacity: 1.0 }, transform: IDENTITY },
+            Op::PopLayer,
+        ];
+        let fast = Renderer::new(assets.clone()).render(&list(ops.clone())).data_as_u8_slice().to_vec();
+        // A trailing transparent op: not a grain tail any more, so vello draws it.
+        ops.push(card(0.0, 0.0, 1.0, 1.0, Paint::Solid(rgba(0.0, 0.0, 0.0, 0.0))));
+        let slow = Renderer::new(assets.clone()).render(&list(ops)).data_as_u8_slice().to_vec();
+        let worst = fast.iter().zip(&slow).map(|(a, b)| a.abs_diff(*b)).max().unwrap();
+        let plain = Renderer::new(assets.clone()).render(&list(vec![])).data_as_u8_slice().to_vec();
+        assert!(fast != plain);
+        let over = fast.iter().zip(&slow).filter(|(a, b)| a.abs_diff(**b) > 1).count();
+        let mean = fast.iter().zip(&slow).map(|(a, b)| a.abs_diff(*b) as f64).sum::<f64>() / fast.len() as f64;
+        println!("{blend:?}: max {worst}, mean {mean:.3}, >1: {over}");
+        // vello rounds its intermediate layer to 8 bits; one float pass differs by a few levels at most.
+        assert!(worst <= 4 && mean < 0.5, "{blend:?}: max diff {worst}, mean {mean:.3}");
+    }
+}

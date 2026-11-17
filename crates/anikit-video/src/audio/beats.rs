@@ -30,8 +30,31 @@ pub struct Beats {
 /// refer to frame starts, so events are reported this much early.
 const FRAME: f64 = 1024.0;
 
-/// Analyse `pcm` (mono downmix).
+/// Analyse `pcm` (mono downmix). Results are cached for the process by a
+/// hash of the samples: the beat markers and every visualizer analyse the same track.
 pub fn analyze_pcm(pcm: &Pcm) -> Beats {
+    use std::hash::{Hash, Hasher};
+    static CACHE: std::sync::OnceLock<std::sync::Mutex<Vec<(u64, Beats)>>> = std::sync::OnceLock::new();
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    (pcm.rate, pcm.samples.len()).hash(&mut h);
+    for v in &pcm.samples {
+        v.to_bits().hash(&mut h);
+    }
+    let key = h.finish();
+    let cache = CACHE.get_or_init(Default::default);
+    if let Some((_, b)) = cache.lock().unwrap_or_else(|e| e.into_inner()).iter().find(|(k, _)| *k == key) {
+        return b.clone();
+    }
+    let b = analyze_pcm_uncached(pcm);
+    let mut c = cache.lock().unwrap_or_else(|e| e.into_inner());
+    if c.len() >= 8 {
+        c.remove(0);
+    }
+    c.push((key, b.clone()));
+    b
+}
+
+fn analyze_pcm_uncached(pcm: &Pcm) -> Beats {
     if pcm.rate == 0 || pcm.samples.is_empty() {
         return Beats {
             hop: ENERGY_HOP,

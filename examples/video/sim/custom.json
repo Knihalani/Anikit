@@ -1,0 +1,28 @@
+{
+  "size": [1920, 1080],
+  "fps": 30,
+  "scenes": [
+    {
+      "duration": 5,
+      "layers": [
+        { "component": "scene3d", "props": {
+          "env": "night",
+          "quality": "draft",
+          "camera": { "keys": [
+            { "t": 0, "pos": [0, 2.6, 5.2], "target": [0, 1.0, 0], "focal": 32, "fstop": 2.8 },
+            { "t": 5, "pos": [1.5, 1.8, 4.6], "target": [0, 1.2, 0], "focal": 36, "fstop": 2.8 } ] },
+          "objects": [
+            { "type": "particles", "count": 1500000, "life": 3,
+              "emit": { "pos": "=[1.6*cos(rand(i)*6.2832), 0.05 + 0.1*rand(i+7), 1.6*sin(rand(i)*6.2832)]",
+                        "vel": "=[0, 0.4 + 0.6*rand(i+3), 0]" },
+              "force": "=[-z*2.2 - x*0.6, 0.35 + 0.4*noise(t + x*2), x*2.2 - z*0.6]",
+              "drag": 0.15,
+              "size": "=0.0018 + 0.0022*rand(i+11)",
+              "color": "=[0.4 + 1.6*age, 0.6 + 0.6*sin(y*2 + t), 2.0 - 1.4*age]",
+              "emissive": 1.4, "blend": "add" }
+          ]
+        } }
+      ]
+    }
+  ]
+}

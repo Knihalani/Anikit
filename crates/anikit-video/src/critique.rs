@@ -385,6 +385,12 @@ pub fn critique(raw: &Value) -> Report {
         let bg_v = scene.get("background").cloned().unwrap_or(default_bg.clone());
         let bg = cx.color(&bg_v).unwrap_or([0.04, 0.04, 0.07, 1.0]);
         let layers = scene.get("layers").and_then(|l| l.as_array()).cloned().unwrap_or_default();
+        // Text over a full-frame shader, 3D scene or photo: the background is pixels, judged by `--render`.
+        let pixel_bg = layers.iter().any(|l| {
+            (l.get("shader").is_some() || l.get("type").and_then(|t| t.as_str()) == Some("shader")) && l.get("width").is_none()
+                || l.get("component").and_then(|c| c.as_str()).is_some_and(|c| matches!(c, "scene3d" | "scene-3d" | "ken-burns"))
+                || (l.get("src").is_some() && l.get("fit").and_then(|f| f.as_str()) == Some("cover"))
+        });
         let mut words_on_screen = 0usize;
         let mut has_motion = scene.get("camera").is_some();
         let mut kinetic_only = true;
@@ -399,7 +405,15 @@ pub fn critique(raw: &Value) -> Report {
                 // Components that show words (a terminal, a prompt, a title card) count for the hook.
                 if first_text_at.is_none() && l.get("component").is_some() {
                     if let Some(p) = l.get("props").and_then(|p| p.as_object()) {
-                        if ["text", "title", "lines", "code", "label", "words", "messages", "items"].iter().any(|k| p.get(*k).is_some_and(|v| !v.is_null())) {
+                        // Words anywhere in the props: a terminal's lines, a 3D wordmark, particles emitted from text.
+                        fn has_words(v: &Value) -> bool {
+                            match v {
+                                Value::Object(m) => ["text", "title", "lines", "code", "label", "words", "messages", "items"].iter().any(|k| m.get(*k).is_some_and(|x| x.is_string() || x.is_array())) || m.values().any(has_words),
+                                Value::Array(a) => a.iter().any(has_words),
+                                _ => false,
+                            }
+                        }
+                        if has_words(&Value::Object(p.clone())) {
                             let delay = p.get("delay").and_then(|d| d.as_f64()).unwrap_or(0.0);
                             first_text_at = Some(scene_start.max(0.0) + vis_from + delay + 0.3);
                         }
@@ -442,7 +456,7 @@ pub fn critique(raw: &Value) -> Report {
                 }
                 // Contrast.
                 let col_v = l.get("color").cloned().or_else(|| st.as_ref().and_then(|s| s.get("color").cloned())).unwrap_or(Value::String(def_color.into()));
-                if let Some(fg) = cx.color(&col_v) {
+                if let Some(fg) = cx.color(&col_v).filter(|_| !pixel_bg) {
                     let fg = color::over(fg, bg);
                     let ratio = color::contrast(fg, bg);
                     let large = size >= short * 0.04;
@@ -700,6 +714,33 @@ fn sameness(raw: &Value, spec: &Value, cx: &mut Ctx) {
     let has_look = raw.get("look").is_some_and(|l| l.as_str() != Some("none") && *l != Value::Bool(false));
     let theme = spec.get("theme");
     let mut signals = Vec::new();
+    // Colours and type set on the layers themselves count as a point of view too.
+    let mut hexes = std::collections::BTreeSet::new();
+    let mut styled_type = false;
+    fn walk(v: &Value, hexes: &mut std::collections::BTreeSet<String>, styled: &mut bool) {
+        match v {
+            Value::Object(m) => {
+                for (k, x) in m {
+                    if let Value::String(s) = x {
+                        if matches!(k.as_str(), "color" | "fill" | "background" | "stroke") && s.starts_with('#') {
+                            hexes.insert(s.to_lowercase());
+                        }
+                        if k == "font" && !s.starts_with("Inter") {
+                            *styled = true;
+                        }
+                    }
+                    if matches!(k.as_str(), "letterSpacing" | "weight") && m.contains_key("text") {
+                        *styled = true;
+                    }
+                    walk(x, hexes, styled);
+                }
+            }
+            Value::Array(a) => a.iter().for_each(|x| walk(x, hexes, styled)),
+            _ => {}
+        }
+    }
+    walk(spec.get("scenes").unwrap_or(&Value::Null), &mut hexes, &mut styled_type);
+    let own_palette = hexes.len() >= 3;
     if !has_look {
         let primary = theme.and_then(|t| t.pointer("/colors/primary")).and_then(|p| p.as_str()).and_then(|p| color::parse(p).ok());
         let house = match primary {
@@ -711,13 +752,14 @@ fn sameness(raw: &Value, spec: &Value, cx: &mut Ctx) {
                 (240.0..290.0).contains(&h) && sat > 0.4 && color::luminance(bg) < 0.03
             }
         };
-        if house {
+        // Layer colours excuse a missing theme, not a violet one.
+        if house && (primary.is_some() || !own_palette) {
             signals.push("the house palette (violet on near-black)");
         }
         let fonts = theme.and_then(|t| t.get("fonts")).and_then(|f| f.as_object());
         let custom_type = fonts.is_some_and(|f| f.values().any(|v| v.as_str().is_some_and(|s| !s.starts_with("Inter") && !s.contains("JetBrains"))))
             || theme.and_then(|t| t.get("styles")).is_some_and(|s| s.as_object().is_some_and(|m| !m.is_empty()));
-        if !custom_type {
+        if !custom_type && !styled_type {
             signals.push("default typography (Inter, stock sizes and weights)");
         }
     }

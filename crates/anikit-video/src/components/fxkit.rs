@@ -301,7 +301,8 @@ pub fn sparkle(p: &mut Path, cx: f32, cy: f32, r: f32, rot: f32, pinch: f32) {
 /// cost of each shortcut can be measured.
 #[inline]
 pub fn exact() -> bool {
-    false
+    // qbench reference renders (`components::reference()`).
+    super::style::reference()
 }
 
 // ---------------------------------------------------------------- sprites

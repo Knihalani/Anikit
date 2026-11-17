@@ -23,6 +23,7 @@
 
 #![allow(clippy::too_many_arguments, clippy::needless_range_loop, clippy::type_complexity, clippy::question_mark, clippy::new_without_default)]
 
+pub mod authoring;
 pub mod bvh;
 pub mod env;
 pub mod geom;
@@ -93,7 +94,7 @@ pub fn shorthand(mut v: Value) -> Value {
 }
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "vignette", "denoise", "lights", "fog", "physics",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -225,7 +226,20 @@ impl Prepare for Scene3d {
         }
         let objs_v: Vec<Value> = match m.get("objects") {
             None => lookdev_objects(m),
-            Some(Value::Array(a)) => a.clone(),
+            Some(Value::Array(a)) => {
+                // `{ "script": "..." }` items expand to the objects they return.
+                let mut out = Vec::with_capacity(a.len());
+                for (i, o) in a.iter().enumerate() {
+                    match o.get("script") {
+                        Some(code) if o.as_object().is_some_and(|m| m.len() == 1) => {
+                            let gen = crate::spec::script::items(code, &serde_json::Map::new(), &format!("objects[{i}]")).map_err(|d| Error(format!("objects[{i}].script: {}", d.message)))?;
+                            out.extend(gen);
+                        }
+                        _ => out.push(o.clone()),
+                    }
+                }
+                out
+            }
             Some(_) => return Err(Error("`objects` must be an array".into())),
         };
         let mut shapes = spec::Shapes::new();
@@ -344,6 +358,12 @@ impl Prepare for Scene3d {
             o => return Err(Error(format!("unknown quality `{o}`; expected draft, standard or high"))),
         };
         let denoise = num_or(m, "denoise", denoise as f32).map_err(Error)? as u32;
+        // `glassLayers`: how many panes a ray may pass through (2 interfaces each).
+        let mut quality = quality;
+        if let Some(g) = m.get("glass_layers") {
+            let g = g.as_f64().filter(|g| *g >= 0.0).ok_or_else(|| Error("`glassLayers` must be a non-negative number".into()))?;
+            quality.max_glass = (g as u32 * 2).min(64);
+        }
 
         // Static layouts get a baked, noise-free floor.
         let total: u64 = objs.iter().map(|o| o.count as u64 * o.lanes as u64).sum();
@@ -602,7 +622,16 @@ impl Scene3d {
         }
         let sims = p.psims.get_or_init(|| {
             let floor_y = p.floor.as_ref().map(|f| f.y);
-            p.parts.iter().map(|d| particles::Sim::new(d, 1.0 / dt.max(1e-4), floor_y, assets)).collect()
+            let colliders: Vec<spec::ObjDef> = p.objs.iter().filter(|o| o.collide && o.phys.is_none()).cloned().collect();
+            p.parts
+                .iter()
+                .map(|d| {
+                    particles::Sim::new(d, 1.0 / dt.max(1e-4), floor_y, assets).map(|mut s| {
+                        s.set_colliders(colliders.clone());
+                        s
+                    })
+                })
+                .collect()
         });
         let sims = match sims {
             Ok(s) => s,
@@ -719,7 +748,9 @@ impl Component for Scene3d {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let p = self.p();
         // Previews and reviews (`still --width`, `critique --render`) trace at the size they show.
-        let ps = crate::eval::shader::preview_scale();
+        // `resolution` (0.25–1): trace at a fraction of the layer size and upscale (fast drafts, soft looks).
+        let res = self.raw.get("resolution").and_then(|r| r.as_f64()).unwrap_or(1.0).clamp(0.25, 1.0) as f32;
+        let ps = crate::eval::shader::preview_scale() * res;
         let (w, h) = ((ctx.width * ps).round().max(2.0) as u32, (ctx.height * ps).round().max(2.0) as u32);
         let fps = ctx.fps.max(1.0);
         let frame = (t * fps).round();
@@ -775,6 +806,8 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        // Scripts expand inside `objects`; open geometry parses.
+        scene(json!({ "objects": [ { "script": "let o = []; for k in 0..3 { o.push(#{ type: \"lathe\", points: [[0.0, 0.0], [0.2, 0.3], [0.0, 0.6]], pos: [k * 0.5, 0.0, 0.0] }); } o" } ] })).unwrap();
         let e = scene(json!({ "objects": [ { "type": "sphere", "material": "crome" } ] })).err().unwrap();
         assert!(e.contains("did you mean `chrome`"), "{e}");
         let e = scene(json!({ "objects": [ { "type": "spere" } ] })).err().unwrap();

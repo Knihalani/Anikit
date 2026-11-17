@@ -42,7 +42,10 @@ Start a value with `=`. It works for any numeric property (`x y width height sca
 - A top-level `"script"` runs first with the whole spec in `spec`. Change it (`spec.scenes.push(…)`) or return a new one.
 - Generated items are ordinary spec, so `use`, `repeat`, presets and expressions all work inside them. `anikit-video check` reports script errors with the line.
 
-Scripts run once, when the spec is loaded. For values that change every frame, put an expression in the generated item (`"x": "=…"`).
+- `{ "script": … }` works in any array of the spec (scene3d `objects`, `draw` items, emitters, keys, notes). A list splices, and an object replaces the item.
+- More helpers: `noise2 noise3 fbm smoothstep ease(name, x) palette(name, x)`, plus `path_circle path_poly path_star` (SVG `d`) and vector helpers `vadd vsub vscale vlen vdist vnorm vrot vlerp`. Run `anikit-video docs script` for the list.
+
+Scripts run once, when the spec is loaded. For values that change every frame, use an expression (`"x": "=…"`), or a layer's `"update"` script: it runs every frame with `t T gt p i n w h fps frame beat bar level bpm` and returns the props to set, e.g. `"update": "#{ x: 960 + 300 * sin(t), fill: palette(\"neon\", fract(t)) }"`. It costs about 4 µs per layer per frame.
 
 ## 3. Raw drawing: paths and points with their own styles
 

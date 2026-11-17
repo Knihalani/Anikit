@@ -72,7 +72,7 @@ pub fn render_track(cue: &MusicCue, video_len: f64, wav: &Path, has_voice: bool)
     })
 }
 
-const DOCS: &str = r#"MUSIC — generated, mastered soundtracks (−14 LUFS, −1 dBTP), deterministic, ~100× real time+
+const DOCS: &str = r#"MUSIC — generated, mastered soundtracks (−14 LUFS, −1 dBTP), deterministic, 25–80× real time, rendered alongside the frames
 In a video spec:   "music": {"style":"lofi","bpm":84,"key":"Dm","mood":"warm","hits":["@bar5"]}
   or just          "music": "synthwave"         (fills the video; @beatN/@barN follow its exact grid)
 Standalone:        anikit-video music '{"style":"house","length":"15s"}' -o bed.wav [--stems DIR] [--midi out.mid]
@@ -249,7 +249,7 @@ fn cmd_music(args: &[String]) -> Result<(), String> {
     }
     let a = &r.arrangement;
     let summary = serde_json::json!({
-        "ok": true, "output": out, "seconds": r.duration(), "style": a.style, "bpm": a.grid.bpm, "key": format!("{:?}", a.key.tonic),
+        "ok": true, "output": out, "seconds": r.duration(), "style": a.style, "bpm": a.grid.bpm, "key": format!("{} {}", anikit_music::theory::key_name(a.key.tonic, a.key.flats()).trim_end_matches(char::is_numeric).trim_end_matches('-'), a.key.scale.name),
         "sections": a.sections, "beats": a.beats().len(), "tracks": a.tracks.iter().map(|t| format!("{} ({})", t.name, t.inst)).collect::<Vec<_>>(),
         "report": r.report, "timings": r.timings,
     });
