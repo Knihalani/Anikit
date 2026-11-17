@@ -1,0 +1,8 @@
+{ "fps": 30, "theme": { "colors": { "bg": "#05040b" } },
+  "scenes": [ { "duration": 5, "layers": [ { "type": "group", "layers": [
+    { "repeat": 1000, "shape": "circle", "width": 10, "height": 10, "fill": "#ff5ca8", "x": "=960 + (120 + 11*sqrt(i)) * cos(i*2.39996 + t*(0.4 + 0.2*sin(i)))", "y": "=540 + (120 + 11*sqrt(i)) * 0.55 * sin(i*2.39996 + t*(0.4 + 0.2*sin(i)))" },
+    { "repeat": 1000, "shape": "circle", "width": 10, "height": 10, "fill": "#7c5cff", "x": "=960 + (120 + 11*sqrt(i)) * cos(i*2.39996 + t*(0.4 + 0.2*sin(i)))", "y": "=540 + (120 + 11*sqrt(i)) * 0.55 * sin(i*2.39996 + t*(0.4 + 0.2*sin(i)))" },
+    { "repeat": 1000, "shape": "circle", "width": 10, "height": 10, "fill": "#ff5ca8", "x": "=960 + (120 + 11*sqrt(i)) * cos(i*2.39996 + t*(0.4 + 0.2*sin(i)))", "y": "=540 + (120 + 11*sqrt(i)) * 0.55 * sin(i*2.39996 + t*(0.4 + 0.2*sin(i)))" },
+    { "repeat": 1000, "shape": "circle", "width": 10, "height": 10, "fill": "#7c5cff", "x": "=960 + (120 + 11*sqrt(i)) * cos(i*2.39996 + t*(0.4 + 0.2*sin(i)))", "y": "=540 + (120 + 11*sqrt(i)) * 0.55 * sin(i*2.39996 + t*(0.4 + 0.2*sin(i)))" },
+    { "repeat": 1000, "shape": "circle", "width": 10, "height": 10, "fill": "#ff5ca8", "x": "=960 + (120 + 11*sqrt(i)) * cos(i*2.39996 + t*(0.4 + 0.2*sin(i)))", "y": "=540 + (120 + 11*sqrt(i)) * 0.55 * sin(i*2.39996 + t*(0.4 + 0.2*sin(i)))" }
+  ] } ] } ] }
