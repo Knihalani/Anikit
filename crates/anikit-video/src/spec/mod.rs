@@ -779,7 +779,7 @@ pub struct Layer {
     /// `arc`: start and end angle in degrees (0 = 12 o'clock, clockwise). Default 0 and 270.
     pub start_angle: Option<f64>,
     pub end_angle: Option<f64>,
-    /// A generated pattern filling `width` × `height`: `"dots"`, `"truchet 48"`, or `{ "kind", "spacing", "mark", "angle", "seed", "jitter", "ramp" }`.
+    /// A generated pattern filling `width` × `height`: `"dots"`, `"truchet 48"`, or `{ "kind", "spacing", "mark", "angle", "seed", "jitter", "ramp", "tile", "tileStroke", "turns", "stagger" }` (`tile`: your own SVG motif).
     pub pattern: Option<PatternValue>,
     pub trim_start: Option<Num>,
     pub trim_end: Option<Num>,

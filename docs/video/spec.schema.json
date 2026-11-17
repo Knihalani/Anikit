@@ -1995,7 +1995,7 @@
           "format": "double"
         },
         "pattern": {
-          "description": "A generated pattern filling `width` × `height`: `\"dots\"`, `\"truchet 48\"`, or `{ \"kind\", \"spacing\", \"mark\", \"angle\", \"seed\", \"jitter\", \"ramp\" }`.",
+          "description": "A generated pattern filling `width` × `height`: `\"dots\"`, `\"truchet 48\"`, or `{ \"kind\", \"spacing\", \"mark\", \"angle\", \"seed\", \"jitter\", \"ramp\", \"tile\", \"tileStroke\", \"turns\", \"stagger\" }` (`tile`: your own SVG motif).",
           "anyOf": [
             {
               "$ref": "#/$defs/PatternValue"
