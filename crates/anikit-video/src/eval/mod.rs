@@ -297,6 +297,8 @@ pub(crate) struct Node {
     pub wipe_dir: u8,
     pub index: f32,
     pub count: f32,
+    /// Index into `Evaluator::layer_info` (spec path and kind), for tagged evaluation.
+    pub tag: u32,
 }
 
 pub(crate) const PART_BG: u8 = 1;
@@ -348,6 +350,18 @@ pub(crate) struct SceneC {
     pub bg_layers: usize,
 }
 
+/// One layer's ops in a tagged evaluation.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OpTag {
+    pub ops: std::ops::Range<usize>,
+    /// Index for [`Evaluator::layer_info`].
+    pub layer: u32,
+}
+
+thread_local! {
+    static TAGS: std::cell::RefCell<Option<Vec<OpTag>>> = const { std::cell::RefCell::new(None) };
+}
+
 /// Timing summary of one scene.
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct SceneInfo {
@@ -371,6 +385,8 @@ pub struct Evaluator {
     pub(crate) easings: Vec<Easing>,
     pub(crate) scenes: Vec<SceneC>,
     pub(crate) overlay: Vec<Node>,
+    /// (spec path, kind) per compiled layer, indexed by `Node::tag`.
+    pub(crate) layer_info: Vec<(String, String)>,
     /// Word-synced captions (TEXT's caption track) and the bottom-centre point they hang from.
     pub(crate) captions: Option<(crate::text::captions::CaptionTrack, [f32; 2])>,
     pub(crate) theme: theme::Theme,
@@ -448,6 +464,25 @@ impl Evaluator {
             && self.captions.as_ref().is_none_or(|(tr, _)| t1 - t0 < 0.05 && tr.page_text(t0).is_none() && tr.page_text(t1).is_none())
     }
 
+    /// The display list at `t` plus, for every layer that drew something, the op range
+    /// it emitted (ranges nest: a group's range contains its children's), so tools like
+    /// critique can tell user text from component text. `layer == u32::MAX` is captions.
+    pub fn eval_tagged(&self, t: f32) -> (DisplayList, Vec<OpTag>) {
+        TAGS.with(|tg| *tg.borrow_mut() = Some(Vec::new()));
+        let dl = self.eval(t);
+        let tags = TAGS.with(|tg| tg.borrow_mut().take()).unwrap_or_default();
+        (dl, tags)
+    }
+
+    /// Spec path and kind of a tagged layer (`("scenes[1].layers[3]", "component:browser")`);
+    /// `("captions", "caption")` for `u32::MAX`.
+    pub fn layer_info(&self, tag: u32) -> (&str, &str) {
+        match self.layer_info.get(tag as usize) {
+            Some((p, k)) => (p, k),
+            None => ("captions", "caption"),
+        }
+    }
+
     /// The display list at time `t` (seconds).
     pub fn eval(&self, t: f32) -> DisplayList {
         let mut dl = DisplayList::default();
@@ -490,7 +525,15 @@ impl Evaluator {
             self.emit_node(n, &cx, &dl::IDENTITY, frame, 1.0, &mut out.ops);
         }
         if let Some((tr, [x, y])) = &self.captions {
+            let start = out.ops.len();
             tr.ops(t, translate(*x, *y), &mut out.ops);
+            if out.ops.len() > start {
+                TAGS.with(|tg| {
+                    if let Some(v) = tg.borrow_mut().as_mut() {
+                        v.push(OpTag { ops: start..out.ops.len(), layer: u32::MAX });
+                    }
+                });
+            }
         }
     }
 
@@ -719,7 +762,20 @@ impl Evaluator {
         }
     }
 
-    fn emit_node(&self, n: &Node, cx: &Cx, parent: &Affine, psize: [f32; 2], _po: f32, out: &mut Vec<Op>) {
+    fn emit_node(&self, n: &Node, cx: &Cx, parent: &Affine, psize: [f32; 2], po: f32, out: &mut Vec<Op>) {
+        let tagging = n.tag != u32::MAX && TAGS.with(|t| t.borrow().is_some());
+        let start = out.len();
+        self.emit_node_inner(n, cx, parent, psize, po, out);
+        if tagging && out.len() > start {
+            TAGS.with(|t| {
+                if let Some(v) = t.borrow_mut().as_mut() {
+                    v.push(OpTag { ops: start..out.len(), layer: n.tag });
+                }
+            });
+        }
+    }
+
+    fn emit_node_inner(&self, n: &Node, cx: &Cx, parent: &Affine, psize: [f32; 2], _po: f32, out: &mut Vec<Op>) {
         let st = cx.scene_t;
         if st < n.start || st >= n.end {
             return;

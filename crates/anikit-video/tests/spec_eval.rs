@@ -276,3 +276,19 @@ fn moving_transitions_keep_backdrops_in_place() {
         }
     }
 }
+
+#[test]
+fn tagged_eval_identifies_layers() {
+    let ev = build(r##"{ "scenes": [ { "layers": [ { "text": "Hello" }, { "component": "button", "props": { "label": "Go" }, "width": 300, "height": 100, "y": "80%" } ] } ],
+        "captions": [ { "text": "Words here", "at": 0, "end": 3 } ] }"##);
+    let (dl, tags) = ev.eval_tagged(1.0);
+    assert_eq!(dl, ev.eval(1.0), "tagging must not change the output");
+    let kinds: Vec<(&str, &str)> = tags.iter().map(|t| ev.layer_info(t.layer)).collect();
+    assert!(kinds.contains(&("scenes[0].layers[0]", "text")), "{kinds:?}");
+    assert!(kinds.iter().any(|k| k.1 == "component:button"), "{kinds:?}");
+    assert!(kinds.contains(&("captions", "caption")), "{kinds:?}");
+    let text = tags.iter().find(|t| ev.layer_info(t.layer).1 == "text").unwrap();
+    assert!(dl.ops[text.ops.clone()].iter().any(|o| matches!(o, Op::Glyphs { .. })));
+    // A normal eval doesn't collect tags.
+    assert_eq!(ev.eval_tagged(1.0).1.len(), tags.len());
+}
