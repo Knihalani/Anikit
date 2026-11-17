@@ -1339,11 +1339,13 @@ const ST_C: usize = ST_N / 2;
 
 fn stamps() -> &'static (Vec<f32>, Vec<[u8; 4]>) {
     static T: std::sync::OnceLock<(Vec<f32>, Vec<[u8; 4]>)> = std::sync::OnceLock::new();
+    // Built sequentially: a rayon loop inside `get_or_init` deadlocks when a
+    // worker waiting on this lock steals a task that also needs it (critique
+    // and multi-frame renders call this from rayon workers).
     T.get_or_init(|| {
-        use rayon::prelude::*;
         let per = ST_P * ST_P * ST_N * ST_N;
         let mut t = vec![0.0f32; ST_R * per];
-        t.par_chunks_mut(per).enumerate().for_each(|(ri, t)| {
+        t.chunks_mut(per).enumerate().for_each(|(ri, t)| {
         {
             let r = ri as f32 / 16.0;
             for py in 0..ST_P {
