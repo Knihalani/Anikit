@@ -286,9 +286,14 @@ pub fn play_chords(chords: &[ChordAt], play: &Play, center: i32, n: usize, vel: 
                             l += 0.5;
                             j += 1;
                         }
+                        // No two strokes alike: the sweep speed varies ±20 %, the hand hits a
+                        // little harder on the beat than between, and each stroke's level wanders ±8 %.
+                        let spread = 0.018 * if down { 1.0 } else { 0.8 } * (0.8 + 0.4 * rng.f32() as f64);
+                        let on_beat = (t - t.floor()).abs() < 1e-6;
+                        let accent = if on_beat { 1.0 } else { 0.88 } * (0.92 + 0.16 * rng.f32());
                         for (s, &k) in order.iter().enumerate() {
-                            let dt = s as f64 * 0.018 * if down { 1.0 } else { 0.8 };
-                            push(&mut out, t + dt, l - dt, k, vel * a * (1.0 - 0.04 * s as f32));
+                            let dt = s as f64 * spread;
+                            push(&mut out, t + dt, l - dt, k, vel * a * accent * (1.0 - 0.04 * s as f32));
                         }
                     }
                     t += 0.5;
@@ -579,5 +584,35 @@ mod tests {
         assert_eq!(m, melody(&c, &k, 72, 1.0, 0.8, None, 9, 4.0));
         let last = m.last().unwrap().key as i32 % 12;
         assert!(last == 9 || last == 0, "ends on a stable tone: {last}");
+    }
+}
+
+#[cfg(test)]
+mod strum_tests {
+    use super::*;
+
+    #[test]
+    fn strums_vary_stroke_to_stroke() {
+        let chords = chord_line("C G Am F", &crate::theory::Key::parse("C").unwrap(), 4.0).unwrap();
+        let notes = play_chords(&chords, &Play::Strum("D.DU.UDU".into()), 60, 4, 0.8, 7);
+        // Group notes into strokes by start time (a stroke spans < 0.15 beat).
+        let mut strokes: Vec<Vec<&Note>> = Vec::new();
+        let mut sorted: Vec<&Note> = notes.iter().collect();
+        sorted.sort_by(|a, b| a.t.total_cmp(&b.t));
+        for n in sorted {
+            match strokes.last_mut() {
+                Some(s) if n.t - s[0].t < 0.15 => s.push(n),
+                _ => strokes.push(vec![n]),
+            }
+        }
+        let spans: Vec<f64> = strokes.iter().filter(|s| s.len() >= 4).map(|s| s[s.len() - 1].t - s[0].t).collect();
+        let (lo, hi) = spans.iter().fold((f64::MAX, 0f64), |(a, b), &x| (a.min(x), b.max(x)));
+        assert!(hi > lo * 1.2, "sweep speeds differ: {lo:.4}–{hi:.4}");
+        let first: Vec<f32> = strokes.iter().map(|s| s[0].vel).collect();
+        let mean = first.iter().sum::<f32>() / first.len() as f32;
+        let sd = (first.iter().map(|v| (v - mean).powi(2)).sum::<f32>() / first.len() as f32).sqrt();
+        assert!(sd > 0.05, "stroke levels vary: sd {sd}");
+        // Deterministic.
+        assert_eq!(notes, play_chords(&chords, &Play::Strum("D.DU.UDU".into()), 60, 4, 0.8, 7));
     }
 }
