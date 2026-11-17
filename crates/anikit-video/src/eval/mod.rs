@@ -148,7 +148,6 @@ impl Track {
         v0 + (v1 - v0) * e
     }
     /// True if no segment is animating within `[a, b]`.
-    #[allow(dead_code)]
     fn still(&self, a: f32, b: f32) -> bool {
         self.segs.iter().all(|g| g.t1 <= a || g.t0 >= b || (g.v0 == g.v1 && !g.v0.is_nan()))
     }
@@ -210,6 +209,8 @@ pub(crate) struct SplitC {
     pub tracks: Vec<Track>,
     /// Delay per unit index.
     pub delays: Vec<f32>,
+    /// Per-unit tracks on the layer's own clock (e.g. caption word highlight colour).
+    pub unit_tracks: Vec<Vec<Track>>,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -397,6 +398,33 @@ impl Evaluator {
     /// Start time of a scene by id.
     pub fn scene_start(&self, id: &str) -> Option<f32> {
         self.scenes.iter().find(|s| s.id == id).map(|s| s.start)
+    }
+
+    /// True if every frame in `[t0, t1]` is guaranteed identical (no scene
+    /// change, transition, visibility change or animation in that span).
+    /// Conservative: `false` means "may change".
+    pub fn is_static(&self, t0: f32, t1: f32) -> bool {
+        let (t0, t1) = (t0.max(0.0), t1.min(self.duration));
+        if t1 < t0 {
+            return true;
+        }
+        // Scene and transition boundaries.
+        for (i, s) in self.scenes.iter().enumerate() {
+            let edges = [s.start, s.start + s.trans.dur, s.start + s.dur];
+            if i > 0 && edges.iter().any(|e| *e > t0 && *e <= t1) {
+                return false;
+            }
+            if i > 0 && s.trans.kind != TransKind::Cut && t0 >= s.start && t0 < s.start + s.trans.dur {
+                return false;
+            }
+        }
+        let cur = self.scenes.iter().rposition(|s| s.start <= t0).unwrap_or(0);
+        let s = &self.scenes[cur];
+        let (a, b) = (t0 - s.start, t1 - s.start);
+        if s.shake.is_some_and(|(amount, _, at, dur, _)| amount != 0.0 && (dur <= 0.0 || (at < b && at + dur > a))) {
+            return false;
+        }
+        node_static(&s.camera, a, b) && s.layers.iter().all(|n| node_static(n, a, b)) && self.overlay.iter().all(|n| node_static(n, t0, t1))
     }
 
     /// The display list at time `t` (seconds).
@@ -767,6 +795,14 @@ impl Evaluator {
                                     let s = tr.slot as usize;
                                     uv[s] = tr.sample(lt - delay, uv[s], &self.easings);
                                 }
+                                let mut own_fill = false;
+                                if let Some(ut) = sp.unit_tracks.get(u) {
+                                    for tr in ut {
+                                        let s = tr.slot as usize;
+                                        uv[s] = tr.sample(lt, uv[s], &self.easings);
+                                        own_fill |= (prop::FILL..prop::FILL + 4).contains(&s);
+                                    }
+                                }
                                 let ua = uv[prop::OPACITY].clamp(0.0, 1.0);
                                 if ua <= 0.0005 {
                                     continue;
@@ -776,11 +812,17 @@ impl Evaluator {
                                 uvv[prop::X] = x0 + uw * 0.5 + uv[prop::X];
                                 uvv[prop::Y] = y0 + uh * 0.5 + uv[prop::Y];
                                 let uxf = dl::mul(&bxf, &dl::mul(&local_xf(&uvv, [0.5, 0.5], uw, uh), &translate(-x0, -y0)));
-                                let f2 = fill.as_ref().map(|f| {
-                                    let mut f = f.clone();
-                                    scale_alpha(&mut f, ua);
-                                    f
-                                });
+                                let f2 = if own_fill {
+                                    let mut c = oklab_to_rgba([uv[prop::FILL], uv[prop::FILL + 1], uv[prop::FILL + 2], uv[prop::FILL + 3]]);
+                                    c.0[3] *= ua * alpha;
+                                    Some(Paint::Solid(c))
+                                } else {
+                                    fill.as_ref().map(|f| {
+                                        let mut f = f.clone();
+                                        scale_alpha(&mut f, ua);
+                                        f
+                                    })
+                                };
                                 let ublur = uv[prop::BLUR];
                                 if ublur > 0.05 {
                                     out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::Blur(ublur)], clip: None, cache_key: None });
@@ -884,6 +926,32 @@ impl Evaluator {
 }
 
 /// Emit glyphs `range` (indices into `layout.glyphs`) below `limit`, one op per run.
+/// Is a node (and its subtree) unchanged over scene times `[a, b]`?
+fn node_static(n: &Node, a: f32, b: f32) -> bool {
+    // Appears or disappears inside the span.
+    if (n.start > a && n.start <= b) || (n.end > a && n.end <= b) {
+        return false;
+    }
+    if b < n.start || a >= n.end {
+        return true; // invisible throughout
+    }
+    let (la, lb) = (a - n.start, b - n.start);
+    if n.exprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
+        return false;
+    }
+    match &n.kind {
+        Kind::Group { children } | Kind::Box { children, .. } => children.iter().all(|c| node_static(c, a, b)),
+        Kind::Text { kinetic: Some(_), .. } => false,
+        Kind::Text { split: Some(sp), .. } => {
+            let md = sp.delays.iter().cloned().fold(0.0, f32::max);
+            sp.tracks.iter().all(|t| t.still(la - md, lb))
+        }
+        Kind::Video { frames, .. } => frames.len() <= 1,
+        Kind::Component(c, _) => c.duration().is_some_and(|d| la >= d),
+        _ => true,
+    }
+}
+
 fn emit_glyphs(out: &mut Vec<Op>, layout: &TextLayout, range: std::ops::Range<u32>, limit: u32, fill: Option<&Paint>, alpha: f32, xf: &Affine) {
     let mut i = range.start;
     let end = range.end.min(limit);

@@ -26,6 +26,8 @@ pub struct Preview {
 impl Preview {
     /// Compile a spec value; asset paths resolve against `base_dir`.
     pub fn new(spec: Value, base_dir: &Path) -> Result<Preview, String> {
+        // An empty base (a template with no params file) means the working directory.
+        let base_dir = if base_dir.as_os_str().is_empty() { Path::new(".") } else { base_dir };
         let parsed = crate::spec::parse::from_value(spec).map_err(|d| d.iter().map(|x| x.to_string()).collect::<Vec<_>>().join("\n"))?;
         let fonts = crate::text::FontStore::new();
         for (name, file) in parsed.spec.fonts.iter().flatten() {

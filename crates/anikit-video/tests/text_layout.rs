@@ -284,3 +284,59 @@ fn caption_background_and_effects() {
     assert!(d < 0.5, "golden diff {d}");
     common::save(pm, "caption");
 }
+
+#[test]
+fn rtl_arabic_hebrew_and_mixed() {
+    use anikit_video::text::kinetic::{Kinetic, KineticPlan};
+    let s = store();
+    for (text, words) in [("مرحبا بالعالم الجميل", 3), ("שלום עולם יפה", 3), ("Hello שלום world", 3)] {
+        let l = s.layout(&TextSpec::plain(text, TextStyle::default()));
+        assert_eq!(l.words.len(), words, "{text}");
+        assert!(l.glyphs.iter().all(|g| l.runs[g.run as usize].glyphs[g.index as usize].id != 0), "no tofu in {text}");
+        // Reading order: the first logical word of an RTL text sits rightmost.
+        let ord = l.logical_order(UnitKind::Word);
+        let first = &l.words[ord[0]];
+        if !text.starts_with('H') {
+            assert!(l.words.iter().all(|w| w.rect[0] <= first.rect[0] + 0.01), "{text}: first word is rightmost");
+            // Kinetic stagger starts at the reading start.
+            let plan = KineticPlan::new(s, l.clone(), &"fade by word 0.1s 1s".parse::<Kinetic>().unwrap());
+            let mut o = vec![];
+            plan.ops(0.05, anikit_video::dl::IDENTITY, &mut o);
+            let xs: Vec<f32> = o.iter().filter_map(|op| match op { anikit_video::dl::Op::Glyphs { glyphs, .. } => glyphs.first().map(|g| g.x), _ => None }).collect();
+            assert!(!xs.is_empty() && xs.iter().all(|x| *x >= first.rect[0] - 1.0), "{text}: rightmost word animates first");
+        }
+    }
+    // Arabic shaping joins letters: fewer glyphs than a naive one-per-char would mean no shaping only for isolated forms;
+    // check the run uses the bundled Arabic face.
+    let l = s.layout(&TextSpec::plain("سلام", TextStyle::default()));
+    assert_eq!(l.chars.len(), 4);
+    assert!(s.face(l.runs[0].font).data.data.len() > 500_000, "Noto Sans Arabic");
+}
+
+#[test]
+fn emoji_sequences_in_titles() {
+    let s = store();
+    let l = s.layout(&TextSpec::plain("Ship it 🚀 👩‍💻 👍🏽 🇯🇵", TextStyle { font: "800 64px Inter Display".into(), ..Default::default() }));
+    assert!(l.glyphs.iter().all(|g| l.runs[g.run as usize].glyphs[g.index as usize].id != 0), "no tofu");
+    // ZWJ sequence, skin tone and flag are each one grapheme unit (one char unit).
+    let emoji_units = l.chars.iter().filter(|c| l.text[c.text.clone()].chars().count() > 1).count();
+    assert_eq!(emoji_units, 3, "{:?}", l.chars.iter().map(|c| &l.text[c.text.clone()]).collect::<Vec<_>>());
+    let mut dl = DisplayList { width: 640, height: 100, background: Rgba([0.04, 0.04, 0.07, 1.0]), ops: vec![] };
+    l.ops([1.0, 0.0, 0.0, 1.0, 20.0, 10.0], &mut dl.ops);
+    let pm = common::render(s, &dl);
+    let d = common::golden(&pm, "emoji_title");
+    assert!(d < 0.5, "golden diff {d}");
+    common::save(pm, "emoji_title");
+}
+
+#[test]
+fn golden_rtl() {
+    let s = store();
+    let spec = TextSpec { text: "مرحبا بالعالم\nשלום עולם — Hello 123".into(), align: Align::Right, width: Some(560.0), markup: Some(false), style: TextStyle { font: "600 48px Inter".into(), ..Default::default() }, ..Default::default() };
+    let l = s.layout(&spec);
+    let mut dl = DisplayList { width: 600, height: 150, background: Rgba([0.04, 0.04, 0.07, 1.0]), ops: vec![] };
+    l.ops([1.0, 0.0, 0.0, 1.0, 20.0, 10.0], &mut dl.ops);
+    let pm = common::render(s, &dl);
+    let d = common::golden(&pm, "rtl");
+    assert!(d < 0.5, "golden diff {d}");
+}

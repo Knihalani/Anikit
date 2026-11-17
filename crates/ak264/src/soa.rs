@@ -34,6 +34,33 @@ impl QuantS {
 
 pub type Soa<const N: usize> = [[i16; N]; 16];
 
+impl QuantS {
+    /// Largest |coefficient| that quantises to 0 at every position `from..16` (inter).
+    pub fn zero_coef(&self, from: usize, intra: bool) -> u32 {
+        let b = &self.bias[!intra as usize];
+        (from..16).map(|k| (65535 / self.m[k] as u32).saturating_sub(b[k] as u32)).min().unwrap_or(0)
+    }
+}
+
+/// Bounds on the SAD of a 16×16 luma block / one 8×8 chroma block at or below
+/// which a residual provably quantises to all zeros (|coef| ≤ 4·SAD; DC sums ≤ SAD).
+/// Inter: luma 4×4 blocks. Intra: I16 (AC + Hadamard DC).
+pub fn zero_sad_bounds(q: &Quant, qs: &QuantS, qc: &Quant, qcs: &QuantS, intra: bool) -> (u32, u32) {
+    // largest |h| with (|h| * mf0 + 2f) >> (qbits + 1) == 0
+    let dc_lim = |q: &Quant| {
+        let f = if intra { q.f_intra } else { q.f_inter } as i64;
+        (((1i64 << (q.qbits + 1)) - 2 * f - 1) / q.mf[0] as i64).max(0) as u32
+    };
+    let luma = if intra {
+        // AC positions 1..16; DC: |y| = |h >> 1| <= ceil(SAD / 2) <= dc_lim
+        (qs.zero_coef(1, true) / 4).min((2 * dc_lim(q)).saturating_sub(1))
+    } else {
+        qs.zero_coef(0, false) / 4
+    };
+    let chroma = (qcs.zero_coef(1, intra) / 4).min(dc_lim(qc));
+    (luma, chroma)
+}
+
 /// Forward 4×4 core transform, lane-wise.
 #[inline(always)]
 pub fn fdct<const N: usize>(r: &mut Soa<N>) {
@@ -72,7 +99,7 @@ pub fn quant<const N: usize>(c: &mut Soa<N>, q: &QuantS, intra: bool, from: usiz
     let mut cnt = [0i16; N];
     #[cfg(target_arch = "x86_64")]
     {
-        if N % 8 == 0 && crate::simd::level() >= 1 {
+        if N.is_multiple_of(8) && crate::simd::level() >= 1 {
             for k in from..16 {
                 for h in (0..N).step_by(8) {
                     // SAFETY: SSE4.1 detected; slices are 8 lanes.

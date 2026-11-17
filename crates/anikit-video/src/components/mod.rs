@@ -35,10 +35,22 @@ pub mod charts;
 pub mod code;
 pub mod devices;
 pub mod lottie;
+pub mod metaballs;
+pub mod morph;
+pub mod particle_text;
 pub mod particles;
+pub mod screens;
+pub mod rays;
+pub mod text3d;
 pub mod three;
+pub mod globe;
 pub mod transitions;
 pub mod ui;
+pub mod visualizer;
+pub mod ken_burns;
+pub mod tiles;
+pub mod reactions;
+pub mod card_stack;
 
 #[cfg(test)]
 pub(crate) mod preview;
@@ -202,8 +214,16 @@ kinds! {
     "sparks" => particles::Sparks, "Bright sparks bursting out with trails.", r##"{}"##;
     "snow" => particles::Snow, "Gently falling snow or dust.", r##"{}"##;
     "dust" => particles::Dust, "Floating glowing dust motes.", r##"{}"##;
+    "particle-text" => particle_text::ParticleText, "Thousands of glowing particles fly in, form a word, hold, re-form into the next word and blow away.", r##"{"text":"Hello"}"##;
+    // Shapes and light
+    "morph" => morph::Morph, "Smooth gradient shape morphing between named shapes (circle, square, star, heart, blob, triangle) or SVG paths.", r##"{"shapes":["circle","star","heart"]}"##;
+    "metaballs" => metaballs::Metaballs, "Liquid gooey blobs that drift, merge and split, with a gradient fill and glow.", r##"{}"##;
+    "god-rays" => rays::GodRays, "Volumetric light rays from a point, slowly turning, with dust motes in the beams.", r##"{}"##;
+    "lens-flare" => rays::LensFlare, "Anamorphic lens flare: streak, halo and ghosts along the axis through the centre; `at` can travel a path.", r##"{"at":[0.3,0.3]}"##;
     // 3D
     "model" => three::Model, "Product spin/orbit of a 3D primitive (rounded box, sphere, torus, knot, extruded logo).", r##"{"shape":"torus"}"##;
+    "text-3d" => text3d::Text3d, "Extruded, bevelled chrome 3D text or logo whose letters rise in, with studio lighting, sway and a glint sweep.", r##"{"text":"ANIKIT"}"##;
+    "globe" => globe::Globe, "Rotating dot-matrix globe with glowing great-circle arcs, travelling pulses, pulsing markers and an atmosphere.", r##"{"arcs":[[37.8,-122.4,51.5,-0.1]]}"##;
     // Transitions
     "wipe" => transitions::Wipe, "Soft-edged wipe mask as a transition overlay.", r##"{}"##;
     "iris" => transitions::Iris, "Circular iris open/close.", r##"{}"##;
@@ -218,6 +238,13 @@ kinds! {
     "marquee" => blocks::Marquee, "Endless scrolling ticker of words or logos with faded edges.", r##"{"items":["Stripe","Linear","Vercel"]}"##;
     "spotlight" => blocks::Spotlight, "Dims everything except a focus rectangle that glides between targets (product demos).", r##"{"targets":[[100,100,300,120],[500,300,200,80]]}"##;
     "keys" => blocks::Keys, "Keyboard shortcut keycaps that pop in and press.", r##"{"keys":["⌘","K"],"press":[0.6]}"##;
+    // Media
+    "visualizer" => visualizer::Visualizer, "Audio visualiser synced to a music src: spectrum bars, a mirrored wave or radial bars around an image (synthetic groove when no src).", r##"{"style":"bars"}"##;
+    "ken-burns" => ken_burns::KenBurns, "Photo with a slow zoom/pan (presets or from/to rects), parallax layers, vignette and a film grade.", r##"{"motion":"in"}"##;
+    "tile-reveal" => tiles::TileReveal, "Grid of tiles that flip, scale or fade in with a diagonal/radial wave to reveal an image or gradient; can reverse.", r##"{"cols":10}"##;
+    "kinetic-grid" => tiles::KineticGrid, "Mesmerising grid of rounded squares or dots whose size, rotation and colour ripple with a wave.", r##"{}"##;
+    "reactions" => reactions::Reactions, "Live-stream reactions (hearts, likes, fire, stars, sparkles, 100, laugh) floating up with wobble, pop and fade.", r##"{"kinds":["heart","like","fire"]}"##;
+    "card-stack" => card_stack::CardStack, "2.5D stack of image or titled cards; the front card swipes away every interval and the stack advances.", r##"{"cards":["Design","Build","Ship"]}"##;
     // Lottie
     "lottie" => lottie::Lottie, "Minimal Lottie player (shape layers, transforms, trim paths).", r##"{"src":"anim.json"}"##;
 }
@@ -395,8 +422,12 @@ fn snake_keys(m: Map<String, Value>) -> Map<String, Value> {
 pub fn kebab(name: &str) -> String {
     let mut out = String::with_capacity(name.len() + 4);
     for (i, c) in name.chars().enumerate() {
-        if c.is_ascii_uppercase() {
-            if i > 0 && !out.ends_with('-') {
+        if c.is_ascii_digit() && out.ends_with(|p: char| p.is_ascii_lowercase()) {
+            // `text3d` → `text-3d`.
+            out.push('-');
+            out.push(c);
+        } else if c.is_ascii_uppercase() {
+            if i > 0 && !out.ends_with('-') && !out.ends_with(|p: char| p.is_ascii_digit()) {
                 out.push('-');
             }
             out.push(c.to_ascii_lowercase());

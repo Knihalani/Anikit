@@ -22,6 +22,12 @@ pub struct Screen {
     pub scroll_at: f32,
     /// …over this long (0 = no scroll).
     pub scroll_duration: f32,
+    /// Generated app screen when there is no `src`: dashboard, chat, feed, editor, settings.
+    pub screen: Option<String>,
+    /// Product name shown on generated screens.
+    pub title: String,
+    /// Accent colour of generated screens (default: theme accent).
+    pub accent: Option<Color>,
 }
 
 /// Draw the screen into the rounded rect `(x, y, w, h, r)`.
@@ -34,6 +40,10 @@ fn screen(o: &mut Vec<Op>, ctx: &Ctx, s: &Screen, t: f32, x: f32, y: f32, w: f32
         let over = (dh - h).max(0.0);
         let f = if s.scroll_duration > 0.0 { s.scroll_to * ease_in_out(seg(t, s.scroll_at, s.scroll_duration)) } else { 0.0 };
         o.push(Op::Image { image: id, dst: [x + (w - dw) * 0.5, y - over * f, dw, dh], opacity: 1.0, transform: IDENTITY });
+    } else if let Some(kind) = s.screen.as_deref() {
+        // Portrait screens leave room for the phone's status bar.
+        let top = if h > w * 1.3 { w * 0.13 } else { 0.0 };
+        super::screens::draw_screen(o, ctx, kind, &s.title, s.accent.map(|c| c.0), t, x, y, w, h, top);
     } else {
         let th = ctx.theme;
         let cols: Vec<Rgba> = if s.colors.is_empty() { vec![shade(th.accent, -0.35), shade(th.pal(2), -0.3), shade(th.pal(1), -0.45)] } else { s.colors.iter().map(|c| c.0).collect() };
@@ -118,7 +128,21 @@ impl Default for Phone {
         Phone { screen: Screen::default(), color: None, reflection: 1.0, shadow: true, delay: 0.0, float: 0.0, time: "9:41".into() }
     }
 }
-impl Prepare for Phone {}
+fn check_screen(s: &Screen) -> Result<(), super::Error> {
+    match s.screen.as_deref() {
+        Some(k) if !super::screens::KINDS.contains(&k) && k != "list" => Err(super::Error(match closest(k, super::screens::KINDS) {
+            Some(c) => format!("unknown screen `{k}`; did you mean `{c}`?"),
+            None => format!("unknown screen `{k}`; use one of {}", super::screens::KINDS.join(", ")),
+        })),
+        _ => Ok(()),
+    }
+}
+
+impl Prepare for Phone {
+    fn prepare(&mut self) -> Result<(), super::Error> {
+        check_screen(&self.screen)
+    }
+}
 impl Component for Phone {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let (x, y, w, h) = fit(ctx, 9.0 / 19.5, 0.08);
@@ -175,7 +199,11 @@ impl Default for Laptop {
         Laptop { screen: Screen::default(), color: None, reflection: 0.6, shadow: true, delay: 0.0, float: 0.0, open: 0.0 }
     }
 }
-impl Prepare for Laptop {}
+impl Prepare for Laptop {
+    fn prepare(&mut self) -> Result<(), super::Error> {
+        check_screen(&self.screen)
+    }
+}
 impl Component for Laptop {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let (x, y, w, h) = fit(ctx, 1.6, 0.06);
@@ -234,7 +262,11 @@ impl Default for Browser {
         Browser { screen: Screen::default(), url: "anikit.dev".into(), tabs: Vec::new(), type_url: 0.0, delay: 0.0, float: 0.0, shadow: true, aspect: 1.6 }
     }
 }
-impl Prepare for Browser {}
+impl Prepare for Browser {
+    fn prepare(&mut self) -> Result<(), super::Error> {
+        check_screen(&self.screen)
+    }
+}
 impl Component for Browser {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let th = ctx.theme;
@@ -315,12 +347,21 @@ mod tests {
         let mut ops = Vec::new();
         for (k, p) in [
             ("phone", json!({"x": 20, "y": 20, "width": 240, "height": 500, "src": "shot.png", "scroll_to": 1, "scroll_duration": 2})),
-            ("laptop", json!({"x": 260, "y": 30, "width": 680, "height": 240})),
-            ("browser", json!({"x": 300, "y": 290, "width": 620, "height": 240, "url": "anikit.dev/video", "tabs": ["Anikit Video", "Docs"]})),
+            ("laptop", json!({"x": 260, "y": 30, "width": 680, "height": 240, "screen": "dashboard", "title": "Northwind"})),
+            ("browser", json!({"x": 300, "y": 290, "width": 620, "height": 240, "url": "anikit.dev/video", "tabs": ["Anikit Video", "Docs"], "screen": "editor", "title": "Anikit"})),
         ] {
             ops.extend(build(k, &p).unwrap().eval(1.5, 960.0, 540.0, 30.0, &th, a));
         }
         preview::validate(&ops).unwrap();
         preview::snapshot("devices", 960, 540, th.background, ops, a);
+        // Every generated screen, phone and laptop.
+        for (i, kind) in ["dashboard", "chat", "feed", "editor", "settings"].iter().enumerate() {
+            let mut ops = Vec::new();
+            ops.extend(build("phone", &json!({"x": 0, "y": 0, "width": 300, "height": 540, "screen": kind, "title": "Northwind", "accent": "#ff6fb1"})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a));
+            ops.extend(build("laptop", &json!({"x": 300, "y": 60, "width": 660, "height": 420, "screen": kind, "title": "Northwind"})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a));
+            preview::validate(&ops).unwrap();
+            preview::snapshot(&format!("screen-{i}-{kind}"), 960, 540, th.background, ops, a);
+        }
+        assert!(build("phone", &json!({"screen": "dashbord"})).err().unwrap().0.contains("dashboard"));
     }
 }
