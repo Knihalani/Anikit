@@ -546,6 +546,8 @@ fn backdrop_fast_path_matches_vello() {
         DisplayList { width: w, height: h, background: rgba(0.0, 0.0, 0.0, 1.0), ops }
     };
     let mut fast = Renderer::new(assets.clone());
+    // Compare like with like: vello samples bilinearly, as Draft does.
+    fast.set_quality(anikit_video::render::Quality::Draft);
     let mut slow = Renderer::new(assets.clone());
     let (mut yuv, mut changed) = (YuvFrame::default(), MbMap::default());
     for i in 0..4 {
@@ -594,6 +596,7 @@ fn smooth_backdrop_matches_full_res() {
     };
     let assets = Arc::new(Assets::default());
     let (mut fast, mut slow) = (Renderer::new(assets.clone()), Renderer::new(assets));
+    fast.set_quality(anikit_video::render::Quality::Draft);
     let (mut yuv, mut changed) = (YuvFrame::default(), MbMap::default());
     for k in 0..4 {
         let k = k as f32;

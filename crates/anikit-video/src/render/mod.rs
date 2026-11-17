@@ -76,6 +76,19 @@ impl View<'_> {
     }
 }
 
+/// Speed/quality trade-off.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum Quality {
+    /// Fastest: smooth backgrounds render at ¼ resolution with bilinear upscaling.
+    Draft,
+    /// Default: gradients at full resolution; low-res fields upscale with a
+    /// smooth cubic B-spline and dither.
+    #[default]
+    Standard,
+    /// As standard (reserved for heavier AA and filtering).
+    High,
+}
+
 /// A rendered frame: premultiplied RGBA8, `width × height`, tightly packed.
 pub type FrameRgba = Pixmap;
 
@@ -152,6 +165,7 @@ pub struct Renderer {
     pp: post::PostProcessor,
     /// Motion-blur accumulator (linear RGB).
     motion_acc: Vec<f32>,
+    quality: Quality,
     /// Low-res backdrop as Y, Cb, Cr planes (fused backdrop → YUV path).
     lo: [Vec<u8>; 3],
     /// Overlay op bounds and macroblock map (multi-box fused path).
@@ -172,7 +186,7 @@ fn round_out(r: Rect) -> Rect {
 
 impl Renderer {
     pub fn new(assets: Arc<Assets>) -> Self {
-        Self {
+        let mut r = Self {
             assets,
             ctx: RenderContext::new(1, 1),
             frame: Pixmap::new(1, 1),
@@ -186,6 +200,7 @@ impl Renderer {
             post_frame: 0,
             pp: Default::default(),
             motion_acc: Vec::new(),
+            quality: Quality::Standard,
             box_rects: Vec::new(),
             box_map: MbMap::default(),
             lctx: None,
@@ -213,7 +228,9 @@ impl Renderer {
                 run: BezPath::new(),
                 cache_hits: 0,
             },
-        }
+        };
+        r.upscaler.cubic = true;
+        r
     }
 
     pub fn assets(&self) -> &Arc<Assets> {
@@ -259,6 +276,17 @@ impl Renderer {
             self.pp.apply(self.frame.data_as_u8_slice_mut(), w, h, p, self.post_frame);
         }
         &self.frame
+    }
+
+    /// Speed/quality trade-off for the following frames (default [`Quality::Standard`]).
+    pub fn set_quality(&mut self, q: Quality) {
+        if q != self.quality {
+            self.invalidate();
+            self.smooth_key = None;
+        }
+        self.quality = q;
+        let cubic = q != Quality::Draft;
+        self.upscaler.cubic = cubic;
     }
 
     /// Film look for the following frames (`None` = off). `frame_index` seeds
@@ -312,7 +340,7 @@ impl Renderer {
         let mut backdrop = backdrop(&list.ops, &assets, w as f64, h as f64);
         let mut from_smooth = false;
         // Or: a smooth leading run (gradients, glows, fields) rendered at ¼ resolution.
-        let n_smooth = smooth::prefix(&list.ops, w as f64, h as f64, &|id| assets.image(id).map(|p| (p.width() as u32, p.height() as u32)));
+        let n_smooth = if self.quality != Quality::Draft { 0 } else { smooth::prefix(&list.ops, w as f64, h as f64, &|id| assets.image(id).map(|p| (p.width() as u32, p.height() as u32))) };
         if n_smooth > 0 && backdrop.as_ref().is_none_or(|(k, _, _)| *k < n_smooth) {
             let f = smooth::FACTOR;
             let (lw, lh) = ((w as u32).div_ceil(f).max(2), (h as u32).div_ceil(f).max(2));

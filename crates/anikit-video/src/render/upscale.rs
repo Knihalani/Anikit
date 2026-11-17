@@ -10,6 +10,9 @@ use kurbo::Rect;
 
 #[derive(Default, Debug)]
 pub struct Upscaler {
+    /// Use the smooth, dithered cubic B-spline filter instead of bilinear.
+    pub cubic: bool,
+    cubic_rows: Vec<(usize, Vec<i32>)>,
     xtab: Vec<(u32, u32, u32)>,
     rows: [Vec<u8>; 2],
     row_ids: [usize; 2],
@@ -79,6 +82,9 @@ impl Upscaler {
 
     #[allow(clippy::too_many_arguments)]
     fn run_c<const C: usize>(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], stride: usize, ow: usize, oh: usize, ox: i64, oy: i64) {
+        if self.cubic {
+            return self.run_cubic::<C>(src, sw, sh, dev, out, stride, ow, oh, ox, oy);
+        }
         #[cfg(target_arch = "x86_64")]
         if std::arch::is_x86_feature_detected!("avx2") {
             // SAFETY: feature checked above.
@@ -167,6 +173,79 @@ impl Upscaler {
                 let (iw, wy) = ((256 - wy) as u16, wy as u16);
                 for ((d, &a), &b) in d.iter_mut().zip(a.iter()).zip(b.iter()) {
                     *d = ((a as u16 * iw + b as u16 * wy + 128) >> 8) as u8;
+                }
+            }
+        }
+    }
+}
+
+/// Cubic B-spline weights (sum 1) for fractional offset `t`, taps at −1, 0, 1, 2.
+#[inline(always)]
+fn bspline(t: f32) -> [f32; 4] {
+    let (t2, t3) = (t * t, t * t * t);
+    [(1.0 - t).powi(3) / 6.0, (3.0 * t3 - 6.0 * t2 + 4.0) / 6.0, (-3.0 * t3 + 3.0 * t2 + 3.0 * t + 1.0) / 6.0, t3 / 6.0]
+}
+
+impl Upscaler {
+    /// Smooth upscale: separable cubic B-spline (C²-continuous, no ringing),
+    /// so low-res fields show no bilinear creases, plus a fixed per-pixel
+    /// triangular dither when rounding to 8 bits so smooth ramps don't band.
+    #[allow(clippy::too_many_arguments, clippy::needless_range_loop)]
+    fn run_cubic<const C: usize>(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], stride: usize, ow: usize, oh: usize, ox: i64, oy: i64) {
+        let (sx, sy) = (sw as f64 / dev.width(), sh as f64 / dev.height());
+        let clampi = |i: i64, n: usize| i.clamp(0, n as i64 - 1) as usize;
+        // Column taps: 4 source indices and weights (fixed point, sum 4096).
+        let cols: Vec<([usize; 4], [i32; 4])> = (0..ow)
+            .map(|x| {
+                let u = ((ox + x as i64) as f64 + 0.5 - dev.x0) * sx - 0.5;
+                let i = u.floor();
+                let w = bspline((u - i) as f32);
+                let i = i as i64;
+                let idx = [clampi(i - 1, sw), clampi(i, sw), clampi(i + 1, sw), clampi(i + 2, sw)];
+                let mut wi = w.map(|v| (v * 4096.0).round() as i32);
+                wi[1] += 4096 - wi.iter().sum::<i32>();
+                (idx, wi)
+            })
+            .collect();
+        self.cubic_rows.clear();
+        let srow = sw * C;
+        for y in 0..oh {
+            let v = ((oy + y as i64) as f64 + 0.5 - dev.y0) * sy - 0.5;
+            let j = v.floor();
+            let wy = bspline((v - j) as f32);
+            let j = j as i64;
+            let rows = [clampi(j - 1, sh), clampi(j, sh), clampi(j + 1, sh), clampi(j + 2, sh)];
+            // Horizontal pass for the needed source rows (cached; rows advance slowly).
+            for &r in &rows {
+                if self.cubic_rows.iter().any(|(k, _)| *k == r) {
+                    continue;
+                }
+                let s = &src[r * srow..(r + 1) * srow];
+                let mut hrow = vec![0i32; ow * C];
+                for (x, (idx, wi)) in cols.iter().enumerate() {
+                    for c in 0..C {
+                        hrow[x * C + c] = wi[0] * s[idx[0] * C + c] as i32 + wi[1] * s[idx[1] * C + c] as i32 + wi[2] * s[idx[2] * C + c] as i32 + wi[3] * s[idx[3] * C + c] as i32;
+                    }
+                }
+                if self.cubic_rows.len() >= 6 {
+                    self.cubic_rows.remove(0);
+                }
+                self.cubic_rows.push((r, hrow));
+            }
+            let get = |r: usize| &self.cubic_rows.iter().find(|(k, _)| *k == r).unwrap().1;
+            let (r0, r1, r2, r3) = (get(rows[0]), get(rows[1]), get(rows[2]), get(rows[3]));
+            let w = wy;
+            let d = &mut out[y * stride..y * stride + ow * C];
+            let yy = (oy + y as i64) as u32;
+            for (x, o) in d.chunks_exact_mut(C).enumerate() {
+                let xx = (ox + x as i64) as u32;
+                let dither = super::post::tri_dither(xx, yy);
+                for c in 0..C {
+                    let k = x * C + c;
+                    let v = (w[0] * r0[k] as f32 + w[1] * r1[k] as f32 + w[2] * r2[k] as f32 + w[3] * r3[k] as f32) / 4096.0;
+                    // No dither on alpha.
+                    let dz = if C == 4 && c == 3 { 0.0 } else { dither * 0.5 };
+                    o[c] = (v + dz + 0.5).clamp(0.0, 255.0) as u8;
                 }
             }
         }
