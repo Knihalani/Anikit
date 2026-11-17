@@ -156,6 +156,33 @@ More keys:
 - `"alpha": true` uses `fragColor.a` as coverage. By default the output is opaque, as on Shadertoy.
 - `src: "fx.glsl"` (or `.wgsl`) loads the code from a file.
 
+### Multi-pass buffers
+
+Simulations, trails, blurs and anything that needs a previous frame or an intermediate image go in buffer passes, as on Shadertoy. Up to four passes, `"A"` to `"D"`, run in that order before the layer's own (image) pass. Each writes a float RGBA buffer at the layer's size, unclamped and exact, so it can hold positions, velocities or HDR light.
+
+```json
+{ "shader": "void mainImage(out vec4 c, in vec2 p) { vec3 v = texture(iChannel0, p / iResolution.xy).rgb; c = vec4(pow(1.0 - exp(-v * 1.5), vec3(0.4545)), 1.0); }",
+  "channels": ["A"],
+  "buffers": { "A": { "src": "trail.glsl", "channels": ["A"] } } }
+```
+
+```glsl
+// trail.glsl: last frame, zoomed and turned a little and faded, plus a bright orbiting dot.
+void mainImage(out vec4 c, in vec2 p) {
+    vec2 ctr = p / iResolution.xy - 0.5;
+    ctr = mat2(cos(0.01), -sin(0.01), sin(0.01), cos(0.01)) * ctr * 0.985;
+    vec3 prev = texture(iChannel0, ctr + 0.5).rgb * 0.965;
+    vec2 q = (p - 0.5 * iResolution.xy) / iResolution.y;
+    vec2 dot_ = 0.3 * vec2(cos(iTime * 1.7), sin(iTime * 2.3));
+    vec3 hue = 0.5 + 0.5 * cos(iTime * 0.6 + vec3(0.0, 2.1, 4.2));
+    c = vec4(prev + hue * exp(-pow(length(q - dot_) / 0.018, 2.0)) * 2.0, 1.0);
+}
+```
+
+- **Channels.** A channel `"A"` (in the layer's `channels` or a buffer's) reads buffer A. If A runs earlier in the order, it reads this frame's A; if A is the reading pass itself or a later one, it reads last frame's A (feedback). On the layer's first frame, previous buffers are zero. Buffer channels can also be `"noise"` or `"none"`, with `wrap` and `filter` options as usual.
+- **Determinism.** Frame *n* is the same whether the render reaches it in order or a still jumps straight to it: a jump runs the buffers from the layer's first frame. Running from the start makes a still deep into a long feedback shot cost *n* buffer frames (about 10 ms each at 960×540). Renders step one frame at a time.
+- **Uniforms.** Buffers see the spec's uniform values (or the declared defaults), not animated ones. Otherwise a frame would depend on how it was reached. Animate the image pass, or drive buffers from `iTime`, `iAudio` and `iBeat`.
+
 ### WGSL
 
 Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) -> vec4f`). The same inputs are private globals. Channels are `iChannel0..3` (`texture_2d<f32>`) with samplers `iSampler0..3`.

@@ -197,3 +197,37 @@ fn audio_uniforms_without_music_warn() {
     let d = diags(r#"{ "size": [16, 8], "scenes": [ { "duration": 1, "layers": [ { "shader": "void mainImage(out vec4 c, in vec2 p) { c = vec4(iBeat.x); }" } ] } ] }"#);
     assert!(d.iter().any(|m| m.contains("need music")), "{d:?}");
 }
+
+#[test]
+fn buffer_feedback_counts_frames_and_seeks_deterministically() {
+    // Buffer A adds 1 per frame to its previous value (float precision, unclamped);
+    // B reads A this frame; the image shows B / 255.
+    let src = r#"{ "size": [8, 4], "fps": 10, "scenes": [ { "duration": 5, "layers": [
+        { "shader": "void mainImage(out vec4 c, in vec2 p) { c = vec4(texelFetch(iChannel0, ivec2(p), 0).r / 255.0, 0.0, 0.0, 1.0); }",
+          "channels": ["B"],
+          "buffers": {
+            "A": { "shader": "void mainImage(out vec4 c, in vec2 p) { c = vec4(texelFetch(iChannel0, ivec2(p), 0).r + 1.0, 0.0, 0.0, 1.0); }", "channels": ["A"] },
+            "B": { "shader": "void mainImage(out vec4 c, in vec2 p) { c = texture(iChannel0, p / iResolution.xy); }", "channels": ["A"] } } } ] } ] }"#;
+    // Cold seek straight to frame 30 (t = 3.0): A has run 31 times.
+    let ev = build(src);
+    assert_eq!(px(&ev, 3.0, 2, 1)[0], 31);
+    // Sequential frames from a fresh evaluator give the same values.
+    let ev2 = build(src);
+    for f in 0..=30 {
+        let v = px(&ev2, f as f32 / 10.0, 2, 1)[0];
+        assert_eq!(v, f + 1, "frame {f}");
+    }
+    // Going back works too.
+    assert_eq!(px(&ev2, 1.0, 2, 1)[0], 11);
+}
+
+#[test]
+fn buffer_names_are_checked() {
+    let d = diags(r#"{ "size": [8, 4], "scenes": [ { "duration": 1, "layers": [
+        { "shader": "void mainImage(out vec4 c, in vec2 p) { c = texture(iChannel0, p / iResolution.xy); }", "channels": ["C"],
+          "buffers": { "A": { "shader": "void mainImage(out vec4 c, in vec2 p) { c = vec4(1.0); }", "channels": ["Z"] }, "E": { "shader": "void mainImage(out vec4 c, in vec2 p) { c = vec4(1.0); }" } } } ] } ] }"#);
+    let all = d.join("\n");
+    assert!(all.contains("buffers.E") && all.contains("\"A\", \"B\", \"C\" or \"D\""), "{all}");
+    assert!(all.contains("not 'Z'"), "{all}");
+    assert!(all.contains("reads buffer C"), "{all}");
+}

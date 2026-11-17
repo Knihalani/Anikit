@@ -966,6 +966,7 @@ impl C<'_> {
             ("filter", l.filter.is_some()),
             ("supersample", l.supersample.is_some()),
             ("alpha", l.alpha.is_some()),
+            ("buffers", l.buffers.is_some()),
         ];
         let check = |d: &mut Vec<Diagnostic>, list: &[(&str, bool)], ok: bool, owner: &str| {
             if !ok {
@@ -2453,6 +2454,7 @@ impl C<'_> {
             slots.push((u.name.clone(), off, len));
             off += len;
         }
+        let (passes, buf_names) = self.shader_buffers(l, path, &vals);
         let filter = l.filter.unwrap_or(false);
         let mut channels = Vec::new();
         let list: Vec<serde_json::Value> = match &l.channels {
@@ -2469,6 +2471,11 @@ impl C<'_> {
             let src = v.as_str().or_else(|| v.get("src").and_then(|s| s.as_str()));
             let comp_name = src.and_then(|x| x.strip_prefix('#')).or_else(|| v.get("composition").and_then(|x| x.as_str()));
             let c = match (src, v.get("layers")) {
+                (Some(b), _) if buf_names.iter().any(|n| n == b) => ChannelC::Buffer(buf_slot(b)),
+                (Some(b), _) if buf_slot_opt(b).is_some() => {
+                    self.d.push(Diagnostic::error(cp.clone(), format!("channel '{b}' reads buffer {b}, but the layer has no \"buffers\": {{\"{b}\": {{…}}}}")));
+                    ChannelC::None
+                }
                 _ if comp_name.is_some() => {
                     let name = comp_name.unwrap_or_default();
                     match self.comps.iter().find(|c| c.0 == name).cloned() {
@@ -2527,7 +2534,7 @@ impl C<'_> {
         }
         self.uniform_slots = slots.clone();
         let sc = ShaderC {
-            dynamic: super::shader::uses_time(&text),
+            dynamic: super::shader::uses_time(&text) || passes.as_ref().is_some_and(|p| p.stateful || p.dynamic),
             id: Self::shader_id(path, &text),
             shader,
             uniforms: slots,
@@ -2538,8 +2545,69 @@ impl C<'_> {
             alpha: l.alpha.unwrap_or(false),
             label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
             audio: self.shader_audio(&text, path),
+            passes,
         };
         Some((Kind::Shader(Box::new(sc)), size))
+    }
+
+    /// Compile a shader layer's `"buffers"` (A–D). Returns the passes and the names given.
+    fn shader_buffers(&mut self, l: &Layer, path: &str, vals: &[(String, Result<Vec<f32>, String>)]) -> (Option<Arc<super::shader::Passes>>, Vec<String>) {
+        use super::shader::{BufChan, BufPass, Passes};
+        let Some(map) = &l.buffers else { return (None, Vec::new()) };
+        let mut bufs = Vec::new();
+        let mut names = Vec::new();
+        let mut dynamic = false;
+        let mut audio = None;
+        let mut uniforms: Vec<(String, Vec<f32>)> = Vec::new();
+        for (name, b) in map {
+            let bp = format!("{path}.buffers.{name}");
+            let Some(slot) = buf_slot_opt(name) else {
+                self.d.push(Diagnostic::error(bp, "buffers are named \"A\", \"B\", \"C\" or \"D\""));
+                continue;
+            };
+            let Some((shader, text, bvals)) = self.compile_shader(b.shader.as_deref(), b.src.as_deref(), l.uniforms.as_ref(), &bp) else { continue };
+            if shader.kind != anikit_shader::Kind::Image {
+                self.d.push(Diagnostic::error(format!("{bp}.shader"), "a buffer pass is an image shader (mainImage)"));
+                continue;
+            }
+            dynamic |= super::shader::uses_time(&text);
+            if audio.is_none() {
+                audio = self.shader_audio(&text, &bp);
+            }
+            // Static uniform values: declared defaults, then the spec's numbers.
+            for u in &shader.uniforms {
+                let v = bvals.iter().chain(vals.iter()).find(|(k, _)| *k == u.name).and_then(|(_, v)| v.clone().ok()).or_else(|| u.default.clone());
+                if let Some(v) = v {
+                    if !uniforms.iter().any(|(n, _)| *n == u.name) {
+                        uniforms.push((u.name.clone(), v));
+                    }
+                }
+            }
+            let mut chans = Vec::new();
+            for (i, v) in b.channels.iter().flatten().take(4).enumerate() {
+                let cp = format!("{bp}.channels[{i}]");
+                let o = self.channel_opts(v, &cp);
+                let src = v.as_str().or_else(|| v.get("src").and_then(|s| s.as_str())).unwrap_or("");
+                let c = match src {
+                    "noise" => BufChan::Noise,
+                    "" | "none" => BufChan::None,
+                    s if buf_slot_opt(s).is_some() && map.contains_key(s) => BufChan::Buffer(buf_slot(s)),
+                    s => {
+                        self.d.push(Diagnostic::error(cp, format!("a buffer channel is \"A\"…\"D\" (a buffer of this layer), \"noise\" or \"none\", not '{s}'")));
+                        BufChan::None
+                    }
+                };
+                chans.push((c, o));
+            }
+            names.push(name.clone());
+            bufs.push(BufPass { slot, shader, chans });
+        }
+        if bufs.is_empty() {
+            return (None, names);
+        }
+        let mut p = Passes::new(bufs, uniforms, audio);
+        p.dynamic = dynamic;
+        (Some(Arc::new(p)), names)
     }
 
     /// Music features for a shader that reads `iAudio`/`iBeat` (analysed once per spec).
@@ -2594,6 +2662,7 @@ impl C<'_> {
             alpha: false,
             label: super::shader::label(path, Some(src)),
             audio: self.shader_audio(&text, path),
+            passes: None,
         })))
     }
 
@@ -3276,4 +3345,19 @@ fn components_theme(t: &Theme) -> crate::components::Theme {
     c.palette = pal;
     c.radius = t.radius;
     c
+}
+
+/// `"A"`…`"D"` → 0..4.
+fn buf_slot_opt(name: &str) -> Option<usize> {
+    match name {
+        "A" => Some(0),
+        "B" => Some(1),
+        "C" => Some(2),
+        "D" => Some(3),
+        _ => None,
+    }
+}
+
+fn buf_slot(name: &str) -> usize {
+    buf_slot_opt(name).unwrap_or(0)
 }
