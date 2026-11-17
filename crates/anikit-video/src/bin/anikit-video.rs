@@ -23,6 +23,7 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|b
   still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
   sheet  spec.json -o sheet.png [--frames N | --cols 4 --rows 3] [--width 480]
   check  spec.json              validate; print errors, warnings and timing
+  set    spec.json <path> <value> [--delete]   patch one value in place (e.g. scenes.0.layers.1.text Hi)
   info   [--components] [--shaders]  version, encoders, component and shader catalogue
   schema [-o file]              print the JSON Schema of the spec
   beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
@@ -256,6 +257,19 @@ fn index_of(a: &[serde_json::Value], seg: &str) -> Option<usize> {
 fn main() -> ExitCode {
     // Agent commands (new, templates, prompt, critique, preview, mcp) live in the library.
     let raw: Vec<String> = std::env::args().skip(1).collect();
+    // `<command> --help` (or -h) prints that command's usage and succeeds, so
+    // agents probing a command never mistake a usage error for a stale build.
+    if raw.len() >= 2 && raw[1..].iter().any(|a| a == "--help" || a == "-h") {
+        let cmd = raw[0].as_str();
+        let both = format!("{USAGE}\n{}", anikit_video::agent_cli::HELP);
+        let lines: Vec<&str> = both.lines().filter(|l| l.trim_start().starts_with(cmd) || l.contains(&format!("anikit-video {cmd}"))).collect();
+        if lines.is_empty() {
+            println!("{USAGE}");
+        } else {
+            println!("{}\n(more: anikit-video docs <topic>)", lines.join("\n"));
+        }
+        return ExitCode::SUCCESS;
+    }
     if raw.first().map(String::as_str) == Some("set") {
         return match set_cmd(&raw[1..]) {
             Ok(()) => ExitCode::SUCCESS,
@@ -267,19 +281,6 @@ fn main() -> ExitCode {
     }
     if matches!(raw.first().map(String::as_str), Some("--version" | "-V" | "version")) {
         println!("anikit-video {} ({} {})", env!("CARGO_PKG_VERSION"), env!("ANIKIT_GIT"), env!("ANIKIT_GIT_DATE"));
-        return ExitCode::SUCCESS;
-    }
-    // `<command> --help` (or -h) prints that command's usage and succeeds, so
-    // agents probing a command never mistake a usage error for a stale build.
-    if raw.len() >= 2 && raw[1..].iter().any(|a| a == "--help" || a == "-h") {
-        let cmd = raw[0].as_str();
-        let both = format!("{USAGE}\n{}", anikit_video::agent_cli::HELP);
-        let lines: Vec<&str> = both.lines().filter(|l| l.trim_start().starts_with(cmd) || l.contains(&format!("anikit-video {cmd}"))).collect();
-        if lines.is_empty() {
-            println!("{USAGE}");
-        } else {
-            println!("{}\n(more: anikit-video docs essentials)", lines.join("\n"));
-        }
         return ExitCode::SUCCESS;
     }
     if let Some(code) = anikit_video::assetlib::run(&raw) {
