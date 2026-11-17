@@ -51,6 +51,9 @@ fn report(name: &str, secs: f64) {
 
 const BLOCK: usize = 128;
 
+/// (seconds, dBFS peak) segments of a test tone.
+type Segs = &'static [(f64, f64)];
+
 /// Stereo 1 kHz sine segments (seconds, dBFS peak).
 fn tone(freq: f64, segs: &[(f64, f64)]) -> Vec<f32> {
     let mut v = Vec::new();
@@ -68,7 +71,7 @@ fn tone(freq: f64, segs: &[(f64, f64)]) -> Vec<f32> {
 /// Meter readings for the synthesisable EBU Tech 3341 / 3342 cases.
 fn validation() {
     println!("\nEBU Tech 3341 integrated loudness (expected ±0.1 LU):");
-    let cases: [(&str, &[(f64, f64)], f64); 5] = [
+    let cases: [(&str, Segs, f64); 5] = [
         ("1: −23 dBFS 20 s", &[(20.0, -23.0)], -23.0),
         ("2: −33 dBFS 20 s", &[(20.0, -33.0)], -33.0),
         ("3: −36/−23/−36", &[(10.0, -36.0), (60.0, -23.0), (10.0, -36.0)], -23.0),
@@ -87,7 +90,7 @@ fn validation() {
     let z = vec![0.0; x.len()];
     println!("  997 Hz 0 dBFS one channel: {:.3} LUFS (BS.1770: −3.01)", measure(&x, &z, FS).integrated);
     println!("EBU Tech 3342 loudness range (expected ±1 LU):");
-    let lra: [(&[(f64, f64)], f64); 4] = [
+    let lra: [(Segs, f64); 4] = [
         (&[(20.0, -20.0), (20.0, -30.0)], 10.0),
         (&[(20.0, -20.0), (20.0, -15.0)], 5.0),
         (&[(20.0, -40.0), (20.0, -20.0)], 20.0),
