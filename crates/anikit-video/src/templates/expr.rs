@@ -471,6 +471,7 @@ pub const FUNCTIONS: &[(&str, &str)] = &[
     ("truncate(s, n)", "at most n characters, ending with … when cut"),
     ("default(x, fallback)", "fallback when x is null or empty"),
     ("pick(list, key)", "list of one field from a list of objects"),
+    ("obj(key, value, …)", "an object from key/value pairs"),
     ("contrast(bg)", "#000000 or #FFFFFF, whichever reads best on bg"),
     ("mix(a, b, t)", "colour between a and b (t = 0..1)"),
     ("alpha(c, a)", "colour c with opacity a (0..1), as #RRGGBBAA"),
@@ -574,6 +575,15 @@ fn call(name: &str, a: &[Value]) -> Result<Value, String> {
                 let cut: String = t.chars().take(n.saturating_sub(1)).collect();
                 Value::String(format!("{}…", cut.trim_end()))
             }
+        }
+        "obj" => {
+            let mut m = Map::new();
+            for pair in a.chunks(2) {
+                if let [k, v] = pair {
+                    m.insert(s(k), v.clone());
+                }
+            }
+            Value::Object(m)
         }
         "default" => {
             let v = arg(a, 0);

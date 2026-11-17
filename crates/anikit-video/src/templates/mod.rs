@@ -277,7 +277,7 @@ impl Template {
         let has_screen = text.contains("\"screen\":");
         let has_image = ["screenshot", "image", "images", "src"].iter().any(|k| params.to_string().contains(&format!("\"{k}\"")));
         if has_screen && !has_image {
-            v.push("note: no screenshots given, so device frames show a generated placeholder app (sample data); pass `screenshot` / `image` params for real product screens".into());
+            v.push("note: no screenshots given, so device frames show generated app screens built from your copy (product name, features); pass `screenshot` / `image` params for real product screens".into());
         }
         v
     }
