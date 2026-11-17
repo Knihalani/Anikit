@@ -270,24 +270,26 @@ pub struct ChanInfo {
     pub nearest: i32,
     /// 1 = the inline path applies (bound, no mipmaps, no mirror wrap).
     pub simple: i32,
-    pub _pad: i32,
+    /// 1 = texels are `[f32; 4]` (16 bytes) instead of RGBA8.
+    pub float: i32,
 }
 
 impl ChanInfo {
-    pub const NONE: ChanInfo = ChanInfo { data: std::ptr::null(), w: 1, h: 1, wf: 1.0, hf: 1.0, repeat: 0, nearest: 0, simple: 0, _pad: 0 };
+    pub const NONE: ChanInfo = ChanInfo { data: std::ptr::null(), w: 1, h: 1, wf: 1.0, hf: 1.0, repeat: 0, nearest: 0, simple: 0, float: 0 };
 
     pub fn of(t: &Texture) -> ChanInfo {
         let l = &t.levels[0];
+        let float = t.is_float();
         ChanInfo {
-            data: l.px.as_ptr() as *const u8,
+            data: if float { l.fpx.as_ptr() as *const u8 } else { l.px.as_ptr() as *const u8 },
             w: l.w as i32,
             h: l.h as i32,
             wf: l.w as f32,
             hf: l.h as f32,
             repeat: (t.wrap == Wrap::Repeat) as i32,
             nearest: (t.filter == Filter::Nearest) as i32,
-            simple: (t.levels.len() == 1 && t.wrap != Wrap::Mirror && !t.is_float()) as i32,
-            _pad: 0,
+            simple: (t.levels.len() == 1 && t.wrap != Wrap::Mirror) as i32,
+            float: float as i32,
         }
     }
 }

@@ -112,11 +112,14 @@ pub struct Env {
     /// Diffuse irradiance without the key, as 9 SH coefficients per channel.
     sh: [V3; 9],
     pub key_solid_angle: f32,
+    /// The boxes lane-wise, for [`Env::radiance`] (see `kernel::envk`).
+    soa: Option<super::kernel::envk::Boxes>,
 }
 
 impl Env {
     pub fn new(boxes: Vec<Softbox>, key: Option<usize>, zenith: V3, horizon: V3, ground: V3, band: V3) -> Env {
-        let mut e = Env { boxes, key, zenith, horizon, ground, band, sh: [v3(0.0, 0.0, 0.0); 9], key_solid_angle: 0.0 };
+        let soa = super::kernel::envk::Boxes::new(&boxes);
+        let mut e = Env { boxes, key, zenith, horizon, ground, band, sh: [v3(0.0, 0.0, 0.0); 9], key_solid_angle: 0.0, soa };
         e.key_solid_angle = key.map(|k| e.boxes[k].solid_angle()).unwrap_or(0.0);
         e.project_sh();
         e
@@ -138,8 +141,19 @@ impl Env {
         let a = rough * rough;
         let blur = 1.6 * a + 0.35 * a.sqrt() * rough;
         let mut c = self.sky(d, blur);
-        for b in &self.boxes {
-            c = add(c, b.eval(d, blur));
+        match &self.soa {
+            // All boxes at once (same values, added in the same order).
+            Some(s) if s.n == self.boxes.len() => {
+                let v = super::kernel::envk::eval(s, d, blur);
+                for l in 0..s.n {
+                    c = add(c, v3(v[0][l], v[1][l], v[2][l]));
+                }
+            }
+            _ => {
+                for b in &self.boxes {
+                    c = add(c, b.eval(d, blur));
+                }
+            }
         }
         // Flags (negative boxes) darken but never below black.
         vmax(c, v3(0.0, 0.0, 0.0))
@@ -308,6 +322,31 @@ mod tests {
         };
         let (a, c) = (integ(0.0), integ(0.08));
         assert!((a - c).abs() / a < 0.08, "{a} vs {c}");
+    }
+
+    #[test]
+    fn lane_boxes_match_scalar() {
+        for name in ["cyc", "studio", "night", "neon", "sunset"] {
+            let e = Env::preset(name, v3(0.5, 0.3, 1.0), v3(0.1, 0.8, 0.9)).unwrap();
+            let mut seed = 3u32;
+            let mut r = || {
+                seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+                (seed >> 8) as f32 / (1u32 << 24) as f32 * 2.0 - 1.0
+            };
+            for i in 0..30000 {
+                let d = norm(v3(r(), r(), r()));
+                let rough: f32 = [0.0, 0.1, 0.45][i % 3];
+                let a2 = rough * rough;
+                let blur = 1.6 * a2 + 0.35 * a2.sqrt() * rough;
+                let mut c = e.sky(d, blur);
+                for b in &e.boxes {
+                    c = add(c, b.eval(d, blur));
+                }
+                let a = vmax(c, v3(0.0, 0.0, 0.0));
+                let b = e.radiance(d, rough);
+                assert_eq!((a.x.to_bits(), a.y.to_bits(), a.z.to_bits()), (b.x.to_bits(), b.y.to_bits(), b.z.to_bits()), "{name} {d:?} {rough}");
+            }
+        }
     }
 
     #[test]

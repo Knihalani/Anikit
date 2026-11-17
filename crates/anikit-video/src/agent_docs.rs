@@ -83,7 +83,21 @@ fn uniforms(src: &str) -> Vec<(String, String, String)> {
         .collect()
 }
 
+/// A recipe's notes and ready spec: hand-built shots, or a shader-library entry wrapped in a minimal spec.
+pub fn recipe_spec(name: &str) -> Option<(String, Value)> {
+    let Some((_, src)) = RECIPES.iter().find(|(r, _)| *r == name) else {
+        return library_spec(name);
+    };
+    let v: Value = serde_json::from_str(src).ok()?;
+    let mut about = v["about"].as_str().unwrap_or("").to_string();
+    if let Some(c) = v["cost"].as_str() {
+        about += &format!(" Cost: {c}.");
+    }
+    Some((about, v["spec"].clone()))
+}
+
 /// The recipe list, or one recipe: its notes and a ready spec.
+
 pub fn recipes(name: Option<&str>) -> Result<String, String> {
     let lib = anikit_shader::library::ALL;
     let Some(n) = name else {
@@ -91,7 +105,8 @@ pub fn recipes(name: Option<&str>) -> Result<String, String> {
         for (n, src) in RECIPES {
             let v: Value = serde_json::from_str(src).unwrap();
             let about = v["about"].as_str().unwrap_or("");
-            s += &format!("  {n:20} {}\n", about.split(". ").next().unwrap_or(about).trim_end_matches('.'));
+            let cost = v["cost"].as_str().map(|c| format!(" [{}]", c.split(" (").next().unwrap_or(c))).unwrap_or_default();
+            s += &format!("  {n:20} {}{cost}\n", about.split(". ").next().unwrap_or(about).trim_end_matches('.'));
         }
         s += "Shaders (one line in a spec: {\"shader\": \"<name>\", \"uniforms\": {...}}; filters add \"filter\": true; transitions: \"transition\": \"<name>\"):\n";
         for e in lib {
@@ -101,7 +116,8 @@ pub fn recipes(name: Option<&str>) -> Result<String, String> {
     };
     if let Some((_, src)) = RECIPES.iter().find(|(r, _)| *r == n) {
         let v: Value = serde_json::from_str(src).unwrap();
-        return Ok(format!("# {n}\n\n{}\n\n```json\n{}\n```\n", v["about"].as_str().unwrap_or(""), crate::agent_cli::compact_json(&v["spec"])));
+        let cost = v["cost"].as_str().map(|c| format!("\n\nCost: {c}.")).unwrap_or_default();
+        return Ok(format!("# {n}\n\n{}{cost}\n\n`anikit-video recipes {n} -o {n}.json` writes the spec.\n\n```json\n{}\n```\n", v["about"].as_str().unwrap_or(""), crate::agent_cli::compact_json(&v["spec"])));
     }
     if let Some(e) = lib.iter().find(|e| e.name == n) {
         let us = uniforms(e.src);
@@ -167,4 +183,18 @@ mod tests {
         assert!(recipes(Some("aurora")).unwrap().contains("\"shader\": \"aurora\""));
         assert!(recipes(Some("kinetic-slm")).unwrap_err().contains("did you mean 'kinetic-slam'"));
     }
+}
+
+/// A shader-library entry as a minimal ready spec (layer, filter or transition).
+fn library_spec(n: &str) -> Option<(String, Value)> {
+    let e = anikit_shader::library::ALL.iter().find(|e| e.name == n)?;
+    let use_ = format!("{:?}", e.use_).to_lowercase();
+    let spec = if use_.contains("transition") {
+        serde_json::json!({ "scenes": [ "Before", { "transition": { "type": e.name, "duration": 0.6 }, "layers": [ "After" ] } ] })
+    } else if use_.contains("filter") {
+        serde_json::json!({ "scenes": [ { "layers": [ { "text": "Filtered", "style": "title" }, { "shader": e.name, "filter": true } ] } ] })
+    } else {
+        serde_json::json!({ "scenes": [ { "duration": 4, "layers": [ { "shader": e.name } ] } ] })
+    };
+    Some((e.about.to_string(), spec))
 }

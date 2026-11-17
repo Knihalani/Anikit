@@ -404,12 +404,22 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
     let starts: std::collections::HashSet<usize> = ranges.iter().map(|r| r.0).collect();
     let chunk_start = |k: usize| ranges[ranges.partition_point(|r| r.0 <= k) - 1].0;
     let workers: std::sync::Mutex<std::collections::HashMap<usize, Worker>> = Default::default();
+    let pool: std::sync::Mutex<Vec<Worker>> = Default::default();
     let out = ak264::encode_ranges(cfg, ranges.clone(), |k, buf, hints| {
         let t = Instant::now();
         let c = chunk_start(k);
-        // A fresh renderer per chunk: some renderer caches still change pixels depending on
-        // what they drew before, so reusing one across chunks isn't deterministic.
-        let mut wk = if k == c { None } else { workers.lock().unwrap().remove(&c) }.unwrap_or_else(new_worker);
+        // A chunk starts from a pooled renderer (its caches are history-independent:
+        // RENDER's `output_is_independent_of_render_history`) with its incremental state reset.
+        let mut wk = if k == c {
+            let mut w = pool.lock().unwrap().pop().unwrap_or_else(new_worker);
+            if let Some(r) = &mut w.renderer {
+                r.invalidate();
+            }
+            w.last = None;
+            w
+        } else {
+            workers.lock().unwrap().remove(&c).unwrap_or_else(new_worker)
+        };
         (|w: &mut Worker| {
             ensure_renderer(ev, w);
             if let (Some(r), Some(l)) = (w.returned.take(), w.last) {
@@ -478,6 +488,8 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
         })(&mut wk);
         if ranges.iter().any(|r| r.0 == c && k + 1 < r.1) {
             workers.lock().unwrap().insert(c, wk);
+        } else {
+            pool.lock().unwrap().push(wk);
         }
         if let Some(tap) = tap {
             tap(k, buf);
@@ -751,6 +763,7 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         full_range: false,
         cabac: opts.quality != Quality::Draft,
         subpel: opts.quality != Quality::Draft,
+        aq_strength: ev.encode_aq.unwrap_or(0.0),
         ..Default::default()
     };
     let prof = Profile::default();
@@ -1071,4 +1084,109 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
 
 fn round3(x: f64) -> f64 {
     (x * 1000.0).round() / 1000.0
+}
+
+/// What a render will cost, measured on a few sample frames before it starts.
+#[derive(Clone, Debug)]
+pub struct Estimate {
+    /// Expected wall-clock seconds.
+    pub secs: f64,
+    /// Mean render time of a changing frame on one thread (ms).
+    pub frame_ms: f64,
+    /// Frames that change (held frames cost nothing).
+    pub changing: u32,
+    pub threads: usize,
+    /// The layer that costs the most in the slowest sampled frame: (spec path, kind, share of that frame 0..1).
+    pub heaviest: Option<(String, String, f64)>,
+}
+
+impl std::fmt::Display for Estimate {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "estimate: ~{:.0} s ({:.1} ms/frame × {} changing frames on {} threads)", self.secs, self.frame_ms, self.changing, self.threads)?;
+        if let Some((p, k, share)) = &self.heaviest {
+            write!(f, "; heaviest: {p} ({k}) ~{:.0}% of a frame", share * 100.0)?;
+        }
+        Ok(())
+    }
+}
+
+/// Estimate a render by timing 4 sample frames (about 4 frame renders). When the
+/// render looks long (`heavy_after` seconds or more), also find the heaviest layer.
+pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estimate {
+    let total = ev.frames();
+    let f0 = opts.from.map(|t| (t * ev.fps).round() as u32).unwrap_or(0).min(total);
+    let f1 = opts.to.map(|t| (t * ev.fps).round() as u32).unwrap_or(total).clamp(f0, total);
+    let changing = (f0..f1).filter(|&i| i == f0 || !ev.is_static((i as f32 - 1.0) / ev.fps, i as f32 / ev.fps)).count() as u32;
+    let threads = rayon::current_num_threads().max(1);
+    let n = f1 - f0;
+    // Render one sample frame per thread, concurrently, as the pipeline does: layers that
+    // parallelise internally (shaders, 3D) then show their real throughput.
+    let k = threads.clamp(2, 8) as u32;
+    let samples: Vec<u32> = (0..k).map(|j| f0 + (n.saturating_sub(1) * (2 * j + 1)) / (2 * k)).collect();
+    let t = Instant::now();
+    let times: Vec<(f64, u32)> = samples
+        .par_iter()
+        .map(|&i| {
+            // A full frame, then the next one incrementally, as the pipeline renders them;
+            // the second is the typical cost of a changing frame.
+            let next = (i + 1).min(f1.saturating_sub(1));
+            with_worker(|w| {
+                let mut dl = ev.eval(frame_time(ev, i));
+                scale_list(&mut dl, opts.scale);
+                ensure_renderer(ev, w);
+                let Worker { renderer, yuv, map, .. } = w;
+                let r = renderer.as_mut().unwrap();
+                r.set_quality(render_quality(opts.quality));
+                r.invalidate();
+                r.render_yuv_incremental(&dl, yuv, map);
+                let t = Instant::now();
+                let mut dl = ev.eval(frame_time(ev, next));
+                scale_list(&mut dl, opts.scale);
+                ensure_renderer(ev, w);
+                let Worker { renderer, yuv, map, last, .. } = w;
+                renderer.as_mut().unwrap().render_yuv_incremental(&dl, yuv, map);
+                *last = None;
+                (t.elapsed().as_secs_f64() * 1e3, i)
+            })
+        })
+        .collect();
+    let _ = t;
+    let frame_ms = times.iter().map(|x| x.0).sum::<f64>() / times.len().max(1) as f64;
+    // Concurrent samples: the batch's throughput is the mean frame time over the threads
+    // that ran them (layers that use all cores themselves show up as slow frames here).
+    let wall = frame_ms / 1e3 * samples.len() as f64 / threads.min(samples.len()) as f64;
+    let worst = times.iter().copied().max_by(|a, b| a.0.total_cmp(&b.0));
+    // Throughput of the batch, scaled to the changing frames; incremental rendering makes
+    // most changing frames cheaper than a full one, encode adds a little.
+    let secs = wall / samples.len().max(1) as f64 * changing as f64 * 1.1 + 0.3;
+    let heaviest = match worst {
+        Some((ms, i)) if secs >= heavy_after && ms > 0.0 => {
+            // Evaluate the slowest frame again: lazily made images (shader layers) are then
+            // computed inside the layer that uses them, so their cost lands on that layer.
+            // Half a frame later, so nothing cached from the timing pass is reused.
+            let (mut dl, tags) = ev.eval_tagged(frame_time(ev, i) + 0.5 / ev.fps);
+            scale_list(&mut dl, opts.scale);
+            let mut best: Option<(f64, u32)> = None;
+            // A layer's cost: its share of the render plus its eval work (shader / 3D images are
+            // made while evaluating, so re-time those by forcing a fresh evaluation of the frame).
+            for tag in &tags {
+                let sub = DisplayList { width: dl.width, height: dl.height, background: dl.background, ops: dl.ops[tag.ops.clone()].to_vec() };
+                let t = Instant::now();
+                with_renderer(ev, |r, _| {
+                    r.invalidate();
+                    r.render(&sub);
+                });
+                let lm = t.elapsed().as_secs_f64() * 1e3;
+                if best.is_none_or(|b| lm > b.0) {
+                    best = Some((lm, tag.layer));
+                }
+            }
+            best.map(|(lm, layer)| {
+                let (p, k) = ev.layer_info(layer);
+                (p.to_string(), k.to_string(), (lm / ms).min(1.0))
+            })
+        }
+        _ => None,
+    };
+    Estimate { secs, frame_ms, changing, threads, heaviest }
 }

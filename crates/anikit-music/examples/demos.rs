@@ -32,12 +32,42 @@ fn main() {
     let out = PathBuf::from(args.first().cloned().unwrap_or_else(|| "music-demos".into()));
     std::fs::create_dir_all(&out).unwrap();
     let only: Vec<&String> = args.iter().skip(1).collect();
+    let raw = std::env::var_os("ANIKIT_DEMOS_RAW").is_some();
+    if std::env::var_os("ANIKIT_DEMOS_CONCURRENT").is_some() {
+        // Throughput: every style at once (one thread each; they share the engine's pool).
+        let t = std::time::Instant::now();
+        let outs: Vec<(String, anikit_music::Rendered)> = std::thread::scope(|sc| {
+            let hs: Vec<_> = DEMOS
+                .iter()
+                .filter(|(n, _)| only.is_empty() || only.iter().any(|o| o.as_str() == *n))
+                .map(|(n, j)| sc.spawn(move || (n.to_string(), render(&MusicSpec::from_json(j).unwrap(), &RenderOpts { stems: true, ..Default::default() }).unwrap())))
+                .collect();
+            hs.into_iter().map(|h| h.join().unwrap()).collect()
+        });
+        let wall = t.elapsed().as_secs_f64();
+        let audio: f64 = outs.iter().map(|(_, r)| r.duration()).sum();
+        for (n, r) in &outs {
+            let b: Vec<u8> = r.l.iter().zip(&r.r).flat_map(|(a, b)| a.to_le_bytes().into_iter().chain(b.to_le_bytes())).collect();
+            std::fs::write(out.join(format!("{n}.f32")), b).unwrap();
+        }
+        eprintln!("total (concurrent): {audio:.1} s of audio in {wall:.2} s = {:.1}× real time", audio / wall);
+        return;
+    }
+    let (mut audio, t_all) = (0.0f64, std::time::Instant::now());
     for (name, json) in DEMOS {
         if !only.is_empty() && !only.iter().any(|o| o.as_str() == *name) {
             continue;
         }
         let spec = MusicSpec::from_json(json).unwrap();
         let r = render(&spec, &RenderOpts { stems: true, ..Default::default() }).unwrap_or_else(|e| panic!("{name}: {e}"));
+        audio += r.duration();
+        if raw {
+            // Raw interleaved f32 for null tests (see examples/null_test.rs).
+            let b: Vec<u8> = r.l.iter().zip(&r.r).flat_map(|(a, b)| a.to_le_bytes().into_iter().chain(b.to_le_bytes())).collect();
+            std::fs::write(out.join(format!("{name}.f32")), b).unwrap();
+            println!("{}", serde_json::json!({"demo": name, "seconds": r.duration(), "timings": r.timings}));
+            continue;
+        }
         let wav = out.join(format!("{name}.wav"));
         write_wav(&wav, r.rate, &r.l, &r.r);
         let ogg = out.join(format!("{name}.ogg"));
@@ -57,8 +87,11 @@ fn main() {
             })
         );
     }
+    let wall = t_all.elapsed().as_secs_f64();
+    eprintln!("total: {audio:.1} s of audio in {wall:.2} s = {:.1}× real time", audio / wall);
 }
 
+#[allow(dead_code)]
 fn write_wav(path: &std::path::Path, rate: u32, l: &[f32], r: &[f32]) {
     let n = l.len();
     let mut b = Vec::with_capacity(44 + n * 4);
