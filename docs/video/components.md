@@ -243,28 +243,50 @@ Two looks from the same kind:
 
 ## Backgrounds
 
-Place backgrounds first in a scene's layers.
+Place backgrounds first in a scene's layers (grain last, as an overlay). Defaults are neutral and follow the theme (`accent`, `background`, `text`); every look can be pushed somewhere else with props. Motion is evaluated at the exact frame time (no stepping outside `--quality draft`).
+
+Pixel fields (`aurora`, `meshGradient`, `gradient`) are computed in linear light as floats, upsampled with a cubic filter, and quantised once with a ±1 LSB triangular dither, so they never band at a 100 % crop. The aurora is recomputed every frame. The mesh moves slowly, so it is computed at keyframes and cross-faded by the renderer: you get continuous motion, but only one new image per keyframe.
 
 | Kind | Props |
 |---|---|
-| `meshGradient` | `colors` (3–6 blobs), `base`, `speed`, `warp` (0 gives round blobs, 1 gives swirls), `intensity` (default 0.75), `seed`, `detail`, `rate` (field updates per second, held in between so frames repeat; default 8), `smooth` (blend between updates instead) |
-| `aurora` | `colors` (ribbons), `sky` (`[top, horizon]`), `speed`, `intensity`, `seed`, `rate` (default 12, held), `smooth` |
-| `gradient` | `colors`, `kind` (`linear` or `radial`), `angle`, `spin` (degrees per second) |
-| `grain` | `amount` (0.03–0.1 is subtle), `size`, `rate` (new patterns per second; default 0 = static, which is free to encode), `seed`. Put it last, as an overlay. |
-| `grid` | `cell`, `color`, `lineWidth`, `fade`, `perspective` (receding floor), `horizon`, `speed` (scroll), `reveal` (seconds to draw on) |
-| `dots` | `spacing`, `radius`, `color`, `fade`, `wave` (a travelling highlight) |
-| `lightLeak` | `colors`, `intensity`, `speed`, `seed`, `rate` (updates per second, held; default 10) |
-| `bokeh` | `count`, `colors`, `minSize`, `maxSize`, `speed`, `seed` |
-| `starfield` | `count`, `color`, `fly` (warp speed), `speed`, `seed` |
+| `meshGradient` | `colors` (3–6 blobs; default: an analogous set around the theme accent), `base` (default: theme background), `speed`, `warp` (0 gives round blobs, 1 swirls, 2 marbling), `scale` (blob size), `intensity` (default 0.8), `sheen` (satin folds lit from the top left, so the mesh reads as a material rather than a blob wash; default 0.85, 0 is matte), `vignette` (default 0.25), `seed`, `detail` (resolution multiplier), `rate` (keyframes per second; default 5 × speed) |
+| `aurora` | `colors` (from the lower edge upwards; default green → teal → rose), `sky` (`[top, horizon]`), `curtains` (1–5, default 3, near to far), `horizon` (lower edge of the nearest curtain, 0–1), `height`, `rays` (0 is a smooth glow, 1 is strongly rayed), `density` (ray fineness), `glow` (volumetric haze), `fold` (how much curtains bunch and fold), `sway` (flow-field bending of the rays), `stars` (0–1), `landscape` (mountain silhouette), `speed`, `intensity`, `seed`, `detail` |
+| `gradient` | `colors` (interpolated in OKLab), `kind` (`linear`, `radial` or `conic`), `angle`, `spin` (degrees per second), `center` (`[x, y]` fractions), `radius`, `smooth` (0 gives linear spacing, 1 an S-curve between stops) |
+| `grain` | `amount` (default 0.016: fine and cheap to encode, about 1.3× the file size of the same film without grain; 0.04 and up is visible film grain), `size`, `rate` (new positions per second; default every frame; 0 is static), `softness` (0 is crisp blue noise, 1 is soft film clumps), `blend` (`overlay` (default, luminance-weighted like film), `soft-light`, or `normal`, which is even and also shows in blacks), `seed` |
+| `grid` | `cell`, `color`, `lineWidth`, `major` (a brighter line every n cells), `fade`, `perspective` (a true 1/z floor with fog towards the horizon), `horizon`, `speed` (scroll), `reveal` (seconds to draw on), `glow` (line halo, or a horizon glow in perspective), `glowColor`, `scan` (seconds per sweep of a glowing scan line) |
+| `dots` | `spacing`, `radius`, `color`, `fade`, `shape` (`circle`, `square` or `plus`), `stagger` (hex packing), `drift` (`[x, y]` px/s), `wave` (a travelling ring of light), `waveColor`, `speed` |
+| `lightLeak` | `colors` (default: warm film amber, rose and gold), `intensity`, `speed`, `scale`, `streak` (anamorphic streaks; default 0.35), `position` (`edges`, `corner` or `top`), `blend` (`normal` or `screen`; screen costs a full-frame layer), `seed` |
+| `bokeh` | `count`, `colors`, `minSize`, `maxSize`, `layers` (1–4 depth layers: far lights are small and crisp, near lights big and soft, and they drift with parallax), `blades` (0 gives round discs, 5–8 polygonal), `rim` (brighter disc edges), `fringe` (chromatic edge), `intensity`, `direction` (drift, in degrees), `blend`, `speed`, `seed` |
+| `starfield` | `count`, `color` (default: natural white with blue and warm tints), `tint`, `twinkle`, `glow` (halos on bright stars), `spikes` (diffraction spikes), `drift` (`[x, y]` parallax), `brightness`, `fly` (fly through the stars: gradient streaks that fade in from the far plane), `warp` (streak length), `speed`, `seed` |
+
+Two looks per kind, for example:
+
+- `meshGradient`: `{}` (theme-tinted satin) · `{"colors": ["#ff7a59", "#ffc36b", "#ff4f8b", "#6a2cff"], "base": "#1a0b2e", "sheen": 1, "warp": 1.4, "scale": 1.3, "intensity": 1}` (glossy silk)
+- `aurora`: `{}` (three rayed curtains) · `{"curtains": 1, "rays": 0.3, "colors": ["#ff9a5c", "#ff4f8b", "#7a5cff"], "landscape": true, "stars": 1}` (one soft dusk ribbon over mountains)
+- `gradient`: `{}` (neutral) · `{"kind": "conic", "colors": ["#0f2027", "#2c5364", "#0f2027"], "center": [0.3, 0.7]}`
+- `grain`: `{}` · `{"amount": 0.06, "size": 1.6, "softness": 1, "blend": "normal"}` (heavy 16 mm; costs bitrate)
+- `grid`: `{"major": 4}` (blueprint) · `{"perspective": true, "glow": 1, "glowColor": "#ff3df0", "scan": 3, "speed": 0.5}` (neon floor)
+- `dots`: `{}` · `{"shape": "plus", "spacing": 40, "stagger": true, "wave": true, "waveColor": "#3ddc97"}`
+- `lightLeak`: `{}` · `{"position": "corner", "colors": ["#7ad7ff", "#ffffff"], "streak": 1, "blend": "screen"}` (cool anamorphic flare)
+- `bokeh`: `{}` · `{"blades": 6, "layers": 4, "colors": ["#ffb347"], "count": 60, "fringe": 1}` (hexagonal city lights)
+- `starfield`: `{}` · `{"fly": true, "warp": 4, "speed": 2}` (hyperspace)
 
 ## Particles
 
+Every particle has a depth: far ones are small and dim, near ones large and out of focus (soft bokeh), so a burst reads as a 3D volume. Fast confetti smears along its motion; sparks are tapered trails whose colour follows black-body temperature as they cool. Colours default to neutral light (snow, dust, sparks) or the theme palette (confetti); on light themes, snow and dust use the muted text colour.
+
 | Kind | Props |
 |---|---|
-| `confetti` | `mode` (`burst`, `cannons` or `rain`), `at` (fire time), `origin` (`[fx, fy]` as fractions of the box), `count`, `colors`, `power`, `gravity`, `size`, `life`, `seed` |
-| `sparks` | `bursts` (times), `origin`, `direction` and `spread` (degrees), `count`, `colors` (`[hot, cool]`), `power`, `gravity`, `life`, `glow`, `seed` |
-| `snow` | `count`, `color`, `speed`, `wind`, `size`, `seed` |
-| `dust` | `count`, `color`, `size`, `speed`, `glow`, `seed` |
+| `confetti` | `mode` (`burst`, `cannons` or `rain`), `at` (fire time), `origin` (`[fx, fy]` as fractions of the box), `count` (`180`), `colors` (theme palette), `material` (`paper`: matte with a soft sheen; `foil`: metallic flashes; `mixed`), `shape` (`mixed`, `strips`, `squares`, `circles`), `power`, `gravity`, `size` (`22`), `life`, `spin` (tumble speed), `depth` (`1`; `0` = flat and sharp), `blur` (motion smear, `1`), `seed` |
+| `sparks` | `bursts` (times), `origin`, `direction` and `spread` (degrees), `count` (`140`), `temperature` (`4300` K; `6500` white-hot, `2500` embers), `colors` (`[hot, cool]`, overrides the temperature), `streak` (trail length, `1.6`), `power`, `gravity`, `life`, `glow`, `flash` (origin flash), `depth`, `seed` |
+| `snow` | `count` (`320`), `color`, `speed`, `wind`, `turbulence` (`1`), `size`, `shape` (`soft` or `crystal`: six-armed flakes in the focus plane), `depth`, `seed` |
+| `dust` | `count`, `color`, `look` (`motes`: fine specks with a few bokeh discs; `bokeh`: big soft discs; `fireflies`: pulsing glowing points), `size`, `speed`, `glow`, `depth`, `seed` |
+
+Two different looks per kind:
+- `confetti`: `{ "material": "foil", "colors": ["#f4f1ea", "#e9c46a", "#d4a373"], "shape": "strips" }` (gold-and-cream foil streamers) vs `{ "mode": "cannons", "shape": "circles", "depth": 0, "blur": 0 }` (flat, crisp, playful).
+- `sparks`: `{ "temperature": 6500, "streak": 3, "spread": 50, "direction": -90 }` (a white-hot fountain with long trails) vs `{ "temperature": 2200, "streak": 0.6, "gravity": 150, "life": 2.5 }` (slow drifting embers).
+- `snow`: `{ "shape": "crystal", "count": 200, "wind": 0 }` (still, crystalline) vs `{ "count": 900, "speed": 260, "wind": 160, "turbulence": 2.5 }` (a blizzard).
+- `dust`: `{ "look": "bokeh", "count": 40 }` vs `{ "look": "fireflies", "count": 60 }`.
 
 ## Media and motion graphics
 
@@ -353,7 +375,7 @@ Put the same file in the spec's `audio` so you hear what you see; use `offset` w
 ```json
 { "component": "reactions", "props": { "kinds": ["heart", "fire", "100"], "rate": 6 } }
 ```
-Emoji are vector drawings (no emoji font needed): `heart`, `like` (thumbs up), `fire`, `star`, `sparkles`, `100` and `laugh` (tears of joy). Aliases such as `thumbs`, `lol` and `hundred` work too. Each one pops in, floats up with a wobble and fades.
+Emoji are vector drawings (no emoji font needed): `heart`, `like` (thumbs up), `fire`, `star`, `sparkles`, `100` and `laugh` (tears of joy). Aliases such as `thumbs`, `lol` and `hundred` work too. Each one pops in with a small ring-and-sparks burst, floats up with a wobble and fades.
 
 | Prop | Default | Meaning |
 |---|---|---|
@@ -366,7 +388,12 @@ Emoji are vector drawings (no emoji font needed): `heart`, `like` (thumbs up), `
 | `spread` | `150` | Horizontal drift and wobble, px. |
 | `rise` | `0.8` | How far up they float, as a fraction of the origin's height. |
 | `life` | `2.8` | Seconds each one lives. |
+| `style` | `emoji` | `emoji` (glossy colour drawings) or `flat` (one-colour silhouettes with white details, in `colors`). |
+| `colors` | theme palette | Colours for `flat`, one per kind. |
+| `burst` | `true` | The ring and sparks on pop. |
 | `delay`, `seed` | | |
+
+Two looks: `{ "kinds": ["heart", "like", "laugh"], "rate": 6 }` (classic live-stream emoji) vs `{ "style": "flat", "colors": ["#ffffff"], "kinds": ["heart", "star"], "burst": false }` (a minimal monochrome brand look).
 
 ### `cardStack`: swiping stack of cards
 ```json
@@ -393,7 +420,7 @@ Cards behind are smaller, higher and darker; every `interval` the front card swi
 | `trail` | `true` | Motion trail on the card being swiped away. |
 
 ### `particleText`: words made of particles
-Thousands of glowing particles fly in from all around, form the text, hold with a soft shimmer, re-form into the next word, then blow away. Points are sampled from the real glyph outlines, so any phrase works.
+Thousands of particles swirl in through a curl-noise flow (with depth: near ones grow and soften, far ones shrink), settle into the text with a soft bloom and the odd glint, re-form into the next word, then blow away in ribbons. Points are sampled from the real glyph outlines, so any phrase works. Colours default to the theme's text colour (warm white on dark themes).
 
 ```json
 { "type": "component", "component": "particleText", "props": { "words": ["Hello", "World"] } }
@@ -403,23 +430,30 @@ Thousands of glowing particles fly in from all around, form the text, hold with 
 |---|---|---|
 | `text` | `"Hello"` | The word or phrase (or use `words`). |
 | `words` | | Several words; the particles re-form from one into the next. |
-| `count` | `4000` | Number of particles. |
-| `size` | `2.4` | Particle radius in px at 1080p. |
-| `colors` | theme | Gradient across the text, left to right. |
+| `count` | `6000` | Number of particles. |
+| `size` | `1.9` | Particle radius in px at 1080p. |
+| `colors` | theme text | Gradient across the text, left to right. |
 | `fontSize` | fit | Default fits about 80% of the width and at most 30% of the height. |
 | `weight`, `face` | `800`, `display` | |
-| `form` | `1.6` | Seconds to fly in and to re-form. |
+| `form` | `1.8` | Seconds to fly in and to re-form. |
 | `hold` | `1.4` | Seconds each word holds. |
-| `exit` | `"none"` | `none` (the text stays), `blow` (wind), `explode` or `fade`. |
+| `flow` | `curl` | How particles travel: `curl` (swirling noise flow), `direct` (gentle arcs) or `spiral` (orbit into place). |
+| `turbulence` | `1` | Strength of the swirl, `0`–`3`. |
+| `depth` | `1` | Depth while flying (`0` = flat). |
+| `sparkle` | `0.5` | Share of particles that glint while the text holds. |
+| `glow`, `bloom` | `true`, `0.7` | Soft bloom around the formed text. |
+| `exit` | `"none"` | `none` (the text stays), `blow` (wind, with curl ribbons), `explode` or `fade`. |
 | `exitTime` | `1.6` | |
-| `delay`, `glow`, `seed` | `0`, `true`, `1` | |
+| `delay`, `seed` | `0`, `1` | |
 | `blend` | `screen` | `normal` draws solid dots, so dark particles show on a light background. |
 | `stagger` | `1` | How much the exit sweeps left to right; `0` makes every particle leave at once (a burst on a beat). |
+
+Two looks: `{ "text": "Launch", "colors": ["#ffd59e", "#ff7a59"], "exit": "blow" }` (warm swirling embers) vs `{ "text": "Launch", "flow": "spiral", "turbulence": 0, "sparkle": 0, "glow": false, "size": 2.6, "count": 3000 }` (a clean, graphic orbit-in).
 
 ## Shapes and light
 
 ### `morph`: shape morphing
-A gradient-filled shape that morphs smoothly through a list of named shapes or SVG paths, with a little squash, turn and a glossy top light.
+A shape that morphs smoothly through a list of named shapes or SVG paths, with a little squash and turn, in one of four materials.
 
 ```json
 { "type": "component", "component": "morph", "props": { "shapes": ["circle", "star", "heart"] } }
@@ -428,46 +462,60 @@ A gradient-filled shape that morphs smoothly through a list of named shapes or S
 | Prop | Default | Meaning |
 |---|---|---|
 | `shapes` | circle, star, heart, blob | Names (`circle`, `square`, `star`, `heart`, `blob`, `triangle`, `hexagon`, `diamond`) or SVG path data (`"M0,0 L10,0 L5,8 Z"`). Every shape is centred and scaled to a similar visual size. |
+| `material` | `glossy` | `glossy` (shaded body, lit rim, specular), `glass` (clear, bright rim, caustic), `flat` (clean fill) or `outline` (line drawing). |
 | `size` | `0.62` | Fraction of the box's shorter side. |
-| `colors` | theme | Fill gradient (2–3 colours). |
+| `colors` | theme accent | Fill gradient (1–3 colours); defaults to shades of the accent (neutral for `glass`). |
 | `duration` | `0.9` | Seconds per morph. |
 | `hold` | `0.7` | Seconds each shape holds. |
 | `loop` | `true` | Morph back to the first shape and repeat. |
 | `turn` | `0` | Degrees each morph rotates the shape. |
 | `glow`, `stroke`, `delay`, `seed` | `true`, none, `0`, `1` | `seed` varies the `blob` shape. |
 
+Two looks: `{ "material": "glossy", "colors": ["#ffb56b", "#ff5e62"] }` (a juicy 3D-ish candy) vs `{ "material": "outline", "glow": false, "colors": ["#ffffff"] }` (a crisp line drawing).
+
 ### `metaballs`: liquid blobs
-Gooey blobs drift, merge and split. The edge is an iso-contour extracted as a vector path each frame, so it stays crisp at any resolution.
+Blobs drift, merge and split. The edge is an iso-contour extracted each frame as smooth closed outlines, so it stays crisp at any resolution. Higher iso-levels of the same field follow the merged shape exactly and shade the liquid: a fresnel rim, inner glow, caustics or mirror bands, depending on the material.
 
 | Prop | Default | Meaning |
 |---|---|---|
 | `count` | `9` | Number of blobs. |
-| `colors` | theme | Gradient (2–4 colours); it drifts slowly. |
+| `material` | `glossy` | `glossy` (coloured liquid, rim light, inner glow, speculars), `glass` (clear with a bright rim and a caustic), `chrome` (mirror bands) or `matte` (soft clay). |
+| `colors` | theme accent | 1–4 colours; the gradient drifts slowly. Defaults to shades of the accent (`glossy`, `matte`) or neutral (`glass`, `chrome`). |
 | `size` | `0.085` | Blob radius as a fraction of the box height. |
 | `spread` | `1` | How far the blobs wander. |
 | `speed` | `1` | |
-| `glow`, `gloss` | `true` | Coloured bloom; soft specular light. |
-| `detail` | `12` | Grid cell in px at 1080p (smaller is smoother). |
+| `glow`, `gloss` | `true` | Soft halo; specular highlights. |
+| `rim` | `1` | Rim light strength (`0`–`2`). |
+| `detail` | `7` | Grid cell in px at 1080p (smaller is more precise). |
 | `seed` | `3` | |
 
+Two looks: `{ "material": "chrome", "count": 6, "size": 0.11 }` (liquid metal) vs `{ "material": "matte", "colors": ["#f4a261", "#e76f51"], "glow": false }` (soft clay).
+
 ### `godRays`: volumetric light
-Soft beams fan out from a light source, slowly turning and breathing, with dust motes that light up inside the beams. Screen-blended: place it above the background.
+A fan of hundreds of hair-thin slices, each lit by a noise density over angle and distance, so shafts of every width emerge, drift and breathe at full frame rate, with haze around the source and dust motes that light up inside the beams (near motes are soft bokeh). Light is neutral daylight by default, nudged towards the theme accent; place it above the background.
 
 | Prop | Default | Meaning |
 |---|---|---|
 | `at` | `[0.32, -0.08]` | Source position as fractions of the box (may be outside it). |
-| `color` | warm white | |
+| `color` | daylight | Light colour near the source. |
+| `farColor` | `color` | Colour far from the source (a warm core with cool haze, for example). |
 | `angle` | `62` | Direction of the fan in degrees (90 points straight down). |
 | `spread` | `70` | Fan width in degrees (360 for all around). |
-| `count` | `14` | Number of beams. |
+| `count` | `26` | Roughly how many distinct shafts across the fan. |
 | `length` | `1.15` | Beam length as a fraction of the box diagonal. |
-| `intensity` | `0.8` | |
-| `spin` | `1.5` | Fan rotation in degrees per second. |
-| `dust` | `120` | Number of dust motes (0 for none). |
+| `intensity` | `1` | |
+| `contrast` | `0.7` | `0` is an even glow, `1` hard beams with dark gaps. |
+| `haze` | `0.5` | Bloom around the source, `0`–`1`. |
+| `spin` | `1` | Fan rotation in degrees per second. |
+| `speed` | `1` | How fast the shafts shift and breathe. |
+| `dust` | `260` | Number of dust motes (0 for none). |
+| `depth` | `1` | Depth of field on the dust (`0` = all sharp). |
 | `seed` | `4` | |
 
+Two looks: `{ "at": [0.5, -0.1], "angle": 90, "spread": 50, "contrast": 0.95, "count": 10, "color": "#fff1d6", "dust": 400 }` (cathedral beams) vs `{ "at": [0.5, 0.45], "spread": 360, "count": 40, "contrast": 0.4, "color": "#ffd9a0", "farColor": "#7fb4ff", "dust": 0, "spin": 4 }` (a radiant burst behind a logo).
+
 ### `lensFlare`
-An anamorphic flare: hot core, halo, faint rainbow ring, a blue horizontal streak, and ghosts along the line from the light through the frame centre. The ghosts slide as the light moves.
+A physically inspired flare: veiling glare, bloom and a hot core; a diffraction starburst (blade spikes with chromatic edges and fine hair); a dispersed halo ring; a streak; and ghosts of varied shapes along the optical axis from the light through the frame centre and beyond, each split into red, green and blue copies. Ghosts strengthen as the light moves off-axis, and the flare fades as the light leaves the frame.
 
 ```json
 { "type": "component", "component": "lensFlare", "props": { "path": [[0.15, 0.25], [0.85, 0.35]], "times": [0, 3] } }
@@ -479,11 +527,21 @@ An anamorphic flare: hot core, halo, faint rainbow ring, a blue horizontal strea
 | `path` | | Positions to travel through (fractions); overrides `at`. |
 | `times` | even | Arrival time of each `path` point, in seconds. |
 | `duration` | `4` | Travel time over the whole `path` when `times` is omitted. |
-| `color` | warm | Core and halo tint. |
-| `streakColor` | blue | |
-| `streak` | `1` | Streak length as a fraction of the box width (0 for none). |
-| `ghosts` | `7` | Number of ghosts (0 for none). |
+| `lens` | `spherical` | `spherical` (starburst, polygon ghosts, short neutral streak), `anamorphic` (long blue streak, oval ghosts, no starburst) or `vintage` (warm, soft, big halos, a 4-point star). |
+| `color` | per lens | Core and halo tint (daylight; warm for `vintage`). |
+| `streakColor` | per lens | |
+| `streak` | per lens | Streak length as a fraction of the box width (0 for none). |
+| `spikes` | per lens | Diffraction spikes (0 for none). |
+| `blades` | `6` | Aperture blades: the ghosts' polygon shape (0 for round). |
+| `chroma` | `1` | Chromatic dispersion of ghosts, spikes and the halo (`0`–`2`). |
+| `halo` | `0.3` | Halo ring radius as a fraction of the box height (0 for none). |
+| `rotation` | `12` | Starburst rotation in degrees. |
+| `ghosts` | `8` | Number of ghosts (0 for none). |
 | `intensity`, `seed` | `1`, `2` | |
+
+Two looks: `{ "lens": "anamorphic", "path": [[0.1, 0.4], [0.9, 0.45]], "duration": 4 }` (a sci-fi sweep) vs `{ "lens": "vintage", "at": [0.75, 0.2], "chroma": 0.3 }` (a soft, warm sun).
+
+**Cost and shortcuts.** The effect kinds keep their speed shortcuts behind one switch, `fxkit::exact()` (off): out-of-focus particles and bloom are gaussian discs and ellipses rather than blurred layers (near confetti uses a baked soft-rectangle image), light composites with source-over rather than additive layers, god-ray slices are up to ~9 px wide where they fade out, and metaballs are contoured on a `detail` grid. Per frame at 1080p (eval / full render, single thread): god-rays 0.5 / 24 ms, lens-flare 0.02 / 9 ms, confetti 0.1 / 2 ms, sparks 0.04 / 1.2 ms, snow 0.1 / 5 ms, dust 0.05 / 1.4 ms, particle-text 3.8 / 29 ms (while flying), metaballs 0.9 / 15 ms, globe 0.2 / 10 ms, morph 0.01 / 3 ms, reactions 0.02 / 2.4 ms.
 
 ## 3D
 
@@ -561,7 +619,7 @@ Rendered with `anikit-core`'s CPU rasteriser at native resolution, supersampled 
 The component's duration is the end of its entrance. **Cost** per frame at 1920×1080 on 4 cores, for a full-width title: 18–25 ms (a logo: 5 ms). The cost scales with the text's area on screen.
 
 ### `globe`: dot-matrix globe with arcs
-A rotating globe in the style of the Stripe and GitHub globes: land is drawn as a lattice of dots (from built-in coarse continent outlines), with an atmosphere halo and a fresnel rim. Great-circle arcs draw on one after another, glowing from cyan to pink. A comet pulse then runs along each arc every 2.6 s. Markers pulse with expanding rings. The view starts centred on the arcs and markers. Everything is vector, and the static geometry is built once.
+A rotating globe in the style of the Stripe and GitHub globes: land is drawn as a lattice of dots (from built-in coarse continent outlines), with an atmosphere halo and a fresnel rim. Great-circle arcs draw on one after another with a soft glow, in the theme accent warming to white. A comet (a tapered, fading tail behind a glowing head) then runs along each arc every 2.6 s. Markers pulse with expanding rings. The view starts centred on the arcs and markers. Everything is vector, and the static geometry is built once.
 
 ```json
 { "type": "component", "component": "globe", "props": { "arcs": [[37.8, -122.4, 51.5, -0.1], [51.5, -0.1, 1.35, 103.8]], "markers": [[37.8, -122.4]] } }
@@ -574,8 +632,8 @@ A rotating globe in the style of the Stripe and GitHub globes: land is drawn as 
 | `spin` | `8` | Degrees of longitude per second. |
 | `tilt` | `18` | The latitude the camera looks from. |
 | `lon` | the middle of the arcs | Longitude facing the camera at the start. |
-| `color` | cool accent | Dots, rim and atmosphere. |
-| `arcColor` | cyan → pink | One colour, or `[start, end]`. |
+| `color` | sky blue | Dots, rim and atmosphere (a cool blue with a touch of the accent). |
+| `arcColor` | accent → white | One colour, or `[start, end]`. |
 | `markerColor` | arc end colour | |
 | `dots` | `land` | `land`, `all` or `none`. |
 | `density` | `1` | Dot rows (`1` = 100 rows from pole to pole, max `4`). |
@@ -583,6 +641,8 @@ A rotating globe in the style of the Stripe and GitHub globes: land is drawn as 
 | `glow` | `1` | Atmosphere strength. |
 | `stagger`, `draw` | `0.45`, `1.4` | Seconds between arcs, and the draw-on time of each. |
 | `delay`, `scale` | | Fade-in delay. A scale of `1` fills 80 % of the short side. |
+
+Two looks: `{ "arcs": [...], "markers": [...] }` (a night-blue data globe) vs `{ "dots": "all", "density": 1.6, "color": "#ffb547", "arcColor": ["#ffffff"], "glow": 0.4 }` (a dense golden sphere with white arcs).
 
 The component's duration is the time the last arc lands. **Cost** per frame at 1920×1080: eval under 1 ms, render 6–15 ms.
 
