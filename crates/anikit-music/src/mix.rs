@@ -357,6 +357,42 @@ fn process_track(l: &mut [f32], r: &mut [f32], m: &TrackMix, rate: u32, pump: Op
     Ok(())
 }
 
+/// SFX are deterministic per (name, params, rate): cache renders in memory and on disk.
+fn cached_sfx(name: &str, raw: &serde_json::Value, p: &crate::sfx::SfxParams, rate: u32) -> Result<crate::sfx::Sfx, String> {
+    use std::collections::HashMap;
+    use std::sync::{Mutex, OnceLock};
+    static MEM: OnceLock<Mutex<HashMap<String, crate::sfx::Sfx>>> = OnceLock::new();
+    let key = format!("{name}|{raw}|{rate}|sfx-v1");
+    let mem = MEM.get_or_init(Default::default);
+    if let Some(x) = mem.lock().unwrap().get(&key) {
+        return Ok(x.clone());
+    }
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    for b in key.bytes() {
+        h = (h ^ b as u64).wrapping_mul(0x100_0000_01b3);
+    }
+    let file = crate::sf2::packs::cache_dir().join(format!("sfx-{h:016x}.f32"));
+    if let Ok(b) = std::fs::read(&file) {
+        let v: Vec<f32> = b.chunks_exact(4).map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect();
+        if !v.is_empty() && (v.len() - 1).is_multiple_of(2) {
+            let n = (v.len() - 1) / 2;
+            let x = crate::sfx::Sfx { hit: v[0], l: v[1..1 + n].to_vec(), r: v[1 + n..].to_vec() };
+            mem.lock().unwrap().insert(key, x.clone());
+            return Ok(x);
+        }
+    }
+    let x = crate::sfx::sfx(name, p, rate)?;
+    let bytes: Vec<u8> = std::iter::once(&x.hit).chain(&x.l).chain(&x.r).flat_map(|f| f.to_le_bytes()).collect();
+    if std::fs::create_dir_all(file.parent().unwrap_or(std::path::Path::new("."))).is_ok() {
+        let tmp = file.with_extension(format!("tmp{}", std::process::id()));
+        if std::fs::write(&tmp, &bytes).is_ok() {
+            let _ = std::fs::rename(&tmp, &file);
+        }
+    }
+    mem.lock().unwrap().insert(key, x.clone());
+    Ok(x)
+}
+
 /// Place every SFX so its hit point lands on its time.
 type StereoBuf = (Vec<f32>, Vec<f32>);
 
@@ -369,7 +405,7 @@ fn render_sfx(a: &Arrangement, rate: u32, frames: usize) -> Result<Option<Stereo
         .par_iter()
         .map(|s| {
             let p: crate::sfx::SfxParams = serde_json::from_value(s.params.clone()).map_err(|e| format!("sfx '{}': {e}", s.name))?;
-            Ok((s.at, s.gain, crate::sfx::sfx(&s.name, &p, rate)?))
+            Ok((s.at, s.gain, cached_sfx(&s.name, &s.params, &p, rate)?))
         })
         .collect::<Result<_, String>>()?;
     let mut l = vec![0.0f32; frames];
