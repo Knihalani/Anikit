@@ -185,21 +185,25 @@ History of the benchmark of record: 63 fps (22:55) → 109 → 143 (fused) → 1
 
 Correctness: fused output decodes with ffmpeg and matches x264 `--quality high` at ≥ 48.6 dB on every frame of the launch template, and at 53.6 dB average on the showcase. `tests/pipeline_e2e.rs` compares fused and plain paths frame by frame, including a many-chunk stress case.
 
-### Every template through the fused pipeline (04:45 UTC)
+### Final table (v-spec on checkpoint 218731e, 05:40 UTC)
 
-`anikit-video new <template> --dir t && anikit-video render t/spec.json` (16:9, 1080p30, ak264), on the 4-core container:
+`anikit-video render <spec> -o out.mp4` (ak264, fused pipeline, audio muxed where the spec has it) on the 4-core container, wall clock including compile, audio mix and mux. Templates come from `anikit-video new <template>`; the films are in `examples/video/`.
 
-| Template | Frames | Wall | Throughput | Frames skipped |
-|---|---|---|---|---|
-| launch | 868 | 2.33 s | 372 fps | 417 |
-| tutorial | 807 | 2.48 s | 325 fps | 217 |
-| changelog | 680 | 2.12 s | 321 fps | 302 |
-| data-story | 616 | 2.01 s | 307 fps | 133 |
-| demo | 665 | 2.45 s | 271 fps | 158 |
-| testimonial | 532 | 2.12 s | 251 fps | 0 |
-| feature | 560 | 3.01 s | 186 fps | 0 |
-| teaser | 275 | 2.07 s | 133 fps | 0 |
-| countdown | 466 | 4.31 s | 108 fps | 0 |
-| logo-reveal | 120 | 1.55 s | 77 fps | 0 |
+| Content | Size | Frames | Wall | Throughput | Skipped | File |
+|---|---|---|---|---|---|---|
+| template `launch` | 1920×1080 @ 30 | 868 | 3.96 s | **219 fps** | 0 | 4565 KB |
+| template `tutorial` | 1920×1080 @ 30 | 807 | 2.52 s | **321 fps** | 218 | 2951 KB |
+| template `changelog` | 1920×1080 @ 30 | 620 | 1.98 s | **314 fps** | 241 | 2774 KB |
+| template `data-story` | 1920×1080 @ 30 | 616 | 2.29 s | **269 fps** | 133 | 2198 KB |
+| template `demo` | 1920×1080 @ 30 | 665 | 2.50 s | **266 fps** | 158 | 2493 KB |
+| template `testimonial` | 1920×1080 @ 30 | 532 | 2.11 s | **252 fps** | 0 | 3838 KB |
+| template `feature` | 1920×1080 @ 30 | 560 | 2.22 s | **252 fps** | 126 | 2511 KB |
+| template `teaser` | 1920×1080 @ 30 | 275 | 1.83 s | **150 fps** | 21 | 2547 KB |
+| template `countdown` | 1920×1080 @ 30 | 466 | 3.49 s | **134 fps** | 0 | 5969 KB |
+| template `logo-reveal` | 1920×1080 @ 30 | 120 | 1.78 s | **67 fps** | 0 | 907 KB |
+| film `spec-to-screen` (with audio) | 1920×1080 @ 60 | 3300 | 21.00 s | **157 fps** | 983 | 30035 KB |
+| film `pulse` (with audio) | 1080×1920 @ 30 | 1080 | 7.63 s | **142 fps** | 102 | 26473 KB |
+| film `telemetry` (with audio) | 1920×1080 @ 60 | 2742 | 10.66 s | **257 fps** | 273 | 14615 KB |
+| `docs/video/examples/showcase.json` | 1920×1080 @ 30 | 222 | 0.44 s | **505 fps** | 23 | 642 KB |
 
-The slow ones are dominated by per-frame effect components. logo-reveal (`text-3d`, `god-rays`, `lens-flare`): eval 15.8 + render 25.0 CPU ms per frame. countdown (`globe`, `particle-text`, `sparks`): render 21.6 per frame.
+The `launch` template changed at checkpoint 5: its new HUD layers keep changing, so no frame is skippable any more (0 skipped, 219 fps). The previous launch spec still renders at 299 fps with 416 frames skipped on the same build. Expect run-to-run noise of about ±10% on this machine. The slow templates (logo-reveal, countdown) are dominated by effect components that change every frame (`text-3d`, `god-rays`, `lens-flare`, `globe`, `particle-text`).
