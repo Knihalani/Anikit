@@ -216,7 +216,7 @@ impl Default for ParticleText {
             face: Face::Display,
             form: 1.6,
             hold: 1.4,
-            exit: "blow".into(),
+            exit: "none".into(),
             exit_time: 1.6,
             delay: 0.0,
             glow: true,
@@ -462,7 +462,7 @@ mod tests {
     fn forms_reforms_and_leaves() {
         let th = Theme::default();
         let a = preview::host();
-        let c = build("particle-text", &json!({"words": ["Hello", "World"]})).unwrap();
+        let c = build("particle-text", &json!({"words": ["Hello", "World"], "exit": "blow"})).unwrap();
         let end = c.component.duration().unwrap();
         assert!((end - (2.0 * 3.0 + 1.6 * 1.6)).abs() < 1e-3, "{end}");
         for (tag, t) in [("start", 0.4f32), ("hello", 2.5), ("between", 3.8), ("world", 5.6), ("exit", 6.5)] {
