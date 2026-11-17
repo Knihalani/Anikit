@@ -1,7 +1,7 @@
 {
   "name": "countdown",
   "title": "Event countdown",
-  "description": "An event intro (name, date, place), a big N…1 countdown where each number pops in inside a ring that draws itself over the second, then a 'Live now' or save-the-date end card.",
+  "description": "An event countdown: kicker badge, event, date and place beside a spinning globe with live arcs; a big N…1 countdown with glowing rings that draw each second and a spark burst at zero; then a particle-text 'Live now' with confetti, or a save-the-date card.",
   "duration": "8–18 s",
   "tags": [
     "event",
@@ -78,7 +78,7 @@
     "theme": {
       "$use": "theme"
     },
-    "background": "radial-gradient(circle at 50% 45%, $bg, $bgDeep)",
+    "background": "$bgDeep",
     "transition": {
       "type": "crossfade",
       "duration": 0.5
@@ -86,61 +86,141 @@
     "scenes": [
       {
         "id": "intro",
-        "duration": "{{max(2.6, readtime(kicker + ' ' + event + ' ' + (date ?? '') + ' ' + (location ?? '')) + 0.4)}}",
+        "duration": "{{max(2.6, readtime(kicker + ' ' + event + ' ' + (date ?? '') + ' ' + (location ?? '')) + 1.0)}}",
         "layers": [
           {
-            "$use": "glows",
+            "$use": "backdrop",
             "with": {
-              "strength": 0.8
+              "seed": 4,
+              "floor": true,
+              "intensity": 0.32
             }
           },
           {
-            "$use": "kicker",
-            "with": {
-              "text": "{{kicker}}"
+            "type": "component",
+            "component": "globe",
+            "props": {
+              "arcs": [
+                [
+                  37.8,
+                  -122.4,
+                  51.5,
+                  -0.1
+                ],
+                [
+                  51.5,
+                  -0.1,
+                  35.7,
+                  139.7
+                ],
+                [
+                  40.7,
+                  -74.0,
+                  -33.9,
+                  151.2
+                ],
+                [
+                  1.35,
+                  103.8,
+                  48.9,
+                  2.35
+                ]
+              ],
+              "color": "{{brand.colors.primary}}"
             },
-            "y": "{{fmt.portrait ? '36%' : '32%'}}"
-          },
-          {
-            "id": "event",
-            "text": "{{event}}",
-            "style": "title",
-            "y": "{{fmt.portrait ? '46%' : '46%'}}",
-            "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.78}}",
-            "split": "words",
+            "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.2 : fmt.cx}}",
+            "y": "{{fmt.landscape ? '50%' : (fmt.portrait ? '64%' : '70%')}}",
+            "width": "{{fmt.landscape ? fmt.w * 0.42 : fmt.safe.w}}",
+            "height": "{{fmt.landscape ? fmt.h * 0.8 : (fmt.portrait ? fmt.h * 0.42 : fmt.h * 0.5)}}",
             "enter": {
-              "preset": "fadeUp",
-              "stagger": 0.08,
-              "delay": 0.1,
-              "ease": "outExpo"
-            },
-            "size": "{{fmt.portrait ? '8.6vmin' : '9.5vmin'}}"
-          },
-          {
-            "$if": "date",
-            "then": {
-              "id": "date",
-              "text": "{{date}}",
-              "style": "subtitle",
-              "color": "$text",
-              "y": "{{fmt.portrait ? '57%' : '61%'}}",
-              "enter": {
-                "preset": "fadeUp",
-                "delay": 0.5
-              }
+              "preset": "fadeIn",
+              "duration": 0.8
             }
           },
           {
-            "$if": "location",
-            "then": {
-              "id": "location",
-              "text": "{{location}}",
-              "style": "caption",
-              "y": "{{fmt.portrait ? '62%' : '68%'}}",
-              "enter": {
-                "preset": "fadeUp",
-                "delay": 0.65
+            "$let": {
+              "tw": "(fmt.landscape ? fmt.w * 0.46 : fmt.safe.w)",
+              "ts": "(fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5)",
+              "lines": "ceil(len(event) * 0.52 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.46 : fmt.safe.w))",
+              "top": "(fmt.landscape ? fmt.h * 0.46 - (ceil(len(event) * 0.52 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.46 : fmt.safe.w)) * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) * 1.1 + fmt.u * 12) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1))",
+              "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
+              "an": "fmt.landscape ? 'topLeft' : 'top'",
+              "al": "fmt.landscape ? 'left' : 'center'"
+            },
+            "in": [
+              {
+                "type": "component",
+                "component": "badge",
+                "props": {
+                  "label": "{{upper(kicker)}}",
+                  "dot": true,
+                  "size": "{{fmt.u * 2.2}}",
+                  "align": "{{fmt.landscape ? 0 : 0.5}}"
+                },
+                "x": "{{ax}}",
+                "y": "{{top}}",
+                "anchor": "{{fmt.landscape ? 'topLeft' : 'top'}}",
+                "width": "{{fmt.u * 40}}",
+                "height": "{{fmt.u * 5}}",
+                "enter": "fadeIn"
+              },
+              {
+                "text": "{{event}}",
+                "style": "title",
+                "weight": 750,
+                "width": "{{tw}}",
+                "align": "{{al}}",
+                "x": "{{ax}}",
+                "anchor": "{{an}}",
+                "y": "{{top + fmt.u * 4.5}}",
+                "enter": "mask by word up",
+                "size": "{{fmt.portrait ? '8.6vmin' : '9.5vmin'}}"
               }
+            ]
+          },
+          {
+            "$let": {
+              "ts2": "(fmt.portrait ? fmt.u * 8.6 : fmt.u * 9.5)",
+              "tw2": "(fmt.landscape ? fmt.w * 0.46 : fmt.safe.w)"
+            },
+            "in": {
+              "$let": {
+                "ln": "ceil(len(event) * 0.52 * ts2 / tw2)",
+                "base": "(fmt.landscape ? fmt.h * 0.46 - (ceil(len(event) * 0.52 * ts2 / tw2) * ts2 * 1.1 + fmt.u * 12) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1)) + fmt.u * 4.5"
+              },
+              "in": [
+                {
+                  "$if": "date",
+                  "then": {
+                    "id": "date",
+                    "text": "{{date}}",
+                    "style": "subtitle",
+                    "color": "$text",
+                    "x": "{{fmt.landscape ? fmt.safe.left : fmt.cx}}",
+                    "anchor": "{{fmt.landscape ? 'topLeft' : 'top'}}",
+                    "y": "{{base + ln * ts2 * 1.1 + fmt.u * 2.5}}",
+                    "enter": {
+                      "preset": "fadeUp",
+                      "delay": 0.45
+                    }
+                  }
+                },
+                {
+                  "$if": "location",
+                  "then": {
+                    "id": "location",
+                    "text": "{{location}}",
+                    "style": "caption",
+                    "x": "{{fmt.landscape ? fmt.safe.left : fmt.cx}}",
+                    "anchor": "{{fmt.landscape ? 'topLeft' : 'top'}}",
+                    "y": "{{base + ln * ts2 * 1.1 + fmt.u * 8.5}}",
+                    "enter": {
+                      "preset": "fadeUp",
+                      "delay": 0.6
+                    }
+                  }
+                }
+              ]
             }
           }
         ]
@@ -154,13 +234,10 @@
         "duration": "{{from + 0.15}}",
         "layers": [
           {
-            "$use": "glows",
+            "$use": "backdrop",
             "with": {
-              "gx": "50%",
-              "gy": "45%",
-              "hx": "50%",
-              "hy": "110%",
-              "strength": 0.9
+              "seed": 9,
+              "intensity": 0.2
             }
           },
           {
@@ -236,6 +313,26 @@
               "preset": "fadeIn",
               "delay": 0.2
             }
+          },
+          {
+            "type": "component",
+            "component": "sparks",
+            "props": {
+              "bursts": [
+                "{{from - 0.05}}"
+              ],
+              "origin": [
+                0.5,
+                0.5
+              ],
+              "count": 120,
+              "colors": [
+                "{{brand.colors.accent}}",
+                "{{brand.colors.primary}}"
+              ],
+              "power": 1.2,
+              "seed": 9
+            }
           }
         ]
       },
@@ -262,66 +359,66 @@
         },
         "layers": [
           {
-            "$use": "glows",
+            "$use": "backdrop",
             "with": {
-              "gx": "30%",
-              "gy": "25%",
-              "hx": "70%",
-              "hy": "80%",
-              "strength": 1
+              "seed": 31,
+              "floor": true,
+              "intensity": 0.22
             }
           },
           {
             "$if": "live",
             "then": [
               {
-                "type": "box",
-                "id": "live-pill",
-                "y": "{{fmt.portrait ? '36%' : '32%'}}",
-                "style": {
-                  "direction": "row",
-                  "gap": "{{fmt.u * 1.4}}",
-                  "align": "center",
-                  "padding": [
-                    "{{fmt.u * 1.2}}",
-                    "{{fmt.u * 2.6}}"
-                  ],
-                  "radius": 999,
-                  "background": "#FF3B3022",
-                  "border": "1px #FF3B3066"
+                "type": "component",
+                "component": "particle-text",
+                "props": {
+                  "text": "{{liveText}}",
+                  "exit": "none",
+                  "form": 1.0,
+                  "size": 2.4,
+                  "glow": true,
+                  "count": 14000,
+                  "colors": [
+                    "{{brand.colors.text}}",
+                    "{{brand.colors.secondary}}"
+                  ]
                 },
-                "enter": {
-                  "preset": "popIn"
-                },
-                "children": [
-                  {
-                    "shape": "circle",
-                    "width": "{{fmt.u * 1.8}}",
-                    "height": "{{fmt.u * 1.8}}",
-                    "fill": "#FF3B30",
-                    "loop": {
-                      "preset": "pulse",
-                      "period": 1.2
-                    }
-                  },
-                  {
-                    "text": "LIVE",
-                    "style": "label",
-                    "color": "{{mix('#FF3B30', brand.colors.text, 0.35)}}"
-                  }
-                ]
+                "y": "{{fmt.portrait ? '46%' : '46%'}}",
+                "width": "{{fmt.safe.w}}",
+                "height": "{{fmt.u * 34}}"
               },
               {
-                "id": "live-text",
-                "text": "{{liveText}}",
-                "style": "hero",
-                "y": "{{fmt.portrait ? '47%' : '48%'}}",
-                "width": "{{fmt.safe.w}}",
-                "split": "chars",
-                "enter": {
-                  "preset": "popIn",
-                  "stagger": 0.04,
-                  "delay": 0.15
+                "type": "component",
+                "component": "badge",
+                "props": {
+                  "label": "LIVE",
+                  "dot": true,
+                  "solid": true,
+                  "color": "#FF3B30",
+                  "size": "{{fmt.u * 2.8}}"
+                },
+                "y": "{{fmt.portrait ? '33%' : '26%'}}",
+                "width": "{{fmt.u * 30}}",
+                "height": "{{fmt.u * 6}}"
+              },
+              {
+                "$if": "cta",
+                "then": {
+                  "$use": "ctaButton",
+                  "with": {
+                    "label": "{{cta}}",
+                    "y": "{{fmt.portrait ? '60%' : '68%'}}",
+                    "press": 1.6
+                  }
+                }
+              },
+              {
+                "$use": "confetti",
+                "with": {
+                  "at": 0.3,
+                  "oy": 0.45,
+                  "count": 160
                 }
               }
             ],
@@ -331,60 +428,39 @@
                 "with": {
                   "text": "Save the date"
                 },
-                "y": "{{fmt.portrait ? '34%' : '30%'}}"
+                "y": "{{fmt.portrait ? '30%' : '26%'}}"
               },
               {
                 "id": "event",
                 "text": "{{event}}",
                 "style": "title",
-                "y": "{{fmt.portrait ? '44%' : '44%'}}",
+                "y": "{{fmt.portrait ? '40%' : '40%'}}",
                 "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.78}}",
-                "split": "words",
-                "enter": {
-                  "preset": "fadeUp",
-                  "stagger": 0.08,
-                  "ease": "outExpo"
-                },
-                "size": "{{fmt.portrait ? '8.6vmin' : '9.5vmin'}}"
+                "size": "{{fmt.portrait ? '8.6vmin' : '9.5vmin'}}",
+                "enter": "mask by word up"
               },
               {
                 "$if": "date",
                 "then": {
-                  "id": "date",
                   "text": "{{date}}",
                   "style": "heading",
                   "color": "$accent",
-                  "y": "{{fmt.portrait ? '55%' : '58%'}}",
-                  "enter": {
-                    "preset": "fadeUp",
-                    "delay": 0.4
+                  "y": "{{fmt.portrait ? '50%' : '54%'}}",
+                  "enter": "scramble"
+                }
+              },
+              {
+                "$if": "cta",
+                "then": {
+                  "$use": "ctaButton",
+                  "with": {
+                    "label": "{{cta}}",
+                    "y": "{{fmt.portrait ? '60%' : '68%'}}",
+                    "press": 1.6
                   }
                 }
               }
             ]
-          },
-          {
-            "$if": "cta",
-            "then": {
-              "$use": "button",
-              "with": {
-                "label": "{{cta}}",
-                "delay": 0.6
-              },
-              "y": "{{fmt.portrait ? '62%' : '70%'}}"
-            }
-          },
-          {
-            "$if": "location && !cta",
-            "then": {
-              "text": "{{location}}",
-              "style": "caption",
-              "y": "{{fmt.portrait ? '62%' : '70%'}}",
-              "enter": {
-                "preset": "fadeIn",
-                "delay": 0.6
-              }
-            }
           }
         ]
       }

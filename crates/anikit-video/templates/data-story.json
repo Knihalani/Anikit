@@ -22,8 +22,8 @@
       "type": "string",
       "required": true,
       "maxWords": 8,
-      "description": "The finding, stated as news: 'Renders got 10× faster'.",
-      "example": "Rendering got 10× faster this year"
+      "description": "The finding, stated as news: 'Support tickets fell by half'.",
+      "example": "Support tickets fell by half this year"
     },
     "charts": {
       "type": "array",

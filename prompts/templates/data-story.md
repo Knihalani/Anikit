@@ -14,7 +14,7 @@ A 15–30 s data narrative on a living brand mesh: a kinetic headline over a ris
 | Param | Type | Required | Limits | What to write |
 |---|---|---|---|---|
 | `kicker` | string |  | ≤ 4 words | Small label above the headline: the dataset or period. |
-| `headline` | string | yes | ≤ 8 words | The finding, stated as news: 'Renders got 10× faster'. |
+| `headline` | string | yes | ≤ 8 words | The finding, stated as news: 'Support tickets fell by half'. |
 | `charts` | array | yes | 1–3 items | 1–3 bar charts, each making one point. |
 | `charts[].title` | string | yes | ≤ 7 words | What the chart shows, ideally its conclusion. |
 | `charts[].prefix` | string |  | ≤ 3 chars | Before each value, e.g. '$'. |
@@ -33,7 +33,7 @@ A 15–30 s data narrative on a living brand mesh: a kinetic headline over a ris
 ## Example
 
 ```json
-{"kicker":"2026 in numbers","headline":"Rendering got 10× faster this year","charts":[{"title":"Frames per second at 1080p","suffix":"","bars":[{"label":"Browser","value":24},{"label":"Canvas","value":61},{"label":"Anikit","value":250}]}],"stat":{"value":10,"suffix":"×","label":"faster than a headless browser"},"takeaway":"No browser in the loop means minutes become seconds.","source":"Source: internal benchmarks, 4-core laptop"}
+{"kicker":"2026 in numbers","headline":"Support tickets fell by half this year","charts":[{"title":"Frames per second at 1080p","suffix":"","bars":[{"label":"Browser","value":24},{"label":"Canvas","value":61},{"label":"Anikit","value":250}]}],"stat":{"value":10,"suffix":"×","label":"faster than a headless browser"},"takeaway":"No browser in the loop means minutes become seconds.","source":"Source: internal benchmarks, 4-core laptop"}
 ```
 
 Create: MCP `create_from_template {template: "data-story", params, brand, format}`, or `anikit-video templates expand data-story params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.

@@ -14,8 +14,8 @@ with v.scene(duration=2.6) as s:
     s.text("Ship the video", style="title", split="words", enter={"preset": "fadeUp", "stagger": 0.08, "ease": "outExpo"})
     s.text("before the meeting.", style="subtitle", y="60%", animate="rise")
 with v.scene(duration=3, transition={"type": "push", "direction": "up"}) as s:
-    s.text("{value:,} fps", value=935, style="title", enter="countUp")
-    s.text("on a laptop", style="subtitle", y="62%", enter={"preset": "fadeUp", "delay": 0.6})
+    s.text("{value:,} fps", value=76, style="title", enter="countUp")
+    s.text("1080p, 4-core VM", style="subtitle", y="62%", enter={"preset": "fadeUp", "delay": 0.6})
 v.render("teaser.mp4")
 
 # 2. From a template plus a brand kit, in all three formats.
