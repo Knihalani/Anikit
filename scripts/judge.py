@@ -218,8 +218,19 @@ Measured pace (shot lengths, change per second):
 Scale (integers 1-10): 10 = among the best of the year; 8 = strong studio work; 6 = competent professional; 4 = template / student; 2 = obvious AI or automated output.
 Score: motion (choreography, timing, weight, variety of movement, transitions), sound ({sound_rule}), craft (finish at 100%, defects: stepping, banding, aliasing, clipped or soft text, pops).
 
+Also answer these yes/no checks strictly (yes only if clearly true from what you see):
+- idea: can you state it as "X shown as Y" where Y is not just "nice animation" or "kinetic text"?
+- invariant: is there one rule/material/device held across every shot, while the rest varies?
+- arc: does energy build to a peak at 60-80% and release (not flat, not one move repeated)?
+- type_meaning: is some type property (weight, width, size, placement, timing) mapped to meaning, beyond fade/slide in?
+- freeze_frame: would each of the 6 frames work as a poster?
+- ending: does the end pay off and settle, ideally rhyming with the opening?
+- sync: do visible impacts/cuts appear to land on audio transients? (null if silent)
+Checks never raise a score; a "no" is a gap.
+
 Answer with ONLY one fenced ```json block:
-{{"scores": {{"motion": n, "sound": n or null, "craft": n}}, "defects": ["..."], "gaps": ["the 3 biggest motion/sound/finish gaps vs top studio work"]}}"""
+{{"scores": {{"motion": n, "sound": n or null, "craft": n}}, "checks": {{"idea": bool, "invariant": bool, "arc": bool, "type_meaning": bool, "freeze_frame": bool, "ending": bool, "sync": bool or null}},
+ "defects": ["..."], "gaps": ["the 3 biggest motion/sound/finish gaps vs top studio work"]}}"""
 
 # ---------------------------------------------------------------- stage 1
 
