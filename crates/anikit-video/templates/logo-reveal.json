@@ -316,6 +316,7 @@
                   "component": "particle-text",
                   "props": {
                     "text": "{{name}}",
+                    "exit": "none",
                     "colors": [
                       "{{brand.colors.primary}}",
                       "{{brand.colors.secondary}}",

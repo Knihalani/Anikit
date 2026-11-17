@@ -154,6 +154,7 @@
                 "props": {
                   "label": "{{upper(kicker)}}",
                   "dot": true,
+                  "size": "{{fmt.u * 2.2}}",
                   "align": "{{fmt.landscape ? 0 : 0.5}}"
                 },
                 "x": "{{ax}}",
@@ -172,13 +173,14 @@
                 "x": "{{ax}}",
                 "anchor": "{{an}}",
                 "y": "{{top + fmt.u * 4.5}}",
-                "enter": "mask by word up"
+                "enter": "mask by word up",
+                "size": "{{fmt.portrait ? '8.6vmin' : '9.5vmin'}}"
               }
             ]
           },
           {
             "$let": {
-              "ts2": "(fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5)",
+              "ts2": "(fmt.portrait ? fmt.u * 8.6 : fmt.u * 9.5)",
               "tw2": "(fmt.landscape ? fmt.w * 0.46 : fmt.safe.w)"
             },
             "in": {
@@ -235,7 +237,7 @@
             "$use": "backdrop",
             "with": {
               "seed": 9,
-              "intensity": 0.4
+              "intensity": 0.28
             }
           },
           {
@@ -331,46 +333,6 @@
               "power": 1.2,
               "seed": 9
             }
-          },
-          {
-            "type": "component",
-            "component": "sparks",
-            "props": {
-              "bursts": [
-                "{{from - 0.05}}"
-              ],
-              "origin": [
-                0.5,
-                0.5
-              ],
-              "count": 120,
-              "colors": [
-                "{{brand.colors.accent}}",
-                "{{brand.colors.primary}}"
-              ],
-              "power": 1.2,
-              "seed": 9
-            }
-          },
-          {
-            "type": "component",
-            "component": "sparks",
-            "props": {
-              "bursts": [
-                "{{from - 0.05}}"
-              ],
-              "origin": [
-                0.5,
-                0.5
-              ],
-              "count": 120,
-              "colors": [
-                "{{brand.colors.accent}}",
-                "{{brand.colors.primary}}"
-              ],
-              "power": 1.2,
-              "seed": 9
-            }
           }
         ]
       },
@@ -401,7 +363,7 @@
             "with": {
               "seed": 31,
               "floor": true,
-              "intensity": 0.42
+              "intensity": 0.3
             }
           },
           {
@@ -412,6 +374,10 @@
                 "component": "particle-text",
                 "props": {
                   "text": "{{liveText}}",
+                  "exit": "none",
+                  "form": 1.0,
+                  "size": 2.4,
+                  "glow": true,
                   "colors": [
                     "{{brand.colors.primary}}",
                     "{{brand.colors.secondary}}",
@@ -429,7 +395,8 @@
                   "label": "LIVE",
                   "dot": true,
                   "solid": true,
-                  "color": "#FF3B30"
+                  "color": "#FF3B30",
+                  "size": "{{fmt.u * 2.8}}"
                 },
                 "y": "{{fmt.portrait ? '33%' : '26%'}}",
                 "width": "{{fmt.u * 30}}",
