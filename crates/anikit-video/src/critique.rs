@@ -145,6 +145,7 @@ pub fn review_pack(spec: &Value, base: &std::path::Path, range: Option<(f64, f64
             r.notes.extend(notes);
             let (cn, worst) = crate::review::composition(&p.ev, &samples, &tl);
             r.notes.extend(cn);
+            r.notes.extend(crate::review_taste::checks(&samples, &tl));
             let (line, an) = crate::review::audio(&p.ev, base);
             if let Some(l) = line {
                 r.summary += &format!("\n{l}");
