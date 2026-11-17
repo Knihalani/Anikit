@@ -1137,7 +1137,7 @@ impl Sim {
     }
 
     fn checkpoint_path(&self, frame: i64) -> Option<std::path::PathBuf> {
-        Some(super::sim_cache_dir()?.join(format!("parts-{:016x}-{frame}.bin", self.key)))
+        Some(super::sim_cache_dir()?.join(format!("parts2-{:016x}-{frame}.bin", self.key)))
     }
 
     /// Write a checkpoint to the disk cache (exact state; written once, renamed into place).
