@@ -277,10 +277,10 @@ One line turns everything below into a distinct, printed or photographed look. P
 
 | Filter | Look | Key uniforms | ms/frame 1080p |
 |---|---|---|---|
-| `halftone` | CMYK dot screens at classic angles, or one black screen | `size`, `mono`, `angle`, `paper`, `contrast` | 60 (mono ≈ 20) |
+| `halftone` | CMYK dot screens at classic angles, or one black screen | `size`, `mono`, `angle`, `paper`, `contrast` | 29 |
 | `risograph` | two or three spot inks, off register, stencil grain | `ink1`, `ink2`, `ink3`, `use3`, `offset`, `grain`, `paper` | 28 |
 | `linocut` | carved block print: solid ink, tone-following gouges, bold outlines | `ink`, `paper`, `threshold`, `lines`, `edge` | 19 |
-| `watercolour` | washes that bleed and pool dark at their edges, paper granulation | `bleed`, `edges`, `granulation`, `paper`, `wash` | 80 |
+| `watercolour` | washes that bleed and pool dark at their edges, paper granulation | `bleed`, `edges`, `granulation`, `paper`, `wash` | 34 |
 | `crosshatch` | pen or pencil hatching, more directions for darker tones | `ink`, `paper`, `spacing`, `pencil`, `edge` | 25 |
 | `film` | photochemical stock: filmic curve, lifted blacks, red halation, gate weave, midtone grain | `stock`, `halation`, `grain`, `weave`, `fade` | 25 |
 | `dither` | ordered Bayer dither into a 2- or 3-colour palette | `pixel`, `dark`, `light`, `mid`, `levels` | 18 |
