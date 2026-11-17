@@ -1,4 +1,19 @@
-# Launch-video skill: two end-to-end runs
+# Launch-video skill: two end-to-end runs (REJECTED, kept as cautionary examples)
+
+> **The user rejected Sift.** Their words: "the text is hard to read and looks low resolution, I'm hearing too much
+> synthesizer in the music, and the lighting is off … Don't force 3D where it doesn't fit and don't use the same 3D
+> visuals every time." Fernway shares the same faults: reduced-resolution 3D type, DOF and grain on words, a
+> synth-leaning score (`cinematic-hybrid`), and 3D used by default. **Don't copy either film.**
+>
+> Causes, now fixed in the skill:
+> - every `scene3d` kept `"resolution": 0.5` and `"quality": "draft"` in the final;
+> - words sat in shallow DOF under bloom and grain;
+> - the repo copies were re-encoded at CRF 22–25;
+> - Sift used `house`, a synth style;
+> - an instruction made every word 3D;
+> - both films reused cyc floors, lacquer and chrome type, tiles and dominoes.
+>
+> See BAR.md, "Third rejection", and the quality checks in `skills/anikit-launch-video/SKILL.md`.
 
 **These are two possible films, not the format.** They were made with an earlier version of the skill that
 prescribed a fixed structure (hook → tension → reveal → three features → proof → logo at 128 BPM); that
