@@ -1910,6 +1910,13 @@ impl C<'_> {
                 scale: sc,
                 opacity: o.opacity.unwrap_or(0.0) as f32,
                 stagger: r.stagger.unwrap_or(0.0) as f32,
+                ranks: {
+                    let order = r.order.as_deref().unwrap_or("forward");
+                    if !["forward", "reverse", "center", "random"].contains(&order) {
+                        self.d.push(Diagnostic::error(format!("{path}.repeat.order"), format!("unknown order '{order}'")).suggest(suggest(order, &["forward", "reverse", "center", "random"])));
+                    }
+                    fx::order_ranks(count.min(2000) as usize, order, r.seed.unwrap_or(1.0))
+                },
                 center: r.center.map(|c| [c[0] as f32, c[1] as f32]),
             });
         }
