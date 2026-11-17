@@ -58,7 +58,7 @@ pub fn category(check: &str) -> &'static str {
         "reading-time" | "legibility" | "contrast" | "render-contrast" | "typography" | "density" | "render-overlap" => "text",
         "hook" | "structure" | "placeholder" | "copy" => "story",
         "frame-fill" | "layout" => "composition",
-        "flicker" | "judder" | "banding" | "audio" => "technical",
+        "flicker" | "judder" | "banding" | "audio" | "render-frame" => "technical",
         _ => "composition",
     }
 }
@@ -130,6 +130,11 @@ pub fn review_pack(spec: &Value, base: &std::path::Path, range: Option<(f64, f64
             r.notes.extend(notes);
             let (cn, worst) = crate::review::composition(&p.ev, &samples, &tl);
             r.notes.extend(cn);
+            let (line, an) = crate::review::audio(&p.ev, base);
+            if let Some(l) = line {
+                r.summary += &format!("\n{l}");
+            }
+            r.notes.extend(an);
             r.rescore();
             if let Some(dir) = pack {
                 files = crate::review::write_pack(dir, &p, &tl, &worst, &r.to_text_detail(true));

@@ -266,7 +266,7 @@ pub fn set_preview_scale(s: f32) {
     PREVIEW_SCALE.with(|c| c.set(if s.is_finite() && s > 0.0 { s.min(1.0) } else { 1.0 }));
 }
 
-fn preview_scale() -> f32 {
+pub(crate) fn preview_scale() -> f32 {
     PREVIEW_SCALE.with(|c| c.get())
 }
 
