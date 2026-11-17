@@ -1198,3 +1198,44 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod instrumentation_tests {
+    use super::*;
+    use crate::instruments::source;
+
+    fn insts(json: &str) -> Vec<(String, String)> {
+        let a = compose(&MusicSpec::from_json(json).unwrap(), None).unwrap();
+        a.tracks.iter().map(|t| (t.role.clone(), t.inst.clone())).collect()
+    }
+
+    #[test]
+    fn non_electronic_styles_use_real_instruments() {
+        for s in ["lofi", "cinematic-hybrid", "pop", "orchestral", "rock", "corporate", "acoustic", "jazz", "piano"] {
+            for (role, inst) in insts(&format!(r#"{{"style":"{s}","length":"30s"}}"#)) {
+                let k = source(&inst);
+                assert!(!k.starts_with("synth"), "{s}: {role} uses {inst} ({k})");
+            }
+        }
+    }
+
+    #[test]
+    fn instrumentation_swaps_every_part() {
+        for (inst, synth_ok) in [("acoustic", false), ("orchestral", false), ("band", false), ("piano", false), ("electronic", true)] {
+            let t = insts(&format!(r#"{{"style":"house","instrumentation":"{inst}","length":"30s"}}"#));
+            assert!(!t.is_empty());
+            for (role, i) in &t {
+                let k = source(i);
+                assert!(synth_ok || !k.starts_with("synth"), "{inst}: {role} uses {i} ({k})");
+            }
+            if inst == "piano" {
+                assert!(t.iter().all(|(r, _)| r != "drums" && r != "pad"), "{t:?}");
+            }
+        }
+        // Per-role overrides still win.
+        let t = insts(r#"{"style":"house","instrumentation":"band","instruments":{"lead":"violin"},"length":"30s"}"#);
+        assert!(t.iter().any(|(r, i)| r == "lead" && i == "violin"));
+        let e = compose(&MusicSpec::from_json(r#"{"style":"house","instrumentation":"acustic"}"#).unwrap(), None).unwrap_err();
+        assert!(e.contains("did you mean 'acoustic'"), "{e}");
+    }
+}
