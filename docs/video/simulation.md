@@ -137,7 +137,7 @@ goes from 9.9 s to 3.0 s, with identical pixels.
 | `gravity` | `0` | m/s² up (number) or `[x, y, z]`. |
 | `drag` | `0.2` | Per second. |
 | `target` | none | Assemble into a shape: an emitter plus `from`/`to` seconds. Each particle springs to its own point on the target, the lowest arriving first. |
-| `collide`, `bounce`, `friction` | `true`, `0.3`, `0.3` | Floor collisions. |
+| `collide`, `bounce`, `friction` | `true`, `0.3`, `0.3` | Collisions with the floor and with every scene object marked `"collide": true` (spheres exactly, other shapes as their oriented box; animated objects sweep particles along). |
 | `size`, `sizeVar` | `0.004`, `0.5` | Radius in metres, and random variation. |
 | `color` | `#ffffff` | A colour or a gradient (array), picked by `colorBy`: `random`, `age`, `speed` (over `speedRange` `[0, 2]` m/s), `height`, `source` (image emitters' pixels, the default for them). |
 | `opacity` | `1` | |

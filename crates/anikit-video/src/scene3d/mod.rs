@@ -595,7 +595,16 @@ impl Scene3d {
         }
         let sims = p.psims.get_or_init(|| {
             let floor_y = p.floor.as_ref().map(|f| f.y);
-            p.parts.iter().map(|d| particles::Sim::new(d, 1.0 / dt.max(1e-4), floor_y, assets)).collect()
+            let colliders: Vec<spec::ObjDef> = p.objs.iter().filter(|o| o.collide && o.phys.is_none()).cloned().collect();
+            p.parts
+                .iter()
+                .map(|d| {
+                    particles::Sim::new(d, 1.0 / dt.max(1e-4), floor_y, assets).map(|mut s| {
+                        s.set_colliders(colliders.clone());
+                        s
+                    })
+                })
+                .collect()
         });
         let sims = match sims {
             Ok(s) => s,

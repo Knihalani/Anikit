@@ -688,6 +688,8 @@ pub struct Sim {
     tgt: Option<Targets>,
     flows: Option<(FlowGrid, FlowGrid)>,
     floor_y: Option<f32>,
+    /// Scene objects particles bounce off (`"collide": true`).
+    colliders: Vec<ObjDef>,
     /// Disk checkpoint key: the description, fps and floor.
     key: u64,
     state: Mutex<SimState>,
@@ -733,10 +735,19 @@ impl Sim {
             tgt,
             flows,
             floor_y: if def.collide { floor_y } else { None },
+            colliders: Vec::new(),
             key: crate::components::style::fnv(&[&def.key.to_le_bytes(), &fps.to_bits().to_le_bytes(), &floor_y.unwrap_or(f32::NAN).to_bits().to_le_bytes()]),
             state: Mutex::new(SimState { live: None, snaps: HashMap::new(), order: Vec::new(), checkpoints: Vec::new(), steps: 0, sim_ms: 0.0 }),
             busy: std::sync::atomic::AtomicBool::new(false),
         })
+    }
+
+    /// Objects particles collide with: spheres exactly, everything else as
+    /// its oriented bounding box. Animated objects push particles along.
+    pub fn set_colliders(&mut self, objs: Vec<ObjDef>) {
+        if self.def.collide {
+            self.colliders = objs;
+        }
     }
 
     /// Birth time and cycle length of particle `i` (`life` systems recycle).
@@ -839,6 +850,34 @@ impl Sim {
         let t0 = d.start + live.frame as f32 * self.dt;
         let chunk = 1 << 14;
         // Attractor positions per substep.
+        // Collider instances per substep.
+        enum PCol {
+            Ball(V3, f32),
+            Obb(Xf, V3, V3),
+        }
+        let cols: Vec<Vec<PCol>> = (0..sub)
+            .map(|s| {
+                let t = t0 + (s as f32 + 1.0) * h;
+                let mut v = Vec::new();
+                for o in &self.colliders {
+                    for lane in 0..o.lanes {
+                        for i in 0..o.count {
+                            let xf = o.xf_at(t, i, lane);
+                            v.push(match &o.col {
+                                spec::Col::Ball => PCol::Ball(xf.t, xf.smax()),
+                                spec::Col::Cuboid { c, h } => PCol::Obb(xf, *c, *h),
+                                spec::Col::Cylinder { c, hh, r } => PCol::Obb(xf, *c, v3(*r, *hh, *r)),
+                                spec::Col::Hull(pts) => {
+                                    let (lo, hi) = pts.iter().fold((v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN)), |(a, b), q| (vmin(a, *q), vmax(b, *q)));
+                                    PCol::Obb(xf, scale(add(lo, hi), 0.5), scale(super::math::sub(hi, lo), 0.5))
+                                }
+                            });
+                        }
+                    }
+                }
+                v
+            })
+            .collect();
         let att: Vec<Vec<(V3, f32, f32, f32)>> = (0..sub)
             .map(|s| {
                 let t = t0 + (s as f32 + 0.5) * h;
@@ -959,7 +998,44 @@ impl Sim {
                                 uz *= 1.0 - d.friction;
                             }
                         }
-                        let _ = (&mut nx, &mut nz);
+                        for c in &cols[s as usize] {
+                            // Push out along the surface normal; bounce and slide.
+                            let (n, pen) = match c {
+                                PCol::Ball(cc, r) => {
+                                    let dv = super::math::sub(v3(nx, ny, nz), *cc);
+                                    let l = len(dv);
+                                    let rr = r + d.size;
+                                    if l >= rr || l < 1e-9 {
+                                        continue;
+                                    }
+                                    (scale(dv, 1.0 / l), rr - l)
+                                }
+                                PCol::Obb(xf, cc, hh) => {
+                                    let lp = super::math::sub(xf.point_inv(v3(nx, ny, nz)), *cc);
+                                    let (dx, dy, dz) = ((hh.x - lp.x.abs()) * xf.s.x, (hh.y - lp.y.abs()) * xf.s.y, (hh.z - lp.z.abs()) * xf.s.z);
+                                    if dx <= 0.0 || dy <= 0.0 || dz <= 0.0 {
+                                        continue;
+                                    }
+                                    let (ln, pen) = if dx <= dy && dx <= dz {
+                                        (v3(lp.x.signum(), 0.0, 0.0), dx)
+                                    } else if dy <= dz {
+                                        (v3(0.0, lp.y.signum(), 0.0), dy)
+                                    } else {
+                                        (v3(0.0, 0.0, lp.z.signum()), dz)
+                                    };
+                                    (norm(xf.rot(ln)), pen)
+                                }
+                            };
+                            let q = madd(v3(nx, ny, nz), n, pen + d.size * 0.5);
+                            (nx, ny, nz) = (q.x, q.y, q.z);
+                            let u = v3(ux, uy, uz);
+                            let vn = dot(u, n);
+                            if vn < 0.0 {
+                                let tang = scale(super::math::sub(u, scale(n, vn)), 1.0 - d.friction);
+                                let u2 = add(tang, scale(n, -vn * d.bounce));
+                                (ux, uy, uz) = (u2.x, u2.y, u2.z);
+                            }
+                        }
                         (px[j], py[j], pz[j], vx[j], vy[j], vz[j]) = (nx, ny, nz, ux, uy, uz);
                     }
                 }
@@ -2002,6 +2078,22 @@ mod tests {
             mag += dx.abs() + dy.abs() + dz.abs();
         }
         assert!(div < mag * 0.15, "divergence {div} vs gradient {mag}");
+    }
+
+    #[test]
+    fn particles_stay_out_of_colliders() {
+        let mut s = sim(serde_json::json!({ "count": 4000, "emit": { "shape": "box", "pos": [0, 3, 0], "size": [0.6, 0.2, 0.6] }, "gravity": -9.8, "size": 0.005 }));
+        let mut shapes = spec::Shapes::new();
+        let ball = spec::object(&serde_json::json!({ "type": "sphere", "radius": 0.5, "pos": [0, 1, 0], "collide": true }), &mut shapes, &mut Vec::new(), &HashMap::new(), "b").unwrap();
+        let cube = spec::object(&serde_json::json!({ "type": "box", "size": 0.6, "pos": [0, 0.3, 1.5], "rot": [0, 30, 0], "collide": true }), &mut shapes, &mut Vec::new(), &HashMap::new(), "c").unwrap();
+        s.set_colliders(vec![ball, cube]);
+        for f in [10, 20, 30, 45, 60] {
+            let q = s.at(f as f32 / 30.0);
+            for p in &q.pos {
+                let d = len(super::super::math::sub(v3(p[0], p[1], p[2]), v3(0.0, 1.0, 0.0)));
+                assert!(d > 0.49, "particle inside the sphere at frame {f}: {d}");
+            }
+        }
     }
 
     #[test]
