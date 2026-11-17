@@ -42,7 +42,7 @@ Other entry points:
 | `cabac` | `true` | Main profile with CABAC. `false` gives Constrained Baseline with CAVLC: 35–60% larger files, slightly faster. |
 | `deblock` | `false` | The in-loop filter. It helps only at QP ≥ 34 (+0.1–0.2 dB) and costs about 25% speed; at QP ≤ 28 it *lowers* PSNR on this content (sharp edges, and copied macroblocks next to changing areas get re-filtered every frame). | With `threads > 1`, each slice deblocks its own rows in parallel (`disable_deblocking_filter_idc` 2).
 | `subpel` | `true` | Quarter-pel motion refinement (exact 6-tap interpolation, half-pel planes kept up to date incrementally). It saves 16–46% on real renderer clips with sub-pixel motion, for 15–25% more time. |
-| `aq_strength` | `0` | Adaptive quantisation: smooth, dark macroblocks get a lower QP (up to −(2 + 4 + 3)·strength), everything else keeps `qp`. At 1.0 dark fades look like QP 19, at +29–83% size on dark UI content. 0 = constant QP. |
+| `aq_strength` | `0` | Adaptive quantisation: smooth macroblocks (fades, lit floors) get a lower QP, −(4 + up to 7)·strength, with a wide AC dead zone; busy ones keep `qp`. 1.0 removes the flat-tile patchwork on 3D floors for +9% there, but costs +36–110% on smooth UI content (see below). |
 | `skip_threshold` | `0` | Perceptual skip: code a changed macroblock as a copy when every sample is within this distance of the reconstructed reference. Off by default (see the measurements below). |
 | `threads` | 1 | Slices per frame for `encode()`. Chunk-parallel modes ignore it. |
 | `full_range` | `false` | Signals the colour range (BT.709 primaries/matrix are always signalled). |
@@ -422,72 +422,68 @@ Two attempts made things worse and were dropped:
 A 4-candidate half-pel diamond is 33% cheaper but makes spec-to-screen 1.9%
 larger, so it was not kept.
 
-### Adaptive quantisation (dark gradients)
+### Smooth gradients: block structure and adaptive quantisation
 
-At constant QP 23, dark dithered gradients (a renderer's ±1 dither over a slow
-ramp in the shadows) lose their dither. They turn into flat one-level bands
-whose edges follow the 4×4/16×16 block grid, which is visible once shadows are
-lifted. x264 at CRF 23 does the same, with more flicker.
+At QP 23 a renderer's low-amplitude texture on smooth areas is below the
+quantiser step. That covers ±1 dither on dark fades and denoiser noise on a lit
+3D floor. Once it is gone, the gradient underneath shows its 1-level steps.
 
-ak264 now codes a QP per macroblock (`mb_qp_delta`, CABAC and CAVLC). Deblocking
-uses each edge's averaged QP, as the standard requires.
+Two encoder effects made those steps look like blocks:
 
-`aq_strength` lowers the QP only where blocking shows:
-- **Flat:** luma plus chroma energy under 4 levels² per sample, up to −4 × strength.
-- **Dark:** mean luma under 80, up to −3 × strength more.
+1. **4×4 staircases from I4x4 on fades.** Fixed, and on by default: smooth
+   macroblocks (sum of |second differences| under 2 per sample) don't try I4x4
+   (except CAVLC at QP < 2, where I16 DC levels would exceed CAVLC's escape
+   range). I16 plane prediction and inter prediction keep fades smooth.
+   - On COMPONENTS' dark aurora fade it is size-neutral (580 vs 583 KB) and
+     slightly better in every metric.
+   - Launch and tutorial grow 0.7–0.9% at the same PSNR.
+2. **A patchwork of flat 16×16 tiles on gentle gradients.** On the
+   `lookdev/cyc.json` floor (frame 60, QP 23):
+   - The delivered error is small: 8×8 means p99 0.8, max 1.3 levels.
+   - But 57% of the floor macroblocks come out perfectly flat, while their
+     neighbours keep the source's noise and slope.
+   - The result is 1-level steps on the macroblock grid. QP 19 and x264 at
+     CRF 23 show the same.
 
-Busy or bright macroblocks keep the frame QP, so text and detail are unchanged.
-The energy is a SIMD sum and sum of squares, computed only for macroblocks
-that are coded.
+**`aq_strength` (opt-in, default 0)** targets the second effect.
+- **Which macroblocks:** smooth ones, bright or dark.
+- **QP:** −(4 + up to 4 for smoothness + up to 3 for darkness) × strength,
+  coded with `mb_qp_delta` (CABAC and CAVLC); deblocking uses each edge's
+  averaged QP.
+- **Dead zone:** those macroblocks get a wide AC dead zone (rounding 1/8), so
+  the QP buys DC precision rather than coded noise.
+- **Effect:** at 1.0 the cyc floor turns from a patchwork into clean bands that
+  follow the gradient.
 
-The x264-style symmetric variant (raising QP on busy macroblocks) was measured
-first and rejected. On launch at QP 23 it doubled the size and lost 1.5 dB,
-because it moves bits from text to the background.
+It is opt-in because smooth-heavy UI content pays heavily (QP 23, 300 frames):
 
-Effect at QP 23, 4 cores, AQ 0 → 0.5:
-
-| Clip | fps | Size | PSNR-Y |
+| Clip | AQ 0 | AQ 0.5 | AQ 1.0 |
 |---|---|---|---|
-| dark mesh-gradient (real renderer, 60 frames) | ≈ same | 22 → 37 KB | 58.35 → 60.79 dB; 4×4-smoothed 59.9 → 64.0 dB |
-| launch (dark UI) | 315 → 266 (−16%) | 2970 → 3467 KB (+17%) | 49.82 → 50.23 dB |
-| tutorial (dark UI) | 676 → 644 (−5%) | 652 → 746 KB (+14%) | 53.53 → 54.00 dB |
-| spec-to-screen (600 frames) | 141 → 135 (−4%) | 13647 → 14765 KB (+8%) | 43.19 → 43.25 dB |
-| full (synthetic, bright) | ≈ same | 1296 → 1277 KB | 51.48 → 51.53 dB |
+| cyc floor (3D, 120 frames) | 2934 KB, 47.50 dB | 3043 KB (+4%), 47.65 dB | 3210 KB (+9%), 47.77 dB |
+| launch | 2991 KB, 49.81 dB | 4063 KB (+36%), 50.62 dB | 6281 KB (+110%), 51.44 dB |
+| tutorial | 658 KB, 53.52 dB | 863 KB (+31%), 54.32 dB | 1354 KB (+106%), 54.80 dB |
+| spec-to-screen | 4080 KB, 44.39 dB | 4485 KB (+10%), 44.48 dB | 5972 KB (+46%), 44.60 dB |
+| full (synthetic) | 1296 KB, 51.44 dB | 1333 KB (+3%), 52.09 dB | 1577 KB (+22%), 52.92 dB |
 
-On the dark clip, QP 23 with AQ 0.5 matches QP 19 without AQ: 37 vs 36 KB,
-and 4×4-smoothed PSNR 63.95 vs 64.07 dB. That is the `--quality best` level
-that showed no blocking, while busy content stays at QP 23. AQ 1.0 goes further
-(69 KB, 67.3 dB smoothed) for about +45% on launch.
+Recommendation: AQ 1.0 for 3D/cyc looks, 0 for UI and motion graphics.
 
-**On by default (free):** smooth ramps (small second differences) no longer try
-I4x4 at QP ≥ 12. Its 4×4 predictions turned fades into a staircase of 4×4
-squares; I16 plane prediction and inter prediction keep them smooth. On
-COMPONENTS' dark aurora fade it is neutral in size (580 vs 583 KB) and slightly
-better in every metric. Launch and tutorial grow 0.7–0.9% at the same PSNR.
+Variants that were measured and rejected:
+- **x264-style symmetric AQ** (raising QP on busy macroblocks): launch doubled
+  in size and lost 1.5 dB, because it moves bits from text to the background.
+- **AQ on intra-coded macroblocks only:** still +49% on launch, which has about
+  1,800 intra macroblocks per P frame.
+- **A plane-mode bias for I16:** no visual change, slightly worse metrics.
+- **An intra penalty for flat P-frame macroblocks:** 4× less flicker, but 3.3 dB
+  of drift on the gradient.
+- **Keeping DC-only corrections out of decimation:** no effect at QP 23.
 
-AQ 0.5 adds −2…−5 QP on smooth, dark macroblocks (second differences under 2
-per sample, mean luma under 80; it no longer uses variance, so fades of any
-slope qualify). AQ 1.0 makes that fade look like QP 19 (`--quality best`) at
-+42% size on that clip, but costs +29% (0.5) to +83% (1.0) on launch.
+No QP short of near-lossless keeps the ±0.5-level texture itself. The renderer's
+dithers are already fixed per pixel, frame to frame (RENDER), so static areas
+skip for free.
 
-AQ is off by default. The cheaper fix is upstream: a temporally stable dither
-(the same pattern every frame) lets P_Skip and inter prediction preserve it at
-no cost. Use AQ 0.5 where delivered quality shows banding.
-
-Two cheaper encoder-side fixes were tried for isolated one-level squares that
-pop when flat areas are refreshed. Neither was kept:
-- Penalising intra coding in flat P-frame macroblocks cut that flicker 4× but
-  let the gradient drift by 3.3 dB (4×4-smoothed).
-- Keeping DC-only corrections out of decimation had no effect at QP 23, because
-  the zero-residual bounds already handle those blocks.
-
-No QP short of near-lossless keeps the dither itself: a ±0.5-level pattern is
-below the quantiser step. What AQ fixes is the block structure: band edges follow
-the gradient instead of the grid.
-
-Reproduce: `cargo run --release -p ak264 --example dark` (synthetic). For a
-rendered clip, use `FILE=clip.yuv AQ=0.5 OUT=dir CROP=x,y LIFT=lo,gain`, which
-also writes a lifted crop as PGM.
+Reproduce with `cargo run --release -p ak264 --example dark`. For a rendered
+clip: `FILE=clip.yuv AQ=1 FRAME=60 OUT=dir CROP=x,y LIFT=lo,gain` writes a
+lifted crop, and `DUMP=frame.yuv` writes the reconstructed frame.
 
 ## Limitations and next steps
 
