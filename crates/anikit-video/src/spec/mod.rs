@@ -499,6 +499,9 @@ pub struct Layer {
     pub twist: Option<f64>,
     /// Shape modifier: noise-displace the outline's vertices, `{"amount": 10, "detail": 24, "speed": 1, "seed": 1}` (animated, deterministic).
     pub wiggle_path: Option<WigglePathSpec>,
+    /// Text animator with a range selector (After Effects style): units inside the range take these props.
+    /// `{"by": "char", "y": 40, "opacity": 0, "duration": 0.8}` sweeps a reveal; see `docs mograph`.
+    pub animator: Option<AnimatorSpec>,
     /// Track matte: another layer of the scene (by `id`) whose alpha or luma shows this one.
     pub matte: Option<MatteSpec>,
 
@@ -701,6 +704,37 @@ pub struct EchoSpec {
     pub decay: Option<f64>,
     /// Blend mode of the echoes (`normal`, `add`, `screen`, …). Default normal.
     pub blend: Option<String>,
+}
+
+/// Text animator: per-unit property offsets, weighted by a range selector.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AnimatorSpec {
+    /// `char` (default), `word`, `line`.
+    pub by: Option<String>,
+    /// Offsets at full selection: `x`, `y` (px), `rotation` (deg), `scale` (multiplier), `opacity` (0..1), `blur` (px), `color`.
+    pub x: Option<f64>,
+    pub y: Option<f64>,
+    pub rotation: Option<f64>,
+    pub scale: Option<f64>,
+    pub opacity: Option<f64>,
+    pub blur: Option<f64>,
+    pub color: Option<String>,
+    /// Range start / end as fractions of the units (0..1). Defaults 0 and 1. Animatable as `rangeStart` / `rangeEnd`.
+    pub start: Option<Num>,
+    pub end: Option<Num>,
+    /// Shifts the range (−1..1). Animatable as `rangeOffset`. When not given, it sweeps 0 → 1 over `duration` after `delay`
+    /// (a left-to-right reveal of units that start at the animator's props).
+    pub offset: Option<Num>,
+    /// Edge softness as a fraction of all units (0 = hard). Default 0.25.
+    pub smooth: Option<f64>,
+    /// `forward` (default), `reverse`, `center` (from the middle out), `random`.
+    pub order: Option<String>,
+    pub seed: Option<f64>,
+    /// Auto sweep: seconds, delay and ease. Defaults 1, 0, `outCubic`.
+    pub duration: Option<f64>,
+    pub delay: Option<f64>,
+    pub ease: Option<String>,
 }
 
 /// `zigzag` shape modifier.

@@ -1207,6 +1207,17 @@
             }
           ]
         },
+        "animator": {
+          "description": "Text animator with a range selector (After Effects style): units inside the range take these props.\n`{\"by\": \"char\", \"y\": 40, \"opacity\": 0, \"duration\": 0.8}` sweeps a reveal; see `docs mograph`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnimatorSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "matte": {
           "description": "Track matte: another layer of the scene (by `id`) whose alpha or luma shows this one.",
           "anyOf": [
@@ -2202,6 +2213,144 @@
             "null"
           ],
           "format": "double"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AnimatorSpec": {
+      "description": "Text animator: per-unit property offsets, weighted by a range selector.",
+      "type": "object",
+      "properties": {
+        "by": {
+          "description": "`char` (default), `word`, `line`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "x": {
+          "description": "Offsets at full selection: `x`, `y` (px), `rotation` (deg), `scale` (multiplier), `opacity` (0..1), `blur` (px), `color`.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "y": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "rotation": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "scale": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "opacity": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "blur": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "start": {
+          "description": "Range start / end as fractions of the units (0..1). Defaults 0 and 1. Animatable as `rangeStart` / `rangeEnd`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "offset": {
+          "description": "Shifts the range (−1..1). Animatable as `rangeOffset`. When not given, it sweeps 0 → 1 over `duration` after `delay`\n(a left-to-right reveal of units that start at the animator's props).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "smooth": {
+          "description": "Edge softness as a fraction of all units (0 = hard). Default 0.25.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "order": {
+          "description": "`forward` (default), `reverse`, `center` (from the middle out), `random`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "seed": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "duration": {
+          "description": "Auto sweep: seconds, delay and ease. Defaults 1, 0, `outCubic`.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "delay": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "ease": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false

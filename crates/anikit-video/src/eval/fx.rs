@@ -124,8 +124,79 @@ pub(crate) struct Fx {
     pub text_path: Option<MPath>,
     /// Animated noise displacement of the shape outline: (amount, detail, speed, seed).
     pub wiggle: Option<[f32; 4]>,
+    /// Text animator with a range selector.
+    pub animator: Option<AnimatorC>,
     /// The outline resampled for `wiggle`.
     pub wiggle_src: Vec<(Vec<Point>, bool)>,
+}
+
+/// Text animator (range selector).
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct AnimatorC {
+    pub by: crate::text::UnitKind,
+    pub dx: f32,
+    pub dy: f32,
+    pub rot: f32,
+    pub scale: f32,
+    pub opacity: f32,
+    pub blur: f32,
+    /// Target colour (OKLab + alpha).
+    pub color: Option<[f32; 4]>,
+    pub smooth: f32,
+    /// Rank of each unit in selection order (empty = in order).
+    pub order: Vec<u32>,
+    /// Auto sweep of the offset 0 → 1: (delay, duration, ease id).
+    pub auto: Option<(f32, f32, u32)>,
+}
+
+impl AnimatorC {
+    /// Selection amount 0..1 of a unit at `pos` (0..1) for the range `[lo, hi]`.
+    #[inline]
+    pub fn amount(&self, pos: f32, lo: f32, hi: f32) -> f32 {
+        let edge = |d: f32| {
+            if self.smooth <= 1e-4 {
+                if d >= 0.0 {
+                    1.0
+                } else {
+                    0.0
+                }
+            } else {
+                // Soft edges fall off outside the range, so [0, 1] selects every unit fully.
+                let x = (d / self.smooth + 1.0).clamp(0.0, 1.0);
+                x * x * (3.0 - 2.0 * x)
+            }
+        };
+        edge(pos - lo) * edge(hi - pos)
+    }
+}
+
+/// Selection order ranks: `forward`, `reverse`, `center`, `random` (seeded).
+pub(crate) fn order_ranks(n: usize, order: &str, seed: f64) -> Vec<u32> {
+    let mut idx: Vec<usize> = (0..n).collect();
+    match order {
+        "reverse" => idx.reverse(),
+        "center" => {
+            let c = (n as f64 - 1.0) * 0.5;
+            idx.sort_by(|a, b| ((*a as f64 - c).abs()).partial_cmp(&(*b as f64 - c).abs()).unwrap());
+        }
+        "random" => {
+            // Deterministic Fisher-Yates with a hash RNG.
+            let mut st = (seed.to_bits() ^ 0x9E37_79B9_7F4A_7C15).wrapping_add(n as u64);
+            for i in (1..n).rev() {
+                st ^= st << 13;
+                st ^= st >> 7;
+                st ^= st << 17;
+                idx.swap(i, (st % (i as u64 + 1)) as usize);
+            }
+        }
+        _ => return Vec::new(),
+    }
+    // idx[k] = unit at rank k → rank of each unit.
+    let mut rank = vec![0u32; n];
+    for (k, &u) in idx.iter().enumerate() {
+        rank[u] = k as u32;
+    }
+    rank
 }
 
 impl Fx {
@@ -581,6 +652,20 @@ mod tests {
         p.line_to((0.0, 100.0));
         p.close_path();
         p
+    }
+
+    #[test]
+    fn animator_selection() {
+        let a = AnimatorC { by: Default::default(), dx: 0.0, dy: 0.0, rot: 0.0, scale: 1.0, opacity: 0.0, blur: 0.0, color: None, smooth: 0.0, order: vec![], auto: None };
+        assert_eq!(a.amount(0.5, 0.0, 1.0), 1.0);
+        assert_eq!(a.amount(0.5, 0.6, 1.6), 0.0);
+        let r = order_ranks(10, "random", 3.0);
+        let mut s = r.clone();
+        s.sort();
+        assert_eq!(s, (0..10).collect::<Vec<u32>>());
+        assert_eq!(r, order_ranks(10, "random", 3.0));
+        assert_ne!(r, order_ranks(10, "random", 4.0));
+        assert_eq!(order_ranks(5, "center", 0.0)[2], 0);
     }
 
     #[test]
