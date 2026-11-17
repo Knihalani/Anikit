@@ -38,6 +38,17 @@ target/release/anikit-video still  examples/video/telemetry/spec.json --at 42.3 
 target/release/anikit-video render examples/video/telemetry/spec.json -o telemetry.mp4
 ```
 
+## 9:16 social cut-down
+
+`vertical.json` is a 14.75 s, 1080×1920 cut of the Turn 1 pass, the fastest lap and the winner. It comes from the same race simulation and the same scene code: the replay scene takes a layout dict, so the battle card, banner and caption reflow for portrait instead of being cropped. The fastest-lap and winner scenes are stacked layouts. All text stays inside the 9:16 safe area (top 12% and bottom 20% clear), and `critique` reports no safe-area notes. The score is the film's `score.mp3`, cut into three segments with `trimStart`, so the replay hit still lands on the pass.
+
+```bash
+python3 examples/video/telemetry/vertical.py      # writes vertical.json
+target/release/anikit-video render examples/video/telemetry/vertical.json -o telemetry-vertical.mp4
+```
+
+Measured on the same 4-core VM: 885 frames in 3.64 s (243 fps), giving a 7.1 MB MP4 (7 290 KB) at −13.5 LUFS and −1.7 dBTP. Poster: `vertical-poster.png`.
+
 ## Sound
 
 `score.py` synthesises the music bed with numpy. It runs at 124 BPM in A minor:
