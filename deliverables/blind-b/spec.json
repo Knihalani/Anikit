@@ -1310,6 +1310,32 @@
      "y": 470
     },
     {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#FFE9CF",
+     "blend": "screen",
+     "opacity": 0,
+     "animate": [
+      {
+       "to": {
+        "opacity": 1.0
+       },
+       "at": 1.4062,
+       "duration": 0.03,
+       "ease": "linear"
+      },
+      {
+       "to": {
+        "opacity": 0.0
+       },
+       "at": 1.4362,
+       "duration": 0.22,
+       "ease": "outQuad"
+      }
+     ]
+    },
+    {
      "text": "Hand-forged knives \u00b7 Sheffield, since 1911",
      "font": "Instrument Serif",
      "size": 54,
