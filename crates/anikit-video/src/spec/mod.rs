@@ -533,6 +533,8 @@ pub struct Layer {
     pub visible: Option<bool>,
 
     // ---- timing & animation
+    /// When the layer appears (seconds into the scene). `delay` means the same.
+    #[serde(alias = "delay")]
     pub start: Option<Num>,
     pub end: Option<Num>,
     pub duration: Option<Num>,
@@ -837,7 +839,28 @@ pub enum Padding {
 /// Drop shadow.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Shadow(pub ShadowObj);
-string_or_struct!(Shadow, ShadowObj, |s| ShadowObj { color: (!s.is_empty()).then(|| s.to_string()), ..Default::default() });
+string_or_struct!(Shadow, ShadowObj, |s| css_shadow(s));
+
+/// `"#0008"` (a colour) or CSS shorthand `"0 4px 24px #0008"` (x, y, blur, colour).
+fn css_shadow(s: &str) -> ShadowObj {
+    let mut nums = Vec::new();
+    let mut rest = s.trim();
+    while let Some(tok) = rest.split_whitespace().next() {
+        match tok.trim_end_matches("px").parse::<f64>() {
+            Ok(v) if nums.len() < 3 => {
+                nums.push(v);
+                rest = rest[tok.len()..].trim_start();
+            }
+            _ => break,
+        }
+    }
+    ShadowObj {
+        x: nums.first().copied(),
+        y: nums.get(1).copied(),
+        blur: nums.get(2).copied(),
+        color: (!rest.is_empty()).then(|| rest.to_string()),
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -928,6 +951,7 @@ string_or_struct!(Preset, PresetObj, |s| PresetObj { preset: Some(s.to_string())
 pub struct PresetObj {
     /// Preset name (`fadeUp`, `popIn`, `drawOn`, `typewriter`, …).
     pub preset: Option<String>,
+    #[serde(alias = "at")]
     pub delay: Option<Num>,
     pub duration: Option<Num>,
     pub ease: Option<String>,

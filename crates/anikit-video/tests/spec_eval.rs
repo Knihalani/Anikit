@@ -564,3 +564,23 @@ fn def_params_with_defaults_and_random_scatter() {
         { "repeat": 30, "shape": "circle", "width": "=pick(rand($i + 7) * 3, 2, 4, 6)",
           "x": "=rand($i, 0, 400)", "y": "=rand($i + 100, 0, 60)", "fill": "=pick(rand($i + 9) * 2, #ffffff, #88ccff)" } ] } ] }"##).eval(1.0));
 }
+
+#[test]
+fn natural_forms_are_accepted() {
+    // `delay` on a layer means `start`; `at` in a preset object means `delay`; CSS shadow shorthand.
+    let p = parse_json(r##"{ "scenes": [ { "layers": [ { "text": "a", "delay": 1, "enter": { "preset": "fadeUp", "at": 0.2 }, "shadow": "0 4px 24px #0008" } ] } ] }"##).unwrap();
+    assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+    let l = &p.spec.scenes[0].layers[0];
+    assert!(matches!(l.start, Some(anikit_video::spec::Num::Num(v)) if v == 1.0));
+    let sh = &l.shadow.as_ref().unwrap().0;
+    assert_eq!((sh.x, sh.y, sh.blur, sh.color.as_deref()), (Some(0.0), Some(4.0), Some(24.0), Some("#0008")));
+    // x/y on box children: a warning that says what to do instead.
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "children": [ { "text": "a", "x": 10 } ] } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("children[0]") && m.contains("ignored")), "{e:?}");
+    // No transition given: hard cuts, and the video is exactly the sum of the scene durations.
+    let ev = build(r##"{ "scenes": [ { "duration": 2, "layers": [ "a" ] }, { "duration": 3, "layers": [ "b" ] } ] }"##);
+    assert_eq!(ev.duration, 5.0);
+    let ev = build(r##"{ "transition": "crossfade", "scenes": [ { "duration": 2, "layers": [ "a" ] }, { "duration": 3, "layers": [ "b" ] } ] }"##);
+    assert_eq!(ev.duration, 5.0, "transitions don't shorten the video");
+    assert_eq!(ev.scenes()[1].end, 5.0);
+}

@@ -280,6 +280,13 @@ impl Evaluator {
                 ));
                 trans.dur = 0.5 * prev_dur.min(dur);
             }
+            // Scene timing never shrinks: a transition into this scene happens during the
+            // last `trans.dur` before its cut point, so cuts land at the sum of the scene
+            // durations (on the beat with musical durations) and the video is exactly as long
+            // as the durations add up to. The scene's own clock starts when the transition does.
+            let own = dur;
+            let in_dur = trans.dur;
+            dur += trans.dur;
             let start = t - trans.dur;
             c.scene_start = start;
             c.smarkers.clear();
@@ -327,7 +334,7 @@ impl Evaluator {
             };
             scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers, post });
             t = start + dur;
-            prev_dur = dur;
+            prev_dur = if auto { dur - in_dur } else { own };
         }
         let mut duration = t;
         if let Some(d) = &spec.duration {
@@ -843,8 +850,10 @@ impl C<'_> {
     // ---------- scenes ----------
 
     fn transition(&mut self, t: Option<&spec::Transition>, path: &str) -> TransC {
+        // No transition given: a hard cut (transitions are opt-in). An object without a
+        // `type` (`{ "duration": 0.6 }`) is a crossfade.
         let o = t.map(|t| t.0.clone()).unwrap_or_default();
-        let kind_s = o.kind.as_deref().unwrap_or("crossfade");
+        let kind_s = o.kind.as_deref().unwrap_or(if t.is_none() { "cut" } else { "crossfade" });
         let kind = match kind_s {
             "cut" | "none" => TransKind::Cut,
             "crossfade" | "fade" => TransKind::Crossfade,
@@ -1146,6 +1155,15 @@ impl C<'_> {
     }
 
     fn layer(&mut self, l: &Layer, path: &str, pc: PCtx) -> Option<Node> {
+        // `"shader": "scene.glsl"` means the shader's source file.
+        let shader_file;
+        let l = match &l.shader {
+            Some(f) if l.src.is_none() && [".glsl", ".wgsl", ".frag"].iter().any(|e| f.trim().to_ascii_lowercase().ends_with(e)) => {
+                shader_file = Layer { src: Some(f.trim().to_string()), shader: None, ..l.clone() };
+                &shader_file
+            }
+            _ => l,
+        };
         // `"text": "=expr"`: a number computed per frame (an animatable counter).
         let expr_text;
         let l = match &l.text {
@@ -2161,6 +2179,14 @@ impl C<'_> {
         let ref_size = [gw.unwrap_or(pc.size[0]), gh.unwrap_or(pc.size[1])];
         let cpc = PCtx { size: ref_size, t0: start, end, delay: 0.0, index: 0, count: 0, in_box: true };
         let kids_spec = l.children.as_deref().unwrap_or(&[]);
+        for (k, ch) in kids_spec.iter().enumerate() {
+            if ch.x.is_some() || ch.y.is_some() {
+                self.d.push(Diagnostic::warning(
+                    format!("{path}.children[{k}]"),
+                    "x/y on a box child are ignored: the box lays its children out (use the box's style.align/justify/gap, or put the layer in a group to place it freely)",
+                ));
+            }
+        }
         let mut kids = self.layers(kids_spec, &format!("{path}.children"), cpc, l.stagger.as_ref());
         let gap = st.gap.as_ref().map(|g| self.len_c(g, &format!("{sp}.gap"), ref_size[0], 16.0)).unwrap_or(16.0);
         let pad: [f32; 4] = match &st.padding {

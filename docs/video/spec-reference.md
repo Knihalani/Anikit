@@ -6,7 +6,7 @@ You describe a video as one JSON (or YAML) document; `anikit-video render spec.j
 
 **Design rules you can rely on**
 
-- **Everything is optional except `scenes`.** Each scene needs `layers`. Defaults look good: a dark theme, Inter, centred layers, and a 0.5 s crossfade between scenes.
+- **Everything is optional except `scenes`.** Each scene needs `layers`. Defaults look good: a dark theme, Inter, centred layers, and hard cuts between scenes (transitions are opt-in and never shorten a scene).
 - **Times are seconds.** Write numbers (`1.5`) or strings: `"1.5s"`, `"500ms"`, `"12f"` (frames), or a marker `"@drop"` / `"@drop+0.25"`.
 - **Lengths are pixels.** Write numbers (`120`) or strings: `"50%"` (of the parent: width for x/width, height for y/height), `"10vw"`, `"8vh"`, `"5vmin"`, `"5vmax"`.
 - **Colours are CSS strings**: `"#6d5dfc"`, `"#fff8"`, `"rgb(20 20 30)"`, `"oklch(70% 0.15 250)"`, `"tomato"`, or a theme token `"$primary"`. Gradients: `"linear-gradient(135deg, #6d5dfc, #ff6ab0)"`, `"radial-gradient(#fff, #000)"`.
@@ -96,7 +96,7 @@ That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the 
 | `background` | colour or gradient | `"$bg"` | Default background of every scene. |
 | `theme` | object | dark theme | Colour tokens, fonts and text styles (see **Theme**). |
 | `scenes` | array | **required** | Played in order. |
-| `transition` | transition | `{ "type": "crossfade", "duration": 0.5 }` | Default transition between scenes. Use `"cut"` for none. |
+| `transition` | transition | `"cut"` | Default transition between scenes (e.g. `"crossfade"`, default length 0.5 s). It plays in the last part of the outgoing scene, so the total length stays the sum of scene durations. |
 | `markers` | `{ name: time }` | `{}` | Named times on the global timeline, used as `"@name"`. |
 | `audio` | array | `[]` | Music and sound effects (see **Audio**). |
 | `captions` | array or `{ "src": "subs.srt" }` | none | Burned-in captions (see **Captions**). |
