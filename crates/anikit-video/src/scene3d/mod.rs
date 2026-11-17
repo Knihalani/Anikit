@@ -314,11 +314,8 @@ impl Prepare for Scene3d {
             None => objs_v,
         };
         // `set`: a stage built around the subject (plinth, steps, field, ...).
-        let set = m.get("set").map(|v| sets::build(v, "set")).transpose().map_err(Error)?;
-        let objs_v: Vec<Value> = match &set {
-            Some(b) => objs_v.into_iter().chain(b.objects.iter().cloned()).collect(),
-            None => objs_v,
-        };
+        // (Built after the objects below, so a plinth fits the subject.)
+        let mut set: Option<sets::Built> = None;
         let outline = match m.get("outline") {
             None if look_outline => Some((1.6, [22u8, 20, 24])),
             None | Some(Value::Bool(false)) => None,
@@ -342,6 +339,21 @@ impl Prepare for Scene3d {
                 continue;
             }
             objs.push(spec::object(o, &mut shapes, &mut mats, &named, &format!("objects[{i}]")).map_err(Error)?);
+        }
+        if let Some(sv) = m.get("set") {
+            // The subject's footprint (half-width on the floor) at t = 0.
+            let mut probe = Scene::new(shapes.list.clone(), mats.clone(), Vec::new(), es.env.clone(), None);
+            probe.insts = instances(&objs, 0.0, 0.0);
+            let mut fit: f32 = 0.0;
+            for i in &probe.insts {
+                let (a, b) = probe.world_box(i);
+                fit = fit.max(a.x.abs()).max(b.x.abs()).max(a.z.abs()).max(b.z.abs());
+            }
+            let built = sets::build(sv, "set", (fit > 0.0).then_some(fit)).map_err(Error)?;
+            for (k, o) in built.objects.iter().enumerate() {
+                objs.push(spec::object(o, &mut shapes, &mut mats, &named, &format!("set[{k}]")).map_err(Error)?);
+            }
+            set = Some(built);
         }
 
         // Physics: body groups become objects whose transforms come from the simulation.
