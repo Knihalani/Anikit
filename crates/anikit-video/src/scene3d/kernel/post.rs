@@ -60,104 +60,154 @@ impl<T> Out<T> {
     }
 }
 
-/// The primary pass's output as planes.
-struct Planes {
-    col: Img,
+/// The primary pass's output as planes (structure of arrays): the trace
+/// writes them through [`PlanesOut`], post reads only what each stage needs.
+pub struct Planes {
+    pub col: Img,
     /// Floor reflection (rgb) and the coverage of samples that traced it.
-    refl: Buf<[f32; 4]>,
-    cov: Buf<f32>,
-    rad: Buf<f32>,
-    rf: Buf<f32>,
+    pub refl: Buf<[f32; 4]>,
+    pub cov: Buf<f32>,
+    pub rad: Buf<f32>,
+    pub rf: Buf<f32>,
     /// Diffuse albedo × ambient, albedo × key, and AO-occluded specular.
-    da: Img,
-    dk: Img,
-    sp: Img,
-    ao: Buf<f32>,
-    vk: Buf<f32>,
-    depth: Buf<f32>,
-    nx: Buf<f32>,
-    ny: Buf<f32>,
-    nz: Buf<f32>,
-    id: Buf<u32>,
+    pub da: Img,
+    pub dk: Img,
+    pub sp: Img,
+    pub ao: Buf<f32>,
+    pub vk: Buf<f32>,
+    /// View depth (distance along the camera axis).
+    pub depth: Buf<f32>,
+    pub nx: Buf<f32>,
+    pub ny: Buf<f32>,
+    pub nz: Buf<f32>,
+    pub id: Buf<u32>,
     /// 1 where the pixel has diffuse albedo or occludable specular (else 0).
-    lit: Buf<f32>,
+    pub lit: Buf<f32>,
     /// Weight of the traced visibility (0: checkerboard gap, filled by the denoiser).
-    vw: Buf<f32>,
-    vel: Buf<[f32; 2]>,
+    pub vw: Buf<f32>,
+    pub vel: Buf<[f32; 2]>,
+}
+
+/// Writes pixels into [`Planes`] from several threads (disjoint pixels).
+#[derive(Clone, Copy)]
+pub struct PlanesOut {
+    col: Out<[f32; 3]>,
+    refl: Out<[f32; 4]>,
+    cov: Out<f32>,
+    rad: Out<f32>,
+    rf: Out<f32>,
+    da: Out<[f32; 3]>,
+    dk: Out<[f32; 3]>,
+    sp: Out<[f32; 3]>,
+    ao: Out<f32>,
+    vk: Out<f32>,
+    depth: Out<f32>,
+    nx: Out<f32>,
+    ny: Out<f32>,
+    nz: Out<f32>,
+    id: Out<u32>,
+    lit: Out<f32>,
+    vw: Out<f32>,
+    vel: Out<[f32; 2]>,
+}
+
+impl PlanesOut {
+    /// Store pixel `i`.
+    ///
+    /// # Safety
+    /// `i` is inside the planes, no other thread writes pixel `i`, and the
+    /// planes outlive every write (nothing else touches them meanwhile).
+    #[inline]
+    pub unsafe fn put(&self, i: usize, q: &Px) {
+        unsafe {
+            self.col.put(i, q.col);
+            self.refl.put(i, [q.refl[0], q.refl[1], q.refl[2], q.rcov]);
+            self.cov.put(i, q.cov);
+            self.rad.put(i, q.rad);
+            self.rf.put(i, q.rf);
+            self.da.put(i, [q.alb[0] * q.amb[0], q.alb[1] * q.amb[1], q.alb[2] * q.amb[2]]);
+            self.dk.put(i, [q.alb[0] * q.key[0], q.alb[1] * q.key[1], q.alb[2] * q.key[2]]);
+            self.sp.put(i, q.spec);
+            self.ao.put(i, q.ao);
+            self.vk.put(i, q.vk);
+            self.depth.put(i, q.depth);
+            self.nx.put(i, q.nrm[0]);
+            self.ny.put(i, q.nrm[1]);
+            self.nz.put(i, q.nrm[2]);
+            self.id.put(i, q.id);
+            let l = q.alb[0] + q.alb[1] + q.alb[2] + q.spec[0] + q.spec[1] + q.spec[2] > 1e-5;
+            self.lit.put(i, if l { 1.0 } else { 0.0 });
+            self.vel.put(i, q.vel);
+            self.vw.put(i, q.vw);
+        }
+    }
 }
 
 impl Planes {
-    fn unpack(px: &[Px]) -> Planes {
-        let n = px.len();
-        // Every plane is written exactly once below.
-        fn alloc<T: Pod>(n: usize) -> Buf<T> {
-            Buf::uninit(n)
+    /// `n` pixels, contents unspecified until written (pooled storage).
+    pub fn new(n: usize) -> Planes {
+        Planes {
+            col: Buf::uninit(n),
+            refl: Buf::uninit(n),
+            cov: Buf::uninit(n),
+            rad: Buf::uninit(n),
+            rf: Buf::uninit(n),
+            da: Buf::uninit(n),
+            dk: Buf::uninit(n),
+            sp: Buf::uninit(n),
+            ao: Buf::uninit(n),
+            vk: Buf::uninit(n),
+            depth: Buf::uninit(n),
+            nx: Buf::uninit(n),
+            ny: Buf::uninit(n),
+            nz: Buf::uninit(n),
+            id: Buf::uninit(n),
+            lit: Buf::uninit(n),
+            vw: Buf::uninit(n),
+            vel: Buf::uninit(n),
         }
-        let mut p = Planes {
-            col: alloc(n),
-            refl: alloc(n),
-            cov: alloc(n),
-            rad: alloc(n),
-            rf: alloc(n),
-            da: alloc(n),
-            dk: alloc(n),
-            sp: alloc(n),
-            ao: alloc(n),
-            vk: alloc(n),
-            depth: alloc(n),
-            nx: alloc(n),
-            ny: alloc(n),
-            nz: alloc(n),
-            id: alloc(n),
-            lit: alloc(n),
-            vw: alloc(n),
-            vel: alloc(n),
-        };
-        let o = (
-            Out(p.col.as_mut_ptr()),
-            Out(p.refl.as_mut_ptr()),
-            Out(p.cov.as_mut_ptr()),
-            Out(p.rad.as_mut_ptr()),
-            Out(p.rf.as_mut_ptr()),
-            Out(p.da.as_mut_ptr()),
-            Out(p.dk.as_mut_ptr()),
-            Out(p.sp.as_mut_ptr()),
-            Out(p.ao.as_mut_ptr()),
-            Out(p.vk.as_mut_ptr()),
-            Out(p.depth.as_mut_ptr()),
-            Out(p.nx.as_mut_ptr()),
-            Out(p.ny.as_mut_ptr()),
-            Out(p.nz.as_mut_ptr()),
-            Out(p.id.as_mut_ptr()),
-            Out(p.lit.as_mut_ptr()),
-            Out(p.vel.as_mut_ptr()),
-            Out(p.vw.as_mut_ptr()),
-        );
+    }
+
+    pub fn len(&self) -> usize {
+        self.col.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.col.is_empty()
+    }
+
+    /// A writer for filling the planes from parallel tasks.
+    pub fn writer(&mut self) -> PlanesOut {
+        PlanesOut {
+            col: Out(self.col.as_mut_ptr()),
+            refl: Out(self.refl.as_mut_ptr()),
+            cov: Out(self.cov.as_mut_ptr()),
+            rad: Out(self.rad.as_mut_ptr()),
+            rf: Out(self.rf.as_mut_ptr()),
+            da: Out(self.da.as_mut_ptr()),
+            dk: Out(self.dk.as_mut_ptr()),
+            sp: Out(self.sp.as_mut_ptr()),
+            ao: Out(self.ao.as_mut_ptr()),
+            vk: Out(self.vk.as_mut_ptr()),
+            depth: Out(self.depth.as_mut_ptr()),
+            nx: Out(self.nx.as_mut_ptr()),
+            ny: Out(self.ny.as_mut_ptr()),
+            nz: Out(self.nz.as_mut_ptr()),
+            id: Out(self.id.as_mut_ptr()),
+            lit: Out(self.lit.as_mut_ptr()),
+            vw: Out(self.vw.as_mut_ptr()),
+            vel: Out(self.vel.as_mut_ptr()),
+        }
+    }
+
+    /// From per-pixel records.
+    pub fn unpack(px: &[Px]) -> Planes {
+        let mut p = Planes::new(px.len());
+        let o = p.writer();
         let body = |i0: usize, chunk: &[Px]| {
             for (j, q) in chunk.iter().enumerate() {
-                let i = i0 + j;
-                // SAFETY: each index is written by exactly one chunk.
-                unsafe {
-                    o.0.put(i, q.col);
-                    o.1.put(i, [q.refl[0], q.refl[1], q.refl[2], q.rcov]);
-                    o.2.put(i, q.cov);
-                    o.3.put(i, q.rad);
-                    o.4.put(i, q.rf);
-                    o.5.put(i, [q.alb[0] * q.amb[0], q.alb[1] * q.amb[1], q.alb[2] * q.amb[2]]);
-                    o.6.put(i, [q.alb[0] * q.key[0], q.alb[1] * q.key[1], q.alb[2] * q.key[2]]);
-                    o.7.put(i, q.spec);
-                    o.8.put(i, q.ao);
-                    o.9.put(i, q.vk);
-                    o.10.put(i, q.depth);
-                    o.11.put(i, q.nrm[0]);
-                    o.12.put(i, q.nrm[1]);
-                    o.13.put(i, q.nrm[2]);
-                    o.14.put(i, q.id);
-                    let l = q.alb[0] + q.alb[1] + q.alb[2] + q.spec[0] + q.spec[1] + q.spec[2] > 1e-5;
-                    o.15.put(i, if l { 1.0 } else { 0.0 });
-                    o.16.put(i, q.vel);
-                    o.17.put(i, q.vw);
-                }
+                // SAFETY: each index is written by exactly one chunk; `p` outlives this.
+                unsafe { o.put(i0 + j, q) };
             }
         };
         const CH: usize = 8192;
@@ -918,35 +968,82 @@ fn debug() -> u8 {
     })
 }
 
-/// Write a primary pass and its post settings to `path` (see [`load`]).
-pub fn dump(path: &std::path::Path, px: &[Px], w: usize, h: usize, p: &Post) {
-    let mut b: Vec<u8> = Vec::with_capacity(std::mem::size_of_val(px) + 64);
+/// Write a primary pass (planes) and its post settings to `path` (see [`load`]).
+pub fn dump(path: &std::path::Path, pl: &Planes, w: usize, h: usize, p: &Post) {
+    let mut b: Vec<u8> = Vec::new();
     for v in [w as f32, h as f32, p.focus, p.aperture, p.shutter, p.bloom, p.exposure, p.vignette, (p.tonemap == Tonemap::Neutral) as u32 as f32, p.denoise as f32] {
         b.extend_from_slice(&v.to_le_bytes());
     }
-    // SAFETY: `Px` is plain `repr(C)` data without padding.
-    b.extend_from_slice(unsafe { std::slice::from_raw_parts(px.as_ptr() as *const u8, std::mem::size_of_val(px)) });
+    fn raw<T: Pod>(b: &mut Vec<u8>, v: &[T]) {
+        // SAFETY: plain data.
+        b.extend_from_slice(unsafe { std::slice::from_raw_parts(v.as_ptr() as *const u8, std::mem::size_of_val(v)) });
+    }
+    raw(&mut b, &pl.col);
+    raw(&mut b, &pl.refl);
+    raw(&mut b, &pl.cov);
+    raw(&mut b, &pl.rad);
+    raw(&mut b, &pl.rf);
+    raw(&mut b, &pl.da);
+    raw(&mut b, &pl.dk);
+    raw(&mut b, &pl.sp);
+    raw(&mut b, &pl.ao);
+    raw(&mut b, &pl.vk);
+    raw(&mut b, &pl.depth);
+    raw(&mut b, &pl.nx);
+    raw(&mut b, &pl.ny);
+    raw(&mut b, &pl.nz);
+    raw(&mut b, &pl.id);
+    raw(&mut b, &pl.lit);
+    raw(&mut b, &pl.vw);
+    raw(&mut b, &pl.vel);
     let _ = std::fs::write(path, b);
 }
 
 /// Read what [`dump`] wrote.
-pub fn load(path: &std::path::Path) -> Option<(Vec<Px>, usize, usize, Post)> {
+pub fn load(path: &std::path::Path) -> Option<(Planes, usize, usize, Post)> {
     let b = std::fs::read(path).ok()?;
     let f = |i: usize| f32::from_le_bytes(b[i * 4..i * 4 + 4].try_into().unwrap());
     let (w, h) = (f(0) as usize, f(1) as usize);
     let p = Post { focus: f(2), aperture: f(3), shutter: f(4), bloom: f(5), exposure: f(6), vignette: f(7), tonemap: if f(8) > 0.5 { Tonemap::Neutral } else { Tonemap::Aces }, denoise: f(9) as u32 };
-    let body = &b[40..];
-    let n = w * h;
-    if body.len() != n * std::mem::size_of::<Px>() {
-        return None;
+    let mut pl = Planes::new(w * h);
+    let mut at = 40usize;
+    fn fill<T: Pod>(b: &[u8], at: &mut usize, v: &mut [T]) -> Option<()> {
+        let n = std::mem::size_of_val(v);
+        let src = b.get(*at..*at + n)?;
+        // SAFETY: sizes match and `T` accepts any bits.
+        unsafe { std::ptr::copy_nonoverlapping(src.as_ptr(), v.as_mut_ptr() as *mut u8, n) };
+        *at += n;
+        Some(())
     }
-    let mut px = vec![Px::default(); n];
-    // SAFETY: sizes match and `Px` accepts any bits.
-    unsafe { std::ptr::copy_nonoverlapping(body.as_ptr(), px.as_mut_ptr() as *mut u8, body.len()) };
-    Some((px, w, h, p))
+    fill(&b, &mut at, &mut pl.col)?;
+    fill(&b, &mut at, &mut pl.refl)?;
+    fill(&b, &mut at, &mut pl.cov)?;
+    fill(&b, &mut at, &mut pl.rad)?;
+    fill(&b, &mut at, &mut pl.rf)?;
+    fill(&b, &mut at, &mut pl.da)?;
+    fill(&b, &mut at, &mut pl.dk)?;
+    fill(&b, &mut at, &mut pl.sp)?;
+    fill(&b, &mut at, &mut pl.ao)?;
+    fill(&b, &mut at, &mut pl.vk)?;
+    fill(&b, &mut at, &mut pl.depth)?;
+    fill(&b, &mut at, &mut pl.nx)?;
+    fill(&b, &mut at, &mut pl.ny)?;
+    fill(&b, &mut at, &mut pl.nz)?;
+    fill(&b, &mut at, &mut pl.id)?;
+    fill(&b, &mut at, &mut pl.lit)?;
+    fill(&b, &mut at, &mut pl.vw)?;
+    fill(&b, &mut at, &mut pl.vel)?;
+    Some((pl, w, h, p))
 }
 
+/// The post stack on per-pixel records (see [`process_planes`]).
 pub fn process(px: &[Px], w: usize, h: usize, p: &Post, vol: Option<Volume>, parts: Option<&super::super::particles::Layer>) -> Vec<u8> {
+    process_planes(&Planes::unpack(px), w, h, p, vol, parts)
+}
+
+/// The post stack: floor-reflection blur, denoise, compose, depth of field,
+/// motion blur, particles, bloom, tone mapping.
+pub fn process_planes(pl: &Planes, w: usize, h: usize, p: &Post, vol: Option<Volume>, parts: Option<&super::super::particles::Layer>) -> Vec<u8> {
     let s = h as f32 / 1080.0;
     let mut clock = std::time::Instant::now();
     let mut stages: Vec<(&str, f64)> = Vec::new();
@@ -954,13 +1051,12 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post, vol: Option<Volume>, par
         stages.push((name, clock.elapsed().as_secs_f64() * 1e3));
         clock = std::time::Instant::now();
     };
-    let pl = Planes::unpack(px);
     tick("unpack");
     // 1. Glossy floor reflection.
-    let rv = floor_reflection(&pl, w, h, s);
+    let rv = floor_reflection(pl, w, h, s);
     tick("refl");
     // 1b. Denoise AO and key visibility, then light the diffuse albedo with them.
-    let (ao, vk) = denoise_vis(&pl, w, h, p.denoise);
+    let (ao, vk) = denoise_vis(pl, w, h, p.denoise);
     tick("denoise");
     let (dc, dr, dd) = match debug() {
         1 => (0.0, 1.0, 0.0),
