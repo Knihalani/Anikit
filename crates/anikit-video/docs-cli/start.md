@@ -15,6 +15,7 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 
 | Topic | What you get |
 |---|---|
+| `docs taste` | **read before designing:** the 15-line taste pass (type, colour, composition, light, motion, rhythm, sound, concept) |
 | `docs primitives` | text, shapes, SVG paths, images, groups: full styling |
 | `docs animation` | keyframes and `=expressions` on any property, presets, kinetic type |
 | `docs camera` | zoom/pan/whip, shake, depth + rack focus, motion blur |
@@ -34,4 +35,4 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 
 Shortcuts (optional): `anikit-video recipes` (drop-in high-end shots), `looks` (art direction),
 `info --components` (prebuilt widgets), `templates` (quick starts).
-Rules that always hold: hook in ≤ 2 s · cut words, not type size · one focal point · judge frames, not scores.
+Rules that always hold: hook in ≤ 2 s · cut words, not type size · one focal point · every choice made for this subject (`docs taste`) · judge frames, not scores.

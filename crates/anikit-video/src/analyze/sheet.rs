@@ -147,6 +147,11 @@ pub fn contact_sheet(a: &Analysis) -> (u32, u32, Vec<u8>) {
         let tin = if s.transition_in == "start" { String::new() } else { s.transition_in.to_uppercase() };
         let info = format!("{} {}", tin, s.camera.label.replace("handheld/shake", "SHAKE"));
         c.text(gx as i32 + 5, (gy + ch) as i32 - 17, info.trim(), 2, transition_colour(&s.transition_in));
+        // Style line: look, grade, motion character, type.
+        let ty = s.text.first().map(|t| format!(" T{:.0}VH {}", t.height * 85.0, t.weight)).unwrap_or_default();
+        let grade: Vec<&str> = s.grade.label.split(", ").take(2).collect();
+        let style = format!("{} {} {}{}", s.look, grade.join(" "), s.motion_character, ty).replace("(milky) ", "").replace(",", "");
+        c.text(gx as i32 + 5, (gy + ch) as i32 - 34, &style, 2, [200, 230, 255]);
         c.text(gx as i32 + cw as i32 - 4 * 2 * s.technique[0].len() as i32 - 6, gy as i32 + 5, &s.technique[0], 2, [255, 210, 120]);
     }
     // Timeline: shots as their main colour, beats as ticks.

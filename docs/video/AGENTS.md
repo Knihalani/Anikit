@@ -2,7 +2,7 @@
 
 **Install:** `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh` (prebuilt, about 2 s). Don't build from source to render.
 
-Start with [`skills/anikit-video/SKILL.md`](../../skills/anikit-video/SKILL.md) (48 lines): install, the loop, the open primitives and the shortcuts. Then use `anikit-video docs <topic>` (30-line pages, each with a working example) instead of reading long files: `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything expressions script draw components analyze`.
+Start with [`skills/anikit-video/SKILL.md`](../../skills/anikit-video/SKILL.md) (48 lines): install, the loop, the open primitives and the shortcuts. Then use `anikit-video docs <topic>` (30-line pages, each with a working example) instead of reading long files: `taste` (read before designing) `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything expressions script draw components analyze`.
 
 ```bash
 anikit-video docs                                    # topics
@@ -20,7 +20,7 @@ anikit-video critique s.json --render --pack rv/     # judged against "intent"; 
 
 **3D:** for chrome, glass, a studio, or thousands of textured instances, use the ray-traced `scene3d` component. See [`scene3d.md`](scene3d.md).
 
-**Quality:** [`quality/BAR.md`](quality/BAR.md). Scores are not quality verdicts; frames are.
+**Quality:** [`taste/TASTE.md`](taste/TASTE.md) (the canon: principles, numbers, tells, the taste pass; sources in [`taste/sources.md`](taste/sources.md)) and [`quality/BAR.md`](quality/BAR.md) (every rejection). Scores are not quality verdicts; frames are.
 
 ## Cold-agent dry runs
 
