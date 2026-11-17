@@ -6,7 +6,7 @@ studio: "Pleas Call Me Champ Studio (director: Champ Panupong Techawongthawon)"
 client: "TED-Ed (educator: Briana Brownell)"
 year: 2021
 url: https://vimeo.com/522542250
-alt_urls: [https://www.pleasecallmechamp.com]
+alt_urls: ["https://www.pleasecallmechamp.com"]
 length_s: 278
 verified: oembed
 aspect: "16:9"
@@ -22,6 +22,11 @@ anikit_features: [shape, "shape gradient fill", mograph.repeat, "path/progress (
 awards: []
 stills:
   - https://i.vimeocdn.com/video/1082388221-6b34fe35f930f5c77908f4cc818e26e1b785880015723bbb28699fb17e4ee557-d_1280
+  - https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-03-12-at-8.47.49-AM.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-03-12-at-8.48.05-AM.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-03-12-at-8.48.19-AM.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-03-12-at-8.49.29-AM.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-03-12-at-8.50.13-AM.jpg
 measured: null
 ---
 

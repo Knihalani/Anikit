@@ -20,6 +20,8 @@ pub(crate) struct RepC {
     pub scale: [f32; 2],
     pub opacity: f32,
     pub stagger: f32,
+    /// Stagger rank of each copy (empty = in order).
+    pub ranks: Vec<u32>,
     /// Rotation/scale centre in parent pixels; `None` = the layer's position.
     pub center: Option<[f32; 2]>,
 }
@@ -111,6 +113,75 @@ impl MPath {
     }
 }
 
+/// Inertia: a damped spring chasing the layer's own animated values.
+#[derive(Debug)]
+pub(crate) struct InertiaC {
+    /// Property slots the spring follows.
+    pub slots: Vec<u8>,
+    pub stiffness: f32,
+    pub damping: f32,
+    pub mass: f32,
+    /// Spring output per sample (`slots.len()` values each), at `RATE` Hz from the layer start.
+    pub table: std::sync::OnceLock<Vec<f32>>,
+}
+
+impl InertiaC {
+    pub const RATE: f32 = 240.0;
+
+    /// Run the spring over `life` seconds against `target(t)` (the layer's own values at local time t).
+    pub fn simulate(&self, life: f32, mut target: impl FnMut(f32) -> [f32; super::prop::N]) -> Vec<f32> {
+        let k = self.slots.len();
+        let n = (life * Self::RATE).ceil().max(1.0) as usize + 1;
+        let mut out = Vec::with_capacity(n * k);
+        let first = target(0.0);
+        let mut x: Vec<f32> = self.slots.iter().map(|&s| first[s as usize]).collect();
+        let mut vel = vec![0.0f32; k];
+        let dt = 1.0 / Self::RATE;
+        let sub = 4;
+        let h = dt / sub as f32;
+        let mut prev = x.clone();
+        for j in 0..n {
+            let t = j as f32 * dt;
+            let tv = if j == 0 { first } else { target(t) };
+            let goal: Vec<f32> = self.slots.iter().map(|&s| tv[s as usize]).collect();
+            if j > 0 {
+                // Semi-implicit Euler, the goal interpolated across the substeps.
+                for q in 1..=sub {
+                    let f = q as f32 / sub as f32;
+                    for i in 0..k {
+                        let g = prev[i] + (goal[i] - prev[i]) * f;
+                        let a = (-self.stiffness * (x[i] - g) - self.damping * vel[i]) / self.mass;
+                        vel[i] += a * h;
+                        x[i] += vel[i] * h;
+                    }
+                }
+            }
+            prev.copy_from_slice(&goal);
+            out.extend_from_slice(&x);
+        }
+        out
+    }
+
+    /// Replace the followed slots of `v` with the spring's value at local time `lt`.
+    #[inline]
+    pub fn apply(&self, table: &[f32], lt: f32, v: &mut [f32; super::prop::N]) {
+        let k = self.slots.len();
+        let n = table.len() / k.max(1);
+        if n == 0 {
+            return;
+        }
+        let f = (lt * Self::RATE).max(0.0);
+        let j = (f.floor() as usize).min(n - 1);
+        let j1 = (j + 1).min(n - 1);
+        let u = (f - j as f32).clamp(0.0, 1.0);
+        for (i, &s) in self.slots.iter().enumerate() {
+            let a = table[j * k + i];
+            let b = table[j1 * k + i];
+            v[s as usize] = a + (b - a) * u;
+        }
+    }
+}
+
 /// Per-layer motion-graphics extras (boxed on `Node`, `None` for ordinary layers).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Fx {
@@ -126,6 +197,10 @@ pub(crate) struct Fx {
     pub wiggle: Option<[f32; 4]>,
     /// Text animator with a range selector.
     pub animator: Option<AnimatorC>,
+    /// Stroke gradient along the path: chunks of the outline, each with its own two colours.
+    pub along: Option<AlongC>,
+    /// Smear strength (stretch along velocity).
+    pub smear: Option<f32>,
     /// The outline resampled for `wiggle`.
     pub wiggle_src: Vec<(Vec<Point>, bool)>,
 }
@@ -142,6 +217,10 @@ pub(crate) struct AnimatorC {
     pub blur: f32,
     /// Target colour (OKLab + alpha).
     pub color: Option<[f32; 4]>,
+    /// Variable-font axis targets at full selection.
+    pub axes: Vec<(String, f32)>,
+    /// Line alignment for axis-driven advance changes: 0 left, 0.5 centre, 1 right.
+    pub align: f32,
     pub smooth: f32,
     /// Rank of each unit in selection order (empty = in order).
     pub order: Vec<u32>,
@@ -197,6 +276,54 @@ pub(crate) fn order_ranks(n: usize, order: &str, seed: f64) -> Vec<u32> {
         rank[u] = k as u32;
     }
     rank
+}
+
+/// One chunk of a path-following stroke gradient: (chunk path, start point, end point, start fraction, end fraction, start colour, end colour).
+pub(crate) type AlongChunk = (Path, [f32; 2], [f32; 2], f32, f32, crate::dl::Rgba, crate::dl::Rgba);
+
+/// A stroke gradient that follows the path.
+#[derive(Clone, Debug, PartialEq, Default)]
+pub(crate) struct AlongC {
+    /// (chunk path, start point, end point, start fraction, end fraction, start colour, end colour).
+    pub chunks: Vec<AlongChunk>,
+}
+
+impl AlongC {
+    /// Split `p` into about `n` equal-length chunks coloured by `stops` (evenly spaced colours).
+    pub fn build(p: &Path, stops: &[crate::dl::Rgba], n: usize) -> AlongC {
+        let mut chunks = Vec::new();
+        let Some(mp) = MPath::from_path(p) else { return AlongC { chunks } };
+        let total = mp.len();
+        let col = |u: f32| -> crate::dl::Rgba {
+            if stops.len() == 1 {
+                return stops[0];
+            }
+            let f = u.clamp(0.0, 1.0) * (stops.len() - 1) as f32;
+            let k = (f.floor() as usize).min(stops.len() - 2);
+            let t = f - k as f32;
+            let (a, b) = (stops[k].0, stops[k + 1].0);
+            crate::dl::Rgba([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t])
+        };
+        let n = n.max(1);
+        let mut j = 0usize;
+        for c in 0..n {
+            let (u0, u1) = (c as f32 / n as f32, (c + 1) as f32 / n as f32);
+            let (s0, s1) = (u0 * total, u1 * total);
+            let mut path = Path::new();
+            let (q0, _) = mp.at(s0);
+            path.move_to((q0[0] as f64, q0[1] as f64));
+            while j + 1 < mp.cum.len() && mp.cum[j + 1] < s1 {
+                j += 1;
+                if mp.cum[j] > s0 {
+                    path.line_to((mp.pts[j][0] as f64, mp.pts[j][1] as f64));
+                }
+            }
+            let (q1, _) = mp.at(s1);
+            path.line_to((q1[0] as f64, q1[1] as f64));
+            chunks.push((path, q0, q1, u0, u1, col(u0), col(u1)));
+        }
+        AlongC { chunks }
+    }
 }
 
 impl Fx {
@@ -656,7 +783,7 @@ mod tests {
 
     #[test]
     fn animator_selection() {
-        let a = AnimatorC { by: Default::default(), dx: 0.0, dy: 0.0, rot: 0.0, scale: 1.0, opacity: 0.0, blur: 0.0, color: None, smooth: 0.0, order: vec![], auto: None };
+        let a = AnimatorC { by: Default::default(), dx: 0.0, dy: 0.0, rot: 0.0, scale: 1.0, opacity: 0.0, blur: 0.0, color: None, axes: vec![], align: 0.5, smooth: 0.0, order: vec![], auto: None };
         assert_eq!(a.amount(0.5, 0.0, 1.0), 1.0);
         assert_eq!(a.amount(0.5, 0.6, 1.6), 0.0);
         let r = order_ranks(10, "random", 3.0);
@@ -681,7 +808,7 @@ mod tests {
 
     #[test]
     fn repeater_transform() {
-        let r = RepC { count: 4, d: [10.0, 0.0], rot: 90.0, scale: [1.0, 1.0], opacity: -0.25, stagger: 0.0, center: None };
+        let r = RepC { count: 4, d: [10.0, 0.0], rot: 90.0, scale: [1.0, 1.0], opacity: -0.25, stagger: 0.0, ranks: vec![], center: None };
         let m = r.xf(1, [0.0, 0.0]);
         // (0,0) → translated by 10 then rotated 90° about the origin → (0, 10).
         let x = m[0] * 0.0 + m[2] * 0.0 + m[4];

@@ -247,6 +247,10 @@ Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) ->
 | `mesh-gradient` | layer | soft animated mesh gradient: four colours drifting and folding into each other, film grain. The background for titles and product shots. `color1`…`color4` (hex strings work), `speed`, `warp`, `softness`, `grain` |
 | `ocean` | layer | open sea to the horizon under a low sun: peaked swell and chop, Fresnel sky reflection, the sun's glitter path, light through crests. `speed`, `sun` (0 high … 1 on the horizon), `swell`, `chop`, `color`, `sky` |
 | `growth` | layer | a living reaction–diffusion simulation (Gray–Scott, 4 steps per frame in buffers A–D): coral labyrinths by default, spots or mitosis by `feed`/`kill`, lit as a glossy relief ([still](shots/generative/growth.jpg)). A still at *t* runs every frame before it, so preview with `--scale 0.5`. `feed`, `kill`, `scale`, `color`, `color2`, `light`, `speed` |
+| `flow-lines` | layer | curves grow from scattered seeds along a swirling flow field and draw themselves on paper, in a weighted palette (60/30/10). Each pixel traces the flow, so any moment renders directly ([still](shots/generative/flow-lines.jpg)). Heavy (~0.45 s/frame). `density`, `width`, `speed`, `scale`, `length`, `color1`, `color2`, `accent`, `paper` |
+| `ink` | layer | a drop of ink blooming in backlit water: billows tear into tendrils, the pigment absorbs per channel (Beer–Lambert) so colours stay rich, and a second ink can curl through ([still](shots/generative/ink.jpg)). ~0.3 s/frame. `ink`, `ink2`, `mixing`, `water`, `speed`, `size`, `center`, `turbulence` |
+| `soap-film` | layer | macro of a draining soap film: thickness swirls and drains under gravity, and six wavelengths of thin-film interference give Newton's real colour sequence (not a rainbow palette) ([still](shots/generative/soap-film.jpg)). ~0.1 s/frame. `speed`, `swirl`, `drain`, `thickness`, `background` |
+| `sky` | layer | golden-hour sky seen from the ground: low billowing clouds lit from the sun's side with warm, shadowed bases, high cirrus streaks, horizon haze and a dark ground strip for type or silhouettes ([still](shots/generative/sky.jpg)). ~0.22 s/frame. `sun` (0 afternoon … 1 sunset), `coverage`, `speed`, `warmth`, `cirrus`, `horizon` |
 | `caustics` | layer | pool-floor caustics; ray density from the refraction map's derivatives. `speed`, `depth`, `tint` |
 | `flow-ink` | layer | two inks marbled by a curl-noise flow field. `speed`, `ink`, `ink2`, `paper` |
 | `light-shafts` | layer | sun through a window into a hazy room: pane-shaped beams, mullion shadows, leaves outside, drifting haze, dust glinting in the light. `angle`, `spread` (0 parallel … 1 fanning), `panes`, `color`, `intensity`, `haze`, `dust`, `speed` |
@@ -276,10 +280,10 @@ One line turns everything below into a distinct, printed or photographed look. P
 
 | Filter | Look | Key uniforms | ms/frame 1080p |
 |---|---|---|---|
-| `halftone` | CMYK dot screens at classic angles, or one black screen | `size`, `mono`, `angle`, `paper`, `contrast` | 60 (mono ≈ 20) |
+| `halftone` | CMYK dot screens at classic angles, or one black screen | `size`, `mono`, `angle`, `paper`, `contrast` | 29 |
 | `risograph` | two or three spot inks, off register, stencil grain | `ink1`, `ink2`, `ink3`, `use3`, `offset`, `grain`, `paper` | 28 |
 | `linocut` | carved block print: solid ink, tone-following gouges, bold outlines | `ink`, `paper`, `threshold`, `lines`, `edge` | 19 |
-| `watercolour` | washes that bleed and pool dark at their edges, paper granulation | `bleed`, `edges`, `granulation`, `paper`, `wash` | 80 |
+| `watercolour` | washes that bleed and pool dark at their edges, paper granulation | `bleed`, `edges`, `granulation`, `paper`, `wash` | 34 |
 | `crosshatch` | pen or pencil hatching, more directions for darker tones | `ink`, `paper`, `spacing`, `pencil`, `edge` | 25 |
 | `film` | photochemical stock: filmic curve, lifted blacks, red halation, gate weave, midtone grain | `stock`, `halation`, `grain`, `weave`, `fade` | 25 |
 | `dither` | ordered Bayer dither into a 2- or 3-colour palette | `pixel`, `dark`, `light`, `mid`, `levels` | 18 |

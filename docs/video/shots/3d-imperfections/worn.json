@@ -1,0 +1,128 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 2,
+   "scene3d": {
+    "env": "studio",
+    "rig": "product",
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.4,
+        0.95,
+        3.6
+       ],
+       "target": [
+        0,
+        0.32,
+        0
+       ],
+       "focal": 60,
+       "fstop": 8
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "sphere",
+      "radius": 0.32,
+      "pos": [
+       -0.78,
+       0.32,
+       0
+      ],
+      "material": {
+       "extends": "chrome",
+       "roughness": 0.05,
+       "imperfections": 0.6
+      }
+     },
+     {
+      "type": "box",
+      "size": [
+       0.6,
+       0.6,
+       0.6
+      ],
+      "radius": 0.03,
+      "pos": [
+       0,
+       0.3,
+       -0.1
+      ],
+      "rot": [
+       0,
+       30,
+       0
+      ],
+      "material": {
+       "extends": "lacquer",
+       "imperfections": 0.6
+      }
+     },
+     {
+      "type": "lathe",
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.2,
+        0.0
+       ],
+       [
+        0.22,
+        0.03
+       ],
+       [
+        0.22,
+        0.5
+       ],
+       [
+        0.18,
+        0.62
+       ],
+       [
+        0.07,
+        0.72
+       ],
+       [
+        0.07,
+        0.82
+       ],
+       [
+        0.0,
+        0.82
+       ]
+      ],
+      "segments": 128,
+      "pos": [
+       0.8,
+       0,
+       0.05
+      ],
+      "material": {
+       "extends": "aluminium",
+       "roughness": 0.18,
+       "imperfections": 0.6
+      }
+     }
+    ],
+    "floor": {
+     "color": "#2A2A2C",
+     "roughness": 0.3,
+     "reflect": 0.5
+    }
+   },
+   "layers": []
+  }
+ ]
+}

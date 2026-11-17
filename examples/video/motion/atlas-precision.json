@@ -1,0 +1,70 @@
+{
+  "size": "16:9", "fps": 30, "background": "#07080b",
+  "intent": "fast",
+  "theme": { "colors": { "void": "#07080b", "steel": "#2a2f38", "fog": "#8b94a3", "white": "#e9edf2", "sodium": "#ff8a1f" } },
+  "transition": "cut",
+  "scenes": [
+    { "id": "calibrate", "duration": 1.5, "notes": "PRECISION register: hairline grid draws in by stagger, a 180-tick dial sweeps, readouts tick",
+      "layers": [
+        { "shape": "rect", "x": 960, "y": 60, "width": 1920, "height": 1, "fill": "$steel", "repeat": { "count": 10, "offset": { "y": 120 }, "stagger": 0.02 },
+          "animate": { "from": { "scaleX": 0 }, "duration": 0.5, "ease": "glide" } },
+        { "shape": "rect", "x": 60, "y": 540, "width": 1, "height": 1080, "fill": "$steel", "repeat": { "count": 17, "offset": { "x": 120 }, "stagger": 0.015 },
+          "animate": { "from": { "scaleY": 0 }, "duration": 0.5, "ease": "glide" } },
+        { "shape": "rect", "x": 960, "y": 540, "width": 2, "height": 22, "fill": "$fog", "anchor": [0.5, 17.5],
+          "repeat": { "count": 180, "offset": { "rotate": 2 }, "stagger": 0.003 }, "enter": { "preset": "fadeIn", "duration": 0.1 } },
+        { "shape": "rect", "x": 960, "y": 540, "width": 3, "height": 44, "fill": "$white", "anchor": [0.5, 8.8],
+          "repeat": { "count": 12, "offset": { "rotate": 30 }, "stagger": 0.03 }, "animate": { "from": { "scaleY": 0 }, "duration": 0.3, "ease": "glide" } },
+        { "shape": "rect", "x": 960, "y": 540, "width": 4, "height": 420, "fill": "$sodium", "anchor": [0.5, 1], "inertia": "tight",
+          "animate": { "from": { "rotation": -150 }, "to": { "rotation": 112 }, "duration": 1.0, "ease": "snap" } },
+        { "shape": "circle", "x": 960, "y": 540, "width": 26, "height": 26, "fill": "$sodium" },
+        { "text": "AZ {value:000.00}°", "value": "=min(112, max(0, t)*112)", "font": "JetBrains Mono", "size": 30, "letterSpacing": 4, "color": "$white", "x": 1340, "y": 300, "anchor": "left" },
+        { "text": "EL {value:00.00}°", "value": "=min(38.5, t*38.5)", "font": "JetBrains Mono", "size": 30, "letterSpacing": 4, "color": "$fog", "x": 1340, "y": 350, "anchor": "left" },
+        { "text": "ATLAS / GROUND STATION 3", "font": "JetBrains Mono", "size": 22, "letterSpacing": 6, "color": "$fog", "x": 120, "y": 1000, "anchor": "left",
+          "animator": { "opacity": 0, "order": "random", "seed": 12, "duration": 0.5, "smooth": 0.02 } }
+      ] },
+    { "id": "orbits", "duration": 1.6, "background": "#e9edf2", "transition": { "type": "blinds", "count": 16, "direction": "right", "duration": 0.35 },
+      "notes": "three tilted orbits; satellites ride them with trails; marching dashes on the outer track",
+      "layers": [
+        { "shape": "ellipse", "x": 960, "y": 540, "width": 1300, "height": 420, "fill": "none", "stroke": "#b9c0ca", "strokeWidth": 2,
+          "repeat": { "count": 3, "offset": { "rotate": 60 } }, "animate": { "from": { "trimEnd": 0 }, "duration": 0.6, "ease": "glide" } },
+        { "shape": "ellipse", "x": 960, "y": 540, "width": 1600, "height": 560, "fill": "none", "rotation": -20,
+          "stroke": { "color": "#07080b", "dash": [2, 14], "cap": "round" }, "strokeWidth": 3, "dashOffset": "=t*-40" },
+        { "shape": "circle", "width": 22, "height": 22, "fill": "#07080b", "repeat": 3,
+          "path": "M310 540 A650 210 0 1 0 1610 540 A650 210 0 1 0 310 540 Z", "progress": "=fract(t*0.35 + $i*0.33)",
+          "echo": { "count": 30, "delay": 0.01, "decay": 0.9 } },
+        { "id": "core", "shape": "circle", "x": 960, "y": 540, "width": 150, "height": 150, "fill": "$sodium", "inertia": "bouncy",
+          "animate": { "from": { "scale": 0 }, "duration": 0.25, "ease": "glide" } },
+        { "shape": "circle", "x": 960, "y": 540, "width": 150, "height": 150, "fill": "none", "stroke": "$sodium", "strokeWidth": 2,
+          "repeat": { "count": 4, "offset": { "scale": 1.35, "opacity": -0.22 }, "stagger": 0.08 },
+          "animate": { "from": { "scale": 0.5, "opacity": 0 }, "duration": 0.5, "ease": "glide" } },
+        { "type": "group", "drag": 0.05, "x": 960, "y": 540, "width": 1920, "height": 1080, "animate": { "from": { "x": 1060, "opacity": 0 }, "at": 0.3, "duration": 0.4, "ease": "glide" },
+          "layers": [
+            { "text": "SAT-11  ACQUIRED", "font": "JetBrains Mono", "size": 26, "letterSpacing": 4, "color": "#07080b", "x": 120, "y": 110, "anchor": "left" },
+            { "text": "SAT-14  TRACKING", "font": "JetBrains Mono", "size": 26, "letterSpacing": 4, "color": "#5b6472", "x": 120, "y": 152, "anchor": "left" },
+            { "text": "SAT-27  HANDOVER", "font": "JetBrains Mono", "size": 26, "letterSpacing": 4, "color": "$sodium", "x": 120, "y": 194, "anchor": "left" } ] }
+      ] },
+    { "id": "field", "duration": 1.6, "background": "#ff8a1f", "transition": { "type": "zoomThrough", "layer": "core", "duration": 0.5 },
+      "notes": "fly into the core: a live field of 32 bars breathing on noise; the group lands with drag",
+      "layers": [
+        { "type": "group", "x": 960, "y": 540, "width": 1920, "height": 1080, "drag": 0.012, "inertia": "tight",
+          "animate": { "from": { "y": 900 }, "duration": 0.35, "ease": "glide" },
+          "layers": [
+            { "shape": "rect", "repeat": 32, "x": "=150 + $i*52", "y": 900, "width": 30, "height": 580, "scaleY": "=0.1 + 0.9*abs(noise($i*0.37 + t*0.9))", "anchor": [0.5, 1], "fill": "#07080b" } ] },
+        { "text": "{value:0.0} Gb/s", "value": "=38.2 + 4*noise(t*2)", "size": 170, "weight": 800, "letterSpacing": -6, "color": "$void", "x": 150, "y": 190, "anchor": "left",
+          "animator": { "by": "char", "y": 60, "opacity": 0, "duration": 0.4, "delay": 0.15, "smooth": 0.3, "ease": "glide" } },
+        { "text": "DOWNLINK · 32 CHANNELS", "font": "JetBrains Mono", "size": 26, "letterSpacing": 6, "color": "$void", "x": 156, "y": 300, "anchor": "left",
+          "animator": { "opacity": 0, "order": "random", "seed": 3, "delay": 0.3, "duration": 0.4, "smooth": 0.02 } }
+      ] },
+    { "id": "lockup", "duration": 1.6, "camera": { "zoom": "=1 + 0.04*t" }, "transition": { "type": "split", "direction": "up", "duration": 0.4 },
+      "notes": "button: the wordmark assembles out of order on a hairline, the dial ticks on",
+      "layers": [
+        { "shape": "rect", "x": 960, "y": 540, "width": 2, "height": 18, "fill": "$steel", "anchor": [0.5, 22], "rotation": "=t*6",
+          "repeat": { "count": 120, "offset": { "rotate": 3 } } },
+        { "text": "ATLAS", "size": 260, "weight": 800, "letterSpacing": 40, "color": "$white", "x": 960, "y": 520,
+          "animator": { "by": "char", "opacity": 0, "y": 30, "blur": 10, "order": "random", "seed": 5, "duration": 0.6, "smooth": 0.1, "ease": "glide" } },
+        { "shape": "rect", "x": 960, "y": 680, "width": 760, "height": 2, "fill": "$sodium", "animate": { "from": { "scaleX": 0 }, "at": 0.2, "duration": 0.5, "ease": "snap" } },
+        { "text": "GROUND SEGMENT, AS A SERVICE", "font": "JetBrains Mono", "size": 28, "letterSpacing": 8, "color": "$fog", "x": 960, "y": 740,
+          "animator": { "opacity": 0, "order": "random", "seed": 9, "delay": 0.4, "duration": 0.5, "smooth": 0.02 } }
+      ] }
+  ]
+}

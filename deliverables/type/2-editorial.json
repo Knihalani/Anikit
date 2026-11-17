@@ -1,0 +1,17 @@
+{ "size": "1080p", "fps": 30,
+  "scenes": [ { "duration": 5, "background": "#f3ede3", "layers": [
+    { "text": "*Rêverie*", "font": "Bodoni Moda", "size": "58vh", "weight": 400, "color": "#16120e", "letterSpacing": "-0.05em",
+      "lineHeight": 0.8, "align": "left", "x": "-3vw", "y": "52vh", "anchor": "left",
+      "animate": [ { "from": { "x": "+120", "opacity": 0 }, "duration": 2.2, "ease": "outQuart" },
+                   { "keyframes": { "axes.wght": [400, 820] }, "at": 0.6, "duration": 3.8, "ease": "inOutSine" } ] },
+    { "text": "THE AUTUMN ISSUE", "font": "Jost", "size": "2.2vh", "weight": 500, "color": "#16120e", "letterSpacing": "0.32em",
+      "align": "left", "x": "6vw", "y": "9vh", "anchor": "topLeft",
+      "animate": [ { "from": { "letterSpacing": 2, "opacity": 0 }, "duration": 2.4, "ease": "outExpo" } ] },
+    { "text": "Nº 117", "font": "Bodoni Moda", "size": "4.4vh", "weight": 500, "color": "#16120e", "features": "onum",
+      "align": "right", "x": "94vw", "y": "9vh", "anchor": "topRight", "enter": { "preset": "fade", "delay": 0.4 } },
+    { "text": "Twelve designers on slowness, craft\nand the return of the handmade.", "font": "Bodoni Moda", "size": "3.2vh",
+      "italic": true, "weight": 400, "color": "#16120e", "lineHeight": 1.25, "align": "left", "x": "62vw", "y": "84vh", "anchor": "left",
+      "enter": { "preset": "mask by line up", "delay": 1.0 } },
+    { "shape": "rect", "x": "62vw", "y": "76vh", "anchor": "left", "width": "8vw", "height": 2, "fill": "#16120e",
+      "animate": [ { "from": { "scaleX": 0 }, "at": 0.8, "duration": 0.9, "ease": "outExpo" } ] }
+  ] } ] }

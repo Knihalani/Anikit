@@ -13,7 +13,7 @@ fn main() {
     let counts = if counts.is_empty() { vec![1_000_000, 4_000_000, 10_000_000] } else { counts };
     let (w, h) = (1920usize, 1080usize);
     let defocus = std::env::var("BENCH_APERTURE").ok().and_then(|v| v.parse::<f32>().ok()).unwrap_or(6.0);
-    let cam = Camera { pos: v3(0.0, 1.4, 6.5), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus: 6.5, aperture: defocus, roll: 0.0, shutter: 0.5 };
+    let cam = Camera { pos: v3(0.0, 1.4, 6.5), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus: 6.5, aperture: defocus, roll: 0.0, shutter: std::env::var("BENCH_SHUTTER").ok().and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.5) };
     let depth = vec![1e9f32; w * h];
     for (blend, n) in counts.iter().flat_map(|n| [("add", *n), ("over", *n)]) {
         let spec = serde_json::json!({
