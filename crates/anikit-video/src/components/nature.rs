@@ -200,6 +200,77 @@ impl Palette {
 
 // -------------------------------------------------------------------- hand
 
+/// The `hand` prop: every knob behind a style preset, so a spec can go past it.
+/// Unset fields keep the preset's value.
+#[derive(Deserialize, Clone, Debug, Default)]
+#[serde(default, deny_unknown_fields)]
+pub struct HandOpts {
+    /// Shadow multiply tint (shadows shift hue towards it).
+    pub shade: Option<Color>,
+    /// Light colour lit faces lift towards (default: the sun).
+    pub highlight: Option<Color>,
+    /// Paper colour (ink washes, risograph stock, torn rims).
+    pub paper: Option<Color>,
+    /// Line and hatching colour.
+    pub ink: Option<Color>,
+    /// Risograph spot inks (exactly 3; repeat one to print with 2).
+    pub inks: Option<Vec<Color>>,
+    /// Risograph halftone cell size in px (at 1080p).
+    pub halftone: Option<f32>,
+    /// Halftone screen angles per ink, degrees.
+    pub angles: Option<[f32; 3]>,
+    /// Misregistration offset per ink plate, px (at 1080p).
+    pub misregister: Option<Vec<[f32; 2]>>,
+    /// Risograph tint steps (0 = continuous tone).
+    pub tints: Option<f32>,
+    /// Edge breakup amplitude (0 = clean edges).
+    pub edge: Option<f32>,
+    /// Edge breakup feature size in px.
+    pub edge_scale: Option<f32>,
+    /// Edge softening radius in px.
+    pub soften: Option<f32>,
+    /// Quantise shading into cel steps.
+    pub cel: Option<bool>,
+    /// Shading strength multiplier.
+    pub contrast: Option<f32>,
+    /// Brush texture amount (painterly).
+    pub brush: Option<f32>,
+    /// Hatch spacing in px (ink); 0 turns hatching off.
+    pub hatch: Option<f32>,
+    /// Hatch angle in degrees.
+    pub hatch_angle: Option<f32>,
+    /// Outline width multiplier (ink); 0 turns outlines off.
+    pub outline: Option<f32>,
+    /// Torn white rim amount (papercut).
+    pub rim: Option<f32>,
+    /// Lifted shadow opacity (papercut).
+    pub lift: Option<f32>,
+    /// Lifted shadow blur in px.
+    pub lift_blur: Option<f32>,
+    /// Lifted shadow offset in px `[dx, dy]`.
+    pub lift_offset: Option<[f32; 2]>,
+}
+
+fn c3(c: &Color) -> C3 {
+    [c.0 .0[0], c.0 .0[1], c.0 .0[2]]
+}
+
+impl HandOpts {
+    pub fn validate(&self) -> Result<(), Error> {
+        if let Some(i) = &self.inks {
+            if i.len() != 3 {
+                return Err(Error("`hand.inks` needs exactly 3 colours (repeat one to print with 2)".into()));
+            }
+        }
+        if let Some(m) = &self.misregister {
+            if m.len() != 3 {
+                return Err(Error("`hand.misregister` needs 3 offsets, one per ink".into()));
+            }
+        }
+        Ok(())
+    }
+}
+
 /// The shared look every environment kind draws with: style, palette,
 /// texture amount, light direction and seed. `illo` and other illustrated
 /// kinds can build one from the same props (`style`, `palette`, `grain`, `light`).
@@ -214,6 +285,8 @@ pub struct Hand {
     pub seed: u32,
     /// Pixels per 1080p pixel (texture sizes scale with the frame).
     pub scale: f32,
+    /// Overrides behind the preset.
+    pub opts: HandOpts,
 }
 
 impl Hand {
@@ -221,7 +294,29 @@ impl Hand {
     /// above, negative from the left, positive from the right.
     pub fn new(style: Style, pal: Palette, grain: f32, light_deg: f32, seed: u32, scale: f32) -> Hand {
         let a = light_deg.to_radians();
-        Hand { style, pal, grain: grain.clamp(0.0, 2.0), light: [a.sin(), -a.cos()], seed, scale: scale.max(0.25) }
+        Hand { style, pal, grain: grain.clamp(0.0, 2.0), light: [a.sin(), -a.cos()], seed, scale: scale.max(0.25), opts: HandOpts::default() }
+    }
+    /// Apply `hand` overrides (colours go into the palette; the rest is read when finishing).
+    pub fn with_opts(mut self, o: &HandOpts) -> Hand {
+        if let Some(c) = &o.shade {
+            self.pal.shade = c3(c);
+        }
+        if let Some(c) = &o.highlight {
+            self.pal.sun = c3(c);
+        }
+        if let Some(c) = &o.paper {
+            self.pal.paper = c3(c);
+        }
+        if let Some(c) = &o.ink {
+            self.pal.ink = c3(c);
+        }
+        if let Some(i) = &o.inks {
+            for (k, c) in i.iter().take(3).enumerate() {
+                self.pal.inks[k] = c3(c);
+            }
+        }
+        self.opts = o.clone();
+        self
     }
     fn key(&self, h: &mut super::fxpix::Hash) {
         h.u32(self.style as u32);
@@ -231,6 +326,8 @@ impl Hand {
         }
         h.f32s(&[self.grain, self.light[0], self.light[1], self.scale]);
         h.u32(self.seed);
+        h.f32s(&p.inks.concat());
+        h.bytes(format!("{:?}", self.opts).as_bytes());
     }
     /// Shade a colour: `s > 0` multiplies towards the palette's shadow tint, `s < 0` lifts towards the light colour.
     #[inline]
@@ -416,8 +513,12 @@ pub fn finish(hand: &Hand, cv: &Canvas, f: Finish) -> Vec<u8> {
             Style::Ink => (1.0, 0.3, 4.0),
             Style::Papercut => (2.0, 0.55, 3.0),
         };
+        let o = &hand.opts;
+        let (r, amp, cell) = (o.soften.unwrap_or(r).max(0.0), o.edge.unwrap_or(amp).max(0.0), o.edge_scale.unwrap_or(cell).max(0.5));
         let rr = (r * sc).round().max(1.0) as usize;
-        blur_plane(&mut a, w, h, rr, 2);
+        if r > 0.0 {
+            blur_plane(&mut a, w, h, rr, 2);
+        }
         let cs = cell * sc;
         for y in 0..h {
             for x in 0..w {
@@ -439,11 +540,29 @@ pub fn finish(hand: &Hand, cv: &Canvas, f: Finish) -> Vec<u8> {
             }
         }
     }
+    // Edges can grow past the painted coverage: bleed colour and shading outwards so new edge pixels never read black.
+    let bleed = if f.edges {
+        let mut planes: Vec<Vec<f32>> = (0..5)
+            .map(|k| match k {
+                0..=2 => (0..n).map(|i| cv.pc[i * 3 + k]).collect(),
+                3 => cv.a.clone(),
+                _ => cv.s.clone(),
+            })
+            .collect();
+        let rb = ((6.0 * sc).round() as usize).max(2);
+        for pl in planes.iter_mut() {
+            blur_plane(pl, w, h, rb, 2);
+        }
+        Some(planes)
+    } else {
+        None
+    };
     // Soft edge band for rims/outlines.
     let need_band = f.edges && matches!(st, Style::Ink | Style::Papercut | Style::Painterly);
     let band = if need_band {
         let mut b = a.clone();
-        let r = match st {
+        let r = hand.opts.outline.unwrap_or(1.0).max(0.1)
+            * match st {
             Style::Ink => 2.0,
             Style::Papercut => 2.5,
             _ => 4.0,
@@ -458,7 +577,14 @@ pub fn finish(hand: &Hand, cv: &Canvas, f: Finish) -> Vec<u8> {
     let pal = &hand.pal;
     let ink = pal.ink;
     let paper = pal.paper;
-    let hatch_sp = 6.5 * sc;
+    let o = &hand.opts;
+    let hatch_sp = o.hatch.unwrap_or(6.5) * sc;
+    let (hs, hc) = o.hatch_angle.unwrap_or(45.0).to_radians().sin_cos();
+    let brush = o.brush.unwrap_or(1.0);
+    let contrast = o.contrast.unwrap_or(1.0);
+    let outline_on = o.outline.unwrap_or(1.0) > 0.0;
+    let rim_amt = o.rim.unwrap_or(0.85);
+    let hard = o.cel.unwrap_or(f.hard);
     for y in 0..h {
         for x in 0..w {
             let i = y * w + x;
@@ -466,11 +592,24 @@ pub fn finish(hand: &Hand, cv: &Canvas, f: Finish) -> Vec<u8> {
             if al <= 0.0 {
                 continue;
             }
-            let ca = cv.a[i].max(1e-4);
-            let mut c = [cv.pc[i * 3] / ca, cv.pc[i * 3 + 1] / ca, cv.pc[i * 3 + 2] / ca];
-            let mut s = cv.s[i] / ca;
+            let (mut c, mut s) = match &bleed {
+                Some(b) if cv.a[i] < 0.6 => {
+                    let ba = b[3][i].max(1e-4);
+                    let ca = cv.a[i];
+                    let k = ca / 0.6;
+                    let bc = [b[0][i] / ba, b[1][i] / ba, b[2][i] / ba];
+                    let own = if ca > 1e-4 { [cv.pc[i * 3] / ca, cv.pc[i * 3 + 1] / ca, cv.pc[i * 3 + 2] / ca] } else { bc };
+                    let os = if ca > 1e-4 { cv.s[i] / ca } else { b[4][i] / ba };
+                    (lerp3(bc, own, k), (b[4][i] / ba) * (1.0 - k) + os * k)
+                }
+                _ => {
+                    let ca = cv.a[i].max(1e-4);
+                    ([cv.pc[i * 3] / ca, cv.pc[i * 3 + 1] / ca, cv.pc[i * 3 + 2] / ca], cv.s[i] / ca)
+                }
+            };
+            s *= contrast;
             let (px, py) = (x as f32 + f.ox, y as f32 + f.oy);
-            if f.hard {
+            if hard {
                 let aa = 0.05;
                 s = smoothstep(0.28 - aa, 0.28 + aa, s) * 0.55 + smoothstep(0.75 - aa, 0.75 + aa, s) * 0.3 - smoothstep(-0.3 + aa, -0.3 - aa, s) * 0.45;
             }
@@ -491,7 +630,7 @@ pub fn finish(hand: &Hand, cv: &Canvas, f: Finish) -> Vec<u8> {
                     let dab = vnoise2(qx / (16.0 * sc), qy / (11.0 * sc), seed ^ 0x17);
                     let bloom = fbm2(px / (180.0 * sc), py / (140.0 * sc), 3, seed ^ 0x19);
                     let k = if f.edges { 1.0 } else { 0.45 };
-                    let s2 = s + (streak * 0.13 + dab * 0.07) * (0.4 + g) * k;
+                    let s2 = s + (streak * 0.13 + dab * 0.07) * (0.4 + g) * k * brush;
                     c = hand.shade(c, s2);
                     let v = 1.0 + bloom * 0.07 * (0.5 + g);
                     let warm = bloom * 0.025;
@@ -517,14 +656,14 @@ pub fn finish(hand: &Hand, cv: &Canvas, f: Finish) -> Vec<u8> {
                     }
                     // Hatching follows the shading: denser and crossed in deep shadow.
                     let mut hatch = 0.0f32;
-                    if s > 0.15 {
+                    if s > 0.15 && hatch_sp > 0.0 {
                         let wob = vnoise2(px / (40.0 * sc), py / (40.0 * sc), seed ^ 0x29) * 0.35;
-                        let u = (px * 0.7071 + py * 0.7071) / hatch_sp + wob;
+                        let u = (px * hc + py * hs) / hatch_sp + wob;
                         let d = (u - u.floor() - 0.5).abs();
                         let wdt = ((s - 0.15) * 0.55).min(0.32);
                         hatch = smoothstep(wdt + 0.08, wdt - 0.04, d);
                         if s > 0.55 {
-                            let v = (px * 0.7071 - py * 0.7071) / (hatch_sp * 1.1) - wob;
+                            let v = (px * hc - py * hs) / (hatch_sp * 1.1) - wob;
                             let d2 = (v - v.floor() - 0.5).abs();
                             let w2 = ((s - 0.55) * 0.5).min(0.28);
                             hatch = hatch.max(smoothstep(w2 + 0.08, w2 - 0.04, d2));
@@ -532,7 +671,7 @@ pub fn finish(hand: &Hand, cv: &Canvas, f: Finish) -> Vec<u8> {
                     }
                     // Outline: a band inside the edge, its width breathing like a brush.
                     let mut line = cv.ln[i];
-                    if !band.is_empty() {
+                    if !band.is_empty() && outline_on {
                         let wv = 0.72 + vnoise2(px / (60.0 * sc), py / (60.0 * sc), seed ^ 0x31) * 0.16;
                         line = line.max(smoothstep(wv, wv - 0.14, band[i]));
                     }
@@ -552,7 +691,7 @@ pub fn finish(hand: &Hand, cv: &Canvas, f: Finish) -> Vec<u8> {
                     if !band.is_empty() {
                         let wv = 0.68 + vnoise2(px / (5.0 * sc), py / (5.0 * sc), seed ^ 0x45) * 0.18;
                         let rim = smoothstep(wv, wv - 0.12, band[i]) * al;
-                        let core = lerp3(c, [0.99, 0.97, 0.93], 0.85);
+                        let core = lerp3(c, lerp3(pal.paper, [1.0, 1.0, 1.0], 0.7), rim_amt);
                         c = lerp3(c, core, rim);
                     }
                 }
@@ -578,16 +717,18 @@ pub fn finish(hand: &Hand, cv: &Canvas, f: Finish) -> Vec<u8> {
     // 4. Lifted shadow / halo.
     if f.shadow && matches!(st, Style::Papercut) {
         let mut sh: Vec<f32> = (0..n).map(|i| out[i * 4 + 3]).collect();
-        let rr = (7.0 * sc).round().max(1.0) as usize;
+        let rr = (hand.opts.lift_blur.unwrap_or(7.0) * sc).round().max(1.0) as usize;
         blur_plane(&mut sh, w, h, rr, 3);
-        let (dx, dy) = ((-hand.light[0] * 3.0 * sc).round() as isize, (-6.0 * sc).round() as isize);
+        let lo = hand.opts.lift_offset.unwrap_or([-hand.light[0] * 3.0, -6.0]);
+        let (dx, dy) = ((lo[0] * sc).round() as isize, (lo[1] * sc).round() as isize);
+        let lift = hand.opts.lift.unwrap_or(0.42);
         let sc_col = hand.shade(pal.near, 1.0);
         for y in 0..h {
             for x in 0..w {
                 let i = y * w + x;
                 let (sx, sy) = (x as isize - dx, y as isize - dy);
                 let v = if sx >= 0 && sy >= 0 && (sx as usize) < w && (sy as usize) < h { sh[sy as usize * w + sx as usize] } else { 0.0 };
-                let sa = v * 0.42;
+                let sa = v * lift;
                 let o = &mut out[i * 4..i * 4 + 4];
                 let fa = o[3];
                 // layer over shadow
@@ -630,6 +771,7 @@ fn riso_print(hand: &Hand, out: &mut [f32], w: usize, h: usize, f: Finish, seed:
     let mut cov = vec![0.0f32; n * 3];
     let mut al = vec![0.0f32; n];
     let mut memo: std::collections::HashMap<u32, C3> = std::collections::HashMap::new();
+    let tints = hand.opts.tints.unwrap_or(4.0);
     for i in 0..n {
         al[i] = out[i * 4 + 3];
         if al[i] <= 0.0 {
@@ -641,10 +783,10 @@ fn riso_print(hand: &Hand, out: &mut [f32], w: usize, h: usize, f: Finish, seed:
             let t = [(key >> 12) as f32 / 63.0, ((key >> 6) & 63) as f32 / 63.0, (key & 63) as f32 / 63.0];
             ink_split(pal, t)
         });
-        let c = if f.hard {
+        let c = if hand.opts.cel.unwrap_or(f.hard) && tints > 0.0 {
             // Riso artists print a few tints, not continuous tone.
             c.map(|v| {
-                let k = (v * 4.0).round() / 4.0;
+                let k = (v * tints).round() / tints;
                 k + (v - k) * 0.25
             })
         } else {
@@ -654,15 +796,18 @@ fn riso_print(hand: &Hand, out: &mut [f32], w: usize, h: usize, f: Finish, seed:
     }
     let sc = hand.scale;
     let mut rng = Rng::new(seed as u64 ^ 0x5157);
+    let mis = hand.opts.misregister.clone();
     let offs: [[isize; 2]; 3] = [0, 1, 2].map(|k| {
-        if k == 1 {
+        if let Some(m) = &mis {
+            [(m[k][0] * sc).round() as isize, (m[k][1] * sc).round() as isize]
+        } else if k == 1 {
             [0, 0]
         } else {
             [(rng.range(-3.0, 3.0) * sc).round() as isize, (rng.range(-2.5, 2.5) * sc).round() as isize]
         }
     });
-    let angles = [15.0f32, 75.0, 0.0].map(|a: f32| a.to_radians().sin_cos());
-    let cell = 5.0 * sc;
+    let angles = hand.opts.angles.unwrap_or([15.0, 75.0, 0.0]).map(|a: f32| a.to_radians().sin_cos());
+    let cell = hand.opts.halftone.unwrap_or(6.0).max(1.0) * sc;
     let tau = std::f32::consts::TAU;
     let g = hand.grain;
     for y in 0..h {
@@ -872,15 +1017,20 @@ struct Geo {
     peaks: Vec<Peak>,
     /// Peaks front to back (who overlaps whom).
     order: Vec<usize>,
+    /// Roughness multiplier.
+    jagk: f32,
+    /// Custom ridgeline (y per box column).
+    custom: Option<Arc<Vec<f32>>>,
 }
 
 impl Geo {
-    fn new(terr: Terr, d: f32, base: f32, amp: f32, p: f32, w: f32, seed: u32, sc: f32) -> Geo {
+    fn new(terr: Terr, d: f32, base: f32, amp: f32, p: f32, w: f32, seed: u32, sc: f32, density: f32) -> Geo {
+        let dn = density.clamp(0.05, 20.0);
         let mut rng = Rng::new(seed as u64 * 7919 + 17);
         let mut peaks = Vec::new();
         match terr {
             Terr::Mountains => {
-                let n = ((p / (w * (0.13 + 0.09 * d))).round() as usize).max(3);
+                let n = ((p / (w * (0.13 + 0.09 * d)) * dn).round() as usize).max(3);
                 for k in 0..n {
                     let x = (k as f32 + rng.range(0.15, 0.85)) * p / n as f32;
                     let big = rng.f();
@@ -896,7 +1046,7 @@ impl Geo {
                 }
             }
             Terr::Dunes => {
-                let n = ((p / (w * (0.28 + 0.12 * d))).round() as usize).max(2);
+                let n = ((p / (w * (0.28 + 0.12 * d)) * dn).round() as usize).max(2);
                 for k in 0..n {
                     let x = (k as f32 + rng.range(0.2, 0.8)) * p / n as f32;
                     let (wind, lee) = (rng.range(0.14, 0.26), rng.range(0.42, 0.6));
@@ -905,7 +1055,7 @@ impl Geo {
             }
             Terr::Forest | Terr::Woods => {
                 let sp = if terr == Terr::Forest { (7.0 + 16.0 * d) * sc } else { (26.0 + 50.0 * d) * sc };
-                let n = ((p / sp).round() as usize).max(4);
+                let n = ((p / sp * dn).round() as usize).max(4);
                 for k in 0..n {
                     let x = (k as f32 + rng.range(-0.45, 0.45)) * p / n as f32;
                     let grove = 0.5 + 0.5 * pfbm(x, p, (p / (260.0 * sc)).max(2.0) as u32, 2, seed ^ 0xabc);
@@ -924,7 +1074,7 @@ impl Geo {
         let mut order: Vec<usize> = (0..peaks.len()).collect();
         let pri: Vec<f32> = peaks.iter().map(|pk| pk.h + rng.range(0.0, 0.35) * amp).collect();
         order.sort_by(|a, b| pri[*b].partial_cmp(&pri[*a]).unwrap());
-        let mut g = Geo { terr, d, base, amp, p, seed, sc, peaks, order };
+        let mut g = Geo { terr, d, base, amp, p, seed, sc, peaks, order, jagk: 1.0, custom: None };
         if matches!(terr, Terr::Forest | Terr::Woods) {
             let cells = (p / (700.0 * sc)).max(2.0) as u32;
             let feet: Vec<f32> = g.peaks.iter().map(|pk| g.base - amp * 0.3 * g.hill(pk.x, cells, 2)).collect();
@@ -959,7 +1109,7 @@ impl Geo {
 
     /// Ridge roughness (px) at `x` for a ridge `v` px above the base.
     fn jag(&self, x: f32, v: f32) -> f32 {
-        let (amp, sc) = (self.amp, self.sc);
+        let (amp, sc) = (self.amp * self.jagk, self.sc);
         if self.terr == Terr::Mountains {
             let k = (v / amp).clamp(0.2, 1.0);
             amp * 0.045 * k * pfbm(x, self.p, (self.p / (38.0 * sc)) as u32, 3, self.seed ^ 0x3333)
@@ -975,6 +1125,11 @@ impl Geo {
 
     /// Ridge y (px) and the index of the shape that owns this column.
     fn ridge(&self, x: f32) -> (f32, usize) {
+        if let Some(c) = &self.custom {
+            let i = (x.max(0.0) as usize) % c.len();
+            let rough = self.amp * 0.02 * self.jagk * pfbm(x, self.p, (self.p / (40.0 * self.sc)) as u32, 2, self.seed ^ 0x3333);
+            return (c[i] - rough, 0);
+        }
         let (amp, sc) = (self.amp, self.sc);
         match self.terr {
             Terr::Mountains | Terr::Dunes => {
@@ -996,10 +1151,10 @@ impl Geo {
                 (self.base - amp * v, 0)
             }
             Terr::Mesas => {
-                let cells = (self.p / (520.0 * sc)).max(2.0) as u32;
+                let cells = (self.p / (340.0 * sc)).max(2.0) as u32;
                 let q = 0.5 + 0.5 * pfbm(x, self.p, cells, 2, self.seed);
-                let plateau = smoothstep(0.5, 0.515, q);
-                let tier = smoothstep(0.66, 0.672, q);
+                let plateau = smoothstep(0.46, 0.475, q);
+                let tier = smoothstep(0.62, 0.632, q);
                 let ground = 0.12 + 0.06 * pfbm(x, self.p, cells * 3, 2, self.seed ^ 0x55);
                 let edge = 0.012 * pfbm(x, self.p, (self.p / (14.0 * sc)) as u32, 2, self.seed ^ 0x66);
                 let v = ground + plateau * 0.55 + tier * 0.28 + edge * (plateau + 0.3);
@@ -1085,14 +1240,14 @@ impl Geo {
             Terr::Mesas => {
                 let steep = smoothstep(1.2, 3.0, slope.abs());
                 let face = if slope * lx < 0.0 { -0.25 } else { 0.6 };
-                let strata = ((y / (11.0 * sc) + vnoise2(x / (200.0 * sc), y / (50.0 * sc), self.seed) * 0.8).fract() < 0.22) as u8 as f32;
+                let strata = ((y / (16.0 * sc) + vnoise2(x / (200.0 * sc), y / (50.0 * sc), self.seed) * 0.8).fract() < 0.3) as u8 as f32 * (0.5 + 0.5 * steep);
                 let cap = smoothstep(4.0 * sc, 1.0 * sc, depth);
                 let gully = smoothstep(0.55, 0.7, vnoise2(x / (12.0 * sc), y / (140.0 * sc), self.seed ^ 0x99));
-                let s = 0.18 + steep * (face - 0.18) + strata * 0.16 - cap * 0.5 + gully * 0.3;
-                (s, strata * 0.4)
+                let s = 0.18 + steep * (face - 0.18) + strata * 0.1 - cap * 0.5 + gully * 0.3;
+                (s, strata * 0.25 * steep)
             }
             Terr::Forest | Terr::Woods => {
-                let mut s = 0.3;
+                let mut s = 0.45;
                 let mut depth = depth;
                 if owner != usize::MAX {
                     let pk = &self.peaks[owner];
@@ -1117,7 +1272,8 @@ impl Geo {
                     };
                 }
                 if owner != usize::MAX {
-                    s += smoothstep(0.0, self.peaks[owner].h * 1.1, depth) * 0.3;
+                    let k = smoothstep(0.0, self.peaks[owner].h * 0.6, depth);
+                    s = s * (1.0 - k) + 0.45 * k;
                 }
                 (s + rim * 0.5, 0.0)
             }
@@ -1126,6 +1282,81 @@ impl Geo {
 }
 
 // --------------------------------------------------------------- landscape
+
+/// Per-range overrides (`ranges[i]`, far to near): anything a preset decides for a range.
+#[derive(Deserialize, Clone, Debug, Default)]
+#[serde(default, deny_unknown_fields)]
+pub struct RangeOpts {
+    /// Terrain for this range.
+    pub terrain: Option<String>,
+    /// Fill colour (replaces the atmospheric-perspective colour).
+    pub color: Option<Color>,
+    /// Ridge height as a fraction of the box.
+    pub amp: Option<f32>,
+    /// Ridge foot line as a fraction of the box (0 top .. 1 bottom).
+    pub base: Option<f32>,
+    /// Custom ridge: an SVG path in box pixels; its top edge becomes the ridgeline (tiles every box width when panning).
+    pub d: Option<String>,
+    /// Ridge roughness multiplier.
+    pub jag: Option<f32>,
+    /// Peak / tree density multiplier.
+    pub density: Option<f32>,
+    /// Pan speed in px/s.
+    pub speed: Option<f32>,
+    /// Step this range's motion at this rate (frames per second).
+    pub step_fps: Option<f32>,
+    /// Haze pooled at its foot, 0..1.
+    pub mist: Option<f32>,
+    /// Shape seed.
+    pub seed: Option<u32>,
+}
+
+/// Top edge of an SVG path sampled per column over `w` px (columns it misses take the nearest value).
+fn ridge_from_path(d: &str, w: usize) -> Result<Vec<f32>, Error> {
+    let path = kurbo::BezPath::from_svg(d).map_err(|e| Error(format!("ranges[].d: {e}")))?;
+    let mut pts: Vec<(f64, f64)> = Vec::new();
+    let mut segs: Vec<((f64, f64), (f64, f64))> = Vec::new();
+    kurbo::flatten(&path, 0.25, |el| match el {
+        kurbo::PathEl::MoveTo(p) => pts = vec![(p.x, p.y)],
+        kurbo::PathEl::LineTo(p) => {
+            if let Some(&a) = pts.last() {
+                segs.push((a, (p.x, p.y)));
+            }
+            pts.push((p.x, p.y));
+        }
+        kurbo::PathEl::ClosePath => {
+            if let (Some(&a), Some(&b)) = (pts.last(), pts.first()) {
+                segs.push((a, b));
+            }
+        }
+        _ => {}
+    });
+    let mut col = vec![f32::NAN; w.max(1)];
+    for ((x0, y0), (x1, y1)) in segs {
+        let (xa, xb) = (x0.min(x1), x0.max(x1));
+        let (i0, i1) = (xa.ceil().max(0.0) as usize, (xb.floor().max(0.0) as usize).min(w.saturating_sub(1)));
+        for i in i0..=i1 {
+            if (i as f64) < xa || (i as f64) > xb {
+                continue;
+            }
+            let t = if (x1 - x0).abs() < 1e-9 { 0.0 } else { (i as f64 - x0) / (x1 - x0) };
+            let y = (y0 + (y1 - y0) * t) as f32;
+            if col[i].is_nan() || y < col[i] {
+                col[i] = y;
+            }
+        }
+    }
+    let first = col.iter().position(|v| !v.is_nan()).ok_or_else(|| Error("ranges[].d covers no column of the box".into()))?;
+    let mut last = col[first];
+    for v in col.iter_mut() {
+        if v.is_nan() {
+            *v = last;
+        } else {
+            last = *v;
+        }
+    }
+    Ok(col)
+}
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
@@ -1181,6 +1412,10 @@ pub struct Landscape {
     pub sun_size: f32,
     /// Draw the sky (off to put ranges over your own background).
     pub sky: bool,
+    /// Per-range overrides, far to near (terrain, color, amp, base, d, jag, density, speed, stepFps, mist, seed).
+    pub ranges: Vec<RangeOpts>,
+    /// Every knob behind the style preset (see `HandOpts`): inks, halftone, misregistration, edges, hatching, rims, lift.
+    pub hand: HandOpts,
     #[serde(skip)]
     plan: Mutex<Option<Arc<Plan>>>,
 }
@@ -1208,6 +1443,8 @@ impl Default for Landscape {
             sun: None,
             sun_size: 1.0,
             sky: true,
+            hand: HandOpts::default(),
+            ranges: Vec::new(),
             plan: Mutex::new(None),
         }
     }
@@ -1218,11 +1455,23 @@ const TIMES: &[&str] = &["dawn", "day", "golden", "dusk", "night"];
 impl Prepare for Landscape {
     fn prepare(&mut self) -> Result<(), Error> {
         parse_style(&self.style)?;
+        self.hand.validate()?;
         if !TIMES.contains(&self.time.as_str()) {
             let hint = super::style::closest(&self.time, TIMES).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
             return Err(Error(format!("unknown time `{}` (one of {}){hint}", self.time, TIMES.join(", "))));
         }
         Palette::resolve(&self.palette, &self.time)?;
+        for r in &self.ranges {
+            if let Some(t) = &r.terrain {
+                parse_terr(t)?;
+            }
+            if let Some(d) = &r.d {
+                ridge_from_path(d, 64)?;
+            }
+        }
+        if self.ranges.len() > self.layers {
+            self.layers = self.ranges.len();
+        }
         if self.layers == 0 || self.layers > 12 {
             return Err(Error("`layers` must be 1..12".into()));
         }
@@ -1255,6 +1504,8 @@ struct LayerPlan {
     bottom: usize,
     speed: f32,
     key: u64,
+    mist: f32,
+    step: Option<f32>,
 }
 
 struct MistPlan {
@@ -1277,7 +1528,6 @@ struct Plan {
     mists: Vec<MistPlan>,
     sky_key: u64,
     sun_key: u64,
-    mist_amt: f32,
 }
 
 impl Landscape {
@@ -1313,6 +1563,10 @@ impl Landscape {
             Terrains::One(s) => vec![parse_terr(s).unwrap(); n],
             Terrains::Many(v) => (0..n).map(|i| parse_terr(&v[i % v.len()]).unwrap()).collect(),
         }
+        .into_iter()
+        .enumerate()
+        .map(|(i, t)| self.ranges.get(i).and_then(|r| r.terrain.as_deref()).map(|s| parse_terr(s).unwrap()).unwrap_or(t))
+        .collect()
     }
 
     fn plan(&self, w: usize, h: usize) -> Arc<Plan> {
@@ -1337,7 +1591,7 @@ impl Landscape {
             let a = ((sun[0] - 0.5) * 140.0).clamp(-70.0, 70.0);
             if a.abs() < 35.0 { 35.0f32.copysign(if a == 0.0 { 1.0 } else { a }) } else { a }
         });
-        let hand = Hand::new(style, pal.clone(), self.grain, light, self.seed, sc);
+        let hand = Hand::new(style, pal.clone(), self.grain, light, self.seed, sc).with_opts(&self.hand);
         let p = ((w as f32 * 1.6).round() as usize).max(w + 2);
         let hz = h as f32 * self.horizon;
         let n = self.layers;
@@ -1346,13 +1600,15 @@ impl Landscape {
         hand.key(&mut base_key);
         base_key.f32s(&[self.horizon, self.depth, self.relief, self.mist, w as f32, h as f32]);
         base_key.u32(n as u32);
+        base_key.bytes(format!("{:?}", self.ranges).as_bytes());
         for t in &terrs {
             base_key.u32(*t as u32);
         }
         let mut layers = Vec::with_capacity(n);
         for (i, &terr) in terrs.iter().enumerate() {
             let d = if n > 1 { i as f32 / (n - 1) as f32 } else { 1.0 };
-            let base = hz + (h as f32 - hz) * self.depth * d.powf(1.3) * 0.9;
+            let ro = self.ranges.get(i).cloned().unwrap_or_default();
+            let base = ro.base.map(|b| b * h as f32).unwrap_or(hz + (h as f32 - hz) * self.depth * d.powf(1.3) * 0.9);
             let amp_f = match terr {
                 Terr::Mountains => 0.30 * (1.0 - 0.45 * d),
                 Terr::Hills => 0.11,
@@ -1361,14 +1617,23 @@ impl Landscape {
                 Terr::Forest => 0.10 * (0.6 + 0.4 * d),
                 Terr::Woods => 0.09 * (0.6 + 0.4 * d),
             };
-            let amp = h as f32 * amp_f * self.relief;
-            let seed = self.seed.wrapping_mul(1013).wrapping_add(i as u32 * 7919);
-            let geo = Geo::new(terr, d, base, amp, p as f32, w as f32, seed, sc);
+            let amp = h as f32 * ro.amp.unwrap_or(amp_f) * self.relief;
+            let seed = ro.seed.unwrap_or_else(|| self.seed.wrapping_mul(1013).wrapping_add(i as u32 * 7919));
+            let terr = if ro.d.is_some() { Terr::Hills } else { terr };
+            let mut geo = Geo::new(terr, d, base, amp, p as f32, w as f32, seed, sc, ro.density.unwrap_or(1.0));
+            geo.jagk = ro.jag.unwrap_or(1.0);
+            if let Some(dp) = &ro.d {
+                geo.custom = ridge_from_path(dp, w).ok().map(Arc::new);
+            }
             // Atmospheric perspective: far ranges take the haze's value and lose chroma.
             let atm = (1.0 - d).powf(1.25);
             let mut col = mixok(pal.near, pal.far, atm.min(1.0) * 0.92);
             col = mixok(col, pal.haze, atm * 0.42);
-            layers.push(LayerPlan { geo, col, top: 0, bottom: h, speed: self.parallax * (0.05 + 0.95 * d.powf(1.6)), key: 0 });
+            if let Some(c) = &ro.color {
+                col = c3(c);
+            }
+            let speed = ro.speed.unwrap_or(self.parallax * (0.05 + 0.95 * d.powf(1.6)));
+            layers.push(LayerPlan { geo, col, top: 0, bottom: h, speed, key: 0, mist: ro.mist.unwrap_or(self.mist), step: ro.step_fps });
         }
         // Rows each layer needs: from its highest ridge to just below the next layer's lowest ridge.
         let ridges: Vec<(f32, f32)> = layers
@@ -1424,7 +1689,7 @@ impl Landscape {
             k.u32(0x5a);
             k.finish()
         };
-        Plan { w, h, p, hand, sun, sun_r, layers, mists, sky_key, sun_key, mist_amt: self.mist }
+        Plan { w, h, p, hand, sun, sun_r, layers, mists, sky_key, sun_key }
     }
 }
 
@@ -1436,10 +1701,21 @@ fn paint_layer(pl: &Plan, l: &LayerPlan) -> Canvas {
     let hand = &pl.hand;
     let g = &l.geo;
     let ridge: Vec<(f32, usize)> = (0..p).map(|x| g.ridge(x as f32 + 0.5)).collect();
+    // Haze pools against a smoothed ridge so spiky silhouettes (trees) don't streak it.
+    let smooth: Vec<f32> = {
+        let r = ((40.0 * hand.scale) as usize).max(1);
+        let mut acc: f32 = (0..=2 * r).map(|k| ridge[(k + p - r) % p].0).sum();
+        let mut out = Vec::with_capacity(p);
+        for x in 0..p {
+            out.push(acc / (2 * r + 1) as f32);
+            acc += ridge[(x + r + 1) % p].0 - ridge[(x + p - r) % p].0;
+        }
+        out
+    };
     let light = hand.light;
     let k_shade = 0.4 + 0.6 * g.d;
     let fade = g.amp * 0.9 + 60.0 * hand.scale;
-    let mist = pl.mist_amt;
+    let mist = l.mist;
     let faceted = matches!(g.terr, Terr::Mountains | Terr::Dunes);
     let treed = matches!(g.terr, Terr::Forest | Terr::Woods);
     let mut cands: Vec<(usize, f32)> = Vec::new();
@@ -1497,10 +1773,10 @@ fn paint_layer(pl: &Plan, l: &LayerPlan) -> Canvas {
             let (s, ln) = g.shade_at(x as f32 + 0.5, y, r, owner, slope, light);
             let ln = ln.max(edge);
             // Haze pools at the foot of each range.
-            let pool = smoothstep(0.0, fade, y - r) * mist * (0.9 - 0.45 * g.d);
+            let pool = smoothstep(0.0, fade, y - smooth[x]) * mist * (0.9 - 0.45 * g.d);
             let c = if pool > 0.002 { lerp3(l.col, hand.pal.haze, pool) } else { l.col };
             let i = yy * p + x;
-            cv.put(i, cov, c, s * k_shade * (1.0 - pool));
+            cv.put(i, cov, c, s * k_shade * (1.0 - pool) * (1.0 - pool));
             if ln > 0.0 {
                 cv.line(i, ln * k_shade);
             }
@@ -1522,7 +1798,7 @@ fn paint_layer(pl: &Plan, l: &LayerPlan) -> Canvas {
                 let wav = pfbm(x, p as f32, (p as f32 / (500.0 * sc)) as u32, 2, g.seed ^ (0x4f0 + j as u32)) * g.amp * 0.18;
                 let y = r0 + off + wav;
                 if gap > -0.1 && y > top as f32 && (y as usize) < top + rows {
-                    let pool = smoothstep(0.0, fade, y - r0) * mist * (0.9 - 0.45 * g.d);
+                    let pool = smoothstep(0.0, fade, y - smooth[xi]) * mist * (0.9 - 0.45 * g.d);
                     let base = lerp3(mixok(l.col, fol[1], 0.3), hand.pal.haze, pool);
                     let r = rr * rng.range(0.75, 1.3) * (1.0 + gap.max(0.0));
                     let lx = light[0];
@@ -1590,7 +1866,8 @@ fn paint_sun(pl: &Plan, m: usize) -> Canvas {
         });
         let _ = dark;
     } else {
-        cv.disc(c, c, r, pal.sun, &|u, v| if u * light[0] + v * light[1] < -0.55 { 0.12 } else { 0.0 });
+        let _ = light;
+        cv.disc(c, c, r, pal.sun, &|_, _| 0.0);
     }
     cv
 }
@@ -1617,7 +1894,7 @@ fn paint_mist(pl: &Plan, m: &MistPlan) -> Canvas {
             } else {
                 edge * (1.0 - smoothstep(top, hb as f32, yf)).powf(0.8)
             };
-            let a = a * m.alpha;
+            let a = if strip { a } else { a * m.alpha };
             if a > 0.004 {
                 cv.put(y * p + x, a, col, 0.0);
             }
@@ -1669,7 +1946,11 @@ impl Component for Landscape {
                 let cv = paint_layer(&pl, l);
                 finish(hand, &cv, Finish { ox: 0.0, oy: l.top as f32, edges: true, shadow: true, variant, hard })
             });
-            let off = -((l.speed * t).rem_euclid(p));
+            let tl = match l.step {
+                Some(f) => step_time(t, false, Some(f)),
+                None => t,
+            };
+            let off = -((l.speed * tl).rem_euclid(p));
             let m = push_m(l.geo.d);
             ops.push(image_op(id, off, l.top as f32, p, rows as f32, m));
             if off + p < w as f32 + 1.0 {
@@ -1682,11 +1963,1209 @@ impl Component for Landscape {
                     finish(hand, &cv, Finish { ox: 0.0, oy: ms.y, edges: hand.style == Style::Papercut, shadow: hand.style == Style::Papercut, variant, hard: false })
                 });
                 let off = -((ms.speed * t).rem_euclid(p));
-                ops.push(image_op(id, off, ms.y, p, ms.h as f32, m));
+                let op_a = if hand.style == Style::Papercut { ms.alpha } else { 1.0 };
+                let mut push = |x: f32| {
+                    let mut o = image_op(id, x, ms.y, p, ms.h as f32, m);
+                    if let Op::Image { opacity, .. } = &mut o {
+                        *opacity = op_a;
+                    }
+                    ops.push(o);
+                };
+                push(off);
                 if off + p < w as f32 + 1.0 {
-                    ops.push(image_op(id, off + p, ms.y, p, ms.h as f32, m));
+                    push(off + p);
                 }
             }
+        }
+        ops
+    }
+}
+
+// -------------------------------------------------------------- primitives
+
+/// A paint primitive in plant/cloud space (y down, root or base at the origin).
+#[derive(Clone, Debug)]
+enum Prim {
+    /// Disc: centre, radius, colour, and the mass it belongs to (centre x, y, radius) for lighting.
+    Disc { c: [f32; 2], r: f32, col: C3, mass: [f32; 3] },
+    /// Tapered limb.
+    Limb { a: [f32; 2], b: [f32; 2], ra: f32, rb: f32, col: C3, lit: f32, dark: f32 },
+    /// Closed polygon, shaded by side of `axis` (x) plus an underside shadow.
+    Poly { pts: Vec<[f32; 2]>, col: C3, axis: f32, top: f32, bottom: f32 },
+    /// Ink mark (bark, creases) in the line channel.
+    Mark { a: [f32; 2], b: [f32; 2], r: f32 },
+    /// Clip everything painted so far below this y (flat-bottomed clouds, bushes).
+    ClipBelow(f32),
+}
+
+fn prims_bbox(ps: &[Prim]) -> [f32; 4] {
+    let mut b = [f32::MAX, f32::MAX, f32::MIN, f32::MIN];
+    let mut add = |x: f32, y: f32, r: f32| {
+        b[0] = b[0].min(x - r);
+        b[1] = b[1].min(y - r);
+        b[2] = b[2].max(x + r);
+        b[3] = b[3].max(y + r);
+    };
+    for p in ps {
+        match p {
+            Prim::Disc { c, r, .. } => add(c[0], c[1], *r),
+            Prim::Limb { a, b, ra, rb, .. } => {
+                add(a[0], a[1], *ra);
+                add(b[0], b[1], *rb);
+            }
+            Prim::Poly { pts, .. } => pts.iter().for_each(|q| add(q[0], q[1], 1.0)),
+            Prim::Mark { a, b, r } => {
+                add(a[0], a[1], *r);
+                add(b[0], b[1], *r);
+            }
+            Prim::ClipBelow(_) => {}
+        }
+    }
+    if b[0] > b[2] {
+        return [0.0, 0.0, 1.0, 1.0];
+    }
+    b
+}
+
+impl Canvas {
+    /// Anti-aliased polygon fill (even-odd), coverage from the distance to the nearest edge.
+    fn poly(&mut self, pts: &[[f32; 2]], col: C3, shade: &dyn Fn(f32, f32) -> f32) {
+        if pts.len() < 3 {
+            return;
+        }
+        let (mut x0, mut y0, mut x1, mut y1) = (f32::MAX, f32::MAX, f32::MIN, f32::MIN);
+        for p in pts {
+            x0 = x0.min(p[0]);
+            y0 = y0.min(p[1]);
+            x1 = x1.max(p[0]);
+            y1 = y1.max(p[1]);
+        }
+        let (xa, xb) = ((x0 - 1.0).floor().max(0.0) as usize, ((x1 + 1.0).ceil().max(0.0) as usize).min(self.w));
+        let (ya, yb) = ((y0 - 1.0).floor().max(0.0) as usize, ((y1 + 1.0).ceil().max(0.0) as usize).min(self.h));
+        let n = pts.len();
+        for y in ya..yb {
+            let py = y as f32 + 0.5;
+            for x in xa..xb {
+                let px = x as f32 + 0.5;
+                let mut inside = false;
+                let mut dmin = f32::MAX;
+                for i in 0..n {
+                    let (a, b) = (pts[i], pts[(i + 1) % n]);
+                    if (a[1] > py) != (b[1] > py) && px < a[0] + (py - a[1]) * (b[0] - a[0]) / (b[1] - a[1]) {
+                        inside = !inside;
+                    }
+                    let (vx, vy) = (b[0] - a[0], b[1] - a[1]);
+                    let u = (((px - a[0]) * vx + (py - a[1]) * vy) / (vx * vx + vy * vy).max(1e-6)).clamp(0.0, 1.0);
+                    let (dx, dy) = (a[0] + vx * u - px, a[1] + vy * u - py);
+                    dmin = dmin.min(dx * dx + dy * dy);
+                }
+                let d = dmin.sqrt();
+                let cov = if inside { (0.5 + d).min(1.0) } else { (0.5 - d).max(0.0) };
+                if cov > 0.0 {
+                    self.put(y * self.w + x, cov, col, shade(px, py));
+                }
+            }
+        }
+    }
+
+    fn clip_below(&mut self, y: f32) {
+        for yy in 0..self.h {
+            let k = (y - yy as f32 + 0.5).clamp(0.0, 1.0);
+            if k >= 1.0 {
+                continue;
+            }
+            for x in 0..self.w {
+                let i = yy * self.w + x;
+                self.pc[i * 3] *= k;
+                self.pc[i * 3 + 1] *= k;
+                self.pc[i * 3 + 2] *= k;
+                self.a[i] *= k;
+                self.s[i] *= k;
+                self.ln[i] *= k;
+            }
+        }
+    }
+}
+
+/// Paint primitives into a canvas whose top-left sits at `org` in primitive space.
+fn paint_prims(ps: &[Prim], w: usize, h: usize, org: [f32; 2], light: [f32; 2]) -> Canvas {
+    let mut cv = Canvas::new(w, h);
+    let (ox, oy) = (org[0], org[1]);
+    for p in ps {
+        match p {
+            Prim::Disc { c, r, col, mass } => {
+                let (cx, cy) = (c[0] - ox, c[1] - oy);
+                let (mx, my, mr) = (mass[0] - ox, mass[1] - oy, mass[2].max(1.0));
+                let rr = *r;
+                if mass[2] < 0.0 {
+                    let s = mass[0];
+                    cv.disc(cx, cy, rr, *col, &|_, _| s);
+                    continue;
+                }
+                cv.disc(cx, cy, rr, *col, &|u, v| {
+                    let glob = ((cx + u * rr - mx) * light[0] + (cy + v * rr - my) * light[1]) / mr;
+                    let loc = u * light[0] + v * light[1];
+                    let val = 0.55 * glob + 0.5 * loc;
+                    if val > 0.32 {
+                        -0.4
+                    } else if val > -0.2 {
+                        0.12
+                    } else {
+                        0.62
+                    }
+                });
+            }
+            Prim::Limb { a, b, ra, rb, col, lit, dark } => {
+                cv.limb([a[0] - ox, a[1] - oy], [b[0] - ox, b[1] - oy], *ra, *rb, *col, *lit, *dark, light);
+            }
+            Prim::Poly { pts, col, axis, top, bottom } => {
+                let q: Vec<[f32; 2]> = pts.iter().map(|p| [p[0] - ox, p[1] - oy]).collect();
+                let (ax, t, bt) = (axis - ox, top - oy, bottom - oy);
+                let lx = light[0];
+                cv.poly(&q, *col, &|px, py| {
+                    let side = (px - ax) * lx;
+                    let under = smoothstep(bt - (bt - t) * 0.22, bt, py);
+                    let base = if side > 0.0 { -0.25 } else { 0.5 };
+                    base + under * 0.35
+                });
+            }
+            Prim::Mark { a, b, r } => {
+                let (a, b) = ([a[0] - ox, a[1] - oy], [b[0] - ox, b[1] - oy]);
+                let rr = *r;
+                let (x0, x1) = (((a[0].min(b[0]) - rr - 1.0).max(0.0)) as usize, ((a[0].max(b[0]) + rr + 1.0).max(0.0) as usize).min(w));
+                let (y0, y1) = (((a[1].min(b[1]) - rr - 1.0).max(0.0)) as usize, ((a[1].max(b[1]) + rr + 1.0).max(0.0) as usize).min(h));
+                let (vx, vy) = (b[0] - a[0], b[1] - a[1]);
+                let l2 = (vx * vx + vy * vy).max(1e-4);
+                for y in y0..y1 {
+                    for x in x0..x1 {
+                        let (px, py) = (x as f32 + 0.5, y as f32 + 0.5);
+                        let u = (((px - a[0]) * vx + (py - a[1]) * vy) / l2).clamp(0.0, 1.0);
+                        let (dx, dy) = (a[0] + vx * u - px, a[1] + vy * u - py);
+                        let cov = (rr * (1.0 - (2.0 * u - 1.0).powi(2)).max(0.2) - (dx * dx + dy * dy).sqrt() + 0.5).clamp(0.0, 1.0);
+                        let i = y * w + x;
+                        if cov > 0.0 && cv.a[i] > 0.5 {
+                            cv.line(i, cov);
+                        }
+                    }
+                }
+            }
+            Prim::ClipBelow(y) => cv.clip_below(y - oy),
+        }
+    }
+    cv
+}
+
+/// A cached, finished sprite made of primitives: (image, top-left offset from the origin, size).
+fn sprite(ctx: &Ctx, hand: &Hand, key: u64, ps: &[Prim], variant: u32, hard: bool) -> (ImageId, [f32; 2], [f32; 2]) {
+    let m = (14.0 * hand.scale).ceil();
+    let b = prims_bbox(ps);
+    let org = [(b[0] - m).floor(), (b[1] - m).floor()];
+    let (w, h) = (((b[2] + m).ceil() - org[0]).max(2.0) as usize, ((b[3] + m).ceil() - org[1]).max(2.0) as usize);
+    let (w, h) = (w.min(4096), h.min(4096));
+    let id = ctx.assets.image_premul(key ^ (variant as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15), w as u32, h as u32, &mut || {
+        let cv = paint_prims(ps, w, h, org, hand.light);
+        finish(hand, &cv, Finish { ox: org[0], oy: org[1], edges: true, shadow: true, variant, hard })
+    });
+    (id, org, [w as f32, h as f32])
+}
+
+// ------------------------------------------------------------------ plants
+
+const SPECIES: &[&str] = &["pine", "broadleaf", "birch", "cypress", "bush", "grass", "flowers", "mixed"];
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Species {
+    Pine,
+    Broadleaf,
+    Birch,
+    Cypress,
+    Bush,
+    Grass,
+    Flowers,
+}
+
+fn parse_species(s: &str) -> Result<Option<Species>, Error> {
+    Ok(Some(match s {
+        "pine" | "conifer" | "fir" => Species::Pine,
+        "broadleaf" | "oak" | "tree" => Species::Broadleaf,
+        "birch" => Species::Birch,
+        "cypress" | "poplar" => Species::Cypress,
+        "bush" | "shrub" => Species::Bush,
+        "grass" => Species::Grass,
+        "flowers" | "meadow" => Species::Flowers,
+        "mixed" => return Ok(None),
+        _ => {
+            let hint = super::style::closest(s, SPECIES).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+            return Err(Error(format!("unknown species `{s}` (one of {}){hint}", SPECIES.join(", "))));
+        }
+    }))
+}
+
+/// Exact plant colours.
+#[derive(Deserialize, Clone, Debug, Default)]
+#[serde(default, deny_unknown_fields)]
+pub struct PlantColorOpts {
+    /// Foliage dark, mid and light.
+    pub foliage: Option<Vec<Color>>,
+    pub trunk: Option<Color>,
+    /// Pale bark (birch).
+    pub bark: Option<Color>,
+    /// Flowers.
+    pub accent: Option<Color>,
+}
+
+struct PlantCols {
+    fol: [C3; 3],
+    trunk: C3,
+    bark: C3,
+    accent: C3,
+}
+
+/// Grow one plant of height `h` (px) as primitives, root at the origin.
+fn grow(sp: Species, h: f32, rng: &mut Rng, c: &PlantCols, sc: f32) -> Vec<Prim> {
+    let mut ps = Vec::new();
+    match sp {
+        Species::Pine => {
+            let tw = h * 0.035;
+            ps.push(Prim::Limb { a: [0.0, 0.0], b: [0.0, -h * 0.97], ra: tw, rb: tw * 0.3, col: c.trunk, lit: -0.1, dark: 0.5 });
+            let tiers = 6 + (rng.f() * 4.0) as usize;
+            let lean = rng.range(-0.04, 0.04) * h;
+            for k in 0..tiers {
+                let u0 = k as f32 / tiers as f32;
+                let u1 = (k as f32 + 1.6) / tiers as f32;
+                let ty = -h + u0 * h * 0.82;
+                let by = -h + u1.min(1.0) * h * 0.82 + h * 0.04;
+                let wv = h * (0.06 + 0.26 * u1.min(1.0)) * rng.range(0.85, 1.12);
+                let cx = lean * (1.0 - u0);
+                // Right bough with a drooping tip, a saw-tooth underside, then the left bough.
+                let mut pts = vec![[cx + rng.range(-0.01, 0.01) * h, ty]];
+                pts.push([cx + wv * 0.55, ty + (by - ty) * 0.55]);
+                pts.push([cx + wv, by + h * 0.012]);
+                let teeth = 4 + (rng.f() * 3.0) as usize;
+                for j in 1..teeth {
+                    let f = 1.0 - j as f32 / teeth as f32 * 2.0;
+                    let up = if j % 2 == 1 { -h * rng.range(0.02, 0.045) } else { h * rng.range(0.0, 0.012) };
+                    pts.push([cx + wv * f, by + up]);
+                }
+                pts.push([cx - wv, by + h * 0.012]);
+                pts.push([cx - wv * 0.55, ty + (by - ty) * 0.55]);
+                let col = if k % 2 == 0 { c.fol[1] } else { mixok(c.fol[1], c.fol[0], 0.25) };
+                ps.push(Prim::Poly { pts, col, axis: cx + h * 0.01, top: ty, bottom: by });
+            }
+        }
+        Species::Broadleaf | Species::Birch => {
+            let birch = sp == Species::Birch;
+            let tw = h * if birch { 0.022 } else { 0.04 };
+            let trunk_h = h * rng.range(0.38, 0.5);
+            let lean = rng.range(-0.06, 0.06) * h;
+            let top = [lean, -trunk_h];
+            let tcol = if birch { c.bark } else { c.trunk };
+            ps.push(Prim::Limb { a: [0.0, 0.0], b: top, ra: tw, rb: tw * 0.7, col: tcol, lit: -0.2, dark: 0.45 });
+            // Branches: a few recursive splits.
+            let mut tips: Vec<[f32; 2]> = Vec::new();
+            let mut stack = vec![(top, -std::f32::consts::FRAC_PI_2 + rng.range(-0.15, 0.15), h * 0.28, tw * 0.7, 0usize)];
+            while let Some((p, ang, len, r, depth)) = stack.pop() {
+                let n = if depth == 0 { 3 } else { 2 };
+                for _ in 0..n {
+                    let a = ang + rng.range(-0.75, 0.75) * if depth == 0 { 1.0 } else { 0.8 };
+                    let l = len * rng.range(0.7, 1.0);
+                    let q = [p[0] + a.cos() * l, p[1] + a.sin() * l * 0.9];
+                    ps.push(Prim::Limb { a: p, b: q, ra: r, rb: r * 0.6, col: tcol, lit: -0.2, dark: 0.45 });
+                    if depth < 2 {
+                        stack.push((q, a, l * 0.68, r * 0.6, depth + 1));
+                    } else {
+                        tips.push(q);
+                    }
+                }
+            }
+            if birch {
+                // Dark lenticels on the pale bark.
+                let marks = (h / (18.0 * sc)) as usize;
+                for _ in 0..marks {
+                    let u = rng.range(0.05, 0.95);
+                    let y = -trunk_h * u;
+                    let x = lean * u + rng.range(-0.6, 0.6) * tw;
+                    let wd = tw * rng.range(0.4, 0.9);
+                    ps.push(Prim::Mark { a: [x - wd, y], b: [x + wd, y + rng.range(-0.5, 0.5) * sc], r: rng.range(0.7, 1.6) * sc });
+                }
+            }
+            // Foliage masses around the tips, lit as one crown.
+            let nt = tips.len().max(1) as f32;
+            let cx = tips.iter().map(|t| t[0]).sum::<f32>() / nt;
+            let cy = tips.iter().map(|t| t[1]).sum::<f32>() / nt;
+            let crown_r = h * if birch { 0.26 } else { 0.32 };
+            let mass = [cx, cy, crown_r];
+            if !birch {
+                // A core so the crown reads as one mass.
+                for _ in 0..6 {
+                    let p = [cx + rng.range(-0.5, 0.5) * crown_r, cy + rng.range(-0.2, 0.45) * crown_r];
+                    ps.push(Prim::Disc { c: p, r: crown_r * rng.range(0.35, 0.5), col: mixok(c.fol[1], c.fol[0], 0.4), mass });
+                }
+            }
+            let lobes = if birch { 2 } else { 4 };
+            for t in &tips {
+                for _ in 0..lobes {
+                    let r = h * rng.range(0.07, 0.12) * if birch { 0.7 } else { 1.0 };
+                    let p = [t[0] + rng.range(-0.6, 0.6) * r, t[1] + rng.range(-0.6, 0.5) * r];
+                    let col = if birch { mixok(c.fol[2], c.accent, 0.25) } else { c.fol[1] };
+                    ps.push(Prim::Disc { c: p, r, col, mass });
+                }
+            }
+        }
+        Species::Cypress => {
+            let tw = h * 0.03;
+            ps.push(Prim::Limb { a: [0.0, 0.0], b: [0.0, -h * 0.25], ra: tw, rb: tw * 0.8, col: c.trunk, lit: -0.1, dark: 0.5 });
+            let wmax = h * rng.range(0.11, 0.15);
+            let mass = [0.0, -h * 0.55, h * 0.45];
+            let n = 9;
+            for k in 0..n {
+                let u = k as f32 / (n - 1) as f32;
+                let y = -h * (0.15 + 0.78 * u);
+                let r = wmax * (1.0 - u * u * 0.85).max(0.15) * rng.range(0.9, 1.1);
+                ps.push(Prim::Disc { c: [rng.range(-0.15, 0.15) * r, y], r, col: c.fol[1], mass });
+            }
+            ps.push(Prim::Disc { c: [0.0, -h * 0.97], r: wmax * 0.22, col: c.fol[1], mass });
+        }
+        Species::Bush => {
+            let wv = h * rng.range(1.0, 1.6);
+            let mass = [0.0, -h * 0.45, wv * 0.6];
+            let n = 7 + (rng.f() * 5.0) as usize;
+            for k in 0..n {
+                let u = k as f32 / (n - 1) as f32 - 0.5;
+                let r = h * rng.range(0.28, 0.42) * (1.0 - u.abs() * 0.8);
+                let p = [u * wv, -r * rng.range(0.7, 1.0) - h * 0.05 * (1.0 - u.abs() * 2.0)];
+                ps.push(Prim::Disc { c: p, r, col: c.fol[1], mass });
+            }
+            ps.push(Prim::ClipBelow(0.0));
+        }
+        Species::Grass | Species::Flowers => {
+            let blades = 9 + (rng.f() * 8.0) as usize;
+            for _ in 0..blades {
+                let x = rng.range(-0.3, 0.3) * h;
+                let len = h * rng.range(0.5, 1.0);
+                let bend = rng.range(-0.35, 0.35) * len;
+                let w = h * rng.range(0.025, 0.04) + 0.8 * sc;
+                let mid = [x + bend * 0.35, -len * 0.55];
+                let tip = [x + bend, -len];
+                let col = if rng.f() < 0.5 { c.fol[1] } else { c.fol[2] };
+                ps.push(Prim::Limb { a: [x, 0.0], b: mid, ra: w, rb: w * 0.65, col, lit: -0.3, dark: 0.35 });
+                ps.push(Prim::Limb { a: mid, b: tip, ra: w * 0.65, rb: 0.3 * sc, col, lit: -0.3, dark: 0.35 });
+            }
+            if sp == Species::Flowers {
+                let n = 2 + (rng.f() * 3.0) as usize;
+                for _ in 0..n {
+                    let x = rng.range(-0.25, 0.25) * h;
+                    let len = h * rng.range(0.8, 1.25);
+                    let tip = [x + rng.range(-0.15, 0.15) * len, -len];
+                    ps.push(Prim::Limb { a: [x, 0.0], b: tip, ra: 1.2 * sc + h * 0.012, rb: 0.8 * sc, col: c.fol[0], lit: -0.2, dark: 0.3 });
+                    let pr = h * rng.range(0.06, 0.09) + 2.0 * sc;
+                    let mass = [tip[0], tip[1], pr * 1.8];
+                    let rot = rng.f() * 6.28;
+                    for k in 0..5 {
+                        let a = rot + k as f32 / 5.0 * std::f32::consts::TAU;
+                        ps.push(Prim::Disc { c: [tip[0] + a.cos() * pr, tip[1] + a.sin() * pr * 0.8], r: pr * 0.75, col: c.accent, mass });
+                    }
+                    ps.push(Prim::Disc { c: tip, r: pr * 0.5, col: mixok(c.accent, [1.0, 0.85, 0.3], 0.6), mass });
+                }
+            }
+        }
+    }
+    ps
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum SpeciesSpec {
+    One(String),
+    Many(Vec<String>),
+}
+impl Default for SpeciesSpec {
+    fn default() -> Self {
+        SpeciesSpec::One("mixed".into())
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Plants {
+    pub style: String,
+    pub palette: PalSpec,
+    pub grain: f32,
+    /// Light direction in degrees (0 = from above, negative = from the left).
+    pub light: f32,
+    pub seed: u32,
+    pub boil: f32,
+    pub on_twos: bool,
+    pub step_fps: Option<f32>,
+    /// Picks the default palette (`dawn day golden dusk night`).
+    pub time: String,
+    /// `pine broadleaf birch cypress bush grass flowers` or `mixed`, or a list to pick from.
+    pub species: SpeciesSpec,
+    /// Number of plants.
+    pub count: usize,
+    /// Horizontal span `[from, to]` as fractions of the box.
+    pub spread: [f32; 2],
+    /// Ground line as a fraction of the box height.
+    pub ground: f32,
+    /// Height of the tallest plant in px (at 1080p).
+    pub size: f32,
+    /// Wind strength 0..1 (sway and gusts); 0 = still.
+    pub wind: f32,
+    /// Depth spread 0..1: farther plants are smaller, higher and hazier.
+    pub depth: f32,
+    /// Fill the ground below the line in the same hand.
+    pub fill: bool,
+    /// Foliage colour override.
+    pub color: Option<Color>,
+    /// Exact colours: `{"foliage": [dark, mid, light], "trunk", "bark", "accent"}`.
+    pub colors: PlantColorOpts,
+    /// Sway frequency multiplier.
+    pub sway_freq: f32,
+    /// Gust strength multiplier.
+    pub gust: f32,
+    /// Every knob behind the style preset (see `HandOpts`): inks, halftone, misregistration, edges, hatching, rims, lift.
+    pub hand: HandOpts,
+    #[serde(skip)]
+    cache: Mutex<Option<Arc<PlantPlan>>>,
+}
+
+impl Default for Plants {
+    fn default() -> Self {
+        Plants {
+            style: "flat".into(),
+            palette: PalSpec::default(),
+            grain: default_grain(),
+            light: -35.0,
+            seed: 1,
+            boil: 0.0,
+            on_twos: false,
+            step_fps: None,
+            time: "day".into(),
+            species: SpeciesSpec::default(),
+            count: 9,
+            spread: [0.02, 0.98],
+            ground: 0.94,
+            size: 380.0,
+            wind: 0.4,
+            depth: 0.4,
+            fill: false,
+            color: None,
+            colors: PlantColorOpts::default(),
+            sway_freq: 1.0,
+            gust: 1.0,
+            hand: HandOpts::default(),
+            cache: Mutex::new(None),
+        }
+    }
+}
+
+impl Prepare for Plants {
+    fn prepare(&mut self) -> Result<(), Error> {
+        parse_style(&self.style)?;
+        self.hand.validate()?;
+        Palette::resolve(&self.palette, &self.time)?;
+        match &self.species {
+            SpeciesSpec::One(s) => {
+                parse_species(s)?;
+            }
+            SpeciesSpec::Many(v) => {
+                if v.is_empty() {
+                    return Err(Error("`species` list is empty".into()));
+                }
+                for s in v {
+                    parse_species(s)?;
+                }
+            }
+        }
+        if self.count > 400 {
+            return Err(Error("`count` must be ≤ 400".into()));
+        }
+        self.wind = self.wind.clamp(0.0, 2.0);
+        self.depth = self.depth.clamp(0.0, 1.0);
+        Ok(())
+    }
+}
+
+struct PlantInst {
+    prims: Vec<Prim>,
+    x: f32,
+    y: f32,
+    key: u64,
+    phase: f32,
+    flex: f32,
+}
+
+struct PlantPlan {
+    w: usize,
+    h: usize,
+    hand: Hand,
+    items: Vec<PlantInst>,
+    ground_key: u64,
+}
+
+impl Plants {
+    fn plan(&self, w: usize, h: usize) -> Arc<PlantPlan> {
+        if let Ok(g) = self.cache.lock() {
+            if let Some(p) = g.as_ref().filter(|p| p.w == w && p.h == h) {
+                return p.clone();
+            }
+        }
+        let style = parse_style(&self.style).unwrap();
+        let mut pal = Palette::resolve(&self.palette, &self.time).unwrap();
+        if let Some(c) = self.color {
+            let f = [c.0 .0[0], c.0 .0[1], c.0 .0[2]];
+            pal.fol = [mixok(f, pal.near, 0.55), f, mixok(f, pal.sun, 0.35)];
+        }
+        if let Some(f) = &self.colors.foliage {
+            for (k, c) in f.iter().take(3).enumerate() {
+                pal.fol[k] = c3(c);
+            }
+        }
+        if let Some(c) = &self.colors.accent {
+            pal.accent = c3(c);
+        }
+        let sc = h as f32 / 1080.0;
+        let hand = Hand::new(style, pal.clone(), self.grain, self.light, self.seed, sc).with_opts(&self.hand);
+        let mut hk = super::fxpix::Hash::new();
+        hand.key(&mut hk);
+        hk.f32s(&[self.size, self.depth, w as f32, h as f32]);
+        hk.bytes(format!("{:?}{:?}", self.colors, self.color).as_bytes());
+        let mut rng = Rng::new(self.seed as u64 * 31 + 7);
+        let pick: Vec<Option<Species>> = match &self.species {
+            SpeciesSpec::One(s) => vec![parse_species(s).unwrap()],
+            SpeciesSpec::Many(v) => v.iter().map(|s| parse_species(s).unwrap()).collect(),
+        };
+        let gy = self.ground * h as f32;
+        let mut items = Vec::new();
+        let (x0, x1) = (self.spread[0] * w as f32, self.spread[1] * w as f32);
+        for i in 0..self.count {
+            let sp = match pick[(rng.f() * pick.len() as f32) as usize % pick.len()] {
+                Some(s) => s,
+                None => {
+                    let r = rng.f();
+                    if r < 0.28 {
+                        Species::Pine
+                    } else if r < 0.5 {
+                        Species::Broadleaf
+                    } else if r < 0.6 {
+                        Species::Birch
+                    } else if r < 0.68 {
+                        Species::Cypress
+                    } else if r < 0.84 {
+                        Species::Bush
+                    } else {
+                        Species::Grass
+                    }
+                }
+            };
+            // Stratified positions so plants don't clump by accident.
+            let x = x0 + (x1 - x0) * ((i as f32 + rng.range(0.1, 0.9)) / self.count.max(1) as f32);
+            let dz = rng.f() * self.depth;
+            let rel = match sp {
+                Species::Bush => 0.28,
+                Species::Grass | Species::Flowers => 0.16,
+                Species::Cypress => 1.0,
+                _ => 0.85,
+            };
+            let ph = self.size * sc * rel * rng.range(0.75, 1.0) * (1.0 - 0.55 * dz);
+            let atm = dz * 0.8;
+            let cols = PlantCols {
+                fol: pal.fol.map(|c| mixok(c, pal.haze, atm * 0.6)),
+                trunk: mixok(self.colors.trunk.as_ref().map(c3).unwrap_or_else(|| mixok(pal.near, [0.35, 0.22, 0.15], 0.35)), pal.haze, atm * 0.6),
+                bark: mixok(self.colors.bark.as_ref().map(c3).unwrap_or(pal.paper), pal.haze, atm * 0.4),
+                accent: mixok(pal.accent, pal.haze, atm * 0.5),
+            };
+            let mut prng = Rng::new(rng.0 ^ 0xa5a5);
+            let prims = grow(sp, ph, &mut prng, &cols, sc);
+            let mut k = super::fxpix::Hash::new();
+            k.u32(hk.finish() as u32);
+            k.u32((hk.finish() >> 32) as u32);
+            k.u32(i as u32);
+            k.u32(sp as u32);
+            let flex = match sp {
+                Species::Grass | Species::Flowers => 2.2,
+                Species::Bush => 0.6,
+                Species::Cypress => 0.8,
+                _ => 1.0,
+            };
+            items.push((dz, PlantInst { prims, x, y: gy - dz * self.size * sc * 0.25, key: k.finish(), phase: x / (w as f32) * 6.0 + rng.f() * 0.8, flex }));
+        }
+        // Far first.
+        items.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+        let mut gk = super::fxpix::Hash::new();
+        gk.u32(hk.finish() as u32);
+        gk.f32s(&[self.ground, 0.4242]);
+        let p = Arc::new(PlantPlan { w, h, hand, items: items.into_iter().map(|(_, it)| it).collect(), ground_key: gk.finish() });
+        if let Ok(mut g) = self.cache.lock() {
+            *g = Some(p.clone());
+        }
+        p
+    }
+}
+
+impl Component for Plants {
+    fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let (w, h) = (ctx.width.round().clamp(16.0, 8192.0) as usize, ctx.height.round().clamp(16.0, 8192.0) as usize);
+        let pl = self.plan(w, h);
+        let ta = anim_time(t, self.on_twos, self.step_fps);
+        let variant = boil_variant(ta, self.boil);
+        let hand = &pl.hand;
+        let hard = matches!(hand.style, Style::Flat | Style::Riso | Style::Papercut);
+        let mut ops = Vec::with_capacity(pl.items.len() + 1);
+        let gy = self.ground * h as f32;
+        for it in &pl.items {
+            let (id, org, size) = sprite(ctx, hand, it.key, &it.prims, variant, hard);
+            let (x, y) = (it.x + org[0], it.y + org[1]);
+            let m = if self.wind > 0.0 {
+                // Sway: a slow swell, a faster flutter and gusts that roll across the frame.
+                let f = self.sway_freq;
+                let gust = vnoise2(ta * 0.35 * f - it.x / (w as f32) * 1.5, 3.7, self.seed) * 0.5 + 0.5;
+                let a = self.wind * it.flex * (0.035 * (ta * 1.3 * f + it.phase).sin() + 0.012 * (ta * 3.7 * f + it.phase * 2.1).sin() + 0.05 * self.gust * gust * gust);
+                Some([1.0, 0.0, -a, 1.0, a * it.y, 0.0])
+            } else {
+                None
+            };
+            ops.push(image_op(id, x, y, size[0], size[1], m));
+        }
+        if self.fill {
+            let gh = (h as f32 - gy).ceil().max(1.0) as usize + 16;
+            let seed = self.seed;
+            let (s0, s1) = (self.spread[0] - 0.06, self.spread[1] + 0.06);
+            let id = ctx.assets.image_premul(pl.ground_key ^ variant as u64, w as u32, gh as u32, &mut || {
+                let mut cv = Canvas::new(w, gh);
+                let c = hand.pal.fol[0];
+                for y in 0..gh {
+                    for x in 0..w {
+                        // A mound under the plants that slopes away past the outermost ones.
+                        let u = (x as f32 + 0.5) / w as f32;
+                        let k = smoothstep(s0, s0 + 0.1, u) * smoothstep(s1, s1 - 0.1, u);
+                        let wav = vnoise2(x as f32 / (90.0 * hand.scale), 0.5, seed) * 5.0 * hand.scale + 8.0 + (1.0 - k) * gh as f32;
+                        let cov = (y as f32 - wav + 0.5).clamp(0.0, 1.0);
+                        cv.put(y * w + x, cov, c, 0.25 + 0.2 * smoothstep(0.0, gh as f32, y as f32));
+                    }
+                }
+                finish(hand, &cv, Finish { ox: 0.0, oy: gy, edges: true, shadow: true, variant, hard })
+            });
+            ops.push(Op::Image { image: id, dst: [0.0, gy - 8.0, w as f32, gh as f32], opacity: 1.0, transform: crate::dl::IDENTITY });
+        }
+        ops
+    }
+}
+
+// ------------------------------------------------------------------ clouds
+
+const LOOKS: &[&str] = &["cumulus", "stratus", "puffs"];
+
+#[derive(Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Clouds {
+    pub style: String,
+    pub palette: PalSpec,
+    pub grain: f32,
+    /// Light direction in degrees (0 = from above, negative = from the left).
+    pub light: f32,
+    pub seed: u32,
+    pub boil: f32,
+    pub on_twos: bool,
+    pub step_fps: Option<f32>,
+    /// Picks the default palette (`dawn day golden dusk night`).
+    pub time: String,
+    /// `cumulus` (lobed, flat-bottomed), `stratus` (long bands) or `puffs`.
+    pub look: String,
+    pub count: usize,
+    /// Vertical band `[top, bottom]` the clouds sit in, as fractions of the box.
+    pub band: [f32; 2],
+    /// Width of the largest cloud in px (at 1080p).
+    pub size: f32,
+    /// Drift speed of the nearest cloud in px/s (negative drifts left).
+    pub speed: f32,
+    /// Depth spread 0..1: farther clouds are smaller, slower and hazier.
+    pub depth: f32,
+    /// Exact colours `[lit, shadow, rim]`.
+    pub colors: Option<Vec<Color>>,
+    /// Every knob behind the style preset (see `HandOpts`): inks, halftone, misregistration, edges, hatching, rims, lift.
+    pub hand: HandOpts,
+    #[serde(skip)]
+    cache: Mutex<Option<Arc<CloudPlan>>>,
+}
+
+impl Default for Clouds {
+    fn default() -> Self {
+        Clouds {
+            style: "flat".into(),
+            palette: PalSpec::default(),
+            grain: default_grain(),
+            light: -35.0,
+            seed: 1,
+            boil: 0.0,
+            on_twos: false,
+            step_fps: None,
+            time: "day".into(),
+            look: "cumulus".into(),
+            count: 5,
+            colors: None,
+            band: [0.06, 0.4],
+            size: 420.0,
+            speed: 14.0,
+            depth: 0.6,
+            hand: HandOpts::default(),
+            cache: Mutex::new(None),
+        }
+    }
+}
+
+impl Prepare for Clouds {
+    fn prepare(&mut self) -> Result<(), Error> {
+        parse_style(&self.style)?;
+        self.hand.validate()?;
+        Palette::resolve(&self.palette, &self.time)?;
+        if !LOOKS.contains(&self.look.as_str()) {
+            let hint = super::style::closest(&self.look, LOOKS).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+            return Err(Error(format!("unknown cloud look `{}` (one of {}){hint}", self.look, LOOKS.join(", "))));
+        }
+        if self.count > 200 {
+            return Err(Error("`count` must be ≤ 200".into()));
+        }
+        self.depth = self.depth.clamp(0.0, 1.0);
+        Ok(())
+    }
+}
+
+struct CloudInst {
+    prims: Vec<Prim>,
+    x: f32,
+    y: f32,
+    speed: f32,
+    key: u64,
+}
+
+struct CloudPlan {
+    w: usize,
+    h: usize,
+    hand: Hand,
+    items: Vec<CloudInst>,
+}
+
+/// Flat-shaded disc (constant shading `s`).
+fn flat_disc(c: [f32; 2], r: f32, col: C3, s: f32) -> Prim {
+    Prim::Disc { c, r, col, mass: [s, 0.0, -1.0] }
+}
+
+fn grow_cloud(look: &str, wd: f32, rng: &mut Rng, cols: [C3; 3], light: [f32; 2]) -> Vec<Prim> {
+    let mut ps = Vec::new();
+    let [lit, shadow, glow] = cols;
+    match look {
+        "stratus" => {
+            // Long lenses: a shadow body with a lit lens laid over its top edge.
+            let n = 2 + (rng.f() * 2.0) as usize;
+            let axis = -1.0e6 * light[0].signum();
+            for k in 0..n {
+                let th = wd * rng.range(0.03, 0.05);
+                let x0 = rng.range(-0.5, -0.25) * wd;
+                let x1 = rng.range(0.25, 0.5) * wd;
+                let y = k as f32 * th * 1.3 + rng.range(-0.3, 0.3) * th;
+                let skew = rng.range(0.2, 0.8);
+                let lens = |x0: f32, x1: f32, up: f32, down: f32| -> Vec<[f32; 2]> {
+                    let m = 16;
+                    let mut pts = Vec::with_capacity(2 * m + 2);
+                    for i in 0..=m {
+                        let u = i as f32 / m as f32;
+                        let bump = (std::f32::consts::PI * u.powf(skew + 0.5)).sin().max(0.0).powf(0.6);
+                        pts.push([x0 + (x1 - x0) * u, y - up * bump]);
+                    }
+                    for i in (0..=m).rev() {
+                        let u = i as f32 / m as f32;
+                        let bump = (std::f32::consts::PI * u).sin().max(0.0);
+                        pts.push([x0 + (x1 - x0) * u, y + down * bump]);
+                    }
+                    pts
+                };
+                ps.push(Prim::Poly { pts: lens(x0, x1, th, th * 0.35), col: shadow, axis, top: y - th, bottom: y + th * 0.35 });
+                let (lx0, lx1) = (x0 + (x1 - x0) * 0.08, x1 - (x1 - x0) * rng.range(0.15, 0.35));
+                ps.push(Prim::Poly { pts: lens(lx0, lx1, th * 0.9, th * 0.05), col: lit, axis, top: y - th, bottom: y + th * 5.0 });
+                ps.push(Prim::Poly { pts: lens(lx0 + (lx1 - lx0) * 0.1, lx0 + (lx1 - lx0) * 0.55, th * 0.6, -th * 0.35), col: glow, axis, top: y - th, bottom: y + th * 5.0 });
+            }
+        }
+        _ => {
+            let puffs = look == "puffs";
+            let n = if puffs { 3 + (rng.f() * 2.0) as usize } else { 5 + (rng.f() * 4.0) as usize };
+            let hc = wd * if puffs { 0.42 } else { 0.3 };
+            let mut lobes = Vec::with_capacity(n);
+            for k in 0..n {
+                let u = (k as f32 + 0.5) / n as f32 - 0.5;
+                let bell = (1.0 - (u * 2.0).powi(2)).max(0.12);
+                let r = hc * (0.35 + 0.65 * bell) * rng.range(0.75, 1.1);
+                let c = [u * wd * 0.82, -r * rng.range(0.55, 0.9)];
+                lobes.push((c, r));
+            }
+            // A second row of smaller lobes on top for a cauliflower profile.
+            if !puffs {
+                for _ in 0..n / 2 {
+                    let (c, r) = lobes[(rng.f() * n as f32) as usize % n];
+                    lobes.push(([c[0] + rng.range(-0.4, 0.4) * r, c[1] - r * rng.range(0.5, 0.8)], r * rng.range(0.5, 0.75)));
+                }
+            }
+            // Shadow body, then the lit shape offset towards the light, then rim highlights.
+            for &(c, r) in &lobes {
+                ps.push(flat_disc(c, r, shadow, 0.0));
+            }
+            // The lit shape sits up towards the light, so the shadow reads as an underside, not an outline.
+            for &(c, r) in &lobes {
+                let o = 0.16 * r;
+                ps.push(flat_disc([c[0] + light[0] * o, c[1] + light[1] * o - 0.12 * r], r * 0.9, lit, 0.0));
+            }
+            let mut tops: Vec<_> = lobes.clone();
+            tops.sort_by(|a, b| (a.0[1] - a.1).partial_cmp(&(b.0[1] - b.1)).unwrap());
+            for &(c, r) in tops.iter().take(2) {
+                let o = 0.55 * r;
+                ps.push(flat_disc([c[0] + light[0] * o, c[1] + light[1] * o - 0.1 * r], r * 0.36, glow, -0.2));
+            }
+            ps.push(Prim::ClipBelow(0.0));
+        }
+    }
+    ps
+}
+
+impl Clouds {
+    fn plan(&self, w: usize, h: usize) -> Arc<CloudPlan> {
+        if let Ok(g) = self.cache.lock() {
+            if let Some(p) = g.as_ref().filter(|p| p.w == w && p.h == h) {
+                return p.clone();
+            }
+        }
+        let style = parse_style(&self.style).unwrap();
+        let pal = Palette::resolve(&self.palette, &self.time).unwrap();
+        let sc = h as f32 / 1080.0;
+        let hand = Hand::new(style, pal.clone(), self.grain, self.light, self.seed, sc).with_opts(&self.hand);
+        let mut hk = super::fxpix::Hash::new();
+        hand.key(&mut hk);
+        hk.f32s(&[self.size, self.depth, w as f32, h as f32]);
+        hk.bytes(self.look.as_bytes());
+        hk.bytes(format!("{:?}", self.colors).as_bytes());
+        let mut rng = Rng::new(self.seed as u64 * 131 + 3);
+        let mut items = Vec::new();
+        for i in 0..self.count {
+            let dz = rng.f() * self.depth;
+            let wd = self.size * sc * rng.range(0.6, 1.0) * (1.0 - 0.55 * dz);
+            let atm = dz * 0.7;
+            let base = match &self.colors {
+                Some(c) if c.len() >= 2 => [c3(&c[0]), c3(&c[1]), c.get(2).map(c3).unwrap_or_else(|| mixok(c3(&c[0]), pal.sun, 0.5))],
+                _ => [pal.cloud[0], pal.cloud[1], mixok(pal.cloud[0], pal.sun, 0.5)],
+            };
+            let cols = base.map(|c| mixok(c, pal.sky_low, atm * 0.5));
+            let mut prng = Rng::new(rng.0 ^ 0xc10d);
+            let prims = grow_cloud(&self.look, wd, &mut prng, cols, hand.light);
+            let x = (i as f32 + rng.range(0.0, 0.8)) / self.count.max(1) as f32 * (w as f32 + wd) - wd * 0.5;
+            let y = (self.band[0] + (self.band[1] - self.band[0]) * (1.0 - dz / self.depth.max(1e-3)) * rng.range(0.6, 1.0)) * h as f32;
+            let mut k = super::fxpix::Hash::new();
+            k.u32(hk.finish() as u32);
+            k.u32((hk.finish() >> 32) as u32);
+            k.u32(i as u32);
+            items.push((dz, CloudInst { prims, x, y, speed: self.speed * sc * (1.0 - 0.75 * dz), key: k.finish() }));
+        }
+        items.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+        let p = Arc::new(CloudPlan { w, h, hand, items: items.into_iter().map(|(_, c)| c).collect() });
+        if let Ok(mut g) = self.cache.lock() {
+            *g = Some(p.clone());
+        }
+        p
+    }
+}
+
+impl Component for Clouds {
+    fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let (w, h) = (ctx.width.round().clamp(16.0, 8192.0) as usize, ctx.height.round().clamp(16.0, 8192.0) as usize);
+        let pl = self.plan(w, h);
+        let ta = anim_time(t, self.on_twos, self.step_fps);
+        let variant = boil_variant(ta, self.boil);
+        let hand = &pl.hand;
+        let hard = matches!(hand.style, Style::Flat | Style::Riso | Style::Papercut);
+        let mut ops = Vec::with_capacity(pl.items.len());
+        for c in &pl.items {
+            let (id, org, size) = sprite(ctx, hand, c.key, &c.prims, variant, hard);
+            let span = w as f32 + size[0];
+            let x = (c.x + c.speed * ta - org[0].min(0.0)).rem_euclid(span) - size[0];
+            ops.push(image_op(id, x, c.y + org[1], size[0], size[1], None));
+        }
+        ops
+    }
+}
+
+// ------------------------------------------------------------------- water
+
+#[derive(Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Water {
+    pub style: String,
+    pub palette: PalSpec,
+    pub grain: f32,
+    /// Light direction in degrees (0 = from above, negative = from the left).
+    pub light: f32,
+    pub seed: u32,
+    pub boil: f32,
+    pub on_twos: bool,
+    pub step_fps: Option<f32>,
+    /// Picks the default palette (`dawn day golden dusk night`).
+    pub time: String,
+    /// Sun (or moon) x as a fraction of the box: where the glitter path falls.
+    pub sun: f32,
+    /// Colour of the reflected shore silhouette (default: the palette's far range); `"none"` hides it.
+    pub reflect: Option<String>,
+    /// Height of the reflected silhouette as a fraction of the box.
+    pub reflect_height: f32,
+    /// Wave dash density multiplier.
+    pub waves: f32,
+    /// Wave drift speed multiplier.
+    pub speed: f32,
+    /// Glitter amount on the sun path.
+    pub glints: f32,
+    /// Depth bands in the water colour (0 = smooth gradient).
+    pub bands: f32,
+    /// Wave dash length multiplier.
+    pub dash: f32,
+    /// Exact colours: `{"top", "deep", "wave", "glint"}`.
+    pub colors: WaterColorOpts,
+    /// Every knob behind the style preset (see `HandOpts`): inks, halftone, misregistration, edges, hatching, rims, lift.
+    pub hand: HandOpts,
+    #[serde(skip)]
+    cache: Mutex<Option<Arc<WaterPlan>>>,
+}
+
+impl Default for Water {
+    fn default() -> Self {
+        Water {
+            style: "flat".into(),
+            palette: PalSpec::default(),
+            grain: default_grain(),
+            light: 0.0,
+            seed: 1,
+            boil: 0.0,
+            on_twos: false,
+            step_fps: None,
+            time: "dusk".into(),
+            sun: 0.5,
+            reflect: None,
+            reflect_height: 0.22,
+            waves: 1.0,
+            speed: 1.0,
+            glints: 1.0,
+            bands: 5.0,
+            dash: 1.0,
+            colors: WaterColorOpts::default(),
+            hand: HandOpts::default(),
+            cache: Mutex::new(None),
+        }
+    }
+}
+
+impl Prepare for Water {
+    fn prepare(&mut self) -> Result<(), Error> {
+        parse_style(&self.style)?;
+        self.hand.validate()?;
+        Palette::resolve(&self.palette, &self.time)?;
+        if let Some(r) = &self.reflect {
+            if r != "none" && super::style::parse_color(r).is_none() {
+                return Err(Error(format!("`reflect` must be a colour or \"none\", got {r:?}")));
+            }
+        }
+        self.reflect_height = self.reflect_height.clamp(0.0, 1.0);
+        Ok(())
+    }
+}
+
+/// Exact water colours.
+#[derive(Deserialize, Clone, Debug, Default)]
+#[serde(default, deny_unknown_fields)]
+pub struct WaterColorOpts {
+    /// Far water (by the horizon).
+    pub top: Option<Color>,
+    /// Near, deep water.
+    pub deep: Option<Color>,
+    /// Wave dashes.
+    pub wave: Option<Color>,
+    /// Glints on the sun path.
+    pub glint: Option<Color>,
+}
+
+struct Dash {
+    x: f32,
+    y: f32,
+    len: f32,
+    th: f32,
+    v: f32,
+    ph: f32,
+    glint: bool,
+}
+
+struct WaterPlan {
+    w: usize,
+    h: usize,
+    hand: Hand,
+    key: u64,
+    dashes: Vec<Dash>,
+}
+
+impl Water {
+    fn plan(&self, w: usize, h: usize) -> Arc<WaterPlan> {
+        if let Ok(g) = self.cache.lock() {
+            if let Some(p) = g.as_ref().filter(|p| p.w == w && p.h == h) {
+                return p.clone();
+            }
+        }
+        let style = parse_style(&self.style).unwrap();
+        let pal = Palette::resolve(&self.palette, &self.time).unwrap();
+        let sc = (h as f32 / 400.0).min(w as f32 / 1920.0).max(0.25) * 1.0;
+        let sc = sc.max(w as f32 / 1920.0);
+        let hand = Hand::new(style, pal, self.grain, self.light, self.seed, sc).with_opts(&self.hand);
+        let mut hk = super::fxpix::Hash::new();
+        hand.key(&mut hk);
+        hk.f32s(&[self.sun, self.reflect_height, w as f32, h as f32, 0.777]);
+        hk.bytes(self.reflect.as_deref().unwrap_or("").as_bytes());
+        hk.bytes(format!("{:?}{}", self.colors, self.bands).as_bytes());
+        let mut rng = Rng::new(self.seed as u64 * 977 + 1);
+        let mut dashes = Vec::new();
+        let rows = ((h as f32 / (9.0 * sc)) * self.waves.max(0.0)) as usize;
+        let sx = self.sun * w as f32;
+        for j in 0..rows {
+            let u = (j as f32 + rng.f()) / rows.max(1) as f32;
+            let depth = u.powf(1.5); // 0 at the far edge, 1 near
+            let y = u * h as f32;
+            let per = (w as f32 / ((60.0 + 260.0 * depth) * sc)).max(1.0) as usize;
+            for _ in 0..per {
+                let x = rng.f() * w as f32;
+                dashes.push(Dash {
+                    x,
+                    y,
+                    len: (10.0 + 70.0 * depth) * sc * rng.range(0.5, 1.3),
+                    th: (1.0 + 3.5 * depth) * sc * rng.range(0.7, 1.2),
+                    v: (4.0 + 18.0 * depth) * sc * rng.range(0.6, 1.4) * self.speed * if rng.f() < 0.5 { -1.0 } else { 1.0 },
+                    ph: rng.f() * 6.28,
+                    glint: false,
+                });
+            }
+            // Glitter on the sun path: more, brighter, shorter, widening towards us.
+            let n = (self.glints * (3.0 + 9.0 * depth)) as usize;
+            let spread = (30.0 + 260.0 * depth) * sc;
+            for _ in 0..n {
+                let g = (rng.f() + rng.f() + rng.f()) / 3.0 - 0.5;
+                dashes.push(Dash {
+                    x: sx + g * spread * 2.2,
+                    y,
+                    len: (6.0 + 40.0 * depth) * sc * rng.range(0.5, 1.2),
+                    th: (1.2 + 3.0 * depth) * sc,
+                    v: (2.0 + 6.0 * depth) * sc * if rng.f() < 0.5 { -1.0 } else { 1.0 } * self.speed,
+                    ph: rng.f() * 6.28,
+                    glint: true,
+                });
+            }
+        }
+        let p = Arc::new(WaterPlan { w, h, hand, key: hk.finish(), dashes });
+        if let Ok(mut g) = self.cache.lock() {
+            *g = Some(p.clone());
+        }
+        p
+    }
+
+    fn paint_base(&self, pl: &WaterPlan) -> Canvas {
+        let (w, h) = (pl.w, pl.h);
+        let hand = &pl.hand;
+        let pal = &hand.pal;
+        let sc = hand.scale;
+        let mut cv = Canvas::new(w, h);
+        // Near the horizon the water mirrors the sky's low colour; nearer it deepens.
+        let top = self.colors.top.as_ref().map(c3).unwrap_or_else(|| mixok(pal.sky_low, pal.water, 0.35));
+        let deep = self.colors.deep.as_ref().map(c3).unwrap_or_else(|| mixok(pal.water, pal.near, 0.35));
+        let refl = match self.reflect.as_deref() {
+            Some("none") => None,
+            Some(c) => super::style::parse_color(c).map(|c| [c.0[0], c.0[1], c.0[2]]),
+            None => Some(mixok(mixok(pal.near, pal.far, 0.45), pal.water, 0.2)),
+        };
+        let soft = hand.style == Style::Painterly || self.bands <= 0.0;
+        let bands = self.bands.max(1.0);
+        let sx = self.sun * w as f32;
+        let rh = self.reflect_height * h as f32;
+        let cells = (w as f32 / (240.0 * sc)).max(2.0) as u32;
+        for y in 0..h {
+            let yf = y as f32 + 0.5;
+            let t = yf / h as f32;
+            for x in 0..w {
+                let xf = x as f32 + 0.5;
+                let wav = (xf / (140.0 * sc) + t * 9.0).sin() * 0.012 + vnoise2(xf / (300.0 * sc), yf / (40.0 * sc), self.seed) * 0.02;
+                let tt = (t + wav).clamp(0.0, 1.0).powf(0.8);
+                let tb = if soft { tt } else { ((tt * bands).floor() + smoothstep(0.92, 1.0, (tt * bands).fract())) / bands };
+                let mut c = mixok(top, deep, tb);
+                let mut s = 0.0;
+                // Sun path: a soft column of the sun's colour that widens towards us.
+                let cw = (40.0 + 300.0 * t) * sc;
+                let col = (-((xf - sx) / cw).powi(2)).exp() * (1.0 - t * 0.7);
+                c = lerp3(c, pal.sun, col * 0.45);
+                if let Some(rc) = refl {
+                    // The shore's mirror image, broken by ripples.
+                    let prof = rh * (0.35 + 0.65 * (0.5 + 0.5 * pfbm(xf, w as f32, cells, 3, self.seed ^ 0x3f)));
+                    let ripple = ((yf / (5.0 * sc)).floor() * 1.7).sin() * 0.5 + 0.5;
+                    let jit = vnoise2(xf / (20.0 * sc), (yf / (5.0 * sc)).floor(), self.seed ^ 0x51) * (6.0 + yf * 0.15) * sc;
+                    let inside = (prof + jit - yf).clamp(0.0, 1.0);
+                    let broken = smoothstep(0.75, 0.9, ripple) * smoothstep(prof * 0.5, prof, yf);
+                    let k = inside * (1.0 - broken * 0.85) * 0.85;
+                    c = lerp3(c, mixok(rc, pal.water, 0.2), k);
+                    s += k * 0.15;
+                }
+                cv.put(y * w + x, 1.0, c, s);
+            }
+        }
+        cv
+    }
+}
+
+impl Component for Water {
+    fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let (w, h) = (ctx.width.round().clamp(16.0, 8192.0) as usize, ctx.height.round().clamp(4.0, 8192.0) as usize);
+        let pl = self.plan(w, h);
+        let ta = anim_time(t, self.on_twos, self.step_fps);
+        let variant = boil_variant(ta, self.boil);
+        let hand = &pl.hand;
+        let id = ctx.assets.image_premul(pl.key ^ variant as u64, w as u32, h as u32, &mut || {
+            let cv = self.paint_base(&pl);
+            finish(hand, &cv, Finish { ox: 0.0, oy: 0.0, edges: false, shadow: false, variant, hard: false })
+        });
+        let mut ops = vec![Op::Image { image: id, dst: [0.0, 0.0, w as f32, h as f32], opacity: 1.0, transform: crate::dl::IDENTITY }];
+        // Wave dashes and glitter, bucketed by brightness so a frame is a few fills.
+        let pal = &hand.pal;
+        let (wave_c, glint_c) = match hand.style {
+            Style::Ink => (pal.ink, pal.ink),
+            Style::Papercut => (pal.paper, lerp3(pal.sun, [1.0, 1.0, 1.0], 0.5)),
+            Style::Riso => (pal.paper, pal.inks[2]),
+            _ => (mixok(pal.sky_low, [1.0, 1.0, 1.0], 0.35), lerp3(pal.sun, [1.0, 1.0, 1.0], 0.55)),
+        };
+        let soft = if hand.style == Style::Painterly { 0.7 } else { 1.0 };
+        let wave_c = self.colors.wave.as_ref().map(c3).unwrap_or(wave_c);
+        let glint_c = self.colors.glint.as_ref().map(c3).unwrap_or(glint_c);
+        const B: usize = 4;
+        let mut paths: Vec<crate::dl::Path> = (0..2 * B).map(|_| crate::dl::Path::new()).collect();
+        let wf = w as f32;
+        for d in &pl.dashes {
+            // Each dash breathes in and out of existence while it drifts.
+            let life = (ta * if d.glint { 2.6 } else { 0.9 } + d.ph).sin();
+            if life <= 0.05 {
+                continue;
+            }
+            let b = ((life * B as f32) as usize).min(B - 1);
+            let len = d.len * (0.5 + 0.5 * life) * self.dash;
+            let x = (d.x + d.v * ta).rem_euclid(wf + len) - len;
+            let r = d.th * 0.5;
+            let rect = kurbo::RoundedRect::new(x as f64, (d.y - r) as f64, (x + len) as f64, (d.y + r) as f64, r as f64);
+            let p = &mut paths[if d.glint { B + b } else { b }];
+            p.extend(kurbo::Shape::path_elements(&rect, 0.1));
+        }
+        for (i, p) in paths.into_iter().enumerate() {
+            if p.elements().is_empty() {
+                continue;
+            }
+            let glint = i >= B;
+            let b = i % B;
+            let a = (0.25 + 0.75 * (b as f32 + 1.0) / B as f32) * soft * if glint { 1.0 } else { 0.55 };
+            let c = if glint { glint_c } else { wave_c };
+            ops.push(Op::Fill { path: p, paint: crate::dl::Paint::Solid(Rgba([c[0], c[1], c[2], a])), rule: crate::dl::FillRule::NonZero, transform: crate::dl::IDENTITY });
         }
         ops
     }

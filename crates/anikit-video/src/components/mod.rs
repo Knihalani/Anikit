@@ -312,6 +312,9 @@ kinds! {
     "cutout" => illus_fill::Cutout, "Cut or torn paper shape (flat colour or paper/kraft/newsprint stock) with a fibrous rim, lifted drop shadow, hand-placed wobble and a drop or slide entrance.", r##"{"shape":"blob","texture":"kraft","torn":0.7}"##;
     // Illustrated environments
     "landscape" => nature::Landscape, "Illustrated landscape: layered parallax ranges (mountains, hills, dunes, mesas, forest, woods) under a sky with sun or moon, atmospheric perspective and mist, in a flat, risograph, painterly, ink or papercut hand.", r##"{"style":"risograph","time":"dusk","terrain":"mountains","layers":4,"mist":0.5}"##;
+    "plants" => nature::Plants, "Procedural trees (pine, broadleaf, birch, cypress), bushes, grass and flowers along a ground line, lit as forms and swaying in gusting wind, in the same hands as `landscape`.", r##"{"species":"mixed","count":7,"wind":0.5,"style":"painterly"}"##;
+    "clouds" => nature::Clouds, "Designed, palette-aware clouds (lobed cumulus with a lit shape and rim, stratus bands or puffs) drifting at depth-scaled speeds.", r##"{"look":"cumulus","count":4,"speed":20,"style":"flat"}"##;
+    "water" => nature::Water, "Illustrated water: banded depth gradient, a ripple-broken shore reflection, a sun path and drifting wave dashes and glints.", r##"{"sun":0.6,"style":"risograph","time":"dusk"}"##;
     // Lottie
     "lottie" => lottie::Lottie, "Minimal Lottie player (shape layers, transforms, trim paths).", r##"{"src":"anim.json"}"##;
 }
