@@ -1,0 +1,25 @@
+{
+  "slug": "kurzgesagt-climate",
+  "title": "Kurzgesagt — climate explainers",
+  "studio": "Kurzgesagt",
+  "year": 2023,
+  "url": "https://www.youtube.com/watch?v=LxgMdjyw8uw",
+  "frame_sources": [
+    "https://i.ytimg.com/vi/LxgMdjyw8uw/maxres1.jpg",
+    "https://i.ytimg.com/vi/LxgMdjyw8uw/maxres2.jpg",
+    "https://i.ytimg.com/vi/LxgMdjyw8uw/maxres3.jpg",
+    "https://i.ytimg.com/vi/wbR-5mHI6bo/maxres1.jpg",
+    "https://i.ytimg.com/vi/wbR-5mHI6bo/maxres2.jpg",
+    "https://i.ytimg.com/vi/wbR-5mHI6bo/maxres3.jpg"
+  ],
+  "style_tags": [
+    "explainer",
+    "editorial-data",
+    "illustration"
+  ],
+  "format": "16:9",
+  "medium": "2D",
+  "description": "Flat-vector isometric worlds explaining climate solutions: traffic, food emissions, wind farms and charts, bird characters around graphs. Saturated cyan, purple and green.",
+  "why_top_tier": "The definitive 2D science explainer style: dense information made friendly with perfect shape language.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright Kurzgesagt GmbH"
+}

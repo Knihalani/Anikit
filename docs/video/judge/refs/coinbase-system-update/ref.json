@@ -1,0 +1,26 @@
+{
+  "slug": "coinbase-system-update",
+  "title": "Coinbase: System Update",
+  "studio": "BUCK",
+  "year": 2022,
+  "url": "https://buck.co/work/coinbase-system-update",
+  "frame_sources": [
+    "https://cdn.sanity.io/images/uk7b627p/production/27b46b7839f32a51a88205c44f27dcf0c170c93d-1920x1080.jpg",
+    "https://cdn.sanity.io/images/uk7b627p/production/323053d0f3f043eaab25be24eca1aa044f8adc63-1920x1080.jpg",
+    "https://cdn.sanity.io/images/uk7b627p/production/db6ae02a213c11f1a6c2f8ed171a653883c3eba5-1920x1080.jpg",
+    "https://cdn.sanity.io/images/uk7b627p/production/c5db67ba034c747def8424175eacbaa9985a14c6-1920x1080.jpg",
+    "https://cdn.sanity.io/images/uk7b627p/production/ac8489a00a99e605561f0e73b0ec8b857dad7e64-1920x1080.jpg",
+    "https://cdn.sanity.io/images/uk7b627p/production/d3524f773fa148d2c97a77615896f7e5234616eb-1920x1080.jpg"
+  ],
+  "style_tags": [
+    "product-launch",
+    "motion-design",
+    "generative",
+    "kinetic-type"
+  ],
+  "format": "16:9",
+  "medium": "2D",
+  "description": "An entirely terminal-style film: white monospaced code, ASCII particle drawings and glyph grids on Coinbase blue, morphing into characters, coins and data fields.",
+  "why_top_tier": "Builds a whole fintech campaign from one generative ASCII constraint, with surprising warmth.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright Coinbase"
+}

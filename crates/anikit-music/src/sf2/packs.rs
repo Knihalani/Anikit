@@ -31,6 +31,24 @@ pub struct Pack {
 /// Known packs.
 pub const PACKS: &[Pack] = &[
     Pack {
+        name: "splendid",
+        description: "Splendid Grand Piano — Akai Steinway samples, 4 velocity layers, SFZ + FLAC",
+        license: "Public domain (released by Akai, 2000)",
+        size: "≈150 MB",
+        url: "https://github.com/sfzinstruments/SplendidGrandPiano",
+        branch: "master",
+        credit: "",
+    },
+    Pack {
+        name: "epianos",
+        description: "Greg Sullivan E-Pianos — Wurlitzer EP200, Yamaha CP80, Hohner Pianet T (SFZ + FLAC)",
+        license: "CC BY 3.0",
+        size: "≈40 MB",
+        url: "https://github.com/sfzinstruments/GregSullivan.E-Pianos",
+        branch: "master",
+        credit: "E-Pianos by Greg Sullivan (CC BY 3.0), SFZ mapping by kinwie",
+    },
+    Pack {
         name: "vsco2-ce",
         description: "VS Chamber Orchestra 2: Community Edition — orchestral strings (sections and solo), \
                       woodwinds, brass, harp, timpani and orchestral percussion, keys and organ (SFZ, WAV)",
@@ -54,6 +72,10 @@ pub const PACKS: &[Pack] = &[
 
 /// Friendly name → (pack, SFZ file inside it).
 pub const INSTRUMENTS: &[(&str, &str, &str)] = &[
+    ("splendid-piano", "splendid", "Splendid Grand Piano.sfz"),
+    ("wurlitzer", "epianos", "Wurlitzer EP200/Wurlitzer EP200.sfz"),
+    ("cp80", "epianos", "CP80/CP80.sfz"),
+    ("pianet", "epianos", "Pianet T/Pianet T.sfz"),
     ("salamander-piano", "salamander", "Salamander Grand Piano V3.sfz"),
     ("salamander", "salamander", "Salamander Grand Piano V3.sfz"),
     ("vsco-violins", "vsco2-ce", "ViolinEnsSusVib.sfz"),
@@ -119,9 +141,20 @@ pub fn is_cached(name: &str) -> bool {
     pack_dir(name).join(".git").exists() || pack_dir(name).join(".anikit-complete").exists()
 }
 
+/// The small packs worth having for everyday scores (≈190 MB): a better grand
+/// piano and vintage electric pianos. `fetch("essentials")` gets them all.
+pub const ESSENTIALS: &[&str] = &["splendid", "epianos"];
+
 /// Download a pack into the cache (`git clone --depth 1`); returns its
 /// directory. Does nothing if it is already there.
 pub fn fetch(name: &str) -> Result<PathBuf, String> {
+    if name == "essentials" {
+        let mut last = cache_dir();
+        for p in ESSENTIALS {
+            last = fetch(p)?;
+        }
+        return Ok(last.parent().map(PathBuf::from).unwrap_or(last));
+    }
     let pack = PACKS
         .iter()
         .find(|p| p.name == name)

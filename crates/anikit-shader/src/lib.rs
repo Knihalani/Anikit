@@ -24,6 +24,48 @@ mod vmath;
 pub use front::{DeclaredUniform, Kind, Lang, ShaderError, UType};
 pub use texture::{Filter, Texture, Wrap};
 
+/// A single-file multi-pass shader split into its passes.
+pub struct PassSources {
+    pub image: String,
+    pub image_channels: Vec<String>,
+    /// (name, source, channels).
+    pub buffers: Vec<(String, String, Vec<String>)>,
+}
+
+/// Split `//--- buffer A: A, noise` / `//--- image: A` sections. Text before
+/// the first section is common code, prepended to every pass (with blank
+/// lines keeping each pass's line numbers). `None` when there are no sections.
+pub fn split_passes(src: &str) -> Option<PassSources> {
+    let lines: Vec<&str> = src.lines().collect();
+    let heads: Vec<usize> = lines.iter().enumerate().filter(|(_, l)| l.trim_start().starts_with("//---")).map(|(i, _)| i).collect();
+    if heads.is_empty() {
+        return None;
+    }
+    let common = lines[..heads[0]].join("\n");
+    let chans = |spec: &str| -> Vec<String> { spec.split(',').map(|c| c.trim().to_string()).filter(|c| !c.is_empty()).collect() };
+    let mut out = PassSources { image: String::new(), image_channels: Vec::new(), buffers: Vec::new() };
+    let mut have_image = false;
+    for (k, &h) in heads.iter().enumerate() {
+        let end = heads.get(k + 1).copied().unwrap_or(lines.len());
+        let head = lines[h].trim_start().trim_start_matches("//---").trim();
+        let (kind, spec) = head.split_once(':').unwrap_or((head, ""));
+        // Pad so errors report the line in the file.
+        let pad = "\n".repeat(h + 1 - heads[0].min(h + 1));
+        let body = format!("{common}\n{pad}{}", lines[h + 1..end].join("\n"));
+        let mut words = kind.split_whitespace();
+        match (words.next(), words.next()) {
+            (Some("image"), _) => {
+                out.image = body;
+                out.image_channels = chans(spec);
+                have_image = true;
+            }
+            (Some("buffer"), Some(name)) => out.buffers.push((name.to_string(), body, chans(spec))),
+            _ => return None,
+        }
+    }
+    have_image.then_some(out)
+}
+
 static LANE_GROUPS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(2);
 
 /// Quads shaded together per kernel iteration, for shaders compiled from now on.
