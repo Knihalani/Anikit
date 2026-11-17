@@ -28,7 +28,7 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema> 
   beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
   music  spec.json -o out.wav   generate a mastered soundtrack (anikit-video docs music)
 common: --json (machine-readable output)
-agents: new | templates | prompt | critique | preview | mcp   (anikit-video templates, anikit-video prompt)";
+start:  docs [topic] | recipes [name] (-o file) | music | critique --render | looks | templates | preview | mcp | --version";
 
 struct Args {
     cmd: String,

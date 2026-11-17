@@ -26,7 +26,6 @@
     "at": 6.29
    }
   ],
-  "motionBlur": true,
   "post": {
    "preset": "punchy",
    "bloom": 0.3
@@ -109,7 +108,8 @@
          "emissive": 3,
          "blend": "add"
         }
-       ]
+       ],
+       "resolution": 0.5
       }
      }
     ]
@@ -188,7 +188,8 @@
          ],
          "material": "glass"
         }
-       ]
+       ],
+       "resolution": 0.5
       }
      }
     ]
