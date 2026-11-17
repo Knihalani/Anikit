@@ -844,6 +844,17 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                         drum_notes.push(Note { t: t0, len: 2.0, key: 49.0, vel: 0.75 });
                     }
                 }
+                // Trailer pulse: builds into a climax tick on a low tom whose subdivision
+                // doubles every third of the section (quarters → 8ths → 16ths), growing louder.
+                if st.name == "cinematic-hybrid" && into_bigger && crate::compose::Role::of(&s.name) == crate::compose::Role::Build && s.bars >= 3.0 {
+                    let span = (s.bars - 1.0) * bpb; // the last bar is the fill
+                    let mut t = 0.0;
+                    while t < span - 1e-9 {
+                        let f = t / span;
+                        drum_notes.push(Note { t: bar0 + t, len: 0.2, key: 41.0, vel: (0.3 + 0.45 * f) as f32 });
+                        t += if f < 1.0 / 3.0 { 1.0 } else if f < 2.0 / 3.0 { 0.5 } else { 0.25 };
+                    }
+                }
                 // Fill into a bigger section: snare roll accelerating over the last bar.
                 if next_e > s.energy + 0.15 && tier > 0 {
                     let t0 = bar0 + (s.bars - 1.0) * bpb;
@@ -1090,6 +1101,32 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 }
             }
         }
+        // A false ending: a climax that falls into a break stops dead — a short hit on
+        // the last beat, then two beats of silence (only the reverb rings) before the
+        // break starts. With a reverse cymbal into the next drop this is the trailer
+        // "hole before act III".
+        if st.riser {
+            let holes: Vec<f64> = sections
+                .windows(2)
+                .filter(|w| crate::compose::Role::of(&w[0].name) == crate::compose::Role::Peak && w[0].energy >= 0.8 && crate::compose::Role::of(&w[1].name) == crate::compose::Role::Break && w[0].bars >= 2.0)
+                .map(|w| w[1].bar * bpb)
+                .collect();
+            for &p in &holes {
+                let (w0, w1) = (p - 1.0, p + 1.0);
+                for tr in tracks.iter_mut() {
+                    tr.notes.retain(|n| !(n.t >= w0 - 1e-9 && n.t < w1 - 1e-9));
+                    for n in tr.notes.iter_mut().filter(|n| n.t < w0 && n.t + n.len > w0) {
+                        n.len = (w0 - n.t).max(0.05);
+                    }
+                }
+                sfx.push(SfxPlan { name: "hit".into(), at: grid.secs(w0) - grid.offset, gain: -6.0, params: serde_json::json!({ "seed": seed }) });
+            }
+            if !holes.is_empty() {
+                if let Some(last) = sections.iter().rev().find(|s| crate::compose::Role::of(&s.name) == crate::compose::Role::Peak && s.bar * bpb > holes[0]) {
+                    sfx.push(SfxPlan { name: "reverse-cymbal".into(), at: grid.secs(last.bar * bpb) - grid.offset, gain: -9.0, params: serde_json::json!({ "seed": seed }) });
+                }
+            }
+        }
         // Picture cuts: a cymbal accent on the beat nearest each cut (≥ 2 bars apart).
         if spec.follow_cuts != Some(false) {
             if let Some(dr) = tracks.iter_mut().find(|t| t.role == "drums") {
@@ -1291,6 +1328,10 @@ fn explicit_sections(list: &[SectionSpec], total_bars: f64) -> Result<Vec<Sectio
 }
 
 /// Sections from the style's form, scaled to `bars`; the first hit (if any) starts the peak section.
+/// Three-act trailer form: act I (intro), act II (build → climax), a false
+/// ending (break), act III (rise → drop).
+const TRAILER_FORM: &[(&str, f64, f32)] = &[("intro", 0.16, 0.3), ("build", 0.2, 0.6), ("climax", 0.16, 0.85), ("break", 0.12, 0.2), ("rise", 0.12, 0.7), ("drop", 0.24, 1.0)];
+
 pub fn auto_sections(st: &StyleDef, bars: f64, hit_bars: &[f64]) -> Vec<Section> {
     if bars <= 0.0 {
         return Vec::new();
@@ -1317,9 +1358,12 @@ pub fn auto_sections(st: &StyleDef, bars: f64, hit_bars: &[f64]) -> Vec<Section>
             })
             .collect();
     }
+    // Long trailers (18+ bars, about 45 s at 100 bpm) get three acts: a first
+    // climax, a false ending that drops to a lone piano, then a bigger act III.
+    let form: &[(&str, f64, f32)] = if st.name == "cinematic-hybrid" && bars >= 18.0 { TRAILER_FORM } else { st.form };
     // Integer bars per section, at least 1, rounded to even counts when long enough.
-    let mut sizes: Vec<f64> = st.form.iter().map(|f| (f.1 * bars).round().max(1.0)).collect();
-    let peak = st.form.iter().enumerate().max_by(|a, b| a.1 .2.total_cmp(&b.1 .2)).map(|x| x.0).unwrap_or(0);
+    let mut sizes: Vec<f64> = form.iter().map(|f| (f.1 * bars).round().max(1.0)).collect();
+    let peak = form.iter().enumerate().max_by(|a, b| a.1 .2.total_cmp(&b.1 .2)).map(|x| x.0).unwrap_or(0);
     // Align the peak start to the first hit.
     if let Some(&h) = hit_bars.iter().find(|&&h| h >= 1.0 && h < bars) {
         let before: f64 = sizes[..peak].iter().sum();
@@ -1353,7 +1397,7 @@ pub fn auto_sections(st: &StyleDef, bars: f64, hit_bars: &[f64]) -> Vec<Section>
     }
     let mut out = Vec::new();
     let mut bar = 0.0;
-    for (f, &n) in st.form.iter().zip(&sizes) {
+    for (f, &n) in form.iter().zip(&sizes) {
         if n <= 0.0 {
             continue;
         }
@@ -1540,5 +1584,36 @@ mod underscore_tests {
         assert!(full.tracks.iter().any(|t| t.role == "pluck" || t.role == "counter"));
         assert!(!under.tracks.iter().any(|t| matches!(t.role.as_str(), "pluck" | "lead" | "counter")));
         assert!(under.tracks.iter().any(|t| t.role == "drums") && under.tracks.iter().any(|t| t.role == "piano"));
+    }
+}
+
+#[cfg(test)]
+mod trailer_tests {
+    use super::*;
+
+    #[test]
+    fn long_trailers_have_three_acts_a_hole_and_a_pulse_ramp() {
+        let a = compose(&MusicSpec::from_json(r#"{"style":"cinematic-hybrid","length":"60s","seed":2}"#).unwrap(), None).unwrap();
+        let names: Vec<&str> = a.sections.iter().map(|s| s.name.as_str()).collect();
+        assert_eq!(names, ["intro", "build", "climax", "break", "rise", "drop"]);
+        let bpb = a.grid.beats_per_bar;
+        let brk = a.sections.iter().find(|s| s.name == "break").unwrap().bar * bpb;
+        // Two beats of silence around the climax → break boundary, a hit at its start.
+        for t in &a.tracks {
+            assert!(!t.notes.iter().any(|n| n.t >= brk - 1.0 && n.t < brk + 1.0), "{} plays in the hole", t.name);
+            assert!(!t.notes.iter().any(|n| n.t < brk - 1.0 && n.t + n.len > brk - 1.0 + 1e-6), "{} rings into the hole", t.name);
+        }
+        assert!(a.sfx.iter().any(|x| x.name == "hit" && (x.at - a.grid.secs(brk - 1.0)).abs() < 1e-6));
+        let drop = a.sections.iter().find(|s| s.name == "drop").unwrap().bar * bpb;
+        assert!(a.sfx.iter().any(|x| x.name == "reverse-cymbal" && (x.at - a.grid.secs(drop)).abs() < 1e-6));
+        // The build's pulse gets faster: first gap a beat, last a 16th.
+        let b = a.sections.iter().find(|s| s.name == "build").unwrap();
+        let mut pulse: Vec<f64> = a.tracks.iter().find(|t| t.role == "drums").unwrap().notes.iter().filter(|n| n.key == 41.0 && n.t >= b.bar * bpb && n.t < (b.bar + b.bars - 1.0) * bpb).map(|n| n.t).collect();
+        pulse.sort_by(f64::total_cmp);
+        assert!(pulse.len() > 8, "{pulse:?}");
+        assert!((pulse[1] - pulse[0] - 1.0).abs() < 1e-9 && (pulse[pulse.len() - 1] - pulse[pulse.len() - 2] - 0.25).abs() < 1e-9);
+        // Short cues keep the simple form.
+        let s = compose(&MusicSpec::from_json(r#"{"style":"cinematic-hybrid","length":"30s"}"#).unwrap(), None).unwrap();
+        assert!(!s.sections.iter().any(|x| x.name == "break"));
     }
 }

@@ -118,7 +118,7 @@ STYLES  played instruments: orchestral acoustic piano jazz rock corporate pop lo
         synth-led: house synthwave trap tech dnb ambient   (aliases: epic trailer edm chill 80s classical upbeat folk …)
 CHOOSING (your call; see docs/video/taste/TASTE.md §7): pick from the film's concept, not habit.
   works: piano/acoustic/orchestral for warm, human, editorial or documentary films; band for energetic product launches;
-         synth-led for tech, night, futurist or club-energy films; cinematic-hybrid for trailers and reveals.
+         synth-led for tech, night, futurist or club-energy films; cinematic-hybrid for trailers and reveals (45 s+: three acts, climax → silence + false ending → bigger act III).
   avoid: a generic synth bed under a calm brand or people film; a busy beat under voice-over; four-on-the-floor under slow footage.
   "instrumentation": "acoustic|orchestral|band|piano|electronic|hybrid" keeps a style's groove and swaps its instruments,
   e.g. {"style":"house","instrumentation":"band"}; per-part {"instruments":{"lead":"violin"}} wins over both.
