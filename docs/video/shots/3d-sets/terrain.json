@@ -1,0 +1,57 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 2,
+   "scene3d": {
+    "env": "overcast",
+    "set": "terrain",
+    "camera": {
+     "shake": "breath",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        2.4499999999999997,
+        1.6,
+        7.0
+       ],
+       "target": [
+        0,
+        0.6,
+        0
+       ],
+       "focal": 35,
+       "fstop": 8
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "box",
+      "size": [
+       0.6,
+       1.6,
+       0.6
+      ],
+      "radius": 0.05,
+      "pos": [
+       0,
+       0.8,
+       0
+      ],
+      "material": {
+       "extends": "matte",
+       "base": "#E8E2D6"
+      }
+     }
+    ]
+   },
+   "layers": []
+  }
+ ]
+}

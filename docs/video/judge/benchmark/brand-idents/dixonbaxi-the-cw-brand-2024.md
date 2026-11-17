@@ -23,6 +23,11 @@ awards: []
 stills:
   - https://i.vimeocdn.com/video/1786991040-5fc4308b2ab4374ca96fc280803d6ab67aa4ac20e07487bf1aa02294a8c627b5-d_1280
   - https://i.vimeocdn.com/video/1787007395-45ae400042b190f3dc66fe91715c04af4484fd456fe8e017499019f624b9a1aa-d_1280
+  - https://image.mux.com/35a5YmyEKchR3yIuwnJID3WLTlu700eOX/thumbnail.jpg?time=3&width=1600
+  - https://image.mux.com/35a5YmyEKchR3yIuwnJID3WLTlu700eOX/thumbnail.jpg?time=14&width=1600
+  - https://image.mux.com/35a5YmyEKchR3yIuwnJID3WLTlu700eOX/thumbnail.jpg?time=26&width=1600
+  - https://image.mux.com/35a5YmyEKchR3yIuwnJID3WLTlu700eOX/thumbnail.jpg?time=40&width=1600
+  - https://image.mux.com/35a5YmyEKchR3yIuwnJID3WLTlu700eOX/thumbnail.jpg?time=47&width=1600
 measured: null
 ---
 

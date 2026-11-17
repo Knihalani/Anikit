@@ -109,10 +109,10 @@ pub fn arc(w: f64, h: f64, start: f64, end: f64, inner: f64) -> BezPath {
 }
 
 /// Pattern kinds.
-pub const PATTERNS: &[&str] = &["dots", "grid", "lines", "stripes", "checker", "triangles", "diamonds", "crosses", "rings", "waves", "zigzag", "truchet", "arcs", "scales", "bricks"];
+pub const PATTERNS: &[&str] = &["tile", "dots", "grid", "lines", "stripes", "checker", "triangles", "diamonds", "crosses", "rings", "waves", "zigzag", "truchet", "arcs", "scales", "bricks"];
 
 /// Parameters of a pattern.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Pat {
     pub kind: String,
     pub spacing: f64,
@@ -121,6 +121,18 @@ pub struct Pat {
     pub seed: u32,
     pub jitter: f64,
     pub ramp: Option<[f64; 2]>,
+    /// `tile`: a motif (SVG path data, px, centred on 0,0) drawn at every lattice point.
+    pub tile: Option<BezPath>,
+    /// Random rotation per mark in steps of 360/turns degrees (0 = none).
+    pub turns: u32,
+    /// Offset every other row by half a spacing (brick / hex lattice).
+    pub stagger: bool,
+    /// Stroke the `tile` motif at this width (px) instead of filling it (for open lines: squiggles, ticks).
+    pub tile_stroke: f64,
+    /// Per-mark size multiplier as an expression of `u v x y d a r` (and `t`); line weight along lines, wave amplitude.
+    pub field: Option<super::expr::Expr>,
+    /// Time for `field` (seconds since the layer started).
+    pub t: f64,
 }
 
 fn default_mark(kind: &str) -> f64 {
@@ -160,6 +172,21 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
         }
         None => 1.0,
     };
+    // Field: a size multiplier per mark from its position (pattern space, centred on the box).
+    let half_diag = ((w * w + h * h).sqrt() * 0.5).max(1.0);
+    let field = |x: f64, y: f64, i: i64, j: i64| -> f64 {
+        match &pt.field {
+            None => 1.0,
+            Some(e) => {
+                let r = rnd(pt.seed ^ 0x5f35, ((i as u32) << 16) ^ (j as u32));
+                let f = [(x + w * 0.5) / w.max(1.0), (y + h * 0.5) / h.max(1.0), x, y, (x * x + y * y).sqrt() / half_diag, y.atan2(x), r];
+                let v = super::expr::Vars { t: pt.t, scene_t: pt.t, gt: pt.t, w, h, f, ..Default::default() };
+                let k = e.eval(&v);
+                if k.is_finite() { k.max(0.0) } else { 0.0 }
+            }
+        }
+    };
+    let sc = |x: f64, y: f64, i: i64, j: i64| ramp(x) * field(x, y, i, j);
     let mut fill = BezPath::new();
     let mut line = BezPath::new();
     let mut idx = 0u32;
@@ -187,13 +214,35 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
     let lo = -n;
     let hi = n;
     match pt.kind.as_str() {
+        "tile" => {
+            if let Some(motif) = &pt.tile {
+                for j in lo..=hi {
+                    for i in lo..=hi {
+                        let (jx, jy) = jit(i, j);
+                        let x = i as f64 * s + jx + if pt.stagger && j.rem_euclid(2) == 1 { s * 0.5 } else { 0.0 };
+                        let y = j as f64 * s + jy;
+                        let k = pt.mark.unwrap_or(1.0) * sc(x, y, i, j);
+                        if k <= 0.001 {
+                            continue;
+                        }
+                        let turn = if pt.turns > 0 { (rnd(pt.seed, (((i as u32) << 16) ^ (j as u32)).wrapping_add(31)) * pt.turns as f64).floor() * TAU / pt.turns as f64 } else { 0.0 };
+                        let m = kurbo::Affine::translate((x, y)) * kurbo::Affine::rotate(turn) * kurbo::Affine::scale(k);
+                        if pt.tile_stroke > 0.0 {
+                            line.extend(motif.elements().iter().map(|e| m * *e));
+                        } else {
+                            fill.extend(motif.elements().iter().map(|e| m * *e));
+                        }
+                    }
+                }
+            }
+        }
         "dots" => {
             for j in lo..=hi {
                 for i in lo..=hi {
                     let (jx, jy) = jit(i, j);
-                    let x = i as f64 * s + jx;
+                    let x = i as f64 * s + jx + if pt.stagger && j.rem_euclid(2) == 1 { s * 0.5 } else { 0.0 };
                     let y = j as f64 * s + jy;
-                    let r = 0.5 * mark * s * ramp(x);
+                    let r = 0.5 * mark * s * sc(x, y, i, j);
                     if r > 0.05 {
                         fill.extend(kurbo::Circle::new((x, y), r).path_elements(0.05));
                     }
@@ -206,7 +255,7 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
                     let (jx, jy) = jit(i, j);
                     let x = i as f64 * s + jx;
                     let y = j as f64 * s + jy;
-                    let k = mark * ramp(x);
+                    let k = mark * sc(x, y, i, j);
                     match pt.kind.as_str() {
                         "diamonds" => {
                             let r = 0.5 * s * k;
@@ -262,6 +311,7 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
                             let x = x0 + k as f64 * wl / steps_per as f64;
                             let ph = k as f64 / steps_per as f64 * TAU;
                             let dy = if pt.kind == "waves" { ph.sin() * amp } else if k % 2 == 0 { -amp } else { amp };
+                            let dy = if pt.field.is_some() { dy * field(x, y, k, j) } else { dy };
                             if k == 0 {
                                 line.move_to((x, y + dy))
                             } else {
@@ -282,7 +332,22 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
                     }
                 }
             }
-            if pt.ramp.is_some() && matches!(pt.kind.as_str(), "lines" | "stripes") {
+            if pt.field.is_some() && matches!(pt.kind.as_str(), "lines" | "stripes") {
+                // Field-driven weight (op art): each line is a band whose width follows the field along it.
+                line = BezPath::new();
+                let step = (s * 0.25).clamp(2.0, 8.0);
+                let m = ((2.0 * half) / step).ceil() as i64;
+                for j in lo..=hi {
+                    let y = j as f64 * s;
+                    let hw = |k: i64| {
+                        let x = -half + k as f64 * step;
+                        (x, 0.5 * s * mark * sc(x, y, k, j))
+                    };
+                    let mut pts: Vec<(f64, f64)> = (0..=m).map(|k| { let (x, a) = hw(k); (x, y - a) }).collect();
+                    pts.extend((0..=m).rev().map(|k| { let (x, a) = hw(k); (x, y + a) }));
+                    poly(&mut fill, &pts);
+                }
+            } else if pt.ramp.is_some() && matches!(pt.kind.as_str(), "lines" | "stripes") {
                 // Ramped line weight: build each line as a tapered quad instead.
                 line = BezPath::new();
                 for j in lo..=hi {
@@ -298,7 +363,7 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
                     let (jx, jy) = jit(i, j);
                     let x = i as f64 * s + jx;
                     let y = j as f64 * s + jy;
-                    let arm = s * 0.25 * ramp(x);
+                    let arm = s * 0.25 * sc(x, y, i, j);
                     line.move_to((x - arm, y));
                     line.line_to((x + arm, y));
                     line.move_to((x, y - arm));
@@ -313,7 +378,7 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
                     if pt.kind == "rings" {
                         let x = i as f64 * s + jx;
                         let y = j as f64 * s + jy;
-                        line.extend(kurbo::Circle::new((x, y), s * 0.35 * ramp(x)).path_elements(0.05));
+                        line.extend(kurbo::Circle::new((x, y), s * 0.35 * sc(x, y, i, j)).path_elements(0.05));
                     } else {
                         let x = i as f64 * s + if j.rem_euclid(2) == 0 { 0.0 } else { s * 0.5 } + jx;
                         let y = j as f64 * s * 0.5 + jy;
@@ -342,8 +407,12 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
             }
         }
     }
+    if pt.kind == "tile" && pt.tile_stroke > 0.0 {
+        stroke_w = pt.tile_stroke;
+    }
     if !line.elements().is_empty() && stroke_w > 0.0 {
-        let st = Stroke::new(stroke_w).with_caps(Cap::Butt).with_join(Join::Miter);
+        let cap = if pt.kind == "tile" { Cap::Round } else { Cap::Butt };
+        let st = Stroke::new(stroke_w).with_caps(cap).with_join(if pt.kind == "tile" { Join::Round } else { Join::Miter });
         let outline = kurbo::stroke(line, &st, &StrokeOpts::default(), 0.05);
         fill.extend(outline);
     }
@@ -373,7 +442,8 @@ mod tests {
     #[test]
     fn patterns_are_deterministic_and_cover() {
         for k in PATTERNS {
-            let pt = Pat { kind: k.to_string(), spacing: 40.0, mark: None, angle: 15.0, seed: 2, jitter: 0.0, ramp: None };
+            let tile = (*k == "tile").then(|| BezPath::from_svg("M-10 -10 L10 -10 L0 12 Z").unwrap());
+            let pt = Pat { kind: k.to_string(), spacing: 40.0, mark: None, angle: 15.0, seed: 2, jitter: 0.0, ramp: None, tile, turns: 4, stagger: true, tile_stroke: 0.0, field: None, t: 0.0 };
             let a = pattern(400.0, 300.0, &pt);
             let b = pattern(400.0, 300.0, &pt);
             assert_eq!(a, b, "{k}");
@@ -457,5 +527,81 @@ mod grid_tests {
         assert_eq!(parse_cell("7/1", 12, 8), Ok((7, 7, 1, 1)));
         assert_eq!(parse_cell("9-", 12, 8), Ok((9, 12, 1, 8)));
         assert!(parse_cell("0-3", 12, 8).is_err() && parse_cell("1-13", 12, 8).is_err());
+    }
+}
+
+/// A cut-out outline of the box `w × h` (plus `grow` px all round): `torn` (fibrous,
+/// two-octave jitter every ~3 px), `scissor` (a few straight cuts per side) or `clean`.
+/// Returned as SVG path data in the box's coordinates.
+pub fn cutout_d(w: f64, h: f64, edge: &str, amount: f64, grow: f64, seed: u32) -> String {
+    let (x0, y0, x1, y1) = (-grow, -grow, w + grow, h + grow);
+    let corners = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)];
+    let mut pts: Vec<(f64, f64)> = Vec::new();
+    let mut k = 0u32;
+    for side in 0..4 {
+        let (a, b) = (corners[side], corners[(side + 1) % 4]);
+        let len = ((b.0 - a.0).powi(2) + (b.1 - a.1).powi(2)).sqrt();
+        // Inward normal (the outline runs clockwise in y-down space).
+        let (nx, ny) = (-(b.1 - a.1) / len.max(1e-9), (b.0 - a.0) / len.max(1e-9));
+        let (n, jitter): (usize, Box<dyn Fn(usize, usize) -> f64>) = match edge {
+            "scissor" => {
+                let n = 3 + (rnd(seed, 900 + side as u32) * 3.0) as usize;
+                (n, Box::new(move |i, _| if i == 0 { 0.0 } else { rnd(seed, 1000 + side as u32 * 16 + i as u32) * amount }))
+            }
+            "torn" => {
+                let n = (len / 3.0).ceil().max(4.0) as usize;
+                let s = seed;
+                let sd = side as u32;
+                (n, Box::new(move |i, n| {
+                    // Low-frequency wander + fibres; 0 at the corners so sides meet.
+                    let t = i as f64 / n as f64;
+                    let env = (t * std::f64::consts::PI).sin().powf(0.3);
+                    let lo = smooth_noise(s ^ (sd * 7919), t * len / 60.0);
+                    let hi = rnd(s, (sd << 20) ^ i as u32) - 0.5;
+                    (env * amount * (0.65 * lo + 0.35 * hi + 0.4)).max(0.0)
+                }))
+            }
+            _ => (1, Box::new(|_, _| 0.0)),
+        };
+        for i in 0..n {
+            let t = i as f64 / n as f64;
+            let j = jitter(i, n);
+            pts.push((a.0 + (b.0 - a.0) * t + nx * j, a.1 + (b.1 - a.1) * t + ny * j));
+            k += 1;
+        }
+    }
+    let _ = k;
+    let mut d = String::with_capacity(pts.len() * 16);
+    for (i, (x, y)) in pts.iter().enumerate() {
+        d += &format!("{}{:.2} {:.2} ", if i == 0 { "M" } else { "L" }, x, y);
+    }
+    d += "Z";
+    d
+}
+
+/// 1D value noise in [-0.5, 0.5], smooth.
+fn smooth_noise(seed: u32, x: f64) -> f64 {
+    let i = x.floor();
+    let f = x - i;
+    let s = f * f * (3.0 - 2.0 * f);
+    let a = rnd(seed, i as i64 as u32);
+    let b = rnd(seed, (i as i64 + 1) as u32);
+    a + (b - a) * s - 0.5
+}
+
+#[cfg(test)]
+mod cutout_tests {
+    use super::*;
+
+    #[test]
+    fn cutouts_stay_near_the_box() {
+        for edge in ["torn", "scissor", "clean"] {
+            let d = cutout_d(400.0, 300.0, edge, 10.0, 0.0, 4);
+            let p = BezPath::from_svg(&d).unwrap();
+            let bb = p.bounding_box();
+            assert!(bb.x0 >= -1.0 && bb.y0 >= -1.0 && bb.x1 <= 401.0 && bb.y1 <= 301.0, "{edge}: {bb:?}");
+            assert!(p.area().abs() > 400.0 * 300.0 * 0.85, "{edge}");
+            assert_eq!(d, cutout_d(400.0, 300.0, edge, 10.0, 0.0, 4));
+        }
     }
 }

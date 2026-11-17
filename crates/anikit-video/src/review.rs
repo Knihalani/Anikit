@@ -530,7 +530,9 @@ pub fn composition(ev: &Evaluator, s: &Samples, tl: &Timeline) -> (Vec<Note>, Ve
     }
     // Centred, symmetric layouts repeated.
     let mid = |l: &Layout| (((l.bbox[0] + l.bbox[2]) / 2.0 - 0.5).abs(), ((l.bbox[1] + l.bbox[3]) / 2.0 - 0.5).abs());
-    let centred: Vec<&(f32, Layout)> = lays.iter().filter(|(_, l)| mid(l).0 < 0.06 && mid(l).1 < 0.12).collect();
+    // A full-bleed image (a shader world, a photo) fills the frame: its box is
+    // centred by definition, so it says nothing about the composition.
+    let centred: Vec<&(f32, Layout)> = lays.iter().filter(|(_, l)| mid(l).0 < 0.06 && mid(l).1 < 0.12 && l.occupied < 0.8).collect();
     if lays.len() >= 4 && centred.len() * 10 >= lays.len() * 7 {
         let (t, l) = centred[0];
         worst.push(("centred".into(), *t, l.bbox));
@@ -626,10 +628,20 @@ pub fn write_pack(dir: &std::path::Path, p: &crate::preview::Preview, tl: &Timel
 
 /// Audio levels of the final mix: approximate loudness (gated RMS, ≈ LUFS), peak and clipping.
 pub fn audio(ev: &Evaluator, base: &std::path::Path) -> (Option<String>, Vec<Note>) {
-    if ev.audio.is_empty() {
+    if ev.audio.is_empty() && ev.music.is_none() {
         return (None, Vec::new());
     }
-    let Ok(pcm) = crate::audio::mix(&ev.audio, ev.duration as f64, 24_000, Some(base)) else { return (None, Vec::new()) };
+    // Generated music is rendered to a temporary file and measured with the rest.
+    let mut tracks = ev.audio.clone();
+    let tmp = std::env::temp_dir().join(format!("anikit-review-{}.music.wav", std::process::id()));
+    if let Some(m) = &ev.music {
+        if let Ok(t) = crate::music::render_track(m, ev.duration as f64, &tmp, !ev.audio.is_empty()) {
+            tracks.push(t);
+        }
+    }
+    let mixed = crate::audio::mix(&tracks, ev.duration as f64, 24_000, Some(base));
+    let _ = std::fs::remove_file(&tmp);
+    let Ok(pcm) = mixed else { return (None, Vec::new()) };
     let mono: Vec<f32> = pcm.samples.chunks(2).map(|c| (c[0] + c.get(1).copied().unwrap_or(c[0])) * 0.5).collect();
     let peak = pcm.samples.iter().fold(0.0f32, |m, x| m.max(x.abs()));
     let clipped = pcm.samples.iter().filter(|x| x.abs() >= 0.999).count();

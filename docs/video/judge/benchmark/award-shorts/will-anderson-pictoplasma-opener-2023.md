@@ -6,7 +6,7 @@ studio: "Will Anderson / Wanderson Studio (director, animator)"
 client: "Pictoplasma (Berlin 2023)"
 year: 2023
 url: https://www.youtube.com/watch?v=a1EwwLFNQI0
-alt_urls: [https://wanderson.xyz/portfolio/pictoplasma-2023-official-opener, https://www.annecyfestival.com/en/pictoplasma-opener-2023]
+alt_urls: ["https://wanderson.xyz/portfolio/pictoplasma-2023-official-opener", "https://www.annecyfestival.com/en/pictoplasma-opener-2023"]
 length_s: 72
 verified: oembed
 aspect: "16:9"

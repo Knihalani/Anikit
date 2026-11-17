@@ -6,7 +6,7 @@ studio: "Kurzgesagt – In a Nutshell"
 client: "Self-initiated"
 year: 2017
 url: https://www.youtube.com/watch?v=MBRqu0YOH14
-alt_urls: [https://kurzgesagt.org/youtube/]
+alt_urls: ["https://kurzgesagt.org/youtube/"]
 length_s: null
 verified: oembed
 aspect: "16:9"
@@ -25,6 +25,9 @@ stills:
   - https://i.ytimg.com/vi/MBRqu0YOH14/hq1.jpg
   - https://i.ytimg.com/vi/MBRqu0YOH14/hq2.jpg
   - https://i.ytimg.com/vi/MBRqu0YOH14/hq3.jpg
+  - https://i.gzn.jp/img/2017/07/28/optimistic-nihilism/cap00002.png
+  - https://i.gzn.jp/img/2017/07/28/optimistic-nihilism/cap00004.png
+  - https://i.gzn.jp/img/2017/07/28/optimistic-nihilism/cap00006.png
 measured: null
 ---
 

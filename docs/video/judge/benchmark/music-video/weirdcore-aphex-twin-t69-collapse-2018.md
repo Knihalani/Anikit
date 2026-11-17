@@ -25,6 +25,9 @@ stills:
   - https://i.ytimg.com/vi/SqayDnQ2wmw/hq1.jpg
   - https://i.ytimg.com/vi/SqayDnQ2wmw/hq2.jpg
   - https://i.ytimg.com/vi/SqayDnQ2wmw/hq3.jpg
+  - https://cdn.thespaces.com/wp-content/uploads/2018/08/Aphex-Twins-%E2%80%98T69-Collapse%E2%80%99-3-1.jpg
+  - https://cdn.thespaces.com/wp-content/uploads/2018/08/Aphex-Twins-%E2%80%98T69-Collapse%E2%80%99-4.jpg
+  - https://cdn.thespaces.com/wp-content/uploads/2018/08/Aphex-Twins-%E2%80%98T69-Collapse%E2%80%99-6.jpg
 measured: null
 ---
 

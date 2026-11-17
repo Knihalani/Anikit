@@ -1,0 +1,60 @@
+{
+  "size": "16:9", "fps": 24, "background": "#1d2a6b",
+  "intent": "fast",
+  "theme": { "colors": { "ink": "#1d2a6b", "tomato": "#e8442b", "butter": "#ffd166", "chalk": "#f4ecdc" } },
+  "transition": "cut",
+  "scenes": [
+    { "id": "bowl", "duration": 1.6, "notes": "HANDMADE register: everything on twos (posterizeTime 12), outlines boil (wigglePath), steam squiggles rise",
+      "layers": [
+        { "type": "group", "x": 960, "y": 540, "width": 1920, "height": 1080, "posterizeTime": 12, "layers": [
+          { "shape": "arc", "startAngle": 90, "endAngle": 270, "x": 960, "y": 400, "width": 760, "height": 760, "fill": "$tomato",
+            "wigglePath": { "amount": 5, "detail": 40, "speed": 6, "seed": 1 }, "inertia": "bouncy", "animate": { "from": { "scaleY": 0 }, "duration": 0.25, "ease": "glide" } },
+          { "shape": "rect", "x": 960, "y": 400, "width": 820, "height": 26, "radius": 13, "fill": "$chalk", "wigglePath": { "amount": 3, "detail": 24, "speed": 6, "seed": 2 },
+            "animate": { "from": { "scaleX": 0 }, "at": 0.1, "duration": 0.3, "ease": "glide" } },
+          { "shape": "path", "d": "M0 160 C 30 120, -30 80, 0 40 S 30 -40, 0 -80", "x": "=760 + $i*200", "y": "=230 - fract(t*0.7 + $i*0.33)*120", "repeat": 3,
+            "stroke": { "color": "$chalk", "width": 16, "cap": "round" }, "fill": "none", "opacity": "=0.9 - fract(t*0.7 + $i*0.33)*0.8",
+            "wigglePath": { "amount": 6, "detail": 12, "speed": 5, "seed": 3 }, "animate": { "from": { "trimEnd": 0 }, "at": 0.3, "duration": 0.5, "ease": "glide" } },
+          { "text": "NOODLE", "size": 210, "weight": 900, "letterSpacing": -6, "color": "$butter", "x": 960, "y": 950,
+            "animator": { "by": "char", "y": 120, "rotation": 18, "opacity": 0, "order": "random", "seed": 6, "duration": 0.5, "delay": 0.4, "smooth": 0.1, "ease": "glide" } } ] }
+      ] },
+    { "id": "night", "duration": 1.5, "background": "#e8442b", "transition": { "type": "reveal", "shape": "blob", "origin": [960, 560], "duration": 0.42 },
+      "notes": "chopsticks swing in and settle with follow-through; noodles draw on as wavy lines",
+      "layers": [
+        { "type": "group", "x": 960, "y": 540, "width": 1920, "height": 1080, "posterizeTime": 12, "layers": [
+          { "text": "NIGHT", "size": 400, "weight": 900, "letterSpacing": -16, "color": "$chalk", "x": 960, "y": 470,
+            "inertia": "soft", "animate": { "from": { "y": "+260", "rotation": -8 }, "duration": 0.3, "ease": "glide" } },
+          { "shape": "rect", "x": 1480, "y": 640, "width": 34, "height": 620, "radius": 17, "fill": "$butter", "anchor": [0.5, 0.9],
+            "inertia": "bouncy", "animate": { "from": { "rotation": 70 }, "to": { "rotation": 16 }, "at": 0.15, "duration": 0.25, "ease": "glide" },
+            "wigglePath": { "amount": 3, "detail": 16, "speed": 6 } },
+          { "shape": "rect", "x": 1540, "y": 650, "width": 34, "height": 620, "radius": 17, "fill": "$butter", "anchor": [0.5, 0.9],
+            "inertia": "bouncy", "animate": { "from": { "rotation": 80 }, "to": { "rotation": 24 }, "at": 0.22, "duration": 0.25, "ease": "glide" },
+            "wigglePath": { "amount": 3, "detail": 16, "speed": 6, "seed": 5 } },
+          { "shape": "path", "d": "M0 0 C 60 -40, 120 40, 180 0 S 300 -40, 360 0 S 480 40, 540 0 S 660 -40, 720 0 S 840 40, 900 0", "x": 760, "y": "=780 + $i*44", "repeat": 4,
+            "fill": "none", "stroke": { "color": "$butter", "width": 14, "cap": "round" }, "wigglePath": { "amount": 4, "detail": 30, "speed": 6, "seed": 8 },
+            "animate": { "from": { "trimEnd": 0 }, "at": "=0.3 + $i*0.06", "duration": 0.5, "ease": "glide" } } ] }
+      ] },
+    { "id": "date", "duration": 1.4, "background": "#ffd166", "transition": { "type": "split", "direction": "left", "duration": 0.35 },
+      "notes": "the date stamps in; puckered stars pop around it on their own beats",
+      "layers": [
+        { "type": "group", "x": 960, "y": 540, "width": 1920, "height": 1080, "posterizeTime": 12, "layers": [
+          { "text": "FRI 21:00", "size": 300, "weight": 900, "letterSpacing": -10, "color": "$ink", "x": 960, "y": 540,
+            "inertia": "bouncy", "animate": { "from": { "scale": 1.6, "opacity": 0 }, "duration": 0.15, "ease": "glide" } },
+          { "shape": "star", "sides": 8, "innerRadius": 0.45, "width": 120, "height": 120, "fill": "$tomato", "puckerBloat": -0.25, "x": 260, "y": 230, "rotation": "=t*40", "inertia": "bouncy", "animate": { "from": { "scale": 0 }, "at": 0.15, "duration": 0.15, "ease": "glide" } },
+          { "shape": "star", "sides": 8, "innerRadius": 0.45, "width": 120, "height": 120, "fill": "$tomato", "puckerBloat": -0.25, "x": 1660, "y": 260, "rotation": "=t*40", "inertia": "bouncy", "animate": { "from": { "scale": 0 }, "at": 0.24, "duration": 0.15, "ease": "glide" } },
+          { "shape": "star", "sides": 8, "innerRadius": 0.45, "width": 120, "height": 120, "fill": "$tomato", "puckerBloat": -0.25, "x": 420, "y": 860, "rotation": "=t*40", "inertia": "bouncy", "animate": { "from": { "scale": 0 }, "at": 0.33, "duration": 0.15, "ease": "glide" } },
+          { "shape": "star", "sides": 8, "innerRadius": 0.45, "width": 120, "height": 120, "fill": "$tomato", "puckerBloat": -0.25, "x": 1500, "y": 880, "rotation": "=t*40", "inertia": "bouncy", "animate": { "from": { "scale": 0 }, "at": 0.42, "duration": 0.15, "ease": "glide" } },
+          { "shape": "star", "sides": 8, "innerRadius": 0.45, "width": 120, "height": 120, "fill": "$tomato", "puckerBloat": -0.25, "x": 180, "y": 560, "rotation": "=t*40", "inertia": "bouncy", "animate": { "from": { "scale": 0 }, "at": 0.51, "duration": 0.15, "ease": "glide" } } ] }
+      ] },
+    { "id": "end", "duration": 1.6, "background": "#1d2a6b", "camera": { "zoom": "=1 + 0.04*t" }, "transition": { "type": "reveal", "shape": "circle", "origin": [960, 540], "duration": 0.4 },
+      "notes": "button: wordmark and the stall address; the bowl boils on",
+      "layers": [
+        { "type": "group", "x": 960, "y": 540, "width": 1920, "height": 1080, "posterizeTime": 12, "layers": [
+          { "shape": "arc", "startAngle": 90, "endAngle": 270, "x": 960, "y": 250, "width": 420, "height": 420, "fill": "$tomato",
+            "wigglePath": { "amount": 3, "detail": 32, "speed": 6 }, "inertia": "bouncy", "animate": { "from": { "scale": 0 }, "duration": 0.2, "ease": "glide" } },
+          { "text": "NOODLE NIGHT", "size": 230, "weight": 900, "letterSpacing": -6, "color": "$chalk", "x": 960, "y": 640,
+            "animator": { "by": "char", "y": 80, "opacity": 0, "duration": 0.5, "delay": 0.1, "smooth": 0.25, "ease": "glide" } },
+          { "text": "STALL 14 · CANAL MARKET", "font": "JetBrains Mono", "size": 36, "letterSpacing": 8, "color": "$butter", "x": 960, "y": 830,
+            "animator": { "opacity": 0, "order": "random", "seed": 2, "delay": 0.45, "duration": 0.5, "smooth": 0.05 } } ] }
+      ] }
+  ]
+}
