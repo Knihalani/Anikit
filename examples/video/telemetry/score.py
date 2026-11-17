@@ -154,8 +154,8 @@ for k in range(8):
 # ---- master ------------------------------------------------------------------------
 mix = np.stack([L, R], axis=1)
 mix *= np.minimum(1.0, (DUR - t) / 1.5)[:, None]  # fade out
-mix = np.tanh(mix * 1.4) / np.tanh(1.4)
-mix *= 0.85 / max(1e-9, np.abs(mix).max())
+mix = np.tanh(mix * 2.2) / np.tanh(2.2)
+mix *= 0.7 / max(1e-9, np.abs(mix).max())
 pcm = (mix * 32767).astype("<i2")
 wav = os.path.join(HERE, "score.wav")
 with wave.open(wav, "wb") as w:

@@ -53,6 +53,7 @@ On a 4-core cloud VM (16 GB), with the default ak264 encoder and the AAC audio t
 | | |
 |---|---|
 | frames | 2742 (265 deduped) |
-| render wall time | 16.4 s (167 fps); three earlier runs took 15.9–16.3 s (168–172 fps) |
-| output | 18.0 MB MP4 (18 472 KB), 1920×1080, 60 fps, about 3.3 Mbit/s |
+| render wall time | 16.6 s (165 fps); other runs took 15.9–16.6 s (165–172 fps) |
+| output | 18.0 MB MP4 (18 475 KB), 1920×1080, 60 fps, about 3.3 Mbit/s |
+| loudness | −14.0 LUFS integrated, −1.4 dBTP true peak (ffmpeg `ebur128`, after AAC) |
 | spec | 542 KB JSON, mostly car-position and trail keyframes |

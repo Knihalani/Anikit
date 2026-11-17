@@ -892,19 +892,19 @@ def build():
     S = dict(zip([sc["id"] for sc in spec["scenes"]], starts))
     ive_pass = S["map"] + MAP_IVE_PASS
     spec["audio"] = [
-        {"src": "score.mp3", "volume": 0.75, "fadeOut": 1.0},
-        {"sfx": "whoosh", "at": r(S["map"] - 0.05), "volume": 0.5},
-        {"sfx": "tick", "at": r(ive_pass), "volume": 0.6},
-        {"sfx": "pop", "at": r(ive_pass + 0.1), "volume": 0.4},
-        {"sfx": "swoosh", "at": r(S["onboard"] - 0.05), "volume": 0.45},
-        {"sfx": "pop", "at": r(S["onboard"] + 1.0), "volume": 0.35},
-        {"sfx": "whoosh", "at": r(S["overtake"] - 0.55), "volume": 0.6},
-        {"sfx": "swoosh", "at": r(S["overtake"] + 0.3), "volume": 0.45},
-        {"sfx": "impact", "at": r(S["overtake"] + OT_PASS), "volume": 0.55},
-        {"sfx": "swoosh", "at": r(S["overtake"] + OT_PASS + 0.15), "volume": 0.4},
-        {"sfx": "chime", "at": r(S["fastest"] + 0.1), "volume": 0.5},
-        {"sfx": "whoosh", "at": r(S["analysis"] - 0.1), "volume": 0.4},
-        {"sfx": "success", "at": r(S["winner"] + 0.4), "volume": 0.45},
+        {"src": "score.mp3", "volume": 0.67, "fadeOut": 1.0},
+        {"sfx": "whoosh", "at": r(S["map"] - 0.05), "volume": 0.35},
+        {"sfx": "tick", "at": r(ive_pass), "volume": 0.42},
+        {"sfx": "pop", "at": r(ive_pass + 0.1), "volume": 0.28},
+        {"sfx": "swoosh", "at": r(S["onboard"] - 0.05), "volume": 0.32},
+        {"sfx": "pop", "at": r(S["onboard"] + 1.0), "volume": 0.24},
+        {"sfx": "whoosh", "at": r(S["overtake"] - 0.55), "volume": 0.42},
+        {"sfx": "swoosh", "at": r(S["overtake"] + 0.3), "volume": 0.32},
+        {"sfx": "impact", "at": r(S["overtake"] + OT_PASS), "volume": 0.39},
+        {"sfx": "swoosh", "at": r(S["overtake"] + OT_PASS + 0.15), "volume": 0.28},
+        {"sfx": "chime", "at": r(S["fastest"] + 0.1), "volume": 0.35},
+        {"sfx": "whoosh", "at": r(S["analysis"] - 0.1), "volume": 0.28},
+        {"sfx": "success", "at": r(S["winner"] + 0.4), "volume": 0.3},
     ]
     with open(os.path.join(HERE, "spec.json"), "w") as f:
         json.dump(spec, f, separators=(",", ":"))
