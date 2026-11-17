@@ -1,0 +1,481 @@
+{
+  "name": "control-artcamp-moosajee-thom-yorke-last-i-heard-2019",
+  "tags": [
+    "music-video",
+    "3d-cg",
+    "boil",
+    "camera-move",
+    "cel",
+    "dark",
+    "eerie",
+    "emotional",
+    "grain",
+    "high-contrast",
+    "instancing",
+    "mixed",
+    "mono",
+    "music-led",
+    "particles",
+    "raw",
+    "sim",
+    "steady",
+    "stop-motion",
+    "stop-motion-feel",
+    "type-none",
+    "cg-3d"
+  ],
+  "refs": [
+    "blinkink-djafari-coldplay-feelslikeimfallinginlove-2024",
+    "blender-studio-charge-2022",
+    "nomint-wwf-up-in-smoke-2023"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 6,
+      "typography": 4,
+      "colour": 5,
+      "light_texture": 5,
+      "motion": 4,
+      "craft": 3,
+      "originality": 4
+    },
+    "overall": 4.38,
+    "judged_professional": "1/3",
+    "pro_rate": 0.3333333333333333,
+    "mean_rank": 3,
+    "gaps": [
+      "Monochrome high-contrast grain is a well-established 'arty' look; one unexpected intrusion, such as a colour or a texture break, would make it fully its own.",
+      "The lone figure in the last frame is softer and less resolved than the first two frames; hold the same graphic precision through the ending.",
+      "Make the subject or point of view more specific, so the striking imagery says something particular rather than a general mood of unrest and isolation.",
+      "Compared with A, there is no authored world. Define a premise and characters whose design stays consistent from frame to frame.",
+      "Fix the figure integrity. Bodies that dissolve or smear destroy credibility unless the dissolve is the deliberate idea, and if it is, make it controlled and repeated.",
+      "Build an arc from cut to cut, with a staging, scale and timing progression, instead of three unrelated atmospheric tableaux.",
+      "Anchor it in a specific subject and idea instead of generic dystopian mood; C's fallen-animal tableau shows how specific an image can be",
+      "Resolve the figures and staging: readable bodies, deliberate blocking and real choreography between shots",
+      "Build real material and light (practical smoke, physical grain from a real source) instead of a uniform film-look filter"
+    ],
+    "tells": [
+      "Striking graphic world: high-contrast, grainy, film-like monochrome with silhouetted figures fleeing billowing smoke. It recalls archival or riot photography but is plainly stylised, possibly animated or treated.",
+      "Every frame works as a poster: a frieze of runners against an explosion of smoke; a top-down diagonal blade of light cutting through a crowd, with long shadows; a lone pale figure isolated in darkness under falling particles.",
+      "The choreography moves from collective chaos to an ordered crowd to a solitary figure. It builds and then narrows, which shows strong editorial intent and variety in scale and point of view.",
+      "The texture is integral to the look: grain, flecks of light and soft halation give it material weight. The light is the main compositional tool.",
+      "No type is visible. Its absence serves the piece, which works on pure image.",
+      "The figures are inconsistent and smeared. The lone figure in frame 3 melts into a vertical streak with no anatomy, and the crowd silhouettes in frame 2 have mushy, merging limbs and ambiguous reflections. These are typical artefacts of generative video.",
+      "The look is generic 'cinematic AI': grainy monochrome, smoke bursts, a diagonal shaft of light over anonymous silhouettes. The mood stands in for a subject.",
+      "There is no specific idea that carries through. Riot smoke, then a crowd in a light beam, then a lone figure is a chain of moody stock situations, not a choreographed sequence.",
+      "The grain and dust look applied over the image as a filter, not part of how it was captured. There is no type, and nothing replaces what it might have carried.",
+      "Grainy black-and-white 'archival riot/cinematic' look applied as a wash, an atmosphere with no specific subject or point of view",
+      "Figures are smeared and anatomically unresolved: the third-frame standing figure melts into a vertical streak, and crowd silhouettes in frame 2 are blobby and duplicated, consistent with AI video generation",
+      "Smoke and diagonal light shafts look impressive at a glance, but nothing is staged or choreographed; people drift rather than act",
+      "No type; its absence adds nothing and there is no narrative anchor"
+    ]
+  },
+  "refs_summary": {
+    "blinkink-djafari-coldplay-feelslikeimfallinginlove-2024": {
+      "overall": 6.12,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "blender-studio-charge-2022": {
+      "overall": 5.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "nomint-wwf-up-in-smoke-2023": {
+      "overall": 7.88,
+      "judged_professional": "3/3",
+      "mean_rank": 1.33
+    }
+  },
+  "ref_mean": 6.58,
+  "delta": -2.2,
+  "trials": [
+    {
+      "key": {
+        "A": "nomint-wwf-up-in-smoke-2023",
+        "B": "blinkink-djafari-coldplay-feelslikeimfallinginlove-2024",
+        "C": "candidate",
+        "D": "blender-studio-charge-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Miniature, tableau-like world: a small girl in a white shift among scattered fallen animal figures, lit like a stage diorama by one hard pool of top light. That is a specific, uncanny idea, not a stock subject.",
+              "The light is motivated and theatrical: a spotlit circle falling off into deep black, then a backlit wall of fog the figure dissolves into. Haze, dust and the earthy ground give it real material depth.",
+              "The frames progress clearly: suspended in fog, standing at the still centre of the carnage, then running from a rolling cloud with animals in pursuit. That reads as a real narrative arc with changing camera distance and energy.",
+              "The palette is restrained and deliberate: cold grey fog against warm ochre, rust and umber figures. The wide letterbox crops are used with intent.",
+              "No type is visible. Leaving it out serves the piece, because the imagery carries it entirely."
+            ],
+            "gaps": [
+              "Push the first frame's composition harder: the figure in fog is soft and placed off to one side without much tension, so it doesn't hold as a poster the way C's frames do.",
+              "Vary the scale of the motion more; two of the three frames are wide shots of the ground, and an extreme close-up or abrupt change in scale would add rhythm.",
+              "Commit further to one graphic signature, as C does with grain and silhouette, so the look is unmistakable beyond 'well-lit miniature'."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "Clear, purposeful concept: signing hands become the visual material, mirrored and multiplied into a kaleidoscopic frame around the performer. It is a meaningful idea tied to accessibility and the song, not effect for its own sake.",
+              "Consistent monochrome grade, competent studio lighting with a black ground, and in the final frame backlit hair against a grid of practical bulbs. That is professional but conventional music-video lighting.",
+              "Performer casting and direction feel real and human. The frames vary between symmetric mirror composites and a tight handheld portrait.",
+              "The mirrored-hands composite is a fairly familiar editing trick, and the symmetric framing repeats from frame to frame.",
+              "No type is visible. Its absence is neutral, but the idea would have room for type made from signing gestures and leaves that unused."
+            ],
+            "gaps": [
+              "Build lighting with texture and a point of view instead of clean studio black; A's single motivated source shows how much atmosphere that adds.",
+              "Develop the hand-mirroring device past simple symmetry: change its scale, the timing of the multiplication and its spatial depth so it evolves across the film instead of repeating.",
+              "Find one image only this piece could own. Right now it reads as a well-made performance video, not a memorable piece of design."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Striking graphic world: high-contrast, grainy, film-like monochrome with silhouetted figures fleeing billowing smoke. It recalls archival or riot photography but is plainly stylised, possibly animated or treated.",
+              "Every frame works as a poster: a frieze of runners against an explosion of smoke; a top-down diagonal blade of light cutting through a crowd, with long shadows; a lone pale figure isolated in darkness under falling particles.",
+              "The choreography moves from collective chaos to an ordered crowd to a solitary figure. It builds and then narrows, which shows strong editorial intent and variety in scale and point of view.",
+              "The texture is integral to the look: grain, flecks of light and soft halation give it material weight. The light is the main compositional tool.",
+              "No type is visible. Its absence serves the piece, which works on pure image."
+            ],
+            "gaps": [
+              "Monochrome high-contrast grain is a well-established 'arty' look; one unexpected intrusion, such as a colour or a texture break, would make it fully its own.",
+              "The lone figure in the last frame is softer and less resolved than the first two frames; hold the same graphic precision through the ending.",
+              "Make the subject or point of view more specific, so the striking imagery says something particular rather than a general mood of unrest and isolation."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "Competent CG open-movie production: rigged characters (an elderly man, a pink-and-white robot), detailed hard-surface environments, sparks, volumetric fire. This is real studio pipeline work, not template output.",
+              "The first frame is a genre key-art collage: a montage of character heads, cyan and magenta rim lights and a logo lockup. It is generic sci-fi poster convention.",
+              "Typography is a stock futuristic display face for the title next to a software brand logo. It has no typographic idea.",
+              "The palette moves from teal and magenta to orange fire, the standard blockbuster teal-and-orange. The fire close-up of gripping hands shows decent cinematography and texture.",
+              "The idea is conventional action sci-fi; the piece doubles as a demo for the software, which dilutes its authorship."
+            ],
+            "gaps": [
+              "Replace the genre-default palette and key-art collage with a deliberate visual language that is specific to this story, the way A uses a diorama and C uses graphic monochrome.",
+              "Give the title typography a point of view (a custom treatment woven into the world) instead of a stock sci-fi face beside a product logo.",
+              "Find a central idea beyond 'old man versus robot in a burning facility': an emotional or formal surprise a juror would remember after the screening."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 36.2,
+        "cost_usd": 0.1426224,
+        "tokens": 69578,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "nomint-wwf-up-in-smoke-2023",
+        "B": "blinkink-djafari-coldplay-feelslikeimfallinginlove-2024",
+        "C": "blender-studio-charge-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A specific, strange image: a pale child-like figure standing in a spotlit clearing among fallen, stylised animal bodies. It reads like a fable, and a viewer would remember it.",
+              "The light is motivated and theatrical. A single overhead pool falls off into true black, and soft fog in frames 1 and 3 gives the scene atmosphere and depth.",
+              "The materials look tactile, like a miniature or stop-motion set: painted animal figures, a dusty ground plane, deliberate grain. It does not have the plastic finish of CG defaults.",
+              "The frames show choreography. The film moves from a floating, falling figure lost in mist, to a still central tableau, to a run across the ground with the animals in pursuit and a fog bank rolling in. That is a real narrative arc with changes of scale and tempo.",
+              "There is no type, and its absence serves the piece. The images carry the story without any typographic help."
+            ],
+            "gaps": [
+              "It is the best of the four, so these gaps are against top-of-year work. Push the scale contrast further, for example an extreme wide that dwarfs the figure, so the world feels larger than one lit set.",
+              "The palette is limited to warm ochre on black. Bring in one unexpected colour accent at a key beat to mark the story's turn.",
+              "The running frame is less composed than the tableau. Give the climactic action the same graphic precision as the centred spotlight frame."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "This is live-action black-and-white music-video photography with real performers, sign-language hands and practical stage lights. It is competently lit, with a rim light on hair and bokeh from the rig.",
+              "The idea is clear and humane: signing performers mirrored and kaleidoscoped around a singer. It is legible, but it rests on one mirroring effect.",
+              "The mirrored-hands composition repeats across frames 1 and 2 with the subject swapped, which is close to a single layout reused.",
+              "Monochrome is a safe default here rather than a palette decision. There is no type to judge, and the piece neither needs nor misses it."
+            ],
+            "gaps": [
+              "Compared with A, there is no built world. Give the signing hands an image system of their own, through scale, multiplication or physical staging, instead of a symmetric mirror effect.",
+              "The grading is flat, generic black-and-white. Commit to a lighting idea per section, for example hard top light against silhouette, so each frame works as a poster.",
+              "Use the gesture as choreography across cuts, with a sign completing from one shot into the next, so the motion has a structure and not just coverage."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "This is a full 3D character-animation pipeline: a sculpted old-man hero, a rigged robot, fire simulation and sparks, volumetric haze. That is studio-level production.",
+              "Frame 1 is a key-art poster with the software's logo and a generic sci-fi display face in tracked caps. It reads as a showcase thumbnail, not a typographic idea.",
+              "The palette is the stock sci-fi split of cyan and magenta against orange fire. The look is genre-default: robot uprising, grizzled hero, burning factory.",
+              "The film frames themselves have convincing light and material work, such as the rim-lit robot, ember particles and a warm close-up of fire on hands."
+            ],
+            "gaps": [
+              "Compared with A, there is no singular idea. Replace genre shorthand (killer robot, gruff survivor) with an image or premise only this film could own.",
+              "The palette is the default cyan, magenta and orange. Choose a restricted, unusual scheme and let light do the storytelling, as A does with one pool of light.",
+              "The title and key art are generic. Design a title treatment with a point of view that works with the image, instead of a logo-and-sci-fi-font lockup."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 4,
+              "composition": 6,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The figures are inconsistent and smeared. The lone figure in frame 3 melts into a vertical streak with no anatomy, and the crowd silhouettes in frame 2 have mushy, merging limbs and ambiguous reflections. These are typical artefacts of generative video.",
+              "The look is generic 'cinematic AI': grainy monochrome, smoke bursts, a diagonal shaft of light over anonymous silhouettes. The mood stands in for a subject.",
+              "There is no specific idea that carries through. Riot smoke, then a crowd in a light beam, then a lone figure is a chain of moody stock situations, not a choreographed sequence.",
+              "The grain and dust look applied over the image as a filter, not part of how it was captured. There is no type, and nothing replaces what it might have carried."
+            ],
+            "gaps": [
+              "Compared with A, there is no authored world. Define a premise and characters whose design stays consistent from frame to frame.",
+              "Fix the figure integrity. Bodies that dissolve or smear destroy credibility unless the dissolve is the deliberate idea, and if it is, make it controlled and repeated.",
+              "Build an arc from cut to cut, with a staging, scale and timing progression, instead of three unrelated atmospheric tableaux."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 35.4,
+        "cost_usd": 0.1433424,
+        "tokens": 69614,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "blinkink-djafari-coldplay-feelslikeimfallinginlove-2024",
+        "C": "nomint-wwf-up-in-smoke-2023",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Fully art-directed CG characters with distinct designs (weathered old man, pink-lit android) and real material detail: skin, wool knit, scuffed plastic armour",
+              "Motivated, high-contrast lighting: cyan/magenta key art, then sparks and fire practicals, then a warm firelit close-up of clasped mechanical and human hands",
+              "The shots move in scale and emotion, from an ensemble poster to a robot in an action pose to an intimate insert, which suggests real editing and choreography",
+              "Custom stencil-cut 'CHARGE' title lockup fits the sci-fi world, but it reads as standard key-art branding and does more marketing than typography"
+            ],
+            "gaps": [
+              "The premise (grizzled hero against a killer robot) is genre-familiar; it needs a stranger, more specific idea like C's tableau of fallen animals",
+              "The cyan/magenta-into-orange palette is the stock sci-fi blockbuster grade; a more distinctive colour scheme would make it its own",
+              "Title and key art follow game-trailer conventions; give the type a role inside the film rather than a poster lockup"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "Clear concept: sign language as the visual centre of a music video, with signing hands mirrored and kaleidoscoped around the performers",
+              "Monochrome on black isolates hands and faces, and backlit hair and stage lights in the third frame give real photographic depth",
+              "Several performers and setups, from symmetric composite to medium shot to backlit close-up, show a planned shoot rather than one repeated layout",
+              "No type visible; that suits a piece about non-written language, but nothing is gained from it either"
+            ],
+            "gaps": [
+              "The mirrored-hands composite is a known effect; push it into choreography that only signing could make",
+              "The black-and-white is safe and generic; a lighting or tonal idea specific to this piece would lift it",
+              "The frames vary less than they should: two of three are centred subjects on black, so it needs more compositional risk and surprise"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A singular, uncanny image: a small pale figure standing in a pool of light among fallen, red-brown animals, a tableau that stays with you",
+              "Tactile, miniature/puppet materiality, with real soil, shadows and practical fog, lit like theatre from a single hard top light",
+              "Strong progression across frames: a figure dissolving in grey haze, then the overhead tableau, then a low wide chase as fog rolls in, giving clear narrative choreography and changes of scale",
+              "Extreme widescreen framing and huge negative space are used on purpose; no type appears, and its absence keeps the piece silent and mythic"
+            ],
+            "gaps": [
+              "Some darkness crushes detail in the wide shot; protect more readable texture in the shadows",
+              "The fog-to-tableau-to-chase arc is strong, but one more surprising formal shift (colour or scale) would push it toward best-of-year",
+              "Even if the film itself stays wordless, a title or end-card treatment as considered as the images would complete the package"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 4,
+              "composition": 6,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "Grainy black-and-white 'archival riot/cinematic' look applied as a wash, an atmosphere with no specific subject or point of view",
+              "Figures are smeared and anatomically unresolved: the third-frame standing figure melts into a vertical streak, and crowd silhouettes in frame 2 are blobby and duplicated, consistent with AI video generation",
+              "Smoke and diagonal light shafts look impressive at a glance, but nothing is staged or choreographed; people drift rather than act",
+              "No type; its absence adds nothing and there is no narrative anchor"
+            ],
+            "gaps": [
+              "Anchor it in a specific subject and idea instead of generic dystopian mood; C's fallen-animal tableau shows how specific an image can be",
+              "Resolve the figures and staging: readable bodies, deliberate blocking and real choreography between shots",
+              "Build real material and light (practical smoke, physical grain from a real source) instead of a uniform film-look filter"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.0,
+        "cost_usd": 0.1358376,
+        "tokens": 69230,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.422,
+  "judge_seconds": 103.6,
+  "verdict": "FAIL"
+}

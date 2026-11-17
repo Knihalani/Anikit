@@ -72,6 +72,7 @@ def fetch(round_):
 def cmd_collect(a):
     rd = J / "rounds" / a.round
     rd.mkdir(parents=True, exist_ok=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts/judge.py"), "sync-bench"])  # REFS's benchmark stills (not in git)
     found = fetch(a.round)
     print(f"outputs found: {sorted(found)}", file=sys.stderr)
     manifest = []

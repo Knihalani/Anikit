@@ -1,26 +1,135 @@
 [
- {"id": "a-social", "category": "9:16 social ad", "tags": ["vertical", "motion-design", "illustration"], "format": "9:16",
-  "brief": "Halde & Sons, a small coffee roaster, has a new single-origin out on Friday: Ethiopia Guji, washed, tasting of bergamot, peach and black tea. Make a 15 s 9:16 ad for Instagram Reels."},
- {"id": "b-launch", "category": "product launch", "tags": ["product-launch", "motion-design"], "format": "16:9",
-  "brief": "Railyard is a payments API: one API call moves money between bank accounts with instant settlement, and it sends a webhook at every state change. Make a 15 s 16:9 launch film."},
- {"id": "c-event", "category": "event promo", "tags": ["music-video", "kinetic-type", "vertical"], "format": "9:16",
-  "brief": "Substation is a two-night techno festival in an old power station, 12-13 June. Make a 15 s 9:16 line-up announcement: Ancient Methods, Paula Temple, DVS1, Héctor Oaks, Rrose, Phase Fatale, Kia, Ida Engberg. Tickets Friday."},
- {"id": "d-illustration", "category": "illustration-led", "tags": ["illustration", "product-launch"], "format": "16:9",
-  "brief": "Burrow is a bedtime-story app for 3-7 year olds: parent and child make a new illustrated story together each night and the app reads it aloud. Make a 20 s 16:9 launch film for parents."},
- {"id": "e-data", "category": "data story", "tags": ["editorial-data"], "format": "16:9",
-  "brief": "Make a 30 s 16:9 piece on Arctic sea ice: the September minimum, 1979 to now, from NSIDC Sea Ice Index v4 (https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_09_extent_v4.0.csv). Cite the source."},
- {"id": "f-3d", "category": "3D/CG", "tags": ["3d-cg", "luxury", "product-launch"], "format": "16:9",
-  "brief": "Atelier Vauclair, an independent Swiss watchmaker, announces the Calibre 9: 38 mm steel, guilloché dial, 72-hour power reserve, 150 pieces. Make a 12 s 16:9 teaser."},
- {"id": "g-titles", "category": "kinetic type / titles", "tags": ["title-sequence", "kinetic-type"], "format": "16:9",
-  "brief": "Offset is a design-systems conference in Lisbon, 14-15 May 2027. Make the 15 s 16:9 opening titles that play before the first keynote."},
- {"id": "h-ident", "category": "brand ident", "tags": ["motion-design", "kinetic-type"], "format": "16:9",
-  "brief": "Kestrel is an independent film distributor. Make its 6 s 16:9 logo ident, the one that plays before every film it releases."},
- {"id": "i-explainer", "category": "2D explainer", "tags": ["editorial-data", "illustration", "motion-design"], "format": "16:9",
-  "brief": "Make a 30 s 16:9 explainer for a science channel: how noise-cancelling headphones cancel sound."},
- {"id": "j-music", "category": "music / lyric video", "tags": ["music-video", "kinetic-type"], "format": "16:9",
-  "brief": "Make a 20 s 16:9 lyric video for the chorus of 'Low Tide', a song by the band Harbour Lights. Lyrics: \"Hold me at low tide / when the harbour lights are gone / we were never meant to stay / but we stayed on\". Write the music too."},
- {"id": "k-sports", "category": "sports / broadcast", "tags": ["motion-design", "3d-cg", "kinetic-type"], "format": "16:9",
-  "brief": "Make the 10 s 16:9 broadcast opener for tonight's match: Northbridge City vs Harbour Athletic, Women's Super League, kick-off 19:45."},
- {"id": "l-generative", "category": "generative / abstract", "tags": ["motion-design", "3d-cg", "music-video"], "format": "16:9",
-  "brief": "A contemporary art museum's new season is called 'Signal'. Make a 20 s 16:9 piece for the lobby screens, no words except the season name."}
+ {
+  "id": "a-social",
+  "category": "9:16 social ad",
+  "tags": [
+   "social-vertical",
+   "vertical",
+   "motion-design",
+   "illustration"
+  ],
+  "format": "9:16",
+  "brief": "Halde & Sons, a small coffee roaster, has a new single-origin out on Friday: Ethiopia Guji, washed, tasting of bergamot, peach and black tea. Make a 15 s 9:16 ad for Instagram Reels."
+ },
+ {
+  "id": "b-launch",
+  "category": "product launch",
+  "tags": [
+   "product-launch",
+   "motion-design"
+  ],
+  "format": "16:9",
+  "brief": "Railyard is a payments API: one API call moves money between bank accounts with instant settlement, and it sends a webhook at every state change. Make a 15 s 16:9 launch film."
+ },
+ {
+  "id": "c-event",
+  "category": "event promo",
+  "tags": [
+   "event-promo",
+   "music-video",
+   "kinetic-type",
+   "vertical"
+  ],
+  "format": "9:16",
+  "brief": "Substation is a two-night techno festival in an old power station, 12-13 June. Make a 15 s 9:16 line-up announcement: Ancient Methods, Paula Temple, DVS1, Héctor Oaks, Rrose, Phase Fatale, Kia, Ida Engberg. Tickets Friday."
+ },
+ {
+  "id": "d-illustration",
+  "category": "illustration-led",
+  "tags": [
+   "illustration",
+   "product-launch"
+  ],
+  "format": "16:9",
+  "brief": "Burrow is a bedtime-story app for 3-7 year olds: parent and child make a new illustrated story together each night and the app reads it aloud. Make a 20 s 16:9 launch film for parents."
+ },
+ {
+  "id": "e-data",
+  "category": "data story",
+  "tags": [
+   "data-story",
+   "editorial-data"
+  ],
+  "format": "16:9",
+  "brief": "Make a 30 s 16:9 piece on Arctic sea ice: the September minimum, 1979 to now, from NSIDC Sea Ice Index v4 (https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_09_extent_v4.0.csv). Cite the source."
+ },
+ {
+  "id": "f-3d",
+  "category": "3D/CG",
+  "tags": [
+   "cg-3d",
+   "3d-cg",
+   "luxury",
+   "product-launch"
+  ],
+  "format": "16:9",
+  "brief": "Atelier Vauclair, an independent Swiss watchmaker, announces the Calibre 9: 38 mm steel, guilloché dial, 72-hour power reserve, 150 pieces. Make a 12 s 16:9 teaser."
+ },
+ {
+  "id": "g-titles",
+  "category": "kinetic type / titles",
+  "tags": [
+   "kinetic-type",
+   "title-sequence"
+  ],
+  "format": "16:9",
+  "brief": "Offset is a design-systems conference in Lisbon, 14-15 May 2027. Make the 15 s 16:9 opening titles that play before the first keynote."
+ },
+ {
+  "id": "h-ident",
+  "category": "brand ident",
+  "tags": [
+   "brand-idents",
+   "motion-design",
+   "kinetic-type"
+  ],
+  "format": "16:9",
+  "brief": "Kestrel is an independent film distributor. Make its 6 s 16:9 logo ident, the one that plays before every film it releases."
+ },
+ {
+  "id": "i-explainer",
+  "category": "2D explainer",
+  "tags": [
+   "explainer-2d",
+   "editorial-data",
+   "illustration",
+   "motion-design"
+  ],
+  "format": "16:9",
+  "brief": "Make a 30 s 16:9 explainer for a science channel: how noise-cancelling headphones cancel sound."
+ },
+ {
+  "id": "j-music",
+  "category": "music / lyric video",
+  "tags": [
+   "music-video",
+   "kinetic-type"
+  ],
+  "format": "16:9",
+  "brief": "Make a 20 s 16:9 lyric video for the chorus of 'Low Tide', a song by the band Harbour Lights. Lyrics: \"Hold me at low tide / when the harbour lights are gone / we were never meant to stay / but we stayed on\". Write the music too."
+ },
+ {
+  "id": "k-sports",
+  "category": "sports / broadcast",
+  "tags": [
+   "broadcast-sports",
+   "motion-design",
+   "3d-cg",
+   "kinetic-type"
+  ],
+  "format": "16:9",
+  "brief": "Make the 10 s 16:9 broadcast opener for tonight's match: Northbridge City vs Harbour Athletic, Women's Super League, kick-off 19:45."
+ },
+ {
+  "id": "l-generative",
+  "category": "generative / abstract",
+  "tags": [
+   "generative",
+   "motion-design",
+   "3d-cg",
+   "music-video"
+  ],
+  "format": "16:9",
+  "brief": "A contemporary art museum's new season is called 'Signal'. Make a 20 s 16:9 piece for the lobby screens, no words except the season name."
+ }
 ]

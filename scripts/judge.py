@@ -27,7 +27,14 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
-REFS = Path(os.environ.get("JUDGE_REFS", ROOT / "docs/video/judge/refs"))
+# one or more reference dirs (os.pathsep-separated): our refs/ plus REFS's exported benchmark set
+BENCH = ROOT / ".cache/judge-bench"  # REFS's benchmark set, rebuilt by `judge.py sync-bench` (stills never in git)
+REFS_DIRS = [Path(p) for p in os.environ.get("JUDGE_REFS", os.pathsep.join([str(ROOT / "docs/video/judge/refs"), str(BENCH / "export")])).split(os.pathsep)
+             if p and Path(p).is_dir()]
+REFS = REFS_DIRS[0]
+# our tag -> REFS benchmark category (both are kept on each ref, so either vocabulary matches)
+SYNONYMS = {"ident": "brand-idents", "explainer": "explainer-2d", "3d-cg": "cg-3d", "sports-broadcast": "broadcast-sports",
+            "editorial-data": "data-story", "vertical": "social-vertical", "title-sequence": "kinetic-type"}
 PACE = ROOT / "docs/video/quality/pace.py"
 DIMS = ["idea", "composition", "typography", "colour", "light_texture", "motion", "craft", "originality"]
 CRITIC_DIMS = ["motion", "sound", "craft"]
@@ -90,6 +97,16 @@ def load_frames(src, grid=None):
     return sheet_frames(p, grid)
 
 
+def trim_bars(im, thr=10):
+    """Crop baked-in black letterbox/pillarbox bars (YouTube grabs have them; our renders may too)."""
+    a = np.asarray(im.convert("L"), dtype=np.float32)
+    rows = np.where(a.mean(1) > thr)[0]
+    cols = np.where(a.mean(0) > thr)[0]
+    if len(rows) < a.shape[0] * 0.4 or len(cols) < a.shape[1] * 0.4:
+        return im  # mostly dark frame: leave it alone
+    return im.crop((int(cols[0]), int(rows[0]), int(cols[-1]) + 1, int(rows[-1]) + 1))
+
+
 def degrade(im, longest=640, q=80):
     """Match the references' resolution and compression so neither gives anything away."""
     from io import BytesIO
@@ -102,12 +119,13 @@ def degrade(im, longest=640, q=80):
 
 
 def panel(frames, out):
-    cols, rows = 3, 2
+    cols = 2 if len(frames) == 4 else 3
+    rows = (len(frames) + cols - 1) // cols
     W, H = CELL
     gap = 6
     sheet = Image.new("RGB", (cols * W + (cols + 1) * gap, rows * H + (rows + 1) * gap), (24, 24, 24))
     for i, f in enumerate(frames[: cols * rows]):
-        f = degrade(f)
+        f = degrade(trim_bars(f))
         s = min(W / f.width, H / f.height)
         f = f.resize((max(1, round(f.width * s)), max(1, round(f.height * s))), Image.LANCZOS)
         x = gap + (i % cols) * (W + gap) + (W - f.width) // 2
@@ -118,36 +136,44 @@ def panel(frames, out):
 # ---------------------------------------------------------------- references
 
 def load_refs():
-    """refs/index.json, plus any refs/<slug>/ref.json not yet in it."""
-    refs = {}
-    idx = REFS / "index.json"
-    if idx.exists():
-        refs = {r["slug"]: r for r in json.loads(idx.read_text())}
-    for f in REFS.glob("*/ref.json"):
-        try:
-            r = json.loads(f.read_text())
-            refs.setdefault(r["slug"], r)
-        except (json.JSONDecodeError, KeyError):
-            pass
-    out = []
-    for r in refs.values():
-        r.setdefault("style_tags", [])
-        if r.get("category") and r["category"] not in r["style_tags"]:
-            r["style_tags"] = [r["category"]] + list(r["style_tags"])
-        if (REFS / r["slug"]).is_dir() and len(list((REFS / r["slug"]).glob("0*.jpg"))) >= 3:
+    """Every <dir>/index.json entry and <dir>/<slug>/ref.json with >= 3 stills, across REFS_DIRS."""
+    out, seen = [], set()
+    for d in REFS_DIRS:
+        refs = {}
+        if (d / "index.json").exists():
+            refs = {r["slug"]: r for r in json.loads((d / "index.json").read_text())}
+        for f in d.glob("*/ref.json"):
+            try:
+                r = json.loads(f.read_text())
+                refs.setdefault(r["slug"], r)
+            except (json.JSONDecodeError, KeyError):
+                pass
+        for r in refs.values():
+            if r["slug"] in seen or not (d / r["slug"]).is_dir():
+                continue
+            if len(list((d / r["slug"]).glob("0*.jpg"))) < 3:
+                continue
+            tags = list(r.get("style_tags", []))
+            if r.get("category"):
+                tags.insert(0, r["category"])
+            tags += [SYNONYMS[t] for t in tags if t in SYNONYMS]
+            r["style_tags"] = list(dict.fromkeys(tags))
+            r["_dir"] = str(d / r["slug"])
+            seen.add(r["slug"])
             out.append(r)
     if not out:
-        sys.exit(f"no references in {REFS}")
+        sys.exit(f"no references in {REFS_DIRS}")
     return out
 
 
 def ref_frames(slug):
-    return dir_frames(REFS / slug)
+    r = next(r for r in load_refs() if r["slug"] == slug)
+    return dir_frames(Path(r["_dir"]))
 
 
 def pick_refs(tags, k, rng, exclude=(), fmt=None):
     refs = [r for r in load_refs() if r["slug"] not in exclude]
-    tags = set(tags)
+    tags = set(tags) | {SYNONYMS[t] for t in tags if t in SYNONYMS}
     def score(r):
         s = 2 * len(tags & set(r["style_tags"]))
         if fmt and r.get("format") == fmt:
@@ -180,7 +206,7 @@ def claude(prompt, cwd, max_turns=30):
 
 COMPARE_PROMPT = """You are on the final jury of an international motion-design award (the level of Ciclope, D&AD Pencils, Art of the Title, Vimeo Staff Picks). You have seen thousands of studio reels and you are hard to impress.
 
-In this directory are {n} entries: {files}. Each is ONE short film, shown as 6 frames sampled evenly in time (left to right, top to bottom). Read every file with the Read tool before answering.
+In this directory are {n} entries: {files}. Each is ONE short film, shown as a few frames sampled across its length (left to right, top to bottom). Read every file with the Read tool before answering.
 
 Some entries are professional work by top studios. Between 0 and {n} of them are NOT: they may be by an amateur, a template, or an automated / AI video tool. Decide each one on its own merits; do not assume any fixed number of each.
 All entries were resized and recompressed identically, so resolution, sharpness of the JPEG and compression are NOT evidence. Judge what was designed: the idea, the image, the type, the light, the motion implied by the frame sequence.
@@ -236,6 +262,9 @@ Answer with ONLY one fenced ```json block:
 
 def compare(cand_frames, refs, trials, seed, workdir):
     entries = [("candidate", cand_frames)] + [(r["slug"], ref_frames(r["slug"])) for r in refs]
+    # same number of frames for every entry, so the count gives nothing away
+    k = min(len(fr) for _, fr in entries)
+    entries = [(n, fr if len(fr) == k else [fr[round(i * (len(fr) - 1) / max(1, k - 1))] for i in range(k)]) for n, fr in entries]
     out = []
     for t in range(trials):
         rng = random.Random(seed * 1000 + t)
@@ -423,6 +452,21 @@ def resolve_src(src):
     return str(ROOT / src) if not os.path.isabs(src) else src
 
 
+def cmd_sync_bench(args):
+    """Fetch REFS's benchmark (branch claude/epic-ramanujan-qe7x4w-v-refs) and export its stills to .cache/judge-bench/export."""
+    br = "claude/epic-ramanujan-qe7x4w-v-refs"
+    subprocess.run(["git", "-C", str(ROOT), "fetch", "-q", "origin", f"{br}:refs/remotes/origin/{br}"], check=True)
+    src = BENCH / "src"
+    shutil.rmtree(src, ignore_errors=True); src.mkdir(parents=True)
+    tar = subprocess.run(["git", "-C", str(ROOT), "archive", f"origin/{br}", "docs/video/judge/benchmark"], capture_output=True, check=True).stdout
+    subprocess.run(["tar", "-x", "-C", str(src)], input=tar, check=True)
+    env = dict(os.environ, ANIKIT_BENCH_CACHE=str(BENCH / "cache"))
+    tool = src / "docs/video/judge/benchmark/tools/bench.py"
+    subprocess.run([sys.executable, "-I", str(tool), "fetch"], cwd=src, env=env)
+    shutil.rmtree(BENCH / "export", ignore_errors=True)
+    subprocess.run([sys.executable, "-I", str(tool), "export", "--out", str(BENCH / "export")], cwd=src, env=env, check=True)
+
+
 def cmd_batch(args):
     """Judge every item of a manifest: [{"name","src","tags","format"?,"grid"?}], paths relative to the repo."""
     items = json.loads(Path(args.manifest).read_text())
@@ -465,10 +509,11 @@ def main():
         b.add_argument(k, type=int, default=v)
     b.add_argument("--out")
     b.add_argument("--no-critic", action="store_true")
+    sub.add_parser("sync-bench")
     t = sub.add_parser("table")
     t.add_argument("results", nargs="+")
     args = ap.parse_args()
-    {"run": cmd_run, "control": cmd_control, "table": cmd_table, "batch": cmd_batch}[args.cmd](args)
+    {"run": cmd_run, "control": cmd_control, "table": cmd_table, "batch": cmd_batch, "sync-bench": cmd_sync_bench}[args.cmd](args)
 
 
 if __name__ == "__main__":

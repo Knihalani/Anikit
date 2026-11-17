@@ -1,0 +1,478 @@
+{
+  "name": "control-channel4-glazer-idents-2015",
+  "tags": [
+    "brand-idents",
+    "brand-colour",
+    "calm",
+    "camera-move",
+    "earthy",
+    "eerie",
+    "hard-cut",
+    "high-contrast",
+    "ident",
+    "live-action",
+    "long-take",
+    "macro",
+    "music-led",
+    "photoreal-cg",
+    "premium",
+    "raw",
+    "type-none"
+  ],
+  "refs": [
+    "domnic-chemical-brothers-wide-open-2016",
+    "rga-kyle-cooper-se7en-1995",
+    "blender-studio-charge-2022"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 7,
+      "composition": 7,
+      "typography": 5,
+      "colour": 8,
+      "light_texture": 7,
+      "motion": 7,
+      "craft": 8,
+      "originality": 7
+    },
+    "overall": 7,
+    "judged_professional": "3/3",
+    "pro_rate": 1.0,
+    "mean_rank": 3,
+    "gaps": [
+      "The stick-simulation frames border on effect with no subject. The link between the abstract sims and the creature needs to be legible and earned, not just juxtaposed",
+      "There is no typographic voice. Titling or credits, if present, should share the stick-system logic",
+      "Composition repeats (top-down field after top-down field). It needs camera variety and scale contrast to build a choreographed arc, as D's sequence does",
+      "The stick system risks being an effect with no subject. Tie the abstract simulation more tightly to the creature reveal so the idea reads as one arc",
+      "The overhead stick frames are flat top-down lighting. Add directional light and depth to match the moody creature shot",
+      "The grid-of-variations frame feels like a portfolio montage. Replace it with a choreographed transition that carries meaning",
+      "Most frames are top-down flat lays of simple extruded primitives. That is close to a 'stock 3D primitive' look, and the rigour of the system has to carry it.",
+      "The light on the simulation frames is soft, generic studio light with little texture or material story, unlike the physical grit of A.",
+      "The connection between the abstract sim sections and the creature reveal is not legible from the frames. It needs a clearer conceptual through-line or typographic framing."
+    ],
+    "tells": [
+      "A system-led piece: thousands of rigid-body sticks scattered over saturated grounds in bold, unusual pairings (aubergine on magenta, teal on pink)",
+      "The contact-sheet grid of dozens of colour and material variations suggests generative exploration presented as part of the work",
+      "A surprise cut to a live or practical creature with a pixel-mosaic face set in mossy natural light. That jump in register adds intrigue",
+      "Soft overhead lighting with real contact shadows on the stick fields",
+      "Simulation-driven fields of thousands of extruded sticks with physically convincing contact shadows and settling, real rigid-body work rather than a stock primitive placed on its own",
+      "Bold, unusual palette pairs (magenta on violet, teal on pink, acid green) varied across a 36-cell grid, showing systematic exploration that reads as a deliberate generative idea",
+      "Surprise turn to a photoreal creature in moss, its face a glowing cluster of the same elements, linking the abstract system to an organic subject",
+      "No visible typography; the piece leans on pure image, and that partly works, though the grid frame reads a little like a process reel",
+      "The palettes are bold and deliberate: magenta against aubergine and teal against pink. The contact-sheet grid shows a systematic colour exploration rather than one default accent.",
+      "The physics-driven stick and shard simulations imply real choreography (scatter, pile, reform), and the grid frame suggests a montage of rhythm-cut variations.",
+      "There is a surprising turn: the abstract sticks resolve into a photoreal, feathered, bird-like creature with a pixel-shard face in a lush mossy setting. That surprise is evidence of a concept.",
+      "There is no visible type. Its absence suits a music-led abstract piece but adds nothing."
+    ]
+  },
+  "refs_summary": {
+    "domnic-chemical-brothers-wide-open-2016": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "rga-kyle-cooper-se7en-1995": {
+      "overall": 9.62,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "blender-studio-charge-2022": {
+      "overall": 6.75,
+      "judged_professional": "3/3",
+      "mean_rank": 4
+    }
+  },
+  "ref_mean": 8.04,
+  "delta": -1.04,
+  "trials": [
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "domnic-chemical-brothers-wide-open-2016",
+        "C": "candidate",
+        "D": "rga-kyle-cooper-se7en-1995"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Full CG character film with strong character design: a weathered old man with sculpted skin, cloth and beard detail, and a robot with designed wear and panel logic",
+              "Motivated practical light: candle-lit interior, firelight rim on clasped hands, volumetric haze in the industrial set",
+              "Cinematic language: anamorphic letterbox, a cut from medium shot to insert close-up, a hero pose against an atmospheric depth plate",
+              "The key-art frame (teal/magenta, lens flare, sci-fi wordmark) is a genre-standard poster rather than a typographic idea"
+            ],
+            "gaps": [
+              "The idea is genre boilerplate (grizzled hunter vs. killer robot). It needs a premise or visual conceit that only this film could have, the way D's handmade-evidence conceit does",
+              "The palette moves between stock teal/magenta key art and warm orange/teal interiors. Commit to one authored, unusual palette",
+              "The typography is a generic sci-fi display wordmark set on the poster. Make the type part of the film's world, distressed and integrated as in D"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific, memorable conceit: a dancer's body gradually replaced by a CG Voronoi lattice, tracked seamlessly onto live action and cloth",
+              "Real location with real texture: peeling concrete warehouse, stained floor, yellow pillars as deliberate colour punctuation",
+              "The frames show choreography: reveal under the shirt, close-up confrontation, the lattice arm crossing the face, then a wide shot with the lattice taking over the full figure in motion",
+              "Restrained, desaturated naturalistic grade that lets the white lattice read as a sculpture",
+              "No type apart from the platform watermark. Its absence suits a performance-led music video"
+            ],
+            "gaps": [
+              "The setting (dancer alone in an empty warehouse) is a familiar music-video default. A less expected space would raise originality",
+              "The palette is safe and muted. A more authored colour decision would make every frame a poster, as D's monochrome does",
+              "Neither the frames nor any title treatment carry graphic design or type intent. Nothing extends the lattice idea into the film's identity"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "A system-led piece: thousands of rigid-body sticks scattered over saturated grounds in bold, unusual pairings (aubergine on magenta, teal on pink)",
+              "The contact-sheet grid of dozens of colour and material variations suggests generative exploration presented as part of the work",
+              "A surprise cut to a live or practical creature with a pixel-mosaic face set in mossy natural light. That jump in register adds intrigue",
+              "Soft overhead lighting with real contact shadows on the stick fields"
+            ],
+            "gaps": [
+              "The stick-simulation frames border on effect with no subject. The link between the abstract sims and the creature needs to be legible and earned, not just juxtaposed",
+              "There is no typographic voice. Titling or credits, if present, should share the stick-system logic",
+              "Composition repeats (top-down field after top-down field). It needs camera variety and scale contrast to build a choreographed arc, as D's sequence does"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "The landmark Se7en title sequence: the idea is the killer's obsessive notebooks, so the film's psychology is told through handmade evidence",
+              "Typography with a point of view: hand-scratched, jittering, multi-exposed type, with the 7 standing in for the V in the wordmark",
+              "Dense, layered frames: taped photos, hooks, cramped handwriting, razor work on fingertip prints",
+              "Grim near-monochrome palette with selective sepia and a red accent; macro texture and raking light on paper and skin",
+              "Implied motion: rapid cutting, double exposure, focus racks and frame jitter create dread"
+            ],
+            "gaps": [
+              "Against the year's best it is hard to fault. The only gap is that its influence has made this grimy-collage look a clich\u00e9, which says more about later imitators than about this piece",
+              "Some frames run very dark and murky. The occasional hero frame could take more legible contrast",
+              "This is the benchmark; any remaining gap is marginal"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "C",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 33.1,
+        "cost_usd": 0.154387,
+        "tokens": 69931,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "domnic-chemical-brothers-wide-open-2016",
+        "C": "rga-kyle-cooper-se7en-1995",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Fully rigged, groomed and shaded characters (bearded hunter, knitted cap, worn leather jacket), well beyond template or AI level",
+              "Firelight and candlelight interiors with motivated warm key light, volumetric haze and real material response",
+              "Cinemascope framing and a cut-in on hands at the fire show an editorial plan from wide shot to insert",
+              "Key art and logotype (Blender branding, sci-fi CHARGE wordmark) are competent but generic: genre poster language with a cyan/magenta duotone",
+              "Reads as a studio open-movie and technology showcase, not a work with an authored motion-design voice"
+            ],
+            "gaps": [
+              "The idea is a familiar sci-fi chase (old man vs. robot). Find a premise or visual conceit that only this film could have, as C does with the killer's handmade notebooks",
+              "The CHARGE wordmark and poster are stock genre typography. Build a type system out of the film's world, for example scratched or fire-lit type, instead of a sleek sci-fi display face",
+              "The palette moves between orange firelight and cyan/magenta. Commit to one unusual, authored colour idea held across every frame"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A strong single conceit: the dancer's body turns into a 3D-printed-looking Voronoi lattice, tracked seamlessly onto live action during movement",
+              "Location photography with real texture (peeling paint, concrete floor stains, yellow columns) and soft natural light from the windows",
+              "Shots vary from intimate close-up to a wide shot of the figure mid-movement, implying choreographed camera and dance",
+              "Restrained palette of muted teal-grey, bone white and dusty pink, used deliberately",
+              "There is no on-screen type beyond the broadcaster bug; leaving it out suits a performance-led piece"
+            ],
+            "gaps": [
+              "Frames are beautiful but sit within a known music-video vocabulary (dancer in an empty warehouse). Push the setting as far as the VFX idea",
+              "The palette is tasteful but safe. C's monochrome-plus-red is more ownable",
+              "Compositions are mostly centred on the figure. More graphic risk in framing would make each frame a poster"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea only this film could have: the title sequence is the killer's own obsessive, handmade work (notebooks, bandaged hands, razor-cut photos)",
+              "Typography with a strong point of view: hand-scratched, jittering, distressed letterforms (SE7EN with the 7 standing in for V) as part of the image, not laid over it",
+              "Dense, layered frames: hand-written pages filled edge to edge, taped photographs, fishhooks, film grain and smeared emulsion",
+              "Near-monochrome palette with a single slash of red. The restraint is clearly intended",
+              "Hard raking light and real analogue texture throughout; macro framing and abrupt cutting suggest nervous, edited choreography"
+            ],
+            "gaps": [
+              "The flicker and grain make some frames hard to read. Make sure the key reveals land cleanly",
+              "Long stretches stay in one tonal register. A sharper contrast beat could add surprise",
+              "The monochrome-and-red palette has been imitated so widely that a fresh variation would need a new axis"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Simulation-driven fields of thousands of extruded sticks with physically convincing contact shadows and settling, real rigid-body work rather than a stock primitive placed on its own",
+              "Bold, unusual palette pairs (magenta on violet, teal on pink, acid green) varied across a 36-cell grid, showing systematic exploration that reads as a deliberate generative idea",
+              "Surprise turn to a photoreal creature in moss, its face a glowing cluster of the same elements, linking the abstract system to an organic subject",
+              "No visible typography; the piece leans on pure image, and that partly works, though the grid frame reads a little like a process reel"
+            ],
+            "gaps": [
+              "The stick system risks being an effect with no subject. Tie the abstract simulation more tightly to the creature reveal so the idea reads as one arc",
+              "The overhead stick frames are flat top-down lighting. Add directional light and depth to match the moody creature shot",
+              "The grid-of-variations frame feels like a portfolio montage. Replace it with a choreographed transition that carries meaning"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "D",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 33.6,
+        "cost_usd": 0.1430706,
+        "tokens": 70010,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "rga-kyle-cooper-se7en-1995",
+        "B": "domnic-chemical-brothers-wide-open-2016",
+        "C": "blender-studio-charge-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 10,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "The type has a clear point of view: hand-scratched, distressed letterforms with the '7' replacing the 'V' in SE7EN. The type tells the story instead of just labelling it.",
+              "The textures are physical and obsessive: notebook pages packed with handwriting, tape, hooks, contact sheets and graph paper, layered into dense collage frames.",
+              "The lighting is motivated and moody: a hard raking shaft across the hands on the drafting surface, and an extreme macro on graphite or film grain.",
+              "The palette is restrained to sepia, black and dirty white with one red accent (the razor or pen line). That restraint reads as deliberate and fits the subject.",
+              "The four frames vary widely (macro, collage, type card, insert shot) but share one grammar, which suggests careful edit choreography and stuttering, scratched-film motion.",
+              "The idea belongs only to this piece: the killer's process, shown as the title sequence itself."
+            ],
+            "gaps": [
+              "This is the benchmark entry. Its only gap is colour, where the near-monochrome limits range and the piece relies on one red accent.",
+              "Some insert frames (the graphite macro) read as abstract texture, so they depend on the edit for meaning.",
+              "The letterboxed framing is inconsistent across frames, with mixed crops."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "The idea is specific and memorable: a dancer's body progressively replaced by a tracked 3D Voronoi lattice. The VFX is the subject, not decoration.",
+              "The body tracking and integration hold up in close-up (the shirt lifted to reveal the lattice), which is high-end compositing.",
+              "The location is real, with naturalistic window light and a worn warehouse texture. The palette is a considered desaturated teal-grey with yellow pillars and the pink garment as the only warm accent.",
+              "The frames progress clearly, from a reveal to a close portrait to a mid-motion turn to a full-body lattice in a wide shot. That progression implies narrative choreography.",
+              "There is no type beyond the broadcaster bug. Its absence serves the piece, since this is a performance-led film where type would intrude."
+            ],
+            "gaps": [
+              "There is no graphic or typographic layer. Compared with A, the design authorship sits wholly in VFX and cinematography.",
+              "The compositions are conventionally centred music-video framing, with less poster-like graphic tension than A.",
+              "The palette and location (the grungy empty warehouse) are a familiar music-video trope. The idea carries the originality while the setting does not."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The palettes are bold and deliberate: magenta against aubergine and teal against pink. The contact-sheet grid shows a systematic colour exploration rather than one default accent.",
+              "The physics-driven stick and shard simulations imply real choreography (scatter, pile, reform), and the grid frame suggests a montage of rhythm-cut variations.",
+              "There is a surprising turn: the abstract sticks resolve into a photoreal, feathered, bird-like creature with a pixel-shard face in a lush mossy setting. That surprise is evidence of a concept.",
+              "There is no visible type. Its absence suits a music-led abstract piece but adds nothing."
+            ],
+            "gaps": [
+              "Most frames are top-down flat lays of simple extruded primitives. That is close to a 'stock 3D primitive' look, and the rigour of the system has to carry it.",
+              "The light on the simulation frames is soft, generic studio light with little texture or material story, unlike the physical grit of A.",
+              "The connection between the abstract sim sections and the creature reveal is not legible from the frames. It needs a clearer conceptual through-line or typographic framing."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "The rendering is competent and production-grade: candle- and fire-lit interiors with volumetric haze and detailed character and robot assets. This is studio-level work (an open-movie production), not AI or template output.",
+              "The key-art frame is genre-generic: an angry old warrior, a pink-lit robot, a lone silhouette before a megastructure, and teal-magenta neon. These are well-worn sci-fi poster tropes.",
+              "The type is a stock 'techy' sci-fi display face beside a software logo, set as a marketing lockup with no integration into the image.",
+              "The cinematic frames rely on letterboxed, underexposed orange-and-black grading. The moodiness is competent but the palette is the default action-short look."
+            ],
+            "gaps": [
+              "Find a specific idea beyond 'grizzled hero vs robot'. A builds its whole piece from one obsessive, subject-specific concept.",
+              "Give the typography a point of view. Replace the generic sci-fi display face with letterforms that carry the story, as A's scratched SE7EN does.",
+              "Push the palette and the frames beyond genre convention (teal/magenta key art, orange firelight) toward a distinctive graphic world where every frame works as a poster."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 36.6,
+        "cost_usd": 0.1478456,
+        "tokens": 70236,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.445,
+  "judge_seconds": 103.3,
+  "verdict": "PRO"
+}

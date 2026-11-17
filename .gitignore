@@ -17,3 +17,4 @@ isolate-*-v8.log
 
 # anikit-video MCP/builder scratch files
 .anikit-video/
+.cache/
