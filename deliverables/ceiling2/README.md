@@ -11,7 +11,7 @@ Each folder has the MP4, `contact-sheet.jpg`, `compare.jpg` (ours next to the re
 ## Blind judge (scripts/judge.py)
 | Piece | Run 1 | Run 2 | Refs mean |
 |---|---|---|---|
-| The Hill That Woke | FAIL 3.62 | FAIL 3.75 (blank frames fixed) | 8.5–8.7 |
+| The Hill That Woke | FAIL 3.62 | FAIL 3.75 (blank frames fixed) → **FAIL 4.0** after a rebuild on main's new features | 8.3–8.7 |
 | Specimen 07 | FAIL 4.25 | – | 7.37 |
 | The Planet Breathes | FAIL 4.0 | FAIL 4.0 (my 1-in-3 blank-frame bug fixed) | 7.2–7.4 |
 

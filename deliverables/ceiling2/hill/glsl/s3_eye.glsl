@@ -50,6 +50,7 @@ void mainImage(out vec4 o, in vec2 fc){
     float ang = -0.6 + 0.3*(h21(fcl) - 0.5);
     vec2 fr = vec2(cos(ang)*ff.x + sin(ang)*ff.y, -sin(ang)*ff.x + cos(ang)*ff.y);
     float stroke = smoothstep(0.08, 0.02, abs(fr.y + 0.3*fr.x*fr.x))*smoothstep(0.42, 0.2, abs(fr.x))*step(0.4, h21(fcl + 7.0));
+    stroke = furTex(hp, -0.6);
     vec3 body = mix(hex(8.,9.,28.), hex(20.,22.,58.), smoothstep(-0.6, 0.4, hp.x - hp.y*0.4));
     body += hex(60.,66.,150.)*0.45*smoothstep(-0.06, 0.0, hp.y - brow)*step(hp.y, brow + 0.002);
     // the lantern lights the fur near it
@@ -78,8 +79,10 @@ void mainImage(out vec4 o, in vec2 fc){
     float open = clamp(eye, 0.0, 1.2);
     // lids: two arcs; the opening is their intersection
     float lidH = er*0.52*open;
-    float upper = eq.y - (lidH*(1.0 - pow(eq.x/er, 2.0)) );
-    float lower = -(eq.y + lidH*0.75*(1.0 - pow(eq.x/er, 2.0)));
+    float lowO = er*0.52*clamp(open*1.25 - 0.1, 0.0, 1.1);          // the lower lid leads, the upper drags behind it
+    float sag = 1.0 + 0.18*(eq.x/er)*(1.0 - smoothstep(0.6, 1.0, open)); // the upper lid peels open from the outer corner
+    float upper = eq.y - (lidH*sag*(1.0 - pow(eq.x/er, 2.0)) );
+    float lower = -(eq.y + lowO*0.72*(1.0 - pow(eq.x/er, 2.0)));
     float eyeD = max(max(upper, lower), abs(eq.x) - er);
     float ce = cov(eyeD, px)*step(0.002, open);
     // the eye ball: glowing amber-green, darker at the rim, tracking the lantern
@@ -112,8 +115,13 @@ void mainImage(out vec4 o, in vec2 fc){
     col += hex(255.,190.,90.)*0.30*eglow*(1.0 - ce);
     // lid line (dark wet rim)
     col = mix(col, hex(4.,4.,12.), cov(abs(eyeD) - 0.006, px)*step(0.002, open));
+    // thick fleshy upper lid catching the lantern, and a wet bead of light along the lower lid
+    float lidBand = smoothstep(0.0, 0.004, -upper*0.9 + 0.022) * smoothstep(0.03, 0.012, -upper*0.9 + 0.022)*step(0.0, upper)*step(abs(eq.x), er);
+    col = mix(col, hex(60.,36.,40.) + warm*0.18, lidBand*0.85*step(0.002, open));
+    float wet = exp(-pow((lower + 0.008)/0.0025, 2.0))*smoothstep(er, er*0.3, abs(eq.x + 0.03))*smoothstep(0.3, 0.8, open);
+    col += hex(255.,226.,190.)*wet*0.55*lamp;
     // lid fold above the eye and a crease below
-    float fold = eq.y - (er*0.62*(1.0 - pow(eq.x/(er*1.15), 2.0)) + 0.01);
+    float fold = eq.y - ((er*0.56 + 0.05*clamp(open, 0.0, 1.2))*(1.0 - pow(eq.x/(er*1.15), 2.0)) + 0.01);
     col = mix(col, hex(26.,28.,70.) + warm*0.08, smoothstep(0.006, 0.0, abs(fold) - 0.002)*step(abs(eq.x), er*1.1)*smoothstep(0.0, 0.4, open)*0.8);
     float crease = -(eq.y + er*0.50*(1.0 - pow(eq.x/(er*1.05), 2.0)) + 0.01);
     col = mix(col, hex(26.,28.,70.), smoothstep(0.005, 0.0, abs(crease) - 0.0015)*step(abs(eq.x), er*0.9)*smoothstep(0.0, 0.4, open)*0.6);
@@ -144,20 +152,9 @@ void mainImage(out vec4 o, in vec2 fc){
     col = mix(col, hex(255.,236.,190.)*flick, cov(glass + 0.006*fh, px)*lamp);
     col += hex(255.,200.,120.)*lamp*exp(-ld*90.0)*0.8;
 
-    // ---- snow sifting off the brow when the eye opens, plus steady fall
-    for(int l=0;l<3;l++){
-        float fl = float(l);
-        float sc = 9.0 + fl*9.0;
-        vec2 q = sp*sc + vec2(iTime*0.15*sc, iTime*(0.8 + fl*0.25)*sc*0.12);
-        q.x += 0.3*sin(q.y*0.5 + fl*2.0 + iTime*0.6);
-        vec2 gi = floor(q);
-        vec2 ff2 = fract(q) - 0.5 - (h22(gi + fl*17.0) - 0.5)*0.6;
-        float on = step(0.88, h21(gi*1.3 + fl));
-        float r = 0.07 + 0.05*h21(gi + 2.0);
-        float flake = (1.0 - smoothstep(r*(1.0 - (l == 0 ? 0.7 : 0.3)), r, length(ff2)))*on;
-        vec3 fcol = mix(hex(150.,158.,230.), hex(255.,214.,150.), max(exp(-ld*4.0), 0.6*eglow));
-        col = mix(col, fcol, flake*(0.35 + 0.2*fl));
-    }
+    // ---- snow: four depths, near flakes smeared and soft, warm near the lantern
+    col = snowfall(col, sp, 0.0, lanW, lamp, hex(214.,218.,250.), hex(255.,214.,150.), 0.5);
+
     col = finish(col, fc, res);
     o = vec4(col, 1.0);
 }

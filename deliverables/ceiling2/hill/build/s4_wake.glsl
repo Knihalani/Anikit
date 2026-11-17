@@ -91,14 +91,15 @@ float sdTraveller(vec2 p, float ph, out vec2 lan){
     p.y -= 0.018*abs(s);                       // bob twice per cycle
     // cloak: bell, hem swings back as it walks
     vec2 q = p - vec2(0.0, 0.40);
-    q.x += 0.03*(0.0 - q.y)*(0.6 + 0.4*s2);
+    q.x += 0.035*(0.0 - q.y)*(0.6 + 0.4*sin(ph*4.0*PI - 0.9));   // hem trails the step
     float cloak = sdTrap(q, 0.25, 0.11, 0.27);
     // wavy hem
     cloak = max(cloak, -(p.y - 0.12 - 0.018*sin(p.x*28.0 + ph*6.28)));
     cloak = smin(cloak, sdEll(p - vec2(0.01, 0.64), vec2(0.15, 0.11)), 0.05);   // shoulders
     // hood with a long point flopping back
     float hood = sdEll(p - vec2(0.03, 0.80), vec2(0.13, 0.135));
-    vec2 tipA = vec2(-0.05, 0.86), tipB = vec2(-0.15, 0.88 + 0.008*s2), tipC = vec2(-0.21, 0.82 + 0.012*s);
+    float lag1 = sin(ph*4.0*PI - 1.1), lag2 = sin(ph*4.0*PI - 2.0);
+    vec2 tipA = vec2(-0.05, 0.86), tipB = vec2(-0.15, 0.88 + 0.018*lag1), tipC = vec2(-0.21 - 0.01*lag2, 0.82 + 0.03*lag2);
     hood = smin(hood, sdSeg(p, tipA, tipB, 0.05), 0.06);
     hood = smin(hood, sdSeg(p, tipB, tipC, 0.026), 0.04);
     // face opening (a hollow on the right side of the hood)
@@ -110,9 +111,10 @@ float sdTraveller(vec2 p, float ph, out vec2 lan){
     float l1 = sdSeg(p, vec2(-0.02, 0.16), vec2(-0.03 + 0.09*s, 0.06), 0.035);
     float l2 = sdSeg(p, vec2( 0.03, 0.16), vec2( 0.04 - 0.09*s, 0.06), 0.035);
     // pack on the back with a rolled blanket on top
-    float sc = sdBox(p - vec2(-0.14, 0.50), vec2(0.06, 0.10)) - 0.03;
-    sc = min(sc, sdEll(p - vec2(-0.13, 0.66), vec2(0.10, 0.045)));
-    sc = min(sc, sdSeg(p, vec2(-0.20, 0.36), vec2(-0.22, 0.30 + 0.01*s), 0.012));   // a dangling cup
+    float pb = 0.014*sin(ph*4.0*PI - 1.4);   // the pack settles a beat after each step
+    float sc = sdBox(p - vec2(-0.14, 0.50 + pb), vec2(0.06, 0.10)) - 0.03;
+    sc = min(sc, sdEll(p - vec2(-0.13, 0.66 + pb*1.3), vec2(0.10, 0.045)));
+    sc = min(sc, sdSeg(p, vec2(-0.20, 0.36 + pb), vec2(-0.22 - 0.02*sin(ph*4.0*PI - 2.2), 0.30 + pb), 0.012));   // a dangling cup swings late
     // arm and staff
     vec2 sh = vec2(0.08, 0.62), hand = vec2(0.24, 0.50 + 0.01*s);
     float arm = sdSeg(p, sh, hand, 0.045);
@@ -151,6 +153,48 @@ float brushEdge(float d, vec2 p, vec2 dir, float w){
     float b = boilT();
     float n = vn(vec2(q.x*18.0, q.y*420.0) + b*0.37) * 0.65 + vn(vec2(q.x*60.0, q.y*900.0) + b*1.1) * 0.35;
     return d + w*(n - 0.5)*2.0*smoothstep(w*3.0, 0.0, abs(d));
+}
+
+// painterly fur: long warped strands along `ang`, gathered into clumps (not a repeating dash grid)
+float furTex(vec2 p, float ang){
+    float c = cos(ang), s = sin(ang);
+    vec2 q = vec2(c*p.x + s*p.y, -s*p.x + c*p.y);
+    q += 0.025*vec2(fbm(p*7.0), fbm(p*7.0 + 9.0));
+    float b = boilT();
+    float strands = vn(vec2(q.x*16.0, q.y*170.0) + b*0.13)*0.65 + vn(vec2(q.x*45.0, q.y*420.0) + b*0.71)*0.35;
+    float clump = smoothstep(0.35, 0.75, fbm(p*5.0 + 3.0));
+    return smoothstep(0.52, 0.86, strands)*(0.35 + 0.65*clump);
+}
+
+// four depths of snow: far fine and dense, near large, motion-smeared and out of focus.
+// Flakes near `lp` catch the warm light. `drift` is camera x travel.
+vec3 snowfall(vec3 col, vec2 sp, float drift, vec2 lp, float lamp_, vec3 cold, vec3 warmC, float density){
+    float gust = 0.35*sin(iTime*0.7) + 0.15*sin(iTime*1.9 + 1.0);
+    for(int l=0;l<4;l++){
+        float fl = float(l);
+        float z = l == 0 ? 0.3 : (l == 1 ? 0.6 : (l == 2 ? 1.1 : 2.6));
+        float sc = 30.0/z;
+        float fall = 0.10 + 0.16*z;
+        vec2 vel = vec2(0.03 + 0.05*gust, -fall);
+        vec2 q = (sp + vec2(drift*z*0.6, 0.0) - vel*iTime)*sc;
+        q.x += 0.35*sin(q.y*0.45 + fl*2.3 + iTime*0.5);
+        vec2 gi = floor(q);
+        vec2 f = fract(q) - 0.5 - (h22(gi + fl*17.0) - 0.5)*0.6;
+        float on = step(l == 3 ? 0.93 : (1.0 - density*(l == 0 ? 0.55 : 0.35)), h21(gi*1.3 + fl*5.1));
+        // smear along the velocity (motion blur grows with nearness)
+        vec2 d = normalize(vel);
+        float along = dot(f, d), across = dot(f, vec2(-d.y, d.x));
+        float smear = 1.0 + 0.9*z*0.4;
+        float r = (0.045 + 0.04*h21(gi + 2.0))*(l == 3 ? 2.2 : 1.0);
+        float soft = l == 3 ? 0.9 : (l == 2 ? 0.45 : 0.25);
+        float dd = length(vec2(along/smear, across));
+        float flake = (1.0 - smoothstep(r*(1.0 - soft), r, dd))*on;
+        float near = exp(-length(sp - lp)*7.0)*lamp_;
+        vec3 fc = mix(cold, warmC, clamp(near*1.6, 0.0, 1.0));
+        float a = l == 0 ? 0.35 : (l == 1 ? 0.55 : (l == 2 ? 0.7 : 0.28));
+        col = mix(col, fc*(1.0 + 0.8*near), flake*a);
+    }
+    return col;
 }
 
 // filmic finish: tone, grain, vignette (call last)
@@ -268,6 +312,7 @@ void mainImage(out vec4 o, in vec2 fc){
     float ang = 0.35*(h21(fcl) - 0.5) - 0.6*(x1 - 0.04);
     vec2 fr = vec2(cos(ang)*ff.x + sin(ang)*ff.y, -sin(ang)*ff.x + cos(ang)*ff.y);
     float stroke = smoothstep(0.09, 0.02, abs(fr.y + 0.25*fr.x*fr.x))*smoothstep(0.42, 0.2, abs(fr.x))*step(0.45, h21(fcl + 7.0));
+    stroke = furTex(vec2(x1, y1), -0.6*(x1 - 0.04));
     float nearTop = smoothstep(-0.12, 0.0, y1 - top);
     body += hex(60.,66.,140.)*stroke*(0.10 + 0.35*nearTop)*step(dh, 0.0);
     col = mix(col, body, c1);
@@ -347,20 +392,8 @@ void mainImage(out vec4 o, in vec2 fc){
     col = mix(col, hex(190.,196.,246.), pg*band*pour*0.7);
     col = mix(col, hex(120.,128.,210.), band*pour*0.25*fbm(vec2(sp.x*8.0, sp.y*3.0 + iTime*1.5)));
 
-    // ---- light snow: sparse fine flakes + rare large soft ones
-    for(int l=0;l<2;l++){
-        float fl = float(l);
-        float sc = l == 0 ? 6.0 : 30.0;
-        vec2 q = sp*sc + vec2(camx*(l == 0 ? 2.5 : 0.8)*sc + iTime*0.3, iTime*(l == 0 ? 0.9 : 1.2));
-        q.x += 0.35*sin(q.y*0.6 + fl*2.0 + iTime*0.4);
-        vec2 gi = floor(q);
-        vec2 fq = fract(q) - 0.5 - (h22(gi + fl*17.0) - 0.5)*0.6;
-        float on = step(l == 0 ? 0.9 : 0.80, h21(gi*1.3 + fl));
-        float r = l == 0 ? 0.10 : 0.08;
-        float soft = l == 0 ? 0.8 : 0.4;
-        float flake = (1.0 - smoothstep(r*(1.0 - soft), r, length(fq)))*on;
-        col = mix(col, hex(214.,218.,250.), flake*(l == 0 ? 0.3 : 0.6));
-    }
+    // ---- snow: four depths, near flakes smeared and soft, warm near the lantern
+    col = snowfall(col, sp, camx, lanW, lamp, hex(214.,218.,250.), hex(255.,214.,150.), 0.6);
 
     col = finish(col, fc, res);
     o = vec4(col, 1.0);
