@@ -1943,7 +1943,7 @@ impl C<'_> {
             ),
         };
         let sub = Spec {
-            size: cdef.size.clone().or_else(|| Some(spec::Size::Wh([self.w as u32, self.h as u32]))),
+            size: cdef.size.clone().or(Some(spec::Size::Wh([self.w as u32, self.h as u32]))),
             fps: Some(self.fps as f64),
             background: Some(cdef.background.clone().unwrap_or(spec::Paint::Css("#00000000".into()))),
             theme: spec.theme.clone(),
