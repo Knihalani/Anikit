@@ -19,12 +19,38 @@ pub fn decode_file(path: impl AsRef<Path>) -> Result<Pcm, String> {
 }
 
 /// Decode a file and resample it to `rate`.
+///
+/// Decoded files are cached for the process, keyed by path, size, modification
+/// time and rate: one music track is otherwise decoded by the beat markers, by
+/// every visualizer and again by the mixer (about 120 ms each for 36 s of FLAC).
 pub fn decode_file_at(path: impl AsRef<Path>, rate: u32) -> Result<Pcm, String> {
+    type Key = (std::path::PathBuf, u64, u128, u32);
+    static CACHE: std::sync::OnceLock<std::sync::Mutex<Vec<(Key, std::sync::Arc<Pcm>)>>> = std::sync::OnceLock::new();
     let path = path.as_ref();
+    let meta = std::fs::metadata(path).ok();
+    let key: Option<Key> = meta.map(|m| {
+        let mtime = m.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map_or(0, |d| d.as_nanos());
+        (path.to_path_buf(), m.len(), mtime, rate)
+    });
+    let cache = CACHE.get_or_init(Default::default);
+    if let Some(k) = &key {
+        if let Some((_, p)) = cache.lock().unwrap_or_else(|e| e.into_inner()).iter().find(|(c, _)| c == k) {
+            return Ok((**p).clone());
+        }
+    }
     let file = std::fs::File::open(path)
         .map_err(|e| format!("audio: cannot open {}: {e}", path.display()))?;
     let ext = path.extension().and_then(|e| e.to_str());
-    decode_source(Box::new(file), ext, rate).map_err(|e| format!("{e} ({})", path.display()))
+    let pcm = decode_source(Box::new(file), ext, rate).map_err(|e| format!("{e} ({})", path.display()))?;
+    if let Some(k) = key {
+        let mut c = cache.lock().unwrap_or_else(|e| e.into_inner());
+        // A few tracks at most (bounded memory in long-lived processes).
+        if c.len() >= 6 {
+            c.remove(0);
+        }
+        c.push((k, std::sync::Arc::new(pcm.clone())));
+    }
+    Ok(pcm)
 }
 
 /// Decode an in-memory file at [`DEFAULT_RATE`]. `ext_hint` is a file
