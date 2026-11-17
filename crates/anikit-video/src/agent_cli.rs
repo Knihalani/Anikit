@@ -48,7 +48,7 @@ Agent commands:
                                     (contrast, overlaps, cut text, frame fill, centred layouts); --pack writes frames
                                     to look at (strip, cuts, worst frames, peak) and a review.md rubric
   anikit-video preview <spec.json> [-o sheet.png] [--detail] [--no-critique]   # THE inner loop: check + 1 frame/s sheet + critique + pace, in one call (draft quality)
-  anikit-video preview <spec.json|template> --at T [--width W] [-o f.png]       # one frame
+  anikit-video preview <spec.json|template> --at T [--width W] [-o f.png]       # one frame; --at 1,4.5,8 = one strip of several
                                     contact sheet (one frame per scene), or one still with --at
   anikit-video mcp                  Model Context Protocol server on stdio
 ";
@@ -357,6 +357,11 @@ fn cmd_preview(args: &[String]) -> Result<(), String> {
     }
     let width = a.get("width").map(|w| w.parse::<u32>().map_err(|_| format!("--width: '{w}' is not a number"))).transpose()?;
     let (img, default_out) = match a.get("at") {
+        // `--at 1.2,4,7.5`: one strip of several moments in one image.
+        Some(t) if t.contains(',') => {
+            let ts = t.split(',').map(|x| x.trim().parse::<f32>().map_err(|_| format!("--at: '{x}' is not a number of seconds"))).collect::<Result<Vec<_>, _>>()?;
+            (p.sheet(Some(ts), width.unwrap_or(960)), format!("{stem}-strip.png"))
+        }
         Some(t) => {
             let t: f32 = t.parse().map_err(|_| format!("--at: '{t}' is not a number of seconds"))?;
             (p.frame(t, width), format!("{stem}-{t}s.png"))
