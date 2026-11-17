@@ -86,6 +86,8 @@ struct C<'a> {
     /// Audio from video clips.
     audio_extra: Vec<crate::audio::Track>,
     layer_info: Vec<(String, String)>,
+    /// Layers with an `sfx` key: (tag, value, path).
+    layer_sfx: Vec<(u32, serde_json::Value, String)>,
     beat_marks: super::beat_markers::BeatMarkers,
     /// Music analysed for `iAudio`/`iBeat` (once, on first use).
     music: Option<Result<Arc<super::audio_react::AudioFeatures>, String>>,
@@ -155,6 +157,7 @@ impl Evaluator {
             image_ids: HashMap::new(),
             audio_extra: Vec::new(),
             layer_info: Vec::new(),
+            layer_sfx: Vec::new(),
             beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
             music: None,
             assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
@@ -351,6 +354,7 @@ impl Evaluator {
             },
             None => None,
         };
+        let sound = c.sound_plan(spec, duration);
         c.smarkers.clear();
         c.scene_start = 0.0;
         c.scene_dur = duration;
@@ -364,6 +368,7 @@ impl Evaluator {
             diagnostics: Vec::new(),
             audio,
             music,
+            sound,
             assets: c.assets,
             easings: c.easings,
             scenes,
@@ -1177,6 +1182,9 @@ impl C<'_> {
         };
         let tag = self.layer_info.len() as u32;
         self.layer_info.push((path.to_string(), label));
+        if let Some(v) = &l.sfx {
+            self.layer_sfx.push((tag, v.clone(), path.to_string()));
+        }
         if l.visible == Some(false) {
             return None;
         }
@@ -3719,6 +3727,42 @@ impl C<'_> {
     }
 
     // ---------- audio & captions ----------
+
+    /// The spec's `sound` and layers' `sfx`, compiled (`None` when neither is used).
+    fn sound_plan(&mut self, spec: &Spec, duration: f32) -> Option<Arc<crate::audio::design::spec::SoundPlan>> {
+        use crate::audio::design::spec::{LayerSfx, SoundPlan};
+        if spec.sound.is_none() && self.layer_sfx.is_empty() {
+            return None;
+        }
+        let mut plan = match SoundPlan::new(spec.sound.as_ref(), spec.music.as_ref()) {
+            Ok(p) => p,
+            Err(e) => {
+                self.d.push(Diagnostic::error("sound", e));
+                return None;
+            }
+        };
+        for (tag, v, path) in std::mem::take(&mut self.layer_sfx) {
+            match LayerSfx::parse(&v) {
+                Ok(l) => plan.layers.push((tag, l)),
+                Err(e) => self.d.push(Diagnostic::error(format!("{path}.sfx"), e)),
+            }
+        }
+        for (i, c) in plan.spec.cues.clone().into_iter().enumerate() {
+            let path = format!("sound.cues[{i}].at");
+            let at = match serde_json::from_value::<Num>(c.at.clone()) {
+                Ok(n) => self.time_raw(&n, &path),
+                Err(_) => {
+                    self.d.push(Diagnostic::error(path, "seconds or a marker like \"@beat9\""));
+                    continue;
+                }
+            };
+            if at > duration + 0.5 {
+                self.d.push(Diagnostic::warning(format!("sound.cues[{i}].at"), format!("{at:.2}s is after the end of the video ({duration:.2}s)")));
+            }
+            plan.cues.push((c, at as f64));
+        }
+        Some(Arc::new(plan))
+    }
 
     fn audio(&mut self, a: &spec::AudioCue, path: &str, scene_start: f32) -> Option<crate::audio::Track> {
         use crate::audio::{Duck, Role, SfxParams, Source, SFX_NAMES};

@@ -125,6 +125,12 @@ pub struct Spec {
     /// Fills the video's length; `@beatN`/`@barN` markers follow its exact grid.
     #[schemars(with = "Option<serde_json::Map<String, serde_json::Value>>")]
     pub music: Option<serde_json::Value>,
+    /// Sound design (`anikit-video docs sound`): `"auto"` derives whooshes, landings, ticks and
+    /// transition sounds from the picture, pans them to their place on screen, puts them in one
+    /// shared space, ducks the music under hits and masters to −14 LUFS / −1 dBTP.
+    /// `{ "palette": "organic", "density": 0.5, "ambience": "city", "space": "room", "cues": [...] }`.
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub sound: Option<serde_json::Value>,
     /// Burned-in captions.
     pub captions: Option<Captions>,
     /// Extra fonts: family name → file path.
@@ -463,6 +469,11 @@ pub struct Layer {
     #[serde(rename = "type")]
     pub kind: Option<String>,
     pub id: Option<String>,
+    /// Sound for this layer (`docs sound`): `"auto"`, `false` (silent), a sound name, or
+    /// `{ "in": "swish", "land": "wood", "out": "air", "gain": -3 }`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub sfx: Option<serde_json::Value>,
     /// Reuse: the name of an entry in top-level `defs`; other keys here override it
     /// (expanded before typing, see `spec/reuse.rs`).
     #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]

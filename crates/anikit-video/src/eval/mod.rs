@@ -439,6 +439,8 @@ pub struct Evaluator {
     pub audio: Vec<crate::audio::Track>,
     /// Generated music (the spec's `music`), rendered when the audio is mixed.
     pub music: Option<Arc<crate::music::MusicCue>>,
+    /// Sound design (the spec's `sound` and layers' `sfx`), mixed with the audio.
+    pub sound: Option<Arc<crate::audio::design::spec::SoundPlan>>,
     /// Fonts and images, shared with the renderers.
     pub assets: Arc<SharedAssets>,
     pub(crate) easings: Vec<Easing>,

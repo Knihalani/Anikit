@@ -17,7 +17,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::Instant;
 
-const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|beats|music|docs|recipes|new|templates|looks|prompt|critique|preview|mcp|--version> [spec.json|spec.yaml] [options]
+const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|beats|music|sound|docs|recipes|new|templates|looks|prompt|critique|preview|mcp|--version> [spec.json|spec.yaml] [options]
   render spec.json -o out.mp4   [--quality draft|good|best] [--crf 0-51] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
                                 [--from S] [--to S] [--scale K] [--no-audio]
   still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
@@ -27,6 +27,7 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|b
   schema [-o file]              print the JSON Schema of the spec
   beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
   music  spec.json -o out.wav   generate a mastered soundtrack (anikit-video docs music)
+  sound  plan|mix|render|list   sound design: cues from the picture, foley, beds (anikit-video docs sound)
   analyze ref.mp4 [-o analysis.json] [--sheet sheet.jpg] [--spec draft.json]
   board  refs/ [-o board.json] [--sheet board.jpg]   palette, value, texture, composition → theme tokens (docs board)
                                 reverse-engineer a reference video (anikit-video docs analyze)
@@ -267,6 +268,9 @@ fn main() -> ExitCode {
     if matches!(raw.first().map(String::as_str), Some("--version" | "-V" | "version")) {
         println!("anikit-video {}", env!("CARGO_PKG_VERSION"));
         return ExitCode::SUCCESS;
+    }
+    if let Some(code) = anikit_video::audio::design::cli::run(&raw) {
+        return ExitCode::from(code as u8);
     }
     if let Some(code) = anikit_video::music::run(&raw) {
         return ExitCode::from(code as u8);
