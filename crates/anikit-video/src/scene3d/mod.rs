@@ -476,6 +476,41 @@ fn write_floor_vis(path: &std::path::Path, v: &FloorVis) {
     }
 }
 
+/// Look warnings for `check`: combinations that render, but badly.
+pub fn lint(props: &Value) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    let env = match props.get("env") {
+        Some(Value::String(s)) => s.as_str(),
+        Some(Value::Object(m)) => m.get("preset").and_then(|p| p.as_str()).unwrap_or("cyc"),
+        _ => "cyc",
+    };
+    let objs = props.get("objects").and_then(|o| o.as_array()).cloned().unwrap_or_default();
+    let mat_of = |o: &Value| -> String {
+        match o.get("material").or(props.get("material")) {
+            Some(Value::String(s)) => s.to_lowercase(),
+            Some(Value::Object(m)) => m.get("extends").and_then(|e| e.as_str()).unwrap_or("").to_lowercase(),
+            _ => if o.get("type").and_then(|t| t.as_str()).is_some_and(|t| t == "slab" || t == "pane") { "glass".into() } else { "chrome".into() },
+        }
+    };
+    let warm = ["gold", "copper"];
+    if matches!(env, "sunset" | "neon") {
+        for (i, o) in objs.iter().enumerate() {
+            let m = mat_of(o);
+            if warm.contains(&m.as_str()) {
+                out.push((format!(".objects[{i}].material"), format!("`{m}` under env `{env}` washes out into the coloured light; use `chrome` or `aluminium`, or env `studio`/`night` for warm metals")));
+            }
+        }
+    }
+    if env == "cyc" {
+        let dark_card = objs.iter().any(|o| o.get("type").and_then(|t| t.as_str()) == Some("card") && o.get("intensity").and_then(|k| k.as_f64()).is_some_and(|k| k < 0.2));
+        let chrome = objs.iter().position(|o| matches!(mat_of(o).as_str(), "chrome" | "mirror") && o.get("type").and_then(|t| t.as_str()) != Some("card"));
+        if let (Some(i), false) = (chrome, dark_card) {
+            out.push((format!(".objects[{i}].material"), "chrome on the white `cyc` reflects only white and reads flat; add a black card ({ \"type\": \"card\", \"color\": \"#000\", \"intensity\": 0, \"pos\": [0, 0.5, 2.5], \"rot\": [0, 180, 0] }) or use env `studio`".into()));
+        }
+    }
+    out
+}
+
 /// Where simulations are cached: `$ANIKIT_CACHE/sim` (default
 /// `$XDG_CACHE_HOME/anikit/sim` or `~/.cache/anikit/sim`); `ANIKIT_CACHE=off`
 /// disables caching.
@@ -880,6 +915,9 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        assert_eq!(lint(&json!({ "env": "sunset", "objects": [ { "text": "A", "material": "gold" } ] })).len(), 1);
+        assert_eq!(lint(&json!({ "objects": [ { "text": "A" } ] })).len(), 1, "chrome on cyc without a flag");
+        assert!(lint(&json!({ "objects": [ { "text": "A" }, { "type": "card", "intensity": 0 } ] })).is_empty());
         // Scripts expand inside `objects`; open geometry parses.
         scene(json!({ "objects": [ { "script": "let o = []; for k in 0..3 { o.push(#{ type: \"lathe\", points: [[0.0, 0.0], [0.2, 0.3], [0.0, 0.6]], pos: [k * 0.5, 0.0, 0.0] }); } o" } ] })).unwrap();
         let e = scene(json!({ "objects": [ { "type": "sphere", "material": "crome" } ] })).err().unwrap();
