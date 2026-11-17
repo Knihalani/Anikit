@@ -406,6 +406,16 @@ pub struct OpTag {
 }
 
 thread_local! {
+    /// Composition display scales for this frame: `(collecting, scale per composition)`.
+    static COMP_SCALE: std::cell::RefCell<Option<(bool, std::collections::HashMap<usize, f32>)>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Whether this is the scale-collecting pass (shader layers emit nothing).
+pub(crate) fn collecting_scales() -> bool {
+    COMP_SCALE.with(|c| matches!(&*c.borrow(), Some((true, _))))
+}
+
+thread_local! {
     static TAGS: std::cell::RefCell<Option<Vec<OpTag>>> = const { std::cell::RefCell::new(None) };
 }
 
@@ -614,7 +624,28 @@ impl Evaluator {
         out.width = self.width;
         out.height = self.height;
         recycle(&mut out.ops);
+        // With compositions: a first pass (no shader jobs) finds the largest
+        // scale each is shown at, so its pixel content renders once, at that size.
+        let top = !self.comps.is_empty() && COMP_SCALE.with(|c| c.borrow().is_none());
+        if top {
+            shader::reset_sizes();
+            COMP_SCALE.with(|c| *c.borrow_mut() = Some((true, std::collections::HashMap::new())));
+            // Tags belong to the real pass only.
+            let tags = TAGS.with(|tg| tg.borrow_mut().take());
+            let mut scratch = Vec::new();
+            self.emit_frame(t, false, &mut scratch);
+            TAGS.with(|tg| *tg.borrow_mut() = tags);
+            COMP_SCALE.with(|c| {
+                if let Some(st) = &mut *c.borrow_mut() {
+                    st.0 = false;
+                }
+            });
+        }
         out.background = self.emit_frame(t, false, &mut out.ops);
+        if top {
+            COMP_SCALE.with(|c| *c.borrow_mut() = None);
+            shader::reset_sizes();
+        }
     }
 
     /// Append the frame at `t` to `out` and return its background colour. With `bg_rect`
@@ -1432,10 +1463,27 @@ impl Evaluator {
                 // The nested layers' tags would name the wrong evaluator's layers: the
                 // whole composition is tagged as this layer by `emit_node`.
                 let tags = TAGS.with(|tg| tg.borrow_mut().take());
+                let k = (m[0] * m[3] - m[1] * m[2]).abs().sqrt();
+                // Pixel content inside (shader layers) renders at the largest size
+                // the composition is shown at in this frame: display scale ×2
+                // (headroom for filtering), in ⅛ steps, never above its declared size.
+                let ps = shader::preview_scale();
+                let want = (((k * 2.0 * 8.0).ceil() / 8.0).min(1.0) * ps).max(1.0 / 64.0);
+                let key = Arc::as_ptr(ev) as usize;
+                let inner = COMP_SCALE.with(|c| match &mut *c.borrow_mut() {
+                    Some((true, m)) => {
+                        let e = m.entry(key).or_insert(0.0);
+                        *e = e.max(want);
+                        want
+                    }
+                    Some((false, m)) => m.get(&key).copied().unwrap_or(0.0).max(want),
+                    None => want,
+                });
+                shader::set_preview_scale(inner);
                 ev.emit_frame(ct, true, out);
+                shader::set_preview_scale(ps);
                 TAGS.with(|tg| *tg.borrow_mut() = tags);
                 crate::components::transform_ops(&mut out[start..], &m);
-                let k = (m[0] * m[3] - m[1] * m[2]).abs().sqrt();
                 if (k - 1.0).abs() > 1e-4 {
                     scale_filters(&mut out[start..], k);
                 }
