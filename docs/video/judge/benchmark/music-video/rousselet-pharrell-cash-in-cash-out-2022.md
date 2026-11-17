@@ -6,7 +6,7 @@ studio: "Division (director: François Rousselet); animation/VFX: Electric Theat
 client: "Pharrell Williams / Columbia"
 year: 2022
 url: https://www.youtube.com/watch?v=cKEwnhc8ItY
-alt_urls: [https://www.annecyfestival.com/en/node/532/commissioned-films/pharrell-feat-21-savage-tyler-the-creator-cash-cash-out]
+alt_urls: ["https://www.annecyfestival.com/en/node/532/commissioned-films/pharrell-feat-21-savage-tyler-the-creator-cash-cash-out"]
 length_s: 236
 verified: oembed
 aspect: "16:9"
@@ -25,6 +25,10 @@ stills:
   - https://i.ytimg.com/vi/cKEwnhc8ItY/hq1.jpg
   - https://i.ytimg.com/vi/cKEwnhc8ItY/hq2.jpg
   - https://i.ytimg.com/vi/cKEwnhc8ItY/hq3.jpg
+  - https://m.itsnicethat.com/original_images/electric-theatre-collective-cash-in-cash-out-film-itsnicethat-02.jpg
+  - https://m.itsnicethat.com/original_images/electric-theatre-collective-cash-in-cash-out-film-itsnicethat-04.jpg
+  - https://m.itsnicethat.com/original_images/electric-theatre-collective-cash-in-cash-out-film-itsnicethat-05.jpg
+  - https://m.itsnicethat.com/original_images/electric-theatre-collective-cash-in-cash-out-film-itsnicethat-06.jpg
 measured: null
 ---
 

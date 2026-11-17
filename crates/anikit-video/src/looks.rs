@@ -138,8 +138,9 @@ fn is_text(layer: &Value) -> bool {
 /// Apply the spec's top-level `look` (if any). Runs after `defs`/`use` expansion.
 pub fn apply(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
     let Some(root) = v.as_object_mut() else { return Ok(v) };
-    // `intent` is for the reviewer (`review.rs`), not the renderer.
+    // `intent` and `world` are for the reviewer (`review.rs`, `critique`), not the renderer.
     root.remove("intent");
+    root.remove("world");
     let Some(lv) = root.remove("look") else { return Ok(v) };
     if lv == Value::Bool(false) || lv.as_str() == Some("none") {
         return Ok(v);

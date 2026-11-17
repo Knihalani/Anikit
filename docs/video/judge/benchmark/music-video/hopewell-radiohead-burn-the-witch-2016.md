@@ -25,6 +25,7 @@ stills:
   - https://i.ytimg.com/vi/yI2oS2hoL0k/hq1.jpg
   - https://i.ytimg.com/vi/yI2oS2hoL0k/hq2.jpg
   - https://i.ytimg.com/vi/yI2oS2hoL0k/hq3.jpg
+  - https://thefilmstage.com/wp-content/uploads/2016/05/Burn-the-Witch-2.png
 measured: null
 ---
 

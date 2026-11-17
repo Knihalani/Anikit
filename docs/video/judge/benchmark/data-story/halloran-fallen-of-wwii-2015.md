@@ -6,7 +6,7 @@ studio: "Neil Halloran (writer, director, coder, narrator)"
 client: "Self-initiated"
 year: 2015
 url: https://www.youtube.com/watch?v=DwKPFT-RioU
-alt_urls: [https://www.neilfilms.com/ww2/, https://informationisbeautifulawards.com/showcase?award=2015]
+alt_urls: ["https://www.neilfilms.com/ww2/", "https://informationisbeautifulawards.com/showcase?award=2015"]
 length_s: null
 verified: oembed
 aspect: "16:9"
@@ -25,6 +25,7 @@ stills:
   - https://i.ytimg.com/vi/DwKPFT-RioU/hq1.jpg
   - https://i.ytimg.com/vi/DwKPFT-RioU/hq2.jpg
   - https://i.ytimg.com/vi/DwKPFT-RioU/hq3.jpg
+  - https://www.irishtimes.com/resizer/v2/3XD7FWULHNRHAFTUQ3PJMH2EQI.jpg?auth=0c764b4d77759977d0ea9ab8cf7e5135596de9346a051b55ad2d13196fc6f53e&smart=true&width=1024&height=576
 measured: null
 ---
 

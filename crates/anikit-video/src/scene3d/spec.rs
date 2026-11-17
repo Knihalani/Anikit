@@ -219,7 +219,7 @@ pub fn builtin_material(name: &str) -> Option<Material> {
     })
 }
 
-const MAT_KEYS: &[&str] = &["base", "color", "metallic", "roughness", "specular", "emissive", "emissive_strength", "clearcoat", "transmission", "ior", "tint", "tint_distance", "glow", "extends", "texture", "scale", "mapping", "normal_strength", "texture_rotate"];
+const MAT_KEYS: &[&str] = &["base", "color", "metallic", "roughness", "specular", "emissive", "emissive_strength", "clearcoat", "transmission", "ior", "tint", "tint_distance", "glow", "extends", "texture", "scale", "mapping", "normal_strength", "texture_rotate", "imperfections", "roughness_variation", "smudges", "scratches", "dust"];
 
 pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res<Material> {
     match v {
@@ -278,6 +278,16 @@ pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res
                 out.pbr = super::pbr::load(src, &o).map_err(|e| format!("{path}.texture: {e}"))?;
                 // The tint went into the set; the base multiplies it.
                 out.base = v3(1.0, 1.0, 1.0);
+            }
+            // Imperfections: one amount (a believable mix), or each by name.
+            if let Some(x) = m.get("imperfections") {
+                let a = f(x, &format!("{path}.imperfections"))?.clamp(0.0, 1.0);
+                out.imperf = [a, a * 0.6, a * 0.5, a * 0.25];
+            }
+            for (k, i) in [("roughness_variation", 0), ("smudges", 1), ("scratches", 2), ("dust", 3)] {
+                if let Some(x) = m.get(k) {
+                    out.imperf[i] = f(x, &format!("{path}.{k}"))?.clamp(0.0, 1.0);
+                }
             }
             if let Some(t) = m.get("tint") {
                 // Colour seen through `tintDistance` metres of the material.
@@ -1232,6 +1242,9 @@ fn hdri_env(v: &Value, path: &str) -> Res<Option<EnvSpec>> {
         Some(x) => x,
         None => {
             let (m, k) = EnvMap::load(&file, o).map_err(|e| format!("{path}.hdri: {e}"))?;
+            if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
+                eprintln!("hdri {}: key {:?} ({:.0}% of the light), mean {:?}", file.display(), k.as_ref().map(|k| (k.c, k.radiance, k.hu.atan().to_degrees() * 2.0)), m.key_fraction * 100.0, m.mean());
+            }
             let x = (std::sync::Arc::new(m), k);
             CACHE.get_or_init(Default::default).lock().unwrap().insert(ck, x.clone());
             x

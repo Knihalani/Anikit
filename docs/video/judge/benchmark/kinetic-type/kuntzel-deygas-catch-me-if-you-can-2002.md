@@ -6,7 +6,7 @@ studio: "Kuntzel + Deygas (Olivier Kuntzel, Florence Deygas), produced at Nexus 
 client: "DreamWorks (director: Steven Spielberg)"
 year: 2002
 url: https://www.kuntzeldeygas.com/catch-me-if-you-can
-alt_urls: [https://www.artofthetitle.com/title/catch-me-if-you-can/]
+alt_urls: ["https://www.artofthetitle.com/title/catch-me-if-you-can/"]
 length_s: null
 verified: page
 aspect: "other"

@@ -147,6 +147,7 @@ goes from 9.9 s to 3.0 s, with identical pixels.
 | `lit` | `true` for `over` | Shade by the key light and environment, with a sphere phase function; particles that have arrived on a `target` shade like its surface. |
 | `shadows` | `true` for `over` | Absorbing particles shadow each other (dense clouds darken inside, like volumes) and cast soft shadows on the floor and objects. |
 | `stretch` | `1` | Motion streak length (× shutter). |
+| `trail` | none | Light trails through each particle's past positions (the real, curved path, not a velocity streak): seconds, or `{ "length": 0.3, "taper": 1, "opacity": 1 }`. The tail fades as (1 − u)^taper and keeps the head's surface brightness; trails stop where a particle was born or recycled, and are depth-tested against the scene. Rendering only: changing it reuses the cached simulation. Best with a few thousand `add` particles; cost grows with count × trail length on screen. |
 | `substeps` | `2` | Integration steps per frame. |
 | `start`, `end`, `seed` | `0`, ∞, `1` | |
 

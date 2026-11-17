@@ -25,6 +25,7 @@ stills:
   - https://i.ytimg.com/vi/cYwa3W9IiKk/hq1.jpg
   - https://i.ytimg.com/vi/cYwa3W9IiKk/hq2.jpg
   - https://i.ytimg.com/vi/cYwa3W9IiKk/hq3.jpg
+  - https://upload.wikimedia.org/wikipedia/en/3/31/BBC_Two_Paint_ident.jpg
 measured: null
 ---
 

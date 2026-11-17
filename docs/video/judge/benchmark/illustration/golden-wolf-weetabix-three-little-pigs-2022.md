@@ -6,7 +6,7 @@ studio: "Golden Wolf (animation lead/storyboard: Stephanie Mercier), with Stink 
 client: "Weetabix (agency: BBH London)"
 year: 2022
 url: https://vimeo.com/710889465
-alt_urls: [https://goldenwolf.tv/work/three-little-pigs]
+alt_urls: ["https://goldenwolf.tv/work/three-little-pigs"]
 length_s: 30
 verified: oembed
 aspect: "16:9"
@@ -22,6 +22,11 @@ anikit_features: [image, shape, camera, post, "post.grain", text, "GAP: frame-by
 awards: ["Collision Awards 2024 Gold, Best 2D Animation", "Creative Circle 2023 Gold, Best Digital 2D Animation", "Motion Awards 2023 Winner, Single Spot Commercial", "Shots Awards Europe 2022 Gold, 2D Animation", "Kinsale Sharks 2022 Bronze, Film Craft / Animation"]
 stills:
   - https://i.vimeocdn.com/video/1433695529-4226051dce0f5b186248d6ed98c766c8ce0988a2cfcd32f5fc840de833da19fa-d_1280
+  - https://us-west-2.graphassets.com/cmbmedy4j0k4v07mudetigq36/cmi7moks79iqc07lp4tkhux27
+  - https://us-west-2.graphassets.com/cmbmedy4j0k4v07mudetigq36/cmi7mokst9dq907n5n4kw9wgf
+  - https://us-west-2.graphassets.com/cmbmedy4j0k4v07mudetigq36/cmi7mokt59iqy07lpw0i809pd
+  - https://us-west-2.graphassets.com/cmbmedy4j0k4v07mudetigq36/cmi7mokuy9dqz07n59gfahfrm
+  - https://us-west-2.graphassets.com/cmbmedy4j0k4v07mudetigq36/cmi7mokw79irj07lp47tdc64h
 measured: null
 ---
 
