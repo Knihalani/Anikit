@@ -285,6 +285,12 @@ A flexbox container (CSS semantics) that lays out `children` automatically, so y
 
 The component draws into its box: `width` × `height` (default: the whole parent), placed like any layer (`x`, `y`, `anchor`). Its own animation runs on the layer's local time (from `start`); the layer's transforms, `opacity`, `enter`/`exit` and `animate` apply on top. Components use the theme's colours (`primary` is their accent).
 
+### Finishing: `post` and `motionBlur`
+
+`"post"` (video level, or per scene; a scene's value overrides, `"none"` turns it off) applies a finishing look after everything is drawn: a preset `clean`, `cinematic`, `dreamy`, `punchy`, `noir`, `vintage`, or an object with a preset and overrides, `{ "preset": "cinematic", "bloom": 0.4, "vignette": 0.3, "grain": 0.02 }`. Settings: `bloom bloomThreshold bloomKnee bloomRadius bloomTint halation aberration distortion exposure temperature tint lift gamma gain contrast saturation tonemap vignette vignetteSoftness grain grainSize dither`. Default: none.
+
+`"motionBlur"`: `true` (180° shutter), `false`, or `{ "shutter": 90 }` (degrees). Moving frames are rendered as several sub-frames averaged in linear light; still frames cost nothing extra. Default: on with `--quality high`, off otherwise (it costs several renders per moving frame), never in drafts.
+
 ### `composition`
 
 A 2D sub-composition: a small video of its own, defined once at the top level and placed like an image.

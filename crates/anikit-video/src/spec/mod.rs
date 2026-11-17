@@ -126,9 +126,37 @@ pub struct Spec {
     pub fonts: Option<BTreeMap<String, String>>,
     /// Override the total duration (truncate, or hold the last frame).
     pub duration: Option<Num>,
+    /// Finishing look: a preset (`none clean cinematic dreamy punchy noir vintage`) or
+    /// `{ "preset": "cinematic", "bloom": 0.4, … }`. Default none.
+    #[schemars(with = "Option<PostValue>")]
+    pub post: Option<serde_json::Value>,
+    /// Motion blur on moving content: `true` (180° shutter), `false`, or `{ "shutter": 90 }` (degrees).
+    /// Default: on at `--quality high` only (it renders several sub-frames per moving frame).
+    pub motion_blur: Option<MotionBlur>,
     /// Named 2D sub-compositions: placed with a `composition` layer, or used as a texture in 3D.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compositions: Option<BTreeMap<String, Composition>>,
+}
+
+/// `post`: a preset name or a preset with overrides.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum PostValue {
+    /// `none clean cinematic dreamy punchy noir vintage`.
+    Preset(String),
+    /// `{ "preset": "cinematic", …any post setting… }`.
+    Custom(serde_json::Map<String, serde_json::Value>),
+}
+
+/// `motionBlur`: on/off, or a shutter angle.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum MotionBlur {
+    On(bool),
+    Shutter {
+        /// Shutter angle in degrees (360 = the whole frame interval). Default 180.
+        shutter: f64,
+    },
 }
 
 /// A 2D sub-composition with its own size and clock: layers (one scene) or scenes.
@@ -241,6 +269,9 @@ pub struct Scene {
     /// How this scene comes in from the previous one.
     pub transition: Option<Transition>,
     pub camera: Option<Camera>,
+    /// Finishing look for this scene (overrides the video's `post`; `"none"` turns it off).
+    #[schemars(with = "Option<PostValue>")]
+    pub post: Option<serde_json::Value>,
     /// Times relative to the scene start.
     pub markers: Option<BTreeMap<String, Num>>,
     /// Drawn bottom to top.

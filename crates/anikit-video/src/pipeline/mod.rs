@@ -373,7 +373,9 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
             let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
             // Held frame: provably identical to the previous one; skip eval and render.
             let fi = (f0 + k) as f32;
-            if continuing && ev.is_static((fi - 1.0) / ev.fps, fi / ev.fps) {
+            let (post, blur) = frame_look(ev, opts.quality, (f0 + k) as u32);
+            let sh = if blur || ev.shutter_explicit || opts.quality == Quality::Best { ev.shutter * 0.5 } else { 0.0 };
+            if continuing && !post.as_ref().is_some_and(|p| p.grain > 0.0) && ev.is_static((fi - 1.0) / ev.fps - sh, fi / ev.fps + sh) {
                 prof.unchanged.fetch_add(1, Ordering::Relaxed);
                 prof.held.fetch_add(1, Ordering::Relaxed);
                 hints.changed = Some(vec![false; emw * emh]);
@@ -389,10 +391,16 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
             let r = renderer.as_mut().unwrap();
             let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
             let t = Instant::now();
-            let upd = r.render_yuv_incremental(dl, yuv, map);
+            r.set_post(post, (f0 + k) as u64);
+            use crate::render::incremental::Update;
+            let upd = if blur {
+                render_blurred(ev, r, (f0 + k) as u32, opts.scale, yuv);
+                Update::Full
+            } else {
+                r.render_yuv_incremental(dl, yuv, map)
+            };
             prof.render_ns.fetch_add(ns(t), Ordering::Relaxed);
             let t = Instant::now();
-            use crate::render::incremental::Update;
             match upd {
                 Update::Unchanged => prof.unchanged.fetch_add(1, Ordering::Relaxed),
                 Update::Partial { .. } => prof.partial.fetch_add(1, Ordering::Relaxed),
@@ -402,6 +410,10 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
                 // `map` is exact versus the previous frame, which `buf` still holds.
                 match upd {
                     Update::Unchanged => hints.changed = Some(vec![false; emw * emh]),
+                    Update::Full => {
+                        copy_yuv(yuv, buf, None);
+                        hints.changed = None;
+                    }
                     _ => {
                         copy_yuv(yuv, buf, Some(map));
                         hints.changed = Some(hint_map(map));
@@ -432,6 +444,24 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
     out
 }
 
+/// Frame `i`'s finishing look, and whether it gets motion blur (never in drafts; by default only at high quality).
+pub fn frame_look(ev: &Evaluator, q: Quality, i: u32) -> (Option<crate::render::post::PostSettings>, bool) {
+    let t = frame_time(ev, i);
+    (ev.post_at(t).cloned(), q != Quality::Draft && ev.needs_blur(t, q == Quality::Best))
+}
+
+/// Render frame `i` with motion blur into `yuv` (a full frame), leaving the
+/// renderer ready for a full incremental render next.
+fn render_blurred(ev: &Evaluator, r: &mut Renderer, i: u32, scale: f32, yuv: &mut YuvFrame) {
+    let mut eval = |t: f32| {
+        let mut d = ev.eval(t);
+        scale_list(&mut d, scale);
+        d
+    };
+    r.render_yuv_motion_blur(&mut eval, frame_time(ev, i), ev.shutter, yuv);
+    r.invalidate();
+}
+
 /// Evaluate frame `i` into `out` at `scale`.
 pub fn eval_frame(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) {
     ev.eval_into(frame_time(ev, i), out);
@@ -442,26 +472,49 @@ pub fn eval_frame(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) {
 pub fn render_rgba(ev: &Evaluator, t: f32, scale: f32) -> (u32, u32, Vec<u8>) {
     let mut dl = ev.eval(t);
     scale_list(&mut dl, scale);
-    render_list_rgba(ev, &dl)
+    let post = ev.post_at(t).cloned();
+    let frame = (t * ev.fps).round().max(0.0) as u64;
+    if ev.needs_blur(t, false) {
+        return with_renderer(ev, |r, _| {
+            r.set_post(post, frame);
+            let mut eval = |t: f32| {
+                let mut d = ev.eval(t);
+                scale_list(&mut d, scale);
+                d
+            };
+            let px = straight(r.render_motion_blur(&mut eval, t, ev.shutter));
+            r.invalidate();
+            r.set_post(None, 0);
+            px
+        });
+    }
+    with_renderer(ev, |r, _| {
+        r.set_post(post, frame);
+        let px = straight(r.render(&dl));
+        r.set_post(None, 0);
+        px
+    })
 }
 
 /// Render an already evaluated (and possibly edited) display list to straight RGBA8.
 pub fn render_list_rgba(ev: &Evaluator, dl: &DisplayList) -> (u32, u32, Vec<u8>) {
     // Evaluating may have created images (components); render after.
-    with_renderer(ev, |r, _| {
-        let pm = r.render(dl);
-        let (w, h) = (pm.width() as u32, pm.height() as u32);
-        let mut px = pm.data_as_u8_slice().to_vec();
-        for p in px.chunks_exact_mut(4) {
-            let a = p[3] as u32;
-            if a != 0 && a != 255 {
-                for c in &mut p[..3] {
-                    *c = ((*c as u32 * 255 + a / 2) / a).min(255) as u8;
-                }
+    with_renderer(ev, |r, _| straight(r.render(dl)))
+}
+
+/// Premultiplied pixmap → straight RGBA8.
+fn straight(pm: &crate::render::FrameRgba) -> (u32, u32, Vec<u8>) {
+    let (w, h) = (pm.width() as u32, pm.height() as u32);
+    let mut px = pm.data_as_u8_slice().to_vec();
+    for p in px.chunks_exact_mut(4) {
+        let a = p[3] as u32;
+        if a != 0 && a != 255 {
+            for c in &mut p[..3] {
+                *c = ((*c as u32 * 255 + a / 2) / a).min(255) as u8;
             }
         }
-        (w, h, px)
-    })
+    }
+    (w, h, px)
 }
 
 /// Save straight RGBA8 as PNG.
@@ -734,18 +787,21 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
         while start < f1 {
             let end = (start + batch).min(f1);
             // Evaluate the batch (cheap) and hash for dedupe.
-            let lists: Vec<(DisplayList, u64)> = (start..end)
+            let lists: Vec<(DisplayList, u64, (Option<crate::render::post::PostSettings>, bool))> = (start..end)
                 .into_par_iter()
                 .map(|i| {
                     let mut dl = DisplayList::default();
                     eval_frame(ev, i, opts.scale, &mut dl);
-                    let h = hash_list(&dl);
-                    (dl, h)
+                    let look = frame_look(ev, opts.quality, i);
+                    // Blurred or grainy frames are never repeats of the previous one.
+                    let unique = look.1 || look.0.as_ref().is_some_and(|p| p.grain > 0.0);
+                    let h = if unique { hash_list(&dl) ^ (i as u64 + 1).wrapping_mul(0x9E37_79B9_7F4A_7C15) } else { hash_list(&dl) };
+                    (dl, h, look)
                 })
                 .collect();
             let mut same = vec![false; lists.len()];
             let mut ph = prev_hash;
-            for (k, (_, h)) in lists.iter().enumerate() {
+            for (k, (_, h, _)) in lists.iter().enumerate() {
                 same[k] = ph == Some(*h);
                 ph = Some(*h);
             }
@@ -762,8 +818,8 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
                             if same[k] {
                                 return (None, None);
                             }
-                            let dl = &lists[k].0;
-                            let hint = if wants_hints {
+                            let (dl, _, look) = &lists[k];
+                            let hint = if wants_hints && !look.1 {
                                 let prev = if k == 0 { last_dl.as_ref() } else { Some(&lists[k - 1].0) };
                                 prev.map(|prev| {
                                     let mut m = crate::render::MbMap::new(0, 0);
@@ -776,7 +832,13 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
                             let f = with_worker(|w| {
                                 ensure_renderer(ev, w);
                                 let Worker { renderer, yuv, map, last, .. } = &mut *w;
-                                renderer.as_mut().unwrap().render_yuv_incremental(dl, yuv, map);
+                                let r = renderer.as_mut().unwrap();
+                                r.set_post(look.0.clone(), start as u64 + k as u64);
+                                if look.1 {
+                                    render_blurred(ev, r, start + k as u32, opts.scale, yuv);
+                                } else {
+                                    r.render_yuv_incremental(dl, yuv, map);
+                                }
                                 *last = None; // the fused path must not reuse this state as its chunk continuation
                                 yuv.clone()
                             });

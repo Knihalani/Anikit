@@ -124,6 +124,28 @@
         }
       ]
     },
+    "post": {
+      "description": "Finishing look: a preset (`none clean cinematic dreamy punchy noir vintage`) or\n`{ \"preset\": \"cinematic\", \"bloom\": 0.4, … }`. Default none.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PostValue"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "motionBlur": {
+      "description": "Motion blur on moving content: `true` (180° shutter), `false`, or `{ \"shutter\": 90 }` (degrees).\nDefault: on at `--quality high` only (it renders several sub-frames per moving frame).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/MotionBlur"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "compositions": {
       "description": "Named 2D sub-compositions: placed with a `composition` layer, or used as a texture in 3D.",
       "type": [
@@ -444,6 +466,17 @@
           "anyOf": [
             {
               "$ref": "#/$defs/Camera"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "post": {
+          "description": "Finishing look for this scene (overrides the video's `post`; `\"none\"` turns it off).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PostValue"
             },
             {
               "type": "null"
@@ -877,6 +910,20 @@
           "format": "double"
         }
       }
+    },
+    "PostValue": {
+      "description": "`post`: a preset name or a preset with overrides.",
+      "anyOf": [
+        {
+          "description": "`none clean cinematic dreamy punchy noir vintage`.",
+          "type": "string"
+        },
+        {
+          "description": "`{ \"preset\": \"cinematic\", …any post setting… }`.",
+          "type": "object",
+          "additionalProperties": true
+        }
+      ]
     },
     "LayerItem": {
       "description": "Schema helper: a layer or a string (text).",
@@ -2459,6 +2506,27 @@
           ]
         }
       }
+    },
+    "MotionBlur": {
+      "description": "`motionBlur`: on/off, or a shutter angle.",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "shutter": {
+              "description": "Shutter angle in degrees (360 = the whole frame interval). Default 180.",
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "required": [
+            "shutter"
+          ]
+        }
+      ]
     },
     "Composition": {
       "description": "A 2D sub-composition with its own size and clock: layers (one scene) or scenes.",
