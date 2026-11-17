@@ -1772,6 +1772,253 @@
   "path": "docs/video/judge/benchmark/ui-product/raycast-new-raycast-coming-2026-2025.md"
  },
  {
+  "slug": "buck-good-books-metamorphosis-2012",
+  "category": "illustration",
+  "title": "Good Books - Metamorphosis",
+  "studio": "BUCK (creative director: Ryan Honey; associate CD: Joshua Harvey; art director: Joe Mullen; animation director: Steve Day)",
+  "client": "Good Books (via String Theory)",
+  "year": 2012,
+  "url": "https://vimeo.com/35720685",
+  "alt_urls": [
+   "https://buck.co/work/goodbooks",
+   "https://vimeo.com/52422865"
+  ],
+  "length_s": 162,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "cel",
+   "frame-by-frame",
+   "mixed"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "warm",
+   "high-contrast"
+  ],
+  "type_role": "none",
+  "mood": [
+   "witty",
+   "energetic",
+   "raw"
+  ],
+  "purpose": "ad",
+  "techniques": [
+   "morph",
+   "transitions-in-camera",
+   "boil",
+   "smear",
+   "camera-move",
+   "rhythmic-edit"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "image",
+   "shape",
+   "camera",
+   "transitions",
+   "audio",
+   "captions",
+   "GAP: frame-by-frame cel animation with painterly texture",
+   "GAP: lens-distorted character drawing (wide-angle 'fish-eye' figures)"
+  ],
+  "awards": [
+   "D&AD 2013 Yellow Pencil, Animation for Film Advertising (source: D&AD via search)",
+   "IAC Award 2013",
+   "AMP Awards Best of Show (Antfood, sound)"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/265220175-20f8421101aef67938bdaaa6c127e631da35f1bd00174b1c45c0810a4fe90568-d_1280",
+   "https://i.vimeocdn.com/video/361674922-b7138d5d0ac779e615aabdfcdc1faa6e2801e413ea901f00d0a8b66998ad2b07-d_1280"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/illustration/buck-good-books-metamorphosis-2012.md"
+ },
+ {
+  "slug": "giant-ant-right-now-2020",
+  "category": "illustration",
+  "title": "Right Now // A Giant Ant Short",
+  "studio": "Giant Ant (written by Jay Grandin; storyboard: Esther Cheung)",
+  "client": "Self-initiated",
+  "year": 2020,
+  "url": "https://vimeo.com/453482133",
+  "alt_urls": [
+   "https://giantant.ca/giant-ant-right-now"
+  ],
+  "length_s": 106,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "cel",
+   "frame-by-frame"
+  ],
+  "pace": "steady",
+  "palette": [
+   "warm",
+   "saturated",
+   "limited"
+  ],
+  "type_role": "none",
+  "mood": [
+   "emotional",
+   "warm",
+   "calm"
+  ],
+  "purpose": "short-film",
+  "techniques": [
+   "hard-cut",
+   "match-cut",
+   "rhythmic-edit",
+   "camera-move"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "shape",
+   "camera",
+   "transitions",
+   "audio",
+   "GAP: frame-by-frame character animation with flat colour cleanup"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/949811155-a8039931fedde7b627d8f4835f921f3b84ae4367e8c946fda6eb4ff1919c1002-d_1280",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595265273704-RQQR0BGIG3VPXLWCOQFQ/GA20_02_RIghtNow_S04_v06.jpg",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595265607133-T5E4CVO93RGYCNMUEY3T/GA20_02_RIghtNow_ChurchWide_v02.jpg",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595266123148-TY08OXXON3C8CAK4CZN9/GA20_02_RIghtNow_Tanzania_Wide_v04.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/illustration/giant-ant-right-now-2020.md"
+ },
+ {
+  "slug": "golden-wolf-weetabix-three-little-pigs-2022",
+  "category": "illustration",
+  "title": "Weetabix: Three Little Pigs",
+  "studio": "Golden Wolf (animation lead/storyboard: Stephanie Mercier), with Stink Films",
+  "client": "Weetabix (agency: BBH London)",
+  "year": 2022,
+  "url": "https://vimeo.com/710889465",
+  "alt_urls": [
+   "https://goldenwolf.tv/work/three-little-pigs"
+  ],
+  "length_s": 30,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "cel",
+   "2d-illustrated",
+   "frame-by-frame"
+  ],
+  "pace": "fast",
+  "palette": [
+   "warm",
+   "limited",
+   "retro"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "retro",
+   "witty"
+  ],
+  "purpose": "ad",
+  "techniques": [
+   "smear",
+   "boil",
+   "grain",
+   "hard-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "shape",
+   "camera",
+   "post",
+   "post.grain",
+   "text",
+   "GAP: frame-by-frame 1930s rubber-hose character animation",
+   "GAP: period film artefacts (gate weave, flicker, vignette)"
+  ],
+  "awards": [
+   "Collision Awards 2024 Gold, Best 2D Animation",
+   "Creative Circle 2023 Gold, Best Digital 2D Animation",
+   "Motion Awards 2023 Winner, Single Spot Commercial",
+   "Shots Awards Europe 2022 Gold, 2D Animation",
+   "Kinsale Sharks 2022 Bronze, Film Craft / Animation"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/1433695529-4226051dce0f5b186248d6ed98c766c8ce0988a2cfcd32f5fc840de833da19fa-d_1280"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/illustration/golden-wolf-weetabix-three-little-pigs-2022.md"
+ },
+ {
+  "slug": "nexus-smith-foulkes-honda-grrr-2004",
+  "category": "illustration",
+  "title": "Honda Grrr | Animated Commercial | Nexus Studios",
+  "studio": "Nexus Productions (directors: Smith & Foulkes — Alan Smith, Adam Foulkes)",
+  "client": "Honda UK (agency: Wieden+Kennedy London)",
+  "year": 2004,
+  "url": "https://www.youtube.com/watch?v=AF4iLRb0a90",
+  "alt_urls": [],
+  "length_s": 90,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "light",
+   "pastel"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "witty",
+   "warm"
+  ],
+  "purpose": "ad",
+  "techniques": [
+   "beat-sync",
+   "camera-move",
+   "parallax",
+   "colour-swap",
+   "logo-build"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "shape",
+   "image",
+   "camera",
+   "depth",
+   "text",
+   "audio",
+   "repeat",
+   "GAP: flat-shaded illustrative 3D (toon shading with paper textures)",
+   "GAP: character animation of many small creatures"
+  ],
+  "awards": [
+   "Cannes Lions 2005 Film Grand Prix",
+   "Grand Clio 2005, Television/Cinema",
+   "One Show 2005 Best of Show (source: search summary)",
+   "D&AD 2005: eight awards (source: Nexus via 4rfv)"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/AF4iLRb0a90/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/AF4iLRb0a90/hq1.jpg",
+   "https://i.ytimg.com/vi/AF4iLRb0a90/hq2.jpg",
+   "https://i.ytimg.com/vi/AF4iLRb0a90/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/illustration/nexus-smith-foulkes-honda-grrr-2004.md"
+ },
+ {
   "slug": "andreas-wannerstedt-eternal-installations-2020",
   "category": "cg-3d",
   "title": "Eternal Installations",
@@ -3934,5 +4181,316 @@
   ],
   "measured": null,
   "path": "docs/video/judge/benchmark/event-promo/xk-studio-offfmx-2025-main-titles.md"
+ },
+ {
+  "slug": "buck-good-books-metamorphosis-2012",
+  "category": "award-shorts",
+  "title": "Metamorphosis",
+  "studio": "BUCK (CD: Ryan Honey; animation director: Steve Day; AD: Joe Mullen)",
+  "client": "Good Books (agency: String Theory)",
+  "year": 2012,
+  "url": "https://vimeo.com/52422865",
+  "alt_urls": [
+   "https://buck.co/work/goodbooks",
+   "https://motionographer.com/2012/03/26/interview-buck-good-books-metamorphosis/"
+  ],
+  "length_s": 162,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "cel",
+   "mixed"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "limited",
+   "saturated"
+  ],
+  "type_role": "none",
+  "mood": [
+   "witty",
+   "raw",
+   "energetic"
+  ],
+  "purpose": "ad",
+  "techniques": [
+   "morph",
+   "smear",
+   "boil",
+   "grain",
+   "transitions-in-camera",
+   "liquid"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "image",
+   "shape",
+   "shape morph/path animation",
+   "post.grain",
+   "camera",
+   "audio",
+   "GAP: hand-drawn cel character animation",
+   "GAP: ink/paint texture compositing over CG"
+  ],
+  "awards": [
+   "D&AD 2013 Pencil, Film Advertising Crafts (archive page shows Yellow and Graphite Pencil icons)"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/361674922-b7138d5d0ac779e615aabdfcdc1faa6e2801e413ea901f00d0a8b66998ad2b07-d_1280",
+   "https://i0.wp.com/motionographer.com/wp-content/uploads/2015/04/GB01_2_slugs.jpg?resize=700%2C394&ssl=1"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/award-shorts/buck-good-books-metamorphosis-2012.md"
+ },
+ {
+  "slug": "nomint-wwf-up-in-smoke-2023",
+  "category": "award-shorts",
+  "title": "WWF - Up in Smoke",
+  "studio": "NOMINT (director: Yannis Konstantinidis; CD: Yannis Konstantinidis, Christos Lefakis)",
+  "client": "WWF",
+  "year": 2023,
+  "url": "https://vimeo.com/889840444",
+  "alt_urls": [
+   "https://vimeo.com/889845779",
+   "https://www.annecyfestival.com/en/wwf-smoke"
+  ],
+  "length_s": 102,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stop-motion",
+   "live-action"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "mono",
+   "cool"
+  ],
+  "type_role": "none",
+  "mood": [
+   "emotional",
+   "eerie",
+   "epic"
+  ],
+  "purpose": "short-film",
+  "techniques": [
+   "stop-motion-feel",
+   "fluid",
+   "camera-move",
+   "depth-of-field",
+   "long-take"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "shader (volumetric smoke via buffers)",
+   "camera aperture (DOF)",
+   "post (grain, vignette, cinematic)",
+   "audio",
+   "GAP: volumetric smoke sim lit by a single key (no real fluid sim in engine)",
+   "GAP: stop-motion pose replacement on a 3D character"
+  ],
+  "awards": [
+   "Ciclope Festival 2024 Grand Prix",
+   "Ciclope 2024 Gold, Animation",
+   "D&AD Yellow Pencil, Animation",
+   "One Show Gold, Animation",
+   "ADC Gold, Animation",
+   "British Arrows Gold, Animation 2D/Stop-motion"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/1768666192-0fe5b0aceba4ad797284bd44fb42eed98ff03fd85a5e3e7e3197f5d09edc20de-d_1280",
+   "https://www.thisiscolossal.com/wp-content/uploads/2023/12/WWF_Up_in_Smoke_16_9_c.jpg",
+   "https://www.thisiscolossal.com/wp-content/uploads/2023/12/WWF_Up_in_Smoke_16_9_a.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/award-shorts/nomint-wwf-up-in-smoke-2023.md"
+ },
+ {
+  "slug": "susser-hsi-save-ralph-2021",
+  "category": "award-shorts",
+  "title": "Save Ralph - A short film with Taika Waititi",
+  "studio": "Spencer Susser (writer/director); Arch Model Studio (Andy Gent); animation director: Tobias Fouracre",
+  "client": "Humane Society International (now Humane World for Animals)",
+  "year": 2021,
+  "url": "https://www.youtube.com/watch?v=G393z8s8nFY",
+  "alt_urls": [
+   "https://www.partizan.com/film/save-ralph",
+   "https://annecyfestival.com/about/archives/2022/award-winners"
+  ],
+  "length_s": 262,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stop-motion"
+  ],
+  "pace": "steady",
+  "palette": [
+   "cool",
+   "light",
+   "limited"
+  ],
+  "type_role": "none",
+  "mood": [
+   "emotional",
+   "witty",
+   "raw"
+  ],
+  "purpose": "short-film",
+  "techniques": [
+   "stop-motion-feel",
+   "depth-of-field",
+   "macro",
+   "hard-cut"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "scene3d",
+   "camera aperture (DOF)",
+   "post (cinematic)",
+   "audio",
+   "GAP: fur/felt puppet materials and practical-set lighting",
+   "GAP: facial performance (eyes) on puppets"
+  ],
+  "awards": [
+   "Annecy 2022 Cristal for a Commissioned Film"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/G393z8s8nFY/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/G393z8s8nFY/hq1.jpg",
+   "https://i.ytimg.com/vi/G393z8s8nFY/hq2.jpg",
+   "https://i.ytimg.com/vi/G393z8s8nFY/hq3.jpg",
+   "https://partizan.com/wp-content/uploads/2025/09/Tobias-Fouracre_Save-Ralph_Poster-480x608.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/award-shorts/susser-hsi-save-ralph-2021.md"
+ },
+ {
+  "slug": "will-anderson-pictoplasma-opener-2023",
+  "category": "award-shorts",
+  "title": "PICTOPLASMA OPENER 2023",
+  "studio": "Will Anderson / Wanderson Studio (director, animator)",
+  "client": "Pictoplasma (Berlin 2023)",
+  "year": 2023,
+  "url": "https://www.youtube.com/watch?v=a1EwwLFNQI0",
+  "alt_urls": [
+   "https://wanderson.xyz/portfolio/pictoplasma-2023-official-opener",
+   "https://www.annecyfestival.com/en/pictoplasma-opener-2023"
+  ],
+  "length_s": 72,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stylised-3d",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "mono",
+   "high-contrast",
+   "limited"
+  ],
+  "type_role": "none",
+  "mood": [
+   "witty",
+   "eerie",
+   "playful"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "long-take",
+   "camera-move",
+   "soft-body",
+   "sim"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "scene3d",
+   "scene3d model",
+   "camera",
+   "post (grain)",
+   "audio",
+   "GAP: hair/fur grooming and dynamics",
+   "GAP: performance capture driving a character rig"
+  ],
+  "awards": [
+   "Annecy 2024 Cristal for a Commissioned Film"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/a1EwwLFNQI0/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/a1EwwLFNQI0/hq1.jpg",
+   "https://i.ytimg.com/vi/a1EwwLFNQI0/hq2.jpg",
+   "https://i.ytimg.com/vi/a1EwwLFNQI0/hq3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Pictoplasma-Berlin-2023-Opening-Will-Anderson2.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/award-shorts/will-anderson-pictoplasma-opener-2023.md"
+ },
+ {
+  "slug": "zambrano-ted-ed-accents-2019",
+  "category": "award-shorts",
+  "title": "\"Accents\" by Denice Frohman",
+  "studio": "Robertino Zambrano (director), KAPWA Studioworks (Sydney)",
+  "client": "TED-Ed (There's a Poem for That)",
+  "year": 2019,
+  "url": "https://www.youtube.com/watch?v=84ZcT1jDCjk",
+  "alt_urls": [
+   "https://ed.ted.com/lessons/accents-by-denice-frohman",
+   "https://www.annecyfestival.com/about/archives/2019/award-winners"
+  ],
+  "length_s": 153,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "frame-by-frame",
+   "2d-illustrated",
+   "kinetic-type"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "limited",
+   "warm"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "raw",
+   "emotional",
+   "energetic"
+  ],
+  "purpose": "short-film",
+  "techniques": [
+   "boil",
+   "grain",
+   "kinetic-type",
+   "morph",
+   "rhythmic-edit",
+   "beat-sync"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "text",
+   "text kinetic (scramble/mask)",
+   "shape",
+   "post.grain",
+   "shape wigglePath (boil)",
+   "audio",
+   "GAP: hand-drawn frame-by-frame animation and scratched/etched line texture"
+  ],
+  "awards": [
+   "Annecy 2019 Cristal for a Commissioned Film"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/84ZcT1jDCjk/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/84ZcT1jDCjk/hq1.jpg",
+   "https://i.ytimg.com/vi/84ZcT1jDCjk/hq2.jpg",
+   "https://i.ytimg.com/vi/84ZcT1jDCjk/hq3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/2019-05-24_1027-640x360.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/award-shorts/zambrano-ted-ed-accents-2019.md"
  }
 ]

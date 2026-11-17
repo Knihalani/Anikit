@@ -74,6 +74,15 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [New Raycast. Coming 2026](ui-product/raycast-new-raycast-coming-2026-2025.md) | Raycast (in-house; individual credits not published) | 2025 | 0:39 | fast | ui, 3d-cg | [watch](https://www.youtube.com/watch?v=Mi173xGb0ZA) |
 | [Introducing the new Notion AI](ui-product/notion-introducing-the-new-notion-ai-2024.md) | Notion (in-house; individual credits not published) | 2024 | 0:57 | fast | ui, 2d-vector, kinetic-type | [watch](https://www.youtube.com/watch?v=S92KX8-Hmlc) |
 
+### Illustration-led animation (`illustration/`, 4)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [Weetabix: Three Little Pigs](illustration/golden-wolf-weetabix-three-little-pigs-2022.md) | Golden Wolf (animation lead/storyboard: Stephanie Mercier), with Stink Films | 2022 | 0:30 | fast | cel, 2d-illustrated, frame-by-frame | [watch](https://vimeo.com/710889465) |
+| [Right Now // A Giant Ant Short](illustration/giant-ant-right-now-2020.md) | Giant Ant (written by Jay Grandin; storyboard: Esther Cheung) | 2020 | 1:46 | steady | 2d-illustrated, cel, frame-by-frame | [watch](https://vimeo.com/453482133) |
+| [Good Books - Metamorphosis](illustration/buck-good-books-metamorphosis-2012.md) | BUCK (creative director: Ryan Honey; associate CD: Joshua Harvey; art director: Joe Mullen; animation director: Steve Day) | 2012 | 2:42 | fast | 2d-illustrated, cel, frame-by-frame | [watch](https://vimeo.com/35720685) |
+| [Honda Grrr | Animated Commercial | Nexus Studios](illustration/nexus-smith-foulkes-honda-grrr-2004.md) | Nexus Productions (directors: Smith & Foulkes — Alan Smith, Adam Foulkes) | 2004 | 1:30 | steady | 2d-illustrated, 3d-cg | [watch](https://www.youtube.com/watch?v=AF4iLRb0a90) |
+
 ### 3D / CG product & abstract (`cg-3d/`, 7)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
@@ -138,5 +147,15 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [OFFFMX 2025 Main Titles by XK Studio](event-promo/xk-studio-offfmx-2025-main-titles.md) | XK Studio (directors: Alexa Sirbu, Lukas Vojir) | 2025 | 1:39 | fast | 3d-cg, stylised-3d | [watch](https://vimeo.com/1119375393) |
 | [MOTION PLUS DESIGN TOKYO - OPENER](event-promo/studio-river-motion-plus-design-tokyo-2024.md) | Studio River (director: Keyvan Nourian) | 2024 | 2:13 | steady | 3d-cg, stylised-3d | [watch](https://vimeo.com/955846057) |
 | [Pictoplasma 2019 Opener - Character Proxemics 1](event-promo/laurie-rowan-pictoplasma-2019-opener.md) | Laurie Rowan (Nexus Studios) | 2019 | 0:33 | steady | stylised-3d, 3d-cg | [watch](https://vimeo.com/367464935) |
+
+### Award-winning commissioned & festival shorts (`award-shorts/`, 5)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [WWF - Up in Smoke](award-shorts/nomint-wwf-up-in-smoke-2023.md) | NOMINT (director: Yannis Konstantinidis; CD: Yannis Konstantinidis, Christos Lefakis) | 2023 | 1:42 | steady | stop-motion, live-action | [watch](https://vimeo.com/889840444) |
+| [PICTOPLASMA OPENER 2023](award-shorts/will-anderson-pictoplasma-opener-2023.md) | Will Anderson / Wanderson Studio (director, animator) | 2023 | 1:12 | steady | stylised-3d, 3d-cg | [watch](https://www.youtube.com/watch?v=a1EwwLFNQI0) |
+| [Save Ralph - A short film with Taika Waititi](award-shorts/susser-hsi-save-ralph-2021.md) | Spencer Susser (writer/director); Arch Model Studio (Andy Gent); animation director: Tobias Fouracre | 2021 | 4:22 | steady | stop-motion | [watch](https://www.youtube.com/watch?v=G393z8s8nFY) |
+| ["Accents" by Denice Frohman](award-shorts/zambrano-ted-ed-accents-2019.md) | Robertino Zambrano (director), KAPWA Studioworks (Sydney) | 2019 | 2:33 | fast | frame-by-frame, 2d-illustrated, kinetic-type | [watch](https://www.youtube.com/watch?v=84ZcT1jDCjk) |
+| [Metamorphosis](award-shorts/buck-good-books-metamorphosis-2012.md) | BUCK (CD: Ryan Honey; animation director: Steve Day; AD: Joe Mullen) | 2012 | 2:42 | fast | 2d-illustrated, cel, mixed | [watch](https://vimeo.com/52422865) |
 
 <!-- TABLES:END -->
