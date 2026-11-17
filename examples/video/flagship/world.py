@@ -38,7 +38,7 @@ T = dict(
     led=14.5,
     frame1_0=15.5, frame1_1=16.5,
     stream0=18.0, stream1=28.5,  # 2..3600 frames
-    ramp0=40.5, lock0=43.0, lock1=49.0, brake1=50.0,
+    ramp0=39.0, lock0=42.0, lock1=48.0, brake1=49.5,
     fold0=50.0, fold1=52.0,      # strip folds into a stack (lands on 52.0)
     crush0=52.5, crush1=54.0,    # stack compresses into a block
     shrink0=54.5, shrink1=56.3,  # block shrinks into the tile
@@ -334,7 +334,7 @@ CAPTIONS = [
     dict(text="sundial-launch.mp4 · H.264 · 1920×1080 · 60 fps", at=None, h=0.02, t0=56.0, t1=60.0, kind="etched"),
     dict(text="Its own H.264 encoder. One file.", at=(None, 0.0, 1.4), h=0.12, t0=54.0, t1=58.5, kind="stand"),
     dict(text="Still rendering.", at=None, h=0.5, t0=61.2, t1=64.5, kind="cart2"),
-    dict(text="This film was one spec. Rendered in N s.", at=(None, 0.0, 10.0), h=0.45, t0=64.4, t1=68.5, kind="stand", yaw=180),
+    dict(text="This film was one spec. Rendered in N s.", at=(None, 0.0, 10.0), h=0.45, t0=64.0, t1=68.5, kind="stand", yaw=180),
     dict(text="Anikit Video", at=None, h=0.6, t0=T["logo0"], t1=DURATION, kind="logo"),
     dict(text="Words in. Film out.", at=None, h=0.12, t0=68.0, t1=DURATION, kind="stand"),
 ]
