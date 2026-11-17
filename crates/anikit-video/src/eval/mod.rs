@@ -415,6 +415,9 @@ pub struct Evaluator {
     pub shutter_explicit: bool,
     /// Named sub-compositions (top-level `compositions`), in dependency order.
     pub(crate) comps: Vec<(String, Arc<Evaluator>)>,
+    /// Resolution factor for shader layers (f32 bits; 1.0 = device resolution).
+    /// Reviews sample small frames and set it below 1 so shaders shade fewer pixels.
+    pub shader_scale: std::sync::atomic::AtomicU32,
 }
 
 /// How a layer's clock maps onto a composition's clock.

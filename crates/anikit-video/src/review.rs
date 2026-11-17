@@ -133,6 +133,8 @@ impl Samples {
     pub fn take(ev: &Evaluator, fps: f32, width: u32) -> Samples {
         let step = 1.0 / fps;
         let scale = (width as f32 / ev.width.max(1) as f32).min(1.0);
+        // Shaders shade at the sample size too (restored afterwards).
+        let prev = ev.shader_scale.swap(scale.to_bits(), std::sync::atomic::Ordering::Relaxed);
         let n = (ev.duration / step).floor() as usize + 1;
         let mut w = 0;
         let mut h = 0;
@@ -146,6 +148,7 @@ impl Samples {
                 px.chunks_exact(4).flat_map(|p| [p[0], p[1], p[2]]).collect()
             })
             .collect();
+        ev.shader_scale.store(prev, std::sync::atomic::Ordering::Relaxed);
         Samples { step, w, h, frames }
     }
     pub fn time(&self, i: usize) -> f32 {
@@ -307,6 +310,279 @@ pub fn time_axis(ev: &Evaluator, s: &Samples, intent: &Intent, beats: Option<&[f
     (tl, notes)
 }
 
+/// Detail map of a frame: 1 where the pixel has local contrast (content), 0 where it is smooth (empty or a soft gradient).
+fn detail(s: &Samples, i: usize) -> Vec<u8> {
+    let (w, h) = (s.w as usize, s.h as usize);
+    let f = &s.frames[i];
+    let lum = |x: usize, y: usize| {
+        let k = (y * w + x) * 3;
+        (f[k] as i32 * 2 + f[k + 1] as i32 * 5 + f[k + 2] as i32) / 8
+    };
+    let mut d = vec![0u8; w * h];
+    for y in 1..h.saturating_sub(1) {
+        for x in 1..w.saturating_sub(1) {
+            let c = lum(x, y);
+            let g = (c - lum(x + 1, y)).abs().max((c - lum(x, y + 1)).abs()).max((c - lum(x - 1, y)).abs()).max((c - lum(x, y - 1)).abs());
+            d[y * w + x] = (g > 10) as u8;
+        }
+    }
+    d
+}
+
+/// Fill (share of pixels with detail), detail centroid (0..1) and its bounding box.
+struct Layout {
+    fill: f32,
+    /// Area of the subject's box (the largest detailed region), as a share of the frame.
+    occupied: f32,
+    cx: f32,
+    cy: f32,
+    bbox: [f32; 4],
+    balance: f32,
+    hash: u64,
+}
+
+fn layout(s: &Samples, i: usize) -> Layout {
+    let (w, h) = (s.w as usize, s.h as usize);
+    let d = detail(s, i);
+    let (mut n, mut sx, mut sy, mut left) = (0f32, 0f32, 0f32, 0f32);
+    for y in 0..h {
+        for x in 0..w {
+            if d[y * w + x] == 1 {
+                let (fx, fy) = (x as f32 / w as f32, y as f32 / h as f32);
+                n += 1.0;
+                sx += fx;
+                sy += fy;
+                left += (fx < 0.5) as u8 as f32;
+            }
+        }
+    }
+    // The subject: the largest connected region of detailed blocks (dilated by one
+    // block so words join up). Thin rules and corner labels form small regions.
+    let bs = (w / 32).max(2);
+    let (gw, gh) = (w.div_ceil(bs), h.div_ceil(bs));
+    let mut grid = vec![false; gw * gh];
+    for gy in 0..gh {
+        for gx in 0..gw {
+            let mut c = 0;
+            for y in gy * bs..((gy + 1) * bs).min(h) {
+                for x in gx * bs..((gx + 1) * bs).min(w) {
+                    c += d[y * w + x] as usize;
+                }
+            }
+            grid[gy * gw + gx] = c * 4 >= bs * bs;
+        }
+    }
+    let mut dil = grid.clone();
+    for gy in 0..gh {
+        for gx in 0..gw {
+            if grid[gy * gw + gx] {
+                for (dx, dy) in [(-1i32, 0i32), (1, 0), (0, -1), (0, 1)] {
+                    let (x, y) = (gx as i32 + dx, gy as i32 + dy);
+                    if x >= 0 && y >= 0 && (x as usize) < gw && (y as usize) < gh {
+                        dil[y as usize * gw + x as usize] = true;
+                    }
+                }
+            }
+        }
+    }
+    let mut seen = vec![false; gw * gh];
+    let mut best = (0usize, [0usize; 4]);
+    for start in 0..gw * gh {
+        if !dil[start] || seen[start] {
+            continue;
+        }
+        let mut stack = vec![start];
+        seen[start] = true;
+        let (mut cnt, mut b) = (0usize, [usize::MAX, usize::MAX, 0usize, 0usize]);
+        while let Some(k) = stack.pop() {
+            let (x, y) = (k % gw, k / gw);
+            cnt += grid[k] as usize;
+            b = [b[0].min(x), b[1].min(y), b[2].max(x), b[3].max(y)];
+            for (dx, dy) in [(-1i32, 0i32), (1, 0), (0, -1), (0, 1)] {
+                let (nx, ny) = (x as i32 + dx, y as i32 + dy);
+                if nx >= 0 && ny >= 0 && (nx as usize) < gw && (ny as usize) < gh {
+                    let nk = ny as usize * gw + nx as usize;
+                    if dil[nk] && !seen[nk] {
+                        seen[nk] = true;
+                        stack.push(nk);
+                    }
+                }
+            }
+        }
+        if cnt > best.0 {
+            best = (cnt, b);
+        }
+    }
+    let b = best.1;
+    let bb = if best.0 == 0 { [0.5, 0.5, 0.5, 0.5] } else { [b[0] as f32 / gw as f32, b[1] as f32 / gh as f32, (b[2] + 1) as f32 / gw as f32, (b[3] + 1) as f32 / gh as f32] };
+    let fill = n / (w * h) as f32;
+    // A dHash of the detail-weighted luminance (9×8), for spotting repeated layouts.
+    let f = &s.frames[i];
+    let cell = |gx: usize, gy: usize| {
+        let (x0, x1, y0, y1) = (gx * w / 9, (gx + 1) * w / 9, gy * h / 8, (gy + 1) * h / 8);
+        let mut t = 0u32;
+        let mut c = 0u32;
+        for y in y0..y1 {
+            for x in x0..x1 {
+                let k = (y * w + x) * 3;
+                t += (f[k] as u32 + f[k + 1] as u32 + f[k + 2] as u32) / 3;
+                c += 1;
+            }
+        }
+        t / c.max(1)
+    };
+    let mut hash = 0u64;
+    for gy in 0..8 {
+        for gx in 0..8 {
+            hash = (hash << 1) | (cell(gx, gy) > cell(gx + 1, gy)) as u64;
+        }
+    }
+    Layout { fill, occupied: (bb[2] - bb[0]).max(0.0) * (bb[3] - bb[1]).max(0.0), cx: if n > 0.0 { sx / n } else { 0.5 }, cy: if n > 0.0 { sy / n } else { 0.5 }, bbox: bb, balance: if n > 0.0 { left / n } else { 0.5 }, hash }
+}
+
+/// A frame worth looking at: (detector, time, box in 0..1 frame coordinates).
+pub type Worst = (String, f32, [f32; 4]);
+
+/// Mid-shot sample indices.
+fn shot_frames(s: &Samples, tl: &Timeline, dur: f32) -> Vec<(usize, f32)> {
+    let mut bounds = vec![0.0];
+    bounds.extend(tl.cuts.iter().cloned());
+    bounds.push(dur);
+    bounds
+        .windows(2)
+        .filter(|w| w[1] - w[0] > 0.05)
+        .map(|w| {
+            let t = w[0] + (w[1] - w[0]) * 0.6;
+            (((t / s.step).round() as usize).min(s.frames.len() - 1), t)
+        })
+        .collect()
+}
+
+/// Composition at real pixels, one frame per shot: frame fill, centre bias,
+/// layout repetition, and BAR #1 (a centred headline over a smooth backdrop).
+pub fn composition(ev: &Evaluator, s: &Samples, tl: &Timeline) -> (Vec<Note>, Vec<Worst>) {
+    let mut notes = Vec::new();
+    let mut worst: Vec<Worst> = Vec::new();
+    let shots = shot_frames(s, tl, ev.duration);
+    if shots.is_empty() {
+        return (notes, worst);
+    }
+    let lays: Vec<(f32, Layout)> = shots.iter().map(|(i, t)| (*t, layout(s, *i))).collect();
+    if std::env::var_os("ANIKIT_REVIEW_DEBUG").is_some() {
+        for (t, l) in &lays {
+            eprintln!("t={t:.1} fill={:.3} occupied={:.3} c=({:.2},{:.2}) balance={:.2} bbox={:?}", l.fill, l.occupied, l.cx, l.cy, l.balance, l.bbox);
+        }
+    }
+    // Small content in an empty frame (BAR #4), ignoring the end card.
+    let body = if lays.len() > 2 { &lays[..lays.len() - 1] } else { &lays[..] };
+    let empty: Vec<&(f32, Layout)> = body.iter().filter(|(_, l)| l.fill < 0.035 || l.occupied < 0.08).collect();
+    if !empty.is_empty() {
+        let (t, l) = empty.iter().min_by(|a, b| a.1.occupied.total_cmp(&b.1.occupied)).unwrap();
+        worst.push(("empty-frame".into(), *t, l.bbox));
+        notes.push(Note {
+            severity: if empty.len() * 3 >= body.len() { "warning" } else { "tip" },
+            check: "frame-fill",
+            path: format!("t={t:.1}s"),
+            message: format!("{} of {} shots are mostly empty (the content sits in {:.0}% of the frame at t={t:.1}s; BAR #4)", empty.len(), body.len(), l.occupied * 100.0),
+            fix: "fill the frame: bigger subject, a world behind it (depth, texture, light), crop in tighter".into(),
+        });
+    }
+    // Centred, symmetric layouts repeated.
+    let mid = |l: &Layout| (((l.bbox[0] + l.bbox[2]) / 2.0 - 0.5).abs(), ((l.bbox[1] + l.bbox[3]) / 2.0 - 0.5).abs());
+    let centred: Vec<&(f32, Layout)> = lays.iter().filter(|(_, l)| mid(l).0 < 0.06 && mid(l).1 < 0.12).collect();
+    if lays.len() >= 4 && centred.len() * 10 >= lays.len() * 7 {
+        let (t, l) = centred[0];
+        worst.push(("centred".into(), *t, l.bbox));
+        notes.push(Note {
+            severity: "warning",
+            check: "layout",
+            path: format!("{} shots", lays.len()),
+            message: format!("{} of {} shots are centred and symmetric: it reads as slides", centred.len(), lays.len()),
+            fix: "compose off-centre (thirds, a strong diagonal, flush-left type against a subject), and vary it shot to shot".into(),
+        });
+    }
+    // Centred headline over a smooth backdrop (BAR #1–2), at pixels.
+    let slide: Vec<&(f32, Layout)> = lays.iter().filter(|(_, l)| l.occupied < 0.2 && ((l.bbox[0] + l.bbox[2]) / 2.0 - 0.5).abs() < 0.08).collect();
+    if !slide.is_empty() {
+        let (t, l) = slide[0];
+        worst.push(("slide".into(), *t, l.bbox));
+        notes.push(Note {
+            severity: "warning",
+            check: "bar",
+            path: format!("t={t:.1}s"),
+            message: format!("{} shot(s) look like a centred headline on a soft backdrop (BAR #1–2), first at t={t:.1}s", slide.len()),
+            fix: "give the shot a subject with light and material, and place the type with intent".into(),
+        });
+    }
+    // Repeated layouts: non-adjacent shots that hash alike.
+    let mut pairs = Vec::new();
+    for i in 0..lays.len() {
+        for j in i + 2..lays.len() {
+            if (lays[i].1.hash ^ lays[j].1.hash).count_ones() <= 6 {
+                pairs.push((lays[i].0, lays[j].0));
+            }
+        }
+    }
+    if pairs.len() >= 2 {
+        worst.push(("repeat".into(), pairs[0].1, [0.0, 0.0, 1.0, 1.0]));
+        notes.push(Note {
+            severity: "tip",
+            check: "layout",
+            path: format!("t={:.1}s ~ t={:.1}s", pairs[0].0, pairs[0].1),
+            message: format!("{} pairs of shots share a layout", pairs.len()),
+            fix: "change the composition each shot: scale, angle, crop, side".into(),
+        });
+    }
+    (notes, worst)
+}
+
+/// Write the review pack: a 1 fps strip, the frame after every cut, the worst
+/// frames per detector with the region boxed, and `review.md` (a rubric
+/// answered by looking at the images).
+pub fn write_pack(dir: &std::path::Path, p: &crate::preview::Preview, tl: &Timeline, worst: &[Worst], report_text: &str) -> Result<Vec<String>, String> {
+    use crate::preview::png;
+    std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    let w = |name: &str, img: &crate::preview::Image| std::fs::write(dir.join(name), png(img)).map_err(|e| format!("{name}: {e}"));
+    let mut files = Vec::new();
+    let dur = p.ev.duration;
+    let secs: Vec<f32> = (0..dur.ceil() as usize).map(|i| (i as f32 + 0.5).min(dur - 0.05)).collect();
+    w("strip.png", &p.sheet(Some(secs), 240))?;
+    files.push("strip.png".to_string());
+    for (k, c) in tl.cuts.iter().enumerate() {
+        let name = format!("cut-{:02}-t{:.1}.png", k + 1, c);
+        // Just before and just after the cut, side by side.
+        w(&name, &p.sheet(Some(vec![(c - 0.07).max(0.0), c + 0.07]), 480))?;
+        files.push(name);
+    }
+    for (k, (what, t, bb)) in worst.iter().enumerate() {
+        let mut img = p.frame(*t, Some(960));
+        let (iw, ih) = (img.width as f32, img.height as f32);
+        let r = [bb[0] * iw, bb[1] * ih, bb[2] * iw, bb[3] * ih];
+        for (x0, y0, x1, y1) in [(r[0], r[1], r[2], r[1] + 3.0), (r[0], r[3] - 3.0, r[2], r[3]), (r[0], r[1], r[0] + 3.0, r[3]), (r[2] - 3.0, r[1], r[2], r[3])] {
+            for y in (y0.max(0.0) as u32)..(y1.min(ih) as u32) {
+                for x in (x0.max(0.0) as u32)..(x1.min(iw) as u32) {
+                    let k = ((y * img.width + x) * 4) as usize;
+                    img.rgba[k..k + 4].copy_from_slice(&[255, 40, 60, 255]);
+                }
+            }
+        }
+        let name = format!("worst-{}-{what}-t{t:.1}.png", k + 1);
+        w(&name, &img)?;
+        files.push(name);
+    }
+    let peak = tl.energy.iter().enumerate().max_by(|a, b| a.1.total_cmp(b.1)).map(|(i, _)| i as f32 + 0.5).unwrap_or(0.0);
+    let wow = p.frame(peak.min(dur - 0.05), Some(960));
+    w(&format!("peak-t{peak:.1}.png"), &wow)?;
+    files.push(format!("peak-t{peak:.1}.png"));
+    let md = format!(
+        "# Review pack\n\nLook at the images. Answer each question in one line, then fix the three weakest answers. A score is not a quality verdict: this is.\n\n```\n{report_text}```\n\nImages: {}\n\n1. `strip.png` (1 frame per second): what is the subject of each second? Name any second without one.\n2. Where is the one 'wow' moment? (`peak-*.png` is the energy peak.) If there is none, which shot should become it?\n3. `cut-*.png` (before and after each cut): which cuts are motivated (a match, the beat, a reveal) and which just happen? Any pop or flash?\n4. `worst-*.png`: is the boxed problem real? What exactly would you change?\n5. Would a top studio post any single frame as is? Which one, and what would they change about the others?\n6. With the sound off, does the story read? Where does it lose you?\n7. Against BAR.md: which frames show a centred headline on a gradient, placeholder UI, an empty frame, flat 2D, or a stock look?\n",
+        files.join(", ")
+    );
+    std::fs::write(dir.join("review.md"), md).map_err(|e| e.to_string())?;
+    files.push("review.md".into());
+    Ok(files)
+}
+
 /// One line on intent versus what was measured.
 pub fn summary(intent: &Intent, tl: &Timeline) -> String {
     let mut s = format!(
@@ -342,6 +618,45 @@ mod tests {
         let e = ev(spec.clone());
         let s = Samples::take(&e, 6.0, 160);
         time_axis(&e, &s, &intent(&spec, None), None)
+    }
+
+    /// The user-rejected slow shot (docs/video/quality/rejected/lighthouse-slow.jpg).
+    /// It is slow against a fast intent, but not punished under a calm one.
+    #[test]
+    fn rejected_slow_shot_is_judged_by_intent() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/review");
+        let spec: Value = serde_json::from_str(&std::fs::read_to_string(dir.join("lighthouse-slow.json")).unwrap()).unwrap();
+        let mut fast = spec.clone();
+        fast["intent"] = json!({ "pace": "fast" });
+        let r = crate::critique::review(&fast, &dir, None, true);
+        assert!(r.notes.iter().any(|n| n.check == "pace" && n.message.contains("fast intent")), "{}", r.to_text());
+        let mut calm = spec;
+        calm["intent"] = json!({ "pace": "calm" });
+        let r = crate::critique::review(&calm, &dir, None, true);
+        assert!(!r.notes.iter().any(|n| matches!(n.check, "pace" | "dead-air" | "ending")), "{}", r.to_text());
+        assert!(r.summary.contains("intent: calm (declared)"), "{}", r.summary);
+    }
+
+    #[test]
+    fn composition_finds_empty_and_centred_slides() {
+        let scenes: Vec<_> = (0..5).map(|i| json!({ "duration": 1.2, "transition": "cut", "background": "linear-gradient(135deg, #1a1040, #402080)", "layers": [ { "text": format!("Slide {i}"), "size": 22, "color": "#ffffff" } ] })).collect();
+        let spec = json!({ "size": [640, 360], "scenes": scenes });
+        let e = ev(spec.clone());
+        let s = Samples::take(&e, 6.0, 192);
+        let (tl, _) = time_axis(&e, &s, &intent(&spec, None), None);
+        let (n, worst) = composition(&e, &s, &tl);
+        let checks: Vec<&str> = n.iter().map(|x| x.check).collect();
+        assert!(checks.contains(&"frame-fill") && checks.contains(&"layout") && checks.contains(&"bar"), "{n:?}");
+        assert!(!worst.is_empty());
+        // A full, off-centre frame is not flagged.
+        let full = json!({ "size": [640, 360], "scenes": (0..5).map(|i| json!({ "duration": 1.2, "transition": "cut", "background": "#101010", "layers": [
+            { "shape": "rect", "fill": "#d0d0d0", "width": 300, "height": 300, "x": 180 + i * 20, "y": 180 },
+            { "text": "A very large headline", "size": 48, "color": "#ffffff", "x": 470, "y": 120 + i * 10 } ] })).collect::<Vec<_>>() });
+        let e = ev(full.clone());
+        let s = Samples::take(&e, 6.0, 192);
+        let (tl, _) = time_axis(&e, &s, &intent(&full, None), None);
+        let (n, _) = composition(&e, &s, &tl);
+        assert!(!n.iter().any(|x| x.check == "frame-fill" || x.check == "bar"), "{n:?}");
     }
 
     #[test]

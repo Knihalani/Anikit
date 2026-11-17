@@ -325,6 +325,7 @@ impl Evaluator {
             ctheme: components_theme(&c.theme),
             theme: c.theme,
             comps: c.comps.into_iter().map(|(n, e, _)| (n, e)).collect(),
+            shader_scale: std::sync::atomic::AtomicU32::new(1.0f32.to_bits()),
             shutter,
             shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
         };

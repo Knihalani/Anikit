@@ -47,7 +47,7 @@ fn expand_examples_and_critique() {
         assert!(ok, "{err}");
         // Templates are honest quick starts: flat 2D (BAR #5) and slower than their intent; nothing else.
         let issues: Vec<&str> = err.lines().filter(|l| l.starts_with("warning") || l.starts_with("error")).collect();
-        assert!(issues.iter().all(|l| l.contains("BAR #5") || l.contains("intent") || l.contains("nothing moves")), "{f}: {err}");
+        assert!(issues.iter().all(|l| l.contains("BAR #") || l.contains("intent") || l.contains("nothing moves") || l.contains("centred")), "{f}: {err}");
         assert!(err.contains("BAR #5") && err.contains("critique "), "{f}: {err}");
         let (ok, json, _) = run(&["critique", out.to_str().unwrap(), "--json"], &d);
         let r: serde_json::Value = serde_json::from_str(&json).unwrap();

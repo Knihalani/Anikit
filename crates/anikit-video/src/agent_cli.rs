@@ -40,9 +40,10 @@ Agent commands:
   anikit-video templates expand <name> [params.json] [--brand brand.json] [--format 9:16] [--look noir] [-o spec.json]
   anikit-video prompt [name]        list prompts, or print one (e.g. director)
   anikit-video looks [name] [--json] art-direction looks (palette, type, motion, world); a spec takes \"look\": \"noir\"
-  anikit-video critique <spec.json> [--render] [--detail] [--json]  review; --render also checks rendered frames
+  anikit-video critique <spec.json> [--render] [--pack dir] [--detail] [--json]  review; --render also checks rendered frames
                                     and the timeline against the spec's \"intent\" (pace, dead air, beats, arc)
-                                    (contrast against real pixels, overlaps, cut text, empty frames)
+                                    (contrast, overlaps, cut text, frame fill, centred layouts); --pack writes frames
+                                    to look at (strip, cuts, worst frames, peak) and a review.md rubric
   anikit-video preview <spec.json|template> [--at T] [--width W] [-o out.png] [--format 9:16] [--brand b.json] [--params p.json]
                                     contact sheet (one frame per scene), or one still with --at
   anikit-video mcp                  Model Context Protocol server on stdio
@@ -252,11 +253,15 @@ fn cmd_prompt(args: &[String]) -> Result<(), String> {
 }
 
 fn cmd_critique(args: &[String]) -> Result<(), String> {
-    let a = parse(args, &[], &["json", "render", "detail"])?;
-    let path = a.pos.first().ok_or("usage: critique <spec.json> [--render] [--detail] [--json]")?;
+    let a = parse(args, &["pack"], &["json", "render", "detail"])?;
+    let path = a.pos.first().ok_or("usage: critique <spec.json> [--render] [--pack dir] [--detail] [--json]")?;
     let spec = read_json(path)?;
     let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
-    let r = crate::critique::review(&spec, &base, None, a.has("render"));
+    let (r, files) = crate::critique::review_pack(&spec, &base, None, a.has("render"), a.get("pack").map(Path::new));
+    if let Some(dir) = a.get("pack") {
+        let files = files?;
+        eprintln!("review pack: {dir}/ ({} files): open review.md and look at every image", files.len());
+    }
     if a.has("json") {
         out!("{}", pretty(&serde_json::to_value(&r).unwrap()));
     } else {

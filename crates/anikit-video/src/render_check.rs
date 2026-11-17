@@ -215,6 +215,15 @@ pub fn check_spec(raw: &serde_json::Value, ev: &Evaluator) -> Vec<Note> {
 /// Run the pixel checks.
 pub fn check(ev: &Evaluator) -> Vec<Note> {
     const SCALE: f32 = 0.5;
+    let prev = ev.shader_scale.swap(SCALE.to_bits(), std::sync::atomic::Ordering::Relaxed);
+    let notes = check_at(ev, SCALE);
+    ev.shader_scale.store(prev, std::sync::atomic::Ordering::Relaxed);
+    notes
+}
+
+fn check_at(ev: &Evaluator, scale: f32) -> Vec<Note> {
+    #[allow(non_snake_case)]
+    let SCALE = scale;
     let fmt = Format { width: ev.width, height: ev.height, fps: 30 };
     let [top, right, bottom, left] = fmt.safe().map(|x| x as f32 * SCALE);
     let mut notes = Vec::new();

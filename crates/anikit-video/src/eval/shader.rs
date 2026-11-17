@@ -382,7 +382,8 @@ impl Evaluator {
         let (fw, fh) = (self.width as f32, self.height as f32);
         // Render at device resolution.
         let (sx, sy) = ((xf[0] * xf[0] + xf[1] * xf[1]).sqrt(), (xf[2] * xf[2] + xf[3] * xf[3]).sqrt());
-        let (dw, dh) = if sc.filter { (fw, fh) } else { ((w * sx).round().clamp(1.0, MAX_SIDE), (h * sy).round().clamp(1.0, MAX_SIDE)) };
+        let k = f32::from_bits(self.shader_scale.load(std::sync::atomic::Ordering::Relaxed)).clamp(0.05, 1.0);
+        let (dw, dh) = if sc.filter { (fw, fh) } else { ((w * sx * k).round().clamp(1.0, MAX_SIDE), (h * sy * k).round().clamp(1.0, MAX_SIDE)) };
         if w < 0.5 || h < 0.5 {
             return;
         }

@@ -57,6 +57,7 @@ pub fn category(check: &str) -> &'static str {
         "pace" | "dead-air" | "rhythm" | "arc" | "ending" | "beat" | "pacing" | "length" => "time",
         "reading-time" | "legibility" | "contrast" | "render-contrast" | "typography" | "density" | "render-overlap" => "text",
         "hook" | "structure" | "placeholder" | "copy" => "story",
+        "frame-fill" | "layout" => "composition",
         "flicker" | "judder" | "banding" | "audio" => "technical",
         _ => "composition",
     }
@@ -110,8 +111,14 @@ impl Report {
 /// The full review: the spec heuristics and, with `render`, the pixel checks
 /// on sampled frames plus the time axis judged against the spec's intent.
 pub fn review(spec: &Value, base: &std::path::Path, range: Option<(f64, f64)>, render: bool) -> Report {
+    review_pack(spec, base, range, render, None).0
+}
+
+/// [`review`], optionally writing the review pack (see `review::write_pack`) to `pack`.
+pub fn review_pack(spec: &Value, base: &std::path::Path, range: Option<(f64, f64)>, render: bool, pack: Option<&std::path::Path>) -> (Report, Result<Vec<String>, String>) {
     let mut r = critique_in_range(spec, range);
-    if render {
+    let mut files = Ok(Vec::new());
+    if render || pack.is_some() {
         let base = if base.as_os_str().is_empty() { std::path::Path::new(".") } else { base };
         if let Ok(p) = crate::preview::Preview::new(spec.clone(), base) {
             r.notes.extend(crate::render_check::check_spec(spec, &p.ev));
@@ -121,10 +128,17 @@ pub fn review(spec: &Value, base: &std::path::Path, range: Option<(f64, f64)>, r
             let (tl, notes) = crate::review::time_axis(&p.ev, &samples, &intent, beats.as_ref().map(|b| &b.beats[..]));
             r.summary = crate::review::summary(&intent, &tl);
             r.notes.extend(notes);
+            let (cn, worst) = crate::review::composition(&p.ev, &samples, &tl);
+            r.notes.extend(cn);
+            r.rescore();
+            if let Some(dir) = pack {
+                files = crate::review::write_pack(dir, &p, &tl, &worst, &r.to_text_detail(true));
+            }
+            return (r, files);
         }
     }
     r.rescore();
-    r
+    (r, files)
 }
 
 struct Ctx<'a> {
