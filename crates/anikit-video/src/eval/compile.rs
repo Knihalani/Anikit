@@ -2485,7 +2485,7 @@ impl C<'_> {
                 0
             }
         };
-        let full = self.o.base_dir.join(&src);
+        let full = self.media_path(&src, path);
         let (id, nat) = if let Some(&(i, nat)) = self.image_ids.get(&full) {
             (i, nat)
         } else if !full.exists() {
@@ -3155,9 +3155,26 @@ impl C<'_> {
         (Kind::Video { frames, natural: nat, fit, rate, speed, looped }, nat)
     }
 
+    /// Where an image `src` lives: library refs (`polyhaven:texture/…`,
+    /// `ambientcg:…`) are fetched once (the albedo map of a texture set);
+    /// anything else is relative to the spec. A failed fetch is reported here
+    /// and yields a path that doesn't exist (so callers skip the image).
+    fn media_path(&mut self, src: &str, path: &str) -> std::path::PathBuf {
+        if !crate::assetlib::is_ref(src) {
+            return self.o.base_dir.join(src);
+        }
+        match crate::assetlib::get(src) {
+            Ok(f) => f.main(),
+            Err(e) => {
+                self.d.push(Diagnostic::error(format!("{path}.src"), e));
+                std::path::PathBuf::from("\0missing-asset")
+            }
+        }
+    }
+
     /// Load an image file referenced by a component and register it under its `src`.
     fn load_media(&mut self, src: &str, path: &str) {
-        let full = self.o.base_dir.join(src);
+        let full = self.media_path(src, path);
         if self.image_ids.contains_key(&full) || !self.o.load_assets {
             if let Some(&(id, _)) = self.image_ids.get(&full) {
                 self.assets.add_media(src, ImageId(id));

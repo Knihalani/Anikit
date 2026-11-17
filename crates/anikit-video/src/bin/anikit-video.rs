@@ -281,6 +281,9 @@ fn main() -> ExitCode {
         }
         return ExitCode::SUCCESS;
     }
+    if let Some(code) = anikit_video::assetlib::run(&raw) {
+        return ExitCode::from(code as u8);
+    }
     if let Some(code) = anikit_video::music::run(&raw) {
         return ExitCode::from(code as u8);
     }
