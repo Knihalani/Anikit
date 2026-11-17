@@ -692,9 +692,18 @@ pub struct CaptionFile {
     pub cues: Option<Vec<CaptionCue>>,
     pub style: Option<String>,
     pub y: Option<Num>,
+    /// Colour of the word being spoken (default `$accent`).
     pub highlight: Option<String>,
     pub color: Option<String>,
+    /// Box behind the word being spoken (TikTok style).
     pub background: Option<String>,
+    /// Words per caption page (default 4; 1 = one word at a time).
+    pub max_words: Option<usize>,
+    pub uppercase: Option<bool>,
+    /// Words not yet spoken: `dim` (default), `hidden` (build up) or `show`.
+    pub upcoming: Option<String>,
+    /// Font size (default 6vh).
+    pub size: Option<Num>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]

@@ -364,6 +364,8 @@ pub struct Evaluator {
     pub(crate) easings: Vec<Easing>,
     pub(crate) scenes: Vec<SceneC>,
     pub(crate) overlay: Vec<Node>,
+    /// Word-synced captions (TEXT's caption track) and the bottom-centre point they hang from.
+    pub(crate) captions: Option<(crate::text::captions::CaptionTrack, [f32; 2])>,
     pub(crate) theme: theme::Theme,
     pub(crate) ctheme: crate::components::Theme,
 }
@@ -436,6 +438,7 @@ impl Evaluator {
             return false;
         }
         node_static(&s.camera, a, b) && s.layers.iter().all(|n| node_static(n, a, b)) && self.overlay.iter().all(|n| node_static(n, t0, t1))
+            && self.captions.as_ref().is_none_or(|(tr, _)| t1 - t0 < 0.05 && tr.page_text(t0).is_none() && tr.page_text(t1).is_none())
     }
 
     /// The display list at time `t` (seconds).
@@ -478,6 +481,9 @@ impl Evaluator {
         let frame = [self.width as f32, self.height as f32];
         for n in &self.overlay {
             self.emit_node(n, &cx, &dl::IDENTITY, frame, 1.0, &mut out.ops);
+        }
+        if let Some((tr, [x, y])) = &self.captions {
+            tr.ops(t, translate(*x, *y), &mut out.ops);
         }
     }
 

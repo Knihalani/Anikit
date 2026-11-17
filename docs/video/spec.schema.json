@@ -2310,6 +2310,7 @@
           ]
         },
         "highlight": {
+          "description": "Colour of the word being spoken (default `$accent`).",
           "type": [
             "string",
             "null"
@@ -2322,9 +2323,43 @@
           ]
         },
         "background": {
+          "description": "Box behind the word being spoken (TikTok style).",
           "type": [
             "string",
             "null"
+          ]
+        },
+        "maxWords": {
+          "description": "Words per caption page (default 4; 1 = one word at a time).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint",
+          "minimum": 0
+        },
+        "uppercase": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "upcoming": {
+          "description": "Words not yet spoken: `dim` (default), `hidden` (build up) or `show`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "size": {
+          "description": "Font size (default 6vh).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       }

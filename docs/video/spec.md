@@ -370,16 +370,13 @@ A cue plays a file (`src`) or a built-in sound effect (`sfx`: `click`, `tick`, `
 ## Captions
 
 ```json
-"captions": { "src": "voice.srt", "style": "caption", "y": "88%", "highlight": "$accent" }
+"captions": { "src": "voice.srt" }
 "captions": [ { "text": "Meet Anikit Video", "at": 0.5, "end": 2.2 }, { "text": "JSON in, MP4 out", "at": 2.4, "end": 4 } ]
-```
-
-Captions are text layers drawn over every scene. With word timings, the spoken word lights up in `highlight` (default `$accent`):
-
-```json
-"captions": { "highlight": "$accent", "cues": [
+"captions": { "background": "$accent", "maxWords": 3, "cues": [
   { "text": "", "at": 0.5, "end": 2.4, "words": [["Meet", 0.5, 0.8], ["Anikit", 0.8, 1.3], ["Video", 1.3, 2.0]] } ] }
 ```
+
+Word-synced captions over every scene, short-form style: words are grouped into pages of `maxWords` (default 4), and the spoken word pops in and lights up in `highlight` (default `$accent`), or sits on a `background` box. Without word timings they're estimated from the text. `src` reads SRT or WebVTT (including VTT word timestamps). Other keys: `color`, `size` (default 6% of the frame's short side), `y` (bottom of the captions, default `90%`), `uppercase`, `upcoming` (`dim`, `hidden` or `show` for words not yet spoken), and `style` (a theme text style's font and weight).
 
 ## Validation and messages
 

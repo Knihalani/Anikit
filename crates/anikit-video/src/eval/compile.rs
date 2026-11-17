@@ -258,10 +258,8 @@ impl Evaluator {
         c.smarkers.clear();
         c.scene_start = 0.0;
         c.scene_dur = duration;
-        let overlay = match &spec.captions {
-            Some(cap) => c.captions(cap, duration),
-            None => Vec::new(),
-        };
+        let overlay = Vec::new();
+        let captions = spec.captions.as_ref().and_then(|cap| c.captions(cap));
         let ev = Evaluator {
             width: c.w as u32,
             height: c.h as u32,
@@ -273,6 +271,7 @@ impl Evaluator {
             easings: c.easings,
             scenes,
             overlay,
+            captions,
             ctheme: components_theme(&c.theme),
             theme: c.theme,
         };
@@ -2441,71 +2440,77 @@ impl C<'_> {
         })
     }
 
-    fn captions(&mut self, cap: &spec::Captions, duration: f32) -> Vec<Node> {
-        let (cues, style, y, color, highlight): (Vec<spec::CaptionCue>, String, Option<Num>, Option<String>, Option<String>) = match cap {
-            spec::Captions::Cues(c) => (c.clone(), "caption".into(), None, None, None),
-            spec::Captions::File(f) => {
-                let mut cues = f.cues.clone().unwrap_or_default();
-                if let Some(src) = &f.src {
-                    let full = self.o.base_dir.join(src);
-                    match std::fs::read_to_string(&full) {
-                        Ok(s) => cues.extend(parse_srt(&s)),
-                        Err(e) => self.d.push(Diagnostic::error("captions.src", format!("can't read {}: {e}", full.display()))),
-                    }
-                }
-                (cues, f.style.clone().unwrap_or_else(|| "caption".into()), f.y.clone(), f.color.clone(), f.highlight.clone())
-            }
+    /// Captions → one TEXT `CaptionTrack` (paging, per-word pop and highlight).
+    fn captions(&mut self, cap: &spec::Captions) -> Option<(text::captions::CaptionTrack, [f32; 2])> {
+        use text::captions::{CaptionStyle, CaptionTrack, Cue, Upcoming, Word};
+        let empty = spec::CaptionFile::default();
+        let (list, f): (Vec<spec::CaptionCue>, &spec::CaptionFile) = match cap {
+            spec::Captions::Cues(c) => (c.clone(), &empty),
+            spec::Captions::File(f) => (f.cues.clone().unwrap_or_default(), f),
         };
-        let mut out = Vec::new();
-        let hl = highlight.unwrap_or_else(|| "$accent".into());
-        let hl_c = self.color(&hl, "captions.highlight").unwrap_or(Rgba([1.0, 0.8, 0.2, 1.0]));
-        for (i, c) in cues.iter().enumerate() {
-            let words = c.words.as_ref().filter(|w| !w.is_empty());
-            let text = match words {
-                Some(w) => w.iter().map(|x| x.0.as_str()).collect::<Vec<_>>().join(" "),
-                None => c.text.clone(),
-            };
-            let l = Layer {
-                text: Some(text),
-                split: words.map(|_| "words".to_string()),
-                style: Some(StyleRef::Name(style.clone())),
-                color: Some(spec::Paint::Css(color.clone().unwrap_or_else(|| "$text".into()))),
-                y: Some(y.clone().unwrap_or(Num::Str("88%".into()))),
-                width: Some(Num::Str("80%".into())),
-                start: Some(c.at.clone()),
-                end: Some(c.end.clone()),
-                shadow: Some(spec::Shadow(spec::ShadowObj { x: Some(0.0), y: Some(2.0), blur: Some(8.0), color: Some("#000000c0".into()) })),
-                enter: Some(spec::Preset(PresetObj { preset: Some("fadeIn".into()), duration: Some(Num::Num(0.15)), ..Default::default() })),
-                ..Default::default()
-            };
-            let pc = PCtx { size: [self.w, self.h], t0: 0.0, end: duration, delay: 0.0, index: i, count: cues.len(), in_box: false };
-            if let Some(mut n) = self.layer(&l, &format!("captions[{i}]"), pc) {
-                if let (Some(w), Kind::Text { split: Some(sp), .. }) = (words, &mut n.kind) {
-                    // Highlight each word while it's spoken (times relative to the cue).
-                    let base = rgba_to_oklab(oklab_to_rgba([n.base[prop::FILL], n.base[prop::FILL + 1], n.base[prop::FILL + 2], n.base[prop::FILL + 3]]));
-                    let on = rgba_to_oklab(hl_c);
-                    sp.unit_tracks = w
-                        .iter()
-                        .map(|(_, a, e)| {
-                            let (a, e) = ((*a as f32 - n.start).max(0.0), (*e as f32 - n.start).max(0.0));
-                            (0..4)
-                                .map(|k| Track {
-                                    slot: (prop::FILL + k) as u8,
-                                    segs: vec![
-                                        Seg { t0: 0.0, t1: 0.0, v0: base[k], v1: base[k], ease: 0, hold_before: true },
-                                        Seg { t0: a, t1: a + 0.06, v0: base[k], v1: on[k], ease: 0, hold_before: false },
-                                        Seg { t0: e, t1: e + 0.06, v0: on[k], v1: base[k], ease: 0, hold_before: false },
-                                    ],
-                                })
-                                .collect()
-                        })
-                        .collect();
-                    sp.delays = vec![0.0; w.len()];
-                }
-                out.push(n);
+        let mut cues: Vec<Cue> = Vec::new();
+        for (i, c) in list.iter().enumerate() {
+            let p = format!("captions[{i}]");
+            let (a, e) = (self.time_raw(&c.at, &format!("{p}.at")), self.time_raw(&c.end, &format!("{p}.end")));
+            let words: Vec<Word> = c.words.iter().flatten().map(|(t, s, e)| Word { text: t.clone(), start: *s as f32, end: *e as f32 }).collect();
+            let text = if c.text.trim().is_empty() { words.iter().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ") } else { c.text.clone() };
+            cues.push(Cue { text, start: a, end: e, words });
+        }
+        if let Some(src) = &f.src {
+            let full = self.o.base_dir.join(src);
+            match std::fs::read_to_string(&full) {
+                Ok(s) => cues.extend(text::captions::parse(&s)),
+                Err(e) => self.d.push(Diagnostic::error("captions.src", format!("can't read {}: {e}", full.display()))),
             }
         }
-        out
+        if cues.is_empty() {
+            return None;
+        }
+        let mut st = CaptionStyle::default();
+        let size = f.size.as_ref().map(|s| self.len_c(s, "captions.size", self.h, 16.0)).unwrap_or(self.h.min(self.w) * 0.06);
+        st.style.size = size;
+        st.width = self.w * 0.86;
+        let col = |me: &mut Self, c: &Option<String>, path: &str| c.as_ref().and_then(|c| me.color(c, path)).map(text::Color);
+        if let Some(c) = col(self, &f.color, "captions.color") {
+            st.style.color = c;
+        } else if let Some(c) = self.theme.colors.get("text") {
+            st.style.color = text::Color(*c);
+        }
+        st.highlight_box = col(self, &f.background, "captions.background");
+        // With a box behind the spoken word, keep its text colour by default (an accent on an accent box vanishes).
+        st.highlight = match col(self, &f.highlight, "captions.highlight") {
+            Some(c) => Some(c),
+            None if st.highlight_box.is_some() => Some(st.style.color),
+            None => self.theme.colors.get("accent").map(|c| text::Color(*c)),
+        };
+        if let Some(n) = f.max_words {
+            st.max_words = n.max(1);
+        }
+        st.uppercase = f.uppercase.unwrap_or(false);
+        st.upcoming = match f.upcoming.as_deref() {
+            None | Some("dim") => Upcoming::Dim,
+            Some("hidden") => Upcoming::Hidden,
+            Some("show") => Upcoming::Show,
+            Some(x) => {
+                self.d.push(Diagnostic::error("captions.upcoming", format!("unknown value '{x}'")).suggest(suggest(x, &["dim", "hidden", "show"])));
+                Upcoming::Dim
+            }
+        };
+        if let Some(sname) = &f.style {
+            if let Some(ts) = self.theme.styles.get(sname).cloned() {
+                if let Some(fnt) = &ts.font {
+                    st.style.font = self.theme.font(fnt).to_string();
+                }
+                if let Some(w) = ts.weight.as_ref().and_then(weight_value) {
+                    st.style.weight = w;
+                }
+            } else {
+                let names: Vec<&String> = self.theme.styles.keys().collect();
+                self.d.push(Diagnostic::error("captions.style", format!("unknown text style '{sname}'")).suggest(suggest(sname, &names)));
+            }
+        }
+        let y = f.y.as_ref().map(|y| self.len_c(y, "captions.y", self.h, 16.0)).unwrap_or(self.h * 0.9);
+        Some((CaptionTrack::new(&self.assets.fonts, &cues, &st), [self.w * 0.5, y]))
     }
 }
 
@@ -2538,6 +2543,7 @@ fn split_top(s: &str) -> Vec<&str> {
 }
 
 /// Minimal SRT parser.
+#[allow(dead_code)]
 pub(crate) fn parse_srt(s: &str) -> Vec<spec::CaptionCue> {
     let ts = |x: &str| -> Option<f64> {
         let x = x.trim().replace(',', ".");

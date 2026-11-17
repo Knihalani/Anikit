@@ -201,16 +201,14 @@ fn is_static_never_lies() {
 #[test]
 fn caption_word_highlight() {
     let ev = build(r##"{ "scenes": [ { "duration": 3, "layers": [] } ],
-        "captions": { "highlight": "#ff0000", "cues": [ { "text": "", "at": 0.5, "end": 2.5, "words": [["Hello", 0.5, 1.0], ["world", 1.0, 2.0]] } ] } }"##);
-    let colors = |t: f32| -> Vec<[f32; 4]> {
-        ev.eval(t).ops.iter().filter_map(|o| match o { Op::Glyphs { paint: anikit_video::dl::Paint::Solid(c), .. } => Some(c.0), _ => None }).collect()
+        "captions": { "highlight": "#ff0000", "color": "#ffffff", "cues": [ { "text": "", "at": 0.5, "end": 2.5, "words": [["Hello", 0.5, 1.0], ["world", 1.0, 2.0]] } ] } }"##);
+    let reds = |t: f32| -> usize {
+        ev.eval(t).ops.iter().filter(|o| matches!(o, Op::Glyphs { paint: anikit_video::dl::Paint::Solid(c), .. } if c.0[0] > 0.95 && c.0[1] < 0.1)).count()
     };
-    let a = colors(0.8);
-    assert_eq!(a.len(), 2);
-    assert!(a[0][0] > 0.95 && a[0][1] < 0.1, "first word highlighted: {a:?}");
-    assert!(a[1][1] > 0.8, "second word plain: {a:?}");
-    let b = colors(1.5);
-    assert!(b[1][0] > 0.95 && b[1][1] < 0.1 && b[0][1] > 0.8, "{b:?}");
+    assert_eq!(ev.eval(0.2).ops.iter().filter(|o| matches!(o, Op::Glyphs { .. })).count(), 0, "nothing before the first word");
+    assert!(reds(0.8) >= 1, "the spoken word is highlighted");
+    assert!(reds(1.5) >= 1);
+    assert!(!ev.is_static(0.7, 0.75));
 }
 
 #[test]
