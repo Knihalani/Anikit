@@ -527,6 +527,7 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
         full_range: false,
         cabac: opts.quality != Quality::Draft,
         subpel: opts.quality == Quality::Best,
+        ..Default::default()
     };
     let prof = Profile::default();
     let annexb = render_fused(ev, opts, &cfg, &prof);
