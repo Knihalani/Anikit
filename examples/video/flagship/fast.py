@@ -70,9 +70,9 @@ def s_deck():
     u = f"clamp(t/{BEAT * 1.2},0,1)"
     fan = sm(u)
     return shot(d, cam([key(0, [2.6, 2.2, 3.0], [0, 0.4, 0], 28, 3.6), key(d, [3.2, 2.8, 3.8], [0, 0.3, 0], 28, 4.4)]),
-                [{"type": "slab", "count": 120, "size": PANE, "radius": 0.03, "material": "pane",
-                  "pos": f"=[0.8*cos(i*3*{fan}*0.0174533), 0.47, -0.8*sin(i*3*{fan}*0.0174533)]",
-                  "rot": f"=[0, i*3*{fan}, 0]",
+                [{"type": "slab", "count": 40, "size": PANE, "radius": 0.03, "material": "pane",
+                  "pos": f"=[0.8*cos(i*9*{fan}*0.0174533), 0.47, -0.8*sin(i*9*{fan}*0.0174533)]",
+                  "rot": f"=[0, i*9*{fan}, 0]",
                   "texture": pane_tex(FILMS[0])}])
 
 
@@ -94,26 +94,29 @@ def s_highway(whip=True):
 def s_vortex():
     """Crash zoom down into a vortex of 40,000 panes, each a different frame."""
     d = SHOT
-    n = 40000
-    r = "(2+sqrt(i)*0.22)"
+    n = 12000
+    r = "(2+sqrt(i)*0.4)"
     a = f"(i*0.0390 + t*{0.6})"
     objs = [{"type": "slab", "count": n, "size": PANE, "radius": 0.03, "material": "pane",
-             "pos": f"=[{r}*cos({a}), 0.47 + 0.0*i, {r}*sin({a})]",
-             "rot": f"=[0, -{a}*57.2958 + 90, 0]", "texture": pane_tex(FILMS[2])}]
+             "pos": f"=[{r}*cos({a}), 0.01, {r}*sin({a})]",
+             "rot": f"=[-90, -{a}*57.2958 + 90, 0]", "texture": pane_tex(FILMS[2])}]
     return shot(d, cam([key(0, [0.1, 70, 0.1], [0, 0, 0], 35, 8, 0.8), key(d, [0.6, 9, 1.2], [0, 0, 0], 35, 8, 0.8)],
                        ease=False), objs)
 
 
-def s_run(lane, dur):
-    """The locked run: one pane per frame of camera travel, the film plays inside the glass."""
+def s_run(lane, dur, angle=0):
+    """The locked run: one pane per frame of camera travel, the film plays inside the glass.
+    angle 0: oblique from the front side; 1: high and steep; 2: reverse, from behind the next strip."""
     pitch, fps = 1.7, 60
     v = pitch * fps
     x0 = 300.0 + lane * 50
     objs = [{"type": "slab", "count": 1800, "size": PANE, "radius": 0.03, "material": "pane",
              "pos": f"=[1.7*i, 0.47, {-4 * k}]", "texture": pane_tex(FILMS[k])} for k in range(4)]
-    z = -4 * lane + 3.6
-    keys = [key(0, [x0, 0.72, z], [x0 + 5, 0.3, z - 3.6], 50, 2.8, 0.0),
-            key(dur, [x0 + v * dur, 0.72, z], [x0 + v * dur + 5, 0.3, z - 3.6], 50, 2.8, 0.0)]
+    z = -4 * lane
+    off = [(0.72, 3.6, 5.0, 0.3, -3.6), (3.4, 2.2, 3.0, 0.2, -2.2), (0.6, 2.6, -5.0, 0.35, -2.6)][angle]
+    y, dz, lx, ly, lz = off
+    keys = [key(0, [x0, y, z + dz], [x0 + lx, ly, z + dz + lz], 50 if angle != 1 else 35, 2.8, 0.0),
+            key(dur, [x0 + v * dur, y, z + dz], [x0 + v * dur + lx, ly, z + dz + lz], 50 if angle != 1 else 35, 2.8, 0.0)]
     return shot(dur, cam(keys, interp="linear", ease=False), objs)
 
 
@@ -136,7 +139,7 @@ def s_crush():
     u = sm(f"clamp(t/{BEAT * 1.1},0,1)")
     c = sm(f"clamp((t-{BEAT * 1.1})/{BEAT * 0.8},0,1)")
     x = f"(1.7*i*(1-{u}) + i*0.012*{u})*(1-0.95*{c})"
-    objs = [{"type": "slab", "count": 600, "size": PANE, "radius": 0.03, "material": "pane",
+    objs = [{"type": "slab", "count": 600, "size": PANE, "radius": 0.03, "material": "pane-solid",
              "pos": f"=[{x}, 0.47, 0]", "rot": f"=[0, 90*{u}, 0]", "texture": pane_tex(FILMS[1])}]
     return shot(d, cam([key(0, [-2.8, 1.0, 3.2], [3, 0.4, 0], 35, 3.5), key(d, [-1.6, 0.7, 1.8], [0.2, 0.4, 0], 50, 2.2)]),
                 objs)
@@ -148,7 +151,7 @@ def s_tunnel():
     per = 24
     ang = f"((i - floor(i/{per})*{per})*{360 / per})"
     z = f"(-floor(i/{per})*0.9)"
-    objs = [{"type": "slab", "count": 24000, "size": PANE, "radius": 0.03, "material": "pane",
+    objs = [{"type": "slab", "count": 8400, "size": PANE, "radius": 0.03, "material": "pane",
              "pos": f"=[3.2*cos({ang}*0.0174533), 3.2 + 3.2*sin({ang}*0.0174533), {z}]",
              "rot": f"=[0, 0, {ang} + 90]", "texture": pane_tex(FILMS[(2) % 4], "=i + t*60")}]
     return shot(d, cam([key(0, [0, 3.2, -300], [0, 3.2, -400], 24, 8, 1.0), key(d * 0.35, [0, 3.2, -120], [0, 3.2, -220], 24, 8, 1.0),
@@ -159,14 +162,14 @@ def s_logo(dur):
     """Panes stream past; chrome ANIKIT VIDEO stands on the floor."""
     rise = sm(f"clamp(t/{BEAT * 1.5},0,1)")
     objs = [
-        {"text": "ANIKIT VIDEO", "height": 0.42, "depth": 0.2, "bevel": 0.03, "material": "chrome",
+        {"text": "ANIKIT VIDEO", "height": 0.34, "depth": 0.2, "bevel": 0.03, "material": "chrome",
          "font": "Inter Display", "weight": 800, "pos": f"=[0, -0.75*(1-{rise}), 0]"},
         {"text": "Words in. Film out.", "height": 0.16, "depth": 0.02, "bevel": 0.004, "material": "ink",
          "font": "Inter Display", "weight": 600, "pos": f"=[0, -0.2*(1-{rise}), 0.9]"},
         {"type": "slab", "count": 400, "size": PANE, "radius": 0.03, "material": "pane",
          "pos": f"=[1.7*i - 340 + 300*{sm(f'clamp(t/{BEAT * 2},0,1)')}, 0.47, -3.5]", "texture": pane_tex(FILMS[0])},
     ]
-    return shot(dur, cam([key(0, [-1.2, 1.1, 7.6], [0, 0.45, 0], 40, 7.0), key(dur, [-0.3, 1.0, 6.8], [0, 0.45, 0], 40, 6.4)]),
+    return shot(dur, cam([key(0, [-0.9, 0.9, 5.2], [0, 0.4, 0], 40, 5.0), key(dur, [-0.2, 0.85, 4.7], [0, 0.4, 0], 40, 4.6)]),
                 objs)
 
 
@@ -178,8 +181,8 @@ def build(proxy=False):
     if "--draft" in sys.argv:
         QUALITY = "draft"
     scenes = [s_macro(), s_deck(), s_highway(), s_vortex(),
-              s_run(0, SHOT), s_run(1, SHOT), s_run(2, SHOT),
-              s_dominoes(), s_crush(), s_tunnel(), s_logo(SHOT * 2.5)]
+              s_run(0, SHOT, 0), s_run(1, SHOT, 1), s_run(2, SHOT, 2),
+              s_dominoes(), s_crush(), s_tunnel(), s_logo(SHOT * 2)]
     total = sum(s["duration"] for s in scenes)
     comps = {}
     hues = ["#2A6F5E", "#6B2A7A", "#1F4E8C", "#B8862B"]
@@ -203,7 +206,8 @@ def build(proxy=False):
     spec.pop("materials_note")
     mats = {"pane": {"extends": "glass", "base": "#FFFFFF", "roughness": 0.03, "tint": "#9FD8C8"},
             "rail": {"base": "#FF5A1F", "emissive": "#FF5A1F", "emissiveStrength": 1.5, "roughness": 0.5},
-            "ink": {"base": "#15171A", "metallic": 0, "roughness": 0.45}}
+            "ink": {"base": "#15171A", "metallic": 0, "roughness": 0.45},
+            "pane-solid": {"base": "#DDE6E2", "metallic": 0, "roughness": 0.08, "clearcoat": 1}}
     for s in scenes:
         s["layers"][0]["props"]["materials"] = mats
     out = HERE / ("fast-proxy.json" if proxy else "fast.json")
