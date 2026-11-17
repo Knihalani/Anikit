@@ -139,6 +139,18 @@ pub fn mat_mul(a: &[V3; 3], b: &[V3; 3]) -> [V3; 3] {
     [ap(b[0]), ap(b[1]), ap(b[2])]
 }
 
+/// Fractional part via truncation (std's `floor` is a software routine
+/// without SSE4.1).
+#[inline(always)]
+pub fn fract(x: f32) -> f32 {
+    let t = x - (x as i32) as f32;
+    if t < 0.0 {
+        t + 1.0
+    } else {
+        t
+    }
+}
+
 /// A small, fast hash for per-pixel sample decorrelation.
 #[inline]
 pub fn hash2(x: u32, y: u32) -> u32 {
@@ -162,7 +174,7 @@ pub fn r2(i: u32, rot: (f32, f32)) -> (f32, f32) {
     const A2: f32 = 0.569_840_3;
     let a = rot.0 + A1 * i as f32;
     let b = rot.1 + A2 * i as f32;
-    (a - a.floor(), b - b.floor())
+    (fract(a), fract(b))
 }
 
 /// Cosine-weighted hemisphere direction around `n`.
