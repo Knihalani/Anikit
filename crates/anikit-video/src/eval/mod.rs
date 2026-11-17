@@ -128,6 +128,38 @@ pub(crate) mod prop {
     }
 }
 
+/// Text whose layout depends on animated values (variable axes in uniform
+/// slots, letter spacing in `prop::LS`).
+pub(crate) struct DynText {
+    pub spec: crate::text::TextSpec,
+    /// Axis tag and its slot (`prop::U0 + i`).
+    pub axes: Vec<(String, usize)>,
+    /// Base letter spacing in px (`prop::LS`).
+    pub ls: f32,
+}
+
+impl DynText {
+    /// The layout for the current values, or `None` when they match the base.
+    fn relayout(&self, fonts: &crate::text::FontStore, v: &[f32; prop::N]) -> Option<Arc<TextLayout>> {
+        let q = |x: f32| (x * 10.0).round() / 10.0;
+        let ls_changed = (v[prop::LS] - self.ls).abs() > 0.01;
+        let ax_changed = self.axes.iter().any(|(t, slot)| self.spec.style.axes.iter().any(|(t2, b)| t2 == t && (q(v[*slot]) - q(*b)).abs() > 1e-4));
+        if !ls_changed && !ax_changed {
+            return None;
+        }
+        let mut sp = self.spec.clone();
+        for (t, slot) in &self.axes {
+            if let Some(a) = sp.style.axes.iter_mut().find(|a| &a.0 == t) {
+                a.1 = q(v[*slot]);
+            }
+        }
+        if ls_changed {
+            sp.style.letter_spacing = (v[prop::LS] * 20.0).round() / 20.0 / sp.style.size.max(1.0);
+        }
+        Some(fonts.layout(&sp))
+    }
+}
+
 /// One interpolation segment of a property track.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Seg {
@@ -254,6 +286,8 @@ pub(crate) enum Kind {
         split: Option<SplitC>,
         counter: Option<Counter>,
         kinetic: Option<KineticPlan>,
+        /// Animated variable axes / tracking: re-laid out per frame.
+        dynamic: Option<Box<DynText>>,
     },
     Shape {
         shape: ShapeKind,
@@ -1224,17 +1258,25 @@ impl Evaluator {
                     give_path(p);
                 }
             }
-            Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic } => {
+            Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic, dynamic } => {
                 let owned;
                 let layout = if let Some(c) = counter {
                     owned = self.layout_counter(c, v[prop::VALUE]);
+                    &owned
+                } else if let Some(l) = dynamic.as_ref().and_then(|d| d.relayout(&self.assets.fonts, &v)) {
+                    owned = l;
                     &owned
                 } else {
                     layout
                 };
                 let lsize = [wrap.unwrap_or(layout.width), layout.height];
                 // Centre the block in the layer box (it may differ when the box is wider).
-                let ox = (w - lsize[0]) * 0.5;
+                // Re-laid-out text (animated axes / tracking) keeps its aligned edge.
+                let ox = match dynamic.as_ref().map(|d| d.spec.align) {
+                    Some(crate::text::Align::Left) => 0.0,
+                    Some(crate::text::Align::Right) => w - lsize[0],
+                    _ => (w - lsize[0]) * 0.5,
+                };
                 let oy = (h - lsize[1]) * 0.5;
                 let bxf = if ox.abs() > 0.01 || oy.abs() > 0.01 { dl::mul(&xf, &translate(ox, oy)) } else { xf };
                 if let Some(k) = kinetic {

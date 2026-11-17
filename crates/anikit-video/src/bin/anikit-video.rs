@@ -96,15 +96,10 @@ fn load(path: &str) -> Result<(spec::Parsed, PathBuf), Vec<Diagnostic>> {
 }
 
 fn options(spec: &spec::Spec, base: &Path, load_assets: bool) -> (Options, Vec<Diagnostic>) {
+    // The spec's `fonts` map (files, keys as aliases) is loaded by the compiler.
+    let _ = spec;
     let fonts = anikit_video::text::FontStore::new();
-    let mut d = Vec::new();
-    if let Some(f) = &spec.fonts {
-        for (name, file) in f {
-            if let Err(e) = fonts.add_font_file(base.join(file)) {
-                d.push(Diagnostic::error(format!("fonts.{name}"), format!("can't load {file}: {e}")));
-            }
-        }
-    }
+    let d = Vec::new();
     (Options { base_dir: base.to_path_buf(), fonts: Some(Arc::new(fonts)), load_assets, assets: None }, d)
 }
 

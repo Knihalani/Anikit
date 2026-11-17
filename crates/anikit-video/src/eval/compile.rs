@@ -125,6 +125,124 @@ fn size_preset(s: &str) -> Option<[u32; 2]> {
 }
 const SIZE_NAMES: &[&str] = &["16:9", "9:16", "1:1", "4:5", "720p", "1080p", "1440p", "4k", "vertical", "square", "portrait"];
 
+impl C<'_> {
+    /// Resolve every font the spec names: library families are fetched on
+    /// first use (an error if that fails), unknown names warn with suggestions.
+    fn load_fonts(&mut self, spec: &Spec) {
+        let Ok(v) = serde_json::to_value(spec) else { return };
+        let fonts = self.assets.fonts.clone();
+        // The `fonts` map: files relative to the spec; each key is an alias for the family it adds.
+        for (key, file) in spec.fonts.iter().flatten() {
+            let low = file.to_ascii_lowercase();
+            if !(low.ends_with(".ttf") || low.ends_with(".otf") || low.ends_with(".ttc") || file.contains('/')) {
+                // `"fonts": {"heading": "Fraunces"}`: a library family under a nickname.
+                match fonts.ensure_family(file) {
+                    Ok(_) => match fonts.resolve_family(file) {
+                        Some(f) => fonts.add_alias(key, &f),
+                        None => self.d.push(Diagnostic::error(format!("fonts.{key}"), format!("'{file}' is neither a font file nor a library family; see `anikit-video fonts`"))),
+                    },
+                    Err(e) => self.d.push(Diagnostic::error(format!("fonts.{key}"), e)),
+                }
+                continue;
+            }
+            match fonts.add_font_file(self.o.base_dir.join(file)) {
+                Ok(names) if names.is_empty() => self.d.push(Diagnostic::error(format!("fonts.{key}"), format!("{file} contains no usable font"))),
+                Ok(names) => {
+                    if fonts.resolve_family(key).is_none() {
+                        fonts.add_alias(key, &names[0]);
+                    }
+                }
+                Err(e) => self.d.push(Diagnostic::error(format!("fonts.{key}"), format!("can't load {file}: {e}"))),
+            }
+        }
+        let mut seen = std::collections::HashSet::new();
+        for (path, name) in text::library::spec_font_names(&v) {
+            // Theme tokens (`$heading`) resolve to their family; a token the
+            // theme doesn't define is someone else's diagnostic.
+            let name = if name.starts_with('$') { self.theme.font(&name).to_string() } else { name };
+            if name.starts_with('$') || !seen.insert(name.to_lowercase()) {
+                continue;
+            }
+            const GENERIC: &[&str] = &["serif", "sans-serif", "monospace", "system-ui", "cursive", "fantasy", "inherit", "default"];
+            if GENERIC.contains(&name.to_lowercase().as_str()) || fonts.resolve_family(&name).is_some() {
+                continue;
+            }
+            let exact = text::library::find(&name).is_some();
+            match fonts.ensure_family(&name) {
+                Err(e) => self.d.push(Diagnostic::error(path, e)),
+                Ok(_) if fonts.resolve_family(&name).is_some() => {
+                    if let (false, Some(f)) = (exact, text::library::find_loose(&name)) {
+                        self.d.push(Diagnostic::warning(path, format!("font '{name}' resolved to the family '{}'; set weight/italic separately", f.name)));
+                    }
+                }
+                Ok(_) => {
+                    let s = text::library::suggest(&name);
+                    let hint = if s.is_empty() { None } else { Some(s.join("', '")) };
+                    self.d.push(
+                        Diagnostic::warning(path, format!("unknown font '{name}' (falls back to Inter); see `anikit-video fonts`")).suggest(hint),
+                    );
+                }
+            }
+        }
+    }
+}
+
+/// Visible ink bounds `[x0, y0, x1, y1]` of a layout (glyph outlines).
+fn ink_bounds(fonts: &FontStore, lay: &text::TextLayout) -> [f32; 4] {
+    use kurbo::Shape;
+    let mut b = [f32::MAX, f32::MAX, f32::MIN, f32::MIN];
+    for r in &lay.runs {
+        let bb = fonts.run_path(r, &r.glyphs).bounding_box();
+        if bb.width() > 0.0 {
+            b = [b[0].min(bb.x0 as f32), b[1].min(bb.y0 as f32), b[2].max(bb.x1 as f32), b[3].max(bb.y1 as f32)];
+        }
+    }
+    if b[0] > b[2] { [0.0, 0.0, lay.width, lay.height] } else { b }
+}
+
+fn anim_src_of(l: &Layer) -> String {
+    l.animate.as_ref().map(|a| format!("{a:?}")).unwrap_or_default()
+}
+
+impl C<'_> {
+    /// Static `axes` into the style; every axis (static or named in `animate`
+    /// as `axes.TAG`) gets a uniform slot so it can be tweened.
+    fn text_axes(&mut self, l: &Layer, anim: &str, style: &mut text::TextStyle, n: &mut Node, path: &str) {
+        let mut tags: Vec<(String, Option<f32>)> = Vec::new();
+        for (k, v) in l.axes.iter().flatten() {
+            if k.len() != 4 || !k.bytes().all(|b| b.is_ascii_alphanumeric()) {
+                self.d.push(Diagnostic::error(format!("{path}.axes.{k}"), "an axis tag is 4 letters, e.g. wght, wdth, opsz, slnt, ital or a custom one like SOFT"));
+                continue;
+            }
+            tags.push((k.clone(), Some(*v as f32)));
+        }
+        let mut rest = anim;
+        while let Some(i) = rest.find("axes.") {
+            let t: String = rest[i + 5..].chars().take(4).collect();
+            if t.len() == 4 && t.bytes().all(|b| b.is_ascii_alphanumeric()) && !tags.iter().any(|x| x.0 == t) {
+                tags.push((t, None));
+            }
+            rest = &rest[i + 5..];
+        }
+        if tags.is_empty() {
+            return;
+        }
+        if tags.len() > super::shader::UNIFORM_SLOTS {
+            self.d.push(Diagnostic::error(format!("{path}.axes"), format!("at most {} axes", super::shader::UNIFORM_SLOTS)));
+            tags.truncate(super::shader::UNIFORM_SLOTS);
+        }
+        // Axes with no static value start at the face's default.
+        let probe = text::TextSpec { text: "a".into(), style: style.clone(), ..Default::default() };
+        let face = self.assets.fonts.layout(&probe).runs.first().map(|r| r.font);
+        for (i, (t, v)) in tags.into_iter().enumerate() {
+            let v = v.or_else(|| face.and_then(|f| self.assets.fonts.axis_default(f, &t))).unwrap_or(0.0);
+            style.axes.push((t.clone(), v));
+            n.base[prop::U0 + i] = v;
+            self.uniform_slots.push((format!("axes.{t}"), i, 1));
+        }
+    }
+}
+
 impl Evaluator {
     /// Compile a spec. Fails if there is any error; warnings are kept in `diagnostics`.
     pub fn new(spec: &Spec, opts: Options) -> Result<Evaluator, SpecErrors> {
@@ -202,6 +320,7 @@ impl Evaluator {
         for (k, v) in bad {
             c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}'")));
         }
+        c.load_fonts(spec);
         if let Some(m) = &spec.markers {
             for (k, v) in m {
                 let t = c.time_raw(v, &format!("markers.{k}"));
@@ -1220,6 +1339,9 @@ impl C<'_> {
             ("align", l.align.is_some()),
             ("lineHeight", l.line_height.is_some()),
             ("reveal", l.reveal.is_some()),
+            ("maxWidth", l.max_width.is_some()),
+            ("axes", l.axes.is_some()),
+            ("features", l.features.is_some()),
         ];
         let shape_only = [("shape", l.shape.is_some()), ("points", l.points.is_some()), ("d", l.d.is_some()), ("sides", l.sides.is_some())];
         let img_only = [("src", l.src.is_some() && kind != "shader"), ("fit", l.fit.is_some() && kind != "text")];
@@ -1867,7 +1989,16 @@ impl C<'_> {
         let size = st.size.as_ref().map(|s| self.len_c(s, &format!("{path}.size"), pc.size[1], 16.0)).unwrap_or(32.0).max(1.0);
         let weight = st.weight.as_ref().and_then(weight_value).unwrap_or(400.0);
         let ls = st.letter_spacing.as_ref().map(|s| self.len_c(s, &format!("{path}.letterSpacing"), size, size)).unwrap_or(0.0);
+        // Multi-line text anchored on its left defaults to flush left (centred
+        // paragraphs are rarely what a left anchor means).
+        let left_anchor = match &l.anchor {
+            Some(spec::Anchor::Name(a)) => a.to_ascii_lowercase().contains("left"),
+            Some(spec::Anchor::Xy([x, _])) => *x < 0.34,
+            None => false,
+        };
+        let multi = l.text.as_deref().is_some_and(|t| t.contains('\n')) || given_w.is_some() || l.max_width.is_some();
         let align = match st.align.as_deref() {
+            None if left_anchor && multi => text::Align::Left,
             None | Some("center") => text::Align::Center,
             Some("left") | Some("start") => text::Align::Left,
             Some("right") | Some("end") => text::Align::Right,
@@ -1877,7 +2008,11 @@ impl C<'_> {
                 text::Align::Center
             }
         };
+        let st_size = size;
         let mut raw = l.text.clone().unwrap_or_default();
+        if l.typeset != Some(false) && !raw.contains("{value") {
+            raw = text::layout::typeset(&raw);
+        }
         if st.uppercase == Some(true) {
             // Not inside `[word]{$token}` markup: colour tokens stay as written.
             let mut depth = 0;
@@ -1923,6 +2058,11 @@ impl C<'_> {
             line_height: st.line_height.unwrap_or(1.2) as f32,
             ..Default::default()
         };
+        let mut style = style;
+        if let Some(f) = &l.features {
+            style.features = Some(text::layout::features_css(f));
+        }
+        self.text_axes(l, &anim_src_of(l), &mut style, n, path);
         let (plain, spans) = self.markup(&raw, path);
         let run_colors = !spans.is_empty();
         // Text on a path never wraps: one line rides the path.
@@ -1946,7 +2086,36 @@ impl C<'_> {
                 tspec.style.size = probe.style.size;
                 n.base[prop::SIZE] = probe.style.size;
             }
-            Some(x) => self.d.push(Diagnostic::error(format!("{path}.fit"), format!("on text, 'fit' is true or false (got '{x}')"))),
+            Some(mode @ ("width" | "box" | "height")) => {
+                // Optical fit, grow or shrink: the *ink* (not the em box) fills
+                // `width` (default 90% of the parent) and, for "box"/"height",
+                // `height`. Line breaks are kept.
+                let tw = given_w.unwrap_or(pc.size[0] * 0.9);
+                let th = l.height.as_ref().map(|v| self.len_c(v, &format!("{path}.height"), pc.size[1], 16.0)).unwrap_or(pc.size[1] * 0.9);
+                let mut probe = tspec.clone();
+                probe.width = None;
+                for _ in 0..4 {
+                    let lay = self.assets.fonts.layout(&probe);
+                    let ink = ink_bounds(&self.assets.fonts, &lay);
+                    let (iw, ih) = ((ink[2] - ink[0]).max(1.0), (ink[3] - ink[1]).max(1.0));
+                    let k = match mode {
+                        "width" => tw / iw,
+                        "height" => th / ih,
+                        _ => (tw / iw).min(th / ih),
+                    };
+                    if (k - 1.0).abs() < 0.002 {
+                        break;
+                    }
+                    probe.style.size = (probe.style.size * k).clamp(1.0, 4000.0);
+                }
+                tspec.style.size = probe.style.size;
+                tspec.width = None;
+                n.base[prop::SIZE] = probe.style.size;
+            }
+            Some(x) => self.d.push(
+                Diagnostic::error(format!("{path}.fit"), format!("on text, 'fit' is true (shrink to width), \"width\", \"height\" or \"box\" (got '{x}')"))
+                    .suggest(suggest(x, &["width", "height", "box"])),
+            ),
         }
         // Counter template.
         let mut counter = None;
@@ -1982,8 +2151,9 @@ impl C<'_> {
             None => {
                 let l0 = self.assets.fonts.layout(&tspec);
                 // No width given and wider than the parent: wrap at 90% of it.
-                let maxw = pc.size[0] * 0.9;
-                if given_w.is_none() && l0.width > maxw && !pc.in_box {
+                let mw = l.max_width.as_ref().map(|v| self.len_c(v, &format!("{path}.maxWidth"), pc.size[0], st_size));
+                let maxw = mw.unwrap_or(pc.size[0] * 0.9);
+                if given_w.is_none() && l0.width > maxw && (!pc.in_box || mw.is_some()) {
                     tspec.width = Some(maxw);
                     self.assets.fonts.layout(&tspec)
                 } else {
@@ -2051,7 +2221,15 @@ impl C<'_> {
         }
         let split = if counter.is_some() || kinetic.is_some() { None } else { split.map(|by| SplitC { by, tracks: Vec::new(), delays: Vec::new(), unit_tracks: Vec::new() }) };
         let has_split = split.is_some();
-        (Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic }, nat, chars, has_split, from_enter)
+        // Animated variable axes or tracking: lay out again per frame (the
+        // static layout above is the base; values are quantised and cached).
+        let anim_src = l.animate.as_ref().map(|a| format!("{a:?}")).unwrap_or_default();
+        let dynamic = (counter.is_none() && kinetic.is_none() && (!self.uniform_slots.is_empty() || anim_src.contains("letterSpacing"))).then(|| {
+            n.base[prop::LS] = tspec.style.letter_spacing * tspec.style.size;
+            let axes = self.uniform_slots.iter().filter_map(|(name, o, _)| name.strip_prefix("axes.").map(|t| (t.to_string(), prop::U0 + o))).collect();
+            Box::new(DynText { spec: tspec.clone(), axes, ls: n.base[prop::LS] })
+        });
+        (Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic, dynamic }, nat, chars, has_split, from_enter)
     }
 
     /// Inline markup: `**bold**`, `*italic*`, `[text]{colour}`. Returns the plain text and spans (empty if none).

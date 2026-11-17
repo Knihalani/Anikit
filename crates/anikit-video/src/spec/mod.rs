@@ -676,12 +676,24 @@ pub struct Layer {
     pub letter_spacing: Option<Num>,
     pub uppercase: Option<bool>,
     pub max_lines: Option<u32>,
+    /// Text: wrap at this width (px, `"40vw"`, `"60%"`) without fixing the box
+    /// width (`width` wraps *and* sets the box).
+    pub max_width: Option<Num>,
     /// `chars`, `words`, `lines`.
     pub split: Option<String>,
     pub reveal: Option<Num>,
     pub value: Option<Num>,
     /// Kinetic text animation (TEXT module): shorthand like `"pop by char from center 0.4s 30ms outBack"`, or an object.
     pub kinetic: Option<serde_json::Value>,
+    /// Variable-font axes: `{"wght": 720, "wdth": 125, "opsz": 144, "SOFT": 100}`
+    /// (`anikit-video fonts NAME` lists a face's axes). Animate one with
+    /// `"axes.wght"` in `animate`; the text re-lays out per frame.
+    pub axes: Option<BTreeMap<String, f64>>,
+    /// OpenType features: `"ss01 tnum smcp -liga"` (or CSS `"\"ss01\" on"`).
+    pub features: Option<String>,
+    /// Typesetting pass (default on): curly quotes, `...` → …, ` -- ` → –,
+    /// `---` → —, and no one-word last line. `false` keeps the text verbatim.
+    pub typeset: Option<bool>,
 
     // ---- shape
     /// `rect`, `circle`, `ellipse`, `line`, `arrow`, `polygon`, `star`, `path`.
