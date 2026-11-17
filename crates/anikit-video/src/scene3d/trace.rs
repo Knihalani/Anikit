@@ -1361,7 +1361,11 @@ impl Scene {
                     while i < q.edge_spp {
                         let (a, b) = r2(i, rot);
                         let srot = (u01(hash2(hs, i * 2 + 1)), u01(hash2(hs, i * 2 + 2)));
-                        samples.push(self.primary(rig, prev, x as f32 + a, y as f32 + b, q, srot, 0));
+                        // Every other sub-sample skips the floor reflection and the
+                        // shadow/AO rays (as the centre samples do on the
+                        // checkerboard): resolve and post weight them out.
+                        let sk = if !q.full && i & 1 == (x + y) as u32 & 1 { (rough_floor as u8) | 2 } else { 0 };
+                        samples.push(self.primary(rig, prev, x as f32 + a, y as f32 + b, q, srot, sk));
                         i += 1;
                         if i == half {
                             let id0 = samples[0].id;
