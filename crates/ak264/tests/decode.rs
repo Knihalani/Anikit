@@ -302,3 +302,36 @@ fn large_motion_vectors_via_hints() {
         assert!(dec == recon);
     }
 }
+
+#[test]
+fn perceptual_skip_bounds_drift() {
+    // ±1 dither on a static picture every frame: with skip_threshold 2 the
+    // dither is coded as copies, and the error never exceeds the threshold.
+    let s = Scene::new(160, 96);
+    let base = s.frame(0);
+    let frames: Vec<YuvBuffer> = (0..12u32)
+        .map(|t| {
+            let mut f = base.clone();
+            for (i, v) in f.y.iter_mut().enumerate() {
+                let n = ((i as u32).wrapping_mul(2654435761).wrapping_add(t * 40503) >> 13) % 3;
+                *v = (*v as i32 + n as i32 - 1).clamp(0, 255) as u8;
+            }
+            f
+        })
+        .collect();
+    let (plain, p0) = roundtrip(EncoderConfig { qp: 4, ..cfg(160, 96) }, &frames, "ps0");
+    let (skip, p2) = roundtrip(EncoderConfig { qp: 4, skip_threshold: 2, ..cfg(160, 96) }, &frames, "ps2");
+    assert!(skip.len() * 5 < plain.len() * 4, "{} vs {}", skip.len(), plain.len());
+    if have_ffmpeg() {
+        assert!(p2 > 40.0 && p0 > 40.0);
+    }
+    // the reconstruction stays within the threshold (plus the IDR's own error)
+    let mut e = Encoder::new(EncoderConfig { skip_threshold: 2, qp: 0, ..cfg(160, 96) });
+    for f in &frames {
+        e.encode(&f.frame(), &FrameHints::default());
+        let r = e.reconstruction().to_bytes();
+        let src = f.to_bytes();
+        let m = r.iter().zip(&src).map(|(a, b)| a.abs_diff(*b)).max().unwrap();
+        assert!(m <= 3, "max error {m}");
+    }
+}
