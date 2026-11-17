@@ -736,6 +736,54 @@ Two looks: `{ "arcs": [...], "markers": [...] }` (a night-blue data globe) vs `{
 
 The component's duration is the time the last arc lands. **Cost** per frame at 1920×1080: eval under 1 ms, render 6–15 ms.
 
+## Illustration: fills, paper and collage
+
+Hand-made surfaces instead of UI-on-dark: hatching drawn on line by line, real paper stock and torn-paper collage. Shapes are `"rect"`, `"circle"`, `"blob"` (and `"star"` for cut-outs) fitted to the layer box, or an SVG path `d` in box pixels.
+
+### `hatch`
+| Prop | Default | Meaning |
+|---|---|---|
+| `shape`, `d` | `"rect"` | The shape to fill; lines are clipped to it. |
+| `style` | `"hatch"` | `"hatch"`, `"crosshatch"` (extra layers only in the shadows), `"stipple"` or `"scribble"`. |
+| `angle`, `spacing` | `35`, `9` | Line angle in degrees and line spacing at full tone, px. |
+| `tone` | `0.6` | Overall darkness 0–1: lighter tones skip lines or dots. |
+| `toneFrom`, `toneTo`, `light` | | Tone on the lit side and on the shadow side, with the light coming from `light` degrees (0 = right, 90 = below, default 225 = top left). |
+| `color`, `width` | `#2a2622`, `1.6` | Ink colour and line width (each stroke varies its pressure). |
+| `jitter` | `0.5` | Hand-drawn wobble: bow, waver and uneven stroke ends. |
+| `outline` | `false` | A wobbly ink outline of the shape. |
+| `boil` | `0` | Re-seed the hand-drawn jitter this many times a second (8–12 looks drawn); 0 = still. |
+| `seed`, `draw` | `1`, `0` | Seed, and seconds to hatch it on line by line. |
+
+### `paper`
+| Prop | Default | Meaning |
+|---|---|---|
+| `stock` | `"paper"` | (`kind` names the component, so the stock is `stock`.) `"paper"`, `"cotton"` (long fibres), `"kraft"` (brown with dark flecks), `"canvas"` (woven threads with slubs), `"watercolor"` (cold-press grain with mottled sizing), `"newsprint"` (grey, fine grain and specks). |
+| `color` | per kind | Stock colour. |
+| `tooth`, `fibers` | `0.6`, `0.5` | Surface relief (lit from the top left) and amount of fibres and flecks, 0–1. |
+| `vignette`, `seed` | `0.3`, `1` | Edge darkening, and the seed. |
+
+Computed once per size and cached as one dithered image: free after the first frame.
+
+### `cutout`
+| Prop | Default | Meaning |
+|---|---|---|
+| `shape`, `d` | `"rect"` | The cut shape. |
+| `color` / `texture` | `#d4553a` | A flat paper colour (with a faint grain), or a stock: `"paper"`, `"kraft"`, `"newsprint"`. |
+| `torn` | `0` | 0 = cleanly cut; up to 1 = a ragged, deckled tear with a lighter fibrous rim. |
+| `shadow` | `0.5` | Soft drop shadow, offset like paper lifted off the page (larger while it drops in). |
+| `rotate`, `wobble`, `boil` | `0`, `0.3`, `0` | Rotation in degrees, gentle hand-placed jitter, and its re-placement rate (fps; 0 = a slow drift). |
+| `enter`, `delay` | `"drop"`, `0` | `"drop"` (falls onto the page), `"slide"` or `"none"`, and when it starts. |
+
+```json
+{ "layers": [
+  { "component": "paper", "props": { "stock": "watercolor" } },
+  { "component": "hatch", "props": { "shape": "circle", "style": "crosshatch", "toneFrom": 0.15, "toneTo": 0.95, "outline": true, "boil": 10, "draw": 1.8 }, "width": 520, "height": 520 },
+  { "component": "cutout", "props": { "shape": "blob", "texture": "kraft", "torn": 0.7, "rotate": -8, "delay": 0.4 }, "x": "70%", "width": 360, "height": 260 }
+] }
+```
+
+Examples: `examples/video/illustration/{hatch,paper,cutout}.json`; stills in `docs/video/shots/illustration/`.
+
 ## Lottie
 
 ### `lottie`

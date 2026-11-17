@@ -73,5 +73,8 @@ COMPONENT_KINDS = {
     "now-playing": "A music app's Now Playing screen (390 pt grid): printed cover art, serif title, live scrubber with real timecodes, transport, volume.",
     "brush": "Hand-made brush stroke along an SVG path or points: variable-width outline with pressure and tapered tips, ink/dry/marker/pencil texture, stroke-on drawing and line boil.",
     "sketch": "Several brush paths drawn on one after another (stagger), sharing texture, pressure, draw and line-boil settings: a whole illustration in one layer.",
+    "hatch": "Hand-drawn hatched, cross-hatched, stippled or scribbled fill of a shape, with a tone gradient from a light direction, wobble, boil and a line-by-line draw-on.",
+    "paper": "Full-frame paper stock with real tooth: paper, cotton, kraft, canvas weave, cold-press watercolor or newsprint; computed once and dithered.",
+    "cutout": "Cut or torn paper shape (flat colour or paper/kraft/newsprint stock) with a fibrous rim, lifted drop shadow, hand-placed wobble and a drop or slide entrance.",
     "lottie": "Minimal Lottie player (shape layers, transforms, trim paths).",
 }

@@ -60,6 +60,7 @@ pub mod reactions;
 pub mod card_stack;
 pub mod now_playing;
 pub mod product_shot;
+pub mod illus_fill;
 
 #[cfg(test)]
 pub(crate) mod preview;
@@ -305,6 +306,9 @@ kinds! {
     // Illustration
     "brush" => illustration::BrushStroke, "Hand-made brush stroke along an SVG path or points: variable-width outline with pressure and tapered tips, ink/dry/marker/pencil texture, stroke-on drawing and line boil.", r##"{"points":[[160,520],[420,300],[760,420],[1100,220]],"size":34,"texture":"dry","draw":1.2,"boil":12}"##;
     "sketch" => illustration::Sketch, "Several brush paths drawn on one after another (stagger), sharing texture, pressure, draw and line-boil settings: a whole illustration in one layer.", r##"{"paths":[{"d":"M200 500 C 300 200, 600 200, 700 480"},{"d":"M260 470 Q 450 560 650 460","texture":"pencil"},{"points":[[380,330],[420,300],[470,330]],"size":6}],"draw":0.8,"stagger":0.3,"boil":8}"##;
+    "hatch" => illus_fill::Hatch, "Hand-drawn hatched, cross-hatched, stippled or scribbled fill of a shape, with a tone gradient from a light direction, wobble, boil and a line-by-line draw-on.", r##"{"shape":"circle","style":"crosshatch","toneFrom":0.2,"toneTo":0.9,"draw":1.5}"##;
+    "paper" => illus_fill::Paper, "Full-frame paper stock with real tooth: paper, cotton, kraft, canvas weave, cold-press watercolor or newsprint; computed once and dithered.", r##"{"stock":"watercolor"}"##;
+    "cutout" => illus_fill::Cutout, "Cut or torn paper shape (flat colour or paper/kraft/newsprint stock) with a fibrous rim, lifted drop shadow, hand-placed wobble and a drop or slide entrance.", r##"{"shape":"blob","texture":"kraft","torn":0.7}"##;
     // Lottie
     "lottie" => lottie::Lottie, "Minimal Lottie player (shape layers, transforms, trim paths).", r##"{"src":"anim.json"}"##;
 }
