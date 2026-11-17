@@ -350,7 +350,7 @@ impl Prepare for Scene3d {
             v => {
                 let mut fp = if bright {
                     let color = match es.name.as_str() {
-                        "overcast" => v3(0.16, 0.19, 0.12),
+                        "overcast" => v3(0.2, 0.27, 0.12),
                         "interior" => v3(0.32, 0.19, 0.1),
                         "underwater" => v3(0.5, 0.45, 0.33),
                         _ => scale(es.tint, 0.92),
@@ -420,11 +420,11 @@ impl Prepare for Scene3d {
         let (backdrop, haze, auto_exp) = match es.name.as_str() {
             "overcast" | "interior" | "underwater" => {
                 let irr = luma(backdrop.0).max(1e-4) / floor_l;
-                let e = match es.name.as_str() { "overcast" => 0.95, "interior" => 0.8, _ => 0.62 } / irr;
+                let e = match es.name.as_str() { "overcast" => 1.15, "interior" => 0.8, _ => 0.62 } / irr;
                 let at = |c: V3, l: f32| scale(c, l / luma(c).max(1e-4) / e);
                 match es.name.as_str() {
                     "overcast" => {
-                        let sky = (at(v3(0.8, 0.82, 0.84), 0.82), at(v3(0.6, 0.65, 0.72), 0.62));
+                        let sky = (at(v3(0.86, 0.88, 0.9), 0.9), at(v3(0.62, 0.7, 0.8), 0.72));
                         (sky, (0.012, sky.0), e)
                     }
                     "interior" => ((at(v3(0.9, 0.86, 0.8), 0.62), at(v3(0.86, 0.82, 0.76), 0.55)), (0.0, backdrop.0), e),
