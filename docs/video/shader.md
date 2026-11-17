@@ -267,7 +267,7 @@ What costs time is pixels × work per pixel:
 - **Raymarch steps and noise octaves** dominate. `aurora` evaluates around 100 noise lookups per pixel; `flow-ink` got from 470 to 160 ms by taking its curl from analytic noise gradients instead of finite differences. Halving octaves or steps halves the time.
 - **Texture reads**: plain bilinear or nearest reads with clamp or repeat wrap are inlined as SIMD gathers. Mipmapped and mirror-wrapped channels go through a sampler call, which is slower because the call spills the shader's registers. `zoom-blur` reads 32 texels per pixel, which is why it costs a third of a second per frame.
 - **Maths on uniforms** (`sin(iTime)` and rotation matrices from time) is free: it is hoisted. Divergent branches cost both sides only in quads that actually diverge.
-- **Supersampling** costs about 1.5–2× when adaptive (4× for full 2×2). A layer smaller than the frame costs proportionally less, and raymarchers should bound their scene: `liquid-chrome` skips every ray that misses its bounding sphere.
+- **Anti-aliasing** (the default) costs 1.9–3.2× on shaders with real detail and nothing on smooth ones, which mark themselves `// anikit:aa off`. Per-pixel noise or dither makes every pixel look like an edge: aurora's layer jitter costs it 4.8×. A layer smaller than the frame costs proportionally less. Raymarchers should bound their scene: `liquid-chrome` skips every ray that misses its bounding sphere.
 - **Static shaders** (no `iTime`) render once per distinct uniform set.
 
 ## Limits
