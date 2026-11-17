@@ -7,6 +7,7 @@
 //! order.
 
 pub mod encode;
+pub mod textures;
 
 use crate::dl::{self, DisplayList, Op};
 use crate::eval::Evaluator;
