@@ -11,6 +11,8 @@ pub struct Theme {
     pub fonts: BTreeMap<String, String>,
     pub radius: f32,
     pub styles: BTreeMap<String, TextStyle>,
+    /// Component material defaults (`theme.material`).
+    pub material: spec::Material,
 }
 
 const DEFAULT_COLORS: &[(&str, &str)] = &[
@@ -98,7 +100,7 @@ impl Theme {
                 }
             }
         }
-        (Theme { colors, fonts, radius, styles }, bad)
+        (Theme { colors, fonts, radius, styles, material: t.and_then(|t| t.material.clone()).unwrap_or_default() }, bad)
     }
 
     /// Resolve a colour string (CSS or `$token`).

@@ -1,0 +1,93 @@
+{
+ "title": "Risograph",
+ "summary": "Off-white paper, fluoro pink and blue ink with misregistration, chunky type, halftone dots; zine energy.",
+ "direction": "A risograph zine. Two spot inks (fluorescent pink and medium blue) on off-white paper, slightly misregistered (offset hard shadows), halftone dot fields, chunky uppercase type, hand-made energy. Motion is playful and stepped (pop, slide), hard slides between pages.",
+ "mode": "light",
+ "theme": {
+  "colors": {
+   "bg": "#F3ECDD",
+   "surface": "#FFF8EA",
+   "text": "#1E2A78",
+   "muted": "#3A4590",
+   "primary": "#FF48B0",
+   "secondary": "#0078BF",
+   "accent": "#A00052"
+  },
+  "fonts": {
+   "heading": "Inter Display",
+   "body": "Inter"
+  },
+  "radius": 6,
+  "styles": {
+   "title": {
+    "weight": 900,
+    "uppercase": true,
+    "letterSpacing": "-0.04em",
+    "lineHeight": 0.9,
+    "color": "$text"
+   },
+   "heading": {
+    "weight": 850,
+    "uppercase": true,
+    "letterSpacing": "-0.03em",
+    "lineHeight": 0.95,
+    "color": "$text"
+   },
+   "label": {
+    "color": "$accent",
+    "size": "2.4vh"
+   }
+  },
+  "material": {
+   "surface": "paper",
+   "shadow": 0,
+   "glow": 0,
+   "motion": "snappy"
+  }
+ },
+ "transition": {
+  "type": "slide",
+  "direction": "up",
+  "duration": 0.5,
+  "ease": "inOutQuart"
+ },
+ "enter": {
+  "preset": "popIn",
+  "ease": "outBack",
+  "duration": 0.5
+ },
+ "textShadow": {
+  "x": 5,
+  "y": 4,
+  "blur": 0,
+  "color": "#FF48B0B0"
+ },
+ "backdrop": [
+  {
+   "id": "look-dots",
+   "component": "dots",
+   "props": {
+    "spacing": 14,
+    "radius": 2.6,
+    "color": "#FF48B030",
+    "fade": 0.55
+   },
+   "width": "100%",
+   "height": "100%"
+  }
+ ],
+ "overlay": [
+  {
+   "id": "look-grain",
+   "component": "grain",
+   "props": {
+    "amount": 0.035,
+    "size": 1.6,
+    "rate": 24
+   },
+   "width": "100%",
+   "height": "100%"
+  }
+ ],
+ "post": "clean"
+}

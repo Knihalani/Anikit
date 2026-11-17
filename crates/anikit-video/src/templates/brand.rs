@@ -126,6 +126,29 @@ impl Brand {
         Ok(b)
     }
 
+    /// This kit over a look's palette, fonts and radius. A kit that sets its own
+    /// `primary` keeps its brand colours (the look's primary, secondary and accent are dropped).
+    pub fn with_look(&self, look: &Value) -> Brand {
+        let mut d = Value::Object(crate::looks::brand_defaults(look));
+        if self.colors.primary.is_some() {
+            if let Some(c) = d.get_mut("colors").and_then(|c| c.as_object_mut()) {
+                for k in ["primary", "secondary", "accent"] {
+                    c.remove(k);
+                }
+            }
+        }
+        fn strip(v: &mut Value) {
+            if let Value::Object(m) = v {
+                m.retain(|_, x| !x.is_null());
+                m.values_mut().for_each(strip);
+            }
+        }
+        let mut own = serde_json::to_value(self).unwrap_or(Value::Null);
+        strip(&mut own);
+        crate::looks::merge(&mut d, &own);
+        Brand::from_value(&d).unwrap_or_else(|_| self.clone())
+    }
+
     /// The resolved kit as the `brand` object templates see: every field filled.
     pub fn resolve(&self) -> Value {
         let light = self.theme.as_deref() == Some("light")

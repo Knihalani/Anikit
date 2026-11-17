@@ -299,10 +299,7 @@ pub fn spring(t: f32, speed: f32) -> f32 {
     1.0 - e * ((wd * t).cos() + (z * w / wd) * (wd * t).sin())
 }
 
-/// Update rate for slow ambient effects (bokeh, dust, snow, stars, rays,
-/// blobs): their time steps 15×/s, so their drift (a fraction of a pixel per
-/// step) reads as smooth while half the frames at 30 fps repeat exactly —
-/// cheap for incremental render, dedupe and the encoder.
+/// Update rate for slow ambient effects in draft mode (see [`step`]).
 pub const AMBIENT_RATE: f32 = 15.0;
 
 /// Phase (0..1) of an attention pulse at `rate` cycles/s, for the first
@@ -314,10 +311,24 @@ pub fn pulse(t: f32, rate: f32) -> Option<f32> {
     (0.0..3.0).contains(&x).then(|| x.fract())
 }
 
-/// `t` stepped down to `rate` updates per second.
+static DRAFT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Draft mode (`--quality draft`): cheaper, stepped motion for fast previews.
+/// Off by default: every component animates smoothly at the full frame rate.
+pub fn set_draft(on: bool) {
+    DRAFT.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Whether draft mode is on.
+#[inline]
+pub fn draft() -> bool {
+    DRAFT.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// `t` stepped down to `rate` updates per second in draft mode; exact otherwise.
 #[inline]
 pub fn step(t: f32, rate: f32) -> f32 {
-    if rate <= 0.0 {
+    if rate <= 0.0 || !draft() {
         t
     } else {
         (t * rate).floor() / rate

@@ -16,6 +16,7 @@ pub mod components;
 pub mod dl;
 pub mod agent_cli;
 pub mod critique;
+pub mod looks;
 pub mod mcp;
 pub mod preview;
 pub mod prompts;
@@ -26,5 +27,7 @@ pub mod eval;
 pub mod render;
 pub mod layout;
 pub mod text;
+// Temporary: scene3d (owned by 3D) has lints to fix; remove this allow once clean.
+#[allow(clippy::needless_range_loop, clippy::too_many_arguments, clippy::question_mark, clippy::new_without_default)]
 pub mod scene3d;
 pub mod pipeline;

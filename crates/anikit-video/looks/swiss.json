@@ -1,0 +1,82 @@
+{
+ "title": "Swiss grid",
+ "summary": "White, black and signal red; heavy uppercase grotesk on a strict grid; hard wipes and snaps.",
+ "direction": "International Typographic Style. Strict modular grid, flush-left heavy grotesk in uppercase, numbers huge, one signal red. Information is architecture: rules, columns, index numbers. Motion snaps on the grid (wipes, slides with outExpo), no drift, no glow, no shadows, square corners.",
+ "mode": "light",
+ "theme": {
+  "colors": {
+   "bg": "#FFFFFF",
+   "surface": "#F2F2F2",
+   "text": "#0A0A0A",
+   "muted": "#4A4A4A",
+   "primary": "#E3000F",
+   "secondary": "#0A0A0A",
+   "accent": "#E3000F"
+  },
+  "fonts": {
+   "heading": "Inter Display",
+   "body": "Inter"
+  },
+  "radius": 0,
+  "styles": {
+   "title": {
+    "weight": 850,
+    "uppercase": true,
+    "letterSpacing": "-0.045em",
+    "lineHeight": 0.9,
+    "align": "left"
+   },
+   "heading": {
+    "weight": 800,
+    "uppercase": true,
+    "letterSpacing": "-0.03em",
+    "lineHeight": 0.95,
+    "align": "left"
+   },
+   "body": {
+    "align": "left"
+   },
+   "label": {
+    "color": "$primary",
+    "letterSpacing": "0.04em",
+    "size": "2.4vh"
+   },
+   "subtitle": {
+    "align": "left"
+   }
+  },
+  "material": {
+   "surface": "flat",
+   "shadow": 0,
+   "glow": 0,
+   "motion": "snappy"
+  }
+ },
+ "transition": {
+  "type": "wipe",
+  "direction": "left",
+  "duration": 0.45,
+  "ease": "inOutQuart"
+ },
+ "enter": {
+  "preset": "wipeIn",
+  "ease": "outExpo",
+  "duration": 0.6
+ },
+ "backdrop": [
+  {
+   "id": "look-grid",
+   "component": "grid",
+   "props": {
+    "cell": 120,
+    "color": "#0A0A0A14",
+    "lineWidth": 1,
+    "fade": 0
+   },
+   "width": "100%",
+   "height": "100%"
+  }
+ ],
+ "overlay": [],
+ "post": "clean"
+}

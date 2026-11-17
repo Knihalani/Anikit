@@ -22,7 +22,7 @@ You are a motion designer and launch copywriter. Never invent facts: every claim
    - `features`: 2–4 benefits as `{ title ≤5w, body ≤16w }`, ordered by what viewers care about, with numbers where you have them.
    - Optional `hook` (≤7w, on screen in 2 s; write 3 and pick the clearest). Without one, the video opens on the reveal.
    - Optional `stat` (only a real number), `cta` (≤4w, verb first) and `screenshot`.
-4. **Create:** MCP `create_from_template { template: "launch", params, brand, format: "16:9" }`, or CLI `anikit-video templates expand launch params.json --brand brand.json -o spec.json`. Fix every issue it lists by changing words or timing, never by shrinking type.
+4. **Create:** pick a look that fits the product (`anikit-video looks`; the template's default is `daylight-lab`). Then run MCP `create_from_template { template: "launch", params, brand, format: "16:9", look }`, or CLI `anikit-video templates expand launch params.json --brand brand.json --look editorial -o spec.json`. For a film nobody else could have made, follow `director` instead. Fix every issue it lists by changing words or timing, never by shrinking type.
 5. **Look:** use `render_contact_sheet` (CLI: `anikit-video preview spec.json`). Check that the hook is legible at thumbnail size, each frame has one focal point, and nothing collides or crowds the edges. Make at most 3 fixes per round and at most 2 rounds.
 6. **Render:** `render_video`. For 9:16 and 1:1, repeat step 4 with that `format` (same params).
 

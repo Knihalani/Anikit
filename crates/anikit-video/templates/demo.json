@@ -1,5 +1,6 @@
 {
   "name": "demo",
+  "look": "soft-clay",
   "title": "Product demo walkthrough",
   "description": "A 15–35 s walkthrough: a kinetic title beside the product, then 2–5 steps, each a screenshot in a browser (or phone) with an animated cursor that glides to the click point, clicks with a ripple and shows a tooltip callout, then a CTA with confetti.",
   "duration": "15–35 s",
@@ -288,7 +289,7 @@
             "$let": {
               "tw": "fmt.landscape ? fmt.w * 0.32 : fmt.safe.w",
               "ts": "fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5",
-              "lines": "ceil(len(title) * 0.48 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.32 : fmt.safe.w))",
+              "lines": "ceil(len(title) * cw * 0.96 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.32 : fmt.safe.w))",
               "top": "fmt.landscape ? fmt.h * 0.5 - (ceil(len(title) * 0.48 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.32 : fmt.safe.w)) * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) * 1.1 + fmt.u * 6) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1)",
               "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
               "an": "fmt.landscape ? 'topLeft' : 'top'",
@@ -362,8 +363,10 @@
               "ease": "inOutQuart"
             },
             "else": {
-              "type": "crossfade",
-              "duration": 0.4
+              "type": "push",
+              "direction": "{{fmt.portrait ? 'up' : 'left'}}",
+              "duration": 0.5,
+              "ease": "inOutQuart"
             }
           },
           "duration": "{{readtime(st.title) + 2.6}}",
@@ -378,7 +381,7 @@
               "$let": {
                 "tw": "fmt.landscape ? fmt.w * 0.32 : fmt.safe.w",
                 "ts": "fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4",
-                "lines": "ceil(len(st.title) * 0.48 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.32 : fmt.safe.w))",
+                "lines": "ceil(len(st.title) * cw * 0.96 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.32 : fmt.safe.w))",
                 "top": "fmt.landscape ? fmt.h * 0.5 - (ceil(len(st.title) * 0.48 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.32 : fmt.safe.w)) * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) * 1.1 + fmt.u * 6) / 2 : (fmt.portrait ? fmt.h * 0.15 : fmt.h * 0.11)",
                 "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
                 "an": "fmt.landscape ? 'topLeft' : 'top'",

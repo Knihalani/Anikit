@@ -126,9 +126,37 @@ pub struct Spec {
     pub fonts: Option<BTreeMap<String, String>>,
     /// Override the total duration (truncate, or hold the last frame).
     pub duration: Option<Num>,
+    /// Finishing look: a preset (`none clean cinematic dreamy punchy noir vintage`) or
+    /// `{ "preset": "cinematic", "bloom": 0.4, … }`. Default none.
+    #[schemars(with = "Option<PostValue>")]
+    pub post: Option<serde_json::Value>,
+    /// Motion blur on moving content: `true` (180° shutter), `false`, or `{ "shutter": 90 }` (degrees).
+    /// Default: on at `--quality high` only (it renders several sub-frames per moving frame).
+    pub motion_blur: Option<MotionBlur>,
     /// Named 2D sub-compositions: placed with a `composition` layer, or used as a texture in 3D.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compositions: Option<BTreeMap<String, Composition>>,
+}
+
+/// `post`: a preset name or a preset with overrides.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum PostValue {
+    /// `none clean cinematic dreamy punchy noir vintage`.
+    Preset(String),
+    /// `{ "preset": "cinematic", …any post setting… }`.
+    Custom(serde_json::Map<String, serde_json::Value>),
+}
+
+/// `motionBlur`: on/off, or a shutter angle.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum MotionBlur {
+    On(bool),
+    Shutter {
+        /// Shutter angle in degrees (360 = the whole frame interval). Default 180.
+        shutter: f64,
+    },
 }
 
 /// A 2D sub-composition with its own size and clock: layers (one scene) or scenes.
@@ -168,6 +196,24 @@ pub struct Theme {
     pub radius: Option<f64>,
     /// Text styles: `title`, `heading`, `subtitle`, `body`, `caption`, `label`, `code`, or your own.
     pub styles: Option<BTreeMap<String, TextStyle>>,
+    /// Material defaults every component takes unless its props say otherwise.
+    pub material: Option<Material>,
+}
+
+/// Art-direction defaults for components (a look's finish). Explicit component props win.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Material {
+    /// `flat`, `glass`, `outline`, `paper` or `solid`.
+    pub surface: Option<String>,
+    /// Shadow depth 0..1.
+    pub shadow: Option<f64>,
+    /// Glow intensity 0..1 (0 = none).
+    pub glow: Option<f64>,
+    /// Texture (film grain) 0..1.
+    pub texture: Option<f64>,
+    /// `snappy`, `soft`, `bouncy`, `mechanical` or `smooth`.
+    pub motion: Option<String>,
 }
 
 /// A named text style.
@@ -241,6 +287,9 @@ pub struct Scene {
     /// How this scene comes in from the previous one.
     pub transition: Option<Transition>,
     pub camera: Option<Camera>,
+    /// Finishing look for this scene (overrides the video's `post`; `"none"` turns it off).
+    #[schemars(with = "Option<PostValue>")]
+    pub post: Option<serde_json::Value>,
     /// Times relative to the scene start.
     pub markers: Option<BTreeMap<String, Num>>,
     /// Drawn bottom to top.
@@ -271,6 +320,11 @@ pub struct TransitionObj {
     pub origin: Option<[Num; 2]>,
     pub amount: Option<f64>,
     pub intensity: Option<f64>,
+    /// `type: "shader"`: a gl-transitions style shader (`vec4 transition(vec2 uv)` with
+    /// `progress`, `getFromColor`, `getToColor`) or a built-in transition name.
+    pub shader: Option<String>,
+    /// Uniforms for a shader transition.
+    pub uniforms: Option<BTreeMap<String, serde_json::Value>>,
 }
 
 /// Scene camera.
@@ -447,6 +501,23 @@ pub struct Layer {
     pub component: Option<String>,
     pub props: Option<serde_json::Value>,
     pub progress: Option<Num>,
+
+    // ---- shader (SHADER module: `eval/shader.rs`, crate `anikit-shader`)
+    /// Fragment shader: Shadertoy-style GLSL (`void mainImage(out vec4 fragColor, in vec2 fragCoord)`),
+    /// WGSL (`fn mainImage(fragCoord: vec2f) -> vec4f`), or a built-in name (`aurora`, `liquid-chrome`, …;
+    /// `anikit-video info --shaders`). `src: "fx.glsl"` loads one from a file.
+    pub shader: Option<String>,
+    /// Shader uniforms by name: a number, `[x, y(, z, w)]`, a colour or an `"=expr"`. Animatable by name in `animate`.
+    pub uniforms: Option<BTreeMap<String, serde_json::Value>>,
+    /// Shader inputs `iChannel0..3`: `"below"`, `"noise"`, an image/video path, `{ "layers": [...] }`,
+    /// optionally with `"wrap": "repeat"|"mirror"`, `"filter": "nearest"`, `"mipmaps": true`.
+    pub channels: Option<Vec<serde_json::Value>>,
+    /// Shader as a filter: `iChannel0` is everything drawn below, and the output replaces the frame.
+    pub filter: Option<bool>,
+    /// Shader: 2×2 supersampling (4 samples per pixel).
+    pub supersample: Option<bool>,
+    /// Shader: use `fragColor.a` as alpha (default: opaque, like Shadertoy).
+    pub alpha: Option<bool>,
 }
 
 /// `style`: a theme text-style name (text layers) or a box style (box layers).
