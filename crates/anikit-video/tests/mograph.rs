@@ -140,3 +140,14 @@ fn group_drag_trails_children() {
     let end = xs(1.5);
     assert!((end[1] - end[0]).abs() < 1e-3, "and catches up: {end:?}");
 }
+
+#[test]
+fn stroke_gradient_along_follows_trim() {
+    let src = |trim: f32| format!(r##"{{ "scenes": [ {{ "layers": [ {{ "shape": "path", "d": "M0 0 L1000 0", "fill": "none", "trimEnd": {trim},
+        "stroke": {{ "width": 10, "along": ["#f00", "#00f"] }} }} ] }} ] }}"##);
+    let strokes = |t: f32| count(&ev(&src(t)).eval(0.5).ops, |o| matches!(o, Op::Stroke { paint: anikit_video::dl::Paint::Linear { .. }, .. }));
+    let full = strokes(1.0);
+    assert!(full > 50, "{full}");
+    let half = strokes(0.5);
+    assert!(half < full * 2 / 3 && half > full / 3, "{half} of {full}");
+}

@@ -1018,6 +1018,8 @@ pub struct StrokeObj {
     pub join: Option<String>,
     pub dash: Option<Vec<f64>>,
     pub dash_offset: Option<f64>,
+    /// Colours along the stroke, start to end: a gradient that follows the path (and its `trimEnd` write-on).
+    pub along: Option<Vec<String>>,
 }
 
 /// `loop`: a preset (name or object), or a bool for video clips.

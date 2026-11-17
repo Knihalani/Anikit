@@ -1693,7 +1693,11 @@ impl C<'_> {
             offset: l.offset_path.unwrap_or(0.0),
             twist: l.twist.unwrap_or(0.0),
         };
-        let any_mod = !mods.is_empty() || l.wiggle_path.is_some();
+        let along: Option<Vec<Rgba>> = l.stroke.as_ref().and_then(|s| s.0.along.as_ref()).map(|cs| {
+            cs.iter().enumerate().filter_map(|(i, c)| self.color(c, &format!("{path}.stroke.along[{i}]"))).collect()
+        });
+        let along = along.filter(|a| !a.is_empty());
+        let any_mod = !mods.is_empty() || l.wiggle_path.is_some() || along.is_some();
         if any_mod {
             let (w, h) = (n.base[prop::W] as f64, n.base[prop::H] as f64);
             if let Kind::Shape { shape, path: p, .. } = &mut n.kind {
@@ -1707,6 +1711,12 @@ impl C<'_> {
                 };
                 *shape = ShapeKind::Path;
                 *p = mods.apply(&src);
+                if let Some(cs) = &along {
+                    if l.wiggle_path.is_some() {
+                        self.d.push(Diagnostic::warning(format!("{path}.stroke.along"), "a gradient along the stroke ignores wigglePath"));
+                    }
+                    f.along = Some(fx::AlongC::build(p, cs, 96));
+                }
                 if let Some(wp) = &l.wiggle_path {
                     let detail = wp.detail.unwrap_or(32).clamp(3, 2000);
                     f.wiggle = Some([wp.amount.unwrap_or(10.0) as f32, detail as f32, wp.speed.unwrap_or(1.0) as f32, wp.seed.unwrap_or(1.0) as f32]);

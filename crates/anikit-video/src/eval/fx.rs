@@ -195,6 +195,8 @@ pub(crate) struct Fx {
     pub wiggle: Option<[f32; 4]>,
     /// Text animator with a range selector.
     pub animator: Option<AnimatorC>,
+    /// Stroke gradient along the path: chunks of the outline, each with its own two colours.
+    pub along: Option<AlongC>,
     /// Smear strength (stretch along velocity).
     pub smear: Option<f32>,
     /// The outline resampled for `wiggle`.
@@ -268,6 +270,51 @@ pub(crate) fn order_ranks(n: usize, order: &str, seed: f64) -> Vec<u32> {
         rank[u] = k as u32;
     }
     rank
+}
+
+/// A stroke gradient that follows the path.
+#[derive(Clone, Debug, PartialEq, Default)]
+pub(crate) struct AlongC {
+    /// (chunk path, start point, end point, start fraction, end fraction, start colour, end colour).
+    pub chunks: Vec<(Path, [f32; 2], [f32; 2], f32, f32, crate::dl::Rgba, crate::dl::Rgba)>,
+}
+
+impl AlongC {
+    /// Split `p` into about `n` equal-length chunks coloured by `stops` (evenly spaced colours).
+    pub fn build(p: &Path, stops: &[crate::dl::Rgba], n: usize) -> AlongC {
+        let mut chunks = Vec::new();
+        let Some(mp) = MPath::from_path(p) else { return AlongC { chunks } };
+        let total = mp.len();
+        let col = |u: f32| -> crate::dl::Rgba {
+            if stops.len() == 1 {
+                return stops[0];
+            }
+            let f = u.clamp(0.0, 1.0) * (stops.len() - 1) as f32;
+            let k = (f.floor() as usize).min(stops.len() - 2);
+            let t = f - k as f32;
+            let (a, b) = (stops[k].0, stops[k + 1].0);
+            crate::dl::Rgba([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t])
+        };
+        let n = n.max(1);
+        let mut j = 0usize;
+        for c in 0..n {
+            let (u0, u1) = (c as f32 / n as f32, (c + 1) as f32 / n as f32);
+            let (s0, s1) = (u0 * total, u1 * total);
+            let mut path = Path::new();
+            let (q0, _) = mp.at(s0);
+            path.move_to((q0[0] as f64, q0[1] as f64));
+            while j + 1 < mp.cum.len() && mp.cum[j + 1] < s1 {
+                j += 1;
+                if mp.cum[j] > s0 {
+                    path.line_to((mp.pts[j][0] as f64, mp.pts[j][1] as f64));
+                }
+            }
+            let (q1, _) = mp.at(s1);
+            path.line_to((q1[0] as f64, q1[1] as f64));
+            chunks.push((path, q0, q1, u0, u1, col(u0), col(u1)));
+        }
+        AlongC { chunks }
+    }
 }
 
 impl Fx {

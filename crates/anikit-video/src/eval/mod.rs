@@ -1396,7 +1396,24 @@ impl Evaluator {
                         geom(out, paint, None);
                     }
                 }
-                if let Some(s) = stroke {
+                let along = n.fx.as_deref().and_then(|f| f.along.as_ref());
+                if let (Some(_), Some(al)) = (stroke, along) {
+                    // Gradient along the path: each chunk carries its slice of the colours (and of the trim).
+                    let (t0, t1) = (v[prop::TRIM0].clamp(0.0, 1.0), v[prop::TRIM1].clamp(0.0, 1.0));
+                    if sw > 0.0 && t1 > t0 {
+                        let fade = |c: Rgba| Rgba([c.0[0], c.0[1], c.0[2], c.0[3] * alpha]);
+                        for (p, p0, p1, u0, u1, c0, c1) in &al.chunks {
+                            if *u1 <= t0 || *u0 >= t1 {
+                                continue;
+                            }
+                            let span = (u1 - u0).max(1e-6);
+                            let trim = [((t0 - u0) / span).clamp(0.0, 1.0), ((t1 - u0) / span).clamp(0.0, 1.0)];
+                            let paint = Paint::Linear { p0: *p0, p1: *p1, stops: vec![(0.0, fade(*c0)), (1.0, fade(*c1))] };
+                            let st = dl::Stroke { width: sw, cap: 1, join: 1, miter_limit: 4.0, dash: vec![], dash_offset: 0.0, trim };
+                            out.push(Op::Stroke { path: copy_path(p), paint, stroke: st, transform: xf });
+                        }
+                    }
+                } else if let Some(s) = stroke {
                     if sw > 0.0 && v[prop::TRIM1] > v[prop::TRIM0] {
                         let paint = self.paint(&s.paint, &v, prop::STROKE, [w, h], alpha);
                         let st = dl::Stroke {

@@ -3251,6 +3251,16 @@
             "null"
           ],
           "format": "double"
+        },
+        "along": {
+          "description": "Colours along the stroke, start to end: a gradient that follows the path (and its `trimEnd` write-on).",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

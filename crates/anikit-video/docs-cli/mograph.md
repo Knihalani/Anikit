@@ -37,6 +37,7 @@
 - **Posterize time** `"posterizeTime": 12` on a layer or group: its motion steps at 12 poses/s (on twos; with `wigglePath` → boiling, handmade lines).
 - **Named curves**: `glide` (expo out 0.16,1,0.3,1), `snap` (0.87,0,0.13,1), `land` (long settle), `launch` (expo in, exits), `material`,
   `emphasizedDecelerate`/`emphasizedAccelerate`, `productive`, `expressive`, `expressiveEntrance`/`expressiveExit`. Why and when: docs/video/craft/motion-design.md.
+- **Gradient along a stroke** `"stroke": {"width": 12, "along": ["#f36", "#fb0", "#1cb"]}`: colours flow start → end along the path (write-ons included).
 - **Dashes**: `stroke.dash` + `dashOffset` (animatable: `"=t*-60"` marches) — combine with `trimEnd` for write-ons.
 - **Easing**: any name (`outExpo`, `inOutBack`, `elastic.out(1, 0.3)`, `steps(4)`), `"ease": [x1, y1, x2, y2]` (cubic-bezier),
   `"spring": {"stiffness": 300, "damping": 18}`; per keyframe: `"keyframes": {"x": [[0, 200], [0.5, 960, "outBack"], [1, 1700, [0.9, 0, 0.1, 1]]]}` (the ease *into* that key).
