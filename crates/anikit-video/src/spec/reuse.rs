@@ -41,6 +41,16 @@ pub fn expand(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
         let items = std::mem::take(scenes);
         *scenes = cx.items(items, "scenes", &Map::new());
     }
+    if let Some(Value::Object(comps)) = root.get_mut("compositions") {
+        for (name, c) in comps.iter_mut() {
+            for key in ["layers", "scenes"] {
+                if let Some(list) = c.get_mut(key) {
+                    let items = std::mem::take(list);
+                    *list = cx.items(items, &format!("compositions.{name}.{key}"), &Map::new());
+                }
+            }
+        }
+    }
     if cx.errors.is_empty() {
         Ok(v)
     } else {
@@ -56,7 +66,7 @@ fn contains_reuse_keys(v: &Map<String, Value>) -> bool {
             _ => false,
         }
     }
-    v.get("scenes").is_some_and(walk)
+    v.get("scenes").is_some_and(walk) || v.get("compositions").is_some_and(walk)
 }
 
 struct Cx {

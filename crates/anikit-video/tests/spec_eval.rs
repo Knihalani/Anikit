@@ -292,3 +292,69 @@ fn tagged_eval_identifies_layers() {
     // A normal eval doesn't collect tags.
     assert_eq!(ev.eval_tagged(1.0).1.len(), tags.len());
 }
+
+// ---------- compositions ----------
+
+const COMP: &str = r##"{ "size": [400, 200], "background": "#000000",
+  "compositions": { "badge": { "size": [100, 50], "duration": 2, "background": "#ff0000",
+      "layers": [ { "shape": "rect", "width": 50, "height": 50, "x": 75, "fill": "#00ff00",
+                    "animate": [ { "from": { "opacity": 0 }, "at": 1, "duration": 0.5 } ] } ] } },
+  "scenes": [ { "duration": 4, "layers": [ { "composition": "badge", "x": 0, "y": 0, "anchor": "topLeft", "width": 200, "start": 1 } ] } ] }"##;
+
+fn px(ev: &Evaluator, t: f32, x: u32, y: u32) -> [u8; 3] {
+    let (w, _, p) = anikit_video::pipeline::render_rgba(ev, t, 1.0);
+    let i = ((y * w + x) * 4) as usize;
+    [p[i], p[i + 1], p[i + 2]]
+}
+
+#[test]
+fn composition_layer_scales_clips_and_maps_time() {
+    let ev = build(COMP);
+    let c = ev.composition("badge").unwrap();
+    assert_eq!((c.width, c.height, c.duration), (100, 50, 2.0));
+    // Before the layer starts: nothing.
+    assert_eq!(px(&ev, 0.5, 20, 20), [0, 0, 0]);
+    // Layer local 0.5 s = composition 0.5 s: red background (scaled 2×, so 200×100), green not yet in.
+    assert_eq!(px(&ev, 1.5, 20, 20), [255, 0, 0]);
+    assert_eq!(px(&ev, 1.5, 175, 50), [255, 0, 0]);
+    // Outside the composition's box: clipped.
+    assert_eq!(px(&ev, 1.5, 300, 50), [0, 0, 0]);
+    assert_eq!(px(&ev, 1.5, 100, 150), [0, 0, 0]);
+    // Composition 1.6 s+ : the green square is in (x 100..200 after scaling).
+    assert_eq!(px(&ev, 3.0, 150, 50), [0, 255, 0]);
+    // Static spans follow the composition's clock: its fade runs at layer 1..1.5 s = video 2..2.5 s.
+    assert!(ev.is_static(1.1, 1.9));
+    assert!(!ev.is_static(1.9, 2.6));
+    assert!(ev.is_static(2.6, 3.9));
+    // Tagged eval names the composition layer for all of its ops.
+    let (dl, tags) = ev.eval_tagged(3.0);
+    assert_eq!(tags.len(), 1);
+    assert_eq!(tags[0].ops, 0..dl.ops.len());
+    assert_eq!(ev.layer_info(tags[0].layer).1, "composition");
+}
+
+#[test]
+fn composition_loop_and_speed() {
+    let src = COMP.replace(r#""start": 1"#, r#""start": 1, "loop": true, "speed": 2"#);
+    let ev = build(&src);
+    // Layer 1.0 s × 2 = 2.0 → wraps to 0: green hidden again.
+    assert_eq!(px(&ev, 2.0, 150, 50), [255, 0, 0]);
+    assert!(!ev.is_static(1.1, 3.9));
+}
+
+#[test]
+fn composition_diagnostics() {
+    let e = errors(r##"{ "compositions": { "ui": { "layers": [ { "type": "txt", "text": "a" } ] } },
+        "scenes": [ { "layers": [ { "composition": "uii" } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("compositions.ui.layers[0].type") && m.contains("'text'")), "{e:?}");
+    assert!(e.iter().any(|m| m.contains("scenes[0].layers[0].composition") && m.contains("did you mean 'ui'")), "{e:?}");
+    let e = errors(r##"{ "compositions": { "a": { "layers": [ { "composition": "b" } ] }, "b": { "layers": [ { "composition": "a" } ] } },
+        "scenes": [ "x" ] }"##);
+    assert!(e.iter().any(|m| m.contains("cycle")), "{e:?}");
+    // Nested compositions compile in dependency order regardless of name order.
+    let ev = build(r##"{ "compositions": { "a": { "size": [10, 10], "layers": [ { "composition": "z" } ] }, "z": { "size": [5, 5], "layers": [ "hi" ] } },
+        "scenes": [ { "layers": [ { "composition": "a", "repeat": 2 } ] } ] }"##);
+    assert!(ev.composition("a").unwrap().composition("z").is_some());
+    let e = errors(r##"{ "compositions": { "ui": { "layers": [ "a" ], "sizee": 3 } }, "scenes": [ "x" ] }"##);
+    assert!(e.iter().any(|m| m.contains("compositions.ui.sizee") && m.contains("'size'")), "{e:?}");
+}
