@@ -389,6 +389,12 @@ pub struct Scene {
     pub haze: (f32, V3),
     /// Local point and spot lights.
     pub lights: Vec<Light>,
+    /// Per instance: world → object transform as three rows of
+    /// diag(1/s)·Rᵀ plus the translation (built by [`Scene::rebuild`]), so
+    /// ray transforms need no divisions.
+    inv: Vec<[V3; 4]>,
+    /// Ambient and unshadowed key diffuse light for an upward normal (the floor).
+    up_light: (V3, V3),
 }
 
 #[derive(Clone, Copy)]
@@ -771,7 +777,11 @@ impl Scene {
             glow: (v3(0.0, 0.0, -1.0), v3(0.0, 0.0, 0.0), 0.1),
             haze: (0.0, v3(0.0, 0.0, 0.0)),
             lights: Vec::new(),
+            inv: Vec::new(),
+            up_light: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)),
         };
+        let up = v3(0.0, 1.0, 0.0);
+        s.up_light = (s.env.diffuse(up), s.key_diffuse(up));
         s.rebuild();
         s
     }
@@ -780,6 +790,23 @@ impl Scene {
     pub fn rebuild(&mut self) {
         let boxes: Vec<(V3, V3)> = self.insts.iter().map(|i| self.world_box(i)).collect();
         self.tlas = Tlas::new(&boxes);
+        self.inv = self.insts.iter().map(|i| [scale(i.xf.r[0], 1.0 / i.xf.s.x), scale(i.xf.r[1], 1.0 / i.xf.s.y), scale(i.xf.r[2], 1.0 / i.xf.s.z), i.xf.t]).collect();
+    }
+
+    /// A world ray in instance `k`'s object space (direction unnormalised,
+    /// so `t` is preserved).
+    #[inline]
+    fn to_object(&self, k: usize, o: V3, d: V3) -> (V3, V3) {
+        match self.inv.get(k) {
+            Some(m) => {
+                let q = sub(o, m[3]);
+                (v3(dot(m[0], q), dot(m[1], q), dot(m[2], q)), v3(dot(m[0], d), dot(m[1], d), dot(m[2], d)))
+            }
+            None => {
+                let xf = &self.insts[k].xf;
+                (xf.point_inv(o), xf.dir_inv(d))
+            }
+        }
     }
 
     pub fn world_box(&self, i: &Inst) -> (V3, V3) {
@@ -821,8 +848,7 @@ impl Scene {
             if camera && !ob.cam {
                 return tm;
             }
-            let lo = ob.xf.point_inv(o);
-            let ld = ob.xf.dir_inv(d);
+            let (lo, ld) = self.to_object(k as usize, o, d);
             if let Some(hh) = self.shapes[ob.shape as usize].hit_t(lo, ld, EPS, tm) {
                 obj = Some((k, lo, ld, hh));
                 hh.0
@@ -857,8 +883,7 @@ impl Scene {
             if !ob.shadow {
                 return tm;
             }
-            let lo = ob.xf.point_inv(o);
-            let ld = ob.xf.dir_inv(d);
+            let (lo, ld) = self.to_object(k as usize, o, d);
             if self.shapes[ob.shape as usize].occluded(lo, ld, EPS, tm) {
                 let m = &self.mats[ob.mat as usize];
                 if m.transmission > 0.0 {
@@ -986,7 +1011,7 @@ impl Scene {
         let r2d = dx * dx + dz * dz;
         let pool = if f.pool.2 > 0.0 { (-r2d / (f.pool.2 * f.pool.2)).exp() } else { 1.0 };
         let (ll, _) = if self.lights.is_empty() { (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) } else { self.local_lights(p, up, scale(d, -1.0), 1.0, v3(0.0, 0.0, 0.0)) };
-        let dif = Diffuse { alb: f.color, amb: add(self.env.diffuse(up), ll), key: scale(self.key_diffuse(up), pool), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
+        let dif = Diffuse { alb: f.color, amb: add(self.up_light.0, ll), key: scale(self.up_light.1, pool), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
         let fade = if f.fade.1 > f.fade.0 { smoothstep(f.fade.0, f.fade.1, r2d.sqrt()) } else { 0.0 };
         // Reflection: Fresnel lacquer plus an optional mirror boost.
         let nv = (-d.y).clamp(1e-4, 1.0);
@@ -1363,7 +1388,11 @@ impl Scene {
                     while i < q.edge_spp {
                         let (a, b) = r2(i, rot);
                         let srot = (u01(hash2(hs, i * 2 + 1)), u01(hash2(hs, i * 2 + 2)));
-                        samples.push(self.primary(rig, prev, x as f32 + a, y as f32 + b, q, srot, 0));
+                        // Every other sub-sample skips the floor reflection and the
+                        // shadow/AO rays (as the centre samples do on the
+                        // checkerboard): resolve and post weight them out.
+                        let sk = if !q.full && i & 1 == (x + y) as u32 & 1 { (rough_floor as u8) | 2 } else { 0 };
+                        samples.push(self.primary(rig, prev, x as f32 + a, y as f32 + b, q, srot, sk));
                         i += 1;
                         if i == half {
                             let id0 = samples[0].id;
