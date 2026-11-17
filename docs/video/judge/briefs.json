@@ -1,0 +1,18 @@
+[
+ {"id": "a-coffee", "tags": ["illustration", "square", "motion-design"], "format": "1:1",
+  "brief": "Halde & Sons, a small specialty coffee roaster, is releasing a new single-origin coffee: Ethiopia Guji, washed process, tasting notes of bergamot, peach and black tea, roasted in small batches, out this Friday. Make a 20 s square (1080x1080) release video for Instagram. Calm, crafted, warm. Sound on."},
+ {"id": "b-payments", "tags": ["product-launch", "motion-design", "editorial-data"], "format": "16:9",
+  "brief": "Railyard is a payments API for developers: one API call moves money between bank accounts with instant settlement, and it sends a webhook at every state change. Make a 15 s 1920x1080 launch film for the homepage and social. Claims allowed: only those above. Sound on."},
+ {"id": "c-festival", "tags": ["music-video", "kinetic-type", "vertical"], "format": "9:16",
+  "brief": "Substation is a two-night techno festival in a decommissioned power station (12-13 June). Make a 15 s 1080x1920 line-up reveal for Instagram/TikTok announcing these acts: Ancient Methods, Paula Temple, DVS1, Héctor Oaks, Rrose, Phase Fatale, Kia, Ida Engberg. Tickets on sale Friday. Sound on."},
+ {"id": "d-storybook", "tags": ["illustration", "product-launch"], "format": "16:9",
+  "brief": "Burrow is a bedtime-story app for children aged 3-7: parents and kids make a new illustrated story together every night, read aloud by the app. Make a 20 s 1920x1080 launch film for parents. Sound on."},
+ {"id": "e-data", "tags": ["editorial-data"], "format": "16:9",
+  "brief": "Make a 30 s 1920x1080 explainer on Arctic sea ice: September minimum extent 1979 to today. Use the real NSIDC Sea Ice Index v4 data (https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_09_extent_v4.0.csv), cite it on screen, and make the trend undeniable. Audience: a newspaper's social feed. Sound on."},
+ {"id": "f-luxury", "tags": ["luxury", "3d-cg", "product-launch"], "format": "16:9",
+  "brief": "Atelier Vauclair, an independent Swiss watchmaker, announces the Calibre 9: 38 mm steel case, hand-finished guilloché dial, 72-hour power reserve, limited to 150 pieces. Make a 12 s 1920x1080 teaser. Sound on."},
+ {"id": "g-titles", "tags": ["title-sequence", "kinetic-type", "motion-design"], "format": "16:9",
+  "brief": "Offset is a design-systems conference, Lisbon, 14-15 May 2027. Make the 15 s 1920x1080 opening title sequence that plays on the main stage before the first keynote. Sound on."},
+ {"id": "h-museum", "tags": ["3d-cg", "title-sequence", "editorial-data"], "format": "16:9",
+  "brief": "The Natural History Museum is opening 'Deep Time', an exhibition about the 300 million years of life before the dinosaurs (the Cambrian explosion, the first forests, the Great Dying). Make a 20 s 1920x1080 exhibition trailer for screens in the Underground and online. Opens 3 April. Sound on."}
+]
