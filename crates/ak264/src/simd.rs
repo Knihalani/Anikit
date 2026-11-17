@@ -134,11 +134,10 @@ unsafe fn satd8_sse41(a: *const u8, sa: usize, b: *const u8, sb: usize, h: usize
             let e = _mm_add_epi16(x, s1);
             let f = _mm_sub_epi16(s1, x);
             let x1 = _mm_blend_epi16(e, f, 0b1010_1010);
-            let s2 = _mm_shufflelo_epi16(_mm_shufflehi_epi16(x1, 0b01_00_11_10), 0b01_00_11_10);
-            let e = _mm_add_epi16(x1, s2);
-            let f = _mm_sub_epi16(s2, x1);
-            let x2 = _mm_blend_epi16(e, f, 0b1100_1100);
-            acc = _mm_add_epi32(acc, _mm_madd_epi16(_mm_abs_epi16(x2), ones));
+            // last stage as 2·max(|p|, |q|) (see satd16_avx2)
+            let ax = _mm_abs_epi16(x1);
+            let s2 = _mm_shufflelo_epi16(_mm_shufflehi_epi16(ax, 0b01_00_11_10), 0b01_00_11_10);
+            acc = _mm_add_epi32(acc, _mm_madd_epi16(_mm_max_epi16(ax, s2), ones));
         }
         y += 4;
     }
@@ -171,11 +170,11 @@ unsafe fn satd16_avx2(a: *const u8, sa: usize, b: *const u8, sb: usize, h: usize
             let e = _mm256_add_epi16(x, s1);
             let f = _mm256_sub_epi16(s1, x);
             let x1 = _mm256_blend_epi16(e, f, 0b1010_1010);
-            let s2 = _mm256_shufflelo_epi16(_mm256_shufflehi_epi16(x1, 0b01_00_11_10), 0b01_00_11_10);
-            let e = _mm256_add_epi16(x1, s2);
-            let f = _mm256_sub_epi16(s2, x1);
-            let x2 = _mm256_blend_epi16(e, f, 0b1100_1100);
-            acc = _mm256_add_epi32(acc, _mm256_madd_epi16(_mm256_abs_epi16(x2), ones));
+            // last stage: |p + q| + |p − q| = 2·max(|p|, |q|); every lane i holds
+            // max(|x1[i]|, |x1[i ^ 2]|), so the lane sum equals Σ|stage output|.
+            let ax = _mm256_abs_epi16(x1);
+            let s2 = _mm256_shufflelo_epi16(_mm256_shufflehi_epi16(ax, 0b01_00_11_10), 0b01_00_11_10);
+            acc = _mm256_add_epi32(acc, _mm256_madd_epi16(_mm256_max_epi16(ax, s2), ones));
         }
         y += 4;
     }
@@ -350,11 +349,10 @@ unsafe fn satd4x4_sse41(a: &[u8; 16], b: &[u8; 16]) -> u32 {
         let e = _mm_add_epi16(v, s1);
         let f = _mm_sub_epi16(s1, v);
         let x1 = _mm_blend_epi16(e, f, 0b1010_1010);
-        let s2 = _mm_shufflelo_epi16(_mm_shufflehi_epi16(x1, 0b01_00_11_10), 0b01_00_11_10);
-        let e = _mm_add_epi16(x1, s2);
-        let f = _mm_sub_epi16(s2, x1);
-        let x2 = _mm_blend_epi16(e, f, 0b1100_1100);
-        acc = _mm_add_epi32(acc, _mm_madd_epi16(_mm_abs_epi16(x2), _mm_set1_epi16(1)));
+        // last stage as 2·max(|p|, |q|) (see satd16_avx2)
+        let ax = _mm_abs_epi16(x1);
+        let s2 = _mm_shufflelo_epi16(_mm_shufflehi_epi16(ax, 0b01_00_11_10), 0b01_00_11_10);
+        acc = _mm_add_epi32(acc, _mm_madd_epi16(_mm_max_epi16(ax, s2), _mm_set1_epi16(1)));
     }
     let t = _mm_add_epi32(acc, _mm_shuffle_epi32(acc, 0b01_00_11_10));
     let t = _mm_add_epi32(t, _mm_shuffle_epi32(t, 0b10_11_00_01));
