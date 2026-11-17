@@ -77,6 +77,8 @@ struct Prepared {
     glow: (V3, V3, f32),
     haze: (f32, V3),
     lights: Vec<trace::Light>,
+    /// Volumetric light shafts in the fog.
+    shafts: bool,
     camera: CamSpec,
     default_aperture: f32,
     shutter: Option<f32>,
@@ -234,16 +236,18 @@ impl Prepare for Scene3d {
             let hz = (es.haze, v3(0.006, 0.006, 0.008));
             ((v3(0.006, 0.006, 0.008), v3(0.0015, 0.0015, 0.002)), (norm(v3(0.0, 0.12, -1.0)), v3(0.05, 0.045, 0.06), 0.09), hz, 1.0, post::Tonemap::Aces)
         };
-        // `fog`: { "density": per metre, "color" } overrides the env's haze.
+        // `fog`: { "density": per metre, "color", "shafts" } overrides the env's haze.
+        let mut shafts = false;
         let haze = match m.get("fog") {
             None => haze,
             Some(Value::Number(d)) => (d.as_f64().unwrap_or(0.0) as f32, haze.1),
             Some(Value::Object(f)) => {
                 for k in f.keys() {
-                    if !["density", "color"].contains(&k.as_str()) {
-                        return Err(Error(format!("fog: unknown key `{k}` (density, color)")));
+                    if !["density", "color", "shafts"].contains(&k.as_str()) {
+                        return Err(Error(format!("fog: unknown key `{k}` (density, color, shafts)")));
                     }
                 }
+                shafts = f.get("shafts").and_then(|x| x.as_bool()).unwrap_or(false);
                 let d = num_or(f, "density", haze.0).map_err(Error)?;
                 let c = f.get("color").map(|c| spec::color(c, "fog.color")).transpose().map_err(Error)?.unwrap_or(haze.1);
                 (d, c)
@@ -288,6 +292,7 @@ impl Prepare for Scene3d {
             glow,
             haze,
             lights: local_lights,
+            shafts,
             camera,
             default_aperture: num_or(m, "aperture", if lookdev { 26.0 } else { 0.0 }).map_err(Error)?,
             shutter: m.get("shutter").and_then(|s| s.as_f64()).map(|s| s as f32),
@@ -382,7 +387,14 @@ impl Scene3d {
         }
         let t_trace = clock.elapsed();
         let pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
-        let out = post::process(&px, w, h, &pp);
+        let vol = if p.shafts && p.haze.0 > 0.0 {
+            let depth: Vec<f32> = px.iter().map(|q| q.depth).collect();
+            let steps = match p.quality.edge_spp { 0..=3 => 8, 4..=8 => 16, _ => 32 };
+            Some(scene.volumetrics(&cam, w, h, &depth, p.haze.0, steps))
+        } else {
+            None
+        };
+        let out = post::process(&px, w, h, &pp, vol.as_ref().map(|v| post::Volume { px: v, w: w.div_ceil(2), h: h.div_ceil(2) }));
         if prof {
             let ms = |d: std::time::Duration| d.as_secs_f64() * 1e3;
             eprintln!(

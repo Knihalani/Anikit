@@ -400,6 +400,116 @@ impl Scene {
     }
 }
 
+impl Scene {
+    /// Light scattered toward the camera by fog lit by the key and the local
+    /// lights (single scattering, Henyey–Greenstein g = 0.35), ray-marched
+    /// with traced visibility at half resolution: god rays and light cones.
+    /// `depth` is the full-resolution view depth; returns `w/2 × h/2` radiance.
+    pub fn volumetrics(&self, cam: &Camera, w: usize, h: usize, depth: &[f32], density: f32, steps: u32) -> Vec<[f32; 3]> {
+        let (hw, hh) = (w.div_ceil(2), h.div_ceil(2));
+        let (f, _, _) = cam.basis();
+        let g = 0.35f32;
+        let hg = |c: f32| (1.0 - g * g) / (4.0 * std::f32::consts::PI * (1.0 + g * g - 2.0 * g * c).max(1e-4).powf(1.5));
+        let key = self.env.key_box().map(|k| (k.c, scale(k.radiance, self.env.key_solid_angle)));
+        let row = |y: usize| -> Vec<[f32; 3]> {
+            (0..hw)
+                .map(|x| {
+                    let d = Self::cam_ray(cam, hw, hh, x as f32 + 0.5, y as f32 + 0.5);
+                    // Nearest surface in this 2×2 block (march no further).
+                    let mut dv = f32::MAX;
+                    for (dx, dy) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
+                        let (sx, sy) = ((2 * x + dx).min(w - 1), (2 * y + dy).min(h - 1));
+                        dv = dv.min(depth[sy * w + sx]);
+                    }
+                    let tmax = (dv / dot(d, f).max(1e-3)).min(60.0);
+                    let jit = u01(hash2(x as u32 * 7 + 3, y as u32 * 13 + 1));
+                    let mut acc = v3(0.0, 0.0, 0.0);
+                    // The key (directional) lights the whole ray.
+                    if let Some((kd, kl)) = key {
+                        let dt = tmax / steps as f32;
+                        let ph = hg(dot(kd, d));
+                        for i in 0..steps {
+                            let t = (i as f32 + jit) * dt;
+                            if self.transmit(madd(cam.pos, d, t), kd, 1e6, false) > 0.0 {
+                                acc = madd(acc, kl, (-density * t).exp() * density * dt * ph);
+                            }
+                        }
+                    }
+                    // Each local light is marched only where it matters: the
+                    // part of the ray inside its sphere of influence.
+                    for l in &self.lights {
+                        let reach = if l.cos_outer > -1.0 { 8.0f32.max(luma(l.power).sqrt() * 1.2) } else { luma(l.power).sqrt() * 1.5 };
+                        let oc = sub(cam.pos, l.pos);
+                        let b = dot(oc, d);
+                        let c = dot(oc, oc) - reach * reach;
+                        let disc = b * b - c;
+                        if disc <= 0.0 {
+                            continue;
+                        }
+                        let sq = disc.sqrt();
+                        let (t0, t1) = ((-b - sq).max(0.0), (-b + sq).min(tmax));
+                        if t1 <= t0 {
+                            continue;
+                        }
+                        let dt = (t1 - t0) / steps as f32;
+                        for i in 0..steps {
+                            let t = t0 + (i as f32 + jit) * dt;
+                            let x3 = madd(cam.pos, d, t);
+                            let to = sub(l.pos, x3);
+                            let d2 = dot(to, to).max(1e-3);
+                            let dist = d2.sqrt();
+                            let ld = scale(to, 1.0 / dist);
+                            let mut k = 1.0 / d2;
+                            if l.cos_outer > -1.0 {
+                                k *= smoothstep(l.cos_outer, l.cos_inner.max(l.cos_outer + 1e-4), dot(scale(ld, -1.0), l.dir));
+                            }
+                            if k < 1e-6 {
+                                continue;
+                            }
+                            if l.shadow && self.transmit(x3, ld, dist, false) <= 0.0 {
+                                continue;
+                            }
+                            acc = madd(acc, l.power, (-density * t).exp() * density * dt * k * hg(dot(ld, d)) * 4.0 * std::f32::consts::PI);
+                        }
+                    }
+                    [acc.x, acc.y, acc.z]
+                })
+                .collect()
+        };
+        use rayon::prelude::*;
+        let rows: Vec<Vec<[f32; 3]>> = if rayon::current_thread_index().is_some() { (0..hh).map(row).collect() } else { (0..hh).into_par_iter().map(row).collect() };
+        let raw: Vec<[f32; 3]> = rows.into_iter().flatten().collect();
+        // Two 5×5 binomial passes remove the jitter (shafts are smooth).
+        let mut out = raw.clone();
+        let mut raw = raw;
+        for _pass in 0..2 {
+        for y in 0..hh {
+            for x in 0..hw {
+                let mut a = [0.0f32; 3];
+                let mut ws = 0.0;
+                for dy in -2i32..=2 {
+                    for dx in -2i32..=2 {
+                        let (sx, sy) = (x as i32 + dx, y as i32 + dy);
+                        if sx < 0 || sy < 0 || sx >= hw as i32 || sy >= hh as i32 {
+                            continue;
+                        }
+                        let wt = [1.0, 4.0, 6.0, 4.0, 1.0][(dx + 2) as usize] * [1.0, 4.0, 6.0, 4.0, 1.0][(dy + 2) as usize];
+                        let v = raw[sy as usize * hw + sx as usize];
+                        for k in 0..3 {
+                            a[k] += v[k] * wt;
+                        }
+                        ws += wt;
+                    }
+                }
+                out[y * hw + x] = a.map(|v| v / ws);
+            }
+        }
+        raw.clone_from(&out);
+        }
+        out
+    }
+}
+
 /// What a ray hit.
 #[derive(Clone, Copy)]
 struct Surf {
@@ -952,7 +1062,9 @@ impl Scene {
         let none = v3(0.0, 0.0, 0.0);
         for layer in 0..=q.max_glass {
             let Some(s) = self.trace_f(o, d, 1e6, true) else {
-                let b = mul(self.backdrop(d), thr);
+                // Fog covers the backdrop too (as if it were 200 m away).
+                let bd = if self.haze.0 > 0.0 { lerp3(self.backdrop(d), self.haze.1, 1.0 - (-self.haze.0 * 200.0).exp()) } else { self.backdrop(d) };
+                let b = mul(bd, thr);
                 let (depth, nrm, id, vel) = first.unwrap_or((1e4, none, usize::MAX - 1, (0.0, 0.0)));
                 return Sample { col: add(col, b), dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, rf: 1.0, rw: 0.0, vw: 1.0, depth, vel, nrm, id };
             };

@@ -20,6 +20,13 @@ pub struct Post {
     pub denoise: u32,
 }
 
+/// Half-resolution light added before depth of field (volumetric shafts).
+pub struct Volume<'a> {
+    pub px: &'a [[f32; 3]],
+    pub w: usize,
+    pub h: usize,
+}
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Tonemap {
     Aces,
@@ -300,7 +307,7 @@ fn box_blur(src: &[f32], w: usize, h: usize, r: usize, rows: bool) -> Vec<f32> {
     out
 }
 
-pub fn process(px: &[Px], w: usize, h: usize, p: &Post) -> Vec<u8> {
+pub fn process(px: &[Px], w: usize, h: usize, p: &Post, vol: Option<Volume>) -> Vec<u8> {
     let s = h as f32 / 1080.0;
     let mut clock = std::time::Instant::now();
     let mut stages: Vec<(&str, f64)> = Vec::new();
@@ -423,6 +430,16 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post) -> Vec<u8> {
         })
         .collect();
 
+    if let Some(v) = &vol {
+        par_rows(&mut hdr, w, |y, row| {
+            for x in 0..w {
+                let c = fetch(v.px, v.w, v.h, (x as f32 + 0.5) * 0.5 - 0.5, (y as f32 + 0.5) * 0.5 - 0.5);
+                for k in 0..3 {
+                    row[x][k] += c[k];
+                }
+            }
+        });
+    }
     tick(&mut stages, &mut clock, "denoise");
     // 2. Depth of field, gathered at half resolution (blur is low-frequency;
     // the 2×2 prefilter also turns sparse highlights into smooth discs) and
