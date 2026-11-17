@@ -495,6 +495,14 @@ Applied everywhere, smooth-heavy UI content pays heavily (QP 23, 300 frames):
 - **Strength:** 0.5 already removes the cyc patchwork; 1.0 looks the same there
   at +9%.
 
+On the PERF corpus (`qbench`), automatic AQ was compared with the earlier
+encoder:
+- **Fidelity:** delivered quality is equal or better on every spec. Backdrop goes
+  46.96 → 47.42 dB, launch 48.12 → 48.47 dB, scene3d 50.72 → 51.08 dB (min
+  PSNR-Y). Minimum SSIM rises with them, and particles moves by −0.0001.
+- **Size:** where AQ fires, files grow: backdrop +35%, launch +23%, scene3d
+  +39%. Everything else changes by 0–4%.
+
 The x264 size gap on cyc: x264 at CRF 23 is 791 KB but 42.5 dB, five dB below
 ak264 at QP 23. At matched PSNR ak264 needs about 1080 KB (1.36×), the usual gap
 from B-frames and RD tools on busy content. A wide AC dead zone on smooth inter
