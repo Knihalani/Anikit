@@ -1,8 +1,8 @@
 {
   "name": "changelog",
   "title": "Changelog / what's new",
-  "description": "A 12–25 s release recap: a version badge and kinetic title beside the product UI, then the changes as icon cards (New ✦, Improved ⚡, Fixed ✓) building in three at a time, then a CTA with confetti.",
-  "duration": "12–25 s",
+  "description": "A 12–30 s release recap: the version badge and headline beside the product's app screen, then one beat per change with a solid NEW / IMPROVED / FIXED chip, the change in big type and a progress ring counting through the release, then a version end card with a CTA and a sparks burst.",
+  "duration": "12–30 s",
   "tags": [
     "changelog",
     "release",
@@ -160,9 +160,11 @@
                 "component": "badge",
                 "props": {
                   "label": "{{version}}",
-                  "solid": false,
+                  "solid": true,
                   "size": "{{fmt.portrait ? fmt.u * 3.4 : fmt.u * 2.8}}",
-                  "delay": 0.1
+                  "delay": 0.1,
+                  "align": "{{fmt.landscape ? 0 : 0.5}}",
+                  "color": "{{brand.colors.primary}}"
                 },
                 "x": "{{ax}}",
                 "anchor": "{{an}}",
@@ -241,113 +243,213 @@
         ]
       },
       {
-        "$each": "range(ceil(len(items) / ceil(len(items) / ceil(len(items) / 3))))",
-        "as": "g",
-        "index": "gi",
+        "$each": "items",
+        "as": "it",
+        "index": "k",
         "do": {
-          "$let": {
-            "per": "ceil(len(items) / ceil(len(items) / 3))",
-            "grp": "slice(items, g * per, g * per + per)"
+          "id": "change-{{k + 1}}",
+          "transition": {
+            "type": "push",
+            "direction": "{{fmt.portrait ? 'up' : 'left'}}",
+            "duration": 0.5,
+            "ease": "inOutQuart"
           },
-          "in": {
-            "id": "changes-{{g + 1}}",
-            "transition": {
-              "type": "push",
-              "direction": "{{fmt.portrait ? 'up' : 'left'}}",
-              "duration": 0.6,
-              "ease": "inOutQuart"
-            },
-            "duration": "{{readtime(join(pick(grp, 'text'), ' ')) + 1.8}}",
-            "layers": [
-              {
-                "$use": "backdrop",
-                "with": {
-                  "seed": "{{12 + g * 5}}"
-                }
-              },
-              {
-                "text": "{{(title ?? 'What is new') + ' in ' + version}}",
-                "style": "heading",
-                "weight": 750,
-                "width": "{{fmt.safe.w}}",
-                "y": "{{fmt.portrait ? '20%' : '27%'}}",
-                "enter": "mask by word up"
-              },
-              {
-                "$each": "grp",
-                "as": "it",
-                "index": "k",
-                "do": {
-                  "$let": {
-                    "n": "len(grp)",
-                    "cw": "fmt.landscape ? min(fmt.w * 0.27, (fmt.safe.w - fmt.u * 4 * (len(grp) - 1)) / len(grp)) : fmt.safe.w",
-                    "ch": "fmt.landscape ? fmt.u * 22 : fmt.u * 17",
-                    "x0": "fmt.cx - (len(grp) * min(fmt.w * 0.27, (fmt.safe.w - fmt.u * 4 * (len(grp) - 1)) / len(grp)) + (len(grp) - 1) * fmt.u * 4) / 2"
-                  },
-                  "in": {
-                    "type": "component",
-                    "component": "card",
-                    "props": {
-                      "title": "{{it.text}}",
-                      "body": "{{it.type == 'new' ? 'New' : it.type == 'improved' ? 'Improved' : 'Fixed'}}",
-                      "icon": "{{it.type == 'new' ? 'spark' : it.type == 'improved' ? 'bolt' : 'check'}}",
-                      "accent": "{{it.type == 'new' ? brand.colors.primary : it.type == 'improved' ? brand.colors.secondary : brand.colors.accent}}",
-                      "glow": true,
-                      "delay": "{{0.25 + k * 0.18}}"
-                    },
-                    "x": "{{fmt.landscape ? x0 + cw / 2 + k * (cw + fmt.u * 4) : fmt.cx}}",
-                    "y": "{{fmt.landscape ? fmt.h * 0.55 : fmt.h * 0.32 + k * (ch + fmt.u * 4) + ch / 2}}",
-                    "width": "{{cw}}",
-                    "height": "{{ch}}"
-                  }
-                }
-              },
-              {
-                "$use": "grain"
+          "duration": "{{max(2.8, readtime(it.text) + 1.4)}}",
+          "layers": [
+            {
+              "$use": "backdrop",
+              "with": {
+                "seed": "{{12 + k * 5}}",
+                "still": true,
+                "intensity": 0.3
               }
-            ]
-          }
+            },
+            {
+              "type": "component",
+              "component": "badge",
+              "props": {
+                "label": "{{upper(product ?? brand.name)}}",
+                "solid": true,
+                "color": "{{brand.colors.primary}}",
+                "size": "{{fmt.u * 2.3}}",
+                "align": 0
+              },
+              "x": "{{fmt.safe.left}}",
+              "anchor": "left",
+              "y": "{{fmt.safe.top + fmt.u * 2}}",
+              "width": "{{fmt.u * 30}}",
+              "height": "{{fmt.u * 5}}"
+            },
+            {
+              "text": "{{'RELEASE NOTES · ' + upper(version)}}",
+              "font": "$mono",
+              "size": "{{fmt.u * 2.3}}",
+              "weight": 600,
+              "letterSpacing": "0.12em",
+              "color": "$muted",
+              "x": "{{fmt.safe.left + fmt.u * (len(product ?? brand.name) * 1.55 + 5.5)}}",
+              "anchor": "left",
+              "y": "{{fmt.safe.top + fmt.u * 2}}"
+            },
+            {
+              "text": "{{((k + 1) < 10 ? '0' + str(k + 1) : str(k + 1)) + ' / ' + (len(items) < 10 ? '0' + str(len(items)) : str(len(items)))}}",
+              "font": "$mono",
+              "size": "{{fmt.u * 2.3}}",
+              "weight": 600,
+              "color": "$muted",
+              "x": "{{fmt.w - fmt.safe.right}}",
+              "anchor": "right",
+              "y": "{{fmt.safe.top + fmt.u * 2}}"
+            },
+            {
+              "type": "shape",
+              "shape": "rect",
+              "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
+              "y": "{{fmt.portrait ? fmt.h * 0.3 : (fmt.square ? fmt.h * 0.3 : fmt.h * 0.52)}}",
+              "width": "{{fmt.portrait ? fmt.u * 60 : fmt.u * 50}}",
+              "height": "{{fmt.portrait ? fmt.u * 60 : fmt.u * 50}}",
+              "radius": "{{fmt.u * 2.4}}",
+              "fill": "{{alpha(brand.colors.surface, 0.55)}}",
+              "stroke": {
+                "color": "{{alpha(brand.colors.text, 0.1)}}",
+                "width": 1
+              },
+              "enter": {
+                "preset": "scaleIn",
+                "duration": 0.5
+              }
+            },
+            {
+              "type": "component",
+              "component": "progress-ring",
+              "props": {
+                "from": "{{k / len(items)}}",
+                "to": "{{(k + 1) / len(items)}}",
+                "duration": "{{max(2.8, readtime(it.text) + 1.4) - 0.6}}",
+                "delay": 0.2,
+                "size": "{{fmt.portrait ? fmt.u * 46 : fmt.u * 38}}",
+                "thickness": "{{fmt.u * 1.4}}",
+                "color": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? brand.colors.secondary : '#22C55E')}}",
+                "percent": false
+              },
+              "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
+              "y": "{{fmt.portrait ? fmt.h * 0.3 : (fmt.square ? fmt.h * 0.3 : fmt.h * 0.52)}}",
+              "width": "{{fmt.portrait ? fmt.u * 52 : fmt.u * 44}}",
+              "height": "{{fmt.portrait ? fmt.u * 52 : fmt.u * 44}}"
+            },
+            {
+              "text": "{{(k + 1) < 10 ? '0' + str(k + 1) : str(k + 1)}}",
+              "style": "stat",
+              "size": "{{fmt.portrait ? fmt.u * 15 : fmt.u * 13}}",
+              "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
+              "y": "{{(fmt.portrait ? fmt.h * 0.3 : (fmt.square ? fmt.h * 0.3 : fmt.h * 0.52)) - fmt.u * 1.5}}",
+              "enter": "pop by char from center"
+            },
+            {
+              "text": "{{'of ' + ((len(items)) < 10 ? '0' + str(len(items)) : str(len(items)))}}",
+              "style": "caption",
+              "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
+              "y": "{{(fmt.portrait ? fmt.h * 0.3 : (fmt.square ? fmt.h * 0.3 : fmt.h * 0.52)) + fmt.u * 7}}",
+              "enter": {
+                "preset": "fadeIn",
+                "delay": 0.4
+              }
+            },
+            {
+              "$let": {
+                "ln": "ceil(len(it.text) * 0.46 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.44 : fmt.safe.w))",
+                "ts": "fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5"
+              },
+              "in": [
+                {
+                  "$if": "fmt.landscape",
+                  "then": {
+                    "type": "shape",
+                    "shape": "rect",
+                    "x": "{{fmt.safe.left}}",
+                    "anchor": "topLeft",
+                    "y": "{{fmt.h * 0.5 - (fmt.u * 10 + ln * ts * 1.08) / 2}}",
+                    "width": "{{fmt.u * 0.7}}",
+                    "height": "{{fmt.u * 10 + ln * ts * 1.08}}",
+                    "fill": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? brand.colors.secondary : '#22C55E')}}",
+                    "radius": "{{fmt.u * 0.35}}",
+                    "enter": {
+                      "preset": "wipeIn",
+                      "direction": "down",
+                      "duration": 0.5
+                    }
+                  }
+                },
+                {
+                  "type": "component",
+                  "component": "badge",
+                  "props": {
+                    "label": "{{upper(it.type)}}",
+                    "solid": true,
+                    "color": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? brand.colors.secondary : '#22C55E')}}",
+                    "size": "{{fmt.portrait ? fmt.u * 3.6 : fmt.u * 3}}",
+                    "align": "{{fmt.landscape ? 0 : 0.5}}",
+                    "delay": 0.15
+                  },
+                  "x": "{{fmt.landscape ? fmt.safe.left + fmt.u * 3 : fmt.cx}}",
+                  "anchor": "{{fmt.landscape ? 'left' : 'center'}}",
+                  "y": "{{fmt.landscape ? fmt.h * 0.5 - (fmt.u * 10 + ln * ts * 1.08) / 2 + fmt.u * 3.2 : (fmt.portrait ? fmt.h * 0.55 : fmt.h * 0.56)}}",
+                  "width": "{{fmt.u * 40}}",
+                  "height": "{{fmt.u * 9}}"
+                },
+                {
+                  "text": "{{it.text}}",
+                  "style": "title",
+                  "weight": 780,
+                  "width": "{{fmt.landscape ? fmt.w * 0.44 : fmt.safe.w}}",
+                  "align": "{{fmt.landscape ? 'left' : 'center'}}",
+                  "x": "{{fmt.landscape ? fmt.safe.left + fmt.u * 3 : '50%'}}",
+                  "anchor": "{{fmt.landscape ? 'topLeft' : 'top'}}",
+                  "y": "{{fmt.landscape ? fmt.h * 0.5 - (fmt.u * 10 + ln * ts * 1.08) / 2 + fmt.u * 9 : (fmt.portrait ? fmt.h * 0.6 : fmt.h * 0.61)}}",
+                  "enter": "mask by word up"
+                }
+              ]
+            }
+          ]
         }
       },
       {
         "id": "cta",
         "transition": {
-          "type": "blur",
+          "type": "zoom",
           "duration": 0.6
         },
-        "duration": "{{max(3.8, readtime(product ?? brand.name + ' ' + cta + ' ' + (url ?? '')) + 1.6)}}",
+        "duration": "{{max(3.8, readtime((product ?? brand.name) + ' ' + cta + ' ' + (url ?? '')) + 1.8)}}",
         "layers": [
           {
             "$use": "backdrop",
             "with": {
-              "seed": 31,
+              "seed": 41,
               "floor": true,
-              "intensity": 0.42
+              "intensity": 0.38
             }
           },
           {
-            "$if": "brand.logo",
-            "then": {
-              "src": "{{brand.logo}}",
-              "height": "{{fmt.u * 10}}",
-              "fit": "contain",
-              "y": "{{fmt.portrait ? '33%' : '28%'}}",
-              "enter": "scaleIn"
-            }
+            "text": "{{(product ?? brand.name) + ' ' + version + ' is out'}}",
+            "style": "label",
+            "y": "{{fmt.portrait ? '30%' : '26%'}}",
+            "enter": "fadeUp"
           },
           {
-            "text": "{{product ?? brand.name}}",
-            "style": "title",
-            "y": "42%",
-            "width": "{{fmt.safe.w}}",
-            "enter": "rise"
+            "text": "{{version}}",
+            "style": "hero",
+            "size": "{{fmt.portrait ? fmt.u * 30 : fmt.u * 26}}",
+            "color": "linear-gradient(90deg, $primary, $secondary)",
+            "y": "{{fmt.portrait ? '41%' : '43%'}}",
+            "enter": "pop by char from center"
           },
           {
             "$use": "ctaButton",
             "with": {
               "label": "{{cta}}",
-              "y": "{{fmt.portrait ? '53%' : '58%'}}",
-              "press": 1.5
+              "y": "{{fmt.portrait ? '56%' : '65%'}}",
+              "press": 1.6,
+              "delay": 0.7
             }
           },
           {
@@ -355,22 +457,31 @@
             "then": {
               "text": "{{url}}",
               "style": "caption",
-              "y": "{{fmt.portrait ? '61%' : '70%'}}",
+              "y": "{{fmt.portrait ? '63%' : '75%'}}",
               "enter": {
                 "preset": "fadeIn",
-                "delay": 0.9
+                "delay": 1.0
               }
             }
           },
           {
-            "$use": "confetti",
-            "with": {
-              "at": 1.5,
-              "oy": "{{fmt.portrait ? 0.53 : 0.58}}"
+            "type": "component",
+            "component": "sparks",
+            "props": {
+              "bursts": [
+                1.6
+              ],
+              "origin": [
+                0.5,
+                "{{fmt.portrait ? 0.56 : 0.65}}"
+              ],
+              "count": 90,
+              "colors": [
+                "{{brand.colors.primary}}",
+                "{{brand.colors.secondary}}"
+              ],
+              "seed": 5
             }
-          },
-          {
-            "$use": "grain"
           }
         ]
       }

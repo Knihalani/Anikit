@@ -1,7 +1,7 @@
 {
   "name": "teaser",
   "title": "Social teaser (9:16 first)",
-  "description": "A 6–12 s vertical teaser for Reels, TikTok and Shorts: one word per beat in huge kinetic type (pop, scramble, mask) on a living brand mesh, with punch-in camera hits, brand-colour flashes and glitch cuts, ending on the logo with a starfield and a burst of sparks.",
+  "description": "A 6–12 s vertical teaser for Reels, TikTok and Shorts: one word per beat in huge uppercase type with camera punches, palette-flip frames in the brand colour, kinetic dot fields and metaballs, a beat counter, optional phrase captions, and a particle wordmark payoff.",
   "duration": "6–12 s",
   "tags": [
     "teaser",
@@ -51,7 +51,7 @@
     "flash": {
       "type": "boolean",
       "default": true,
-      "description": "Flash every third beat to the brand colour for energy.",
+      "description": "Flip every third beat to a full-bleed brand-colour frame (the palette flip) for energy.",
       "example": true
     },
     "music": {
@@ -60,7 +60,7 @@
     },
     "captions": {
       "type": "any",
-      "description": "Optional burned-in captions. true: a caption line timed to each beat (the running phrase), for sound-off viewing. Or a list of {text, at, end} cues in seconds (e.g. for a voice-over), or {\"src\": \"subs.srt\"}. Best with a voice-over; the beat words are already on screen."
+      "description": "Optional burned-in captions. true: one caption per phrase (beats grouped at . ! ? or every 4), each ending before the next starts. Or a list of {text, at, end} cues in seconds (e.g. for a voice-over), or {\"src\": \"subs.srt\"}. The beat words are already on screen, so captions matter most with a voice-over."
     }
   },
   "spec": {
@@ -87,21 +87,14 @@
           "in": {
             "id": "beat-{{i + 1}}",
             "duration": "{{d}}",
-            "background": "{{hot ? 'linear-gradient(135deg, ' + brand.colors.primary + ', ' + brand.colors.secondary + ')' : '$bgDeep'}}",
-            "transition": {
-              "$if": "i > 0 && i % 3 == 0",
-              "then": {
-                "type": "glitch",
-                "duration": 0.2
-              },
-              "else": "cut"
-            },
+            "background": "{{hot ? brand.colors.primary : '$bgDeep'}}",
+            "transition": "cut",
             "camera": {
               "animate": [
                 {
                   "from": {
-                    "zoom": "{{i % 2 ? 1.16 : 1.1}}",
-                    "rotation": "{{i % 2 ? -1.5 : 1.5}}"
+                    "zoom": "{{i % 2 ? 1.14 : 1.08}}",
+                    "rotation": "{{i % 2 ? -1.2 : 1.2}}"
                   },
                   "to": {
                     "zoom": 1,
@@ -115,25 +108,85 @@
             "layers": [
               {
                 "$if": "!hot",
-                "then": {
-                  "$use": "backdrop",
-                  "with": {
-                    "seed": "{{3 + i * 7}}",
-                    "intensity": 0.3
+                "then": [
+                  {
+                    "$use": "backdrop",
+                    "with": {
+                      "seed": "{{3 + i * 7}}",
+                      "intensity": 0.26,
+                      "still": true
+                    }
+                  },
+                  {
+                    "type": "component",
+                    "component": "kinetic-grid",
+                    "props": {
+                      "shape": "dot",
+                      "wave": "radial",
+                      "colors": [
+                        "{{brand.colors.primary}}",
+                        "{{brand.colors.secondary}}"
+                      ],
+                      "speed": 2,
+                      "cols": "{{fmt.portrait ? 9 : 14}}"
+                    },
+                    "opacity": 0.32
                   }
+                ],
+                "else": {
+                  "type": "component",
+                  "component": "kinetic-grid",
+                  "props": {
+                    "shape": "dot",
+                    "wave": "radial",
+                    "colors": [
+                      "{{mix(brand.colors.primary, '#000000', 0.25)}}",
+                      "{{mix(brand.colors.primary, '#FFFFFF', 0.2)}}"
+                    ],
+                    "speed": 2,
+                    "cols": "{{fmt.portrait ? 9 : 14}}"
+                  },
+                  "opacity": 0.5
                 }
               },
               {
-                "id": "word-{{i + 1}}",
-                "text": "{{w}}",
-                "style": "hero",
-                "size": "{{len(w) <= 6 ? (fmt.portrait ? '22vmin' : '18vmin') : len(w) <= 11 ? (fmt.portrait ? '16vmin' : '14vmin') : (fmt.portrait ? '12vmin' : '11vmin')}}",
-                "width": "{{fmt.safe.w}}",
-                "color": "{{hot ? '$onPrimary' : '$text'}}",
-                "enter": "{{i % 3 == 0 ? 'pop by char from center 0.35s 25ms outBack' : i % 3 == 1 ? 'scramble 0.3s' : 'mask by word up'}}"
+                "$if": "i % 4 == 1 && !hot",
+                "then": {
+                  "type": "component",
+                  "component": "metaballs",
+                  "props": {
+                    "colors": [
+                      "{{brand.colors.primary}}",
+                      "{{brand.colors.secondary}}"
+                    ],
+                    "seed": "{{i}}"
+                  },
+                  "y": "{{fmt.portrait ? '58%' : '55%'}}",
+                  "width": "{{fmt.portrait ? fmt.w * 0.9 : fmt.w * 0.5}}",
+                  "height": "{{fmt.portrait ? fmt.h * 0.4 : fmt.h * 0.7}}",
+                  "opacity": 0.85
+                }
               },
               {
-                "$use": "grain"
+                "text": "{{((i + 1) < 10 ? '0' + str(i + 1) : str(i + 1)) + ' / ' + (len(words) < 10 ? '0' + str(len(words)) : str(len(words)))}}",
+                "font": "$mono",
+                "size": "{{fmt.u * 2.2}}",
+                "weight": 600,
+                "letterSpacing": "0.12em",
+                "color": "{{hot ? brand.colors.onPrimary : '$muted'}}",
+                "y": "{{fmt.safe.top + fmt.u * 2}}"
+              },
+              {
+                "id": "word-{{i + 1}}",
+                "text": "{{upper(w)}}",
+                "style": "hero",
+                "weight": 900,
+                "letterSpacing": "-0.04em",
+                "lineHeight": 0.95,
+                "size": "{{len(w) <= 6 ? (fmt.portrait ? '24vmin' : '19vmin') : len(w) <= 11 ? (fmt.portrait ? '17vmin' : '15vmin') : (fmt.portrait ? '13vmin' : '12vmin')}}",
+                "width": "{{fmt.safe.w}}",
+                "color": "{{hot ? '$onPrimary' : '$text'}}",
+                "enter": "{{i % 3 == 0 ? 'pop by char from center 0.35s 25ms outBack' : i % 3 == 1 ? 'mask by word up' : 'rise by char 0.4s 20ms'}}"
               }
             ]
           }
@@ -145,57 +198,47 @@
           "type": "zoom",
           "duration": 0.3
         },
-        "duration": "{{payoff ? max(2.6, readtime(payoff) + 1.0) : 2.4}}",
-        "camera": {
-          "animate": [
-            {
-              "from": {
-                "zoom": 1.12
-              },
-              "to": {
-                "zoom": 1
-              },
-              "duration": 2.4,
-              "ease": "outExpo"
-            }
-          ]
-        },
+        "duration": "{{payoff ? max(2.8, readtime(payoff) + 1.2) : 2.6}}",
         "layers": [
           {
             "$use": "backdrop",
             "with": {
               "seed": 41,
-              "intensity": 0.35
+              "intensity": 0.34
             }
           },
           {
             "type": "component",
-            "component": "starfield",
+            "component": "kinetic-grid",
             "props": {
-              "count": 220,
-              "fly": true,
-              "color": "{{brand.colors.text}}",
-              "seed": 5
+              "shape": "dot",
+              "wave": "radial",
+              "colors": [
+                "{{brand.colors.primary}}",
+                "{{brand.colors.secondary}}"
+              ],
+              "speed": 1.5,
+              "cols": "{{fmt.portrait ? 9 : 14}}"
             },
-            "opacity": 0.7
+            "opacity": 0.25
           },
           {
             "type": "component",
             "component": "sparks",
             "props": {
               "bursts": [
-                0.15
+                0.1
               ],
               "origin": [
                 0.5,
-                "{{payoff ? 0.45 : 0.5}}"
+                "{{payoff ? 0.44 : 0.5}}"
               ],
-              "count": 90,
+              "count": 110,
               "colors": [
                 "{{brand.colors.accent}}",
                 "{{brand.colors.primary}}"
               ],
-              "power": 1.1,
+              "power": 1.2,
               "seed": 3
             }
           },
@@ -205,34 +248,44 @@
               "src": "{{brand.logo}}",
               "height": "{{fmt.u * 16}}",
               "fit": "contain",
-              "y": "{{payoff ? '45%' : '50%'}}",
+              "y": "{{payoff ? '44%' : '50%'}}",
               "enter": "popIn"
             },
             "else": {
-              "id": "name",
-              "text": "{{brand.name}}",
-              "style": "hero",
+              "type": "component",
+              "component": "particle-text",
+              "props": {
+                "text": "{{upper(brand.name)}}",
+                "colors": [
+                  "{{brand.colors.primary}}",
+                  "{{brand.colors.secondary}}",
+                  "{{brand.colors.text}}"
+                ],
+                "fontSize": "{{fmt.portrait ? fmt.u * 20 : fmt.u * 17}}",
+                "weight": 900,
+                "seed": 7
+              },
+              "y": "{{payoff ? '44%' : '50%'}}",
               "width": "{{fmt.safe.w}}",
-              "y": "{{payoff ? '45%' : '50%'}}",
-              "enter": "pop by char from center"
+              "height": "{{fmt.u * 30}}"
             }
           },
           {
             "$if": "payoff",
             "then": {
               "id": "payoff",
-              "text": "{{payoff}}",
-              "style": "subtitle",
-              "y": "{{fmt.portrait ? '55%' : '60%'}}",
+              "text": "{{upper(payoff)}}",
+              "style": "label",
+              "size": "{{fmt.portrait ? fmt.u * 4 : fmt.u * 3.2}}",
+              "color": "$text",
+              "letterSpacing": "0.16em",
+              "y": "{{fmt.portrait ? '56%' : '61%'}}",
               "width": "{{fmt.safe.w}}",
               "enter": {
                 "preset": "fadeUp",
-                "delay": 0.35
+                "delay": 0.6
               }
             }
-          },
-          {
-            "$use": "grain"
           }
         ]
       }
@@ -252,21 +305,27 @@
           }
         },
         "in": {
-          "cues": {
-            "$each": "words",
-            "as": "w",
-            "index": "i",
-            "do": {
-              "text": "{{join(slice(words, i - i % 3, i + 1), ' ')}}",
-              "at": "{{sum(slice(durs, 0, i)) - 0.2 * floor(i / 3)}}",
-              "end": "{{sum(slice(durs, 0, i + 1)) - 0.2 * floor(i / 3)}}"
+          "$merge": [
+            {
+              "y": "{{fmt.portrait ? fmt.h * 0.76 : fmt.h * 0.86}}",
+              "style": "subtitle",
+              "color": "{{brand.colors.text}}",
+              "background": "{{alpha(brand.colors.backgroundDeep, 0.6)}}",
+              "highlight": "{{brand.colors.accent}}"
+            },
+            {
+              "cues": {
+                "$each": "phrases(words)",
+                "as": "ph",
+                "index": "pi",
+                "do": {
+                  "text": "{{join(slice(words, ph[0], ph[1]), ' ')}}",
+                  "at": "{{sum(slice(durs, 0, ph[0])) + 0.05}}",
+                  "end": "{{sum(slice(durs, 0, ph[1])) - 0.08}}"
+                }
+              }
             }
-          },
-          "y": "{{fmt.portrait ? fmt.h * 0.74 : fmt.h * 0.86}}",
-          "style": "subtitle",
-          "color": "{{brand.colors.text}}",
-          "background": "{{alpha(brand.colors.backgroundDeep, 0.55)}}",
-          "highlight": "{{brand.colors.accent}}"
+          ]
         }
       },
       "else": {
@@ -274,10 +333,10 @@
         "then": {
           "$merge": [
             {
-              "y": "{{fmt.portrait ? fmt.h * 0.74 : fmt.h * 0.86}}",
+              "y": "{{fmt.portrait ? fmt.h * 0.76 : fmt.h * 0.86}}",
               "style": "subtitle",
               "color": "{{brand.colors.text}}",
-              "background": "{{alpha(brand.colors.backgroundDeep, 0.55)}}",
+              "background": "{{alpha(brand.colors.backgroundDeep, 0.6)}}",
               "highlight": "{{brand.colors.accent}}"
             },
             {

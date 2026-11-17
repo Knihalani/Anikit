@@ -472,6 +472,7 @@ pub const FUNCTIONS: &[(&str, &str)] = &[
     ("default(x, fallback)", "fallback when x is null or empty"),
     ("pick(list, key)", "list of one field from a list of objects"),
     ("obj(key, value, …)", "an object from key/value pairs"),
+    ("phrases(list)", "[start, end) index pairs grouping beats into phrases (ending at . ! ? or every 4)"),
     ("contrast(bg)", "#000000 or #FFFFFF, whichever reads best on bg"),
     ("mix(a, b, t)", "colour between a and b (t = 0..1)"),
     ("alpha(c, a)", "colour c with opacity a (0..1), as #RRGGBBAA"),
@@ -575,6 +576,22 @@ fn call(name: &str, a: &[Value]) -> Result<Value, String> {
                 let cut: String = t.chars().take(n.saturating_sub(1)).collect();
                 Value::String(format!("{}…", cut.trim_end()))
             }
+        }
+        "phrases" => {
+            // Group a list of beats into phrases: a phrase ends at . ! ? or after 4 beats.
+            // Returns [[start, end), ...] index pairs.
+            let list = arg(a, 0).as_array().cloned().unwrap_or_default();
+            let mut out = Vec::new();
+            let mut start = 0usize;
+            for (i, w) in list.iter().enumerate() {
+                let t = s(w);
+                let t = t.trim_end();
+                if t.ends_with(['.', '!', '?']) || i + 1 - start >= 4 || i + 1 == list.len() {
+                    out.push(Value::Array(vec![Value::from(start), Value::from(i + 1)]));
+                    start = i + 1;
+                }
+            }
+            Value::Array(out)
         }
         "obj" => {
             let mut m = Map::new();
