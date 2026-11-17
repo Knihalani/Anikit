@@ -539,10 +539,18 @@ A software ray tracer for product films: PBR materials (chrome, aluminium, glass
 - **Floor:** a static layout gets its floor shadows and AO baked once. Floor reflections are blurred through a pyramid by the distance to what they reflect, then faded and hazed.
 - **Post:** half-resolution scatter-as-gather DOF, motion blur from motion vectors, bloom, tone map, vignette and dithering.
 
-**Cost** at 1920×1080 on 4 cores (`standard`, measured):
-- The pipeline renders the cyc example at about 1.4 s per frame (60 frames in 82 s).
-- Single stills: trace 1.3–2.0 s and post 0.6–0.9 s with 4 threads.
+**Cost** at 1920×1080 on 4 cores (`standard`, measured through `render` → MP4):
+- The cyc example renders 60 frames in 79 s (1.31 s/frame).
+- 3,601 textured glass panes render 60 frames in 80 s (1.33 s/frame).
+- One thread spends about 4.0 s tracing and 1.2 s in post per frame.
 - `ANIKIT_SCENE3D_PROFILE=1` prints per-stage ms and ray counts.
+
+**What a rasteriser can't do here:**
+- true mirror and glossy reflections of the scene itself;
+- refraction and tinted glass you can see through, layer after layer;
+- soft area-light shadows and contact occlusion;
+- a seamless lit cyclorama;
+- composition textures on thousands of instances, each at its own frame.
 
 **Known limits:**
 - Thick glass resting on the floor reads metallic (the floor plane and the bottom face coincide). Lift it 1 mm.
