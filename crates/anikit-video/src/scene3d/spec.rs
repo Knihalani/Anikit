@@ -219,7 +219,7 @@ pub fn builtin_material(name: &str) -> Option<Material> {
     })
 }
 
-const MAT_KEYS: &[&str] = &["base", "color", "metallic", "roughness", "specular", "emissive", "emissive_strength", "clearcoat", "transmission", "ior", "tint", "tint_distance", "glow", "extends"];
+const MAT_KEYS: &[&str] = &["base", "color", "metallic", "roughness", "specular", "emissive", "emissive_strength", "clearcoat", "transmission", "ior", "tint", "tint_distance", "glow", "extends", "texture", "scale", "mapping", "normal_strength", "texture_rotate"];
 
 pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res<Material> {
     match v {
@@ -254,6 +254,30 @@ pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res
             if let Some(e) = m.get("emissive") {
                 let s = m.get("emissive_strength").map(|x| f(x, &format!("{path}.emissiveStrength"))).transpose()?.unwrap_or(4.0);
                 out.emissive = scale(color(e, &format!("{path}.emissive"))?, s);
+            }
+            if let Some(t) = m.get("texture") {
+                let src = t.as_str().ok_or_else(|| format!("{path}.texture: expected an asset ref (`ambientcg:Wood049`, `polyhaven:texture/…`) or a folder of maps"))?;
+                let o = super::pbr::SetOpts {
+                    scale: m.get("scale").map(|x| f(x, &format!("{path}.scale"))).transpose()?.unwrap_or(1.0).max(1e-3),
+                    tint: match m.get("base").or(m.get("color")) {
+                        Some(c) => color(c, &format!("{path}.color"))?,
+                        None => v3(1.0, 1.0, 1.0),
+                    },
+                    mapping: match m.get("mapping").and_then(|x| x.as_str()) {
+                        None | Some("triplanar") | Some("box") => super::pbr::Mapping::Triplanar,
+                        Some("uv") => super::pbr::Mapping::Uv,
+                        Some(x) => return Err(format!("{path}.mapping: `{x}` (triplanar or uv)")),
+                    },
+                    rough_mul: 1.0,
+                    normal_strength: m.get("normal_strength").map(|x| f(x, &format!("{path}.normalStrength"))).transpose()?.unwrap_or(1.0),
+                    keep_rough: m.contains_key("roughness"),
+                    keep_metal: m.contains_key("metallic"),
+                    rotate: m.get("texture_rotate").map(|x| f(x, &format!("{path}.textureRotate"))).transpose()?.unwrap_or(0.0),
+                    max: 2048,
+                };
+                out.pbr = super::pbr::load(src, &o).map_err(|e| format!("{path}.texture: {e}"))?;
+                // The tint went into the set; the base multiplies it.
+                out.base = v3(1.0, 1.0, 1.0);
             }
             if let Some(t) = m.get("tint") {
                 // Colour seen through `tintDistance` metres of the material.
@@ -566,7 +590,8 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
             // fitted to `height` (or the largest side to `size`) and standing
             // on y = 0, centred on x and z.
             let src = m.get("src").and_then(|x| x.as_str()).ok_or_else(|| format!("{path}: a model needs `src` (a .glb or .gltf file)"))?;
-            let (parts, anim) = super::gltf::load(std::path::Path::new(src)).map_err(|e| format!("{path}.src: {e}"))?;
+            let file = crate::assetlib::resolve_path(std::path::Path::new(""), src).map_err(|e| format!("{path}.src: {e}"))?;
+            let (parts, anim) = super::gltf::load(&file).map_err(|e| format!("{path}.src: {e}"))?;
             // Rest-pose bounds (animated files: nodes placed at t = 0).
             let rest = anim.as_ref().map(|a| a.world(0.0));
             let (mut lo, mut hi) = (v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN));
@@ -1121,11 +1146,14 @@ pub fn env(v: &Value, path: &str) -> Res<EnvSpec> {
     let accent = srgb_lin(0.486, 0.361, 1.0);
     let accent2 = srgb_lin(0.133, 0.827, 0.933);
     let names = ["cyc", "studio", "night", "neon", "sunset", "overcast", "interior", "city", "underwater"];
+    if let Some(e) = hdri_env(v, path)? {
+        return Ok(e);
+    }
     let (name, tint, key, haze) = match v {
         Value::Null => ("cyc".to_string(), srgb_lin(0.933, 0.922, 0.898), None, None),
         Value::String(s) => (s.clone(), srgb_lin(0.933, 0.922, 0.898), None, None),
         Value::Object(m) => {
-            check_keys(m, &["preset", "color", "key", "haze"], path)?;
+            check_keys(m, &["preset", "color", "key", "haze", "hdri"], path)?;
             let name = m.get("preset").and_then(|p| p.as_str()).unwrap_or("cyc").to_string();
             let tint = m.get("color").map(|c| color(c, &format!("{path}.color"))).transpose()?.unwrap_or(srgb_lin(0.933, 0.922, 0.898));
             let key = m
@@ -1153,6 +1181,69 @@ pub fn env(v: &Value, path: &str) -> Res<EnvSpec> {
     })?;
     let haze = haze.unwrap_or(if canon == "cyc" { 0.0015 } else { 0.0 });
     Ok(EnvSpec { env: e, name: canon, tint, haze })
+}
+
+/// `"env": "polyhaven:hdri/…"` or `{"hdri": …, "rotate", "exposure", "background", "backgroundExposure", "haze"}`.
+fn hdri_env(v: &Value, path: &str) -> Res<Option<EnvSpec>> {
+    use super::hdri::{Background, EnvMap, Opts};
+    let (src, m) = match v {
+        Value::String(s) if crate::assetlib::is_ref(s) || s.ends_with(".hdr") => (s.clone(), None),
+        Value::Object(m) if m.contains_key("hdri") => (m["hdri"].as_str().ok_or_else(|| format!("{path}.hdri: expected an asset ref or .hdr path"))?.to_string(), Some(m)),
+        _ => return Ok(None),
+    };
+    let mut o = Opts::default();
+    let mut haze = 0.0;
+    if let Some(m) = m {
+        check_keys(m, &["hdri", "rotate", "exposure", "background", "background_exposure", "haze", "key"], path)?;
+        if let Some(x) = m.get("rotate") {
+            o.rotate = f(x, &format!("{path}.rotate"))?;
+        }
+        if let Some(x) = m.get("exposure") {
+            o.exposure = f(x, &format!("{path}.exposure"))?;
+        }
+        if let Some(x) = m.get("background_exposure") {
+            o.bg_exposure = f(x, &format!("{path}.backgroundExposure"))?;
+        }
+        if let Some(x) = m.get("haze") {
+            haze = f(x, &format!("{path}.haze"))?;
+        }
+        if let Some(x) = m.get("key") {
+            o.extract_key = x.as_bool().ok_or_else(|| format!("{path}.key: true (lift the sun/key lamp out as a traced shadow-casting light, default) or false"))?;
+        }
+        o.background = match m.get("background") {
+            None | Some(Value::Bool(true)) => Background::Map(0.0),
+            Some(Value::Bool(false)) => Background::Off,
+            Some(Value::String(s)) if s == "blur" => Background::Map(0.06),
+            Some(Value::String(s)) if s == "sharp" => Background::Map(0.0),
+            Some(Value::String(s)) if s == "none" || s == "off" => Background::Off,
+            Some(Value::Number(n)) => Background::Map(n.as_f64().unwrap_or(0.0).max(0.0).to_radians() as f32),
+            Some(x) => return Err(format!("{path}.background: expected true, false, \"blur\" or a blur angle in degrees, got {x}")),
+        };
+    }
+    let file = if crate::assetlib::is_ref(&src) {
+        crate::assetlib::get(&src).map_err(|e| format!("{path}.hdri: {e}"))?.main()
+    } else {
+        std::path::PathBuf::from(&src)
+    };
+    static CACHE: std::sync::OnceLock<std::sync::Mutex<HashMap<String, (std::sync::Arc<super::hdri::EnvMap>, Option<super::env::Softbox>)>>> = std::sync::OnceLock::new();
+    let ck = format!("{}|{:?}", file.display(), (o.rotate, o.exposure, o.background, o.bg_exposure, o.extract_key));
+    let hit = CACHE.get_or_init(Default::default).lock().unwrap().get(&ck).cloned();
+    let (map, key) = match hit {
+        Some(x) => x,
+        None => {
+            let (m, k) = EnvMap::load(&file, o).map_err(|e| format!("{path}.hdri: {e}"))?;
+            let x = (std::sync::Arc::new(m), k);
+            CACHE.get_or_init(Default::default).lock().unwrap().insert(ck, x.clone());
+            x
+        }
+    };
+    let (boxes, ki) = match key {
+        Some(k) => (vec![k], Some(0)),
+        None => (Vec::new(), None),
+    };
+    let z = v3(0.0, 0.0, 0.0);
+    let env = Env::new(boxes, ki, z, z, z, z).with_map(Some(map));
+    Ok(Some(EnvSpec { env, name: "hdri".into(), tint: v3(0.8, 0.8, 0.8), haze }))
 }
 
 // ------------------------------------------------------------ lights
@@ -1220,5 +1311,5 @@ pub fn lights(v: &Value, env: &Env, path: &str) -> Res<(Env, Vec<super::trace::L
             key = Some(boxes.len() - 1);
         }
     }
-    Ok((Env::new(boxes, key, env.zenith, env.horizon, env.ground, env.band), local))
+    Ok((Env::new(boxes, key, env.zenith, env.horizon, env.ground, env.band).with_map(env.map.clone()), local))
 }

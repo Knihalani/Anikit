@@ -1,0 +1,472 @@
+{
+  "name": "control-australian-open",
+  "tags": [
+    "sports-broadcast",
+    "illustration",
+    "motion-design"
+  ],
+  "refs": [
+    "tedxsydney",
+    "hermes-buck",
+    "mad-men"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 7,
+      "composition": 8,
+      "typography": 5,
+      "colour": 8,
+      "light_texture": 7,
+      "motion": 7,
+      "craft": 8,
+      "originality": 7
+    },
+    "overall": 7.12,
+    "judged_professional": "3/3",
+    "pro_rate": 1.0,
+    "mean_rank": 3.33,
+    "gaps": [
+      "It reads as a collection of commissioned illustrations rather than one film. There is no through-line of choreography connecting the frames, and transitions cannot be inferred.",
+      "There is no unifying idea or typographic system beyond logo badges. It needs a single concept that binds the styles together.",
+      "The colour and lighting language shifts frame to frame (neon night, flat pastel, toxic green). Without a governing palette, the eclecticism reads as a compilation.",
+      "Unify the styles under one through-line (a motif, a transition device or a recurring ball) so it plays as one film rather than a gallery",
+      "Give typography a real role, such as expressive kinetic player names or score graphics, rather than tiny tags",
+      "Some frames lean on familiar campaign tropes (the energy-burst explosion, the crowd party scene); push for one surreal idea as specific as A's falling man",
+      "Unify the anthology with a typographic and colour system or a recurring graphic device (B's palette discipline, C's red-and-black type) so it reads as one film",
+      "Replace literal hype metaphors with one specific idea about this tournament or this player that only this piece could have",
+      "Design the transitions so the styles hand off to each other (match cuts, shared shapes, the ball as a thread) instead of hard switches between unrelated posters"
+    ],
+    "tells": [
+      "The illustration has a high level of finish and real specificity: recognisable players, branded headbands, the stadium and its fans, and Melbourne-specific iconography.",
+      "The styles vary on purpose: flat graphic portraiture, an isometric stadium, a tennis-ball creature on a dark field, a crowded party scene, an anime-style energy burst, and photo collage with torn tiger-print shapes.",
+      "Each frame has a strong individual composition, with bold diagonals and effective scale contrast.",
+      "There is real energy and surprise, for example the tennis-ball monster and the tiger slashes that tear through the court photograph.",
+      "Event-specific content: real players, recognisable kit, branded flags, and an illustrated stadium with a giant hand hitting the ball out of the roof. It is anchored to its subject rather than generic",
+      "Several illustration languages are deliberately mixed: a graphic portrait with fireworks, an isometric line-art stadium, a creature-style ball monster, a crowded fan-zone scene, a painterly energy-burst composite, and a photo collage with torn tiger-print claw marks. It reads as a multi-artist campaign",
+      "Strong poster compositions with clear focal points and dynamic diagonals; the photo and illustration hybrid in frame 6 is the most inventive frame",
+      "Type is almost absent beyond tiny name tags and logos, which suits the piece but adds nothing as a design idea",
+      "The aspect ratios and styles are inconsistent, so it reads as a collection of artworks more than a single choreographed film; continuity between frames is weak",
+      "A sports event campaign (tennis) built as an illustration anthology. Each frame is in a different illustrator's style: a flat portrait with fireworks, an isometric line-art stadium, a monster tennis ball, a crowd scene in sticker style, an anime-like energy burst, and a photo collage with tiger-print claw slashes",
+      "Individual frames are skilled and lively, with real energy in the explosion and claw-slash frames",
+      "There is no shared visual language: the palette, line weight, rendering and aspect ratio all change from frame to frame, so it reads as a commissioned compilation rather than one designed film",
+      "Type is almost absent apart from logo flags and small name tags; there is no typographic system",
+      "The ideas are fairly literal (player as hero, ball as monster, tiger for ferocity), standard sports-hype tropes"
+    ]
+  },
+  "refs_summary": {
+    "tedxsydney": {
+      "overall": 8,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "hermes-buck": {
+      "overall": 6.38,
+      "judged_professional": "3/3",
+      "mean_rank": 3.67
+    },
+    "mad-men": {
+      "overall": 9.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.83,
+  "delta": -0.71,
+  "trials": [
+    {
+      "key": {
+        "A": "mad-men",
+        "B": "tedxsydney",
+        "C": "candidate",
+        "D": "hermes-buck"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "One clear idea that only this piece could have: a flat black silhouette of a man in a suit walks into an office, the office dissolves, and he falls past skyscraper glass covered in reflected period advertising. It is a metaphor for the whole show.",
+              "Clear choreography across the frames: a back view at the start, a close-up of a foot stepping, the long fall, the figure tumbling, and a final pose seated with a cigarette that resolves the fall. The fall reads as weightless, then the piece lands in calm.",
+              "The palette is restrained and deliberate: a desaturated grey-cream ground, pure black silhouettes, and the red of the type shared with the advertising imagery.",
+              "The type is a condensed grotesque in two weights, with the first name in red and the surname in black. It is placed asymmetrically and sits inside the composition rather than being laid over it like a slide.",
+              "The layers are dense: the curtain-wall grid of the building, mid-century ad photography, the falling silhouette and the credits. Every frame works as a poster.",
+              "The final frame is a famous end card, a seated silhouette paired with the title. The ending is iconic and earned."
+            ],
+            "gaps": [
+              "The credit type is functional and period-appropriate, but it is not expressive. A bolder interplay of scale between type and image would push it further.",
+              "The interior frame is rendered with flatter, more diagrammatic detail than the rich ad-photo collages. Its texture could match the collages better.",
+              "This is the benchmark entry. The remaining gap is small: the falling frames repeat the same grid-and-collage device, and a little more variety in camera there would help."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "It has a distinctive, consistent illustration world: little figures in patterned clothes carry a giant stone head and a log, with coral-like plants, all in a folk-modern style.",
+              "The palette is unusual and controlled: ochre, slate blue, coral, blush, mint and charcoal on a warm off-white ground.",
+              "The materials are real: grain, dry-brush, stipple and crosshatch fills, and patterned textures that work like fabric swatches.",
+              "Choreography between frames is clear. The procession passes under the log, then a harlequin diamond pattern takes over the frame, a texture transition, before opening out into a scattered menagerie of objects.",
+              "The frames shift between a cropped close-up, a wide procession, an abstract pattern and a full-frame field of objects, so the variety of scale is good.",
+              "No type is visible. The narrative imagery carries the piece without it, so the absence is acceptable, but nothing is gained by it."
+            ],
+            "gaps": [
+              "The story is charming but vague. A sharper central idea, a reason why they carry the head, would make it memorable the way A is.",
+              "There is no typographic layer. Integrated hand-lettering, or titles in the same visual language, would turn a style exercise into a complete piece.",
+              "The pattern interludes feel like palette-cleansers. They should advance the story rather than reset it."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The illustration has a high level of finish and real specificity: recognisable players, branded headbands, the stadium and its fans, and Melbourne-specific iconography.",
+              "The styles vary on purpose: flat graphic portraiture, an isometric stadium, a tennis-ball creature on a dark field, a crowded party scene, an anime-style energy burst, and photo collage with torn tiger-print shapes.",
+              "Each frame has a strong individual composition, with bold diagonals and effective scale contrast.",
+              "There is real energy and surprise, for example the tennis-ball monster and the tiger slashes that tear through the court photograph."
+            ],
+            "gaps": [
+              "It reads as a collection of commissioned illustrations rather than one film. There is no through-line of choreography connecting the frames, and transitions cannot be inferred.",
+              "There is no unifying idea or typographic system beyond logo badges. It needs a single concept that binds the styles together.",
+              "The colour and lighting language shifts frame to frame (neon night, flat pastel, toxic green). Without a governing palette, the eclecticism reads as a compilation."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 5,
+              "typography": 4,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 4,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "The textures are crafted: diagonal screen-print hatching, stipple shading and a woven-cloth ground give it a believable printed or textile material.",
+              "The palette is committed: deep circus red with teal-grey, ochre, cream and coral, carried consistently.",
+              "The background florals have small eye motifs hidden inside them, which shows authored detail.",
+              "However, the same composition repeats in every frame: one centred circus icon (tiger, elephant, tarot, cannon, seal, barbell) on the same patterned ground. It is structured like a slide deck.",
+              "The idea is literal, an inventory of circus objects, with little evident change between frames beyond swapping the icon."
+            ],
+            "gaps": [
+              "It needs an idea and an event instead of a catalogue. The objects should interact or transform; the cannon firing the seal's ball would be one example. A builds this kind of narrative from frame to frame.",
+              "Break the centred, same-scale framing. Use cropping, extreme close-ups, depth and camera movement so that each frame becomes a distinct poster.",
+              "Add a typographic layer or a title device, for example circus-poster lettering integrated with the textile pattern, to give the piece a point of view and a purpose."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.6,
+        "cost_usd": 0.1614528,
+        "tokens": 71939,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "mad-men",
+        "B": "tedxsydney",
+        "C": "hermes-buck",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One specific idea that belongs only to this piece: an ad man in silhouette falls past skyscraper windows carrying period advertising imagery. Image and theme are the same thing, and the frames read as Saul Bass and North by Northwest refracted through the show's world",
+              "Flat black silhouettes are set against translucent, layered photographic ads (the pin-up, the whisky glass, 'ENJOY THE BEST AMERICA HAS TO OFFER'). The frames are dense and the layering means something",
+              "The camera moves through the sequence with intent: office establishing shot, low shoe close-up, a fall seen at different scales and rotations, then the reclined arm-on-sofa resolve. The ending answers the opening",
+              "Typography is restrained but has a point of view: a red/black weight split in a period-appropriate grotesk, and credits placed in negative space that the silhouettes leave open",
+              "A deliberate muted cream, grey and black palette with red as the only accent, tied to the type colour; subtle grain and paper texture throughout"
+            ],
+            "gaps": [
+              "Benchmark entry. The office interior in frame 1 is flatter and plainer than the montage frames, and could carry more of the ad-collage texture",
+              "Type treatment is deliberately minimal; a little more scale play on the title card would make it more memorable",
+              "Frame 5's cropped white-shirt silhouette loses some readability against the busy background"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "An authored character system: a procession of geometric little people carrying a giant stone head and an ochre log. It is a narrative idea about collective effort, not an effect without a subject",
+              "A very deliberate, unusual palette of ochre, slate blue, coral, mint and blush on a warm off-white, held strictly across every frame",
+              "Real hand-made texture: dry-brush on the ochre, stipple and grain on the head, halftone dots and pattern fills in the clothing. None of it reads as vector default",
+              "Composition varies a lot: a tight crop under the weight, a wide procession, harlequin pattern transitions on both dark and light grounds, and a scattered 'museum of objects' tableau. That implies choreographed transitions and shifts of scale",
+              "No type is visible. Its absence suits a wordless, illustration-led film, though the type gets a 7 rather than a high score because it is never tested"
+            ],
+            "gaps": [
+              "The two harlequin pattern frames work as transitions but are weaker than the narrative frames as posters; give them a subject or tie them to the procession",
+              "Unlike A, the idea stays charming rather than sharp: there is no emotional or conceptual turn a viewer would remember and retell",
+              "The final scattered-objects frame weakens the composition hierarchy; one clear focal point would land the ending"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 5,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The illustration has real textural craft: woven or fabric-like diagonal hatching on the cannon and seal, grain on the tiger, layered tarot cards with gold detailing. The illustration is not clip-art",
+              "A bold, committed palette: deep oxblood red with sage, cream, orange and teal, in a folk-botanical wallpaper motif with hidden eyes in the flowers, which adds intrigue",
+              "Weakness: the same composition repeats in every frame, one centred circus icon on the same patterned ground. It reads like a set of icons or a loop rather than a choreographed film",
+              "No type is visible. That suits a decorative loop, but nothing replaces the work type could do for hierarchy or narrative",
+              "The subject list (tiger, elephant, cannon, seal, strongman barbell) is the obvious circus inventory, with little conceptual surprise beyond the eyes in the foliage"
+            ],
+            "gaps": [
+              "It has no narrative or transformation between frames; build choreography where objects interact, morph or travel through the pattern, as A's figure travels through its world",
+              "Break the centred-icon layout with crops, scale shifts or multiple layered subjects so that each frame becomes a distinct poster",
+              "Push the idea past an inventory of circus props, for example by developing the hidden-eyes motif into an uncanny twist"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Event-specific content: real players, recognisable kit, branded flags, and an illustrated stadium with a giant hand hitting the ball out of the roof. It is anchored to its subject rather than generic",
+              "Several illustration languages are deliberately mixed: a graphic portrait with fireworks, an isometric line-art stadium, a creature-style ball monster, a crowded fan-zone scene, a painterly energy-burst composite, and a photo collage with torn tiger-print claw marks. It reads as a multi-artist campaign",
+              "Strong poster compositions with clear focal points and dynamic diagonals; the photo and illustration hybrid in frame 6 is the most inventive frame",
+              "Type is almost absent beyond tiny name tags and logos, which suits the piece but adds nothing as a design idea",
+              "The aspect ratios and styles are inconsistent, so it reads as a collection of artworks more than a single choreographed film; continuity between frames is weak"
+            ],
+            "gaps": [
+              "Unify the styles under one through-line (a motif, a transition device or a recurring ball) so it plays as one film rather than a gallery",
+              "Give typography a real role, such as expressive kinetic player names or score graphics, rather than tiny tags",
+              "Some frames lean on familiar campaign tropes (the energy-burst explosion, the crowd party scene); push for one surreal idea as specific as A's falling man"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 32.5,
+        "cost_usd": 0.1599644,
+        "tokens": 71859,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "hermes-buck",
+        "B": "tedxsydney",
+        "C": "mad-men",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 5,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Folk circus iconography (tiger, elephant with jewelled headdress, tarot cards with horseshoe, cannon, seal in a tutu, strongman's barbell) drawn with a consistent, personal hand rather than clip art",
+              "Deliberate oxblood ground with sage, ochre and cream accents; textile weave texture and grain on the objects give it real material",
+              "Eye-flowers hidden in the botanical pattern are a small surreal touch only this piece has",
+              "The craft is clearly professional, but every frame repeats the same layout: one centred emblem on a patterned field. It reads as a set of tiles or a pattern-reveal loop",
+              "No type is visible, which suits a decorative loop, but no typographic idea adds anything"
+            ],
+            "gaps": [
+              "Break the single centred object per frame: stage interactions between the motifs (the cannon fires the seal, the elephant's trunk lifts the barbell) so the choreography develops across frames the way C's fall does",
+              "Vary the scale and the camera: push into the weave texture for macro shots, pull back to the full tapestry, and give the pattern its own depth layers",
+              "Give the film an arc or a reveal (a curtain, a title or a payoff) so the motifs build to an idea instead of stopping as a catalogue"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific, strange narrative: a procession of small, geometric folk carry a giant classical head and a log-like creature, a mythic and slightly absurd image",
+              "Every frame is a different composition: a tight crop under the load, a wide procession, a vertical harlequin pattern, a dark diamond field, a scattered still-life of objects. That is real choreography and variety",
+              "An unusual muted palette (khaki, coral, slate blue, celadon, cream) held with discipline",
+              "Hand-drawn grain, dry-brush edges, and pattern fills of plaid, dots and hatching give rich texture with no vector-default flatness",
+              "Scale shifts from enormous carried objects to tiny figures sell weight and motion",
+              "No type is visible. The images carry the piece, so leaving type out works"
+            ],
+            "gaps": [
+              "The harlequin and diamond pattern interstitials feel like transitions rather than images; give them narrative stakes as C does with every frame",
+              "Reach C's level of a single unforgettable emblem: the piece is lovely but lacks one iconic image to anchor it",
+              "If this is a title or brand piece, add a typographic idea integrated with the hand-made world rather than relying on the illustration alone"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "One unforgettable idea: a flat black silhouette enters an office, the room dissolves, and he falls past skyscrapers papered with mid-century advertising, then lands relaxed on a sofa with a cigarette. Character, theme and period in one gesture",
+              "Each frame is a poster: a back view in a modelled interior, a giant foreground shoe, a figure falling against glass-curtain walls with superimposed ad imagery, and the final iconic sofa pose",
+              "The typography has a point of view: period-appropriate condensed grotesk caps in a red-and-black split (first name red, surname black), small and placed asymmetrically so it never fights the image; the title lockup echoes the system",
+              "Restricted palette of grey ground, black silhouette and red accent, with the full colour reserved for the advertising collage, which makes it the thematic temptation",
+              "Clear choreography across frames: enter, fall, tumble, land, resolve. The ending rhymes with the opening"
+            ],
+            "gaps": [
+              "Light is deliberately flat and graphic; a slightly richer treatment of the ad photography layers could add depth without losing the iconography",
+              "Credits at very small scale can get lost against the busiest collage frames",
+              "Little to fault; the main risk is how heavily the piece leans on a single silhouette device"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 4,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A sports event campaign (tennis) built as an illustration anthology. Each frame is in a different illustrator's style: a flat portrait with fireworks, an isometric line-art stadium, a monster tennis ball, a crowd scene in sticker style, an anime-like energy burst, and a photo collage with tiger-print claw slashes",
+              "Individual frames are skilled and lively, with real energy in the explosion and claw-slash frames",
+              "There is no shared visual language: the palette, line weight, rendering and aspect ratio all change from frame to frame, so it reads as a commissioned compilation rather than one designed film",
+              "Type is almost absent apart from logo flags and small name tags; there is no typographic system",
+              "The ideas are fairly literal (player as hero, ball as monster, tiger for ferocity), standard sports-hype tropes"
+            ],
+            "gaps": [
+              "Unify the anthology with a typographic and colour system or a recurring graphic device (B's palette discipline, C's red-and-black type) so it reads as one film",
+              "Replace literal hype metaphors with one specific idea about this tournament or this player that only this piece could have",
+              "Design the transitions so the styles hand off to each other (match cuts, shared shapes, the ball as a thread) instead of hard switches between unrelated posters"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.3,
+        "cost_usd": 0.1588164,
+        "tokens": 71804,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.48,
+  "judge_seconds": 97.4,
+  "verdict": "PASS"
+}

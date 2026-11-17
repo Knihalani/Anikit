@@ -49,11 +49,13 @@ pub struct Material {
     pub tex_glow: f32,
     /// Shading style: 0 physically based; 1 toon, 2 clay, 3 paper, 4 gouache, 5 hatch.
     pub style: u8,
+    /// PBR texture set (`super::pbr`), 0 = none.
+    pub pbr: u32,
 }
 
 impl Material {
     pub fn chrome() -> Material {
-        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0 }
+        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0 }
     }
 }
 
@@ -204,6 +206,23 @@ impl Shape {
             }),
         }
     }
+    /// Object-space direction of +u on a triangle (spheres: around +y).
+    fn tangent(&self, tri: u32, n: V3) -> V3 {
+        match self {
+            Shape::Mesh(b) => {
+                let tr = &b.tris[tri as usize];
+                let (du1, dv1) = (tr.uv[1][0] - tr.uv[0][0], tr.uv[1][1] - tr.uv[0][1]);
+                let (du2, dv2) = (tr.uv[2][0] - tr.uv[0][0], tr.uv[2][1] - tr.uv[0][1]);
+                let det = du1 * dv2 - du2 * dv1;
+                if det.abs() < 1e-12 {
+                    return basis(n).0;
+                }
+                norm(scale(sub(scale(tr.e1, dv2), scale(tr.e2, dv1)), 1.0 / det))
+            }
+            Shape::Sphere => norm(cross(v3(0.0, 1.0, 0.0), n)),
+        }
+    }
+
     #[inline]
     fn occluded(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> bool {
         match self {
@@ -382,6 +401,10 @@ pub struct Scene {
     pub insts: Vec<Inst>,
     pub tlas: Tlas,
     pub env: Env,
+    /// PBR texture sets (`Material::pbr` − 1 indexes this).
+    pub pbr: Vec<Arc<super::pbr::PbrSet>>,
+    /// Angle one output pixel subtends (radians), for texture mip selection.
+    pub texel_angle: f32,
     pub floor: Option<Floor>,
     /// Backdrop colours (linear): at the horizon and at the top of frame.
     pub backdrop: (V3, V3),
@@ -609,6 +632,8 @@ struct Surf {
     on: V3,
     /// Instance index, or `FLOOR`.
     obj: usize,
+    /// Triangle index (meshes), for UV tangents.
+    tri: u32,
 }
 
 const FLOOR: usize = usize::MAX;
@@ -632,6 +657,13 @@ fn count(k: usize) {
         });
     }
 }
+/// Neighbour normals on a smooth specular object closer than this cosine
+/// don't trigger edge samples (`ANIKIT_SCENE3D_NCOS` overrides; -2 = off).
+fn normal_cos() -> f32 {
+    static C: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    *C.get_or_init(|| std::env::var("ANIKIT_SCENE3D_NCOS").ok().and_then(|v| v.parse().ok()).unwrap_or(0.995))
+}
+
 /// Profiling: wall µs of the centre pass and the refinement pass, refined pixels.
 pub static TIMES: [std::sync::atomic::AtomicU64; 3] = [const { std::sync::atomic::AtomicU64::new(0) }; 3];
 pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -774,6 +806,8 @@ fn refract(d: V3, n: V3, eta: f32) -> Option<V3> {
 impl Scene {
     pub fn new(shapes: Vec<Shape>, mats: Vec<Material>, insts: Vec<Inst>, env: Env, floor: Option<Floor>) -> Scene {
         let mut s = Scene {
+            pbr: if mats.iter().any(|m| m.pbr != 0) { super::pbr::snapshot() } else { Vec::new() },
+            texel_angle: 1.0 / 1000.0,
             shapes,
             mats,
             insts,
@@ -846,7 +880,7 @@ impl Scene {
                 if t > EPS && t < tm {
                     tm = t;
                     let up = v3(0.0, 1.0, 0.0);
-                    best = Some(Surf { t, p: madd(o, d, t), ng: up, ns: up, uv: [0.0; 2], on: up, obj: FLOOR });
+                    best = Some(Surf { t, p: madd(o, d, t), ng: up, ns: up, uv: [0.0; 2], on: up, obj: FLOOR, tri: 0 });
                 }
             }
         }
@@ -869,7 +903,7 @@ impl Scene {
         if let Some((k, lo, ld, hh)) = obj {
             let ob = &self.insts[k as usize];
             let (t, sn, gn, uv) = self.shapes[ob.shape as usize].surface(lo, ld, hh);
-            best = Some(Surf { t, p: madd(o, d, t), ng: ob.xf.normal(gn), ns: ob.xf.normal(sn), uv, on: norm(gn), obj: k as usize });
+            best = Some(Surf { t, p: madd(o, d, t), ng: ob.xf.normal(gn), ns: ob.xf.normal(sn), uv, on: norm(gn), obj: k as usize, tri: hh.1 });
         }
         best
     }
@@ -918,6 +952,9 @@ impl Scene {
     /// The backdrop seen by rays that miss everything.
     #[inline]
     pub fn backdrop(&self, d: V3) -> V3 {
+        if let Some(c) = self.env.map.as_ref().and_then(|m| m.background(d)) {
+            return c;
+        }
         let base = lerp3(self.backdrop.0, self.backdrop.1, smoothstep(-0.05, 0.6, d.y));
         let (g, c, w) = self.glow;
         madd(base, c, (-(1.0 - dot(d, g)) / w.max(1e-4)).exp())
@@ -1091,6 +1128,14 @@ impl Scene {
     fn shade_obj(&self, s: &Surf, d: V3, depth: u32, glass: u32, q: &Quality, rot: (f32, f32), inline_vis: bool) -> (V3, Diffuse) {
         let ob = &self.insts[s.obj];
         let m = &self.mats[ob.mat as usize];
+        let textured;
+        let (m, s) = match self.pbr_surface(m, ob, s, d) {
+            Some((mm, ss)) => {
+                textured = (mm, ss);
+                (&textured.0, &textured.1)
+            }
+            None => (m, s),
+        };
         let entering = dot(s.ng, d) < 0.0;
         let (mut ng, mut n) = (s.ng, s.ns);
         if !entering {
@@ -1197,6 +1242,36 @@ impl Scene {
             dif.spec = scale(dif.spec, 1.0 - fc);
         }
         (madd(add(out, m.emissive), c, keep), dif)
+    }
+
+    /// A material with its PBR texture set applied at this hit (base colour,
+    /// roughness, metalness, AO folded into the base, perturbed normal).
+    #[inline]
+    fn pbr_surface(&self, m: &Material, ob: &Inst, s: &Surf, d: V3) -> Option<(Material, Surf)> {
+        if m.pbr == 0 {
+            return None;
+        }
+        let set = self.pbr.get(m.pbr as usize - 1)?;
+        let p = ob.xf.point_inv(s.p);
+        // World normal → object space (the inverse of `Xf::normal`).
+        let q = ob.xf.rot_inv(s.ns);
+        let n_o = norm(v3(q.x * ob.xf.s.x, q.y * ob.xf.s.y, q.z * ob.xf.s.z));
+        let tan = if set.mapping == super::pbr::Mapping::Uv { self.shapes[ob.shape as usize].tangent(s.tri, n_o) } else { v3(1.0, 0.0, 0.0) };
+        let footprint = s.t.max(0.0) * self.texel_angle / ob.xf.smin().max(1e-6) / dot(norm(s.ns), scale(d, -1.0)).abs().max(0.25);
+        let x = set.sample(p, n_o, s.uv, tan, footprint, |v| norm(ob.xf.normal(v)));
+        let mut mm = m.clone();
+        mm.base = scale(mul(m.base, x.base), x.ao);
+        if let Some(r) = x.rough {
+            mm.roughness = r;
+        }
+        if let Some(mt) = x.metal {
+            mm.metallic = mt;
+        }
+        let mut ss = *s;
+        if let Some(n) = x.n {
+            ss.ns = n;
+        }
+        Some((mm, ss))
     }
 
     /// Underwater caustics: a bright, moving net of light (mean about 1).
@@ -1473,6 +1548,15 @@ impl Scene {
         let (centre, tms) = (&centre, &tms);
         assert_eq!(out.len(), w * h);
         let wr = out.writer();
+        // Smooth metal: thin specular highlights (bevels) live inside
+        // one object, so neighbours with the same id but turned normals also
+        // get edge samples (otherwise the lines come out dotted and crawl).
+        let shiny: Vec<bool> = self
+            .insts
+            .iter()
+            .map(|i| self.mats.get(i.mat as usize).is_some_and(|m| m.roughness < 0.3 && m.metallic > 0.5 && m.transmission <= 0.0))
+            .collect();
+        let ncos = normal_cos();
         par::each_row(h, |y| {
             let mut samples: Vec<Sample> = Vec::with_capacity(q.edge_spp as usize + 1);
             let mut nref = 0u64;
@@ -1486,7 +1570,9 @@ impl Scene {
                         continue;
                     }
                     let ni = ny as usize * w + nx as usize;
-                    if centre[ni].id != c.id || (tms[ni] - tms[ci]).abs() > q.contrast {
+                    let n = &centre[ni];
+                    let turned = n.id == c.id && c.id < shiny.len() && shiny[c.id] && dot(n.nrm, c.nrm) < ncos;
+                    if n.id != c.id || (tms[ni] - tms[ci]).abs() > q.contrast || turned {
                         refine = true;
                         break;
                     }

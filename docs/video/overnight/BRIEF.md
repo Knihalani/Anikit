@@ -25,3 +25,6 @@ Also: "There's not enough stuff on research on taste, design, sound design, visu
 ## Schedule
 - Eval rounds (JUDGE runs fixed briefs with fresh agents on current main) at 23:30, 01:30, 03:30, 05:30. The parent merges green branches at :00 and :30.
 - 06:15: final merge. 07:00: report to the user.
+
+## Added 22:20 (user)
+"When you're making tools, the models should always be able to go above and beyond." Every feature must be open-ended: presets are starting points, never ceilings; expose the underlying parameters, allow composition with everything else (expressions, scripts, shaders, any layer), and never cap what an agent can express.

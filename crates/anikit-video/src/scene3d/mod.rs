@@ -30,6 +30,8 @@ pub mod sets;
 pub mod env;
 pub mod geom;
 pub mod gltf;
+pub mod hdri;
+pub mod pbr;
 pub mod kernel;
 pub mod math;
 pub mod particles;
@@ -360,7 +362,10 @@ impl Prepare for Scene3d {
             Some(Value::Bool(false)) => None,
             None if set.as_ref().is_some_and(|b| b.no_floor) => None,
             v => {
-                let mut fp = if bright {
+                let mut fp = if es.name == "hdri" {
+                    // A neutral ground that catches shadows and melts into the HDRI's horizon.
+                    FloorParams { y: 0.0, color: v3(0.18, 0.18, 0.18), roughness: 0.55, mirror: 0.0, reflect: 0.2, pool: (0.0, 0.0, 0.0), fade: (6.0, 40.0) }
+                } else if bright {
                     let color = match es.name.as_str() {
                         "overcast" => v3(0.2, 0.27, 0.12),
                         "interior" => v3(0.32, 0.19, 0.1),
@@ -648,9 +653,11 @@ pub fn lint(props: &Value) -> Vec<(String, String)> {
     let mut out = Vec::new();
     let env = match props.get("env") {
         Some(Value::String(s)) => s.as_str(),
+        Some(Value::Object(m)) if m.contains_key("hdri") => "hdri",
         Some(Value::Object(m)) => m.get("preset").and_then(|p| p.as_str()).unwrap_or("cyc"),
         _ => "cyc",
     };
+    let env = if crate::assetlib::is_ref(env) || env.ends_with(".hdr") { "hdri" } else { env };
     let objs = props.get("objects").and_then(|o| o.as_array()).cloned().unwrap_or_default();
     let mat_of = |o: &Value| -> String {
         match o.get("material").or(props.get("material")) {
@@ -893,6 +900,8 @@ impl Scene3d {
         scene.caustics = p.caustics;
         scene.gobo = p.gobo;
         scene.time = t;
+        // One pixel's angle: picks texture mips (vertical fov over output rows).
+        scene.texel_angle = (2.0 * (cam.fov.to_radians() * 0.5).tan() / h.max(1) as f32).max(1e-5);
         let mut insts = instances(&p.objs, t, dt);
         // Textures need world boxes, so build the hierarchy first.
         scene.insts = std::mem::take(&mut insts);

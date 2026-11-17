@@ -18,7 +18,8 @@ pub struct Grid {
     pub bpm: f64,
     /// Beats (quarter notes) per bar: 4 for 4/4, 3 for 3/4, 3 for 6/8.
     pub beats_per_bar: f64,
-    /// 0 = straight, 1 = hard swing (75 %); 0.33 ≈ triplet feel.
+    /// Off-beat position = 50 % + 25 % × swing: 0 straight, 0.16 ≈ 54 % (loose, not "swung"),
+    /// 0.45 ≈ 61 % (lofi), 0.667 = triplet (66.7 %), 1 = 75 %.
     pub swing: f64,
     /// Swing subdivision in beats: 0.25 (16ths) or 0.5 (8ths).
     pub swing_unit: f64,
@@ -153,11 +154,26 @@ pub fn render_part(part: &Part, grid: &Grid, rate: u32, frames: usize) -> (Vec<f
     // resolve mono and choke groups in a sequential pass, in note order.
     let live: Vec<&Event> = evs.iter().take_while(|e| e.start < frames).collect();
     let make = |e: &&Event| match &part.custom {
-        Some(c) => c.voice_at(&e.on, e.start as f64 / rate as f64),
+        Some(c) => c.voice_at(&e.on, e.start as f64 / rate as f64, true),
         None => part.inst.voice(&e.on),
     };
-    // Instruments with shared per-note state (glide) need note order.
-    let voices: Vec<Box<dyn Voice>> = if part.inst.ordered_voices() { live.iter().map(make).collect() } else { live.par_iter().map(make).collect() };
+    // Instruments with shared per-note state (glide) need note order, and are
+    // told whether each note is legato (starts before the previous one ends).
+    let voices: Vec<Box<dyn Voice>> = if part.inst.ordered_voices() {
+        let mut prev_end: Option<usize> = None;
+        live.iter()
+            .map(|e| {
+                let legato = prev_end.is_some_and(|p| p > e.start);
+                prev_end = Some(prev_end.map_or(e.release, |p| p.max(e.release)));
+                match &part.custom {
+                    Some(c) => c.voice_at(&e.on, e.start as f64 / rate as f64, legato),
+                    None => part.inst.voice_legato(&e.on, legato),
+                }
+            })
+            .collect()
+    } else {
+        live.par_iter().map(make).collect()
+    };
     let mut jobs: Vec<Job> = Vec::with_capacity(live.len());
     let mut last_in_class: std::collections::HashMap<u32, usize> = Default::default();
     for (e, voice) in live.into_iter().zip(voices) {
