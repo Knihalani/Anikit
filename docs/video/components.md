@@ -753,82 +753,85 @@ Music ducks smoothly under voice tracks. The master bus has a soft limiter.
 
 ## Cost per frame
 
-1080p from `cargo run --release -p anikit-video --example component_cost`:
-- **eval** builds the ops (3D kinds rasterise here, on all cores; serially when called from frame-parallel renders);
+1080p, one thread, from `cargo run --release -p anikit-video --example component_cost` (4-vCPU VM, 17 Nov 2026):
+- **eval** builds the ops (fields, 3D and ray-traced kinds compute pixels here);
 - **full render** rasterises every frame from scratch;
 - **incremental YUV** is the pipeline's path, which redraws only what changed since the previous frame;
 - **static frames** counts frames identical to the one before (from 0.5 s to 1.5 s). Those are deduplicated and encode as P_Skip almost free.
 
-Slow ambient effects step their time (backgrounds 8–15 updates per second, ambient particles and rays 15 per second, 3D poses 30 per second during entrances and 15 once settled). Attention pulses stop after 3 cycles, and settled springs land exactly on 1. Most frames therefore repeat once entrances end. Light effects and grain draw straight into the frame, with no full-frame blend layers.
+Motion is evaluated at the exact frame time; nothing steps outside `--quality draft`. Default paths are quality-locked against the exact reference with `qbench` (backdrop and particles pass the gate). Slow fields (mesh) are computed at keyframes and cross-faded by the renderer; light effects add into one image. Attention pulses stop after 3 cycles and settled springs land exactly on 1, so most UI frames repeat once entrances end. `product-shot` is a ray tracer for hero moments: budget about a second per frame per core.
 
 | kind | eval ms | full render ms | incremental YUV ms | static frames |
 |---|---:|---:|---:|---:|
-| `code` | 0.025 | 1.31 | 0.00 | 29/29 |
-| `terminal` | 0.012 | 1.26 | 0.05 | 21/29 |
-| `bar-chart` | 0.054 | 1.80 | 1.72 | 7/29 |
-| `line-chart` | 0.025 | 1.51 | 2.91 | 0/29 |
-| `area-chart` | 0.025 | 2.41 | 3.83 | 0/29 |
-| `donut-chart` | 0.036 | 1.24 | 1.15 | 0/29 |
-| `pie-chart` | 0.006 | 1.38 | 0.59 | 0/29 |
-| `counter` | 0.013 | 0.85 | 0.78 | 0/29 |
-| `stat` | 0.016 | 5.58 | 8.03 | 0/29 |
-| `phone` | 0.005 | 3.60 | 4.44 | 7/29 |
-| `laptop` | 0.003 | 4.12 | 4.37 | 7/29 |
-| `browser` | 0.007 | 12.02 | 12.01 | 7/29 |
-| `card` | 0.007 | 5.11 | 5.68 | 14/29 |
-| `button` | 0.004 | 0.75 | 0.12 | 14/29 |
-| `toggle` | 0.000 | 0.65 | 0.04 | 4/29 |
-| `badge` | 0.003 | 0.66 | 0.02 | 14/29 |
-| `avatar` | 0.003 | 0.68 | 0.03 | 17/29 |
-| `avatar-stack` | 0.010 | 0.70 | 0.05 | 14/29 |
-| `progress-bar` | 0.009 | 1.61 | 0.87 | 0/29 |
-| `progress-ring` | 0.010 | 0.76 | 0.20 | 0/29 |
-| `toast` | 0.007 | 0.87 | 0.22 | 11/29 |
-| `cursor` | 0.001 | 0.68 | 0.07 | 5/29 |
-| `tooltip` | 0.003 | 0.70 | 0.08 | 14/29 |
-| `callout` | 0.006 | 0.68 | 0.06 | 0/29 |
-| `arrow` | 0.000 | 0.62 | 0.02 | 23/29 |
-| `lower-third` | 0.006 | 0.70 | 0.08 | 14/29 |
-| `title-card` | 0.015 | 0.81 | 0.26 | 19/29 |
-| `mesh-gradient` | 0.299 | 2.84 | 0.57 | 22/29 |
-| `aurora` | 1.549 | 2.92 | 0.86 | 18/29 |
-| `grain` | 0.000 | 3.33 | 0.00 | 29/29 |
-| `grid` | 0.001 | 2.29 | 0.00 | 29/29 |
-| `dots` | 0.253 | 4.94 | 0.80 | 29/29 |
-| `light-leak` | 0.002 | 2.97 | 1.36 | 20/29 |
-| `bokeh` | 0.007 | 1.34 | 1.34 | 14/29 |
-| `starfield` | 0.093 | 1.07 | 1.40 | 14/29 |
-| `gradient` | 0.000 | 2.62 | 0.00 | 29/29 |
-| `confetti` | 0.025 | 0.84 | 2.20 | 0/29 |
-| `sparks` | 0.003 | 3.66 | 2.85 | 3/29 |
-| `snow` | 0.034 | 1.01 | 1.34 | 14/29 |
-| `dust` | 0.034 | 1.18 | 1.36 | 14/29 |
-| `particle-text` | 0.894 | 19.39 | 24.62 | 0/29 |
-| `morph` | 0.001 | 2.86 | 3.70 | 0/29 |
-| `metaballs` | 0.106 | 3.53 | 2.56 | 14/29 |
-| `god-rays` | 0.065 | 8.84 | 5.80 | 14/29 |
-| `lens-flare` | 0.003 | 2.68 | 2.20 | 14/29 |
-| `model` | 32.058 | 1.99 | 2.63 | 0/29 |
-| `text-3d` | 19.764 | 1.62 | 2.05 | 0/29 |
-| `globe` | 0.297 | 8.94 | 11.22 | 0/29 |
-| `wipe` | 0.001 | 2.04 | 2.68 | 9/29 |
-| `iris` | 0.001 | 0.66 | 1.09 | 13/29 |
-| `glitch` | 0.000 | 0.63 | 0.00 | 29/29 |
-| `chat` | 0.021 | 0.74 | 0.10 | 5/29 |
-| `prompt` | 0.018 | 2.25 | 1.96 | 0/29 |
-| `checklist` | 0.008 | 0.72 | 0.12 | 0/29 |
-| `quote` | 0.023 | 0.77 | 0.08 | 11/29 |
-| `table` | 0.008 | 3.09 | 0.25 | 23/29 |
-| `timeline` | 0.011 | 0.69 | 0.20 | 0/29 |
-| `marquee` | 0.043 | 0.71 | 0.40 | 0/29 |
-| `spotlight` | 0.002 | 1.06 | 1.50 | 11/29 |
-| `keys` | 0.014 | 0.74 | 0.06 | 14/29 |
-| `visualizer` | 0.008 | 3.32 | 5.10 | 0/29 |
-| `ken-burns` | 0.004 | 13.77 | 13.08 | 0/29 |
-| `tile-reveal` | 0.005 | 2.92 | 4.06 | 0/29 |
-| `kinetic-grid` | 0.016 | 1.68 | 1.59 | 14/29 |
-| `reactions` | 0.009 | 1.00 | 0.43 | 0/29 |
-| `card-stack` | 0.020 | 7.16 | 7.92 | 4/29 |
-| `lottie` | 0.000 | 0.66 | 0.00 | 29/29 |
+| `code` | 0.037 | 6.56 | 0.01 | 29/29 |
+| `terminal` | 0.019 | 3.47 | 0.05 | 21/29 |
+| `bar-chart` | 0.054 | 1.99 | 1.78 | 7/29 |
+| `line-chart` | 0.034 | 1.19 | 2.57 | 0/29 |
+| `area-chart` | 0.026 | 2.20 | 3.66 | 0/29 |
+| `donut-chart` | 0.036 | 1.35 | 1.23 | 0/29 |
+| `pie-chart` | 0.007 | 1.44 | 0.65 | 0/29 |
+| `counter` | 0.016 | 1.06 | 0.95 | 0/29 |
+| `stat` | 0.019 | 14.70 | 18.16 | 0/29 |
+| `phone` | 0.104 | 7.22 | 6.70 | 14/29 |
+| `laptop` | 0.270 | 10.13 | 9.40 | 7/29 |
+| `browser` | 0.254 | 15.83 | 16.20 | 7/29 |
+| `card` | 0.008 | 13.13 | 12.22 | 14/29 |
+| `button` | 0.007 | 0.87 | 0.20 | 18/29 |
+| `toggle` | 0.001 | 0.76 | 0.11 | 7/29 |
+| `badge` | 0.003 | 0.67 | 0.02 | 18/29 |
+| `avatar` | 0.004 | 0.84 | 0.25 | 0/29 |
+| `avatar-stack` | 0.012 | 0.98 | 0.39 | 0/29 |
+| `progress-bar` | 0.010 | 2.47 | 0.75 | 0/29 |
+| `progress-ring` | 0.014 | 0.73 | 0.17 | 0/29 |
+| `toast` | 0.008 | 1.71 | 1.04 | 15/29 |
+| `cursor` | 0.001 | 0.76 | 0.08 | 6/29 |
+| `tooltip` | 0.003 | 0.85 | 0.00 | 29/29 |
+| `callout` | 0.011 | 1.08 | 0.53 | 0/29 |
+| `arrow` | 0.000 | 0.68 | 0.03 | 23/29 |
+| `lower-third` | 0.013 | 1.07 | 0.44 | 3/29 |
+| `title-card` | 0.013 | 1.19 | 0.68 | 14/29 |
+| `mesh-gradient` | 40.014 | 3.13 | 14.37 | 0/29 |
+| `aurora` | 52.568 | 2.10 | 13.02 | 0/29 |
+| `grain` | 0.000 | 4.22 | 5.95 | 0/29 |
+| `grid` | 0.002 | 2.48 | 0.00 | 29/29 |
+| `dots` | 0.638 | 5.29 | 0.91 | 29/29 |
+| `light-leak` | 0.005 | 6.01 | 7.82 | 0/29 |
+| `bokeh` | 0.027 | 2.27 | 2.44 | 0/29 |
+| `starfield` | 0.210 | 2.42 | 4.58 | 0/29 |
+| `gradient` | 0.015 | 0.64 | 0.00 | 29/29 |
+| `confetti` | 0.101 | 12.20 | 16.04 | 0/29 |
+| `sparks` | 0.033 | 31.42 | 25.73 | 0/29 |
+| `snow` | 0.084 | 22.07 | 23.76 | 0/29 |
+| `dust` | 0.054 | 19.38 | 21.80 | 0/29 |
+| `particle-text` | 41.824 | 17.12 | 19.74 | 0/29 |
+| `morph` | 0.003 | 3.66 | 4.60 | 0/29 |
+| `metaballs` | 2.342 | 43.89 | 45.29 | 0/29 |
+| `god-rays` | 29.041 | 17.74 | 18.73 | 0/29 |
+| `lens-flare` | 0.024 | 16.73 | 19.20 | 0/29 |
+| `model` | 34.984 | 2.38 | 3.19 | 0/29 |
+| `scene-3d` | 511.927 | 0.87 | 10.42 | 0/29 |
+| `text-3d` | 23.957 | 1.82 | 2.29 | 0/29 |
+| `globe` | 0.457 | 10.81 | 13.57 | 0/29 |
+| `wipe` | 0.004 | 6.64 | 6.21 | 9/29 |
+| `iris` | 0.001 | 0.78 | 1.22 | 13/29 |
+| `glitch` | 0.000 | 0.84 | 0.00 | 29/29 |
+| `chat` | 0.025 | 1.34 | 0.54 | 3/29 |
+| `prompt` | 0.026 | 5.36 | 5.05 | 0/29 |
+| `checklist` | 0.014 | 1.08 | 0.44 | 0/29 |
+| `quote` | 0.037 | 1.08 | 0.41 | 0/29 |
+| `table` | 0.016 | 1.48 | 1.40 | 2/29 |
+| `timeline` | 0.019 | 1.53 | 0.52 | 0/29 |
+| `marquee` | 0.060 | 0.91 | 0.48 | 0/29 |
+| `spotlight` | 0.007 | 2.87 | 3.20 | 8/29 |
+| `keys` | 0.019 | 1.08 | 0.35 | 0/29 |
+| `visualizer` | 0.011 | 3.91 | 5.52 | 0/29 |
+| `ken-burns` | 0.008 | 9.39 | 11.16 | 0/29 |
+| `tile-reveal` | 0.007 | 3.52 | 4.81 | 0/29 |
+| `kinetic-grid` | 0.016 | 1.94 | 3.44 | 0/29 |
+| `reactions` | 0.016 | 1.19 | 0.60 | 0/29 |
+| `card-stack` | 0.025 | 9.00 | 9.64 | 4/29 |
+| `product-shot` | 1242.126 | 0.84 | 11.96 | 0/29 |
+| `now-playing` | 0.111 | 11.37 | 1.65 | 0/29 |
+| `lottie` | 0.000 | 0.78 | 0.00 | 29/29 |
 
 Totals: eval 56.01 ms, full render 178.56 ms, incremental 157.14 ms
