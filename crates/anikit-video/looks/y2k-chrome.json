@@ -1,0 +1,74 @@
+{
+ "title": "Y2K chrome",
+ "summary": "Liquid chrome 3D type, iridescent pink-cyan, bubbly bounce, starry space; maximalist and optimistic.",
+ "direction": "Turn-of-the-millennium future. Extruded chrome 3D type (text-3d) and glossy blobs (metaballs gloss), iridescent pink-to-cyan gradients, stars and lens sparkle. Heavy italic grotesk. Motion is springy and bouncy, zoom transitions, a little overshoot. Maximal but one hero per frame.",
+ "mode": "dark",
+ "theme": {
+  "colors": {
+   "bg": "#0A0B1E",
+   "surface": "#1A1C3A",
+   "text": "#F4F6FF",
+   "muted": "#B7BCE6",
+   "primary": "#FF4FD8",
+   "secondary": "#3FE6FF",
+   "accent": "#9DF9FF"
+  },
+  "fonts": {
+   "heading": "Inter Display",
+   "body": "Inter"
+  },
+  "radius": 28,
+  "styles": {
+   "title": {
+    "weight": 900,
+    "italic": true,
+    "letterSpacing": "-0.04em"
+   },
+   "heading": {
+    "weight": 850,
+    "italic": true,
+    "letterSpacing": "-0.03em"
+   },
+   "label": {
+    "color": "$accent"
+   }
+  }
+ },
+ "transition": {
+  "type": "zoom",
+  "duration": 0.6,
+  "ease": "inOutQuart"
+ },
+ "enter": {
+  "preset": "popIn",
+  "spring": "bouncy"
+ },
+ "backdrop": [
+  {
+   "id": "look-bg",
+   "component": "gradient",
+   "props": {
+    "colors": [
+     "#20114A",
+     "#0A0B1E",
+     "#04182E"
+    ],
+    "angle": 135
+   },
+   "width": "100%",
+   "height": "100%"
+  },
+  {
+   "id": "look-stars",
+   "component": "starfield",
+   "props": {
+    "count": 160,
+    "color": "#DDE6FF",
+    "speed": 0
+   },
+   "width": "100%",
+   "height": "100%"
+  }
+ ],
+ "post": []
+}

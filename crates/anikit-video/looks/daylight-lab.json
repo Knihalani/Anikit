@@ -1,0 +1,74 @@
+{
+ "title": "Daylight lab",
+ "summary": "Bright white studio, precise grotesk, electric-blue signal, crisp soft shadows; calm and exact.",
+ "direction": "A clean product lab at noon. Lots of white space, one electric-blue signal colour, tight tracked grotesk headlines left-aligned on a grid. Objects float on soft contact shadows. Motion is quick and exact (outExpo), cuts are pushes. Use 3D product shots (model, text-3d) lit like a studio. Avoid gradients and glow.",
+ "mode": "light",
+ "theme": {
+  "colors": {
+   "bg": "#F5F5F2",
+   "surface": "#FFFFFF",
+   "text": "#0E0F12",
+   "muted": "#5A5E66",
+   "primary": "#2448FF",
+   "secondary": "#00A3FF",
+   "accent": "#2448FF"
+  },
+  "fonts": {
+   "heading": "Inter Display",
+   "body": "Inter"
+  },
+  "radius": 18,
+  "styles": {
+   "title": {
+    "weight": 650,
+    "letterSpacing": "-0.035em"
+   },
+   "heading": {
+    "weight": 620,
+    "letterSpacing": "-0.025em"
+   },
+   "label": {
+    "color": "$primary"
+   }
+  }
+ },
+ "transition": {
+  "type": "push",
+  "direction": "left",
+  "duration": 0.55,
+  "ease": "inOutQuart"
+ },
+ "enter": {
+  "preset": "fadeUp",
+  "ease": "outExpo",
+  "duration": 0.7
+ },
+ "backdrop": [
+  {
+   "id": "look-bg",
+   "component": "gradient",
+   "props": {
+    "colors": [
+     "#FFFFFF",
+     "#ECECE7"
+    ],
+    "kind": "radial"
+   },
+   "width": "100%",
+   "height": "100%"
+  },
+  {
+   "id": "look-dots",
+   "component": "dots",
+   "props": {
+    "spacing": 36,
+    "radius": 1.4,
+    "color": "#0E0F121F",
+    "fade": 0.75
+   },
+   "width": "100%",
+   "height": "100%"
+  }
+ ],
+ "post": []
+}

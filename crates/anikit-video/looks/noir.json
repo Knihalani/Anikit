@@ -1,0 +1,107 @@
+{
+ "title": "Film noir",
+ "summary": "Black and bone, serif titles, venetian light rays, heavy grain and vignette, slow fades to black.",
+ "direction": "1940s crime cinema. Near-black frames carved by hard light (god-rays), bone-white serif titles, a single pale gold accent, deep vignette and heavy grain. Long holds, slow blur-ins, fades to black between scenes, slow push-ins on the camera. Mystery: reveal less than you show.",
+ "mode": "dark",
+ "theme": {
+  "colors": {
+   "bg": "#090908",
+   "surface": "#171614",
+   "text": "#EEE8DC",
+   "muted": "#A39C8F",
+   "primary": "#D8B66A",
+   "secondary": "#6E6A60",
+   "accent": "#D8B66A"
+  },
+  "fonts": {
+   "heading": "Instrument Serif",
+   "body": "Inter"
+  },
+  "radius": 0,
+  "styles": {
+   "title": {
+    "weight": 400,
+    "size": "12vh",
+    "letterSpacing": "0.01em"
+   },
+   "heading": {
+    "weight": 400,
+    "size": "7.5vh"
+   },
+   "label": {
+    "letterSpacing": "0.35em",
+    "color": "$accent"
+   },
+   "subtitle": {
+    "color": "$muted"
+   }
+  }
+ },
+ "transition": {
+  "type": "fadeBlack",
+  "duration": 1.0
+ },
+ "enter": {
+  "preset": "blurIn",
+  "duration": 1.1,
+  "ease": "outCubic"
+ },
+ "camera": {
+  "animate": [
+   {
+    "from": {
+     "zoom": 1.0
+    },
+    "to": {
+     "zoom": 1.05
+    },
+    "duration": 6,
+    "ease": "inOutSine"
+   }
+  ]
+ },
+ "backdrop": [
+  {
+   "id": "look-rays",
+   "component": "god-rays",
+   "props": {
+    "at": [
+     0.85,
+     -0.1
+    ],
+    "color": "#E9DFC4",
+    "count": 7,
+    "intensity": 0.9,
+    "spread": 0.6,
+    "spin": 0
+   },
+   "width": "100%",
+   "height": "100%"
+  }
+ ],
+ "post": [
+  {
+   "id": "look-vignette",
+   "component": "gradient",
+   "props": {
+    "colors": [
+     "#00000000",
+     "#000000D0"
+    ],
+    "kind": "radial"
+   },
+   "width": "100%",
+   "height": "100%"
+  },
+  {
+   "id": "look-grain",
+   "component": "grain",
+   "props": {
+    "amount": 0.08,
+    "rate": 24
+   },
+   "width": "100%",
+   "height": "100%"
+  }
+ ]
+}

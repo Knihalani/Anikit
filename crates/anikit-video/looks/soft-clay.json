@@ -1,0 +1,80 @@
+{
+ "title": "Soft clay",
+ "summary": "Pastel matte clay, rounded chunky shapes, gooey blobs, bouncy springs; friendly and tactile.",
+ "direction": "Friendly, tactile, toy-like. Pastel matte surfaces, big rounded shapes and pill cards with deep soft shadows, gooey metaballs and morphing blobs, rounded heavy type. Motion is springy (bouncy, wobbly), objects squash and settle; zoom transitions. Never sharp, never dark.",
+ "mode": "light",
+ "theme": {
+  "colors": {
+   "bg": "#EFE7F6",
+   "surface": "#FFFFFF",
+   "text": "#2B2140",
+   "muted": "#625877",
+   "primary": "#FF8A65",
+   "secondary": "#7DD3C0",
+   "accent": "#A3360A"
+  },
+  "fonts": {
+   "heading": "Inter Display",
+   "body": "Inter"
+  },
+  "radius": 36,
+  "styles": {
+   "title": {
+    "weight": 800,
+    "letterSpacing": "-0.03em"
+   },
+   "heading": {
+    "weight": 750,
+    "letterSpacing": "-0.02em"
+   },
+   "label": {
+    "color": "$accent"
+   }
+  }
+ },
+ "transition": {
+  "type": "zoom",
+  "duration": 0.6,
+  "ease": "inOutQuart"
+ },
+ "enter": {
+  "preset": "bounceIn",
+  "spring": "bouncy"
+ },
+ "backdrop": [
+  {
+   "id": "look-bg",
+   "component": "gradient",
+   "props": {
+    "colors": [
+     "#F6EFFB",
+     "#E6DCF2"
+    ],
+    "kind": "radial"
+   },
+   "width": "100%",
+   "height": "100%"
+  },
+  {
+   "id": "look-blobs",
+   "component": "metaballs",
+   "props": {
+    "count": 5,
+    "colors": [
+     "#FFB199",
+     "#9EE6D4",
+     "#C9B8FF"
+    ],
+    "size": 1.0,
+    "spread": 0.9,
+    "speed": 0.25,
+    "glow": false,
+    "gloss": true
+   },
+   "opacity": 0.55,
+   "width": "100%",
+   "height": "100%"
+  }
+ ],
+ "post": []
+}

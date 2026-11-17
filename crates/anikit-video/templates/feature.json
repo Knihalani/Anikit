@@ -1,5 +1,6 @@
 {
   "name": "feature",
+  "look": "swiss",
   "title": "Feature announcement",
   "description": "A 12–20 s spotlight on one new feature: a 'New' badge and kinetic headline beside the product in a browser (your screenshot or a generated UI), the points checking off next to it with a success toast, then a CTA that bursts into confetti.",
   "duration": "12–20 s",
@@ -121,7 +122,7 @@
             "$let": {
               "tw": "fmt.landscape ? fmt.w * 0.38 : fmt.safe.w",
               "ts": "fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4",
-              "lines": "ceil(len(headline) * 0.48 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.38 : fmt.safe.w))",
+              "lines": "ceil(len(headline) * cw * 0.96 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.38 : fmt.safe.w))",
               "top": "fmt.landscape ? fmt.h * 0.5 - (ceil(len(headline) * 0.48 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.38 : fmt.safe.w)) * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) * 1.1 + fmt.u * 14) / 2 : (fmt.portrait ? fmt.h * 0.15 : fmt.h * 0.11)",
               "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
               "an": "fmt.landscape ? 'topLeft' : 'top'",
