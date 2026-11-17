@@ -37,4 +37,4 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 
 Shortcuts (optional): `anikit-video recipes` (drop-in high-end shots), `looks` (art direction),
 `info --components` (prebuilt widgets), `templates` (quick starts).
-Rules that always hold: hook in ≤ 2 s · cut words, not type size · one focal point · every choice made for this subject (`docs taste`) · judge frames, not scores.
+What tends to work: a hook in the first 2 s · cutting words rather than shrinking type · one focal point per shot · every choice made for this subject (`docs taste`) · judging frames, not numbers.

@@ -808,7 +808,7 @@ fn medium(raw: &Value, cx: &mut Ctx) {
             let res = p.get("resolution").and_then(|r| r.as_f64()).unwrap_or(1.0);
             let defocus = ["aperture", "dof", "focus"].iter().any(|k| p.get(*k).is_some() || p.get("camera").and_then(|c| c.get(*k)).is_some());
             if text && (res < 1.0 || defocus) {
-                cx.note("warning", "legibility", &path, format!("3D words are traced {}; type must be crisp at full resolution while it is read", if res < 1.0 { format!("at resolution {res}") } else { "under depth of field".into() }),
+                cx.note("warning", "legibility", &path, format!("3D words are traced {}; words read best crisp, at full resolution and in focus", if res < 1.0 { format!("at resolution {res}") } else { "under depth of field".into() }),
                     "drop `resolution` (drafts reduce it automatically) and keep the words in the focal plane, or set the words as a 2D text layer over the 3D");
             }
             sets.push((path, env, mats));

@@ -1,6 +1,6 @@
 # Make anything: escape hatches
 
-Nothing is limited to the prebuilt pieces. The medium comes from the concept: 2D typography, illustration and paths are first-class, and 3D is for ideas that are physical or material (never a default studio/cyc set with chrome or glass; vary looks between pieces). Combine:
+Nothing is limited to the prebuilt pieces. The medium comes from the concept: 2D typography, illustration and paths are first-class, and 3D is for ideas that are physical or material (a studio/cyc set with chrome or glass is the most common default and tends to read as stock; varying looks between pieces helps). Combine:
 
 1. **Draw it**: SVG `path` + `trimEnd` draw-on, gradients, masks (`mask`, `clip`), blend modes. Any icon, map, chart or diagram.
 2. **Move it**: `"=expressions"` of `t`, `beat`, `level` on any number or colour (`docs expressions`); `script` loops that generate layers (`docs script`); raw `draw` paths and points (`docs draw`); `repeat` + `$i` for fields of objects; keyframes for choreography.
