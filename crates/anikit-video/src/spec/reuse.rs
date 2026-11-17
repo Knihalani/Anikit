@@ -172,7 +172,9 @@ impl Cx {
                 }
                 continue;
             }
-            let repeat = match obj.remove("repeat") {
+            // `"repeat": { "count": … }` on a layer is the render-time repeater: leave it.
+            let repeater = !path.ends_with("scenes") && obj.get("repeat").is_some_and(Value::is_object);
+            let repeat = match if repeater { None } else { obj.remove("repeat") } {
                 None => None,
                 Some(r) => match subst(r, params).as_u64() {
                     Some(n) if n <= MAX_REPEAT => Some(n),

@@ -650,7 +650,7 @@ impl Evaluator {
                     ChannelC::Below => ChanData::List(frame_list(self.width, self.height, FRAME_BG.with(|b| b.get()), out.clone())),
                     ChannelC::Layers(nodes) => {
                         let mut ops = Vec::new();
-                        let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0 };
+                        let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0, amul: 1.0 };
                         let k = [dw / w.max(1e-3), 0.0, 0.0, dh / h.max(1e-3), 0.0, 0.0];
                         for n in nodes {
                             self.emit_node(n, &ccx, &k, [w, h], 1.0, &mut ops);
@@ -680,7 +680,7 @@ impl Evaluator {
         for (c, o) in sc.channels.iter().skip(2) {
             chans.push((if matches!(c, ChannelC::Noise) { ChanData::Noise } else { ChanData::None }, *o));
         }
-        let cx = Cx { ev: self, scene_t: t, gt: t, dof: 0.0 };
+        let cx = Cx { ev: self, scene_t: t, gt: t, dof: 0.0, amul: 1.0 };
         let v = [0.0f32; prop::N];
         let ps = preview_scale();
         let size = (((w as f32 * ps).round() as u32).max(1), ((h as f32 * ps).round() as u32).max(1));
