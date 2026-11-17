@@ -1,0 +1,17 @@
+RAILYARD — 15 s launch film (16:9)
+
+Noun: a rail yard / signal box.   Verb: switches, routes, clears.
+Before -> after: a payment parked at a red signal in the yard ("held, day 1, 2, 3")
+  -> one API call throws the lever, the signal clears and the payment runs straight
+     through to the other bank, lighting a lamp (a webhook) at every state change.
+Motif: the amber payment "car" running on cream track; it ends parked under the wordmark.
+World: an illuminated signal-box mimic panel (enamel green-black, cream track lines,
+  amber/green/red lamps, rivets, engraved labels) — railway interlocking diagrams and
+  Swiss station signage as references, not SaaS UI.
+Medium: 2D graphic design (the idea is a diagram), no 3D.
+Type: Inter Display (headlines, signage), JetBrains Mono (API + webhook event names).
+Tempo: steady-fast, 128 BPM acoustic band = a train's rhythm; 8 bars = 15.0 s.
+  Lever throw on beat 10 (hit), run + webhook ticks in bars 4-5, pull-back to the
+  whole yard in bars 6-7, wordmark lands on bar 7.5.
+Copy (only the brief's claims): "Payments still wait in the yard." / "One API call." /
+  "A webhook at every signal." / "Instant settlement between bank accounts." / "Railyard".
