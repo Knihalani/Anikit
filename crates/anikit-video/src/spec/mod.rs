@@ -195,6 +195,8 @@ pub struct EncodeSpec {
     /// Adaptive quantisation strength, 0 (off, default) to 2: spends bits on flat areas
     /// (gradients, skies) and saves them on busy texture.
     pub aq: Option<f64>,
+    /// Constant quantiser 0–51 (lower = better and bigger). Default 23 (19 high, 28 draft). `render --crf` overrides.
+    pub crf: Option<f64>,
 }
 
 /// `motionBlur`: on/off, or a shutter angle.

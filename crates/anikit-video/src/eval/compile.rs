@@ -214,6 +214,14 @@ impl Evaluator {
                 (shutter.clamp(0.0, 720.0) as f32 / 360.0) / c.fps
             }
         };
+        let encode_crf = spec.encode.as_ref().and_then(|e| e.crf).and_then(|q| {
+            if (0.0..=51.0).contains(&q) {
+                Some(q.round() as u8)
+            } else {
+                c.d.push(Diagnostic::error("encode.crf", format!("{q} is out of range (0..51)")));
+                None
+            }
+        });
         let encode_aq = spec.encode.as_ref().and_then(|e| e.aq).filter(|a| {
             let ok = (0.0..=2.0).contains(a);
             if !ok {
@@ -358,6 +366,7 @@ impl Evaluator {
             comps: c.comps.into_iter().map(|(n, e, _)| (n, e)).collect(),
             shutter,
             encode_aq: encode_aq.map(|a| a as f32),
+            encode_crf,
             groove: c.groove.and_then(|m| m.ok()),
             shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
         };
@@ -1047,6 +1056,15 @@ impl C<'_> {
     }
 
     fn layer(&mut self, l: &Layer, path: &str, pc: PCtx) -> Option<Node> {
+        // `"text": "=expr"`: a number computed per frame (an animatable counter).
+        let expr_text;
+        let l = match &l.text {
+            Some(t) if t.trim_start().starts_with('=') && l.value.is_none() => {
+                expr_text = Layer { text: Some("{value}".into()), value: Some(Num::Str(t.trim().to_string())), ..l.clone() };
+                &expr_text
+            }
+            _ => l,
+        };
         // `"animate": "rise"` (a lone preset) means `"enter": "rise"`.
         let norm;
         let l = match &l.animate {

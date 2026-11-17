@@ -2850,6 +2850,14 @@
             "null"
           ],
           "format": "double"
+        },
+        "crf": {
+          "description": "Constant quantiser 0–51 (lower = better and bigger). Default 23 (19 high, 28 draft). `render --crf` overrides.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
         }
       }
     },
