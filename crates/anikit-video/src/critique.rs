@@ -408,6 +408,7 @@ pub fn critique(raw: &Value) -> Report {
                 || (l.get("src").is_some() && l.get("fit").and_then(|f| f.as_str()) == Some("cover"))
         });
         let mut words_on_screen = 0usize;
+        let mut text_sizes: Vec<f64> = Vec::new();
         let mut has_motion = scene.get("camera").is_some();
         let mut kinetic_only = true;
         for (li, layer) in layers.iter().enumerate() {
@@ -462,6 +463,8 @@ pub fn critique(raw: &Value) -> Report {
                     cx.note("warning", "legibility", p, format!("text size {size:.0} px is small for a {}×{} frame (phones shrink it further)", cx.w, cx.h),
                         format!("use at least {:.0} px (2.2vmin); 3vmin+ for body copy", short * 0.022));
                 }
+                text_sizes.push(size);
+                type_checks(cx, l, p, text, size, words);
                 // Line length.
                 let width = l.get("width").and_then(|v| cx.len(v, cx.w));
                 let chars = text.lines().map(|x| x.chars().count()).max().unwrap_or(0) as f64;
@@ -490,6 +493,13 @@ pub fn critique(raw: &Value) -> Report {
         }
         if dur < 1.2 && !kinetic_only {
             cx.note("warning", "pacing", &path, format!("scene{id} lasts {dur:.2} s, too short to register"), "make it at least 1.5 s, or merge it with a neighbour (fast cuts work only for single words on a beat)");
+        }
+        if text_sizes.len() >= 2 {
+            let (lo, hi) = text_sizes.iter().fold((f64::MAX, 0.0f64), |(a, b), x| (a.min(*x), b.max(*x)));
+            if hi / lo.max(1.0) < 1.8 {
+                cx.note("tip", "type-scale", &path, format!("{} text layers between {lo:.0} and {hi:.0} px: the hierarchy is flat", text_sizes.len()),
+                    "when type leads, give the headline 4–25× the caption's size (30–60 vh over 2.2–3 vh); when it supports, use one small size consistently (docs type-craft)");
+            }
         }
         if words_on_screen > 32 {
             cx.note("warning", "density", &path, format!("{words_on_screen} words in one scene; viewers skim, they don't read paragraphs"), "keep scenes under ~20 words; split the copy across scenes or move detail to a voice-over");
@@ -532,6 +542,36 @@ pub fn critique(raw: &Value) -> Report {
 
 /// Device mockups showing a generated screen without the product's copy (or a
 /// dashboard with invented numbers) read as a different product.
+/// Per-text-layer typography tells (advice, from docs/video/craft/typography.md).
+fn type_checks(cx: &mut Ctx, l: &serde_json::Map<String, Value>, p: &str, text: &str, size: f64, words: usize) {
+    let align = l.get("align").and_then(|a| a.as_str()).unwrap_or("");
+    let left_anchor = l.get("anchor").and_then(|a| a.as_str()).is_some_and(|a| a.to_ascii_lowercase().contains("left"));
+    let centred = matches!(align, "" | "center") && !(align.is_empty() && left_anchor);
+    let lines = text.lines().filter(|x| !x.trim().is_empty()).count();
+    let wraps = l.get("width").is_some() || l.get("maxWidth").is_some();
+    if centred && (lines >= 3 || (wraps && words >= 14)) {
+        cx.note("tip", "typography", p, format!("\"{}\" is a centred paragraph", trunc(text, 32)),
+            "set multi-line text flush left on an edge or grid line (\"align\": \"left\" or a left anchor); centre only a word, a date or a logo");
+    }
+    let em = match l.get("letterSpacing") {
+        Some(Value::String(s)) if s.trim().ends_with("em") => s.trim().trim_end_matches("em").trim().parse::<f64>().ok(),
+        Some(Value::Number(n)) => n.as_f64().map(|px| px / size.max(1.0)),
+        _ => None,
+    };
+    let upper = l.get("uppercase").and_then(|u| u.as_bool()).unwrap_or(false) || (text.chars().any(|c| c.is_alphabetic()) && !text.chars().any(|c| c.is_lowercase()));
+    let font = l.get("font").and_then(|f| f.as_str()).unwrap_or("Inter").to_ascii_lowercase();
+    if let Some(em) = em {
+        if !upper && em > 0.06 && words >= 2 {
+            cx.note("tip", "typography", p, format!("lowercase text tracked +{em:.2} em"),
+                "lowercase tends to fall apart when tracked loose; keep it at −0.03…+0.02 em (track caps and small labels instead)");
+        }
+        if upper && em >= 0.15 && centred && (font.starts_with("inter") || font.starts_with('$')) && size > 20.0 {
+            cx.note("tip", "typography", p, format!("\"{}\": widely tracked caps, centred, in the default face", trunc(text, 32)),
+                "this reads as the generic 'cinematic' template; give the line a face with a voice, set it flush to a grid line, or drop the tracking");
+        }
+    }
+}
+
 fn scan_placeholders(v: &Value, path: &str, cx: &mut Ctx) {
     match v {
         Value::Object(m) => {
@@ -889,7 +929,7 @@ fn sameness(raw: &Value, spec: &Value, cx: &mut Ctx) {
         let custom_type = fonts.is_some_and(|f| f.values().any(|v| v.as_str().is_some_and(|s| !s.starts_with("Inter") && !s.contains("JetBrains"))))
             || theme.and_then(|t| t.get("styles")).is_some_and(|s| s.as_object().is_some_and(|m| !m.is_empty()));
         if !custom_type && !styled_type {
-            signals.push("default typography (Inter, stock sizes and weights)");
+            signals.push("default typography (Inter, stock sizes and weights; `anikit-video fonts` lists ~130 faces)");
         }
     }
     let first_kind = |sc: &Value| sc.get("layers").and_then(|l| l.as_array()).and_then(|l| l.first()).and_then(|l| l.get("component")).and_then(|c| c.as_str()).map(String::from);
@@ -1057,6 +1097,18 @@ mod tests {
         assert!(checks.contains(&"safe-area"), "{}", r.to_text());
         assert!(r.score < 80);
         assert!((r.duration - 5.0).abs() < 1e-9, "{}", r.duration);
+    }
+
+    #[test]
+    fn typography_tells() {
+        let spec = json!({ "scenes": [ { "duration": 6, "layers": [
+            { "text": "THE FUTURE OF WORK", "size": "6vh", "letterSpacing": "0.3em" },
+            { "text": "One line\nanother line\nand a third", "size": "4vh", "y": "65%" },
+            { "text": "a lowercase tracked line", "size": "4vh", "letterSpacing": "0.12em", "y": "85%" } ] } ] });
+        let t = critique(&spec).to_text();
+        for want in ["widely tracked caps", "centred paragraph", "lowercase text tracked", "hierarchy is flat"] {
+            assert!(t.contains(want), "{want} missing in\n{t}");
+        }
     }
 
     #[test]
