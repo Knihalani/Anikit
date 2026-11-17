@@ -172,7 +172,7 @@ impl Brand {
                 "fill": h({
                     let mut c = primary;
                     let mut k = 0.0;
-                    while color::contrast(c, [1.0, 1.0, 1.0, 1.0]) < 4.5 && k < 1.0 {
+                    while color::contrast(c, [1.0, 1.0, 1.0, 1.0]) < 6.0 && k < 1.0 {
                         k += 0.05;
                         c = color::mix(primary, [0.0, 0.0, 0.0, 1.0], k);
                     }
