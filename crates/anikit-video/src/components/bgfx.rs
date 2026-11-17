@@ -158,6 +158,26 @@ pub fn fbm2(x: f32, y: f32, octaves: u32, seed: u32) -> f32 {
     s / n
 }
 
+/// `min` as compare-and-select (vectorises; no NaN handling).
+#[inline(always)]
+pub fn fmin(a: f32, b: f32) -> f32 {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+/// `max` as compare-and-select (vectorises; no NaN handling).
+#[inline(always)]
+pub fn fmax(a: f32, b: f32) -> f32 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
 #[inline]
 pub fn smoothstep(a: f32, b: f32, x: f32) -> f32 {
     let t = ((x - a) / (b - a)).clamp(0.0, 1.0);

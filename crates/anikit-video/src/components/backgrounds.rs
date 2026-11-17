@@ -361,6 +361,9 @@ pub struct Aurora {
     pub rate: f32,
     /// Kept for old specs; motion is always smooth outside draft mode.
     pub smooth: bool,
+    /// Height profiles per curtain (static: built on first use).
+    #[serde(skip)]
+    luts: std::sync::OnceLock<Vec<[Vec<f32>; 6]>>,
 }
 impl Default for Aurora {
     fn default() -> Self {
@@ -383,6 +386,7 @@ impl Default for Aurora {
             detail: 1.0,
             rate: 24.0,
             smooth: true,
+            luts: Default::default(),
         }
     }
 }
@@ -464,7 +468,23 @@ fn landscape(ctx: &Ctx, seed: u32, sky_top: Rgba) -> Op {
 }
 
 impl Aurora {
-    fn field(&self, t: f32, ctx: &Ctx, cols: &[Rgba], sky: [Rgba; 2], (fw, fh): (usize, usize)) -> Lin {
+    fn field(&self, t: f32, ctx: &Ctx, cols: &[Rgba], sky: [Rgba; 2], size: (usize, usize)) -> Lin {
+        #[cfg(target_arch = "x86_64")]
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: AVX2 checked above. Same arithmetic (no FMA), wider lanes and gathers.
+            return unsafe { self.field_avx2(t, ctx, cols, sky, size) };
+        }
+        self.field_any(t, ctx, cols, sky, size)
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "avx2")]
+    unsafe fn field_avx2(&self, t: f32, ctx: &Ctx, cols: &[Rgba], sky: [Rgba; 2], size: (usize, usize)) -> Lin {
+        self.field_any(t, ctx, cols, sky, size)
+    }
+
+    #[inline(always)]
+    fn field_any(&self, t: f32, ctx: &Ctx, cols: &[Rgba], sky: [Rgba; 2], (fw, fh): (usize, usize)) -> Lin {
         let tt = t * self.speed;
         let aspect = ctx.width / ctx.height.max(1.0);
         let ppu = fw as f32 / aspect; // field px per unit (unit = box height)
@@ -484,15 +504,46 @@ impl Aurora {
         let hscale = (LN - 1) as f32 / (HHI - HLO);
         let rays = self.rays.clamp(0.0, 1.0);
 
-        struct Curtain {
-            /// Per column: lower edge `v`, 1 / height, ray intensity, glow intensity.
-            cols: Vec<[f32; 4]>,
-            /// Per height: ray colour (3) and glow colour (3).
-            lut: Vec<[f32; 6]>,
+        struct Curtain<'a> {
+            /// Per column, planar: lower edge `v`, 1 / height, ray intensity, glow intensity.
+            pc: [Vec<f32>; 4],
+            /// Per height, planar: ray colour (3) and glow colour (3).
+            pl: &'a [Vec<f32>; 6],
             vmin: f32,
             vmax: f32,
         }
+        // 2. Height profiles (with colour) per curtain as lookup tables:
+        // they only depend on the parameters, so they are built once.
+        let luts = self.luts.get_or_init(|| {
+            (0..k_curt)
+                .map(|c| {
+                    let d = if k_curt > 1 { c as f32 / (k_curt - 1) as f32 } else { 0.0 };
+                    let h_c = self.height * (1.0 - 0.45 * d);
+                    let edge = 0.007 / h_c.max(0.05);
+                    let lut: Vec<[f32; 6]> = (0..LN)
+                    .map(|i| {
+                        let h = HLO + i as f32 / hscale;
+                        // Continuous profile: a soft (logistic) lower edge, a bright
+                        // band just above it, then a long fade upwards.
+                        let rise = 1.0 / (1.0 + (-(h - 0.5 * edge) / edge).exp());
+                        let hp = h.max(0.0);
+                        let p = rise * ((-hp * 9.0).exp() * 0.9 + (-hp * 2.0).exp() * 0.55 + 0.15 * (-hp * 0.7).exp()) * (1.0 - bgfx::smoothstep(0.75, 1.5, h));
+                        let col = ramp_at(h / 1.05);
+                        // A whiter core just above the lower edge.
+                        let core = 0.25 * (-((h - 2.0 * edge) / 0.08) * ((h - 2.0 * edge) / 0.08)).exp();
+                        let g = if h < 0.0 { 0.89 * (-(h / 0.14) * (h / 0.14)).exp() } else { (-((h - 0.22) / 0.65) * ((h - 0.22) / 0.65)).exp() };
+                        let g = g * (1.0 - bgfx::smoothstep(1.2, 1.6, h)) * bgfx::smoothstep(-0.7, -0.5, h);
+                        let gc = ramp_at(h / 1.05 * 0.8 + 0.05);
+                        let gk = g * 0.35 * self.glow;
+                        [p * (col[0] + core), p * (col[1] + core), p * (col[2] + core), gk * gc[0], gk * gc[1], gk * gc[2]]
+                    })
+                    .collect();
+                    std::array::from_fn(|k| lut.iter().map(|c| c[k]).collect())
+                })
+                .collect::<Vec<[Vec<f32>; 6]>>()
+        });
         let mut curtains = Vec::with_capacity(k_curt);
+        let mut samples: Vec<[f32; 4]> = Vec::new();
         for c in 0..k_curt {
             let d = if k_curt > 1 { c as f32 / (k_curt - 1) as f32 } else { 0.0 };
             let sc = self.seed.wrapping_mul(7).wrapping_add(c as u32 * 131);
@@ -513,7 +564,9 @@ impl Aurora {
             let wpx = ds * ppu;
             // i, b·i, h·i, w, b·w, h·w
             let mut a = vec![[0.0f32; 6]; fw];
-            for j in 0..ns {
+            // Samples first (independent: vectorises), then the scatter onto columns.
+            samples.clear();
+            samples.extend((0..ns).map(|j| {
                 let s = s_lo + (j as f32 + 0.5) * ds;
                 let x = s + self.fold * 0.085 * (bgfx::vnoise2(s * 1.7 + cf * 5.3, tt * 0.09, sc) + 0.55 * bgfx::vnoise2(s * 4.1, tt * 0.13, sc + 1));
                 let b = base_c + 0.14 * bgfx::vnoise2(s * 0.7 + cf * 2.0, tt * 0.035, sc + 2) + 0.035 * bgfx::vnoise2(s * 2.2, tt * 0.06, sc + 3);
@@ -526,6 +579,9 @@ impl Aurora {
                 let ray = r1 * r1 * r1 * 0.6 + r2 * r2 * r2 * r2 * 0.7 + r3 * r3 * r3 * r3 * 0.7;
                 let i = k_c * env * ((1.0 - rays) * 0.55 + rays * ray * 1.6);
                 let hh = h_c * (0.55 + 0.45 * (0.5 + 0.5 * bgfx::vnoise2(s * 1.3, tt * 0.07, sc + 7))) * (0.7 + 0.5 * r1 * rays + 0.25 * (1.0 - rays));
+                [x, b, i, hh]
+            }));
+            for &[x, b, i, hh] in samples.iter() {
                 let col = x * ppu - 0.5;
                 let c0 = col.floor();
                 let f = col - c0;
@@ -571,27 +627,9 @@ impl Aurora {
                 })
                 .collect();
 
-            // 2. Height profiles (with colour) as one lookup table.
-            let edge = 0.007 / h_c.max(0.05);
-            let lut: Vec<[f32; 6]> = (0..LN)
-                .map(|i| {
-                    let h = HLO + i as f32 / hscale;
-                    // Continuous profile: a soft (logistic) lower edge, a bright
-                    // band just above it, then a long fade upwards.
-                    let rise = 1.0 / (1.0 + (-(h - 0.5 * edge) / edge).exp());
-                    let hp = h.max(0.0);
-                    let p = rise * ((-hp * 9.0).exp() * 0.9 + (-hp * 2.0).exp() * 0.55 + 0.15 * (-hp * 0.7).exp()) * (1.0 - bgfx::smoothstep(0.75, 1.5, h));
-                    let col = ramp_at(h / 1.05);
-                    // A whiter core just above the lower edge.
-                    let core = 0.25 * (-((h - 2.0 * edge) / 0.08) * ((h - 2.0 * edge) / 0.08)).exp();
-                    let g = if h < 0.0 { 0.89 * (-(h / 0.14) * (h / 0.14)).exp() } else { (-((h - 0.22) / 0.65) * ((h - 0.22) / 0.65)).exp() };
-                    let g = g * (1.0 - bgfx::smoothstep(1.2, 1.6, h)) * bgfx::smoothstep(-0.7, -0.5, h);
-                    let gc = ramp_at(h / 1.05 * 0.8 + 0.05);
-                    let gk = g * 0.35 * self.glow;
-                    [p * (col[0] + core), p * (col[1] + core), p * (col[2] + core), gk * gc[0], gk * gc[1], gk * gc[2]]
-                })
-                .collect();
-            curtains.push(Curtain { cols, lut, vmin, vmax });
+            // Planar copies for the per-pixel gathers.
+            let pc: [Vec<f32>; 4] = std::array::from_fn(|k| cols.iter().map(|c| c[k]).collect());
+            curtains.push(Curtain { pc, pl: &luts[c], vmin, vmax });
         }
 
         // Flow field for sway: a coarse grid, interpolated once per row.
@@ -609,6 +647,7 @@ impl Aurora {
         let s0 = bgfx::lin3(sky[0]);
         let s1 = bgfx::lin3(sky[1]);
         let mut img = Lin::new(fw, fh);
+        // Light per column (planar r, g, b).
         let mut acc = vec![0.0f32; fw * 3];
         let xmax = fw as f32 - 1.001;
         for y in 0..fh {
@@ -626,47 +665,50 @@ impl Aurora {
                 *r = (g0 + (g1 - g0) * fy) * sway_px;
             }
             acc.iter_mut().for_each(|a| *a = 0.0);
+            let (ar, rest) = acc.split_at_mut(fw);
+            let (ag, ab) = rest.split_at_mut(fw);
             for cu in &curtains {
                 if v < cu.vmin || v > cu.vmax {
                     continue;
                 }
-                let (cols, lut) = (&cu.cols, &cu.lut);
+                let (cb, ci, cr, cg) = (&cu.pc[0][..fw], &cu.pc[1][..fw], &cu.pc[2][..fw], &cu.pc[3][..fw]);
+                let [l0, l1, l2, l3, l4, l5] = &cu.pl;
+                let (l0, l1, l2, l3, l4, l5) = (&l0[..LN], &l1[..LN], &l2[..LN], &l3[..LN], &l4[..LN], &l5[..LN]);
+                let sway = &rowsway[..fw];
+                // Branch-free (vectorises with gathers): pixels outside the
+                // curtain contribute zero weight instead of being skipped.
                 for x in 0..fw {
-                    let c0 = cols[x];
-                    let h0 = (c0[0] - v) * c0[1];
-                    // Far outside this curtain (sway moves it only a little): skip.
-                    if !(HLO - 0.15..HHI + 0.15).contains(&h0) {
-                        continue;
-                    }
-                    let up = h0.clamp(0.0, 1.5);
-                    let xs = (x as f32 + rowsway[x] * up * up).clamp(0.0, xmax);
-                    let i0 = xs as usize;
+                    let h0 = (cb[x] - v) * ci[x];
+                    // Far outside this curtain (sway moves it only a little): no light.
+                    let near = h0 > HLO - 0.15 && h0 < HHI + 0.15;
+                    let up = bgfx::fmin(bgfx::fmax(h0, 0.0), 1.5);
+                    let xs = bgfx::fmin(bgfx::fmax(x as f32 + sway[x] * up * up, 0.0), xmax);
+                    let i0 = xs as i32 as usize;
                     let f = xs - i0 as f32;
-                    let (p, q) = (cols[i0], cols[i0 + 1]);
-                    let b = p[0] + (q[0] - p[0]) * f;
-                    let ih = p[1] + (q[1] - p[1]) * f;
+                    // SAFETY: 0 ≤ xs ≤ fw - 1.001, so i0 + 1 < fw (the length of every column array).
+                    let at = |a: &[f32], i: usize| unsafe { *a.get_unchecked(i) };
+                    let b = at(cb, i0) + (at(cb, i0 + 1) - at(cb, i0)) * f;
+                    let ih = at(ci, i0) + (at(ci, i0 + 1) - at(ci, i0)) * f;
                     let h = (b - v) * ih;
-                    if !(HLO..HHI).contains(&h) {
-                        continue;
-                    }
-                    let i = p[2] + (q[2] - p[2]) * f;
-                    let g = p[3] + (q[3] - p[3]) * f;
+                    let on = near && h >= HLO && h < HHI;
+                    let i = if on { at(cr, i0) + (at(cr, i0 + 1) - at(cr, i0)) * f } else { 0.0 };
+                    let g = if on { at(cg, i0) + (at(cg, i0 + 1) - at(cg, i0)) * f } else { 0.0 };
                     // The table is fine enough (≈½ px per entry) to sample nearest.
-                    let l = lut[(((h - HLO) * hscale + 0.5) as usize).min(LN - 1)];
-                    let o = &mut acc[x * 3..x * 3 + 3];
-                    o[0] += i * l[0] + g * l[3];
-                    o[1] += i * l[1] + g * l[4];
-                    o[2] += i * l[2] + g * l[5];
+                    // SAFETY (reads below): li is clamped to 0..=LN - 1 and every table has LN entries.
+                    let li = bgfx::fmin(bgfx::fmax((h - HLO) * hscale + 0.5, 0.0), (LN - 1) as f32) as i32 as usize;
+                    ar[x] += i * at(l0, li) + g * at(l3, li);
+                    ag[x] += i * at(l1, li) + g * at(l4, li);
+                    ab[x] += i * at(l2, li) + g * at(l5, li);
                 }
             }
             // Sky, plus the light tone-mapped with a soft shoulder (no clipping).
             let k = v.powf(1.4);
             let sk = [0, 1, 2].map(|j| s0[j] + (s1[j] - s0[j]) * k);
             let row = &mut img.px[y * fw * 3..(y + 1) * fw * 3];
-            for (o, a) in row.chunks_exact_mut(3).zip(acc.chunks_exact(3)) {
-                for j in 0..3 {
-                    o[j] = sk[j] + bgfx::one_minus_exp_neg(a[j] * 1.1);
-                }
+            for (x, o) in row.chunks_exact_mut(3).enumerate() {
+                o[0] = sk[0] + bgfx::one_minus_exp_neg(ar[x] * 1.1);
+                o[1] = sk[1] + bgfx::one_minus_exp_neg(ag[x] * 1.1);
+                o[2] = sk[2] + bgfx::one_minus_exp_neg(ab[x] * 1.1);
             }
         }
         img
