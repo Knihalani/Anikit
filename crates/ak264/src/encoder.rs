@@ -2258,7 +2258,7 @@ impl Encoder {
     /// Negative means automatic: |aq_strength| when the frame is dominated by
     /// smooth, textured content (renders of 3D scenes, video, soft photographic
     /// gradients: second differences between 0.25 and 2 per sample on at least
-    /// 60% of a 2×2-subsampled macroblock grid), else 0. Decided from the
+    /// 60% of a 4×4-subsampled macroblock grid), else 0. Decided from the
     /// frame's own samples only, so it is deterministic and independent of
     /// chunking and thread count.
     fn aq_for_frame(&self) -> f32 {
@@ -2269,8 +2269,8 @@ impl Encoder {
         let y = &self.cur.y;
         let (mut smooth, mut n) = (0u32, 0u32);
         let mut blk = [0u8; 256];
-        for my in (0..self.mbh).step_by(2) {
-            for mx in (0..self.mbw).step_by(2) {
+        for my in (1..self.mbh).step_by(4) {
+            for mx in (1..self.mbw).step_by(4) {
                 let o = y.off(mx as isize * 16, my as isize * 16);
                 crate::simd::copy_block::<16>(&mut blk, 0, 16, &y.data, o, y.stride, 16);
                 let hf = crate::simd::second_diff16(&blk);
