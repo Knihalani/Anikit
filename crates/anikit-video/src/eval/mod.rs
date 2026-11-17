@@ -1132,7 +1132,7 @@ impl Evaluator {
                 }
             }
             Kind::Component(c, th) => {
-                let ctx = crate::components::Ctx { width: w, height: h, fps: self.fps, theme: th.as_ref().unwrap_or(&self.ctheme), assets: &*self.assets, root: Some(self) };
+                let ctx = crate::components::Ctx { width: w, height: h, fps: self.fps, theme: th.as_ref().unwrap_or(&self.ctheme), assets: &*self.assets };
                 let ops = c.eval(lt.max(0.0), &ctx);
                 let k = out.len();
                 out.extend(ops);

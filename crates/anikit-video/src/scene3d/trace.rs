@@ -212,6 +212,10 @@ pub struct Inst {
     pub thin: bool,
     /// Casts shadows and occludes.
     pub shadow: bool,
+    /// Which object, instance index and lane this came from (for textures).
+    pub obj: u32,
+    pub i: u32,
+    pub lane: u32,
 }
 
 /// Baked floor lighting: key-light visibility and ambient occlusion over a
@@ -764,10 +768,15 @@ impl Scene {
                 match dir {
                     Some(t) => {
                         let tl = self.radiance(madd(s.p, ng, -1e-4), t, depth, glass + 1, q, rough, rot);
-                        c = madd(c, tl, (1.0 - fr) * m.transmission);
+                        c = madd(c, tl, (1.0 - fr) * m.transmission.clamp(0.0, 1.0));
                     }
                     None => c = madd(c, refl_l, 1.0 - fr),
                 }
+            }
+            let opaque = (1.0 - m.transmission).clamp(0.0, 1.0);
+            if opaque > 0.0 && entering {
+                let lit = add(self.env.diffuse(n), self.key_diffuse(n));
+                c = madd(c, mul(m.base, lit), opaque * (1.0 - fr));
             }
             // Beer–Lambert over the path inside (exiting: s.t was inside).
             if !entering {
@@ -900,7 +909,13 @@ impl Scene {
                     let r = reflect(d, n);
                     let rl = if entering && layer < 2 && fr * (1.0 - a) * luma(thr) > 0.004 { self.radiance(madd(s.p, ngf, 1e-4), r, 1, layer + 1, q, m.roughness, rot) } else { self.sky(r, m.roughness.max(0.05)) };
                     col = add(col, scale(mul(rl, thr), fr * (1.0 - a) * haze_f));
-                    let mut tthr = scale(thr, (1.0 - fr) * (1.0 - a) * m.transmission);
+                    // Partly transmissive glass: the rest is a lit surface of its base colour.
+                    let opaque = (1.0 - m.transmission).clamp(0.0, 1.0);
+                    if opaque > 0.0 && entering {
+                        let lit = add(self.env.diffuse(n), self.key_diffuse(n));
+                        col = add(col, scale(mul(mul(m.base, lit), thr), opaque * (1.0 - fr) * (1.0 - a) * haze_f));
+                    }
+                    let mut tthr = scale(thr, (1.0 - fr) * (1.0 - a) * m.transmission.clamp(0.0, 1.0));
                     if entering {
                         inside_since = Some(dist);
                     } else {
