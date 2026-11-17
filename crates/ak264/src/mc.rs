@@ -171,24 +171,31 @@ impl HpelPlanes {
 
     /// Update after the reference samples in columns `[xa, xb)` × rows `[a, b)`
     /// (plane coordinates, border included) changed.
+    #[cfg(test)]
     pub fn compute_rect(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize) {
+        self.filter(r, xa, xb, a, b, a.saturating_sub(3), b + 2)
+    }
+
+    /// Columns affected by a change in `[xa, xb)`: horizontal filter on rows
+    /// `[a, b)`, vertical and centre filters on rows `[va, vb)` (clipped).
+    pub fn filter(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize, va: usize, vb: usize) {
         #[cfg(target_arch = "x86_64")]
         {
             if crate::simd::level() >= 2 {
                 #[target_feature(enable = "avx2")]
-                unsafe fn f(s: &mut HpelPlanes, r: &Plane, xa: usize, xb: usize, a: usize, b: usize) {
-                    s.compute_avx2(r, xa, xb, a, b)
+                unsafe fn f(s: &mut HpelPlanes, r: &Plane, xa: usize, xb: usize, a: usize, b: usize, va: usize, vb: usize) {
+                    s.compute_avx2(r, xa, xb, a, b, va, vb)
                 }
                 // SAFETY: AVX2 detected at run time.
-                return unsafe { f(self, r, xa, xb, a, b) };
+                return unsafe { f(self, r, xa, xb, a, b, va, vb) };
             }
         }
-        self.compute_impl(r, xa, xb, a, b)
+        self.compute_impl(r, xa, xb, a, b, va, vb)
     }
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
-    unsafe fn compute_avx2(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize) {
+    unsafe fn compute_avx2(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize, va: usize, vb: usize) {
         use std::arch::x86_64::*;
         let s = r.stride;
         let rows = r.data.len() / s;
@@ -198,7 +205,6 @@ impl HpelPlanes {
         let b1 = self.b1.as_mut_ptr();
         let (bo, ho, jo) = (self.b.data.as_mut_ptr(), self.h.data.as_mut_ptr(), self.j.data.as_mut_ptr());
         let (c5, c20, c16) = (_mm256_set1_epi16(5), _mm256_set1_epi16(20), _mm256_set1_epi16(16));
-        let (c5d, c20d, c512) = (_mm256_set1_epi32(5), _mm256_set1_epi32(20), _mm256_set1_epi32(512));
         #[inline]
         #[target_feature(enable = "avx2")]
         unsafe fn ld(p: *const u8) -> __m256i {
@@ -241,24 +247,26 @@ impl HpelPlanes {
         let hi = (xb + 2).min(s);
         let xlast = hi - 16;
         let lo = xa.saturating_sub(3).min(xlast);
-        for y in a.saturating_sub(3).max(2)..(b + 2).min(rows - 3) {
+        for y in va.max(2)..vb.min(rows - 3) {
             let mut x0 = lo;
             loop {
                 let x = x0.min(xlast);
                 let p = d.add((y - 2) * s + x);
                 let v = tap(ld(p), ld(p.add(s)), ld(p.add(2 * s)), ld(p.add(3 * s)), ld(p.add(4 * s)), ld(p.add(5 * s)), c5, c20);
                 st8(ho.add(y * s + x), v, c16);
+                // j = (a - 5b + 20c + 512) >> 10 in 16 bits, exactly (floor shifts compose):
+                // ((((a - b) >> 2) - b + c) >> 2) + c == (a - 5b + 20c) >> 4, and with the
+                // 6-tap row sums in [-2550, 10710] no step leaves the i16 range.
                 let q = b1.add((y - 2) * s + x) as *const i16;
-                let mut out = [_mm256_setzero_si256(); 2];
-                for (h, o) in out.iter_mut().enumerate() {
-                    let l = |k: usize| _mm256_cvtepi16_epi32(_mm_loadu_si128(q.add(k * s + h * 8) as *const __m128i));
-                    let t = _mm256_add_epi32(l(0), l(5));
-                    let t = _mm256_sub_epi32(t, _mm256_mullo_epi32(_mm256_add_epi32(l(1), l(4)), c5d));
-                    let t = _mm256_add_epi32(t, _mm256_mullo_epi32(_mm256_add_epi32(l(2), l(3)), c20d));
-                    *o = _mm256_srai_epi32(_mm256_add_epi32(t, c512), 10);
-                }
-                let pk = _mm256_permute4x64_epi64(_mm256_packs_epi32(out[0], out[1]), 0b11011000);
-                let pk = _mm256_packus_epi16(pk, pk);
+                let l = |k: usize| _mm256_loadu_si256(q.add(k * s) as *const __m256i);
+                let (ta, tb, tc) = (_mm256_add_epi16(l(0), l(5)), _mm256_add_epi16(l(1), l(4)), _mm256_add_epi16(l(2), l(3)));
+                let t = _mm256_srai_epi16(_mm256_sub_epi16(ta, tb), 2);
+                // (x + c) >> 2 == ((x + (c & 3)) >> 2) + (c >> 2), which stays inside i16
+                let x3 = _mm256_add_epi16(_mm256_sub_epi16(t, tb), _mm256_and_si256(tc, _mm256_set1_epi16(3)));
+                let t = _mm256_add_epi16(_mm256_srai_epi16(x3, 2), _mm256_srai_epi16(tc, 2));
+                let t = _mm256_add_epi16(t, tc);
+                let t = _mm256_srai_epi16(_mm256_add_epi16(t, _mm256_set1_epi16(32)), 6);
+                let pk = _mm256_packus_epi16(t, t);
                 let pk = _mm256_permute4x64_epi64(pk, 0b1000);
                 _mm_storeu_si128(jo.add(y * s + x) as *mut __m128i, _mm256_castsi256_si128(pk));
                 if x == xlast {
@@ -270,7 +278,7 @@ impl HpelPlanes {
     }
 
     #[inline(always)]
-    fn compute_impl(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize) {
+    fn compute_impl(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize, va: usize, vb: usize) {
         let s = r.stride;
         let rows = r.data.len() / s;
         let d = &r.data;
@@ -290,7 +298,7 @@ impl HpelPlanes {
                 bo[x] = ((v + 16) >> 5).clamp(0, 255) as u8;
             }
         }
-        for y in a.saturating_sub(3).max(2)..(b + 2).min(rows - 3) {
+        for y in va.max(2)..vb.min(rows - 3) {
             let r0 = &d[(y - 2) * s..(y - 1) * s];
             let r1 = &d[(y - 1) * s..y * s];
             let r2 = &d[y * s..(y + 1) * s];
@@ -387,6 +395,50 @@ impl HpelPlanes {
 mod planes_test {
     use super::*;
     #[test]
+    fn centre_filter_i16_identity() {
+        // same operations as the AVX2 centre filter, in wrapping i16
+        let f16 = |c: [i16; 6]| -> i32 {
+            let (ta, tb, tc) = (c[0].wrapping_add(c[5]), c[1].wrapping_add(c[4]), c[2].wrapping_add(c[3]));
+            let t = ta.wrapping_sub(tb) >> 2;
+            let x3 = t.wrapping_sub(tb).wrapping_add(tc & 3);
+            let t = (x3 >> 2).wrapping_add(tc >> 2).wrapping_add(tc);
+            (t.wrapping_add(32) >> 6) as i32
+        };
+        let vals = [-2550i16, -2549, -1000, -1, 0, 1, 3, 4000, 10709, 10710];
+        let n = vals.len();
+        for m in 0..n.pow(6) {
+            let mut c = [0i16; 6];
+            let mut k = m;
+            for v in c.iter_mut() {
+                *v = vals[k % n];
+                k /= n;
+            }
+            let v: i32 = c[0] as i32 - 5 * c[1] as i32 + 20 * c[2] as i32 + 20 * c[3] as i32 - 5 * c[4] as i32 + c[5] as i32;
+            assert_eq!(f16(c), (v + 512) >> 10, "{c:?}");
+        }
+    }
+
+    #[test]
+    fn planes_extremes() {
+        // rows/columns of 0 and 255 that drive the centre filter to its limits
+        let mut p = Plane::new(64, 48, 32);
+        let s = p.stride;
+        for (i, v) in p.data.iter_mut().enumerate() {
+            let (x, y) = (i % s, i / s);
+            let f = |k: usize| matches!(k % 6, 0 | 3);
+            *v = if f(x) ^ f(y) { 255 } else { 0 };
+            if (x / 7 + y / 5) % 3 == 0 {
+                *v = 255 - *v;
+            }
+        }
+        let rows = p.data.len() / s;
+        let (mut a, mut b) = (HpelPlanes::new(&p), HpelPlanes::new(&p));
+        a.compute(&p);
+        b.compute_impl(&p, 0, s, 0, rows, 0, rows);
+        assert!(a.j.data == b.j.data && a.b.data == b.b.data && a.h.data == b.h.data);
+    }
+
+    #[test]
     fn planes_match_window() {
         let mut p = Plane::new(64, 48, 32);
         for (i, v) in p.data.iter_mut().enumerate() {
@@ -397,7 +449,7 @@ mod planes_test {
         hp.compute(&p);
         let mut sc = HpelPlanes::new(&p);
         let rows = p.data.len() / p.stride;
-        sc.compute_impl(&p, 0, p.stride, 0, rows);
+        sc.compute_impl(&p, 0, p.stride, 0, rows, 0, rows);
         // partial update after a local change equals a full recompute
         let mut q = p.clone();
         for y in 40..60 {
@@ -409,7 +461,7 @@ mod planes_test {
         sc.compute(&q);
         assert!(sc.b.data == hp.b.data && sc.h.data == hp.h.data && sc.j.data == hp.j.data);
         hp.compute(&p);
-        sc.compute_impl(&p, 0, p.stride, 0, rows);
+        sc.compute_impl(&p, 0, p.stride, 0, rows, 0, rows);
         assert!(sc.b.data == hp.b.data && sc.h.data == hp.h.data && sc.j.data == hp.j.data);
         for (x, y) in [(0isize, 0isize), (-17, -17), (40, 20), (48, 32), (-5, 30)] {
             let w = Hpel::new(&p, x, y);

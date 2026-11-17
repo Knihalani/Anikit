@@ -623,9 +623,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         // SAD for the candidates (cheap), SATD for the final cost.
         let mut best = it.sad + mvcost(base_q);
         let start = it.mv;
-        for step in [2, 1] {
+        const SQ: [(i32, i32); 8] = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)];
+        const CROSS: [(i32, i32); 4] = [(0, -1), (-1, 0), (1, 0), (0, 1)];
+        for (step, pat) in [(2, &SQ[..]), (1, &CROSS[..])] {
             let centre = d;
-            for (sx, sy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
+            for &(sx, sy) in pat {
                 let cand = (centre.0 + sx * step, centre.1 + sy * step);
                 match (&win, self.c.hpel) {
                     (Some(w), _) => w.pred(cand.0, cand.1, &mut p),
@@ -2040,23 +2042,41 @@ impl Encoder {
             let hp = self.hpel.get_or_insert_with(|| crate::mc::HpelPlanes::new(r));
             let (p, s, rows) = (r.pad, r.stride, r.data.len() / r.stride);
             let (mbw, mbh) = (self.mbw, self.mbh);
-            for (my, drow) in self.hpel_dirty.chunks(mbw).enumerate() {
-                let ya = if my == 0 { 0 } else { p + my * 16 };
-                let yb = if my == mbh - 1 { rows } else { p + my * 16 + 16 };
+            let dirty = &self.hpel_dirty;
+            // Runs of set MBs in `mask` (one MB row) → plane columns.
+            let runs = |mask: &dyn Fn(usize) -> bool, f: &mut dyn FnMut(usize, usize)| {
                 let mut x = 0;
                 while x < mbw {
-                    if !drow[x] {
+                    if !mask(x) {
                         x += 1;
                         continue;
                     }
                     let x0 = x;
-                    while x < mbw && drow[x] {
+                    while x < mbw && mask(x) {
                         x += 1;
                     }
-                    let xa = if x0 == 0 { 0 } else { p + x0 * 16 };
-                    let xb = if x == mbw { s } else { p + x * 16 };
-                    hp.compute_rect(r, xa, xb, ya, yb);
+                    f(if x0 == 0 { 0 } else { p + x0 * 16 }, if x == mbw { s } else { p + x * 16 });
                 }
+            };
+            // Horizontal filter over the changed MBs, then the vertical/centre
+            // filters over rows whose 6-tap support reaches a changed MB row:
+            // rows 0-1 of an MB row also see the row above, rows 13-15 the row below.
+            for my in 0..mbh {
+                let lo = if my == 0 { 0 } else { p + my * 16 };
+                let hi = if my == mbh - 1 { rows } else { p + my * 16 + 16 };
+                let d = |x: usize| dirty[my * mbw + x];
+                runs(&d, &mut |xa, xb| hp.filter(r, xa, xb, lo, hi, 0, 0));
+            }
+            for my in 0..mbh {
+                let lo = if my == 0 { 0 } else { p + my * 16 };
+                let hi = if my == mbh - 1 { rows } else { p + my * 16 + 16 };
+                let (m2, m13) = (p + my * 16 + 2, p + my * 16 + 13);
+                let d = |x: usize| dirty[my * mbw + x];
+                let up = |x: usize| d(x) || (my > 0 && dirty[(my - 1) * mbw + x]);
+                let dn = |x: usize| d(x) || (my + 1 < mbh && dirty[(my + 1) * mbw + x]);
+                runs(&up, &mut |xa, xb| hp.filter(r, xa, xb, 0, 0, lo, m2));
+                runs(&d, &mut |xa, xb| hp.filter(r, xa, xb, 0, 0, m2, m13));
+                runs(&dn, &mut |xa, xb| hp.filter(r, xa, xb, 0, 0, m13, hi));
             }
             self.hpel_dirty.fill(false);
         }
