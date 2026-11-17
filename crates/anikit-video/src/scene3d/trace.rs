@@ -47,11 +47,13 @@ pub struct Material {
     pub absorb: V3,
     /// How much a texture glows on its own (0 = only lit, 1 = a screen).
     pub tex_glow: f32,
+    /// Shading style: 0 physically based; 1 toon, 2 clay, 3 paper, 4 gouache, 5 hatch.
+    pub style: u8,
 }
 
 impl Material {
     pub fn chrome() -> Material {
-        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7 }
+        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0 }
     }
 }
 
@@ -395,6 +397,9 @@ pub struct Scene {
     inv: Vec<[V3; 4]>,
     /// Ambient and unshadowed key diffuse light for an upward normal (the floor).
     up_light: (V3, V3),
+    /// Underwater caustics on the key light (0 = off) and the time they animate with.
+    pub caustics: f32,
+    pub time: f32,
 }
 
 #[derive(Clone, Copy)]
@@ -778,6 +783,8 @@ impl Scene {
             haze: (0.0, v3(0.0, 0.0, 0.0)),
             lights: Vec::new(),
             inv: Vec::new(),
+            caustics: 0.0,
+            time: 0.0,
             up_light: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)),
         };
         let up = v3(0.0, 1.0, 0.0);
@@ -1011,7 +1018,7 @@ impl Scene {
         let r2d = dx * dx + dz * dz;
         let pool = if f.pool.2 > 0.0 { (-r2d / (f.pool.2 * f.pool.2)).exp() } else { 1.0 };
         let (ll, _) = if self.lights.is_empty() { (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) } else { self.local_lights(p, up, scale(d, -1.0), 1.0, v3(0.0, 0.0, 0.0)) };
-        let dif = Diffuse { alb: f.color, amb: add(self.up_light.0, ll), key: scale(self.up_light.1, pool), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
+        let dif = Diffuse { alb: f.color, amb: add(self.up_light.0, ll), key: scale(self.up_light.1, pool * self.caustic(p)), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
         let fade = if f.fade.1 > f.fade.0 { smoothstep(f.fade.0, f.fade.1, r2d.sqrt()) } else { 0.0 };
         // Reflection: Fresnel lacquer plus an optional mirror boost.
         let nv = (-d.y).clamp(1e-4, 1.0);
@@ -1138,6 +1145,9 @@ impl Scene {
             return (madd(add(out, m.emissive), c, keep), Diffuse::default());
         }
 
+        if m.style != 0 {
+            return self.shade_style(m, s, n, v, nv, keep, out);
+        }
         let rough = m.roughness.clamp(0.02, 1.0);
         let f0 = lerp3(v3(0.04 * m.specular, 0.04 * m.specular, 0.04 * m.specular), m.base, m.metallic);
         let ab = env_brdf(rough, nv);
@@ -1171,7 +1181,7 @@ impl Scene {
         let kd = 1.0 - luma(spec_w).min(1.0);
         let mut dif = Diffuse::default();
         if needs_diffuse {
-            dif = Diffuse { alb: scale(diff_col, kd * keep), amb: add(self.env.diffuse(n), ll), key: self.key_diffuse(n), ao, vk, spec: v3(0.0, 0.0, 0.0) };
+            dif = Diffuse { alb: scale(diff_col, kd * keep), amb: add(self.env.diffuse(n), ll), key: scale(self.key_diffuse(n), self.caustic(s.p)), ao, vk, spec: v3(0.0, 0.0, 0.0) };
         }
         dif.spec = env_spec;
         if !inline_vis && luma(env_spec) > 0.0 {
@@ -1183,6 +1193,101 @@ impl Scene {
             dif.alb = scale(dif.alb, 1.0 - fc);
             dif.spec = scale(dif.spec, 1.0 - fc);
         }
+        (madd(add(out, m.emissive), c, keep), dif)
+    }
+
+    /// Underwater caustics: a bright, moving net of light (mean about 1).
+    #[inline]
+    fn caustic(&self, p: V3) -> f32 {
+        if self.caustics <= 0.0 {
+            return 1.0;
+        }
+        let t = self.time;
+        let mut a = 0.0;
+        for k in 0..3 {
+            let ang = k as f32 * 2.094 + 0.3;
+            let u = p.x * ang.cos() + p.z * ang.sin();
+            let w = -p.x * ang.sin() + p.z * ang.cos();
+            a += (u * 6.0 + (w * 2.3 + t * 0.9).sin() * 0.9 + t * 1.1 + k as f32).sin();
+        }
+        let c = (1.0 - (a / 3.0).abs()).powi(6);
+        1.0 + self.caustics * (c * 3.2 - 0.45)
+    }
+
+    /// Non-photoreal styles. They keep the diffuse split (so traced shadows and
+    /// AO still apply in post) but reshape the light: bands, wrap, fibres, strokes.
+    #[allow(clippy::too_many_arguments)]
+    fn shade_style(&self, m: &Material, s: &Surf, n: V3, v: V3, nv: f32, keep: f32, out: V3) -> (V3, Diffuse) {
+        let up = v3(0.0, 1.0, 0.0);
+        let (l, kmax) = match self.env.key_box() {
+            Some(k) => (k.c, self.key_diffuse(k.c)),
+            None => (up, v3(0.0, 0.0, 0.0)),
+        };
+        let kmax = scale(kmax, self.caustic(s.p));
+        let ndl = dot(n, l);
+        let kn = ndl.max(0.0);
+        let amb_n = self.env.diffuse(n);
+        let flat = lerp3(amb_n, self.env.diffuse(up), 0.6);
+        let p = s.p;
+        let base = m.base;
+        let mut c = v3(0.0, 0.0, 0.0);
+        let (alb, amb, key) = match m.style {
+            1 => {
+                // Toon: three crisp bands, a hard highlight and a rim.
+                let band = |t: f32| smoothstep(t - 0.015, t + 0.015, kn);
+                let kq = (band(0.12) + band(0.5) + band(0.85)) / 3.0;
+                let h = norm(add(v, l));
+                let hl = smoothstep(0.962, 0.972, dot(n, h)) * (1.0 - m.roughness).max(0.2);
+                c = scale(kmax, hl * 0.9);
+                let rim = smoothstep(0.66, 0.7, 1.0 - nv) * smoothstep(-0.2, 0.2, ndl + 0.3);
+                c = add(c, scale(mul(base, add(flat, kmax)), rim * 0.45));
+                (base, scale(flat, 0.45), scale(kmax, kq * 1.25))
+            }
+            2 => {
+                // Clay: wrapped light, warm subsurface fill, faint fingerprints and sheen.
+                let wrap = ((ndl + 0.55) / 1.55).clamp(0.0, 1.0);
+                let grain = 1.0 + 0.05 * (vnoise(scale(p, 45.0)) - 0.5) + 0.03 * (vnoise(scale(p, 160.0)) - 0.5);
+                let sss = scale(mul(mul(base, base), kmax), (1.0 - wrap) * 0.35);
+                let sheen = scale(self.sky(reflect(scale(v, -1.0), n), 0.7), 0.035 * (1.0 - nv).powi(2) + 0.012);
+                c = add(sss, sheen);
+                (scale(base, grain), scale(amb_n, 1.1), scale(kmax, wrap * 0.95))
+            }
+            3 => {
+                // Paper / card: fibres (anisotropic noise), soft light, no gloss.
+                let fib = vnoise(v3(p.x * 160.0, p.y * 18.0, p.z * 160.0)) * 0.6 + vnoise(scale(p, 50.0)) * 0.4;
+                let wrap = ((ndl + 0.2) / 1.2).clamp(0.0, 1.0);
+                (scale(base, 0.78 + 0.32 * fib), amb_n, scale(kmax, wrap))
+            }
+            4 => {
+                // Gouache: flat fields, a soft two-tone turn, cool shadows, brush strokes.
+                let tone = smoothstep(0.25, 0.45, kn) * 0.85 + kn * 0.15;
+                let stroke = vnoise(v3(p.x * 9.0 + p.y * 3.0, p.y * 22.0, p.z * 9.0));
+                let alb = scale(base, 0.9 + 0.18 * stroke);
+                (alb, mul(scale(flat, 0.6), v3(0.8, 0.9, 1.2)), scale(kmax, tone * 1.2))
+            }
+            _ => {
+                // Hatch: ink lines on paper, denser and crossed where it's darker.
+                let lum = |x: V3| luma(x).max(1e-4);
+                let t = ((lum(kmax) * kn + lum(amb_n) * 0.7) / (lum(kmax) + lum(flat) * 0.7)).clamp(0.0, 1.0);
+                let line = |axis: V3, freq: f32, width: f32| {
+                    let u = fract(dot(p, axis) * freq);
+                    let d = (u - 0.5).abs() * 2.0;
+                    1.0 - smoothstep(width - 0.12, width + 0.12, d)
+                };
+                let w1 = (1.0 - t) * 0.95;
+                let mut ink = line(norm(v3(1.0, 1.0, 0.3)), 48.0, w1);
+                if t < 0.5 {
+                    ink = ink.max(line(norm(v3(1.0, -0.8, -0.4)), 48.0, (0.5 - t) * 1.6));
+                }
+                if t < 0.2 {
+                    ink = ink.max(line(norm(v3(0.2, 0.3, 1.0)), 110.0, (0.2 - t) * 3.0));
+                }
+                let paper = lerp3(v3(0.92, 0.9, 0.85), base, 0.15);
+                let alb = scale(lerp3(paper, v3(0.05, 0.05, 0.07), ink), 1.0);
+                (alb, scale(flat, 1.6), scale(kmax, 0.45))
+            }
+        };
+        let dif = Diffuse { alb: scale(alb, keep), amb, key, ao: 1.0, vk: 1.0, spec: v3(0.0, 0.0, 0.0) };
         (madd(add(out, m.emissive), c, keep), dif)
     }
 
@@ -1615,4 +1720,19 @@ fn env_brdf(rough: f32, nv: f32) -> (f32, f32) {
     let r = [rough * c0[0] + c1[0], rough * c0[1] + c1[1], rough * c0[2] + c1[2], rough * c0[3] + c1[3]];
     let a004 = (r[0] * r[0]).min((-9.28 * nv).exp2()) * r[0] + r[1];
     (a004 * -1.04 + r[2], a004 * 1.04 + r[3])
+}
+
+/// Smooth value noise in [0, 1] (trilinear over a hashed lattice).
+fn vnoise(p: V3) -> f32 {
+    let (fx, fy, fz) = (p.x.floor(), p.y.floor(), p.z.floor());
+    let (x, y, z) = (p.x - fx, p.y - fy, p.z - fz);
+    let (x, y, z) = (x * x * (3.0 - 2.0 * x), y * y * (3.0 - 2.0 * y), z * z * (3.0 - 2.0 * z));
+    let (ix, iy, iz) = (fx as i32 as u32, fy as i32 as u32, fz as i32 as u32);
+    let h = |a: u32, b: u32, c: u32| u01(hash2(hash2(ix.wrapping_add(a), iy.wrapping_add(b)), iz.wrapping_add(c)));
+    let l = |a: f32, b: f32, t: f32| a + (b - a) * t;
+    l(
+        l(l(h(0, 0, 0), h(1, 0, 0), x), l(h(0, 1, 0), h(1, 1, 0), x), y),
+        l(l(h(0, 0, 1), h(1, 0, 1), x), l(h(0, 1, 1), h(1, 1, 1), x), y),
+        z,
+    )
 }

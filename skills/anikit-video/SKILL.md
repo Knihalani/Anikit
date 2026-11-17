@@ -5,9 +5,9 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 
 **Setup:** if `anikit-video` isn't on PATH, install the prebuilt binary (seconds; don't compile it): `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh`, then `export PATH="$HOME/.local/bin:$PATH"`.
 
-**Taste first:** before designing, read `anikit-video docs taste` (the 15-line taste pass; canon in `docs/video/taste/TASTE.md`). Every choice made for this subject; no house style, no forced 3D, no repeated look.
+**Taste first:** before designing, read `anikit-video docs taste` (one page: routes to a striking frame and the tools for each, what tends to land and what tends to fail; depth in `docs/video/taste/TASTE.md`).
 
-**The loop:** write `s.json` → `anikit-video check s.json` (errors and the real length: scenes overlap by their transitions) → `anikit-video still s.json --at 2.4 --width 640 -o f.png` (look) → `anikit-video render s.json -o out.mp4` → `anikit-video critique s.json --render --pack rv/` (then look at `rv/`).
+**The loop (one command):** write `s.json` → `anikit-video preview s.json` (validates, writes `s-sheet.png` with one frame per second, and prints the critique and pace, in about a second for 2D; look at the sheet) → fix → repeat → `anikit-video render s.json -o out.mp4` (final quality; run it in the background with 3D). Zoom in with `preview s.json --at 2.4 -o f.png`. Before shipping, `critique s.json --render --pack rv/` writes cut frames and the worst frames boxed.
 
 **Need detail? Don't grep the docs: run `anikit-video docs <topic>`** (30 lines each, with a working example): `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything`.
 
@@ -47,6 +47,8 @@ No limits: expressions on any number or colour (`"=hsl(beat * 30, 80, 60)"`, `le
 - A layer's own timing is `start`/`end`; `at` is for tweens and `audio` cues.
 
 ## Shortcuts (optional; each is made from the primitives above)
+
+- `anikit-video snippets [name]`: paste-able fragments so you write less (type treatments, line draws, camera push/snap/whip, acoustic and orchestral music, a film grade).
 
 - **Launch, product or announcement video?** Use the `skills/anikit-launch-video/SKILL.md` skill (`anikit-video docs launch`): principles, process and quality checks; no template.
 

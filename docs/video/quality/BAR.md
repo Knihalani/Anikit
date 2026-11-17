@@ -1,5 +1,7 @@
 # The quality bar (read before showing anyone a frame)
 
+> How to read this: these are failure modes the user has rejected, with the reasons. They are advice for judging your own work (what tends to read as generic, illegible or slow, and why), not a style rule. Any look, medium or genre can work when it is chosen for the idea and executed well; use this list to notice when a choice is a default rather than a decision.
+
 The positive canon behind these rules, with numbers and sources: [`../taste/TASTE.md`](../taste/TASTE.md) (run its §10 taste pass before any final render).
 
 The user has rejected, in their own words, everything in `rejected/`:
@@ -10,7 +12,7 @@ The user has rejected, in their own words, everything in `rejected/`:
 
 Those frames scored 100/100 on `critique --render` and up to 8/10 from an LLM grader. **Automated scores are not evidence of quality.** Only this checklist plus a look at full-size, in-motion frames counts.
 
-## A frame FAILS if any of these is true
+## Common ways a frame fails (and why)
 
 1. **Centred headline on a gradient.** A bold sans headline (or any big centred text) sits over a gradient, blob or mesh backdrop.
 2. **Soft blob backdrop.** The background is a blurred colour-blob, mesh-gradient or aurora wash doing the work of "design".
@@ -63,7 +65,7 @@ Every shot must show something that a browser-based tool (Remotion or HyperFrame
 
 The user's verdict on the Sift launch example (`docs/video/skills/launch-examples/sift/`): "the text is hard to read and looks low resolution, I'm hearing too much synthesizer in the music, and the lighting is off … Don't force 3D where it doesn't fit and don't use the same 3D visuals every time." On the reverse-engineer examples: "not good."
 
-So, in addition to the checks above, a piece FAILS if:
+So, in addition to the checks above, watch for these (each has been rejected):
 - **3D is forced.** The medium must come from the concept. Well-set 2D typography, illustration, UI, photography-style compositing and shader work are first-class; "make every word 3D" is a template, not a fix for flat design.
 - **It repeats a look.** Same environment, cyc floor, chrome/lacquer type, falling-tiles or domino motif as a previous piece. Vary the medium, light, lens, palette and materials every time.
 - **Text is not crisp and instantly readable.** Every word at full resolution (no reduced-resolution tracing, no DOF, motion blur or bloom on words while they are meant to be read), ≥ 4.5:1 contrast, set in a deliberate typeface at a deliberate size, held long enough to read.
@@ -72,7 +74,7 @@ So, in addition to the checks above, a piece FAILS if:
 
 ## Fourth rejection: Margin ("complete AI slop")
 
-The user's verdict on `docs/video/skills/launch-examples/margin/`: "margin also looks like complete AI slop." Swapping 3D clichés for restraint did not fix it; it swapped one generic look for another. A piece FAILS if it shows the **tasteful-AI look**:
+The user's verdict on `docs/video/skills/launch-examples/margin/`: "margin also looks like complete AI slop." Swapping 3D clichés for restraint did not fix it; it swapped one generic look for another. The **tasteful-AI look** has been rejected; it tends to appear when restraint is used as a default rather than a choice:
 - cream/off-white "paper" ground + an editorial serif (Instrument Serif and kin) + a single red or terracotta accent;
 - aphorism copy ("Your first draft is a mess", "Less noise. More signal."), small-caps tracked labels over a serif line;
 - sparse, near-static frames: a few lines of type in a mostly empty frame, slow drift as the only motion;

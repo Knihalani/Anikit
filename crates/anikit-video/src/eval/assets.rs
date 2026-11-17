@@ -128,6 +128,27 @@ impl SharedAssets {
         self.images.read().unwrap().get(id.0 as usize).cloned()
     }
 
+    /// A content identity for an image without rendering it, for the render
+    /// cache: shader jobs and per-frame images by the content key they were made
+    /// with; stored images (files, static component images) by a hash of their
+    /// pixels. `None` when the content can't be identified cheaply.
+    pub fn content_key(&self, id: ImageId) -> Option<u64> {
+        use std::hash::{Hash, Hasher};
+        if super::shader::ShaderJobs::owns(id) {
+            return self.shaders.key_of(id).map(|k| k ^ 0x5348_4144_4552);
+        }
+        if (VOLATILE_BASE..super::shader::SHADER_BASE).contains(&id.0) {
+            let seq = id.0 - VOLATILE_BASE;
+            let v = self.volatile.read().unwrap();
+            return v.slots.get(seq as usize % VOLATILE_SLOTS)?.as_ref().filter(|s| s.1 == seq).map(|s| s.0 ^ 0x564f_4c41);
+        }
+        let pm = self.images.read().unwrap().get(id.0 as usize).cloned()?;
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        (pm.width(), pm.height()).hash(&mut h);
+        pm.data_as_u8_slice().hash(&mut h);
+        Some(h.finish())
+    }
+
     /// Fonts only; images come through [`Self::pixmap`] as a dynamic source,
     /// so a renderer survives images being added while frames are evaluated.
     pub fn snapshot_fonts(&self) -> Arc<render::Assets> {

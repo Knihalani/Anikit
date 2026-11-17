@@ -15,4 +15,4 @@ For each beat give: id, **what the viewer understands** after it, hold, the cut 
 - **Depth:** 2D flat space and 3D deep space are both valid; choose per beat for meaning and don't mix them by accident.
 - **Formats:** 9:16 and 1:1 stack the subject and type; keep the top 12% and bottom 20% clear on 9:16.
 
-Take the vocabulary from the concept first; a look (`anikit-video looks <name>`) or template is a quick start to override, never the design.
+Take the vocabulary from the concept first; a look (`anikit-video looks <name>`) or template is a quick start to override, not the design.

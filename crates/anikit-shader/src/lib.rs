@@ -167,6 +167,9 @@ pub struct Frame<'a> {
     /// With `adaptive`: refine a pixel when a channel differs from one of its
     /// 8 neighbours by more than this (0..1). Default [`ADAPTIVE_THRESHOLD`].
     pub threshold: f32,
+    /// With `adaptive`: refine at most this fraction of the pixels, the
+    /// highest-contrast first (a cost cap). 1 = no cap.
+    pub max_refine: f32,
     /// Treat `fragColor.a` as coverage (straight alpha). When false the
     /// output is opaque, as on Shadertoy.
     pub alpha: bool,
@@ -193,6 +196,7 @@ impl<'a> Frame<'a> {
             supersample: false,
             adaptive: true,
             threshold: ADAPTIVE_THRESHOLD,
+            max_refine: 1.0,
             alpha: false,
             dither: false,
         }
@@ -420,19 +424,45 @@ impl Shader {
     /// Adaptive supersampling: re-shade, with 2×2 sub-samples, every pixel that
     /// differs from any of its 8 neighbours by more than the threshold in any channel.
     fn refine(&self, f: &Frame, out: &mut [[f32; 4]], w: usize, h: usize) {
-        let th = f.threshold;
         let src: &[[f32; 4]] = out;
-        let differs = |a: [f32; 4], b: [f32; 4]| (0..4).any(|k| (a[k].clamp(0.0, 1.0) - b[k].clamp(0.0, 1.0)).abs() > th);
-        let flags: Vec<bool> = (0..w * h)
+        // Contrast of each pixel: its largest channel difference to any of its 8 neighbours.
+        let diff = |a: [f32; 4], b: [f32; 4]| (0..4).map(|k| (a[k].clamp(0.0, 1.0) - b[k].clamp(0.0, 1.0)).abs()).fold(0.0f32, f32::max);
+        let contrast: Vec<f32> = (0..w * h)
             .into_par_iter()
             .map(|i| {
                 let (x, y) = (i % w, i / w);
                 let c = src[i];
                 let (x0, x1) = (x.saturating_sub(1), (x + 1).min(w - 1));
                 let (y0, y1) = (y.saturating_sub(1), (y + 1).min(h - 1));
-                (y0..=y1).any(|yy| (x0..=x1).any(|xx| differs(c, src[yy * w + xx])))
+                let mut m = 0.0f32;
+                for yy in y0..=y1 {
+                    for xx in x0..=x1 {
+                        m = m.max(diff(c, src[yy * w + xx]));
+                    }
+                }
+                m
             })
             .collect();
+        // Cost budget: refine at most `max_refine` of the pixels, the highest-contrast
+        // ones first (a 256-bin histogram picks the cut). Deterministic: it depends
+        // on the image, not on timing.
+        let mut th = f.threshold;
+        if f.max_refine < 1.0 {
+            let mut hist = [0usize; 256];
+            for &c in &contrast {
+                hist[((c * 255.0) as usize).min(255)] += 1;
+            }
+            let allowed = (f.max_refine.max(0.0) * (w * h) as f32) as usize;
+            let mut above = 0usize;
+            for b in (0..256).rev() {
+                if above + hist[b] > allowed {
+                    th = th.max((b + 1) as f32 / 255.0);
+                    break;
+                }
+                above += hist[b];
+            }
+        }
+        let flags: Vec<bool> = contrast.iter().map(|&c| c > th).collect();
         let mut fs = f.clone();
         fs.supersample = true;
         let uni = self.uniform_buffer(&fs);
@@ -581,6 +611,11 @@ pub const ADAPTIVE_THRESHOLD: f32 = 1.5 / 255.0;
 /// keeps every library shader within SSIM 0.995 and ΔE76 p99.9 2.3 of full
 /// 2×2 supersampling (`examples/aa_check.rs`).
 pub const AA_THRESHOLD: f32 = 4.0 / 255.0;
+
+/// The default cost cap for shader layers: anti-alias at most this fraction of
+/// the pixels per frame (the highest-contrast ones), so AA costs at most about
+/// 1 + 4 × this of a one-sample render.
+pub const AA_MAX_REFINE: f32 = 0.2;
 
 /// True when the source opts out of default anti-aliasing with a
 /// `// anikit:aa off` comment (soft fields, intentional per-pixel grain).
