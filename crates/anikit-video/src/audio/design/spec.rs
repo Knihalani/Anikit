@@ -99,6 +99,8 @@ pub struct CueSpec {
     pub duck: Option<f32>,
     /// Reverb send 0..1.
     pub send: Option<f32>,
+    /// Seconds of near-silence in the music just before the hit (0.08–0.3).
+    pub suck: Option<f32>,
     pub duration: Option<f32>,
     pub pitch: Option<f32>,
     pub intensity: Option<f32>,
@@ -223,6 +225,8 @@ pub struct SoundPlan {
     pub cues: Vec<(CueSpec, f64)>,
     /// Tuning root (Hz) from the music key.
     pub tune: Option<f32>,
+    /// Ready-made cues (from `audio[].sfx` naming sound-design effects).
+    pub extra: Vec<super::Cue>,
 }
 
 /// Palette for a music style (when `palette` is `auto`).
@@ -373,6 +377,7 @@ impl SoundPlan {
             spec,
             layers: Vec::new(),
             cues: Vec::new(),
+            extra: Vec::new(),
         })
     }
 }

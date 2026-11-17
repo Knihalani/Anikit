@@ -119,12 +119,11 @@ fn cmd(sub: &str, args: &[String]) -> Result<(), String> {
         "plan" | "mix" => {
             let file = args.first().ok_or(format!("sound {sub} spec.json"))?;
             let ev = load(file, flag(args, "--sound"))?;
-            let Some(plan) = ev.sound.clone() else {
-                return Err(
-                    "the spec has no `sound` key and no layer `sfx` (try --sound auto)".into(),
-                );
-            };
+            let plan = ev.sound.clone();
             if sub == "plan" {
+                let Some(plan) = plan else {
+                    return Err("the spec has no `sound` key and no layer `sfx` (try --sound auto)".into());
+                };
                 let t = std::time::Instant::now();
                 let cues = super::auto::plan_cues(&ev, &plan);
                 println!(
@@ -149,7 +148,7 @@ fn cmd(sub: &str, args: &[String]) -> Result<(), String> {
             } else {
                 out.with_extension("tmp.wav")
             };
-            crate::pipeline::mix_audio(&ev, 0.0, ev.duration, &wav)?;
+            crate::pipeline::mix_audio(&ev, 0.0, ev.duration, &wav)?.ok_or("the video has no audio")?;
             if wav != out {
                 let st = std::process::Command::new("ffmpeg")
                     .args(["-y", "-loglevel", "error", "-i"])
@@ -188,9 +187,15 @@ fn load(file: &str, sound: Option<String>) -> Result<crate::eval::Evaluator, Str
     } else {
         serde_json::from_str(&text).map_err(|e| format!("{file}: {e}"))?
     };
-    if let Some(s) = sound {
-        let sv = serde_json::from_str(&s).unwrap_or(serde_json::Value::String(s));
-        v["sound"] = sv;
+    match sound.as_deref() {
+        // `--sound none`: the plain mix (no sound design at all), for before/after.
+        Some("none") => {
+            if let Some(o) = v.as_object_mut() {
+                o.remove("sound");
+            }
+        }
+        Some(s) => v["sound"] = serde_json::from_str(s).unwrap_or(serde_json::Value::String(s.into())),
+        None => {}
     }
     let base = path.parent().unwrap_or(Path::new("."));
     crate::preview::Preview::new(v, base).map(|p| p.ev)

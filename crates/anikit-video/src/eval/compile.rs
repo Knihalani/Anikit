@@ -88,6 +88,8 @@ struct C<'a> {
     layer_info: Vec<(String, String)>,
     /// Layers with an `sfx` key: (tag, value, path).
     layer_sfx: Vec<(u32, serde_json::Value, String)>,
+    /// `audio[].sfx` cues naming sound-design effects (placed by their hit point).
+    design_cues: Vec<crate::audio::design::Cue>,
     beat_marks: super::beat_markers::BeatMarkers,
     /// Music analysed for `iAudio`/`iBeat` (once, on first use).
     music: Option<Result<Arc<super::audio_react::AudioFeatures>, String>>,
@@ -161,6 +163,7 @@ impl Evaluator {
             audio_extra: Vec::new(),
             layer_info: Vec::new(),
             layer_sfx: Vec::new(),
+            design_cues: Vec::new(),
             beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
             music: None,
             assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
@@ -4145,7 +4148,7 @@ impl C<'_> {
     /// The spec's `sound` and layers' `sfx`, compiled (`None` when neither is used).
     fn sound_plan(&mut self, spec: &Spec, duration: f32) -> Option<Arc<crate::audio::design::spec::SoundPlan>> {
         use crate::audio::design::spec::{LayerSfx, SoundPlan};
-        if spec.sound.is_none() && self.layer_sfx.is_empty() {
+        if spec.sound.is_none() && self.layer_sfx.is_empty() && self.design_cues.is_empty() {
             return None;
         }
         let mut plan = match SoundPlan::new(spec.sound.as_ref(), spec.music.as_ref()) {
@@ -4155,6 +4158,13 @@ impl C<'_> {
                 return None;
             }
         };
+        if spec.sound.is_none() {
+            // Only `audio[].sfx` / layer `sfx` asked for sound design: keep the
+            // mix as it was (no loudness change, no shared space).
+            plan.target_lufs = None;
+            plan.space = None;
+        }
+        plan.extra = std::mem::take(&mut self.design_cues);
         for (tag, v, path) in std::mem::take(&mut self.layer_sfx) {
             match LayerSfx::parse(&v) {
                 Ok(l) => plan.layers.push((tag, l)),
@@ -4190,7 +4200,24 @@ impl C<'_> {
             }
             (None, Some(n)) => {
                 if !SFX_NAMES.contains(&n.as_str()) {
-                    self.d.push(Diagnostic::error(format!("{path}.sfx"), format!("unknown sound effect '{n}'")).suggest(suggest(n, SFX_NAMES)));
+                    // Sound-design names (foley, cinematic, packs, layers): the hit lands on `at`.
+                    if crate::audio::design::is_known(n) {
+                        let at = scene_start + a.at.as_ref().map(|x| self.time_rel(x, &format!("{path}.at"), 0.0)).unwrap_or(0.0);
+                        let mut c = crate::audio::design::Cue::new(n, at as f64);
+                        c.params.duration = a.duration.as_ref().map(|x| self.time_raw(x, &format!("{path}.duration")));
+                        c.params.pitch = 12.0 * (a.pitch.unwrap_or(1.0).max(0.01) as f32).log2();
+                        c.params.seed = 1 + self.design_cues.len() as u64;
+                        c.gain_db = match &a.volume {
+                            Some(Num::Num(v)) => 20.0 * (v.max(1e-4) as f32).log10(),
+                            Some(Num::Str(s)) => s.trim().trim_end_matches("dB").trim_end_matches("db").trim().parse().unwrap_or(0.0),
+                            None => 0.0,
+                        };
+                        c.why = path.to_string();
+                        self.design_cues.push(c);
+                        return None;
+                    }
+                    let names = crate::audio::design::all_names();
+                    self.d.push(Diagnostic::error(format!("{path}.sfx"), format!("unknown sound effect '{n}'")).suggest(suggest(n, &names)));
                     return None;
                 }
                 let duration = a.duration.as_ref().map(|x| self.time_raw(x, &format!("{path}.duration")) as f64);

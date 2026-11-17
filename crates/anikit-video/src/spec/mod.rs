@@ -1170,7 +1170,8 @@ pub struct Tween {
 pub struct AudioCue {
     /// Audio file (mp3, wav, ogg, flac, aac/m4a).
     pub src: Option<String>,
-    /// Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`.
+    /// Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`;
+    /// any other `docs sound` name (`glass`, `passby`, `impact+glass`, `kenney-interface/click`) lands its hit on `at`.
     pub sfx: Option<String>,
     pub at: Option<Num>,
     /// 0..1 or `"-6dB"`.

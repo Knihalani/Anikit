@@ -640,9 +640,12 @@ pub(crate) fn cues(evs: &[Event], plan: &SoundPlan) -> Vec<Cue> {
         .filter(|e| e.kind == Kind::Land)
         .map(|e| e.salience)
         .fold(0.0f32, f32::max);
+    // The film's biggest reveal / pop gets a tonal accent (tuned to the key).
+    let accent_sal = evs.iter().filter(|e| matches!(e.kind, Kind::Reveal | Kind::Pop)).map(|e| e.salience).fold(0.0f32, f32::max);
     let mut out = Vec::new();
     for (i, e) in evs.iter().enumerate() {
         let hero = e.kind == Kind::Land && e.salience >= hero_sal * 0.999 && e.size > 0.15;
+        let accent = matches!(e.kind, Kind::Reveal | Kind::Pop) && e.salience >= accent_sal * 0.999 && e.size > 0.1;
         let o = overrides.get(&e.layer);
         let fixed = o.and_then(|o| match e.kind {
             Kind::Land => o.land.clone(),
@@ -653,6 +656,14 @@ pub(crate) fn cues(evs: &[Event], plan: &SoundPlan) -> Vec<Cue> {
         let name = match fixed {
             Some(n) => n,
             None => match sound_for(e, plan, hero) {
+                Some(n) if accent => match plan.palette.as_str() {
+                    "luxury" => format!("{n}+glass"),
+                    "organic" => format!("{n}+wood"),
+                    "cinematic" => format!("{n}+impact"),
+                    "digital" => format!("{n}+zap"),
+                    "playful" => format!("{n}+plastic"),
+                    _ => format!("{n}+blip"),
+                },
                 Some(n) => n.to_string(),
                 None => continue,
             },
@@ -728,6 +739,7 @@ pub(crate) fn cues(evs: &[Event], plan: &SoundPlan) -> Vec<Cue> {
             send,
             duck_db,
             own_size: false,
+            suck: if hero && matches!(plan.palette.as_str(), "cinematic" | "digital") { 0.12 } else { 0.0 },
             why: format!(
                 "{}: {}",
                 e.path,
@@ -769,6 +781,7 @@ pub fn explicit(plan: &SoundPlan) -> Vec<Cue> {
                 send: c.send.unwrap_or(0.22),
                 duck_db: c.duck.unwrap_or(0.0),
                 own_size: c.size.is_some(),
+                suck: c.suck.unwrap_or(0.0),
                 why: format!("sound.cues[{i}]"),
             }
         })
@@ -783,6 +796,7 @@ pub fn plan_cues(ev: &Evaluator, plan: &SoundPlan) -> Vec<Cue> {
         all.extend(cues(&evs, plan));
     }
     all.extend(explicit(plan));
+    all.extend(plan.extra.iter().cloned());
     all.sort_by(|a, b| a.at.total_cmp(&b.at));
     all
 }

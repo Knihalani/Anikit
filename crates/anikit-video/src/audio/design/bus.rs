@@ -33,6 +33,9 @@ pub struct Cue {
     pub duck_db: f32,
     /// `params.size` was set by the author (keep the effect's own tail even in a shared space).
     pub own_size: bool,
+    /// Seconds of "suck" before the hit: the music drops ~12 dB just before a
+    /// hero hit so it lands out of near-silence (0 = none; 0.08–0.3 typical).
+    pub suck: f32,
     /// Why the cue exists (`"scenes[0].layers[2]: lands"`), for reports.
     pub why: String,
 }
@@ -47,6 +50,7 @@ impl Cue {
             send: 0.2,
             duck_db: 0.0,
             own_size: false,
+            suck: 0.0,
             why: String::new(),
         }
     }
@@ -242,11 +246,20 @@ pub fn mix_design(
     // 4. Duck the music under hits: −duck_db reached at the hit (ramping in
     // over 30 ms before it), held 80 ms, released with a 250 ms time constant.
     let mut max_duck = 0.0f32;
-    if opts.duck && cues.iter().any(|c| c.duck_db > 0.0) {
+    if opts.duck && cues.iter().any(|c| c.duck_db > 0.0 || c.suck > 0.0) {
         const B: usize = 64;
         let blocks = n / B + 1;
         let mut red = vec![0.0f32; blocks];
         let bs = B as f64 / rate as f64;
+        for c in cues.iter().filter(|c| c.suck > 0.0) {
+            let hit = c.at / bs;
+            let s0 = ((c.at - c.suck.min(0.5) as f64) / bs).floor().max(0.0) as usize;
+            let ramp = 0.02 / bs;
+            for (b, rb) in red.iter_mut().enumerate().take(hit.ceil().max(0.0) as usize).skip(s0) {
+                let v = 12.0 * ((b - s0) as f64 / ramp).min(1.0) as f32;
+                *rb = rb.max(v);
+            }
+        }
         for c in cues.iter().filter(|c| c.duck_db > 0.0) {
             let d = c.duck_db.min(12.0);
             let hit = c.at / bs;
