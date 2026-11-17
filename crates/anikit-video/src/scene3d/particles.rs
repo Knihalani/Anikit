@@ -632,8 +632,9 @@ impl FlowGrid {
 
 /// Particle state at one frame, compact: positions, and velocity quantised to i16.
 pub struct Snap {
-    /// Particle ids (slot `j` holds particle `id[j]`; slots are kept in spatial order).
-    pub id: Vec<u32>,
+    /// Particle ids (slot `j` holds particle `id[j]`; slots are kept in spatial
+    /// order). Shared with the live state until the next re-sort.
+    pub id: Arc<Vec<u32>>,
     pub pos: Vec<[f32; 3]>,
     pub vel: Vec<[i16; 3]>,
     pub vscale: f32,
@@ -653,7 +654,7 @@ impl Snap {
 
 struct Live {
     frame: i64,
-    id: Vec<u32>,
+    id: Arc<Vec<u32>>,
     px: Vec<f32>,
     py: Vec<f32>,
     pz: Vec<f32>,
@@ -792,7 +793,7 @@ impl Sim {
         let pv: Vec<(V3, V3)> = (0..n).into_par_iter().map(|i| self.spawn(i, 0)).collect();
         let mut live = Live {
             frame: 0,
-            id: (0..n as u32).collect(),
+            id: Arc::new((0..n as u32).collect()),
             px: pv.iter().map(|q| q.0.x).collect(),
             py: pv.iter().map(|q| q.0.y).collect(),
             pz: pv.iter().map(|q| q.0.z).collect(),
@@ -837,7 +838,7 @@ impl Sim {
         keys.par_sort_unstable_by_key(|&(m, i)| (m, id[i as usize]));
         let gather = |a: &Vec<f32>| -> Vec<f32> { keys.par_iter().with_min_len(1 << 14).map(|&(_, i)| a[i as usize]).collect() };
         let (px, py, pz, vx, vy, vz) = (gather(&live.px), gather(&live.py), gather(&live.pz), gather(&live.vx), gather(&live.vy), gather(&live.vz));
-        live.id = keys.par_iter().with_min_len(1 << 14).map(|&(_, i)| live.id[i as usize]).collect();
+        live.id = Arc::new(keys.par_iter().with_min_len(1 << 14).map(|&(_, i)| live.id[i as usize]).collect());
         (live.px, live.py, live.pz, live.vx, live.vy, live.vz) = (px, py, pz, vx, vy, vz);
     }
 
@@ -1166,7 +1167,7 @@ impl Sim {
         let mut b = Vec::with_capacity(16 + n * 28);
         b.extend_from_slice(b"AKPART02");
         b.extend_from_slice(&(n as u64).to_le_bytes());
-        for v in &live.id {
+        for v in live.id.iter() {
             b.extend_from_slice(&v.to_le_bytes());
         }
         for a in [&live.px, &live.py, &live.pz, &live.vx, &live.vy, &live.vz] {
@@ -1193,7 +1194,7 @@ impl Sim {
                     if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
                         eprintln!("particles: checkpoint at frame {k} from the cache");
                     }
-                    return Some(Live { frame: k, id, px: col(0), py: col(1), pz: col(2), vx: col(3), vy: col(4), vz: col(5) });
+                    return Some(Live { frame: k, id: Arc::new(id), px: col(0), py: col(1), pz: col(2), vx: col(3), vy: col(4), vz: col(5) });
                 }
             }
             k -= CHECK_EVERY;
@@ -2025,16 +2026,8 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 if ix >= 0 && iy >= 0 && (ix as usize) < w && (iy as usize) < h && v.depth[iy as usize * w + ix as usize] < z - size * 2.0 {
                     continue;
                 }
-                // Threads own bands of rows: a cheap first cull (no motion yet).
+                // Threads own bands of rows (pass 1 already picked the particles that can reach this one).
                 let banded = py.band != (0, i32::MAX);
-                if banded && (sy + foot + 6.0 + 64.0 < py.band.0 as f32 || (py.band.1 != i32::MAX && sy - foot - 6.0 - 64.0 > py.band.1 as f32)) {
-                    // Far from the band; only a very long streak could reach it.
-                    let vel = snap.vel(j);
-                    let dt_s = v.shutter * sim.dt * d.stretch;
-                    if len(vel) * dt_s * pj.k / z < 64.0 {
-                        continue;
-                    }
-                }
                 let vel = snap.vel(j);
                 // Screen motion over the shutter: where the point was half a shutter ago.
                 let back = madd(p, vel, -v.shutter * sim.dt * d.stretch);
@@ -2042,10 +2035,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let (bx, by) = (sx + (bx - sx) * if v.shutter > 0.0 { 1.0 } else { 0.0 }, sy + (by - sy) * if v.shutter > 0.0 { 1.0 } else { 0.0 });
                 let (mx, my) = (sx - bx, sy - by);
                 let ml = (mx * mx + my * my).sqrt();
-                let reach = foot + 6.0 + my.abs() * 0.5;
-                if banded && (sy + reach < py.band.0 as f32 || (py.band.1 != i32::MAX && sy - reach > py.band.1 as f32)) {
-                    continue;
-                }
+                let _ = banded;
                 let (col, a) = sim.look(i, t, p, vel);
                 if a <= 0.0 {
                     continue;
@@ -2288,11 +2278,26 @@ mod tests {
         let (w, h) = (320usize, 180usize);
         let depth = vec![1e9f32; w * h];
         let cam = Camera { pos: v3(0.0, 1.0, 3.0), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus: 2.0, aperture: 8.0, roll: 0.0, shutter: 0.5 };
-        let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: 2.0, aperture: 8.0, shutter: 0.5, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.2, 0.2, 0.2), v3(0.1, 0.1, 0.1)), shadow: None, draft: false };
+        // The camera moves too (its motion streaks particles across bands).
+        let prev = Camera { pos: v3(0.6, 0.6, 3.2), ..cam };
+        let v = View { cam: &cam, prev: &prev, w, h, depth: &depth, focus: 2.0, aperture: 8.0, shutter: 0.5, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.2, 0.2, 0.2), v3(0.1, 0.1, 0.1)), shadow: None, draft: false };
         let one = rayon::ThreadPoolBuilder::new().num_threads(1).build().unwrap().install(|| render(&[(&s, snap.clone())], &v, 0.1).buf);
         // From a plain thread the splatter splits the frame over the global pool's threads.
         let many = std::thread::scope(|sc| sc.spawn(|| render(&[(&s, snap.clone())], &v, 0.1).buf).join().unwrap());
         assert!(rayon::current_num_threads() < 2 || one.iter().zip(&many).all(|(a, b)| a.to_bits() == b.to_bits()), "layers differ between 1 and {} threads", rayon::current_num_threads());
+    }
+
+    #[test]
+    fn simulation_is_identical_at_any_thread_count() {
+        let v = serde_json::json!({ "count": 70000, "emit": { "text": "AB", "height": 1.0 }, "flow": { "strength": 0.8, "scale": 0.8 }, "attractors": [{ "pos": [0, 1, 0], "strength": 0.5, "swirl": 1 }], "gravity": 0.15, "drag": 0.4, "life": 2 });
+        let run = |threads: usize| rayon::ThreadPoolBuilder::new().num_threads(threads).build().unwrap().install(|| {
+            let s = sim(v.clone());
+            let q = s.at(1.5);
+            (q.id.as_ref().clone(), q.pos.clone())
+        });
+        let (a, b) = (run(1), run(4));
+        assert_eq!(a.0, b.0, "ids differ");
+        assert!(a.1.iter().zip(&b.1).all(|(x, y)| x.iter().zip(y).all(|(p, q)| p.to_bits() == q.to_bits())), "positions differ between 1 and 4 threads");
     }
 
     #[test]
