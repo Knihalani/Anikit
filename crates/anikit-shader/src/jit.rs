@@ -39,8 +39,9 @@ const LOOP_CAP: i64 = 1 << 20;
 
 pub struct Kernel {
     module: Option<JITModule>,
-    /// Code loaded from the disk cache (instead of `module`).
-    cached: Option<region::Allocation>,
+    /// Code loaded from the disk cache (instead of `module`); held so the
+    /// executable memory lives as long as `func`.
+    _cached: Option<region::Allocation>,
     pub func: KernelFn,
     /// Number of Cranelift IR instructions (for stats).
     pub insts: usize,
@@ -92,7 +93,7 @@ impl Kernel {
         unsafe { region::protect(base, len.max(1), region::Protection::READ_EXECUTE).ok()? };
         // SAFETY: the blob was produced by `compile` for exactly this signature.
         let func: KernelFn = unsafe { std::mem::transmute::<*const u8, KernelFn>(base as *const u8) };
-        Some(Kernel { module: None, cached: Some(alloc), func, insts, blob: None })
+        Some(Kernel { module: None, _cached: Some(alloc), func, insts, blob: None })
     }
 
     #[cfg(not(target_arch = "x86_64"))]
@@ -2711,5 +2712,5 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
     let func: KernelFn = unsafe { std::mem::transmute::<*const u8, KernelFn>(code) };
     let _ = I64;
     let _ = Block::from_u32;
-    Ok(Kernel { module: Some(module), cached: None, func, insts, blob })
+    Ok(Kernel { module: Some(module), _cached: None, func, insts, blob })
 }
