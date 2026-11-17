@@ -299,6 +299,10 @@ pub(crate) struct Node {
     pub count: f32,
 }
 
+pub(crate) const PART_BG: u8 = 1;
+pub(crate) const PART_FG: u8 = 2;
+pub(crate) const PART_ALL: u8 = 3;
+
 /// Compiled transition into a scene.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct TransC {
@@ -340,6 +344,8 @@ pub(crate) struct SceneC {
     pub layers: Vec<Node>,
     /// Some layer or the camera uses depth (parallax / depth of field).
     pub depth: bool,
+    /// How many leading layers are the backdrop (full-frame backgrounds).
+    pub bg_layers: usize,
 }
 
 /// Timing summary of one scene.
@@ -489,8 +495,14 @@ impl Evaluator {
     }
 
     fn emit_scene(&self, s: &SceneC, t: f32, xf: &Affine, bg_done: bool, out: &mut Vec<Op>) {
+        self.emit_scene_part(s, t, xf, bg_done, PART_ALL, out)
+    }
+
+    /// Emit the backdrop (`PART_BG`: scene background + leading full-frame layers), the
+    /// foreground (`PART_FG`) or both.
+    fn emit_scene_part(&self, s: &SceneC, t: f32, xf: &Affine, bg_done: bool, part: u8, out: &mut Vec<Op>) {
         let (w, h) = (self.width as f32, self.height as f32);
-        if !bg_done || !matches!(s.bg, PaintC::Solid) {
+        if part & PART_BG != 0 && (!bg_done || !matches!(s.bg, PaintC::Solid)) {
             let paint = self.paint(&s.bg, &solid_slots(s.bg_color), prop::FILL, [w, h], 1.0);
             out.push(Op::RoundRect { x: 0.0, y: 0.0, w, h, radius: 0.0, paint, transform: *xf });
         }
@@ -526,7 +538,11 @@ impl Evaluator {
         };
         let (focus, aperture) = (v[prop::FOCUS], v[prop::APERTURE].max(0.0));
         let panning = cxp != 0.0 || cyp != 0.0;
-        for n in &s.layers {
+        for (li, n) in s.layers.iter().enumerate() {
+            let is_bg = li < s.bg_layers;
+            if (is_bg && part & PART_BG == 0) || (!is_bg && part & PART_FG == 0) {
+                continue;
+            }
             if !s.depth {
                 self.emit_node(n, &cx, &cam, [w, h], 1.0, out);
                 continue;
@@ -563,13 +579,6 @@ impl Evaluator {
                 self.emit_scene(b, t, &id, false, out);
                 out.push(Op::PopLayer);
             }
-            TransKind::MorphCut => {
-                let sa = 1.0 - 0.02 * e;
-                self.emit_scene(a, t, &about(w, h, sa), false, out);
-                layer(out, e, vec![], None);
-                self.emit_scene(b, t, &about(w, h, 1.02 - 0.02 * e), false, out);
-                out.push(Op::PopLayer);
-            }
             TransKind::Dip => {
                 let (sc, k) = if e < 0.5 { (a, e * 2.0) } else { (b, (1.0 - e) * 2.0) };
                 self.emit_scene(sc, t, &id, false, out);
@@ -577,21 +586,41 @@ impl Evaluator {
                 c.0[3] *= k;
                 out.push(Op::RoundRect { x: 0.0, y: 0.0, w, h, radius: 0.0, paint: Paint::Solid(c), transform: id });
             }
-            TransKind::Slide => {
-                self.emit_scene(a, t, &id, false, out);
-                let off = 1.0 - e;
-                self.emit_scene(b, t, &translate(tr.dir[0] * -w * off, tr.dir[1] * -h * off), false, out);
-            }
-            TransKind::Push => {
-                self.emit_scene(a, t, &translate(tr.dir[0] * w * e, tr.dir[1] * h * e), false, out);
-                let off = 1.0 - e;
-                self.emit_scene(b, t, &translate(tr.dir[0] * -w * off, tr.dir[1] * -h * off), false, out);
-            }
-            TransKind::Zoom => {
-                self.emit_scene(b, t, &about(w, h, 0.85 + 0.15 * e), false, out);
-                layer(out, 1.0 - e, vec![], None);
-                self.emit_scene(a, t, &about(w, h, 1.0 + 0.4 * e), false, out);
+            // Moving transitions: backdrops cross-fade in place (moving them would expose
+            // their edges); only the foregrounds move.
+            TransKind::Slide | TransKind::Push | TransKind::Zoom | TransKind::MorphCut => {
+                self.emit_scene_part(a, t, &id, false, PART_BG, out);
+                layer(out, e, vec![], None);
+                self.emit_scene_part(b, t, &id, false, PART_BG, out);
                 out.push(Op::PopLayer);
+                let off = 1.0 - e;
+                let into = translate(tr.dir[0] * -w * off, tr.dir[1] * -h * off);
+                match tr.kind {
+                    TransKind::Slide => {
+                        self.emit_scene_part(a, t, &id, false, PART_FG, out);
+                        self.emit_scene_part(b, t, &into, false, PART_FG, out);
+                    }
+                    TransKind::Push => {
+                        self.emit_scene_part(a, t, &translate(tr.dir[0] * w * e, tr.dir[1] * h * e), false, PART_FG, out);
+                        self.emit_scene_part(b, t, &into, false, PART_FG, out);
+                    }
+                    TransKind::Zoom => {
+                        layer(out, e, vec![], None);
+                        self.emit_scene_part(b, t, &about(w, h, 0.85 + 0.15 * e), false, PART_FG, out);
+                        out.push(Op::PopLayer);
+                        layer(out, 1.0 - e, vec![], None);
+                        self.emit_scene_part(a, t, &about(w, h, 1.0 + 0.4 * e), false, PART_FG, out);
+                        out.push(Op::PopLayer);
+                    }
+                    _ => {
+                        layer(out, 1.0 - e, vec![], None);
+                        self.emit_scene_part(a, t, &about(w, h, 1.0 - 0.02 * e), false, PART_FG, out);
+                        out.push(Op::PopLayer);
+                        layer(out, e, vec![], None);
+                        self.emit_scene_part(b, t, &about(w, h, 1.02 - 0.02 * e), false, PART_FG, out);
+                        out.push(Op::PopLayer);
+                    }
+                }
             }
             TransKind::Wipe => {
                 self.emit_scene(a, t, &id, false, out);
