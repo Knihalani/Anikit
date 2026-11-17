@@ -97,6 +97,14 @@ pub trait Encoder: Send {
     fn finish(&mut self) -> Result<u64, String>;
     fn output(&self) -> &str;
     fn name(&self) -> &str;
+    /// True if the encoder takes straight RGBA8 frames ([`Encoder::write_rgba`]) instead of YUV.
+    fn wants_rgba(&self) -> bool {
+        false
+    }
+    /// Append a straight-alpha RGBA8 frame (`w × h × 4`, the encoder's size).
+    fn write_rgba(&mut self, _px: &[u8]) -> Result<(), String> {
+        Err("this encoder takes YUV frames".into())
+    }
 }
 
 /// ffmpeg via a raw YUV pipe.
@@ -109,6 +117,7 @@ pub struct FfmpegEncoder {
     buf: Vec<u8>,
     name: String,
     ak: Option<ak264::Encoder>,
+    rgba: bool,
 }
 
 impl FfmpegEncoder {
@@ -122,7 +131,14 @@ impl FfmpegEncoder {
         if codec == Codec::Ak264 {
             cmd.args(["-f", "h264", "-r", &format!("{fps}"), "-i", "-"]);
         } else {
-            cmd.args(["-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", &format!("{w}x{h}"), "-r", &format!("{fps}"), "-i", "-"]);
+            if matches!(codec, Codec::Png | Codec::Gif) {
+                // Stills and GIFs get straight RGBA: no 4:2:0 subsampling, no matrix guesswork.
+                cmd.args(["-f", "rawvideo", "-pix_fmt", "rgba", "-s", &format!("{w}x{h}"), "-r", &format!("{fps}"), "-i", "-"]);
+            } else {
+                // Our YUV is BT.709, limited range: say so, so conversions don't assume BT.601.
+                cmd.args(["-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", &format!("{w}x{h}"), "-r", &format!("{fps}")]);
+                cmd.args(["-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv", "-i", "-"]);
+            }
         }
         let use_audio = audio.is_some() && !matches!(codec, Codec::Gif | Codec::Png);
         if let (true, Some(a)) = (use_audio, audio) {
@@ -174,8 +190,8 @@ impl FfmpegEncoder {
             }
             Codec::Png | Codec::Ak264 => {}
         }
-        if matches!(codec, Codec::H264 | Codec::H265 | Codec::Vp9 | Codec::Av1) {
-            cmd.args(["-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"]);
+        if matches!(codec, Codec::H264 | Codec::H265 | Codec::Vp9 | Codec::Av1 | Codec::ProRes) {
+            cmd.args(["-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", "-color_range", "tv"]);
         }
         let out_s = if codec == Codec::Png && !out.to_string_lossy().contains('%') {
             // `frames.png` → `frames_00001.png`.
@@ -203,9 +219,9 @@ impl FfmpegEncoder {
                 Quality::Best => 19,
             };
             let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(8);
-            ak264::Encoder::new(ak264::EncoderConfig { width: w, height: h, fps: fps as f64, qp, gop: (fps * 4.0) as u32, deblock: true, threads, full_range: false, cabac: q != Quality::Draft, subpel: q == Quality::Best, ..Default::default() })
+            ak264::Encoder::new(ak264::EncoderConfig { width: w, height: h, fps: fps as f64, qp, gop: (fps * 4.0) as u32, deblock: true, threads, full_range: false, cabac: q != Quality::Draft, subpel: q != Quality::Draft, ..Default::default() })
         });
-        Ok(FfmpegEncoder { child: Some(child), stdin, out: out.to_path_buf(), w, h, buf: Vec::new(), name: codec.name().into(), ak })
+        Ok(FfmpegEncoder { child: Some(child), stdin, out: out.to_path_buf(), w, h, buf: Vec::new(), name: codec.name().into(), ak, rgba: matches!(codec, Codec::Png | Codec::Gif) })
     }
 
     fn pack(&mut self, f: &YuvFrame) {
@@ -225,6 +241,18 @@ impl FfmpegEncoder {
 impl Encoder for FfmpegEncoder {
     fn wants_hints(&self) -> bool {
         self.ak.is_some()
+    }
+
+    fn wants_rgba(&self) -> bool {
+        self.rgba
+    }
+
+    fn write_rgba(&mut self, px: &[u8]) -> Result<(), String> {
+        let r = self.stdin.as_mut().ok_or("encoder finished")?.write_all(px);
+        if r.is_err() {
+            return Err(self.finish().err().unwrap_or_else(|| "ffmpeg closed its input".into()));
+        }
+        Ok(())
     }
 
     fn write(&mut self, f: &YuvFrame, repeat: bool, changed: Option<Vec<bool>>) -> Result<(), String> {

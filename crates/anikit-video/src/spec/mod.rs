@@ -721,8 +721,10 @@ pub struct CaptionFile {
     /// Colour of the word being spoken (default `$accent`).
     pub highlight: Option<String>,
     pub color: Option<String>,
-    /// Box behind the word being spoken (TikTok style).
+    /// A pill behind the caption line.
     pub background: Option<String>,
+    /// A box behind the word being spoken (TikTok style).
+    pub highlight_box: Option<String>,
     /// Words per caption page (default 4; 1 = one word at a time).
     pub max_words: Option<usize>,
     pub uppercase: Option<bool>,

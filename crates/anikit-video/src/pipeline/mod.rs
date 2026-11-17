@@ -429,7 +429,7 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
 
 /// Evaluate frame `i` into `out` at `scale`.
 pub fn eval_frame(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) {
-    ev.eval_into(i as f32 / ev.fps, out);
+    ev.eval_into(frame_time(ev, i), out);
     scale_list(out, scale);
 }
 
@@ -553,7 +553,7 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
         threads: 1,
         full_range: false,
         cabac: opts.quality != Quality::Draft,
-        subpel: opts.quality == Quality::Best,
+        subpel: opts.quality != Quality::Draft,
         ..Default::default()
     };
     let prof = Profile::default();
@@ -614,8 +614,61 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
     })
 }
 
+/// RGBA path (PNG sequences, GIF): straight-alpha frames, cropped to even dimensions.
+fn render_video_rgba(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder) -> Result<Summary, String> {
+    let t0 = Instant::now();
+    let total = ev.frames();
+    let f0 = opts.from.map(|t| (t * ev.fps).round() as u32).unwrap_or(0).min(total);
+    let f1 = opts.to.map(|t| (t * ev.fps).round() as u32).unwrap_or(total).clamp(f0, total);
+    let n = f1 - f0;
+    let (w, h) = (((ev.width as f32 * opts.scale).round() as u32).max(2) & !1, ((ev.height as f32 * opts.scale).round() as u32).max(2) & !1);
+    let batch = (rayon::current_num_threads() as u32 * 4).max(8);
+    let mut start = f0;
+    while start < f1 {
+        let end = (start + batch).min(f1);
+        let frames: Vec<Vec<u8>> = (start..end)
+            .into_par_iter()
+            .map(|i| {
+                let (fw, _, px) = render_rgba(ev, frame_time(ev, i), opts.scale);
+                let mut out = Vec::with_capacity((w * h * 4) as usize);
+                for y in 0..h as usize {
+                    out.extend_from_slice(&px[y * fw as usize * 4..(y * fw as usize + w as usize) * 4]);
+                }
+                out
+            })
+            .collect();
+        for f in &frames {
+            enc.write_rgba(f)?;
+        }
+        start = end;
+    }
+    let bytes = enc.finish()?;
+    let secs = t0.elapsed().as_secs_f32();
+    Ok(Summary {
+        output: enc.output().to_string(),
+        width: w,
+        height: h,
+        fps: round3(ev.fps as f64),
+        frames: n,
+        deduped: 0,
+        duration: round3((n as f32 / ev.fps) as f64),
+        seconds: round3(secs as f64),
+        render_fps: (n as f64 / secs.max(1e-6) as f64).round(),
+        bytes,
+        codec: enc.name().to_string(),
+    })
+}
+
+/// The time of frame `i`, computed the same way on every path (render, still, sheet).
+pub fn frame_time(ev: &Evaluator, i: u32) -> f32 {
+    (i as f64 / ev.fps as f64) as f32
+}
+
 /// Render the video (or a range of it) into `enc`.
 pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder) -> Result<Summary, String> {
+    if enc.wants_rgba() {
+        return render_video_rgba(ev, opts, enc);
+    }
     let t0 = Instant::now();
     let total = ev.frames();
     let f0 = opts.from.map(|t| (t * ev.fps).round() as u32).unwrap_or(0).min(total);

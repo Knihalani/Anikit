@@ -2486,11 +2486,16 @@ impl C<'_> {
         } else if let Some(c) = self.theme.colors.get("text") {
             st.style.color = text::Color(*c);
         }
-        st.highlight_box = col(self, &f.background, "captions.background");
+        // `background`: a pill behind the caption line; `highlightBox`: a box behind the spoken word.
+        st.background = col(self, &f.background, "captions.background");
+        if st.background.is_some() {
+            st.radius = 0.5;
+        }
+        st.highlight_box = col(self, &f.highlight_box, "captions.highlightBox");
         // With a box behind the spoken word, keep its text colour by default (an accent on an accent box vanishes).
         st.highlight = match col(self, &f.highlight, "captions.highlight") {
             Some(c) => Some(c),
-            None if st.highlight_box.is_some() => Some(st.style.color),
+            None if st.highlight_box.is_some() || st.background.is_some() => Some(st.style.color),
             None => self.theme.colors.get("accent").map(|c| text::Color(*c)),
         };
         if let Some(n) = f.max_words {

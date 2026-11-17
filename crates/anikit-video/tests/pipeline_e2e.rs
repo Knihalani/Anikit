@@ -181,3 +181,42 @@ fn fused_odd_size_and_range() {
     assert_eq!(String::from_utf8_lossy(&o.stdout).trim(), "160,90,24");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn colour_round_trip_every_codec() {
+    if !ffmpeg() {
+        return;
+    }
+    let src = r##"{ "size": [96, 64], "fps": 10, "scenes": [ { "duration": 0.5, "background": "#7c5cff", "layers": [] } ] }"##;
+    let ev = Evaluator::new(&parse_json(src).unwrap().spec, Options::default()).unwrap();
+    let dir = std::env::temp_dir().join(format!("akv-colour-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let decode = |path: &std::path::Path| {
+        let o = Command::new("ffmpeg").args(["-v", "error", "-i"]).arg(path).args(["-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"]).output().unwrap();
+        let i = (32 * 96 + 48) * 3;
+        [o.stdout[i] as i32, o.stdout[i + 1] as i32, o.stdout[i + 2] as i32]
+    };
+    for (codec, file, tol) in [
+        (Codec::H264, "c.mp4", 4),
+        (Codec::H265, "c265.mp4", 4),
+        (Codec::Vp9, "c.webm", 4),
+        (Codec::Av1, "c.mkv", 5),
+        (Codec::ProRes, "c.mov", 4),
+        (Codec::Gif, "c.gif", 6),
+        (Codec::Png, "c.png", 0),
+    ] {
+        let out = dir.join(file);
+        let mut enc = FfmpegEncoder::new(&out, 96, 64, 10.0, codec, Quality::Best, None).unwrap();
+        pipeline::render_video(&ev, &RenderOptions::default(), &mut enc).unwrap();
+        let read = if codec == Codec::Png { dir.join("c_00001.png") } else { out.clone() };
+        let c = decode(&read);
+        let want = [0x7c, 0x5c, 0xff];
+        let err = (0..3).map(|k| (c[k] - want[k]).abs()).max().unwrap();
+        assert!(err <= tol, "{codec:?}: decoded {c:?}, want {want:?}");
+    }
+    let out = dir.join("ak.mp4");
+    pipeline::render_ak264(&ev, &RenderOptions::default(), &out, None).unwrap();
+    let c = decode(&out);
+    assert!((c[0] - 0x7c).abs() <= 4 && (c[1] - 0x5c).abs() <= 4 && (c[2] - 0xff).abs() <= 4, "ak264: {c:?}");
+    let _ = std::fs::remove_dir_all(&dir);
+}

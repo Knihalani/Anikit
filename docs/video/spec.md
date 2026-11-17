@@ -76,7 +76,7 @@ Animatable: `x y width height scale scaleX scaleY rotation skewX skewY opacity b
 
 ```json
 "audio": [ { "src": "music.mp3", "volume": 0.7, "fadeOut": 1.5, "duck": true }, { "sfx": "whoosh", "at": "@drop" } ],
-"captions": { "src": "voice.srt", "background": "$accent", "maxWords": 3 }
+"captions": { "src": "voice.srt", "highlightBox": "$accent", "maxWords": 3 }   // or "background" for a pill behind the line
 ```
 
 SFX: `click tick pop whoosh swoosh rise riser drop impact ding chime typing success`.
