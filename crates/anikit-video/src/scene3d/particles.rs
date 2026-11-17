@@ -1954,7 +1954,9 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
         (false, true) => (None, Some(0), 4),
         _ => (Some(0), None, 3),
     };
-    let threads = if rayon::current_thread_index().is_some() { 1 } else { rayon::current_num_threads().max(1) };
+    // Bands are fixed (64 rows), so the output never depends on the thread count;
+    // nested inside a render worker this still spreads over idle cores.
+    let threads = rayon::current_num_threads().max(1);
     let mut pyrs: Vec<Pyr> = Vec::new();
     for (sim, snap) in systems {
         let d = &sim.def;
