@@ -42,7 +42,11 @@
    },
    "psnr": 44.825584,
    "ssim": 0.995758,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 41.69,
+   "psnrMinFrame": 193,
+   "ssimMin": 0.992475,
+   "framesScored": 600
   },
   {
    "tool": "remotion",
@@ -89,7 +93,11 @@
    },
    "psnr": 44.777826,
    "ssim": 0.995957,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 41.66,
+   "psnrMinFrame": 193,
+   "ssimMin": 0.992857,
+   "framesScored": 600
   },
   {
    "tool": "remotion",
@@ -133,7 +141,11 @@
    },
    "psnr": 42.922938,
    "ssim": 0.991563,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 42.36,
+   "psnrMinFrame": 326,
+   "ssimMin": 0.990647,
+   "framesScored": 600
   },
   {
    "tool": "remotion",
@@ -180,7 +192,11 @@
    },
    "psnr": 42.910644,
    "ssim": 0.991666,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 42.34,
+   "psnrMinFrame": 326,
+   "ssimMin": 0.99083,
+   "framesScored": 600
   },
   {
    "tool": "remotion",
@@ -224,7 +240,11 @@
    },
    "psnr": 45.216835,
    "ssim": 0.996284,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 44.32,
+   "psnrMinFrame": 351,
+   "ssimMin": 0.995657,
+   "framesScored": 600
   },
   {
    "tool": "remotion",
@@ -271,7 +291,11 @@
    },
    "psnr": 45.35791,
    "ssim": 0.996438,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 44.53,
+   "psnrMinFrame": 451,
+   "ssimMin": 0.995866,
+   "framesScored": 600
   },
   {
    "tool": "hyperframes",
@@ -312,7 +336,11 @@
    },
    "psnr": 43.879956,
    "ssim": 0.994586,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 41.47,
+   "psnrMinFrame": 298,
+   "ssimMin": 0.992412,
+   "framesScored": 600
   },
   {
    "tool": "hyperframes",
@@ -358,7 +386,11 @@
    },
    "psnr": 42.108144,
    "ssim": 0.991242,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 39.92,
+   "psnrMinFrame": 278,
+   "ssimMin": 0.987474,
+   "framesScored": 600
   },
   {
    "tool": "hyperframes",
@@ -399,7 +431,11 @@
    },
    "psnr": 44.153716,
    "ssim": 0.995006,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 43.71,
+   "psnrMinFrame": 434,
+   "ssimMin": 0.99456,
+   "framesScored": 600
   },
   {
    "tool": "hyperframes",
@@ -445,7 +481,11 @@
    },
    "psnr": 41.477674,
    "ssim": 0.989414,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 40.89,
+   "psnrMinFrame": 189,
+   "ssimMin": 0.987934,
+   "framesScored": 600
   },
   {
    "tool": "hyperframes",
@@ -486,7 +526,11 @@
    },
    "psnr": 45.317801,
    "ssim": 0.995475,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 45.06,
+   "psnrMinFrame": 303,
+   "ssimMin": 0.995021,
+   "framesScored": 600
   },
   {
    "tool": "hyperframes",
@@ -532,7 +576,11 @@
    },
    "psnr": 42.740477,
    "ssim": 0.992831,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 42,
+   "psnrMinFrame": 351,
+   "ssimMin": 0.991423,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -573,7 +621,11 @@
    },
    "psnr": 46.061492,
    "ssim": 0.997307,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.39,
+   "psnrMinFrame": 321,
+   "ssimMin": 0.99496,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -619,7 +671,11 @@
    },
    "psnr": 34.928405,
    "ssim": 0.985938,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 32.54,
+   "psnrMinFrame": 260,
+   "ssimMin": 0.978731,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -667,7 +723,11 @@
    },
    "psnr": 42.582929,
    "ssim": 0.99429,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 34.88,
+   "psnrMinFrame": 321,
+   "ssimMin": 0.991406,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -713,7 +773,11 @@
    },
    "psnr": 46.928607,
    "ssim": 0.997869,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.6,
+   "psnrMinFrame": 321,
+   "ssimMin": 0.995592,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -761,7 +825,11 @@
    },
    "psnr": 47.371743,
    "ssim": 0.997744,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.5,
+   "psnrMinFrame": 321,
+   "ssimMin": 0.995287,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -807,7 +875,11 @@
    },
    "psnr": 45.446942,
    "ssim": 0.997509,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.47,
+   "psnrMinFrame": 321,
+   "ssimMin": 0.995118,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -853,7 +925,11 @@
    },
    "psnr": 47.168098,
    "ssim": 0.998116,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.63,
+   "psnrMinFrame": 321,
+   "ssimMin": 0.995851,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -894,7 +970,11 @@
    },
    "psnr": 43.886753,
    "ssim": 0.994307,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 40.9,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.993168,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -940,7 +1020,11 @@
    },
    "psnr": 34.011431,
    "ssim": 0.970952,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 33.4,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.968578,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -988,7 +1072,11 @@
    },
    "psnr": 41.290113,
    "ssim": 0.990797,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 39.32,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.988583,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1034,7 +1122,11 @@
    },
    "psnr": 44.49342,
    "ssim": 0.995517,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 41.45,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.994633,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1082,7 +1174,11 @@
    },
    "psnr": 44.900951,
    "ssim": 0.995619,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 41.45,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.994462,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1128,7 +1224,11 @@
    },
    "psnr": 44.209839,
    "ssim": 0.995306,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 41.11,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.994104,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1174,7 +1274,11 @@
    },
    "psnr": 45.210598,
    "ssim": 0.996244,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 41.78,
+   "psnrMinFrame": 201,
+   "ssimMin": 0.995571,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1215,7 +1319,11 @@
    },
    "psnr": 48.170455,
    "ssim": 0.997787,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 46.87,
+   "psnrMinFrame": 354,
+   "ssimMin": 0.996861,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1261,7 +1369,11 @@
    },
    "psnr": 33.696148,
    "ssim": 0.988005,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 32.39,
+   "psnrMinFrame": 353,
+   "ssimMin": 0.985456,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1309,7 +1421,11 @@
    },
    "psnr": 44.136693,
    "ssim": 0.995219,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 43.2,
+   "psnrMinFrame": 307,
+   "ssimMin": 0.992602,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1355,7 +1471,11 @@
    },
    "psnr": 49.708375,
    "ssim": 0.998494,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 48.78,
+   "psnrMinFrame": 305,
+   "ssimMin": 0.997707,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1403,7 +1523,11 @@
    },
    "psnr": 50.367571,
    "ssim": 0.998455,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 46.39,
+   "psnrMinFrame": 458,
+   "ssimMin": 0.996445,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1449,7 +1573,11 @@
    },
    "psnr": 47.732249,
    "ssim": 0.998297,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 45.77,
+   "psnrMinFrame": 159,
+   "ssimMin": 0.99759,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1495,7 +1623,11 @@
    },
    "psnr": 50.590729,
    "ssim": 0.998696,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 48.28,
+   "psnrMinFrame": 309,
+   "ssimMin": 0.998368,
+   "framesScored": 600
   },
   {
    "tool": "anikit",
@@ -1557,7 +1689,11 @@
    },
    "psnr": 46.023506,
    "ssim": 0.997133,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.33,
+   "psnrMinFrame": 642,
+   "ssimMin": 0.994741,
+   "framesScored": 3600
   },
   {
    "tool": "anikit",
@@ -1624,7 +1760,11 @@
    },
    "psnr": 34.893918,
    "ssim": 0.985651,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 32.49,
+   "psnrMinFrame": 520,
+   "ssimMin": 0.978055,
+   "framesScored": 3600
   },
   {
    "tool": "anikit",
@@ -1693,7 +1833,11 @@
    },
    "psnr": 42.473156,
    "ssim": 0.993967,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 34.74,
+   "psnrMinFrame": 642,
+   "ssimMin": 0.991088,
+   "framesScored": 3600
   },
   {
    "tool": "anikit",
@@ -1760,7 +1904,11 @@
    },
    "psnr": 47.004231,
    "ssim": 0.997804,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.57,
+   "psnrMinFrame": 642,
+   "ssimMin": 0.995472,
+   "framesScored": 3600
   },
   {
    "tool": "anikit",
@@ -1829,7 +1977,11 @@
    },
    "psnr": 47.178291,
    "ssim": 0.997578,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.42,
+   "psnrMinFrame": 642,
+   "ssimMin": 0.994964,
+   "framesScored": 3600
   },
   {
    "tool": "anikit",
@@ -1896,7 +2048,11 @@
    },
    "psnr": 44.620187,
    "ssim": 0.997126,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.36,
+   "psnrMinFrame": 642,
+   "ssimMin": 0.994147,
+   "framesScored": 3600
   },
   {
    "tool": "anikit",
@@ -1963,7 +2119,11 @@
    },
    "psnr": 47.082452,
    "ssim": 0.998028,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 35.56,
+   "psnrMinFrame": 642,
+   "ssimMin": 0.995689,
+   "framesScored": 3600
   },
   {
    "tool": "remotion",
@@ -2028,7 +2188,11 @@
    },
    "psnr": 44.754878,
    "ssim": 0.995671,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 41.64,
+   "psnrMinFrame": 2999,
+   "ssimMin": 0.992255,
+   "framesScored": 3600
   },
   {
    "tool": "remotion",
@@ -2096,7 +2260,11 @@
    },
    "psnr": 44.53753,
    "ssim": 0.99588,
-   "decodeMatrix": "bt470bg"
+   "decodeMatrix": "bt470bg",
+   "psnrMin": 41.16,
+   "psnrMinFrame": 2996,
+   "ssimMin": 0.992532,
+   "framesScored": 3600
   },
   {
    "tool": "hyperframes",
@@ -2158,7 +2326,11 @@
    },
    "psnr": 43.839642,
    "ssim": 0.994545,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 41.39,
+   "psnrMinFrame": 458,
+   "ssimMin": 0.992334,
+   "framesScored": 3600
   },
   {
    "tool": "hyperframes",
@@ -2225,7 +2397,11 @@
    },
    "psnr": 41.747486,
    "ssim": 0.991042,
-   "decodeMatrix": "bt709"
+   "decodeMatrix": "bt709",
+   "psnrMin": 39.41,
+   "psnrMinFrame": 2961,
+   "ssimMin": 0.986455,
+   "framesScored": 3600
   },
   {
    "tool": "remotion",
@@ -2691,7 +2867,7 @@
   }
  ],
  "machine": {
-  "date": "2026-11-17T03:37:52.765Z",
+  "date": "2026-11-17T03:55:29.688Z",
   "nproc": 4,
   "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
   "memGB": 16,
@@ -2699,7 +2875,7 @@
   "node": "v22.23.4",
   "ffmpeg": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers",
   "chrome": "Google Chrome for Testing 153.0.8010.12",
-  "anikit": "f8b235f",
+  "anikit": "95d31cf",
   "remotion": "4.0.544",
   "hyperframes": "0.9.59",
   "gsap": "3.15.1",
