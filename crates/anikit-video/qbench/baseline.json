@@ -2,31 +2,31 @@
   "delivered": {
     "audio": [
       0.9942,
-      47.57
+      47.55
     ],
     "backdrop": [
-      0.9812,
-      46.95
+      0.9867,
+      48.9
     ],
     "explainer": [
       0.9988,
-      52.67
+      53.05
     ],
     "launch": [
-      0.9821,
-      48.11
+      0.9828,
+      48.46
     ],
     "particles": [
-      0.9854,
-      42.2
+      0.9958,
+      48.79
     ],
     "post": [
-      0.9504,
-      42.74
+      0.9503,
+      42.73
     ],
     "scene3d": [
-      0.9948,
-      50.72
+      0.9942,
+      47.96
     ],
     "shader": [
       0.9409,
@@ -38,31 +38,25 @@
     ],
     "text": [
       0.9995,
-      55.43
+      55.44
     ],
     "ui": [
       0.9992,
-      53.12
+      53.2
     ]
   },
   "known": {
-    "backdrop": {
-      "ssim_min": 0.9892,
-      "de_p999_max": 3.29,
-      "flicker_p999_max": 2.7,
-      "owner": "COMPONENTS: fxkit/backgrounds fast paths (source-over light, sprite defocus, low-res mesh field); see docs/video/perf.md"
-    },
     "launch": {
       "ssim_min": 0.9934,
       "de_p999_max": 2.51,
       "flicker_p999_max": 1.9,
       "owner": "COMPONENTS: fxkit/backgrounds fast paths (source-over light, sprite defocus, low-res mesh field); see docs/video/perf.md"
     },
-    "particles": {
-      "ssim_min": 0.988323225666029,
-      "de_p999_max": 36.07,
-      "flicker_p999_max": 64.9,
-      "owner": "COMPONENTS: fxkit/backgrounds fast paths (source-over light, sprite defocus, low-res mesh field); see docs/video/perf.md"
+    "scene3d": {
+      "ssim_min": 0.998931025437001,
+      "de_p999_max": 5.24,
+      "flicker_p999_max": 7.800000000000001,
+      "owner": "3D: default scene3d vs its reference mode (samples, denoise, half-res DOF/bloom); flicker 7.8"
     },
     "shader": {
       "ssim_min": 0.9537615618690154,
