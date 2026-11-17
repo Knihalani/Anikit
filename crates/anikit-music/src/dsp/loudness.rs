@@ -348,19 +348,46 @@ pub fn measure(l: &[f32], r: &[f32], rate: f32) -> Loudness {
 
 /// Integrated loudness only (cheaper: no true-peak oversampling).
 pub fn integrated_lufs(l: &[f32], r: &[f32], rate: f32) -> f64 {
-    let mut m = LoudnessMeter::new(rate);
-    // Same filter and blocks as `process`, without the peak detectors.
-    for (&a, &b) in l.iter().zip(r) {
-        let yl = LoudnessMeter::kfilter(&m.kw, &mut m.z, 0, a as f64);
-        let yr = LoudnessMeter::kfilter(&m.kw, &mut m.z, 1, b as f64);
-        m.acc += yl * yl + yr * yr;
-        m.count += 1;
-        if m.count == m.sub_len {
-            m.subs.push(m.acc);
-            m.acc = 0.0;
-            m.count = 0;
-            LoudnessMeter::flush_denormals(&mut m.z);
-        }
+    use rayon::prelude::*;
+    // Parallel: chunks aligned to the 100 ms sub-blocks, each K-filter warmed up
+    // on 0.5 s of preceding input (its slowest pole decays ~1e-11 per 100 ms, so
+    // the warmed state matches a serial pass to rounding).
+    let m0 = LoudnessMeter::new(rate);
+    let sub = m0.sub_len;
+    let n = l.len().min(r.len());
+    let chunk = (n.div_ceil(8).max(1 << 17)).div_ceil(sub) * sub;
+    let pre = 5 * sub;
+    let parts: Vec<(Vec<f64>, f64, usize)> = (0..n.div_ceil(chunk).max(1))
+        .into_par_iter()
+        .map(|k| {
+            let (a, b) = (k * chunk, ((k + 1) * chunk).min(n));
+            let mut z = [[0.0f64; 2]; 4];
+            for i in a.saturating_sub(pre)..a {
+                LoudnessMeter::kfilter(&m0.kw, &mut z, 0, l[i] as f64);
+                LoudnessMeter::kfilter(&m0.kw, &mut z, 1, r[i] as f64);
+            }
+            let (mut subs, mut acc, mut count) = (Vec::with_capacity((b - a) / sub + 1), 0.0f64, 0usize);
+            for i in a..b {
+                let yl = LoudnessMeter::kfilter(&m0.kw, &mut z, 0, l[i] as f64);
+                let yr = LoudnessMeter::kfilter(&m0.kw, &mut z, 1, r[i] as f64);
+                acc += yl * yl + yr * yr;
+                count += 1;
+                if count == sub {
+                    subs.push(acc);
+                    acc = 0.0;
+                    count = 0;
+                    LoudnessMeter::flush_denormals(&mut z);
+                }
+            }
+            (subs, acc, count)
+        })
+        .collect();
+    let mut m = m0;
+    for (subs, acc, count) in parts {
+        m.subs.extend(subs);
+        // Only the last chunk can end mid-block (chunks are whole sub-blocks).
+        m.acc = acc;
+        m.count = count;
     }
     m.integrated()
 }
