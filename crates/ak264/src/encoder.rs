@@ -705,9 +705,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mut pred = [0u8; 256];
         {
             let (r, rs) = self.luma_ref_int(mbx, mby, base);
-            for y in 0..16 {
-                pred[y * 16..y * 16 + 16].copy_from_slice(&r[y * rs..y * rs + 16]);
-            }
+            crate::simd::copy_block::<16>(&mut pred, 0, 16, r, 0, rs, 16);
         }
         let mv = base_q;
         let sad = best.0 - mvcost(base_q);
@@ -852,9 +850,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let (r, rs) = self.luma_ref_int(mbx, mby, (mv.0 >> 2, mv.1 >> 2));
         debug_assert!(mv.0 & 3 == 0 && mv.1 & 3 == 0);
         let base = self.yi(mbx * 16, mby * 16);
-        for y in 0..16 {
-            self.b.y[base + y * self.ys..base + y * self.ys + 16].copy_from_slice(&r[y * rs..y * rs + 16]);
-        }
+        crate::simd::copy_block::<16>(self.b.y, base, self.ys, r, 0, rs, 16);
         let mut p = [0u8; 64];
         for comp in 0..2 {
             self.mc_chroma(comp, mbx, mby, mv, &mut p);
@@ -929,15 +925,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
     fn store_recon(&mut self, mbx: usize, mby: usize, y16: &[u8; 256], c8: &[[u8; 64]; 2]) {
         let base = self.yi(mbx * 16, mby * 16);
-        for y in 0..16 {
-            self.b.y[base + y * self.ys..base + y * self.ys + 16].copy_from_slice(&y16[y * 16..y * 16 + 16]);
-        }
+        crate::simd::copy_block::<16>(self.b.y, base, self.ys, y16, 0, 16, 16);
         let base = self.ci(mbx * 8, mby * 8);
         let cs = self.cs;
-        for y in 0..8 {
-            self.b.u[base + y * cs..base + y * cs + 8].copy_from_slice(&c8[0][y * 8..y * 8 + 8]);
-            self.b.v[base + y * cs..base + y * cs + 8].copy_from_slice(&c8[1][y * 8..y * 8 + 8]);
-        }
+        crate::simd::copy_block::<8>(self.b.u, base, cs, &c8[0], 0, 8, 8);
+        crate::simd::copy_block::<8>(self.b.v, base, cs, &c8[1], 0, 8, 8);
     }
 
     fn edges4(&self, mbx: usize, mby: usize, bx: usize, by: usize) -> Edges4 {
@@ -1083,9 +1075,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 luma_i16(src, pred, &q, &self.p.qs, self.dc_max(), cd, &mut recon);
             }
             let base = self.yi(mbx * 16, mby * 16);
-            for y in 0..16 {
-                self.b.y[base + y * self.ys..base + y * self.ys + 16].copy_from_slice(&recon[y * 16..y * 16 + 16]);
-            }
+            crate::simd::copy_block::<16>(self.b.y, base, self.ys, &recon, 0, 16, 16);
         }
         // chroma mode decision
         let ec = [self.edges8(0, mbx, mby), self.edges8(1, mbx, mby)];
@@ -1136,10 +1126,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
         let base = self.ci(mbx * 8, mby * 8);
         let cs = self.cs;
-        for y in 0..8 {
-            self.b.u[base + y * cs..base + y * cs + 8].copy_from_slice(&reconc[0][y * 8..y * 8 + 8]);
-            self.b.v[base + y * cs..base + y * cs + 8].copy_from_slice(&reconc[1][y * 8..y * 8 + 8]);
-        }
+        crate::simd::copy_block::<8>(self.b.u, base, cs, &reconc[0], 0, 8, 8);
+        crate::simd::copy_block::<8>(self.b.v, base, cs, &reconc[1], 0, 8, 8);
 
         // ---- syntax ----
         let modes4 = modes.unwrap_or([2; 16]);
@@ -1899,14 +1887,10 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
                 continue;
             }
             let o = sy.off(mbx as isize * 16, mby as isize * 16);
-            for y in 0..16 {
-                src_y[y * 16..y * 16 + 16].copy_from_slice(&sy.data[o + y * sy.stride..o + y * sy.stride + 16]);
-            }
+            crate::simd::copy_block::<16>(&mut src_y, 0, 16, &sy.data, o, sy.stride, 16);
             let o = su.off(mbx as isize * 8, mby as isize * 8);
-            for y in 0..8 {
-                src_c[0][y * 8..y * 8 + 8].copy_from_slice(&su.data[o + y * su.stride..o + y * su.stride + 8]);
-                src_c[1][y * 8..y * 8 + 8].copy_from_slice(&sv.data[o + y * sv.stride..o + y * sv.stride + 8]);
-            }
+            crate::simd::copy_block::<8>(&mut src_c[0], 0, 8, &su.data, o, su.stride, 8);
+            crate::simd::copy_block::<8>(&mut src_c[1], 0, 8, &sv.data, o, sv.stride, 8);
             let b0 = s.w.bits_written();
             let (i0, n0) = (s.stats.intra16 + s.stats.intra4, s.stats.inter);
             s.encode_mb(mbx, mby, &src_y, &src_c);

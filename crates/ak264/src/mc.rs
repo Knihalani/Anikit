@@ -337,7 +337,7 @@ impl HpelPlanes {
                 let n = g.data.len();
                 // reads reach (x−1, y−1) .. (x+1+1+15, y+1+1+15) (offset +1/+stride included)
                 assert!(o > s && o + 17 * s + 18 <= n);
-                assert!(cands.len() <= out.len() && cands.iter().all(|c| c.0.abs() <= 3 && c.1.abs() <= 3));
+                debug_assert!(cands.iter().all(|c| c.0.abs() <= 3 && c.1.abs() <= 3));
                 let planes = [g.data.as_ptr(), self.b.data.as_ptr(), self.h.data.as_ptr(), self.j.data.as_ptr()];
                 // SAFETY: the asserts bound every read; AVX2 detected.
                 unsafe { sad_cands_avx2(&planes, o, s, cands, src, out) };
@@ -523,7 +523,10 @@ unsafe fn sad_avx2(a: *const u8, b: Option<*const u8>, s: usize, src: &[u8; 256]
 unsafe fn sad_cands_avx2(planes: &[*const u8; 4], o: usize, s: usize, cands: &[(i32, i32)], src: &[u8; 256], out: &mut [u32]) {
     for (c, r) in cands.iter().zip(out.iter_mut()) {
         let t = PHASE[((c.1 & 3) * 4 + (c.0 & 3)) as usize];
-        let base = (o as isize + (c.1 >> 2) as isize * s as isize + (c.0 >> 2) as isize) as usize;
+        // whole-sample part of a ±3 quarter offset is −1 or 0; the clamp keeps any
+        // input inside the bounds the caller checked
+        let (ix, iy) = ((c.0 >> 2).clamp(-1, 0) as isize, (c.1 >> 2).clamp(-1, 0) as isize);
+        let base = (o as isize + iy * s as isize + ix) as usize;
         let off = |k: u8| [0, 1, s][k as usize];
         let a = planes[t[0] as usize].add(base + off(t[1]));
         let b = if t[2] < 4 { Some(planes[t[2] as usize].add(base + off(t[3]))) } else { None };

@@ -609,6 +609,20 @@ pub fn avg16(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     core::array::from_fn(|i| ((a[i] as u16 + b[i] as u16 + 1) >> 1) as u8)
 }
 
+/// Copy a `W`×`h` block between strided buffers: one bounds check per block
+/// instead of one per row.
+#[inline(always)]
+pub fn copy_block<const W: usize>(dst: &mut [u8], doff: usize, ds: usize, src: &[u8], soff: usize, ss: usize, h: usize) {
+    assert!(h > 0 && doff + (h - 1) * ds + W <= dst.len() && soff + (h - 1) * ss + W <= src.len());
+    // SAFETY: the assert bounds every row; `dst` and `src` are distinct borrows.
+    unsafe {
+        let (d, s) = (dst.as_mut_ptr().add(doff), src.as_ptr().add(soff));
+        for y in 0..h {
+            core::ptr::copy_nonoverlapping(s.add(y * ss), d.add(y * ds), W);
+        }
+    }
+}
+
 /// Chroma bilinear MC of an 8×8 block at 1/8-sample phase (fx, fy) (8.4.2.2.2):
 /// `((8−fx)(8−fy)·A + fx(8−fy)·B + (8−fx)fy·C + fx·fy·D + 32) >> 6`, rows from
 /// `d[o ..]` with stride `s`.
