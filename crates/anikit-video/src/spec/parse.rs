@@ -95,6 +95,8 @@ fn strip_pos(s: &str) -> String {
 /// errors with their path.
 pub fn from_value(v: serde_json::Value) -> Result<Parsed, Vec<Diagnostic>> {
     let v = super::reuse::expand(v)?;
+    // `{"scene3d": {...}}` on a layer or a scene is shorthand for the scene3d component.
+    let v = crate::scene3d::shorthand(v);
     let v = crate::looks::apply(v)?;
     let mut warnings = Vec::new();
     let mut track = serde_path_to_error::Track::new();

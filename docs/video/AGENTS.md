@@ -14,6 +14,8 @@ anikit-video critique s.json --render --pack rv/     # judged against "intent"; 
 
 **MCP** (`anikit-video mcp`): `docs`, `recipes`, `list_looks`, `validate_spec`, `critique_spec` (`render`, `detail`), `render_still`, `render_contact_sheet`, `render_video`, `get_prompt`, `list_templates`, `get_template_schema`, `create_from_template`.
 
+**3D:** for chrome, glass, a studio, or thousands of textured instances, use the ray-traced `scene3d` component. See [`scene3d.md`](scene3d.md).
+
 **Quality:** [`quality/BAR.md`](quality/BAR.md). Scores are not quality verdicts; frames are.
 
 ## Cold-agent dry runs

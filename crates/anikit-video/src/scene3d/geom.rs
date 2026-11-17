@@ -76,7 +76,8 @@ pub fn torus(radius: f32, tube: f32) -> Mesh {
 /// smooth bevel; centred on X, sitting on y = 0, centred on Z. The cap
 /// normals get a gentle vertical "pillow" tilt so flat chrome faces sweep
 /// through the environment instead of reading as one flat tone.
-pub fn text(s: &str, font: &str, weight: f32, tracking: f32, height: f32, depth: f32, bevel: f32) -> Result<Mesh, String> {
+/// `align`: -1 puts the left edge at x = 0, 1 the right edge, 0 centres.
+pub fn text(s: &str, font: &str, weight: f32, tracking: f32, height: f32, depth: f32, bevel: f32, align: f32) -> Result<Mesh, String> {
     let letters = glyph_outlines(s, font, weight, tracking);
     let shapes: Vec<Vec<Vec<[f32; 2]>>> = letters.into_iter().map(|cs| cs.into_iter().filter_map(clean).collect::<Vec<_>>()).filter(|c: &Vec<_>| !c.is_empty()).collect();
     if shapes.is_empty() {
@@ -90,7 +91,7 @@ pub fn text(s: &str, font: &str, weight: f32, tracking: f32, height: f32, depth:
         }
     }
     let k = height / (hi[1] - lo[1]).max(1e-3);
-    let cx = (lo[0] + hi[0]) * 0.5;
+    let cx = (lo[0] + hi[0]) * 0.5 + align * (hi[0] - lo[0]) * 0.5;
     let mut out = Mesh::default();
     for cs in &shapes {
         let cs: Vec<Vec<[f32; 2]>> = cs.iter().map(|c| c.iter().map(|p| [(p[0] - cx) * k, (p[1] - lo[1]) * k - height * 0.5]).collect()).collect();
@@ -106,7 +107,7 @@ pub fn text(s: &str, font: &str, weight: f32, tracking: f32, height: f32, depth:
     }
     let w = (hi[0] - lo[0]) * k;
     for p in out.pos.chunks_exact(3) {
-        out.uv.extend_from_slice(&[p[0] / w.max(1e-3) + 0.5, 1.0 - p[1] / height]);
+        out.uv.extend_from_slice(&[(p[0] / w.max(1e-3) + 0.5 + align * 0.5).clamp(0.0, 1.0), 1.0 - p[1] / height]);
     }
     Ok(out)
 }
@@ -140,7 +141,7 @@ mod tests {
 
     #[test]
     fn text_is_requested_height() {
-        let m = text("AK", "Inter", 800.0, 0.02, 0.5, 0.1, 0.01).unwrap();
+        let m = text("AK", "Inter", 800.0, 0.02, 0.5, 0.1, 0.01, 0.0).unwrap();
         let (mut lo, mut hi) = (f32::MAX, f32::MIN);
         for p in m.pos.chunks_exact(3) {
             lo = lo.min(p[1]);
