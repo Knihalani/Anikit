@@ -505,7 +505,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         }
 
-        let try_i4 = best_cost > lambda as u32 * 24 + 256 && (c.idr || kind != Kind::P16 || best_cost > lambda as u32 * 64 + 1024);
+        // In P frames I4x4 rarely beats the best of P16/I16 unless both are poor.
+        let try_i4 = best_cost > lambda as u32 * 24 + 256 && (c.idr || best_cost > lambda as u32 * 64 + 1024);
         if try_i4 {
             // Encode I4x4 tentatively (writes recon).
             let mut cd = Coded::new();
