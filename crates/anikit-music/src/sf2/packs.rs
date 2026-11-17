@@ -152,16 +152,23 @@ fn derive_files(pack: &Pack, dir: &std::path::Path) {
 /// skipped so hits land on the grid. A millisecond of lead-in is kept.
 const TRIM_MS: &[(&str, f32)] = &[("virtuosity", 7.0)];
 
-/// Skips the first `n` frames of every voice.
-struct Trimmed {
+/// Packs recorded with widely spaced mics: their side signal is scaled so the
+/// image stays mono-compatible (Splendid's samples measure L/R correlation
+/// −0.22…0.43 and lose up to 4 dB summed to mono; at 0.5 they sit near 0.45).
+const WIDTH: &[(&str, f32)] = &[("splendid", 0.5)];
+
+/// Per-pack fixes applied to every voice: skip `trim` frames (at 48 kHz),
+/// scale the side signal by `width`.
+struct PackVoice {
     inner: SfzInstrument,
-    n: usize,
+    trim: usize,
+    width: f32,
 }
 
-impl Instrument for Trimmed {
+impl Instrument for PackVoice {
     fn voice(&self, note: &crate::voice::NoteOn) -> Box<dyn crate::voice::Voice> {
         let mut v = self.inner.voice(note);
-        let n = (self.n as f32 * note.rate / 48_000.0) as usize;
+        let n = (self.trim as f32 * note.rate / 48_000.0) as usize;
         let (mut l, mut r) = ([0f32; crate::voice::BLOCK], [0f32; crate::voice::BLOCK]);
         let mut left = n;
         while left > 0 {
@@ -169,7 +176,40 @@ impl Instrument for Trimmed {
             v.render(&mut l[..m], &mut r[..m]);
             left -= m;
         }
-        v
+        if (self.width - 1.0).abs() < 1e-6 {
+            v
+        } else {
+            Box::new(Narrow { v, width: self.width })
+        }
+    }
+}
+
+struct Narrow {
+    v: Box<dyn crate::voice::Voice>,
+    width: f32,
+}
+
+impl crate::voice::Voice for Narrow {
+    fn render(&mut self, l: &mut [f32], r: &mut [f32]) -> bool {
+        let (mut a, mut b) = ([0f32; crate::voice::BLOCK], [0f32; crate::voice::BLOCK]);
+        let n = l.len();
+        let alive = self.v.render(&mut a[..n], &mut b[..n]);
+        let (wm, ws) = (0.5, 0.5 * self.width);
+        for i in 0..n {
+            let (m, s) = (wm * (a[i] + b[i]), ws * (a[i] - b[i]));
+            l[i] += m + s;
+            r[i] += m - s;
+        }
+        alive
+    }
+    fn release(&mut self) {
+        self.v.release();
+    }
+    fn exclusive(&self) -> u32 {
+        self.v.exclusive()
+    }
+    fn kill(&mut self) {
+        self.v.kill();
     }
 }
 
@@ -335,10 +375,9 @@ pub fn pack_instrument(name: &str) -> Option<Arc<dyn Instrument>> {
     // Lenient: a sparse or partial checkout still plays what it has.
     let opt = SfzOptions { skip_missing: true, extend: EXTEND.contains(&pack.as_str()) };
     let sfz = SfzInstrument::load_with(&path, opt).ok()?;
-    let inst: Arc<dyn Instrument> = match TRIM_MS.iter().find(|t| t.0 == pack) {
-        Some(&(_, ms)) => Arc::new(Trimmed { inner: sfz, n: (ms * 48.0) as usize }),
-        None => Arc::new(sfz),
-    };
+    let trim = TRIM_MS.iter().find(|t| t.0 == pack).map_or(0, |t| (t.1 * 48.0) as usize);
+    let width = WIDTH.iter().find(|t| t.0 == pack).map_or(1.0, |t| t.1);
+    let inst: Arc<dyn Instrument> = if trim > 0 || width != 1.0 { Arc::new(PackVoice { inner: sfz, trim, width }) } else { Arc::new(sfz) };
     cache.lock().ok()?.insert(path, inst.clone());
     Some(inst)
 }
@@ -346,6 +385,25 @@ pub fn pack_instrument(name: &str) -> Option<Arc<dyn Instrument>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn narrow_scales_the_side_only() {
+        struct Wide;
+        impl crate::voice::Voice for Wide {
+            fn render(&mut self, l: &mut [f32], r: &mut [f32]) -> bool {
+                l.iter_mut().for_each(|x| *x += 0.75);
+                r.iter_mut().for_each(|x| *x += -0.25);
+                true
+            }
+            fn release(&mut self) {}
+        }
+        use crate::voice::Voice;
+        let mut v = Narrow { v: Box::new(Wide), width: 0.5 };
+        let (mut l, mut r) = ([0.1f32; 8], [0.1f32; 8]);
+        assert!(v.render(&mut l, &mut r));
+        // mid 0.25 stays, side 0.5 → 0.25; added onto what was there.
+        assert!((l[0] - (0.1 + 0.5)).abs() < 1e-6 && (r[0] - (0.1 + 0.0)).abs() < 1e-6, "{} {}", l[0], r[0]);
+    }
 
     #[test]
     fn sf2_packs_table_is_consistent() {
