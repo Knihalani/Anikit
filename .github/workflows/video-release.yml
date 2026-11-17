@@ -30,6 +30,7 @@ jobs:
           - { name: windows-x64, os: windows-latest, target: x86_64-pc-windows-msvc }
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
+    continue-on-error: ${{ startsWith(matrix.os, 'macos') }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.97.0
@@ -69,8 +70,9 @@ jobs:
 
   publish:
     needs: build
-    # Publish whatever built (a platform whose runner never came is simply missing this time).
-    if: ${{ !cancelled() }}
+    # Publish whatever built: a platform whose runner never came (macOS jobs are sometimes
+    # cancelled for lack of runners) is simply missing this time.
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
