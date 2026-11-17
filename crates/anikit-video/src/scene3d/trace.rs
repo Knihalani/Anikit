@@ -51,11 +51,14 @@ pub struct Material {
     pub style: u8,
     /// PBR texture set (`super::pbr`), 0 = none.
     pub pbr: u32,
+    /// Surface imperfections (0..1 each): roughness variation, smudges
+    /// (fingerprints and wipes), micro-scratches, dust on up-facing surfaces.
+    pub imperf: [f32; 4],
 }
 
 impl Material {
     pub fn chrome() -> Material {
-        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0 }
+        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0, imperf: [0.0; 4] }
     }
 }
 
@@ -1226,7 +1229,7 @@ impl Scene {
             // Dielectric interface.
             let eta = if entering { 1.0 / m.ior } else { m.ior };
             let fr = fresnel_dielectric(nv.min(1.0), if ob.thin { 1.0 / m.ior } else { eta });
-            let rough = m.roughness.clamp(0.0, 1.0);
+            let rough = if m.imperf == [0.0; 4] { m.roughness.clamp(0.0, 1.0) } else { (m.roughness + self.imperfect(m, ob.xf.point_inv(s.p), n).0).clamp(0.0, 1.0) };
             let r = reflect(d, n);
             // Only the first glass interface along a path traces its reflection:
             // otherwise reflection × transmission branching grows as 2^layers.
@@ -1257,11 +1260,14 @@ impl Scene {
         if m.style != 0 {
             return self.shade_style(m, s, n, v, nv, keep, out);
         }
-        let rough = m.roughness.clamp(0.02, 1.0);
+        let (dr, dust) = if m.imperf == [0.0; 4] { (0.0, 0.0) } else { self.imperfect(m, ob.xf.point_inv(s.p), n) };
+        let rough = (m.roughness + dr).clamp(0.02, 1.0);
         let f0 = lerp3(v3(0.04 * m.specular, 0.04 * m.specular, 0.04 * m.specular), m.base, m.metallic);
+        let f0 = scale(f0, 1.0 - dust);
         let ab = env_brdf(rough, nv);
         let spec_w = madd(scale(f0, ab.0), v3(1.0, 1.0, 1.0), ab.1);
-        let diff_col = scale(m.base, 1.0 - m.metallic);
+        // Dust is a grey diffuse layer, even on metal.
+        let diff_col = add(scale(m.base, (1.0 - m.metallic) * (1.0 - dust)), scale(v3(0.42, 0.4, 0.37), dust));
         let needs_diffuse = luma(diff_col) > 0.005;
         let rotp = (rot.1 * 0.37 + fract(s.p.x * 13.7), rot.0 * 0.61 + fract(s.p.z * 7.3));
         // Secondary hits (seen in reflections or through glass) aren't denoised:
@@ -1333,6 +1339,45 @@ impl Scene {
             ss.ns = n;
         }
         Some((mm, ss))
+    }
+
+    /// Surface imperfections at object-space point `p` (normal `n`, world):
+    /// (roughness offset, dust cover 0..1). They stick to the object.
+    #[inline]
+    fn imperfect(&self, m: &Material, p: V3, n: V3) -> (f32, f32) {
+        let [var, smudge, scratch, dust] = m.imperf;
+        let mut dr = 0.0;
+        if var > 0.0 {
+            // Broad, uneven sheen: ±0.08 at full strength.
+            dr += var * 0.09 * (vnoise(scale(p, 5.0)) * 0.75 + vnoise(scale(p, 17.0)) * 0.25 - 0.5);
+        }
+        if smudge > 0.0 {
+            // Fingerprint-sized blotches with ridged whorls, and soft wipes.
+            let blob = smoothstep(0.66, 0.82, vnoise(add(scale(p, 9.0), v3(3.1, 7.7, 1.3))));
+            let ridge = 0.7 + 0.3 * (vnoise(scale(p, 70.0)) * std::f32::consts::TAU).sin().abs();
+            let wipe = smoothstep(0.62, 0.9, vnoise(v3(p.x * 2.5 + p.y * 1.5, p.y * 14.0, p.z * 2.5))) * 0.6;
+            dr += smudge * 0.22 * (blob * ridge).max(wipe);
+        }
+        if scratch > 0.0 {
+            // Sparse patches of fine parallel scratches in three directions;
+            // they only show where a highlight crosses them.
+            let mut sc: f32 = 0.0;
+            for (k, d) in [v3(0.83, 0.2, 0.52), v3(-0.3, 0.9, 0.31), v3(0.4, -0.35, 0.85)].into_iter().enumerate() {
+                let patch = smoothstep(0.6, 0.75, vnoise(add(scale(p, 2.2), v3(k as f32 * 5.3, 1.7, 0.0))));
+                let u = dot(p, d) * 220.0 + vnoise(scale(p, 5.0)) * 9.0;
+                let line = 1.0 - smoothstep(0.0, 0.08, (fract(u) - 0.5).abs() * 2.0 - 0.9);
+                let fine = smoothstep(0.3, 0.7, vnoise(v3(u * 0.05, k as f32 * 9.1, 0.0)));
+                sc = sc.max(patch * line * fine);
+            }
+            dr += scratch * 0.35 * sc;
+        }
+        let mut d = 0.0;
+        if dust > 0.0 && n.y > 0.2 {
+            let up = smoothstep(0.2, 0.9, n.y);
+            d = (dust * up * (0.6 + 0.4 * smoothstep(0.35, 0.75, vnoise(scale(p, 18.0))))).min(0.85);
+            dr += d * 0.6;
+        }
+        (dr, d)
     }
 
     /// Underwater caustics: a bright, moving net of light (mean about 1).

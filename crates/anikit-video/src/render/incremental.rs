@@ -224,6 +224,13 @@ fn hash_filter(h: &mut impl Hasher, fl: &Filter) {
                 h.write(m.as_flattened());
             }
         }
+        Filter::Ink { amount, scale, seed, ox, oy } => {
+            h.write_u8(6);
+            h.write_u32(*seed);
+            for v in [*amount, *scale, *ox, *oy] {
+                f(h, v);
+            }
+        }
         Filter::Halftone(ht) => {
             h.write_u8(5);
             h.write_u8(ht.shape);

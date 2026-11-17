@@ -25,6 +25,8 @@ stills:
   - https://i.ytimg.com/vi/08aeo0WZMOY/hq1.jpg
   - https://i.ytimg.com/vi/08aeo0WZMOY/hq2.jpg
   - https://i.ytimg.com/vi/08aeo0WZMOY/hq3.jpg
+  - https://www.german-design-award.com/fileadmin/assets/0/174/174506_2000HWebP.webp
+  - https://www.german-design-award.com/fileadmin/assets/0/174/174507_2000HWebP.webp
 measured: null
 ---
 

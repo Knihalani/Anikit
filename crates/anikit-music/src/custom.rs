@@ -622,7 +622,7 @@ pub enum Fx {
 }
 
 /// Effect types for `fx`.
-pub const FX_TYPES: &[&str] = &["eq", "comp", "delay", "reverb", "chorus", "saturate", "widener", "transient", "filter", "gain"];
+pub const FX_TYPES: &[&str] = &["eq", "comp", "delay", "reverb", "chorus", "saturate", "widener", "transient", "filter", "gain", "autopan"];
 
 /// Parse a track's `fx` list (each `{"type": …, …params}`).
 pub fn fx_chain(list: &Value, rate: u32, bpm: f64, at: &str) -> Result<Vec<Fx>, String> {
@@ -673,6 +673,22 @@ pub fn fx_chain(list: &Value, rate: u32, bpm: f64, at: &str) -> Result<Vec<Fx>, 
                 let q = fo.get("q").map(|c| num(c, &ap)).unwrap_or(Ok(0.707))?;
                 Fx::Proc(Box::new(SvfFx(dsp::Svf::new(fs, mode, cut, q))))
             }
+            "autopan" | "tremolo" => {
+                // Stereo tremolo (the suitcase electric-piano vibrato): an equal-power
+                // pan swinging at `rate` Hz or a note value (`"note":"1/8"`), `depth` 0–1.
+                let fo = v.as_object().unwrap();
+                check_keys(fo, &["rate", "note", "depth"], &ap)?;
+                let hz = match (fo.get("note").and_then(Value::as_str), fo.get("rate")) {
+                    (Some(n), _) => 1.0 / dsp::note_seconds(n, bpm as f32).map_err(|e| format!("{ap}.note: {e}"))?,
+                    (None, Some(r)) => num(r, &ap)?,
+                    (None, None) => 1.0 / dsp::note_seconds("1/8", bpm as f32)?,
+                };
+                let depth = fo.get("depth").map(|c| num(c, &ap)).unwrap_or(Ok(0.5))?.clamp(0.0, 1.0);
+                if !(0.01..=40.0).contains(&hz) {
+                    return Err(format!("{ap}: rate {hz:.2} Hz is out of range (0.01–40)"));
+                }
+                Fx::Proc(Box::new(AutoPan { step: std::f64::consts::TAU * hz as f64 / rate as f64, phase: 0.0, depth }))
+            }
             "gain" => {
                 let db = v.get("db").map(|c| num(c, &ap)).unwrap_or(Ok(0.0))?;
                 Fx::Proc(Box::new(GainFx(10f32.powf(db / 20.0))))
@@ -695,6 +711,29 @@ impl Processor for SvfFx {
         }
     }
     fn reset(&mut self) {}
+}
+
+struct AutoPan {
+    step: f64,
+    phase: f64,
+    depth: f32,
+}
+impl Processor for AutoPan {
+    fn process(&mut self, l: &mut [f32], r: &mut [f32]) {
+        for (a, b) in l.iter_mut().zip(r.iter_mut()) {
+            // θ = π/4 · (1 + depth·sin φ): centre at φ = 0, √2 so the centre is unity.
+            let th = std::f32::consts::FRAC_PI_4 * (1.0 + self.depth * (self.phase as f32).sin());
+            *a *= std::f32::consts::SQRT_2 * th.cos();
+            *b *= std::f32::consts::SQRT_2 * th.sin();
+            self.phase += self.step;
+            if self.phase > std::f64::consts::TAU {
+                self.phase -= std::f64::consts::TAU;
+            }
+        }
+    }
+    fn reset(&mut self) {
+        self.phase = 0.0;
+    }
 }
 
 struct GainFx(f32);
@@ -805,6 +844,21 @@ impl TrackAuto {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn autopan_swings_a_mono_source_at_the_note_rate() {
+        let mut chain = fx_chain(&serde_json::json!([{ "type": "autopan", "note": "1/4", "depth": 0.5 }]), 48_000, 120.0, "fx").unwrap();
+        let (mut l, mut r) = (vec![0.5f32; 48_000], vec![0.5f32; 48_000]);
+        apply_chain(&mut chain, &mut l, &mut r, 48_000);
+        // 1/4 at 120 bpm = 2 Hz: right-heavy at 1/8 cycle, left-heavy at 3/8, centred at 1/4.
+        assert!(r[6_000] > l[6_000] * 1.5 && l[18_000] > r[18_000] * 1.5, "{} {} / {} {}", l[6_000], r[6_000], l[18_000], r[18_000]);
+        assert!((l[12_000] - r[12_000]).abs() < 1e-3);
+        // Equal power: L² + R² stays at the input's.
+        for i in (0..48_000).step_by(997) {
+            assert!(((l[i] * l[i] + r[i] * r[i]) - 0.5).abs() < 1e-4);
+        }
+        assert!(fx_chain(&serde_json::json!([{ "type": "autopan", "rate": 100 }]), 48_000, 120.0, "fx").is_err());
+    }
 
     #[test]
     fn expressions() {

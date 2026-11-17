@@ -25,6 +25,9 @@ stills:
   - https://i.ytimg.com/vi/ff2k22F4qNM/hq1.jpg
   - https://i.ytimg.com/vi/ff2k22F4qNM/hq2.jpg
   - https://i.ytimg.com/vi/ff2k22F4qNM/hq3.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/BBC-World-Cup-2026-Coverage-animated-trailer-by-Nicos-Livesey-and-Blinkink-STASH-MAGAZINE.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/BBC-World-Cup-2026-Coverage-animated-trailer-by-Nicos-Livesey-and-Blinkink-STASH-MAGAZINE3.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/BBC-World-Cup-2026-Coverage-animated-trailer-by-Nicos-Livesey-and-Blinkink-STASH-MAGAZINE5.jpg
 measured: null
 ---
 
