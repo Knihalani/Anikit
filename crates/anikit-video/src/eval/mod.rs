@@ -421,6 +421,8 @@ pub struct Evaluator {
     pub(crate) ctheme: crate::components::Theme,
     /// Beat grid and loudness of the music, when expressions read them.
     pub(crate) groove: Option<Arc<beat_markers::Music>>,
+    /// Encoder adaptive-quantisation strength (`encode.aq`), when the spec sets it.
+    pub encode_aq: Option<f32>,
     /// Motion-blur shutter in seconds (0 = off). Default half a frame (180°).
     pub shutter: f32,
     /// The spec asked for motion blur itself (otherwise only `--quality high` applies it).
