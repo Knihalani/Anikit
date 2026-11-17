@@ -80,9 +80,7 @@
          "emissive": 3,
          "blend": "add"
         }
-       ],
-       "quality": "draft",
-       "resolution": 0.5
+       ]
       }
      }
     ]

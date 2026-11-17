@@ -61,7 +61,6 @@
          }
         ]
        },
-       "quality": "draft",
        "objects": [
         {
          "type": "sphere",
@@ -73,8 +72,7 @@
          ],
          "material": "chrome"
         }
-       ],
-       "resolution": 0.5
+       ]
       }
      }
     ]

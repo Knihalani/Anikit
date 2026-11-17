@@ -712,8 +712,11 @@ impl Component for Scene3d {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let p = self.p();
         // Previews and reviews (`still --width`, `critique --render`) trace at the size they show.
-        // `resolution` (0.25–1): trace at a fraction of the layer size and upscale (fast drafts, soft looks).
-        let res = self.raw.get("resolution").and_then(|r| r.as_f64()).unwrap_or(1.0).clamp(0.25, 1.0) as f32;
+        // `resolution` (0.25–1): trace at a fraction of the layer size and upscale. Unset, it is
+        // full size at standard/high quality and half size in drafts (`--quality draft`), so
+        // iterating is fast and final renders lose nothing.
+        let default_res = if crate::components::draft() { 0.5 } else { 1.0 };
+        let res = self.raw.get("resolution").and_then(|r| r.as_f64()).unwrap_or(default_res).clamp(0.25, 1.0) as f32;
         let ps = crate::eval::shader::preview_scale() * res;
         let (w, h) = ((ctx.width * ps).round().max(2.0) as u32, (ctx.height * ps).round().max(2.0) as u32);
         let fps = ctx.fps.max(1.0);
