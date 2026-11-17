@@ -92,6 +92,16 @@ impl Upscaler {
 
     #[allow(clippy::too_many_arguments)]
     fn run_c<const C: usize>(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], stride: usize, ow: usize, oh: usize, ox: i64, oy: i64) {
+        // A uniform source (a solid background): every filter gives that colour.
+        if sw * sh <= 16 && sw * sh > 0 && src[..sw * sh * C].chunks_exact(C).all(|p| p == &src[..C]) {
+            let px = &src[..C];
+            for row in out.chunks_mut(stride).take(oh) {
+                for o in row[..ow * C].chunks_exact_mut(C) {
+                    o.copy_from_slice(px);
+                }
+            }
+            return;
+        }
         // 1:1 at an integer offset: a plain copy (any filter would only blur).
         if dev.width() == sw as f64 && dev.height() == sh as f64 && dev.x0.fract() == 0.0 && dev.y0.fract() == 0.0 {
             let (bx, by) = (ox - dev.x0 as i64, oy - dev.y0 as i64);

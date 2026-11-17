@@ -926,3 +926,23 @@ fn long_strokes_clip_to_the_view() {
     assert!(near.iter().zip(&Renderer::new(assets).render(&list(vec![])).data_as_u8_slice().to_vec()).any(|(a, b)| a != b));
     assert!(worst <= 1, "max diff {worst}");
 }
+
+/// A plain background colour acts as a backdrop (no full-frame clear and
+/// convert): the same pixels and YUV as vello clearing to it.
+#[test]
+fn solid_background_backdrop_matches_clear() {
+    use anikit_video::render::{Quality, YuvFrame};
+    let assets = Arc::new(Assets::default());
+    let mut l = list(vec![card(20.0, 30.0, 40.0, 25.0, solid(0.9, 0.4, 0.2)), card(10.0, 70.0, 70.0, 10.0, Paint::Solid(rgba(1.0, 1.0, 1.0, 0.5)))]);
+    l.background = rgba(0.137, 0.52, 0.81, 1.0);
+    let mut exact = Renderer::new(assets.clone());
+    exact.set_quality(Quality::Reference);
+    let want = exact.render(&l).data_as_u8_slice().to_vec();
+    let got = Renderer::new(assets.clone()).render(&l).data_as_u8_slice().to_vec();
+    assert_eq!(got, want);
+    let (mut a, mut b) = (YuvFrame::new(W, H), YuvFrame::new(W, H));
+    Renderer::new(assets.clone()).render_yuv(&l, &mut a);
+    exact.render_yuv(&l, &mut b);
+    let worst = a.y.iter().zip(&b.y).chain(a.u.iter().zip(&b.u)).chain(a.v.iter().zip(&b.v)).map(|(p, q)| p.abs_diff(*q)).max().unwrap();
+    assert!(worst <= 1, "max YUV diff {worst}");
+}

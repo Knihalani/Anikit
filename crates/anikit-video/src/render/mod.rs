@@ -182,6 +182,8 @@ pub struct Renderer {
     motion_acc: Vec<f32>,
     motion_tmp: Vec<f32>,
     grain: Vec<grain::Grain>,
+    /// The background colour as a 2×2 backdrop (RGBA8), reused while it stays.
+    bg_pix: Option<([u8; 4], Arc<Pixmap>)>,
     motion_brute: bool,
     quality: Quality,
     /// Low-res backdrop as Y, Cb, Cr planes (fused backdrop → YUV path).
@@ -220,6 +222,7 @@ impl Renderer {
             motion_acc: Vec::new(),
             motion_tmp: Vec::new(),
             grain: Vec::new(),
+            bg_pix: None,
             motion_brute: false,
             quality: Quality::Standard,
             box_rects: Vec::new(),
@@ -503,8 +506,28 @@ impl Renderer {
             backdrop = Some((n_smooth - 1, lo, Rect::new(0.0, 0.0, w as f64, h as f64)));
             from_smooth = true;
         }
+        // An opaque background colour is a backdrop too: YUV planes and RGBA
+        // boxes start from it directly instead of a full-frame clear and convert.
+        if backdrop.is_none() && !blends && list.background.0[3] >= 1.0 && !st.reference {
+            let c = color(list.background).to_rgba8().to_u8_array();
+            let pix = match &self.bg_pix {
+                Some((k, p)) if *k == c => p.clone(),
+                _ => {
+                    let mut p = Pixmap::new(2, 2);
+                    for px in p.data_as_u8_slice_mut().chunks_exact_mut(4) {
+                        px.copy_from_slice(&c);
+                    }
+                    p.set_may_have_transparency(false);
+                    let p = Arc::new(p);
+                    self.bg_pix = Some((c, p.clone()));
+                    p
+                }
+            };
+            // `usize::MAX`: no op is hidden (k + 1 wraps to 0).
+            backdrop = Some((usize::MAX, pix, Rect::new(0.0, 0.0, w as f64, h as f64)));
+        }
         let (ops, skip) = match &backdrop {
-            Some((k, _, _)) => (&list.ops[k + 1..], k + 1),
+            Some((k, _, _)) => (&list.ops[k.wrapping_add(1)..], k.wrapping_add(1)),
             None => (list_ops, 0),
         };
         let settings = if backdrop.is_some() { RasterizerSettings { target_init: TargetInit::SrcOver, ..Default::default() } } else { settings };
