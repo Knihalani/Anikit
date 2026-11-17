@@ -140,9 +140,9 @@
           {
             "$let": {
               "tw": "(fmt.landscape ? fmt.w * 0.46 : fmt.safe.w)",
-              "ts": "(fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5)",
-              "lines": "ceil(len(event) * 0.52 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.46 : fmt.safe.w))",
-              "top": "(fmt.landscape ? fmt.h * 0.46 - (ceil(len(event) * 0.52 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.46 : fmt.safe.w)) * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) * 1.1 + fmt.u * 12) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1))",
+              "ts": "(fmt.portrait ? fmt.u * 8.6 : fmt.u * 9.5)",
+              "lines": "ceil(len(event) * 0.52 * (fmt.portrait ? fmt.u * 8.6 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.46 : fmt.safe.w))",
+              "top": "(fmt.landscape ? fmt.h * 0.46 - (ceil(len(event) * 0.52 * (fmt.portrait ? fmt.u * 8.6 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.46 : fmt.safe.w)) * (fmt.portrait ? fmt.u * 8.6 : fmt.u * 9.5) * 1.1 + fmt.u * 12) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1))",
               "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
               "an": "fmt.landscape ? 'topLeft' : 'top'",
               "al": "fmt.landscape ? 'left' : 'center'"
@@ -370,23 +370,33 @@
             "$if": "live",
             "then": [
               {
-                "type": "component",
-                "component": "particle-text",
-                "props": {
+                "$if": "brand.theme == 'light'",
+                "then": {
                   "text": "{{liveText}}",
-                  "exit": "none",
-                  "form": 1.0,
-                  "size": 2.4,
-                  "glow": true,
-                  "count": 14000,
-                  "colors": [
-                    "{{brand.colors.text}}",
-                    "{{brand.colors.secondary}}"
-                  ]
+                  "style": "hero",
+                  "y": "{{fmt.portrait ? '46%' : '46%'}}",
+                  "width": "{{fmt.safe.w}}",
+                  "enter": "pop by char from center"
                 },
-                "y": "{{fmt.portrait ? '46%' : '46%'}}",
-                "width": "{{fmt.safe.w}}",
-                "height": "{{fmt.u * 34}}"
+                "else": {
+                  "type": "component",
+                  "component": "particle-text",
+                  "props": {
+                    "text": "{{liveText}}",
+                    "exit": "none",
+                    "form": 1.0,
+                    "size": 2.4,
+                    "glow": "{{brand.theme != 'light'}}",
+                    "count": 14000,
+                    "colors": [
+                      "{{brand.colors.text}}",
+                      "{{brand.colors.secondary}}"
+                    ]
+                  },
+                  "y": "{{fmt.portrait ? '46%' : '46%'}}",
+                  "width": "{{fmt.safe.w}}",
+                  "height": "{{fmt.u * 34}}"
+                }
               },
               {
                 "type": "component",

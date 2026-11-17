@@ -319,12 +319,12 @@
         "component": "mesh-gradient",
         "props": {
           "colors": [
-            "{{brand.colors.primary}}",
-            "{{brand.colors.secondary}}",
-            "{{mix(brand.colors.background, brand.colors.primary, 0.35)}}"
+            "{{brand.theme == 'light' ? mix(brand.colors.background, brand.colors.primary, 0.22) : brand.colors.primary}}",
+            "{{brand.theme == 'light' ? mix(brand.colors.background, brand.colors.secondary, 0.18) : brand.colors.secondary}}",
+            "{{brand.theme == 'light' ? mix(brand.colors.background, brand.colors.text, 0.05) : mix(brand.colors.background, brand.colors.primary, 0.35)}}"
           ],
-          "base": "{{brand.colors.backgroundDeep}}",
-          "intensity": "{{(intensity ?? 0.38) * (brand.theme == 'light' ? 0.6 : 1)}}",
+          "base": "{{brand.theme == 'light' ? brand.colors.background : brand.colors.backgroundDeep}}",
+          "intensity": "{{(intensity ?? 0.32) * (brand.theme == 'light' ? 1.6 : 1)}}",
           "seed": "{{seed ?? 1}}",
           "speed": "{{(still ?? false) ? 0 : 0.3}}",
           "rate": 3
@@ -357,52 +357,47 @@
         }
       }
     },
-    "device": [
-      {
-        "$if": "src",
-        "then": {
-          "id": "{{(id ?? 'device') + '-asset'}}",
-          "src": "{{src}}",
-          "width": 2,
-          "height": 2,
-          "opacity": 0
-        }
-      },
-      {
-        "id": "{{id ?? 'device'}}",
-        "type": "component",
-        "component": "{{kind ?? 'browser'}}",
-        "props": {
-          "$merge": [
-            {
-              "delay": "{{delay ?? 0.3}}",
-              "float": "{{(bob ?? false) ? fmt.u * 0.6 : 0}}"
+    "device": {
+      "id": "{{id ?? 'device'}}",
+      "type": "component",
+      "component": "{{kind ?? 'browser'}}",
+      "props": {
+        "$merge": [
+          {
+            "delay": "{{delay ?? 0.3}}",
+            "float": "{{(bob ?? false) ? fmt.u * 0.6 : 0}}"
+          },
+          {
+            "$if": "src",
+            "then": {
+              "src": "{{src}}"
             },
-            {
-              "$if": "src",
-              "then": {
-                "src": "{{src}}"
-              },
-              "else": {
-                "screen": "{{screen ?? 'dashboard'}}",
-                "title": "{{brand.name}}",
-                "accent": "{{brand.colors.primary}}"
-              }
-            },
-            {
-              "$if": "(kind ?? 'browser') == 'browser' && url",
-              "then": {
-                "url": "{{url}}"
-              }
+            "else": {
+              "screen": "{{screen ?? (kpis ?? null ? 'dashboard' : 'app')}}",
+              "title": "{{product ?? brand.name}}",
+              "accent": "{{brand.colors.primary}}",
+              "items": "{{copy ?? default(pick(features ?? [], 'title'), default(pick(steps ?? [], 'title'), default(pick(items ?? [], 'text'), points ?? [])))}}"
             }
-          ]
-        },
-        "x": "{{x ?? '50%'}}",
-        "y": "{{y ?? '50%'}}",
-        "width": "{{width}}",
-        "height": "{{height}}"
-      }
-    ],
+          },
+          {
+            "$if": "(kind ?? 'browser') == 'browser' && url",
+            "then": {
+              "url": "{{url}}"
+            }
+          },
+          {
+            "$if": "kpis ?? null",
+            "then": {
+              "kpis": "{{kpis}}"
+            }
+          }
+        ]
+      },
+      "x": "{{x ?? '50%'}}",
+      "y": "{{y ?? '50%'}}",
+      "width": "{{width}}",
+      "height": "{{height}}"
+    },
     "ctaButton": {
       "id": "cta-button",
       "type": "component",
