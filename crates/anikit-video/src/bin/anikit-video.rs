@@ -27,6 +27,8 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|b
   schema [-o file]              print the JSON Schema of the spec
   beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
   music  spec.json -o out.wav   generate a mastered soundtrack (anikit-video docs music)
+  analyze ref.mp4 [-o analysis.json] [--sheet sheet.jpg] [--spec draft.json]
+                                reverse-engineer a reference video (anikit-video docs analyze)
 common: --json (machine-readable output)
 start:  docs [topic] | recipes [name] (-o file) | music | critique --render | looks | templates | preview | mcp | --version";
 
@@ -349,6 +351,32 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             } else {
                 let f = |v: &[f64]| v.iter().map(|t| format!("{t:.3}")).collect::<Vec<_>>().join(" ");
                 println!("bpm {:.1}\nbeats ({}): {}\nbars ({}): {}", b.bpm, b.beats.len(), f(&b.beats), b.downbeats.len(), f(&b.downbeats));
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        "analyze" => {
+            let path = a.input.as_deref().ok_or("missing video (an MP4/WebM/GIF/MOV, a directory of frames, or a frame%04d.png pattern)")?;
+            let opts = anikit_video::analyze::Options { sequence_fps: a.num("--fps")?.map(f64::from).unwrap_or(30.0), audio: !a.has("--no-audio"), ..Default::default() };
+            let an = anikit_video::analyze::analyze(Path::new(path), &opts)?;
+            let js = serde_json::to_string_pretty(&an).map_err(|e| e.to_string())?;
+            match a.get("-o").or(a.get("--out")) {
+                Some(o) => std::fs::write(o, js + "\n").map_err(|e| format!("{o}: {e}"))?,
+                None if !json => println!("{js}"),
+                None => {}
+            }
+            if let Some(sh) = a.get("--sheet") {
+                let (w, h, px) = anikit_video::analyze::contact_sheet(&an);
+                let img = image::RgbImage::from_raw(w, h, px).ok_or("sheet buffer")?;
+                img.save(sh).map_err(|e| format!("{sh}: {e}"))?;
+            }
+            if let Some(sp) = a.get("--spec") {
+                let spec = anikit_video::analyze::draft_spec(&an);
+                std::fs::write(sp, serde_json::to_string_pretty(&spec).map_err(|e| e.to_string())? + "\n").map_err(|e| format!("{sp}: {e}"))?;
+            }
+            if json {
+                println!("{}", serde_json::json!({ "ok": true, "summary": an.global.style_summary, "shots": an.shots.len(), "seconds": an.timing.total }));
+            } else {
+                eprintln!("{}\nanalysed in {:.2} s (decode {:.2}, analyse {:.2}, audio {:.2})", an.global.style_summary, an.timing.total, an.timing.decode, an.timing.analyse, an.timing.audio);
             }
             Ok(ExitCode::SUCCESS)
         }

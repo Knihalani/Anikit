@@ -11,6 +11,8 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 
 **Concept before JSON (two minutes, three lines):** (1) the one image only *this* brief could have, built from its own nouns (a lock that shatters into particles for a security product; its real data as a physics pile); (2) which primitive below makes it unforgettable; (3) the music style and the beat it lands on. Recipes are techniques to borrow for a shot, not the piece: `critique` flags a spec that is mostly a recipe with new words.
 
+**Have a reference video?** "Make one like this": `anikit-video analyze ref.mp4 --sheet s.jpg --spec draft.json`, then follow `skills/anikit-reverse-video/SKILL.md`.
+
 ## Build from the open primitives (anything is possible)
 
 A spec: `{ "size": "16:9", "intent": {"pace": "fast"}, "music": "synthwave", "scenes": [ { "duration": 1.2, "layers": [ … ] } ] }`.

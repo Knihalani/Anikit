@@ -1,0 +1,700 @@
+{
+ "size": "16:9",
+ "fps": 24,
+ "intent": {
+  "pace": "steady"
+ },
+ "theme": {
+  "colors": {
+   "bg": "#FCFCFB",
+   "text": "#1E9BD7",
+   "primary": "#1E9BD7",
+   "accent": "#F2A23A"
+  }
+ },
+ "scenes": [
+  {
+   "id": "s1-kinetic-type",
+   "duration": 4.16,
+   "background": "#FCFCFB",
+   "transition": "cut",
+   "layers": [
+    {
+     "text": "A SMALL TEAM PRESENTS",
+     "size": "10vh",
+     "weight": 800,
+     "color": "$primary",
+     "enter": "pop by char from center"
+    }
+   ]
+  },
+  {
+   "id": "s2-footage-or-scene3d",
+   "duration": 3.56,
+   "background": "radial-gradient(#414B40, #667355)",
+   "transition": {
+    "type": "crossfade",
+    "duration": 0.64
+   },
+   "layers": [
+    {
+     "shader": "caustics"
+    },
+    {
+     "shape": "circle",
+     "width": 300,
+     "height": 300,
+     "fill": "#F2A23A",
+     "y": "48%",
+     "enter": "pop"
+    },
+    {
+     "text": "RENT",
+     "size": "8vh",
+     "weight": 900,
+     "color": "#FFFFFF",
+     "y": "74%",
+     "enter": "rise"
+    }
+   ]
+  },
+  {
+   "id": "s3-2d-motion-graphics",
+   "duration": 2.64,
+   "background": "#FCFCFB",
+   "transition": {
+    "type": "crossfade",
+    "duration": 0.64
+   },
+   "layers": [
+    {
+     "text": "ONE BIG BUDGET",
+     "size": "10vh",
+     "weight": 800,
+     "color": "$primary",
+     "enter": "pop by char from center"
+    }
+   ]
+  },
+  {
+   "id": "s4-scene3d",
+   "duration": 2.12,
+   "background": "radial-gradient(#FFE7C2, #F2A23A)",
+   "transition": "cut",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": "studio",
+      "quality": "draft",
+      "resolution": 0.5,
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -2.4,
+          0.9,
+          7.0
+         ],
+         "target": [
+          0,
+          0.4,
+          0
+         ],
+         "focal": 42,
+         "fstop": 2.4
+        },
+        {
+         "t": 2.12,
+         "pos": [
+          2.0,
+          0.8,
+          6.2
+         ],
+         "target": [
+          0,
+          0.4,
+          0
+         ],
+         "focal": 50,
+         "fstop": 2.2
+        }
+       ]
+      },
+      "objects": [
+       {
+        "text": "HEARTH",
+        "height": 0.45,
+        "material": "chrome"
+       },
+       {
+        "type": "sphere",
+        "radius": 0.3,
+        "pos": [
+         1.9,
+         0.3,
+         0.9
+        ],
+        "material": "glass"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "s5-2d-motion-graphics",
+   "duration": 2.0,
+   "background": "#FCFCFB",
+   "transition": "cut",
+   "layers": [
+    {
+     "text": "THREE BILLS",
+     "size": "10vh",
+     "weight": 800,
+     "color": "$primary",
+     "enter": "pop by char from center"
+    }
+   ]
+  },
+  {
+   "id": "s6-scene3d",
+   "duration": 0.68,
+   "background": "radial-gradient(#899047, #7F7257)",
+   "transition": "cut",
+   "layers": [
+    {
+     "shader": "flow-ink"
+    },
+    {
+     "shape": "circle",
+     "width": 300,
+     "height": 300,
+     "fill": "#30A46C",
+     "y": "48%",
+     "enter": "pop"
+    },
+    {
+     "text": "STREAMING",
+     "size": "8vh",
+     "weight": 900,
+     "color": "#FFFFFF",
+     "y": "74%",
+     "enter": "rise"
+    }
+   ]
+  },
+  {
+   "id": "s7-scene3d",
+   "duration": 1.12,
+   "background": "radial-gradient(#E4D948, #F0D5D2)",
+   "transition": "cut",
+   "layers": [
+    {
+     "shader": "hero"
+    },
+    {
+     "shape": "circle",
+     "width": 300,
+     "height": 300,
+     "fill": "#8E4EC6",
+     "y": "48%",
+     "enter": "pop"
+    },
+    {
+     "text": "GROCERIES",
+     "size": "8vh",
+     "weight": 900,
+     "color": "#FFFFFF",
+     "y": "74%",
+     "enter": "rise"
+    }
+   ]
+  },
+  {
+   "id": "s8-scene3d",
+   "duration": 1.0,
+   "background": "radial-gradient(#82755B, #8B904C)",
+   "transition": "cut",
+   "layers": [
+    {
+     "shader": "caustics"
+    },
+    {
+     "shape": "circle",
+     "width": 300,
+     "height": 300,
+     "fill": "#F2A23A",
+     "y": "48%",
+     "enter": "pop"
+    },
+    {
+     "text": "SAVINGS",
+     "size": "8vh",
+     "weight": 900,
+     "color": "#FFFFFF",
+     "y": "74%",
+     "enter": "rise"
+    }
+   ]
+  },
+  {
+   "id": "s9-scene3d",
+   "duration": 0.6,
+   "background": "radial-gradient(#FFE7C2, #F2A23A)",
+   "transition": "cut",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1,
+       "x": 0,
+       "y": 0,
+       "rotation": 0
+      },
+      "to": {
+       "zoom": 0.86,
+       "x": 205.0,
+       "y": 58.0,
+       "rotation": 5.0
+      },
+      "duration": 0.6,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": "studio",
+      "quality": "draft",
+      "resolution": 0.5,
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -2.4,
+          0.9,
+          7.0
+         ],
+         "target": [
+          0,
+          0.4,
+          0
+         ],
+         "focal": 42,
+         "fstop": 2.4
+        },
+        {
+         "t": 0.6,
+         "pos": [
+          2.0,
+          0.8,
+          6.2
+         ],
+         "target": [
+          0,
+          0.4,
+          0
+         ],
+         "focal": 50,
+         "fstop": 2.2
+        }
+       ]
+      },
+      "objects": [
+       {
+        "text": "HEARTH",
+        "height": 0.45,
+        "material": "chrome"
+       },
+       {
+        "type": "sphere",
+        "radius": 0.3,
+        "pos": [
+         1.9,
+         0.3,
+         0.9
+        ],
+        "material": "glass"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "s10-kinetic-type",
+   "duration": 2.22,
+   "background": "#FCFCFB",
+   "transition": "cut",
+   "layers": [
+    {
+     "text": "AND ONE GIANT SAVING",
+     "size": "10vh",
+     "weight": 800,
+     "color": "$primary",
+     "enter": "pop by char from center"
+    }
+   ]
+  },
+  {
+   "id": "s11-2d-motion-graphics",
+   "duration": 4.3,
+   "background": "radial-gradient(#3C3D2E, #161A15)",
+   "transition": {
+    "type": "zoom",
+    "duration": 0.2
+   },
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1,
+       "x": 0,
+       "y": 0,
+       "rotation": 0
+      },
+      "to": {
+       "zoom": 1.5,
+       "x": -127.0,
+       "y": -147.0,
+       "rotation": 4.0
+      },
+      "duration": 4.3,
+      "ease": "inOutSine"
+     }
+    ],
+    "shake": {
+     "amount": 29.0
+    }
+   },
+   "layers": [
+    {
+     "shader": "flow-ink"
+    },
+    {
+     "shape": "circle",
+     "width": 300,
+     "height": 300,
+     "fill": "#30A46C",
+     "y": "48%",
+     "enter": "pop"
+    },
+    {
+     "text": "PLANS",
+     "size": "8vh",
+     "weight": 900,
+     "color": "#FFFFFF",
+     "y": "74%",
+     "enter": "rise"
+    }
+   ]
+  },
+  {
+   "id": "s12-2d-motion-graphics",
+   "duration": 2.0,
+   "background": "#FCFCFB",
+   "transition": "cut",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1,
+       "x": 0,
+       "rotation": 0
+      },
+      "to": {
+       "zoom": 0.89,
+       "x": 115.0,
+       "rotation": -2.0
+      },
+      "duration": 2.0,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "text": "GET READY",
+     "size": "10vh",
+     "weight": 800,
+     "color": "$primary",
+     "enter": "pop by char from center"
+    }
+   ]
+  },
+  {
+   "id": "s13-scene3d",
+   "duration": 1.08,
+   "background": "radial-gradient(#F3DDDC, #A4C4F3)",
+   "transition": "cut",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1,
+       "y": 0,
+       "rotation": 0
+      },
+      "to": {
+       "zoom": 1.07,
+       "y": 148.0,
+       "rotation": -4.0
+      },
+      "duration": 1.08,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "shader": "hero"
+    },
+    {
+     "shape": "circle",
+     "width": 300,
+     "height": 300,
+     "fill": "#8E4EC6",
+     "y": "48%",
+     "enter": "pop"
+    },
+    {
+     "text": "BILLS",
+     "size": "8vh",
+     "weight": 900,
+     "color": "#FFFFFF",
+     "y": "74%",
+     "enter": "rise"
+    }
+   ]
+  },
+  {
+   "id": "s14-scene3d",
+   "duration": 0.72,
+   "background": "radial-gradient(#CAC4D1, #F9E0D2)",
+   "transition": "cut",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "y": 0,
+       "rotation": 0
+      },
+      "to": {
+       "y": 45.0,
+       "rotation": -4.0
+      },
+      "duration": 0.72,
+      "ease": "inOutSine"
+     }
+    ],
+    "shake": {
+     "amount": 29.0
+    }
+   },
+   "layers": [
+    {
+     "shader": "caustics"
+    },
+    {
+     "shape": "circle",
+     "width": 300,
+     "height": 300,
+     "fill": "#F2A23A",
+     "y": "48%",
+     "enter": "pop"
+    },
+    {
+     "text": "RENT",
+     "size": "8vh",
+     "weight": 900,
+     "color": "#FFFFFF",
+     "y": "74%",
+     "enter": "rise"
+    }
+   ]
+  },
+  {
+   "id": "s15-2d-motion-graphics",
+   "duration": 3.24,
+   "background": "#FCFCFB",
+   "transition": "cut",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1,
+       "y": 0
+      },
+      "to": {
+       "zoom": 0.81,
+       "y": 77.0
+      },
+      "duration": 3.24,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "text": "Hearth",
+     "size": "34vh",
+     "weight": 900,
+     "color": "$primary",
+     "letterSpacing": "-0.04em",
+     "animate": [
+      {
+       "from": {
+        "scale": 1.6,
+        "opacity": 0,
+        "blur": 16
+       },
+       "duration": 0.3,
+       "ease": "outExpo"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "s16-scene3d",
+   "duration": 0.38,
+   "background": "radial-gradient(#FFE7C2, #F2A23A)",
+   "transition": "cut",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1,
+       "x": 0,
+       "y": 0,
+       "rotation": 0
+      },
+      "to": {
+       "zoom": 0.91,
+       "x": -131.0,
+       "y": 86.0,
+       "rotation": -11.0
+      },
+      "duration": 0.38,
+      "ease": "inOutSine"
+     }
+    ],
+    "shake": {
+     "amount": 30.0
+    }
+   },
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": "studio",
+      "quality": "draft",
+      "resolution": 0.5,
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -2.4,
+          0.9,
+          7.0
+         ],
+         "target": [
+          0,
+          0.4,
+          0
+         ],
+         "focal": 42,
+         "fstop": 2.4
+        },
+        {
+         "t": 0.38,
+         "pos": [
+          2.0,
+          0.8,
+          6.2
+         ],
+         "target": [
+          0,
+          0.4,
+          0
+         ],
+         "focal": 50,
+         "fstop": 2.2
+        }
+       ]
+      },
+      "objects": [
+       {
+        "text": "HEARTH",
+        "height": 0.45,
+        "material": "chrome"
+       },
+       {
+        "type": "sphere",
+        "radius": 0.3,
+        "pos": [
+         1.9,
+         0.3,
+         0.9
+        ],
+        "material": "glass"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "s17-kinetic-type",
+   "duration": 2.34,
+   "background": "#FCFCFB",
+   "transition": {
+    "type": "zoom",
+    "duration": 0.2
+   },
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1
+      },
+      "to": {
+       "zoom": 1.03
+      },
+      "duration": 2.34,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "text": "hearth.app",
+     "size": "8vh",
+     "weight": 800,
+     "color": "$primary",
+     "enter": "rise"
+    }
+   ]
+  }
+ ],
+ "post": {
+  "bloom": 0.12
+ },
+ "music": {
+  "style": "corporate",
+  "bpm": 123,
+  "fit": false,
+  "mood": "playful",
+  "hits": [
+   "@18.42",
+   "@22.06",
+   "@30.22"
+  ]
+ }
+}

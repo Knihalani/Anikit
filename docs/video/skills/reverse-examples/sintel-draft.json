@@ -1,0 +1,1208 @@
+{
+  "size": "16:9",
+  "fps": 24,
+  "intent": {
+    "pace": "steady"
+  },
+  "theme": {
+    "colors": {
+      "bg": "#000000",
+      "text": "#C1AB94",
+      "primary": "#A0826A",
+      "accent": "#EFCD8A"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s1-scene3d",
+      "duration": 5.292,
+      "background": "radial-gradient(#1F2121, #000000)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "x": 0,
+              "y": 0,
+              "rotation": 0
+            },
+            "to": {
+              "zoom": 2.5,
+              "x": 102.0,
+              "y": -549.0,
+              "rotation": 10.0
+            },
+            "duration": 5.292,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "studio",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    -2.8,
+                    1.0,
+                    7.2
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 42,
+                  "fstop": 2.4
+                },
+                {
+                  "t": 5.292,
+                  "pos": [
+                    2.4,
+                    0.8,
+                    6.4
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 50,
+                  "fstop": 2.2
+                }
+              ]
+            },
+            "objects": [
+              {
+                "text": "PRODUCT",
+                "height": 0.7,
+                "material": "chrome"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.28,
+                "pos": [
+                  1.9,
+                  0.28,
+                  0.9
+                ],
+                "material": "glass"
+              },
+              {
+                "type": "torus",
+                "radius": 0.3,
+                "tube": 0.07,
+                "pos": [
+                  -1.9,
+                  0.3,
+                  0.7
+                ],
+                "rot": [
+                  0,
+                  30,
+                  70
+                ],
+                "material": "gold",
+                "spin": [
+                  0,
+                  40,
+                  0
+                ]
+              }
+            ],
+            "quality": "draft",
+            "resolution": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "s2-2d-motion-graphics",
+      "duration": 11.792,
+      "background": "radial-gradient(#0D0706, #000000)",
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.583
+      },
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "x": 0,
+              "y": 0,
+              "rotation": 0
+            },
+            "to": {
+              "zoom": 0.5,
+              "x": 403.0,
+              "y": -104.0,
+              "rotation": -29.0
+            },
+            "duration": 11.792,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "shape": "circle",
+          "width": 360,
+          "height": 360,
+          "fill": "$accent",
+          "opacity": 0.9,
+          "enter": "pop"
+        },
+        {
+          "text": "HEADLINE",
+          "size": "2.4vh",
+          "weight": 500,
+          "color": "$text",
+          "x": "52.5%",
+          "y": "43.9%",
+          "enter": "rise"
+        }
+      ]
+    },
+    {
+      "id": "s3-scene3d",
+      "duration": 0.333,
+      "background": "radial-gradient(#9498A0, #B6B9BF)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1
+            },
+            "to": {
+              "zoom": 1.18
+            },
+            "duration": 0.333,
+            "ease": "inOutSine"
+          }
+        ],
+        "shake": {
+          "amount": 30.0
+        }
+      },
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "studio",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    -2.8,
+                    1.0,
+                    7.2
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 42,
+                  "fstop": 2.4
+                },
+                {
+                  "t": 0.333,
+                  "pos": [
+                    2.4,
+                    0.8,
+                    6.4
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 50,
+                  "fstop": 2.2
+                }
+              ]
+            },
+            "objects": [
+              {
+                "text": "PRODUCT",
+                "height": 0.7,
+                "material": "chrome"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.28,
+                "pos": [
+                  1.9,
+                  0.28,
+                  0.9
+                ],
+                "material": "glass"
+              },
+              {
+                "type": "torus",
+                "radius": 0.3,
+                "tube": 0.07,
+                "pos": [
+                  -1.9,
+                  0.3,
+                  0.7
+                ],
+                "rot": [
+                  0,
+                  30,
+                  70
+                ],
+                "material": "gold",
+                "spin": [
+                  0,
+                  40,
+                  0
+                ]
+              }
+            ],
+            "quality": "draft",
+            "resolution": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "s4-scene3d",
+      "duration": 0.667,
+      "background": "radial-gradient(#000000, #201F20)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "x": 0,
+              "rotation": 0
+            },
+            "to": {
+              "zoom": 1.05,
+              "x": 250.0,
+              "rotation": -7.0
+            },
+            "duration": 0.667,
+            "ease": "inOutSine"
+          }
+        ],
+        "shake": {
+          "amount": 30.0
+        }
+      },
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "studio",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    -2.8,
+                    1.0,
+                    7.2
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 42,
+                  "fstop": 2.4
+                },
+                {
+                  "t": 0.667,
+                  "pos": [
+                    2.4,
+                    0.8,
+                    6.4
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 50,
+                  "fstop": 2.2
+                }
+              ]
+            },
+            "objects": [
+              {
+                "text": "PRODUCT",
+                "height": 0.7,
+                "material": "chrome"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.28,
+                "pos": [
+                  1.9,
+                  0.28,
+                  0.9
+                ],
+                "material": "glass"
+              },
+              {
+                "type": "torus",
+                "radius": 0.3,
+                "tube": 0.07,
+                "pos": [
+                  -1.9,
+                  0.3,
+                  0.7
+                ],
+                "rot": [
+                  0,
+                  30,
+                  70
+                ],
+                "material": "gold",
+                "spin": [
+                  0,
+                  40,
+                  0
+                ]
+              }
+            ],
+            "quality": "draft",
+            "resolution": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "s5-scene3d",
+      "duration": 5.459,
+      "background": "radial-gradient(#0E0C07, #000000)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "y": 0,
+              "rotation": 0
+            },
+            "to": {
+              "zoom": 1.05,
+              "y": -51.0,
+              "rotation": -7.0
+            },
+            "duration": 5.459,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "studio",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    -2.8,
+                    1.0,
+                    7.2
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 42,
+                  "fstop": 2.4
+                },
+                {
+                  "t": 5.459,
+                  "pos": [
+                    2.4,
+                    0.8,
+                    6.4
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 50,
+                  "fstop": 2.2
+                }
+              ]
+            },
+            "objects": [
+              {
+                "text": "PRODUCT",
+                "height": 0.7,
+                "material": "chrome"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.28,
+                "pos": [
+                  1.9,
+                  0.28,
+                  0.9
+                ],
+                "material": "glass"
+              },
+              {
+                "type": "torus",
+                "radius": 0.3,
+                "tube": 0.07,
+                "pos": [
+                  -1.9,
+                  0.3,
+                  0.7
+                ],
+                "rot": [
+                  0,
+                  30,
+                  70
+                ],
+                "material": "gold",
+                "spin": [
+                  0,
+                  40,
+                  0
+                ]
+              }
+            ],
+            "quality": "draft",
+            "resolution": 0.5
+          }
+        },
+        {
+          "text": "HEADLINE",
+          "size": "2.1vh",
+          "weight": 500,
+          "color": "$text",
+          "x": "75.0%",
+          "y": "17.7%",
+          "enter": "rise",
+          "anchor": "right"
+        }
+      ]
+    },
+    {
+      "id": "s6-scene3d",
+      "duration": 1.417,
+      "background": "radial-gradient(#000000, #302214)",
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.583
+      },
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "x": 0,
+              "rotation": 0
+            },
+            "to": {
+              "zoom": 0.84,
+              "x": 198.0,
+              "rotation": -4.0
+            },
+            "duration": 1.417,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "studio",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    -2.8,
+                    1.0,
+                    7.2
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 42,
+                  "fstop": 2.4
+                },
+                {
+                  "t": 1.417,
+                  "pos": [
+                    2.4,
+                    0.8,
+                    6.4
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 50,
+                  "fstop": 2.2
+                }
+              ]
+            },
+            "objects": [
+              {
+                "text": "PRODUCT",
+                "height": 0.7,
+                "material": "chrome"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.28,
+                "pos": [
+                  1.9,
+                  0.28,
+                  0.9
+                ],
+                "material": "glass"
+              },
+              {
+                "type": "torus",
+                "radius": 0.3,
+                "tube": 0.07,
+                "pos": [
+                  -1.9,
+                  0.3,
+                  0.7
+                ],
+                "rot": [
+                  0,
+                  30,
+                  70
+                ],
+                "material": "gold",
+                "spin": [
+                  0,
+                  40,
+                  0
+                ]
+              }
+            ],
+            "quality": "draft",
+            "resolution": 0.5
+          }
+        },
+        {
+          "text": "HEADLINE",
+          "size": "2.8vh",
+          "weight": 500,
+          "color": "$text",
+          "x": "62.7%",
+          "y": "55.8%",
+          "enter": "rise",
+          "anchor": "right"
+        }
+      ]
+    },
+    {
+      "id": "s7-scene3d",
+      "duration": 2.083,
+      "background": "radial-gradient(#000000, #2A2014)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "rotation": 0
+            },
+            "to": {
+              "zoom": 0.64,
+              "rotation": -24.0
+            },
+            "duration": 2.083,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "studio",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    -2.8,
+                    1.0,
+                    7.2
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 42,
+                  "fstop": 2.4
+                },
+                {
+                  "t": 2.083,
+                  "pos": [
+                    2.4,
+                    0.8,
+                    6.4
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 50,
+                  "fstop": 2.2
+                }
+              ]
+            },
+            "objects": [
+              {
+                "text": "PRODUCT",
+                "height": 0.7,
+                "material": "chrome"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.28,
+                "pos": [
+                  1.9,
+                  0.28,
+                  0.9
+                ],
+                "material": "glass"
+              },
+              {
+                "type": "torus",
+                "radius": 0.3,
+                "tube": 0.07,
+                "pos": [
+                  -1.9,
+                  0.3,
+                  0.7
+                ],
+                "rot": [
+                  0,
+                  30,
+                  70
+                ],
+                "material": "gold",
+                "spin": [
+                  0,
+                  40,
+                  0
+                ]
+              }
+            ],
+            "quality": "draft",
+            "resolution": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "s8-scene3d",
+      "duration": 1.542,
+      "background": "radial-gradient(#000000, #A67259)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "x": 0,
+              "y": 0
+            },
+            "to": {
+              "zoom": 0.62,
+              "x": -1920.0,
+              "y": -168.0
+            },
+            "duration": 1.542,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "studio",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    -2.8,
+                    1.0,
+                    7.2
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 42,
+                  "fstop": 2.4
+                },
+                {
+                  "t": 1.542,
+                  "pos": [
+                    2.4,
+                    0.8,
+                    6.4
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 50,
+                  "fstop": 2.2
+                }
+              ]
+            },
+            "objects": [
+              {
+                "text": "PRODUCT",
+                "height": 0.7,
+                "material": "chrome"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.28,
+                "pos": [
+                  1.9,
+                  0.28,
+                  0.9
+                ],
+                "material": "glass"
+              },
+              {
+                "type": "torus",
+                "radius": 0.3,
+                "tube": 0.07,
+                "pos": [
+                  -1.9,
+                  0.3,
+                  0.7
+                ],
+                "rot": [
+                  0,
+                  30,
+                  70
+                ],
+                "material": "gold",
+                "spin": [
+                  0,
+                  40,
+                  0
+                ]
+              }
+            ],
+            "quality": "draft",
+            "resolution": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "s9-scene3d",
+      "duration": 0.583,
+      "background": "radial-gradient(#BE8259, #000000)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1
+            },
+            "to": {
+              "zoom": 1.08
+            },
+            "duration": 0.583,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "studio",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    -2.8,
+                    1.0,
+                    7.2
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 42,
+                  "fstop": 2.4
+                },
+                {
+                  "t": 0.583,
+                  "pos": [
+                    2.4,
+                    0.8,
+                    6.4
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 50,
+                  "fstop": 2.2
+                }
+              ]
+            },
+            "objects": [
+              {
+                "text": "PRODUCT",
+                "height": 0.7,
+                "material": "chrome"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.28,
+                "pos": [
+                  1.9,
+                  0.28,
+                  0.9
+                ],
+                "material": "glass"
+              },
+              {
+                "type": "torus",
+                "radius": 0.3,
+                "tube": 0.07,
+                "pos": [
+                  -1.9,
+                  0.3,
+                  0.7
+                ],
+                "rot": [
+                  0,
+                  30,
+                  70
+                ],
+                "material": "gold",
+                "spin": [
+                  0,
+                  40,
+                  0
+                ]
+              }
+            ],
+            "quality": "draft",
+            "resolution": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "s10-scene3d",
+      "duration": 4.042,
+      "background": "radial-gradient(#B5714B, #000000)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "x": 0,
+              "y": 0,
+              "rotation": 0
+            },
+            "to": {
+              "zoom": 0.95,
+              "x": -1261.0,
+              "y": 251.0,
+              "rotation": 26.0
+            },
+            "duration": 4.042,
+            "ease": "inOutSine"
+          }
+        ],
+        "shake": {
+          "amount": 30.0
+        }
+      },
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "studio",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    -2.8,
+                    1.0,
+                    7.2
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 42,
+                  "fstop": 2.4
+                },
+                {
+                  "t": 4.042,
+                  "pos": [
+                    2.4,
+                    0.8,
+                    6.4
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 50,
+                  "fstop": 2.2
+                }
+              ]
+            },
+            "objects": [
+              {
+                "text": "PRODUCT",
+                "height": 0.7,
+                "material": "chrome"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.28,
+                "pos": [
+                  1.9,
+                  0.28,
+                  0.9
+                ],
+                "material": "glass"
+              },
+              {
+                "type": "torus",
+                "radius": 0.3,
+                "tube": 0.07,
+                "pos": [
+                  -1.9,
+                  0.3,
+                  0.7
+                ],
+                "rot": [
+                  0,
+                  30,
+                  70
+                ],
+                "material": "gold",
+                "spin": [
+                  0,
+                  40,
+                  0
+                ]
+              }
+            ],
+            "quality": "draft",
+            "resolution": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "s11-scene3d",
+      "duration": 1.541,
+      "background": "radial-gradient(#0D0905, #000000)",
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.583
+      },
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "x": 0,
+              "y": 0
+            },
+            "to": {
+              "zoom": 1.46,
+              "x": 83.0,
+              "y": -82.0
+            },
+            "duration": 1.541,
+            "ease": "inOutSine"
+          }
+        ],
+        "shake": {
+          "amount": 30.0
+        }
+      },
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "studio",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    -2.8,
+                    1.0,
+                    7.2
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 42,
+                  "fstop": 2.4
+                },
+                {
+                  "t": 1.541,
+                  "pos": [
+                    2.4,
+                    0.8,
+                    6.4
+                  ],
+                  "target": [
+                    0,
+                    0.4,
+                    0
+                  ],
+                  "focal": 50,
+                  "fstop": 2.2
+                }
+              ]
+            },
+            "objects": [
+              {
+                "text": "PRODUCT",
+                "height": 0.7,
+                "material": "chrome"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.28,
+                "pos": [
+                  1.9,
+                  0.28,
+                  0.9
+                ],
+                "material": "glass"
+              },
+              {
+                "type": "torus",
+                "radius": 0.3,
+                "tube": 0.07,
+                "pos": [
+                  -1.9,
+                  0.3,
+                  0.7
+                ],
+                "rot": [
+                  0,
+                  30,
+                  70
+                ],
+                "material": "gold",
+                "spin": [
+                  0,
+                  40,
+                  0
+                ]
+              }
+            ],
+            "quality": "draft",
+            "resolution": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "id": "s12-2d-motion-graphics",
+      "duration": 19.792,
+      "background": "radial-gradient(#9D8870, #000000)",
+      "transition": {
+        "type": "crossfade",
+        "duration": 0.583
+      },
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "y": 0,
+              "rotation": 0
+            },
+            "to": {
+              "zoom": 1.07,
+              "y": 207.0,
+              "rotation": 22.0
+            },
+            "duration": 19.792,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "shape": "circle",
+          "width": 360,
+          "height": 360,
+          "fill": "$accent",
+          "opacity": 0.9,
+          "enter": "pop"
+        }
+      ]
+    }
+  ],
+  "post": {
+    "vignette": 0.7
+  },
+  "music": {
+    "style": "house",
+    "bpm": 123.0,
+    "fit": false,
+    "hits": [
+      "@9.38",
+      "@12.21",
+      "@16.63",
+      "@17.06"
+    ]
+  }
+}
