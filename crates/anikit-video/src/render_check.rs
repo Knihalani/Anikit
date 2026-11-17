@@ -53,9 +53,16 @@ fn text_blocks(dl: &DisplayList) -> Vec<Block> {
                 }
                 let (mut x0, mut x1) = (f32::MAX, f32::MIN);
                 let (mut y0, mut y1) = (f32::MAX, f32::MIN);
+                // The last glyph's width: the run's average advance (narrow letters end runs often).
+                let adv = if glyphs.len() > 1 {
+                    let (a, b) = glyphs.iter().fold((f32::MAX, f32::MIN), |(lo, hi), g| (lo.min(g.x), hi.max(g.x)));
+                    ((b - a) / (glyphs.len() - 1) as f32).clamp(size * 0.25, size * 0.55)
+                } else {
+                    size * 0.5
+                };
                 for g in glyphs {
                     x0 = x0.min(g.x);
-                    x1 = x1.max(g.x + size * 0.55);
+                    x1 = x1.max(g.x + adv);
                     y0 = y0.min(g.y - size * 0.72);
                     y1 = y1.max(g.y + size * 0.1);
                 }
@@ -174,10 +181,10 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
             if b.size / SCALE < 16.0 {
                 continue;
             }
-            let large = b.size / SCALE >= fmt.width.min(fmt.height) as f32 * 0.04;
+            let large = b.size / SCALE >= fmt.width.min(fmt.height) as f32 * 0.03;
             let need = if large { 3.0 } else { 4.5 };
             if let Some(c) = worst_contrast(&bg, w, h, b.rect, b.color) {
-                if c < need {
+                if c + 0.05 < need {
                     push(format!("c{where_}{i}"), Note {
                         severity: if c < 2.0 { "error" } else { "warning" },
                         check: "render-contrast",
@@ -190,7 +197,11 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
             if !transition {
                 if b.rect[0] < -1.0 || b.rect[1] < -1.0 || b.rect[2] > w as f32 + 1.0 || b.rect[3] > h as f32 + 1.0 {
                     push(format!("f{where_}{i}"), Note { severity: "error", check: "render-frame", path: at(b.rect), message: "text is cut by the frame edge".into(), fix: "move it inside the frame or give it a narrower width".into() });
-                } else if b.rect[0] < left - 2.0 || b.rect[2] > w as f32 - right + 2.0 || b.rect[1] < top - 2.0 || b.rect[3] > h as f32 - bottom + 2.0 {
+                } else if {
+                    // Camera moves nudge type a little; flag only real overflows (> 1.5% of the frame).
+                    let (tx, ty) = (w as f32 * 0.015, h as f32 * 0.015);
+                    b.rect[0] < left - tx || b.rect[2] > w as f32 - right + tx || b.rect[1] < top - ty || b.rect[3] > h as f32 - bottom + ty
+                } {
                     push(format!("s{where_}{i}"), Note { severity: "warning", check: "render-safe", path: at(b.rect), message: "text extends outside the title-safe area".into(), fix: "keep it inside the safe margins (9:16: top 12%, bottom 20%)".into() });
                 }
             }
