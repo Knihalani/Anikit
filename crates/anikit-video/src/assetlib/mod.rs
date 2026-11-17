@@ -25,7 +25,7 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 /// Sources `src` strings may name.
-pub const PROVIDERS: &[&str] = &["polyhaven", "ambientcg", "khronos", "anikit"];
+pub const PROVIDERS: &[&str] = &["polyhaven", "ambientcg", "khronos", "kenney", "anikit"];
 /// Asset types (`assets search --type`).
 pub const TYPES: &[&str] = &["hdri", "texture", "model", "lut", "image"];
 

@@ -23,7 +23,7 @@ Lines read `id  type  description  [tags]  size`; types `hdri texture model lut 
 | `polyhaven:texture/<slug>` | PBR set: albedo, normal, roughness, AO, displacement (2k; `@1k`) |
 | `ambientcg:<AssetId>` | PBR set from ambientCG (e.g. `ambientcg:Wood049`, 2k) |
 | `polyhaven:model/<slug>` | glTF model with its textures (1k; `@2k`) |
-| `khronos:<Name>` | CC0 glTF sample model (GLB) |
+| `khronos:<Name>` · `kenney:<kit>/<name>` | CC0 glTF sample model · stylised low-poly kits (city, racing, arena, platformer, fps) |
 | `anikit:lut/<name>` | film LUT, generated locally (no download) |
 
 Any Poly Haven slug or ambientCG id works live; the curated ~230 are pinned and described.
@@ -57,4 +57,4 @@ Any Poly Haven slug or ambientCG id works live; the curated ~230 are pinned and 
 `assets get <ref…>` pre-fetches (prints paths). Offline, a missing asset fails with a clear
 message; `ANIKIT_OFFLINE=1` never touches the network. Downloads use the system `curl`.
 All CC0 1.0: Poly Haven (polyhaven.com/license), ambientCG (docs.ambientcg.com/license),
-CC0-only Khronos samples, anikit's own LUTs. `assets credits spec.json` lists what a spec uses.
+CC0-only Khronos samples, Kenney's starter-kit models, anikit's own LUTs. `assets credits spec.json` lists what a spec uses.
