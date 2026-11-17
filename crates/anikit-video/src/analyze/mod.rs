@@ -157,6 +157,13 @@ pub struct Shot {
     pub technique: Vec<String>,
     /// Time of the key frame (on the sheet).
     pub key_time: f64,
+    /// Tone and colour of the grade.
+    pub grade: Grade,
+    /// Composition of the key frame.
+    pub layout: Layout,
+    /// How the motion is timed over the shot: `snap-then-settle` (ease-out),
+    /// `builds` (ease-in), `steady` (linear drift), `bursts` (hits) or `still`.
+    pub motion_character: String,
 }
 
 #[derive(Debug, Clone, Serialize, Default)]
@@ -171,6 +178,30 @@ pub struct Camera {
     /// Frame-to-frame jitter left after the smooth move (% of width): shake or handheld.
     pub shake: f32,
     /// `static`, `pan left`, `push in`, `pull out`, `roll`, `handheld`, …
+    pub label: String,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct Grade {
+    /// OKLab lightness at the 2nd, 50th and 98th percentiles: the black point (lift), mid (gamma) and white point (gain).
+    pub black: f32,
+    pub mid: f32,
+    pub white: f32,
+    /// Mean OKLab b (+ warm/yellow, − cool/blue) and a (+ magenta, − green) of the mid-tones.
+    pub warmth: f32,
+    pub tint: f32,
+    /// e.g. `lifted blacks, soft highlights, warm, desaturated`.
+    pub label: String,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct Layout {
+    /// Left-right mirror similarity of the key frame, 0…1 (1 = symmetric).
+    pub symmetry: f32,
+    /// Centre of visual weight (contrast against the mean), 0…1 in x and y.
+    pub weight_x: f32,
+    pub weight_y: f32,
+    /// `centred`, `left-weighted`, `right-weighted`, `top-heavy`, `bottom-heavy`.
     pub label: String,
 }
 
@@ -196,6 +227,12 @@ pub struct TextRegion {
     pub position: String,
     /// Edge density in the box: higher means more confidently text.
     pub confidence: f32,
+    /// `light-on-dark` or `dark-on-light`.
+    pub ink: String,
+    /// Share of the box covered by ink: ≈ 0.12 light/thin, 0.2 regular, ≥ 0.3 bold/black.
+    pub ink_share: f32,
+    /// `thin`, `regular` or `bold` from `ink_share`.
+    pub weight: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -890,6 +927,7 @@ fn analyse_shot(index: usize, start: f64, end: f64, pad_a: f64, pad_b: f64, tran
     let contrast = ((l2 / ns - (ls / ns).powi(2)).max(0.0).sqrt()) as f32;
     let saturation = (cs / ns) as f32;
     let key = if luma < 0.38 { "low-key" } else if luma > 0.72 { "high-key" } else { "mid-key" }.to_string();
+    let grade = grade_of(&samples, saturation);
 
     // Camera: integrate the similarity model over the shot (skip the first frame: it straddles the cut).
     let (mut px, mut py, mut lz, mut rot) = (0f32, 0f32, 0f32, 0f32);
@@ -916,6 +954,7 @@ fn analyse_shot(index: usize, start: f64, end: f64, pad_a: f64, pad_b: f64, tran
     let per = (fps / 4.0).round().max(1.0) as usize;
     let motion: Vec<f32> = range.clone().collect::<Vec<_>>().chunks(per).map(|c| r2(c.iter().map(|&q| m[q].mag).sum::<f32>() / c.len() as f32 / sw as f32 * 100.0)).collect();
     let motion_mean = r2(motion.iter().sum::<f32>() / motion.len().max(1) as f32);
+    let motion_character = motion_character(&motion);
 
     // Vignette: corners vs centre over the shot's frames.
     let mut vig = Vec::new();
@@ -933,6 +972,7 @@ fn analyse_shot(index: usize, start: f64, end: f64, pad_a: f64, pad_b: f64, tran
     let glow = r2(glow(&kl, k.w, k.h));
     let points = count_points(&kl, k.w, k.h);
     let text = text_regions(&kl, k.w, k.h);
+    let layout = layout_of(&kl, k.w, k.h);
     let text_coverage = r2(text.iter().map(|t| t.bbox[2] * t.bbox[3]).sum::<f32>().min(1.0));
     let (busy, hard) = flatness(&kl, k.w, k.h);
     let look_score = r2(1.0 - (hard / 0.15).min(1.0));
@@ -993,6 +1033,85 @@ fn analyse_shot(index: usize, start: f64, end: f64, pad_a: f64, pad_b: f64, tran
         points,
         technique,
         key_time: round3(k.t),
+        grade,
+        layout,
+        motion_character,
+    }
+}
+
+fn grade_of(lab: &[[f32; 3]], sat: f32) -> Grade {
+    if lab.is_empty() {
+        return Grade::default();
+    }
+    let mut l: Vec<f32> = lab.iter().map(|c| c[0]).collect();
+    l.sort_by(f32::total_cmp);
+    let p = |q: f32| l[((l.len() - 1) as f32 * q) as usize];
+    let (black, mid, white) = (p(0.02), p(0.5), p(0.98));
+    let mids: Vec<&[f32; 3]> = lab.iter().filter(|c| c[0] > 0.25 && c[0] < 0.8).collect();
+    let n = mids.len().max(1) as f32;
+    let warmth = mids.iter().map(|c| c[2]).sum::<f32>() / n;
+    let tint = mids.iter().map(|c| c[1]).sum::<f32>() / n;
+    let mut parts = Vec::new();
+    parts.push(if black > 0.18 { "lifted (milky) blacks" } else if black < 0.04 { "crushed blacks" } else { "clean blacks" });
+    parts.push(if white < 0.8 { "soft, rolled-off highlights" } else if white > 0.97 { "bright, clipped highlights" } else { "clean highlights" });
+    parts.push(if white - black < 0.5 { "low contrast" } else if white - black > 0.85 { "high contrast" } else { "medium contrast" });
+    parts.push(if warmth > 0.015 { "warm" } else if warmth < -0.015 { "cool" } else { "neutral" });
+    if tint > 0.012 {
+        parts.push("magenta tint");
+    } else if tint < -0.012 {
+        parts.push("green tint");
+    }
+    parts.push(if sat < 0.03 { "near monochrome" } else if sat < 0.07 { "desaturated" } else if sat > 0.13 { "saturated" } else { "natural saturation" });
+    Grade { black: r2(black), mid: r2(mid), white: r2(white), warmth: r3(warmth), tint: r3(tint), label: parts.join(", ") }
+}
+
+fn layout_of(l: &[f32], w: usize, h: usize) -> Layout {
+    let mean = l.iter().sum::<f32>() / l.len().max(1) as f32;
+    let (mut sym, mut dev) = (0.0f32, 0.0f32);
+    let (mut wx, mut wy, mut ws) = (0.0f32, 0.0f32, 0.0f32);
+    for y in (0..h).step_by(2) {
+        for x in (0..w).step_by(2) {
+            let v = l[y * w + x];
+            sym += (v - l[y * w + (w - 1 - x)]).abs();
+            let d = (v - mean).abs();
+            dev += d;
+            wx += d * x as f32;
+            wy += d * y as f32;
+            ws += d;
+        }
+    }
+    let symmetry = if dev > 1e-3 { (1.0 - sym / (2.0 * dev)).clamp(0.0, 1.0) } else { 1.0 };
+    let (bx, by) = if ws > 1e-3 { (wx / ws / w as f32, wy / ws / h as f32) } else { (0.5, 0.5) };
+    let label = if (bx - 0.5).abs() < 0.06 && (by - 0.5).abs() < 0.08 {
+        "centred"
+    } else if (bx - 0.5).abs() >= (by - 0.5).abs() {
+        if bx < 0.5 { "left-weighted" } else { "right-weighted" }
+    } else if by < 0.5 {
+        "top-heavy"
+    } else {
+        "bottom-heavy"
+    };
+    Layout { symmetry: r2(symmetry), weight_x: r2(bx), weight_y: r2(by), label: label.into() }
+}
+
+fn motion_character(m: &[f32]) -> String {
+    let n = m.len();
+    let mean = m.iter().sum::<f32>() / n.max(1) as f32;
+    if n < 2 || mean < 0.15 {
+        return "still".into();
+    }
+    let peak = m.iter().cloned().fold(0.0, f32::max);
+    let third = (n / 3).max(1);
+    let a = m[..third].iter().sum::<f32>() / third as f32;
+    let c = m[n - third..].iter().sum::<f32>() / third as f32;
+    if peak > mean * 2.5 && n >= 4 {
+        "bursts".into()
+    } else if a > c * 1.6 {
+        "snap-then-settle".into()
+    } else if c > a * 1.6 {
+        "builds".into()
+    } else {
+        "steady".into()
     }
 }
 

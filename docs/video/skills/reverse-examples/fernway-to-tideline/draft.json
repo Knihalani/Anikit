@@ -1,0 +1,290 @@
+{
+  "size": "9:16",
+  "fps": 30,
+  "intent": {
+    "pace": "fast"
+  },
+  "theme": {
+    "colors": {
+      "bg": "#080E17",
+      "text": "#E5E8C9",
+      "primary": "#E5E8C9",
+      "accent": "#C6CAA8"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s1-scene3d",
+      "duration": 0.967,
+      "background": "radial-gradient(#202C2C, #070E17)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "x": 0
+            },
+            "to": {
+              "zoom": 1.46,
+              "x": 66.0
+            },
+            "duration": 0.967,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "notes": "REF shot 1 (0.00–0.97 s, key frame 0.53 s): rendered-3d look, low-key; grade: clean blacks, soft, rolled-off highlights, low contrast, neutral, green tint, near monochrome; palette #070E17 47%, #202C2C 45%, #394039 7%, #F2DBA0 1%; camera: push in + pan right; motion: steady (1.1% of width/frame); layout: centred (symmetry 0.74); depth: soft; finish: grain 0.000, glow 0.53, vignette 0.55. Technique guess: scene3d. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.",
+      "layers": []
+    },
+    {
+      "id": "s2-scene3d",
+      "duration": 1.033,
+      "background": "radial-gradient(#838C86, #2B3937)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1
+            },
+            "to": {
+              "zoom": 0.84
+            },
+            "duration": 1.033,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "notes": "REF shot 2 (0.97–1.90 s, key frame 1.33 s): rendered-3d look, mid-key; grade: lifted (milky) blacks, soft, rolled-off highlights, low contrast, neutral, green tint, near monochrome; palette #2B3937 25%, #838C86 24%, #6C7470 20%, #41504C 16%; camera: pull out; motion: bursts (0.6% of width/frame); layout: centred (symmetry 0.89); depth: deep; finish: grain 0.002, glow 0.00, vignette 0.36. Technique guess: scene3d. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.",
+      "layers": []
+    },
+    {
+      "id": "s3-scene3d",
+      "duration": 1.033,
+      "background": "radial-gradient(#080E17, #202D2C)",
+      "transition": {
+        "type": "zoom",
+        "duration": 0.2
+      },
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1
+            },
+            "to": {
+              "zoom": 0.76
+            },
+            "duration": 1.033,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "notes": "REF shot 3 (1.90–2.83 s, key frame 2.40 s): rendered-3d look, low-key; grade: clean blacks, clean highlights, medium contrast, neutral, green tint, near monochrome; palette #202D2C 48%, #080E17 46%, #F9E1A0 3%, #6E4D2D 2%; camera: pull out; motion: bursts (0.6% of width/frame); layout: top-heavy (symmetry 0.82); depth: soft; finish: grain 0.000, glow 0.72, vignette 0.64. Technique guess: scene3d. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.",
+      "layers": []
+    },
+    {
+      "id": "s4-scene3d",
+      "duration": 0.934,
+      "background": "radial-gradient(#303C3A, #616A65)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1
+            },
+            "to": {
+              "zoom": 1.38
+            },
+            "duration": 0.934,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "notes": "REF shot 4 (2.83–3.77 s, key frame 3.20 s): rendered-3d look, mid-key; grade: lifted (milky) blacks, soft, rolled-off highlights, low contrast, neutral, green tint, near monochrome; palette #616A65 34%, #303C3A 24%, #7A817A 22%, #47534E 19%; camera: push in; motion: snap-then-settle (1.1% of width/frame); layout: centred (symmetry 0.83); depth: deep; finish: grain 0.002, glow 0.40, vignette 0.29. Technique guess: scene3d. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.",
+      "layers": []
+    },
+    {
+      "id": "s5-scene3d",
+      "duration": 1.866,
+      "background": "radial-gradient(#232F2D, #070E18)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "x": 0
+            },
+            "to": {
+              "zoom": 1.08,
+              "x": -168.0
+            },
+            "duration": 1.866,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "notes": "REF shot 5 (3.77–5.63 s, key frame 4.80 s): rendered-3d look, low-key; grade: clean blacks, soft, rolled-off highlights, low contrast, neutral, green tint, near monochrome; palette #070E18 49%, #232F2D 39%, #858A83 11%, #D9C38E 1%; camera: push in + pan left; motion: snap-then-settle (1.4% of width/frame); layout: centred (symmetry 0.85); depth: deep; finish: grain 0.000, glow 0.00, vignette 0.71. Technique guess: scene3d. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.",
+      "layers": []
+    },
+    {
+      "id": "s6-2d-motion-graphics",
+      "duration": 0.934,
+      "background": "#E6E6D2",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "rotation": 0
+            },
+            "to": {
+              "zoom": 0.88,
+              "rotation": 5.0
+            },
+            "duration": 0.934,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "notes": "REF shot 6 (5.63–6.57 s, key frame 6.13 s): flat-2d look, high-key; grade: lifted (milky) blacks, bright, clipped highlights, medium contrast, warm, near monochrome; palette #E6E6D2 82%, #BAB89B 7%, #34322F 6%, #222222 4%; camera: pull out; motion: bursts (1.3% of width/frame); layout: top-heavy (symmetry 0.81); depth: deep. Technique guess: 2d-motion-graphics. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.",
+      "layers": []
+    },
+    {
+      "id": "s7-scene3d",
+      "duration": 1.033,
+      "background": "radial-gradient(#070C14, #868C86)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "x": 0,
+              "y": 0
+            },
+            "to": {
+              "zoom": 1.4,
+              "x": -75.0,
+              "y": -131.0
+            },
+            "duration": 1.033,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "notes": "REF shot 7 (6.57–7.50 s, key frame 6.93 s): rendered-3d look, mid-key; grade: clean blacks, soft, rolled-off highlights, medium contrast, neutral, near monochrome; palette #868C86 38%, #070C14 26%, #6C706A 19%, #1C2727 17%; camera: push in + pan left; motion: steady (2.6% of width/frame); layout: centred (symmetry 0.84); depth: deep; finish: grain 0.001, glow 0.00, vignette 0.85; TYPE 4.1vh regular light-on-dark wide line, center-aligned at top. Technique guess: scene3d. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.",
+      "layers": []
+    },
+    {
+      "id": "s8-kinetic-type",
+      "duration": 2.0,
+      "background": "radial-gradient(#25302E, #0B1019)",
+      "transition": {
+        "type": "zoom",
+        "duration": 0.2
+      },
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1,
+              "x": 0,
+              "y": 0,
+              "rotation": 0
+            },
+            "to": {
+              "zoom": 1.73,
+              "x": 470.0,
+              "y": -336.0,
+              "rotation": -45.0
+            },
+            "duration": 2.0,
+            "ease": "inOutSine"
+          }
+        ],
+        "shake": {
+          "amount": 18.0
+        }
+      },
+      "notes": "REF shot 8 (7.50–9.40 s, key frame 8.53 s): rendered-3d look, low-key; grade: clean blacks, clean highlights, medium contrast, neutral, green tint, near monochrome; palette #0B1019 52%, #25302E 43%, #70593A 2%, #C8BD90 2%; camera: push in + pan right + roll + handheld/shake; motion: snap-then-settle (1.8% of width/frame); layout: top-heavy (symmetry 0.64); depth: shallow; finish: grain 0.000, glow 0.54, vignette 0.49; TYPE 6.3vh regular light-on-dark wide line, center-aligned at top. Technique guess: kinetic-type / scene3d. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.",
+      "layers": []
+    },
+    {
+      "id": "s9-scene3d",
+      "duration": 1.867,
+      "background": "radial-gradient(#E1EBC6, #C6CDAC)",
+      "transition": "cut",
+      "notes": "REF shot 9 (9.40–11.27 s, key frame 10.40 s): rendered-3d look, high-key; grade: lifted (milky) blacks, clean highlights, medium contrast, warm, desaturated; palette #C6CDAC 52%, #E1EBC6 45%, #2F2D28 2%, #A29574 1%; camera: static; motion: bursts (0.6% of width/frame); layout: bottom-heavy (symmetry 0.82); depth: deep; finish: grain 0.001, glow 0.50, vignette 0.16. Technique guess: scene3d. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.",
+      "layers": []
+    },
+    {
+      "id": "s10-scene3d",
+      "duration": 0.933,
+      "background": "radial-gradient(#090E17, #232E2C)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1
+            },
+            "to": {
+              "zoom": 1.13
+            },
+            "duration": 0.933,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "notes": "REF shot 10 (11.27–12.20 s, key frame 11.73 s): rendered-3d look, low-key; grade: clean blacks, clean highlights, medium contrast, neutral, green tint, near monochrome; palette #232E2C 49%, #090E17 42%, #F9E6AC 5%, #624B33 3%; camera: push in; motion: snap-then-settle (0.9% of width/frame); layout: top-heavy (symmetry 0.93); depth: deep; finish: grain 0.001, glow 0.56, vignette 0.78; TYPE 2.2vh bold light-on-dark short line, right-aligned at bottom; TYPE 2.2vh bold light-on-dark short line, left-aligned at bottom. Technique guess: scene3d. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.",
+      "layers": []
+    },
+    {
+      "id": "s11-scene3d",
+      "duration": 0.933,
+      "background": "radial-gradient(#828A84, #656E6A)",
+      "transition": "cut",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1
+            },
+            "to": {
+              "zoom": 0.84
+            },
+            "duration": 0.933,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "notes": "REF shot 11 (12.20–13.13 s, key frame 12.53 s): rendered-3d look, mid-key; grade: lifted (milky) blacks, soft, rolled-off highlights, low contrast, neutral, green tint, near monochrome; palette #656E6A 30%, #828A84 27%, #2C3937 26%, #44524E 17%; camera: pull out; motion: bursts (0.5% of width/frame); layout: centred (symmetry 0.89); depth: deep; finish: grain 0.002, glow 0.00, vignette 0.36. Technique guess: scene3d. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.",
+      "layers": []
+    },
+    {
+      "id": "s12-scene3d",
+      "duration": 1.867,
+      "background": "radial-gradient(#080E15, #1F2C2B)",
+      "transition": "cut",
+      "notes": "REF shot 12 (13.13–15.00 s, key frame 14.13 s): rendered-3d look, low-key; grade: clean blacks, soft, rolled-off highlights, medium contrast, neutral, green tint, near monochrome; palette #1F2C2B 63%, #080E15 30%, #504939 3%, #D5D4AA 2%; camera: static; motion: bursts (0.3% of width/frame); layout: top-heavy (symmetry 0.64); depth: deep; finish: grain 0.001, glow 0.46, vignette 0.66; TYPE 2.8vh bold light-on-dark short line, left-aligned at bottom; TYPE 2.8vh bold light-on-dark short line, right-aligned at bottom. Technique guess: scene3d. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.",
+      "layers": []
+    }
+  ],
+  "post": {
+    "vignette": 0.55,
+    "bloom": 0.37
+  },
+  "music": {
+    "style": "house",
+    "bpm": 128.0,
+    "fit": false,
+    "hits": [
+      "@12.19"
+    ]
+  }
+}

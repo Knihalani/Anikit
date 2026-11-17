@@ -1,5 +1,41 @@
 # Reverse-engineering examples
 
+## `fernway-to-tideline/` (the good one)
+
+- **Reference:** `docs/video/skills/launch-examples/fernway/fernway.mp4`, our own 15 s 9:16 motion-design launch.
+- **Recreation:** the same style for a different product, *Tideline* (offline sea charts).
+- **Method:** following `skills/anikit-reverse-video/SKILL.md`:
+  1. `analyze` gives 12 shots, median 0.93 s, 128 BPM, 100% of cuts on a beat, and a grade of lifted blacks with low contrast.
+  2. Looking at the key frames gives the style breakdown: dark rendered terrain at dusk with a warm key light; an **amber glowing bead route as the recurring motif**; a high-contrast serif for statements (one glowing amber word); a heavy grotesk plus italic serif for feature lines; a mono for data; chart-paper inserts with an orange route and a dark label bar; a phone in the world; fast snaps on the beat; a serif wordmark end card.
+  3. Each shot is rebuilt with the same medium, type system, light and motif, but new subject and copy: a swell instead of ridges, a sea route, depth soundings, "No coverage. / No chart. / Every *channel.*".
+- `make.py` writes `tideline.json`.
+
+**Open `pairs.jpg`:** each reference key frame (left) next to the recreation at the same time (right).
+
+| | Fernway (reference) | Tideline (recreation) |
+|---|---|---|
+| shots / median / longest | 12 / 0.93 s / 1.90 s | 12 / 0.93 s / 1.90 s |
+| pace / tempo / cuts on a beat | fast / 128 BPM / 100% | fast / 128 BPM / 100% |
+| analyze time (15 s, 1080×1920) | 2.4 s | 2.9 s |
+| render (`--scale 0.5`, 4 cores) | | 1 min 48 s |
+
+Honest gaps:
+- Shot 3 shows mirrored fragments of the extruded word reflecting in the water.
+- Shot 11 has a stray glint.
+- The sea reads as rolling hills more than water.
+
+Files:
+- `ref-analysis.json`, `ref-sheet.jpg`: analysis of the reference.
+- `draft.json`: the skeleton `--spec`, with `notes` per scene and no invented layers.
+- `recreate-analysis.json`, `recreate-sheet.jpg`: analysis of the recreation.
+- `tideline.mp4`: the recreation.
+
+**Limit:** motion design recreates well. Live-action or character-animation footage can't be rebuilt in a motion-graphics engine, only its cutting, framing, grade and type.
+
+## First attempt (rejected): Big Buck Bunny and Sintel trailers
+
+The files below are kept as a record of what *not* to do. The timing matched, but the recreations were placeholder art (centred caps on white, circles on a stock shader, a torus), because the old draft invented layers and the agent built from numbers without studying the frames. Their `*-draft.json` files predate the skeleton draft.
+
 `anikit-video analyze` on two public trailers, then a recreation of each one's *structure, pacing and style* for a made-up product, following `skills/anikit-reverse-video/SKILL.md`. No footage, characters, logos or music from the references are in the recreations.
 
 References (Blender Foundation open movies, CC BY 3.0, © Blender Foundation, www.blender.org; used here only for analysis and the side-by-side comparison):

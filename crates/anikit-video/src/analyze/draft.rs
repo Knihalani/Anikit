@@ -45,72 +45,26 @@ fn theme(a: &Analysis) -> Value {
     json!({ "colors": { "bg": bg, "text": text, "primary": primary, "accent": accent } })
 }
 
-fn pct(v: f32) -> String {
-    format!("{:.1}%", v * 100.0)
-}
 
-fn text_layers(s: &Shot, kinetic: bool) -> Vec<Value> {
-    let copy = ["HEADLINE", "Supporting line", "caption"];
-    s.text
-        .iter()
-        .take(3)
-        .enumerate()
-        .map(|(i, t)| {
-            let size = (t.height * 100.0 * 0.85).clamp(1.6, 30.0);
-            let (x, anchor) = match t.align.as_str() {
-                "left" => (t.bbox[0], Some("left")),
-                "right" => (t.bbox[0] + t.bbox[2], Some("right")),
-                _ => (t.bbox[0] + t.bbox[2] / 2.0, None),
-            };
-            let y = t.bbox[1] + t.bbox[3] / 2.0;
-            let mut l = json!({
-                "text": copy[i.min(2)],
-                "size": format!("{size:.1}vh"),
-                "weight": if t.height > 0.06 { 800 } else { 500 },
-                "color": "$text",
-                "x": pct(x),
-                "y": pct(y),
-                "enter": if kinetic { "pop by char from center" } else { "rise" },
-            });
-            if let Some(a) = anchor {
-                l["anchor"] = json!(a);
-            }
-            l
-        })
-        .collect()
-}
-
-fn technique_layer(tech: &str, s: &Shot, dur: f64) -> Option<Value> {
-    let swatches: Vec<String> = s.palette.iter().filter(|p| p.share > 0.02).map(|p| p.hex.clone()).collect();
-    match tech {
-        "particles" => {
-            let (_, mut spec) = crate::agent_docs::recipe_spec("particle-ignite")?;
-            let mut layer = spec["scenes"][0]["layers"][0].take();
-            let obj = &mut layer["props"]["objects"][0];
-            obj["emit"]["text"] = json!("PRODUCT");
-            if swatches.len() >= 2 {
-                obj["color"] = json!(swatches);
-            }
-            layer["props"]["camera"]["keys"][1]["t"] = json!(dur);
-            Some(layer)
-        }
-        "scene3d" => {
-            let (_, mut spec) = crate::agent_docs::recipe_spec("chrome-hero")?;
-            let mut layer = spec["scenes"][0]["layers"][0].take();
-            layer["props"]["objects"][0]["text"] = json!("PRODUCT");
-            layer["props"]["camera"]["keys"][1]["t"] = json!(dur);
-            Some(layer)
-        }
-        "shader" | "footage-or-scene3d" => {
-            let name = if s.luma < 0.4 { "aurora" } else { "flow-ink" };
-            Some(json!({ "shader": name }))
-        }
-        "2d-motion-graphics" => {
-            let fill = if swatches.len() > 1 { "$accent" } else { "$primary" };
-            Some(json!({ "shape": "circle", "width": 360, "height": 360, "fill": fill, "opacity": 0.9, "enter": "pop" }))
-        }
-        _ => None,
+/// A shot description for the scene's `notes`: what the reference shows and
+/// how, from the measures. The agent adds what it sees in the key frame.
+fn notes(s: &Shot) -> String {
+    let pal: Vec<String> = s.palette.iter().take(4).map(|p| format!("{} {:.0}%", p.hex, p.share * 100.0)).collect();
+    let mut n = format!(
+        "REF shot {} ({:.2}–{:.2} s, key frame {:.2} s): {} look, {}; grade: {}; palette {}; camera: {}; motion: {} ({:.1}% of width/frame); layout: {} (symmetry {:.2}); depth: {}",
+        s.index + 1, s.start, s.end, s.key_time, s.look, s.key, s.grade.label, pal.join(", "), s.camera.label, s.motion_character, s.motion_mean, s.layout.label, s.layout.symmetry, s.depth.dof
+    );
+    if s.grain > 0.008 || s.glow > 0.1 || s.vignette > 0.3 {
+        n += &format!("; finish: grain {:.3}, glow {:.2}, vignette {:.2}", s.grain, s.glow, s.vignette);
     }
+    for t in &s.text {
+        n += &format!(
+            "; TYPE {:.1}vh {} {} {}, {}-aligned at {}",
+            t.height * 85.0, t.weight, t.ink, if t.bbox[2] > 0.5 { "wide line" } else { "short line" }, t.align, t.position
+        );
+    }
+    n += &format!(". Technique guess: {}. LOOK at the key frame, then replace this with what it shows (subject, typeface, materials, light) and build it with your content.", s.technique.join(" / "));
+    n
 }
 
 fn music(a: &Analysis) -> Option<Value> {
@@ -229,15 +183,10 @@ pub fn draft_spec(a: &Analysis) -> Value {
         if cam.as_object().is_some_and(|o| !o.is_empty()) {
             scene["camera"] = cam;
         }
-        let mut layers = Vec::new();
-        if let Some(l) = technique_layer(tech, s, d) {
-            layers.push(l);
-        }
-        let kinetic = s.technique.iter().any(|t| t == "kinetic-type");
-        layers.extend(text_layers(s, kinetic));
-        if layers.is_empty() {
-            layers.push(json!({ "shape": "rect", "width": "100%", "height": "100%", "fill": "$bg", "opacity": 0 }));
-        }
+        // No invented content: the layers are yours to build from the notes
+        // and your own look at the reference's key frame.
+        scene["notes"] = json!(notes(s));
+        let layers: Vec<Value> = Vec::new();
         scene["layers"] = json!(layers);
         scenes.push(scene);
     }
