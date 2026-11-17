@@ -407,14 +407,88 @@ pub struct GroupSpec {
     pub rotate: f32,
     pub scale: Option<Num2>,
     pub origin: [f32; 2],
+    /// Bone pivot (alias of `origin`): rotation and scale happen about it.
+    pub pivot: Option<[f32; 2]>,
     pub animate: Option<AnimSpec>,
     pub sway: Option<Sway>,
+    /// Procedural motion cycle: `"idle"`, `"breathe"`, `"walk"`, `"bob"`, `"wave"` or `"nod"` (or an object).
+    pub cycle: Option<CycleSpec>,
     /// Seconds this group trails its parent's motion (secondary action).
     pub lag: f32,
 }
+
+#[derive(Deserialize, Clone, Debug, Default)]
+#[serde(default, deny_unknown_fields)]
+pub struct CycleFull {
+    pub style: String,
+    /// Cycles per second (defaults per style).
+    pub speed: Option<f32>,
+    /// Amplitude multiplier (default 1).
+    pub amount: Option<f32>,
+    /// Offset 0..1 (0.5 puts a leg or arm in opposition).
+    pub phase: f32,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum CycleSpec {
+    Style(String),
+    Full(CycleFull),
+}
+
+const CYCLES: &[&str] = &["idle", "breathe", "walk", "bob", "wave", "nod"];
+
+#[derive(Clone, Debug)]
+struct PCycle {
+    style: String,
+    speed: f32,
+    amount: f32,
+    phase: f32,
+}
+
+fn cycle_of(c: &Option<CycleSpec>) -> Result<Option<PCycle>, Error> {
+    let Some(c) = c else { return Ok(None) };
+    let f = match c {
+        CycleSpec::Style(s) => CycleFull { style: s.clone(), ..Default::default() },
+        CycleSpec::Full(f) => f.clone(),
+    };
+    one_of("cycle", &f.style, CYCLES)?;
+    let speed = f.speed.unwrap_or(match f.style.as_str() {
+        "idle" => 0.3,
+        "breathe" => 0.25,
+        "walk" | "bob" => 0.9,
+        "wave" => 1.6,
+        _ => 0.5,
+    });
+    Ok(Some(PCycle { style: f.style, speed, amount: f.amount.unwrap_or(1.0), phase: f.phase }))
+}
+
+fn cycle_at(c: &PCycle, t: f32) -> Pose {
+    let ph = (t * c.speed + c.phase) * TAU;
+    let a = c.amount;
+    let (s, s1) = (ph.sin(), (ph + 1.1).sin());
+    let mut p = Pose { sx: 1.0, sy: 1.0, op: 1.0, ..Default::default() };
+    match c.style.as_str() {
+        "idle" => {
+            p.rot = 1.5 * a * s;
+            p.dy = 2.0 * a * s1;
+            p.sy = 1.0 + 0.006 * a * s1;
+        }
+        "breathe" => {
+            p.sy = 1.0 + 0.02 * a * s;
+            p.sx = 1.0 - 0.006 * a * s;
+        }
+        "walk" => p.rot = 24.0 * a * s,
+        // One bob per step: twice per walk cycle, with a quick dip (contact) and a slow rise.
+        "bob" => p.dy = -7.0 * a * s.abs().powf(0.8),
+        "wave" => p.rot = 18.0 * a * s + 4.0 * a * (2.0 * ph).sin(),
+        _ => p.rot = 4.0 * a * (s * s * s),
+    }
+    p
+}
 impl Default for GroupSpec {
     fn default() -> Self {
-        GroupSpec { name: String::new(), parent: None, x: 0.0, y: 0.0, rotate: 0.0, scale: None, origin: [0.0, 0.0], animate: None, sway: None, lag: 0.0 }
+        GroupSpec { name: String::new(), parent: None, x: 0.0, y: 0.0, rotate: 0.0, scale: None, origin: [0.0, 0.0], pivot: None, animate: None, sway: None, cycle: None, lag: 0.0 }
     }
 }
 
@@ -444,6 +518,12 @@ pub struct Illo {
     /// Step time to 12 fps (or `stepFps`).
     pub on_twos: bool,
     pub step_fps: f32,
+    /// Vector art to import: an SVG string whose `<path>`, `<circle>`, `<ellipse>`, `<rect>`,
+    /// `<polygon>`, `<polyline>` and `<line>` elements (with fill / stroke attributes) become
+    /// shapes drawn before `shapes`, named by their `id` (or `svg0`, `svg1`…). Transforms are ignored.
+    pub svg: Option<String>,
+    /// Draw every closed shape as brush outline plus hatching in its shadow colour, without flat fills.
+    pub paint_over: bool,
     pub seed: u32,
     #[serde(skip)]
     p: Prepared,
@@ -466,6 +546,8 @@ impl Default for Illo {
             misregister: None,
             on_twos: false,
             step_fps: 0.0,
+            svg: None,
+            paint_over: false,
             seed: 1,
             p: Prepared::default(),
         }
@@ -582,6 +664,8 @@ struct PShape {
     lag: f32,
     visible: bool,
     seed: u32,
+    /// Outline + hatching only (no flat fill or shade).
+    paint_over: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -594,6 +678,7 @@ struct PGroup {
     origin: [f32; 2],
     anim: Option<PAnim>,
     sway: Option<Sway>,
+    cycle: Option<PCycle>,
     lag: f32,
 }
 
@@ -1126,6 +1211,14 @@ fn anim_of(a: &Option<AnimSpec>) -> Result<Option<PAnim>, Error> {
 
 impl Prepare for Illo {
     fn prepare(&mut self) -> Result<(), Error> {
+        if let Some(src) = self.svg.take() {
+            let (mut shapes, vb) = svg_shapes(&src)?;
+            if self.view.is_none() {
+                self.view = vb;
+            }
+            shapes.append(&mut self.shapes);
+            self.shapes = shapes;
+        }
         let mut palette = HashMap::new();
         match &self.palette {
             None => {}
@@ -1193,7 +1286,8 @@ impl Prepare for Illo {
                 y: g.y,
                 rotate: g.rotate,
                 scale: num2(&g.scale, [1.0, 1.0]),
-                origin: g.origin,
+                origin: g.pivot.unwrap_or(g.origin),
+                cycle: cycle_of(&g.cycle).map_err(|e| err(format!("group {:?}: {}", g.name, e.0)))?,
                 anim: anim_of(&g.animate)?,
                 sway: g.sway.clone(),
                 lag: g.lag,
@@ -1327,7 +1421,7 @@ impl Prepare for Illo {
                 Some(OnOff::On(b)) => *b,
                 Some(OnOff::Amount(a)) => *a > 0.0,
                 Some(OnOff::Full(_)) => true,
-                None => !closed || s.stroke.is_some() || s.line_color.is_some() || self.hand.outline,
+                None => !closed || s.stroke.is_some() || s.line_color.is_some() || self.hand.outline || self.paint_over,
             };
             let line_k = match &s.outline {
                 Some(OnOff::Amount(a)) => *a,
@@ -1396,7 +1490,8 @@ impl Prepare for Illo {
                 Some(GrainOpt::Amount(a)) => (a > 0.0).then_some((a, 1.4)),
                 Some(GrainOpt::Full(g)) => Some((g.amount.unwrap_or(0.06), g.scale.unwrap_or(1.4).max(0.5))),
             };
-            let texture = match s.texture.clone().or(if closed { g_tex.clone() } else { None }) {
+            let paint_tex = (self.paint_over && closed && fill.is_some()).then(|| TextureSpec::Full(TextureFull { style: "hatch".into(), amount: Some(0.75), scale: Some(7.0), ..Default::default() }));
+            let texture = match s.texture.clone().or(paint_tex).or(if closed { g_tex.clone() } else { None }) {
                 None => None,
                 Some(t) => {
                     let f = match t {
@@ -1478,12 +1573,145 @@ impl Prepare for Illo {
                 lag: s.lag,
                 visible: s.visible,
                 seed: s.seed.unwrap_or_else(|| (i as u32).wrapping_mul(0x9e37_79b9) ^ self.seed.wrapping_mul(0x85eb_ca6b)),
+                paint_over: self.paint_over && closed,
             });
         }
         p.hash = fnv(&[b"illo", format!("{:?}", p.shapes.len()).as_bytes(), self.seed.to_le_bytes().as_slice()]);
         self.p = p;
         Ok(())
     }
+}
+
+// ------------------------------------------------------------------ svg import
+
+/// `name="value"` attributes of one tag (plus `style="a:b; c:d"` entries).
+fn svg_attrs(tag: &str) -> HashMap<String, String> {
+    let mut out = HashMap::new();
+    let b = tag.as_bytes();
+    let mut i = 0;
+    while i < b.len() {
+        while i < b.len() && !b[i].is_ascii_alphabetic() {
+            i += 1;
+        }
+        let n0 = i;
+        while i < b.len() && (b[i].is_ascii_alphanumeric() || b[i] == b'-' || b[i] == b':' || b[i] == b'_') {
+            i += 1;
+        }
+        let name = &tag[n0..i];
+        while i < b.len() && b[i] == b' ' {
+            i += 1;
+        }
+        if i >= b.len() || b[i] != b'=' {
+            continue;
+        }
+        i += 1;
+        while i < b.len() && b[i] == b' ' {
+            i += 1;
+        }
+        if i >= b.len() {
+            break;
+        }
+        let q = b[i];
+        if q != b'"' && q != b'\'' {
+            continue;
+        }
+        i += 1;
+        let v0 = i;
+        while i < b.len() && b[i] != q {
+            i += 1;
+        }
+        let val = &tag[v0..i.min(b.len())];
+        i += 1;
+        if name == "style" {
+            for kv in val.split(';') {
+                if let Some((k, v)) = kv.split_once(':') {
+                    out.insert(k.trim().to_string(), v.trim().to_string());
+                }
+            }
+        } else {
+            out.entry(name.to_string()).or_insert_with(|| val.to_string());
+        }
+    }
+    out
+}
+
+/// Shapes (and the `viewBox` size) from an SVG string.
+fn svg_shapes(src: &str) -> Result<(Vec<ShapeSpec>, Option<[f32; 2]>), Error> {
+    let mut shapes = Vec::new();
+    let mut view = None;
+    let mut rest = src;
+    while let Some(lt) = rest.find('<') {
+        rest = &rest[lt + 1..];
+        let end = rest.find('>').unwrap_or(rest.len());
+        let tag = &rest[..end];
+        rest = &rest[end..];
+        let name: String = tag.chars().take_while(|c| c.is_ascii_alphanumeric()).collect();
+        let a = svg_attrs(&tag[name.len()..]);
+        let num = |k: &str| a.get(k).and_then(|v| v.trim_end_matches("px").trim().parse::<f32>().ok());
+        if name == "svg" {
+            if let Some(vb) = a.get("viewBox") {
+                let v: Vec<f32> = vb.split(|c: char| c == ',' || c.is_whitespace()).filter_map(|x| x.parse().ok()).collect();
+                if v.len() == 4 && v[2] > 0.0 && v[3] > 0.0 {
+                    view = Some([v[2], v[3]]);
+                }
+            } else if let (Some(w), Some(h)) = (num("width"), num("height")) {
+                view = Some([w, h]);
+            }
+            continue;
+        }
+        let mut sh = ShapeSpec { name: a.get("id").cloned().or_else(|| Some(format!("svg{}", shapes.len()))), ..Default::default() };
+        let pts = |k: &str| -> Option<Vec<[f32; 2]>> {
+            let v: Vec<f32> = a.get(k)?.split(|c: char| c == ',' || c.is_whitespace()).filter_map(|x| x.parse().ok()).collect();
+            Some(v.chunks_exact(2).map(|c| [c[0], c[1]]).collect())
+        };
+        match name.as_str() {
+            "path" => {
+                sh.d = a.get("d").cloned();
+                if sh.d.is_none() {
+                    continue;
+                }
+            }
+            "circle" => {
+                sh.shape = "circle".into();
+                (sh.cx, sh.cy, sh.r) = (num("cx").or(Some(0.0)), num("cy").or(Some(0.0)), num("r"));
+            }
+            "ellipse" => {
+                sh.shape = "ellipse".into();
+                (sh.cx, sh.cy, sh.rx, sh.ry) = (num("cx").or(Some(0.0)), num("cy").or(Some(0.0)), num("rx"), num("ry"));
+            }
+            "rect" => {
+                sh.shape = "rect".into();
+                (sh.x, sh.y, sh.w, sh.h, sh.radius) = (num("x").or(Some(0.0)), num("y").or(Some(0.0)), num("width"), num("height"), num("rx").or(Some(0.0)));
+            }
+            "polygon" | "polyline" => {
+                sh.points = pts("points");
+                sh.closed = Some(name == "polygon");
+                if name == "polygon" {
+                    sh.shape = "polygon".into();
+                }
+            }
+            "line" => {
+                sh.points = Some(vec![[num("x1").unwrap_or(0.0), num("y1").unwrap_or(0.0)], [num("x2").unwrap_or(0.0), num("y2").unwrap_or(0.0)]]);
+            }
+            _ => continue,
+        }
+        let open = name == "line" || name == "polyline";
+        let fill = a.get("fill").map(|s| s.as_str()).unwrap_or(if open { "none" } else { "#000000" });
+        sh.fill = Some(FillSpec::Color(if fill == "currentColor" { "#000000".into() } else { fill.to_string() }));
+        if let Some(st) = a.get("stroke").filter(|s| s.as_str() != "none") {
+            sh.stroke = Some(if st == "currentColor" { "#000000".into() } else { st.clone() });
+            let w = num("stroke-width").unwrap_or(1.0);
+            sh.weight = Some([w * 0.6, w * 1.4]);
+        }
+        if let Some(o) = num("opacity").or(num("fill-opacity")) {
+            sh.opacity = o;
+        }
+        shapes.push(sh);
+    }
+    if shapes.is_empty() {
+        return Err(err("svg: no <path>, <circle>, <ellipse>, <rect>, <polygon>, <polyline> or <line> elements found"));
+    }
+    Ok((shapes, view))
 }
 
 // ------------------------------------------------------------------ animation
@@ -1632,7 +1860,15 @@ impl Illo {
     fn group_m(&self, g: usize, t: f32, depth: u32) -> [f32; 6] {
         let gr = &self.p.groups[g];
         let tl = t - gr.lag;
-        let (pose, _) = pose_at(&gr.anim, &gr.sway, tl);
+        let (mut pose, _) = pose_at(&gr.anim, &gr.sway, tl);
+        if let Some(c) = &gr.cycle {
+            let q = cycle_at(c, tl);
+            pose.dx += q.dx;
+            pose.dy += q.dy;
+            pose.rot += q.rot;
+            pose.sx *= q.sx;
+            pose.sy *= q.sy;
+        }
         let own = trs(gr.x + pose.dx, gr.y + pose.dy, gr.rotate + pose.rot, [gr.scale[0] * pose.sx, gr.scale[1] * pose.sy], gr.origin);
         match gr.parent {
             Some(p) if depth < 16 => mul(&self.group_m(p, tl, depth + 1), &own),
@@ -1757,9 +1993,11 @@ impl Frame<'_> {
                 PFill::Solid(c) => Paint::Solid(*c),
                 PFill::Grad(g) => self.grad_paint(g, &bf, s.seed),
             };
-            out.push(Op::Fill { path: bf.clone(), paint, rule: FillRule::NonZero, transform: IDENTITY });
+            if !s.paint_over {
+                out.push(Op::Fill { path: bf.clone(), paint, rule: FillRule::NonZero, transform: IDENTITY });
+            }
             let base = fill.base();
-            if let Some(sh) = &s.shade {
+            if let Some(sh) = s.shade.as_ref().filter(|_| !s.paint_over) {
                 // Overlays each get their own clipped layer at this level, so blend
                 // modes see the fill below (a nested group would isolate them).
                 out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: Some((bf.clone(), IDENTITY)), cache_key: None });
@@ -1792,7 +2030,7 @@ impl Frame<'_> {
             if let Some(tx) = &s.texture {
                 self.texture_ops(&mut out, tx, &bf, base, s.seed, &st_m(&self.states[i]));
             }
-            if let Some((amt, sc)) = s.grain {
+            if let Some((amt, sc)) = s.grain.filter(|_| !s.paint_over) {
                 let tile = grain_tile(self.ctx);
                 let m = st_m(&self.states[i]);
                 let o = (hash01(s.seed) * 256.0).floor();
@@ -2301,6 +2539,21 @@ mod tests {
         assert_ne!(a, c);
         // The red fill snapped to the pink ink.
         assert!(a.iter().any(|o| matches!(o, Op::Fill { paint: Paint::Solid(c), .. } if (c.0[2] - 0xb0 as f32 / 255.0).abs() < 0.01)));
+    }
+
+    #[test]
+    fn svg_import_paint_over_and_rig() {
+        let svg = r##"<svg viewBox="0 0 200 100"><path id="hill" d="M0 100 L100 20 L200 100 Z" fill="#3a7d5c"/><circle cx="150" cy="30" r="12" style="fill:#f6b94c"/><line x1="0" y1="90" x2="200" y2="90" stroke="#222" stroke-width="3"/></svg>"##;
+        let v = serde_json::json!({"svg": svg, "paintOver": true, "shapes": [{"shape": "circle", "cx": 50, "cy": 50, "r": 10, "fill": "#fff", "clipTo": "hill"}]});
+        let ops = eval(v, 0.0);
+        assert!(ops.iter().any(|o| matches!(o, Op::Stroke { .. })), "hatching");
+        assert!(build("illo", &serde_json::json!({"svg": "<svg></svg>"})).is_err());
+        let rig = serde_json::json!({
+            "groups": [{"name": "body", "pivot": [100, 200], "cycle": "bob"}, {"name": "arm", "parent": "body", "pivot": [100, 120], "cycle": {"style": "walk", "phase": 0.5}, "lag": 0.06}],
+            "shapes": [{"shape": "rect", "x": 80, "y": 100, "w": 40, "h": 100, "group": "body"}, {"shape": "rect", "x": 95, "y": 120, "w": 10, "h": 60, "group": "arm"}]
+        });
+        assert_ne!(eval(rig.clone(), 0.0), eval(rig.clone(), 0.3));
+        assert!(build("illo", &serde_json::json!({"groups": [{"name": "a", "cycle": "jog"}]})).is_err());
     }
 
     #[test]
