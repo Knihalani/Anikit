@@ -36,3 +36,5 @@ Colour fonts (Nabla, Honk, Bungee Spice) draw their own palette; `color` doesn't
   classic title move; use heavy weights (800+) so enough of the image shows.
 - **Outline:** `stroke` + `strokeWidth`; `color: "none"` leaves only the outline. Layering a solid copy with a hollow copy
   offset by 0.04 em gives an inline/offset print look.
+- **Hard offset shadow** (70s, print, poster): `"shadow": {"x": 14, "y": 14, "blur": 0, "color": "#2c1a10"}` on the text layer. It follows
+  per-glyph animators. Offset about 0.05–0.07 em, in a darker shade of the paper rather than black.
