@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" />
+<script src="assets/gsap.min.js"></script>
+<link rel="stylesheet" href="assets/base.css" />
+<style>
+  .t1 { font-size: 160px; font-weight: 800; }
+  .t2 { font-size: 140px; font-weight: 800; }
+  .t3 { font-size: 180px; font-weight: 800; }
+  .sub { font-size: 48px; font-weight: 500; color: #9a9ab0; }
+  .bar { height: 8px; width: 600px; border-radius: 4px; background: #7c5cff; }
+</style></head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1920" data-height="1080">
+  <div id="s1" class="scene clip" data-start="0" data-duration="5">
+    <div class="abs c d t1 split" style="left:960px;top:500px">MAKE VIDEOS</div>
+    <div class="abs c sub" id="s1sub" style="left:960px;top:640px">with code, not clicks</div>
+  </div>
+  <div id="s2" class="scene clip" data-start="5" data-duration="5">
+    <div class="abs c d t2" id="w1" style="left:960px;top:360px">FAST.</div>
+    <div class="abs c d t2" id="w2" style="left:960px;top:540px">NATIVE.</div>
+    <div class="abs c d t2" id="w3" style="left:960px;top:720px;color:#ff5ca8">AGENT-FIRST.</div>
+    <div class="abs c bar" id="bar1" style="left:960px;top:830px"></div>
+  </div>
+  <div id="s3" class="scene clip" data-start="10" data-duration="5">
+    <div class="abs c" id="sq" style="left:960px;top:540px;width:500px;height:500px;border:4px solid #ffffff22;border-radius:40px"></div>
+    <div class="abs c d t3" id="j1" style="left:960px;top:440px">JSON in.</div>
+    <div class="abs c d t3" id="j2" style="left:960px;top:640px;color:#7c5cff">MP4 out.</div>
+  </div>
+  <div id="s4" class="scene clip" data-start="15" data-duration="5">
+    <div class="abs c d t3 split" style="left:960px;top:500px">Anikit Video</div>
+    <div class="abs c sub" id="s4sub" style="left:960px;top:660px">JSON in. MP4 out.</div>
+    <div class="abs c bar" id="bar2" style="left:960px;top:740px;width:240px;height:10px;border-radius:5px;background:#ff5ca8"></div>
+  </div>
+</div>
+<script>
+  document.querySelectorAll(".split").forEach((el) => {
+    el.innerHTML = [...el.textContent].map((c) => `<span class="ch">${c}</span>`).join("");
+  });
+  gsap.set(".c", { xPercent: -50, yPercent: -50 });
+  const tl = gsap.timeline({ paused: true });
+  const fadeUp = (t, at) => tl.from(t, { opacity: 0, y: 40, duration: 0.6, ease: "power3.out" }, at);
+  ["#s1", "#s2", "#s3", "#s4"].forEach((s, i) => tl.fromTo(s, { scale: 1 }, { scale: 1.06, duration: 5, ease: "none" }, i * 5));
+  tl.from("#s1 .ch", { opacity: 0, y: 40, duration: 0.6, ease: "power3.out", stagger: 0.04 }, 0);
+  fadeUp("#s1sub", 0.8);
+  fadeUp("#w1", 5); fadeUp("#w2", 5.4); fadeUp("#w3", 5.8);
+  tl.from("#bar1", { scaleX: 0, duration: 0.8, ease: "expo.out" }, 6.2);
+  tl.to("#sq", { rotation: 90, duration: 5, ease: "none" }, 10);
+  tl.from("#j1", { x: -600, opacity: 0, duration: 0.7, ease: "expo.out" }, 10);
+  tl.from("#j2", { x: 600, opacity: 0, duration: 0.7, ease: "expo.out" }, 10.3);
+  tl.from("#s4 .ch", { opacity: 0, scale: 0, duration: 0.5, ease: "back.out(1.7)", stagger: 0.03 }, 15);
+  fadeUp("#s4sub", 15.8);
+  tl.from("#bar2", { scaleX: 0, duration: 0.8, ease: "expo.out" }, 16.2);
+  window.__timelines = window.__timelines || {};
+  window.__timelines["main"] = tl;
+</script>
+</body></html>

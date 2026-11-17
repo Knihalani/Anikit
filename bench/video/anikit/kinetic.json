@@ -1,0 +1,31 @@
+{
+  "fps": 30,
+  "transition": "cut",
+  "theme": { "colors": { "bg": "#0b0b12", "text": "#f5f5fa", "muted": "#9a9ab0", "primary": "#7c5cff", "accent": "#ff5ca8" } },
+  "scenes": [
+    { "duration": 5, "camera": { "animate": [ { "to": { "zoom": 1.06 }, "duration": 5, "ease": "linear" } ] },
+      "layers": [
+        { "text": "MAKE VIDEOS", "font": "Inter Display", "size": 160, "weight": 800, "y": 500, "split": "chars", "enter": { "preset": "fadeUp", "stagger": 0.04 } },
+        { "text": "with code, not clicks", "size": 48, "weight": 500, "color": "$muted", "y": 640, "enter": { "preset": "fadeUp", "delay": 0.8 } }
+      ] },
+    { "duration": 5, "camera": { "animate": [ { "to": { "zoom": 1.06 }, "duration": 5, "ease": "linear" } ] },
+      "layers": [
+        { "text": "FAST.", "font": "Inter Display", "size": 140, "weight": 800, "y": 360, "enter": "fadeUp" },
+        { "text": "NATIVE.", "font": "Inter Display", "size": 140, "weight": 800, "y": 540, "enter": { "preset": "fadeUp", "delay": 0.4 } },
+        { "text": "AGENT-FIRST.", "font": "Inter Display", "size": 140, "weight": 800, "color": "$accent", "y": 720, "enter": { "preset": "fadeUp", "delay": 0.8 } },
+        { "shape": "rect", "width": 600, "height": 8, "radius": 4, "y": 830, "animate": [ { "from": { "scaleX": 0 }, "at": 1.2, "duration": 0.8, "ease": "outExpo" } ] }
+      ] },
+    { "duration": 5, "camera": { "animate": [ { "to": { "zoom": 1.06 }, "duration": 5, "ease": "linear" } ] },
+      "layers": [
+        { "shape": "rect", "width": 500, "height": 500, "radius": 40, "fill": "none", "stroke": { "color": "#ffffff22", "width": 4 }, "animate": [ { "to": { "rotation": 90 }, "duration": 5, "ease": "linear" } ] },
+        { "text": "JSON in.", "font": "Inter Display", "size": 180, "weight": 800, "y": 440, "animate": [ { "from": { "x": "-600", "opacity": 0 }, "duration": 0.7, "ease": "outExpo" } ] },
+        { "text": "MP4 out.", "font": "Inter Display", "size": 180, "weight": 800, "color": "$primary", "y": 640, "animate": [ { "from": { "x": "+600", "opacity": 0 }, "at": 0.3, "duration": 0.7, "ease": "outExpo" } ] }
+      ] },
+    { "duration": 5, "camera": { "animate": [ { "to": { "zoom": 1.06 }, "duration": 5, "ease": "linear" } ] },
+      "layers": [
+        { "text": "Anikit Video", "font": "Inter Display", "size": 180, "weight": 800, "y": 500, "split": "chars", "enter": { "preset": "popIn", "stagger": 0.03 } },
+        { "text": "JSON in. MP4 out.", "size": 48, "weight": 500, "color": "$muted", "y": 660, "enter": { "preset": "fadeUp", "delay": 0.8 } },
+        { "shape": "rect", "width": 240, "height": 10, "radius": 5, "fill": "$accent", "y": 740, "animate": [ { "from": { "scaleX": 0 }, "at": 1.2, "duration": 0.8, "ease": "outExpo" } ] }
+      ] }
+  ]
+}

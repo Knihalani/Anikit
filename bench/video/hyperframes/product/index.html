@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" />
+<script src="assets/gsap.min.js"></script>
+<link rel="stylesheet" href="assets/base.css" />
+<style>
+  .win { left: 160px; top: 90px; width: 1600px; height: 900px; border-radius: 24px; background: #171725; border: 2px solid #ffffff14; }
+  .dot { width: 16px; height: 16px; border-radius: 50%; top: 116px; }
+  .card { width: 440px; height: 170px; border-radius: 20px; background: #22223a; left: 250px; }
+  .lbl { font-size: 24px; font-weight: 500; color: #9a9ab0; left: 280px; }
+  .val { font-size: 56px; font-weight: 700; left: 280px; }
+  .b { width: 80px; bottom: 240px; border-radius: 8px; background: #7c5cff; }
+  .l { transform: translateY(-50%); }
+</style></head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1920" data-height="1080">
+  <div class="scene clip" data-start="0" data-duration="20">
+    <div id="win" class="abs" style="inset:0">
+      <div class="abs win"></div>
+      <div class="abs dot" style="left:192px;background:#ff5f57"></div>
+      <div class="abs dot" style="left:220px;background:#febc2e"></div>
+      <div class="abs dot" style="left:248px;background:#28c840"></div>
+      <div class="abs" style="left:660px;top:108px;width:600px;height:32px;border-radius:16px;background:#ffffff10"></div>
+      <div class="abs" style="left:160px;top:157px;width:1600px;height:2px;background:#ffffff14"></div>
+    </div>
+    <div id="title" class="abs l" style="left:250px;top:220px;font-size:44px;font-weight:700">Revenue</div>
+    <div id="live" class="abs" style="left:1243px;top:213px;width:14px;height:14px;border-radius:50%;background:#28c840"></div>
+    <div class="abs l" style="left:1270px;top:220px;font-size:24px;font-weight:600;color:#9a9ab0">Live</div>
+    <div id="btn" class="abs" style="left:1490px;top:190px;width:220px;height:60px;border-radius:30px;background:#7c5cff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600">Share</div>
+    <div id="c1" class="abs" style="inset:0"><div class="abs card" style="top:275px"></div>
+      <div class="abs l lbl" style="top:320px">Revenue ($)</div><div id="v1" class="abs l val" style="top:385px">0</div></div>
+    <div id="c2" class="abs" style="inset:0"><div class="abs card" style="top:485px"></div>
+      <div class="abs l lbl" style="top:530px">Active users</div><div id="v2" class="abs l val" style="top:595px">0</div></div>
+    <div id="c3" class="abs" style="inset:0"><div class="abs card" style="top:695px"></div>
+      <div class="abs l lbl" style="top:740px">Conversion</div><div class="abs l val" style="top:805px">4.8%</div></div>
+    <div id="chart" class="abs" style="inset:0">
+      <div class="abs" style="left:750px;top:260px;width:960px;height:620px;border-radius:20px;background:#22223a"></div>
+      <div class="abs l" style="left:790px;top:310px;font-size:28px;font-weight:600">Weekly signups</div></div>
+    <div class="abs b" style="left:800px"></div><div class="abs b" style="left:930px"></div><div class="abs b" style="left:1060px"></div>
+    <div class="abs b" style="left:1190px"></div><div class="abs b" style="left:1320px"></div><div class="abs b" style="left:1450px"></div>
+    <div class="abs b" style="left:1580px"></div>
+    <div id="toast" class="abs" style="inset:0">
+      <div class="abs" style="left:1290px;top:887px;width:420px;height:90px;border-radius:16px;background:#2a2a44;border:2px solid #ffffff20"></div>
+      <div class="abs" style="left:1330px;top:922px;width:20px;height:20px;border-radius:50%;background:#28c840"></div>
+      <div class="abs l" style="left:1370px;top:932px;font-size:26px;font-weight:600">Export complete</div></div>
+    <div id="cursor" class="abs" style="left:1286.5px;top:686.5px;width:27px;height:27px;border-radius:50%;background:#fff;border:3px solid #0b0b12"></div>
+  </div>
+</div>
+<script>
+  const tl = gsap.timeline({ paused: true });
+  const fadeUp = (t, at) => tl.from(t, { opacity: 0, y: 40, duration: 0.6, ease: "power3.out" }, at);
+  tl.from("#win", { opacity: 0, y: 60, scale: 0.96, duration: 0.8, ease: "power3.out" }, 0);
+  fadeUp("#title", 0.4); fadeUp("#c1", 0.6); fadeUp("#c2", 0.75); fadeUp("#c3", 0.9); fadeUp("#chart", 1.0);
+  const count = (el, to, at) => {
+    const o = { v: 0 };
+    tl.to(o, { v: to, duration: 2, ease: "power3.out", onUpdate: () => (el.textContent = Math.round(o.v).toLocaleString("en-US")) }, at);
+  };
+  count(document.querySelector("#v1"), 12480, 1.2);
+  count(document.querySelector("#v2"), 3920, 1.35);
+  const h1 = [180, 260, 220, 340, 300, 420, 380], h2 = [240, 200, 300, 380, 360, 460, 440];
+  document.querySelectorAll(".b").forEach((b, i) => {
+    tl.fromTo(b, { height: 0 }, { height: h1[i], duration: 0.6, ease: "power3.out" }, 1.5 + i * 0.1);
+    tl.to(b, { height: h2[i], duration: 0.8, ease: "power3.inOut" }, 10 + i * 0.1);
+  });
+  tl.to("#live", { keyframes: { opacity: [1, 0.3, 1] }, duration: 1.5, ease: "sine.inOut", repeat: 12 }, 0);
+  tl.fromTo("#toast", { x: 500, opacity: 0 }, { x: 0, opacity: 1, duration: 0.7, ease: "expo.out" }, 6);
+  tl.to("#toast", { opacity: 0, duration: 0.5, ease: "power3.in" }, 10.5);
+  tl.fromTo("#cursor", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power3.out" }, 12.5);
+  tl.to("#cursor", { x: 300, y: -475, duration: 1.2, ease: "power3.inOut" }, 13);
+  tl.to("#btn", { keyframes: { scale: [1, 0.92, 1] }, duration: 0.3 }, 14.4);
+  tl.set({}, {}, 20);
+  window.__timelines = window.__timelines || {};
+  window.__timelines["main"] = tl;
+</script>
+</body></html>

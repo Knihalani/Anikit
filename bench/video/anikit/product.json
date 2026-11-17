@@ -1,0 +1,55 @@
+{
+  "fps": 30,
+  "theme": { "colors": { "bg": "#0b0b12", "text": "#f5f5fa", "muted": "#9a9ab0", "primary": "#7c5cff", "accent": "#ff5ca8", "surface": "#171725" } },
+  "scenes": [
+    { "duration": 20, "layers": [
+      { "type": "group", "animate": [ { "from": { "opacity": 0, "y": "+60", "scale": 0.96 }, "duration": 0.8, "ease": "outCubic" } ], "layers": [
+        { "shape": "rect", "width": 1600, "height": 900, "radius": 24, "fill": "$surface", "stroke": { "color": "#ffffff14", "width": 2 } },
+        { "shape": "circle", "width": 16, "height": 16, "fill": "#ff5f57", "x": 200, "y": 124 },
+        { "shape": "circle", "width": 16, "height": 16, "fill": "#febc2e", "x": 228, "y": 124 },
+        { "shape": "circle", "width": 16, "height": 16, "fill": "#28c840", "x": 256, "y": 124 },
+        { "shape": "rect", "width": 600, "height": 32, "radius": 16, "fill": "#ffffff10", "y": 124 },
+        { "shape": "rect", "width": 1600, "height": 2, "fill": "#ffffff14", "y": 158 }
+      ] },
+      { "text": "Revenue", "size": 44, "weight": 700, "x": 250, "y": 220, "anchor": "left", "enter": { "preset": "fadeUp", "delay": 0.4 } },
+      { "shape": "circle", "width": 14, "height": 14, "fill": "#28c840", "x": 1250, "y": 220, "animate": [ { "keyframes": { "opacity": [1, 0.3, 1] }, "duration": 1.5, "repeat": -1, "ease": "inOutSine" } ] },
+      { "text": "Live", "size": 24, "weight": 600, "color": "$muted", "x": 1270, "y": 220, "anchor": "left" },
+      { "shape": "rect", "id": "button", "width": 220, "height": 60, "radius": 30, "x": 1600, "y": 220, "animate": [ { "keyframes": { "scale": [1, 0.92, 1] }, "at": 14.4, "duration": 0.3 } ] },
+      { "text": "Share", "size": 24, "weight": 600, "x": 1600, "y": 220 },
+      { "type": "group", "enter": { "preset": "fadeUp", "delay": 0.6 }, "layers": [
+        { "shape": "rect", "width": 440, "height": 170, "radius": 20, "fill": "#22223a", "x": 470, "y": 360 },
+        { "text": "Revenue ($)", "size": 24, "weight": 500, "color": "$muted", "x": 280, "y": 320, "anchor": "left" },
+        { "text": "{value:,}", "value": 12480, "size": 56, "weight": 700, "x": 280, "y": 385, "anchor": "left", "animate": [ { "from": { "value": 0 }, "at": 1.2, "duration": 2, "ease": "outCubic" } ] }
+      ] },
+      { "type": "group", "enter": { "preset": "fadeUp", "delay": 0.75 }, "layers": [
+        { "shape": "rect", "width": 440, "height": 170, "radius": 20, "fill": "#22223a", "x": 470, "y": 570 },
+        { "text": "Active users", "size": 24, "weight": 500, "color": "$muted", "x": 280, "y": 530, "anchor": "left" },
+        { "text": "{value:,}", "value": 3920, "size": 56, "weight": 700, "x": 280, "y": 595, "anchor": "left", "animate": [ { "from": { "value": 0 }, "at": 1.35, "duration": 2, "ease": "outCubic" } ] }
+      ] },
+      { "type": "group", "enter": { "preset": "fadeUp", "delay": 0.9 }, "layers": [
+        { "shape": "rect", "width": 440, "height": 170, "radius": 20, "fill": "#22223a", "x": 470, "y": 780 },
+        { "text": "Conversion", "size": 24, "weight": 500, "color": "$muted", "x": 280, "y": 740, "anchor": "left" },
+        { "text": "4.8%", "size": 56, "weight": 700, "x": 280, "y": 805, "anchor": "left" }
+      ] },
+      { "type": "group", "enter": { "preset": "fadeUp", "delay": 1.0 }, "layers": [
+        { "shape": "rect", "width": 960, "height": 620, "radius": 20, "fill": "#22223a", "x": 1230, "y": 570 },
+        { "text": "Weekly signups", "size": 28, "weight": 600, "x": 790, "y": 310, "anchor": "left" }
+      ] },
+      { "type": "group", "stagger": 0.1, "layers": [
+        { "shape": "rect", "width": 80, "height": 180, "radius": 8, "x": 840, "y": 840, "anchor": "bottom", "animate": [ { "from": { "height": 0 }, "at": 1.5, "duration": 0.6 }, { "to": { "height": 240 }, "at": 10, "duration": 0.8, "ease": "inOutCubic" } ] },
+        { "shape": "rect", "width": 80, "height": 260, "radius": 8, "x": 970, "y": 840, "anchor": "bottom", "animate": [ { "from": { "height": 0 }, "at": 1.5, "duration": 0.6 }, { "to": { "height": 200 }, "at": 10, "duration": 0.8, "ease": "inOutCubic" } ] },
+        { "shape": "rect", "width": 80, "height": 220, "radius": 8, "x": 1100, "y": 840, "anchor": "bottom", "animate": [ { "from": { "height": 0 }, "at": 1.5, "duration": 0.6 }, { "to": { "height": 300 }, "at": 10, "duration": 0.8, "ease": "inOutCubic" } ] },
+        { "shape": "rect", "width": 80, "height": 340, "radius": 8, "x": 1230, "y": 840, "anchor": "bottom", "animate": [ { "from": { "height": 0 }, "at": 1.5, "duration": 0.6 }, { "to": { "height": 380 }, "at": 10, "duration": 0.8, "ease": "inOutCubic" } ] },
+        { "shape": "rect", "width": 80, "height": 300, "radius": 8, "x": 1360, "y": 840, "anchor": "bottom", "animate": [ { "from": { "height": 0 }, "at": 1.5, "duration": 0.6 }, { "to": { "height": 360 }, "at": 10, "duration": 0.8, "ease": "inOutCubic" } ] },
+        { "shape": "rect", "width": 80, "height": 420, "radius": 8, "x": 1490, "y": 840, "anchor": "bottom", "animate": [ { "from": { "height": 0 }, "at": 1.5, "duration": 0.6 }, { "to": { "height": 460 }, "at": 10, "duration": 0.8, "ease": "inOutCubic" } ] },
+        { "shape": "rect", "width": 80, "height": 380, "radius": 8, "x": 1620, "y": 840, "anchor": "bottom", "animate": [ { "from": { "height": 0 }, "at": 1.5, "duration": 0.6 }, { "to": { "height": 440 }, "at": 10, "duration": 0.8, "ease": "inOutCubic" } ] }
+      ] },
+      { "type": "group", "start": 6, "end": 11, "animate": [ { "from": { "x": "+500", "opacity": 0 }, "duration": 0.7, "ease": "outExpo" } ], "exit": "fadeOut", "layers": [
+        { "shape": "rect", "width": 420, "height": 90, "radius": 16, "fill": "#2a2a44", "stroke": { "color": "#ffffff20", "width": 2 }, "x": 1500, "y": 932 },
+        { "shape": "circle", "width": 20, "height": 20, "fill": "#28c840", "x": 1340, "y": 932 },
+        { "text": "Export complete", "size": 26, "weight": 600, "x": 1370, "y": 932, "anchor": "left" }
+      ] },
+      { "shape": "circle", "width": 24, "height": 24, "fill": "#ffffff", "stroke": { "color": "#0b0b12", "width": 3 }, "x": 1300, "y": 700, "start": 12.5, "enter": "fadeIn", "animate": [ { "to": { "x": 1600, "y": 225 }, "at": 0.5, "duration": 1.2, "ease": "inOutCubic" } ] }
+    ] }
+  ]
+}
