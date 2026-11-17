@@ -341,9 +341,9 @@ pub fn parse(v: &Value, raw_objects: &[Value], shapes: &mut spec::Shapes, mats: 
             let mut angvel = ang.as_ref().map(|v| scale(spec::eval3(v, &vars), std::f32::consts::PI / 180.0)).unwrap_or(v3(0.0, 0.0, 0.0));
             if i == 0 {
                 if let Some(w) = trigger {
-                    // Tip the first domino forward (about its local X, towards its local -Z).
+                    // Tip the first domino forward: its picture side (local +Z) faces back, so the top goes to local -Z.
                     let r = mat_of([pose[3], pose[4], pose[5], pose[6]]);
-                    angvel = add(angvel, scale(r[0], w));
+                    angvel = add(angvel, scale(r[0], -w));
                 }
             }
             // Dominoes wait asleep until hit; free-falling layouts start awake.
@@ -413,7 +413,7 @@ fn layout_poses(layout: &str, gm: &Map<String, Value>, obj: &ObjDef, count: u32,
     };
     match layout {
         "dominoes" => {
-            // Standing panes: local X across, Y up, Z the thin axis (the direction of travel).
+            // Standing panes: local X across, Y up, Z the thin axis, pointing back the way the wave comes (the picture side faces the trigger).
             let h = size.y;
             let spacing = gfl("spacing", h * 0.55)?;
             let gap = gfl("gap", size.x * 0.12)?;
@@ -437,7 +437,7 @@ fn layout_poses(layout: &str, gm: &Map<String, Value>, obj: &ObjDef, count: u32,
                         for j in 0..per {
                             let a = (j as f32 - (per as f32 - 1.0) * 0.5) * step;
                             let p = add(o, scale(dir(a), r));
-                            out.push(pose_at(v3(p.x, y, p.z), heading + a.to_degrees(), 0.0, 0.0, s0));
+                            out.push(pose_at(v3(p.x, y, p.z), heading + 180.0 + a.to_degrees(), 0.0, 0.0, s0));
                         }
                         row += 1;
                     }
@@ -477,7 +477,7 @@ fn layout_poses(layout: &str, gm: &Map<String, Value>, obj: &ObjDef, count: u32,
                         let s = i as f32 * spacing;
                         let (p, a) = curve(s);
                         let p = add(o, p);
-                        out.push(pose_at(v3(p.x, y, p.z), heading + a.to_degrees(), 0.0, 0.0, s0));
+                        out.push(pose_at(v3(p.x, y, p.z), heading + 180.0 + a.to_degrees(), 0.0, 0.0, s0));
                     }
                 }
                 other => return Err(format!("{path}.path: unknown domino path `{other}` (fan, line, spiral, snake)")),
@@ -816,6 +816,17 @@ impl Sim {
             );
         }
         (st.frames[k].clone(), st.frames[k + 1].clone(), u - k as f32)
+    }
+
+    /// How far the toppling has spread from the first body (m): the farthest
+    /// body tipped more than 30°. For framing domino shots.
+    pub fn front(&self, t: f32) -> f32 {
+        let (a, _, _) = self.at(t);
+        let o = &self.init[0];
+        a.iter()
+            .filter(|q| mat_of([q[3], q[4], q[5], q[6]])[1].y < 0.87)
+            .map(|q| ((q[0] - o[0]).powi(2) + (q[2] - o[2]).powi(2)).sqrt())
+            .fold(0.0, f32::max)
     }
 
     /// Simulate up to video time `t` and report (steps, simulated seconds).

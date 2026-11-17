@@ -21,7 +21,7 @@ fn main() {
             "type": "particles", "count": n,
             "emit": { "shape": "ball", "radius": 1.2, "pos": [0, 1.2, 0] },
             "flow": { "strength": 0.8, "scale": 0.8 }, "attractors": [{ "pos": [0, 1.2, 0], "strength": 0.6, "swirl": 0.8 }],
-            "drag": 0.3, "size": 0.003, "color": ["#ffffff", "#7fd4ff"], "colorBy": "speed", "blend": blend
+            "drag": 0.3, "size": 0.003, "color": ["#ffffff", "#7fd4ff"], "color_by": "speed", "blend": blend
         });
         let mut shapes = anikit_video::scene3d::spec::Shapes::new();
         let def = particles::parse(&spec, &mut shapes, &mut Vec::new(), &HashMap::new(), &[], "bench").unwrap();
@@ -47,13 +47,22 @@ fn main() {
             let _ = particles::render(&[(&sim, snap.clone())], &view, t);
         }
         let splat_ms = t2.elapsed().as_secs_f64() * 1e3 / reps as f64;
+        // Video renders splat one frame per thread, several frames at once.
+        use rayon::prelude::*;
+        let t3 = Instant::now();
+        let k = rayon::current_num_threads() * 2;
+        (0..k).into_par_iter().for_each(|_| {
+            let _ = particles::render(&[(&sim, snap.clone())], &view, t);
+        });
+        let video_ms = t3.elapsed().as_secs_f64() * 1e3 / k as f64;
         println!(
-            "{n:>9} particles ({blend:>4}): init {:.0} ms, sim {:.1} ms/frame ({:.1} M particle-frames/s), splat 1080p {:.1} ms ({:.1} M/s)",
+            "{n:>9} particles ({blend:>4}): init {:.0} ms, sim {:.1} ms/frame ({:.1} M particle-frames/s), splat 1080p {:.1} ms ({:.1} M/s), in a video render {:.1} ms/frame",
             init * 1e3,
             sim_ms,
             n as f64 / sim_ms / 1e3,
             splat_ms,
-            n as f64 / splat_ms / 1e3
+            n as f64 / splat_ms / 1e3,
+            video_ms
         );
     }
 }

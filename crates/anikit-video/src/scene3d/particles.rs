@@ -665,8 +665,19 @@ impl Sim {
             })
             .collect();
         let Live { px, py, pz, vx, vy, vz, .. } = live;
-        let flows = self.flows.as_ref();
-        let (fs, fscale, fevo, fdrift) = d.flow.unwrap_or((0.0, 1.0, 0.0, v3(0.0, 0.0, 0.0)));
+        // The two flow fields cross-faded per substep, once for all particles.
+        let blended: Vec<FlowGrid> = match &self.flows {
+            Some((fa, fb)) => (0..sub)
+                .map(|k| {
+                    let t = t0 + k as f32 * h;
+                    let a = t * d.flow.map(|f| f.2).unwrap_or(0.0) * std::f32::consts::FRAC_PI_2;
+                    let (wa, wb) = (a.cos(), a.sin());
+                    FlowGrid { v: fa.v.par_iter().zip(&fb.v).map(|(x, y)| [x[0] * wa + y[0] * wb, x[1] * wa + y[1] * wb, x[2] * wa + y[2] * wb]).collect() }
+                })
+                .collect(),
+            None => Vec::new(),
+        };
+        let (fs, fscale, _fevo, fdrift) = d.flow.unwrap_or((0.0, 1.0, 0.0, v3(0.0, 0.0, 0.0)));
         let inv = FN as f32 / (fscale * 4.0);
         let drag = d.drag;
         let g = d.gravity;
@@ -686,10 +697,7 @@ impl Sim {
                 for s in 0..sub {
                     let t = t0 + s as f32 * h;
                     let te = t + h;
-                    let (wa, wb) = {
-                        let a = t * fevo * std::f32::consts::FRAC_PI_2;
-                        (a.cos(), a.sin())
-                    };
+                    let flow = blended.get(s as usize);
                     let off = scale(fdrift, -t);
                     let dampf = (-drag * h).exp();
                     let spring = target.map(|tg| ((t - tg.from) / (tg.to - tg.from)).clamp(-1.0, 2.0));
@@ -711,15 +719,13 @@ impl Sim {
                         let (x, y, z) = (px[j], py[j], pz[j]);
                         let (mut ax, mut ay, mut az) = (g.x, g.y, g.z);
                         let (mut ux, mut uy, mut uz) = (vx[j], vy[j], vz[j]);
-                        if let Some((fa, fb)) = flows {
-                            let (sx, sy, sz) = ((x + off.x) * inv, (y + off.y) * inv, (z + off.z) * inv);
-                            let a = fa.sample(sx, sy, sz);
-                            let b = fb.sample(sx + 17.0, sy + 31.0, sz + 5.0);
-                            let k = 1.0 - dampf;
+                        if let Some(fg) = flow {
+                            let a = fg.sample((x + off.x) * inv, (y + off.y) * inv, (z + off.z) * inv);
                             // Relax towards the flow velocity.
-                            ux += ((a[0] * wa + b[0] * wb) * fs - ux) * k * 4.0;
-                            uy += ((a[1] * wa + b[1] * wb) * fs - uy) * k * 4.0;
-                            uz += ((a[2] * wa + b[2] * wb) * fs - uz) * k * 4.0;
+                            let k = (1.0 - dampf) * 4.0;
+                            ux += (a[0] * fs - ux) * k;
+                            uy += (a[1] * fs - uy) * k;
+                            uz += (a[2] * fs - uz) * k;
                         }
                         for &(c, st, sw, r) in &att[s as usize] {
                             let (dx, dy, dz) = (c.x - x, c.y - y, c.z - z);
@@ -771,16 +777,15 @@ impl Sim {
     }
 
     fn snap(&self, live: &Live) -> Snap {
+        use rayon::prelude::*;
         let n = live.px.len();
-        let mut m = 1e-6f32;
-        for i in 0..n {
-            m = m.max(live.vx[i].abs()).max(live.vy[i].abs()).max(live.vz[i].abs());
-        }
+        let m = (0..n).into_par_iter().with_min_len(1 << 14).map(|i| live.vx[i].abs().max(live.vy[i].abs()).max(live.vz[i].abs())).reduce(|| 1e-6f32, f32::max);
         let vs = m / 32767.0;
-        let q = |v: f32| (v / vs).round().clamp(-32767.0, 32767.0) as i16;
+        let iv = 1.0 / vs;
+        let q = |v: f32| (v * iv).round().clamp(-32767.0, 32767.0) as i16;
         Snap {
-            pos: (0..n).map(|i| [live.px[i], live.py[i], live.pz[i]]).collect(),
-            vel: (0..n).map(|i| [q(live.vx[i]), q(live.vy[i]), q(live.vz[i])]).collect(),
+            pos: (0..n).into_par_iter().with_min_len(1 << 14).map(|i| [live.px[i], live.py[i], live.pz[i]]).collect(),
+            vel: (0..n).into_par_iter().with_min_len(1 << 14).map(|i| [q(live.vx[i]), q(live.vy[i]), q(live.vz[i])]).collect(),
             vscale: vs,
             t: self.def.start + live.frame as f32 * self.dt,
         }
@@ -889,55 +894,58 @@ impl Sim {
 
 // ------------------------------------------------------------------ rendering
 
-/// Particle light for one frame: emission, and (for `over`) absorbed
-/// density with its colour. Composited by `post` before bloom.
+/// Particle light for one frame: emission, and (for `over`) premultiplied
+/// colour and optical depth of absorbing particles. Composited by `post`
+/// before bloom.
 pub struct Layer {
     pub w: usize,
     pub h: usize,
-    /// Emitted light (linear RGB).
-    pub emit: Vec<[f32; 3]>,
-    /// Premultiplied colour and optical depth of absorbing particles.
-    pub col: Vec<[f32; 4]>,
-    pub any_over: bool,
+    /// Channels per pixel: 3 (emission) or 7 (emission, colour, density).
+    pub c: usize,
+    pub buf: Vec<f32>,
 }
 
 impl Layer {
     /// Composite over the scene's HDR image.
     #[inline]
     pub fn apply(&self, i: usize, c: [f32; 3]) -> [f32; 3] {
-        let e = self.emit[i];
-        if !self.any_over {
-            return [c[0] + e[0], c[1] + e[1], c[2] + e[2]];
+        let b = &self.buf[i * self.c..(i + 1) * self.c];
+        let e = [c[0] + b[0], c[1] + b[1], c[2] + b[2]];
+        if self.c == 3 || b[6] <= 1e-6 {
+            return e;
         }
-        let q = self.col[i];
-        if q[3] <= 1e-6 {
-            return [c[0] + e[0], c[1] + e[1], c[2] + e[2]];
-        }
-        let tr = (-q[3]).exp();
-        let k = (1.0 - tr) / q[3];
-        [c[0] * tr + q[0] * k + e[0], c[1] * tr + q[1] * k + e[1], c[2] * tr + q[2] * k + e[2]]
+        let tr = (-b[6]).exp();
+        let k = (1.0 - tr) / b[6];
+        [c[0] * tr + b[3] * k + b[0], c[1] * tr + b[4] * k + b[1], c[2] * tr + b[5] * k + b[2]]
+    }
+
+    /// Total emitted light (tests).
+    pub fn emitted(&self) -> f64 {
+        self.buf.chunks_exact(self.c).map(|q| q[0] as f64).sum()
     }
 }
 
-/// Pyramid level buffers: 8 floats per texel (emit rgb, premult rgb, density, pad).
+/// Pyramid levels, `c` floats per texel.
 struct Pyr {
-    lv: Vec<(usize, usize, Vec<[f32; 8]>)>,
+    c: usize,
+    lv: Vec<(usize, usize, Vec<f32>)>,
 }
 
 impl Pyr {
-    fn new(w: usize, h: usize, levels: usize) -> Pyr {
+    fn new(w: usize, h: usize, levels: usize, c: usize) -> Pyr {
         let mut lv = Vec::new();
         let (mut cw, mut ch) = (w, h);
         for _ in 0..levels {
-            lv.push((cw, ch, vec![[0.0f32; 8]; cw * ch]));
+            lv.push((cw, ch, vec![0.0f32; cw * ch * c]));
             cw = cw.div_ceil(2).max(1);
             ch = ch.div_ceil(2).max(1);
         }
-        Pyr { lv }
+        Pyr { c, lv }
     }
-    /// Bilinear splat at level `l`, pixel coords of level 0.
+    /// Bilinear splat at level `l`, pixel coordinates of level 0.
     #[inline(always)]
     fn splat(&mut self, l: usize, x: f32, y: f32, v: &[f32; 8]) {
+        let c = self.c;
         let (w, h, buf) = &mut self.lv[l];
         let f = 1.0 / (1u32 << l) as f32;
         let (fx, fy) = (x * f - 0.5, y * f - 0.5);
@@ -950,8 +958,8 @@ impl Pyr {
             if xx < 0 || yy < 0 || xx >= w || yy >= h {
                 continue;
             }
-            let o = &mut buf[(yy * w + xx) as usize];
-            for k in 0..7 {
+            let o = &mut buf[(yy * w + xx) as usize * c..][..c];
+            for k in 0..c {
                 o[k] += v[k] * wt;
             }
         }
@@ -1001,24 +1009,36 @@ impl Proj {
     }
 }
 
+/// acos to about 1e-4 (Abramowitz & Stegun 4.4.45).
+#[inline(always)]
+fn fast_acos(x: f32) -> f32 {
+    let a = x.abs();
+    let r = (1.0 - a).max(0.0).sqrt() * (1.570_728_8 + a * (-0.212_114_4 + a * (0.074_261_0 + a * -0.018_729_3)));
+    if x < 0.0 {
+        std::f32::consts::PI - r
+    } else {
+        r
+    }
+}
+
 /// Splat every live system into one layer.
 pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
+    let clock = std::time::Instant::now();
     let (w, h) = (v.w, v.h);
     let levels = 6;
     let s = h as f32 / 1080.0;
     let pj = Proj::new(v.cam, w, h);
     let pp = Proj::new(v.prev, w, h);
     let lvl_of = |r: f32| -> usize { (r.max(1.0).log2().floor() as usize).min(levels - 1) };
-    let mut any_over = false;
+    let c = if systems.iter().any(|(s, _)| s.def.blend == Blend::Over) { 7 } else { 3 };
     let threads = if rayon::current_thread_index().is_some() { 1 } else { rayon::current_num_threads().max(1) };
     let mut pyrs: Vec<Pyr> = Vec::new();
     for (sim, snap) in systems {
         let d = &sim.def;
-        any_over |= d.blend == Blend::Over;
         let n = snap.pos.len();
         let per = n.div_ceil(threads).max(1);
         let work = |range: std::ops::Range<usize>| -> Pyr {
-            let mut py = Pyr::new(w, h, levels);
+            let mut py = Pyr::new(w, h, levels, c);
             for i in range {
                 let p = v3(snap.pos[i][0], snap.pos[i][1], snap.pos[i][2]);
                 let (sx, sy, z) = pj.at(p);
@@ -1059,8 +1079,8 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let lc = if d.lit {
                     let to_cam = norm(sub(v.cam.pos, p));
                     let ca = dot(to_cam, v.key.0).clamp(-1.0, 1.0);
-                    let al = ca.acos();
-                    let phase = (al.sin() + (std::f32::consts::PI - al) * ca) / std::f32::consts::PI;
+                    // Lambert sphere phase: (sin α + (π − α) cos α) / π, with π − α = acos(−cos α).
+                    let phase = ((1.0 - ca * ca).max(0.0).sqrt() + fast_acos(-ca) * ca) / std::f32::consts::PI;
                     let amb = lerp3(v.amb.1, v.amb.0, 0.5 + 0.5 * to_cam.y.max(0.0));
                     let l = add(scale(v.key.1, phase * 0.66), amb);
                     [col[0] * l.x, col[1] * l.y, col[2] * l.z]
@@ -1105,51 +1125,57 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
             pyrs.extend(parts);
         }
     }
+    let t_splat = clock.elapsed();
     // Reduce the per-thread pyramids, then collapse levels (coarse to fine, bilinear up).
+    use rayon::prelude::*;
+    let par = threads > 1;
     let mut acc = match pyrs.pop() {
         Some(p) => p,
-        None => Pyr::new(w, h, levels),
+        None => Pyr::new(w, h, levels, c),
     };
     for p in pyrs {
         for (a, b) in acc.lv.iter_mut().zip(p.lv) {
-            for (x, y) in a.2.iter_mut().zip(b.2) {
-                for k in 0..7 {
-                    x[k] += y[k];
-                }
+            if par {
+                a.2.par_chunks_mut(1 << 16).zip(b.2.par_chunks(1 << 16)).for_each(|(x, y)| x.iter_mut().zip(y).for_each(|(x, y)| *x += y));
+            } else {
+                a.2.iter_mut().zip(&b.2).for_each(|(x, y)| *x += y);
             }
         }
     }
     for l in (1..levels).rev() {
-        let (cw, ch, src) = {
-            let (cw, ch, b) = &acc.lv[l];
-            (*cw, *ch, b.clone())
-        };
-        let (fw, fh, dst) = &mut acc.lv[l - 1];
-        for y in 0..*fh {
+        let (lo, hi) = acc.lv.split_at_mut(l);
+        let (cw, ch, src) = (hi[0].0, hi[0].1, &hi[0].2);
+        let (fw, _, dst) = &mut lo[l - 1];
+        let fw = *fw;
+        let row = |(y, out): (usize, &mut [f32])| {
             let fy = ((y as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, ch as f32 - 1.0);
             let (iy, ty) = (fy as usize, fy - fy.floor());
             let iy1 = (iy + 1).min(ch - 1);
-            for x in 0..*fw {
+            let (r0, r1) = (&src[iy * cw * c..(iy + 1) * cw * c], &src[iy1 * cw * c..(iy1 + 1) * cw * c]);
+            for x in 0..fw {
                 let fx = ((x as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, cw as f32 - 1.0);
                 let (ix, tx) = (fx as usize, fx - fx.floor());
                 let ix1 = (ix + 1).min(cw - 1);
-                let (a, b, c, e) = (&src[iy * cw + ix], &src[iy * cw + ix1], &src[iy1 * cw + ix], &src[iy1 * cw + ix1]);
-                let o = &mut dst[y * *fw + x];
                 // Values are per texel; a coarse texel spreads over 4 fine ones.
-                for k in 0..7 {
-                    o[k] += ((a[k] * (1.0 - tx) + b[k] * tx) * (1.0 - ty) + (c[k] * (1.0 - tx) + e[k] * tx) * ty) * 0.25;
+                let (w00, w10, w01, w11) = ((1.0 - tx) * (1.0 - ty) * 0.25, tx * (1.0 - ty) * 0.25, (1.0 - tx) * ty * 0.25, tx * ty * 0.25);
+                let o = &mut out[x * c..(x + 1) * c];
+                for k in 0..c {
+                    o[k] += r0[ix * c + k] * w00 + r0[ix1 * c + k] * w10 + r1[ix * c + k] * w01 + r1[ix1 * c + k] * w11;
                 }
             }
+        };
+        if par {
+            dst.par_chunks_mut(fw * c).enumerate().for_each(row);
+        } else {
+            dst.chunks_mut(fw * c).enumerate().for_each(row);
         }
     }
-    let base = &acc.lv[0].2;
-    Layer {
-        w,
-        h,
-        emit: base.iter().map(|q| [q[0], q[1], q[2]]).collect(),
-        col: base.iter().map(|q| [q[3], q[4], q[5], q[6]]).collect(),
-        any_over,
+    let prof = std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some();
+    if prof {
+        eprintln!("  splat: points {:.0} ms, collapse {:.0} ms", t_splat.as_secs_f64() * 1e3, (clock.elapsed() - t_splat).as_secs_f64() * 1e3);
     }
+    let buf = std::mem::take(&mut acc.lv[0].2);
+    Layer { w, h, c, buf }
 }
 
 #[cfg(test)]
@@ -1205,8 +1231,7 @@ mod tests {
         let total = |focus: f32, ap: f32| {
             let cam = Camera { pos: v3(0.0, 1.0, 4.0), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus, aperture: ap, roll: 0.0, shutter: 0.0 };
             let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus, aperture: ap, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) };
-            let l = render(&[(&s, snap.clone())], &v, 0.0);
-            l.emit.iter().map(|e| e[0] as f64).sum::<f64>()
+            render(&[(&s, snap.clone())], &v, 0.0).emitted()
         };
         let (sharp, blurred) = (total(4.0, 0.0), total(1.0, 30.0));
         assert!(sharp > 0.0 && (sharp - blurred).abs() / sharp < 0.03, "sharp {sharp} vs blurred {blurred}");
