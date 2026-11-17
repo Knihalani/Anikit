@@ -470,10 +470,37 @@ pub struct Layer {
     /// Values for `"$param"` placeholders in the `use`d def.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub with: Option<BTreeMap<String, serde_json::Value>>,
-    /// Emit this many copies; `"$i"` (0-based) and `"$n"` are available, and
-    /// `"=…"` strings are arithmetic (`"x": "=160 + $i * 420"`).
+    /// A number: emit this many copies at spec level (`"$i"`, `"$n"`, `"=…"` arithmetic).
+    /// An object: a render-time repeater (`{"count": 12, "offset": {"rotate": 30}, "stagger": 0.05}`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub repeat: Option<u32>,
+    pub repeat: Option<RepeatValue>,
+    /// Motion trails: draw earlier-time copies under the layer, `{"count": 6, "delay": 0.04, "decay": 0.6}`.
+    pub echo: Option<EchoSpec>,
+    /// Follow a motion path (SVG path data in parent pixels): `x`/`y` come from the path at `progress`
+    /// (0..1, animatable; default: linear over the layer's life).
+    pub path: Option<String>,
+    /// With `path`: rotate the layer along the path's tangent (`true`, or an extra angle in degrees).
+    pub orient: Option<serde_json::Value>,
+    /// Text on a path: SVG path data (layer-local pixels); glyphs ride it, shifted by `pathOffset` px (animatable).
+    pub text_path: Option<String>,
+    /// Text on a path: shift along the path in px (animatable as `pathOffset`).
+    pub path_offset: Option<Num>,
+    /// Stroke dash offset in px, added to `stroke.dashOffset` (animatable as `dashOffset`; `"=t*-120"` marches ants).
+    pub dash_offset: Option<Num>,
+    /// Shape modifier: round every corner of the outline by this radius (px).
+    pub round_corners: Option<f64>,
+    /// Shape modifier: zigzag the outline, `{"size": 12, "ridges": 20, "smooth": false}`.
+    pub zigzag: Option<ZigzagSpec>,
+    /// Shape modifier: pucker (< 0) or bloat (> 0) the outline, −1..1.
+    pub pucker_bloat: Option<f64>,
+    /// Shape modifier: grow (> 0) or shrink (< 0) the outline by this many px.
+    pub offset_path: Option<f64>,
+    /// Shape modifier: twist the outline around its centre by this many degrees (more at the rim).
+    pub twist: Option<f64>,
+    /// Shape modifier: noise-displace the outline's vertices, `{"amount": 10, "detail": 24, "speed": 1, "seed": 1}` (animated, deterministic).
+    pub wiggle_path: Option<WigglePathSpec>,
+    /// Track matte: another layer of the scene (by `id`) whose alpha or luma shows this one.
+    pub matte: Option<MatteSpec>,
 
     // ---- transform & appearance (all kinds)
     pub x: Option<Num>,
@@ -627,6 +654,92 @@ pub struct ShaderBuffer {
     pub src: Option<String>,
     /// `iChannel0..3`: `"A"`…`"D"` (buffers), `"noise"`, or `"none"`; options as for layer channels.
     pub channels: Option<Vec<serde_json::Value>>,
+}
+
+/// `repeat` on a layer: a spec-level copy count, or a render-time repeater.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum RepeatValue {
+    Count(u32),
+    Repeater(RepeaterSpec),
+}
+
+/// Render-time repeater (After Effects style): `count` copies, each offset from the last.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RepeaterSpec {
+    /// Number of copies (including the original). Default 3.
+    pub count: Option<u32>,
+    /// Per-copy change: `x`, `y` (px), `rotate` (deg), `scale` (multiplier, number or `[sx, sy]`),
+    /// `opacity` (added per copy, e.g. −0.1), `hue` (degrees per copy).
+    pub offset: Option<RepeatOffset>,
+    /// Seconds of delay per copy (copy i plays i × stagger later).
+    pub stagger: Option<f64>,
+    /// Rotation/scale centre `[x, y]` in parent pixels (default: the layer's own position).
+    pub center: Option<[f64; 2]>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RepeatOffset {
+    pub x: Option<f64>,
+    pub y: Option<f64>,
+    pub rotate: Option<f64>,
+    pub scale: Option<serde_json::Value>,
+    pub opacity: Option<f64>,
+}
+
+/// `echo`: earlier-time copies drawn under the layer.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct EchoSpec {
+    /// Number of echoes. Default 5.
+    pub count: Option<u32>,
+    /// Seconds between echoes. Default 0.05.
+    pub delay: Option<f64>,
+    /// Opacity multiplier per echo. Default 0.6.
+    pub decay: Option<f64>,
+    /// Blend mode of the echoes (`normal`, `add`, `screen`, …). Default normal.
+    pub blend: Option<String>,
+}
+
+/// `zigzag` shape modifier.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ZigzagSpec {
+    /// Amplitude in px. Default 10.
+    pub size: Option<f64>,
+    /// Ridges per segment (per closed outline for ellipses). Default 10.
+    pub ridges: Option<u32>,
+    /// Smooth waves instead of sharp corners.
+    pub smooth: Option<bool>,
+}
+
+/// `wigglePath` shape modifier.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct WigglePathSpec {
+    /// Displacement in px. Default 10.
+    pub amount: Option<f64>,
+    /// Points the outline is resampled to. Default 32.
+    pub detail: Option<u32>,
+    /// Noise cycles per second (0 = frozen). Default 1.
+    pub speed: Option<f64>,
+    pub seed: Option<f64>,
+}
+
+/// `matte`: show this layer through another layer's alpha or luminance.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MatteSpec(pub MatteObj);
+string_or_struct!(MatteSpec, MatteObj, |s| MatteObj { layer: s.to_string(), mode: None });
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct MatteObj {
+    /// `id` of the matte layer (in the same scene; it is not drawn itself).
+    pub layer: String,
+    /// `alpha` (default), `alphaInverted`, `luma`, `lumaInverted`.
+    pub mode: Option<String>,
 }
 
 /// `style`: a theme text-style name (text layers) or a box style (box layers).
