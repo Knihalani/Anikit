@@ -3,7 +3,7 @@ name: anikit-reverse-video
 description: Reverse-engineer a reference video (MP4, WebM, GIF or a frame sequence) and recreate its structure, pacing, style and techniques as an Anikit Video spec adapted to the user's own content. Use when the user says "make one like this", shares a reference clip, or asks how a video was made.
 ---
 
-**Rule zero: recreate, don't copy.** Take the *structure, pacing, style and techniques* of the reference: shot rhythm, transitions, camera language, palette mood, type treatment and finish. Never reuse its footage, frames, logos, characters, trademarks, music or copy, and never trace its artwork. Use the user's own product, words and assets. If the user asks for a pixel copy of someone else's work, say no and offer the "in the style of" version.
+**Rule zero: recreate, don't copy.** Take the *structure, pacing, style and techniques* of the reference: shot rhythm, transitions, camera language, palette mood, type treatment and finish. Never reuse its footage, frames, logos, characters, trademarks, music or copy, and never trace its artwork. Use the user's own product, words and assets. If the user asks for a pixel copy of someone else's work, say no and offer the "in the style of" version. Borrow the *grammar* (pacing curve, framing logic, how type meets image), never the shots: `docs/video/taste/TASTE.md` §8, "References vs copying". If the reference itself shows a trend tell (§9, including the "tasteful AI" look), don't recreate that part.
 
 **What it can and can't recreate:** motion design (type, 2D/vector, UI, shader worlds, rendered 3D, particles) recreates well. Live-action footage (people, real places, camera-original photography) can't be rebuilt in a motion-graphics engine: keep its *cutting, framing, grade and type* and say plainly that the imagery itself will differ (or use the user's own footage as video layers).
 
@@ -34,6 +34,7 @@ The numbers can't tell a serif from a sans or chrome from paper. You must look:
    - **Motion:** camera move and ease (from `camera` and `motion_character`), object motion, overshoot or snap.
    - **Texture:** grain, glow or bloom, blur, vignette.
    - **Recurring motif:** the one element that carries across shots (a line, a colour, a shape). This is usually what makes the style recognisable. Keep it.
+   - Vocabulary and numbers for each line are in `docs/video/taste/TASTE.md`: §1 Typography (scale ratio, tracking, read time), §2 Colour (value structure, palette size), §3 Composition (placement, negative space, lens), §4 Light (key:fill ratio, key direction), §5 Motion (durations, easing, overshoot).
 
 Correct the tool wherever your eyes disagree.
 
@@ -67,7 +68,7 @@ for t in $(jq -r '.shots[].key_time' ref.json); do
 done
 ```
 
-Put each pair next to each other and look. For every pair ask: would a viewer say this is the same designer's work? Check typeface class, weight and size, colour and grade, light direction, motif, and density of detail. Also compare `global` and each shot's `grade`, `layout` and `motion_character` in `ref.json` vs `out.json`. Fix the worst pair, re-render it with `still --at`, and repeat. Then run `critique s.json --render --pack rv/` and `python3 docs/video/quality/pace.py out.mp4`, and check docs/video/quality/BAR.md (crisp readable text, motivated light, no forced 3D).
+Put each pair next to each other and look. For every pair ask: would a viewer say this is the same designer's work? Check typeface class, weight and size, colour and grade, light direction, motif, and density of detail. Also compare `global` and each shot's `grade`, `layout` and `motion_character` in `ref.json` vs `out.json`. Fix the worst pair, re-render it with `still --at`, and repeat. Check the rhythm against `TASTE.md` §6 (shot-length variation, a breath after the run, cuts on action) and run the taste pass (`anikit-video docs taste`). Then run `critique s.json --render --pack rv/` and `python3 docs/video/quality/pace.py out.mp4`, and check docs/video/quality/BAR.md (crisp readable text, motivated light, no forced 3D).
 
 Tell the user what you took from the reference (structure, timing, type system, grade, motif) and what is theirs.
 
