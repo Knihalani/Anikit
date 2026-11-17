@@ -264,6 +264,8 @@ pub(crate) enum Kind {
     Group {
         children: Vec<Node>,
     },
+    /// Raw drawing: primitives in the layer's box.
+    Draw(Vec<DrawC>),
     /// A nested 2D composition, drawn as vectors in its own clipped layer.
     Comp {
         ev: Arc<Evaluator>,
@@ -298,6 +300,8 @@ pub(crate) struct Node {
     pub end: f32,
     pub base: [f32; prop::N],
     pub exprs: Vec<(u8, Expr)>,
+    /// Per-frame colours (`"fill": "=hsl(t * 60, 70, 55)"`) for the 4-slot colour at `slot`.
+    pub cexprs: Vec<(u8, expr::ColorExpr)>,
     pub tracks: Vec<Track>,
     pub loops: Vec<LoopC>,
     pub anchor: [f32; 2],
@@ -413,12 +417,30 @@ pub struct Evaluator {
     pub(crate) captions: Option<(crate::text::captions::CaptionTrack, [f32; 2])>,
     pub(crate) theme: theme::Theme,
     pub(crate) ctheme: crate::components::Theme,
+    /// Beat grid and loudness of the music, when expressions read them.
+    pub(crate) groove: Option<Arc<beat_markers::Music>>,
     /// Motion-blur shutter in seconds (0 = off). Default half a frame (180°).
     pub shutter: f32,
     /// The spec asked for motion blur itself (otherwise only `--quality high` applies it).
     pub shutter_explicit: bool,
     /// Named sub-compositions (top-level `compositions`), in dependency order.
     pub(crate) comps: Vec<(String, Arc<Evaluator>)>,
+}
+
+/// A gradient stroke segment: path, start and end points, start and end colours.
+pub(crate) type DrawSeg = (Path, [f32; 2], [f32; 2], Rgba, Rgba);
+
+/// One compiled `draw` primitive.
+pub(crate) struct DrawC {
+    pub path: Path,
+    pub fill: Option<Rgba>,
+    /// Stroke colour (none when per-vertex colours draw the stroke).
+    pub stroke: Option<Rgba>,
+    /// Stroke width, cap, join.
+    pub style: (f32, u8, u8),
+    /// Per-vertex colours: one gradient segment per pair of points.
+    pub segs: Vec<DrawSeg>,
+    pub opacity: f32,
 }
 
 /// How a layer's clock maps onto a composition's clock.
@@ -821,7 +843,7 @@ impl Evaluator {
     /// Compute a node's property values at local time `lt`.
     fn props(&self, n: &Node, cx: &Cx, lt: f32, v: &mut [f32; prop::N]) {
         *v = n.base;
-        if !n.exprs.is_empty() {
+        if !n.exprs.is_empty() || !n.cexprs.is_empty() {
             let dur = (n.end - n.start).max(1e-6);
             let vars = Vars {
                 t: lt as f64,
@@ -833,9 +855,21 @@ impl Evaluator {
                 w: self.width as f64,
                 h: self.height as f64,
                 fps: self.fps as f64,
+                ..Default::default()
+            };
+            let vars = match &self.groove {
+                Some(m) if n.exprs.iter().any(|(_, e)| e.music) || n.cexprs.iter().any(|(_, e)| e.music) => {
+                    let (beat, bar, level, bpm) = m.at(cx.gt as f64);
+                    Vars { beat, bar, level, bpm, ..vars }
+                }
+                _ => vars,
             };
             for (slot, e) in &n.exprs {
                 v[*slot as usize] = e.eval(&vars) as f32;
+            }
+            for (slot, e) in &n.cexprs {
+                let s = *slot as usize;
+                v[s..s + 4].copy_from_slice(&rgba_to_oklab(Rgba(e.eval(&vars))));
             }
         }
         for tr in &n.tracks {
@@ -1087,6 +1121,28 @@ impl Evaluator {
                 }
             }
             Kind::Shader(sc) => self.emit_shader(sc, cx, &v, &xf, w, h, alpha, lt, out),
+            Kind::Draw(items) => {
+                let trim = [v[prop::TRIM0].clamp(0.0, 1.0), v[prop::TRIM1].clamp(0.0, 1.0)];
+                let fade = |c: Rgba, k: f32| Rgba([c.0[0], c.0[1], c.0[2], c.0[3] * k]);
+                for it in items {
+                    let a = alpha * it.opacity;
+                    let (w, cap, join) = it.style;
+                    let style = || dl::Stroke { width: w, cap, join, miter_limit: 4.0, dash: vec![], dash_offset: 0.0, trim };
+                    if let Some(c) = it.fill {
+                        out.push(Op::Fill { path: copy_path(&it.path), paint: Paint::Solid(fade(c, a)), rule: dl::FillRule::NonZero, transform: xf });
+                    }
+                    if trim[1] <= trim[0] {
+                        continue;
+                    }
+                    if let Some(c) = it.stroke {
+                        out.push(Op::Stroke { path: copy_path(&it.path), paint: Paint::Solid(fade(c, a)), stroke: style(), transform: xf });
+                    }
+                    for (p, p0, p1, c0, c1) in &it.segs {
+                        let paint = Paint::Linear { p0: *p0, p1: *p1, stops: vec![(0.0, fade(*c0, a)), (1.0, fade(*c1, a))] };
+                        out.push(Op::Stroke { path: copy_path(p), paint, stroke: style(), transform: xf });
+                    }
+                }
+            }
             Kind::Comp { ev, natural, fit, time } => {
                 let ct = time.map(lt, ev.duration);
                 let dst = fit_rect(*natural, [w, h], *fit);
@@ -1135,7 +1191,7 @@ impl Evaluator {
                 }
             }
             Kind::Component(c, th) => {
-                let ctx = crate::components::Ctx { width: w, height: h, fps: self.fps, theme: th.as_ref().unwrap_or(&self.ctheme), assets: &*self.assets, root: Some(self) };
+                let ctx = crate::components::Ctx { width: w, height: h, fps: self.fps, theme: th.as_ref().unwrap_or(&self.ctheme), assets: &*self.assets };
                 let ops = c.eval(lt.max(0.0), &ctx);
                 let k = out.len();
                 out.extend(ops);
@@ -1215,7 +1271,7 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
         return true; // invisible throughout
     }
     let (la, lb) = (a - n.start, b - n.start);
-    if n.exprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
+    if n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
         return false;
     }
     match &n.kind {

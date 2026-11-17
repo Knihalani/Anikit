@@ -12,6 +12,7 @@
 mod de;
 pub mod parse;
 pub mod reuse;
+pub mod script;
 pub mod validate;
 
 use schemars::JsonSchema;
@@ -140,6 +141,39 @@ pub struct Spec {
     /// Named 2D sub-compositions: placed with a `composition` layer, or used as a texture in 3D.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compositions: Option<BTreeMap<String, Composition>>,
+}
+
+/// One primitive of a `draw` layer: exactly one of `d`, `points`, `circle`, `rect`, `line`.
+#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DrawItem {
+    /// SVG path data (`"M0 0 L100 0 Q150 50 200 0 Z"`).
+    pub d: Option<String>,
+    /// A polyline `[[x, y], …]` (`closed` for a polygon, `smooth` for a curve through the points).
+    pub points: Option<Vec<[f64; 2]>>,
+    pub closed: Option<bool>,
+    pub smooth: Option<bool>,
+    /// `[cx, cy, r]`.
+    pub circle: Option<[f64; 3]>,
+    /// `[x, y, w, h]` (with `radius` for rounded corners).
+    pub rect: Option<[f64; 4]>,
+    pub radius: Option<f64>,
+    /// `[x1, y1, x2, y2]`.
+    pub line: Option<[f64; 4]>,
+    /// Fill colour (none by default; `points`, `circle`, `rect` and `d` can be filled).
+    pub fill: Option<String>,
+    /// Stroke colour (default `$text` when `width` is set; lines always stroke).
+    pub stroke: Option<String>,
+    /// Stroke width in px (default 2 when stroked).
+    pub width: Option<f64>,
+    /// Per-vertex stroke colours for `points` (one per point; each segment is a gradient).
+    pub colors: Option<Vec<String>>,
+    /// `butt` (default), `round`, `square`.
+    pub cap: Option<String>,
+    /// `miter` (default), `round`, `bevel`.
+    pub join: Option<String>,
+    /// 0..1, multiplied with the layer's opacity.
+    pub opacity: Option<f64>,
 }
 
 /// `post`: a preset name or a preset with overrides.
@@ -496,6 +530,11 @@ pub struct Layer {
     #[serde(default, deserialize_with = "de::opt_layers")]
     #[schemars(with = "Option<Vec<de::LayerItem>>")]
     pub children: Option<Vec<Layer>>,
+
+    // ---- draw
+    /// Raw drawing: primitives in frame pixels (the layer defaults to the parent's box), each
+    /// with its own fill and stroke. The layer's transforms, opacity, animation and `trimStart`/`trimEnd` apply.
+    pub draw: Option<Vec<DrawItem>>,
 
     // ---- composition (`trimStart`, `speed`, `loop: true` and `fit` apply too)
     /// Name of an entry in top-level `compositions`.

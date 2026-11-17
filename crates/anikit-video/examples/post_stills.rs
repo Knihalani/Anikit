@@ -11,6 +11,7 @@ fn main() {
     let ev = Evaluator::new(&p.spec, Options::default()).unwrap();
     let t: f32 = a[2].parse().unwrap();
     let out = &a[3];
+    std::fs::create_dir_all(out).unwrap();
     let presets: Vec<String> = if a.len() > 4 { a[4..].to_vec() } else { vec!["none".into(), "cinematic".into(), "dreamy".into(), "punchy".into(), "noir".into(), "vintage".into()] };
     let l = ev.eval(t);
     let mut r = Renderer::new(ev.assets.snapshot());

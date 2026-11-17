@@ -30,6 +30,8 @@ A spec: `{ "size": "16:9", "intent": {"pace": "fast"}, "music": "synthwave", "sc
 
 Combine them. `anikit-video docs make-anything` lists the escape hatches.
 
+No limits: expressions on any number or colour (`"=hsl(beat * 30, 80, 60)"`, `level`, `c ? a : b`), `{ "script": … }` loops that generate layers, and `draw` layers of raw paths and points (`docs/video/authoring.md`).
+
 **Costs:** 2D layers render at 100+ fps. Shaders run 50–400 ms per frame (`still` prints it). Ray-traced 3D and particles take 0.3–1 s per frame: use `"quality": "draft"` while iterating, keep 3D shots short, and preview with `still --width 640`. A layer's own timing is `start`/`end`; `at` is for tweens and `audio` cues.
 
 ## Shortcuts (optional; each is made from the primitives above)

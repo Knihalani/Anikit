@@ -2,7 +2,6 @@
 //!
 //! `cargo run --release -p anikit-video --example particles_bench [-- 1000000 10000000]`
 
-use anikit_video::pipeline::textures::CompTextures;
 use anikit_video::scene3d::math::v3;
 use anikit_video::scene3d::particles::{self, Sim, View};
 use anikit_video::scene3d::trace::Camera;
@@ -15,7 +14,6 @@ fn main() {
     let (w, h) = (1920usize, 1080usize);
     let cam = Camera { pos: v3(0.0, 1.4, 6.5), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus: 6.5, aperture: 6.0, roll: 0.0, shutter: 0.5 };
     let depth = vec![1e9f32; w * h];
-    let cache = CompTextures::new(1 << 20);
     for (blend, n) in counts.iter().flat_map(|n| [("add", *n), ("over", *n)]) {
         let spec = serde_json::json!({
             "type": "particles", "count": n,
@@ -26,7 +24,7 @@ fn main() {
         let mut shapes = anikit_video::scene3d::spec::Shapes::new();
         let def = particles::parse(&spec, &mut shapes, &mut Vec::new(), &HashMap::new(), &[], "bench").unwrap();
         let t0 = Instant::now();
-        let sim = Sim::new(&def, 30.0, Some(0.0), None, &cache).unwrap();
+        let sim = Sim::new(&def, 30.0, Some(0.0), None).unwrap();
         let _ = sim.at(0.0);
         let init = t0.elapsed().as_secs_f64();
         // Warm, then time 20 frames of simulation.

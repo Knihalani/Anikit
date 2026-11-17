@@ -19,6 +19,11 @@ pub struct Vars {
     pub w: f64,
     pub h: f64,
     pub fps: f64,
+    /// Music: beats and bars elapsed (fractional, from 0 at the first beat), loudness 0..1, tempo.
+    pub beat: f64,
+    pub bar: f64,
+    pub level: f64,
+    pub bpm: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -34,6 +39,15 @@ enum Ins {
     Pow,
     Lt,
     Gt,
+    Le,
+    Ge,
+    Eq,
+    Ne,
+    And,
+    Or,
+    Not,
+    /// `c ? a : b` (both sides are evaluated; no side effects).
+    Select,
     Call(u8, u8),
 }
 
@@ -41,11 +55,15 @@ enum Ins {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Expr {
     code: Vec<Ins>,
-    /// Whether it depends on time (`t`, `T`, `gt`, `p`, `frame`).
+    /// Whether it depends on time (`t`, `T`, `gt`, `p`, `frame`, music).
     pub dynamic: bool,
+    /// Whether it reads the music (`beat`, `bar`, `level`, `bpm`).
+    pub music: bool,
+    /// Whether it reads the loudness (`level`), which needs the audio itself.
+    pub level: bool,
 }
 
-const VARS: &[&str] = &["t", "T", "gt", "p", "i", "n", "w", "h", "fps", "frame", "pi", "e", "tau"];
+const VARS: &[&str] = &["t", "T", "gt", "p", "i", "n", "w", "h", "fps", "frame", "pi", "e", "tau", "beat", "bar", "level", "bpm"];
 const FUNCS: &[(&str, u8)] = &[
     ("sin", 1),
     ("cos", 1),
@@ -75,6 +93,23 @@ const FUNCS: &[(&str, u8)] = &[
     ("fract", 1),
     ("step", 2),
     ("pingpong", 2),
+    ("if", 3),
+    ("remap", 5),
+    ("lerp", 3),
+    ("hypot", 2),
+    ("log2", 1),
+    ("log10", 1),
+    ("sinh", 1),
+    ("cosh", 1),
+    ("tanh", 1),
+    ("tri", 1),
+    ("saw", 1),
+    ("square", 1),
+    ("ease", 1),
+    ("easeIn", 1),
+    ("easeOut", 1),
+    ("spring", 1),
+    ("rand2", 2),
 ];
 
 struct P<'a> {
@@ -105,18 +140,63 @@ impl P<'_> {
             false
         }
     }
+    /// `c ? a : b`, then `||`, `&&`, comparisons.
     fn expr(&mut self) -> Result<(), String> {
+        self.or()?;
+        if self.eat(b'?') {
+            self.expr()?;
+            if !self.eat(b':') {
+                return Err("expected ':' in 'condition ? a : b'".into());
+            }
+            self.expr()?;
+            self.out.push(Ins::Select);
+        }
+        Ok(())
+    }
+    fn eat2(&mut self, a: u8, b: u8) -> bool {
+        if self.peek() == Some(a) && self.s.get(self.i + 1) == Some(&b) {
+            self.i += 2;
+            true
+        } else {
+            false
+        }
+    }
+    fn or(&mut self) -> Result<(), String> {
+        self.and()?;
+        while self.eat2(b'|', b'|') {
+            self.and()?;
+            self.out.push(Ins::Or);
+        }
+        Ok(())
+    }
+    fn and(&mut self) -> Result<(), String> {
+        self.cmp()?;
+        while self.eat2(b'&', b'&') {
+            self.cmp()?;
+            self.out.push(Ins::And);
+        }
+        Ok(())
+    }
+    fn cmp(&mut self) -> Result<(), String> {
         self.additive()?;
         loop {
-            if self.eat(b'<') {
-                self.additive()?;
-                self.out.push(Ins::Lt);
+            let op = if self.eat2(b'<', b'=') {
+                Ins::Le
+            } else if self.eat2(b'>', b'=') {
+                Ins::Ge
+            } else if self.eat2(b'=', b'=') {
+                Ins::Eq
+            } else if self.eat2(b'!', b'=') {
+                Ins::Ne
+            } else if self.eat(b'<') {
+                Ins::Lt
             } else if self.eat(b'>') {
-                self.additive()?;
-                self.out.push(Ins::Gt);
+                Ins::Gt
             } else {
                 return Ok(());
-            }
+            };
+            self.additive()?;
+            self.out.push(op);
         }
     }
     fn additive(&mut self) -> Result<(), String> {
@@ -158,6 +238,12 @@ impl P<'_> {
         }
         if self.eat(b'+') {
             return self.unary();
+        }
+        if self.peek() == Some(b'!') && self.s.get(self.i + 1) != Some(&b'=') {
+            self.i += 1;
+            self.unary()?;
+            self.out.push(Ins::Not);
+            return Ok(());
         }
         self.power()
     }
@@ -268,7 +354,7 @@ impl P<'_> {
             }
             let idx = VARS.iter().position(|v| *v == name).ok_or_else(|| match crate::spec::validate::suggest(name, VARS) {
                 Some(s) => format!("unknown variable '{name}', did you mean '{s}'?"),
-                None => format!("unknown variable '{name}' (use t, T, gt, p, i, n, w, h, fps, frame)"),
+                None => format!("unknown variable '{name}' (use t, T, gt, p, i, n, w, h, fps, frame, beat, bar, level, bpm)"),
             })?;
             match name {
                 "pi" => self.out.push(Ins::Const(std::f64::consts::PI)),
@@ -309,7 +395,8 @@ impl Expr {
         for ins in &p.out {
             d += match ins {
                 Ins::Const(_) | Ins::Var(_) => 1,
-                Ins::Neg => 0,
+                Ins::Neg | Ins::Not => 0,
+                Ins::Select => -2,
                 Ins::Call(_, n) => 1 - *n as i32,
                 _ => -1,
             };
@@ -318,8 +405,10 @@ impl Expr {
         if maxd > 32 {
             return Err("expression too deeply nested".into());
         }
-        let dynamic = p.out.iter().any(|i| matches!(i, Ins::Var(0..=3) | Ins::Var(9)));
-        let mut e = Expr { code: p.out, dynamic };
+        let music = p.out.iter().any(|i| matches!(i, Ins::Var(13..=16)));
+        let dynamic = music || p.out.iter().any(|i| matches!(i, Ins::Var(0..=3) | Ins::Var(9)));
+        let level = p.out.iter().any(|i| matches!(i, Ins::Var(15)));
+        let mut e = Expr { code: p.out, dynamic, music, level };
         e.fold();
         Ok(e)
     }
@@ -360,11 +449,21 @@ impl Expr {
                         6 => v.w,
                         7 => v.h,
                         8 => v.fps,
+                        13 => v.beat,
+                        14 => v.bar,
+                        15 => v.level,
+                        16 => v.bpm,
                         _ => (v.gt * v.fps).floor(),
                     };
                     sp += 1;
                 }
                 Ins::Neg => st[sp - 1] = -st[sp - 1],
+                Ins::Not => st[sp - 1] = (st[sp - 1] == 0.0) as u8 as f64,
+                Ins::Select => {
+                    let (c, a, b) = (st[sp - 3], st[sp - 2], st[sp - 1]);
+                    sp -= 2;
+                    st[sp - 1] = if c != 0.0 { a } else { b };
+                }
                 Ins::Call(f, n) => {
                     let n = n as usize;
                     let a = &st[sp - n..sp];
@@ -386,6 +485,12 @@ impl Expr {
                         Ins::Pow => a.powf(b),
                         Ins::Lt => (a < b) as u8 as f64,
                         Ins::Gt => (a > b) as u8 as f64,
+                        Ins::Le => (a <= b) as u8 as f64,
+                        Ins::Ge => (a >= b) as u8 as f64,
+                        Ins::Eq => ((a - b).abs() < 1e-9) as u8 as f64,
+                        Ins::Ne => ((a - b).abs() >= 1e-9) as u8 as f64,
+                        Ins::And => (a != 0.0 && b != 0.0) as u8 as f64,
+                        Ins::Or => (a != 0.0 || b != 0.0) as u8 as f64,
                         _ => unreachable!(),
                     };
                 }
@@ -458,6 +563,36 @@ fn call(f: u8, a: &[f64]) -> f64 {
                 m
             }
         }
+        "if" => {
+            if a[0] != 0.0 {
+                a[1]
+            } else {
+                a[2]
+            }
+        }
+        "remap" => a[3] + (a[0] - a[1]) / (a[2] - a[1]) * (a[4] - a[3]),
+        "lerp" => a[0] + (a[1] - a[0]) * a[2],
+        "hypot" => a[0].hypot(a[1]),
+        "log2" => a[0].log2(),
+        "log10" => a[0].log10(),
+        "sinh" => a[0].sinh(),
+        "cosh" => a[0].cosh(),
+        "tanh" => a[0].tanh(),
+        "tri" => 1.0 - 4.0 * ((a[0] - 0.25).rem_euclid(1.0) - 0.5).abs(),
+        "saw" => 2.0 * a[0].rem_euclid(1.0) - 1.0,
+        "square" => if a[0].rem_euclid(1.0) < 0.5 { 1.0 } else { -1.0 },
+        // Eases of x in 0..1 (clamped): in-out cubic, in cubic, out cubic, a damped spring.
+        "ease" => {
+            let x = a[0].clamp(0.0, 1.0);
+            if x < 0.5 { 4.0 * x * x * x } else { 1.0 - (-2.0 * x + 2.0).powi(3) / 2.0 }
+        }
+        "easeIn" => a[0].clamp(0.0, 1.0).powi(3),
+        "easeOut" => 1.0 - (1.0 - a[0].clamp(0.0, 1.0)).powi(3),
+        "spring" => {
+            let x = a[0].max(0.0);
+            1.0 - (-6.0 * x).exp() * (12.0 * x).cos()
+        }
+        "rand2" => hash(a[0] * 12.9898 + hash(a[1] * 78.233) * 4375.0),
         _ => 0.0,
     }
 }
@@ -487,5 +622,191 @@ mod tests {
         assert!(Expr::compile("1 +", 1.0, 1.0, 1.0).is_err());
         assert!(!Expr::compile("w/2", 1.0, 1.0, 1.0).unwrap().dynamic);
         assert!(Expr::compile("t", 1.0, 1.0, 1.0).unwrap().dynamic);
+    }
+
+    #[test]
+    fn logic_and_more_functions() {
+        assert_eq!(ev("t > 1 ? 10 : 20", 2.0), 10.0);
+        assert_eq!(ev("t > 1 ? 10 : 20", 0.5), 20.0);
+        assert_eq!(ev("t >= 1 && t <= 2 ? 1 : 0", 1.0), 1.0);
+        assert_eq!(ev("t == 3 || !(t != 4)", 4.0), 1.0);
+        assert_eq!(ev("t < 1 ? 1 : t < 2 ? 2 : 3", 1.5), 2.0);
+        assert_eq!(ev("if(t > 1, 5, 6)", 2.0), 5.0);
+        assert_eq!(ev("remap(t, 0, 10, 100, 200)", 5.0), 150.0);
+        assert_eq!(ev("lerp(0, 10, 0.25)", 0.0), 2.5);
+        assert_eq!(ev("ease(1)", 0.0), 1.0);
+        assert_eq!(ev("square(0.25)", 0.0), 1.0);
+        let e = Expr::compile("level * 2 + beat", 1.0, 1.0, 1.0).unwrap();
+        assert!(e.music && e.dynamic);
+        assert_eq!(e.eval(&Vars { level: 0.5, beat: 3.0, ..Default::default() }), 4.0);
+    }
+}
+
+/// A colour computed per frame: `"=hsl(t * 60, 70, 55)"`, `"=rgb(255, 128 + 127 * sin(t), 0)"`,
+/// `"=oklch(0.7, 0.15, t * 90)"`, `"=mix($primary, $accent, level)"` (any argument an expression).
+#[derive(Clone, Debug, PartialEq)]
+pub struct ColorExpr {
+    kind: ColorKind,
+    args: Vec<Expr>,
+    pub dynamic: bool,
+    pub music: bool,
+    pub level: bool,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+enum ColorKind {
+    Rgb,
+    Hsl,
+    Oklch,
+    /// Two colours (straight sRGB) mixed in OKLab by the argument.
+    Mix([f32; 4], [f32; 4]),
+    /// A fixed colour (a branch of a conditional).
+    Const([f32; 4]),
+    /// `condition ? a : b` (args[0] is the condition).
+    Select(Box<ColorExpr>, Box<ColorExpr>),
+}
+
+/// Top-level `?` and its `:` (outside parentheses).
+fn split_ternary(s: &str) -> Option<(&str, &str, &str)> {
+    let (mut depth, mut q) = (0i32, None);
+    let mut nest = 0;
+    for (i, c) in s.char_indices() {
+        match c {
+            '(' => depth += 1,
+            ')' => depth -= 1,
+            '?' if depth == 0 => {
+                if q.is_none() {
+                    q = Some(i);
+                } else {
+                    nest += 1;
+                }
+            }
+            ':' if depth == 0 && q.is_some() => {
+                if nest == 0 {
+                    let qi = q.unwrap();
+                    return Some((&s[..qi], &s[qi + 1..i], &s[i + 1..]));
+                }
+                nest -= 1;
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Split `a, b(c, d), e` at top-level commas.
+fn split_args(s: &str) -> Vec<&str> {
+    let (mut out, mut depth, mut st) = (Vec::new(), 0i32, 0);
+    for (i, c) in s.char_indices() {
+        match c {
+            '(' => depth += 1,
+            ')' => depth -= 1,
+            ',' if depth == 0 => {
+                out.push(s[st..i].trim());
+                st = i + 1;
+            }
+            _ => {}
+        }
+    }
+    out.push(s[st..].trim());
+    out
+}
+
+impl ColorExpr {
+    /// Compile `src` (without the `=`). `color` resolves a colour token or literal (for `mix`).
+    pub fn compile(src: &str, color: &mut dyn FnMut(&str) -> Option<[f32; 4]>) -> Result<ColorExpr, String> {
+        let s = src.trim();
+        if let Some((c, a, b)) = split_ternary(s) {
+            let cond = Expr::compile(c, 1.0, 1.0, 1.0)?;
+            let (a, b) = (ColorExpr::compile(a, color)?, ColorExpr::compile(b, color)?);
+            return Ok(ColorExpr {
+                dynamic: cond.dynamic || a.dynamic || b.dynamic,
+                music: cond.music || a.music || b.music,
+                level: cond.level || a.level || b.level,
+                kind: ColorKind::Select(Box::new(a), Box::new(b)),
+                args: vec![cond],
+            });
+        }
+        if !s.contains('(') {
+            let c = color(s).ok_or_else(|| format!("'{s}' isn't a colour"))?;
+            return Ok(ColorExpr { kind: ColorKind::Const(c), args: Vec::new(), dynamic: false, music: false, level: false });
+        }
+        let open = s.find('(').ok_or("a colour expression is rgb(…), hsl(…), oklch(…) or mix(a, b, x)")?;
+        let name = s[..open].trim().to_ascii_lowercase();
+        let inner = s[open + 1..].strip_suffix(')').ok_or("missing ')'")?;
+        let parts = split_args(inner);
+        let ex = |p: &str| Expr::compile(p, 1.0, 1.0, 1.0);
+        let (kind, args) = match name.as_str() {
+            "rgb" | "rgba" | "hsl" | "hsla" | "oklch" => {
+                if !(3..=4).contains(&parts.len()) {
+                    return Err(format!("{name}() takes 3 or 4 arguments"));
+                }
+                let kind = match &name[..3] {
+                    "rgb" => ColorKind::Rgb,
+                    "hsl" => ColorKind::Hsl,
+                    _ => ColorKind::Oklch,
+                };
+                (kind, parts.iter().map(|p| ex(p)).collect::<Result<Vec<_>, _>>()?)
+            }
+            "mix" => {
+                if parts.len() != 3 {
+                    return Err("mix() takes (colour, colour, amount)".into());
+                }
+                let a = color(parts[0]).ok_or_else(|| format!("mix(): '{}' isn't a colour", parts[0]))?;
+                let b = color(parts[1]).ok_or_else(|| format!("mix(): '{}' isn't a colour", parts[1]))?;
+                (ColorKind::Mix(a, b), vec![ex(parts[2])?])
+            }
+            _ => {
+                let names = ["rgb", "hsl", "oklch", "mix"];
+                return Err(match crate::spec::validate::suggest(&name, &names) {
+                    Some(x) => format!("unknown colour function '{name}', did you mean '{x}'?"),
+                    None => format!("unknown colour function '{name}' (use rgb, hsl, oklch or mix)"),
+                });
+            }
+        };
+        Ok(ColorExpr { dynamic: args.iter().any(|a| a.dynamic), music: args.iter().any(|a| a.music), level: args.iter().any(|a| a.level), kind, args })
+    }
+
+    /// Straight-alpha sRGB 0..1.
+    pub fn eval(&self, v: &Vars) -> [f32; 4] {
+        let a = |i: usize| self.args.get(i).map(|e| e.eval(v)).unwrap_or(1.0);
+        match &self.kind {
+            ColorKind::Const(c) => return *c,
+            ColorKind::Select(x, y) => return if a(0) != 0.0 { x.eval(v) } else { y.eval(v) },
+            _ => {}
+        }
+        let alpha = if self.args.len() > 3 { a(3).clamp(0.0, 1.0) } else { 1.0 };
+        let c = match &self.kind {
+            ColorKind::Rgb => [a(0) / 255.0, a(1) / 255.0, a(2) / 255.0],
+            ColorKind::Hsl => {
+                let (h, s, l) = (a(0).rem_euclid(360.0) / 60.0, (a(1) / 100.0).clamp(0.0, 1.0), (a(2) / 100.0).clamp(0.0, 1.0));
+                let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
+                let x = c * (1.0 - (h % 2.0 - 1.0).abs());
+                let (r, g, b) = match h as u32 {
+                    0 => (c, x, 0.0),
+                    1 => (x, c, 0.0),
+                    2 => (0.0, c, x),
+                    3 => (0.0, x, c),
+                    4 => (x, 0.0, c),
+                    _ => (c, 0.0, x),
+                };
+                let m = l - c / 2.0;
+                [r + m, g + m, b + m]
+            }
+            ColorKind::Oklch => {
+                let (l, ch, h) = (a(0), a(1), a(2).to_radians());
+                let lab = [l as f32, (ch * h.cos()) as f32, (ch * h.sin()) as f32, 1.0];
+                let c = super::oklab_to_rgba(lab).0;
+                [c[0] as f64, c[1] as f64, c[2] as f64]
+            }
+            ColorKind::Mix(x, y) => {
+                let k = a(0).clamp(0.0, 1.0) as f32;
+                let (p, q) = (super::rgba_to_oklab(crate::dl::Rgba(*x)), super::rgba_to_oklab(crate::dl::Rgba(*y)));
+                let m = [0, 1, 2, 3].map(|i| p[i] + (q[i] - p[i]) * k);
+                return super::oklab_to_rgba(m).0;
+            }
+            ColorKind::Const(_) | ColorKind::Select(..) => unreachable!(),
+        };
+        [c[0].clamp(0.0, 1.0) as f32, c[1].clamp(0.0, 1.0) as f32, c[2].clamp(0.0, 1.0) as f32, alpha as f32]
     }
 }

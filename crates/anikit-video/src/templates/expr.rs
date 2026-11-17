@@ -417,7 +417,7 @@ fn run(e: &Ex, sc: &Scope) -> Result<Value, String> {
             match *op {
                 "==" => Value::Bool(loose_eq(&l, &r)),
                 "!=" => Value::Bool(!loose_eq(&l, &r)),
-                "+" if l.is_string() || r.is_string() => Value::String(s(&l) + &s(&r)),
+                "+" if l.is_string() || r.is_string() => Value::String(format!("{}{}", s(&l), s(&r))),
                 "+" if l.is_array() && r.is_array() => {
                     let mut v = l.as_array().unwrap().clone();
                     v.extend(r.as_array().unwrap().iter().cloned());

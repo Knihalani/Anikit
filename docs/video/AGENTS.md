@@ -1,6 +1,8 @@
 # Anikit Video for agents
 
-Start with [`skills/anikit-video/SKILL.md`](../../skills/anikit-video/SKILL.md) (48 lines): install, the loop, the open primitives and the shortcuts. Then use `anikit-video docs <topic>` (30-line pages, each with a working example) instead of reading long files: `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything components`.
+**Install:** `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh` (prebuilt, about 2 s). Don't build from source to render.
+
+Start with [`skills/anikit-video/SKILL.md`](../../skills/anikit-video/SKILL.md) (48 lines): install, the loop, the open primitives and the shortcuts. Then use `anikit-video docs <topic>` (30-line pages, each with a working example) instead of reading long files: `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything expressions script draw components`.
 
 ```bash
 anikit-video docs                                    # topics
@@ -11,6 +13,8 @@ anikit-video critique s.json --render --pack rv/     # judged against "intent"; 
 ```
 
 **MCP** (`anikit-video mcp`): `docs`, `recipes`, `list_looks`, `validate_spec`, `critique_spec` (`render`, `detail`), `render_still`, `render_contact_sheet`, `render_video`, `get_prompt`, `list_templates`, `get_template_schema`, `create_from_template`.
+
+**3D:** for chrome, glass, a studio, or thousands of textured instances, use the ray-traced `scene3d` component. See [`scene3d.md`](scene3d.md).
 
 **Quality:** [`quality/BAR.md`](quality/BAR.md). Scores are not quality verdicts; frames are.
 

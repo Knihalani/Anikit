@@ -1,0 +1,13 @@
+{
+  "size": [1920, 1080], "fps": 30, "background": "#0b0d14",
+  "post": "cinematic",
+  "motionBlur": true,
+  "scenes": [
+    { "duration": 3, "transition": "cut", "layers": [
+      { "shape": "rect", "width": 360, "height": 220, "radius": 28, "fill": "linear-gradient(135deg, #7c5cff, #ff5f8f)", "x": 300, "animate": [ { "to": { "x": 1620, "rotation": 180 }, "duration": 1.6, "ease": "inOutCubic" } ] },
+      { "shape": "circle", "width": 140, "height": 140, "fill": "#ffd166", "y": 820, "animate": [ { "to": { "x": 1700 }, "at": 0.5, "duration": 1.0, "ease": "inOutQuart" } ] },
+      { "text": "Post + motion blur", "style": "title", "y": 200, "enter": "rise" },
+      { "text": "bloom, halation, grain, tone map", "style": "body", "y": 300, "color": "#c9cbd6" }
+    ] }
+  ]
+}

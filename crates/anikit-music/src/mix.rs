@@ -203,6 +203,7 @@ fn process_track(l: &mut [f32], r: &mut [f32], m: &TrackMix, rate: u32, kicks: &
 }
 
 /// Place every SFX so its hit point lands on its time.
+#[allow(clippy::type_complexity)]
 fn render_sfx(a: &Arrangement, rate: u32, frames: usize) -> Result<Option<(Vec<f32>, Vec<f32>)>, String> {
     if a.sfx.is_empty() {
         return Ok(None);

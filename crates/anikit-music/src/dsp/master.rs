@@ -8,7 +8,9 @@ use serde::{Deserialize, Serialize};
 
 use super::biquad::{Eq, EqParams};
 use super::comp::{Compressor, CompressorParams, Detector};
-use super::loudness::{measure, Loudness, TruePeak, TP_HALF};
+use super::loudness::{Loudness, TruePeak, TP_HALF};
+#[cfg(test)]
+use super::loudness::measure;
 use super::saturate::{Saturator, SaturatorParams};
 use super::util::{db_to_gain, gain_to_db};
 use super::{process_aligned, Processor};
