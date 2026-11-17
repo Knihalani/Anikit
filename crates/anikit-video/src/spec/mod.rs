@@ -1,4 +1,4 @@
-//! The agent-facing spec: serde types for `docs/video/spec.md`.
+//! The agent-facing spec: serde types for `docs/video/spec.md` (cheat sheet) and `docs/video/spec-reference.md`.
 //!
 //! Every field is optional except `scenes` (and `layers` on a scene), so the
 //! types are mostly `Option`s; defaults are applied by [`crate::eval`].

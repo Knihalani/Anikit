@@ -353,7 +353,8 @@ pub fn validate(spec: Value, base_dir: &Path) -> Value {
 
 /// Resources served to clients.
 const RESOURCES: &[(&str, &str, &str, &str)] = &[
-    ("anikit://docs/spec", "Spec reference", "The complete Anikit Video JSON spec (layers, animation, presets, transitions).", include_str!("../../../../docs/video/spec.md")),
+    ("anikit://docs/spec", "Spec cheat sheet", "One page: the Anikit Video JSON spec (layers, animation, presets, transitions, CLI).", include_str!("../../../../docs/video/spec.md")),
+    ("anikit://docs/spec-reference", "Spec reference", "The complete Anikit Video JSON spec reference, with every key and recipes.", include_str!("../../../../docs/video/spec-reference.md")),
     ("anikit://docs/agents", "Agent quick start", "How to make a great video with Anikit Video as an agent.", include_str!("../../../../docs/video/AGENTS.md")),
     ("anikit://prompts/motion-rules", "Motion rules", "Timing, hierarchy, easing, reading time, safe areas.", include_str!("../../../../prompts/motion-rules.md")),
 ];

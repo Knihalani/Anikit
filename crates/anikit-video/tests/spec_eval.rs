@@ -117,7 +117,7 @@ fn schema_is_valid_json() {
 #[test]
 fn all_doc_examples_parse() {
     // Every ```json block in spec.md that is a whole spec must compile without errors.
-    let md = include_str!("../../../docs/video/spec.md");
+    let md = [include_str!("../../../docs/video/spec.md"), include_str!("../../../docs/video/spec-reference.md")].concat();
     let mut n = 0;
     for block in md.split("```json").skip(1) {
         let src = block.split("```").next().unwrap().trim();
@@ -237,4 +237,23 @@ fn depth_of_field_and_parallax() {
     let (b, xs) = info(1.0);
     assert_eq!(b, vec![20.0]);
     assert!((xs[0] + 100.0).abs() < 0.01 && (xs[1] + 33.333).abs() < 0.01, "{xs:?}");
+}
+
+/// Token-efficiency metric (≈ chars / 4): the cheat sheet an agent reads, and
+/// what common videos cost to write. Run with `--nocapture` to see the numbers.
+#[test]
+fn token_metric() {
+    let sheet = include_str!("../../../docs/video/spec.md");
+    assert!(sheet.lines().count() <= 150, "the cheat sheet must stay under 150 lines");
+    let examples = [
+        ("hello", r#"{"scenes":[{"layers":[{"text":"Hello, world","enter":"fadeUp"}]}]}"#),
+        ("3 scenes with a chart", r#"{"scenes":["Launch day | Everything ships",{"layers":[{"text":"3× faster","style":"title","animate":"rise"},"Built in Rust"]},{"transition":"push","layers":[{"component":"bar-chart","props":{"values":[3,7,5,9]}}]}]}"#),
+        ("vertical teaser + captions + sfx", r#"{"size":"9:16","scenes":[{"duration":4,"layers":[{"text":"Ship faster","style":"title","split":"words","enter":{"preset":"fadeUp","stagger":0.12}}],"audio":[{"sfx":"whoosh","at":0.1}]}],"captions":{"background":"$accent","cues":[{"text":"Ship faster with Anikit","at":0.5,"end":3.5}]}}"#),
+    ];
+    eprintln!("cheat sheet: {} lines, ≈{} tokens", sheet.lines().count(), sheet.len() / 4);
+    for (name, src) in examples {
+        let ev = build(src);
+        assert!(ev.diagnostics.is_empty(), "{name}: {:?}", ev.diagnostics);
+        eprintln!("{name:34} ≈{:4} tokens → {:.1} s, {} scene(s)", src.len() / 4, ev.duration, ev.scenes().len());
+    }
 }
