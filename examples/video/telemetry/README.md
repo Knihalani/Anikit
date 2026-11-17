@@ -47,7 +47,7 @@ python3 examples/video/telemetry/vertical.py      # writes vertical.json
 target/release/anikit-video render examples/video/telemetry/vertical.json -o telemetry-vertical.mp4
 ```
 
-Measured on the same 4-core VM: 885 frames in 3.64 s (243 fps), giving a 7.1 MB MP4 (7 290 KB) at −13.5 LUFS and −1.7 dBTP. Poster: `vertical-poster.png`.
+Measured on the same 4-core VM: 885 frames in 3.4–3.8 s (236–258 fps over 3 runs), giving a 7.1 MB MP4 (7 290 KB) at −13.5 LUFS and −1.7 dBTP. Poster: `vertical-poster.png`.
 
 ## Sound
 
@@ -64,7 +64,7 @@ On a 4-core cloud VM (16 GB), with the default ak264 encoder and the AAC audio t
 | | |
 |---|---|
 | frames | 2742 (273 deduped) |
-| render wall time | 11.8 s (232 fps) after checkpoint 4; the parent measured 10.8 s (254 fps) on main |
-| output | 16.8 MB MP4 (17 250 KB), 1920×1080, 60 fps, about 3.0 Mbit/s |
+| render wall time | 10.6–12.3 s (224–259 fps) over 4 consecutive runs on main 88ac967 |
+| output | 16.5 MB MP4 (16 876 KB), 1920×1080, 60 fps, about 3.0 Mbit/s |
 | loudness | −14.0 LUFS integrated, −1.4 dBTP true peak (ffmpeg `ebur128`, after AAC) |
 | spec | 542 KB JSON, mostly car-position and trail keyframes |
