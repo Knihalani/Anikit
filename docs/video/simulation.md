@@ -5,8 +5,13 @@ rigid bodies and millions of particles inside its ray-traced scene. Both are
 simulated once per spec, deterministically, and cached, so a render can be split,
 resumed or rendered out of order and still get identical frames.
 
-Examples: `examples/video/sim/dominoes.json` (10,000 glass panes with live video
-textures falling as dominoes), `examples/video/sim/particles.json`.
+Examples (`examples/video/sim/`):
+
+- `dominoes.json`: 10,000 glass panes with live video textures falling as dominoes;
+- `particles.json`: 3M sand particles swirling into a word, with self-shadows and floor shadows;
+- `glow.json`: 2M glowing particles with disc bokeh and motion streaks;
+- `custom.json`: everything as expressions (spawn ring, vortex force, colour by age and height);
+- `bridge.json`: a chain of beads pinned at both ends, with boxes raining past.
 
 ## Rigid bodies: `physics`
 
@@ -70,6 +75,26 @@ A body group is an ordinary scene object (`type`, `size`, `material`, `texture`,
   `stagger` (m) spreads the drop heights.
 - `expr`: the object's own `pos`/`rot` expressions of `i`.
 
+**Joints.** `"chain": "ball"` (or `fixed`, `hinge`, `spring`, `rope`, or
+`{ "type", "stiffness", "damping" }`) links each body of a group to the next
+at their midpoint: chains, ropes of beads, hanging banners, bridges.
+`"pin": "first" | "last" | "ends" | [indices]` fixes bodies to the world.
+Any other constraint goes in `physics.joints`:
+
+```json
+"joints": [ { "type": "hinge", "a": [0, 3], "b": "world", "anchor": [0, 2, 0], "axis": [0, 0, 1] },
+            { "type": "spring", "a": [0, 0], "b": [1, 0], "length": 0.5, "stiffness": 300, "damping": 6 } ]
+```
+
+`a` and `b` are `[group, index]` (or `"world"`); `anchor` defaults to the
+midpoint between the bodies at the start; hinges turn about `axis`; ropes
+hold bodies at most `length` apart; springs pull to `length` with
+`stiffness` and `damping`. Jointed bodies don't collide with each other.
+
+**Any shape.** A body group is any scene object: `{ "type": "model", "src":
+"part.glb" }` (glTF; it collides as the convex hull of all its parts),
+`{ "text": "A" }`, a torus, a custom-sized box.
+
 **Colliders.** Boxes, slabs, panes and phones collide as boxes, spheres as
 exact spheres, cylinders as cylinders, and text, tori and other meshes as their
 convex hull. Any object in `objects` with `"collide": true` takes part:
@@ -123,6 +148,27 @@ goes from 9.9 s to 3.0 s, with identical pixels.
 | `stretch` | `1` | Motion streak length (× shutter). |
 | `substeps` | `2` | Integration steps per frame. |
 | `start`, `end`, `seed` | `0`, ∞, `1` | |
+
+**Anything custom: expressions.** Every particle key below that takes a
+value per particle also takes an expression of the particle: `x`, `y`, `z`
+(m), `vx`, `vy`, `vz` (m/s), `t` (s), `age` (0–1 over its life), `i` (its
+id), with all expression functions (`sin`, `noise`, `rand`, `mix`, `clamp` …):
+
+```json
+{ "type": "particles", "count": 1500000, "life": 3,
+  "emit": { "pos": "=[1.6*cos(rand(i)*6.2832), 0.05, 1.6*sin(rand(i)*6.2832)]", "vel": "=[0, 0.4 + 0.6*rand(i+3), 0]" },
+  "force": "=[-z*2.2 - x*0.6, 0.35 + 0.4*noise(t + x*2), x*2.2 - z*0.6]",
+  "size": "=0.0018 + 0.0022*rand(i+11)",
+  "color": "=[0.4 + 1.6*age, 0.6 + 0.6*sin(y*2 + t), 2.0 - 1.4*age]",
+  "opacity": "=1 - age" }
+```
+
+- `force`: an acceleration field (m/s²), added to gravity, flow and attractors.
+- `emit.pos` / `emit.vel`: a custom spawn rule (`i` the particle, `age` its spawn cycle).
+- `size`, `color` (linear RGB), `opacity`: per particle, per frame.
+
+Expressions cost about 30–60 ns each per particle and substep, so a custom
+force on 1.5M particles adds about 0.2 s per frame (`examples/video/sim/custom.json`).
 
 **Emitters.** `{ "shape": "point" | "sphere" | "ball" | "box" | "disc", "pos", "radius", "size", "axis" }`
 (`sphere` emits on the surface, `ball` inside); any scene object description
