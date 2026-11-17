@@ -198,6 +198,12 @@ impl components::Assets for SharedAssets {
         }
         let Some(pm) = scratch.get(ImageId(0)).cloned() else { return ImageId(u32::MAX) };
         let mut v = self.volatile.write().unwrap();
+        // Another thread may have made the same key meanwhile: hand out its image,
+        // so a key always maps to one id and one Arc (the renderer's incremental
+        // state keys on both; two copies made output nondeterministic).
+        if let Some((_, seq, _)) = v.slots.iter().flatten().find(|s| s.0 == key) {
+            return ImageId(VOLATILE_BASE + seq);
+        }
         if v.slots.len() < VOLATILE_SLOTS {
             v.slots.resize(VOLATILE_SLOTS, None);
         }
@@ -225,6 +231,12 @@ impl components::Assets for SharedAssets {
         pm.set_may_have_transparency(true);
         let pm = Arc::new(pm);
         let mut v = self.volatile.write().unwrap();
+        // Another thread may have made the same key meanwhile: hand out its image,
+        // so a key always maps to one id and one Arc (the renderer's incremental
+        // state keys on both; two copies made output nondeterministic).
+        if let Some((_, seq, _)) = v.slots.iter().flatten().find(|s| s.0 == key) {
+            return ImageId(VOLATILE_BASE + seq);
+        }
         if v.slots.len() < VOLATILE_SLOTS {
             v.slots.resize(VOLATILE_SLOTS, None);
         }
