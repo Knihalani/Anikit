@@ -44,15 +44,29 @@ pub struct EncoderConfig {
     /// bounded by the threshold (it cannot accumulate). 0 = off; 1–2 hides
     /// renderer dither and ±1 drift.
     pub skip_threshold: u8,
-    /// Adaptive quantisation strength: per-macroblock QP offsets from local
-    /// variance and brightness (lower QP on flat and dark areas, where blocking is
-    /// visible; higher on busy ones). 0 = constant QP.
+    /// Adaptive quantisation strength: smooth macroblocks (fades, lit floors,
+    /// soft gradients; small second differences) get a lower QP, −(4 + up to 4
+    /// for smoothness + up to 3 for darkness) × strength, with a wide AC dead
+    /// zone so their noise is not coded. Busy macroblocks keep `qp`.
+    /// 0 = constant QP. It stops gradients turning into a patchwork of blocks, but
+    /// costs size on smooth-heavy UI content (see docs/video/encoder.md).
+    /// Negative (the default, −0.5): automatic per frame — |value| on frames
+    /// dominated by smooth textured content (3D renders, video), 0 elsewhere.
     pub aq_strength: f32,
+    /// Per-frame quality floor: after each frame the luma SSIM of the
+    /// reconstruction is measured, and while it is below this floor the
+    /// following frames use a lower QP (back up towards `qp` when there is
+    /// margin). 0 = constant QP. Deterministic (it depends only on the frames
+    /// already coded in this stream or chunk).
+    pub ssim_floor: f32,
+    /// How far below `qp` the SSIM floor may take the QP (bounds the size on
+    /// content such as film grain, where SSIM rises slowly with bits).
+    pub ssim_max_drop: u8,
 }
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: 0.0 }
+        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: -0.5, ssim_floor: 0.985, ssim_max_drop: 8 }
     }
 }
 
@@ -219,9 +233,26 @@ pub(crate) struct QpSet {
 
 impl QpSet {
     fn new(qp: u8) -> Self {
+        Self::build(qp, false)
+    }
+
+    /// `smooth`: AC coefficients (every position but the block DC) get a wide
+    /// dead zone (rounding 1/8 instead of 1/3 intra, 1/6 inter). Used with a
+    /// lower QP on smooth macroblocks, it buys DC precision (what a gentle
+    /// gradient needs) without coding their low-amplitude noise.
+    fn build(qp: u8, smooth: bool) -> Self {
         let q = Quant::new(qp);
         let qc = Quant::new(chroma_qp(qp));
-        let (qs, qcs) = (QuantS::new(&q), QuantS::new(&qc));
+        let (mut qs, mut qcs) = (QuantS::new(&q), QuantS::new(&qc));
+        if smooth {
+            for t in [&mut qs, &mut qcs] {
+                for i in 1..16 {
+                    let b = ((65536.0 / t.m[i] as f64) / 8.0).round() as u16;
+                    t.bias[0][i] = b;
+                    t.bias[1][i] = b;
+                }
+            }
+        }
         let (l, c) = crate::soa::zero_sad_bounds(&q, &qs, &qc, &qcs, false);
         QpSet {
             zero_sad: (l, c, crate::soa::chroma_dc_limit(&qc, false)),
@@ -241,9 +272,13 @@ impl QpSet {
 /// Shared, read-only state for coding one frame.
 pub(crate) struct FrameCtx<'a> {
     pub mbw: usize,
-    /// Slice (base) QP and the parameter sets of every QP.
+    /// Slice QP (the configured QP, lowered by the SSIM floor) and the parameter
+    /// sets of every QP.
     pub qp: u8,
+    pub base_qp: u8,
     pub qsets: &'a [QpSet],
+    /// The same with wide AC dead zones, for smooth macroblocks under AQ.
+    pub qsets_smooth: &'a [QpSet],
     /// Adaptive quantisation strength (0 = off).
     pub aq: f32,
     pub src: &'a Pic,
@@ -295,6 +330,7 @@ pub(crate) struct Band<'a> {
 }
 
 /// Result of motion search (quarter-pel units).
+#[derive(Clone)]
 struct Inter {
     mv: (i32, i32),
     /// SATD + lambda * MV bits.
@@ -449,8 +485,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             e.top.copy_from_slice(&self.b.y[i..i + 16]);
         }
         if has_left {
+            let (i, ys) = (self.yi(x0 - 1, y0), self.ys);
+            let col = &self.b.y[i..i + 15 * ys + 1];
             for k in 0..16 {
-                e.left[k] = self.b.y[self.yi(x0 - 1, y0 + k)];
+                e.left[k] = col[k * ys];
             }
         }
         if e.has_tl {
@@ -470,8 +508,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             e.top.copy_from_slice(&pl[i..i + 8]);
         }
         if has_left {
+            let (i, cs) = (self.ci(x0 - 1, y0), self.cs);
+            let col = &pl[i..i + 7 * cs + 1];
             for k in 0..8 {
-                e.left[k] = pl[self.ci(x0 - 1, y0 + k)];
+                e.left[k] = col[k * cs];
             }
         }
         if e.has_tl {
@@ -493,8 +533,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
     fn encode_mb(&mut self, mbx: usize, mby: usize, src_y: &[u8; 256], src_c: &[[u8; 64]; 2]) {
         let c = self.c;
-        self.mb_qp = if c.aq > 0.0 { (c.qp as i32 + aq_offset(src_y, src_c, c.aq)).clamp(0, 51) as u8 } else { c.qp };
-        self.p = &c.qsets[self.mb_qp as usize];
+        let (off, smooth) = if c.aq > 0.0 { aq_offset(src_y, src_c, c.aq) } else { (0, false) };
+        self.mb_qp = (c.qp as i32 + off).clamp(0, 51) as u8;
+        self.p = if smooth { &c.qsets_smooth[self.mb_qp as usize] } else { &c.qsets[self.mb_qp as usize] };
         let mbi = mby * c.mbw + mbx;
         let lambda = self.p.lambda;
 
@@ -702,6 +743,14 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
         let base = best.1;
         let base_q = (base.0 * 4, base.1 * 4);
+        // The full search often ends where its seed (a quick search) did; the seed
+        // already holds that prediction and its SATD cost (seeds reaching here have
+        // SAD above the quick-exit bound, so their cost is SATD-based).
+        if let Some(q) = seed {
+            if !quick && q.mv == base_q && q.sad > lambda * 24 {
+                return q.clone();
+            }
+        }
         let mut pred = [0u8; 256];
         {
             let (r, rs) = self.luma_ref_int(mbx, mby, base);
@@ -1472,28 +1521,62 @@ fn dc_flags(cd: &Coded, i16: bool) -> u8 {
     f
 }
 
+/// Mean SSIM of the luma planes over 8×8 blocks on a 2×2-subsampled block grid
+/// (enough for rate decisions; not the reporting metric).
+fn ssim_luma(a: &crate::frame::Plane, b: &crate::frame::Plane, w: usize, h: usize) -> f64 {
+    const C1: f64 = 6.5025; // (0.01·255)²
+    const C2: f64 = 58.5225; // (0.03·255)²
+    let (mut sum, mut n) = (0f64, 0u32);
+    for by in (0..h / 8).step_by(2) {
+        for bx in (0..w / 8).step_by(2) {
+            let (oa, ob) = (a.off(bx as isize * 8, by as isize * 8), b.off(bx as isize * 8, by as isize * 8));
+            let (mut sa, mut sb, mut saa, mut sbb, mut sab) = (0u32, 0u32, 0u32, 0u32, 0u32);
+            for y in 0..8 {
+                let ra = &a.data[oa + y * a.stride..oa + y * a.stride + 8];
+                let rb = &b.data[ob + y * b.stride..ob + y * b.stride + 8];
+                for x in 0..8 {
+                    let (p, q) = (ra[x] as u32, rb[x] as u32);
+                    sa += p;
+                    sb += q;
+                    saa += p * p;
+                    sbb += q * q;
+                    sab += p * q;
+                }
+            }
+            let (ma, mb) = (sa as f64 / 64.0, sb as f64 / 64.0);
+            let va = saa as f64 / 64.0 - ma * ma;
+            let vb = sbb as f64 / 64.0 - mb * mb;
+            let cab = sab as f64 / 64.0 - ma * mb;
+            sum += ((2.0 * ma * mb + C1) * (2.0 * cab + C2)) / ((ma * ma + mb * mb + C1) * (va + vb + C2));
+            n += 1;
+        }
+    }
+    if n == 0 {
+        1.0
+    } else {
+        sum / n as f64
+    }
+}
+
 /// Adaptive-quantisation QP offset of a macroblock. One-sided: only flat, dark
 /// macroblocks (where blocking and banding show once shadows are lifted) get a
 /// lower QP; busy or bright ones keep the frame QP, so text and detail lose nothing.
-fn aq_offset(y: &[u8; 256], _c: &[[u8; 64]; 2], strength: f32) -> i32 {
-    // dark: mean luma under 80 (limited range; black is 16)
-    const DARK: u32 = 80;
-    let (sy, _) = crate::simd::sum_sq(y);
-    // Only dark macroblocks (bright ones mask a 1-level step).
-    if sy >= DARK << 8 {
-        return 0;
-    }
-    // Smooth: small second differences. A ramp of any slope (a fade) scores ~0,
-    // a ±1 dither about 1 per sample, edges and texture far more.
+fn aq_offset(y: &[u8; 256], _c: &[[u8; 64]; 2], strength: f32) -> (i32, bool) {
+    // Smooth: small second differences. A ramp of any slope (a fade, a lit
+    // floor) scores ~0, a ±1 dither or denoiser noise ~1 per sample, edges and
+    // texture far more. Their block means quantise in visible steps at QP 23.
     let hf = crate::simd::second_diff16(y);
     if hf >= SMOOTH_HF {
-        return 0;
+        return (0, false);
     }
+    // dark: mean luma under 80 (limited range; black is 16), a little more
+    const DARK: u32 = 80;
+    let (sy, _) = crate::simd::sum_sq(y);
     let smooth = ((SMOOTH_HF as f32).log2() - (hf.max(1) as f32).log2()).min(4.0);
     let mean = (sy >> 8) as f32;
     let dark = ((DARK as f32 - mean).max(0.0) / 16.0).min(3.0);
-    // a smooth dark macroblock starts at −2 (the staircase shows at any slope)
-    -(strength * (2.0 + smooth + dark)).round() as i32
+    // a smooth macroblock starts at −4: half the quantiser step for its DC
+    (-(strength * (4.0 + smooth + dark)).round() as i32, true)
 }
 
 /// mb_qp_delta: unary of the mapped value, contexts 60 + (previous MB coded a
@@ -1823,6 +1906,7 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
             deblock: c.deblock,
             slice_edges: c.slice_deblock,
             cabac: c.cabac,
+            qp_delta: c.qp as i32 - c.base_qp as i32,
         },
     );
     let mut s = SliceEnc {
@@ -1926,6 +2010,9 @@ pub struct Encoder {
     mbw: usize,
     mbh: usize,
     qsets: Vec<QpSet>,
+    qsets_smooth: Vec<QpSet>,
+    /// Frame QP offset from the SSIM floor (≤ 0).
+    qp_adj: i32,
     level: u8,
     cur: Pic,
     /// Macroblocks where `recon` (the picture before the reference) differs from `refp`.
@@ -1963,12 +2050,15 @@ impl Encoder {
         let mbw = (cfg.width as usize).div_ceil(16);
         let mbh = (cfg.height as usize).div_ceil(16);
         let qsets = (0..52).map(QpSet::new).collect();
+        let qsets_smooth = (0..52).map(|q| QpSet::build(q, true)).collect();
         let level = level_idc(mbw, mbh, cfg.fps);
         let threads = cfg.threads.clamp(1, mbh);
         Encoder {
             mbw,
             mbh,
             qsets,
+            qsets_smooth,
+            qp_adj: 0,
             level,
             cur: Pic::new(mbw, mbh, 0),
             stale: vec![true; mbw * mbh],
@@ -2144,7 +2234,7 @@ impl Encoder {
             w.clear();
             write_slice_header(
                 w,
-                &SliceHdr { first_mb: 0, idr: false, frame_num, idr_id: 0, deblock: self.cfg.deblock, slice_edges: false, cabac },
+                &SliceHdr { first_mb: 0, idr: false, frame_num, idr_id: 0, deblock: self.cfg.deblock, slice_edges: false, cabac, qp_delta: 0 },
             );
             if cabac {
                 while !w.byte_aligned() {
@@ -2167,15 +2257,35 @@ impl Encoder {
             write_nal(&mut self.out, 2, 1, &w.buf);
             stats.skip = nmb as u32;
         } else {
+            let mark = self.out.len();
             self.encode_slices(idr, frame_num, &mut stats);
             if self.cfg.deblock && self.writers.len() == 1 {
                 crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &mut self.touched);
+            }
+            if idr && self.cfg.ssim_floor > 0.0 {
+                // An IDR has no history to steer by: measure it, and if it is
+                // below the floor code it once more at the estimated QP.
+                let s = ssim_luma(&self.cur.y, &self.recon.y, w, h);
+                let old = self.qp_adj;
+                self.floor_update(s, 200.0, 12);
+                if self.qp_adj < old {
+                    self.out.truncate(mark);
+                    stats = FrameStats { idr, ..Default::default() };
+                    self.encode_slices(idr, frame_num, &mut stats);
+                    if self.cfg.deblock && self.writers.len() == 1 {
+                        crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &mut self.touched);
+                    }
+                }
             }
             for ((st, inf), &t) in self.stale.iter_mut().zip(&self.info).zip(&self.touched) {
                 *st = inf.coded || t;
             }
             self.recon.extend();
             std::mem::swap(&mut self.recon, &mut self.refp);
+            if self.cfg.ssim_floor > 0.0 {
+                let s = ssim_luma(&self.cur.y, &self.refp.y, w, h);
+                self.floor_update(s, 400.0, 4);
+            }
             if self.cfg.subpel {
                 // only where the reconstruction differs from the old reference
                 for ((d, inf), &t) in self.hpel_dirty.iter_mut().zip(&self.info).zip(&self.touched) {
@@ -2190,6 +2300,22 @@ impl Encoder {
         stats.bytes = self.out.len();
         self.last = stats;
         &self.out
+    }
+
+    /// Moves the frame QP offset towards the SSIM floor after a frame measured
+    /// `s`: down by the shortfall × `gain` (1..=`max_step`), up by one when
+    /// there is margin; never above the configured QP or below it by more than
+    /// `ssim_max_drop`.
+    fn floor_update(&mut self, s: f64, gain: f64, max_step: i32) {
+        // + 0.002: this estimate (8×8 blocks, every other one) reads about that
+        // much higher than the usual overlapping-window SSIM
+        let f = self.cfg.ssim_floor as f64 + 0.002;
+        if s < f {
+            self.qp_adj -= ((f - s) * gain).ceil().clamp(1.0, max_step as f64) as i32;
+        } else if s > f + 0.004 {
+            self.qp_adj += 1;
+        }
+        self.qp_adj = self.qp_adj.clamp(-(self.cfg.ssim_max_drop as i32), 0);
     }
 
     /// Slice row ranges. P frames balance the expected work: a changed macroblock
@@ -2214,6 +2340,37 @@ impl Encoder {
         }
         rows.push((start, self.mbh));
         rows
+    }
+
+    /// AQ strength for the current frame. `aq_strength ≥ 0` is used as given.
+    /// Negative means automatic: |aq_strength| when the frame is dominated by
+    /// smooth, textured content (renders of 3D scenes, video, soft photographic
+    /// gradients: second differences between 0.25 and 2 per sample on at least
+    /// 60% of a 4×4-subsampled macroblock grid), else 0. Decided from the
+    /// frame's own samples only, so it is deterministic and independent of
+    /// chunking and thread count.
+    fn aq_for_frame(&self) -> f32 {
+        let a = self.cfg.aq_strength;
+        if a >= 0.0 {
+            return a;
+        }
+        let y = &self.cur.y;
+        let (mut smooth, mut n) = (0u32, 0u32);
+        let mut blk = [0u8; 256];
+        for my in (1..self.mbh).step_by(4) {
+            for mx in (1..self.mbw).step_by(4) {
+                let o = y.off(mx as isize * 16, my as isize * 16);
+                crate::simd::copy_block::<16>(&mut blk, 0, 16, &y.data, o, y.stride, 16);
+                let hf = crate::simd::second_diff16(&blk);
+                smooth += (SMOOTH_HF / 8..SMOOTH_HF).contains(&hf) as u32;
+                n += 1;
+            }
+        }
+        if smooth * 10 >= n * 6 {
+            -a
+        } else {
+            0.0
+        }
     }
 
     fn encode_slices(&mut self, idr: bool, frame_num: u32, stats: &mut FrameStats) {
@@ -2266,9 +2423,11 @@ impl Encoder {
         }
         let ctx = FrameCtx {
             mbw: self.mbw,
-            qp: self.cfg.qp,
+            qp: (self.cfg.qp as i32 + self.qp_adj).clamp(0, 51) as u8,
+            base_qp: self.cfg.qp,
             qsets: &self.qsets,
-            aq: self.cfg.aq_strength,
+            qsets_smooth: &self.qsets_smooth,
+            aq: self.aq_for_frame(),
             src: &self.cur,
             refp: &self.refp,
             changed: &self.changed,

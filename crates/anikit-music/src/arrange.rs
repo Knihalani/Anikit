@@ -423,6 +423,7 @@ pub fn bassline(chords: &[ChordAt], pattern: &str, key: &Key, oct: i32, vel: f32
 /// phrase shape, chord tones on strong beats, stepwise motion elsewhere,
 /// ending on a stable tone. `density` ≈ notes per beat (0.5…2), `center`
 /// the register (MIDI key), `rhythm` an optional 16th grid for the motif.
+#[allow(clippy::too_many_arguments)]
 pub fn melody(chords: &[ChordAt], key: &Key, center: i32, density: f64, vel: f32, rhythm: Option<&str>, seed: u64, beats_per_bar: f64) -> Vec<Note> {
     let mut rng = Rng::new(seed ^ 0x6d656c);
     let total = chords.last().map(|c| c.t + c.len).unwrap_or(0.0);

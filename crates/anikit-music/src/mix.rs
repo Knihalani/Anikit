@@ -38,6 +38,9 @@ struct Processed {
     reverb: f32,
     delay: f32,
     stem: &'static str,
+    /// Automated sends (per-sample levels), when the track automates them.
+    reverb_env: Option<Vec<f32>>,
+    delay_env: Option<Vec<f32>>,
 }
 
 pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: usize, opts: &RenderOpts, tm: &mut Timings) -> Result<MixOut, String> {
@@ -45,12 +48,42 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
     // Sidechain triggers (kicks) in seconds.
     let kicks = a.kicks.clone();
     let beat = a.grid.beat();
+    // The sidechain pump's shape is shared by every ducked track: compute it
+    // once (as ln of the gain at 1 dB depth), in parallel chunks.
+    let pump: Option<Vec<f32>> = (!kicks.is_empty() && a.tracks.iter().any(|t| t.mix.duck > 0.0)).then(|| {
+        let d = dsp::DuckerParams { depth: -1.0, attack: 4.0, hold: 20.0, release: (beat * 550.0) as f32, ..Default::default() };
+        let mut env = vec![1.0f32; frames];
+        env.par_chunks_mut(1 << 16).enumerate().for_each(|(k, c)| {
+            let mut du = dsp::Ducker::new(rate as f32, &d, &kicks);
+            du.seek((k << 16) as u64);
+            let mut c2 = vec![1.0f32; c.len()];
+            du.process(c, &mut c2);
+            c.iter_mut().for_each(|x| *x = x.ln());
+        });
+        env
+    });
     let tracks: Vec<Processed> = dry
         .into_par_iter()
         .zip(a.tracks.par_iter())
         .map(|((mut l, mut r), t)| {
-            process_track(&mut l, &mut r, &t.mix, rate, &kicks, beat)?;
-            Ok(Processed { l, r, reverb: t.mix.reverb, delay: t.mix.delay, stem: stem_of(&t.role) })
+            let t0 = Instant::now();
+            process_track(&mut l, &mut r, &t.mix, rate, pump.as_deref())?;
+            let (mut reverb_env, mut delay_env) = (None, None);
+            // Custom per-track effects and automation (only when the track asks).
+            if let Some(fx) = &t.fx {
+                let mut chain = crate::custom::fx_chain(fx, rate, a.grid.bpm, &format!("tracks.{}.fx", t.name))?;
+                crate::custom::apply_chain(&mut chain, &mut l, &mut r, rate);
+            }
+            if let Some(v) = &t.automate {
+                let au = crate::custom::TrackAuto::parse(v, &a.grid, &format!("tracks.{}.automate", t.name))?;
+                au.apply(&mut l, &mut r, rate);
+                reverb_env = au.reverb.as_ref().map(|x| x.render(l.len(), rate));
+                delay_env = au.delay.as_ref().map(|x| x.render(l.len(), rate));
+            }
+            if std::env::var_os("ANIKIT_MUSIC_PROFILE").is_some() {
+                eprintln!("  track {} ({}): {:.3}s", t.name, t.inst, t0.elapsed().as_secs_f64());
+            }
+            Ok(Processed { l, r, reverb: t.mix.reverb, delay: t.mix.delay, stem: stem_of(&t.role), reverb_env, delay_env })
         })
         .collect::<Result<_, String>>()?;
     let prof = std::env::var_os("ANIKIT_MUSIC_PROFILE").is_some();
@@ -70,6 +103,7 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
     }
     let reverb = dsp::ReverbParams { preset: Some(a.reverb.clone()), wet: Some(1.0), dry: Some(0.0), ..Default::default() };
     let delay_time = beat * 0.75; // dotted 8th
+    let a_gain = a.master.reverb_gain as f32;
     let stems: Vec<Stem> = groups
         .par_iter()
         .map(|&g| {
@@ -84,12 +118,20 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
             for p in tracks.iter().filter(|p| g == "all" || p.stem == g) {
                 add(&mut l, &p.l, 1.0);
                 add(&mut r, &p.r, 1.0);
-                if p.reverb > 0.0 {
+                if let Some(e) = &p.reverb_env {
+                    add_env(&mut rl, &p.l, e);
+                    add_env(&mut rr, &p.r, e);
+                    any_r = true;
+                } else if p.reverb > 0.0 {
                     add(&mut rl, &p.l, p.reverb);
                     add(&mut rr, &p.r, p.reverb);
                     any_r = true;
                 }
-                if p.delay > 0.0 {
+                if let Some(e) = &p.delay_env {
+                    add_env(&mut dl, &p.l, e);
+                    add_env(&mut dr, &p.r, e);
+                    any_d = true;
+                } else if p.delay > 0.0 {
                     add(&mut dl, &p.l, p.delay);
                     add(&mut dr, &p.r, p.delay);
                     any_d = true;
@@ -106,15 +148,20 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
                 any_r = true;
             }
             if any_r {
-                let mut rv = dsp::Reverb::new(rate as f32, &reverb);
-                rv.process(&mut rl, &mut rr);
-                let g = 10f32.powf(a.master.reverb_gain as f32 / 20.0) * 0.6;
-                add(&mut l, &rl, g);
-                add(&mut r, &rr, g);
+                let ir = reverb_ir(rate, &reverb);
+                let ((a, b), (c, d)) = rayon::join(|| dsp::convolve(&rl, &rl, &ir.0), || dsp::convolve(&rr, &rr, &ir.1));
+                let g = 10f32.powf(a_gain / 20.0) * 0.6;
+                add(&mut l, &a[..frames], g);
+                add(&mut l, &c[..frames], g);
+                add(&mut r, &b[..frames], g);
+                add(&mut r, &d[..frames], g);
             }
             Stem { name: g.to_string(), l, r }
         })
         .collect();
+    if prof {
+        eprintln!("mix: buses {:.3}s", t.elapsed().as_secs_f64());
+    }
     let mut stems = stems;
     if let Some((fl, fr)) = fx {
         if opts.stems {
@@ -134,7 +181,12 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
         add(&mut r, &s.r, 1.0);
     }
     fades(a, &mut l, &mut r, rate);
+    let tp = Instant::now();
     let rep = dsp::master(&mut l, &mut r, rate, a.master.lufs as f32, a.master.ceiling as f32);
+    let prof = std::env::var_os("ANIKIT_MUSIC_PROFILE").is_some();
+    if prof {
+        eprintln!("  sum+fades {:.1} ms, master() {:.1} ms", (tp - t).as_secs_f64() * 1e3, tp.elapsed().as_secs_f64() * 1e3);
+    }
     // Stems carry the master's static gain (not its limiter) so they line up with the mix.
     let g = 10f32.powf(rep.gain_db as f32 / 20.0);
     let mut stems = if opts.stems { stems } else { Vec::new() };
@@ -142,13 +194,106 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
         s.l.iter_mut().chain(s.r.iter_mut()).for_each(|x| *x *= g);
         fades(a, &mut s.l, &mut s.r, rate);
     }
+    let ta = Instant::now();
     let report = dsp::analyze(&l, &r, rate as f32);
+    if prof {
+        eprintln!("  analyze {:.1} ms", ta.elapsed().as_secs_f64() * 1e3);
+    }
     tm.master = t.elapsed().as_secs_f64();
     let mut report = serde_json::to_value(&report).unwrap_or_default();
     report["lufs"] = serde_json::json!(rep.output.integrated);
     report["truePeak"] = serde_json::json!(rep.output.true_peak);
     report["master"] = serde_json::to_value(&rep).unwrap_or_default();
     Ok(MixOut { l, r, stems, report })
+}
+
+/// The reverb as a true-stereo impulse response (L→LR, R→LR), rendered once per
+/// preset and rate from the algorithmic reverb, then applied by FFT convolution
+/// (several times faster than running the FDN over the whole track).
+pub(crate) fn reverb_ir(rate: u32, p: &dsp::ReverbParams) -> std::sync::Arc<(dsp::Ir, dsp::Ir)> {
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex, OnceLock};
+    type Cache = Mutex<HashMap<(String, u32), Arc<(dsp::Ir, dsp::Ir)>>>;
+    static CACHE: OnceLock<Cache> = OnceLock::new();
+    let key = (format!("{p:?}"), rate);
+    let cache = CACHE.get_or_init(Default::default);
+    if let Some(ir) = cache.lock().unwrap().get(&key) {
+        return ir.clone();
+    }
+    // On-disk cache: the IR depends only on the preset and the rate.
+    let file = {
+        let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+        for b in key.0.bytes().chain(rate.to_le_bytes()).chain(*b"ir-v1") {
+            h = (h ^ b as u64).wrapping_mul(0x100_0000_01b3);
+        }
+        crate::sf2::packs::cache_dir().join(format!("reverb-{h:016x}.f32"))
+    };
+    if let Ok(b) = std::fs::read(&file) {
+        let v: Vec<f32> = b.chunks_exact(4).map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect();
+        if v.len().is_multiple_of(4) && !v.is_empty() {
+            let n = v.len() / 4;
+            let ir = Arc::new((dsp::Ir { l: v[..n].to_vec(), r: v[n..2 * n].to_vec(), rate }, dsp::Ir { l: v[2 * n..3 * n].to_vec(), r: v[3 * n..].to_vec(), rate }));
+            cache.lock().unwrap().insert(key, ir.clone());
+            return ir;
+        }
+    }
+    // Render in 0.5 s blocks until the tail has died away (max 12 s).
+    let one = |left: bool| {
+        let blk = rate as usize / 2;
+        let mut rv = dsp::Reverb::new(rate as f32, p);
+        let (mut l, mut r) = (Vec::new(), Vec::new());
+        let mut peak = 0.0f32;
+        for k in 0..24 {
+            let (mut bl, mut br) = (vec![0.0f32; blk], vec![0.0f32; blk]);
+            if k == 0 {
+                if left {
+                    bl[0] = 1.0;
+                } else {
+                    br[0] = 1.0;
+                }
+            }
+            rv.process(&mut bl, &mut br);
+            let m = bl.iter().chain(&br).fold(0.0f32, |m, x| m.max(x.abs()));
+            peak = peak.max(m);
+            l.extend_from_slice(&bl);
+            r.extend_from_slice(&br);
+            if k > 1 && m < peak * 1e-5 {
+                break;
+            }
+        }
+        (l, r)
+    };
+    let ((ll, lr), (rl, rr)) = rayon::join(|| one(true), || one(false));
+    // Trim the inaudible tail (below −100 dB of the peak).
+    let peak = ll.iter().chain(&lr).chain(&rl).chain(&rr).fold(0.0f32, |m, x| m.max(x.abs()));
+    let floor = peak * 1e-5;
+    let last = [&ll, &lr, &rl, &rr].iter().map(|v| v.iter().rposition(|x| x.abs() > floor).unwrap_or(0)).max().unwrap_or(0) + 1;
+    let cut = |mut v: Vec<f32>| {
+        v.resize(last, 0.0);
+        // Short fade so the truncation is silent.
+        let f = (rate as usize / 20).min(last);
+        for i in 0..f {
+            v[last - 1 - i] *= i as f32 / f as f32;
+        }
+        v
+    };
+    let ir = Arc::new((dsp::Ir { l: cut(ll), r: cut(lr), rate }, dsp::Ir { l: cut(rl), r: cut(rr), rate }));
+    let bytes: Vec<u8> = [&ir.0.l, &ir.0.r, &ir.1.l, &ir.1.r].iter().flat_map(|v| v.iter().flat_map(|x| x.to_le_bytes())).collect();
+    if std::fs::create_dir_all(file.parent().unwrap_or(std::path::Path::new("."))).is_ok() {
+        // Write then rename, so a concurrent reader never sees a partial file.
+        let tmp = file.with_extension(format!("tmp{}", std::process::id()));
+        if std::fs::write(&tmp, &bytes).is_ok() {
+            let _ = std::fs::rename(&tmp, &file);
+        }
+    }
+    cache.lock().unwrap().insert(key, ir.clone());
+    ir
+}
+
+fn add_env(dst: &mut [f32], src: &[f32], g: &[f32]) {
+    for ((d, s), g) in dst.iter_mut().zip(src).zip(g) {
+        *d += s * g.max(0.0);
+    }
 }
 
 fn add(dst: &mut [f32], src: &[f32], g: f32) {
@@ -158,9 +303,9 @@ fn add(dst: &mut [f32], src: &[f32], g: f32) {
 }
 
 /// Auto-level, filters, EQ, compression, drive, width, pan, sidechain pump.
-fn process_track(l: &mut [f32], r: &mut [f32], m: &TrackMix, rate: u32, kicks: &[f64], beat: f64) -> Result<(), String> {
+fn process_track(l: &mut [f32], r: &mut [f32], m: &TrackMix, rate: u32, pump: Option<&[f32]>) -> Result<(), String> {
     // Loudness while playing → target.
-    let loud = dsp::measure(l, r, rate as f32).integrated;
+    let loud = dsp::loudness::integrated_lufs(l, r, rate as f32);
     if loud.is_finite() {
         let g = 10f32.powf(((REF + m.gain) - loud) as f32 / 20.0);
         l.iter_mut().for_each(|x| *x *= g);
@@ -195,15 +340,27 @@ fn process_track(l: &mut [f32], r: &mut [f32], m: &TrackMix, rate: u32, kicks: &
         l.iter_mut().for_each(|x| *x *= gl * s);
         r.iter_mut().for_each(|x| *x *= gr * s);
     }
-    if m.duck > 0.0 && !kicks.is_empty() {
-        let d = dsp::DuckerParams { depth: -m.duck.abs(), attack: 4.0, hold: 20.0, release: (beat * 550.0) as f32, ..Default::default() };
-        dsp::Ducker::new(rate as f32, &d, kicks).process(l, r);
+    if let (true, Some(p)) = (m.duck > 0.0, pump) {
+        // gain = (gain at 1 dB)^depth
+        let k = m.duck.abs();
+        for ((x, y), e) in l.iter_mut().zip(r.iter_mut()).zip(p) {
+            // exp(x) as (1 + x/256)^256: branch-free and vectorisable; |x| ≤ 2.8 here,
+            // relative error < 2e-4 (≈ 0.002 dB).
+            let mut g = 1.0 + e * k * (1.0 / 256.0);
+            for _ in 0..8 {
+                g *= g;
+            }
+            *x *= g;
+            *y *= g;
+        }
     }
     Ok(())
 }
 
 /// Place every SFX so its hit point lands on its time.
-fn render_sfx(a: &Arrangement, rate: u32, frames: usize) -> Result<Option<(Vec<f32>, Vec<f32>)>, String> {
+type StereoBuf = (Vec<f32>, Vec<f32>);
+
+fn render_sfx(a: &Arrangement, rate: u32, frames: usize) -> Result<Option<StereoBuf>, String> {
     if a.sfx.is_empty() {
         return Ok(None);
     }
@@ -262,32 +419,47 @@ fn fades(a: &Arrangement, l: &mut [f32], r: &mut [f32], rate: u32) {
     }
 }
 
-/// Timing accuracy: mean and max |onset − expected| (ms) for each expected
-/// hit time, detecting the onset as the first sample within ±30 ms where the
-/// signal rises above 25 % of the local peak.
+/// Timing accuracy of hits against their expected times (ms): for each
+/// expected time, the onset is the steepest rise of a 1 ms energy envelope
+/// within ±30 ms (robust to the tails of earlier hits still ringing).
 pub fn onset_error(l: &[f32], r: &[f32], rate: u32, times: &[f64]) -> serde_json::Value {
-    let w = (0.03 * rate as f64) as i64;
+    let n = l.len().min(r.len());
+    let w = (0.001 * rate as f64).round() as usize; // 1 ms
+    // Energy in 1 ms frames, hop 0.25 ms.
+    let hop = (w / 4).max(1);
+    let frames = n / hop;
+    let mut e = vec![0.0f32; frames];
+    for (k, v) in e.iter_mut().enumerate() {
+        let a = k * hop;
+        let b = (a + w).min(n);
+        *v = (a..b).map(|i| l[i] * l[i] + r[i] * r[i]).sum::<f32>();
+    }
     let mut errs = Vec::new();
     for &t in times {
-        let c = (t * rate as f64).round() as i64;
-        let (a, b) = ((c - w).max(0) as usize, ((c + w) as usize).min(l.len()));
-        if a >= b {
+        let c = t * rate as f64 / hop as f64;
+        let span = 0.03 * rate as f64 / hop as f64;
+        let (a, b) = (((c - span).max(4.0)) as usize, ((c + span) as usize).min(frames));
+        if a + 8 >= b {
             continue;
         }
-        // Energy before the window start must be lower (a real onset).
-        let peak = (a..b).map(|i| l[i].abs().max(r[i].abs())).fold(0.0f32, f32::max);
-        if peak < 1e-3 {
-            continue;
-        }
-        if let Some(i) = (a..b).find(|&i| l[i].abs().max(r[i].abs()) > 0.25 * peak) {
-            errs.push((i as f64 - c as f64) / rate as f64 * 1000.0);
+        // Steepest rise in dB: log energy difference over 1 ms.
+        let lg = |k: usize| 10.0 * (e[k] + 1e-12).log10();
+        let lag = w / hop;
+        let best = (a..b).max_by(|&i, &j| (lg(i) - lg(i - lag)).total_cmp(&(lg(j) - lg(j - lag))));
+        if let Some(k) = best {
+            if lg(k) - lg(k - lag) < 6.0 {
+                continue; // no clear onset
+            }
+            // The rise ends at frame k (window k..k+w ends ~1 ms later): the onset is near its start.
+            let onset = (k as f64 - lag as f64 * 0.5) * hop as f64 / rate as f64;
+            errs.push((onset - t) * 1000.0);
         }
     }
-    let n = errs.len().max(1) as f64;
+    let m = errs.len().max(1) as f64;
     serde_json::json!({
         "hits": errs.len(),
-        "meanMs": errs.iter().sum::<f64>() / n,
-        "meanAbsMs": errs.iter().map(|e| e.abs()).sum::<f64>() / n,
+        "meanMs": errs.iter().sum::<f64>() / m,
+        "meanAbsMs": errs.iter().map(|e| e.abs()).sum::<f64>() / m,
         "maxAbsMs": errs.iter().map(|e| e.abs()).fold(0.0, f64::max),
     })
 }

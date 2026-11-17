@@ -42,7 +42,9 @@ Other entry points:
 | `cabac` | `true` | Main profile with CABAC. `false` gives Constrained Baseline with CAVLC: 35–60% larger files, slightly faster. |
 | `deblock` | `false` | The in-loop filter. It helps only at QP ≥ 34 (+0.1–0.2 dB) and costs about 25% speed; at QP ≤ 28 it *lowers* PSNR on this content (sharp edges, and copied macroblocks next to changing areas get re-filtered every frame). | With `threads > 1`, each slice deblocks its own rows in parallel (`disable_deblocking_filter_idc` 2).
 | `subpel` | `true` | Quarter-pel motion refinement (exact 6-tap interpolation, half-pel planes kept up to date incrementally). It saves 16–46% on real renderer clips with sub-pixel motion, for 15–25% more time. |
-| `aq_strength` | `0` | Adaptive quantisation: smooth, dark macroblocks get a lower QP (up to −(2 + 4 + 3)·strength), everything else keeps `qp`. At 1.0 dark fades look like QP 19, at +29–83% size on dark UI content. 0 = constant QP. |
+| `aq_strength` | `-0.5` (auto) | Adaptive quantisation: smooth macroblocks (fades, lit floors) get a lower QP, −(4 + up to 7)·strength, with a wide AC dead zone; busy ones keep `qp`. ≥ 0 is used as given. Negative is automatic per frame: \|value\| on frames dominated by smooth textured content (3D renders, video), 0 on UI and motion graphics. |
+| `ssim_floor` | `0.985` | Per-frame quality floor. After each frame the luma SSIM of the reconstruction is estimated; while it is below the floor the next frames use a lower slice QP (`slice_qp_delta`), and an IDR below the floor is coded a second time at the estimated QP. The QP comes back up towards `qp` when there is margin. It is deterministic: it depends only on frames already coded in the stream or chunk. 0 = constant QP. Content above the floor (all UI, text and motion-graphics clips tested) is bit-identical to constant QP. |
+| `ssim_max_drop` | `8` | Lowest QP the floor may use, as an offset below `qp`. It bounds the size on content where SSIM rises slowly with bits, such as per-frame film grain. |
 | `skip_threshold` | `0` | Perceptual skip: code a changed macroblock as a copy when every sample is within this distance of the reconstructed reference. Off by default (see the measurements below). |
 | `threads` | 1 | Slices per frame for `encode()`. Chunk-parallel modes ignore it. |
 | `full_range` | `false` | Signals the colour range (BT.709 primaries/matrix are always signalled). |
@@ -161,19 +163,25 @@ Real-clip frames were rendered with `--codec png` and converted to yuv420p
 
 | Clip | ak264 | vs veryfast | vs ultrafast | vs medium |
 |---|---|---|---|---|
-| launch | 349 fps, 2061 KB, 47.8 dB | **3.2× faster, 0.90× size*** (≈ 109 fps, 2302 KB) | 1.0× speed, **0.62× size** (≈ 340 fps, 3305 KB) | 6.9× faster, 1.12× size (≈ 51 fps, 1834 KB) |
-| tutorial | 750 fps, 492 KB, 51.2 dB | **4.1× faster**, 1.08× size (≈ 182 fps, 455 KB) | **2.1× faster, 0.85× size*** (≈ 355 fps, 577 KB) | 7.1× faster, 1.31× size (≈ 106 fps, 376 KB) |
-| full | 425 fps, 1075 KB, 48.9 dB | **2.8× faster**, 1.18× size (≈ 152 fps, 915 KB) | **1.1× faster, 0.63× size** (≈ 374 fps, 1704 KB) | 4.9× faster, 1.50× size (≈ 86 fps, 717 KB) |
-| spec-to-screen | 161 fps, 8332 KB, 42.0 dB | **1.8× faster, 0.97× size** (≈ 91 fps, 8557 KB) | 0.5× speed, **0.48× size** (≈ 295 fps, 17508 KB) | 3.8× faster, 1.40× size (≈ 42 fps, 5972 KB) |
+| launch | 344 fps, 2071 KB, 47.7 dB | **3.5× faster, 0.90× size*** (≈ 98 fps, 2291 KB) | 1.0× speed, **0.63× size** (≈ 329 fps, 3296 KB) | 7.2× faster, 1.13× size (≈ 48 fps, 1827 KB) |
+| tutorial | 437 fps, 498 KB, 51.2 dB | **2.2× faster**, 1.10× size (≈ 199 fps, 454 KB) | **1.5× faster, 0.86× size*** (≈ 286 fps, 576 KB) | 4.1× faster, 1.33× size (≈ 106 fps, 376 KB) |
+| full | 474 fps, 1074 KB, 48.9 dB | **3.2× faster**, 1.18× size (≈ 148 fps, 913 KB) | **1.3× faster, 0.63× size** (≈ 367 fps, 1700 KB) | 5.4× faster, 1.50× size (≈ 87 fps, 715 KB) |
+| spec-to-screen | 190 fps, 8392 KB, 42.0 dB | **2.1× faster, 0.97× size** (≈ 89 fps, 8611 KB) | 0.6× speed, **0.48× size** (≈ 322 fps, 17561 KB) | 4.7× faster, 1.40× size (≈ 41 fps, 6004 KB) |
+
+Measured on the final build (automatic AQ, smooth-ramp I4x4 rule, low-level
+optimisations). ak264 fps is the median of its three QP runs, because single
+runs on this VM varied by up to ±30%. Tutorial ran at 651 / 377 / 437 fps at
+QP 22 / 26 / 30, and earlier sessions measured 750–900 fps at QP 26. x264 ran
+in the same session, under the same conditions.
 
 **Reading it:**
 
-- Against veryfast, ak264 is 1.8–4× faster at about the same size (0.90–1.18×).
-- Against ultrafast, files are 15–52% smaller. Speed ranges from 2.1× faster
+- Against veryfast, ak264 is 2.1–3.5× faster at about the same size (0.90–1.18×).
+- Against ultrafast, files are 14–52% smaller. Speed ranges from 1.5× faster
   (text) to 0.5× (spec-to-screen, the hardest clip: nearly every macroblock
   changes with sub-pixel motion of smooth gradients). On that clip ultrafast is
   faster but needs twice the bytes for the same PSNR.
-- Medium is still 12–50% smaller. The gap is B-frames, smaller partitions and
+- Medium is still 11–50% smaller. The gap is B-frames, smaller partitions and
   psycho-visual tuning, which ak264 doesn't have.
 - On content that is mostly static between frames, the margin grows a lot. On the
   synthetic `hold` scene (held text), ak264 is 13× faster than veryfast and 21%
@@ -215,7 +223,7 @@ On spec-to-screen the saving grows with QP: −24% at QP 22 and −46% at QP 30.
 
 | Encoder | Setting | fps | KB | PSNR-Y | PSNR-all |
 |---|---|---|---|---|---|
-| ak264 chunks | qp 22 / 26 / 30 | 133 / 161 / 198 | 16934 / 8332 / 4202 | 43.55 / 42.03 / 40.07 | 44.73 / 43.04 / 41.17 |
+| ak264 chunks | qp 22 / 26 / 30 | 151 / 195 / 190 | 17156 / 8392 / 4265 | 43.57 / 42.04 / 40.09 | 44.74 / 43.05 / 41.18 |
 | ak264 chunks, integer-pel | qp 22 / 26 / 30 | 117 / 160 / 193 | 22160 / 12825 / 7816 | 43.45 / 41.83 / 39.83 | 44.63 / 42.85 / 40.94 |
 | ak264 1 thread | qp 22 / 26 / 30 | 43 / 53 / 58 | 16794 / 8241 / 4149 | 43.54 / 42.02 / 40.06 | |
 | ak264 4 slices | qp 22 / 26 / 30 | 88 / 113 / 131 | 17081 / 8493 / 4321 | 43.54 / 42.01 / 40.05 | |
@@ -379,72 +387,164 @@ Measured with `cargo run --release -p ak264 --example quality -- <scene> 60 <qp>
 | full, 26 | 93 fps, 179 KB, 48.68 dB | 79 fps, 197 KB, 48.25 dB | 65 fps, 197 KB, 49.03 dB | 96 fps, 247 KB, 48.68 dB |
 | typical, 34 | 337 fps, 70 KB, 43.86 dB | 306 fps, 70 KB, 44.01 dB | 284 fps, 67 KB, 43.91 dB | 412 fps, 123 KB, 43.86 dB |
 
-### Adaptive quantisation (dark gradients)
+### Low-level optimisation
 
-At constant QP 23, dark dithered gradients (a renderer's ±1 dither over a slow
-ramp in the shadows) lose their dither. They turn into flat one-level bands
-whose edges follow the 4×4/16×16 block grid, which is visible once shadows are
-lifted. x264 at CRF 23 does the same, with more flicker.
+Every change below leaves the bitstream bit-identical: each clip's size and PSNR
+match exactly before and after. Wall-clock time on this shared VM varied by up to
+±30% between runs of the same binary, so the work was steered by instruction
+counts (callgrind, 20 frames, one thread). The pipeline's configuration is QP 23
+with deblocking on:
 
-ak264 now codes a QP per macroblock (`mb_qp_delta`, CABAC and CAVLC). Deblocking
-uses each edge's averaged QP, as the standard requires.
-
-`aq_strength` lowers the QP only where blocking shows:
-- **Flat:** luma plus chroma energy under 4 levels² per sample, up to −4 × strength.
-- **Dark:** mean luma under 80, up to −3 × strength more.
-
-Busy or bright macroblocks keep the frame QP, so text and detail are unchanged.
-The energy is a SIMD sum and sum of squares, computed only for macroblocks
-that are coded.
-
-The x264-style symmetric variant (raising QP on busy macroblocks) was measured
-first and rejected. On launch at QP 23 it doubled the size and lost 1.5 dB,
-because it moves bits from text to the background.
-
-Effect at QP 23, 4 cores, AQ 0 → 0.5:
-
-| Clip | fps | Size | PSNR-Y |
+| Clip | Before | After | Change |
 |---|---|---|---|
-| dark mesh-gradient (real renderer, 60 frames) | ≈ same | 22 → 37 KB | 58.35 → 60.79 dB; 4×4-smoothed 59.9 → 64.0 dB |
-| launch (dark UI) | 315 → 266 (−16%) | 2970 → 3467 KB (+17%) | 49.82 → 50.23 dB |
-| tutorial (dark UI) | 676 → 644 (−5%) | 652 → 746 KB (+14%) | 53.53 → 54.00 dB |
-| spec-to-screen (600 frames) | 141 → 135 (−4%) | 13647 → 14765 KB (+8%) | 43.19 → 43.25 dB |
-| full (synthetic, bright) | ≈ same | 1296 → 1277 KB | 51.48 → 51.53 dB |
+| launch | 11.16 G | 8.93 G | −20% |
+| tutorial | 4.93 G | 3.98 G | −19% |
+| spec-to-screen | 13.30 G | 10.65 G | −20% |
 
-On the dark clip, QP 23 with AQ 0.5 matches QP 19 without AQ: 37 vs 36 KB,
-and 4×4-smoothed PSNR 63.95 vs 64.07 dB. That is the `--quality best` level
-that showed no blocking, while busy content stays at QP 23. AQ 1.0 goes further
-(69 KB, 67.3 dB smoothed) for about +45% on launch.
+The final builds include automatic AQ; its per-frame measurement costs about 1%.
 
-**On by default (free):** smooth ramps (small second differences) no longer try
-I4x4 at QP ≥ 12. Its 4×4 predictions turned fades into a staircase of 4×4
-squares; I16 plane prediction and inter prediction keep them smooth. On
-COMPONENTS' dark aurora fade it is neutral in size (580 vs 583 KB) and slightly
-better in every metric. Launch and tutorial grow 0.7–0.9% at the same PSNR.
+What changed:
+- **Sub-pel refinement:** AVX2 SAD two rows per step, one call per candidate
+  pattern, and a phase table instead of a match.
+- **I16 mode decision:** SADs of V, H, DC and plane come straight from the edges
+  (a SIMD plane ramp), and only the winning prediction is built.
+- **SATD:** the last butterfly stage uses |p + q| + |p − q| = 2·max(|p|, |q|),
+  which is exact and uses fewer operations.
+- **Chroma MC:** SSSE3 `pmaddubsw` bilinear interpolation.
+- **Deblocking:** one bounds check per edge and an SSE2 8×4 transpose for chroma
+  vertical edges. Cb and Cr edges are filtered together as one 16-lane pass.
+  Internal-edge strengths come from a coefficient bitmask, and edges without
+  bS 4 skip the strong filter at compile time.
+- **Motion search:** the full search returns its seed when it ends on the seed's
+  vector, with no second prediction copy and no second SATD.
+- **CABAC:** decisions renormalise only when `range < 256`, with no bounds checks;
+  empty 4×4 blocks are a single bin; the residual coder walks a nonzero bitmask.
+- **Smaller items:**
+  - Block copies take one bounds check per block.
+  - An 8 KB table gives `se(v)` lengths for MV costs.
+  - Half-pel plane updates use hoisted row pointers and merge runs across
+    one-macroblock gaps.
+  - Change detection zeroes only the accumulators it uses.
 
-AQ 0.5 adds −2…−5 QP on smooth, dark macroblocks (second differences under 2
-per sample, mean luma under 80; it no longer uses variance, so fades of any
-slope qualify). AQ 1.0 makes that fade look like QP 19 (`--quality best`) at
-+42% size on that clip, but costs +29% (0.5) to +83% (1.0) on launch.
+Two attempts made things worse and were dropped:
+- A register-resident sliding window for the vertical half-pel filter spilled
+  (12 YMM rows plus constants).
+- Wide row loads in the deblocking filter beat the compiler's own code by less
+  than the extra copies cost.
 
-AQ is off by default. The cheaper fix is upstream: a temporally stable dither
-(the same pattern every frame) lets P_Skip and inter prediction preserve it at
-no cost. Use AQ 0.5 where delivered quality shows banding.
+A 4-candidate half-pel diamond is 33% cheaper but makes spec-to-screen 1.9%
+larger, so it was not kept.
 
-Two cheaper encoder-side fixes were tried for isolated one-level squares that
-pop when flat areas are refreshed. Neither was kept:
-- Penalising intra coding in flat P-frame macroblocks cut that flicker 4× but
-  let the gradient drift by 3.3 dB (4×4-smoothed).
-- Keeping DC-only corrections out of decimation had no effect at QP 23, because
-  the zero-residual bounds already handle those blocks.
+### Smooth gradients: block structure and adaptive quantisation
 
-No QP short of near-lossless keeps the dither itself: a ±0.5-level pattern is
-below the quantiser step. What AQ fixes is the block structure: band edges follow
-the gradient instead of the grid.
+At QP 23 a renderer's low-amplitude texture on smooth areas is below the
+quantiser step. That covers ±1 dither on dark fades and denoiser noise on a lit
+3D floor. Once it is gone, the gradient underneath shows its 1-level steps.
 
-Reproduce: `cargo run --release -p ak264 --example dark` (synthetic). For a
-rendered clip, use `FILE=clip.yuv AQ=0.5 OUT=dir CROP=x,y LIFT=lo,gain`, which
-also writes a lifted crop as PGM.
+Two encoder effects made those steps look like blocks:
+
+1. **4×4 staircases from I4x4 on fades.** Fixed, and on by default: smooth
+   macroblocks (sum of |second differences| under 2 per sample) don't try I4x4
+   (except CAVLC at QP < 2, where I16 DC levels would exceed CAVLC's escape
+   range). I16 plane prediction and inter prediction keep fades smooth.
+   - On COMPONENTS' dark aurora fade it is size-neutral (580 vs 583 KB) and
+     slightly better in every metric.
+   - Launch and tutorial grow 0.7–0.9% at the same PSNR.
+2. **A patchwork of flat 16×16 tiles on gentle gradients.** On the
+   `lookdev/cyc.json` floor (frame 60, QP 23):
+   - The delivered error is small: 8×8 means p99 0.8, max 1.3 levels.
+   - But 57% of the floor macroblocks come out perfectly flat, while their
+     neighbours keep the source's noise and slope.
+   - The result is 1-level steps on the macroblock grid. QP 19 and x264 at
+     CRF 23 show the same.
+
+**`aq_strength`** targets the second effect.
+- **Which macroblocks:** smooth ones, bright or dark.
+- **QP:** −(4 + up to 4 for smoothness + up to 3 for darkness) × strength,
+  coded with `mb_qp_delta` (CABAC and CAVLC); deblocking uses each edge's
+  averaged QP.
+- **Dead zone:** those macroblocks get a wide AC dead zone (rounding 1/8), so
+  the QP buys DC precision rather than coded noise.
+- **Effect:** at 1.0 the cyc floor turns from a patchwork into clean bands that
+  follow the gradient.
+
+Applied everywhere, smooth-heavy UI content pays heavily (QP 23, 300 frames):
+
+| Clip | AQ 0 | AQ 0.5 | AQ 1.0 |
+|---|---|---|---|
+| cyc floor (3D, 120 frames) | 2934 KB, 47.50 dB | 3043 KB (+4%), 47.65 dB | 3210 KB (+9%), 47.77 dB |
+| launch | 2991 KB, 49.81 dB | 4063 KB (+36%), 50.62 dB | 6281 KB (+110%), 51.44 dB |
+| tutorial | 658 KB, 53.52 dB | 863 KB (+31%), 54.32 dB | 1354 KB (+106%), 54.80 dB |
+| spec-to-screen | 4080 KB, 44.39 dB | 4485 KB (+10%), 44.48 dB | 5972 KB (+46%), 44.60 dB |
+| full (synthetic) | 1296 KB, 51.44 dB | 1333 KB (+3%), 52.09 dB | 1577 KB (+22%), 52.92 dB |
+
+**The default is automatic (`-0.5`).**
+- **Rule:** per frame, from that frame's own samples, so it is deterministic and
+  independent of chunking and thread count. AQ 0.5 applies when at least 60% of
+  a 2×2-subsampled macroblock grid is smooth but textured (second differences
+  between 0.25 and 2 per sample), as in renders of 3D scenes and video. UI
+  backgrounds are mostly exactly flat and stay at constant QP.
+- **Effect at QP 23:**
+
+  | Clip | Size change | Result |
+  |---|---|---|
+  | launch, tutorial, full | 0% (auto stays off) | unchanged |
+  | spec-to-screen | +1.8% (some frames qualify) | |
+  | cyc floor | +4% | patchwork gone |
+  | COMPONENTS' dark aurora | +29% (580 → 747 KB) | smoothed PSNR 56.8 → 57.8 dB, the QP 19 level at fewer bytes than QP 19 (789 KB) |
+
+- **Cost:** the measurement adds about 1% instructions.
+- **Strength:** 0.5 already removes the cyc patchwork; 1.0 looks the same there
+  at +9%.
+
+On the PERF corpus (`qbench`), automatic AQ was compared with the earlier
+encoder:
+- **Fidelity:** delivered quality is equal or better on every spec. Backdrop goes
+  46.96 → 47.42 dB, launch 48.12 → 48.47 dB, scene3d 50.72 → 51.08 dB (min
+  PSNR-Y). Minimum SSIM rises with them, and particles moves by −0.0001.
+- **Size:** where AQ fires, files grow: backdrop +35%, launch +23%, scene3d
+  +39%. Everything else changes by 0–4%.
+
+The x264 size gap on cyc: x264 at CRF 23 is 791 KB but 42.5 dB, five dB below
+ak264 at QP 23. At matched PSNR ak264 needs about 1080 KB (1.36×), the usual gap
+from B-frames and RD tools on busy content. A wide AC dead zone on smooth inter
+macroblocks (coding less denoiser noise) changed the size by only 0.2%, so the
+bits are not going into floor noise.
+
+Variants that were measured and rejected:
+- **x264-style symmetric AQ** (raising QP on busy macroblocks): launch doubled
+  in size and lost 1.5 dB, because it moves bits from text to the background.
+- **AQ on intra-coded macroblocks only:** still +49% on launch, which has about
+  1,800 intra macroblocks per P frame.
+- **A plane-mode bias for I16:** no visual change, slightly worse metrics.
+- **An intra penalty for flat P-frame macroblocks:** 4× less flicker, but 3.3 dB
+  of drift on the gradient.
+- **Keeping DC-only corrections out of decimation:** no effect at QP 23.
+
+No QP short of near-lossless keeps the ±0.5-level texture itself. The renderer's
+dithers are already fixed per pixel, frame to frame (RENDER), so static areas
+skip for free.
+
+Reproduce with `cargo run --release -p ak264 --example dark`. For a rendered
+clip: `FILE=clip.yuv AQ=1 FRAME=60 OUT=dir CROP=x,y LIFT=lo,gain` writes a
+lifted crop, and `DUMP=frame.yuv` writes the reconstructed frame.
+
+### Quality floor (SSIM)
+
+At a constant QP 23, two renderer specs delivered a visibly lower SSIM than the others: `shader` (0.933 min, 39.8 dB) and `post` (0.950 min, 42.7 dB). Every other spec is ≥ 0.993. The error has two sources:
+
+- **`shader`: high-frequency procedural detail that moves.** It is spread over the whole frame, with a mean |Laplacian| of 17. Constant QP 19 reaches 0.968 and QP 15 reaches 0.984.
+- **`post`: film grain.** The frame is dark (mean luma 40) and covered in grain of about ±2 levels that is re-drawn every frame. 34% of the pixels change by more than 2 between frames where nothing moves. An inter frame can't predict new noise, so at QP 23 the grain is smoothed away, which costs SSIM everywhere. x264 behaves the same way: `medium` at CRF 18 delivers 0.950 at 5.5 MB, and `-tune grain` doesn't help.
+
+`ssim_floor` (default 0.985) handles both with per-frame feedback. The results are for 90 frames at 1080p30 and `qp` 23; SSIM-Y and PSNR-Y are from ffmpeg on the decoded stream:
+
+| Spec | Constant QP 23 | Floor 0.985, max drop 8 (default) | Floor, max drop 12 |
+|---|---|---|---|
+| shader | 0.933 min / 0.939 mean, 39.8 dB, 2.7 MB | 0.984 / 0.984, 46.0 dB, 12.1 MB | – |
+| post | 0.950 / 0.951, 42.8 dB, 1.1 MB | 0.977 / 0.981, 47.0 dB, 21.6 MB | 0.977 / 0.988, 49.0 dB, 31.7 MB |
+| particles, UI, text, … | ≥ 0.993 | unchanged (bit-identical) | – |
+
+The floor removes the visible loss on `shader` for 4.4× the bytes. For reference, x264 `medium` without B-frames reaches about 0.97 at 3.0–3.4 MB, so a coding-efficiency gap of about 2× on this kind of content remains: x264 has RD mode decision, several references, 8×8 transforms and trellis quantisation. On `post`, the bytes go to coding random grain, which is expensive with any encoder. Synthesising the grain at playback, or rendering it with a fixed pattern, would be far cheaper than encoding it.
 
 ## Limitations and next steps
 

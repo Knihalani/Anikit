@@ -343,8 +343,11 @@ fn channel_usage() {
 #[test]
 fn inline_sampling_matches_reference() {
     let px: Vec<[f32; 4]> = (0..7 * 5).map(|i| [((i * 37) % 11) as f32 / 10.0, ((i * 13) % 7) as f32 / 6.0, (i % 5) as f32 / 4.0, 1.0]).collect();
-    for (wrap, filter) in [(Wrap::Clamp, Filter::Linear), (Wrap::Repeat, Filter::Linear), (Wrap::Clamp, Filter::Nearest), (Wrap::Repeat, Filter::Nearest)] {
-        let t = Texture::from_f32(7, 5, px.clone()).with_wrap(wrap).with_filter(filter);
+    // Float buffers: values outside 0..1 must come through exactly.
+    let fpx: Vec<[f32; 4]> = px.iter().enumerate().map(|(i, p)| [p[0] * 7.0 - 3.0, p[1] * -2.5, p[2] + i as f32 * 0.25, 1.0 + i as f32]).collect();
+    for (wrap, filter, float) in [(Wrap::Clamp, Filter::Linear, false), (Wrap::Repeat, Filter::Linear, false), (Wrap::Clamp, Filter::Nearest, false), (Wrap::Repeat, Filter::Nearest, false), (Wrap::Clamp, Filter::Linear, true), (Wrap::Repeat, Filter::Linear, true), (Wrap::Repeat, Filter::Nearest, true)] {
+        let t = if float { Texture::from_f32_exact(7, 5, fpx.clone()) } else { Texture::from_f32(7, 5, px.clone()) };
+        let t = t.with_wrap(wrap).with_filter(filter);
         let s = Shader::compile("void mainImage(out vec4 c, in vec2 p) { vec2 uv = (p - vec2(20.0, 12.0)) * vec2(0.037, -0.029) + 0.013; c = texture(iChannel0, uv); }").unwrap();
         let mut f = Frame::new(41, 23, 0.0);
         f.channels[0] = Some(&t);
@@ -354,7 +357,7 @@ fn inline_sampling_matches_reference() {
             let uv = [(x - 20.0) * 0.037 + 0.013, (y - 12.0) * -0.029 + 0.013];
             let want = t.sample(uv[0], uv[1], 0.0);
             for k in 0..4 {
-                assert!((got[k] - want[k]).abs() < 1e-6, "{wrap:?} {filter:?} px {i}: {got:?} vs {want:?}");
+                assert!((got[k] - want[k]).abs() <= 1e-6 * (1.0 + want[k].abs()), "{wrap:?} {filter:?} float={float} px {i}: {got:?} vs {want:?}");
             }
         }
     }
@@ -373,4 +376,94 @@ fn dither_keeps_exact_values_and_breaks_bands() {
     let mean = right.iter().sum::<f32>() / right.len() as f32;
     assert!((mean - 0.3017 * 255.0).abs() < 0.05, "{mean}");
     assert!(right.contains(&76.0) && right.contains(&77.0));
+}
+
+#[test]
+fn unrolled_loops_keep_glsl_semantics() {
+    // Counter value after the loop, divergent ifs around it, nested and
+    // decreasing loops, loops with a break (not unrolled), <= bounds.
+    let src = r#"
+float f(float x) {
+    float s = 0.0;
+    for (int i = 0; i < 6; i++) { float fi = float(i); s += sin(iTime + fi) * x + fi; }
+    return s;
+}
+void mainImage(out vec4 c, in vec2 p) {
+    int k = 0;
+    if (p.x > 2.0) { for (k = 0; k < 3; k++) { } }       // lanes that skip keep k = 0
+    float n = 0.0;
+    for (int a = 0; a < 3; a++) { for (int b = 4; b > 0; b--) { n += float(a * 10 + b); } }
+    float m = 0.0;
+    for (int i = 1; i <= 4; i++) { if (p.x > 3.0 && i == 3) break; m += float(i); }
+    float big = 0.0;
+    for (int i = 0; i < 40; i++) { big += 1.0; }          // too many trips: stays a loop
+    c = vec4(f(1.0), float(k) + n * 0.001, m, big);
+}"#;
+    let px = render(src, 8, 2);
+    let expect_f: f32 = (0..6).map(|i| (1.0 + i as f32).sin() + i as f32).sum();
+    for (x, p) in px.iter().take(8).enumerate() {
+        let fx = x as f32 + 0.5;
+        assert!(close(p[0], expect_f, 1e-5), "f: {} vs {expect_f}", p[0]);
+        let k = if fx > 2.0 { 3.0 } else { 0.0 };
+        let n: f32 = (0..3).flat_map(|a| (1..=4).map(move |b| (a * 10 + b) as f32)).sum();
+        assert!(close(p[1], k + n * 0.001, 1e-5), "x={x}: k/n {} vs {}", p[1], k + n * 0.001);
+        let m = if fx > 3.0 { 3.0 } else { 10.0 };
+        assert_eq!(p[2], m, "x={x}: m");
+        assert_eq!(p[3], 40.0);
+    }
+}
+
+#[test]
+fn texel_fetch_inline_matches_reference() {
+    let px: Vec<[f32; 4]> = (0..6 * 4).map(|i| [(i % 6) as f32 / 5.0, (i / 6) as f32 / 3.0, ((i * 7) % 10) as f32 / 9.0, 1.0]).collect();
+    let fpx: Vec<[f32; 4]> = px.iter().enumerate().map(|(i, p)| [p[0] * 9.0 - 4.0, i as f32, -p[2], 2.5]).collect();
+    // Coordinates run from -2 to 8 / -2 to 6: out of range on every side.
+    let src = "void mainImage(out vec4 c, in vec2 p) { c = texelFetch(iChannel0, ivec2(p) - ivec2(2), 0); }";
+    for t in [Texture::from_f32(6, 4, px.clone()), Texture::from_f32_exact(6, 4, fpx.clone()), Texture::from_f32(6, 4, px.clone()).with_mipmaps()] {
+        let s = Shader::compile(src).unwrap();
+        let mut f = Frame::new(10, 8, 0.0);
+        f.channels[0] = Some(&t);
+        let out = s.render_f32(&f);
+        for (i, got) in out.iter().enumerate() {
+            let (x, y) = ((i % 10) as i32 - 2, (7 - i / 10) as i32 - 2);
+            let want = t.fetch(x, y, 0);
+            assert_eq!(*got, want, "px {i} ({x}, {y})");
+        }
+    }
+    // Another level goes through the sampler.
+    let t = Texture::from_f32(6, 4, px).with_mipmaps();
+    let s = Shader::compile("void mainImage(out vec4 c, in vec2 p) { c = texelFetch(iChannel0, ivec2(p), 1); }").unwrap();
+    let mut f = Frame::new(4, 2, 0.0);
+    f.channels[0] = Some(&t);
+    let out = s.render_f32(&f);
+    assert_eq!(out[4], t.fetch(0, 0, 1));
+}
+
+#[test]
+fn disk_cache_round_trip_renders_identically() {
+    let dir = std::env::temp_dir().join(format!("anikit-shader-cache-test-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::env::set_var("ANIKIT_SHADER_CACHE", &dir);
+    // Samples a texture too, so the patched call addresses are exercised.
+    let src = "uniform float k; // = 0.25\nvoid mainImage(out vec4 c, in vec2 p) { vec2 uv = p / iResolution.xy; c = texture(iChannel0, uv * 1.7) * k + vec4(sin(uv.x * 9.0 + iTime), 0.0, 0.0, 1.0); for (int i = 0; i < 3; i++) c.g += texelFetch(iChannel0, ivec2(p) + ivec2(i), 0).r * 0.1; }";
+    let tex = Texture::from_f32(5, 3, (0..15).map(|i| [i as f32 / 15.0, 0.5, 1.0 - i as f32 / 15.0, 1.0]).collect());
+    let render = |s: &Shader| {
+        let mut f = Frame::new(33, 17, 0.7);
+        f.channels[0] = Some(&tex);
+        s.render_f32(&f)
+    };
+    let a = Shader::compile(src).unwrap();
+    let files: Vec<_> = std::fs::read_dir(&dir).map(|d| d.flatten().collect()).unwrap_or_default();
+    assert!(!files.is_empty(), "the first compile writes the cache");
+    let b = Shader::compile(src).unwrap(); // loaded from disk
+    assert_eq!(a.insts, b.insts);
+    assert_eq!(render(&a), render(&b));
+    // A corrupt entry is ignored (compiled afresh), never trusted.
+    for f in &files {
+        std::fs::write(f.path(), b"AKSHJIT1garbage").unwrap();
+    }
+    let c = Shader::compile(src).unwrap();
+    assert_eq!(render(&a), render(&c));
+    std::env::remove_var("ANIKIT_SHADER_CACHE");
+    let _ = std::fs::remove_dir_all(&dir);
 }

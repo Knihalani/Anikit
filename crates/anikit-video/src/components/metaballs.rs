@@ -258,20 +258,10 @@ impl Component for Metaballs {
         if self.glow && mat != "chrome" {
             let a = if mat == "glass" { 0.18 } else { 0.32 };
             let blend = if th.dark { Blend::Add } else { Blend::Normal };
-            if fxkit::exact() {
-                push_layer(&mut out, 1.0, blend, vec![Filter::Blur(mean_r * 0.45)]);
-                let stops: Vec<(f32, Rgba)> = cols.iter().enumerate().map(|(i, c)| (i as f32 / n, alpha(*c, a))).collect();
-                out.push(fill(body.clone(), lin(stops)));
-            } else {
-                // One baked gaussian per blob sums to the same soft halo
-                // (straight onto the frame: no blend layer to composite).
-                for &(x, y, r) in &blobs {
-                    out.push(fxkit::light(x, y, r * 2.3, fxkit::gauss(ramp_at(x, y), a)));
-                }
-            }
-            if fxkit::exact() {
-                out.push(Op::PopLayer);
-            }
+            push_layer(&mut out, 1.0, blend, vec![Filter::Blur(mean_r * 0.45)]);
+            let stops: Vec<(f32, Rgba)> = cols.iter().enumerate().map(|(i, c)| (i as f32 / n, alpha(*c, a))).collect();
+            out.push(fill(body.clone(), lin(stops)));
+            out.push(Op::PopLayer);
         }
 
         // Base body.
@@ -327,19 +317,12 @@ impl Component for Metaballs {
             }
             _ => {
                 // Inner glow (glossy) or soft clay light (matte).
-                let (blend, a) = if mat == "matte" || !fxkit::exact() { (Blend::Normal, 0.22) } else { (Blend::Screen, 0.32) };
+                let (blend, a) = if mat == "matte" { (Blend::Normal, 0.22) } else { (Blend::Screen, 0.32) };
                 let (dx, dy) = if mat == "matte" { (-0.18, -0.24) } else { (0.06, 0.1) };
                 let lc = hot(ramp_at(w * 0.5, h * 0.5), 0.4);
-                if fxkit::exact() {
-                    push_layer(&mut out, 1.0, blend, vec![Filter::Blur(mean_r * 0.22)]);
-                    for lv in [0.45, 0.7, 1.0] {
-                        out.push(fill(iso(lv, dx, dy), solid(alpha(lc, a))));
-                    }
-                } else {
-                    push_layer(&mut out, 1.0, blend, Vec::new());
-                    for &(x, y, r) in &blobs {
-                        out.push(fxkit::light(x + dx * r * 1.6, y + dy * r * 1.6, r * 1.15, fxkit::gauss(lc, a * 2.2)));
-                    }
+                push_layer(&mut out, 1.0, blend, vec![Filter::Blur(mean_r * 0.22)]);
+                for lv in [0.45, 0.7, 1.0] {
+                    out.push(fill(iso(lv, dx, dy), solid(alpha(lc, a))));
                 }
                 out.push(Op::PopLayer);
             }
@@ -360,9 +343,7 @@ impl Component for Metaballs {
                 "chrome" => (white, 0.4),
                 _ => (hot(c0, 0.6), 0.55),
             };
-            // (Screen is exact; a plain layer of light over the body looks the same and composites faster.)
-            let blend = if fxkit::exact() { Blend::Screen } else { Blend::Normal };
-            push_layer(&mut out, (ra * self.rim).min(1.0), blend, vec![Filter::Blur(mean_r * 0.06)]);
+            push_layer(&mut out, (ra * self.rim).min(1.0), Blend::Screen, vec![Filter::Blur(mean_r * 0.06)]);
             out.push(tint(even_odd(body.clone(), iso(0.4, 0.0, 0.0)), rc));
             out.push(Op::PopLayer);
         }

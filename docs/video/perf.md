@@ -76,11 +76,60 @@ Add an entry when you add a feature with its own fast paths. If a component has 
 
 ## Results
 
-4 vCPU (Intel Xeon @ 2.1 GHz), 16 GB, Linux 6.18. "before" is the merged trunk at the start of this work, with today's metrics. "after" is the current branch. Wall time is the median of 3 runs.
+Same VM throughout: 4 vCPU (Intel Xeon @ 2.1 GHz), 16 GB, Linux 6.18. Wall time is the median of 3 runs. In the fps column, entries marked "(timed)" time the whole spec; the others time the clip.
 
-<!-- qbench:start -->
-(filled in by the latest run, see below)
-<!-- qbench:end -->
+### Now (`qbench --gate`, after merging main 43f56da; one run each)
+
+| spec | frames (timed) | wall s | fps | CPU ms/frame: eval · render · copy · encode · idle* | startup · 1st frame ms | render SSIM min | ΔE p99.9 / max | flicker | delivered SSIM min / PSNR-Y | result |
+|---|---:|---:|---:|---|---|---:|---:|---:|---|---|
+| ui | 120 (600) | 0.35 | 1729 | 0.05 · 0.57 · 0.04 · 1.24 · 0.41 | 4 · 17 | 1.00000 | 0.00 / 0.1 | 0.0 | 0.9993 / 53.2 | PASS |
+| text | 120 (600) | 0.84 | 712 | 0.01 · 2.09 · 0.07 · 2.59 · 0.84 | 2 · 11 | 1.00000 | 0.00 / 0.0 | 0.0 | 0.9996 / 55.4 | PASS |
+| explainer | 120 (600) | 0.35 | 1709 | 0.01 · 0.61 · 0.05 · 1.45 · 0.20 | 2 · 9 | 1.00000 | 0.00 / 0.5 | 0.0 | 0.9989 / 53.1 | PASS |
+| backdrop | 105 | 1.44 | 73 | 10.5 · 23.7 · 0.48 · 15.6 · 4.7 | 2 · 52 | 0.98919 | 3.29 / 12.3 | 2.7 | 0.9813 / 47.0 | KNOWN (COMPONENTS) |
+| particles | 120 | 2.38 | 51 | 1.5 · 19.2 · 0.41 · 23.1 · 34.2 | 133 · 11 | 0.98832 | 36.1 / 61.4 | 64.9 | 0.9855 / 42.2 | KNOWN (COMPONENTS) |
+| launch | 120 (1005) | 6.29 | 160 | 0.78 · 15.5 · 0.16 · 4.9 · 3.7 | 4 · 72 | 0.99337 | 2.51 / 3.2 | 1.9 | 0.9821 / 48.1 | KNOWN (COMPONENTS) |
+| scene3d | 9 | 13.39 | 0.7 | 1464 · 11 · 0.5 · 10.6 · 4465* | 1502 · 1525 | 1.00000 | 1.27 / 2.3 | 0.0 | 0.9948 / 50.5 | PASS (no 3D reference knobs yet) |
+| shader-hero | 60 | 4.28 | 14 | 0.02 · 133 · 0.52 · 6.1 · 146* | 66 · 77 | 0.99955 | 1.17 / 9.2 | 2.8 | 0.9964 / 50.6 | PASS |
+| shader (aurora) | 60 | 53.5 | 1.1 | 0.03 · 1711 · 0.51 · 40.3 · 1817* | 30 · 921 | 0.95376 | 2.71 / 10.9 | 1.6 | 0.9410 / 40.3 | KNOWN (SHADER: aliasing vs 2×2 supersampled reference) |
+| post | 90 | 7.28 | 12 | 0.03 · 216 · 0.48 · 18.0 · 88.6* | 1 · 129 | 0.99864 | 0.97 / 8.8 | 1.6 | 0.9504 / 42.7 | PASS |
+| audio | 120 | 1.13 | 106 | 0.05 · 17.5 · 0.30 · 11.2 · 6.0 | 595 · 33 | 0.99957 | 1.51 / 1.8 | 0.9 | 0.9942 / 47.6 | PASS |
+
+\* idle is wall × threads minus the per-frame stage times, so for stages with nested parallelism (shaders, 3D, post) it includes their work on other threads. Rendering frames of short clips in parallel was tried and gained nothing; the cores are already busy.
+
+Output is byte-identical between 1 and 4 threads (checked: launch, product, backdrop, shader-hero, post).
+
+KNOWN means the entry is over the thresholds today, recorded in `qbench/baseline.json` (`known`, with an owner). It passes the gate only while it gets no worse. Run `qbench --exact-components` to see what removing those shortcuts costs: particles pass at 43 fps instead of 54; the mesh field drops to 4 fps, so it needs a better fast path, not the exact one.
+
+### Before, at the start of this work (same harness and metrics, original fast paths)
+
+| spec | wall s | fps | render SSIM min | ΔE p99.9 / max | flicker | result |
+|---|---:|---:|---:|---:|---:|---|
+| ui | 0.07 (clip) | 1678 | 0.99988 | 2.66 / 6.8 | 3.4 | FAIL: ¼-px glyph phases |
+| text | 0.14 (clip) | 871 | 1.00000 | 0.00 / 0.3 | 0.0 | PASS |
+| explainer | 0.18 (clip) | 672 | 0.99987 | 2.96 / 6.5 | 7.4 | FAIL: ¼-px stepping on a slow rise |
+| backdrop | 1.40 | 75 | 0.99624 | 2.90 / 8.4 | 3.7 | FAIL: YUV-space overlay compositing |
+| particles | 1.52 | 79 | 1.00000 | 0.29 / 1.2 | 0.2 | PASS (the components' shortcuts weren't measured yet) |
+| launch | 1.65 (clip) | 73 | 0.99696 | 3.86 / 6.7 | 7.6 | FAIL: blur-σ steps, YUV compositing |
+| scene3d | 35.6 | 0.25 | 1.0 | 1.28 / 2.1 | 0.0 | PASS |
+| post | 11.2 | 8 | 0.99980 | 2.38 / 6.5 | 4.4 | FAIL |
+| audio | 1.37 | 88 | 0.99874 | 2.48 / 4.3 | 4.9 | FAIL |
+
+Not deterministic: `launch.json` rendered differently run to run.
+
+### Speed, like for like
+
+The content changed during this work (the components' premium pass made backdrop, particles and launch heavier). So each speed change is measured with binaries on the same content: `anikit-video render`, best of 2, whole spec.
+
+| Change | Spec | Before | After |
+|---|---|---:|---:|
+| Deterministic chunk-owned renderers, cubic upscaler rows vectorised, RGBA compositing | launch (whole, 1005 frames) | 163 fps | 285 fps (content then) |
+| same | backdrop | 67 fps | 103 fps (content then) |
+| Post: lens 4×, final pass 1.3× (byte-identical) | post | 15.3 s (6 fps) | 7.45 s (12 fps) |
+| Upscaler (RENDER's fixed-point rewrite) vectorised (byte-identical) + post | launch (current content) | 8.18 s | 7.63 s |
+| same | backdrop (current content) | 2.16 s | 1.98 s |
+| Audio decode / beat caches | pulse, 4 s with audio | 2.07 s | 1.95 s |
+
+For reference, trunk before the in-flight render and components branches rendered launch at 411 fps. Their quality work (cubic fields, full-quality components) costs most of that gap; the fast paths here took back what could be taken back without losing quality.
 
 ## What the harness found, and what changed
 
@@ -94,11 +143,15 @@ Add an entry when you add a feature with its own fast paths. If a component has 
 | The cubic field upscaler used a scalar float loop; Rust's saturating `f32 as u8` stops vectorisation. | no (speed) | vectorised rows; `render::sat_u8` | full-frame upscale 17 → 7 ms (one thread). RENDER has since rewritten it in fixed point. |
 | Motion blur rendered every sample as a whole frame and called `powf` 6M times a frame. | no (speed) | samples only where things move; LUT encode | 448 → ~400 ms CPU/frame on `post`. The post stack dominates, see below. |
 
-Open items, with their owners:
-- **Post stack** (`render/post.rs`, RENDER): ~385 ms/frame on one thread at 1080p for the cinematic preset (lens 85, bloom 150, grade/encode 145). It's scalar AoS code; planar SIMD with the static maps cached (lens table, vignette, dither) should get it under 30 ms. Keep the current code as the reference path.
-- **scene3d** (3D): ~3.2 s CPU per 1080p frame for the chrome lookdev. It doesn't honour `components::reference()` yet, so its own approximations aren't measured.
-- **Shader layer** (SHADER): see the shader row.
-- **Encoder**: once rendering is fast, ak264 is the largest share of CPU on busy content (backdrop, particles: 17–20 ms/frame). The next step is intra/inter decision pruning, gated by the delivered columns.
+Open items, with their owners (all messaged with numbers):
+- **Components' visible shortcuts** (COMPONENTS): fxkit light and particles (source-over instead of Add, sprite defocus, wide god-ray slices; ΔE p99.9 35, flicker 65; exact costs only ~15%), and the mesh-gradient field resolution (ΔE 3.3; exact is 12× slower, so it needs a better fast path). These are recorded as KNOWN in the baseline.
+- **Motion-blur box artefact** (RENDER): a hard-edged strip at the edge of a card starting to move (qbench `post`, frame 0; pooled ΔE max 25).
+- **Post stack** (`render/post.rs`, RENDER): now ~290 ms per 1080p frame on one thread for the cinematic preset (decode 5, lens 95, bloom 35, grade/encode 155), down from 640 ms. The rest needs an explicit AVX2 pass (planar, gathers for the LUTs); keep the current code as the reference path.
+- **Shader layer** (SHADER): 3.35 s CPU per 1080p frame for `aurora`. It's exact (no approximations to measure), just slow.
+- **scene3d** (3D): 4.1 s CPU per 1080p frame for the chrome lookdev (3× faster than at the start). It doesn't honour `components::reference()` yet, so its own approximations (spp, adaptive termination, DOF, bloom) aren't measured.
+- **Startup with music** (SPEC/COMPONENTS): pulse takes 0.6 s to compile, from beat analysis (225 ms), the visualizers' own decode and analysis at their sample rate (~170 ms) and particle-text's glyph sampling (160 ms). These run one after another; component builds could run in parallel.
+- **Encoder** (ak264): it's now the largest CPU share on busy content (backdrop, particles: 17–23 ms/frame). Stage split, from timing counters: I4×4 trial plus coding is about half on particle-heavy content, and the rest is spread across motion search, sub-pel, intra16, residual coding, deblock (1.7 ms) and half-pel planes (1.2 ms). Mode pruning would change bitstreams; gate it with the delivered columns and file sizes.
+- **Load balance on short clips**: one GOP chunk per core leaves cores idle when chunks differ in cost (particles: 30 ms/frame idle on a 4 s clip). Long videos (≥ 12 chunks) are fine.
 
 ## Tools
 

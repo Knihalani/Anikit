@@ -39,7 +39,17 @@ pub fn parse(v: &serde_json::Value, base: &Path) -> Result<MusicCue, String> {
     let opts = RenderOpts { video_length: Some(10.0), base_dir: Some(base.to_path_buf()), ..Default::default() };
     let a = anikit_music::arrange(&spec, &opts)?;
     for t in &a.tracks {
-        anikit_music::instruments::resolve(&t.inst, Some(base)).map_err(|e| format!("track '{}': {e}", t.name))?;
+        if let Some(def) = spec.define.get(&t.inst) {
+            anikit_music::custom::build(&t.inst, def, Some(base), Vec::new()).map_err(|e| format!("track '{}': {e}", t.name))?;
+        } else {
+            anikit_music::instruments::resolve(&t.inst, Some(base)).map_err(|e| format!("track '{}': {e}", t.name))?;
+        }
+        if let Some(fx) = &t.fx {
+            anikit_music::custom::fx_chain(fx, 48_000, a.grid.bpm, &format!("track '{}'.fx", t.name))?;
+        }
+        if let Some(au) = &t.automate {
+            anikit_music::custom::TrackAuto::parse(au, &a.grid, &format!("track '{}'.automate", t.name))?;
+        }
     }
     Ok(MusicCue { at: spec.at.unwrap_or(0.0), gain: spec.gain.unwrap_or(0.0), duck, spec, base: base.to_path_buf() })
 }
@@ -72,7 +82,7 @@ pub fn render_track(cue: &MusicCue, video_len: f64, wav: &Path, has_voice: bool)
     })
 }
 
-const DOCS: &str = r#"MUSIC — generated, mastered soundtracks (−14 LUFS, −1 dBTP), deterministic, ~100× real time+
+const DOCS: &str = r#"MUSIC — generated, mastered soundtracks (−14 LUFS, −1 dBTP), deterministic, 25–80× real time, rendered alongside the frames
 In a video spec:   "music": {"style":"lofi","bpm":84,"key":"Dm","mood":"warm","hits":["@bar5"]}
   or just          "music": "synthwave"         (fills the video; @beatN/@barN follow its exact grid)
 Standalone:        anikit-video music '{"style":"house","length":"15s"}' -o bed.wav [--stems DIR] [--midi out.mid]
@@ -97,6 +107,14 @@ TRACKS  (add to a style, or write everything yourself)
 NOTES   C4 Eb3 F#5 · degrees 1-7 b3 5' 3, · chords Am Cmaj7 G/B vi IV V7 [C4 E4 G4] · r rest · _ hold
         /4 quarter /8 /16 /2 /1 /8t triplet . dotted :1.5 beats · ! accent ? ghost ^ staccato ~ legato
         o3 octave > < · l8 default length · v100 velocity · t+2 transpose · | bar line · @5 bar · (…)x4 repeat
+MAKE ANYTHING (example: docs/video/music/custom.json)
+  "define": {"wob": {"synth": {"base":"bass-synth"?, "osc":[{"wave":"saw|square|tri|sine|supersaw","voices":3,"detune":12,"semis":0,"level":0.8,"pw":0.5}],
+             "sub":0.3, "noise":0, "filter":{"type":"ladder|lp|lp4|bp|formant","cutoff":800,"res":0.4,"drive":1.5,"env":2,"track":0.5},
+             "amp":[a,d,s,r], "fenv":[a,d,s,r], "lfo":{"rate":5,"vib":8,"cutoff":0.5,"trem":0.2}, "pitch":[12,0.05], "glide":0.05, "mono":true}},
+             "kit": {"sampler": {"zones":[{"file":"kick.wav","key":36},{"file":"c4.wav","root":"C4","lo":48,"hi":72,"vel":[1,90],"loop":[s,e]}],"release":0.3}}}
+  then {"inst":"wob", …}.  Per track: "fx":[{"type":"eq|comp|delay|reverb|chorus|saturate|widener|transient|filter|gain", …params}]
+  "automate": {"volume"|"pan"|"lp"|"hp"|"reverb"|"delay"|"synth.cutoff|res|drive|env|vib|…": [[beat, v], ["@bar5", v]] or "=400+3000*saw(bar/4)"}
+        expr vars beat bar t bpm; fns sin cos abs min max clamp mix saw tri sq step smooth exp log pow
 INSTRUMENTS (sampled GM bank bundled; `music instruments` lists all) piano epiano rhodes organ strings violin cello
         choir trumpet french-horn brass flute oboe clarinet sax harp timpani nylon-guitar steel-guitar overdrive-guitar
         bass pick-bass fretless · models: marimba vibraphone kalimba glockenspiel celesta tubular-bells church-bell handpan
@@ -249,7 +267,7 @@ fn cmd_music(args: &[String]) -> Result<(), String> {
     }
     let a = &r.arrangement;
     let summary = serde_json::json!({
-        "ok": true, "output": out, "seconds": r.duration(), "style": a.style, "bpm": a.grid.bpm, "key": format!("{:?}", a.key.tonic),
+        "ok": true, "output": out, "seconds": r.duration(), "style": a.style, "bpm": a.grid.bpm, "key": format!("{} {}", anikit_music::theory::key_name(a.key.tonic, a.key.flats()).trim_end_matches(char::is_numeric).trim_end_matches('-'), a.key.scale.name),
         "sections": a.sections, "beats": a.beats().len(), "tracks": a.tracks.iter().map(|t| format!("{} ({})", t.name, t.inst)).collect::<Vec<_>>(),
         "report": r.report, "timings": r.timings,
     });

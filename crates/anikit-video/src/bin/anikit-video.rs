@@ -17,7 +17,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::Instant;
 
-const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema> [spec.json|spec.yaml] [options]
+const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|beats|music|docs|recipes|new|templates|looks|prompt|critique|preview|mcp|--version> [spec.json|spec.yaml] [options]
   render spec.json -o out.mp4   [--quality draft|good|best] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
                                 [--from S] [--to S] [--scale K] [--no-audio]
   still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
@@ -28,7 +28,7 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema> 
   beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
   music  spec.json -o out.wav   generate a mastered soundtrack (anikit-video docs music)
 common: --json (machine-readable output)
-agents: new | templates | prompt | critique | preview | mcp   (anikit-video templates, anikit-video prompt)";
+start:  docs [topic] | recipes [name] (-o file) | music | critique --render | looks | templates | preview | mcp | --version";
 
 struct Args {
     cmd: String,
@@ -173,6 +173,10 @@ fn resolve_time(ev: &Evaluator, s: &str) -> Result<f32, String> {
 fn main() -> ExitCode {
     // Agent commands (new, templates, prompt, critique, preview, mcp) live in the library.
     let raw: Vec<String> = std::env::args().skip(1).collect();
+    if matches!(raw.first().map(String::as_str), Some("--version" | "-V" | "version")) {
+        println!("anikit-video {}", env!("CARGO_PKG_VERSION"));
+        return ExitCode::SUCCESS;
+    }
     if let Some(code) = anikit_video::music::run(&raw) {
         return ExitCode::from(code as u8);
     }
@@ -267,6 +271,8 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             Ok(ExitCode::SUCCESS)
         }
         "still" => {
+            // One frame: compile latency matters more than per-frame throughput.
+            anikit_shader::set_lane_groups(1);
             let path = need_input(a)?;
             let out = PathBuf::from(a.get("-o").or(a.get("--out")).unwrap_or("still.png"));
             let scale = a.num("--scale")?.unwrap_or(1.0);
@@ -407,6 +413,13 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             let wav = std::env::temp_dir().join(format!("anikit-video-{}.wav", std::process::id()));
             let job = if opts.audio { pipeline::audio_job(&ev, t0, dur, &wav) } else { None };
             let had_audio = job.is_some();
+            // Before a long render, say how long and why (stderr; stdout stays JSON).
+            if !a.has("--quiet") && (ev.has_heavy_layers() || ev.frames() > 3600) {
+                let est = pipeline::estimate(&ev, &opts, 20.0);
+                if est.secs >= 20.0 {
+                    eprintln!("{est}. Faster: --quality draft, or --from/--to for a range.");
+                }
+            }
             let s = if codec == Codec::Ak264 {
                 // The audio (and any generated music) mixes on a thread while frames render.
                 pipeline::render_ak264_job(&ev, &opts, &out, job)

@@ -127,8 +127,12 @@ pub fn sad16_mode(e: &Edges<16>, mode: u8, src: &[u8; 256]) -> u32 {
                     }
                 }
                 _ => {
-                    let st: u32 = e.top.iter().map(|&v| v as u32).sum();
-                    let sl: u32 = e.left.iter().map(|&v| v as u32).sum();
+                    let z = _mm_setzero_si128();
+                    let hsum = |p: *const u8| {
+                        let v = _mm_sad_epu8(_mm_loadu_si128(p as *const __m128i), z);
+                        (_mm_cvtsi128_si64(v) + _mm_cvtsi128_si64(_mm_unpackhi_epi64(v, v))) as u32
+                    };
+                    let (st, sl) = (hsum(e.top.as_ptr()), hsum(e.left.as_ptr()));
                     let dc = match (e.has_top, e.has_left) {
                         (true, true) => (st + sl + 16) >> 5,
                         (true, false) => (st + 8) >> 4,

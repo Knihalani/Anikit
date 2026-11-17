@@ -79,6 +79,19 @@ struct Entry {
 struct Baseline {
     /// name → (delivered SSIM min, delivered PSNR-Y mean)
     delivered: std::collections::BTreeMap<String, (f64, f64)>,
+    /// Known render-fidelity failures, ratcheted: an entry over the thresholds
+    /// passes as KNOWN while it is no worse than this, and must have an owner.
+    #[serde(default)]
+    known: std::collections::BTreeMap<String, Known>,
+}
+
+#[derive(Serialize, Deserialize, Default, Clone)]
+struct Known {
+    ssim_min: f64,
+    de_p999_max: f64,
+    flicker_p999_max: f64,
+    /// Who is fixing it, and what it is.
+    owner: String,
 }
 
 // ---------------------------------------------------------------- frames
@@ -636,6 +649,8 @@ struct Row {
     delivered_regressed: bool,
     /// Two default renders of the same clip disagreed.
     nondeterministic: Option<String>,
+    /// Over the thresholds but no worse than the recorded known failure (owner).
+    known: Option<String>,
     pass: bool,
     flags: Vec<String>,
 }
@@ -835,7 +850,21 @@ fn main() {
         if worst > 0 {
             row.flags.push(format!("{worst} px > 1 JND in the worst frame"));
         }
-        row.pass = rf.failing.is_empty() && !row.delivered_regressed && row.nondeterministic.is_none();
+        // Known failures (baseline.known) pass while they don't get worse.
+        let known = baseline.known.get(&e.name);
+        let within_known = known.is_some_and(|k| rf.ssim_min >= k.ssim_min - 1e-4 && rf.de_p999_max <= k.de_p999_max + 0.05 && rf.flicker_p999_max <= k.flicker_p999_max + 0.2);
+        if !rf.failing.is_empty() {
+            if let (true, Some(k)) = (within_known, known) {
+                row.known = Some(k.owner.clone());
+                new_base.known.insert(e.name.clone(), k.clone());
+            } else if has("--update-baseline") {
+                let owner = get("--owner").unwrap_or_else(|| known.map(|k| k.owner.clone()).unwrap_or_else(|| "unassigned".into()));
+                new_base.known.insert(e.name.clone(), Known { ssim_min: rf.ssim_min, de_p999_max: rf.de_p999_max, flicker_p999_max: rf.flicker_p999_max, owner });
+            }
+        } else {
+            new_base.known.remove(&e.name);
+        }
+        row.pass = (rf.failing.is_empty() || row.known.is_some()) && !row.delivered_regressed && row.nondeterministic.is_none();
         if let Some(nd) = &row.nondeterministic {
             row.flags.push(format!("NONDETERMINISTIC: {nd}"));
         }
@@ -871,7 +900,9 @@ fn print_table(rows: &[Row]) {
             continue;
         }
         let p = r.profile.clone().unwrap_or_default();
-        let res = if r.pass { "PASS".to_string() } else { format!("**FAIL** ({} frames{})", r.render.failing.len(), if r.delivered_regressed { ", delivered regressed" } else { "" }) };
+        let res = if let (true, Some(o)) = (r.pass, &r.known) {
+            format!("KNOWN ({} frames; {o})", r.render.failing.len())
+        } else if r.pass { "PASS".to_string() } else { format!("**FAIL** ({} frames{})", r.render.failing.len(), if r.delivered_regressed { ", delivered regressed" } else { "" }) };
         let flags = if r.flags.is_empty() { String::new() } else { format!(" ⚑ {}", r.flags.join("; ")) };
         println!(
             "| {} | {} | {} ({}) | {:.2} | {:.0} | {:.2} · {:.2} · {:.2} · {:.2} · {:.2} | {:.0} · {:.0} | {:.5} | {:.2} | {:.2} / {:.1} | {:.1} | {:.1} | {:.4} / {:.2} | {}{} |",

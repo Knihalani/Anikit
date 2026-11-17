@@ -32,6 +32,28 @@ def scene_cuts(path, thr=0.25):
     except Exception:
         return []
 
+def norm_cuts(path, w=96, thr=0.55):
+    """Cuts the scene filter misses (dark to dark): each frame is normalised to
+    zero mean and unit contrast at low resolution, and a cut is a frame whose
+    normalised difference from the previous one spikes well above its neighbours."""
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v", "-show_entries", "stream=width,height,r_frame_rate",
+                        "-of", "csv=p=0", path], capture_output=True, text=True)
+    sw, sh, rate = r.stdout.strip().split(",")[:3]
+    num, den = (rate.split("/") + ["1"])[:2]
+    fps = float(num) / float(den or 1)
+    h = max(2, round(int(sh) * w / int(sw)) // 2 * 2)
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-vf", f"scale={w}:{h},format=gray", "-f", "rawvideo", "-"],
+                         capture_output=True, check=True).stdout
+    f = np.frombuffer(raw, dtype=np.uint8).reshape(-1, h, w).astype(np.float32)
+    f = (f - f.mean(axis=(1, 2), keepdims=True)) / (f.std(axis=(1, 2), keepdims=True) + 4.0)
+    d = np.abs(f[1:] - f[:-1]).mean(axis=(1, 2))
+    cuts = []
+    for i in range(len(d)):
+        local = np.median(d[max(0, i - 4):i + 5])
+        if d[i] > thr and d[i] > 3.0 * local + 0.05 and d[i] == d[max(0, i - 2):i + 3].max():
+            cuts.append((i + 1) / fps)
+    return cuts
+
 def duration(path):
     r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path], capture_output=True, text=True)
     return float(r.stdout.strip())
@@ -40,6 +62,10 @@ def main():
     path = sys.argv[1]
     dur = duration(path)
     cuts = scene_cuts(path)
+    for c in norm_cuts(path):
+        if all(abs(c - k) > 0.1 for k in cuts):
+            cuts.append(c)
+    cuts.sort()
     bounds = [0.0] + cuts + [dur]
     shots = [round(b - a, 2) for a, b in zip(bounds, bounds[1:]) if b - a > 0.05]
     fr = frames_1fps(path)

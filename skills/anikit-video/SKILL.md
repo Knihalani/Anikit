@@ -5,7 +5,7 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 
 **Setup:** if `anikit-video` isn't on PATH, install the prebuilt binary (seconds; don't compile it): `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh`, then `export PATH="$HOME/.local/bin:$PATH"`.
 
-**The loop:** write `s.json` → `anikit-video still s.json --at 2.4 --width 640 -o f.png` (look) → `anikit-video render s.json -o out.mp4` → `anikit-video critique s.json --render --pack rv/` (then look at `rv/`).
+**The loop:** write `s.json` → `anikit-video check s.json` (errors and the real length: scenes overlap by their transitions) → `anikit-video still s.json --at 2.4 --width 640 -o f.png` (look) → `anikit-video render s.json -o out.mp4` → `anikit-video critique s.json --render --pack rv/` (then look at `rv/`).
 
 **Need detail? Don't grep the docs: run `anikit-video docs <topic>`** (30 lines each, with a working example): `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything`.
 
@@ -26,13 +26,23 @@ A spec: `{ "size": "16:9", "intent": {"pace": "fast"}, "music": "synthwave", "sc
    `{ "component": "scene3d", "props": { "env": "studio", "objects": [{ "text": "ANIKIT", "material": "chrome" }], "camera": "orbit" } }`
 6. **Particles and physics** inside scene3d: `{ "type": "particles", "count": 400000, "emit": {"text": "IGNITE"}, "flow": 0.8 }`, `"physics": { "bodies": [{ "type": "box", "count": 400, "layout": "pile" }], "timeScale": "=1 - 0.7*smoothstep(2, 2.5, t)" }`.
 7. **Compositions:** nested timelines used as layers, looped, or as textures on 3D objects: `"compositions": { "ui": {…} }` → `{ "composition": "ui", "loop": true }`.
-8. **Music and grade:** `"music": {"style": "synthwave", "bpm": 128}` (generated; cut with `"duration": "@bar2"`, `"at": "@beat9"`; never hand-write a synth); `"post": {"preset": "cinematic", "bloom": 0.4}`.
+8. **Music and grade:** `"music": "synthwave"` or `{"style": "trap", "bpm": 140, "key": "Cm", "hits": ["@bar5"]}` generates a mastered score that fills the video (`anikit-video docs music`: styles, instruments, note language). Cut on its exact grid with `"@beat9"` / `"@bar2"`, and never hand-write a synth. Grade: `"post": {"preset": "cinematic", "bloom": 0.4}`.
 
 Combine them. `anikit-video docs make-anything` lists the escape hatches.
 
+No limits: expressions on any number or colour (`"=hsl(beat * 30, 80, 60)"`, `level`, `c ? a : b`), `{ "script": … }` loops that generate layers, and `draw` layers of raw paths and points (`docs/video/authoring.md`).
+
+**Costs (stay on the fast path):**
+- 2D layers render at 100+ fps; shaders cost 50–400 ms a frame (`still` prints it).
+- Ray-traced 3D and particles cost 0.5–1.5 s a frame. **Iterate with `render --quality draft`**, which traces 3D at half size automatically, then render the final at the default (standard) quality. Keep 3D shots to 2–4 s.
+- A final with 3D takes minutes (`recipes` lists draft and final costs). Start it early in the background and keep working; check one shot at final quality with `render --from 2 --to 4`. Physics, particle and floor bakes are cached on disk (`~/.cache/anikit`), so re-renders skip them.
+- `motionBlur` re-renders 2D layers per sub-frame (shader and 3D images are reused), so turn it on where motion is fast, not globally.
+- Preview with `still --width 640` and `render --quality draft`; never iterate at `--quality best`.
+- A layer's own timing is `start`/`end`; `at` is for tweens and `audio` cues.
+
 ## Shortcuts (optional; each is made from the primitives above)
 
-- `anikit-video recipes`: drop-in high-end shots to adapt (kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, raymarch-world) and the shader library.
+- `anikit-video recipes`: drop-in high-end shots to adapt (launch-sting: particles + 3D + shader + music on the beat; kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, raymarch-world) and the shader library.
 - `anikit-video looks`: art direction (palette, type, motion, grade). Use `"look": "noir"`.
 - `anikit-video info --components`: prebuilt widgets (charts, devices, UI).
 - `anikit-video templates`: quick starts. They are optional; don't let them define the piece.

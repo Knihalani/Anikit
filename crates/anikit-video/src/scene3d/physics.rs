@@ -33,14 +33,49 @@ use std::sync::{Arc, Mutex};
 /// A body pose: position and rotation quaternion (x, y, z, w).
 pub type Pose7 = [f32; 7];
 
-const PHYS_KEYS: &[&str] = &["gravity", "rate", "iterations", "time_scale", "start", "ground", "friction", "restitution", "record", "bodies", "impulses", "sleep", "freeze"];
+const PHYS_KEYS: &[&str] = &["gravity", "rate", "iterations", "time_scale", "start", "ground", "friction", "restitution", "record", "bodies", "impulses", "sleep", "freeze", "joints"];
 
 /// Keys of a body group besides the usual object keys.
 const BODY_KEYS: &[&str] = &[
-    "instance", "layout", "spacing", "gap", "angle", "path", "heading", "origin", "grid", "region", "velocity", "angular", "density", "friction", "restitution", "trigger", "ccd", "seed", "turns", "jitter", "awake", "stagger", "pitch",
+    "instance", "layout", "spacing", "gap", "angle", "path", "heading", "origin", "grid", "region", "velocity", "angular", "density", "friction", "restitution", "trigger", "ccd", "seed", "turns", "jitter", "awake", "stagger", "pitch", "chain", "pin",
 ];
 
 const LAYOUTS: &[&str] = &["dominoes", "grid", "wall", "pile", "rain", "expr"];
+
+/// A constraint between two bodies, or a body and the world.
+#[derive(Clone, Debug)]
+struct JointDef {
+    kind: JointKind,
+    a: usize,
+    /// `None`: pinned to the world.
+    b: Option<usize>,
+    /// World-space anchor at the start, and hinge axis.
+    anchor: V3,
+    axis: V3,
+    length: f32,
+    stiffness: f32,
+    damping: f32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum JointKind {
+    Ball,
+    Fixed,
+    Hinge,
+    Spring,
+    Rope,
+}
+
+fn joint_kind(s: &str, path: &str) -> Res<JointKind> {
+    Ok(match s {
+        "ball" | "spherical" => JointKind::Ball,
+        "fixed" | "weld" => JointKind::Fixed,
+        "hinge" | "revolute" => JointKind::Hinge,
+        "spring" => JointKind::Spring,
+        "rope" => JointKind::Rope,
+        o => return Err(format!("{path}: unknown joint `{o}` (ball, fixed, hinge, spring, rope)")),
+    })
+}
 
 /// One rigid body's set-up.
 #[derive(Clone)]
@@ -115,6 +150,7 @@ pub struct Sim {
     impulses: Vec<Impulse>,
     movers: Vec<Mover>,
     sleep: bool,
+    joints: Vec<JointDef>,
     init: Arc<Vec<Pose7>>,
     /// Bounding radius per body (waking frozen bodies near movers).
     radius: Vec<f32>,
@@ -197,7 +233,8 @@ pub fn lerp_pose(a: &Pose7, b: &Pose7, u: f32) -> Pose7 {
 
 #[inline]
 pub fn xf_of(p: &Pose7, s: f32) -> Xf {
-    Xf { r: mat_of([p[3], p[4], p[5], p[6]]), s, t: v3(p[0], p[1], p[2]) }
+    // Physics bodies scale uniformly.
+    Xf { r: mat_of([p[3], p[4], p[5], p[6]]), s: v3(s, s, s), t: v3(p[0], p[1], p[2]) }
 }
 
 fn hash_u(seed: u32, i: u32, k: u32) -> f32 {
@@ -264,6 +301,8 @@ pub fn parse(v: &Value, raw_objects: &[Value], shapes: &mut spec::Shapes, mats: 
     let bodies_v = m.get("bodies").and_then(|b| b.as_array()).ok_or("physics: missing `bodies` (an array of body groups)")?;
     let mut groups = Vec::new();
     let mut bodies = Vec::new();
+    let mut joints: Vec<JointDef> = Vec::new();
+    let (mut group_first, mut group_count): (Vec<usize>, Vec<usize>) = (Vec::new(), Vec::new());
     let mut objs = Vec::new();
     let mut templates = Vec::new();
     for (gi, g) in bodies_v.iter().enumerate() {
@@ -361,8 +400,92 @@ pub fn parse(v: &Value, raw_objects: &[Value], shapes: &mut spec::Shapes, mats: 
             bodies.push(BodyInit { pose, linvel, angvel, scale: s, group: gi as u32, awake });
         }
         groups.push(gd);
+        // Shortcuts: link consecutive bodies, pin some to the world.
+        let opt = |k: &str| -> Res<Option<(JointKind, f32, f32)>> {
+            match gm.get(k) {
+                None | Some(Value::Bool(false)) => Ok(None),
+                Some(Value::Bool(true)) => Ok(Some((JointKind::Ball, 400.0, 8.0))),
+                Some(Value::String(t)) => Ok(Some((joint_kind(t, &format!("{path}.{k}"))?, 400.0, 8.0))),
+                Some(Value::Object(o)) => {
+                    let jp = format!("{path}.{k}");
+                    spec::check_keys(o, &["type", "stiffness", "damping"], &jp)?;
+                    let t = o.get("type").and_then(|x| x.as_str()).unwrap_or("ball");
+                    let g = |n: &str, d: f32| o.get(n).map(|x| spec::f(x, &format!("{jp}.{n}"))).transpose().map(|v| v.unwrap_or(d));
+                    Ok(Some((joint_kind(t, &jp)?, g("stiffness", 400.0)?, g("damping", 8.0)?)))
+                }
+                Some(_) => Err(format!("{path}.{k}: expected true, a joint type, or {{ \"type\", \"stiffness\", \"damping\" }}")),
+            }
+        };
+        if let Some((kind, stiffness, damping)) = opt("chain")? {
+            for i in 1..count as usize {
+                let (pa, pb) = (&bodies[first as usize + i - 1].pose, &bodies[first as usize + i].pose);
+                let (a, b) = (v3(pa[0], pa[1], pa[2]), v3(pb[0], pb[1], pb[2]));
+                let axis = norm(cross(sub(b, a), v3(0.0, 1.0, 0.0)));
+                joints.push(JointDef { kind, a: first as usize + i - 1, b: Some(first as usize + i), anchor: scale(add(a, b), 0.5), axis: if len(axis) > 0.5 { axis } else { v3(1.0, 0.0, 0.0) }, length: len(sub(b, a)), stiffness, damping });
+            }
+        }
+        match gm.get("pin") {
+            None | Some(Value::Bool(false)) => {}
+            Some(x) => {
+                let idx: Vec<usize> = match x {
+                    Value::Bool(true) => vec![0],
+                    Value::String(w) if w == "first" => vec![0],
+                    Value::String(w) if w == "last" => vec![count.saturating_sub(1) as usize],
+                    Value::String(w) if w == "ends" => vec![0, count.saturating_sub(1) as usize],
+                    Value::Number(n) => vec![n.as_f64().unwrap_or(0.0) as usize],
+                    Value::Array(a) => a.iter().filter_map(|v| v.as_f64()).map(|v| v as usize).collect(),
+                    _ => return Err(format!("{path}.pin: expected true, \"first\", \"last\", \"ends\", an index or a list of indices")),
+                };
+                for i in idx.into_iter().filter(|&i| i < count as usize) {
+                    let pa = &bodies[first as usize + i].pose;
+                    joints.push(JointDef { kind: JointKind::Ball, a: first as usize + i, b: None, anchor: v3(pa[0], pa[1], pa[2]), axis: v3(1.0, 0.0, 0.0), length: 0.0, stiffness: 0.0, damping: 0.0 });
+                }
+            }
+        }
+        group_first.push(first as usize);
+        group_count.push(count as usize);
         obj.pos = [Num::C(0.0), Num::C(0.0), Num::C(0.0)];
         objs.push((obj, first));
+    }
+    // Explicit joints: { "type", "a": [group, index], "b": [group, index] or "world", "anchor", "axis", "length", "stiffness", "damping" }.
+    if let Some(js) = m.get("joints") {
+        let a = js.as_array().ok_or("physics.joints: expected an array")?;
+        for (k, j) in a.iter().enumerate() {
+            let jp = format!("physics.joints[{k}]");
+            let o = j.as_object().ok_or_else(|| format!("{jp}: expected an object"))?;
+            spec::check_keys(o, &["type", "a", "b", "anchor", "axis", "length", "stiffness", "damping"], &jp)?;
+            let body = |v: Option<&Value>, n: &str| -> Res<Option<usize>> {
+                match v {
+                    Some(Value::String(w)) if w == "world" => Ok(None),
+                    None if n == "b" => Ok(None),
+                    Some(Value::Array(a)) if a.len() == 2 => {
+                        let (g, i) = (a[0].as_f64().unwrap_or(-1.0) as i64, a[1].as_f64().unwrap_or(-1.0) as i64);
+                        if g < 0 || g as usize >= group_first.len() || i < 0 || i as usize >= group_count[g as usize] {
+                            return Err(format!("{jp}.{n}: no body [{g}, {i}]"));
+                        }
+                        Ok(Some(group_first[g as usize] + i as usize))
+                    }
+                    _ => Err(format!("{jp}.{n}: expected [group, index] or \"world\"")),
+                }
+            };
+            let a = body(o.get("a"), "a")?.ok_or_else(|| format!("{jp}.a: must be a body"))?;
+            let b = body(o.get("b"), "b")?;
+            let pa = &bodies[a].pose;
+            let pa = v3(pa[0], pa[1], pa[2]);
+            let pb = b.map(|b| v3(bodies[b].pose[0], bodies[b].pose[1], bodies[b].pose[2])).unwrap_or(pa);
+            let anchor = o.get("anchor").map(|x| vec3c(x, &format!("{jp}.anchor"))).transpose()?.unwrap_or(scale(add(pa, pb), 0.5));
+            let g = |n: &str, d: f32| o.get(n).map(|x| spec::f(x, &format!("{jp}.{n}"))).transpose().map(|v| v.unwrap_or(d));
+            joints.push(JointDef {
+                kind: joint_kind(o.get("type").and_then(|x| x.as_str()).unwrap_or("ball"), &format!("{jp}.type"))?,
+                a,
+                b,
+                anchor,
+                axis: o.get("axis").map(|x| vec3c(x, &format!("{jp}.axis"))).transpose()?.map(norm).unwrap_or(v3(1.0, 0.0, 0.0)),
+                length: g("length", len(sub(pb, pa)))?,
+                stiffness: g("stiffness", 400.0)?,
+                damping: g("damping", 8.0)?,
+            });
+        }
     }
 
     // Thin bodies need smaller steps not to pass through each other.
@@ -388,7 +511,7 @@ pub fn parse(v: &Value, raw_objects: &[Value], shapes: &mut spec::Shapes, mats: 
         Some(x) if !x.is_boolean() => spec::f(x, "physics.freeze")?.max(0.0),
         _ => 0.4,
     };
-    let sim = Arc::new(Sim { gravity, rate, iterations, time_scale, start, ground, record, groups, bodies, impulses, movers, sleep, init, radius, freeze, key, state: Mutex::new(None) });
+    let sim = Arc::new(Sim { gravity, rate, iterations, time_scale, start, ground, record, groups, bodies, impulses, movers, sleep, joints, init, radius, freeze, key, state: Mutex::new(None) });
     let objs = objs
         .into_iter()
         .map(|(mut o, first)| {
@@ -414,7 +537,7 @@ fn layout_poses(layout: &str, gm: &Map<String, Value>, obj: &ObjDef, count: u32,
     let gfl = |k: &str, d: f32| -> Res<f32> { gm.get(k).map(|x| spec::f(x, &format!("{path}.{k}"))).transpose().map(|o| o.unwrap_or(d)) };
     let sc = |i: u32| -> f32 {
         let vars = Vars { i: i as f64, n: count as f64, ..Vars::default() };
-        (obj.scale.at(&vars) * obj.scale_mul).max(1e-6)
+        (obj.scale[0].at(&vars) * obj.scale_mul).max(1e-6)
     };
     let s0 = sc(0);
     let size = scale(sub(hi, lo), s0);
@@ -423,8 +546,8 @@ fn layout_poses(layout: &str, gm: &Map<String, Value>, obj: &ObjDef, count: u32,
     let n = count as usize;
     let mut out = Vec::with_capacity(n);
     let pose_at = |p: V3, yaw: f32, pitch: f32, roll: f32, s: f32| -> (Pose7, f32) {
-        let xf = Xf::new(p, v3(pitch, yaw, roll), 1.0);
-        (pose7(&Xf { s, ..xf }), s)
+        let xf = Xf::new(p, v3(pitch, yaw, roll), v3(1.0, 1.0, 1.0));
+        (pose7(&Xf { s: v3(s, s, s), ..xf }), s)
     };
     match layout {
         "dominoes" => {
@@ -570,7 +693,7 @@ fn layout_poses(layout: &str, gm: &Map<String, Value>, obj: &ObjDef, count: u32,
             // `expr`: the object's own pos/rot expressions of `i`.
             for i in 0..count {
                 let xf = obj.xf_at(0.0, i, 0);
-                out.push((pose7(&xf), xf.s));
+                out.push((pose7(&xf), xf.smax()));
             }
         }
     }
@@ -632,6 +755,35 @@ impl Sim {
             };
             handles.push(h);
         }
+        if !self.joints.is_empty() {
+            use rapier3d::dynamics::{GenericJointBuilder, JointAxesMask, RopeJointBuilder, SpringJointBuilder};
+            let world_body = world.bodies.insert(RigidBodyBuilder::fixed());
+            for j in &self.joints {
+                let ha = handles[j.a];
+                let hb = j.b.map(|b| handles[b]).unwrap_or(world_body);
+                let pose_of = |k: Option<usize>| k.map(|k| to_pose(&self.bodies[k].pose)).unwrap_or(Pose::IDENTITY);
+                let (p1, p2) = (pose_of(Some(j.a)), pose_of(j.b));
+                // The joint frame in world space: at the anchor, X along the hinge axis.
+                let frame = Pose::from_parts(Vector::new(j.anchor.x, j.anchor.y, j.anchor.z), Rotation::from_rotation_arc(Vector::X, Vector::new(j.axis.x, j.axis.y, j.axis.z).normalize()));
+                let (f1, f2) = (p1.inverse() * frame, p2.inverse() * frame);
+                match j.kind {
+                    JointKind::Ball | JointKind::Fixed | JointKind::Hinge => {
+                        let mask = match j.kind {
+                            JointKind::Ball => JointAxesMask::LOCKED_SPHERICAL_AXES,
+                            JointKind::Fixed => JointAxesMask::LOCKED_FIXED_AXES,
+                            _ => JointAxesMask::LOCKED_REVOLUTE_AXES,
+                        };
+                        world.impulse_joints.insert(ha, hb, GenericJointBuilder::new(mask).local_frame1(f1).local_frame2(f2).contacts_enabled(false), true);
+                    }
+                    JointKind::Spring => {
+                        world.impulse_joints.insert(ha, hb, SpringJointBuilder::new(j.length, j.stiffness, j.damping).local_anchor1(f1.translation).local_anchor2(f2.translation), true);
+                    }
+                    JointKind::Rope => {
+                        world.impulse_joints.insert(ha, hb, RopeJointBuilder::new(j.length).local_anchor1(f1.translation).local_anchor2(f2.translation), true);
+                    }
+                }
+            }
+        }
         let mut movers = Vec::new();
         for mv in &self.movers {
             let o = &mv.obj;
@@ -639,7 +791,7 @@ impl Sim {
             for lane in 0..o.lanes {
                 for i in 0..o.count {
                     let xf = o.xf_at(self.start, i, lane);
-                    let Some((shape, off)) = shared_shape(&o.col, xf.s) else { continue };
+                    let Some((shape, off)) = shared_shape(&o.col, xf.smax()) else { continue };
                     let p = to_pose(&pose7(&xf));
                     let rb = if mv.kinematic { RigidBodyBuilder::kinematic_position_based() } else { RigidBodyBuilder::fixed() }.pose(p);
                     let col = ColliderBuilder::new(shape).translation(Vector::new(off.x, off.y, off.z)).friction(0.5).restitution(0.1);
@@ -792,7 +944,7 @@ impl Sim {
                     for i in 0..mv.obj.count {
                         let xf = mv.obj.xf_at(t + 0.25, i, lane);
                         let c = xf.point(scale(add(lo, hi), 0.5));
-                        let r = len(sub(hi, lo)) * 0.5 * xf.s + 0.5;
+                        let r = len(sub(hi, lo)) * 0.5 * xf.smax() + 0.5;
                         for (k, h) in st.handles.iter().enumerate() {
                             if st.still[k] >= 0.0 {
                                 continue;
@@ -1055,8 +1207,23 @@ mod tests {
     }
 
     #[test]
+    fn a_pinned_chain_hangs_and_holds() {
+        let p = sim(serde_json::json!({ "bodies": [ { "type": "sphere", "radius": 0.05, "count": 20, "layout": "expr", "pos": "=[i*0.1, 2, 0]", "chain": "ball", "pin": "first" } ] }));
+        // It swings like a pendulum: the free end passes well below the pin.
+        let lowest = (1..80).map(|k| p.sim.at(k as f32 * 0.05).0[19][1]).fold(f32::MAX, f32::min);
+        assert!(lowest < 0.5, "the free end never swung down (lowest y = {lowest})");
+        let (a, _, _) = p.sim.at(4.0);
+        let d0 = len(sub(v3(a[0][0], a[0][1], a[0][2]), v3(0.0, 2.0, 0.0)));
+        assert!(d0 < 0.02, "pinned link moved {d0} m");
+        for k in 1..20 {
+            let gap = len(sub(v3(a[k][0], a[k][1], a[k][2]), v3(a[k - 1][0], a[k - 1][1], a[k - 1][2])));
+            assert!(gap < 0.12, "link {k} stretched to {gap}");
+        }
+    }
+
+    #[test]
     fn quaternion_round_trip() {
-        let xf = Xf::new(v3(1.0, 2.0, 3.0), v3(30.0, -70.0, 145.0), 1.0);
+        let xf = Xf::new(v3(1.0, 2.0, 3.0), v3(30.0, -70.0, 145.0), v3(1.0, 1.0, 1.0));
         let q = quat_of(&xf.r);
         let r = mat_of(q);
         for k in 0..3 {

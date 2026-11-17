@@ -97,6 +97,8 @@ pub fn arrange(spec: &MusicSpec, opts: &RenderOpts) -> Result<Arrangement, Strin
                 mix: TrackMix { reverb: 0.15, ..Default::default() },
                 humanize: 0.0,
                 straight: true,
+                fx: None,
+                automate: None,
             });
         }
         if spec.length.is_none() && opts.video_length.is_none() {
@@ -106,8 +108,40 @@ pub fn arrange(spec: &MusicSpec, opts: &RenderOpts) -> Result<Arrangement, Strin
     Ok(a)
 }
 
+/// Set flush-to-zero and denormals-are-zero on this thread (x86): decaying
+/// filter and reverb states otherwise crawl through the subnormal range,
+/// where arithmetic is ~100× slower. Deterministic either way.
+pub fn ftz() {
+    #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+    #[allow(deprecated)]
+    unsafe {
+        #[cfg(target_arch = "x86_64")]
+        use std::arch::x86_64::{_mm_getcsr, _mm_setcsr};
+        #[cfg(target_arch = "x86")]
+        use std::arch::x86::{_mm_getcsr, _mm_setcsr};
+        // SAFETY: only sets the FTZ (bit 15) and DAZ (bit 6) flags of MXCSR.
+        _mm_setcsr(_mm_getcsr() | 0x8040);
+    }
+}
+
+/// The engine's thread pool: one worker per core, FTZ/DAZ on every worker.
+fn pool() -> &'static rayon::ThreadPool {
+    static POOL: std::sync::OnceLock<rayon::ThreadPool> = std::sync::OnceLock::new();
+    POOL.get_or_init(|| {
+        let n = std::env::var("ANIKIT_MUSIC_THREADS").ok().and_then(|v| v.parse().ok()).unwrap_or_else(rayon::current_num_threads);
+        rayon::ThreadPoolBuilder::new().num_threads(n).thread_name(|i| format!("anikit-music-{i}")).start_handler(|_| ftz()).build().expect("thread pool")
+    })
+}
+
 /// Render a spec to mastered stereo.
 pub fn render(spec: &MusicSpec, opts: &RenderOpts) -> Result<Rendered, String> {
+    pool().install(|| {
+        ftz();
+        render_inner(spec, opts)
+    })
+}
+
+fn render_inner(spec: &MusicSpec, opts: &RenderOpts) -> Result<Rendered, String> {
     let t0 = Instant::now();
     let a = arrange(spec, opts)?;
     let compose = t0.elapsed().as_secs_f64();
@@ -123,11 +157,37 @@ pub fn render_arrangement(a: Arrangement, opts: &RenderOpts) -> Result<Rendered,
     let rate = if opts.rate == 0 { crate::RATE } else { opts.rate };
     let mut tm = Timings::default();
     let t = Instant::now();
-    let insts = a
-        .tracks
-        .iter()
-        .map(|tr| instruments::resolve(&tr.inst, opts.base_dir.as_deref()).map_err(|e| format!("music: track '{}': {e}", tr.name)))
-        .collect::<Result<Vec<_>, _>>()?;
+    // Instruments: custom definitions (with per-note `synth.*` automation) or names.
+    let mut customs: Vec<Option<std::sync::Arc<crate::custom::CustomSynth>>> = Vec::with_capacity(a.tracks.len());
+    let mut insts: Vec<std::sync::Arc<dyn crate::Instrument>> = Vec::with_capacity(a.tracks.len());
+    for tr in &a.tracks {
+        let err = |e: String| format!("music: track '{}': {e}", tr.name);
+        let per_note = match &tr.automate {
+            Some(v) => crate::custom::TrackAuto::parse(v, &a.grid, &format!("tracks.{}.automate", tr.name)).map_err(err)?.per_note,
+            None => Vec::new(),
+        };
+        if let Some(def) = a.defines.get(&tr.inst) {
+            let is_synth = def.get("synth").is_some();
+            if !is_synth && !per_note.is_empty() {
+                return Err(err("`synth.*` automation needs a custom synth instrument (define it with \"synth\")".into()));
+            }
+            if is_synth {
+                let p = crate::custom::synth_patch(&def["synth"], &format!("define.{}.synth", tr.inst)).map_err(err)?;
+                let c = std::sync::Arc::new(crate::custom::CustomSynth { synth: crate::synth::patch::SubSynth::new(p), per_note });
+                insts.push(c.clone());
+                customs.push(Some(c));
+            } else {
+                insts.push(crate::custom::build(&tr.inst, def, opts.base_dir.as_deref(), Vec::new()).map_err(err)?);
+                customs.push(None);
+            }
+        } else {
+            if !per_note.is_empty() {
+                return Err(err(format!("`synth.*` automation needs a custom synth: define \"{}\" under \"define\"", tr.inst)));
+            }
+            insts.push(instruments::resolve(&tr.inst, opts.base_dir.as_deref()).map_err(err)?);
+            customs.push(None);
+        }
+    }
     tm.instruments = t.elapsed().as_secs_f64();
     let frames = (a.length * rate as f64).round() as usize;
     let t = Instant::now();
@@ -135,9 +195,9 @@ pub fn render_arrangement(a: Arrangement, opts: &RenderOpts) -> Result<Rendered,
     let dry: Vec<(Vec<f32>, Vec<f32>)> = a
         .tracks
         .par_iter()
-        .zip(insts.par_iter())
+        .zip(insts.par_iter().zip(customs.par_iter()))
         .enumerate()
-        .map(|(i, (tr, inst))| {
+        .map(|(i, (tr, (inst, custom)))| {
             let part = Part {
                 name: tr.name.clone(),
                 inst: inst.clone(),
@@ -145,6 +205,7 @@ pub fn render_arrangement(a: Arrangement, opts: &RenderOpts) -> Result<Rendered,
                 humanize: tr.humanize,
                 seed: a.seed.wrapping_add(i as u64 * 0x2545_F491),
                 straight: tr.straight,
+                custom: custom.clone(),
             };
             seq::render_part(&part, &a.grid, rate, frames)
         })

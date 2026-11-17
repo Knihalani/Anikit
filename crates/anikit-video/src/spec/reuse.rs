@@ -26,6 +26,10 @@ const MAX_REPEAT: u64 = 1000;
 
 /// Expand `defs`/`use`/`with`/`repeat` in a raw spec value.
 pub fn expand(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
+    // A top-level `script` runs first, on the whole spec (it may generate defs too).
+    if let Some(code) = v.as_object_mut().and_then(|m| m.remove("script")) {
+        v = super::script::top(&code, v).map_err(|d| vec![d])?;
+    }
     let Some(root) = v.as_object_mut() else { return Ok(v) };
     let defs = match root.remove("defs") {
         None => Map::new(),
@@ -36,7 +40,8 @@ pub fn expand(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
     if !quick {
         return Ok(v);
     }
-    let mut cx = Cx { defs, errors: Vec::new(), stack: Vec::new() };
+    let size = frame_size(root.get("size"));
+    let mut cx = Cx { defs, errors: Vec::new(), stack: Vec::new(), size };
     if let Some(scenes) = root.get_mut("scenes") {
         let items = std::mem::take(scenes);
         *scenes = cx.items(items, "scenes", &Map::new());
@@ -51,6 +56,10 @@ pub fn expand(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
             }
         }
     }
+    // `{ "script": … }` anywhere else in an array (scene3d objects, draw items, emitters,
+    // keys, notes…): a returned list splices, an object replaces.
+    let size = cx.size;
+    splice_scripts(&mut v, "", size, &mut cx.errors);
     if cx.errors.is_empty() {
         Ok(v)
     } else {
@@ -58,18 +67,80 @@ pub fn expand(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
     }
 }
 
+fn splice_scripts(v: &mut Value, path: &str, size: (u64, u64), errors: &mut Vec<Diagnostic>) {
+    match v {
+        Value::Array(items) => {
+            let mut out = Vec::with_capacity(items.len());
+            for (k, mut item) in std::mem::take(items).into_iter().enumerate() {
+                let p = format!("{path}[{k}]");
+                let code = match &mut item {
+                    Value::Object(m) if m.contains_key("script") && m.len() == 1 => m.remove("script"),
+                    _ => None,
+                };
+                match code {
+                    Some(code) => {
+                        let mut vars = Map::new();
+                        vars.insert("w".into(), size.0.into());
+                        vars.insert("h".into(), size.1.into());
+                        match super::script::items(&code, &vars, &p) {
+                            Ok(gen) => {
+                                let mut gen = Value::Array(gen);
+                                splice_scripts(&mut gen, &p, size, errors);
+                                if let Value::Array(g) = gen {
+                                    out.extend(g);
+                                }
+                            }
+                            Err(d) => errors.push(d),
+                        }
+                    }
+                    None => {
+                        splice_scripts(&mut item, &p, size, errors);
+                        out.push(item);
+                    }
+                }
+            }
+            *items = out;
+        }
+        Value::Object(m) => {
+            for (k, x) in m.iter_mut() {
+                let p = if path.is_empty() { k.clone() } else { format!("{path}.{k}") };
+                splice_scripts(x, &p, size, errors);
+            }
+        }
+        _ => {}
+    }
+}
+
 fn contains_reuse_keys(v: &Map<String, Value>) -> bool {
     fn walk(v: &Value) -> bool {
         match v {
-            Value::Object(m) => m.contains_key("use") || m.contains_key("repeat") || m.values().any(walk),
+            Value::Object(m) => m.contains_key("use") || m.contains_key("repeat") || m.contains_key("script") || m.values().any(walk),
             Value::Array(a) => a.iter().any(walk),
             _ => false,
         }
     }
-    v.get("scenes").is_some_and(walk) || v.get("compositions").is_some_and(walk)
+    v.values().any(walk)
+}
+
+/// Frame size for scripts (`w`, `h`): `[w, h]` or a common preset; default 1920×1080.
+fn frame_size(v: Option<&Value>) -> (u64, u64) {
+    match v {
+        Some(Value::Array(a)) if a.len() == 2 => (a[0].as_u64().unwrap_or(1920), a[1].as_u64().unwrap_or(1080)),
+        Some(Value::String(s)) => match s.as_str() {
+            "9:16" | "vertical" | "story" | "reels" | "tiktok" | "shorts" => (1080, 1920),
+            "1:1" | "square" => (1080, 1080),
+            "4:5" | "portrait" => (1080, 1350),
+            "720p" | "hd" => (1280, 720),
+            "1440p" | "2k" | "qhd" => (2560, 1440),
+            "4k" | "2160p" | "uhd" => (3840, 2160),
+            _ => (1920, 1080),
+        },
+        _ => (1920, 1080),
+    }
 }
 
 struct Cx {
+    size: (u64, u64),
     defs: Map<String, Value>,
     errors: Vec<Diagnostic>,
     stack: Vec<String>,
@@ -86,6 +157,21 @@ impl Cx {
                 out.push(item);
                 continue;
             };
+            // `{ "script": … }`: replaced by the items it returns (expanded in turn).
+            if let Some(code) = obj.remove("script") {
+                let mut vars = params.clone();
+                vars.insert("w".into(), self.size.0.into());
+                vars.insert("h".into(), self.size.1.into());
+                match super::script::items(&code, &vars, &p) {
+                    Ok(gen) => {
+                        if let Value::Array(v) = self.items(Value::Array(gen), path, params) {
+                            out.extend(v);
+                        }
+                    }
+                    Err(d) => self.errors.push(d),
+                }
+                continue;
+            }
             let repeat = match obj.remove("repeat") {
                 None => None,
                 Some(r) => match subst(r, params).as_u64() {

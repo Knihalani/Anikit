@@ -1,5 +1,6 @@
 {
  "about": "Ray-traced chrome wordmark on a studio set: glossy floor, glass and gold accents, a slow dolly with real depth of field. Change the text, materials and camera keys.",
+ "cost": "draft ~40 s, final ~160 s (1080p, 4 cores)",
  "spec": {
   "size": "16:9",
   "post": {
@@ -8,7 +9,7 @@
   },
   "scenes": [
    {
-    "duration": 5,
+    "duration": 3,
     "layers": [
      {
       "component": "scene3d",
@@ -32,7 +33,7 @@
           "fstop": 2.4
          },
          {
-          "t": 5,
+          "t": 3,
           "pos": [
            2.4,
            0.8,

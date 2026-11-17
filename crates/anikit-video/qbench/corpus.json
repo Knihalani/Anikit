@@ -8,7 +8,8 @@
     { "name": "particles", "kind": "particles",                "spec": "crates/anikit-video/qbench/particles.json" },
     { "name": "launch",    "kind": "template (backdrop + UI)", "spec": "crates/anikit-video/qbench/launch.json", "from": 2.0, "to": 6.0, "time_full": true },
     { "name": "scene3d",   "kind": "3D ray-traced scene3d",    "spec": "crates/anikit-video/qbench/scene3d.json", "from": 0.0, "to": 0.3, "runs": 1 },
-    { "name": "shader",    "kind": "GLSL shader layer",        "spec": "crates/anikit-video/qbench/shader.json", "from": 0.0, "to": 2.0 },
+    { "name": "shader-hero", "kind": "GLSL shader (typical: hero)", "spec": "crates/anikit-video/qbench/shader-hero.json", "from": 0.0, "to": 2.0 },
+    { "name": "shader",    "kind": "GLSL shader (worst: aurora)",        "spec": "crates/anikit-video/qbench/shader.json", "from": 0.0, "to": 2.0 },
     { "name": "post",      "kind": "post stack + motion blur", "spec": "crates/anikit-video/qbench/post.json" },
     { "name": "audio",     "kind": "music + sfx, beat-synced", "spec": "examples/video/pulse/spec.json", "from": 0.0, "to": 4.0 }
   ]
