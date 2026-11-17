@@ -1,5 +1,5 @@
 {
- "about": "Illustration from paths: a route drawn on as a single ink line over faint contour lines, its two ends marked and named, then a close crop on the destination. Taste decision it demonstrates: a 2D medium that comes from the subject (a journey is a line), negative space given texture instead of a gradient, two colours (navy ink on cream, the second ink only on the dots), motion with weight (draw-on on inOutQuart, dots that settle with a 3% overshoot) and an acoustic score (TASTE.md §2, §3, §5, §8). Replace the path with the brief's own shape: a route, a signal, a growth curve, an outline of its object. Don't use it for abstract claims with no shape of their own.",
+ "about": "Illustration from paths: a route drawn on as one signal-yellow line across a field of 34 procedural contour lines (one path repeated with $i offsets, drawn on in a 0.85 s stagger), its ends marked with their real coordinates, then a hard cut to the distance as type. Taste decision it demonstrates: density of considered detail instead of an empty frame (every pixel of the ground is terrain), a 2D medium that comes from the subject (a journey is a line), one signal colour against a dark field read in luma, mono type because this is cartography, motion with weight (draw-on on inOutQuart, dots settling with a 3% overshoot) and an acoustic score (TASTE.md §2, §3, §5, §11). Replace the path and the terrain with the brief's own shape and ground: a route, a signal, a growth curve, an outline of its object. Don't use it for abstract claims with no shape of their own, and don't reuse the dark-moss + yellow pairing: take the palette from the subject.",
  "cost": "draft or final ~5 s (1080p, 4 cores)",
  "spec": {
   "size": "16:9",
@@ -16,7 +16,7 @@
   "scenes": [
    {
     "duration": 3.2,
-    "background": "#F2EEE4",
+    "background": "#0E1712",
     "camera": {
      "animate": [
       {
@@ -36,56 +36,14 @@
     "layers": [
      {
       "shape": "path",
-      "d": "M0 140 C 300 80, 600 190, 900 120 S 1400 180, 1800 110",
-      "stroke": "#1E3550",
-      "strokeWidth": 2,
+      "d": "M0 60 C 260 0, 520 120, 820 50 S 1380 110, 1700 30 S 2100 80, 2200 40",
+      "stroke": "#C9D6C2",
+      "strokeWidth": 1.6,
       "fill": "none",
-      "opacity": 0.14,
-      "x": "3%",
-      "y": "9%",
-      "anchor": "topLeft"
-     },
-     {
-      "shape": "path",
-      "d": "M0 300 C 300 240, 600 350, 900 280 S 1400 340, 1800 270",
-      "stroke": "#1E3550",
-      "strokeWidth": 2,
-      "fill": "none",
-      "opacity": 0.14,
-      "x": "3%",
-      "y": "33%",
-      "anchor": "topLeft"
-     },
-     {
-      "shape": "path",
-      "d": "M0 460 C 300 400, 600 510, 900 440 S 1400 500, 1800 430",
-      "stroke": "#1E3550",
-      "strokeWidth": 2,
-      "fill": "none",
-      "opacity": 0.14,
-      "x": "3%",
-      "y": "60%",
-      "anchor": "topLeft"
-     },
-     {
-      "shape": "path",
-      "d": "M0 620 C 300 560, 600 670, 900 600 S 1400 660, 1800 590",
-      "stroke": "#1E3550",
-      "strokeWidth": 2,
-      "fill": "none",
-      "opacity": 0.14,
-      "x": "3%",
-      "y": "82%",
-      "anchor": "topLeft"
-     },
-     {
-      "shape": "path",
-      "d": "M0 330 C 160 300, 220 140, 420 170 S 700 360, 900 250 S 1180 40, 1400 90",
-      "stroke": "#1E3550",
-      "strokeWidth": 7,
-      "fill": "none",
-      "x": "12%",
-      "y": "22%",
+      "repeat": 34,
+      "opacity": "=0.10 + 0.10*(($i % 5) == 0)",
+      "x": "=-120 - ($i % 7)*23",
+      "y": "=-30 + $i*33",
       "anchor": "topLeft",
       "animate": [
        {
@@ -95,7 +53,31 @@
         "to": {
          "trimEnd": 1
         },
-        "duration": 1.8,
+        "duration": 1.1,
+        "ease": "outQuart",
+        "at": "=$i*0.025"
+       }
+      ]
+     },
+     {
+      "shape": "path",
+      "d": "M0 330 C 160 300, 220 140, 420 170 S 700 360, 900 250 S 1180 40, 1400 90",
+      "stroke": "#F2B92E",
+      "strokeWidth": 7,
+      "fill": "none",
+      "x": "12%",
+      "y": "22%",
+      "anchor": "topLeft",
+      "start": 0.5,
+      "animate": [
+       {
+        "from": {
+         "trimEnd": 0
+        },
+        "to": {
+         "trimEnd": 1
+        },
+        "duration": 1.6,
         "ease": "inOutQuart"
        }
       ]
@@ -104,9 +86,10 @@
       "shape": "circle",
       "width": 30,
       "height": 30,
-      "fill": "#B8431A",
+      "fill": "#F2B92E",
       "x": "12%",
       "y": "45.4%",
+      "start": 0.5,
       "animate": [
        {
         "from": {
@@ -124,10 +107,10 @@
       "shape": "circle",
       "width": 30,
       "height": 30,
-      "fill": "#B8431A",
+      "fill": "#F2B92E",
       "x": "84.9%",
       "y": "23.1%",
-      "start": 1.8,
+      "start": 2.1,
       "animate": [
        {
         "from": {
@@ -142,35 +125,38 @@
       ]
      },
      {
-      "text": "Lisbon",
-      "font": "Instrument Serif",
-      "size": "7vh",
-      "color": "#1E3550",
+      "text": "LISBOA 38.72°N",
+      "font": "JetBrains Mono",
+      "size": "4.6vh",
+      "weight": 700,
+      "letterSpacing": "0.04em",
+      "color": "#EEF2EA",
       "x": "12%",
-      "y": "51%",
-      "anchor": "topLeft"
+      "y": "50%",
+      "anchor": "topLeft",
+      "start": 0.6
      },
      {
-      "text": "Porto",
-      "font": "Instrument Serif",
-      "size": "7vh",
-      "color": "#1E3550",
+      "text": "PORTO 41.15°N",
+      "font": "JetBrains Mono",
+      "size": "4.6vh",
+      "weight": 700,
+      "letterSpacing": "0.04em",
+      "color": "#EEF2EA",
       "x": "84.9%",
-      "y": "19%",
+      "y": "18%",
       "anchor": "bottom",
-      "start": 1.9,
+      "start": 2.2,
       "enter": {
        "preset": "mask by line up",
-       "duration": 0.4
+       "duration": 0.35
       }
      },
      {
       "text": "313 km by the coast road",
       "font": "JetBrains Mono",
       "size": "3.4vh",
-      "uppercase": true,
-      "letterSpacing": "0.1em",
-      "color": "#1E3550",
+      "color": "#C9D6C2",
       "x": "12%",
       "y": "88%",
       "anchor": "left",
@@ -179,27 +165,29 @@
     ]
    },
    {
-    "duration": 1.4,
+    "duration": 2.6,
     "transition": "cut",
-    "background": "#1E3550",
+    "background": "#F2B92E",
     "layers": [
      {
-      "text": "Porto",
-      "font": "Instrument Serif",
-      "size": "34vh",
-      "color": "#F2EEE4",
-      "letterSpacing": "-0.03em",
-      "x": "8%",
-      "y": "55%",
+      "text": "313 km",
+      "font": "JetBrains Mono",
+      "size": "30vh",
+      "weight": 700,
+      "letterSpacing": "-0.04em",
+      "color": "#0E1712",
+      "x": "7%",
+      "y": "56%",
       "anchor": "left"
      },
      {
-      "shape": "circle",
-      "width": 60,
-      "height": 60,
-      "fill": "#B8431A",
-      "x": "80%",
-      "y": "38%"
+      "text": "4 hours, Atlantic side",
+      "font": "JetBrains Mono",
+      "size": "3.6vh",
+      "color": "#0E1712",
+      "x": "7.6%",
+      "y": "78%",
+      "anchor": "left"
      }
     ]
    }

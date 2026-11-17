@@ -1,6 +1,6 @@
 # Taste: read before designing
 
-Not a style. Every choice is made for *this* subject and you can say why; an unchosen default is the tell. Full canon with numbers and sources: `docs/video/taste/TASTE.md` (§1 type · §2 colour · §3 composition · §4 light · §5 motion · §6 editing · §7 sound · §8 concept · §9 tells).
+Not a style. Every choice is made for *this* subject and you can say why; an unchosen default is the tell. Full canon with numbers and sources: `docs/video/taste/TASTE.md` (§1 type · §2 colour · §3 composition · §4 light · §5 motion · §6 editing · §7 sound · §8 concept · §9 tells · §11 ambition).
 
 **The taste pass (run before any final render):** look at the `critique --pack` strip, its cut pairs and 3 full-size stills; listen muted and audio-only.
 
@@ -17,9 +17,9 @@ Not a style. Every choice is made for *this* subject and you can say why; an unc
 11. **Motion:** fast attack, long settle; one thing leads; entrances vary by role; fast moves blurred; overshoot ≤ 5% unless playful.
 12. **Rhythm and arc:** pace matches `intent`; shot lengths vary (CV ≳ 0.6), a breath after the densest run; cut on action or comprehension, beats for key hits; hook by 1 s, peak at ~⅔, land on a held frame or a button.
 13. **Sound:** instruments from the concept (synths only if it's electronic); one planned silence; hits on the frame; rare, material sfx; −14 to −16 LUFS.
-14. **No tells:** no placeholder, filler copy or §9 tell without a stated reason.
+14. **The bar:** would a senior motion designer scroll past it on Vimeo? Name the trend it looks like; if you can, it fails. That includes the "tasteful AI" look (cream paper, editorial serif, terracotta accent, sparse static frames). No placeholder, filler copy or §9 tell without a reason.
 15. **Cut 20%:** remove the weakest shot, word or effect; if it got better, cut again.
 
-**Range, not a house style.** Valid directions differ on every axis; examples: editorial stills with hard cuts · one continuous camera move · flat graphic 2D on a strict grid · photographic compositing · a ray-traced world · type as the set. Calm and held is as valid as frantic. Two briefs should look as different as two studios' work.
+**Range, not a house style; density, not emptiness** (§11 Ambition). Valid directions differ on every axis, for example: a procedural illustration world drawn from paths · one continuous camera move through a simulation · a dense graphic grid of real data · photographic-grade compositing · a ray-traced object in motivated light · type choreographed as the set. Calm and held is as valid as frantic. Two briefs should look as different as two studios' work.
 
 `critique` checks the measurable ones (`type-scale`, `text-crisp`, `contrast`, `reading-time`, `palette`, `composition`, `rhythm`, `pace`, `music`, `audio`, `sameness`) as warnings and tips, never a verdict: the frames are.

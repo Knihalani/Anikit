@@ -1,6 +1,6 @@
 {
  "about": "Physical 3D with motivated light: three ceramic vessels turned from lathe profiles on a dark oak table, lit only by one warm low window spot through haze (shafts, ~8:1 key to fill), seen through an 85 mm lens with a slow push and shallow focus; the caption is crisp 2D type set flush-left over the dark side of the frame. Taste decision it demonstrates: 3D because the subject is a physical object, a light you can point to, low-key mood chosen on purpose, a long lens instead of a wide orbit, matte and glazed materials instead of chrome, and a cello over piano instead of a synth bed (TASTE.md §4, §7, §8). Replace the vessels with the brief's own object (lathe, extrude or a glTF). Don't use it for software with no physical form, or for a bright, friendly brand.",
- "cost": "draft ~30 s, final ~110 s (1080p, 4 cores; estimate, measure with render --quality draft)",
+ "cost": "draft ~45 s (measured), final ~3 min (estimated at 4× draft) (1080p, 4 cores)",
  "spec": {
   "size": "16:9",
   "intent": {

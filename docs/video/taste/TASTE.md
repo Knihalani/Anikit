@@ -371,6 +371,14 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 - Lens flares and particles over nothing.
 - Gibberish or low-resolution text.
 
+**The "tasteful AI" look** (the user's fourth rejection, Margin: "complete AI slop"):
+- a cream/off-white "paper" ground, an editorial serif (Instrument Serif and its kin) and one red or terracotta accent;
+- aphorism copy, and small-caps tracked labels over a serif line;
+- sparse, near-static frames where a slow drift is the only motion;
+- a Notion/Linear/Arc-style landing page turned into a video.
+
+Restraint swapped for 3D clichés is still a cliché. Restraint must be rich (§11), never empty.
+
 **Motion.**
 - Fade-and-rise or scale-0 entrances on everything.
 - One ease and one duration everywhere.
@@ -411,5 +419,29 @@ Step 1 happens before designing; the rest happen on the `critique --pack` strip,
 11. **Motion.** Fast attack and long settle. One element leads. Entrances vary by role. Fast moves are blurred. Overshoot ≤ 5% unless the piece is playful.
 12. **Rhythm and arc.** Pace matches the declared intent. Shot lengths vary (CV ≳ 0.6), with a breath after the densest run. Cuts land on action or comprehension, with beats saved for the key hits. Hook by 1 s, peak at about ⅔, then land on a held frame or a button.
 13. **Sound.** Instruments come from the concept (synths only if it's electronic). At least one silence. Hits on the frame. Sfx are rare and match the material. −14 to −16 LUFS, ≤ −1 dBTP.
-14. **No tells.** No placeholder, no filler copy, and no §9 tell without a stated reason.
+14. **The bar.** Would a senior motion designer scroll past this on Vimeo? Name the trend it looks like; if you can, it fails. No placeholder, no filler copy, and no §9 tell without a stated reason.
 15. **Cut 20%.** Remove the weakest shot, word or effect. If it got better, cut again.
+
+## 11. Ambition: amazing, not merely correct
+
+Correct is not enough. The fourth rejection (Margin) passed every rule above and was still "complete AI slop", because it was empty and recognisable as a trend. Amazing work is dense with considered decisions and does something the viewer hasn't seen.
+
+**What amazing requires.**
+- **Density of craft per frame.** Several layers of considered detail: a subject, a world it lives in, texture at the edges, a secondary motion, light that models form. Restraint is a choice about *what* is in the frame, never about leaving it empty. Title sequences are restrained and still rich in every frame.
+- **Real imagery, made.** Illustration, simulation, texture, photographic-grade compositing. With this engine:
+  - paths drawn and repeated procedurally (`repeat` with `$i`, `script` loops);
+  - shader worlds (your own GLSL);
+  - particles and rigid-body physics;
+  - ray-traced objects lit by motivated sources.
+  Never gradients standing in for imagery.
+- **Choreography with weight.** Elements hand off to each other: a shape becomes the next shot's subject (match cut), a camera move continues through a cut, a transition is an idea (a morph, a reveal) rather than a wipe.
+- **One specific idea executed at a very high level,** rather than five ideas at a medium level. Take the idea further than the first version: more detail, more variation, more finish.
+- **Surprise.** At least one moment the viewer didn't predict: a reversal, a change of scale, a rule broken once.
+- **Sound and picture designed together.** Hits, textures and silences that belong to this world's materials.
+
+**Checks.**
+- In any random frame, name ≥ 3 layers of intentional detail and the job each one does.
+- Measure how much of the frame is doing something intended (subject, world, texture, type). A small cluster in a mostly empty frame fails unless the emptiness *is* the idea and is shaped.
+- Count the transitions that are ideas (match, morph, continuous move) rather than cuts or wipes. Plan at least one.
+- Find the surprise and name it.
+- Would a senior motion designer stop scrolling on Vimeo? Name the trend it resembles; if you can, change the direction (§10, step 1).
