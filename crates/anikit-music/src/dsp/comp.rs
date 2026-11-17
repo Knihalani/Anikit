@@ -159,7 +159,7 @@ impl Compressor {
                 };
                 let target = static_curve(level, t, ratio, knee) - level;
                 let c = if target < self.gr { self.att } else { self.rel };
-                self.gr = target + c * (self.gr - target);
+                self.gr = flush(target + c * (self.gr - target));
                 self.max_gr = self.max_gr.min(self.gr);
                 let g = fast_db_to_gain(self.gr) * self.makeup;
                 let g = mix * g + (1.0 - mix);
@@ -399,12 +399,12 @@ impl KeyDucker {
         let u = ((lvl - self.p.threshold) / self.p.range.max(0.1)).clamp(0.0, 1.0);
         let target = u * u * (3.0 - 2.0 * u);
         if target >= self.d {
-            self.d = target + self.att * (self.d - target);
+            self.d = flush(target + self.att * (self.d - target));
             self.held = self.hold;
         } else if self.held > 0 {
             self.held -= 1;
         } else {
-            self.d = target + self.rel * (self.d - target);
+            self.d = flush(target + self.rel * (self.d - target));
         }
         fast_db_to_gain(self.p.depth.min(0.0) * self.d)
     }

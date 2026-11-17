@@ -1,7 +1,7 @@
 //! Polyphase half-band 2× up/down-samplers (Kaiser-windowed, linear phase).
 //! Cascade two for 4×. Used by the saturator to keep harmonics from aliasing.
 
-use super::util::{kaiser, sinc};
+use super::util::{dot, kaiser, sinc};
 
 /// Design the non-trivial (even-index) taps of a half-band low-pass with
 /// `n = 4m + 3` taps. The centre tap (0.5) is implicit.
@@ -60,10 +60,7 @@ impl Upsampler2 {
             self.hist[self.pos] = v;
             self.hist[self.pos + k] = v;
             let h = &self.hist[self.pos..self.pos + k];
-            let mut acc = 0.0f32;
-            for (a, b) in h.iter().zip(&self.taps) {
-                acc += a * b;
-            }
+            let acc = dot(h, &self.taps);
             out[2 * i] = 2.0 * acc;
             out[2 * i + 1] = h[self.m];
         }
@@ -105,10 +102,7 @@ impl Downsampler2 {
             self.even[self.pos] = pair[0];
             self.even[self.pos + k] = pair[0];
             let h = &self.even[self.pos..self.pos + k];
-            let mut acc = 0.0f32;
-            for (a, b) in h.iter().zip(&self.taps) {
-                acc += a * b;
-            }
+            let acc = dot(h, &self.taps);
             // odd history: odd[j] = v[2j+1]; centre needs odd[n − m − 1].
             let c = self.odd[prev_odd_pos + self.m];
             *o = acc + 0.5 * c;

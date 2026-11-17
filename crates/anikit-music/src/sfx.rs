@@ -195,7 +195,7 @@ fn finish(l: &mut Vec<f32>, r: &mut Vec<f32>, fs: f32, peak_db: f32, hit: f32, p
         let g = db_to_gain(target + punch - tp - 0.02);
         l.iter_mut().chain(r.iter_mut()).for_each(|x| *x *= g);
         if punch > 0.0 {
-            let lp = LimiterParams { ceiling: target - 0.05, lookahead: 3.0, release: 80.0, true_peak: true };
+            let lp = LimiterParams { ceiling: target - 0.05, lookahead: 3.0, release: 80.0, hold: 6.0, true_peak: true };
             process_aligned(&mut Limiter::new(fs, &lp), l, r);
         }
     }
@@ -1382,6 +1382,23 @@ mod tests {
         // The riser ends at its loudest and the hit is exactly the duration.
         let r = sfx("riser", &SfxParams { duration: Some(2.0), ..Default::default() }, FS).unwrap();
         assert_eq!(r.hit, 2.0);
+    }
+
+    #[test]
+    fn extreme_params_are_safe() {
+        let cases = [
+            SfxParams { duration: Some(0.03), pitch: 24.0, intensity: 1.0, size: 0.0, width: 0.0, pan: -1.0, count: Some(1), ..Default::default() },
+            SfxParams { duration: Some(8.0), pitch: -24.0, intensity: 0.0, size: 1.0, width: 1.0, pan: 1.0, count: Some(30), bpm: Some(200.0), ..Default::default() },
+            SfxParams { motion: Some(-1.0), gain: 12.0, ..Default::default() },
+        ];
+        for p in &cases {
+            for name in SFX {
+                let s = sfx(name, p, FS).unwrap_or_else(|e| panic!("{name}: {e}"));
+                assert!(s.l.iter().chain(s.r.iter()).all(|x| x.is_finite()), "{name}");
+                let tp = crate::dsp::loudness::true_peak_db(&s.l, &s.r);
+                assert!(tp <= -1.0 + 1e-3, "{name}: {tp}");
+            }
+        }
     }
 
     #[test]

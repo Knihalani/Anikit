@@ -23,13 +23,16 @@ pub struct LimiterParams {
     pub lookahead: f32,
     /// Release time constant (ms).
     pub release: f32,
+    /// Hold (ms): gain reduction is held this long after a peak passes before
+    /// releasing, so low frequencies are not distorted by gain ripple.
+    pub hold: f32,
     /// Detect inter-sample peaks (4× oversampled).
     pub true_peak: bool,
 }
 
 impl Default for LimiterParams {
     fn default() -> Self {
-        LimiterParams { ceiling: -1.0, lookahead: 5.0, release: 120.0, true_peak: true }
+        LimiterParams { ceiling: -1.0, lookahead: 5.0, release: 120.0, hold: 12.0, true_peak: true }
     }
 }
 
@@ -48,6 +51,7 @@ pub struct Limiter {
     s: usize,
     d: usize,
     w: usize,
+    hold: usize,
     a: usize,
     tp: [TruePeak; 2],
     true_peak: bool,
@@ -72,6 +76,7 @@ impl Limiter {
         let s = ((p.lookahead.max(0.2) * 0.001 * rate).round() as usize).max(4);
         let d = if p.true_peak { TP_HALF } else { 0 };
         let w = s + d;
+        let hold = (p.hold.max(0.0) * 0.001 * rate).round() as usize;
         let a = s + d - 1;
         let s1 = s / 2;
         let s2 = s - s1 + 1;
@@ -83,7 +88,8 @@ impl Limiter {
             a,
             tp: [TruePeak::default(), TruePeak::default()],
             true_peak: p.true_peak,
-            dq: vec![(0, 1.0); w + 2],
+            dq: vec![(0, 1.0); w + hold + 2],
+            hold,
             dq_head: 0,
             dq_len: 0,
             n: 0,
@@ -125,7 +131,9 @@ impl Limiter {
         self.dq[slot] = (self.n, q);
         self.dq_len += 1;
         // Expire entries older than the window.
-        let oldest = (self.n + 1).saturating_sub(self.w as u64);
+        // The window reaches `w − 1` samples ahead of the gain it produces and
+        // `hold` samples behind it.
+        let oldest = (self.n + 1).saturating_sub((self.w + self.hold) as u64);
         while self.dq[self.dq_head].0 < oldest {
             self.dq_head = (self.dq_head + 1) % cap;
             self.dq_len -= 1;
@@ -429,6 +437,33 @@ mod tests {
             assert!(tp <= ceiling as f64 + 0.05, "ceiling {ceiling}: true peak {tp}");
             assert!(x.iter().all(|v| v.is_finite()));
         }
+    }
+
+    #[test]
+    fn limiter_low_distortion_on_bass() {
+        // A 60 Hz sine 6 dB over the ceiling: steady gain, so harmonics stay low.
+        let fs = 48_000.0f64;
+        let n = 96_000;
+        let x: Vec<f32> = (0..n).map(|i| (2.0 * (std::f64::consts::TAU * 60.0 * i as f64 / fs).sin()) as f32 * 0.9).collect();
+        let mut lim = Limiter::new(48_000.0, &LimiterParams { ceiling: -6.0, ..Default::default() });
+        let (mut l, mut r) = (x.clone(), x.clone());
+        process_aligned(&mut lim, &mut l, &mut r);
+        let tail = &l[48_000..];
+        let amp = |f: f64| {
+            let m = tail.len() as f64;
+            let (mut re, mut im) = (0.0, 0.0);
+            for (i, v) in tail.iter().enumerate() {
+                let w = 0.5 - 0.5 * (std::f64::consts::TAU * i as f64 / m).cos();
+                let ph = std::f64::consts::TAU * f * i as f64 / fs;
+                re += w * *v as f64 * ph.cos();
+                im += w * *v as f64 * ph.sin();
+            }
+            4.0 * (re * re + im * im).sqrt() / m
+        };
+        let h1 = amp(60.0);
+        let thd = ((2..8).map(|k| amp(60.0 * k as f64).powi(2)).sum::<f64>()).sqrt() / h1;
+        assert!(20.0 * thd.log10() < -60.0, "THD {} dB", 20.0 * thd.log10());
+        assert!((20.0 * h1.log10() + 6.0).abs() < 0.3, "level {}", 20.0 * h1.log10());
     }
 
     #[test]
