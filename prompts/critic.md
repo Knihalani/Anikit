@@ -18,6 +18,19 @@ Look at the contact sheet first, then run `critique_spec`, then read the spec. S
 9. **Point of view:** a chosen look, one signature image, layouts that vary per shot (critique's `sameness` note is a fail).
 10. **Story:** each shot changes what the viewer understands; copy is benefits with numbers, no filler.
 
+Then apply the quality bar (`docs/video/quality/BAR.md`). Any of these fails the frame, whatever the score:
+- a centred headline on a gradient;
+- a blob backdrop;
+- placeholder UI;
+- small content in an empty frame;
+- flat 2D;
+- slides;
+- a stock-demo look;
+- an effect without a subject;
+- visible defects.
+
+Name the frame and the failing rule.
+
 Output:
 ```
 Score: N/20 — one-sentence verdict

@@ -15,6 +15,7 @@ You are the director. A video that looks like every other generated video has fa
 **3. Build the world from the brief's own nouns.** Sailing means water, tide lines and rope; coffee means cherries, hands, soil and a map; horror means sea, rock and fog. Draw them with shapes and paths (`shape: "path"` with `d`, lines that draw on with `trimEnd`, `morph`) or with real photos. Stock effects (a halftone or kinetic grid, bokeh, a mesh) are seasoning, never the subject, and never the same one across your videos.
 
 **Then build one signature image** that no template has, and give it the longest hold:
+- a shader world: `{"type": "shader", "src": "scene.glsl"}` (Shadertoy GLSL, raymarched light, fog, water; `docs/video/shader.md`). This is the strongest tool for real light. See the shots in [`examples/video/bar/`](../../examples/video/bar/);
 - 3D: `text-3d` (extruded chrome or matte type), `model` (rounded box, torus, knot, an extruded logo or an `.obj`), `globe`, and `scene3d` when `anikit-video info --components` lists it;
 - generative: `particle-text`, `metaballs`, `kinetic-grid`, `morph`, `god-rays`, `tile-reveal`;
 - real: photos or footage via `ken-burns` or `src` with `fit: "cover"`;
@@ -34,7 +35,18 @@ You are the director. A video that looks like every other generated video has fa
 - [`docs/video/spec.md`](../../docs/video/spec.md) is the one-page cheat sheet. `defs`/`use`/`repeat` keep specs short.
 - Templates (`anikit-video templates`) are quick starts only. Restyle them with `--look`, then make them yours.
 
-**6. Judge in motion and fix:**
+**6. Judge in motion against the bar** ([`docs/video/quality/BAR.md`](../../docs/video/quality/BAR.md)). A frame fails if it shows:
+- a centred headline on a gradient;
+- a blob or mesh backdrop doing the design;
+- placeholder UI (grey bars, fake cards);
+- small content in an empty frame;
+- flat 2D with no light, material, depth or lens;
+- a slide-deck structure;
+- a stock-demo look (primitives, default Inter-on-dark, generic dashboard);
+- an effect with no subject;
+- any judder, banding, aliasing or clipped text.
+
+A critique score is not evidence:
 - `anikit-video critique spec.json --render` checks rendered frames for contrast, overlaps and cut text, and flags *sameness*.
 - `anikit-video preview spec.json` makes a contact sheet. Look at it and ask, shot by shot, "do I understand X within 1 s?" and "would I screenshot this frame?"
 - For motion, check stills at transitions and at entrances (`--at 2.3`). Fix three things, then re-check.
