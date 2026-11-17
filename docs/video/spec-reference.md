@@ -210,6 +210,10 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `cell` | area name, `"1-6/2-4"`, `[col, row, cols, rows]` | none | Place the layer in a field of the scene's `grid` (sets x, y, width; height except for text). `anchor` picks the cell point (default `topLeft`). See `anikit-video docs graphic`. |
 | `duotone`, `gradientMap` | `[dark, light]`, `[c1, c2, …]` | none | Map the layer's luma to inks (OKLab). `toneRange: [black, white]` pre-stretches, `posterize: N` steps, `toneAmount` mixes. |
 | `halftone` | px or `{cell, angle, shape, ink, paper, gain}` | none | Print screen over the layer (dot/line/square; ink `"source"` keeps colours; fixed to the frame). |
+| `cutout` | `"torn"`, `"scissor"`, `"clean"` or `{edge, amount, rim, rimColor, shadow, seed}` | none | Collage piece: cut edge, paper rim, printed shadow (needs numeric width/height or a cell). |
+| `inkTexture` | 0..1 or `{amount, scale, seed}` | none | Uneven ink coverage fixed to the frame (riso, screenprint). |
+| `step` | fps, `"twos"`, `"threes"`, `"fours"` | none | Stepped time for this layer and its children (stop-motion / print looks). |
+| `boil` | px or `{amount, rotate, fps, seed}` | none | Seeded jitter re-drawn `fps` (12) times a second: hand-drawn boil, drifting ink plates. |
 | `glow` | glow | none | `{ "radius": 24, "intensity": 1, "color": "$primary" }` or a colour string. |
 | `clip` | bool or shape | `false` | `true` clips to the layer's box (with its `radius`); or a static shape `{ "shape": "circle", "width": 300, "height": 300 }` positioned in the layer's box (centred by default). |
 | `mask` | shape layer | none | A shape whose outline cuts this layer (hard-edged; same as a `clip` shape). |

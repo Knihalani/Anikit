@@ -363,6 +363,14 @@ pub(crate) struct Node {
     pub glow: Option<Filter>,
     /// Image treatments (tone map, halftone), applied first.
     pub treat: Vec<Filter>,
+    /// A pattern whose `field` reads `t`: regenerated every frame (pattern, box size).
+    pub live_pattern: Option<Arc<(graphic::Pat, [f64; 2])>>,
+    /// First of 5 animatable slots for the treatments (toneAmount, halftone cell/angle/gain, ink amount); 0 = none.
+    pub treat_slot: u8,
+    /// Stepped time in fps (0 = smooth): the layer animates "on twos" etc.
+    pub step: f32,
+    /// Boil: `[px, degrees, fps, seed]` seeded jitter.
+    pub boil: Option<[f32; 4]>,
     /// Clip children to the box (with radius).
     pub clip: bool,
     /// A clip path in the layer's local box (clip shapes, shape masks).
@@ -1324,9 +1332,30 @@ impl Evaluator {
         if st < n.start - 1e-4 || st >= n.end - 1e-4 {
             return;
         }
+        // Stepped time ("on twos"): this layer and its children see time held at `step` fps.
+        let stepped;
+        let cx = if n.step > 0.0 {
+            let lt = st - n.start;
+            let held = (lt * n.step + 1e-4).floor() / n.step;
+            let d = lt - held;
+            stepped = Cx { scene_t: st - d, gt: cx.gt - d, ..*cx };
+            &stepped
+        } else {
+            cx
+        };
+        let st = cx.scene_t;
         let lt = st - n.start;
         let mut v = [0.0f32; prop::N];
         self.props(n, cx, lt, &mut v);
+        if let Some([amt, rot, fps, seed]) = n.boil {
+            // Boil: a seeded jitter re-drawn `fps` times a second (hand-drawn / misregistered plates).
+            let k = ((cx.gt * fps) + 1e-4).floor() as i64 as u32;
+            let sd = seed as u32;
+            let r = |j: u32| (graphic::rnd(sd, k.wrapping_mul(3).wrapping_add(j)) as f32 - 0.5) * 2.0;
+            v[prop::X] += r(0) * amt;
+            v[prop::Y] += r(1) * amt;
+            v[prop::ROT] += r(2) * rot;
+        }
         let opacity = (v[prop::OPACITY] * cx.amul).clamp(0.0, 1.0);
         if opacity <= 0.0005 {
             return;
@@ -1367,6 +1396,26 @@ impl Evaluator {
         let mut alpha = opacity;
         if needs_layer {
             let mut filters = n.treat.clone();
+            if n.treat_slot != 0 {
+                let b = n.treat_slot as usize;
+                for f in filters.iter_mut() {
+                    match f {
+                        Filter::Tone(t) => {
+                            let a = v[b].clamp(0.0, 1.0);
+                            if (a - t.amount).abs() > 1e-4 {
+                                *t = Arc::new(dl::ToneLut { amount: a, ..(**t).clone() });
+                            }
+                        }
+                        Filter::Halftone(h) => {
+                            h.cell = v[b + 1].max(2.0);
+                            h.angle = v[b + 2];
+                            h.gain = v[b + 3].max(0.05);
+                        }
+                        Filter::Ink { amount, .. } => *amount = v[b + 4].clamp(0.0, 1.0),
+                        _ => {}
+                    }
+                }
+            }
             if blur > 0.05 {
                 filters.push(Filter::Blur(blur));
             }
@@ -1398,8 +1447,12 @@ impl Evaluator {
         }
         match &n.kind {
             Kind::Shape { shape, fill, stroke, path } => {
-                let wiggled = match n.fx.as_deref() {
-                    Some(fx::Fx { wiggle: Some(w), wiggle_src, .. }) => {
+                let wiggled = match (n.fx.as_deref(), n.live_pattern.as_deref()) {
+                    (_, Some((pat, [pw, ph]))) => {
+                        let pt = graphic::Pat { t: lt as f64, ..pat.clone() };
+                        Some(graphic::pattern(*pw, *ph, &pt))
+                    }
+                    (Some(fx::Fx { wiggle: Some(w), wiggle_src, .. }), None) => {
                         let mut p = take_path();
                         fx::wiggle_into(wiggle_src, *w, lt, &mut p);
                         Some(p)
@@ -1851,6 +1904,7 @@ pub(crate) fn scale_filters(ops: &mut [Op], s: f32) {
                     }
                     Filter::Glow { radius, .. } => *radius *= s,
                     Filter::Halftone(h) => h.cell *= s,
+                    Filter::Ink { scale, .. } => *scale *= s,
                     Filter::ColorMatrix(_) | Filter::Tone(_) => {}
                 }
             }
@@ -1867,7 +1921,7 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
         return true; // invisible throughout
     }
     let (la, lb) = (a - n.start, b - n.start);
-    if n.update.is_some() || n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
+    if n.boil.is_some() || n.live_pattern.is_some() || n.update.is_some() || n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
         return false;
     }
     match &n.kind {

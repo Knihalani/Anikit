@@ -46,6 +46,10 @@ pub const RECIPES: &[(&str, &str)] = &[
     ("particle-ignite", include_str!("../recipes/particle-ignite.json")),
     ("domino-cascade", include_str!("../recipes/domino-cascade.json")),
     ("raymarch-world", include_str!("../recipes/raymarch-world.json")),
+    ("swiss-grid-poster", include_str!("../recipes/swiss-grid-poster.json")),
+    ("riso-overprint", include_str!("../recipes/riso-overprint.json")),
+    ("torn-collage", include_str!("../recipes/torn-collage.json")),
+    ("op-art-field", include_str!("../recipes/op-art-field.json")),
 ];
 
 const ALIASES: &[(&str, &str)] = &[
@@ -77,7 +81,7 @@ pub fn docs(topic: Option<&str>) -> Result<String, String> {
     }
     if t == "essentials" || t == "all" {
         // Everything a typical piece needs in one read (about 13k characters).
-        let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique).\n\n");
+        let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique, graphic: grids, patterns, print treatments).\n\n");
         for p in ["primitives", "animation", "expressions", "compositions", "shader"] {
             if let Some((_, md)) = PAGES.iter().find(|(n, _)| *n == p) {
                 s += md;

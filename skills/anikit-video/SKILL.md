@@ -27,7 +27,7 @@ Write the spec directly. For repetitive layers use `"repeat": 40` with `$i`, `de
 - **3D, particles, physics:** `{ "component": "scene3d", "props": { "objects": [ … ], "camera": "orbit" } }` (`docs 3d`, `docs particles`, `docs physics`).
 - **Compositions:** `"compositions": { "ui": {…} }` → `{ "composition": "ui", "loop": true }`.
 - **Music and grade:** `"music": "orchestral"` or `{"style": "acoustic", "bpm": 96, "key": "D", "hits": ["@bar5"]}`; cut on `"@beat9"`/`"@bar2"`. `"post": {"preset": "cinematic", "bloom": 0.15}`.
-- **Look up one key:** `anikit-video docs key shadow` (its type, fields and examples, a few lines); a topic: `anikit-video docs <topic>` (1–3k characters each): `primitives animation expressions camera compositions shader 3d particles physics music post pacing draw script`. `anikit-video snippets` has paste-able fragments.
+- **Look up one key:** `anikit-video docs key shadow` (its type, fields and examples, a few lines); a topic: `anikit-video docs <topic>` (1–3k characters each): `primitives animation expressions camera compositions shader 3d particles physics music post pacing draw script graphic` (`graphic`: modular grids and cells, squircles, patterns and custom tiles, duotone, halftone, riso inks, cutouts). `anikit-video snippets` has paste-able fragments.
 
 **Costs:** 2D renders at 100+ fps; shaders 50–400 ms a frame; ray-traced 3D and particles 0.5–1.5 s a frame (keep 3D shots to 2–4 s). `motionBlur` only where motion is fast. `--quality best` is several times slower; standard is the final.
 

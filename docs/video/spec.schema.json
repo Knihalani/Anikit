@@ -1582,12 +1582,15 @@
           "minimum": 0
         },
         "toneAmount": {
-          "description": "Strength of `duotone` / `gradientMap` / `posterize` (0..1). Default 1.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
+          "description": "Strength of `duotone` / `gradientMap` / `posterize` (0..1). Default 1. Animatable (`toneAmount`), or `\"=expr\"`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "toneRange": {
           "description": "Input luma range `[black, white]` (0..1) stretched to the full map before `duotone`/`gradientMap`:\nthe pre-curve a print designer sets so a flat source still spans ink to paper. Default `[0, 1]`.",
@@ -1607,6 +1610,42 @@
           "anyOf": [
             {
               "$ref": "#/$defs/HalftoneValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inkTexture": {
+          "description": "Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ \"amount\", \"scale\": px, \"seed\" }`.\nFixed to the frame like the paper, so moving shapes travel through it.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InkValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cutout": {
+          "description": "Collage cut-out: `\"torn\"`, `\"scissor\"` or `\"clean\"`, or `{ \"edge\", \"amount\": px, \"rim\": px, \"rimColor\", \"shadow\": bool, \"seed\" }`.\nCuts the layer's box with that edge, backs it with a paper rim and a printed shadow. Needs a numeric `width`/`height` (or a `cell`).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CutoutValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "step": {
+          "description": "Stepped time: the layer (and its children) animate at this many fps, or `\"twos\"`/`\"threes\"`/`\"fours\"`\nof the video's fps (stop-motion, hand-pulled print, cel looks) while the rest stays smooth."
+        },
+        "boil": {
+          "description": "Boil: a seeded jitter re-drawn a few times a second: px, or `{ \"amount\": px, \"rotate\": deg, \"fps\": 12, \"seed\": 1 }`.\nOn a `multiply` ink layer it reads as plates drifting out of register.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoilValue"
             },
             {
               "type": "null"
@@ -2042,7 +2081,7 @@
           "format": "double"
         },
         "pattern": {
-          "description": "A generated pattern filling `width` × `height`: `\"dots\"`, `\"truchet 48\"`, or `{ \"kind\", \"spacing\", \"mark\", \"angle\", \"seed\", \"jitter\", \"ramp\" }`.",
+          "description": "A generated pattern filling `width` × `height`: `\"dots\"`, `\"truchet 48\"`, or `{ \"kind\", \"spacing\", \"mark\", \"angle\", \"seed\", \"jitter\", \"ramp\", \"tile\", \"tileStroke\", \"turns\", \"stagger\" }` (`tile`: your own SVG motif).",
           "anyOf": [
             {
               "$ref": "#/$defs/PatternValue"
@@ -2814,20 +2853,26 @@
       "type": "object",
       "properties": {
         "cell": {
-          "description": "Screen pitch in px (distance between dot centres). Default 10.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
+          "description": "Screen pitch in px (distance between dot centres). Default 10. Animatable as `halftoneCell` (also `halftoneAngle`,\n`halftoneGain`), or `\"=expr\"`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "angle": {
           "description": "Screen angle in degrees. Default 45 (black ink); 15/75/0 for other plates.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "shape": {
           "description": "`dot` (default), `line` or `square`.",
@@ -2852,11 +2897,171 @@
         },
         "gain": {
           "description": "Dot gain: > 1 darkens (fatter dots), < 1 lightens. Default 1.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "InkValue": {
+      "description": "`inkTexture`: amount, or the full settings.",
+      "anyOf": [
+        {
+          "type": "number",
+          "format": "double"
+        },
+        {
+          "$ref": "#/$defs/InkSpec"
+        }
+      ]
+    },
+    "InkSpec": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "description": "How much ink thins out in the worst spots (0..1). Default 0.35. Animatable as `inkAmount`, or `\"=expr\"`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scale": {
+          "description": "Size of the blotches in px. Default 28.",
           "type": [
             "number",
             "null"
           ],
           "format": "double"
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "CutoutValue": {
+      "description": "`cutout`: an edge name or the full settings.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/CutoutSpec"
+        }
+      ]
+    },
+    "CutoutSpec": {
+      "type": "object",
+      "properties": {
+        "edge": {
+          "description": "`torn` (default), `scissor` or `clean`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "amount": {
+          "description": "How far the edge bites in, px. Default 14 (torn), 18 (scissor).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "rim": {
+          "description": "Paper rim around the cut, px. Default 8 for torn, 0 otherwise.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "rimColor": {
+          "description": "Rim colour. Default `\"#f4f1ea\"`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "shadow": {
+          "description": "A tight printed shadow under the piece. Default true.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "BoilValue": {
+      "description": "`boil`: px, or the full settings.",
+      "anyOf": [
+        {
+          "type": "number",
+          "format": "double"
+        },
+        {
+          "$ref": "#/$defs/BoilSpec"
+        }
+      ]
+    },
+    "BoilSpec": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "description": "Max offset in px. Default 2.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "rotate": {
+          "description": "Max rotation in degrees. Default 0.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "fps": {
+          "description": "New positions per second. Default 12.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
         }
       },
       "additionalProperties": false
@@ -3316,8 +3521,9 @@
       "type": "object",
       "properties": {
         "kind": {
-          "description": "`dots`, `grid`, `lines`, `checker`, `triangles`, `diamonds`, `crosses`, `rings`, `waves`, `zigzag`, `truchet`, `arcs`, `scales`, `bricks`.",
-          "type": "string"
+          "description": "`dots`, `grid`, `lines`, `stripes`, `checker`, `triangles`, `diamonds`, `crosses`, `rings`, `waves`, `zigzag`, `truchet`, `arcs`,\n`scales`, `bricks`, or `tile` (your own `tile` motif; implied when `tile` is given).",
+          "type": "string",
+          "default": ""
         },
         "spacing": {
           "description": "Repeat distance in px. Default 40.",
@@ -3372,12 +3578,47 @@
           },
           "minItems": 2,
           "maxItems": 2
+        },
+        "tile": {
+          "description": "Your own motif for `kind: \"tile\"` (the default when `tile` is given): SVG path data in px, centred on 0,0,\ndrawn at every lattice point and scaled by `mark` (default 1) × `ramp`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "turns": {
+          "description": "Random rotation of each mark in steps of 360/turns degrees, seeded (`4` = quarter turns, Truchet-style).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "stagger": {
+          "description": "Shift every other row by half the spacing (brick / hexagonal lattice).",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "tileStroke": {
+          "description": "Stroke the `tile` motif at this width in px instead of filling it (open lines: squiggles, ticks, zigzags).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "field": {
+          "description": "Size of each mark as an expression (multiplies `mark` and `ramp`): `u`, `v` (0..1 across the box), `x`, `y`\n(px from the centre), `d` (0 centre … 1 corner), `a` (angle), `r` (random per mark), `t`, plus the usual functions.\nOn `lines`/`stripes` it sets the weight along each line (op art); on `waves`/`zigzag` the amplitude.\nUsing `t` regenerates the pattern every frame. E.g. `\"0.5 + 0.5 * sin(d * 18 - t * 3)\"`.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
-      "additionalProperties": false,
-      "required": [
-        "kind"
-      ]
+      "additionalProperties": false
     },
     "FitValue": {
       "description": "`fit`: an image mode (`\"cover\"`) or, on text, `true`. Derefs to the word\n(`\"true\"` / `\"false\"` for booleans) so callers match on strings.",

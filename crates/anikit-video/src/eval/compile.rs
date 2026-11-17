@@ -575,6 +575,10 @@ fn empty_node(kind: Kind) -> Node {
         shadow: None,
         glow: None,
         treat: Vec::new(),
+        treat_slot: 0,
+        live_pattern: None,
+        step: 0.0,
+        boil: None,
         clip: false,
         clip_path: None,
         wipe_dir: 0,
@@ -1462,6 +1466,17 @@ impl C<'_> {
             }
             None => l,
         };
+        let cut;
+        let l = match &l.cutout {
+            Some(c) => match self.cutout_group(l, c, path) {
+                Some(g) => {
+                    cut = g;
+                    &cut
+                }
+                None => l,
+            },
+            None => l,
+        };
         let kind = self.infer_kind(l, path)?;
         self.uniform_slots.clear();
         let label = match (kind, &l.component) {
@@ -1651,6 +1666,10 @@ impl C<'_> {
             },
         };
 
+        if l.cell.is_none() && !pc.in_box {
+            self.near_grid_check(l, path, &n, pc.size);
+        }
+
         // Transform & appearance.
         match &l.scale {
             Some(spec::Scale::One(s)) => {
@@ -1706,6 +1725,39 @@ impl C<'_> {
             n.glow = Some(Filter::Glow { radius: g.radius.unwrap_or(24.0) as f32, intensity: g.intensity.unwrap_or(1.0) as f32, color });
         }
         self.treatments(l, path, &mut n);
+        if let Some(st) = &l.step {
+            let sp = format!("{path}.step");
+            n.step = match st {
+                serde_json::Value::Number(x) => x.as_f64().unwrap_or(0.0) as f32,
+                serde_json::Value::String(x) => match x.as_str() {
+                    "ones" => self.fps,
+                    "twos" => self.fps / 2.0,
+                    "threes" => self.fps / 3.0,
+                    "fours" => self.fps / 4.0,
+                    _ => {
+                        self.d.push(Diagnostic::error(&sp, format!("unknown step '{x}'")).suggest(suggest(x, &["twos", "threes", "fours"])));
+                        0.0
+                    }
+                },
+                _ => {
+                    self.d.push(Diagnostic::error(&sp, "expected fps (e.g. 12) or \"twos\" / \"threes\""));
+                    0.0
+                }
+            };
+            if n.step < 0.0 || n.step > self.fps * 1.001 {
+                self.d.push(Diagnostic::warning(&sp, format!("step {} fps is outside 0..{} (the video's fps); ignored", n.step, self.fps)));
+                n.step = 0.0;
+            }
+        }
+        if let Some(b) = &l.boil {
+            let (amt, rot, fps, seed) = match b {
+                spec::BoilValue::Px(px) => (*px, 0.0, 12.0, 1),
+                spec::BoilValue::Full(o) => (o.amount.unwrap_or(2.0), o.rotate.unwrap_or(0.0), o.fps.unwrap_or(12.0), o.seed.unwrap_or(1)),
+            };
+            if amt > 0.0 || rot > 0.0 {
+                n.boil = Some([amt as f32, rot as f32, (fps as f32).clamp(0.5, self.fps), seed as f32]);
+            }
+        }
         if matches!(n.kind, Kind::Image { .. } | Kind::Video { .. }) {
             if let Some(r) = &l.radius {
                 let refl = n.base[prop::W].min(n.base[prop::H]);
@@ -2474,6 +2526,56 @@ impl C<'_> {
         out
     }
 
+    /// A hand-placed layer whose edge sits a few px off a grid line reads as a mistake: say so, with the snap.
+    fn near_grid_check(&mut self, l: &Layer, path: &str, n: &Node, size: [f32; 2]) {
+        let Some(g) = self.grid.clone() else { return };
+        // Overprinted plates are offset on purpose; the grid overlay is the grid.
+        if path.contains(".grid[") || l.blend.as_deref().is_some_and(|b| b != "normal") || l.boil.is_some() {
+            return;
+        }
+        if !matches!((&l.x, &l.y), (Some(Num::Num(_)), _) | (_, Some(Num::Num(_)))) {
+            return;
+        }
+        let saved = self.d.len();
+        let gc = self.grid_c(&g, size, path);
+        self.d.truncate(saved);
+        let (w, h) = (n.base[prop::W], n.base[prop::H]);
+        let mut xs = Vec::new();
+        let mut ys = Vec::new();
+        for c in 1..=gc.cols {
+            let [x, _, cw, _] = gc.rect(c, c, 1, 1);
+            xs.extend([x, x + cw]);
+        }
+        for r in 1..=gc.rows {
+            let [_, y, _, rh] = gc.rect(1, 1, r, r);
+            ys.extend([y, y + rh]);
+        }
+        let near = |v: f32, lines: &[f32]| {
+            // On a line already (within rounding) means aligned: no advice.
+            if lines.iter().any(|l| (l - v).abs() <= 1.5) {
+                return None;
+            }
+            lines.iter().map(|l| (l - v, *l)).filter(|(d, _)| d.abs() < 8.0).min_by(|a, b| a.0.abs().total_cmp(&b.0.abs()))
+        };
+        let mut msgs = Vec::new();
+        // Only edges the author placed (left/right/top/bottom anchors), not centred layers.
+        if let (Some(Num::Num(x)), true) = (&l.x, n.anchor[0] < 0.01 || n.anchor[0] > 0.99) {
+            let left = *x as f32 - n.anchor[0] * w;
+            if let Some((d, line)) = near(left, &xs) {
+                msgs.push(format!("left edge {left:.0} px is {:.0} px off the grid line at {line:.0} (x = {:.0} snaps it)", d.abs(), *x as f32 + d));
+            }
+        }
+        if let (Some(Num::Num(y)), true) = (&l.y, n.anchor[1] < 0.01 || n.anchor[1] > 0.99) {
+            let top = *y as f32 - n.anchor[1] * h;
+            if let Some((d, line)) = near(top, &ys) {
+                msgs.push(format!("top edge {top:.0} px is {:.0} px off the grid line at {line:.0} (y = {:.0} snaps it)", d.abs(), *y as f32 + d));
+            }
+        }
+        if !msgs.is_empty() {
+            self.d.push(Diagnostic::warning(path, format!("almost on the grid: {}; or use \"cell\"", msgs.join("; "))));
+        }
+    }
+
     /// A copy of `l` placed in its grid cell.
     fn place_in_cell(&mut self, l: &Layer, c: &serde_json::Value, path: &str, size: [f32; 2]) -> Layer {
         let cp = format!("{path}.cell");
@@ -2620,8 +2722,72 @@ impl C<'_> {
         out
     }
 
+    /// `cutout`: the layer becomes a group of a paper rim (with a printed shadow) and the
+    /// layer itself clipped to a torn / scissor-cut outline of its box.
+    fn cutout_group(&mut self, l: &Layer, c: &spec::CutoutValue, path: &str) -> Option<Layer> {
+        let cp = format!("{path}.cutout");
+        let o = match c {
+            spec::CutoutValue::Edge(e) => spec::CutoutSpec { edge: Some(e.clone()), ..Default::default() },
+            spec::CutoutValue::Full(f) => f.clone(),
+        };
+        let edge = o.edge.clone().unwrap_or_else(|| "torn".into());
+        if !["torn", "scissor", "clean"].contains(&edge.as_str()) {
+            self.d.push(Diagnostic::error(&cp, format!("unknown cutout edge '{edge}'")).suggest(suggest(&edge, &["torn", "scissor", "clean"])));
+            return None;
+        }
+        let (Some(Num::Num(w)), Some(Num::Num(h))) = (&l.width, &l.height) else {
+            self.d.push(Diagnostic::error(&cp, "a cutout needs a numeric width and height (or a grid cell)"));
+            return None;
+        };
+        let (w, h) = (*w, *h);
+        let amount = o.amount.unwrap_or(if edge == "scissor" { 18.0 } else { 14.0 });
+        let rim = o.rim.unwrap_or(if edge == "torn" { 8.0 } else { 0.0 }).max(0.0);
+        let seed = o.seed.unwrap_or(1);
+        let inner_d = super::graphic::cutout_d(w, h, &edge, amount, 0.0, seed);
+        let rim_d = super::graphic::cutout_d(w, h, &edge, amount * 1.25, rim, seed.wrapping_add(17));
+        let mut inner = l.clone();
+        inner.cutout = None;
+        let mut g = Layer {
+            kind: Some("group".into()),
+            id: l.id.clone(),
+            width: Some(Num::Num(w)),
+            height: Some(Num::Num(h)),
+            ..Default::default()
+        };
+        // Placement, time and motion move to the group; looks stay on the content.
+        macro_rules! mv {
+            ($($f:ident),*) => { $( g.$f = inner.$f.take(); )* };
+        }
+        mv!(x, y, anchor, scale, scale_x, scale_y, rotation, skew_x, skew_y, opacity, start, end, duration, enter, exit, animate, loop_, depth, blend, step, boil, path, orient, repeat, echo);
+        inner.id = None;
+        inner.x = Some(Num::Num(w / 2.0));
+        inner.y = Some(Num::Num(h / 2.0));
+        let clip = Layer { shape: Some("path".into()), d: Some(inner_d), ..Default::default() };
+        inner.clip = Some(spec::Clip::Shape(Box::new(clip)));
+        let mut layers = Vec::new();
+        if rim > 0.0 || o.shadow != Some(false) {
+            let mut r = Layer {
+                shape: Some("path".into()),
+                d: Some(if rim > 0.0 { rim_d } else { super::graphic::cutout_d(w, h, &edge, amount, 0.0, seed) }),
+                x: Some(Num::Num(w / 2.0)),
+                y: Some(Num::Num(h / 2.0)),
+                fill: Some(spec::Paint::Css(o.rim_color.clone().unwrap_or_else(|| "#f4f1ea".into()))),
+                ..Default::default()
+            };
+            if o.shadow != Some(false) {
+                r.shadow = Some(spec::Shadow(spec::ShadowObj { x: Some(5.0), y: Some(7.0), blur: Some(3.0), color: Some("#00000059".into()) }));
+            }
+            layers.push(r);
+        }
+        layers.push(inner);
+        g.layers = Some(layers);
+        Some(g)
+    }
+
     /// Image treatments (`duotone`, `gradientMap`, `posterize`, `halftone`) as layer filters.
     fn treatments(&mut self, l: &Layer, path: &str, n: &mut Node) {
+        let mut ht_nums: Option<(Option<Num>, Option<Num>, Option<Num>)> = None;
+        let mut ink_num: Option<Num> = None;
         let mut stops: Option<Vec<(f32, Rgba)>> = None;
         if let Some(d) = &l.duotone {
             if d.len() != 2 {
@@ -2666,7 +2832,7 @@ impl C<'_> {
                 }
                 m
             });
-            let amount = l.tone_amount.unwrap_or(1.0).clamp(0.0, 1.0) as f32;
+            let amount = 1.0;
             // With a map, posterising is baked into it.
             let levels = if map.is_some() { 0 } else { levels };
             n.treat.push(Filter::Tone(Arc::new(dl::ToneLut { map, levels, amount })));
@@ -2674,7 +2840,7 @@ impl C<'_> {
         if let Some(h) = &l.halftone {
             let hp = format!("{path}.halftone");
             let hs = match h {
-                spec::HalftoneValue::Cell(c) => spec::HalftoneSpec { cell: Some(*c), ..Default::default() },
+                spec::HalftoneValue::Cell(c) => spec::HalftoneSpec { cell: Some(Num::Num(*c)), ..Default::default() },
                 spec::HalftoneValue::Full(f) => f.clone(),
             };
             let shape = match hs.shape.as_deref().unwrap_or("dot") {
@@ -2695,11 +2861,55 @@ impl C<'_> {
             };
             let ink = col(self, &hs.ink, "ink", "source");
             let paper = col(self, &hs.paper, "paper", "none");
-            let cell = hs.cell.unwrap_or(10.0) as f32;
+            let cell = match &hs.cell {
+                Some(Num::Num(c)) => *c as f32,
+                _ => 10.0,
+            };
             if cell < 3.0 {
                 self.d.push(Diagnostic::warning(format!("{hp}.cell"), "cells under 3 px alias into moiré after encoding; use 4 px or more"));
             }
-            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: hs.angle.unwrap_or(45.0) as f32, shape, ink, paper, gain: hs.gain.unwrap_or(1.0) as f32, ox: 0.0, oy: 0.0 }));
+            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: 45.0, shape, ink, paper, gain: 1.0, ox: 0.0, oy: 0.0 }));
+            ht_nums = Some((hs.cell.clone(), hs.angle.clone(), hs.gain.clone()));
+        }
+        if let Some(iv) = &l.ink_texture {
+            let (amount, scale, seed) = match iv {
+                spec::InkValue::Amount(a) => (Num::Num(*a), 28.0, 1),
+                spec::InkValue::Full(o) => (o.amount.clone().unwrap_or(Num::Num(0.35)), o.scale.unwrap_or(28.0), o.seed.unwrap_or(1)),
+            };
+            n.treat.push(Filter::Ink { amount: 0.35, scale: scale.max(1.0) as f32, seed, ox: 0.0, oy: 0.0 });
+            ink_num = Some(amount);
+        }
+        // Halftone on reading-size text breaks it into dots that H.264 smears.
+        if let (Some(_), Some(_), Some(Num::Num(sz))) = (&l.halftone, &l.text, &l.size) {
+            let cell = match &l.halftone {
+                Some(spec::HalftoneValue::Cell(c)) => *c,
+                Some(spec::HalftoneValue::Full(f)) => match &f.cell { Some(Num::Num(c)) => *c, _ => 10.0 },
+                None => 10.0,
+            };
+            if *sz < cell * 8.0 {
+                self.d.push(Diagnostic::warning(format!("{path}.halftone"), format!("halftone cells of {cell} px on {sz} px text: under ~8 cells per letter height it stops reading; use it on display type (≥ {} px) or a smaller cell", (cell * 8.0).round())));
+            }
+        }
+        // Animatable treatment parameters live in uniform slots after any shader uniforms,
+        // so `animate`, keyframes and "=expr" all reach them by name.
+        if !n.treat.is_empty() {
+            let used: usize = self.uniform_slots.iter().map(|(_, o, c)| o + c).max().unwrap_or(0);
+            if used + 5 > super::shader::UNIFORM_SLOTS {
+                self.d.push(Diagnostic::warning(path, "too many shader uniforms to also animate this layer's treatments; they stay fixed"));
+            } else {
+                let b = prop::U0 + used;
+                n.treat_slot = b as u8;
+                for (k, name) in ["toneAmount", "halftoneCell", "halftoneAngle", "halftoneGain", "inkAmount"].iter().enumerate() {
+                    self.uniform_slots.push((name.to_string(), used + k, 1));
+                }
+                let (c, a, g) = ht_nums.unwrap_or((None, None, None));
+                let one = Num::Num(1.0);
+                self.set(n, b, Some(l.tone_amount.as_ref().unwrap_or(&one)), &format!("{path}.toneAmount"), 1.0);
+                self.set(n, b + 1, Some(c.as_ref().unwrap_or(&Num::Num(10.0))), &format!("{path}.halftone.cell"), 1.0);
+                self.set(n, b + 2, Some(a.as_ref().unwrap_or(&Num::Num(45.0))), &format!("{path}.halftone.angle"), 1.0);
+                self.set(n, b + 3, Some(g.as_ref().unwrap_or(&one)), &format!("{path}.halftone.gain"), 1.0);
+                self.set(n, b + 4, Some(ink_num.as_ref().unwrap_or(&Num::Num(0.35))), &format!("{path}.inkTexture.amount"), 1.0);
+            }
         }
     }
 
@@ -2768,10 +2978,34 @@ impl C<'_> {
                         let mut it = s.split_whitespace();
                         let kind = it.next().unwrap_or("dots").to_string();
                         let spacing = it.next().and_then(|x| x.trim_end_matches("px").parse::<f64>().ok()).unwrap_or(40.0);
-                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None })
+                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None, tile: None, turns: 0, stagger: false, tile_stroke: 0.0, field: None, t: 0.0 })
                     }
                     Some(spec::PatternValue::Full(f)) => Some(super::graphic::Pat {
-                        kind: f.kind.clone(),
+                        kind: if f.kind.is_empty() && f.tile.is_some() { "tile".into() } else { f.kind.clone() },
+                        tile: match &f.tile {
+                            Some(d) => match Path::from_svg(d) {
+                                Ok(p) => Some(p),
+                                Err(e) => {
+                                    self.d.push(Diagnostic::error(format!("{pp}.tile"), format!("invalid SVG path: {e}")));
+                                    None
+                                }
+                            },
+                            None => None,
+                        },
+                        turns: f.turns.unwrap_or(0).min(360),
+                        stagger: f.stagger.unwrap_or(false),
+                        tile_stroke: f.tile_stroke.unwrap_or(0.0).max(0.0),
+                        field: match &f.field {
+                            Some(src) => match super::expr::Expr::compile_field(src.trim().trim_start_matches('='), self.w as f64, self.h as f64) {
+                                Ok(e) => Some(e),
+                                Err(e) => {
+                                    self.d.push(Diagnostic::error(format!("{pp}.field"), format!("field: {e}")));
+                                    None
+                                }
+                            },
+                            None => None,
+                        },
+                        t: 0.0,
                         spacing: f.spacing.unwrap_or(40.0),
                         mark: f.mark,
                         angle: f.angle.unwrap_or(0.0),
@@ -2786,8 +3020,14 @@ impl C<'_> {
                             self.d.push(Diagnostic::error(&pp, format!("unknown pattern '{}'", pt.kind)).suggest(suggest(&pt.kind, super::graphic::PATTERNS)));
                             pt.kind = "dots".into();
                         }
+                        if pt.kind == "tile" && pt.tile.is_none() {
+                            self.d.push(Diagnostic::error(&pp, "a \"tile\" pattern needs \"tile\": SVG path data centred on 0,0 (e.g. \"M-8 -8 L8 -8 L0 10 Z\")"));
+                        }
                         if pt.spacing < 4.0 {
                             self.d.push(Diagnostic::warning(&pp, "spacing under 4 px turns to moiré after encoding"));
+                        }
+                        if pt.field.as_ref().is_some_and(|e| e.dynamic) {
+                            n.live_pattern = Some(Arc::new((pt.clone(), [w as f64, h as f64])));
                         }
                         super::graphic::pattern(w as f64, h as f64, &pt)
                     }
