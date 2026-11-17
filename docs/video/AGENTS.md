@@ -36,4 +36,8 @@ A fresh agent with only `skills/anikit-video/SKILL.md` did three tasks end to en
 | 2 | Teaser | 2 | 1.0k | 5.5/10 | beat advice failed the critique → aligned (0.6–0.7 s); symbol scramble, overlapping captions → reworked |
 | 2 | Changelog | 2 | 0.4k | 5/10 | tiny cards, unclear type labels → redesigned; misleading screenshot note → template-aware |
 
-Run 2 used a stricter grader ("10 = ship it for a real launch"). Rendering was 165–240 fps; `preview` takes about 0.04 s.
+| 3 | Launch | 3 | 2.0k | 6.5/10 | over-length not scored → `length` warning with per-scene seconds; title repeated 3× per frame (toast) → removed; accent drifted to crimson → accent = primary lifted to 4.5:1 |
+| 3 | Teaser | 4 | 1.2k | 5/10 | white captions unreadable on lime flash frames → light primaries flash a darkened tint with light text |
+| 3 | Changelog | 2 | 1.0k | 6.5/10 | red IMPROVED chip read as an error → semantic blue; NEW = primary, FIXED = green |
+
+Runs 2 and 3 used a stricter grader ("10 = ship it for a real launch"). Rendering was 165–240 fps; `preview` takes about 0.04 s.

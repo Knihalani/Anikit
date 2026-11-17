@@ -266,13 +266,6 @@ impl Template {
     /// Notes about an expansion an agent should know (length out of range, placeholder UI).
     pub fn expansion_notes(&self, params: &Value, spec: &Value, duration: f64) -> Vec<String> {
         let mut v = Vec::new();
-        if let Some((lo, hi)) = self.duration_range() {
-            if duration > hi + 0.5 {
-                v.push(format!("note: {duration:.1} s is longer than this template's {lo}–{hi} s; cut a list item or shorten copy"));
-            } else if duration + 0.5 < lo {
-                v.push(format!("note: {duration:.1} s is shorter than this template's {lo}–{hi} s"));
-            }
-        }
         let text = spec.to_string();
         let has_screen = text.contains("\"screen\":");
         let has_image = ["screenshot", "image", "images", "src"].iter().any(|k| params.to_string().contains(&format!("\"{k}\"")));

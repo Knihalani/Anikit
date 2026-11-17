@@ -197,7 +197,7 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
             match a.get("o").or(a.get("out")) {
                 Some(o) => {
                     write(Path::new(o), &pretty(&spec))?;
-                    let r = critique(&spec);
+                    let r = crate::critique::critique_in_range(&spec, t.duration_range());
                     let base = Path::new(o).parent().map(Path::to_path_buf).unwrap_or_default();
                     let v = mcp::validate(spec.clone(), &base);
                     for k in ["errors", "warnings"] {
