@@ -23,6 +23,11 @@ awards: []
 stills:
   - https://i.vimeocdn.com/video/1785156593-aa9eb8e7500cb3e1b1b4ae1f74784db893e037b862982b3abaac5865933f9e74-d_1280?region=us
   - https://i.vimeocdn.com/video/1785323243-2f16ae5d62629d361b362f8b6220fc8ee58ed4037120f4aa438af2d386d833e3-d_1280?region=us
+  - https://www.stashmedia.tv/wp-content/uploads/Hublot-MP10-Launch-Film-by-Tendril.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Hublot-MP10-Launch-Film-by-Tendril2.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Hublot-MP10-Launch-Film-by-Tendril3.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Hublot-MP10-Launch-Film-by-Tendril4.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Hublot-MP10-Launch-Film-by-Tendril5.jpg
 measured: null
 ---
 

@@ -24,6 +24,10 @@ stills:
   - https://i.vimeocdn.com/video/582356586-641bf3acdec56ecd1ca62a4aa7dca2f73b1696840bec40330e25f69d81d4800c-d_1280
   - https://imaginaryforces.com/images/pics/757_y6fpK6_stranger_things_8.jpg
   - https://www.artofthetitle.com/assets/sm/upload/4m/y6/kt/t8/st_t.jpg
+  - https://images.squarespace-cdn.com/content/v1/516f2132e4b0067040fcf93f/1465937738251-5LFSOSVU07SUGZ1Q9AYK/ST+Main+Titles+FINAL+%280.00.08.21%29.jpg
+  - https://images.squarespace-cdn.com/content/v1/516f2132e4b0067040fcf93f/1465937971125-JJM43J720LVDSK7Y1JH5/ST+Main+Titles+FINAL+%280.00.14.13%29.jpg
+  - https://images.squarespace-cdn.com/content/v1/516f2132e4b0067040fcf93f/1465938153632-IM5X1Y3J156UQ8R9IP73/ST+Main+Titles+FINAL+%280.00.26.00%29.jpg
+  - https://images.squarespace-cdn.com/content/v1/516f2132e4b0067040fcf93f/1465938520843-N32SJWIJGX8KSP3VJV4K/ST+Main+Titles+FINAL+%280.00.38.16%29.jpg
 measured: null
 ---
 

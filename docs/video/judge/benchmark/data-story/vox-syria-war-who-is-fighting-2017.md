@@ -25,6 +25,7 @@ stills:
   - https://i.ytimg.com/vi/JFpanWNgfQY/hq1.jpg
   - https://i.ytimg.com/vi/JFpanWNgfQY/hq2.jpg
   - https://i.ytimg.com/vi/JFpanWNgfQY/hq3.jpg
+  - https://platform.vox.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/4157256/xex-208-syria-Post.0.jpg
 measured: null
 ---
 

@@ -25,6 +25,10 @@ stills:
   - https://i.ytimg.com/vi/r6sGWTCMz2k/hq1.jpg
   - https://i.ytimg.com/vi/r6sGWTCMz2k/hq2.jpg
   - https://i.ytimg.com/vi/r6sGWTCMz2k/hq3.jpg
+  - https://storage.googleapis.com/3blue1brown-website-bucket/lessons/2019/fourier-series/fourier_intro_2.jpeg
+  - https://storage.googleapis.com/3blue1brown-website-bucket/lessons/2019/fourier-series/heat_0.jpeg
+  - https://storage.googleapis.com/3blue1brown-website-bucket/lessons/2019/fourier-series/heat_3.jpeg
+  - https://storage.googleapis.com/3blue1brown-website-bucket/lessons/2019/fourier-series/integ_2.jpeg
 measured: null
 ---
 

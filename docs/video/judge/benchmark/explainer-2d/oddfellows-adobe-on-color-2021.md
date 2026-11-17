@@ -25,6 +25,8 @@ stills:
   - https://www.thisiscolossal.com/wp-content/uploads/2021/06/oddfellows-3.jpg
   - https://www.thisiscolossal.com/wp-content/uploads/2021/06/oddfellows-2.jpg
   - https://www.thisiscolossal.com/wp-content/uploads/2021/06/oddfellows-4.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-06-11-at-10.26.51-AM.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-06-11-at-10.28.04-AM.jpg
 measured: null
 ---
 

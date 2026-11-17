@@ -25,6 +25,7 @@ stills:
   - https://i.ytimg.com/vi/x1SgmFa0r04/hq1.jpg
   - https://i.ytimg.com/vi/x1SgmFa0r04/hq2.jpg
   - https://i.ytimg.com/vi/x1SgmFa0r04/hq3.jpg
+  - https://www.geeksaresexy.net/wp-content/uploads/2016/03/carbon.jpg
 measured: null
 ---
 

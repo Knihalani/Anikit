@@ -22,6 +22,11 @@ anikit_features: [shader, mograph, audio, "GAP: Voronoi agent system driven by a
 awards: ["FILE Electronic Language International Festival 2016, 3rd Place (Anima+Games)"]
 stills:
   - https://i.vimeocdn.com/video/536121164-490b06d21f38e83c464dc12c44ff61990f236d15864ca15cf49f7c6ff8d36464-d_1280?region=us
+  - https://live.staticflickr.com/572/21419792870_585a77551d_b.jpg
+  - https://live.staticflickr.com/576/21616714061_e1ab13ba25_b.jpg
+  - https://live.staticflickr.com/605/20986709223_b0bc9f2960_b.jpg
+  - https://live.staticflickr.com/641/21607895275_015afd0cc6_b.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Kwok_Skyline.png
 measured: null
 ---
 
