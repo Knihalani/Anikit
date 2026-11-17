@@ -545,28 +545,66 @@ Two looks: `{ "lens": "anamorphic", "path": [[0.1, 0.4], [0.9, 0.45]], "duration
 
 ## 3D
 
-### `scene3d`: ray-traced studio product shot (lookdev, phase 1)
-A software ray tracer for premium 3D: a chrome (or `gold`, `black`) extruded wordmark with a 10-segment bevel, optional primitives (glossy black sphere, gold ring, chrome and satin spheres), a glossy reflective floor, and a slow camera move with a rack focus. Kind names: `scene3d`, `scene-3d`, `3d.scene`. Example: `examples/video/lookdev/chrome.json`.
+### `scene3d`: ray-traced 3D scenes
+A software ray tracer for product films: PBR materials (chrome, aluminium, glass and more), a procedural HDR studio, soft traced shadows, glossy floor reflections, haze, depth of field, motion blur, bloom and tone mapping. Any spec `composition` can be a live texture, including on thousands of instances at per-instance frame offsets. Kind names: `scene3d`, `scene-3d`, `3d.scene`. Examples: `examples/video/lookdev/` (`cyc.json`, `panes.json`, `glass.json`, and `chrome.json`, the phase-1 dark-studio shot).
 
-- **Shading:** GGX/Schlick split-sum specular against an analytic HDR studio (`env`: `studio`, `night`, `neon`, `sunset`), whose softboxes and strips are pre-filtered per roughness by widening their edges. Reflections of the scene are traced (chrome reflects the floor and the other objects, up to 3 bounces).
-- **Shadows:** the key softbox is an area light sampled with shadow rays; AO is traced. On the floor both are baked once into a smooth texture.
-- **Floor:** a lacquer with Fresnel reflections, blurred by the distance to what they reflect. It fades into a backdrop with a soft glow.
-- **Image:** 4–16 adaptive samples per pixel, resolved in tone-mapped space; depth of field (scatter-as-gather), per-pixel motion blur from motion vectors, a bloom pyramid, an ACES tone map, a vignette and dithered sRGB.
+```json
+{ "component": "scene3d", "props": {
+  "env": "cyc",
+  "camera": { "keys": [ { "t": 0, "pos": [-3, 1.2, 6], "target": [0, 0.5, 0], "focal": 40, "fstop": 2.8 },
+                        { "t": 6, "pos": [3, 1.0, 5], "target": [0, 0.5, 0], "focal": 45 } ] },
+  "objects": [
+    { "text": "ANIKIT", "height": 0.7, "material": "chrome" },
+    { "type": "slab", "count": 1800, "size": [1.6, 0.9, 0.008], "pos": "=[1.7*i, 0.47, -2]", "material": "glass",
+      "texture": { "composition": "film", "frame": "=i", "face": "back" } } ] } }
+```
+
+**Shorthand:** `{"env":"studio","objects":[{"text":"ANIKIT","material":"chrome"}],"camera":"orbit"}`. Without `objects`, you get the phase-1 lookdev: `{"text":"ANIKIT"}` gives a chrome wordmark with primitives in the dark studio.
+
+**Props**
 
 | Prop | Default | Meaning |
 |---|---|---|
-| `text` | `ANIKIT` | |
-| `font`, `weight` | `Inter`, `800` | |
-| `env` | `studio` | `studio`, `night`, `neon`, `sunset`. |
-| `material` | `chrome` | `chrome`, `gold`, `black`. |
-| `primitives` | `true` | The four supporting objects. |
-| `camera` | lookdev move | Keys `[{ "at": 0, "pos": [x, y, z], "target": [x, y, z], "fov": 30, "focus": 7.9 }]`; Catmull-Rom between keys, eased overall; `focus` `null` = the target. |
-| `aperture` | `26` | Blur radius (px at 1080p) for points at infinity. |
-| `shutter` | `0.5` | Motion-blur shutter (0.5 = 180°). |
-| `bloom`, `exposure` | `0.06`, `1` | |
-| `quality` | `standard` | `draft`, `standard`, `high`. |
+| `env` | `cyc` | `cyc` (bright warm-white cyclorama: a seamless floor and backdrop, a big soft key from the upper left, a strip light, black flags for chrome contrast), `studio`, `night`, `neon` or `sunset`. Or `{ "preset", "color": "#EEEBE5", "key": [x, y, z], "haze": 0.0015 }`. |
+| `camera` | `orbit` | A preset (`orbit`, `dolly`, `crane`, `static`, or `{ "preset", "duration", "degrees", "height" }`), framed on the objects. Or keys: `{ "interp": "smooth"\|"linear", "ease": false, "shake": 0.01, "keys": [ { "t", "pos", "target", "focal" (mm, 36 mm-wide sensor) or "fov" (vertical degrees), "focus" (m; default is the target distance), "fstop" or "aperture" (px at 1080p), "shutter" (0 means no blur), "roll" } ] }`. A dense per-frame key list is fine. |
+| `objects` | | See below. |
+| `materials` | | Named materials: `{ "brushed": { "extends": "aluminium", "roughness": 0.3 } }`. |
+| `floor` | per env | `false`, or `{ "color", "roughness", "reflect", "mirror", "y" }`. |
+| `quality` | `standard` | `draft`, `standard` or `high`. Sets the samples at edges, shadow and AO rays, bounces and glass layers. |
+| `bloom`, `exposure`, `vignette` | per env | `exposure` multiplies the automatic exposure (the cyc maps to #EEEBE5-ish white). |
+| `tonemap` | per env | `neutral` (Khronos PBR Neutral, whites stay white; for bright envs) or `aces`. |
+| `shutter`, `aperture` | | Overrides for every camera key. |
+| `denoise` | `5` | À-trous passes over AO and shadow visibility (0 turns it off). |
 
-**Cost:** about 6 s per 1920×1080 frame on 4 cores at `standard`. It is built for quality, not speed; use `draft` for previews.
+**Objects:** `type` is `text`, `box`, `slab` (or `pane`), `plane`, `sphere`, `cylinder`, `torus`, `phone` or `model`. It is inferred from `text`, `src` or `count`.
+- **Geometry:**
+  - `size: [x, y, z]`, `radius` (corners), `bevel`;
+  - text has `text`, `font`, `weight`, `tracking`, `height` (cap height, m), `depth`, `bevel`;
+  - spheres and cylinders have `radius`; cylinders also `height`;
+  - tori have `radius` and `tube`;
+  - a `model` is a glTF 2.0 file: `src` (`.glb`, or `.gltf` with `.bin` files or data URIs, relative to the working directory), fitted to `height` or with its largest side fitted to `size`, standing on y = 0. It keeps its node transforms and per-primitive PBR factors (base colour, metallic, roughness, emission, transmission, IOR); `material` overrides them. Image textures, skins and animations aren't read.
+- **Placement:** `pos`, `rot` (degrees, yaw·pitch·roll order Y·X·Z) and `scale`. Each takes a number, `[x, y, z]` whose items may be `"=expr"`, or `"=[a, b, c]"`. Expressions can use `t`, `i` (instance index), `lane` and `n`.
+- **Animation:** `keys: [{ "t", "pos", "rot", "scale", "ease": "smooth|linear|in|out" }]` (added on top of the base placement); `spin` (degrees per second, a number for Y or `[x, y, z]`); `start` and `end`.
+- **Instances:** `count` and `lanes`. A shared mesh is placed per instance, with a top-level hierarchy rebuilt each frame.
+- **Material:** a name or an object. The built-ins are `chrome`, `glass`, `aluminium`, `aluminium-bead`, `matte`/`white`, `ceramic`, `plastic`, `rubber`, `black`, `gold` and `emissive`. Object keys are `base`, `metallic`, `roughness`, `specular`, `clearcoat`, `emissive`, `emissiveStrength`, `transmission`, `ior`, `tint` + `tintDistance` (Beer–Lambert colour), `glow` (how much a texture glows) and `extends`.
+- **Texture:** `"#name"` or `{ "composition", "frame": "=i" (frame index) or "offset"/"speed"/"loop", "face": "front|back|both" }`. Frames come from the spec's top-level `compositions` through the shared, deterministic texture cache. The level of detail follows on-screen size; tiny or off-screen surfaces use the frame's average colour.
+- **Flags:** `thin` (default for slabs ≤ 3 cm: camera rays pass straight through panes) and `shadow`.
+
+**How it renders:**
+- **Primary rays:** one per pixel, plus 6 jittered samples where neighbours disagree, resolved in tone-mapped space.
+- **Shading:** GGX/Schlick split-sum against the analytic, pre-filtered environment. Scene reflections are traced. Glass is a dielectric with Fresnel, refraction and absorption; thin panes keep their prints and reflections.
+- **Diffuse light:** albedo × (ambient × AO + key × visibility). AO and visibility come from one ray each and are denoised edge-aware.
+- **Floor:** a static layout gets its floor shadows and AO baked once. Floor reflections are blurred through a pyramid by the distance to what they reflect, then faded and hazed.
+- **Post:** half-resolution scatter-as-gather DOF, motion blur from motion vectors, bloom, tone map, vignette and dithering.
+
+**Cost** at 1920×1080 on 4 cores (`standard`, measured):
+- The pipeline renders the cyc example at about 1.4 s per frame (60 frames in 82 s).
+- Single stills: trace 1.3–2.0 s and post 0.6–0.9 s with 4 threads.
+- `ANIKIT_SCENE3D_PROFILE=1` prints per-stage ms and ray counts.
+
+**Known limits:**
+- Thick glass resting on the floor reads metallic (the floor plane and the bottom face coincide). Lift it 1 mm.
+- glTF models load geometry and PBR factors only (no image textures or animation).
 
 ### `model`: product spin and orbit
 Rendered with `anikit-core`'s CPU rasteriser at native resolution, supersampled 2× for anti-aliasing, with studio lighting and a transparent background.
