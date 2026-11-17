@@ -145,19 +145,37 @@ Digits are tabular, and the width is reserved for the final value, so the number
 
 ## Devices
 
-Devices keep their aspect ratio and are centred in the box. Screen props are shared by all of them:
+Devices are drawn like product renders: a phone with a machined frame, Dynamic Island and iOS status bar; a laptop with thin bezels, a notch, a macOS menu bar and an aluminium base; a browser window with real chrome. Each keeps its aspect ratio and is centred in the box. Screen props are shared by all of them:
 - `src`: an image or video;
-- `colors`: a placeholder gradient with skeleton UI, used when there is no `src`;
+- `colors`: a wallpaper gradient, used when there is no `src` and no `screen`;
 - `scrollTo` (0 to 1), `scrollAt` and `scrollDuration`: scroll a tall screenshot;
 - `delay`: spring entrance;
 - `float`: bobbing amplitude in px.
-- `screen`: a generated app screen, used when there is no `src`. It is one of `app` (neutral: the product name and its items, no invented numbers or names), `dashboard` (KPI tiles, an area chart and a list), `chat`, `feed`, `editor` or `settings`. Add `title` for the product name and `accent` for the colour. `items` (the product's features or changelog entries) fill the sidebar, list and card titles, chat lines and settings rows. `kpis` (`[{"label": "Notes", "value": "12,400"}]`) replace the dashboard numbers, which count up. Screens lay out for portrait or landscape and build in with a stagger. Example: `{ "component": "device.phone", "props": { "screen": "dashboard", "title": "Northwind" } }`.
+- `screen`: a generated app screen, used when there is no `src` (with neither `src`, `screen` nor `colors`, the device shows `app`). It is one of `app` (neutral: the product name and its items as a featured card and an update list, no invented numbers or names), `dashboard` (KPI tiles with deltas, an axis-labelled area chart with a hover crosshair, a channel list and recent orders), `chat` (team chat on desktop, iMessage-style on phones), `feed`, `editor` (file tree, highlighted code that types, terminal) or `settings`. Add `title` for the product name and `accent` for the colour. `items` (the product's features or changelog entries) fill the sidebar, list and card titles, chat lines and settings rows; long ones shrink a little, then end with "…". `kpis` (`[{"label": "Notes", "value": "12,400"}]`) replace the dashboard numbers, which count up. Desktop screens have a sidebar and toolbar; portrait screens get iOS navigation and a tab bar. Screens build in with a stagger and then keep a little life (a gliding hover, a typing indicator, a like, a caret).
+
+The look of a generated screen is yours to set, so two products need not look alike:
+
+| Prop | Values |
+|---|---|
+| `ui` | `auto` (follows the theme, default), `light`, `dark` |
+| `density` | `compact` (real-app density), `comfortable` (default), `large` (big type for small embeds and vertical video) |
+| `font` | heading and number face: `sans` (default), `display`, `serif`, `mono` |
+| `tint` | grey family: `neutral` (default), `warm`, `cool`, `accent` |
+| `radius` | card corner radius in design points (default 10 on desktop, 14 on phones; 0 gives square UI) |
+| `motion` | `still` (a static product shot), `subtle` (default), `lively` (snappier build, more live activity) |
 
 | Kind | Extra props |
 |---|---|
-| `phone` | `color` (frame), `reflection` (0–1), `shadow`, `time` (status bar). |
-| `laptop` | `color`, `reflection`, `shadow`, `open` (seconds for the lid to open). |
-| `browser` | `url`, `tabs` (titles; the first is active), `typeUrl` (seconds to type the URL), `shadow`, `aspect` (default 1.6). |
+| `phone` | `finish` (`titanium` (default), `black`, `white`, `blue`, `desert`), `color` (frame; overrides `finish`), `reflection` (0–1), `shadow`, `time` (status bar; `""` hides it). |
+| `laptop` | `finish` (`silver` (default), `space-black`, `midnight`, `starlight`), `color`, `menuBar` (default true; macOS menu bar over generated screens), `reflection`, `shadow`, `open` (seconds for the lid to open). |
+| `browser` | `style` (`safari` (default; unified toolbar, tabs below), `chrome` (tab strip above an omnibox), `minimal` (traffic lights and the URL)), `chrome` (`auto`, `light`, `dark`), `url`, `tabs` (titles; the first is active), `typeUrl` (seconds to type the URL), `shadow`, `aspect` (default 1.6). |
+
+Two looks from the same kind:
+
+```json
+{ "component": "laptop", "props": { "screen": "dashboard", "title": "Northwind", "motion": "lively" } }
+{ "component": "laptop", "props": { "screen": "dashboard", "title": "Fieldnote", "finish": "starlight", "ui": "light", "tint": "warm", "font": "serif", "radius": 4, "density": "compact", "accent": "#2f6b4f" } }
+```
 
 ## UI kit
 
