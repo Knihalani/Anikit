@@ -270,6 +270,7 @@ impl Prepare for KineticGrid {
 
 impl Component for KineticGrid {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let t = step(t, AMBIENT_RATE);
         let at = t - self.delay;
         if at < 0.0 {
             return Vec::new();
