@@ -451,9 +451,8 @@ struct Splat {
     glow: Vec<(f32, f32, f32)>,
     /// Glow colour (premultiplied) and blur sigma, when the glow shows.
     glow_paint: Option<([f32; 4], f32)>,
-    /// Out-of-focus discs `(colour bucket, x, y, r, alpha)`.
-    soft: Vec<(usize, f32, f32, f32, f32)>,
-    soft_col: [[f32; 4]; NB],
+    /// Blur sigma of the near (out-of-focus) dots' layer.
+    near_blur: f32,
     dot_col: [[f32; 4]; NB * NA],
     /// Scratch, reused per thread: pixels (premultiplied) that dots or
     /// discs touched and when (`stamp == frame`), the touched list,
@@ -464,6 +463,9 @@ struct Splat {
     touched: Vec<u32>,
     cov: Vec<f32>,
     gl: Vec<u8>,
+    /// The near dots' layer (premultiplied, then RGBA8 for the blur).
+    near: Vec<[f32; 4]>,
+    near8: Vec<u8>,
     order: Vec<u32>,
     blur: Option<Box<crate::render::blur::BlurScratch>>,
 }
@@ -515,24 +517,11 @@ fn dot_radius(r: f32) -> f32 {
     }
 }
 
-/// `fxkit::gauss` falloff (piecewise linear through its stops), 0..1 → 0..1.
-fn gauss_at(x: f32) -> f32 {
-    const X: [f32; 7] = [0.0, 0.15, 0.3, 0.45, 0.6, 0.8, 1.0];
-    let g = |x: f32| if x >= 1.0 { 0.0 } else { (-4.6 * x * x).exp() };
-    if x >= 1.0 {
-        return 0.0;
-    }
-    let i = X.iter().rposition(|&s| s <= x).unwrap_or(0).min(5);
-    let f = (x - X[i]) / (X[i + 1] - X[i]);
-    g(X[i]) + (g(X[i + 1]) - g(X[i])) * f
-}
-
 impl Splat {
     fn take() -> Splat {
         let mut s = SPLAT.with(|c| c.take());
         s.dots.clear();
         s.glow.clear();
-        s.soft.clear();
         s.glow_paint = None;
         s
     }
@@ -549,8 +538,11 @@ impl Splat {
         for &(_, x, y, r) in &self.dots {
             grow(x, y, r + 1.0);
         }
-        for &(_, x, y, r, _) in &self.soft {
-            grow(x, y, r + 1.0);
+        let nm = (self.near_blur * 3.0).ceil() + 2.0;
+        for &(b, x, y, r) in &self.dots {
+            if b >= NB * NA {
+                grow(x, y, r + 1.0 + nm);
+            }
         }
         if self.glow_paint.is_some() {
             for &(x, y, r) in &self.glow {
@@ -572,10 +564,7 @@ impl Splat {
             hs.u32(b as u32);
             hs.f32s(&[x, y, r]);
         }
-        for &(b, x, y, r, a) in &self.soft {
-            hs.u32(b as u32);
-            hs.f32s(&[x, y, r, a]);
-        }
+        hs.f32s(&[self.near_blur]);
         if let Some((c, s)) = self.glow_paint {
             hs.f32s(&c);
             hs.f32s(&[s]);
@@ -583,7 +572,7 @@ impl Splat {
                 hs.f32s(&[x, y, r]);
             }
         }
-        for c in self.soft_col.iter().chain(self.dot_col.iter()) {
+        for c in self.dot_col.iter() {
             hs.f32s(c);
         }
         let id = ctx.assets.image_premul(hs.finish(), iw as u32, ih as u32, &mut || self.pixels(x0, y0, iw, ih));
@@ -599,6 +588,41 @@ impl Splat {
         let i1 = ((x + e - x0).ceil().max(0.0) as usize).min(iw);
         let j1 = ((y + e - y0).ceil().max(0.0) as usize).min(ih);
         (i0, i1, j0, j1)
+    }
+
+    /// One bucket of dots: coverage summed (clamped, like one non-zero
+    /// fill of all its discs), then `put` once per covered pixel.
+    #[allow(clippy::too_many_arguments)]
+    fn bucket(dots: &[(usize, f32, f32, f32)], run: &[u32], cov: &mut [f32], iw: usize, ih: usize, x0: f32, y0: f32, c: [f32; 4], put: &mut dyn FnMut(usize, [f32; 4])) {
+        if run.is_empty() {
+            return;
+        }
+        for &k in run {
+            let (_, x, y, r) = dots[k as usize];
+            let rr = dot_radius(r);
+            let (i0, i1, j0, j1) = Self::span(x, y, rr + 1.0, x0, y0, iw, ih);
+            for j in j0..j1 {
+                let py = y0 + j as f32 + 0.5;
+                for i in i0..i1 {
+                    cov[j * iw + i] += disc_cov(x0 + i as f32 + 0.5, py, x, y, rr);
+                }
+            }
+        }
+        for &k in run {
+            let (_, x, y, r) = dots[k as usize];
+            let rr = dot_radius(r);
+            let (i0, i1, j0, j1) = Self::span(x, y, rr + 1.0, x0, y0, iw, ih);
+            for j in j0..j1 {
+                for i in i0..i1 {
+                    let q = cov[j * iw + i];
+                    if q > 0.0 {
+                        let a = q.min(1.0);
+                        cov[j * iw + i] = 0.0;
+                        put(j * iw + i, [c[0] * a, c[1] * a, c[2] * a, c[3] * a]);
+                    }
+                }
+            }
+        }
     }
 
     fn pixels(&mut self, x0: f32, y0: f32, iw: usize, ih: usize) -> Vec<u8> {
@@ -654,29 +678,6 @@ impl Splat {
             }
             img[p] = fxpix::over(c, img[p]);
         };
-        // 2. Out-of-focus discs: gaussian falloff, source-over.
-        let mut lut = [0.0f32; 257];
-        for (i, v) in lut.iter_mut().enumerate() {
-            *v = gauss_at(i as f32 / 256.0);
-        }
-        for &(ci, x, y, r, a) in &self.soft {
-            let c = self.soft_col[ci];
-            let (i0, i1, j0, j1) = Self::span(x, y, r, x0, y0, iw, ih);
-            let k = 256.0 / r;
-            for j in j0..j1 {
-                let dy = y0 + j as f32 + 0.5 - y;
-                for i in i0..i1 {
-                    let dx = x0 + i as f32 + 0.5 - x;
-                    let t = (dx * dx + dy * dy).sqrt() * k;
-                    if t >= 256.0 {
-                        continue;
-                    }
-                    let ti = t as usize;
-                    let al = a * (lut[ti] + (lut[ti + 1] - lut[ti]) * (t - ti as f32));
-                    put(j * iw + i, [c[0] * al, c[1] * al, c[2] * al, c[3] * al]);
-                }
-            }
-        }
         // 3. Dots, bucket by bucket: coverage summed (clamped, like one
         // non-zero fill of all of a bucket's discs), then composited once.
         const NBK: usize = NB * NA * 2;
@@ -695,38 +696,55 @@ impl Splat {
             order[fill[d.0] as usize] = k as u32;
             fill[d.0] += 1;
         }
-        for b in 0..NBK {
-            let run = &order[first[b] as usize..first[b + 1] as usize];
-            if run.is_empty() {
-                continue;
-            }
-            for &k in run {
+        // Near dots first (they sit behind): composited into their own
+        // layer over their bounds, blurred like the renderer blurs a layer,
+        // then laid over the glow; then the sharp dots.
+        let (nb0, nb1) = (first[NB * NA] as usize, first[NBK] as usize);
+        if nb1 > nb0 {
+            let nm = (self.near_blur * 3.0).ceil() + 2.0;
+            let mut bb = [f32::MAX, f32::MAX, f32::MIN, f32::MIN];
+            for &k in &order[nb0..nb1] {
                 let (_, x, y, r) = self.dots[k as usize];
-                let rr = dot_radius(r);
-                let (i0, i1, j0, j1) = Self::span(x, y, rr + 1.0, x0, y0, iw, ih);
-                for j in j0..j1 {
-                    let py = y0 + j as f32 + 0.5;
-                    for i in i0..i1 {
-                        cov[j * iw + i] += disc_cov(x0 + i as f32 + 0.5, py, x, y, rr);
-                    }
+                let e = r + 1.0 + nm;
+                bb = [bb[0].min(x - e), bb[1].min(y - e), bb[2].max(x + e), bb[3].max(y + e)];
+            }
+            let (bx0, by0) = (((bb[0] - x0).floor().max(0.0) as usize).min(iw), ((bb[1] - y0).floor().max(0.0) as usize).min(ih));
+            let (bx1, by1) = (((bb[2] - x0).ceil().max(0.0) as usize).min(iw), ((bb[3] - y0).ceil().max(0.0) as usize).min(ih));
+            let (bw, bh) = (bx1.saturating_sub(bx0), by1.saturating_sub(by0));
+            if bw > 0 && bh > 0 {
+                let near = &mut self.near;
+                near.clear();
+                near.resize(bw * bh, [0.0; 4]);
+                for b in NB * NA..NBK {
+                    let run = &order[first[b] as usize..first[b + 1] as usize];
+                    let c = self.dot_col[b % (NB * NA)];
+                    Self::bucket(&self.dots, run, cov, iw, ih, x0, y0, c, &mut |p, v| {
+                        let (i, j) = (p % iw, p / iw);
+                        if i >= bx0 && i < bx1 && j >= by0 && j < by1 {
+                            let q = &mut near[(j - by0) * bw + (i - bx0)];
+                            *q = fxpix::over(v, *q);
+                        }
+                    });
                 }
-            }
-            let c = self.dot_col[b % (NB * NA)];
-            for &k in run {
-                let (_, x, y, r) = self.dots[k as usize];
-                let rr = dot_radius(r);
-                let (i0, i1, j0, j1) = Self::span(x, y, rr + 1.0, x0, y0, iw, ih);
-                for j in j0..j1 {
-                    for i in i0..i1 {
-                        let q = cov[j * iw + i];
-                        if q > 0.0 {
-                            let a = q.min(1.0);
-                            cov[j * iw + i] = 0.0;
-                            put(j * iw + i, [c[0] * a, c[1] * a, c[2] * a, c[3] * a]);
+                let n8 = &mut self.near8;
+                n8.clear();
+                n8.extend(near.iter().flat_map(|c| fxpix::pack(*c)));
+                let bs = self.blur.get_or_insert_with(Default::default);
+                crate::render::blur::blur::<4>(n8, bw, bh, self.near_blur, bs);
+                for j in 0..bh {
+                    for i in 0..bw {
+                        let q = &n8[(j * bw + i) * 4..][..4];
+                        if q[3] > 0 || q[0] > 0 || q[1] > 0 || q[2] > 0 {
+                            put((by0 + j) * iw + bx0 + i, [0, 1, 2, 3].map(|k| q[k] as f32 * (1.0 / 255.0)));
                         }
                     }
                 }
             }
+        }
+        for b in 0..NB * NA {
+            let run = &order[first[b] as usize..first[b + 1] as usize];
+            let c = self.dot_col[b];
+            Self::bucket(&self.dots, run, cov, iw, ih, x0, y0, c, &mut put);
         }
         // 4. Premultiplied RGBA8: the glow through a table, then the touched pixels.
         let mut px = vec![0u8; n * 4];
@@ -775,7 +793,6 @@ impl Component for ParticleText {
         let mut dots: Vec<Path> = vec![Path::new(); 2 * NB * NA];
         let mut streaks: Vec<Path> = vec![Path::new(); 2 * NB];
         let mut glow = Path::new();
-        let mut soft: Vec<(usize, f32, f32, f32, f32)> = Vec::new();
         let mut sparks = Vec::new();
         let tw_t = step(t, 30.0);
         for i in 0..self.parts.len() {
@@ -801,21 +818,15 @@ impl Component for ParticleText {
                 }
             }
             let ai = ((a * NA as f32) as usize).min(NA - 1);
-            if band == 1 && !fxkit::exact() {
-                // Out of focus: a gaussian disc instead of a blurred layer.
-                let sg = 3.5 * k;
-                let rr = pl.r + 2.2 * sg;
-                soft.push((ci, pl.x, pl.y, rr, ([0.35, 0.6, 0.82, 1.0][ai] * 1.6 * (pl.r + sg * 0.4) / rr).min(1.0)));
-                continue;
-            }
-            if direct {
+            if direct && band == 1 {
                 sp.dots.push(((band * NB + ci) * NA + ai, pl.x, pl.y, pl.r.max(0.3)));
-                if self.glow && band == 0 && ai >= NA - 2 {
-                    sp.glow.push((pl.x, pl.y, pl.r * 1.8));
-                }
             } else {
                 fxkit::dot(&mut dots[(band * NB + ci) * NA + ai], pl.x, pl.y, pl.r.max(0.3));
-                if self.glow && band == 0 && ai >= NA - 2 {
+            }
+            if self.glow && band == 0 && ai >= NA - 2 {
+                if direct {
+                    sp.glow.push((pl.x, pl.y, pl.r * 1.8));
+                } else {
                     fxkit::dot(&mut glow, pl.x, pl.y, pl.r * 1.8);
                 }
             }
@@ -858,9 +869,8 @@ impl Component for ParticleText {
         if direct {
             let glow_on = self.glow && !normal && bloom > 0.02 && !sp.glow.is_empty();
             sp.glow_paint = glow_on.then(|| (fxpix::premul(alpha(grad(NB / 2), 0.55 * bloom)), 7.0 * k));
-            sp.soft = soft;
+            sp.near_blur = 3.5 * k;
             for ci in 0..NB {
-                sp.soft_col[ci] = fxpix::premul(grad(ci));
                 for ai in 0..NA {
                     sp.dot_col[ci * NA + ai] = fxpix::premul(lvl_col(ci, ai));
                 }
@@ -869,25 +879,26 @@ impl Component for ParticleText {
                 out.push(op);
             }
             sp.give_back();
-            // Motion streaks (exits) stay vector ops, over the dots.
-            for band in [1usize, 0] {
-                if streaks[band * NB..(band + 1) * NB].iter().all(|p| p.is_empty()) {
-                    continue;
-                }
-                let pushed = if band == 1 { fxkit::push_blur(&mut out, 3.5 * k, Blend::Normal) } else { false };
+            // Near motion streaks (exits), blurred like the near dots.
+            if streaks[NB..2 * NB].iter().any(|p| !p.is_empty()) {
+                let pushed = fxkit::push_blur(&mut out, 3.5 * k, Blend::Normal);
                 for ci in 0..NB {
-                    fxkit::fill_solid(&mut out, std::mem::take(&mut streaks[band * NB + ci]), alpha(grad(ci), 0.45));
+                    fxkit::fill_solid(&mut out, std::mem::take(&mut streaks[NB + ci]), alpha(grad(ci), 0.45));
                 }
                 fxkit::pop_if(&mut out, pushed);
+            }
+            // Sharp dots and streaks stay vector fills (their edges are what the eye checks).
+            for ci in 0..NB {
+                fxkit::fill_solid(&mut out, std::mem::take(&mut streaks[ci]), alpha(grad(ci), 0.45));
+                for ai in 0..NA {
+                    fxkit::fill_solid(&mut out, std::mem::take(&mut dots[ci * NA + ai]), lvl_col(ci, ai));
+                }
             }
         } else {
             if self.glow && !normal && bloom > 0.02 && !glow.is_empty() {
                 push_layer(&mut out, 1.0, Blend::Normal, vec![Filter::Blur(7.0 * k)]);
                 out.push(fill(glow, solid(alpha(grad(NB / 2), 0.55 * bloom))));
                 out.push(Op::PopLayer);
-            }
-            for (ci, x, y, r, a) in soft {
-                out.push(fxkit::light(x, y, r, fxkit::gauss(grad(ci), a)));
             }
             for band in [1usize, 0] {
                 let pushed = if band == 1 { fxkit::push_blur(&mut out, 3.5 * k, Blend::Normal) } else { false };
