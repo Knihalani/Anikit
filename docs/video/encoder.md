@@ -42,6 +42,7 @@ Other entry points:
 | `cabac` | `true` | Main profile with CABAC. `false` gives Constrained Baseline with CAVLC: 35–60% larger files, slightly faster. |
 | `deblock` | `false` | The in-loop filter. It helps only at QP ≥ 34 (+0.1–0.2 dB) and costs about 25% speed; at QP ≤ 28 it *lowers* PSNR on this content (sharp edges, and copied macroblocks next to changing areas get re-filtered every frame). | With `threads > 1`, each slice deblocks its own rows in parallel (`disable_deblocking_filter_idc` 2).
 | `subpel` | `true` | Quarter-pel motion refinement (exact 6-tap interpolation, half-pel planes kept up to date incrementally). It saves 16–46% on real renderer clips with sub-pixel motion, for 15–25% more time. |
+| `aq_strength` | `0.5` | Adaptive quantisation: flat, dark macroblocks get a lower QP (up to −(4 + 3)·strength), everything else keeps `qp`. It stops dark dithered gradients from turning into blocks. 0 = constant QP. |
 | `skip_threshold` | `0` | Perceptual skip: code a changed macroblock as a copy when every sample is within this distance of the reconstructed reference. Off by default (see the measurements below). |
 | `threads` | 1 | Slices per frame for `encode()`. Chunk-parallel modes ignore it. |
 | `full_range` | `false` | Signals the colour range (BT.709 primaries/matrix are always signalled). |
@@ -377,6 +378,51 @@ Measured with `cargo run --release -p ak264 --example quality -- <scene> 60 <qp>
 | typical, 26 | 320 fps, 111 KB, 50.12 dB | 247 fps, 111 KB, 48.80 dB | 302 fps, 108 KB, 50.09 dB | 336 fps, 174 KB, 50.12 dB |
 | full, 26 | 93 fps, 179 KB, 48.68 dB | 79 fps, 197 KB, 48.25 dB | 65 fps, 197 KB, 49.03 dB | 96 fps, 247 KB, 48.68 dB |
 | typical, 34 | 337 fps, 70 KB, 43.86 dB | 306 fps, 70 KB, 44.01 dB | 284 fps, 67 KB, 43.91 dB | 412 fps, 123 KB, 43.86 dB |
+
+### Adaptive quantisation (dark gradients)
+
+At constant QP 23, dark dithered gradients (a renderer's ±1 dither over a slow
+ramp in the shadows) lose their dither. They turn into flat one-level bands
+whose edges follow the 4×4/16×16 block grid, which is visible once shadows are
+lifted. x264 at CRF 23 does the same, with more flicker.
+
+ak264 now codes a QP per macroblock (`mb_qp_delta`, CABAC and CAVLC). Deblocking
+uses each edge's averaged QP, as the standard requires.
+
+`aq_strength` lowers the QP only where blocking shows:
+- **Flat:** luma plus chroma energy under 4 levels² per sample, up to −4 × strength.
+- **Dark:** mean luma under 80, up to −3 × strength more.
+
+Busy or bright macroblocks keep the frame QP, so text and detail are unchanged.
+The energy is a SIMD sum and sum of squares, computed only for macroblocks
+that are coded.
+
+The x264-style symmetric variant (raising QP on busy macroblocks) was measured
+first and rejected. On launch at QP 23 it doubled the size and lost 1.5 dB,
+because it moves bits from text to the background.
+
+Effect at QP 23, 4 cores, AQ 0 → 0.5 (the default):
+
+| Clip | fps | Size | PSNR-Y |
+|---|---|---|---|
+| dark mesh-gradient (real renderer, 60 frames) | ≈ same | 22 → 37 KB | 58.35 → 60.79 dB; 4×4-smoothed 59.9 → 64.0 dB |
+| launch (dark UI) | 315 → 266 (−16%) | 2970 → 3467 KB (+17%) | 49.82 → 50.23 dB |
+| tutorial (dark UI) | 676 → 644 (−5%) | 652 → 746 KB (+14%) | 53.53 → 54.00 dB |
+| spec-to-screen (600 frames) | 141 → 135 (−4%) | 13647 → 14765 KB (+8%) | 43.19 → 43.25 dB |
+| full (synthetic, bright) | ≈ same | 1296 → 1277 KB | 51.48 → 51.53 dB |
+
+On the dark clip, QP 23 with AQ 0.5 matches QP 19 without AQ: 37 vs 36 KB,
+and 4×4-smoothed PSNR 63.95 vs 64.07 dB. That is the `--quality best` level
+that showed no blocking, while busy content stays at QP 23. AQ 1.0 goes further
+(69 KB, 67.3 dB smoothed) for about +45% on launch.
+
+No QP short of near-lossless keeps the dither itself: a ±0.5-level pattern is
+below the quantiser step. What AQ fixes is the block structure: band edges follow
+the gradient instead of the grid.
+
+Reproduce: `cargo run --release -p ak264 --example dark` (synthetic). For a
+rendered clip, use `FILE=clip.yuv AQ=0.5 OUT=dir CROP=x,y LIFT=lo,gain`, which
+also writes a lifted crop as PGM.
 
 ## Limitations and next steps
 
