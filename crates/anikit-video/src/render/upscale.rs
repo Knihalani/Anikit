@@ -314,7 +314,7 @@ fn cubic_row<const C: usize>(r: [&[i32]; 4], w: [f32; 4], drow: &mut [f32], d: &
     }
     for k in 0..n {
         let v = (w[0] * r0[k] as f32 + w[1] * r1[k] as f32 + w[2] * r2[k] as f32 + w[3] * r3[k] as f32) / 4096.0;
-        d[k] = (v + drow[k] + 0.5).clamp(0.0, 255.0) as u8;
+        d[k] = super::sat_u8(v + drow[k] + 0.5);
     }
     if C == 4 {
         for o in d.chunks_exact_mut(4) {
@@ -366,6 +366,20 @@ mod perf {
             let t = std::time::Instant::now();
             u.run(&src, sw, sh, Rect::new(0.0, 0.0, 1924.0, 1084.0), &mut out, 1920, 1080, 0, 0);
             eprintln!("upscale {:?}", t.elapsed());
+        }
+        // Cubic B-spline field (≥ 12×) and Mitchell (2×).
+        let mut c = Upscaler::cubic();
+        let (fw, fh) = (160usize, 90usize);
+        let field: Vec<u8> = (0..fw * fh * 4).map(|i| if i % 4 == 3 { 255 } else { (i % 251) as u8 }).collect();
+        for _ in 0..3 {
+            let t = std::time::Instant::now();
+            c.run(&field, fw, fh, Rect::new(0.0, 0.0, 1920.0, 1080.0), &mut out, 1920, 1080, 0, 0);
+            eprintln!("cubic rgba 12x {:?}", t.elapsed());
+        }
+        for _ in 0..3 {
+            let t = std::time::Instant::now();
+            c.run(&src, sw, sh, Rect::new(0.0, 0.0, 1924.0, 1084.0), &mut out, 1920, 1080, 0, 0);
+            eprintln!("cubic rgba 4x {:?}", t.elapsed());
         }
         let plane: Vec<u8> = (0..sw * sh + 4).map(|i| (i % 251) as u8).collect();
         let mut y = vec![0u8; 1920 * 1080];

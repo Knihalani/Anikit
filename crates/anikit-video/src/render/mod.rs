@@ -76,6 +76,16 @@ impl View<'_> {
     }
 }
 
+/// `x.clamp(0.0, 255.0) as u8`, bit for bit (NaN → 0), but vectorisable: Rust's
+/// saturating float → int cast stops LLVM from vectorising a loop (measured 4×).
+#[inline(always)]
+pub(crate) fn sat_u8(x: f32) -> u8 {
+    // max/min map NaN to 0 and keep the value in 0..=255, so the cast is in range.
+    let v = x.max(0.0).min(255.0);
+    // SAFETY: v is finite and in [0, 255].
+    unsafe { v.to_int_unchecked::<i32>() as u8 }
+}
+
 /// Speed/quality trade-off.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum Quality {
@@ -508,10 +518,15 @@ impl Renderer {
                 Some(r) => vec![r],
                 None => Vec::new(),
             };
+            // Draft only: draw each box on a transparent canvas and composite in
+            // YUV (alpha and chroma per 2×2 block: up to ~2.5 ΔE at glow and text
+            // edges in qbench). Otherwise the box is seeded with the upscaled
+            // backdrop in RGBA and converted exactly.
+            let yuv_composite = normal_only && self.quality == Quality::Draft;
             for [x0, y0, x1, y1] in boxes {
                 let (rw, rh) = ((x1 - x0) as u16, (y1 - y0) as u16);
                 self.rpix.resize(rw, rh);
-                let box_settings = if normal_only {
+                let box_settings = if yuv_composite {
                     RasterizerSettings { target_init: TargetInit::Clear(AlphaColor::TRANSPARENT), ..Default::default() }
                 } else {
                     self.upscaler.run(pix.data_as_u8_slice(), pw, ph, *dev, self.rpix.data_as_u8_slice_mut(), rw as usize, rh as usize, x0 as i64, y0 as i64);
@@ -527,7 +542,7 @@ impl Renderer {
                 rctx.render_with(&mut self.rpix, &mut st.res, box_settings);
                 rctx.reset();
                 st.org = (0, 0);
-                if normal_only {
+                if yuv_composite {
                     yuv::composite_over(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, (x0, y0), yuv);
                 } else {
                     yuv::convert_into(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, [0, 0, rw as usize, rh as usize], yuv, (x0, y0));
