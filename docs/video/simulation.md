@@ -83,6 +83,13 @@ Standing dominoes sleep until hit; bodies that have been still for `freeze`
 seconds become fixed, so a pile of thousands of fallen panes costs nothing
 and only the wave front is solved.
 
+**Cache.** Records are also appended to `$ANIKIT_CACHE/sim/phys-<hash>.bin`
+(default `~/.cache/anikit`; `ANIKIT_CACHE=off` disables it), keyed by
+everything that affects the motion. Each record stores only the bodies that
+moved, exact `f32`. A later `still` or render of the same physics reads the
+frames instead of simulating: a cold 1080p still of the 10k cascade at 5 s
+goes from 9.9 s to 3.0 s, with identical pixels.
+
 ## Particles: `{ "type": "particles" }` in `objects`
 
 ```json

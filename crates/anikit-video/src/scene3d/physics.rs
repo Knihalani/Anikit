@@ -79,18 +79,26 @@ struct Mover {
     kinematic: bool,
 }
 
-struct State {
+/// The live rapier world, `at` records into the simulation.
+struct World {
     world: PhysicsWorld,
     handles: Vec<RigidBodyHandle>,
     movers: Vec<Vec<RigidBodyHandle>>,
-    /// Records `0..`: record `k` is video time `start + k / record`.
-    frames: Vec<Arc<Vec<Pose7>>>,
+    at: usize,
     fired: usize,
-    steps: u64,
-    sim_secs: f64,
     /// Seconds (simulated) each body has been still; `< 0` = frozen.
     still: Vec<f32>,
     frozen: usize,
+}
+
+struct State {
+    /// Records `0..`: record `k` is video time `start + k / record`. Some may
+    /// come from the disk cache, ahead of the live world.
+    frames: Vec<Arc<Vec<Pose7>>>,
+    world: Option<World>,
+    steps: u64,
+    sim_secs: f64,
+    disk: Option<std::path::PathBuf>,
 }
 
 /// The simulation of one spec: set-up plus its lazily grown recording.
@@ -112,6 +120,8 @@ pub struct Sim {
     radius: Vec<f32>,
     /// Seconds a body must be still before it's frozen (0 = never).
     freeze: f32,
+    /// Hash of everything that determines the motion (disk cache key).
+    key: u64,
     state: Mutex<Option<State>>,
 }
 
@@ -362,6 +372,11 @@ pub fn parse(v: &Value, raw_objects: &[Value], shapes: &mut spec::Shapes, mats: 
         d.x.min(d.y).min(d.z)
     }).fold(f32::MAX, f32::min);
     let rate = rate_v.unwrap_or(if thinnest < 0.02 { 240.0 } else { 120.0 }).clamp(30.0, 2000.0);
+    let key = {
+        let colliders: Vec<&Value> = raw_objects.iter().filter(|o| o.get("collide").and_then(|c| c.as_bool()) == Some(true)).collect();
+        let tpl: Vec<&Value> = templates.iter().map(|&k| &raw_objects[k]).collect();
+        crate::components::style::fnv(&[b"anikit-physics-v1 rapier 0.36", v.to_string().as_bytes(), serde_json::to_string(&colliders).unwrap_or_default().as_bytes(), serde_json::to_string(&tpl).unwrap_or_default().as_bytes(), &floor_y.unwrap_or(f32::NAN).to_bits().to_le_bytes()])
+    };
     let movers: Vec<Mover> = scene_objs.iter().filter(|o| o.collide).map(|o| Mover { obj: o.clone(), kinematic: o.dynamic() }).collect();
     let init = Arc::new(bodies.iter().map(|b| b.pose).collect());
     let radius = bodies.iter().map(|b| {
@@ -373,7 +388,7 @@ pub fn parse(v: &Value, raw_objects: &[Value], shapes: &mut spec::Shapes, mats: 
         Some(x) if !x.is_boolean() => spec::f(x, "physics.freeze")?.max(0.0),
         _ => 0.4,
     };
-    let sim = Arc::new(Sim { gravity, rate, iterations, time_scale, start, ground, record, groups, bodies, impulses, movers, sleep, init, radius, freeze, state: Mutex::new(None) });
+    let sim = Arc::new(Sim { gravity, rate, iterations, time_scale, start, ground, record, groups, bodies, impulses, movers, sleep, init, radius, freeze, key, state: Mutex::new(None) });
     let objs = objs
         .into_iter()
         .map(|(mut o, first)| {
@@ -589,7 +604,7 @@ impl Sim {
         self.bodies[b].scale
     }
 
-    fn build(&self) -> State {
+    fn build(&self) -> World {
         let mut world = PhysicsWorld { gravity: Vector::new(self.gravity.x, self.gravity.y, self.gravity.z), ..PhysicsWorld::default() };
         world.integration_parameters.dt = 1.0 / self.rate;
         world.integration_parameters.num_solver_iterations = self.iterations;
@@ -634,10 +649,10 @@ impl Sim {
             movers.push(hs);
         }
         let n = handles.len();
-        State { world, handles, movers, frames: vec![self.init.clone()], fired: 0, steps: 0, sim_secs: 0.0, still: vec![0.0; n], frozen: 0 }
+        World { world, handles, movers, at: 0, fired: 0, still: vec![0.0; n], frozen: 0 }
     }
 
-    fn record(&self, st: &State) -> Vec<Pose7> {
+    fn record(&self, st: &World) -> Vec<Pose7> {
         st.handles
             .iter()
             .map(|h| {
@@ -649,9 +664,17 @@ impl Sim {
             .collect()
     }
 
-    /// Step the world from record `k - 1` to record `k`.
-    fn advance(&self, st: &mut State) {
-        let k = st.frames.len();
+    /// Step the live world one record; keep the record if it's new.
+    fn advance(&self, state: &mut State) {
+        if state.world.is_none() {
+            let clock = std::time::Instant::now();
+            state.world = Some(self.build());
+            if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
+                eprintln!("physics: built {} bodies in {:.0} ms", self.bodies.len(), clock.elapsed().as_secs_f64() * 1e3);
+            }
+        }
+        let st = state.world.as_mut().unwrap();
+        let k = st.at + 1;
         let hz = self.record;
         let t0 = self.start + (k - 1) as f32 / hz;
         let t1 = self.start + k as f32 / hz;
@@ -705,28 +728,35 @@ impl Sim {
                     }
                 }
                 st.world.step();
-                st.steps += 1;
-
+                state.steps += 1;
             }
-            st.sim_secs += sim_dt as f64;
+            state.sim_secs += sim_dt as f64;
         }
         if n > 0 && self.freeze > 0.0 {
             self.freeze_settled(st, sim_dt, t1);
         }
+        st.at = k;
+        if k < state.frames.len() {
+            // Re-simulating records the disk cache already had.
+            return;
+        }
         let asleep = st.world.islands.active_bodies().next().is_none();
         let rec = if asleep && n > 0 && st.movers.iter().all(|m| m.is_empty()) {
-            st.frames.last().unwrap().clone()
+            state.frames.last().unwrap().clone()
         } else {
             Arc::new(self.record(st))
         };
-        st.frames.push(rec);
+        if let Some(path) = &state.disk {
+            disk::append(path, k, state.frames.last().unwrap(), &rec, self.record);
+        }
+        state.frames.push(rec);
     }
 
     /// Settled bodies become fixed, so piles of fallen bodies stop costing
     /// solver time (a whole leaning pile is one island and would never
     /// sleep while the wave front moves). Bodies near a moving kinematic
     /// collider are woken back up.
-    fn freeze_settled(&self, st: &mut State, dt: f32, t: f32) {
+    fn freeze_settled(&self, st: &mut World, dt: f32, t: f32) {
         let (v_eps, w_eps) = (0.015f32, 0.04f32);
         let active: Vec<RigidBodyHandle> = st.world.islands.active_bodies().collect();
         let index: HashMap<RigidBodyHandle, usize> = if active.is_empty() { HashMap::new() } else { st.handles.iter().enumerate().map(|(k, h)| (*h, k)).collect() };
@@ -791,11 +821,12 @@ impl Sim {
         let k = u.floor() as usize;
         let mut g = self.state.lock().unwrap();
         if g.is_none() {
-            let clock = std::time::Instant::now();
-            *g = Some(self.build());
-            if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
-                eprintln!("physics: built {} bodies in {:.0} ms", self.bodies.len(), clock.elapsed().as_secs_f64() * 1e3);
+            let disk = disk::path(self.key);
+            let frames = disk.as_ref().map(|p| disk::load(p, &self.init, self.record)).unwrap_or_else(|| vec![self.init.clone()]);
+            if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() && frames.len() > 1 {
+                eprintln!("physics: {} records from the cache", frames.len());
             }
+            *g = Some(State { frames, world: None, steps: 0, sim_secs: 0.0, disk });
         }
         let st = g.as_mut().unwrap();
         let before = (st.frames.len(), std::time::Instant::now(), st.steps);
@@ -803,14 +834,15 @@ impl Sim {
             self.advance(st);
         }
         if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() && st.frames.len() > before.0 {
+            let w = st.world.as_ref().unwrap();
             eprintln!(
                 "physics: records {}..{} ({} steps) in {:.0} ms; {} awake, {} frozen",
                 before.0,
                 st.frames.len(),
                 st.steps - before.2,
                 before.1.elapsed().as_secs_f64() * 1e3,
-                st.world.islands.active_bodies().filter(|h| st.world.bodies[*h].is_dynamic()).count(),
-                st.frozen
+                w.world.islands.active_bodies().filter(|h| w.world.bodies[*h].is_dynamic()).count(),
+                w.frozen
             );
         }
         (st.frames[k].clone(), st.frames[k + 1].clone(), u - k as f32)
@@ -821,6 +853,7 @@ impl Sim {
     pub fn front(&self, t: f32) -> f32 {
         let (a, _, _) = self.at(t);
         let o = &self.init[0];
+
         a.iter()
             .filter(|q| mat_of([q[3], q[4], q[5], q[6]])[1].y < 0.87)
             .map(|q| ((q[0] - o[0]).powi(2) + (q[2] - o[2]).powi(2)).sqrt())
@@ -836,11 +869,124 @@ impl Sim {
     }
 }
 
+/// The on-disk record cache: `$ANIKIT_CACHE/sim/phys-<key>.bin` (default
+/// `~/.cache/anikit`; `ANIKIT_CACHE=off` disables it). A header, then one
+/// block per record holding only the bodies that moved since the previous
+/// one, exact `f32`, each block checksummed. Appended as records are made, so
+/// a later `still` of the same spec reads its frames instead of simulating.
+mod disk {
+    use super::Pose7;
+    use std::io::Write;
+    use std::path::{Path, PathBuf};
+    use std::sync::Arc;
+
+    const MAGIC: &[u8; 8] = b"AKPHYS01";
+
+    pub fn path(key: u64) -> Option<PathBuf> {
+        let base = match std::env::var("ANIKIT_CACHE") {
+            Ok(v) if v == "off" || v == "0" => return None,
+            Ok(v) if !v.is_empty() => PathBuf::from(v),
+            _ => match std::env::var_os("XDG_CACHE_HOME") {
+                Some(x) => PathBuf::from(x).join("anikit"),
+                None => PathBuf::from(std::env::var_os("HOME")?).join(".cache").join("anikit"),
+            },
+        };
+        let dir = base.join("sim");
+        std::fs::create_dir_all(&dir).ok()?;
+        Some(dir.join(format!("phys-{key:016x}.bin")))
+    }
+
+    fn sum(b: &[u8]) -> u32 {
+        let mut h = 0x811c_9dc5u32;
+        for &x in b {
+            h = (h ^ x as u32).wrapping_mul(0x0100_0193);
+        }
+        h
+    }
+
+    pub fn load(p: &Path, init: &Arc<Vec<Pose7>>, hz: f32) -> Vec<Arc<Vec<Pose7>>> {
+        let mut out = vec![init.clone()];
+        let Ok(b) = std::fs::read(p) else { return out };
+        let n = init.len();
+        if b.len() < 16 || &b[..8] != MAGIC || u32::from_le_bytes(b[8..12].try_into().unwrap()) as usize != n || f32::from_le_bytes(b[12..16].try_into().unwrap()) != hz {
+            return out;
+        }
+        let rd = |o: usize| u32::from_le_bytes(b[o..o + 4].try_into().unwrap());
+        let mut o = 16;
+        while o + 8 <= b.len() {
+            let (k, m) = (rd(o) as usize, rd(o + 4) as usize);
+            let end = o + 8 + m * 32;
+            if end + 4 > b.len() || sum(&b[o..end]) != rd(end) {
+                break;
+            }
+            if k == out.len() {
+                let mut rec: Vec<Pose7> = out.last().unwrap().as_ref().clone();
+                let mut ok = true;
+                for j in 0..m {
+                    let q = o + 8 + j * 32;
+                    let i = rd(q) as usize;
+                    if i >= n {
+                        ok = false;
+                        break;
+                    }
+                    for c in 0..7 {
+                        rec[i][c] = f32::from_le_bytes(b[q + 4 + c * 4..q + 8 + c * 4].try_into().unwrap());
+                    }
+                }
+                if !ok {
+                    break;
+                }
+                // Unchanged records share the previous one.
+                if m == 0 {
+                    let last = out.last().unwrap().clone();
+                    out.push(last);
+                } else {
+                    out.push(Arc::new(rec));
+                }
+            } else if k > out.len() {
+                break;
+            }
+            o = end + 4;
+        }
+        out
+    }
+
+    pub fn append(p: &Path, k: usize, prev: &[Pose7], rec: &[Pose7], hz: f32) {
+        let mut blk = Vec::with_capacity(16);
+        blk.extend_from_slice(&(k as u32).to_le_bytes());
+        blk.extend_from_slice(&0u32.to_le_bytes());
+        let mut m = 0u32;
+        for (i, (a, b)) in prev.iter().zip(rec).enumerate() {
+            if a != b {
+                m += 1;
+                blk.extend_from_slice(&(i as u32).to_le_bytes());
+                for v in b {
+                    blk.extend_from_slice(&v.to_le_bytes());
+                }
+            }
+        }
+        blk[4..8].copy_from_slice(&m.to_le_bytes());
+        let s = sum(&blk);
+        blk.extend_from_slice(&s.to_le_bytes());
+        let fresh = std::fs::metadata(p).map(|m| m.len() == 0).unwrap_or(true);
+        let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(p) else { return };
+        if fresh {
+            let mut h = MAGIC.to_vec();
+            h.extend_from_slice(&(rec.len() as u32).to_le_bytes());
+            h.extend_from_slice(&hz.to_le_bytes());
+            let _ = f.write_all(&h);
+        }
+        let _ = f.write_all(&blk);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn sim(v: Value) -> Parsed {
+        // Tests always simulate.
+        std::env::set_var("ANIKIT_CACHE", "off");
         let mut shapes = spec::Shapes::new();
         parse(&v, &[], &mut shapes, &mut Vec::new(), &HashMap::new(), &[], Some(0.0)).unwrap()
     }
@@ -892,6 +1038,27 @@ mod tests {
         let (a, _, _) = p.sim.at(0.4);
         let up = mat_of([a[49][3], a[49][4], a[49][5], a[49][6]])[1].y;
         assert!(up > 0.999 && (a[49][1] - p.sim.init[49][1]).abs() < 2e-3, "up {up}, y {} vs {}", a[49][1], p.sim.init[49][1]);
+    }
+
+    #[test]
+    fn disk_cache_round_trips_exactly() {
+        let dir = std::env::temp_dir().join(format!("anikit-phys-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("t.bin");
+        let a = sim(serde_json::json!({ "bodies": [ { "type": "box", "size": 0.2, "count": 50, "layout": "pile" } ] }));
+        let init = a.sim.init.clone();
+        let recs: Vec<Arc<Vec<Pose7>>> = (0..40).map(|k| a.sim.at(k as f32 / 60.0 + 1e-4).0).collect();
+        for k in 1..recs.len() {
+            disk::append(&p, k, &recs[k - 1], &recs[k], 60.0);
+        }
+        let back = disk::load(&p, &init, 60.0);
+        assert_eq!(back.len(), recs.len());
+        for (x, y) in back.iter().zip(&recs) {
+            assert_eq!(x.as_slice(), y.as_slice());
+        }
+        // A different rate is a different cache.
+        assert_eq!(disk::load(&p, &init, 30.0).len(), 1);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
