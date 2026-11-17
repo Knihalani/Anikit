@@ -1,0 +1,514 @@
+{
+  "name": "div-c-substation",
+  "tags": [
+    "music-video",
+    "kinetic-type",
+    "vertical"
+  ],
+  "refs": [
+    "demo-festival",
+    "kurzgesagt-short",
+    "bbc-two-ident-vertical"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 4,
+      "typography": 4,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 4,
+      "craft": 5,
+      "originality": 3
+    },
+    "overall": 3.88,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find an idea specific to the decommissioned power station, such as real archive footage, real texture or actual electrical behaviour driving the type, instead of stock lightning and hazard tape",
+      "Break the repeated template: vary scale, cropping and layout from frame to frame and make the type physically interact with light and material",
+      "Replace the default condensed sans and mono-label combination with a typographic point of view, and introduce real texture and depth (grain, print, photographic material)",
+      "Find a real idea in the venue: shoot or model the actual power-station space and its materials instead of a black void with a lightning overlay",
+      "Break the repeated layout. Vary scale, cropping and type behaviour between frames so the motion has choreography rather than swaps",
+      "Give the type a point of view (custom forms, physical interaction with current or light) and build a palette beyond black plus safety yellow",
+      "It needs a specific idea about this venue: real concrete, rust, sodium light and transformer hum, instead of generic 'electric' clip-art",
+      "Typography has no point of view: one default condensed face at constant weight and a mono label system. It needs custom or distorted letterforms that the current actually acts on, with real scale contrast.",
+      "The same frame repeats eight times with names swapped. It needs choreography: camera moves, layering and frames that build and break the grid rather than reset to the template."
+    ],
+    "tells": [
+      "Textbook 'tasteful AI' poster: dark ground, small tracked mono caps labels ('CIRCUIT 03/08', '\u25cf LIVE', 'kV'), a big condensed grotesk headline and a single yellow accent",
+      "The same layout repeats with the words swapped (name centred, kV readout bottom-left, yellow rule bottom-right); it is structured like a slide deck",
+      "The lightning bolt is a stock glow effect laid over the type with no physical relationship to it, and the light is flat and unmotivated",
+      "The idea is literal: a power-station venue, so lightning, voltage numbers and hazard stripes; the hazard tape is a clich\u00e9",
+      "The blurred 'PETRA' and 'SUB' frames are generic push-in transitions, not choreography",
+      "A generic template look: dark ground, small tracked mono labels ('CIRCUIT 03/08', '\u25cf LIVE', 'kV'), a big condensed headline and a single yellow accent",
+      "The same layout repeats with names swapped (PETRA, NULLFORM, VEDA K): it works like a slide deck",
+      "The lightning-bolt effect is a stock overlay with no physical relationship to the type or space",
+      "Hazard stripes and the 'decommissioned power station' copy make the idea literal (substation = electricity + caution tape)",
+      "Placeholder-like UI furniture (rule lines, a red live dot, counters) with no texture or depth",
+      "It matches the generic template almost exactly: tiny tracked monospace labels ('CIRCUIT 03/08', '\u25cf LIVE', '2 kV'), a big condensed grotesk headline, black ground, and a single yellow accent",
+      "The same layout repeats across frames: label at top left, red LIVE dot at top right, a centred condensed name, a kV readout and a yellow rule at bottom. Only the word changes.",
+      "The idea is literal: a power station festival gets lightning bolts, hazard stripes and voltage numbers. All are stock signifiers.",
+      "The lightning is a stock overlay with no interaction with the type; it never charges, cuts or distorts the letterforms",
+      "The flat yellow ground and default hazard tape show no texture or materiality, which is a miss for a decommissioned industrial building",
+      "The end card is a centred info-dump stack (title, date, rule, small caps lines) set like a slide"
+    ]
+  },
+  "refs_summary": {
+    "demo-festival": {
+      "overall": 6.88,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "kurzgesagt-short": {
+      "overall": 6.88,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "bbc-two-ident-vertical": {
+      "overall": 8.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.29,
+  "delta": -3.41,
+  "trials": [
+    {
+      "key": {
+        "A": "bbc-two-ident-vertical",
+        "B": "demo-festival",
+        "C": "candidate",
+        "D": "kurzgesagt-short"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Dense fields of soft 3D objects, each with a distinct material (knit, quilted fabric, foil, rubber, wireframe), which takes real look-dev work",
+              "A diagonal seam splits each frame into two colour worlds, and the pairs change between frames (blue/pink, green/plum, red/teal), so the pairings were planned",
+              "Lighting is soft and physically plausible, with contact shadows and sheen on the metallic pieces; the frames have real depth and are densely layered",
+              "The broadcast brand mark sits small and steady while the image does the work, which is how real channel idents are built",
+              "The palette is unusual and deliberate (dusty plum against mint, brick against teal) rather than one accent colour"
+            ],
+            "gaps": [
+              "Only three distinct states are visible, so the choreography between frames is shown less than in the best work; reveal the motion of the seam itself (slide, collapse, tumble) more",
+              "The mark is the only typography and it sits passively; integrating it with the objects (occlusion, interaction) would lift the type score",
+              "The object vocabulary sometimes leans toward generic primitives (cubes, cylinders); a sharper reason for these particular objects would make the idea more ownable"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Coherent, fully art-directed flat-vector illustration system: the characters, map and mammoth share one shape language and one palette",
+              "Every frame is a different set-up (villain at a control panel, title over a map, birds playing a memory game, mammoth), so the edit tells a story rather than repeating a template",
+              "The title over the stylised Europe map has a custom-feeling stroke and shadow treatment that fits the illustration",
+              "The light is stylised but deliberate: gradients, rim highlights and atmospheric skies"
+            ],
+            "gaps": [
+              "The house style is well established and not surprising; there is no single image a jury would remember as unique to this piece",
+              "Burned-in social captions in a default-feeling rounded sans sit on top of the image and weaken every frame; design them as part of the system",
+              "Little material or texture; adding grain or a distinctive surface would deepen the flat-vector look"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 7,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "Reads as a curated reel or title montage: a real station platform with a motion-blurred train and a bold poster, a chaotic simulated chrome-fluid render, then a heavy red grotesk name card",
+              "The live-action plate has real light and atmosphere, and the fluid simulation has genuine complexity and iridescent detail",
+              "The red heavy grotesk on grey is confident and intentional, though plain"
+            ],
+            "gaps": [
+              "No unifying idea across the frames; it is a compilation rather than one designed film, so there is no specific concept",
+              "The frames do not talk to each other through palette, type or motion; establish one connecting language (for example the red letterform recurring inside each scene)",
+              "The closing name card is a centred slide with a lot of empty space; give the type scale and integration with the image"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "Textbook 'tasteful AI' poster: dark ground, small tracked mono caps labels ('CIRCUIT 03/08', '\u25cf LIVE', 'kV'), a big condensed grotesk headline and a single yellow accent",
+              "The same layout repeats with the words swapped (name centred, kV readout bottom-left, yellow rule bottom-right); it is structured like a slide deck",
+              "The lightning bolt is a stock glow effect laid over the type with no physical relationship to it, and the light is flat and unmotivated",
+              "The idea is literal: a power-station venue, so lightning, voltage numbers and hazard stripes; the hazard tape is a clich\u00e9",
+              "The blurred 'PETRA' and 'SUB' frames are generic push-in transitions, not choreography"
+            ],
+            "gaps": [
+              "Find an idea specific to the decommissioned power station, such as real archive footage, real texture or actual electrical behaviour driving the type, instead of stock lightning and hazard tape",
+              "Break the repeated template: vary scale, cropping and layout from frame to frame and make the type physically interact with light and material",
+              "Replace the default condensed sans and mono-label combination with a typographic point of view, and introduce real texture and depth (grain, print, photographic material)"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 29.1,
+        "cost_usd": 0.1709806,
+        "tokens": 72046,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "bbc-two-ident-vertical",
+        "B": "demo-festival",
+        "C": "kurzgesagt-short",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Dense, tactile 3D still lifes with knit, felt, ribbed rubber, foil and chrome surfaces: real material work, not stock primitives",
+              "The diagonal split ties into the channel's identity, and each frame reworks the palette (blue/lilac, green/plum, red/teal) while keeping the system",
+              "Wireframe cubes and outlined shapes break up the soft masses, so each frame is layered and reads as a poster",
+              "Soft, directional light with real occlusion and specular detail. The light is shaped on purpose",
+              "The broadcast mark is used as a fixed anchor and is set small and with restraint"
+            ],
+            "gaps": [
+              "Only three frames are visible. Show more of how the camera or objects move, the tumble and settle, to prove the choreography rather than leave it implied",
+              "Composition repeats across the frames. One frame should break the diagonal system for surprise",
+              "Type is limited to the stock channel logo. The idea could carry into how the mark interacts with the materials"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 8,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Live-action context: a poster column on a station platform with a motion-blurred train behind it. The graphic sits in a real place, which shows ambition beyond the screen",
+              "A custom fluid/particle simulation with iridescent oil-slick surfaces and spray: complex, art-directed simulation, not a preset",
+              "Tight, heavy red grotesk for the end title, kerned with care and paired with a controlled red and black language",
+              "Shifts between media (photography, CG simulation, flat type) suggest an authored, editorial structure"
+            ],
+            "gaps": [
+              "The frames feel like separate pieces. A clearer visual thread tying the poster, the simulation and the title would strengthen the single-film read",
+              "The end card is a centred word on grey and is the weakest frame. Give it the same density as the simulation frame",
+              "Colour is unresolved across the frames (cold blue sim against the red brand). Commit to a palette that links them"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Coherent house illustration style with characters that are drawn, posed and acting, not clip art",
+              "A saturated, consistent palette and strong gradients used in a deliberate system",
+              "Each frame is a new scene (villain at the control room, a stylised map, card-game characters, a mammoth), which shows real storytelling and choreography",
+              "The title card uses dimensional, stroked display type integrated into the map"
+            ],
+            "gaps": [
+              "Burned-in caption subtitles in a small default sans hurt the frames. Integrate the captions or design them",
+              "Light is flat, cel-style. Some atmospheric depth or texture would lift it toward the best entry",
+              "The style is a well-known explainer idiom. The craft is high, but it lacks a signature idea that belongs only to this film"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 5,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "A generic template look: dark ground, small tracked mono labels ('CIRCUIT 03/08', '\u25cf LIVE', 'kV'), a big condensed headline and a single yellow accent",
+              "The same layout repeats with names swapped (PETRA, NULLFORM, VEDA K): it works like a slide deck",
+              "The lightning-bolt effect is a stock overlay with no physical relationship to the type or space",
+              "Hazard stripes and the 'decommissioned power station' copy make the idea literal (substation = electricity + caution tape)",
+              "Placeholder-like UI furniture (rule lines, a red live dot, counters) with no texture or depth"
+            ],
+            "gaps": [
+              "Find a real idea in the venue: shoot or model the actual power-station space and its materials instead of a black void with a lightning overlay",
+              "Break the repeated layout. Vary scale, cropping and type behaviour between frames so the motion has choreography rather than swaps",
+              "Give the type a point of view (custom forms, physical interaction with current or light) and build a palette beyond black plus safety yellow"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.9,
+        "cost_usd": 0.1550086,
+        "tokens": 71920,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "kurzgesagt-short",
+        "B": "demo-festival",
+        "C": "bbc-two-ident-vertical",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A complete, consistent house illustration style: flat vector with soft inner gradients, rim highlights and layered parallax depth, held across very different scenes (a control room, a map, a two-character gag, a mammoth)",
+              "Every frame stages a different scene type: a villain with a STOP button, a thermohaline map as the title card, a card-matching game used as a metaphor for a misconception, a mammoth. That shows real storyboarding, not one layout reused.",
+              "The title is built into the map; the chunky outlined display type sits on the warm/cold palette",
+              "The saturated violet/cyan/orange palette is deliberate and holds together across scenes",
+              "Weaknesses: the burned-in captions are default social-video subtitles, and the visual language follows a well-known explainer formula"
+            ],
+            "gaps": [
+              "The look is a recognisable genre house style rather than a language invented for this subject. It needs a visual idea that belongs only to 'Europe's next ice age'.",
+              "The burned-in captions are default and work against the illustration; they should be typeset with care or designed into the scenes",
+              "Light is decorative gradient, not motivated. Real atmosphere (cold haze, low winter sun) would match the material depth of C."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "It mixes media: a live-action Dutch station platform with a motion poster on a real city light, a high-end iridescent fluid simulation (credited to Thomas Traum), and a bold red grotesk end card",
+              "The contrast between the documentary plate and the abstract sim is a curatorial choice, typical of a studio or designer reel",
+              "The red-on-grey name card is restrained and confident and carries through the red/black poster in frame 1",
+              "Only three frames survive, so choreography can't be read; the piece reads as an anthology rather than one film"
+            ],
+            "gaps": [
+              "No single unifying idea: it is three strong fragments rather than one designed film. A through-line is needed (a recurring form, colour or transition logic).",
+              "The end card is a centred name on flat grey, which is the weakest frame. It could integrate with the image the way frame 1 integrates poster and city.",
+              "There is no evident choreography between shots. A specific cut or transform that carries the D poster into the fluid would make it a film rather than a compilation."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "The material work is exceptional: knitted and quilted fabrics, foil, embossed rubber, felt and metal coins, all with soft, motivated, physically correct light and contact shadows",
+              "The diagonal split puts two contrasting colour worlds in every frame (cyan/lilac, green/aubergine, red/teal), so the 'TWO' idea is carried by the image itself",
+              "The palette is unusual and adult (dusty pink, bottle green, aubergine, signal red) and shifts with each frame while the system stays coherent",
+              "Wireframe cubes act as a graphic counterpoint layered over the tactile objects, so the frames are dense and layered",
+              "The brand mark is used correctly and quietly; the image does the work",
+              "Weakness: the composition is very similar across frames, but here that is an ident system, not a slide deck"
+            ],
+            "gaps": [
+              "The three frames share almost the same diagonal and logo position, so the motion arc needs a stronger event: a reveal, a collapse or a change of scale",
+              "Typography is only the corporate mark. A typographic beat that interacts physically with the objects would add surprise.",
+              "The idea ('two halves') is sound but expected for this channel. A stranger premise would push it toward the top of the year."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 5,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "It matches the generic template almost exactly: tiny tracked monospace labels ('CIRCUIT 03/08', '\u25cf LIVE', '2 kV'), a big condensed grotesk headline, black ground, and a single yellow accent",
+              "The same layout repeats across frames: label at top left, red LIVE dot at top right, a centred condensed name, a kV readout and a yellow rule at bottom. Only the word changes.",
+              "The idea is literal: a power station festival gets lightning bolts, hazard stripes and voltage numbers. All are stock signifiers.",
+              "The lightning is a stock overlay with no interaction with the type; it never charges, cuts or distorts the letterforms",
+              "The flat yellow ground and default hazard tape show no texture or materiality, which is a miss for a decommissioned industrial building",
+              "The end card is a centred info-dump stack (title, date, rule, small caps lines) set like a slide"
+            ],
+            "gaps": [
+              "It needs a specific idea about this venue: real concrete, rust, sodium light and transformer hum, instead of generic 'electric' clip-art",
+              "Typography has no point of view: one default condensed face at constant weight and a mono label system. It needs custom or distorted letterforms that the current actually acts on, with real scale contrast.",
+              "The same frame repeats eight times with names swapped. It needs choreography: camera moves, layering and frames that build and break the grid rather than reset to the template."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.9,
+        "cost_usd": 0.161968,
+        "tokens": 72271,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 4,
+        "craft": 6
+      },
+      "defects": [
+        "The same transition is used almost every time: a defocus blur that resolves into sharp type (PETRA, SUB and others). It feels like a preset, not something built for each shot.",
+        "The 0.15\u20132.0 s pairs show mostly hard swaps between states rather than moving type. There is little overshoot, follow-through or sense of weight in how the type lands.",
+        "The lightning is a procedural noise line drawn twice, with a uniform glow. Each bolt has a thin second strand running beside it, which reads as a duplicated layer, not a branching discharge.",
+        "The HUD line 'CIRCUIT 03/08' is clipped at the left edge ('IRCUIT') during the blur-in. It looks like a safe-area mistake.",
+        "The 'ENERG\u2014' dash runs off the right frame edge. The RE-/ENERG-/ISED. stack has uneven left alignment and tight leading that reads as accidental, not designed.",
+        "In 'STATION' the N appears to be a different width or set from the other letters, and 'NULLFORM' has visibly uneven spacing between letters.",
+        "The kV counter and the yellow rule are the only secondary animation, and they repeat the same way in every shot.",
+        "Pace check failed: the longest shot is 2.77 s. The end card holds while per-second change falls to about 22, so the ending runs out of energy.",
+        "Soundtrack: rigid grid-locked transients, the same synthetic downward pitch-sweep zap at 0.94 s and 11.26 s, and a plain white-noise riser from 7.5 to 9.4 s. There are few tonal partials and almost no low-mid body. It reads as generated synth stabs, not produced techno."
+      ],
+      "gaps": [
+        "Motion vocabulary: top studio work builds a distinct move for each artist card, such as type that is charged, sparks off or builds voltage, and lets electricity drive the layout. Here there is one blur-to-focus move and a static stock-style bolt, with no interaction between the energy and the type.",
+        "Sound: the arrangement is thin, with clicks, a white-noise riser and two zaps. There is no kick or bass groove that fits 'two nights of techno', and no layered electrical foley (hum, arcing, relay clunks). Hits fall on cuts but nothing has real impact.",
+        "Finish and resolve: the end card holds too long with little secondary life. Edge clipping, inconsistent glyph widths and the doubled lightning layers would not pass a top-tier finishing review. The yellow hazard-stripe system is introduced late and not built through the piece."
+      ]
+    },
+    "meta": {
+      "seconds": 21.0,
+      "cost_usd": 0.1705852,
+      "tokens": 73085,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "substation.mp4: 15.0s, 14 shots, median 0.90s, longest 2.77s\nper-second change: [53.0, 47.8, 121.4, 121.1, 120.8, 118.4, 115.1, 46.7, 114.7, 46.0, 116.7, 127.1, 22.6, 22.8]\nPACE: FAIL \u2014 longest shot 2.8s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 4,
+    "typography": 4,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 4.5,
+    "craft": 5.5,
+    "originality": 3,
+    "sound": 4
+  },
+  "full_overall": 4.0,
+  "cost_usd": 0.659,
+  "judge_seconds": 112.9,
+  "verdict": "FAIL"
+}

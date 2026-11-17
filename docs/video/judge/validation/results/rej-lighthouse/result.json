@@ -1,0 +1,470 @@
+{
+  "name": "rej-lighthouse",
+  "tags": [
+    "3d-cg",
+    "title-sequence"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "the-crown",
+    "westworld"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 3,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 3,
+      "motion": 2,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 2.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "No idea beyond the literal subject: it needs a specific conceit (the keeper's ritual, the light as a clock, the beam revealing story fragments) that only this film could have",
+      "Typography needs a real typographic idea, such as type lit by or revealed by the sweeping beam, expressive scale, or a chosen face with character instead of a default serif and caps label",
+      "Composition and motion need variety: different shot scales, macro detail of lens, mechanism and texture, and choreography between frames instead of one locked-off layout",
+      "Find a specific idea beyond the literal lighthouse, such as the keeper's ritual, the lens mechanism or the logbook, and let it drive varied shots and changes of scale as B does",
+      "Make typography part of the image (in the beam, on the lens, in the fog) instead of placing a default serif slide block in the lower left",
+      "Build real light and material, with wet stone, glass, volumetric fog interacting with the beam and a deliberate palette, plus choreography that develops over time instead of a repeated frame",
+      "Find an idea beyond the literal noun, for example the keeper's ritual, the mechanism of the lens, or the beam revealing story fragments. Then build a sequence of distinct shots the way the best entry builds a mechanical world.",
+      "Replace the default serif-plus-tracked-label lockup with type that lives in the image, such as light-projected letters or lettering on the lens or logbook, with real scale contrast.",
+      "Add real light physics and material: volumetric beams, wet stone, rain, a varied camera with changes of scale and choreography across frames, instead of one static locked-off frame."
+    ],
+    "tells": [
+      "The same composition repeated in every frame: a centred lighthouse on a flat sea, with only the beam direction changing; little happens",
+      "Typography matches the generic 'tasteful AI' formula exactly: a default editorial serif headline with an italic second line, a tiny tracked-caps 'OCTOBER' label and a dark desaturated ground",
+      "The title is placed like a slide in the bottom left, with no scale contrast and no relationship to the image",
+      "The idea is completely literal (a film called The Lighthouse Keeper shows a lighthouse)",
+      "Flat, generic fog and water with a stock silhouette, no real material or depth; only 4 distinct frames, which suggests a very short, uneventful piece",
+      "The palette is grey on grey with no point of view",
+      "The same locked-off composition repeats in every frame: a lighthouse on a rock at the centre right, with only the beam direction changing",
+      "Only 4 frames, and the title card is repeated three times in a nearly identical layout, so very little happens",
+      "Slide-like typography: a generic editorial serif headline with an italic second line and a small tracked-caps 'OCTOBER' label below it, the classic 'tasteful AI' formula",
+      "A literal, obvious idea: a film called The Lighthouse Keeper shown as a lighthouse with a sweeping beam",
+      "Flat desaturated grey-brown with a stock fog/beam effect, and a simplified silhouette lighthouse with no material detail or texture",
+      "The same composition is repeated in every frame: a centred lighthouse on a flat sea with only the beam angle changing. It is one layout recycled, and only 4 frames were provided.",
+      "The type is a textbook generic-AI lockup: a default editorial serif with an italic second line and a tiny tracked-caps label ('OCTOBER') in the lower left, placed like a slide.",
+      "The ground is dark, desaturated and nearly monochrome, with mostly empty frame and fog as a stand-in for atmosphere.",
+      "The light is flat and unmotivated. The beam is a simple gradient wedge, the water shows default ripple reflections, the silhouette is a stock primitive, and there is no material or texture.",
+      "The idea is the literal title (a lighthouse for 'The Lighthouse Keeper'), with no keeper, no story and nothing a viewer would remember."
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "the-crown": {
+      "overall": 7.88,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "westworld": {
+      "overall": 8.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 8.54,
+  "delta": -5.92,
+  "trials": [
+    {
+      "key": {
+        "A": "westworld",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "the-crown"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, ownable idea: robotic arms 3D-print and string organic anatomy (sinew, eye, horse, pianist's hands), so the subject is literally being manufactured",
+              "Every frame is a different set-piece (extruded tendon, galloping horse skeleton, iris macro, player piano, rider, Vitruvian ring) with clear story progression from parts to a whole being",
+              "Restrained near-monochrome bone/ivory palette with motivated studio light, subsurface-like materials and shallow depth of field",
+              "Composition changes from frame to frame (macro, wide, symmetrical end-plate), which points to deliberate camera choreography",
+              "Small tracked-caps credits are a convention here, but they sit in negative space that each shot was framed to leave open"
+            ],
+            "gaps": [
+              "Typography is the weakest layer: small tracked caps in a neutral sans that are correct but carry no idea; the type could take on the machined, engraved language of the image",
+              "The palette is so tightly controlled that a few frames read slightly sterile; one well-chosen tonal break (warm skin, blood) would add tension",
+              "The closing Vitruvian ring is more expected than the middle of the sequence; the final image could surprise as much as the iris or the piano"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A memorable central idea: the world is a mechanical clockwork map whose cities unfold from gears, and the map changes with the story, so it is a real system and not decoration",
+              "Strong variety and choreography: an astrolabe band, cities rising from the map, a wooden tree mechanism, the armillary sun and an overhead map read as one continuous camera journey",
+              "Tactile materials (carved wood, brass, engraved metal, parchment) and a warm burned-sun light motif that bookends the piece",
+              "Custom-feeling engraved display serif for the title, built into a heraldic metal plate; credits come with sigil icons",
+              "Clear structure that ends on a strong logo lock-up"
+            ],
+            "gaps": [
+              "Credit typography is set small in places and fights busy, textured backgrounds (Michelle Fairley, Oral Norrie Ottey), which hurts legibility",
+              "The map frame is the flattest image in the set; its light and depth fall below the macro mechanical shots",
+              "Heavy bloom and burn on the astrolabe and title frames sometimes flattens detail, and the composition is busier than A's"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeated in every frame: a centred lighthouse on a flat sea, with only the beam direction changing; little happens",
+              "Typography matches the generic 'tasteful AI' formula exactly: a default editorial serif headline with an italic second line, a tiny tracked-caps 'OCTOBER' label and a dark desaturated ground",
+              "The title is placed like a slide in the bottom left, with no scale contrast and no relationship to the image",
+              "The idea is completely literal (a film called The Lighthouse Keeper shows a lighthouse)",
+              "Flat, generic fog and water with a stock silhouette, no real material or depth; only 4 distinct frames, which suggests a very short, uneventful piece",
+              "The palette is grey on grey with no point of view"
+            ],
+            "gaps": [
+              "No idea beyond the literal subject: it needs a specific conceit (the keeper's ritual, the light as a clock, the beam revealing story fragments) that only this film could have",
+              "Typography needs a real typographic idea, such as type lit by or revealed by the sweeping beam, expressive scale, or a chosen face with character instead of a default serif and caps label",
+              "Composition and motion need variety: different shot scales, macro detail of lens, mechanism and texture, and choreography between frames instead of one locked-off layout"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A clear concept: extreme macro of molten gold slowly forming the crown, with metal cooling, filigree and gemstones emerging, which tells you about institution and inheritance through material",
+              "Excellent light and texture: specular gold, smoke, facets and pearls with shallow depth of field and deep blacks",
+              "Carefully chosen classical small-caps roman serif with refined tracking, consistent and dignified, and it ends on a wide-spaced lock-up of the title",
+              "Asymmetric compositions place credits in negative space on purpose, and the scale changes from fragment to crown detail"
+            ],
+            "gaps": [
+              "Less surprising than B or A: the macro-luxury-material look is a familiar title-sequence idiom, and the idea is close to literal (a crown for The Crown)",
+              "Frames are low-key and similar in value, so the sequence lacks the shot-to-shot variety and set-piece contrast of B",
+              "The final title card on a plain dark ground is the weakest frame; the lock-up could come out of the material instead of sitting on an empty field"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.0,
+        "cost_usd": 0.1566014,
+        "tokens": 72006,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "westworld",
+        "B": "game-of-thrones",
+        "C": "the-crown",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "One specific conceit carries the whole piece: robotic printers building organic bodies (tendons, a horse, an iris, a player-piano hand), so making and being made become the theme",
+              "Every frame is a different set-up with shifting scale: macro tendon, mid-air horse limbs, an extreme eye close-up, piano keys, a full rider, and a Vitruvian end frame",
+              "Monochrome bone-white against black, with real subsurface and specular detail on the synthetic tissue",
+              "Light changes deliberately across frames: a low-key void, a hard floor strip, then a high-key misted white finale",
+              "The sequence clearly builds toward the final Vitruvian figure in its ring"
+            ],
+            "gaps": [
+              "Credits are small tracked caps dropped into negative space. They are tasteful but have no typographic idea and play no part in the image",
+              "The palette is restrained to the point of being expected for 'synthetic body' material, with no unexpected accent",
+              "Some frames rely on the same black void, so the in-between shots feel a little interchangeable"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A world-specific idea: the map as a clockwork mechanism, with cities that rise as gears on a continent, all lit by an astrolabe sun. It works as a title sequence and as narrative orientation",
+              "Rich material: carved metal, wood, parchment and tooled leather, with warm firelit gold against cold green-grey land",
+              "Varied framing: a macro of the engraved band, low tracking shots over the model cities, a top-down map, and a symmetrical logo lock-up",
+              "Type has a point of view: an engraved serif with small sigil icons per credit, and a logo integrated into the mechanism",
+              "Clear choreography: the sun-ring opens the piece and closes it, with flights between locations in the middle"
+            ],
+            "gaps": [
+              "Credit legibility suffers where text sits over busy mechanical detail",
+              "The lens-flare-heavy sun frames tip toward overexposure, and the first and last frames are compositionally similar",
+              "The map-flyover frame is visually flatter than the mechanical shots"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A molten-metal-to-crown idea: raw ore, a cast tendril and jewels resolve into the object, which matches the theme of an office forged and inherited",
+              "Excellent macro material rendering: textured gilt, faceted gems, specular pinpoints, smoke and shallow depth of field",
+              "Restrained gold-on-near-black palette with a cool smoky counterpoint in the opening",
+              "A classical spaced-caps serif title that suits the subject and is carefully kerned"
+            ],
+            "gaps": [
+              "Dark ground, small tracked caps and a centred serif title sit uncomfortably close to the generic prestige look; the type needs a more distinctive voice or a stronger tie to the metal",
+              "Frames 2 to 5 are similar extreme close-ups, so there is little variety of scale or camera grammar compared with B",
+              "The final title on an empty dark ground is the most expected beat. The crown itself is never revealed whole, so the build lacks a payoff"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same locked-off composition repeats in every frame: a lighthouse on a rock at the centre right, with only the beam direction changing",
+              "Only 4 frames, and the title card is repeated three times in a nearly identical layout, so very little happens",
+              "Slide-like typography: a generic editorial serif headline with an italic second line and a small tracked-caps 'OCTOBER' label below it, the classic 'tasteful AI' formula",
+              "A literal, obvious idea: a film called The Lighthouse Keeper shown as a lighthouse with a sweeping beam",
+              "Flat desaturated grey-brown with a stock fog/beam effect, and a simplified silhouette lighthouse with no material detail or texture"
+            ],
+            "gaps": [
+              "Find a specific idea beyond the literal lighthouse, such as the keeper's ritual, the lens mechanism or the logbook, and let it drive varied shots and changes of scale as B does",
+              "Make typography part of the image (in the beam, on the lens, in the fog) instead of placing a default serif slide block in the lower left",
+              "Build real light and material, with wet stone, glass, volumetric fog interacting with the beam and a deliberate palette, plus choreography that develops over time instead of a repeated frame"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.8,
+        "cost_usd": 0.1555592,
+        "tokens": 71985,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "the-crown",
+        "B": "game-of-thrones",
+        "C": "westworld",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The material tells a story across the frames: molten gold forms into filigree, then a gem setting, then the jewelled object. The image builds the crown that the title then names.",
+              "Macro photography of metal with shallow depth of field, dust, oxidised surfaces and real specular highlights. The light-and-texture work is high-end.",
+              "Small tracked roman caps with italic small-caps role labels. The credits sit in shifting positions (left, right, lower-left, top-centre) that follow the negative space of each shot.",
+              "The palette is held to bronze, gold and soot black, then turns cold for the title card. That restraint is deliberate.",
+              "The camera rides along the surface and the scale changes from frame to frame. It looks like one choreographed pass through the object, not separate stills."
+            ],
+            "gaps": [
+              "The type is safe: a classic serif in small tracked caps. It never plays with scale or works into the image the way the best entry places credits inside its world.",
+              "The end card, a centred serif title on a dark smoky ground, is close to the generic prestige look. It needs a payoff that closes the metal story instead of a fade to haze.",
+              "The dark-gold-macro palette can be mistaken for other prestige openers. It needs one unexpected visual beat to make it its own."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "The idea belongs to this piece alone: a clockwork map of the world that builds itself, so the opening is also an orientation device. It is memorable and highly shareable.",
+              "The frames are dense and layered: an engraved astrolabe band with dragon reliefs, a miniature city on a gear base, a tree that grows mechanically from cogs, a parchment map with a pin drop.",
+              "The credits are set in a custom-feeling engraved serif with heraldic sigils next to each name. The type belongs to the world and is part of it.",
+              "The motion is varied and clearly choreographed: flyovers, objects unfolding, the rings of an armillary sphere, a cut to a top-down map. Each frame has a different camera grammar.",
+              "The light is real and motivated: a sun-like burst of light inside the sphere, warm brass against a cold land mass, with wood, metal and parchment textures."
+            ],
+            "gaps": [
+              "The end card's lens-flare halo and glowing logo veer toward trailer clich\u00e9. Hold back the glow.",
+              "The credits sometimes fight the busy foreground, for example a name over the tree and gears. Give the credits a clearer zone.",
+              "The grade is muddy and sepia in places, which flattens the brass and the land. A cleaner tonal separation would make every frame read as a poster."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "The idea is specific to the show: robot arms 3D-print synthetic flesh, horses and a player piano. It shows the show's theme of made humans instead of illustrating it literally.",
+              "The monochrome bone-white palette on black reads as a deliberate clinical choice, and the closing frame inverts it to white-on-white.",
+              "Strong surprise in scale: from a tendon-level macro shot to a giant iris to a whole horse and rider, then the Vitruvian ring as a payoff.",
+              "The motion implies slow, weighted, balletic camera moves. The frames are choreographed, with printing and assembly as the verb that carries the piece.",
+              "Real subsurface scattering on the resin flesh, plus haze, rim light and a reflective floor."
+            ],
+            "gaps": [
+              "The credits are a generic thin, widely tracked grotesk with no voice. That is the one area that falls back toward the default 'tasteful' look. Develop a typographic idea tied to the printing motif.",
+              "A few frames have empty black fields around one object. The best entry fills the world more richly; layer in more environment.",
+              "The monochrome restraint costs a little warmth and variety. One controlled accent, such as blood or brass, could punctuate the reveal."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition is repeated in every frame: a centred lighthouse on a flat sea with only the beam angle changing. It is one layout recycled, and only 4 frames were provided.",
+              "The type is a textbook generic-AI lockup: a default editorial serif with an italic second line and a tiny tracked-caps label ('OCTOBER') in the lower left, placed like a slide.",
+              "The ground is dark, desaturated and nearly monochrome, with mostly empty frame and fog as a stand-in for atmosphere.",
+              "The light is flat and unmotivated. The beam is a simple gradient wedge, the water shows default ripple reflections, the silhouette is a stock primitive, and there is no material or texture.",
+              "The idea is the literal title (a lighthouse for 'The Lighthouse Keeper'), with no keeper, no story and nothing a viewer would remember."
+            ],
+            "gaps": [
+              "Find an idea beyond the literal noun, for example the keeper's ritual, the mechanism of the lens, or the beam revealing story fragments. Then build a sequence of distinct shots the way the best entry builds a mechanical world.",
+              "Replace the default serif-plus-tracked-label lockup with type that lives in the image, such as light-projected letters or lettering on the lens or logbook, with real scale contrast.",
+              "Add real light physics and material: volumetric beams, wet stone, rain, a varied camera with changes of scale and choreography across frames, instead of one static locked-off frame."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.1,
+        "cost_usd": 0.1596568,
+        "tokens": 72154,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.472,
+  "judge_seconds": 92.9,
+  "verdict": "FAIL"
+}

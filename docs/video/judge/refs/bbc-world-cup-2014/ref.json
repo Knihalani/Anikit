@@ -1,0 +1,23 @@
+{
+  "slug": "bbc-world-cup-2014",
+  "title": "BBC Sport — World Cup 2014 titles",
+  "studio": "BBC Creative",
+  "year": 2014,
+  "url": "https://www.youtube.com/watch?v=7N6Pwb51R4Y",
+  "frame_sources": [
+    "https://i.ytimg.com/vi/7N6Pwb51R4Y/maxresdefault.jpg",
+    "https://i.ytimg.com/vi/7N6Pwb51R4Y/maxres1.jpg",
+    "https://i.ytimg.com/vi/7N6Pwb51R4Y/maxres2.jpg",
+    "https://i.ytimg.com/vi/7N6Pwb51R4Y/maxres3.jpg"
+  ],
+  "style_tags": [
+    "sports-broadcast",
+    "3d-cg",
+    "illustration"
+  ],
+  "format": "16:9",
+  "medium": "mixed",
+  "description": "Brazilian street art comes alive: painted murals, a mural portrait of a player, a footballer figure in rain of colour.",
+  "why_top_tier": "Painterly sports broadcast opener mixing CG and street art.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright BBC"
+}

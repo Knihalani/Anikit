@@ -78,9 +78,10 @@ fn yaml() {
 fn timeline_and_transitions() {
     let ev = build(r##"{ "scenes": [ { "duration": 2, "layers": [] }, { "duration": 3, "transition": { "type": "slide", "duration": 0.5 }, "layers": [] }, { "duration": 1, "transition": "cut", "layers": [] } ] }"##);
     let s = ev.scenes();
-    assert_eq!((s[1].start, s[1].end), (1.5, 4.5));
-    assert_eq!((s[2].start, s[2].end), (4.5, 5.5));
-    assert_eq!(ev.duration, 5.5);
+    // The slide plays over the last 0.5 s of scene 1; scene 2 still gets its full 3 s after it.
+    assert_eq!((s[1].start, s[1].end), (1.5, 5.0));
+    assert_eq!((s[2].start, s[2].end), (5.0, 6.0));
+    assert_eq!(ev.duration, 6.0, "the sum of the scene durations");
 }
 
 #[test]
@@ -537,4 +538,81 @@ fn dots_from_data_with_appear() {
     assert!(!ev.is_static(0.0, 1.0));
     let (_, _, p0) = anikit_video::pipeline::render_rgba(&ev, 0.0, 1.0);
     assert!(p0.chunks(4).all(|c| c[0] < 5), "nothing has appeared at t = 0");
+}
+
+#[test]
+fn def_params_with_defaults_and_random_scatter() {
+    // A def with parameters and defaults, used like a function; a 30-star scatter in one item.
+    let ev = build(r##"{ "size": [400, 200], "motionBlur": false, "defs": {
+        "lamp": { "params": { "x": 0, "y": 100, "lit": "#ffcc00" }, "shape": "circle", "width": 20, "x": "$x", "y": "$y", "fill": "$lit" } },
+      "scenes": [ { "background": "#000000", "layers": [
+        { "use": "lamp", "x": 50 },
+        { "use": "lamp", "x": 150, "lit": "#00ff00" },
+        { "repeat": 30, "shape": "circle", "width": "=pick(rand($i + 7) * 3, 2, 4, 6)",
+          "x": "=rand($i, 0, 400)", "y": "=rand($i + 100, 0, 60)", "fill": "=pick(rand($i + 9) * 2, #ffffff, #88ccff)" } ] } ] }"##);
+    let (w, _, p) = anikit_video::pipeline::render_rgba(&ev, 1.0, 1.0);
+    let px = |x: u32, y: u32| { let i = ((y * w + x) * 4) as usize; [p[i], p[i + 1], p[i + 2]] };
+    assert_eq!(px(50, 100), [255, 204, 0]);
+    assert_eq!(px(150, 100), [0, 255, 0]);
+    // The scatter lands in the top band only, deterministically.
+    let lit_top = (0..60).flat_map(|y| (0..400).map(move |x| (x, y))).filter(|&(x, y)| px(x, y)[2] > 100).count();
+    assert!(lit_top > 30, "{lit_top}");
+    assert_eq!(ev.eval(1.0), build(r##"{ "size": [400, 200], "motionBlur": false, "defs": {
+        "lamp": { "params": { "x": 0, "y": 100, "lit": "#ffcc00" }, "shape": "circle", "width": 20, "x": "$x", "y": "$y", "fill": "$lit" } },
+      "scenes": [ { "background": "#000000", "layers": [
+        { "use": "lamp", "x": 50 },
+        { "use": "lamp", "x": 150, "lit": "#00ff00" },
+        { "repeat": 30, "shape": "circle", "width": "=pick(rand($i + 7) * 3, 2, 4, 6)",
+          "x": "=rand($i, 0, 400)", "y": "=rand($i + 100, 0, 60)", "fill": "=pick(rand($i + 9) * 2, #ffffff, #88ccff)" } ] } ] }"##).eval(1.0));
+}
+
+#[test]
+fn natural_forms_are_accepted() {
+    // `delay` on a layer means `start`; `at` in a preset object means `delay`; CSS shadow shorthand.
+    let p = parse_json(r##"{ "scenes": [ { "layers": [ { "text": "a", "delay": 1, "enter": { "preset": "fadeUp", "at": 0.2 }, "shadow": "0 4px 24px #0008" } ] } ] }"##).unwrap();
+    assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+    let l = &p.spec.scenes[0].layers[0];
+    assert!(matches!(l.start, Some(anikit_video::spec::Num::Num(v)) if v == 1.0));
+    let sh = &l.shadow.as_ref().unwrap().0;
+    assert_eq!((sh.x, sh.y, sh.blur, sh.color.as_deref()), (Some(0.0), Some(4.0), Some(24.0), Some("#0008")));
+    // x/y on box children: a warning that says what to do instead.
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "children": [ { "text": "a", "x": 10 } ] } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("children[0]") && m.contains("ignored")), "{e:?}");
+    // No transition given: hard cuts, and the video is exactly the sum of the scene durations.
+    let ev = build(r##"{ "scenes": [ { "duration": 2, "layers": [ "a" ] }, { "duration": 3, "layers": [ "b" ] } ] }"##);
+    assert_eq!(ev.duration, 5.0);
+    let ev = build(r##"{ "transition": "crossfade", "scenes": [ { "duration": 2, "layers": [ "a" ] }, { "duration": 3, "layers": [ "b" ] } ] }"##);
+    assert_eq!(ev.duration, 5.0, "transitions don't shorten the video");
+    assert_eq!(ev.scenes()[1].end, 5.0);
+}
+
+#[test]
+fn relative_layout_refers_to_earlier_siblings() {
+    let ev = build(r##"{ "scenes": [ { "layers": [
+        { "id": "card", "shape": "rect", "x": 400, "y": 300, "width": 200, "height": 100 },
+        { "id": "side-note", "shape": "rect", "anchor": "topLeft", "x": "=card.right + 20", "y": "=card.bottom + 10", "width": "=card.width / 2", "height": 40 },
+        { "shape": "rect", "anchor": "topLeft", "x": "=side-note.left", "y": "=side-note.bottom + 8 * sin(t * 0)", "width": 10, "height": 10 } ] } ] }"##);
+    let rects: Vec<[f32; 6]> = ev.eval(1.0).ops.iter().filter_map(|o| match o { Op::RoundRect { transform, .. } => Some(*transform), _ => None }).collect();
+    assert_eq!((rects[0][4], rects[0][5]), (300.0, 250.0));
+    assert_eq!((rects[1][4], rects[1][5]), (520.0, 360.0), "right of and below the card");
+    assert_eq!((rects[2][4], rects[2][5]), (520.0, 400.0), "ids with hyphens, inside a bigger expression");
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "id": "card", "shape": "rect" }, { "text": "x", "y": "=crad.bottom + 10" } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("crad") && m.contains("card")), "{e:?}");
+}
+
+#[test]
+fn one_frame_layers_show_on_exactly_one_frame() {
+    // `start + 1/fps` used to land a hair after the next frame time in f32, showing the layer twice.
+    let ev = build(r##"{ "fps": 30, "scenes": [ { "duration": 2, "layers": [
+        { "shape": "rect", "start": 0.7, "duration": 0.0333333 },
+        { "shape": "rect", "start": 0.2333333, "end": 0.2666667 } ] } ] }"##);
+    let shown = |k: u32| ev.eval(k as f32 / 30.0).ops.iter().filter(|o| matches!(o, Op::RoundRect { .. })).count();
+    let on: Vec<u32> = (0..60).filter(|&k| shown(k) > 0).collect();
+    assert_eq!(on, vec![7, 21]);
+    // Frame timing: one frame, or a half-open range.
+    let ev = build(r##"{ "fps": 10, "scenes": [ { "layers": [ { "shape": "rect", "frames": 3 }, { "shape": "circle", "frames": [4, 6] } ] } ] }"##);
+    let kinds = |k: u32| ev.eval(k as f32 / 10.0).ops.iter().filter(|o| matches!(o, Op::RoundRect { .. } | Op::Fill { .. })).count();
+    assert_eq!((0..8).map(kinds).collect::<Vec<_>>(), vec![0, 0, 0, 1, 1, 1, 0, 0]);
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "frames": [4, 4] } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("[4, 5]")), "{e:?}");
 }

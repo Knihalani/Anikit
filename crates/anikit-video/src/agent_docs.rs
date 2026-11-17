@@ -18,6 +18,7 @@ pub const PAGES: &[(&str, &str)] = &[
     ("3d", include_str!("../docs-cli/3d.md")),
     ("particles", include_str!("../docs-cli/particles.md")),
     ("physics", include_str!("../docs-cli/physics.md")),
+    ("fluid", include_str!("../docs-cli/fluid.md")),
     ("post", include_str!("../docs-cli/post.md")),
     ("pacing", include_str!("../docs-cli/pacing.md")),
     ("critique", include_str!("../docs-cli/critique.md")),
@@ -26,9 +27,12 @@ pub const PAGES: &[(&str, &str)] = &[
     ("script", include_str!("../docs-cli/script.md")),
     ("draw", include_str!("../docs-cli/draw.md")),
     ("mograph", include_str!("../docs-cli/mograph.md")),
+    ("type", include_str!("../docs-cli/type.md")),
+    ("graphic", include_str!("../docs-cli/graphic.md")),
     ("launch", include_str!("../docs-cli/launch.md")),
     ("analyze", include_str!("../docs-cli/analyze.md")),
     ("board", include_str!("../docs-cli/board.md")),
+    ("assets", include_str!("../docs-cli/assets.md")),
 ];
 
 /// Hand-built shots: `(name, {"about", "spec"})`.
@@ -42,15 +46,19 @@ pub const RECIPES: &[(&str, &str)] = &[
     ("particle-ignite", include_str!("../recipes/particle-ignite.json")),
     ("domino-cascade", include_str!("../recipes/domino-cascade.json")),
     ("raymarch-world", include_str!("../recipes/raymarch-world.json")),
+    ("swiss-grid-poster", include_str!("../recipes/swiss-grid-poster.json")),
+    ("riso-overprint", include_str!("../recipes/riso-overprint.json")),
+    ("torn-collage", include_str!("../recipes/torn-collage.json")),
+    ("op-art-field", include_str!("../recipes/op-art-field.json")),
 ];
 
 const ALIASES: &[(&str, &str)] = &[
-    ("scene3d", "3d"), ("scene-3d", "3d"), ("three", "3d"), ("shaders", "shader"), ("glsl", "shader"), ("audio", "music"),
-    ("sound", "music"), ("sfx", "music"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("motion-graphics", "mograph"), ("repeater", "mograph"), ("trails", "mograph"), ("echo", "mograph"), ("text", "primitives"),
+    ("scene3d", "3d"), ("ink", "fluid"), ("smoke", "fluid"), ("fire", "fluid"), ("scene-3d", "3d"), ("three", "3d"), ("shaders", "shader"), ("glsl", "shader"), ("audio", "music"),
+    ("sound", "music"), ("sfx", "music"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("motion-graphics", "mograph"), ("typography", "type"), ("fonts", "type"), ("font", "type"), ("axes", "type"), ("variable", "type"), ("features", "type"), ("opentype", "type"), ("repeater", "mograph"), ("trails", "mograph"), ("echo", "mograph"), ("grid", "graphic"), ("pattern", "graphic"), ("patterns", "graphic"), ("halftone", "graphic"), ("duotone", "graphic"), ("print", "graphic"), ("graphic-design", "graphic"), ("layout", "graphic"), ("text", "primitives"),
     ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"),
     ("review", "critique"), ("pace", "pacing"), ("index", "start"), ("anything", "make-anything"),
     ("launch-video", "launch"), ("product", "launch"), ("announcement", "launch"),
-    ("analyse", "analyze"), ("design", "taste"), ("style", "taste"), ("quality", "taste"), ("canon", "taste"), ("reverse", "analyze"), ("reference", "analyze"), ("moodboard", "board"), ("mood-board", "board"), ("references", "board"),
+    ("analyse", "analyze"), ("design", "taste"), ("style", "taste"), ("quality", "taste"), ("canon", "taste"), ("reverse", "analyze"), ("reference", "analyze"), ("moodboard", "board"), ("mood-board", "board"), ("references", "board"), ("asset", "assets"), ("hdri", "assets"), ("hdris", "assets"), ("materials", "assets"), ("textures", "assets"), ("models", "assets"), ("lut", "assets"), ("luts", "assets"), ("library", "assets"),
 ];
 
 /// A docs page: `None` (or `start`) is the index; `component <kind>` / `components` come from the registry.
@@ -66,9 +74,14 @@ pub fn docs(topic: Option<&str>) -> Result<String, String> {
     if t == "music" {
         return Ok(crate::music::docs().to_string());
     }
+    if let Some(k) = t.strip_prefix("key ") {
+        // The key as typed (keys are camelCase).
+        let raw = topic.unwrap_or("").trim();
+        return key_doc(raw.get(4..).unwrap_or(k).trim());
+    }
     if t == "essentials" || t == "all" {
         // Everything a typical piece needs in one read (about 13k characters).
-        let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique).\n\n");
+        let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique, graphic: grids, patterns, print treatments).\n\n");
         for p in ["primitives", "animation", "expressions", "compositions", "shader"] {
             if let Some((_, md)) = PAGES.iter().find(|(n, _)| *n == p) {
                 s += md;
@@ -117,6 +130,17 @@ pub fn recipe_spec(name: &str) -> Option<(String, Value)> {
     Some((about, v["spec"].clone()))
 }
 
+/// A list line: the first clause, cut at a word near 90 characters (the
+/// full text is one `recipes <name>` away).
+fn short(about: &str) -> String {
+    let first = about.split(". ").next().unwrap_or(about).trim_end_matches('.');
+    if first.chars().count() <= 90 {
+        return first.to_string();
+    }
+    let cut: String = first.chars().take(90).collect();
+    format!("{}…", cut.rsplit_once(' ').map(|(a, _)| a).unwrap_or(&cut).trim_end_matches([',', ';']))
+}
+
 /// The recipe list, or one recipe: its notes and a ready spec.
 pub fn recipes(name: Option<&str>) -> Result<String, String> {
     let lib = anikit_shader::library::ALL;
@@ -126,11 +150,11 @@ pub fn recipes(name: Option<&str>) -> Result<String, String> {
             let v: Value = serde_json::from_str(src).unwrap();
             let about = v["about"].as_str().unwrap_or("");
             let cost = v["cost"].as_str().map(|c| format!(" [{}]", c.split(" (").next().unwrap_or(c))).unwrap_or_default();
-            s += &format!("  {n:20} {}{cost}\n", about.split(". ").next().unwrap_or(about).trim_end_matches('.'));
+            s += &format!("  {n:20} {}{cost}\n", short(about));
         }
         s += "Shaders (one line in a spec: {\"shader\": \"<name>\", \"uniforms\": {...}}; filters add \"filter\": true; transitions: \"transition\": \"<name>\"):\n";
         for e in lib {
-            s += &format!("  {:13} {:10} {}\n", e.name, format!("{:?}", e.use_).to_lowercase(), e.about);
+            s += &format!("  {:13} {:10} {}\n", e.name, format!("{:?}", e.use_).to_lowercase(), short(e.about));
         }
         return Ok(s);
     };
@@ -188,6 +212,58 @@ pub fn snippets(name: Option<&str>) -> Result<String, String> {
     }
 }
 
+/// `docs key <name>`: every spec property with that name, from the JSON
+/// Schema (type, description, examples), a few lines each.
+fn key_doc(name: &str) -> Result<String, String> {
+    let schema: Value = serde_json::from_str(&crate::spec::schema_json()).map_err(|e| e.to_string())?;
+    let defs = schema.get("definitions").or_else(|| schema.get("$defs")).and_then(|d| d.as_object()).cloned().unwrap_or_default();
+    let mut out = String::new();
+    let mut all = std::collections::BTreeSet::new();
+    let ty = |p: &Value| -> String {
+        if let Some(r) = p.get("$ref").and_then(|r| r.as_str()) {
+            return r.rsplit('/').next().unwrap_or(r).to_string();
+        }
+        for k in ["anyOf", "oneOf", "allOf"] {
+            if let Some(a) = p.get(k).and_then(|a| a.as_array()) {
+                return a.iter().filter_map(|x| x.get("$ref").and_then(|r| r.as_str()).map(|r| r.rsplit('/').next().unwrap_or(r).to_string()).or_else(|| x.get("type").map(|t| t.to_string().replace('"', "")))).collect::<Vec<_>>().join(" | ");
+            }
+        }
+        p.get("type").map(|t| t.to_string().replace('"', "")).unwrap_or_default()
+    };
+    for (def, d) in &defs {
+        let Some(props) = d.get("properties").and_then(|p| p.as_object()) else { continue };
+        for (k, p) in props {
+            all.insert(k.clone());
+            if k.eq_ignore_ascii_case(name) {
+                let desc = p.get("description").and_then(|d| d.as_str()).unwrap_or("").replace('\n', " ");
+                let ex = p.get("examples").map(|e| format!("\n  e.g. {}", crate::agent_cli::compact_json(e))).unwrap_or_default();
+                // An object type: list its fields, so one call answers "what goes inside".
+                let t = ty(p);
+                // Follow `A | null` and `string | AObj` wrappers one level down.
+                let mut names: Vec<String> = t.split(" | ").map(str::to_string).collect();
+                for n in names.clone() {
+                    if let Some(a) = defs.get(&n).and_then(|d| d.get("anyOf").or_else(|| d.get("oneOf"))).and_then(|a| a.as_array()) {
+                        names.extend(a.iter().filter_map(|x| x.get("$ref").and_then(|r| r.as_str()).map(|r| r.rsplit('/').next().unwrap_or(r).to_string())));
+                        if a.iter().any(|x| x.get("type").and_then(|t| t.as_str()) == Some("string")) {
+                            names.push("string".into());
+                        }
+                    }
+                }
+                let fields = names.iter().filter_map(|n| defs.get(n)).filter_map(|d| d.get("properties").and_then(|p| p.as_object())).map(|p| p.keys().cloned().collect::<Vec<_>>().join(", ")).collect::<Vec<_>>().join(" / ");
+                let fields = if !fields.is_empty() && names.iter().any(|n| n == "string") { format!("a string, or {{ {fields} }}") } else { fields };
+                let fields = if fields.is_empty() { String::new() } else { format!("\n  fields: {fields}") };
+                let desc = if desc.is_empty() { String::new() } else { format!("\n  {desc}") };
+                out += &format!("{def}.{k}: {t}{desc}{fields}{ex}\n");
+            }
+        }
+    }
+    if out.is_empty() {
+        let hint = suggest(name, all.iter().map(|s| s.as_str())).map(|s| format!(" Did you mean '{s}'?")).unwrap_or_default();
+        return Err(format!("no spec key '{name}'.{hint} (`anikit-video schema` has them all)"));
+    }
+    Ok(out)
+}
+
 /// A shader-library entry as a minimal ready spec (layer, filter or transition).
 fn library_spec(n: &str) -> Option<(String, Value)> {
     let e = anikit_shader::library::ALL.iter().find(|e| e.name == n)?;
@@ -220,6 +296,8 @@ mod tests {
             crate::spec::parse::from_value(spec).unwrap_or_else(|d| panic!("{}: {:?}", v["name"], d.iter().map(|x| x.to_string()).collect::<Vec<_>>()));
         }
         assert!(snippets(None).unwrap().contains("type-slam"));
+        assert!(docs(Some("key anchor")).unwrap().contains("anchor"));
+        assert!(docs(Some("key ancor")).unwrap_err().contains("anchor"));
         let e = docs(Some("essentials")).unwrap();
         assert!(e.len() < 15_000 && e.contains("compositions") && e.contains("shader"), "{}", e.len());
         assert!(snippets(Some("snap-zoom")).unwrap().contains("\"shake\""));

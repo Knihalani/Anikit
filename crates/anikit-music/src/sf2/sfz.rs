@@ -105,22 +105,31 @@ impl Lexer {
     }
 
     fn text(&mut self, text: &str) -> Result<(), String> {
-        // strip block comments
+        // Strip comments in one pass: `//` to the end of the line, `/* … */`
+        // blocks. (A `//****` separator line must not open a block comment.)
+        let b: Vec<char> = text.chars().collect();
         let mut t = String::with_capacity(text.len());
-        let mut rest = text;
-        while let Some(a) = rest.find("/*") {
-            t.push_str(&rest[..a]);
-            match rest[a..].find("*/") {
-                Some(b) => rest = &rest[a + b + 2..],
-                None => rest = "",
+        let mut i = 0;
+        while i < b.len() {
+            if b[i] == '/' && i + 1 < b.len() && b[i + 1] == '/' {
+                while i < b.len() && b[i] != '\n' {
+                    i += 1;
+                }
+            } else if b[i] == '/' && i + 1 < b.len() && b[i + 1] == '*' {
+                i += 2;
+                while i + 1 < b.len() && !(b[i] == '*' && b[i + 1] == '/') {
+                    if b[i] == '\n' {
+                        t.push('\n');
+                    }
+                    i += 1;
+                }
+                i += 2;
+            } else {
+                t.push(b[i]);
+                i += 1;
             }
         }
-        t.push_str(rest);
-        for raw in t.lines() {
-            let line = match raw.find("//") {
-                Some(i) => &raw[..i],
-                None => raw,
-            };
+        for line in t.lines() {
             self.line(line)?;
         }
         Ok(())
@@ -346,6 +355,10 @@ fn builtin(name: &str) -> Option<SampleBuf> {
 pub struct SfzOptions {
     /// Drop regions whose sample file is missing instead of failing.
     pub skip_missing: bool,
+    /// Stretch the lowest and highest attack regions to keys 0 and 127, so
+    /// a pack recorded over a narrow range never falls silent (out-of-range
+    /// notes are resampled from the nearest edge sample).
+    pub extend: bool,
 }
 
 impl SfzInstrument {
@@ -510,6 +523,19 @@ impl SfzInstrument {
         if regions.is_empty() {
             return Err("no playable regions".into());
         }
+        if opt.extend {
+            let attack = |r: &&Region| matches!(r.trigger, Trigger::Attack | Trigger::First);
+            let lo = regions.iter().filter(attack).map(|r| r.keys.0).min().unwrap_or(0);
+            let hi = regions.iter().filter(attack).map(|r| r.keys.1).max().unwrap_or(127);
+            for r in &mut regions {
+                if r.keys.0 == lo {
+                    r.keys.0 = 0;
+                }
+                if r.keys.1 == hi {
+                    r.keys.1 = 127;
+                }
+            }
+        }
         // Choke mapping (see `Voice::exclusive`): a region with off_by=N is
         // choked by notes of group N; give both the class N.
         let offs: std::collections::HashSet<u32> = regions.iter().map(|r| r.off_by).filter(|&o| o != 0).collect();
@@ -622,7 +648,12 @@ fn compile(
                 if n < 128 {
                     let amt = v.trim().parse::<f32>().unwrap_or(0.0);
                     let curve = m.get(&format!("{base}_curvecc{n}")).and_then(|c| c.trim().parse::<i32>().ok()).unwrap_or(0);
-                    let x = if curve == 2 { 1.0 - cc[n] } else { cc[n] };
+                    // Standard curves: 0 linear, 1 bipolar (−1…1, so a centred controller adds nothing), 2 inverted.
+                    let x = match curve {
+                        1 => 2.0 * cc[n] - 1.0,
+                        2 => 1.0 - cc[n],
+                        _ => cc[n],
+                    };
                     add += amt * x;
                 }
             }
@@ -904,10 +935,33 @@ mod tests {
         let d = dir("missing");
         let e = SfzInstrument::from_str("<region> sample=nope.wav", &d, SfzOptions::default()).unwrap_err();
         assert!(e.contains("not found"), "{e}");
-        let e = SfzInstrument::from_str("<region> sample=nope.wav", &d, SfzOptions { skip_missing: true }).unwrap_err();
+        let e = SfzInstrument::from_str("<region> sample=nope.wav", &d, SfzOptions { skip_missing: true, ..Default::default() }).unwrap_err();
         assert!(e.contains("no playable regions"), "{e}");
         assert!(load_sfz(d.join("none.sfz")).is_err());
         let _ = std::fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn sfz_extend_covers_every_key() {
+        // `*sine` sounds middle C at its keycenter.
+        let text = "<region> sample=*sine lokey=40 hikey=45 pitch_keycenter=60 ampeg_release=0.01\n<region> sample=*sine lokey=46 hikey=50 pitch_keycenter=60";
+        let strict = SfzInstrument::from_str(text, ".", SfzOptions::default()).unwrap();
+        let wide = SfzInstrument::from_str(text, ".", SfzOptions { extend: true, ..Default::default() }).unwrap();
+        let peak = |i: &SfzInstrument, key: f32| {
+            let mut v = i.voice(&NoteOn { key, vel: 0.8, rate: 48_000.0, seed: 0, rr: 0, len: 1.0 });
+            let (l, _, _) = crate::sf2::tests::render(v.as_mut(), 1.0, 0.9, 128);
+            (l.iter().fold(0f32, |m, v| m.max(v.abs())), l)
+        };
+        for key in [30.0, 57.0] {
+            assert_eq!(peak(&strict, key).0, 0.0, "strict: key {key} is outside every region");
+            let (p, l) = peak(&wide, key);
+            assert!(p > 0.1, "extended: key {key} plays ({p})");
+            let want = 440.0 * ((key as f64 - 69.0) / 12.0).exp2();
+            let f = crate::sf2::tests::measure_freq(&l[2_400..40_000], want, 48_000.0);
+            assert!((1200.0 * (f / want).log2()).abs() < 5.0, "key {key}: {f} Hz, want {want}");
+        }
+        // Inside the recorded range nothing changes.
+        assert_eq!(peak(&strict, 44.0).1, peak(&wide, 44.0).1);
     }
 
     #[test]
@@ -926,5 +980,39 @@ mod tests {
         let peak = l[9_600..14_400].iter().fold(0f32, |m, v| m.max(v.abs()));
         assert!(peak > 0.2 && peak < 0.45, "{peak}");
         assert!(!alive);
+    }
+}
+
+#[cfg(test)]
+mod label_tests {
+    use super::*;
+
+    #[test]
+    fn region_labels_do_not_swallow_opcodes() {
+        let d = std::env::temp_dir().join(format!("ak-sfz-label-{}", std::process::id()));
+        std::fs::create_dir_all(&d).unwrap();
+        // A tiny WAV.
+        let n = 4800u32;
+        let mut b = Vec::new();
+        b.extend_from_slice(b"RIFF");
+        b.extend_from_slice(&(36 + n * 2).to_le_bytes());
+        b.extend_from_slice(b"WAVEfmt ");
+        b.extend_from_slice(&16u32.to_le_bytes());
+        b.extend_from_slice(&1u16.to_le_bytes());
+        b.extend_from_slice(&1u16.to_le_bytes());
+        b.extend_from_slice(&48_000u32.to_le_bytes());
+        b.extend_from_slice(&96_000u32.to_le_bytes());
+        b.extend_from_slice(&2u16.to_le_bytes());
+        b.extend_from_slice(&16u16.to_le_bytes());
+        b.extend_from_slice(b"data");
+        b.extend_from_slice(&(n * 2).to_le_bytes());
+        for i in 0..n {
+            b.extend_from_slice(&(((i as f32 * 0.05).sin() * 9000.0) as i16).to_le_bytes());
+        }
+        std::fs::write(d.join("a1pp.wav"), b).unwrap();
+        let text = "//******** separator\n#define $EXT wav\n<group>\n/* block\ncomment */<region> region_label=01 lokey=33 hikey=35 pitch_keycenter=33 volume=-3.2 sample=a1pp.$EXT tune=-5\n";
+        let i = SfzInstrument::from_str(text, &d, SfzOptions::default());
+        assert!(i.is_ok(), "{:?}", i.err());
+        let _ = std::fs::remove_dir_all(&d);
     }
 }

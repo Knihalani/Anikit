@@ -7,10 +7,10 @@
 use std::sync::OnceLock;
 
 pub const LAYER_TYPES: &[&str] = &["text", "shape", "image", "video", "group", "box", "component", "composition", "shader", "draw", "dots"];
-pub const SHAPES: &[&str] = &["rect", "circle", "ellipse", "line", "arrow", "polygon", "star", "path"];
+pub const SHAPES: &[&str] = &["rect", "circle", "ellipse", "line", "arrow", "polygon", "star", "path", "superellipse", "squircle", "blob", "arc", "pattern"];
 pub const TRANSITIONS: &[&str] = &[
     "cut", "crossfade", "fade", "fadeBlack", "fadeWhite", "slide", "push", "zoom", "wipe", "iris", "blur", "glitch",
-    "morphCut", "shader",
+    "morphCut", "shader", "zoomThrough", "reveal", "blinds", "split", "whip",
 ];
 pub const DIRECTIONS: &[&str] = &["left", "right", "up", "down"];
 pub const ENTER_PRESETS: &[&str] = &[
@@ -81,6 +81,11 @@ pub fn easings() -> &'static [String] {
             }
         }
         v.extend(SPRINGS.iter().map(|s| s.to_string()));
+        v.extend(
+            ["glide", "snap", "land", "launch", "material", "emphasizedDecelerate", "emphasizedAccelerate", "productive", "expressive", "expressiveEntrance", "expressiveExit"]
+                .iter()
+                .map(|s| s.to_string()),
+        );
         v
     })
 }

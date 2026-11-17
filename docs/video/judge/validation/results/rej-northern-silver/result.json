@@ -1,0 +1,469 @@
+{
+  "name": "rej-northern-silver",
+  "tags": [
+    "3d-cg",
+    "motion-design"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "jpmorgan-payments",
+    "bbc-two-ident"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 3,
+      "typography": 2,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 3,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 2.75,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find an actual idea. What is Northern Silver, and why should these objects behave this way? Give the forms a subject and a story arc",
+      "Build real material and light: an environment the spheres actually sit in, interaction with the water, varied scale and composition from frame to frame",
+      "Make the type part of the image, or make it a confident hero moment, instead of a tiny default label",
+      "There is no idea: decide what 'Northern Silver' is and build an image that only it could have, rather than generic chrome blobs",
+      "Typography needs scale, a chosen face and integration with the image; right now it is a placeholder label",
+      "Choreograph change across frames (camera, scale, events, a payoff) instead of one slow zoom on the same layout",
+      "Find an idea that gives the spheres a reason to exist (a story, a product or a transformation) instead of a showcase of one effect",
+      "Develop typography with scale, a chosen typeface and integration into the scene, rather than a small caps caption in the corner",
+      "Build real light and material: believable environment reflections, surface detail, and varied compositions and camera moves across shots"
+    ],
+    "tells": [
+      "An effect with no subject: generic chrome metaballs reflecting an aurora, with no idea beyond 'shiny blobs under the northern lights'",
+      "A small tracked-caps label ('NORTHERN SILVER') in a default grotesk sits in the corner like a placeholder, with an underline accent and no typographic idea",
+      "Dark ground, a single teal/purple accent and a mostly empty frame: the 'tasteful AI' look",
+      "The reflections are smeared and the same on every sphere, and the background is a flat painted backdrop with no real light interaction",
+      "Only 4 frames, and they are essentially one composition pushed in. Little happens beyond a slow zoom",
+      "An effect with no subject: chrome metaballs float in front of an aurora backdrop and only reflect it",
+      "A small tracked-caps label ('NORTHERN SILVER') with a tiny underline is the only type, set like a default slide caption",
+      "The same composition is repeated, with only a slow push-in across frames; little happens, and the piece runs short (only 4 frames)",
+      "Flat, painterly backdrop and generic reflection shading; the water and mountains are clip-art-like with no real depth or texture",
+      "The palette is the stock aurora green/purple on a dark ground; nothing specific to a brand or idea",
+      "An effect with no subject: generic chrome metaballs reflecting an aurora, which reads like a stock 3D primitive demo",
+      "A small tracked-caps label ('NORTHERN SILVER') with a tiny underline accent, placed like a slide caption, which is textbook default typography",
+      "The reflections are a smeared horizontal band; the light is not physically convincing and the backplate is a flat, painted-looking gradient aurora",
+      "Four near-identical frames that only push in on the same blobs, with little happening and no choreography",
+      "The name is literal (northern lights + silver spheres), with nothing memorable"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.38,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "jpmorgan-payments": {
+      "overall": 6,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "bbc-two-ident": {
+      "overall": 8.25,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.88,
+  "delta": -5.13,
+  "trials": [
+    {
+      "key": {
+        "A": "bbc-two-ident",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "jpmorgan-payments"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A large, specific set of objects: quilted, foil-wrapped, ribbed, padded and wireframe shapes, with materials that look tactile and handmade rather than stock primitives",
+              "Two top-down 'inventory' frames repeat the same layout in green and then lilac/yellow recolourings. That is a planned system for a family of idents, not lazy repetition",
+              "Each colourway's palette is deliberate (orange/silver, magenta, teal/blush, cobalt), and the pegboard ground gives scale and rhythm",
+              "The small BBC TWO mark sits in the pile of objects as a quiet broadcast ident lockup. The type stays out of the way and lets the objects carry the brand",
+              "The frames move from flowing chains to piles to a flat lay-out, which implies choreography: a rolling ball, objects tumbling and settling"
+            ],
+            "gaps": [
+              "Tie the piece more closely to one memorable action. The flat-lay frames are beautiful but read as a style sheet more than a moment",
+              "Give the logo more interplay with the objects (revealed, carried or framed by the motion) instead of a fixed overlay",
+              "Push contrast or drama in the lighting on the pile shots to match B's cinematic depth"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "The idea belongs to this piece alone: the world as a clockwork map, with cities that unfold mechanically from the terrain and an astrolabe as the sun. It works as a credits sequence and as an orientation device for the show's world",
+              "Rich materials (tarnished brass, carved wood, engraved metal bands), with real flares and atmospheric depth",
+              "Credit typography is set in a considered classical serif with small caps and a house sigil next to each name. The type sits inside the 3D space, and the title lockup is framed by the engraved band",
+              "The palette of warm amber, verdigris and parchment holds across every frame",
+              "The frames vary in scale (macro engraving, aerial city, mechanism close-up, map), which shows clear choreography and a journey across the camera moves"
+            ],
+            "gaps": [
+              "This is the reference standard. Gaps are marginal: some credit placements sit over busy detail and lose legibility",
+              "The map frame is flatter and less dimensional than the mechanical frames around it",
+              "The opening and closing band frames mirror each other closely. That is intentional bookending, but a little predictable"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "An effect with no subject: generic chrome metaballs reflecting an aurora, with no idea beyond 'shiny blobs under the northern lights'",
+              "A small tracked-caps label ('NORTHERN SILVER') in a default grotesk sits in the corner like a placeholder, with an underline accent and no typographic idea",
+              "Dark ground, a single teal/purple accent and a mostly empty frame: the 'tasteful AI' look",
+              "The reflections are smeared and the same on every sphere, and the background is a flat painted backdrop with no real light interaction",
+              "Only 4 frames, and they are essentially one composition pushed in. Little happens beyond a slow zoom"
+            ],
+            "gaps": [
+              "Find an actual idea. What is Northern Silver, and why should these objects behave this way? Give the forms a subject and a story arc",
+              "Build real material and light: an environment the spheres actually sit in, interaction with the water, varied scale and composition from frame to frame",
+              "Make the type part of the image, or make it a confident hero moment, instead of a tiny default label"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 4,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "The lighting is well judged: hard gobo window shadows and caustics through glass coins. It is consistent from shot to shot and looks physically motivated",
+              "The scenes vary (wave chart, phone, tiled floor node, conveyor, glass tablet, coin stack), which suggests a planned set of shots",
+              "The brand marks and UI text are correct and legible (J.P.Morgan wordmark, '$2.45M', 'MONTHLY SUMMARY'), which argues against raw AI output",
+              "But it carries several template tells: a cream/beige ground, a single gold accent, placeholder dashboard UI, a padlock icon for 'security', and an idea that is a literal diagram of the features ('coin = payment, conveyor = flow')",
+              "It reads as competent premium fintech CG, polished but forgettable"
+            ],
+            "gaps": [
+              "Replace the literal metaphors (padlock, conveyor, chart) with one surprising central idea that the whole piece hangs on, as B does with its clockwork world",
+              "Give the typography a point of view. The UI type and the logo are applied, not designed into the image",
+              "Broaden the palette and the materials beyond glass-plus-gold-on-beige so that each frame stands as its own poster"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.6,
+        "cost_usd": 0.1604968,
+        "tokens": 72184,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "bbc-two-ident",
+        "B": "game-of-thrones",
+        "C": "jpmorgan-payments",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A dense set of tactile objects (quilted foam, foil, knurled metal, ribbed tubes, wireframe primitives) where every surface has its own designed material, not stock primitives left at default",
+              "Deliberate colour systems change from frame to frame (orange/brown, pink/magenta, green, lilac/yellow) while the same object set is kept, so this reads as an ident family with a real system behind it",
+              "The pegboard ground, the roaming white ball and the flow of objects across frames show choreography: the objects pile, snake and settle into a flat-lay grid",
+              "Soft, believable top light with contact shadows and specular detail on the foil and metal",
+              "Typography is restrained to the broadcaster's own logo lockup and placed well, which suits an ident"
+            ],
+            "gaps": [
+              "The idea ('a playful bag of shapes') is charming but less specific to its subject than B's map-as-world-building conceit; tie the objects more tightly to what the channel stands for",
+              "The two flat-lay grid frames are near-identical in layout with only the palette swapped; vary the final composition per ident so it doesn't feel like a recolour",
+              "No emotional or narrative arc; one moment of surprise or change of scale would give it the dramatic payoff B has"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea only this piece could have: a clockwork map that builds itself, with the astrolabe and sun as the framing device, so the opening also teaches the viewer the world's geography",
+              "Rich, layered frames: engraved metal bands with heraldic relief, cog-driven cities, wooden towers growing up, parchment map with drawn rivers",
+              "Strong motivated light: blown-out sun core against dark, grimy miniatures, with real material texture (tarnished brass, wood, parchment)",
+              "The credits are set in a chosen classical face with small sigils, placed into the scene rather than on a slide; the logo is integrated into the engraved band",
+              "The frames show a clear choreography from sky to astrolabe, a dive into cities, a pull-out to the map and a return to the emblem, with real variety of scale and camera"
+            ],
+            "gaps": [
+              "The palette is mostly sepia and brass; a little more chromatic contrast between regions would make each location easier to tell apart",
+              "Some of the credit placements sit small against busy detail and lose legibility",
+              "The map frame is flatter and less lit than the miniatures; carry the miniature lighting through every beat"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 5,
+              "craft": 6,
+              "originality": 4
+            },
+            "tells": [
+              "The window-light shadows and glass/gold materials are convincingly lit and the angles vary, which is more than a template would do",
+              "But it is the 'tasteful' look exactly: a cream ground, a single gold accent, mostly empty frames",
+              "The idea is literal: a coin token travels through a wave, a phone, a conveyor, a dashboard and a lock, which is a feature diagram of 'payments are fast and secure'",
+              "Placeholder UI ($2.45M, 'Monthly Summary', grey menu items, a sparkline) and a lock icon on a coin; the type is a generic sans set as UI defaults",
+              "The same hero object (a glass disc with a ring icon) is repeated in every frame, so each one is a vignette rather than a choreographed sequence"
+            ],
+            "gaps": [
+              "Find an idea that isn't the product diagram; give the viewer an image they would remember instead of coin \u2192 phone \u2192 lock",
+              "Bring a typographic point of view: replace the placeholder UI with designed typography integrated into the scene, as B does with its credits",
+              "Break the cream-and-gold safety: an unexpected palette or a change of scale between frames would give it surprise and identity"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "An effect with no subject: chrome metaballs float in front of an aurora backdrop and only reflect it",
+              "A small tracked-caps label ('NORTHERN SILVER') with a tiny underline is the only type, set like a default slide caption",
+              "The same composition is repeated, with only a slow push-in across frames; little happens, and the piece runs short (only 4 frames)",
+              "Flat, painterly backdrop and generic reflection shading; the water and mountains are clip-art-like with no real depth or texture",
+              "The palette is the stock aurora green/purple on a dark ground; nothing specific to a brand or idea"
+            ],
+            "gaps": [
+              "There is no idea: decide what 'Northern Silver' is and build an image that only it could have, rather than generic chrome blobs",
+              "Typography needs scale, a chosen face and integration with the image; right now it is a placeholder label",
+              "Choreograph change across frames (camera, scale, events, a payoff) instead of one slow zoom on the same layout"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.8,
+        "cost_usd": 0.1613116,
+        "tokens": 72226,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "jpmorgan-payments",
+        "B": "game-of-thrones",
+        "C": "bbc-two-ident",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Consistent physical art direction across all six frames: warm sand ground, brushed-gold edges, frosted glass, and a single hard raking key light that casts believable long shadows",
+              "The coin/token motif carries through and changes form from frame to frame (a wave, a phone tap, a node on a gold-inlaid grid, a conveyor, stacked coins with a lock), which suggests a real choreographed system rather than one layout repeated",
+              "Brand UI ($2.45M balance, J.P. Morgan wordmark) is built into the glass objects instead of laid flat on the frame",
+              "Against it: the idea is literal fintech (coin + phone + lock = secure payments), and the cream-and-gold glass look comes close to generic 'premium' CGI"
+            ],
+            "gaps": [
+              "Swap the literal feature diagram (coin moves, lock appears) for a metaphor only this brand could own, the way B turns a map into a clockwork world",
+              "Give the type its own presence; at the moment it is only interface copy, while B's credits are part of the set",
+              "Break up the one-material, one-light formula with a change of scale, a palette shift or a surprise, so the six frames don't all read as the same product shot"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific, memorable concept: the world is a clockwork map that builds itself, lit by an armillary sun, and it lays out the show's geography and politics",
+              "Dense physical texture: engraved bronze bands with dragon reliefs, gears, wood, and a parchment map, all under warm, motivated sun-flare light",
+              "Credits are set in a considered inscriptional serif with small-cap roles and house sigils, placed in perspective inside the scene",
+              "The frames progress from macro to aerial to map to logo, so the camera choreography and the story are both visible",
+              "The title lockup sits inside an engraved emblem with sculpted beasts, and every frame works as a poster"
+            ],
+            "gaps": [
+              "None of substance; it is the benchmark",
+              "The palette sits close to genre-standard sepia and bronze; a bolder colour accent could set it further apart",
+              "The map frame is flatter than the mechanical frames, so lighting density dips for a moment"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A distinctive ident system: a pegboard world of tactile objects (quilted, foil, rubber, wireframe) that recolours per variant",
+              "A deliberate, unusual palette that changes per frame (orange/blue, pink, green, lilac/acid yellow) while the object set stays the same, which is a clear system idea",
+              "Rich material rendering: quilting, crinkled foil, terry-cloth texture, soft contact shadows",
+              "Frames vary between flowing chains, piles, and an ordered flat-lay grid, which implies choreography and tidy-up and spill gestures",
+              "The broadcaster logo is used with restraint, in keeping with the brand"
+            ],
+            "gaps": [
+              "Type is limited to the station mark; it has no typographic idea beyond the logo lockup",
+              "The concept is a playful object collection rather than a narrative idea with B's depth",
+              "The light is the same even studio light in every frame, with no dramatic change over time"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "An effect with no subject: generic chrome metaballs reflecting an aurora, which reads like a stock 3D primitive demo",
+              "A small tracked-caps label ('NORTHERN SILVER') with a tiny underline accent, placed like a slide caption, which is textbook default typography",
+              "The reflections are a smeared horizontal band; the light is not physically convincing and the backplate is a flat, painted-looking gradient aurora",
+              "Four near-identical frames that only push in on the same blobs, with little happening and no choreography",
+              "The name is literal (northern lights + silver spheres), with nothing memorable"
+            ],
+            "gaps": [
+              "Find an idea that gives the spheres a reason to exist (a story, a product or a transformation) instead of a showcase of one effect",
+              "Develop typography with scale, a chosen typeface and integration into the scene, rather than a small caps caption in the corner",
+              "Build real light and material: believable environment reflections, surface detail, and varied compositions and camera moves across shots"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.1,
+        "cost_usd": 0.1523606,
+        "tokens": 71781,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.474,
+  "judge_seconds": 92.5,
+  "verdict": "FAIL"
+}

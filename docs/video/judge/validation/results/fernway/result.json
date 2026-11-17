@@ -1,0 +1,517 @@
+{
+  "name": "fernway",
+  "tags": [
+    "product-launch",
+    "kinetic-type"
+  ],
+  "refs": [
+    "coinbase-system-update",
+    "thank-you-for-smoking",
+    "fitc-tokyo-2015"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 3,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 4,
+      "motion": 3,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 3.25,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find a specific idea (the physical experience of losing signal on a trail, real cartography, real place) instead of captions describing features",
+      "Commit to real material and light (photographed terrain, paper maps, lit sets) instead of a procedural grey mesh and a glow line",
+      "Break the slide structure: vary scale, crop and layout between frames, and let the type become the image as D's packaging does",
+      "Find an idea beyond the feature list: C turns the subject's own visual culture (packaging) into the form, and this could do the same with real cartography, trail markers or hand-drawn field notes",
+      "Replace the default serif/grotesk/mono stack and centred slide layouts with type that is part of the image, with scale contrast and a point of view",
+      "Build real light and material (time of day, rock texture, atmosphere) and vary the camera and composition so each frame is a distinct poster rather than the same hill with new words",
+      "Needs a specific, memorable concept (for example, the experience of losing signal) instead of a feature list read as headlines",
+      "Typography needs a point of view and integration with the landscape (custom or expressive faces, scale contrast, type that lives in the terrain) instead of centred slide text",
+      "Real light, material and choreography: changes of camera and space between frames, textured terrain and motivated light, not one repeated mesh shot"
+    ],
+    "tells": [
+      "Textbook 'tasteful AI' look: dark muted ground, a generic editorial serif or bold sans headline, a single orange accent, a mostly empty frame",
+      "Literal idea: product name plus feature diagram ('No signal.' \u2192 'Works offline.' \u2192 '0 BARS NEEDED' \u2192 'Fernway / Trail maps that never drop.')",
+      "Centred headlines placed like slides over the same generic displaced-noise 'terrain' mesh in almost every frame",
+      "Placeholder-like UI: a floating phone card with grey bars, and a contour map with a black label pill",
+      "Tracked mono caps under a glowing numeral and a serif/italic-sans pairing with no typographic idea",
+      "Motion implied is one camera drift with words swapped; the glowing orange line is an effect with no real subject",
+      "The textbook 'tasteful AI' formula: dark ground, centred editorial serif headline ('No signal.', 'Fernway'), a single orange accent, mostly empty frame",
+      "Default type pairing: generic grotesk bold with an italic serif accent word ('Every switchback.'), small tracked monospace label ('BARS NEEDED', 'OFFLINE \u00b7 14.2 KM'), centred like slides",
+      "Literal, obvious idea: an offline trail app shown with a glowing trail line on a 3D terrain primitive, a phone mockup, '0 bars needed' and a product name with a tagline",
+      "Repeated composition: the same noise-displacement hill fills the bottom third of nearly every frame, with text swapped above it",
+      "Stock 3D terrain with flat, uniform fog lighting; the phone mockup floats unconvincingly with no contact shadow or scale relationship",
+      "The topo-map frame uses placeholder-feeling UI (a black label bar, an orange dot) with no typographic craft",
+      "The generic 'tasteful AI' formula: dark ground, a single orange accent, generic editorial serif headlines ('No signal.', 'Fernway') with a tracked-caps label ('BARS NEEDED')",
+      "Centred, slide-like headlines repeated across frames over the same procedural terrain mesh. It is one layout with the words swapped",
+      "The idea is literal: product name plus feature diagram (an offline map, a glowing trail line, the '0 bars' pun), and the closing tagline 'Trail maps that never drop.' is an obvious end card",
+      "The phone UI floating on terrain and the contour-map card are placeholder-grade. The terrain is a stock displacement surface with flat, unmotivated light",
+      "Default type pairing (heavy grotesk plus italic serif accent, 'Every / switchback.'): a stock pattern with no typographic idea"
+    ]
+  },
+  "refs_summary": {
+    "coinbase-system-update": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "thank-you-for-smoking": {
+      "overall": 9.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "fitc-tokyo-2015": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    }
+  },
+  "ref_mean": 7.79,
+  "delta": -4.54,
+  "trials": [
+    {
+      "key": {
+        "A": "fitc-tokyo-2015",
+        "B": "coinbase-system-update",
+        "C": "candidate",
+        "D": "thank-you-for-smoking"
+      },
+      "answer": {
+        "entries": {
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "The core idea fits only this film: each credit is set as a period cigarette-pack design, so the credits themselves become the satire of tobacco branding",
+              "Every frame uses a different typographic voice (condensed caps on a ribbon, script, transitional serif 'LIGHTS', Art Deco caps, a bold grotesk under a script line), and each face is chosen to fit a specific pack style",
+              "Real print texture: paper grain, misregistration, foil-like gold, engraved crests, a hound, an eagle, a biplane",
+              "Varied palette (royal blue/gold, orange/cream, red/white/blue, menthol green) held together by one mid-century print logic",
+              "Tight crops and changing angles imply a camera moving across physical packaging, so the frames do not repeat a layout",
+              "Small copy jokes like 'UNDERAGE SALE PROHIBITED' and 'HONEY-TOASTED' reward a second viewing"
+            ],
+            "gaps": [
+              "It is the reference entry. It could vary rhythm more: the crop/pan grammar is similar from shot to shot",
+              "Light is mostly flat scan lighting; one or two shots with lit, dimensional packs would add depth",
+              "Some cards (Rob Lowe) are sparser than others and give a little density back"
+            ]
+          },
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A kinetic type system that breaks Latin and katakana into modular glyph parts that reassemble into 'TOKYO'",
+              "Bold, deliberate palette: hot pink, mint, acid yellow-green and violet on near-black",
+              "Large scale contrast: a huge cropped 'D' and target shape, then fields of tiny scattered glyphs",
+              "Every frame has a different structure (horizontal band, framed grid, diagonal slash, LED dot matrix, layered collage), which points to real choreography",
+              "Scan-line and print-grain texture and layered overprints give depth to a flat graphic style"
+            ],
+            "gaps": [
+              "The idea is a well-worn genre (glitchy neo-Tokyo type). It lacks a specific concept the way D's cigarette packs have one",
+              "Frames 5\u20136 drift into dense noise where readability and hierarchy get lost; the reveal needs a cleaner resolve",
+              "The type system is clever but anonymous; a custom face with a stronger personality would make it ownable"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "One committed visual system: everything (a walking figure, a coin planet, padlocks, a coin grid) is drawn in ASCII on a single electric blue",
+              "Real variety in scale and staging: a character, a space-like scene with a ringed planet, a full-screen code wall, a triptych, then a 24-coin grid",
+              "The ASCII rendering has shading and volume, not a simple filter",
+              "Weak points: the payment/crypto message is literal ('Crypto is...', 'Faster', 'Secure'), and the code-dump frame is filler text set in a default mono like a slide",
+              "The ASCII-on-blue look has become common, which limits originality"
+            ],
+            "gaps": [
+              "Replace the literal feature words with an idea about money a viewer would remember, as D builds a whole conceit around its subject",
+              "Give the type a point of view: the label pills and the mono code block are defaults, with no scale or layout play",
+              "Add a second colour or tonal layer and some depth so the blue field doesn't flatten every frame to the same value"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Textbook 'tasteful AI' look: dark muted ground, a generic editorial serif or bold sans headline, a single orange accent, a mostly empty frame",
+              "Literal idea: product name plus feature diagram ('No signal.' \u2192 'Works offline.' \u2192 '0 BARS NEEDED' \u2192 'Fernway / Trail maps that never drop.')",
+              "Centred headlines placed like slides over the same generic displaced-noise 'terrain' mesh in almost every frame",
+              "Placeholder-like UI: a floating phone card with grey bars, and a contour map with a black label pill",
+              "Tracked mono caps under a glowing numeral and a serif/italic-sans pairing with no typographic idea",
+              "Motion implied is one camera drift with words swapped; the glowing orange line is an effect with no real subject"
+            ],
+            "gaps": [
+              "Find a specific idea (the physical experience of losing signal on a trail, real cartography, real place) instead of captions describing features",
+              "Commit to real material and light (photographed terrain, paper maps, lit sets) instead of a procedural grey mesh and a glow line",
+              "Break the slide structure: vary scale, crop and layout between frames, and let the type become the image as D's packaging does"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.1,
+        "cost_usd": 0.15818920000000003,
+        "tokens": 72118,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "fitc-tokyo-2015",
+        "B": "coinbase-system-update",
+        "C": "thank-you-for-smoking",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Modular, stencil-cut custom letterforms that break apart into glyph fields, pixel-dot matrices and Katakana-like fragments: the type is the image, not a label on top of it",
+              "Deliberate clashing palette (coral, cyan, acid lime, violet on near-black and putty grey) that holds across the frames without becoming one flat accent colour",
+              "Frames change in structure: a close-up crop, then a horizontal band, a framed grid, a diagonal slash, a dot-matrix and a layered collage, which suggests real choreography and changes of tempo",
+              "Halftone grain, scan-line texture and misregistration add a physical, printed quality",
+              "The glitch/HUD language is close to a familiar genre (Tokyo cyber-type), which lowers originality"
+            ],
+            "gaps": [
+              "The glitch-type vocabulary is well worn; it needs a concept specific to this subject, like C's packaging metaphor, rather than a style that would suit any 'Tokyo/tech' brief",
+              "Legibility and hierarchy break down in the busiest frames (5, 6); a designed moment of clarity would let the chaos land",
+              "Link the motifs to meaning so the cut-up letters spell out a narrative arc, not only rhythm"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A committed ASCII/character-render system: a figure, coins, a planet, padlocks and a token grid are all built from glyphs, with a consistent dither treatment",
+              "Varied staging from frame to frame (walking figure, flow field, orbiting sphere, code wall, triple padlock, grid of coins) suggests transitions and match cuts were planned",
+              "Monospace code text is used as both texture and copy ('Crypto is...', 'Faster', 'Direct'), which is a coherent idea",
+              "But the idea is fairly literal (crypto = code + coins + locks), the single-blue monochrome is a familiar fintech look, and the inline copy labels feel like captions dropped onto the frame"
+            ],
+            "gaps": [
+              "Move beyond literal crypto iconography (dollar signs, padlocks, Bitcoin coins) to a metaphor nobody else would have used",
+              "Give the type a point of view: the white-box labels read as default UI tags, not typography designed into the image",
+              "Add tonal or colour contrast, or one breaking moment, so the electric-blue monochrome doesn't flatten six frames into one mood"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea only this film could have: every credit is set as a different period cigarette pack, so the title sequence enacts the film's satire of tobacco branding",
+              "Typography with real authority: each name gets its own era-correct face and lockup (banner script, condensed sans, script and slab, sunburst filter mark, Art Deco caps)",
+              "A rich, specific palette per pack (royal blue and gold, orange and cream, Americana red, white and blue, menthol green), still unified by printed-ephemera warmth",
+              "Real material: paper grain, foil stripes, engraved heraldry, offset-printing colour, with micro-copy ('Underage sale prohibited', 'Honey-toasted', 'Premium blend') rewarding close viewing",
+              "Every frame works as a poster, and the closing row of cigarette filters under the director's credit is a perfect button"
+            ],
+            "gaps": [
+              "Benchmark entry; the remaining gap is motion. The frames suggest mostly lateral pans and cuts, and more camera variation (macro, pack opening, cellophane glints) would push it further",
+              "A few pack layouts follow a similar horizontal-band structure; one more radical format (soft pack, matchbook, carton) would add surprise",
+              "Very little depth or light play; a touch of lit physicality (foil specular, crushed edges) would make the packs feel held, not scanned"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook 'tasteful AI' formula: dark ground, centred editorial serif headline ('No signal.', 'Fernway'), a single orange accent, mostly empty frame",
+              "Default type pairing: generic grotesk bold with an italic serif accent word ('Every switchback.'), small tracked monospace label ('BARS NEEDED', 'OFFLINE \u00b7 14.2 KM'), centred like slides",
+              "Literal, obvious idea: an offline trail app shown with a glowing trail line on a 3D terrain primitive, a phone mockup, '0 bars needed' and a product name with a tagline",
+              "Repeated composition: the same noise-displacement hill fills the bottom third of nearly every frame, with text swapped above it",
+              "Stock 3D terrain with flat, uniform fog lighting; the phone mockup floats unconvincingly with no contact shadow or scale relationship",
+              "The topo-map frame uses placeholder-feeling UI (a black label bar, an orange dot) with no typographic craft"
+            ],
+            "gaps": [
+              "Find an idea beyond the feature list: C turns the subject's own visual culture (packaging) into the form, and this could do the same with real cartography, trail markers or hand-drawn field notes",
+              "Replace the default serif/grotesk/mono stack and centred slide layouts with type that is part of the image, with scale contrast and a point of view",
+              "Build real light and material (time of day, rock texture, atmosphere) and vary the camera and composition so each frame is a distinct poster rather than the same hill with new words"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.5,
+        "cost_usd": 0.1607728,
+        "tokens": 72208,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "coinbase-system-update",
+        "C": "fitc-tokyo-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific idea that suits the film: every credit is set as a fake vintage cigarette-pack design, so the satire is built into the type itself",
+              "Each frame uses a different typographic voice: an arched condensed slab on a ribbon, a casual script, an editorial serif with tracked 'LIGHTS', a wide sans with a sunburst, spaced small caps, and a script/bold-caps pair. These are period-correct choices, not defaults",
+              "Real print texture: paper grain, worn gold foil, slight misregistration, and the crisp emboss of heraldic crests",
+              "The palette is taken from mid-century packaging (royal blue/gold, orange/cream, red/navy, menthol green) and changes with every card while staying in one family",
+              "Ephemera details reward close viewing: 'UNDERAGE SALE PROHIBITED', 'HONEY-TOASTED TOBACCO LIGHTS', 'MENTHOL CIGARETTES', and the filter-row motif under the director credit"
+            ],
+            "gaps": [
+              "Implied motion is mostly tight crops and pans across flat surfaces. The frames show little camera choreography or transitional surprise between cards",
+              "The structure repeats (one pack, one credit) with no escalation or mid-sequence change in rhythm",
+              "Little spatial depth: the packs are treated as 2D scans, without the 3D or physical play the concept could support"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A full image system built from ASCII/glyph rendering: a figure, a coin, a sphere, padlocks and a coin grid are all made of characters, so the medium (code) is the subject (payments infrastructure)",
+              "A committed, unusual palette of International Klein-style blue with white only, kept consistent in every frame",
+              "High variation and choreography between frames: a character walk cycle, a coin travelling through a glyph vortex, an orbiting sphere, a terminal log, a padlock triptych and a coin-matrix finale",
+              "Monospace type is part of the image (highlighted label chips like '<<Crypto is...' and 'Faster'), and the code text even mentions a 'MatchCut Transition', which suggests deliberate match cuts",
+              "Dense, layered frames with dithered tonal modelling that gives depth from characters alone"
+            ],
+            "gaps": [
+              "The copy and labels are thin. The idea leans on the ASCII technique more than on a memorable line or narrative turn",
+              "The ASCII-render look is a known trend. Push it further with a signature glyph set or a custom face to make it ownable",
+              "The terminal-dump frame reads as filler and breaks the visual density of the rest"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Typography is the main material: modular letterforms, mixed Latin and katakana glyphs, letters built from dot grids, and fragmented words that resolve to 'TOKYO'",
+              "An aggressive, deliberate palette: hot pink, aqua, acid lime and violet on near-black, with tonal variety between frames",
+              "Layered, glitchy compositions with grain, scan textures and pixel matrices that give the frames depth and grit",
+              "Strong variety between frames (single huge glyph, horizontal band, framed letter grid, diagonal scatter, dot-matrix type, dense collage), which implies energetic, varied choreography"
+            ],
+            "gaps": [
+              "The idea is a style exercise (glitch and kinetic type for a city) more than a specific concept. Compared with A, it says less about its subject",
+              "The glitch/cyber-Tokyo vocabulary is familiar, so it needs one surprising move nobody has seen",
+              "Some frames (the dot-matrix one) are murky and less legible as posters, so the hierarchy collapses in places"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The generic 'tasteful AI' formula: dark ground, a single orange accent, generic editorial serif headlines ('No signal.', 'Fernway') with a tracked-caps label ('BARS NEEDED')",
+              "Centred, slide-like headlines repeated across frames over the same procedural terrain mesh. It is one layout with the words swapped",
+              "The idea is literal: product name plus feature diagram (an offline map, a glowing trail line, the '0 bars' pun), and the closing tagline 'Trail maps that never drop.' is an obvious end card",
+              "The phone UI floating on terrain and the contour-map card are placeholder-grade. The terrain is a stock displacement surface with flat, unmotivated light",
+              "Default type pairing (heavy grotesk plus italic serif accent, 'Every / switchback.'): a stock pattern with no typographic idea"
+            ],
+            "gaps": [
+              "Needs a specific, memorable concept (for example, the experience of losing signal) instead of a feature list read as headlines",
+              "Typography needs a point of view and integration with the landscape (custom or expressive faces, scale contrast, type that lives in the terrain) instead of centred slide text",
+              "Real light, material and choreography: changes of camera and space between frames, textured terrain and motivated light, not one repeated mesh shot"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.9,
+        "cost_usd": 0.1620138,
+        "tokens": 72314,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 6
+      },
+      "defects": [
+        "Glowing trail is visibly beaded: you can count the separate sample points along the path in 'Every switchback.' and on the end card instead of seeing one continuous stroke, and it gets worse at the leading edge (pairs row 2)",
+        "The 'Every' transition is a flat hard-edged panel slide with no motion blur and no easing on the edge. The vertical seam reads like a compositing split, not a designed wipe",
+        "'Works offline.' shot: the 'Ridge Loop' header is cut off at the top of the frame and the bar sits flush against the left edge; it looks like an accidental crop",
+        "Phone mockup in the 3D shot is too small and too soft to read. The UI text turns to mush and the flat screen sits on the terrain with no contact shadow or reflection",
+        "Near-static holds (per-second change about 8 at 4s and 13s) where the camera drift is so slight it reads as a frozen frame, not a deliberate hold ('0 BARS NEEDED' barely changes between the two frames of its pair)",
+        "Terrain is a low-frequency displaced mesh with cloth-like shading. It has no micro detail, no scale cues and only soft fog, so it feels like a default procedural look",
+        "Uniform heavy grain over flat dark areas looks like it was added to hide banding, not graded in"
+      ],
+      "gaps": [
+        "Choreography: almost all of it is slow push-ins, one slide and a trail draw-on. There are no motivated camera moves connecting map to terrain to type, no match-cuts between the contour map and the 3D landscape (the obvious idea), and no secondary or overlapping animation to give weight",
+        "Finish: a top studio would render the trail as a continuous, sub-frame-sampled glowing stroke with proper bloom falloff, give the terrain real material and lighting detail, and stage the device as a hero object, not a flat card stuck in a hill",
+        "Sound: the spectrogram shows mostly broadband noise risers and whooshes over a thin, static low bed with little harmonic movement. Tonal content only really appears in the final resolve around 12.6s. Hits line up with some cuts, but there is no layered sound design (UI ticks, foley, a terrain texture) and no real musical arc"
+      ]
+    },
+    "meta": {
+      "seconds": 24.1,
+      "cost_usd": 0.179172,
+      "tokens": 73536,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "fernway.mp4: 15.0s, 12 shots, median 0.93s, longest 1.90s\nper-second change: [64.8, 66.6, 63.4, 61.8, 8.9, 155.9, 102.9, 74.6, 163.1, 11.4, 160.9, 63.7, 62.0, 7.4]\nPACE: PASS"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 4,
+    "motion": 4.0,
+    "craft": 5.0,
+    "originality": 2,
+    "sound": 5
+  },
+  "full_overall": 3.67,
+  "cost_usd": 0.66,
+  "judge_seconds": 121.6,
+  "verdict": "FAIL"
+}

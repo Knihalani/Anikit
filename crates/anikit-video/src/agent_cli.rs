@@ -34,6 +34,7 @@ pub const HELP: &str = "\
 Start: anikit-video docs   (compact pages per primitive; docs 3d, docs shader, docs particles, ...)
        anikit-video recipes (drop-in high-end shots and the shader library)
        anikit-video snippets [name] (paste-able fragments: type treatments, camera moves, music and grade blocks)
+       anikit-video fonts [query]   (~130 curated typefaces by genre with pairings; \"font\": \"Name\" fetches on first use)
 Agent commands:
   anikit-video new <template> [--brand brand.json] [--from README.md] [--format 16:9] [--dir DIR]
                                     scaffold a project: params.json, brand.json, spec.json, NEXT.md
@@ -48,13 +49,13 @@ Agent commands:
                                     (contrast, overlaps, cut text, frame fill, centred layouts); --pack writes frames
                                     to look at (strip, cuts, worst frames, peak) and a review.md rubric
   anikit-video preview <spec.json> [-o sheet.png] [--detail] [--no-critique]   # THE inner loop: check + 1 frame/s sheet + critique + pace, in one call (draft quality)
-  anikit-video preview <spec.json|template> --at T [--width W] [-o f.png]       # one frame
+  anikit-video preview <spec.json|template> --at T [--width W] [-o f.png]       # one frame; --at 1,4.5,8 = one strip of several
                                     contact sheet (one frame per scene), or one still with --at
   anikit-video mcp                  Model Context Protocol server on stdio
 ";
 
 /// Commands this module handles.
-pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "looks", "look", "critique", "preview", "mcp", "docs", "doc", "recipes", "recipe", "snippets", "snippet"];
+pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "looks", "look", "critique", "preview", "mcp", "docs", "doc", "recipes", "recipe", "snippets", "snippet", "fonts", "font"];
 
 /// Run an agent command. `args` excludes the program name.
 pub fn run(args: &[String]) -> Option<i32> {
@@ -79,6 +80,7 @@ pub fn run(args: &[String]) -> Option<i32> {
         "docs" | "doc" => crate::agent_docs::docs((!rest.is_empty()).then(|| rest.join(" ")).as_deref()).map(|s| out!("{s}")),
         "recipes" | "recipe" => cmd_recipes(rest),
         "snippets" | "snippet" => crate::agent_docs::snippets(rest.first().map(|s| s.as_str())).map(|s| out!("{s}")),
+        "fonts" | "font" => cmd_fonts(rest),
         "critique" => cmd_critique(rest),
         "preview" => cmd_preview(rest),
         "mcp" => mcp::serve_stdio().map_err(|e| e.to_string()),
@@ -91,6 +93,61 @@ pub fn run(args: &[String]) -> Option<i32> {
             1
         }
     })
+}
+
+/// `fonts [query] [--json]`, `fonts --fetch NAME…` (or `--fetch all`).
+fn cmd_fonts(rest: &[String]) -> Result<(), String> {
+    use crate::text::library;
+    let json = rest.iter().any(|a| a == "--json");
+    if let Some(i) = rest.iter().position(|a| a == "--fetch") {
+        let names: Vec<&String> = rest[i + 1..].iter().filter(|a| !a.starts_with("--")).collect();
+        let fams: Vec<&library::Family> = if names.iter().any(|n| n.as_str() == "all") {
+            library::families().iter().collect()
+        } else {
+            names
+                .iter()
+                .map(|n| {
+                    library::find(n).ok_or_else(|| format!("unknown font '{n}'; did you mean {}?", library::suggest(n).join(", ")))
+                })
+                .collect::<Result<_, _>>()?
+        };
+        if fams.is_empty() {
+            return Err("usage: anikit-video fonts --fetch NAME… | all".into());
+        }
+        for f in fams {
+            f.load()?;
+            println!("{} ok ({} KB)", f.name, f.size() / 1000);
+        }
+        return Ok(());
+    }
+    let q: Vec<&str> = rest.iter().filter(|a| !a.starts_with("--")).map(String::as_str).collect();
+    let q = q.join(" ");
+    if let Some(f) = library::find(&q) {
+        // One family: full card.
+        let axes: Vec<String> = f.axes.iter().map(|a| format!("{} {}..{}", a.0, a.1, a.2)).collect();
+        if json {
+            println!("{}", library::listing(&q, true));
+        } else {
+            println!(
+                "{} ({}{})\n{}\naxes: {}\npairs with: {}\nsize: {} KB, {}\nuse: \"font\": \"{}\"",
+                f.name,
+                f.genre,
+                if f.bundled { ", bundled" } else { "" },
+                f.desc,
+                if axes.is_empty() { "none (static)".into() } else { axes.join(", ") },
+                f.pairs.join(", "),
+                f.size() / 1000,
+                if f.is_cached() { "cached" } else { "fetched on first use" },
+                f.name
+            );
+        }
+        return Ok(());
+    }
+    print!("{}", library::listing(&q, json));
+    if json {
+        println!();
+    }
+    Ok(())
 }
 
 /// Simple flag parsing: positionals plus `--flag value` / `-o value` / `--switch`.
@@ -334,8 +391,18 @@ fn cmd_preview(args: &[String]) -> Result<(), String> {
             per * p.ev.frames() as f64 + 1.0
         };
         if a.has("json") {
-            out!("{}", pretty(&serde_json::json!({ "sheet": out, "seconds_per_cell": 1, "duration": p.ev.duration, "final_render_estimate_s": est.round(), "critique": report })));
+            let warns: Vec<String> = crate::spec::parse::from_value(spec.clone()).map(|p| p.warnings.iter().map(|d| d.to_string()).collect()).unwrap_or_default();
+            out!("{}", pretty(&serde_json::json!({ "spec_warnings": warns, "sheet": out, "seconds_per_cell": 1, "duration": p.ev.duration, "final_render_estimate_s": est.round(), "critique": report })));
             return Ok(());
+        }
+        // Spec warnings first (unknown or ignored keys): they are the cheapest
+        // fixes, and render would print them anyway after the expensive part.
+        let warns: Vec<String> = crate::spec::parse::from_value(spec.clone()).map(|p| p.warnings.iter().map(|d| d.to_string()).collect()).unwrap_or_default();
+        for w in warns.iter().take(8) {
+            outln!("spec {w}");
+        }
+        if warns.len() > 8 {
+            outln!("spec … {} more (anikit-video check {src})", warns.len() - 8);
         }
         outln!("sheet: {out} (one cell per second, {:.1} s video; open it and look)", p.ev.duration);
         if let Some(r) = report {
@@ -347,6 +414,11 @@ fn cmd_preview(args: &[String]) -> Result<(), String> {
     }
     let width = a.get("width").map(|w| w.parse::<u32>().map_err(|_| format!("--width: '{w}' is not a number"))).transpose()?;
     let (img, default_out) = match a.get("at") {
+        // `--at 1.2,4,7.5`: one strip of several moments in one image.
+        Some(t) if t.contains(',') => {
+            let ts = t.split(',').map(|x| x.trim().parse::<f32>().map_err(|_| format!("--at: '{x}' is not a number of seconds"))).collect::<Result<Vec<_>, _>>()?;
+            (p.sheet(Some(ts), width.unwrap_or(960)), format!("{stem}-strip.png"))
+        }
         Some(t) => {
             let t: f32 = t.parse().map_err(|_| format!("--at: '{t}' is not a number of seconds"))?;
             (p.frame(t, width), format!("{stem}-{t}s.png"))

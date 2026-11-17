@@ -179,6 +179,9 @@ fn b64(s: &str) -> Result<Vec<u8>, String> {
 struct Doc {
     json: Value,
     buffers: Vec<Vec<u8>>,
+    /// Folder for external image URIs, and the file (texture cache key).
+    dir: std::path::PathBuf,
+    file: String,
 }
 
 impl Doc {
@@ -310,8 +313,156 @@ impl Doc {
         if let Some(ior) = j["extensions"]["KHR_materials_ior"]["ior"].as_f64() {
             m.ior = ior as f32;
         }
+        match self.textures(i as usize, &m) {
+            Ok(Some(id)) => {
+                m.pbr = id;
+                m.base = v3(1.0, 1.0, 1.0);
+            }
+            Ok(None) => {}
+            Err(e) => eprintln!("anikit: glTF {}: material {i}: textures skipped ({e})", self.file),
+        }
         m
     }
+
+    /// Encoded bytes of texture `t`'s image (file, data URI or buffer view).
+    fn image(&self, t: &Value) -> Result<Option<Vec<u8>>, String> {
+        let Some(ti) = t["index"].as_u64() else { return Ok(None) };
+        let tex = &self.json["textures"][ti as usize];
+        let src = tex["source"].as_u64().or_else(|| tex["extensions"]["EXT_texture_webp"]["source"].as_u64()).ok_or("texture without source")?;
+        let img = &self.json["images"][src as usize];
+        if let Some(u) = img["uri"].as_str() {
+            if u.starts_with("data:") {
+                return b64(u.split_once(',').map(|x| x.1).unwrap_or("")).map(Some);
+            }
+            let u = percent_decode(u);
+            if std::path::Path::new(&u).components().any(|c| matches!(c, std::path::Component::ParentDir | std::path::Component::RootDir)) {
+                return Err(format!("image uri `{u}` leaves the model's folder"));
+            }
+            return std::fs::read(self.dir.join(&u)).map(Some).map_err(|e| format!("image {u}: {e}"));
+        }
+        let bv = &self.json["bufferViews"][img["bufferView"].as_u64().ok_or("image without uri or bufferView")? as usize];
+        let buf = self.buffers.get(bv["buffer"].as_u64().unwrap_or(0) as usize).ok_or("bad buffer")?;
+        let o = bv["byteOffset"].as_u64().unwrap_or(0) as usize;
+        let n = bv["byteLength"].as_u64().unwrap_or(0) as usize;
+        buf.get(o..o + n).map(|b| Some(b.to_vec())).ok_or_else(|| "image bufferView out of range".into())
+    }
+
+    /// `textures/x_leaves_diff_1k.jpg` → an existing `textures/x_leaves_alpha_1k.png` (or .jpg).
+    fn sibling_alpha(&self, t: &Value) -> Option<std::path::PathBuf> {
+        let tex = &self.json["textures"][t["index"].as_u64()? as usize];
+        let uri = percent_decode(self.json["images"][tex["source"].as_u64()? as usize]["uri"].as_str()?);
+        let stem = uri.rsplit_once('.')?.0;
+        for (a, b) in [("_diff_", "_alpha_"), ("_diffuse_", "_alpha_"), ("_color_", "_alpha_"), ("_basecolor_", "_alpha_")] {
+            if stem.to_lowercase().contains(a) {
+                let i = stem.to_lowercase().find(a)?;
+                let cand = format!("{}{b}{}", &stem[..i], &stem[i + a.len()..]);
+                for ext in ["png", "jpg"] {
+                    let p = self.dir.join(format!("{cand}.{ext}"));
+                    if p.exists() && !cand.contains("..") {
+                        return Some(p);
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    /// The material's base colour / normal / metallic-roughness / occlusion
+    /// textures as a UV-mapped PBR set (cached per file and material).
+    fn textures(&self, i: usize, m: &Material) -> Result<Option<u32>, String> {
+        use super::pbr::{Mapping, Mips, PbrSet};
+        static CACHE: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<(String, usize), u32>>> = std::sync::OnceLock::new();
+        let key = (self.file.clone(), i);
+        if let Some(&id) = CACHE.get_or_init(Default::default).lock().unwrap().get(&key) {
+            return Ok(Some(id));
+        }
+        let j = &self.json["materials"][i];
+        let pbr = &j["pbrMetallicRoughness"];
+        const MAX: usize = 2048;
+        let dec = |b: Vec<u8>| image::load_from_memory(&b).map_err(|e| e.to_string());
+        let albedo = self.image(&pbr["baseColorTexture"])?;
+        let normal = self.image(&j["normalTexture"])?;
+        let mr = self.image(&pbr["metallicRoughnessTexture"])?;
+        let occ = self.image(&j["occlusionTexture"])?;
+        if albedo.is_none() && normal.is_none() && mr.is_none() {
+            return Ok(None);
+        }
+        let fit = |img: image::DynamicImage| if img.width().max(img.height()) as usize > MAX { img.resize(MAX as u32, MAX as u32, image::imageops::FilterType::Triangle) } else { img };
+        let rgb = |b: Vec<u8>| -> Result<Mips, String> {
+            let im = fit(dec(b)?).to_rgb8();
+            Ok(Mips::from_raw(im.width() as usize, im.height() as usize, 3, im.into_raw()))
+        };
+        let chan = |b: &[u8], ch: usize| -> Result<Mips, String> {
+            let im = fit(dec(b.to_vec())?).to_rgb8();
+            Ok(Mips::from_raw(im.width() as usize, im.height() as usize, 1, im.pixels().map(|p| p[ch]).collect()))
+        };
+        let (rough, metal) = match &mr {
+            Some(b) => (Some(chan(b, 1)?), Some(chan(b, 2)?)),
+            None => (None, None),
+        };
+        // Same image for occlusion and metallic-roughness (ARM packing) is common.
+        let ao = match &occ {
+            Some(b) => Some(chan(b, 0)?),
+            None => None,
+        };
+        // Cutouts (leaves, fences): coverage from the base colour's alpha.
+        let cutoff = match j["alphaMode"].as_str() {
+            Some("MASK") => Some(j["alphaCutoff"].as_f64().unwrap_or(0.5) as f32),
+            Some("BLEND") => Some(0.5),
+            _ => None,
+        };
+        let alpha = match (cutoff, &albedo) {
+            (Some(c), Some(b)) => {
+                let im = fit(dec(b.clone())?);
+                if im.color().has_alpha() {
+                    let im = im.to_rgba8();
+                    Some((Mips::from_raw(im.width() as usize, im.height() as usize, 1, im.pixels().map(|p| p[3]).collect()), c))
+                } else {
+                    // A JPEG colour map (Poly Haven's exports): the cutout is a
+                    // sibling `…_alpha_…` file, when there is one.
+                    self.sibling_alpha(&pbr["baseColorTexture"]).map(|p| Mips::load(&p, 1, MAX)).transpose()?.map(|m| (m, c))
+                }
+            }
+            _ => None,
+        };
+        let set = PbrSet {
+            alpha,
+            albedo: albedo.map(rgb).transpose()?,
+            normal: normal.map(rgb).transpose()?,
+            rough,
+            ao,
+            metal,
+            mapping: Mapping::Uv,
+            scale: 1.0,
+            tint: m.base,
+            rough_mul: m.roughness.max(0.0),
+            normal_strength: j["normalTexture"]["scale"].as_f64().unwrap_or(1.0) as f32,
+            keep_rough: false,
+            keep_metal: m.metallic <= 0.0,
+            rotate: 0.0,
+        };
+        let id = super::pbr::register(set);
+        CACHE.get_or_init(Default::default).lock().unwrap().insert(key, id);
+        Ok(Some(id))
+    }
+}
+
+fn percent_decode(s: &str) -> String {
+    let b = s.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        if b[i] == b'%' && i + 2 < b.len() {
+            if let Ok(v) = u8::from_str_radix(&s[i + 1..i + 3], 16) {
+                out.push(v);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(b[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
 }
 
 /// Load every triangle primitive of the default scene, in model space.
@@ -343,7 +494,7 @@ pub fn load(path: &Path) -> Result<(Vec<Part>, Option<Anim>), String> {
             Some(u) => buffers.push(std::fs::read(dir.join(u)).map_err(|e| format!("can't read buffer {u}: {e}"))?),
         }
     }
-    let doc = Doc { json, buffers };
+    let doc = Doc { json, buffers, dir: dir.to_path_buf(), file: path.display().to_string() };
     let scene = doc.json["scene"].as_u64().unwrap_or(0) as usize;
     let roots: Vec<u64> = match doc.json["scenes"][scene]["nodes"].as_array() {
         Some(a) => a.iter().filter_map(|x| x.as_u64()).collect(),

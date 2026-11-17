@@ -1,0 +1,24 @@
+{
+  "slug": "tiffany-holiday",
+  "title": "A Tiffany Holiday",
+  "studio": "BUCK",
+  "year": 2019,
+  "url": "https://buck.co/work/a-tiffany-holiday",
+  "frame_sources": [
+    "https://cdn.sanity.io/images/uk7b627p/production/163779d2465c039f9cd08e8bd7d2325319a8a623-1920x1080.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/fd0567d6f2e05cfccb399a5656e3ee89bd39cea2-1920x1080.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/ad42cf59ef718a9748c1259ee9d28614e0357de1-1920x1080.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/0cc17297689685c00ff1eb6fdaf72fa440110737-1920x1080.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/5147adb0f53130d42bf237b1f1f62e3a893cedf8-1920x1080.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/e11ad2f5f5533a2c2a6c7ab2b8434d56fc02689d-1380x904.jpg"
+  ],
+  "style_tags": [
+    "luxury",
+    "3d-cg"
+  ],
+  "format": "16:9",
+  "medium": "3D",
+  "description": "A CG dream journey through New York and a canyon: a bird flies past a vintage clock face, aerial city streets, a lit stage, a table set with crystal.",
+  "why_top_tier": "Cinematic lighting and camera with luxury-film polish.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright Tiffany & Co."
+}

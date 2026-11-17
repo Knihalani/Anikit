@@ -1,0 +1,5555 @@
+[
+ {
+  "slug": "antibody-elastic-true-detective-2014",
+  "category": "kinetic-type",
+  "title": "HBO's True Detective - Main Title Sequence",
+  "studio": "Elastic / Antibody (director: Patrick Clair; senior designer: Raoul Marks; additional compositing: Breeder)",
+  "client": "HBO",
+  "year": 2014,
+  "url": "https://vimeo.com/84017154",
+  "alt_urls": [
+   "https://www.artofthetitle.com/title/true-detective/",
+   "https://motionographer.com/2014/01/24/patrick-clair-elastic-hbos-true-detective"
+  ],
+  "length_s": 94,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "mixed",
+   "photo",
+   "live-action",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "earthy",
+   "warm"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "eerie",
+   "emotional",
+   "premium"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "masks",
+   "parallax",
+   "camera-move",
+   "speed-ramp",
+   "depth-of-field",
+   "grain",
+   "flash-frame",
+   "particles"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "video",
+   "matte",
+   "camera",
+   "depth",
+   "scene3d",
+   "post",
+   "GAP: camera projection of stills onto low-poly geometry",
+   "GAP: optical-interpolation super-slow-motion (frame blending at 10–20% speed)",
+   "GAP: fire elements"
+  ],
+  "awards": [
+   "Primetime Emmy 2014, Outstanding Main Title Design"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/460704812-b3045e1ae5bcb84bd563eea422e8cb1a7a133f093240cc67ad1af9ab164d3485-d_1280",
+   "https://www.artofthetitle.com/assets/sm/upload/hd/cr/sh/co/td_t.jpg",
+   "https://www.artofthetitle.com/assets/sm/upload/iq/oh/79/wt/td_c.jpg",
+   "https://motionographer.com/wp-content/uploads/2014/01/TD00283.jpg",
+   "https://motionographer.com/wp-content/uploads/2014/01/TD00365.jpg",
+   "https://motionographer.com/wp-content/uploads/2014/01/TD00503.jpg",
+   "https://motionographer.com/wp-content/uploads/2014/01/TD00630.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/kinetic-type/antibody-elastic-true-detective-2014.md"
+ },
+ {
+  "slug": "extraweg-severance-2022",
+  "category": "kinetic-type",
+  "title": "Severance - Intro Title Sequence / Credits / Opening 4K ( Apple TV+) Official",
+  "studio": "extraweg (director/3D: Oliver Latta); title typography: Teddy Blanks, CHIPS",
+  "client": "Apple TV+ / Red Hour (Ben Stiller)",
+  "year": 2022,
+  "url": "https://vimeo.com/680855862",
+  "alt_urls": [
+   "https://www.artofthetitle.com/title/severance/"
+  ],
+  "length_s": 86,
+  "verified": "oembed",
+  "aspect": "2.39:1",
+  "medium": [
+   "stylised-3d",
+   "sim"
+  ],
+  "pace": "steady",
+  "palette": [
+   "cool",
+   "limited",
+   "dark"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "eerie",
+   "premium",
+   "editorial"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "soft-body",
+   "cloth",
+   "sim",
+   "camera-move",
+   "transitions-in-camera",
+   "morph",
+   "depth-of-field",
+   "long-take"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "text",
+   "motionBlur",
+   "post",
+   "GAP: soft-body / cloth simulation of characters",
+   "GAP: scanned, groomed, mocap-driven digital human",
+   "GAP: liquid/ooze sim"
+  ],
+  "awards": [
+   "Primetime Emmy 2022, Outstanding Main Title Design",
+   "Art of the Title Top 10 Title Sequences of 2022"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/1395644320-9e68a355a0a7c79d76a00881f3943a4c8378af469ad0409517ed7e938acc653d-d_1280",
+   "https://media.artofthetitle.com/media/28-human-paste-extraweg-om3la3oj/poster.jpg",
+   "https://media.artofthetitle.com/media/31-past-extraweg-85u2ck17/poster.jpg",
+   "https://media.artofthetitle.com/media/34-outgrow-extraweg-75aus6no/poster.jpg",
+   "https://www.artofthetitle.com/assets/resized/sm/upload/ke/6e/vl/81/Severance-Still-_0023_Layer%2022-0-1080-0-0.jpg",
+   "https://www.artofthetitle.com/assets/resized/sm/upload/du/v4/rs/m3/Severance-Still-_0026_Layer%2019-0-1080-0-0.jpg",
+   "https://www.artofthetitle.com/assets/resized/sm/upload/xt/de/10/i4/Severance-Still-_0037_Layer%208-0-1080-0-0.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/kinetic-type/extraweg-severance-2022.md"
+ },
+ {
+  "slug": "imaginary-forces-stranger-things-2016",
+  "category": "kinetic-type",
+  "title": "Netflix Stranger Things Main Title",
+  "studio": "Imaginary Forces (creative director: Michelle Dougherty; lead animator: Eric Demeusy)",
+  "client": "Netflix",
+  "year": 2016,
+  "url": "https://vimeo.com/174870794",
+  "alt_urls": [
+   "https://imaginaryforces.com/project/stranger-things",
+   "https://www.artofthetitle.com/title/stranger-things/"
+  ],
+  "length_s": 53,
+  "verified": "oembed",
+  "aspect": "other",
+  "medium": [
+   "kinetic-type",
+   "2d-vector"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "limited",
+   "high-contrast"
+  ],
+  "type_role": "only",
+  "mood": [
+   "eerie",
+   "retro",
+   "minimal"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "kinetic-type",
+   "glow",
+   "grain",
+   "camera-move",
+   "logo-build",
+   "scale-contrast",
+   "macro"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "text",
+   "camera",
+   "glow",
+   "post",
+   "post.grain",
+   "post.bloom",
+   "GAP: per-glyph outline extraction as separate animatable pieces",
+   "GAP: optical-print imperfections (gate weave, light flicker, colour fringing in fades)"
+  ],
+  "awards": [
+   "Primetime Emmy 2017, Outstanding Main Title Design",
+   "Clio (source: Imaginary Forces)",
+   "Communication Arts Award (source: Imaginary Forces)"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/582356586-641bf3acdec56ecd1ca62a4aa7dca2f73b1696840bec40330e25f69d81d4800c-d_1280",
+   "https://imaginaryforces.com/images/pics/757_y6fpK6_stranger_things_8.jpg",
+   "https://www.artofthetitle.com/assets/sm/upload/4m/y6/kt/t8/st_t.jpg",
+   "https://images.squarespace-cdn.com/content/v1/516f2132e4b0067040fcf93f/1465937738251-5LFSOSVU07SUGZ1Q9AYK/ST+Main+Titles+FINAL+%280.00.08.21%29.jpg",
+   "https://images.squarespace-cdn.com/content/v1/516f2132e4b0067040fcf93f/1465937971125-JJM43J720LVDSK7Y1JH5/ST+Main+Titles+FINAL+%280.00.14.13%29.jpg",
+   "https://images.squarespace-cdn.com/content/v1/516f2132e4b0067040fcf93f/1465938153632-IM5X1Y3J156UQ8R9IP73/ST+Main+Titles+FINAL+%280.00.26.00%29.jpg",
+   "https://images.squarespace-cdn.com/content/v1/516f2132e4b0067040fcf93f/1465938520843-N32SJWIJGX8KSP3VJV4K/ST+Main+Titles+FINAL+%280.00.38.16%29.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/kinetic-type/imaginary-forces-stranger-things-2016.md"
+ },
+ {
+  "slug": "kuntzel-deygas-catch-me-if-you-can-2002",
+  "category": "kinetic-type",
+  "title": "Catch Me If You Can (opening title sequence)",
+  "studio": "Kuntzel + Deygas (Olivier Kuntzel, Florence Deygas), produced at Nexus Productions",
+  "client": "DreamWorks (director: Steven Spielberg)",
+  "year": 2002,
+  "url": "https://www.kuntzeldeygas.com/catch-me-if-you-can",
+  "alt_urls": [
+   "https://www.artofthetitle.com/title/catch-me-if-you-can/"
+  ],
+  "length_s": null,
+  "verified": "page",
+  "aspect": "other",
+  "medium": [
+   "2d-illustrated",
+   "kinetic-type",
+   "collage"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "limited",
+   "warm"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "playful",
+   "retro",
+   "witty"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "collage-cutout",
+   "stop-motion-feel",
+   "kinetic-type",
+   "colour-swap",
+   "transitions-in-camera",
+   "camera-move"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "shape",
+   "image",
+   "text",
+   "camera",
+   "matte",
+   "transitions",
+   "GAP: rubber-stamp texture (ink voids, uneven edges) as a material",
+   "GAP: on-twos stepped animation timing"
+  ],
+  "awards": [],
+  "stills": [
+   "https://images.squarespace-cdn.com/content/v1/64760552cc99965d01325c82/ff0923a3-d322-4353-91bc-901bf7cc1f34/catch-me-if-you-can-01.jpg",
+   "https://images.squarespace-cdn.com/content/v1/64760552cc99965d01325c82/f3cef9bb-d162-4f74-998c-cd0bff098e07/catch-me-if-you-can-02.jpg",
+   "https://images.squarespace-cdn.com/content/v1/64760552cc99965d01325c82/3c434420-d631-462f-8a89-92693b0390c6/catch-me-if-you-can-03.jpg",
+   "https://www.artofthetitle.com/assets/sm/upload/f2/tf/6c/rv/catch_me_if_you_can_t.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/kinetic-type/kuntzel-deygas-catch-me-if-you-can-2002.md"
+ },
+ {
+  "slug": "prologue-feud-bette-and-joan-2017",
+  "category": "kinetic-type",
+  "title": "Prologue Films // Feud : Bette and Joan - Main Titles",
+  "studio": "Prologue (director: Kyle Cooper; designer: Nadia Tzuo; animator: Margherita Premuroso; editor: Rachel Fowler)",
+  "client": "FX Networks (creative director: Ryan Murphy)",
+  "year": 2017,
+  "url": "https://vimeo.com/205161349",
+  "alt_urls": [
+   "https://prologue.com/portfolio-item/feud/",
+   "https://www.artofthetitle.com/title/feud-bette-and-joan/"
+  ],
+  "length_s": 76,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-vector",
+   "cel",
+   "kinetic-type"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "limited",
+   "high-contrast"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "retro",
+   "witty",
+   "eerie"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "long-take",
+   "transitions-in-camera",
+   "morph",
+   "scale-contrast",
+   "colour-swap",
+   "kinetic-type"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "shape",
+   "text",
+   "camera",
+   "path",
+   "matte",
+   "mask",
+   "transitions",
+   "GAP: frame-by-frame (on twos) hand-drawn timing preset",
+   "GAP: continuous single-shot scene graph where shapes morph into the next set"
+  ],
+  "awards": [
+   "Primetime Emmy 2017 nominee, Outstanding Main Title Design",
+   "Primetime Emmy 2017 nominee, Outstanding Original Main Title Theme Music (Mac Quayle)"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/619854803-6e95cd2fffc6949358a8d11efb08a6328bb378315423c297d0cfda8189adc2cb-d_1280",
+   "https://prologue.com/wp-content/uploads/2022/02/FEUD_S1_marked_01.png",
+   "https://www.artofthetitle.com/assets/sm/upload/vy/kn/8f/8j/feud_t.jpg",
+   "https://www.motionpictures.org/wp-content/uploads/2017/04/Stepping.jpg",
+   "https://www.motionpictures.org/wp-content/uploads/2017/04/Dragging.jpg",
+   "https://www.motionpictures.org/wp-content/uploads/2017/04/Color_Red.jpg",
+   "https://www.motionpictures.org/wp-content/uploads/2017/04/Oscars.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/kinetic-type/prologue-feud-bette-and-joan-2017.md"
+ },
+ {
+  "slug": "rga-kyle-cooper-se7en-1995",
+  "category": "kinetic-type",
+  "title": "New Line Cinema's Se7en Main Title",
+  "studio": "R/Greenberg Associates West (director: Kyle Cooper; designer: Jenny Shainin; editor: Angus Wall); upload by Imaginary Forces",
+  "client": "New Line Cinema (director: David Fincher)",
+  "year": 1995,
+  "url": "https://vimeo.com/87617487",
+  "alt_urls": [
+   "https://imaginaryforces.com/project/se7en",
+   "https://www.artofthetitle.com/title/se7en/"
+  ],
+  "length_s": 128,
+  "verified": "oembed",
+  "aspect": "2.39:1",
+  "medium": [
+   "live-action",
+   "kinetic-type",
+   "collage"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "earthy",
+   "high-contrast"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "eerie",
+   "raw"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "kinetic-type",
+   "macro",
+   "hard-cut",
+   "flash-frame",
+   "grain",
+   "rhythmic-edit",
+   "collage-cutout"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "video",
+   "image",
+   "text",
+   "post",
+   "transitions",
+   "GAP: hand-scratched type in emulsion (per-frame jitter, smear, double-printed offsets)",
+   "GAP: film damage (leader, scratches, frame-line slips)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/900997299-b48b030c0c4bc45a053e572ca0ee6a5f68d547ab59c847835f40edbaa4f84a09-d_1280",
+   "https://www.artofthetitle.com/assets/sm/upload/kv/vg/9u/1d/seven_t.jpg",
+   "https://media.artofthetitle.com/media/se7en-the-notebooks-sueks2w5/poster.jpg",
+   "https://media.artofthetitle.com/media/se7en-early-storyboards-w3nazcd1/poster.jpg",
+   "https://www.artofthetitle.com/assets/sm/upload/90/0m/3j/ev/s_type+photos_02.jpg",
+   "https://www.artofthetitle.com/assets/sm/upload/1x/y0/o4/15/s_type+photos_04.jpg",
+   "https://www.artofthetitle.com/assets/sm/upload/9d/op/5q/fk/s_type+photos_05.jpg",
+   "https://www.artofthetitle.com/assets/sm/upload/8c/m4/s0/10/s_type+photos_08.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/kinetic-type/rga-kyle-cooper-se7en-1995.md"
+ },
+ {
+  "slug": "found-devialet-opera-de-paris-2022",
+  "category": "product-launch",
+  "title": "Devialet, Opéra De Paris",
+  "studio": "Found, London",
+  "client": "Devialet (agency: La Manufacture Paris)",
+  "year": 2022,
+  "url": "https://vimeo.com/776941201",
+  "alt_urls": [
+   "https://www.stashmedia.tv/found-takes-devialet-to-the-opera-de-paris/"
+  ],
+  "length_s": 30,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "stylised-3d"
+  ],
+  "pace": "fast",
+  "palette": [
+   "warm",
+   "limited",
+   "brand-colour"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "luxurious",
+   "premium",
+   "playful"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "product-turntable",
+   "camera-move",
+   "rhythmic-edit",
+   "rigid-body",
+   "light-sweep",
+   "depth-of-field"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "motionBlur",
+   "post",
+   "text",
+   "audio",
+   "GAP: mechanical rig/clockwork constraints (gears, wind-up key driving motion)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1563213537-750a7396215b5e9979bc41dc39c498aa57fef06ff7a1c515cd7f323e69f4d6cb-d_1280",
+   "https://www.stashmedia.tv/wp-content/uploads/Devialet-Ope%CC%81ra-De-Paris-speakers-by-Found-Studio.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Devialet-Ope%CC%81ra-De-Paris-speakers-by-Found-Studio2.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Devialet-Ope%CC%81ra-De-Paris-speakers-by-Found-Studio3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Devialet-Ope%CC%81ra-De-Paris-speakers-by-Found-Studio4.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Devialet-Ope%CC%81ra-De-Paris-speakers-by-Found-Studio5.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/product-launch/found-devialet-opera-de-paris-2022.md"
+ },
+ {
+  "slug": "futuredeluxe-bang-olufsen-beosound-theatre-2022",
+  "category": "product-launch",
+  "title": "Bang & Olufsen - Beosound Theatre",
+  "studio": "FutureDeluxe (director: Raj Davsi)",
+  "client": "Bang & Olufsen",
+  "year": 2022,
+  "url": "https://vimeo.com/746646949",
+  "alt_urls": [
+   "https://www.stashmedia.tv/?p=90425",
+   "https://vimeo.com/747400200"
+  ],
+  "length_s": 30,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "photoreal-cg",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "warm",
+   "limited"
+  ],
+  "type_role": "none",
+  "mood": [
+   "premium",
+   "luxurious",
+   "emotional"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "cloth",
+   "macro",
+   "camera-move",
+   "transitions-in-camera",
+   "depth-of-field",
+   "light-sweep"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "motionBlur",
+   "post",
+   "audio",
+   "GAP: photoreal human (eye) rendering",
+   "GAP: Houdini-grade cloth simulation of large fabric sheets"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1501749959-950594fe79fc510f2fdd2aa7c33586fb81d00bc16e17b8820ca9ca237a925ed6-d_1280",
+   "https://www.stashmedia.tv/wp-content/uploads/FutureDeluxe-Beosound-Theatre-Soundbar-Bang-Olufsen.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/FutureDeluxe-Beosound-Theatre-Soundbar-Bang-Olufsen2.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/FutureDeluxe-Beosound-Theatre-Soundbar-Bang-Olufsen4.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/FutureDeluxe-Beosound-Theatre-Soundbar-Bang-Olufsen6.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/FutureDeluxe-Beosound-Theatre-Soundbar-Bang-Olufsen7.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/product-launch/futuredeluxe-bang-olufsen-beosound-theatre-2022.md"
+ },
+ {
+  "slug": "manvsmachine-nike-air-max-17-2016",
+  "category": "product-launch",
+  "title": "Nike ~ Air Max",
+  "studio": "ManvsMachine (concept, design & direction)",
+  "client": "Nike Europe",
+  "year": 2016,
+  "url": "https://vimeo.com/192130017",
+  "alt_urls": [
+   "https://lovethework.com/work-awards/entries/nike-air-max-17-the-art-of-negative-space-25094",
+   "https://www.stashmedia.tv/manvsmachine-nike-air-max-2017/"
+  ],
+  "length_s": 32,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "stylised-3d"
+  ],
+  "pace": "fast",
+  "palette": [
+   "pastel",
+   "limited",
+   "brand-colour"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "premium",
+   "minimal"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "morph",
+   "soft-body",
+   "cloth",
+   "product-turntable",
+   "rhythmic-edit",
+   "hard-cut",
+   "beat-sync",
+   "macro"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "motionBlur",
+   "post",
+   "audio",
+   "GAP: soft-body/inflatable tube sim with knit (perforated fabric) material",
+   "GAP: transparent air-bag (glass/clear TPU) material with refraction"
+  ],
+  "awards": [
+   "Cannes Lions 2017 Gold, Design > Design Craft (Nike Air Max '17 - The Art of Negative Space)"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/603393463-36c0123de8bfef1e12a1be940cda8c0e19f6f35b7050689514141aa510523d59-d_1280",
+   "https://www.stashmedia.tv/wp-content/uploads/MvsM_Nike3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/MvsM_Nike5.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/MvsM_Nike6.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/MvsM_Nike7.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/MvsM_Nike9.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/product-launch/manvsmachine-nike-air-max-17-2016.md"
+ },
+ {
+  "slug": "morph-studio-xreal-1s-2025",
+  "category": "product-launch",
+  "title": "XREAL 1S AR Glasses TVC",
+  "studio": "Morph Studio, Singapore (director: Vitas)",
+  "client": "XREAL",
+  "year": 2025,
+  "url": "https://vimeo.com/1145191776",
+  "alt_urls": [
+   "https://www.stashmedia.tv/morph-studio-breeds-launch-film-for-xreal-1s-ar-glasses/"
+  ],
+  "length_s": 26,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "sim"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "cool",
+   "brand-colour",
+   "limited"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "technical",
+   "premium",
+   "energetic"
+  ],
+  "purpose": "ad",
+  "techniques": [
+   "fluid",
+   "morph",
+   "particles",
+   "loop",
+   "macro",
+   "depth-of-field",
+   "glow",
+   "logo-build"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "motionBlur",
+   "post",
+   "glow",
+   "text",
+   "audio",
+   "GAP: fluid/liquid simulation with droplets (Houdini FLIP equivalent)",
+   "GAP: organic cell-division morph of a hard-surface product"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/2094062481-afb9eb195eef5463e8c2ef72dedb81d502f43030432f1de56169f5aea9e732b6-d_1280",
+   "https://www.stashmedia.tv/wp-content/uploads/XREAL-1S-3D-AR-glasses-ad-by-Morph-Studio-STASH-MAGAZINE.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/XREAL-1S-3D-AR-glasses-ad-by-Morph-Studio-STASH-MAGAZINE2.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/XREAL-1S-3D-AR-glasses-ad-by-Morph-Studio-STASH-MAGAZINE4.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/XREAL-1S-3D-AR-glasses-ad-by-Morph-Studio-STASH-MAGAZINE5.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/XREAL-1S-3D-AR-glasses-ad-by-Morph-Studio-STASH-MAGAZINE6.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/product-launch/morph-studio-xreal-1s-2025.md"
+ },
+ {
+  "slug": "post-office-studios-nothing-phone-2a-plus-2024",
+  "category": "product-launch",
+  "title": "Nothing :: 2a Film",
+  "studio": "Post Office Studios, Mumbai (director: Prasad Kelkar)",
+  "client": "Nothing (creative agency: Made Thought)",
+  "year": 2024,
+  "url": "https://vimeo.com/999367912",
+  "alt_urls": [
+   "https://stashmedia.tv/post-office-studios-conjures-scale-and-drama-for-the-nothing-2a-phone"
+  ],
+  "length_s": 65,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "stylised-3d"
+  ],
+  "pace": "steady",
+  "palette": [
+   "mono",
+   "dark",
+   "high-contrast"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "epic",
+   "premium",
+   "technical"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "scale-contrast",
+   "macro",
+   "camera-move",
+   "glow",
+   "light-sweep",
+   "depth-of-field"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "motionBlur",
+   "post",
+   "glow",
+   "text",
+   "audio",
+   "GAP: hard-surface product-as-landscape set (machined radial grooves at architectural scale)",
+   "GAP: tiny rigged human figures for scale"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1915518292-fa63808b8967adbc8a9e7bb05069de3bc0ac1a9444e24aa17fdac4b5f1e8f808-d_1280",
+   "https://www.stashmedia.tv/wp-content/uploads/Nothing-2a-Phone-product-film-by-Post-Office-Studios.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Nothing-2a-Phone-product-film-by-Post-Office-Studios2.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Nothing-2a-Phone-product-film-by-Post-Office-Studios3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Nothing-2a-Phone-product-film-by-Post-Office-Studios4.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Nothing-2a-Phone-product-film-by-Post-Office-Studios6.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/product-launch/post-office-studios-nothing-phone-2a-plus-2024.md"
+ },
+ {
+  "slug": "tendril-oppo-reno6-jin-2021",
+  "category": "product-launch",
+  "title": "OPPO | Reno6 Jin Series",
+  "studio": "Tendril (CD: Nidia Dias; directors: Miguel Rato & Joey Recoskie)",
+  "client": "OPPO",
+  "year": 2021,
+  "url": "https://vimeo.com/646512105",
+  "alt_urls": [
+   "https://vimeo.com/647785908",
+   "https://www.stashmedia.tv/oppo-reno6-launch-films-by-tendril/",
+   "https://jrecoskie.myportfolio.com/oppo-reno6-series"
+  ],
+  "length_s": 31,
+  "verified": "oembed",
+  "aspect": "other",
+  "medium": [
+   "3d-cg",
+   "photoreal-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "mono",
+   "dark",
+   "high-contrast"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "premium",
+   "minimal",
+   "calm"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "macro",
+   "particles",
+   "depth-of-field",
+   "product-turntable",
+   "light-sweep",
+   "camera-move"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "motionBlur",
+   "post",
+   "component.snow",
+   "audio",
+   "GAP: procedural ice-crystal / snowflake growth (dendritic) geometry",
+   "GAP: granular snow/sand settling on a product surface (particle sim with contact)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1301428326-5ee841561897da3bcf59d0ffae430c90b1448061893cc7ea6_1280",
+   "https://cdn.myportfolio.com/0e0fd073-df90-4bff-856a-29b1536ff042/089fb919-1760-4a78-8c65-034e1d85d1c0_rw_1920.jpg?h=112951d7c39c485f1f1623942037693a",
+   "https://cdn.myportfolio.com/0e0fd073-df90-4bff-856a-29b1536ff042/11f439db-ddcf-4b03-a17d-4faf56f04f9b_rw_1920.jpg?h=adf5fda2750d9631b0a4a637b3bed198",
+   "https://cdn.myportfolio.com/0e0fd073-df90-4bff-856a-29b1536ff042/7844e98f-9409-4426-860d-8d8af4301257_rw_3840.jpg?h=c182817ed3d333486cfe70b05c5237ce",
+   "https://cdn.myportfolio.com/0e0fd073-df90-4bff-856a-29b1536ff042/7c9b516b-68e9-4c3b-8306-db0768f0d6a5_rw_3840.jpg?h=64f037b1d9368e747a67200d02ff4dfe",
+   "https://cdn.myportfolio.com/0e0fd073-df90-4bff-856a-29b1536ff042/453fa28d-1589-4f24-95c4-58a0905397b2_rw_3840.jpg?h=22919cf54bec5072a4cc183cc09c3564",
+   "https://cdn.myportfolio.com/0e0fd073-df90-4bff-856a-29b1536ff042/4a057556-3ae6-4515-b715-5e51e3274c2e_rw_3840.jpg?h=fbbbe1cb9ada7825c3936ea872f0f127",
+   "https://cdn.myportfolio.com/0e0fd073-df90-4bff-856a-29b1536ff042/8ca1614d-765d-49b5-b8fb-acac83b1236e_rw_3840.jpg?h=54056467e32fa265d04daae76dec955a"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/product-launch/tendril-oppo-reno6-jin-2021.md"
+ },
+ {
+  "slug": "channel4-glazer-idents-2015",
+  "category": "brand-idents",
+  "title": "CHANNEL 4 REBRAND",
+  "studio": "4creative with Jonathan Glazer (Academy Films), Neville Brody, DBLG",
+  "client": "Channel 4",
+  "year": 2015,
+  "url": "https://www.youtube.com/watch?v=8Ua5m6lPTbA",
+  "alt_urls": [
+   "https://www.youtube.com/watch?v=aWvUJATjJDE",
+   "https://www.youtube.com/watch?v=FTsmtfR9MP8",
+   "https://www.academyfilms.com/blog/channel-4-by-jonathan-glazer"
+  ],
+  "length_s": 61,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "live-action",
+   "photoreal-cg"
+  ],
+  "pace": "calm",
+  "palette": [
+   "earthy",
+   "high-contrast",
+   "brand-colour"
+  ],
+  "type_role": "none",
+  "mood": [
+   "eerie",
+   "premium",
+   "raw"
+  ],
+  "purpose": "ident",
+  "techniques": [
+   "long-take",
+   "macro",
+   "camera-move",
+   "hard-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "video",
+   "camera",
+   "post",
+   "scene3d",
+   "GAP: photoreal live-action plates with CG composites (crystalline blocks embedded in real landscapes)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/8Ua5m6lPTbA/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/8Ua5m6lPTbA/hq1.jpg",
+   "https://i.ytimg.com/vi/8Ua5m6lPTbA/hq2.jpg",
+   "https://i.ytimg.com/vi/8Ua5m6lPTbA/hq3.jpg",
+   "https://i.ytimg.com/vi/aWvUJATjJDE/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/aWvUJATjJDE/hq1.jpg",
+   "https://i.ytimg.com/vi/aWvUJATjJDE/hq2.jpg",
+   "https://i.ytimg.com/vi/aWvUJATjJDE/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/brand-idents/channel4-glazer-idents-2015.md"
+ },
+ {
+  "slug": "dixonbaxi-the-cw-brand-2024",
+  "category": "brand-idents",
+  "title": "DixonBaxi | CW",
+  "studio": "DixonBaxi",
+  "client": "The CW Network",
+  "year": 2024,
+  "url": "https://vimeo.com/905627809",
+  "alt_urls": [
+   "https://vimeo.com/905638729",
+   "https://www.itsnicethat.com/news/dixonbaxi-the-cw-graphic-design-240124"
+  ],
+  "length_s": 48,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-vector",
+   "kinetic-type"
+  ],
+  "pace": "fast",
+  "palette": [
+   "brand-colour",
+   "limited",
+   "high-contrast"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "witty",
+   "premium",
+   "energetic"
+  ],
+  "purpose": "ident",
+  "techniques": [
+   "masks",
+   "kinetic-type",
+   "logo-build",
+   "scale-contrast",
+   "colour-swap",
+   "hard-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "shape",
+   "mask",
+   "text.split",
+   "group",
+   "transitions",
+   "audio"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1786991040-5fc4308b2ab4374ca96fc280803d6ab67aa4ac20e07487bf1aa02294a8c627b5-d_1280",
+   "https://i.vimeocdn.com/video/1787007395-45ae400042b190f3dc66fe91715c04af4484fd456fe8e017499019f624b9a1aa-d_1280",
+   "https://image.mux.com/35a5YmyEKchR3yIuwnJID3WLTlu700eOX/thumbnail.jpg?time=3&width=1600",
+   "https://image.mux.com/35a5YmyEKchR3yIuwnJID3WLTlu700eOX/thumbnail.jpg?time=14&width=1600",
+   "https://image.mux.com/35a5YmyEKchR3yIuwnJID3WLTlu700eOX/thumbnail.jpg?time=26&width=1600",
+   "https://image.mux.com/35a5YmyEKchR3yIuwnJID3WLTlu700eOX/thumbnail.jpg?time=40&width=1600",
+   "https://image.mux.com/35a5YmyEKchR3yIuwnJID3WLTlu700eOX/thumbnail.jpg?time=47&width=1600"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/brand-idents/dixonbaxi-the-cw-brand-2024.md"
+ },
+ {
+  "slug": "lambie-nairn-bbc-two-1991",
+  "category": "brand-idents",
+  "title": "BBC 2 Phase one 1991",
+  "studio": "Lambie-Nairn (Martin Lambie-Nairn)",
+  "client": "BBC Two",
+  "year": 1991,
+  "url": "https://www.youtube.com/watch?v=cYwa3W9IiKk",
+  "alt_urls": [
+   "https://www.youtube.com/watch?v=s8ar1aavGXk"
+  ],
+  "length_s": 47,
+  "verified": "oembed",
+  "aspect": "other",
+  "medium": [
+   "live-action",
+   "stop-motion"
+  ],
+  "pace": "steady",
+  "palette": [
+   "limited",
+   "brand-colour"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "witty",
+   "playful",
+   "minimal"
+  ],
+  "purpose": "ident",
+  "techniques": [
+   "macro",
+   "stop-motion-feel",
+   "logo-build"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "text",
+   "shape",
+   "image",
+   "camera",
+   "scene3d",
+   "GAP: practical materials (paint, water, silk, powder) with real physics"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/cYwa3W9IiKk/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/cYwa3W9IiKk/hq1.jpg",
+   "https://i.ytimg.com/vi/cYwa3W9IiKk/hq2.jpg",
+   "https://i.ytimg.com/vi/cYwa3W9IiKk/hq3.jpg",
+   "https://upload.wikimedia.org/wikipedia/en/3/31/BBC_Two_Paint_ident.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/brand-idents/lambie-nairn-bbc-two-1991.md"
+ },
+ {
+  "slug": "manvsmachine-bbc-one-lens-2022",
+  "category": "brand-idents",
+  "title": "BBC ONE ~ Idents",
+  "studio": "ManvsMachine with BBC Creative",
+  "client": "BBC One",
+  "year": 2022,
+  "url": "https://vimeo.com/709436376",
+  "alt_urls": [
+   "https://itsnicethat.com/news/manvsmachine-bbc-creative-bbc-one-film-010622"
+  ],
+  "length_s": 340,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "live-action",
+   "mixed"
+  ],
+  "pace": "calm",
+  "palette": [
+   "warm",
+   "saturated",
+   "brand-colour"
+  ],
+  "type_role": "none",
+  "mood": [
+   "warm",
+   "premium",
+   "calm"
+  ],
+  "purpose": "ident",
+  "techniques": [
+   "camera-move",
+   "masks",
+   "long-take",
+   "transitions-in-camera"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "video",
+   "mask",
+   "camera",
+   "group",
+   "post",
+   "GAP: motion-control plate matching across three shoots of the same set"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1431124838-f0244e25c00a3f973a11a1494a65e4fe0a84f73d09cfb270915f772da2567d64-d_1280",
+   "https://mvsm.com/assets/images/project/_1600x900_crop_center-center_none/bbc_field_ramble_tweak.jpg",
+   "https://mvsm.com/assets/images/project/_1600x900_crop_center-center_none/bbc_field_sheep.jpg",
+   "https://mvsm.com/assets/images/project/_1600x900_crop_center-center_none/bbc_grease_builders_04.jpg",
+   "https://mvsm.com/assets/images/project/_1600x900_crop_center-center_none/bbc_grease_date_04.jpg",
+   "https://mvsm.com/assets/images/project/_2400x1350_crop_center-center_none/bbc_grease_footy_04.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/brand-idents/manvsmachine-bbc-one-lens-2022.md"
+ },
+ {
+  "slug": "netflix-ribbon-logo-2019",
+  "category": "brand-idents",
+  "title": "Netflix New Logo Animation 2019",
+  "studio": "Netflix brand team with Imaginary Forces",
+  "client": "Netflix",
+  "year": 2019,
+  "url": "https://www.youtube.com/watch?v=GV3HUDMQ-F8",
+  "alt_urls": [
+   "https://imaginaryforces.com/project/netflix"
+  ],
+  "length_s": 4,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "generative"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "saturated",
+   "brand-colour"
+  ],
+  "type_role": "none",
+  "mood": [
+   "premium",
+   "epic"
+  ],
+  "purpose": "ident",
+  "techniques": [
+   "logo-build",
+   "glow",
+   "camera-move",
+   "light-sweep",
+   "instancing"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "shape",
+   "glow",
+   "camera",
+   "motionBlur",
+   "post",
+   "audio",
+   "GAP: dense ribbon of hundreds of coloured light strands with volumetric bloom"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/GV3HUDMQ-F8/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/GV3HUDMQ-F8/hq1.jpg",
+   "https://i.ytimg.com/vi/GV3HUDMQ-F8/hq2.jpg",
+   "https://i.ytimg.com/vi/GV3HUDMQ-F8/hq3.jpg",
+   "https://imaginaryforces.com/images/pics/731_J0CHJG_netflix_originals.jpg",
+   "https://cdn.mos.cms.futurecdn.net/BDvqkcvVLHBu6xZ5yaN7jQ.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/brand-idents/netflix-ribbon-logo-2019.md"
+ },
+ {
+  "slug": "pentagram-motogp-identity-2024",
+  "category": "brand-idents",
+  "title": "AH_MotoGP_03_v2",
+  "studio": "Pentagram (partner: Angus Hyland); typefaces with F37",
+  "client": "MotoGP (Dorna Sports)",
+  "year": 2024,
+  "url": "https://vimeo.com/1029958152",
+  "alt_urls": [
+   "https://www.pentagram.com/work/motogp",
+   "https://vimeo.com/1029682703",
+   "https://www.youtube.com/watch?v=2zqNtfYKcH4"
+  ],
+  "length_s": 133,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-vector",
+   "kinetic-type",
+   "mixed"
+  ],
+  "pace": "fast",
+  "palette": [
+   "mono",
+   "saturated",
+   "high-contrast"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "energetic",
+   "premium",
+   "editorial"
+  ],
+  "purpose": "ident",
+  "techniques": [
+   "logo-build",
+   "kinetic-type",
+   "type-morph",
+   "smear",
+   "speed-ramp",
+   "colour-swap",
+   "masks"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "shape",
+   "text",
+   "text.split",
+   "mask",
+   "motionBlur",
+   "transitions",
+   "mograph",
+   "GAP: variable-font axis animation",
+   "GAP: directional colour-streak smear on type and shapes"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1950403029-eaf3643eecab17f8ba2a196a7e59134e92a69fb63c72a3f24540943b8224af7d-d_1280",
+   "https://pentagram-production.imgix.net/daaef282-3878-41c9-9f4f-e8750c9b0299/AH_MotoGP_01.png",
+   "https://pentagram-production.imgix.net/daaef282-3878-41c9-9f4f-e8750c9b0299/AH_MotoGP_02_Thumbnail.png",
+   "https://pentagram-production.imgix.net/63e0d6b4-103e-4e33-854f-00babdffdac4/AH_MotoGP_27_v2.png",
+   "https://pentagram-production.imgix.net/daaef282-3878-41c9-9f4f-e8750c9b0299/AH_MotoGP_03_Thumbnail.png?auto=compress%2Cformat&fit=min&fm=jpg&q=80&rect=0%2C0%2C1920%2C1080&w=1920&s=dfe3844b143566bc4ce404af54032548"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/brand-idents/pentagram-motogp-identity-2024.md"
+ },
+ {
+  "slug": "buck-github-what-is-github-2022",
+  "category": "explainer-2d",
+  "title": "What is GitHub?",
+  "studio": "BUCK Amsterdam (CD: Richard Gray; ECD: Vincent Lammers; animation director: Daniel Rodrigues)",
+  "client": "GitHub",
+  "year": 2022,
+  "url": "https://www.youtube.com/watch?v=pBy1zgt0XPc",
+  "alt_urls": [
+   "https://buck.co/work/github-what-is-github",
+   "https://awards.europeandesign.org/winner/258195"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "mixed",
+   "2d-illustrated",
+   "cel",
+   "3d-cg",
+   "live-action",
+   "ui"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "brand-colour",
+   "cool"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "witty",
+   "energetic",
+   "technical"
+  ],
+  "purpose": "explainer",
+  "techniques": [
+   "kinetic-type",
+   "grain",
+   "ui-zoom",
+   "camera-move",
+   "hard-cut",
+   "rhythmic-edit"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "video",
+   "text",
+   "text gradient fill",
+   "image",
+   "scene3d",
+   "component code",
+   "post.grain",
+   "camera depth",
+   "transitions (cut)",
+   "audio",
+   "GAP: cel character animation",
+   "GAP: airbrushed grain-gradient illustration rendering"
+  ],
+  "awards": [
+   "European Design Awards 2023 Gold, Animated Storytelling"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/pBy1zgt0XPc/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/pBy1zgt0XPc/hq1.jpg",
+   "https://i.ytimg.com/vi/pBy1zgt0XPc/hq2.jpg",
+   "https://i.ytimg.com/vi/pBy1zgt0XPc/hq3.jpg",
+   "https://cdn.sanity.io/images/uk7b627p/production/d286f01e99a42d75c199a16267e7a6e3935a1463-1920x1080.png?q=90&w=1920",
+   "https://cdn.sanity.io/images/uk7b627p/production/a328408bfcb6370a0993f81a8926b4dafc9288d4-3840x2160.png?w=1200"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/explainer-2d/buck-github-what-is-github-2022.md"
+ },
+ {
+  "slug": "champ-ted-ed-how-ai-learns-2021",
+  "category": "explainer-2d",
+  "title": "TED-ED | How does artificial intelligence learn?",
+  "studio": "Pleas Call Me Champ Studio (director: Champ Panupong Techawongthawon)",
+  "client": "TED-Ed (educator: Briana Brownell)",
+  "year": 2021,
+  "url": "https://vimeo.com/522542250",
+  "alt_urls": [
+   "https://www.pleasecallmechamp.com"
+  ],
+  "length_s": 278,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-vector",
+   "data-viz"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "saturated",
+   "high-contrast"
+  ],
+  "type_role": "none",
+  "mood": [
+   "technical",
+   "playful",
+   "energetic"
+  ],
+  "purpose": "explainer",
+  "techniques": [
+   "loop",
+   "grid",
+   "morph",
+   "glow",
+   "rhythmic-edit",
+   "beat-sync"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "shape",
+   "shape gradient fill",
+   "mograph.repeat",
+   "path/progress (objects on orbits)",
+   "post (bloom)",
+   "audio",
+   "GAP: soft inner-glow/airbrushed gradient tubes along a stroke"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1082388221-6b34fe35f930f5c77908f4cc818e26e1b785880015723bbb28699fb17e4ee557-d_1280",
+   "https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-03-12-at-8.47.49-AM.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-03-12-at-8.48.05-AM.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-03-12-at-8.48.19-AM.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-03-12-at-8.49.29-AM.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-03-12-at-8.50.13-AM.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/explainer-2d/champ-ted-ed-how-ai-learns-2021.md"
+ },
+ {
+  "slug": "giant-ant-imaginary-friend-society-2017",
+  "category": "explainer-2d",
+  "title": "The Imaginary Friend Society // Finding Out You Have Cancer",
+  "studio": "Giant Ant (CD: Jay Grandin; animation director: Conor Whelan; AD: Rafael Mayani)",
+  "client": "Pediatric Brain Tumor Foundation (agency: RPA)",
+  "year": 2017,
+  "url": "https://vimeo.com/235372654",
+  "alt_urls": [
+   "https://giantant.ca/imaginary-friends-finding-out",
+   "https://2017.motionawards.com/winner/visual-essay-social-good"
+  ],
+  "length_s": 119,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "cel"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "warm"
+  ],
+  "type_role": "none",
+  "mood": [
+   "warm",
+   "playful",
+   "emotional"
+  ],
+  "purpose": "explainer",
+  "techniques": [
+   "grain",
+   "camera-move",
+   "parallax",
+   "boil"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "image",
+   "group",
+   "camera depth (parallax)",
+   "shape",
+   "post.grain",
+   "audio",
+   "GAP: frame-by-frame character animation (cel)",
+   "GAP: crayon/pencil texture brushes inside shapes"
+  ],
+  "awards": [
+   "Motion Awards 2017 winner, Visual Essay > Social Good"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/657206262-0bd0437c64729a716cd384e33662a0b905d36b3f74879313237e6e4394077942-d_1280",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1590707034308-4OWHX9GE84DT51665LK4/RPA17_01_ImaginaryFriends_s09_CAULDRON_02.jpg",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1590707387829-24IS72T5U5YJKM2L6M1P/RPA17_01_ImaginaryFriends_s15_HOVERTANK.jpg",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1590707340531-M4ZBCOG8SF5N35MAZDTQ/RPA17_01_ImaginaryFriends_s15_DOCTORS.jpg",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1590707660309-B4VOJYCDHMDZENJ64HZA/RPA17_01_ImaginaryFriends_s19_TOPFOREST.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/explainer-2d/giant-ant-imaginary-friend-society-2017.md"
+ },
+ {
+  "slug": "kurzgesagt-optimistic-nihilism-2017",
+  "category": "explainer-2d",
+  "title": "Optimistic Nihilism",
+  "studio": "Kurzgesagt – In a Nutshell",
+  "client": "Self-initiated",
+  "year": 2017,
+  "url": "https://www.youtube.com/watch?v=MBRqu0YOH14",
+  "alt_urls": [
+   "https://kurzgesagt.org/youtube/"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-vector"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "saturated",
+   "neon"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "epic",
+   "emotional",
+   "playful"
+  ],
+  "purpose": "explainer",
+  "techniques": [
+   "parallax",
+   "camera-move",
+   "glow",
+   "scale-contrast",
+   "loop",
+   "match-cut"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "shape",
+   "shape gradient fill",
+   "group",
+   "camera (zoom, depth parallax)",
+   "glow",
+   "mograph.repeat",
+   "loop presets",
+   "particles (starfield, dust)",
+   "text",
+   "audio",
+   "GAP: Kurzgesagt-style character rig library (bird, human) with secondary motion"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/MBRqu0YOH14/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/MBRqu0YOH14/hq1.jpg",
+   "https://i.ytimg.com/vi/MBRqu0YOH14/hq2.jpg",
+   "https://i.ytimg.com/vi/MBRqu0YOH14/hq3.jpg",
+   "https://i.gzn.jp/img/2017/07/28/optimistic-nihilism/cap00002.png",
+   "https://i.gzn.jp/img/2017/07/28/optimistic-nihilism/cap00004.png",
+   "https://i.gzn.jp/img/2017/07/28/optimistic-nihilism/cap00006.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/explainer-2d/kurzgesagt-optimistic-nihilism-2017.md"
+ },
+ {
+  "slug": "oddfellows-adobe-on-color-2021",
+  "category": "explainer-2d",
+  "title": "Creativity Explained - On Color with Eddie Opara",
+  "studio": "Oddfellows (CD: Jarratt Moody; AD: Ben Hill)",
+  "client": "Adobe",
+  "year": 2021,
+  "url": "https://vimeo.com/561587283",
+  "alt_urls": [
+   "https://www.stashmedia.tv/creativity-explained-on-color-with-eddie-opara-by-oddfellows/"
+  ],
+  "length_s": 139,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-vector",
+   "kinetic-type"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "dark",
+   "limited"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "editorial",
+   "playful",
+   "premium"
+  ],
+  "purpose": "explainer",
+  "techniques": [
+   "grain",
+   "morph",
+   "grid",
+   "colour-swap",
+   "masks",
+   "rhythmic-edit"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "shape",
+   "shape gradient fill",
+   "post.grain",
+   "mograph.repeat",
+   "box columns (grid)",
+   "text",
+   "transitions (wipe, cut)",
+   "audio",
+   "GAP: hand-printed risograph/paper texture on fills (halftone dither inside gradients)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1160754788-2207ead40122f971f41b1b588cc7d6c7a9aa94e13521b30677cb591bc21b3e8c-d_1280",
+   "https://www.thisiscolossal.com/wp-content/uploads/2021/06/oddfellows-3.jpg",
+   "https://www.thisiscolossal.com/wp-content/uploads/2021/06/oddfellows-2.jpg",
+   "https://www.thisiscolossal.com/wp-content/uploads/2021/06/oddfellows-4.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-06-11-at-10.26.51-AM.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Screen-Shot-2021-06-11-at-10.28.04-AM.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/explainer-2d/oddfellows-adobe-on-color-2021.md"
+ },
+ {
+  "slug": "ordinary-folk-school-of-motion-manifesto-2019",
+  "category": "explainer-2d",
+  "title": "School of Motion: Manifesto",
+  "studio": "Ordinary Folk (CD: Jorge R. Canedo E.)",
+  "client": "School of Motion",
+  "year": 2019,
+  "url": "https://vimeo.com/360269073",
+  "alt_urls": [
+   "https://www.ordinaryfolk.co/work/som-manifesto",
+   "https://youtu.be/Er04BDbtSIg"
+  ],
+  "length_s": 110,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-vector",
+   "stylised-3d",
+   "mixed"
+  ],
+  "pace": "fast",
+  "palette": [
+   "light",
+   "limited",
+   "saturated"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "energetic",
+   "playful",
+   "premium"
+  ],
+  "purpose": "explainer",
+  "techniques": [
+   "morph",
+   "match-cut",
+   "grain",
+   "camera-move",
+   "depth-of-field",
+   "transitions-in-camera",
+   "rhythmic-edit"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "shape",
+   "shape trimStart/trimEnd (draw-on)",
+   "mograph",
+   "camera depth + aperture",
+   "scene3d",
+   "post.grain",
+   "text",
+   "audio",
+   "GAP: style-to-style morphing of characters between line, flat and 3D renders"
+  ],
+  "awards": [
+   "Motion Awards 2020 winner, Infographics | Commercial"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/814401123-c013630b4beb907d7726b7fb641ecca26537adf5a0fe8ea393e0538de91ffbdc-d_1280",
+   "https://media.ordinary.co/wf/63ed73889045a98f52926d6a_9-school-of-motion-brand-manifesto.jpeg",
+   "https://media.ordinary.co/wf/63ed74b9d0d1ba0446b4f86b_S19-01_NuriaBoj_190725.jpeg",
+   "https://media.ordinary.co/wf/63ed74d8c6e1cf14233fc40a_S20-01_NuriaBoj_080219.jpeg",
+   "https://s35726.pcdn.co/wp-content/uploads/2019/09/School-of-Motion-Manifesto-Video-3D-Spheres.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/explainer-2d/ordinary-folk-school-of-motion-manifesto-2019.md"
+ },
+ {
+  "slug": "framer-thats-framer-2025",
+  "category": "ui-product",
+  "title": "That's Framer: The pro site builder loved by designers",
+  "studio": "Framer (in-house; individual credits not published)",
+  "client": "Framer",
+  "year": 2025,
+  "url": "https://www.youtube.com/watch?v=8AHPXm9Y6mI",
+  "alt_urls": [],
+  "length_s": 38,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "ui",
+   "2d-vector",
+   "kinetic-type"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "high-contrast",
+   "brand-colour"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "energetic",
+   "minimal",
+   "technical"
+  ],
+  "purpose": "ad",
+  "techniques": [
+   "ui-zoom",
+   "cursor",
+   "kinetic-type",
+   "scale-contrast",
+   "hard-cut",
+   "rhythmic-edit",
+   "typographic-grid"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "composition",
+   "component.cursor",
+   "component.browser",
+   "text",
+   "camera",
+   "shape",
+   "motionBlur",
+   "transitions",
+   "audio"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/8AHPXm9Y6mI/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/8AHPXm9Y6mI/hq1.jpg",
+   "https://i.ytimg.com/vi/8AHPXm9Y6mI/hq2.jpg",
+   "https://i.ytimg.com/vi/8AHPXm9Y6mI/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/ui-product/framer-thats-framer-2025.md"
+ },
+ {
+  "slug": "google-design-introducing-material-3-expressive-2025",
+  "category": "ui-product",
+  "title": "Introducing: Material 3 Expressive",
+  "studio": "Google Design (in-house; individual credits not published)",
+  "client": "Google",
+  "year": 2025,
+  "url": "https://www.youtube.com/watch?v=n17dnMChX14",
+  "alt_urls": [
+   "https://m3.material.io/"
+  ],
+  "length_s": 39,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "ui",
+   "2d-vector",
+   "photo"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "pastel",
+   "brand-colour"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "energetic",
+   "warm"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "morph",
+   "grid",
+   "colour-swap",
+   "rhythmic-edit",
+   "scale-contrast",
+   "ui-zoom"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "composition",
+   "shape",
+   "box",
+   "text",
+   "mograph",
+   "transitions",
+   "audio",
+   "GAP: spring-physics presets matching Material motion (spatial vs effects springs)",
+   "GAP: shape-morph between arbitrary rounded polygons (35 M3 shapes)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/n17dnMChX14/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/n17dnMChX14/hq1.jpg",
+   "https://i.ytimg.com/vi/n17dnMChX14/hq2.jpg",
+   "https://i.ytimg.com/vi/n17dnMChX14/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/ui-product/google-design-introducing-material-3-expressive-2025.md"
+ },
+ {
+  "slug": "hook-launching-whisk-with-google-labs-2025",
+  "category": "ui-product",
+  "title": "Launching Whisk with Google Labs",
+  "studio": "Hook Studios",
+  "client": "Google Labs",
+  "year": 2025,
+  "url": "https://www.youtube.com/watch?v=dTtshFSBIQw",
+  "alt_urls": [
+   "https://byhook.com/work/bringing-ideas-to-life-with-google-labs",
+   "https://www.stashmedia.tv/hook-taps-into-the-joy-of-the-creative-process-to-launch-whisk-for-google-labs/"
+  ],
+  "length_s": 52,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "ui",
+   "kinetic-type",
+   "photo",
+   "2d-vector"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "brand-colour",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "playful",
+   "energetic",
+   "witty"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "cursor",
+   "kinetic-type",
+   "ui-zoom",
+   "grid",
+   "collage-cutout",
+   "rhythmic-edit",
+   "beat-sync",
+   "hard-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "composition",
+   "component.cursor",
+   "image",
+   "text",
+   "box",
+   "transitions",
+   "audio",
+   "camera"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/dTtshFSBIQw/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/dTtshFSBIQw/hq1.jpg",
+   "https://i.ytimg.com/vi/dTtshFSBIQw/hq2.jpg",
+   "https://i.ytimg.com/vi/dTtshFSBIQw/hq3.jpg",
+   "https://cdn.sanity.io/images/qckremhp/production/6caec7116a75c176ddab8808f5ea53c46bb4f910-2880x1400.png",
+   "https://cdn.sanity.io/images/qckremhp/production/908973374ff51a8f9a4d0a4e80401eea8c0ca34b-5760x2800.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/ui-product/hook-launching-whisk-with-google-labs-2025.md"
+ },
+ {
+  "slug": "linear-introducing-linear-agent-2026",
+  "category": "ui-product",
+  "title": "Introducing Linear Agent",
+  "studio": "Linear (in-house; individual credits not published)",
+  "client": "Linear",
+  "year": 2026,
+  "url": "https://www.youtube.com/watch?v=mRql2VJ99gM",
+  "alt_urls": [
+   "https://linear.app/changelog/2026-03-24-introducing-linear-agent"
+  ],
+  "length_s": 55,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "ui",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "mono",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "premium",
+   "minimal",
+   "technical"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "ui-zoom",
+   "camera-move",
+   "depth-of-field",
+   "kinetic-type",
+   "logo-build"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "composition",
+   "scene3d",
+   "camera",
+   "text",
+   "component.browser",
+   "motionBlur",
+   "post",
+   "GAP: real app UI rendered as a tilted 3D plane with DOF and per-row reveal (composition-as-texture works; live UI data needs authoring)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/mRql2VJ99gM/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/mRql2VJ99gM/hq1.jpg",
+   "https://i.ytimg.com/vi/mRql2VJ99gM/hq2.jpg",
+   "https://i.ytimg.com/vi/mRql2VJ99gM/hq3.jpg",
+   "https://webassets.linear.app/images/ornj730p/production/7f2d7219355b015e6b32632ae3827b2e0f50aa8e-1920x960.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/ui-product/linear-introducing-linear-agent-2026.md"
+ },
+ {
+  "slug": "notion-introducing-the-new-notion-ai-2024",
+  "category": "ui-product",
+  "title": "Introducing the new Notion AI",
+  "studio": "Notion (in-house; individual credits not published)",
+  "client": "Notion",
+  "year": 2024,
+  "url": "https://www.youtube.com/watch?v=S92KX8-Hmlc",
+  "alt_urls": [
+   "https://www.notion.ai"
+  ],
+  "length_s": 57,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "ui",
+   "2d-vector",
+   "kinetic-type",
+   "2d-illustrated"
+  ],
+  "pace": "fast",
+  "palette": [
+   "light",
+   "high-contrast",
+   "brand-colour",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "playful",
+   "witty",
+   "minimal"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "ui-zoom",
+   "kinetic-type",
+   "split-screen",
+   "masks",
+   "hard-cut",
+   "rhythmic-edit",
+   "logo-build"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "composition",
+   "text",
+   "shape",
+   "component.browser",
+   "camera",
+   "transitions",
+   "mask",
+   "audio",
+   "GAP: hand-drawn underline/scribble draw-on with brush texture (trimEnd on a path works; brush texture is missing)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/S92KX8-Hmlc/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/S92KX8-Hmlc/hq1.jpg",
+   "https://i.ytimg.com/vi/S92KX8-Hmlc/hq2.jpg",
+   "https://i.ytimg.com/vi/S92KX8-Hmlc/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/ui-product/notion-introducing-the-new-notion-ai-2024.md"
+ },
+ {
+  "slug": "raycast-new-raycast-coming-2026-2025",
+  "category": "ui-product",
+  "title": "New Raycast. Coming 2026",
+  "studio": "Raycast (in-house; individual credits not published)",
+  "client": "Raycast",
+  "year": 2025,
+  "url": "https://www.youtube.com/watch?v=Mi173xGb0ZA",
+  "alt_urls": [
+   "https://raycast.com/"
+  ],
+  "length_s": 39,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "ui",
+   "3d-cg"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "mono",
+   "limited"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "premium",
+   "technical",
+   "minimal"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "ui-zoom",
+   "macro",
+   "depth-of-field",
+   "grain",
+   "camera-move",
+   "kinetic-type",
+   "grid"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "composition",
+   "text",
+   "camera",
+   "scene3d",
+   "post",
+   "motionBlur",
+   "component.grain",
+   "GAP: frosted/refractive glass UI material over a moving backdrop (blur + edge highlight)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/Mi173xGb0ZA/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/Mi173xGb0ZA/hq1.jpg",
+   "https://i.ytimg.com/vi/Mi173xGb0ZA/hq2.jpg",
+   "https://i.ytimg.com/vi/Mi173xGb0ZA/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/ui-product/raycast-new-raycast-coming-2026-2025.md"
+ },
+ {
+  "slug": "blinkink-hornet-john-lewis-bear-and-hare-2013",
+  "category": "illustration",
+  "title": "John Lewis Christmas Advert 2013 - The Bear & The Hare",
+  "studio": "Blinkink / Hornet (directors: Elliot Dear, Yves Geleyn)",
+  "client": "John Lewis (agency: adam&eveDDB; writers: Aidan McClure, Laurent Simon)",
+  "year": 2013,
+  "url": "https://www.youtube.com/watch?v=XqWig2WARb0",
+  "alt_urls": [],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "cel",
+   "stop-motion",
+   "mixed"
+  ],
+  "pace": "calm",
+  "palette": [
+   "cool",
+   "warm",
+   "pastel"
+  ],
+  "type_role": "none",
+  "mood": [
+   "emotional",
+   "warm",
+   "calm"
+  ],
+  "purpose": "ad",
+  "techniques": [
+   "stop-motion-feel",
+   "camera-move",
+   "depth-of-field",
+   "parallax",
+   "boil"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "camera",
+   "depth",
+   "post",
+   "audio",
+   "GAP: hand-drawn 2D characters printed and shot in camera on physical miniature sets",
+   "GAP: real-lens depth of field and practical light on drawn characters"
+  ],
+  "awards": [
+   "D&AD 2014, Film Advertising Crafts (entry listed; pencil level not checked)"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/XqWig2WARb0/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/XqWig2WARb0/hq1.jpg",
+   "https://i.ytimg.com/vi/XqWig2WARb0/hq2.jpg",
+   "https://i.ytimg.com/vi/XqWig2WARb0/hq3.jpg",
+   "https://www.cartoonbrew.com/wp-content/uploads/2013/11/bearandhare.jpg",
+   "https://3dvf.com/wp-content/uploads/2024/12/bear-hare.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/illustration/blinkink-hornet-john-lewis-bear-and-hare-2013.md"
+ },
+ {
+  "slug": "fortiche-arcane-imagine-dragons-enemy-2021",
+  "category": "illustration",
+  "title": "Imagine Dragons & JID - Enemy (from the series Arcane: League of Legends) | Official Music Video",
+  "studio": "Fortiche Production (with Riot Games)",
+  "client": "Riot Games / Netflix (Arcane)",
+  "year": 2021,
+  "url": "https://www.youtube.com/watch?v=F5tSoaJ93ac",
+  "alt_urls": [],
+  "length_s": 214,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stylised-3d",
+   "2d-illustrated",
+   "mixed"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "warm",
+   "dark"
+  ],
+  "type_role": "none",
+  "mood": [
+   "epic",
+   "energetic",
+   "emotional"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "camera-move",
+   "beat-sync",
+   "smear",
+   "depth-of-field",
+   "particles",
+   "hard-cut",
+   "match-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "post",
+   "shader",
+   "motionBlur",
+   "GAP: hand-painted textures on 3D characters with toon/painterly shading",
+   "GAP: 2D hand-drawn FX (smoke, sparks, smears) over 3D",
+   "GAP: stepped (on twos) character animation inside smooth camera moves"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/F5tSoaJ93ac/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/F5tSoaJ93ac/hq1.jpg",
+   "https://i.ytimg.com/vi/F5tSoaJ93ac/hq2.jpg",
+   "https://i.ytimg.com/vi/F5tSoaJ93ac/hq3.jpg",
+   "https://forticheprod.com/wp-content/uploads/2025/04/Fortiche_projects_public_enemy1.jpg",
+   "https://forticheprod.com/wp-content/uploads/2025/04/Fortiche_projects_public_enemy2.jpg",
+   "https://forticheprod.com/wp-content/uploads/2025/04/Fortiche_projects_public_enemy4.jpg",
+   "https://forticheprod.com/wp-content/uploads/2025/04/Fortiche_projects_public_enemy6.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/illustration/fortiche-arcane-imagine-dragons-enemy-2021.md"
+ },
+ {
+  "slug": "giant-ant-right-now-2020",
+  "category": "illustration",
+  "title": "Right Now // A Giant Ant Short",
+  "studio": "Giant Ant (written by Jay Grandin; storyboard: Esther Cheung)",
+  "client": "Self-initiated",
+  "year": 2020,
+  "url": "https://vimeo.com/453482133",
+  "alt_urls": [
+   "https://giantant.ca/giant-ant-right-now"
+  ],
+  "length_s": 106,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "cel",
+   "frame-by-frame"
+  ],
+  "pace": "steady",
+  "palette": [
+   "warm",
+   "saturated",
+   "limited"
+  ],
+  "type_role": "none",
+  "mood": [
+   "emotional",
+   "warm",
+   "calm"
+  ],
+  "purpose": "short-film",
+  "techniques": [
+   "hard-cut",
+   "match-cut",
+   "rhythmic-edit",
+   "camera-move"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "shape",
+   "camera",
+   "transitions",
+   "audio",
+   "GAP: frame-by-frame character animation with flat colour cleanup"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/949811155-a8039931fedde7b627d8f4835f921f3b84ae4367e8c946fda6eb4ff1919c1002-d_1280",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595265273704-RQQR0BGIG3VPXLWCOQFQ/GA20_02_RIghtNow_S04_v06.jpg",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595265607133-T5E4CVO93RGYCNMUEY3T/GA20_02_RIghtNow_ChurchWide_v02.jpg",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595266123148-TY08OXXON3C8CAK4CZN9/GA20_02_RIghtNow_Tanzania_Wide_v04.jpg",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1598921206895-LPBVTPQNJUKAYDT3YAZ6/GA20_02_RIghtNow_S_11_v02.jpg",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595265470191-PEEVB027OLMEFL0G1QLC/GA20_02_RIghtNow_NYC_CU_v03.jpg",
+   "https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595266304614-33WIZM4Q2NRNQM6KORGV/GA20_02_RightNow_S_02_v03.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/illustration/giant-ant-right-now-2020.md"
+ },
+ {
+  "slug": "golden-wolf-weetabix-three-little-pigs-2022",
+  "category": "illustration",
+  "title": "Weetabix: Three Little Pigs",
+  "studio": "Golden Wolf (animation lead/storyboard: Stephanie Mercier), with Stink Films",
+  "client": "Weetabix (agency: BBH London)",
+  "year": 2022,
+  "url": "https://vimeo.com/710889465",
+  "alt_urls": [
+   "https://goldenwolf.tv/work/three-little-pigs"
+  ],
+  "length_s": 30,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "cel",
+   "2d-illustrated",
+   "frame-by-frame"
+  ],
+  "pace": "fast",
+  "palette": [
+   "warm",
+   "limited",
+   "retro"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "retro",
+   "witty"
+  ],
+  "purpose": "ad",
+  "techniques": [
+   "smear",
+   "boil",
+   "grain",
+   "hard-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "shape",
+   "camera",
+   "post",
+   "post.grain",
+   "text",
+   "GAP: frame-by-frame 1930s rubber-hose character animation",
+   "GAP: period film artefacts (gate weave, flicker, vignette)"
+  ],
+  "awards": [
+   "Collision Awards 2024 Gold, Best 2D Animation",
+   "Creative Circle 2023 Gold, Best Digital 2D Animation",
+   "Motion Awards 2023 Winner, Single Spot Commercial",
+   "Shots Awards Europe 2022 Gold, 2D Animation",
+   "Kinsale Sharks 2022 Bronze, Film Craft / Animation"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/1433695529-4226051dce0f5b186248d6ed98c766c8ce0988a2cfcd32f5fc840de833da19fa-d_1280",
+   "https://us-west-2.graphassets.com/cmbmedy4j0k4v07mudetigq36/cmi7moks79iqc07lp4tkhux27",
+   "https://us-west-2.graphassets.com/cmbmedy4j0k4v07mudetigq36/cmi7mokst9dq907n5n4kw9wgf",
+   "https://us-west-2.graphassets.com/cmbmedy4j0k4v07mudetigq36/cmi7mokt59iqy07lpw0i809pd",
+   "https://us-west-2.graphassets.com/cmbmedy4j0k4v07mudetigq36/cmi7mokuy9dqz07n59gfahfrm",
+   "https://us-west-2.graphassets.com/cmbmedy4j0k4v07mudetigq36/cmi7mokw79irj07lp47tdc64h"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/illustration/golden-wolf-weetabix-three-little-pigs-2022.md"
+ },
+ {
+  "slug": "miyu-lefevre-naive-new-beaters-ye-kou-si-kuo-2024",
+  "category": "illustration",
+  "title": "Naive New Beaters, Star Feminine Band - Ye Kou Si Kuo",
+  "studio": "Miyu Productions (director: Lola Lefèvre; producers: Pierre Baussaron, Emmanuel-Alain Raynal)",
+  "client": "Naive New Beaters / Star Feminine Band",
+  "year": 2024,
+  "url": "https://www.youtube.com/watch?v=1SXCE5NB4WA",
+  "alt_urls": [
+   "https://www.annecyfestival.com/en/archives/2025/the-festival/2025-official-selection/2025-commissioned-films/naive-new-beaters-star-feminine-band-ye-kou-si-kuo"
+  ],
+  "length_s": 148,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "frame-by-frame"
+  ],
+  "pace": "fast",
+  "palette": [
+   "neon",
+   "saturated"
+  ],
+  "type_role": "none",
+  "mood": [
+   "playful",
+   "energetic",
+   "warm"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "boil",
+   "camera-move",
+   "beat-sync",
+   "rhythmic-edit",
+   "macro"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "shape",
+   "camera",
+   "audio",
+   "GAP: frame-by-frame 2D character animation with chunky line",
+   "GAP: dense patterned line-art backgrounds that animate with the characters"
+  ],
+  "awards": [
+   "Annecy 2025 Cristal for a Commissioned Film"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/1SXCE5NB4WA/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/1SXCE5NB4WA/hq1.jpg",
+   "https://i.ytimg.com/vi/1SXCE5NB4WA/hq2.jpg",
+   "https://i.ytimg.com/vi/1SXCE5NB4WA/hq3.jpg",
+   "https://www.cartoonbrew.com/wp-content/uploads/2024/04/yekousikuo_lefevre-1.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/illustration/miyu-lefevre-naive-new-beaters-ye-kou-si-kuo-2024.md"
+ },
+ {
+  "slug": "nexus-smith-foulkes-honda-grrr-2004",
+  "category": "illustration",
+  "title": "Honda Grrr | Animated Commercial | Nexus Studios",
+  "studio": "Nexus Productions (directors: Smith & Foulkes — Alan Smith, Adam Foulkes)",
+  "client": "Honda UK (agency: Wieden+Kennedy London)",
+  "year": 2004,
+  "url": "https://www.youtube.com/watch?v=AF4iLRb0a90",
+  "alt_urls": [],
+  "length_s": 90,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "light",
+   "pastel"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "witty",
+   "warm"
+  ],
+  "purpose": "ad",
+  "techniques": [
+   "beat-sync",
+   "camera-move",
+   "parallax",
+   "colour-swap",
+   "logo-build"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "shape",
+   "image",
+   "camera",
+   "depth",
+   "text",
+   "audio",
+   "repeat",
+   "GAP: flat-shaded illustrative 3D (toon shading with paper textures)",
+   "GAP: character animation of many small creatures"
+  ],
+  "awards": [
+   "Cannes Lions 2005 Film Grand Prix",
+   "Grand Clio 2005, Television/Cinema",
+   "One Show 2005 Best of Show (source: search summary)",
+   "D&AD 2005: eight awards (source: Nexus via 4rfv)"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/AF4iLRb0a90/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/AF4iLRb0a90/hq1.jpg",
+   "https://i.ytimg.com/vi/AF4iLRb0a90/hq2.jpg",
+   "https://i.ytimg.com/vi/AF4iLRb0a90/hq3.jpg",
+   "https://nexusstudios.com/app/uploads/2017/10/1_SmithFoulkes_Honda_Grrr.gif"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/illustration/nexus-smith-foulkes-honda-grrr-2004.md"
+ },
+ {
+  "slug": "andreas-wannerstedt-eternal-installations-2020",
+  "category": "cg-3d",
+  "title": "Eternal Installations",
+  "studio": "Andreas Wannerstedt",
+  "client": "Self-initiated",
+  "year": 2020,
+  "url": "https://vimeo.com/454900647",
+  "alt_urls": [
+   "https://www.instagram.com/andreaswannerstedt/"
+  ],
+  "length_s": 60,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "photoreal-cg",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "earthy",
+   "limited",
+   "light"
+  ],
+  "type_role": "none",
+  "mood": [
+   "calm",
+   "premium",
+   "minimal"
+  ],
+  "purpose": "art",
+  "techniques": [
+   "loop",
+   "rigid-body",
+   "camera-move",
+   "depth-of-field",
+   "macro",
+   "long-take"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "motionBlur",
+   "post",
+   "audio",
+   "mograph.repeat",
+   "GAP: outdoor environments (terrain, vegetation, sky) in scene3d",
+   "GAP: seamless-loop authoring helper (period check for every animated property)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/952196346-ace0f6662f641cbeb1b3fa97dc2091eeda0e66a5209eba33be528cce23400e92-d_1280?region=us",
+   "https://cdn.myportfolio.com/1a59bd5334e07bdab23db8ff29d19008/aaca6379-99ce-44b3-89d6-022a2c2b5e0b_rw_1920.jpg?h=5ee403a2450fc47ccd46a00a088185be",
+   "https://cdn.myportfolio.com/1a59bd5334e07bdab23db8ff29d19008/7a412e6f-eba1-4ecf-bfbe-c301e8dc4e17_rw_1920.jpg?h=cb164bc79e0f73d6896ac35c63a2b34e",
+   "https://cdn.myportfolio.com/1a59bd5334e07bdab23db8ff29d19008/9472b80a-cb7e-448e-89a6-1c988c326443_rw_1920.jpg?h=f989c75bbabd03f9c0accdc990742db0",
+   "https://cdn.myportfolio.com/1a59bd5334e07bdab23db8ff29d19008/fd5664c3-8b60-4685-81f1-137d74fbc603_rw_1920.jpg?h=f44a0cc8c9872b2114998429e663bc21",
+   "https://cdn.myportfolio.com/1a59bd5334e07bdab23db8ff29d19008/07c08c20-cbfe-4299-8394-9192a35f32c6_rw_1920.jpg?h=64c1a64755d6c039ea51a57d6d130560"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/cg-3d/andreas-wannerstedt-eternal-installations-2020.md"
+ },
+ {
+  "slug": "blender-studio-charge-2022",
+  "category": "cg-3d",
+  "title": "CHARGE - Blender Open Movie",
+  "studio": "Blender Studio (director: Hjalti Hjálmarsson)",
+  "client": "Self-initiated (Blender Studio Open Movie #14)",
+  "year": 2022,
+  "url": "https://www.youtube.com/watch?v=UXqq0ZvbOnk",
+  "alt_urls": [
+   "https://studio.blender.org/films/charge/",
+   "https://studio.blender.org/projects/charge/"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "photoreal-cg",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "cool",
+   "high-contrast"
+  ],
+  "type_role": "none",
+  "mood": [
+   "epic",
+   "raw",
+   "technical"
+  ],
+  "purpose": "short-film",
+  "techniques": [
+   "camera-move",
+   "depth-of-field",
+   "particles",
+   "glow",
+   "light-sweep",
+   "hard-cut",
+   "rhythmic-edit",
+   "speed-ramp"
+  ],
+  "audio": "mixed",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "post",
+   "motionBlur",
+   "audio",
+   "GAP: rigged realistic human character",
+   "GAP: volumetric light / atmospherics in scene3d",
+   "GAP: electric arcs / sparks FX"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/UXqq0ZvbOnk/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/UXqq0ZvbOnk/hq1.jpg",
+   "https://i.ytimg.com/vi/UXqq0ZvbOnk/hq2.jpg",
+   "https://i.ytimg.com/vi/UXqq0ZvbOnk/hq3.jpg",
+   "https://studio.blender.org/files/public/header/project/f6/76/f67601c6f69b2d7f65a5e5d97e73c4d7.png",
+   "https://studio.blender.org/files/public/header/blog/d5/65/d565eedccd5967feda7081ecd3d6f141.png"
+  ],
+  "measured": {
+   "aspect": "21:9",
+   "audio": {
+    "bpm": 120.1,
+    "cuts_on_beat": 0.36,
+    "cuts_on_downbeat": 0.11
+   },
+   "cuts_per_minute": 10.3,
+   "duration": 262.708,
+   "glow": 0.0,
+   "grain": 0.001,
+   "longest_shot": 86.5,
+   "mean_luma": 0.25,
+   "mean_shot": 5.711,
+   "median_shot": 1.625,
+   "pace": "steady",
+   "palette": [
+    "#161511",
+    "#42392F",
+    "#000000",
+    "#7D695D",
+    "#B1B2A6",
+    "#3E2695"
+   ],
+   "shot_count": 46,
+   "style_summary": "21:9 dark clip, 262.7 s, 46 shots (median 1.62 s, longest 86.50 s): steady pace. Transitions: 33 cut, 11 zoom, 1 crossfade. Palette led by #161511, #42392F, #000000. Camera moves in 36/46 shots; text in 3/46. Looks like: scene3d ×35, 2d-motion-graphics ×8, particles ×2, kinetic-type ×1. Finish: vignette. Music ≈ 120 BPM; 36% of cuts on a beat.",
+   "technique_mix": [
+    [
+     "scene3d",
+     35
+    ],
+    [
+     "2d-motion-graphics",
+     8
+    ],
+    [
+     "particles",
+     2
+    ],
+    [
+     "kinetic-type",
+     1
+    ]
+   ],
+   "transition_mix": [
+    [
+     "cut",
+     33
+    ],
+    [
+     "zoom",
+     11
+    ],
+    [
+     "crossfade",
+     1
+    ]
+   ],
+   "vignette": 0.6
+  },
+  "path": "docs/video/judge/benchmark/cg-3d/blender-studio-charge-2022.md"
+ },
+ {
+  "slug": "builders-club-baidu-raven-h-2017",
+  "category": "cg-3d",
+  "title": "Baidu Raven \"H\" TVC - Director Cut",
+  "studio": "Builders Club (Jonas Hegi, Julien Simshauser)",
+  "client": "Raven Tech / Baidu (agency: Twelve)",
+  "year": 2017,
+  "url": "https://vimeo.com/244013457",
+  "alt_urls": [
+   "https://vimeo.com/244659746",
+   "https://www.itsnicethat.com/articles/builders-club-raven-h-baidu-3d-film-151217"
+  ],
+  "length_s": 71,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "photoreal-cg",
+   "sim"
+  ],
+  "pace": "fast",
+  "palette": [
+   "mono",
+   "limited",
+   "saturated"
+  ],
+  "type_role": "none",
+  "mood": [
+   "playful",
+   "premium",
+   "minimal"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "morph",
+   "liquid",
+   "soft-body",
+   "fluid",
+   "rigid-body",
+   "instancing",
+   "product-turntable",
+   "hard-cut",
+   "colour-swap",
+   "macro"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "scene3d.physics",
+   "camera",
+   "post",
+   "motionBlur",
+   "audio",
+   "GAP: fluid / ripple sims and growth (vegetation spreading) in scene3d",
+   "GAP: material morph between solids (marble ↔ wood ↔ metal)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/668298460-60a243c853658745dceb4e7915d31d215c957275d04fa1f7558dc273e19f9246-d_1280?region=us",
+   "https://m.itsnicethat.com/original_images/5a32922c7fa44cce56001f72.jpg",
+   "https://m.itsnicethat.com/original_images/5a3292457fa44cb457001691.jpg",
+   "https://m.itsnicethat.com/original_images/5a3292437fa44c17fb0003e8.jpg",
+   "https://m.itsnicethat.com/original_images/5a3292437fa44cb45700168e.jpg",
+   "https://m.itsnicethat.com/original_images/5a3292427fa44c17e0000002.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/cg-3d/builders-club-baidu-raven-h-2017.md"
+ },
+ {
+  "slug": "futuredeluxe-plume-2017",
+  "category": "cg-3d",
+  "title": "Plume",
+  "studio": "FutureDeluxe (art direction and lead CG: Twistedpoly / Nejc Polovsak)",
+  "client": "Wacom",
+  "year": 2017,
+  "url": "https://vimeo.com/229537127",
+  "alt_urls": [
+   "https://vimeo.com/229544853",
+   "http://futuredeluxe.co.uk/work/wacom",
+   "https://behance.net/gallery/57804951/WACOM-PLUME"
+  ],
+  "length_s": 58,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "generative"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "dark",
+   "high-contrast"
+  ],
+  "type_role": "none",
+  "mood": [
+   "premium",
+   "eerie",
+   "editorial"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "macro",
+   "camera-move",
+   "depth-of-field",
+   "instancing",
+   "noise-field",
+   "morph",
+   "hard-cut"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "scene3d",
+   "scene3d.instances",
+   "camera",
+   "post",
+   "motionBlur",
+   "audio",
+   "GAP: hair/feather groom & strand instancing on deforming meshes",
+   "GAP: scanned human mesh playback (alembic/obj sequence)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/649871889-e210e0afc10a2485a34b7bc7caf4bbd969874dd88eba008a9ceb4cc3fedd807d-d_1280?region=us",
+   "https://i.vimeocdn.com/video/649881493-085a75943e896adfc728b2d8c37a72d859e430443256245c9b26b2eb14554f5e-d_1280?region=us",
+   "https://www.stashmedia.tv/wp-content/uploads/Wacom_01.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Wacom_08.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Wacom_09.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Wacom_10.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/wacom_rd_18.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/cg-3d/futuredeluxe-plume-2017.md"
+ },
+ {
+  "slug": "julius-horsthuis-emptyset-2019",
+  "category": "cg-3d",
+  "title": "Max Cooper - Emptyset - Official video by Julius Horsthuis",
+  "studio": "Julius Horsthuis",
+  "client": "Max Cooper (One Hundred Billion Sparks)",
+  "year": 2019,
+  "url": "https://vimeo.com/321969608",
+  "alt_urls": [
+   "https://www.onehundredbillionsparks.net"
+  ],
+  "length_s": 314,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "generative"
+  ],
+  "pace": "calm",
+  "palette": [
+   "mono",
+   "light",
+   "limited"
+  ],
+  "type_role": "none",
+  "mood": [
+   "calm",
+   "eerie",
+   "technical"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "shader",
+   "noise-field",
+   "camera-move",
+   "long-take",
+   "depth-of-field",
+   "beat-sync"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "shader",
+   "camera",
+   "post",
+   "audio",
+   "GAP: none fundamental: raymarched fractals run in the shader layer; a fly-through camera path for a shader (uniform-driven) is manual today"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/764809882-3f0f1517ebc6fca1e1487bbc9fe133fc2d9025d21b20306f148d21e9d7cab4eb-d_1280?region=us",
+   "https://images.squarespace-cdn.com/content/v1/553fb34be4b01d70400fc6dd/1551976407719-NPLQS7FXMOGJZUM09OLP/Emptyset_WIDE_FINAL+%280-02-25-00%29.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/cg-3d/julius-horsthuis-emptyset-2019.md"
+ },
+ {
+  "slug": "panoply-manifold-2024",
+  "category": "cg-3d",
+  "title": "Manifold",
+  "studio": "Panoply (CD: Mark Lindner)",
+  "client": "Self-initiated",
+  "year": 2024,
+  "url": "https://vimeo.com/1022123584",
+  "alt_urls": [
+   "https://www.stashmedia.tv/data-dimensions-panoply-drops-manifold-short-film/"
+  ],
+  "length_s": 89,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "sim",
+   "ui"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "limited",
+   "high-contrast"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "technical",
+   "minimal",
+   "eerie"
+  ],
+  "purpose": "art",
+  "techniques": [
+   "cloth",
+   "sim",
+   "morph",
+   "hard-cut",
+   "camera-move",
+   "3d-type",
+   "flash-frame",
+   "grid"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "scene3d",
+   "scene3d.physics",
+   "composition",
+   "text",
+   "camera",
+   "post",
+   "motionBlur",
+   "audio",
+   "GAP: cloth (vellum-style) sim driven by an external field",
+   "GAP: polygon slice-and-displace type effect on 3D text"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1941015928-3482f0ccb1e173e546994220c38c7d3469d3d8d66fe68165167771cb8575d8aa-d_1280?region=us",
+   "https://panoply.co.uk/api/media/file/MAN24_HoldFrame.jpg",
+   "https://panoply.co.uk/api/media/file/MAN24_16x9_09.jpg",
+   "https://panoply.co.uk/api/media/file/MAN24_16x9_10.jpg",
+   "https://panoply.co.uk/api/media/file/MAN24_16x9_12.jpg",
+   "https://panoply.co.uk/api/media/file/MAN24_16x9_13.jpg",
+   "https://panoply.co.uk/api/media/file/MAN24_16x9_14.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/cg-3d/panoply-manifold-2024.md"
+ },
+ {
+  "slug": "tendril-hublot-mp-10-2024",
+  "category": "cg-3d",
+  "title": "Hublot MP-10 Launch Film",
+  "studio": "Tendril (director: Joey Recoskie; CD: Chris Bahry)",
+  "client": "Hublot",
+  "year": 2024,
+  "url": "https://vimeo.com/904510310",
+  "alt_urls": [
+   "https://vimeo.com/904619597",
+   "https://www.stashmedia.tv/precision-complexity-tendril-launchs-the-hublot-mp-10/"
+  ],
+  "length_s": 68,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "photoreal-cg",
+   "3d-cg",
+   "kinetic-type"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "high-contrast",
+   "limited"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "luxurious",
+   "technical",
+   "premium"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "macro",
+   "product-turntable",
+   "light-sweep",
+   "camera-move",
+   "depth-of-field",
+   "sim",
+   "particles",
+   "hard-cut",
+   "rhythmic-edit",
+   "3d-type"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "motionBlur",
+   "post",
+   "text",
+   "audio",
+   "GAP: Houdini-grade FX sims (fluids, debris) in scene3d",
+   "GAP: precise sapphire/dispersion and caustics"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1785156593-aa9eb8e7500cb3e1b1b4ae1f74784db893e037b862982b3abaac5865933f9e74-d_1280?region=us",
+   "https://i.vimeocdn.com/video/1785323243-2f16ae5d62629d361b362f8b6220fc8ee58ed4037120f4aa438af2d386d833e3-d_1280?region=us",
+   "https://www.stashmedia.tv/wp-content/uploads/Hublot-MP10-Launch-Film-by-Tendril.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Hublot-MP10-Launch-Film-by-Tendril2.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Hublot-MP10-Launch-Film-by-Tendril3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Hublot-MP10-Launch-Film-by-Tendril4.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Hublot-MP10-Launch-Film-by-Tendril5.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/cg-3d/tendril-hublot-mp-10-2024.md"
+ },
+ {
+  "slug": "inigo-quilez-selfie-girl-2020",
+  "category": "generative",
+  "title": "Painting a Character with Maths",
+  "studio": "Inigo Quilez",
+  "client": "Self-initiated",
+  "year": 2020,
+  "url": "https://www.youtube.com/watch?v=8--5LwHRhjk",
+  "alt_urls": [
+   "https://www.shadertoy.com/view/WsSBzh"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "generative",
+   "3d-cg",
+   "stylised-3d"
+  ],
+  "pace": "calm",
+  "palette": [
+   "warm",
+   "saturated",
+   "light"
+  ],
+  "type_role": "none",
+  "mood": [
+   "playful",
+   "technical",
+   "warm"
+  ],
+  "purpose": "art",
+  "techniques": [
+   "shader",
+   "noise-field",
+   "depth-of-field",
+   "camera-move",
+   "loop"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "shader",
+   "GAP: none for the shader itself (Anikit runs Shadertoy GLSL via naga + Cranelift); performance at 1080p supersampled is the open question"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/8--5LwHRhjk/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/8--5LwHRhjk/hq1.jpg",
+   "https://i.ytimg.com/vi/8--5LwHRhjk/hq2.jpg",
+   "https://i.ytimg.com/vi/8--5LwHRhjk/hq3.jpg",
+   "https://www.shadertoy.com/media/shaders/WsSBzh.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/generative/inigo-quilez-selfie-girl-2020.md"
+ },
+ {
+  "slug": "maxime-causeret-order-from-chaos-2016",
+  "category": "generative",
+  "title": "Max Cooper - Order from Chaos - Official Video by Maxime Causeret",
+  "studio": "Maxime Causeret (Teresuac)",
+  "client": "Max Cooper (album: Emergence)",
+  "year": 2016,
+  "url": "https://vimeo.com/196269431",
+  "alt_urls": [
+   "https://maxcooper.net/order-from-chaos",
+   "https://www.thisiscolossal.com/2016/12/order-from-chaos-video-maxime-causeret/"
+  ],
+  "length_s": 258,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "generative",
+   "sim",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "saturated",
+   "limited"
+  ],
+  "type_role": "none",
+  "mood": [
+   "calm",
+   "technical",
+   "emotional"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "sim",
+   "particles",
+   "noise-field",
+   "soft-body",
+   "fluid",
+   "beat-sync",
+   "macro",
+   "depth-of-field",
+   "instancing"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d.particles",
+   "shader",
+   "camera",
+   "post",
+   "motionBlur",
+   "audio",
+   "GAP: reaction-diffusion and cellular / flocking agent sims driven by audio onsets",
+   "GAP: translucent membrane (SSS) shading for cells"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/608700439-a6aa42e40721d672ccd6529ca24726cdc4064a51e7cd7f1dfbbbbe34a401921a-d_1280?region=us",
+   "https://maxcooper.net/lib/content/32_landscape.jpg",
+   "https://www.thisiscolossal.com/wp-content/uploads/2016/12/Screen-Shot-2016-12-20-at-1.14.19-PM.png",
+   "https://www.onepointfour.co/wp-content/uploads/2017/01/maxime.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/generative/maxime-causeret-order-from-chaos-2016.md"
+ },
+ {
+  "slug": "memo-akten-learning-to-see-gloomy-sunday-2017",
+  "category": "generative",
+  "title": "Learning to see: Gloomy Sunday (2017)",
+  "studio": "Memo Akten",
+  "client": "Self-initiated",
+  "year": 2017,
+  "url": "https://vimeo.com/260612034",
+  "alt_urls": [
+   "https://www.memo.tv/works/learning-to-see/"
+  ],
+  "length_s": 182,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "generative",
+   "live-action",
+   "mixed"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "dark"
+  ],
+  "type_role": "none",
+  "mood": [
+   "emotional",
+   "eerie",
+   "editorial"
+  ],
+  "purpose": "art",
+  "techniques": [
+   "split-screen",
+   "morph",
+   "long-take",
+   "hard-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "video",
+   "shader",
+   "composition",
+   "GAP: neural image-to-image (pix2pix-style) inference",
+   "GAP: live split-screen of source vs generated in sync"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1604699068-89cc1952bce06668bac2f0dde8dab2c39eda16184d06fb4ca2d3328742b7fcb4-d_1280?region=us",
+   "https://media.superradiance.net/cdn-cgi/image/width=1200,fit=scale-down,format=auto,onerror=redirect/memotv/projects/2017/learning-to-see/images/learning-to-see.jpg",
+   "https://media.superradiance.net/cdn-cgi/image/width=640,fit=scale-down,format=auto,onerror=redirect/memotv/projects/2017/gloomy-sunday/gallery/01_Gloomy Sunday still 003.jpg",
+   "https://media.superradiance.net/cdn-cgi/image/width=1200,fit=scale-down,format=auto,onerror=redirect/memotv/projects/2017/gloomy-sunday/gallery/02_Gloomy%20Sunday%20still%20002.jpg",
+   "https://media.superradiance.net/cdn-cgi/image/width=1200,fit=scale-down,format=auto,onerror=redirect/memotv/projects/2017/gloomy-sunday/gallery/03_Gloomy%20Sunday%20still%20004.jpg",
+   "https://media.superradiance.net/cdn-cgi/image/width=1200,fit=scale-down,format=auto,onerror=redirect/memotv/projects/2017/gloomy-sunday/gallery/04_Gloomy%20Sunday%20still%20005.jpg",
+   "https://media.superradiance.net/cdn-cgi/image/width=1200,fit=scale-down,format=auto,onerror=redirect/memotv/projects/2017/gloomy-sunday/gallery/05_Gloomy%20Sunday%20still%20006.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/generative/memo-akten-learning-to-see-gloomy-sunday-2017.md"
+ },
+ {
+  "slug": "raven-kwok-skyline-2015",
+  "category": "generative",
+  "title": "Skyline",
+  "studio": "Raven Kwok",
+  "client": "Karma Fields (Monstercat)",
+  "year": 2015,
+  "url": "https://vimeo.com/139977231",
+  "alt_urls": [
+   "http://ravenkwok.com/skyline/",
+   "https://www.stashmedia.tv/?p=25149"
+  ],
+  "length_s": 296,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "generative",
+   "2d-vector"
+  ],
+  "pace": "fast",
+  "palette": [
+   "mono",
+   "high-contrast",
+   "dark"
+  ],
+  "type_role": "none",
+  "mood": [
+   "energetic",
+   "technical",
+   "eerie"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "beat-sync",
+   "grid",
+   "noise-field",
+   "particles",
+   "morph",
+   "rotoscope",
+   "rhythmic-edit"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "shader",
+   "mograph",
+   "audio",
+   "GAP: Voronoi agent system driven by audio spectrum (beyond iAudio 4-band levels)",
+   "GAP: performer-silhouette seeding from video (rotoscope)"
+  ],
+  "awards": [
+   "FILE Electronic Language International Festival 2016, 3rd Place (Anima+Games)"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/536121164-490b06d21f38e83c464dc12c44ff61990f236d15864ca15cf49f7c6ff8d36464-d_1280?region=us",
+   "https://live.staticflickr.com/572/21419792870_585a77551d_b.jpg",
+   "https://live.staticflickr.com/576/21616714061_e1ab13ba25_b.jpg",
+   "https://live.staticflickr.com/605/20986709223_b0bc9f2960_b.jpg",
+   "https://live.staticflickr.com/641/21607895275_015afd0cc6_b.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Kwok_Skyline.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/generative/raven-kwok-skyline-2015.md"
+ },
+ {
+  "slug": "refik-anadol-machine-hallucination-nyc-2019",
+  "category": "generative",
+  "title": "MACHINE HALLUCINATION : NYC",
+  "studio": "Refik Anadol Studio",
+  "client": "Artechouse New York (commission)",
+  "year": 2019,
+  "url": "https://vimeo.com/450313024",
+  "alt_urls": [
+   "https://refikanadol.com/works/machine-hallucination/"
+  ],
+  "length_s": 336,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "generative",
+   "data-viz",
+   "photo"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "dark",
+   "cool"
+  ],
+  "type_role": "none",
+  "mood": [
+   "epic",
+   "technical",
+   "eerie"
+  ],
+  "purpose": "art",
+  "techniques": [
+   "morph",
+   "fluid",
+   "particles",
+   "noise-field",
+   "camera-move",
+   "long-take",
+   "glow"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "shader",
+   "scene3d.particles",
+   "post",
+   "camera",
+   "audio",
+   "GAP: latent-space morph of photo datasets (GAN interpolation)",
+   "GAP: point-cloud / particle 'data sculpture' of 1M+ points with fluid advection"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/944445700-e53023c42381d73d4dd37894f79f62e5958ec932ed9008cafe78a9e68d7889eb-d_1280?region=us",
+   "https://refikanadol.com/wp-content/uploads/2020/05/MH-Photo-02.jpg",
+   "https://refikanadol.com/wp-content/uploads/2020/05/MH-Photo-05.jpg",
+   "https://refikanadol.com/wp-content/uploads/2020/05/MH-Photo-09.jpg",
+   "https://refikanadol.com/wp-content/uploads/2020/05/MH-Photo-13.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/generative/refik-anadol-machine-hallucination-nyc-2019.md"
+ },
+ {
+  "slug": "universal-everything-walking-city-2014",
+  "category": "generative",
+  "title": "Walking City",
+  "studio": "Universal Everything (creative director: Matt Pyke; animation: Chris Perry)",
+  "client": "Self-initiated",
+  "year": 2014,
+  "url": "https://vimeo.com/85596568",
+  "alt_urls": [
+   "https://www.universaleverything.com/art/walking-city",
+   "https://vimeo.com/718724283"
+  ],
+  "length_s": 468,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "generative",
+   "sim"
+  ],
+  "pace": "calm",
+  "palette": [
+   "light",
+   "limited",
+   "mono"
+  ],
+  "type_role": "none",
+  "mood": [
+   "minimal",
+   "calm",
+   "premium"
+  ],
+  "purpose": "art",
+  "techniques": [
+   "long-take",
+   "morph",
+   "loop",
+   "instancing",
+   "cloth",
+   "soft-body",
+   "noise-field",
+   "camera-move"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "scene3d",
+   "scene3d.instances",
+   "camera",
+   "post",
+   "motionBlur",
+   "audio",
+   "GAP: skinned walk-cycle character with procedural surface swaps",
+   "GAP: cloth / inflatable / particle-shell surface treatments on a moving body"
+  ],
+  "awards": [
+   "Prix Ars Electronica 2014 Golden Nica"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/477386526-70ba52542b331c855705a1a54198d51278067bef12b0ab13d30314e445b94e69-d_1280?region=us",
+   "https://static.universaleverything.com/wp-content/uploads/2013/11/18160857/walking.jpg",
+   "https://www.thisiscolossal.com/wp-content/uploads/2014/02/walking.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/2014/02/UE_Walking-City.png",
+   "https://www.cartoonbrew.com/wp-content/uploads/2014/07/walkingcity.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/generative/universal-everything-walking-city-2014.md"
+ },
+ {
+  "slug": "3blue1brown-fourier-series-2019",
+  "category": "data-story",
+  "title": "But what is a Fourier series?  From heat flow to drawing with circles | DE4",
+  "studio": "3Blue1Brown (Grant Sanderson)",
+  "client": "Self-initiated",
+  "year": 2019,
+  "url": "https://www.youtube.com/watch?v=r6sGWTCMz2k",
+  "alt_urls": [
+   "https://github.com/3b1b/manim"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-vector",
+   "data-viz",
+   "kinetic-type"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "limited",
+   "cool"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "technical",
+   "calm",
+   "witty"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "chart-build",
+   "morph",
+   "type-morph",
+   "loop",
+   "long-take",
+   "transitions-in-camera"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "shape",
+   "shape path trimStart/trimEnd (traced curves)",
+   "mograph path/progress (epicycles)",
+   "text",
+   "text (LaTeX maths: GAP)",
+   "animate (transform)",
+   "camera",
+   "audio",
+   "GAP: native LaTeX/maths typesetting with glyph-level morphs between equations",
+   "GAP: programmatic/procedural animation driven by computed data (epicycle sums)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/r6sGWTCMz2k/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/r6sGWTCMz2k/hq1.jpg",
+   "https://i.ytimg.com/vi/r6sGWTCMz2k/hq2.jpg",
+   "https://i.ytimg.com/vi/r6sGWTCMz2k/hq3.jpg",
+   "https://storage.googleapis.com/3blue1brown-website-bucket/lessons/2019/fourier-series/fourier_intro_2.jpeg",
+   "https://storage.googleapis.com/3blue1brown-website-bucket/lessons/2019/fourier-series/heat_0.jpeg",
+   "https://storage.googleapis.com/3blue1brown-website-bucket/lessons/2019/fourier-series/heat_3.jpeg",
+   "https://storage.googleapis.com/3blue1brown-website-bucket/lessons/2019/fourier-series/integ_2.jpeg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/3blue1brown-fourier-series-2019.md"
+ },
+ {
+  "slug": "bbc-rosling-200-countries-2010",
+  "category": "data-story",
+  "title": "Hans Rosling's 200 Countries, 200 Years, 4 Minutes - The Joy of Stats - BBC",
+  "studio": "BBC Four, The Joy of Stats (presenter: Hans Rosling; data: Gapminder)",
+  "client": "BBC Four",
+  "year": 2010,
+  "url": "https://www.youtube.com/watch?v=jbkSRLYSojo",
+  "alt_urls": [],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "data-viz",
+   "live-action",
+   "mixed"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "saturated"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "energetic",
+   "editorial",
+   "witty"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "chart-build",
+   "long-take",
+   "camera-move",
+   "rhythmic-edit"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "video",
+   "component (scatter/bubble chart: GAP)",
+   "text value (year counter)",
+   "camera",
+   "audio",
+   "GAP: animated bubble/scatter chart with size+colour encodings and interpolated yearly data",
+   "GAP: chart composited into a tracked live-action plate"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/jbkSRLYSojo/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/jbkSRLYSojo/hq1.jpg",
+   "https://i.ytimg.com/vi/jbkSRLYSojo/hq2.jpg",
+   "https://i.ytimg.com/vi/jbkSRLYSojo/hq3.jpg",
+   "https://ichef.bbci.co.uk/images/ic/1920x1080/p02c35nh.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/bbc-rosling-200-countries-2010.md"
+ },
+ {
+  "slug": "halloran-fallen-of-wwii-2015",
+  "category": "data-story",
+  "title": "The Fallen of World War II",
+  "studio": "Neil Halloran (writer, director, coder, narrator)",
+  "client": "Self-initiated",
+  "year": 2015,
+  "url": "https://www.youtube.com/watch?v=DwKPFT-RioU",
+  "alt_urls": [
+   "https://www.neilfilms.com/ww2/",
+   "https://informationisbeautifulawards.com/showcase?award=2015"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "data-viz",
+   "3d-cg"
+  ],
+  "pace": "calm",
+  "palette": [
+   "dark",
+   "limited",
+   "high-contrast"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "emotional",
+   "editorial",
+   "epic"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "chart-build",
+   "scale-contrast",
+   "camera-move",
+   "instancing",
+   "long-take"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "scene3d",
+   "component bar-chart",
+   "text value counters",
+   "camera",
+   "mograph.repeat (instanced figures)",
+   "post vignette/grain",
+   "audio",
+   "GAP: thousands of instanced figure glyphs stacked into bars with a long camera crane up the stack"
+  ],
+  "awards": [
+   "Information is Beautiful Awards 2015, Motion Infographic Gold"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/DwKPFT-RioU/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/DwKPFT-RioU/hq1.jpg",
+   "https://i.ytimg.com/vi/DwKPFT-RioU/hq2.jpg",
+   "https://i.ytimg.com/vi/DwKPFT-RioU/hq3.jpg",
+   "https://www.irishtimes.com/resizer/v2/3XD7FWULHNRHAFTUQ3PJMH2EQI.jpg?auth=0c764b4d77759977d0ea9ab8cf7e5135596de9346a051b55ad2d13196fc6f53e&smart=true&width=1024&height=576"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/halloran-fallen-of-wwii-2015.md"
+ },
+ {
+  "slug": "nasa-year-in-the-life-of-co2-2014",
+  "category": "data-story",
+  "title": "NASA | A Year in the Life of Earth's CO2",
+  "studio": "NASA Goddard (GMAO; animator/scientist: Bill Putman)",
+  "client": "NASA",
+  "year": 2014,
+  "url": "https://www.youtube.com/watch?v=x1SgmFa0r04",
+  "alt_urls": [
+   "https://svs.gsfc.nasa.gov/11719"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "data-viz",
+   "sim"
+  ],
+  "pace": "calm",
+  "palette": [
+   "saturated",
+   "high-contrast"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "technical",
+   "epic",
+   "calm"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "map",
+   "fluid",
+   "noise-field",
+   "long-take",
+   "camera-move"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "shader",
+   "shader buffers (advection/feedback)",
+   "image (map plates)",
+   "text value (date counter)",
+   "camera",
+   "scene3d",
+   "audio",
+   "GAP: colour-mapped scalar-field renderer with legend (rainbow/diverging LUT)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/x1SgmFa0r04/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/x1SgmFa0r04/hq1.jpg",
+   "https://i.ytimg.com/vi/x1SgmFa0r04/hq2.jpg",
+   "https://i.ytimg.com/vi/x1SgmFa0r04/hq3.jpg",
+   "https://www.geeksaresexy.net/wp-content/uploads/2016/03/carbon.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/nasa-year-in-the-life-of-co2-2014.md"
+ },
+ {
+  "slug": "nature-tulp-how-many-trees-2015",
+  "category": "data-story",
+  "title": "How many trees are there in the world?",
+  "studio": "Nature Video (data visualization: Jan Willem Tulp; art direction: Kelly Krause)",
+  "client": "Nature",
+  "year": 2015,
+  "url": "https://www.youtube.com/watch?v=jqdOkXQngw8",
+  "alt_urls": [
+   "https://informationisbeautifulawards.com/showcase/772-how-many-trees-are-there-in-the-world"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "data-viz",
+   "3d-cg",
+   "generative"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "technical",
+   "calm",
+   "editorial"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "map",
+   "instancing",
+   "particles",
+   "camera-move",
+   "scale-contrast",
+   "kinetic-type"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "scene3d",
+   "text value (counter)",
+   "camera",
+   "particles/instancing (point globe)",
+   "glow",
+   "audio",
+   "GAP: data-driven point-cloud globe (lat/long density → instanced points)"
+  ],
+  "awards": [
+   "Information is Beautiful Awards 2015, Motion Infographic Silver"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/jqdOkXQngw8/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/jqdOkXQngw8/hq1.jpg",
+   "https://i.ytimg.com/vi/jqdOkXQngw8/hq2.jpg",
+   "https://i.ytimg.com/vi/jqdOkXQngw8/hq3.jpg",
+   "https://tulpinteractive.com/img/trillions-of-trees.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/nature-tulp-how-many-trees-2015.md"
+ },
+ {
+  "slug": "primer-simulating-natural-selection-2018",
+  "category": "data-story",
+  "title": "Simulating Natural Selection",
+  "studio": "Primer (Justin Helps)",
+  "client": "Self-initiated",
+  "year": 2018,
+  "url": "https://www.youtube.com/watch?v=0ZGbIKd0XrM",
+  "alt_urls": [
+   "https://github.com/Helpsypoo/primer",
+   "https://flowingdata.com/2019/07/31/natural-selection-simulation/"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stylised-3d",
+   "sim",
+   "data-viz"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "limited",
+   "cool"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "technical",
+   "witty"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "sim",
+   "chart-build",
+   "soft-body",
+   "instancing",
+   "camera-move"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "scene3d",
+   "scene3d model (blob characters)",
+   "component (histogram/bar-chart)",
+   "text",
+   "camera",
+   "physics world (agents)",
+   "audio",
+   "GAP: agent-based simulation whose population feeds a live histogram in the same frame",
+   "GAP: squash-and-stretch soft-body characters"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/0ZGbIKd0XrM/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/0ZGbIKd0XrM/hq1.jpg",
+   "https://i.ytimg.com/vi/0ZGbIKd0XrM/hq2.jpg",
+   "https://i.ytimg.com/vi/0ZGbIKd0XrM/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/primer-simulating-natural-selection-2018.md"
+ },
+ {
+  "slug": "vox-syria-war-who-is-fighting-2017",
+  "category": "data-story",
+  "title": "Syria's war: Who is fighting and why",
+  "studio": "Vox (Johnny Harris, Max Fisher)",
+  "client": "Vox",
+  "year": 2017,
+  "url": "https://www.youtube.com/watch?v=JFpanWNgfQY",
+  "alt_urls": [
+   "http://www.vox.com/2015/10/14/9525469/syrias-war-a-5-minute-history"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "data-viz",
+   "collage",
+   "photo",
+   "mixed"
+  ],
+  "pace": "steady",
+  "palette": [
+   "light",
+   "earthy",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "editorial",
+   "technical"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "map",
+   "collage-cutout",
+   "camera-move",
+   "kinetic-type",
+   "chart-build"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "image",
+   "image (cut-out photos)",
+   "text",
+   "shape (map paths, timeline chips)",
+   "camera",
+   "box (timeline row)",
+   "post.grain",
+   "audio",
+   "GAP: map component (country outlines, territory fills that animate over time)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/JFpanWNgfQY/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/JFpanWNgfQY/hq1.jpg",
+   "https://i.ytimg.com/vi/JFpanWNgfQY/hq2.jpg",
+   "https://i.ytimg.com/vi/JFpanWNgfQY/hq3.jpg",
+   "https://platform.vox.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/4157256/xex-208-syria-Post.0.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/vox-syria-war-who-is-fighting-2017.md"
+ },
+ {
+  "slug": "artcamp-moosajee-thom-yorke-last-i-heard-2019",
+  "category": "music-video",
+  "title": "Thom Yorke - Last I Heard (…He Was Circling The Drain)",
+  "studio": "Art Camp (directors: Saad Moosajee with Art Camp; technical director: James Bartolozzi)",
+  "client": "Thom Yorke / XL Recordings",
+  "year": 2019,
+  "url": "https://www.youtube.com/watch?v=I03xFqbxUp8",
+  "alt_urls": [
+   "https://www.dandad.org/awards/professional/2020/231860/thom-yorke-last-i-heard-he-was-circling-the-drain"
+  ],
+  "length_s": 308,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "mixed",
+   "3d-cg",
+   "cel",
+   "stop-motion",
+   "sim"
+  ],
+  "pace": "steady",
+  "palette": [
+   "mono",
+   "dark",
+   "high-contrast"
+  ],
+  "type_role": "none",
+  "mood": [
+   "eerie",
+   "emotional",
+   "raw"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "sim",
+   "boil",
+   "grain",
+   "camera-move",
+   "particles",
+   "instancing",
+   "stop-motion-feel"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "post",
+   "shader",
+   "GAP: crowd simulation of thousands of agents",
+   "GAP: per-frame hand-treated texture (charcoal wash, powder) over 3D renders",
+   "GAP: fire simulation"
+  ],
+  "awards": [
+   "D&AD 2020 Graphite Pencil, Music Videos / Animation"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/I03xFqbxUp8/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/I03xFqbxUp8/hq1.jpg",
+   "https://i.ytimg.com/vi/I03xFqbxUp8/hq2.jpg",
+   "https://i.ytimg.com/vi/I03xFqbxUp8/hq3.jpg",
+   "https://www.thisiscolossal.com/wp-content/uploads/2019/11/TY_1.jpg",
+   "https://www.thisiscolossal.com/wp-content/uploads/2019/11/TY_2.jpg",
+   "https://www.thisiscolossal.com/wp-content/uploads/2019/11/TY_3.jpg",
+   "https://media.sidefx.com/uploads/article/thom-yorke-last-i-heard-he-was-circling-the-drain/Houdini_ThomYorke_final2.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/artcamp-moosajee-thom-yorke-last-i-heard-2019.md"
+ },
+ {
+  "slug": "blinkink-djafari-coldplay-feelslikeimfallinginlove-2024",
+  "category": "music-video",
+  "title": "Coldplay - feelslikeimfallinginlove (Official Video)",
+  "studio": "Blinkink (director: Raman Djafari) with 14 guest animators",
+  "client": "Coldplay / Parlophone",
+  "year": 2024,
+  "url": "https://www.youtube.com/watch?v=V3IVdLo-2NM",
+  "alt_urls": [
+   "https://www.stashmedia.tv/raman-djafari-and-friends-collab-for-coldplay/"
+  ],
+  "length_s": 261,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "frame-by-frame",
+   "stop-motion",
+   "3d-cg",
+   "mixed"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "pastel",
+   "warm"
+  ],
+  "type_role": "none",
+  "mood": [
+   "emotional",
+   "warm",
+   "playful"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "morph",
+   "transitions-in-camera",
+   "boil",
+   "stop-motion-feel",
+   "match-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "video",
+   "shape",
+   "camera",
+   "transitions",
+   "matte",
+   "GAP: frame-by-frame drawn animation in many hand media (oil pastel, watercolour, felt)",
+   "GAP: style-to-style morph transitions"
+  ],
+  "awards": [
+   "UK Music Video Awards 2024: Best Animation in a Video"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/V3IVdLo-2NM/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/V3IVdLo-2NM/hq1.jpg",
+   "https://i.ytimg.com/vi/V3IVdLo-2NM/hq2.jpg",
+   "https://i.ytimg.com/vi/V3IVdLo-2NM/hq3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Coldplay-feelslikeimfallinginlove-Music-Videoby-Raman-Djafari2.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Coldplay-feelslikeimfallinginlove-Music-Videoby-Raman-Djafari3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/blinkink-djafari-coldplay-feelslikeimfallinginlove-2024.md"
+ },
+ {
+  "slug": "domnic-chemical-brothers-wide-open-2016",
+  "category": "music-video",
+  "title": "The Chemical Brothers - Wide Open (Official Music Video) ft. Beck",
+  "studio": "Outsider (directors: Dom&Nic); VFX: The Mill; choreography: Wayne McGregor",
+  "client": "The Chemical Brothers / Virgin EMI",
+  "year": 2016,
+  "url": "https://www.youtube.com/watch?v=BC2dRkm8ATU",
+  "alt_urls": [
+   "https://waynemcgregor.com/productions/wide-open",
+   "https://www.youtube.com/watch?v=ifAE5MWR-4k"
+  ],
+  "length_s": 331,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "live-action",
+   "photoreal-cg"
+  ],
+  "pace": "calm",
+  "palette": [
+   "light",
+   "cool",
+   "limited"
+  ],
+  "type_role": "none",
+  "mood": [
+   "premium",
+   "emotional",
+   "minimal",
+   "technical"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "long-take",
+   "morph",
+   "camera-move",
+   "instancing"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "video",
+   "scene3d",
+   "camera",
+   "matte",
+   "post",
+   "GAP: match-moved CG body replacing a live dancer limb by limb",
+   "GAP: lattice / Voronoi mesh body material",
+   "GAP: lidar-based camera tracking"
+  ],
+  "awards": [
+   "UK Music Video Awards 2016: Best Dance Video",
+   "UK Music Video Awards 2016: Best VFX",
+   "Cannes Lions 2016: Bronze, Entertainment Lions for Music / Music Content (one of one Gold and two Bronze per Station Film)"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/BC2dRkm8ATU/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/BC2dRkm8ATU/hq1.jpg",
+   "https://i.ytimg.com/vi/BC2dRkm8ATU/hq2.jpg",
+   "https://i.ytimg.com/vi/BC2dRkm8ATU/hq3.jpg",
+   "https://waynemcgregor.com/assets/2Work/Wide-Open/wideopen_carousel_chemicalbrothers.jpg",
+   "https://waynemcgregor.com/assets/2Work/Wide-Open/wideopen_carousel_chemicalbrothers2.jpg",
+   "https://waynemcgregor.com/assets/2Work/Wide-Open/wideopen_carousel_chemicalbrothers3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/The-Mill-Chemical-Brothers.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/domnic-chemical-brothers-wide-open-2016.md"
+ },
+ {
+  "slug": "hopewell-radiohead-burn-the-witch-2016",
+  "category": "music-video",
+  "title": "Radiohead - Burn The Witch",
+  "studio": "Jacknife (director: Chris Hopewell)",
+  "client": "Radiohead / XL Recordings",
+  "year": 2016,
+  "url": "https://www.youtube.com/watch?v=yI2oS2hoL0k",
+  "alt_urls": [],
+  "length_s": 240,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stop-motion"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "warm",
+   "pastel"
+  ],
+  "type_role": "none",
+  "mood": [
+   "eerie",
+   "witty",
+   "retro"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "stop-motion-feel",
+   "camera-move",
+   "hard-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "post",
+   "GAP: stop-motion puppet look (on-twos stepped motion, felt/wood materials, miniature lighting)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/yI2oS2hoL0k/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/yI2oS2hoL0k/hq1.jpg",
+   "https://i.ytimg.com/vi/yI2oS2hoL0k/hq2.jpg",
+   "https://i.ytimg.com/vi/yI2oS2hoL0k/hq3.jpg",
+   "https://thefilmstage.com/wp-content/uploads/2016/05/Burn-the-Witch-2.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/hopewell-radiohead-burn-the-witch-2016.md"
+ },
+ {
+  "slug": "konersman-prince-sign-o-the-times-1987",
+  "category": "music-video",
+  "title": "Prince - Sign O' The Times (Official Music Video)",
+  "studio": "Bill Konersman (director/animator)",
+  "client": "Prince / Paisley Park / Warner Bros. Records",
+  "year": 1987,
+  "url": "https://www.youtube.com/watch?v=8EdxM72EZ94",
+  "alt_urls": [],
+  "length_s": 224,
+  "verified": "oembed",
+  "aspect": "other",
+  "medium": [
+   "kinetic-type",
+   "2d-vector"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "dark",
+   "limited"
+  ],
+  "type_role": "only",
+  "mood": [
+   "retro",
+   "raw",
+   "editorial"
+  ],
+  "purpose": "lyric-video",
+  "techniques": [
+   "kinetic-type",
+   "beat-sync",
+   "colour-swap",
+   "hard-cut"
+  ],
+  "audio": "lyric",
+  "anikit_features": [
+   "text",
+   "text.kinetic",
+   "shape",
+   "transitions",
+   "audio",
+   "captions"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/8EdxM72EZ94/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/8EdxM72EZ94/hq1.jpg",
+   "https://i.ytimg.com/vi/8EdxM72EZ94/hq2.jpg",
+   "https://i.ytimg.com/vi/8EdxM72EZ94/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/konersman-prince-sign-o-the-times-1987.md"
+ },
+ {
+  "slug": "rousselet-pharrell-cash-in-cash-out-2022",
+  "category": "music-video",
+  "title": "Pharrell Williams - Cash In Cash Out (Official Video) ft. 21 Savage, Tyler, The Creator",
+  "studio": "Division (director: François Rousselet); animation/VFX: Electric Theatre Collective",
+  "client": "Pharrell Williams / Columbia",
+  "year": 2022,
+  "url": "https://www.youtube.com/watch?v=cKEwnhc8ItY",
+  "alt_urls": [
+   "https://www.annecyfestival.com/en/node/532/commissioned-films/pharrell-feat-21-savage-tyler-the-creator-cash-cash-out"
+  ],
+  "length_s": 236,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "photoreal-cg",
+   "stylised-3d"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "neon",
+   "dark"
+  ],
+  "type_role": "none",
+  "mood": [
+   "playful",
+   "witty",
+   "energetic"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "loop",
+   "stop-motion-feel",
+   "macro",
+   "depth-of-field",
+   "beat-sync",
+   "camera-move",
+   "instancing"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "depth",
+   "motionBlur",
+   "post",
+   "GAP: strobe/zoetrope temporal sampling (per-figure pose sequences on a rotating platter seen through a shutter)",
+   "GAP: miniature-scale photoreal materials (3D-print layer lines, fingerprints, clay cloth)",
+   "GAP: lip-synced character performance"
+  ],
+  "awards": [
+   "UK Music Video Awards 2022: Video of the Year",
+   "UK Music Video Awards 2022: Best Animation in a Video",
+   "UK Music Video Awards 2022: Best VFX in a Video",
+   "UK Music Video Awards 2022: Best Hip Hop/Grime/Rap Video International",
+   "D&AD 2023 Pencils (animation and visual effects; level not checked)",
+   "Annecy 2023 official selection, commissioned films"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/cKEwnhc8ItY/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/cKEwnhc8ItY/hq1.jpg",
+   "https://i.ytimg.com/vi/cKEwnhc8ItY/hq2.jpg",
+   "https://i.ytimg.com/vi/cKEwnhc8ItY/hq3.jpg",
+   "https://m.itsnicethat.com/original_images/electric-theatre-collective-cash-in-cash-out-film-itsnicethat-02.jpg",
+   "https://m.itsnicethat.com/original_images/electric-theatre-collective-cash-in-cash-out-film-itsnicethat-04.jpg",
+   "https://m.itsnicethat.com/original_images/electric-theatre-collective-cash-in-cash-out-film-itsnicethat-05.jpg",
+   "https://m.itsnicethat.com/original_images/electric-theatre-collective-cash-in-cash-out-film-itsnicethat-06.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/rousselet-pharrell-cash-in-cash-out-2022.md"
+ },
+ {
+  "slug": "weirdcore-aphex-twin-t69-collapse-2018",
+  "category": "music-video",
+  "title": "Aphex Twin - T69 Collapse",
+  "studio": "Weirdcore",
+  "client": "Aphex Twin / Warp Records",
+  "year": 2018,
+  "url": "https://www.youtube.com/watch?v=SqayDnQ2wmw",
+  "alt_urls": [],
+  "length_s": 319,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "generative",
+   "3d-cg",
+   "photo",
+   "kinetic-type"
+  ],
+  "pace": "frantic",
+  "palette": [
+   "neon",
+   "saturated",
+   "dark"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "energetic",
+   "raw",
+   "technical",
+   "eerie"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "beat-sync",
+   "camera-move",
+   "glitch",
+   "flash-frame",
+   "shader",
+   "noise-field",
+   "particles",
+   "colour-swap"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "cloud",
+   "splat",
+   "shader",
+   "camera",
+   "text",
+   "transitions",
+   "post",
+   "audio (beat-sync)",
+   "GAP: photogrammetry / point-cloud capture import",
+   "GAP: neural style-transfer pass"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/SqayDnQ2wmw/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/SqayDnQ2wmw/hq1.jpg",
+   "https://i.ytimg.com/vi/SqayDnQ2wmw/hq2.jpg",
+   "https://i.ytimg.com/vi/SqayDnQ2wmw/hq3.jpg",
+   "https://cdn.thespaces.com/wp-content/uploads/2018/08/Aphex-Twins-%E2%80%98T69-Collapse%E2%80%99-3-1.jpg",
+   "https://cdn.thespaces.com/wp-content/uploads/2018/08/Aphex-Twins-%E2%80%98T69-Collapse%E2%80%99-4.jpg",
+   "https://cdn.thespaces.com/wp-content/uploads/2018/08/Aphex-Twins-%E2%80%98T69-Collapse%E2%80%99-6.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/weirdcore-aphex-twin-t69-collapse-2018.md"
+ },
+ {
+  "slug": "apple-macbook-neo-handmade-magic-2026",
+  "category": "social-vertical",
+  "title": "A peek at some handmade magic 🪄 #MacBookNeo #Shorts",
+  "studio": "Apple (production credits not published)",
+  "client": "Apple",
+  "year": 2026,
+  "url": "https://www.youtube.com/shorts/y4DnsCzJTRQ",
+  "alt_urls": [
+   "https://petapixel.com/2026/04/24/how-apple-filmed-its-flashy-macbook-neo-video-using-handmade-props/"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "9:16",
+  "medium": [
+   "stop-motion",
+   "live-action",
+   "mixed"
+  ],
+  "pace": "fast",
+  "palette": [
+   "light",
+   "saturated",
+   "pastel"
+  ],
+  "type_role": "none",
+  "mood": [
+   "playful",
+   "warm",
+   "premium"
+  ],
+  "purpose": "social-ad",
+  "techniques": [
+   "stop-motion-feel",
+   "split-screen",
+   "macro",
+   "glow",
+   "hard-cut",
+   "rhythmic-edit"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "video",
+   "image",
+   "box",
+   "transitions",
+   "audio",
+   "GAP: stop-motion capture and practical effects (only the edit/split-screen layer is in scope)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/y4DnsCzJTRQ/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/y4DnsCzJTRQ/hq1.jpg",
+   "https://i.ytimg.com/vi/y4DnsCzJTRQ/hq2.jpg",
+   "https://i.ytimg.com/vi/y4DnsCzJTRQ/hq3.jpg",
+   "https://i.ytimg.com/vi/y4DnsCzJTRQ/oardefault.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/social-vertical/apple-macbook-neo-handmade-magic-2026.md"
+ },
+ {
+  "slug": "duolingo-duotv-the-night-shift-2026",
+  "category": "social-vertical",
+  "title": "Episode 6 - The Night Shift (DuoTV Finale)",
+  "studio": "Duolingo in-house design studio (ACD: Sarah Beth Morgan; head of design: Mig Reyes)",
+  "client": "Duolingo",
+  "year": 2026,
+  "url": "https://www.youtube.com/shorts/lsNxpodd-14",
+  "alt_urls": [
+   "https://fastcompany.com/91621113/duo-the-owl-next-big-act-is-an-animated-series",
+   "https://fastcompanybrasil.com/design/a-coruja-do-duolingo-virou-estrela-de-uma-serie-animada/"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "9:16",
+  "medium": [
+   "2d-illustrated",
+   "cel"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "warm",
+   "brand-colour"
+  ],
+  "type_role": "none",
+  "mood": [
+   "witty",
+   "playful",
+   "retro"
+  ],
+  "purpose": "short-film",
+  "techniques": [
+   "hard-cut",
+   "light-sweep"
+  ],
+  "audio": "mixed",
+  "anikit_features": [
+   "shape",
+   "image",
+   "group",
+   "camera",
+   "audio",
+   "captions",
+   "GAP: character animation (rigged/cel 2D characters with lip sync and acting)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/lsNxpodd-14/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/lsNxpodd-14/hq1.jpg",
+   "https://i.ytimg.com/vi/lsNxpodd-14/hq2.jpg",
+   "https://i.ytimg.com/vi/lsNxpodd-14/hq3.jpg",
+   "https://i.ytimg.com/vi/lsNxpodd-14/oardefault.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/social-vertical/duolingo-duotv-the-night-shift-2026.md"
+ },
+ {
+  "slug": "loop-duolingo-living-with-lily-ep1-2023",
+  "category": "social-vertical",
+  "title": "Ep 1 | The One With Deep Fried Duo #duolingo #funny #languagelearning #sitcom",
+  "studio": "Loop (showrunner: Nick Gallo; writer: Matt Powers)",
+  "client": "Duolingo",
+  "year": 2023,
+  "url": "https://www.youtube.com/shorts/IZzFzfR4Fh8",
+  "alt_urls": [
+   "https://winners.webbyawards.com/2024/video/branded-entertainment/scripted-branded/288672/duolingo-living-with-lily",
+   "https://www.youtube.com/shorts/3ypLePZXEuo"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "9:16",
+  "medium": [
+   "live-action"
+  ],
+  "pace": "steady",
+  "palette": [
+   "warm",
+   "saturated",
+   "brand-colour"
+  ],
+  "type_role": "none",
+  "mood": [
+   "witty",
+   "playful",
+   "retro"
+  ],
+  "purpose": "social-ad",
+  "techniques": [
+   "hard-cut"
+  ],
+  "audio": "mixed",
+  "anikit_features": [
+   "video",
+   "captions",
+   "audio",
+   "GAP: live-action costume sitcom production (out of scope for a motion engine; only captions/titles/end card apply)"
+  ],
+  "awards": [
+   "Webby Awards 2024 People's Voice Winner, Video: Scripted (Branded) — Duolingo \"Living With Lily\" (entrant: Loop)"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/IZzFzfR4Fh8/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/IZzFzfR4Fh8/hq1.jpg",
+   "https://i.ytimg.com/vi/IZzFzfR4Fh8/hq2.jpg",
+   "https://i.ytimg.com/vi/IZzFzfR4Fh8/hq3.jpg",
+   "https://i.ytimg.com/vi/IZzFzfR4Fh8/oardefault.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/social-vertical/loop-duolingo-living-with-lily-ep1-2023.md"
+ },
+ {
+  "slug": "nike-airmax-1000-short-2024",
+  "category": "social-vertical",
+  "title": "The latest chapter in Nike's never-ending pursuit of Innovation is here: The AIRMAX 1000 #shorts",
+  "studio": "Nike (CG launch visuals for the Airmax 1000 credited by Stash to Already Been Chewed; that this Short is that work is est.)",
+  "client": "Nike x Zellerfeld",
+  "year": 2024,
+  "url": "https://www.youtube.com/shorts/qlNWNuhLl4s",
+  "alt_urls": [
+   "https://www.stashmedia.tv/?p=110226",
+   "https://www.designboom.com/technology/nike-zellerfeld-air-max-1-3d-printed-sneakers-1000-11-18-2024/"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "9:16",
+  "medium": [
+   "photoreal-cg",
+   "3d-cg"
+  ],
+  "pace": "fast",
+  "palette": [
+   "warm",
+   "limited",
+   "brand-colour"
+  ],
+  "type_role": "none",
+  "mood": [
+   "premium",
+   "technical",
+   "energetic"
+  ],
+  "purpose": "social-ad",
+  "techniques": [
+   "macro",
+   "product-turntable",
+   "depth-of-field",
+   "glow",
+   "particles",
+   "light-sweep",
+   "camera-move"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "motionBlur",
+   "post",
+   "glow",
+   "component.sparks",
+   "GAP: additive-manufacturing growth (layer-by-layer extrusion reveal) on a mesh",
+   "GAP: photoreal printer/machine set"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/qlNWNuhLl4s/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/qlNWNuhLl4s/hq1.jpg",
+   "https://i.ytimg.com/vi/qlNWNuhLl4s/hq2.jpg",
+   "https://i.ytimg.com/vi/qlNWNuhLl4s/hq3.jpg",
+   "https://i.ytimg.com/vi/qlNWNuhLl4s/oardefault.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/social-vertical/nike-airmax-1000-short-2024.md"
+ },
+ {
+  "slug": "spotify-wrapped-2025-is-here-2025",
+  "category": "social-vertical",
+  "title": "Wrapped 2025 Is Here",
+  "studio": "Spotify in-house creative (Global ECD: Jeremy Wirth); motion guidelines by Vucko per a contributor's portfolio (unverified)",
+  "client": "Spotify",
+  "year": 2025,
+  "url": "https://www.youtube.com/shorts/1-HSVoieS2U",
+  "alt_urls": [
+   "https://newsroom.spotify.com/?p=37865",
+   "https://newsroom.spotify.com/2025-12-03/2025-wrapped-user-experience/"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "9:16",
+  "medium": [
+   "kinetic-type",
+   "2d-vector",
+   "collage"
+  ],
+  "pace": "frantic",
+  "palette": [
+   "limited",
+   "high-contrast",
+   "brand-colour"
+  ],
+  "type_role": "only",
+  "mood": [
+   "energetic",
+   "raw",
+   "retro"
+  ],
+  "purpose": "social-ad",
+  "techniques": [
+   "kinetic-type",
+   "typographic-grid",
+   "colour-swap",
+   "grain",
+   "collage-cutout",
+   "hard-cut",
+   "rhythmic-edit",
+   "scale-contrast",
+   "beat-sync"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "text",
+   "shape",
+   "mograph.repeat",
+   "mask",
+   "post",
+   "component.grain",
+   "transitions",
+   "audio",
+   "GAP: hand-drawn scribble underline and photocopy/xerox texture as a text style"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/1-HSVoieS2U/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/1-HSVoieS2U/hq1.jpg",
+   "https://i.ytimg.com/vi/1-HSVoieS2U/hq2.jpg",
+   "https://i.ytimg.com/vi/1-HSVoieS2U/hq3.jpg",
+   "https://i.ytimg.com/vi/1-HSVoieS2U/oardefault.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/social-vertical/spotify-wrapped-2025-is-here-2025.md"
+ },
+ {
+  "slug": "studio-dumbar-instagram-motion-identity-2024",
+  "category": "social-vertical",
+  "title": "Instagram_Motion-Identity-System_J_Motion-Sizzle_1920x1080",
+  "studio": "Studio Dumbar/DEPT® (with Instagram in-house brand design)",
+  "client": "Instagram (Meta)",
+  "year": 2024,
+  "url": "https://vimeo.com/922022119",
+  "alt_urls": [
+   "https://studiodumbar.com/work/instagram",
+   "https://awards.europeandesign.org/winner/261911"
+  ],
+  "length_s": 38,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-vector",
+   "kinetic-type",
+   "ui",
+   "photo"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "brand-colour"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "energetic",
+   "playful",
+   "premium"
+  ],
+  "purpose": "ident",
+  "techniques": [
+   "kinetic-type",
+   "camera-move",
+   "parallax",
+   "masks",
+   "rhythmic-edit",
+   "colour-swap",
+   "scale-contrast"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "text",
+   "image",
+   "video",
+   "camera",
+   "mask",
+   "transitions",
+   "motionBlur",
+   "audio",
+   "GAP: a documented motion-physics preset system (named easing/spring tokens per motion technique)"
+  ],
+  "awards": [
+   "European Design Awards 2025 Gold, Motion Graphics (Instagram — Motion Identity System, Studio Dumbar/DEPT®)"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/1812870425-92457d993482a1ba31312abc8a308b8dda9670bb0443711ba9d3605eddc1e533-d_1280",
+   "https://www.dept.global/wp-content/uploads/2024/04/Cover_Instagram_Motion-Identity-System_Motion-Sizzle_1920x1080-1-1.jpg",
+   "https://m.itsnicethat.com/original_images/studio-dumbar-instagram-digital-itsnicethat-1.gif",
+   "https://m.itsnicethat.com/original_images/studio-dumbar-instagram-digital-itsnicethat-2.gif",
+   "https://m.itsnicethat.com/original_images/studio-dumbar-instagram-digital-itsnicethat-3.gif",
+   "https://m.itsnicethat.com/original_images/studio-dumbar-instagram-digital-itsnicethat-4.gif"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/social-vertical/studio-dumbar-instagram-motion-identity-2024.md"
+ },
+ {
+  "slug": "blinkink-bbc-world-cup-2026",
+  "category": "broadcast-sports",
+  "title": "FIFA World Cup 2026 - Let's Make It Iconic | Official Trailer - BBC",
+  "studio": "Blinkink (director: Nicos Livesey; lead designer Dan Evans)",
+  "client": "BBC Sport / BBC Creative",
+  "year": 2026,
+  "url": "https://www.youtube.com/watch?v=ff2k22F4qNM",
+  "alt_urls": [
+   "https://www.youtube.com/watch?v=rQKrA9MTKxs",
+   "https://www.stashmedia.tv/nicos-livesey-animates-on-everything-in-buildup-to-bbcs-world-cup-coverage/"
+  ],
+  "length_s": 52,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "mixed",
+   "stop-motion",
+   "live-action",
+   "2d-illustrated"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "warm"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "raw",
+   "energetic",
+   "warm"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "stop-motion-feel",
+   "match-cut",
+   "collage-cutout",
+   "rhythmic-edit",
+   "macro"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "video",
+   "image",
+   "mask",
+   "transitions",
+   "camera",
+   "post",
+   "audio",
+   "GAP: physical fabrication textures (knit, weave, enamel, nail art) animated in stop-motion"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/ff2k22F4qNM/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/ff2k22F4qNM/hq1.jpg",
+   "https://i.ytimg.com/vi/ff2k22F4qNM/hq2.jpg",
+   "https://i.ytimg.com/vi/ff2k22F4qNM/hq3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/BBC-World-Cup-2026-Coverage-animated-trailer-by-Nicos-Livesey-and-Blinkink-STASH-MAGAZINE.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/BBC-World-Cup-2026-Coverage-animated-trailer-by-Nicos-Livesey-and-Blinkink-STASH-MAGAZINE3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/BBC-World-Cup-2026-Coverage-animated-trailer-by-Nicos-Livesey-and-Blinkink-STASH-MAGAZINE5.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/broadcast-sports/blinkink-bbc-world-cup-2026.md"
+ },
+ {
+  "slug": "dissembargo-f1-2026-opening-titles",
+  "category": "broadcast-sports",
+  "title": "New 2026 F1 Opening Titles",
+  "studio": "DissEmbargo (directors: Sam Humphries, Sebastian Helene)",
+  "client": "Formula 1",
+  "year": 2026,
+  "url": "https://www.youtube.com/watch?v=Sks_fMr2Yss",
+  "alt_urls": [
+   "https://www.stashmedia.tv/peek-into-the-process-behind-dissembargos-f1-2026-titles/",
+   "https://vimeo.com/1201922086",
+   "https://vimeo.com/1205777379"
+  ],
+  "length_s": 58,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "mixed",
+   "live-action"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "high-contrast",
+   "brand-colour"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "epic",
+   "premium",
+   "technical"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "camera-move",
+   "light-sweep",
+   "glow",
+   "depth-of-field",
+   "rhythmic-edit",
+   "beat-sync",
+   "3d-type"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "video",
+   "camera",
+   "glow",
+   "text",
+   "post",
+   "motionBlur",
+   "audio",
+   "GAP: compositing filmed drivers into 3D environments",
+   "GAP: airflow streamline visualisation"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/Sks_fMr2Yss/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/Sks_fMr2Yss/hq1.jpg",
+   "https://i.ytimg.com/vi/Sks_fMr2Yss/hq2.jpg",
+   "https://i.ytimg.com/vi/Sks_fMr2Yss/hq3.jpg",
+   "https://images.squarespace-cdn.com/content/v1/64a2e088ff6efe7b7f676dff/b9ccb069-4336-4dee-9865-5334c240706b/close-up-of-2026-f1-car-suspension-dissembargo.png?format=1500w",
+   "https://images.squarespace-cdn.com/content/v1/64a2e088ff6efe7b7f676dff/7d5e0b9d-165b-48a4-93eb-02de70d93b2c/f1-driver-walking-through-red-light-streaks-dissembargo.png?format=1500w",
+   "https://images.squarespace-cdn.com/content/v1/64a2e088ff6efe7b7f676dff/680a5729-94f6-4709-af1c-60594fd7a904/2026-f1-car-on-a-sweeping-white-dissembargo.png?format=1500w"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/broadcast-sports/dissembargo-f1-2026-opening-titles.md"
+ },
+ {
+  "slug": "dixonbaxi-tnt-sports-2023",
+  "category": "broadcast-sports",
+  "title": "TNT_CLOCK_00003",
+  "studio": "DixonBaxi (type with F37)",
+  "client": "TNT Sports (BT Group / Warner Bros. Discovery)",
+  "year": 2023,
+  "url": "https://vimeo.com/863534078",
+  "alt_urls": [
+   "https://www.dixonbaxi.com/case-study/tnt-sports"
+  ],
+  "length_s": 12,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "mixed",
+   "kinetic-type",
+   "ui",
+   "live-action"
+  ],
+  "pace": "fast",
+  "palette": [
+   "high-contrast",
+   "brand-colour",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "raw",
+   "energetic",
+   "editorial"
+  ],
+  "purpose": "broadcast",
+  "techniques": [
+   "masks",
+   "kinetic-type",
+   "scale-contrast",
+   "ui-zoom",
+   "hard-cut",
+   "grid"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "mask",
+   "shape",
+   "text",
+   "video",
+   "box",
+   "component",
+   "transitions",
+   "camera"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1722778049-ee0be6308af09481089ceb330ada04da5e3d3c94fbdad22ab8dd7600ad80f059-d_1280",
+   "https://www.datocms-assets.com/160962/1748963771-1-hero.jpg",
+   "https://www.datocms-assets.com/160962/1749225389-tnt_2-1.png",
+   "https://www.datocms-assets.com/160962/1749225585-tnt_4.png",
+   "https://www.datocms-assets.com/160962/1749225622-tnt_5.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/broadcast-sports/dixonbaxi-tnt-sports-2023.md"
+ },
+ {
+  "slug": "drive-studio-fox-world-cup-2026",
+  "category": "broadcast-sports",
+  "title": "FIFA Men's World Cup 2026 | FOX Sports |",
+  "studio": "Drive Studio",
+  "client": "FOX Sports",
+  "year": 2026,
+  "url": "https://vimeo.com/1206272473",
+  "alt_urls": [
+   "https://vimeo.com/1211433063",
+   "https://www.stashmedia.tv/?p=121328"
+  ],
+  "length_s": 84,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "kinetic-type",
+   "mixed"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "brand-colour",
+   "high-contrast"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "energetic",
+   "epic"
+  ],
+  "purpose": "broadcast",
+  "techniques": [
+   "3d-type",
+   "camera-move",
+   "cloth",
+   "grid",
+   "kinetic-type",
+   "rhythmic-edit",
+   "beat-sync",
+   "light-sweep"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "text",
+   "camera",
+   "mograph",
+   "mask",
+   "transitions",
+   "motionBlur",
+   "post",
+   "audio",
+   "GAP: cloth sim for scarves and flags",
+   "GAP: template system for 48 team variants"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/2175076916-1dd784142027ef070f50e7c740c921ee6eb41b11b70debee1f4bda0f6e350790-d_1280",
+   "https://i.vimeocdn.com/video/2181606149-3d8d5d0f40e5eac8420c74b8719d29566180f4ee91787f6e42980faaae3cb67e-d_1280",
+   "https://www.stashmedia.tv/wp-content/uploads/FOX-Sports-FIFA-Mens-World-Cup-2026-broadcast-package-by-Drive-Studio-STASH-MAGAZINE.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/FOX-Sports-FIFA-Mens-World-Cup-2026-broadcast-package-by-Drive-Studio-STASH-MAGAZINE2.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/FOX-Sports-FIFA-Mens-World-Cup-2026-broadcast-package-by-Drive-Studio-STASH-MAGAZINE3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/FOX-Sports-FIFA-Mens-World-Cup-2026-broadcast-package-by-Drive-Studio-STASH-MAGAZINE5.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/FOX-Sports-FIFA-Mens-World-Cup-2026-broadcast-package-by-Drive-Studio-STASH-MAGAZINE6.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/broadcast-sports/drive-studio-fox-world-cup-2026.md"
+ },
+ {
+  "slug": "factory-fifteen-bbc-tokyo-2020",
+  "category": "broadcast-sports",
+  "title": "BBC Tokyo 2020",
+  "studio": "Factory Fifteen (directors: Paul Nicholls, Jonathan Gales, Kibwe Tavares), produced by Nexus Studios",
+  "client": "BBC Sport / BBC Creative",
+  "year": 2021,
+  "url": "https://vimeo.com/566015251",
+  "alt_urls": [
+   "https://www.youtube.com/watch?v=Qrym1Lk3c1Q",
+   "https://vimeo.com/820939870",
+   "https://factoryfifteen.com/world/tokyo-olympics"
+  ],
+  "length_s": 60,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "mixed",
+   "live-action",
+   "3d-cg",
+   "2d-illustrated"
+  ],
+  "pace": "fast",
+  "palette": [
+   "neon",
+   "saturated",
+   "warm"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "energetic",
+   "epic"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "long-take",
+   "camera-move",
+   "transitions-in-camera",
+   "parallax",
+   "glow"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "camera",
+   "scene3d",
+   "image",
+   "video",
+   "group",
+   "text",
+   "glow",
+   "post",
+   "motionBlur",
+   "GAP: one continuous camera through six dense, built 3D/live-action sets"
+  ],
+  "awards": [
+   "BAFTA 2022 (per BAFTA's Jonathan Gales page: Factory Fifteen's Tokyo 2020 opening titles, visuals and idents)"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/1170596567-1151d6521f8e7d078164934fdd6afd5cf4b6c969f04f7e2584c1458a2f8859c1-d_1280",
+   "https://i.ytimg.com/vi/Qrym1Lk3c1Q/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/Qrym1Lk3c1Q/hq1.jpg",
+   "https://i.ytimg.com/vi/Qrym1Lk3c1Q/hq2.jpg",
+   "https://i.ytimg.com/vi/Qrym1Lk3c1Q/hq3.jpg",
+   "https://factoryfifteen.com/wp-content/uploads/2023/05/20015_Nexus_BBC-Tokyo-Olympics_Factory-Fifteen_Result_01.jpg",
+   "https://factoryfifteen.com/wp-content/uploads/2023/05/20015_Nexus_BBC-Tokyo-Olympics_Factory-Fifteen_Result_2.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/broadcast-sports/factory-fifteen-bbc-tokyo-2020.md"
+ },
+ {
+  "slug": "nexus-fx-goby-bbc-paris-2024",
+  "category": "broadcast-sports",
+  "title": "Paris 2024 Olympic Games - BBC Official Trailer | Directed by Fx Goby | Nexus Studios",
+  "studio": "Nexus Studios (director: Fx Goby)",
+  "client": "BBC Sport / BBC Creative",
+  "year": 2024,
+  "url": "https://www.youtube.com/watch?v=j7wDrDsMJhU",
+  "alt_urls": [
+   "https://www.youtube.com/watch?v=iVc61V4xhlw",
+   "https://nexusstudios.com/work/bbc-paris-olympics/"
+  ],
+  "length_s": 60,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "cel"
+  ],
+  "pace": "fast",
+  "palette": [
+   "warm",
+   "limited"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "emotional",
+   "premium",
+   "epic"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "match-cut",
+   "rhythmic-edit",
+   "hard-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "shape",
+   "mask",
+   "transitions",
+   "post",
+   "audio",
+   "GAP: hand-drawn 2D character animation at 25 fps without outlines"
+  ],
+  "awards": [
+   "Annie Awards nomination, Best Sponsored (per Nexus Studios news)"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/j7wDrDsMJhU/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/j7wDrDsMJhU/hq1.jpg",
+   "https://i.ytimg.com/vi/j7wDrDsMJhU/hq2.jpg",
+   "https://i.ytimg.com/vi/j7wDrDsMJhU/hq3.jpg",
+   "https://cdn.nexusstudios.com/uploads/2024/06/NexusStudios_FxGoby_BBC_ParisOlympics_BBCPressStills_1.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/broadcast-sports/nexus-fx-goby-bbc-paris-2024.md"
+ },
+ {
+  "slug": "w-conran-paris-2024-look-of-the-games",
+  "category": "broadcast-sports",
+  "title": "#Paris2024 - Look of the Games",
+  "studio": "W Conran Design with the Paris 2024 brand team",
+  "client": "Paris 2024 (COJOP)",
+  "year": 2023,
+  "url": "https://www.youtube.com/watch?v=08aeo0WZMOY",
+  "alt_urls": [
+   "https://www.youtube.com/watch?v=mhsYRlQrt1o",
+   "https://www.red-dot.org/project/paris-2024-look-of-the-games-73164"
+  ],
+  "length_s": 121,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-vector",
+   "kinetic-type",
+   "mixed"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "limited",
+   "brand-colour"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "playful",
+   "editorial",
+   "energetic"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "grid",
+   "typographic-grid",
+   "masks",
+   "colour-swap",
+   "kinetic-type"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "shape",
+   "mask",
+   "mograph",
+   "text",
+   "group",
+   "box",
+   "transitions",
+   "GAP: system-level pattern generator for the pavé grid across many layouts"
+  ],
+  "awards": [
+   "Red Dot: Best of the Best 2024, Brand Design (red-dot.org)"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/08aeo0WZMOY/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/08aeo0WZMOY/hq1.jpg",
+   "https://i.ytimg.com/vi/08aeo0WZMOY/hq2.jpg",
+   "https://i.ytimg.com/vi/08aeo0WZMOY/hq3.jpg",
+   "https://www.german-design-award.com/fileadmin/assets/0/174/174506_2000HWebP.webp",
+   "https://www.german-design-award.com/fileadmin/assets/0/174/174507_2000HWebP.webp"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/broadcast-sports/w-conran-paris-2024-look-of-the-games.md"
+ },
+ {
+  "slug": "gobelins-annecy-2025-a-tiszan",
+  "category": "event-promo",
+  "title": "A TISZÁN - Annecy Festival 2025",
+  "studio": "GOBELINS Paris (students: Simon Crouzeix, Maëva Dubois, Arthur Laboudigue, Xinjun She)",
+  "client": "Annecy International Animation Film Festival",
+  "year": 2025,
+  "url": "https://www.youtube.com/watch?v=INrfSjjxnwE",
+  "alt_urls": [
+   "https://www.youtube.com/watch?v=Dwc_WERFdX0",
+   "https://3dvf.com/annecy-2025-redecouvrez-les-animations-des-gobelins/"
+  ],
+  "length_s": 55,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "cel"
+  ],
+  "pace": "steady",
+  "palette": [
+   "earthy",
+   "cool"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "warm",
+   "emotional",
+   "calm"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "camera-move",
+   "parallax"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "camera",
+   "group",
+   "post",
+   "audio",
+   "GAP: hand-drawn character animation"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/INrfSjjxnwE/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/INrfSjjxnwE/hq1.jpg",
+   "https://i.ytimg.com/vi/INrfSjjxnwE/hq2.jpg",
+   "https://i.ytimg.com/vi/INrfSjjxnwE/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/event-promo/gobelins-annecy-2025-a-tiszan.md"
+ },
+ {
+  "slug": "laurie-rowan-pictoplasma-2019-opener",
+  "category": "event-promo",
+  "title": "Pictoplasma 2019 Opener - Character Proxemics 1",
+  "studio": "Laurie Rowan (Nexus Studios)",
+  "client": "Pictoplasma Festival, Berlin",
+  "year": 2019,
+  "url": "https://vimeo.com/367464935",
+  "alt_urls": [
+   "https://nexusstudios.com/work/character_proxemics"
+  ],
+  "length_s": 33,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stylised-3d",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "dark"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "eerie"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "loop",
+   "camera-move",
+   "glow",
+   "instancing"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "glow",
+   "post",
+   "audio",
+   "loop",
+   "GAP: character design and rigged stacked character animation"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/823831771-46d669e15c8ac959f95e42e05bf604e5aff877ce78ef6beb6a4f28e04b5befc6-d_1280"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/event-promo/laurie-rowan-pictoplasma-2019-opener.md"
+ },
+ {
+  "slug": "studio-dumbar-demo-festival-trailer",
+  "category": "event-promo",
+  "title": "Demo 2027 trailer 16x9",
+  "studio": "Studio Dumbar/DEPT",
+  "client": "DEMO Design in Motion Festival (self-initiated with Global)",
+  "year": 2026,
+  "url": "https://vimeo.com/1189394573",
+  "alt_urls": [
+   "https://studiodumbar.com/work/demo",
+   "https://studiodumbar.com/work/demo-2025"
+  ],
+  "length_s": 68,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "kinetic-type",
+   "2d-vector",
+   "generative"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "limited",
+   "high-contrast"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "energetic",
+   "playful",
+   "editorial"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "kinetic-type",
+   "type-morph",
+   "typographic-grid",
+   "colour-swap",
+   "beat-sync",
+   "scale-contrast"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "text",
+   "text.split",
+   "mograph",
+   "shape",
+   "mask",
+   "transitions",
+   "audio",
+   "GAP: variable-font axis animation and script-driven glyph distortion"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/2153898094-d42f2bab0ecefeac23dd945ab0e0fce763e366cc9234177ca77171a73f26bc44-d_1280",
+   "https://studiodumbar.com/media/pages/work/demo/1368cf28e7-1682344555/163demo.jpg",
+   "https://studiodumbar.com/media/pages/work/demo/313fdbc37d-1682344554/77demo.jpg",
+   "https://studiodumbar.com/media/pages/work/demo-2025/563fde532b-1739226108/render_3_edited_4x5.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/event-promo/studio-dumbar-demo-festival-trailer.md"
+ },
+ {
+  "slug": "studio-river-motion-plus-design-tokyo-2024",
+  "category": "event-promo",
+  "title": "MOTION PLUS DESIGN TOKYO - OPENER",
+  "studio": "Studio River (director: Keyvan Nourian)",
+  "client": "Motion Plus Design",
+  "year": 2024,
+  "url": "https://vimeo.com/955846057",
+  "alt_urls": [
+   "https://vimeo.com/1032996351",
+   "https://www.stashmedia.tv/studio-river-ponders-ais-creative-future-for-motion-plus-design-tokyo-trailer/",
+   "https://2024.motionawards.com/?p=3952"
+  ],
+  "length_s": 133,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "stylised-3d"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "cool"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "technical",
+   "eerie",
+   "premium"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "cloth",
+   "sim",
+   "camera-move",
+   "depth-of-field",
+   "macro",
+   "light-sweep",
+   "kinetic-type"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "text",
+   "post",
+   "motionBlur",
+   "audio",
+   "GAP: cloth-shaded character with sim",
+   "GAP: modelled city/train environment"
+  ],
+  "awards": [
+   "Motion Awards 2024 nominee, Title Sequence (live event)"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/2030363516-5d6dabb511d5a9602c91d1ee2146e23624131424d8922116b15e75895a78b9bd-d_1280",
+   "https://www.stashmedia.tv/wp-content/uploads/Motion-Plus-Design-Tokyo-Trailer-byStudio-River-1920x1080.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Motion-Plus-Design-Tokyo-Trailer-byStudio-River2-1920x1080.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Motion-Plus-Design-Tokyo-Trailer-byStudio-River3-1920x1080.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Motion-Plus-Design-Tokyo-Trailer-byStudio-River5-1920x1080.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Motion-Plus-Design-Tokyo-Trailer-byStudio-River6.jpg",
+   "https://bunny-wp-pullzone-5qplbwmk6g.b-cdn.net/wp-content/uploads/2024/11/thumb-1-21.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/event-promo/studio-river-motion-plus-design-tokyo-2024.md"
+ },
+ {
+  "slug": "uncommon-offf-barcelona-2026-cultured",
+  "category": "event-promo",
+  "title": "OFFF Barcelona 2026 'Cultured' campaign by Uncommon",
+  "studio": "Uncommon Creative Studio (with artist Dasha Plesen; type by Ryan Bugden)",
+  "client": "OFFF Barcelona",
+  "year": 2026,
+  "url": "https://vimeo.com/1185548924",
+  "alt_urls": [
+   "https://www.offf.barcelona/post/offf-2026-visual-campaign-cultured-by-uncommon-studio-hero-film-revealed",
+   "https://itsnicethat.com/articles/uncommon-offf-barcelona-graphic-design-project-070526"
+  ],
+  "length_s": 110,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "mixed",
+   "photo",
+   "kinetic-type"
+  ],
+  "pace": "steady",
+  "palette": [
+   "earthy",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "raw",
+   "eerie",
+   "editorial"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "macro",
+   "morph",
+   "noise-field",
+   "kinetic-type",
+   "type-morph",
+   "grain"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "video",
+   "image",
+   "text",
+   "mask",
+   "shader",
+   "post",
+   "GAP: biomorphic custom typefaces",
+   "GAP: real microbial growth footage"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/2149007295-393ed2a4e254719ca5e30c7c5e5b158c6df3e90041a659beadca77df0e3922ac-d_1280",
+   "https://static.wixstatic.com/media/b8d8db_1263823978a64ddeb956e26058639a8f~mv2.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/event-promo/uncommon-offf-barcelona-2026-cultured.md"
+ },
+ {
+  "slug": "xk-studio-offfmx-2025-main-titles",
+  "category": "event-promo",
+  "title": "OFFFMX 2025 Main Titles by XK Studio",
+  "studio": "XK Studio (directors: Alexa Sirbu, Lukas Vojir)",
+  "client": "OFFF Festival (OFFFMX, Mexico City)",
+  "year": 2025,
+  "url": "https://vimeo.com/1119375393",
+  "alt_urls": [
+   "https://www.stashmedia.tv/?p=114512"
+  ],
+  "length_s": 99,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "stylised-3d"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "warm"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "technical",
+   "premium"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "macro",
+   "soft-body",
+   "camera-move",
+   "depth-of-field",
+   "rhythmic-edit",
+   "kinetic-type"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "text",
+   "motionBlur",
+   "post",
+   "audio",
+   "GAP: animated CG hands with skin/subsurface shading"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/2059820107-a45bef5efaad0d1f56b4f8cabdd27256aec564018e9a1a07090799cd1ed8cdbb-d_1280",
+   "https://www.stashmedia.tv/wp-content/uploads/OFFFMX-2025-main-titles-by-XK-Studio-STASH-MAGAZINE.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/OFFFMX-2025-main-titles-by-XK-Studio-STASH-MAGAZINE2.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/OFFFMX-2025-main-titles-by-XK-Studio-STASH-MAGAZINE3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/OFFFMX-2025-main-titles-by-XK-Studio-STASH-MAGAZINE4.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/OFFFMX-2025-main-titles-by-XK-Studio-STASH-MAGAZINE5.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/event-promo/xk-studio-offfmx-2025-main-titles.md"
+ },
+ {
+  "slug": "buck-good-books-metamorphosis-2012",
+  "category": "award-shorts",
+  "title": "Metamorphosis",
+  "studio": "BUCK (CD: Ryan Honey; animation director: Steve Day; AD: Joe Mullen)",
+  "client": "Good Books (agency: String Theory)",
+  "year": 2012,
+  "url": "https://vimeo.com/52422865",
+  "alt_urls": [
+   "https://buck.co/work/goodbooks",
+   "https://motionographer.com/2012/03/26/interview-buck-good-books-metamorphosis/"
+  ],
+  "length_s": 162,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "cel",
+   "mixed"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "limited",
+   "saturated"
+  ],
+  "type_role": "none",
+  "mood": [
+   "witty",
+   "raw",
+   "energetic"
+  ],
+  "purpose": "ad",
+  "techniques": [
+   "morph",
+   "smear",
+   "boil",
+   "grain",
+   "transitions-in-camera",
+   "liquid"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "image",
+   "shape",
+   "shape morph/path animation",
+   "post.grain",
+   "camera",
+   "audio",
+   "GAP: hand-drawn cel character animation",
+   "GAP: ink/paint texture compositing over CG"
+  ],
+  "awards": [
+   "D&AD 2013 Pencil, Film Advertising Crafts (archive page shows Yellow and Graphite Pencil icons)"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/361674922-b7138d5d0ac779e615aabdfcdc1faa6e2801e413ea901f00d0a8b66998ad2b07-d_1280",
+   "https://i0.wp.com/motionographer.com/wp-content/uploads/2015/04/GB01_2_slugs.jpg?resize=700%2C394&ssl=1",
+   "https://cdn.sanity.io/images/uk7b627p/production/e155f200729ea1ca7b96e7f1757224a4fe377ef1-2266x1274.png",
+   "https://cdn.sanity.io/images/uk7b627p/production/07f273b96e25a0b386e9ddd61f501488c813e6c4-2270x1274.png",
+   "https://cdn.sanity.io/images/uk7b627p/production/986de9627ceea8eb441fb6171f89598c1d8e4180-2268x1274.png",
+   "https://cdn.sanity.io/images/uk7b627p/production/1095d9760ffd16fcf478d53f8271d2b8a4dcb20c-2272x1274.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/award-shorts/buck-good-books-metamorphosis-2012.md"
+ },
+ {
+  "slug": "nomint-wwf-up-in-smoke-2023",
+  "category": "award-shorts",
+  "title": "WWF - Up in Smoke",
+  "studio": "NOMINT (director: Yannis Konstantinidis; CD: Yannis Konstantinidis, Christos Lefakis)",
+  "client": "WWF",
+  "year": 2023,
+  "url": "https://vimeo.com/889840444",
+  "alt_urls": [
+   "https://vimeo.com/889845779",
+   "https://www.annecyfestival.com/en/wwf-smoke"
+  ],
+  "length_s": 102,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stop-motion",
+   "live-action"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "mono",
+   "cool"
+  ],
+  "type_role": "none",
+  "mood": [
+   "emotional",
+   "eerie",
+   "epic"
+  ],
+  "purpose": "short-film",
+  "techniques": [
+   "stop-motion-feel",
+   "fluid",
+   "camera-move",
+   "depth-of-field",
+   "long-take"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "shader (volumetric smoke via buffers)",
+   "camera aperture (DOF)",
+   "post (grain, vignette, cinematic)",
+   "audio",
+   "GAP: volumetric smoke sim lit by a single key (no real fluid sim in engine)",
+   "GAP: stop-motion pose replacement on a 3D character"
+  ],
+  "awards": [
+   "Ciclope Festival 2024 Grand Prix",
+   "Ciclope 2024 Gold, Animation",
+   "D&AD Yellow Pencil, Animation",
+   "One Show Gold, Animation",
+   "ADC Gold, Animation",
+   "British Arrows Gold, Animation 2D/Stop-motion"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/1768666192-0fe5b0aceba4ad797284bd44fb42eed98ff03fd85a5e3e7e3197f5d09edc20de-d_1280",
+   "https://www.thisiscolossal.com/wp-content/uploads/2023/12/WWF_Up_in_Smoke_16_9_c.jpg",
+   "https://www.thisiscolossal.com/wp-content/uploads/2023/12/WWF_Up_in_Smoke_16_9_a.jpg",
+   "https://m.itsnicethat.com/original_images/nomint-wwf-up-in-smoke-animation-itsnicethat-05.jpg?class=w1440",
+   "https://m.itsnicethat.com/original_images/nomint-wwf-up-in-smoke-animation-itsnicethat-04.jpg?class=w1440",
+   "https://www.stashmedia.tv/wp-content/uploads/WWF-Up-in-Smoke-ad-Nomint-Stop-motion3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/award-shorts/nomint-wwf-up-in-smoke-2023.md"
+ },
+ {
+  "slug": "susser-hsi-save-ralph-2021",
+  "category": "award-shorts",
+  "title": "Save Ralph - A short film with Taika Waititi",
+  "studio": "Spencer Susser (writer/director); Arch Model Studio (Andy Gent); animation director: Tobias Fouracre",
+  "client": "Humane Society International (now Humane World for Animals)",
+  "year": 2021,
+  "url": "https://www.youtube.com/watch?v=G393z8s8nFY",
+  "alt_urls": [
+   "https://www.partizan.com/film/save-ralph",
+   "https://annecyfestival.com/about/archives/2022/award-winners"
+  ],
+  "length_s": 262,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stop-motion"
+  ],
+  "pace": "steady",
+  "palette": [
+   "cool",
+   "light",
+   "limited"
+  ],
+  "type_role": "none",
+  "mood": [
+   "emotional",
+   "witty",
+   "raw"
+  ],
+  "purpose": "short-film",
+  "techniques": [
+   "stop-motion-feel",
+   "depth-of-field",
+   "macro",
+   "hard-cut"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "scene3d",
+   "camera aperture (DOF)",
+   "post (cinematic)",
+   "audio",
+   "GAP: fur/felt puppet materials and practical-set lighting",
+   "GAP: facial performance (eyes) on puppets"
+  ],
+  "awards": [
+   "Annecy 2022 Cristal for a Commissioned Film"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/G393z8s8nFY/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/G393z8s8nFY/hq1.jpg",
+   "https://i.ytimg.com/vi/G393z8s8nFY/hq2.jpg",
+   "https://i.ytimg.com/vi/G393z8s8nFY/hq3.jpg",
+   "https://partizan.com/wp-content/uploads/2025/09/Tobias-Fouracre_Save-Ralph_Poster-480x608.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/award-shorts/susser-hsi-save-ralph-2021.md"
+ },
+ {
+  "slug": "will-anderson-pictoplasma-opener-2023",
+  "category": "award-shorts",
+  "title": "PICTOPLASMA OPENER 2023",
+  "studio": "Will Anderson / Wanderson Studio (director, animator)",
+  "client": "Pictoplasma (Berlin 2023)",
+  "year": 2023,
+  "url": "https://www.youtube.com/watch?v=a1EwwLFNQI0",
+  "alt_urls": [
+   "https://wanderson.xyz/portfolio/pictoplasma-2023-official-opener",
+   "https://www.annecyfestival.com/en/pictoplasma-opener-2023"
+  ],
+  "length_s": 72,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stylised-3d",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "mono",
+   "high-contrast",
+   "limited"
+  ],
+  "type_role": "none",
+  "mood": [
+   "witty",
+   "eerie",
+   "playful"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "long-take",
+   "camera-move",
+   "soft-body",
+   "sim"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "scene3d",
+   "scene3d model",
+   "camera",
+   "post (grain)",
+   "audio",
+   "GAP: hair/fur grooming and dynamics",
+   "GAP: performance capture driving a character rig"
+  ],
+  "awards": [
+   "Annecy 2024 Cristal for a Commissioned Film"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/a1EwwLFNQI0/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/a1EwwLFNQI0/hq1.jpg",
+   "https://i.ytimg.com/vi/a1EwwLFNQI0/hq2.jpg",
+   "https://i.ytimg.com/vi/a1EwwLFNQI0/hq3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/Pictoplasma-Berlin-2023-Opening-Will-Anderson2.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/award-shorts/will-anderson-pictoplasma-opener-2023.md"
+ },
+ {
+  "slug": "zambrano-ted-ed-accents-2019",
+  "category": "award-shorts",
+  "title": "\"Accents\" by Denice Frohman",
+  "studio": "Robertino Zambrano (director), KAPWA Studioworks (Sydney)",
+  "client": "TED-Ed (There's a Poem for That)",
+  "year": 2019,
+  "url": "https://www.youtube.com/watch?v=84ZcT1jDCjk",
+  "alt_urls": [
+   "https://ed.ted.com/lessons/accents-by-denice-frohman",
+   "https://www.annecyfestival.com/about/archives/2019/award-winners"
+  ],
+  "length_s": 153,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "frame-by-frame",
+   "2d-illustrated",
+   "kinetic-type"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "limited",
+   "warm"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "raw",
+   "emotional",
+   "energetic"
+  ],
+  "purpose": "short-film",
+  "techniques": [
+   "boil",
+   "grain",
+   "kinetic-type",
+   "morph",
+   "rhythmic-edit",
+   "beat-sync"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "text",
+   "text kinetic (scramble/mask)",
+   "shape",
+   "post.grain",
+   "shape wigglePath (boil)",
+   "audio",
+   "GAP: hand-drawn frame-by-frame animation and scratched/etched line texture"
+  ],
+  "awards": [
+   "Annecy 2019 Cristal for a Commissioned Film"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/84ZcT1jDCjk/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/84ZcT1jDCjk/hq1.jpg",
+   "https://i.ytimg.com/vi/84ZcT1jDCjk/hq2.jpg",
+   "https://i.ytimg.com/vi/84ZcT1jDCjk/hq3.jpg",
+   "https://www.stashmedia.tv/wp-content/uploads/2019-05-24_1027-640x360.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/award-shorts/zambrano-ted-ed-accents-2019.md"
+ }
+]

@@ -1,0 +1,440 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "intent": "fast",
+ "background": "#d8d2c4",
+ "fonts": {
+  "Anton": "fonts/Anton-Regular.ttf",
+  "IBM Plex Mono": "fonts/IBMPlexMono-Medium.ttf"
+ },
+ "theme": {
+  "colors": {
+   "paper": "#d8d2c4",
+   "ink": "#16130f",
+   "red": "#d7301f",
+   "yellow": "#f2c230",
+   "navy": "#0d2238",
+   "bone": "#efe9dc"
+  },
+  "fonts": {
+   "heading": "Anton",
+   "body": "Anton",
+   "mono": "IBM Plex Mono"
+  }
+ },
+ "music": {
+  "style": "orchestral",
+  "bpm": 120,
+  "key": "Dm",
+  "mood": "stormy dramatic"
+ },
+ "post": {
+  "grain": 0.04,
+  "grainSize": 1.3,
+  "vignette": 0.15
+ },
+ "scenes": [
+  {
+   "id": "poster",
+   "duration": 11,
+   "camera": {
+    "animate": [
+     {
+      "keyframes": {
+       "zoom": [
+        [
+         0,
+         1.9
+        ],
+        [
+         0.12,
+         1.9
+        ],
+        [
+         0.121,
+         1.35
+        ],
+        [
+         0.26,
+         1.35
+        ],
+        [
+         0.261,
+         2.3
+        ],
+        [
+         0.4,
+         2.3
+        ],
+        [
+         0.401,
+         1.25
+        ],
+        [
+         0.55,
+         1.25
+        ],
+        [
+         0.551,
+         1.7
+        ],
+        [
+         0.68,
+         1.7
+        ],
+        [
+         0.681,
+         1.0
+        ],
+        [
+         1,
+         1.0
+        ]
+       ],
+       "x": [
+        [
+         0,
+         -200
+        ],
+        [
+         0.12,
+         -200
+        ],
+        [
+         0.121,
+         140
+        ],
+        [
+         0.26,
+         140
+        ],
+        [
+         0.261,
+         420
+        ],
+        [
+         0.4,
+         420
+        ],
+        [
+         0.401,
+         -140
+        ],
+        [
+         0.55,
+         -140
+        ],
+        [
+         0.551,
+         280
+        ],
+        [
+         0.68,
+         280
+        ],
+        [
+         0.681,
+         0
+        ],
+        [
+         1,
+         0
+        ]
+       ],
+       "y": [
+        [
+         0,
+         -70
+        ],
+        [
+         0.12,
+         -70
+        ],
+        [
+         0.121,
+         20
+        ],
+        [
+         0.26,
+         20
+        ],
+        [
+         0.261,
+         -210
+        ],
+        [
+         0.4,
+         -210
+        ],
+        [
+         0.401,
+         100
+        ],
+        [
+         0.55,
+         100
+        ],
+        [
+         0.551,
+         220
+        ],
+        [
+         0.68,
+         220
+        ],
+        [
+         0.681,
+         0
+        ],
+        [
+         1,
+         0
+        ]
+       ]
+      },
+      "duration": 11,
+      "ease": "linear"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "x": 960,
+     "y": 540,
+     "width": 1920,
+     "height": 1080,
+     "pattern": {
+      "kind": "lines",
+      "spacing": 9,
+      "mark": 0.12,
+      "angle": 20
+     },
+     "fill": "#b9b2a2",
+     "opacity": 0.35
+    },
+    {
+     "shader": "ocean",
+     "uniforms": {
+      "sun": 0.85,
+      "swell": 1.4,
+      "speed": 1.6
+     },
+     "supersample": false,
+     "x": 900,
+     "y": 470,
+     "width": 1180,
+     "height": 760,
+     "rotation": -4,
+     "gradientMap": [
+      "#0d2238",
+      "#3f5a6e",
+      "#efe9dc"
+     ],
+     "posterize": 4,
+     "toneRange": [
+      0.12,
+      0.8
+     ],
+     "cutout": {
+      "edge": "torn",
+      "amount": 22,
+      "rim": 10,
+      "rimColor": "#efe9dc",
+      "seed": 3
+     },
+     "animate": [
+      {
+       "from": {
+        "scale": 1.12,
+        "rotation": 2,
+        "opacity": 0
+       },
+       "duration": 0.3,
+       "ease": "outBack"
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "x": 1330,
+     "y": 300,
+     "width": 380,
+     "height": 380,
+     "fill": "$red",
+     "blend": "multiply",
+     "inkTexture": {
+      "amount": 0.25,
+      "seed": 4
+     },
+     "start": 1.33,
+     "animate": [
+      {
+       "from": {
+        "scale": 1.3,
+        "opacity": 0
+       },
+       "duration": 0.25,
+       "ease": "outBack"
+      }
+     ]
+    },
+    {
+     "shader": "hero",
+     "uniforms": {
+      "shape": 3,
+      "metal": 1,
+      "rough": 0.15,
+      "background": [
+       0.05,
+       0.05,
+       0.06
+      ],
+      "speed": 1.5,
+      "size": 1.7
+     },
+     "supersample": false,
+     "x": 1330,
+     "y": 630,
+     "width": 560,
+     "height": 560,
+     "rotation": 6,
+     "start": 2.86,
+     "duotone": [
+      "#16130f",
+      "#f2c230"
+     ],
+     "toneRange": [
+      0.03,
+      0.4
+     ],
+     "halftone": {
+      "cell": 10,
+      "angle": 15,
+      "ink": "source"
+     },
+     "cutout": {
+      "edge": "scissor",
+      "amount": 26,
+      "rim": 0,
+      "seed": 8
+     },
+     "animate": [
+      {
+       "from": {
+        "scale": 1.15,
+        "rotation": 14,
+        "opacity": 0
+       },
+       "duration": 0.3,
+       "ease": "outBack"
+      }
+     ]
+    },
+    {
+     "type": "group",
+     "x": 600,
+     "y": 860,
+     "width": 1000,
+     "height": 330,
+     "rotation": -2,
+     "start": 4.4,
+     "cutout": {
+      "edge": "scissor",
+      "amount": 14,
+      "rim": 0,
+      "seed": 12
+     },
+     "animate": [
+      {
+       "from": {
+        "scale": 1.2,
+        "rotation": -9,
+        "opacity": 0
+       },
+       "duration": 0.28,
+       "ease": "outBack"
+      }
+     ],
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 500,
+       "y": 165,
+       "width": 1000,
+       "height": 330,
+       "fill": "$yellow",
+       "inkTexture": {
+        "amount": 0.18,
+        "seed": 9
+       }
+      },
+      {
+       "x": 500,
+       "y": 172,
+       "text": "THE TEMPEST",
+       "size": 186,
+       "lineHeight": 0.9,
+       "letterSpacing": "-0.01em",
+       "color": "$ink",
+       "width": 990
+      }
+     ]
+    },
+    {
+     "x": 1560,
+     "y": 1010,
+     "text": "Harbour Theatre\n12 Mar — 30 Apr",
+     "font": "$mono",
+     "size": 30,
+     "lineHeight": 1.3,
+     "align": "left",
+     "color": "$ink",
+     "start": 6.0,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.15
+     }
+    },
+    {
+     "x": 230,
+     "y": 110,
+     "text": "W. SHAKESPEARE",
+     "font": "$mono",
+     "size": 28,
+     "letterSpacing": "0.12em",
+     "color": "$ink",
+     "start": 7.4,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.15
+     }
+    },
+    {
+     "shape": "rect",
+     "x": 1640,
+     "y": 150,
+     "width": 220,
+     "height": 54,
+     "rotation": 8,
+     "fill": "#e8e0c8",
+     "opacity": 0.85,
+     "start": 7.4,
+     "cutout": {
+      "edge": "torn",
+      "amount": 6,
+      "rim": 0,
+      "shadow": false,
+      "seed": 21
+     },
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.1
+     }
+    }
+   ]
+  }
+ ]
+}
