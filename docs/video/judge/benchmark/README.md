@@ -8,6 +8,7 @@
 | `bench.py verify [slug…]` | Re-check each URL through Vimeo/YouTube oEmbed (title and channel), or the page status for studio pages. |
 | `bench.py fetch [slug…]` | Download the piece's official stills into the cache: YouTube's own frames (`maxresdefault`, `hq1–3` at 25/50/75%), the Vimeo poster frame, and the studio/press stills listed in `stills:`. |
 | `bench.py match --spec s.json [--analysis a.json] [--tags "k=v …"] [--text "…"] [-n 3] [--json]` | Profile our video (aspect, pace, medium, type role, palette, purpose) and rank the set; returns the 3 most relevant references from different studios, with reasons and the stills folder. |
+| `bench.py export --out DIR [slug…]` | Write the JUDGE layout: `DIR/index.json` (slug, title, studio, year, url, format, category, style_tags, pace, measured) and `DIR/<slug>/01.jpg…` copied from the cache (run `fetch` first). From Python: `sys.path.insert(0, "docs/video/judge/benchmark/tools"); from bench import match_refs; match_refs(spec="s.json", analysis=None, tags=None, text=None, n=3)`. |
 | `bench.py stats` | Counts and distributions across the set (feeds `WHAT-WORLD-CLASS-LOOKS-LIKE.md`). |
 | `bench.py measure <slug> <clip>` | Run `anikit-video analyze` on a legitimately obtained clip, store the key stats in `measured.json` and a contact sheet in the cache. |
 

@@ -6,6 +6,7 @@
     python3 docs/video/judge/benchmark/tools/bench.py fetch [slug..]   # download official stills into the cache
     python3 docs/video/judge/benchmark/tools/bench.py match --spec our.json [--analysis our.analysis.json]
                                           [--tags "medium=3d-cg pace=fast purpose=launch"] [--text "..."] [-n 3]
+    python3 docs/video/judge/benchmark/tools/bench.py export --out DIR  # JUDGE layout: DIR/index.json + DIR/<slug>/01.jpg…
     python3 docs/video/judge/benchmark/tools/bench.py stats            # numbers for WHAT-WORLD-CLASS-LOOKS-LIKE.md
     python3 docs/video/judge/benchmark/tools/bench.py measure slug clip.mp4   # run `anikit-video analyze`, store stats
 
@@ -420,16 +421,16 @@ def score(pr, p):
     return s, why
 
 
-def cmd_match(a):
+def build_profile(spec=None, analysis=None, tags=None, text=None):
     pr = {k: set() for k in ("medium", "palette", "mood", "techniques", "purpose", "audio")}
-    if a.spec:
-        pr = profile_from_spec(a.spec)
-    if a.analysis:
-        pr = profile_from_analysis(a.analysis, pr)
-    if a.tags:
-        pr = profile_from_tags(a.tags, pr)
-    if a.text:
-        words = set(re.findall(r"[a-z0-9-]+", a.text.lower()))
+    if spec:
+        pr = profile_from_spec(spec)
+    if analysis:
+        pr = profile_from_analysis(analysis, pr)
+    if tags:
+        pr = profile_from_tags(tags, pr)
+    if text:
+        words = set(re.findall(r"[a-z0-9-]+", text.lower()))
         pr.setdefault("words", set()).update(words)
         vocab = {"3d": ("medium", "3d-cg"), "cg": ("medium", "3d-cg"), "vertical": ("aspect", "9:16"), "launch": ("purpose", "launch"),
                  "explainer": ("purpose", "explainer"), "title": ("purpose", "title-sequence"), "ident": ("purpose", "ident"),
@@ -442,6 +443,11 @@ def cmd_match(a):
                 if k == "aspect": pr[k] = v
                 else: pr.setdefault(k, set()).add(v)
             if w in PACE: pr["pace"] = w
+    return pr
+
+
+def rank(pr, n=3):
+    """Top n pieces for a profile, at most one per studio: [(score, reasons, piece)]."""
     pieces = load(require_cache=True)
     ranked = sorted(((score(pr, p), p) for p in pieces), key=lambda x: -x[0][0])
     picked, studios = [], set()
@@ -450,8 +456,44 @@ def cmd_match(a):
         if st and st in studios:
             continue
         picked.append((sc, why, p)); studios.add(st)
-        if len(picked) >= a.n:
+        if len(picked) >= n:
             break
+    return picked
+
+
+def match_refs(spec=None, analysis=None, tags=None, text=None, n=3):
+    """Importable API for the judge. Returns [{slug, title, studio, year, url, category, score, why, file}]."""
+    pr = build_profile(spec, analysis, tags, text)
+    return [dict(slug=p["slug"], title=p["title"], studio=p.get("studio"), year=p.get("year"), url=p.get("url"),
+                 category=p["category"], score=round(sc, 2), why=why, file=p["path"]) for sc, why, p in rank(pr, n)]
+
+
+def style_tags(p):
+    return sorted(set([p["category"]] + p["medium"] + p["palette"] + p["mood"] + p["techniques"]
+                      + [x for x in (p.get("pace"), p.get("purpose"), p.get("audio"), "type-" + str(p.get("type_role"))) if x]))
+
+
+def cmd_export(a):
+    """Write the JUDGE's layout: <out>/index.json + <out>/<slug>/01.jpg… from the cached stills (fetch first)."""
+    import shutil
+    out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
+    idx = []
+    for p in _select(load(), a.slugs):
+        src = CACHE / p["slug"]
+        imgs = sorted(f for f in src.glob("*") if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")) if src.is_dir() else []
+        d = out / p["slug"]; d.mkdir(exist_ok=True)
+        for i, f in enumerate(imgs[:8], 1):
+            shutil.copyfile(f, d / f"{i:02d}{f.suffix.lower()}")
+        idx.append(dict(slug=p["slug"], title=p["title"], studio=p.get("studio"), year=p.get("year"), url=p.get("url"),
+                        format=p.get("aspect"), category=p["category"], style_tags=style_tags(p), pace=p.get("pace"),
+                        length_s=p.get("length_s"), file=p["path"], frames=len(imgs[:8]), measured=p.get("measured")))
+    (out / "index.json").write_text(json.dumps(idx, indent=1, ensure_ascii=False) + "\n")
+    print(f"{len(idx)} refs → {out}  ({sum(1 for r in idx if r['frames'])} with frames)")
+
+
+def cmd_match(a):
+    pr = build_profile(a.spec, a.analysis, a.tags, a.text)
+    picked = rank(pr, a.n)
     shown = {k: (sorted(v) if isinstance(v, set) else v) for k, v in pr.items() if v}
     if a.json:
         print(json.dumps({"profile": shown, "references": [
@@ -525,6 +567,7 @@ def main():
     s.add_argument("--spec"); s.add_argument("--analysis"); s.add_argument("--tags"); s.add_argument("--text")
     s.add_argument("-n", type=int, default=3); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_match)
     sub.add_parser("stats").set_defaults(f=cmd_stats)
+    s = sub.add_parser("export"); s.add_argument("--out", required=True); s.add_argument("slugs", nargs="*"); s.set_defaults(f=cmd_export)
     s = sub.add_parser("measure"); s.add_argument("slug"); s.add_argument("clip"); s.set_defaults(f=cmd_measure)
     a = ap.parse_args()
     a.f(a)
