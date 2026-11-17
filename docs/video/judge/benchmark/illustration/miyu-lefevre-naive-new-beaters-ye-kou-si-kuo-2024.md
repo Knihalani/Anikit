@@ -6,7 +6,7 @@ studio: "Miyu Productions (director: Lola Lefèvre; producers: Pierre Baussaron,
 client: "Naive New Beaters / Star Feminine Band"
 year: 2024
 url: https://www.youtube.com/watch?v=1SXCE5NB4WA
-alt_urls: [https://www.annecyfestival.com/en/archives/2025/the-festival/2025-official-selection/2025-commissioned-films/naive-new-beaters-star-feminine-band-ye-kou-si-kuo]
+alt_urls: ["https://www.annecyfestival.com/en/archives/2025/the-festival/2025-official-selection/2025-commissioned-films/naive-new-beaters-star-feminine-band-ye-kou-si-kuo"]
 length_s: 148
 verified: oembed
 aspect: "16:9"
@@ -25,6 +25,7 @@ stills:
   - https://i.ytimg.com/vi/1SXCE5NB4WA/hq1.jpg
   - https://i.ytimg.com/vi/1SXCE5NB4WA/hq2.jpg
   - https://i.ytimg.com/vi/1SXCE5NB4WA/hq3.jpg
+  - https://www.cartoonbrew.com/wp-content/uploads/2024/04/yekousikuo_lefevre-1.jpg
 measured: null
 ---
 
