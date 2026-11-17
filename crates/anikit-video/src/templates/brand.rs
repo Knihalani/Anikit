@@ -140,20 +140,31 @@ impl Brand {
             color::mix(t, bg, 0.04)
         });
         let secondary = p(&self.colors.secondary).unwrap_or_else(|| color::hue_shift(primary, -20.0));
+        // Text sits on the brand mesh too, so check against its brightest blobs
+        // (primary and secondary blends, as measured by `critique --render`).
+        let blob = |c: color::C| color::mix(bg, c, 0.6);
+        let (mp, ms) = (blob(primary), blob(secondary));
+        let mesh = if color::contrast(mp, text) < color::contrast(ms, text) { mp } else { ms };
+        const MESH_MIN: f64 = 4.5;
         let accent = p(&self.colors.accent).unwrap_or_else(|| {
             // The primary, lifted toward the text colour until small labels read (≥ 4.5:1).
             let mut c = primary;
             let mut k = 0.0;
-            // Text sits on the brand mesh too, so check against the mesh's brightest blend.
-            let mesh = color::mix(bg, primary, 0.45);
-            while (color::contrast(c, bg) < 4.6 || color::contrast(c, mesh) < 3.2) && k < 1.0 {
+            while (color::contrast(c, bg) < 4.6 || color::contrast(c, mesh) < MESH_MIN) && k < 1.0 {
                 k += 0.05;
                 c = color::mix(primary, text, k);
             }
             c
         });
         let surface = p(&self.colors.surface).unwrap_or_else(|| color::mix(bg, text, if light { 0.04 } else { 0.07 }));
-        let muted = p(&self.colors.muted).unwrap_or_else(|| color::mix(text, bg, 0.28));
+        let muted = p(&self.colors.muted).unwrap_or_else(|| {
+            // Text mixed toward the background, but still ≥ 4.5:1 on the mesh.
+            let mut k = 0.28;
+            while color::contrast(color::mix(text, bg, k), mesh) < MESH_MIN && k > 0.04 {
+                k -= 0.02;
+            }
+            color::mix(text, bg, k)
+        });
         let h = color::to_hex;
         let name = self.name.clone().unwrap_or_else(|| "Your Product".into());
         json!({
