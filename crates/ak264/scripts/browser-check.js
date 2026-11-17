@@ -9,6 +9,7 @@ const path = require('path');
 const file = path.resolve(process.argv[2] || 'out.mp4');
 const server = http.createServer((req, res) => {
   if (req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end('<video src="/v.mp4" playsinline muted></video>');
   } else {
     res.writeHead(200, { 'Content-Type': 'video/mp4' });
