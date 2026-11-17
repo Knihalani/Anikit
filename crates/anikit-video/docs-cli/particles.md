@@ -11,7 +11,7 @@
 
 - Up to 20 M particles. `emit`: a shape (`point sphere ball box disc`), any object (text, torus…), an image or a composition (pixels → coloured points).
 - Forces: `flow` (curl noise), `attractors` (`pos`, `strength`, `swirl`), `gravity`, `drag`; `target` assembles particles into a shape between `from`/`to`.
-- Look: `blend: add` (glowing light) or `over` (dust, sand, smoke: lit, self-shadowed volumes); `colorBy: age|speed|height|source`; `stretch` streaks.
+- Look: `blend: add` (glowing light) or `over` (dust, sand, smoke: lit, self-shadowed volumes); `colorBy: age|speed|height|source`; `stretch` streaks; `"trail": 0.6` (or `{ "length", "taper", "opacity" }`) draws light trails along each particle's real past path, best with 1–10 k `add` particles (examples/video/sim/trails.json).
 - **Make anything: expressions** of `x y z vx vy vz t age i` (+ `sin noise rand mix clamp`…):
   - `"force": "=[-z*2, 0.4, x*2]"` is a custom acceleration field (a vortex here);
   - `"emit": { "pos": "=[cos(rand(i)*6.28), 0, sin(rand(i)*6.28)]", "vel": "=[0, 1, 0]" }` is a custom spawn rule;

@@ -39,6 +39,7 @@ PACE = ROOT / "docs/video/quality/pace.py"
 DIMS = ["idea", "composition", "typography", "colour", "light_texture", "motion", "craft", "originality"]
 CRITIC_DIMS = ["motion", "sound", "craft"]
 N_FRAMES = 6
+MIN_FRAMES = int(os.environ.get("JUDGE_MIN_FRAMES", 4))  # refs need this many real frames
 CELL = (480, 300)
 MODEL = os.environ.get("JUDGE_MODEL", "claude-opus-5-5")
 
@@ -151,7 +152,7 @@ def load_refs():
         for r in refs.values():
             if r["slug"] in seen or not (d / r["slug"]).is_dir():
                 continue
-            if len(list((d / r["slug"]).glob("0*.jpg"))) < 3:
+            if len(list((d / r["slug"]).glob("0*.jpg"))) < MIN_FRAMES:
                 continue
             tags = list(r.get("style_tags", []))
             if r.get("category"):

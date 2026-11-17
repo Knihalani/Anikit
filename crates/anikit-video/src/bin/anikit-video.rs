@@ -96,15 +96,10 @@ fn load(path: &str) -> Result<(spec::Parsed, PathBuf), Vec<Diagnostic>> {
 }
 
 fn options(spec: &spec::Spec, base: &Path, load_assets: bool) -> (Options, Vec<Diagnostic>) {
+    // The spec's `fonts` map (files, keys as aliases) is loaded by the compiler.
+    let _ = spec;
     let fonts = anikit_video::text::FontStore::new();
-    let mut d = Vec::new();
-    if let Some(f) = &spec.fonts {
-        for (name, file) in f {
-            if let Err(e) = fonts.add_font_file(base.join(file)) {
-                d.push(Diagnostic::error(format!("fonts.{name}"), format!("can't load {file}: {e}")));
-            }
-        }
-    }
+    let d = Vec::new();
     (Options { base_dir: base.to_path_buf(), fonts: Some(Arc::new(fonts)), load_assets, assets: None }, d)
 }
 
@@ -254,6 +249,16 @@ fn index_of(a: &[serde_json::Value], seg: &str) -> Option<usize> {
 }
 
 fn main() -> ExitCode {
+    // `anikit-video … | head` closes the pipe early: exit quietly instead of
+    // panicking with a backtrace into the caller's output.
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let msg = info.payload().downcast_ref::<String>().map(String::as_str).or_else(|| info.payload().downcast_ref::<&str>().copied()).unwrap_or("");
+        if msg.contains("Broken pipe") {
+            std::process::exit(0);
+        }
+        default_hook(info);
+    }));
     // Agent commands (new, templates, prompt, critique, preview, mcp) live in the library.
     let raw: Vec<String> = std::env::args().skip(1).collect();
     // `<command> --help` (or -h) prints that command's usage and succeeds, so

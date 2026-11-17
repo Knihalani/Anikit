@@ -240,6 +240,7 @@ pub fn scale_list(dl: &mut DisplayList, s: f32) {
                     }
                     dl::Filter::Glow { radius, .. } => *radius *= s,
                     dl::Filter::Halftone(h) => h.cell *= s,
+                    dl::Filter::Ink { scale, .. } => *scale *= s,
                     dl::Filter::ColorMatrix(_) | dl::Filter::Tone(_) => {}
                 }
             }
@@ -784,6 +785,13 @@ fn straight(pm: &crate::render::FrameRgba) -> (u32, u32, Vec<u8>) {
 /// Save straight RGBA8 as PNG.
 pub fn save_png(path: &std::path::Path, w: u32, h: u32, rgba: Vec<u8>) -> Result<(), String> {
     let img = image::RgbaImage::from_raw(w, h, rgba).ok_or("bad image buffer")?;
+    // JPEG has no alpha: write RGB (quality 92) when asked for .jpg.
+    if path.extension().is_some_and(|e| e.eq_ignore_ascii_case("jpg") || e.eq_ignore_ascii_case("jpeg")) {
+        let rgb = image::DynamicImage::ImageRgba8(img).to_rgb8();
+        let f = std::fs::File::create(path).map_err(|e| format!("can't write {}: {e}", path.display()))?;
+        let mut enc = image::codecs::jpeg::JpegEncoder::new_with_quality(std::io::BufWriter::new(f), 92);
+        return enc.encode_image(&rgb).map_err(|e| format!("can't write {}: {e}", path.display()));
+    }
     img.save(path).map_err(|e| format!("can't write {}: {e}", path.display()))
 }
 
