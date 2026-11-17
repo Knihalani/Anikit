@@ -438,3 +438,32 @@ fn texel_fetch_inline_matches_reference() {
     let out = s.render_f32(&f);
     assert_eq!(out[4], t.fetch(0, 0, 1));
 }
+
+#[test]
+fn disk_cache_round_trip_renders_identically() {
+    let dir = std::env::temp_dir().join(format!("anikit-shader-cache-test-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::env::set_var("ANIKIT_SHADER_CACHE", &dir);
+    // Samples a texture too, so the patched call addresses are exercised.
+    let src = "uniform float k; // = 0.25\nvoid mainImage(out vec4 c, in vec2 p) { vec2 uv = p / iResolution.xy; c = texture(iChannel0, uv * 1.7) * k + vec4(sin(uv.x * 9.0 + iTime), 0.0, 0.0, 1.0); for (int i = 0; i < 3; i++) c.g += texelFetch(iChannel0, ivec2(p) + ivec2(i), 0).r * 0.1; }";
+    let tex = Texture::from_f32(5, 3, (0..15).map(|i| [i as f32 / 15.0, 0.5, 1.0 - i as f32 / 15.0, 1.0]).collect());
+    let render = |s: &Shader| {
+        let mut f = Frame::new(33, 17, 0.7);
+        f.channels[0] = Some(&tex);
+        s.render_f32(&f)
+    };
+    let a = Shader::compile(src).unwrap();
+    let files: Vec<_> = std::fs::read_dir(&dir).map(|d| d.flatten().collect()).unwrap_or_default();
+    assert!(!files.is_empty(), "the first compile writes the cache");
+    let b = Shader::compile(src).unwrap(); // loaded from disk
+    assert_eq!(a.insts, b.insts);
+    assert_eq!(render(&a), render(&b));
+    // A corrupt entry is ignored (compiled afresh), never trusted.
+    for f in &files {
+        std::fs::write(f.path(), b"AKSHJIT1garbage").unwrap();
+    }
+    let c = Shader::compile(src).unwrap();
+    assert_eq!(render(&a), render(&c));
+    std::env::remove_var("ANIKIT_SHADER_CACHE");
+    let _ = std::fs::remove_dir_all(&dir);
+}

@@ -150,6 +150,8 @@ struct State {
     /// Frame-space position of the current context's pixel (0, 0).
     org: (i32, i32),
     frame_size: (u32, u32),
+    /// Scratch for strokes clipped to the view.
+    clip_path: BezPath,
     frame_no: u64,
     path: BezPath,
     lens: Vec<f64>,
@@ -180,6 +182,8 @@ pub struct Renderer {
     motion_acc: Vec<f32>,
     motion_tmp: Vec<f32>,
     grain: Vec<grain::Grain>,
+    /// The background colour as a 2×2 backdrop (RGBA8), reused while it stays.
+    bg_pix: Option<([u8; 4], Arc<Pixmap>)>,
     motion_brute: bool,
     quality: Quality,
     /// Low-res backdrop as Y, Cb, Cr planes (fused backdrop → YUV path).
@@ -218,6 +222,7 @@ impl Renderer {
             motion_acc: Vec::new(),
             motion_tmp: Vec::new(),
             grain: Vec::new(),
+            bg_pix: None,
             motion_brute: false,
             quality: Quality::Standard,
             box_rects: Vec::new(),
@@ -242,6 +247,7 @@ impl Renderer {
                 up: upscale::Upscaler::cubic(),
                 org: (0, 0),
                 frame_size: (1, 1),
+                clip_path: BezPath::new(),
                 frame_no: 0,
                 path: BezPath::new(),
                 lens: Vec::new(),
@@ -500,8 +506,28 @@ impl Renderer {
             backdrop = Some((n_smooth - 1, lo, Rect::new(0.0, 0.0, w as f64, h as f64)));
             from_smooth = true;
         }
+        // An opaque background colour is a backdrop too: YUV planes and RGBA
+        // boxes start from it directly instead of a full-frame clear and convert.
+        if backdrop.is_none() && !blends && list.background.0[3] >= 1.0 && !st.reference {
+            let c = color(list.background).to_rgba8().to_u8_array();
+            let pix = match &self.bg_pix {
+                Some((k, p)) if *k == c => p.clone(),
+                _ => {
+                    let mut p = Pixmap::new(2, 2);
+                    for px in p.data_as_u8_slice_mut().chunks_exact_mut(4) {
+                        px.copy_from_slice(&c);
+                    }
+                    p.set_may_have_transparency(false);
+                    let p = Arc::new(p);
+                    self.bg_pix = Some((c, p.clone()));
+                    p
+                }
+            };
+            // `usize::MAX`: no op is hidden (k + 1 wraps to 0).
+            backdrop = Some((usize::MAX, pix, Rect::new(0.0, 0.0, w as f64, h as f64)));
+        }
         let (ops, skip) = match &backdrop {
-            Some((k, _, _)) => (&list.ops[k + 1..], k + 1),
+            Some((k, _, _)) => (&list.ops[k.wrapping_add(1)..], k.wrapping_add(1)),
             None => (list_ops, 0),
         };
         let settings = if backdrop.is_some() { RasterizerSettings { target_init: TargetInit::SrcOver, ..Default::default() } } else { settings };
@@ -1504,6 +1530,91 @@ fn set_paint(ctx: &mut RenderContext, assets: &View, paint: &Paint) -> bool {
     true
 }
 
+/// The parts of `path` that can reach `r` (local coordinates): line segments
+/// clipped to it exactly, curves whose control hull misses it dropped. Joins
+/// and caps only move to points outside `r`, which the caller inflates by
+/// the stroke's reach, so the visible pixels are unchanged.
+fn clip_stroke_path(path: &BezPath, r: Rect, out: &mut BezPath) {
+    use kurbo::{PathEl, Point};
+    out.truncate(0);
+    let (mut cur, mut start) = (Point::ZERO, Point::ZERO);
+    // Whether `out` currently ends at `cur`, and whether this subpath is still whole.
+    let (mut down, mut whole) = (false, true);
+    let line = |a: Point, b: Point| -> Option<(Point, Point)> {
+        // Liang–Barsky.
+        let (dx, dy) = (b.x - a.x, b.y - a.y);
+        let (mut t0, mut t1) = (0.0f64, 1.0f64);
+        for (p, q) in [(-dx, a.x - r.x0), (dx, r.x1 - a.x), (-dy, a.y - r.y0), (dy, r.y1 - a.y)] {
+            if p == 0.0 {
+                if q < 0.0 {
+                    return None;
+                }
+            } else {
+                let t = q / p;
+                if p < 0.0 {
+                    t0 = t0.max(t);
+                } else {
+                    t1 = t1.min(t);
+                }
+            }
+        }
+        (t0 <= t1).then(|| (a + (b - a) * t0, a + (b - a) * t1))
+    };
+    let hull = |pts: &[Point]| pts.iter().fold(Rect::from_points(pts[0], pts[0]), |acc, p| acc.union_pt(*p));
+    for el in path.elements() {
+        match *el {
+            PathEl::MoveTo(p) => {
+                (cur, start, down, whole) = (p, p, false, true);
+            }
+            PathEl::LineTo(p) => {
+                match line(cur, p) {
+                    Some((a, b)) => {
+                        if !down || a != cur {
+                            out.move_to(a);
+                        }
+                        out.line_to(b);
+                        down = b == p;
+                        whole &= a == cur && b == p;
+                    }
+                    None => (down, whole) = (false, false),
+                }
+                cur = p;
+            }
+            PathEl::QuadTo(c, p) | PathEl::CurveTo(c, _, p) => {
+                let pts: Vec<Point> = match *el {
+                    PathEl::QuadTo(..) => vec![cur, c, p],
+                    PathEl::CurveTo(c1, c2, _) => vec![cur, c1, c2, p],
+                    _ => unreachable!(),
+                };
+                if hull(&pts).overlaps(r) || r.contains(cur) || r.contains(p) {
+                    if !down {
+                        out.move_to(cur);
+                    }
+                    match *el {
+                        PathEl::QuadTo(..) => out.quad_to(c, p),
+                        _ => out.curve_to(pts[1], pts[2], p),
+                    }
+                    down = true;
+                } else {
+                    (down, whole) = (false, false);
+                }
+                cur = p;
+            }
+            PathEl::ClosePath => {
+                if whole && down {
+                    out.close_path();
+                } else if let Some((a, b)) = line(cur, start) {
+                    if !down || a != cur {
+                        out.move_to(a);
+                    }
+                    out.line_to(b);
+                }
+                (cur, down, whole) = (start, false, true);
+            }
+        }
+    }
+}
+
 fn el_points(el: &kurbo::PathEl) -> impl Iterator<Item = kurbo::Point> {
     use kurbo::PathEl::*;
     let v: [Option<kurbo::Point>; 3] = match *el {
@@ -1574,17 +1685,35 @@ fn draw_op(st: &mut State, assets: &View, ctx: &mut RenderContext, op: &Op, base
                 let pat = (0..reps).flat_map(|_| stroke.dash.iter().map(|d| d.max(0.0) as f64));
                 ks = ks.with_dashes(stroke.dash_offset as f64, pat);
             }
+            let dashed = ks.dash_pattern.iter().any(|d| *d > 0.0);
             ctx.set_stroke(ks);
-            ctx.set_transform(base * affine(transform));
+            ctx.set_transform(t);
             let [t0, t1] = stroke.trim;
-            if t0 <= 0.0 && t1 >= 1.0 {
-                ctx.stroke_path(path);
-            } else {
+            let trimmed = !(t0 <= 0.0 && t1 >= 1.0);
+            if trimmed {
                 trim::trim_path(path, t0, t1, &mut st.path, &mut st.lens);
-                if !st.path.is_empty() {
-                    ctx.stroke_path(&st.path);
+                if st.path.is_empty() {
+                    return;
                 }
             }
+            let p = if trimmed { &st.path } else { path };
+            // Strokes reaching far off-screen (perspective grids, long guides):
+            // clip them to the view first; vello pays for every off-screen pixel row.
+            let reach = stroke.width as f64 * 0.5 * scale * if stroke.join == 0 { stroke.miter_limit.max(1.0) as f64 } else { 1.0 } * std::f64::consts::SQRT_2 + 2.0;
+            let view = Rect::new(0.0, 0.0, ctx.width() as f64, ctx.height() as f64).inflate(reach, reach);
+            let dev = t.transform_rect_bbox(p.bounding_box());
+            if !dashed && (dev.width() > 4.0 * view.width() || dev.height() > 4.0 * view.height()) && !view.contains_rect(dev) {
+                if let Some(inv) = invert(t) {
+                    let mut out = std::mem::take(&mut st.clip_path);
+                    clip_stroke_path(p, inv.transform_rect_bbox(view), &mut out);
+                    if !out.is_empty() {
+                        ctx.stroke_path(&out);
+                    }
+                    st.clip_path = out;
+                    return;
+                }
+            }
+            ctx.stroke_path(p);
         }
         Op::RoundRect { x, y, w, h, radius, paint, transform } => {
             if *w <= 0.0 || *h <= 0.0 || !set_paint(ctx, assets, paint) {

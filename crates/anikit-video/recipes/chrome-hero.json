@@ -1,6 +1,6 @@
 {
  "about": "Ray-traced chrome wordmark on a studio set: glossy floor, glass and gold accents, a slow dolly with real depth of field. Change the text, materials and camera keys.",
- "cost": "renders in about 40 s at 1080p on 4 cores",
+ "cost": "draft ~40 s, final ~160 s (1080p, 4 cores)",
  "spec": {
   "size": "16:9",
   "post": {

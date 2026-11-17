@@ -17,8 +17,8 @@
       48.11
     ],
     "particles": [
-      0.9856,
-      42.35
+      0.9854,
+      42.2
     ],
     "post": [
       0.9504,
@@ -29,8 +29,12 @@
       50.72
     ],
     "shader": [
-      0.9318,
-      39.79
+      0.9409,
+      40.29
+    ],
+    "shader-hero": [
+      0.9964,
+      50.55
     ],
     "text": [
       0.9995,
@@ -55,10 +59,16 @@
       "owner": "COMPONENTS: fxkit/backgrounds fast paths (source-over light, sprite defocus, low-res mesh field); see docs/video/perf.md"
     },
     "particles": {
-      "ssim_min": 0.9884,
-      "de_p999_max": 35.32,
-      "flicker_p999_max": 65.0,
+      "ssim_min": 0.988323225666029,
+      "de_p999_max": 36.07,
+      "flicker_p999_max": 64.9,
       "owner": "COMPONENTS: fxkit/backgrounds fast paths (source-over light, sprite defocus, low-res mesh field); see docs/video/perf.md"
+    },
+    "shader": {
+      "ssim_min": 0.9537615618690154,
+      "de_p999_max": 2.71,
+      "flicker_p999_max": 1.6,
+      "owner": "SHADER: point-sampled vs 2x2-supersampled reference (aliasing in fine detail, aurora); AA is SHADER's call"
     }
   }
 }

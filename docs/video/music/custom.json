@@ -1,0 +1,18 @@
+{
+  "bpm": 122, "key": "Am", "length": "16s", "seed": 1,
+  "define": {
+    "acidish": {"synth": {"osc": [{"wave": "square", "pw": 0.45}, {"wave": "saw", "voices": 2, "detune": 9, "level": 0.5}],
+                          "filter": {"type": "ladder", "cutoff": 500, "res": 0.65, "drive": 2, "env": 2.5},
+                          "fenv": [0.002, 0.18, 0.0, 0.1], "amp": [0.002, 0.25, 0.6, 0.08], "mono": true, "glide": 0.04}},
+    "glass": {"synth": {"base": "pad-glass", "lfo": {"rate": 0.3, "cutoff": 0.6}, "amp": [1.2, 1, 0.8, 2.5]}}
+  },
+  "tracks": [
+    {"inst": "drums:909", "drums": {"kick": "x...x...x...x...", "clap": "....x.......x...", "hat": "..x...x...x...x."}, "bars": 8,
+     "fx": [{"type": "comp", "threshold": -14, "ratio": 4}]},
+    {"inst": "acidish", "notes": "o2 l16 (A2 A2 A3 A2 C3 A2 G2 A2^ A2 E3 A2 A2 D3 C3 A2 G2)x8", "duck": 5,
+     "automate": {"synth.cutoff": "=400 + 3000*smooth(saw(bar/4))", "pan": "=0.3*sin(beat*pi/2)"},
+     "fx": [{"type": "delay", "note": "1/8d", "feedback": 0.35, "wet": 0.18}, {"type": "saturate", "drive": 0.3}]},
+    {"inst": "glass", "chords": "Am F C G", "play": "pad", "bars": 8, "gain": -4,
+     "automate": {"lp": [[0, 600], ["@bar5", 9000], ["@bar8", 2000]], "reverb": [[0, 0.1], ["@bar6", 0.6]]}}
+  ]
+}
