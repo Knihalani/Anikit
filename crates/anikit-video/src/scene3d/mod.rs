@@ -329,7 +329,9 @@ impl Prepare for Scene3d {
         let mut parts = Vec::new();
         for (i, o) in objs_v.iter().enumerate() {
             if o.get("type").and_then(|t| t.as_str()) == Some("particles") {
-                parts.push(particles::parse(o, &mut shapes, &mut mats, &named, &objs_v, &format!("objects[{i}]")).map_err(Error)?);
+                for o in particles::expand_layers(o, &format!("objects[{i}]")).map_err(Error)? {
+                    parts.push(particles::parse(&o, &mut shapes, &mut mats, &named, &objs_v, &format!("objects[{i}]")).map_err(Error)?);
+                }
                 continue;
             }
             objs.push(spec::object(o, &mut shapes, &mut mats, &named, &format!("objects[{i}]")).map_err(Error)?);
