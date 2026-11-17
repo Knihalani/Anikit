@@ -989,6 +989,11 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                         n.t += 0.02; // laid-back backbeat (≈ 15 ms at 82 bpm)
                     }
                 }
+                // Played kits sound in a room: a short stereo ambience gives them the
+                // width overheads and room mics give a real kit (panning alone leaves each drum mono).
+                if tr.fx.is_none() && !electronic {
+                    tr.fx = Some(serde_json::json!([{ "type": "reverb", "preset": "ambience", "wet": 0.25 }]));
+                }
                 continue;
             }
             let piano_like = ["piano", "rhodes", "epiano", "keys", "salamander"].iter().any(|p| tr.inst.contains(p));
@@ -1021,7 +1026,14 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
             // Rhodes and pad treatment) in styles whose parts are otherwise centre-heavy.
             if tr.fx.is_none() && !electronic && matches!(tr.role.as_str(), "keys" | "pad" | "comp" | "piano" | "strings" | "choir" | "picking") {
                 let mix = if tr.role == "keys" || tr.role == "comp" { 0.35 } else { 0.25 };
-                tr.fx = Some(serde_json::json!([{ "type": "chorus", "mode": "ensemble", "rate": 0.6, "depth": 2.5, "spread": 1.0, "mix": mix }]));
+                let chorus = serde_json::json!({ "type": "chorus", "mode": "ensemble", "rate": 0.6, "depth": 2.5, "spread": 1.0, "mix": mix });
+                // Electric pianos get their stereo tremolo (a mono sample panned stays mono).
+                let ep = ["wurli", "rhodes", "epiano", "cp80", "pianet"].iter().any(|p| tr.inst.contains(p));
+                tr.fx = Some(if ep {
+                    serde_json::json!([{ "type": "autopan", "note": "1/4", "depth": 0.55 }, chorus])
+                } else {
+                    serde_json::json!([chorus])
+                });
             }
             tr.mix.width = match tr.role.as_str() {
                 "pad" | "glass" | "choir" | "strings" => 1.5,

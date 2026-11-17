@@ -142,7 +142,7 @@ The new code is in `src/compose.rs`, wired in by `style.rs`. It fixes gaps 1–4
   - Hats are accented by position in the beat (velocity SD went from 0.02–0.10 to 0.14–0.23).
   - Lofi and jazz have a laid-back backbeat.
   - Piano-family chords sustain to each chord change (a sustain-pedal model).
-- **Stereo:** each role gets a default pan and pads are widened. Correlation is now 0.4–0.98 (cinematic 0.66, ambient 0.40), but lofi, jazz and pop are still about 0.95.
+- **Stereo:** each role gets a default pan and pads are widened. Correlation is now 0.4–0.98 (cinematic 0.66, ambient 0.40); lofi, jazz and pop were still about 0.95 (fixed later, see the progress table below).
 
 Measured with `diagnose`:
 
@@ -178,5 +178,6 @@ Each change has a before/after render in this folder.
 | Mono synths glide only on legato notes; trap 808 slides into octave jumps; hat rolls only at phrase ends; kit round-robin (8f5e584) | every synthwave bass note used to glide | [groove-trap-before](groove-trap-before.ogg), [groove-synthwave-before](groove-synthwave-before.ogg) | [groove-trap-after](groove-trap-after.ogg), [groove-synthwave-after](groove-synthwave-after.ogg) |
 | FreePats CC0 electric bass (finger/picked), nylon and clean electric guitars, part of `fetch essentials` | in tune within 4 cents at A4; bass parts (keys 33–50) stretch the top sample at most 5 semitones | [samples-pop-gm](samples-pop-gm.ogg), [samples-acoustic-gm](samples-acoustic-gm.ogg), [samples-rock-gm](samples-rock-gm.ogg) | [samples-pop-packs](samples-pop-packs.ogg), [samples-acoustic-packs](samples-acoustic-packs.ogg), [samples-rock-packs](samples-rock-packs.ogg) |
 | Trailer grammar for cinematic-hybrid cues of 45 s or more: act I, a build whose low-tom pulse goes quarters → 8ths → 16ths, a first climax that stops dead on a hit, a false ending (lone piano and cello), a rise, then act III with a reverse cymbal into the drop | 60 s cue: from −13 dB at the climax down to −52 dB within 1 s of the hit; the false ending sits at about −25 dB, then act III | [trailer-60s-before](trailer-60s-before.ogg) | [trailer-60s-after](trailer-60s-after.ogg) |
+| Stereo for played styles: acoustic kits play in a short stereo room (ambience, 25 % wet), and electric pianos get their stereo tremolo (new `autopan` effect, 1/4 note, depth 0.55). Panning a mono sample had left each part mono | side/mid above 300 Hz: lofi −12.1 → −9.7 dB (drums alone −20 → −12 dB), rock −9.2 → −8.7 dB; every played style now sits between −4.6 and −9.7 dB; below 120 Hz the mix stays mono (−25.6 dB) | [stereo-lofi-before](stereo-lofi-before.ogg), [stereo-rock-before](stereo-rock-before.ogg) | [stereo-lofi-after](stereo-lofi-after.ogg), [stereo-rock-after](stereo-rock-after.ogg) |
 
 The underscore mix (a6b081c) needs no render: under voice-over it mutes the lead, melody and countermelody tracks, and `underscore_tests` checks that.

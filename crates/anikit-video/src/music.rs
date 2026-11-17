@@ -146,7 +146,7 @@ MAKE ANYTHING (example: docs/video/music/custom.json)
              "sub":0.3, "noise":0, "filter":{"type":"ladder|lp|lp4|bp|formant","cutoff":800,"res":0.4,"drive":1.5,"env":2,"track":0.5},
              "amp":[a,d,s,r], "fenv":[a,d,s,r], "lfo":{"rate":5,"vib":8,"cutoff":0.5,"trem":0.2}, "pitch":[12,0.05], "glide":0.05, "mono":true}},
              "kit": {"sampler": {"zones":[{"file":"kick.wav","key":36},{"file":"c4.wav","root":"C4","lo":48,"hi":72,"vel":[1,90],"loop":[s,e]}],"release":0.3}}}
-  then {"inst":"wob", …}.  Per track: "fx":[{"type":"eq|comp|delay|reverb|chorus|saturate|widener|transient|filter|gain", …params}]
+  then {"inst":"wob", …}.  Per track: "fx":[{"type":"eq|comp|delay|reverb|chorus|saturate|widener|transient|filter|gain|autopan", …params}]
   "automate": {"volume"|"pan"|"lp"|"hp"|"reverb"|"delay"|"synth.cutoff|res|drive|env|vib|…": [[beat, v], ["@bar5", v]] or "=400+3000*saw(bar/4)"}
         expr vars beat bar t bpm; fns sin cos abs min max clamp mix saw tri sq step smooth exp log pow
 INSTRUMENTS (sampled GM bank bundled; `music instruments` lists all) piano epiano rhodes organ strings violin cello
