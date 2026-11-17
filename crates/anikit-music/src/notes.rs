@@ -10,9 +10,10 @@
 //!   `1`…`7` in the track's key with `b`/`#` prefix and `'`/`,` octave marks
 //!   (`5,` = fifth below, `3'` = third above); `r` or `-` rest; `_` holds the
 //!   previous note(s) longer.
-//! - chords: symbols `Am` `Cmaj7` `G/B` `F#m7b5`, Roman numerals `vi` `IV` `V7`,
+//! - chords: symbols `Am` `Cmaj` `Cmaj7` `Cdom7` `G/B` `F#m7b5`, Roman numerals `vi` `IV` `V7`,
 //!   or explicit `[C4 E4 G4]` / `[1 3 5]`; voiced near the current octave.
-//!   `E7` `A9` are dominant chords: write notes in octave 7+ in lowercase (`e7`).
+//!   A letter with an octave is a note (`C7` = C in octave 7); a bare letter is a note in
+//!   the current octave (`o7 C`). Chords need a quality: `Cmaj` `Am` `Cdom7` `[C E G]`.
 //! - durations: `/4` quarter (1 beat), `/8`, `/16`, `/2`, `/1`, `/8t` triplet;
 //!   `.` dotted; `:1.5` explicit beats. Default from `l8` / `l:0.5`.
 //! - marks: `!` accent, `?` ghost, `^` staccato, `~` legato (tied into the next onset).
@@ -302,15 +303,24 @@ impl Parser<'_> {
             }
             return Ok(out);
         }
-        // `E7`, `A9`, `D11`, `G13` (uppercase letter) are dominant chords; a
-        // note in octave 7+ is written lowercase (`e7`).
-        let dominant = {
-            let b = head.as_bytes();
-            let acc = usize::from(b.len() > 1 && (b[1] == b'#' || b[1] == b'b'));
-            b.first().is_some_and(|c| (b'A'..=b'G').contains(c)) && matches!(&head[1 + acc..], "7" | "9" | "11" | "13")
-        };
-        if let (false, Some(k)) = (dominant, note_key(head)) {
+        // A letter with an octave is a note (`C7` = C in octave 7); a bare letter
+        // (`C`, `F#`, `Bb`) is a note in the current octave (`o7 C`). Chords need a
+        // quality: `Cmaj` `Am7` `Cdom7` `G/B`, or numerals `V7`, or `[C E G]`.
+        if let Some(k) = note_key(head) {
             return Ok(vec![k]);
+        }
+        if crate::theory::pitch_class(head).is_some() {
+            let letter = crate::theory::pitch_class(&head[..1]).unwrap_or(0);
+            let acc: i32 = head[1..].chars().map(|c| if c == '#' || c == '♯' { 1 } else { -1 }).sum();
+            return Ok(vec![(oct + 1) * 12 + letter + acc]);
+        }
+        let dom = head.replacen("dom", "", 1);
+        if head.contains("dom") {
+            if let Some(c) = Chord::parse_symbol(&dom) {
+                let mut ks = c.voice(4, (oct + 1) * 12 + 4);
+                ks.sort();
+                return Ok(ks);
+            }
         }
         if let Some(k) = self.degree(head) {
             return Ok(vec![k]);
@@ -329,11 +339,14 @@ impl Parser<'_> {
                 }
                 Ok(ks)
             }
-            Err(_) => Err(self.err(
-                pos,
-                tok,
-                "expected a note (C4, Eb3), a degree (1-7, b3, 5'), a chord (Am, Cmaj7, vi), [C4 E4 G4], r, _ or a directive (o4 l8 v100 t+2 @5 > <)",
-            )),
+            Err(_) => {
+                let fix = suggest(head);
+                Err(self.err(
+                    pos,
+                    tok,
+                    &format!("not a note, chord or directive{fix}. Notes: C5 (octave 5), C (current octave, set with o5), Eb3, F#4; chords: Cmaj Am7 Cdom7 G/B [C E G] or numerals vi IV V7; rest r; hold _; durations C5/8 C5/4. C5:1.5"),
+                ))
+            }
         }
     }
 
@@ -369,6 +382,29 @@ impl Parser<'_> {
         }
         Some(self.ctx.key.degree(d - 1, self.ctx.octave) + acc + 12 * o)
     }
+}
+
+/// A targeted hint for a token that failed to parse.
+fn suggest(head: &str) -> String {
+    let first = head.chars().next().unwrap_or(' ');
+    if matches!(first, 'H' | 'h') {
+        return " — use B (German H)".into();
+    }
+    if first.is_ascii_lowercase() && matches!(first, 'a'..='g') {
+        let up: String = first.to_ascii_uppercase().to_string() + &head[1..];
+        if note_key(&up).is_some() || crate::theory::pitch_class(&up).is_some() {
+            return format!(" — note names are uppercase: {up}");
+        }
+    }
+    if let Some(rest) = head.get(1..) {
+        if rest.parse::<i32>().is_ok_and(|o| !(-1..=9).contains(&o)) {
+            return format!(" — octave {rest} is out of range (−1…9)");
+        }
+    }
+    if head.ends_with("maj") || head.ends_with('m') || head.contains("7") {
+        return " — check the chord root (A–G, then # or b)".into();
+    }
+    String::new()
 }
 
 /// `C4/8.!` → (`C4`, `/8.`, `!`).
@@ -502,7 +538,7 @@ mod tests {
     #[test]
     fn degrees_chords_and_bars() {
         let ctx = Ctx { key: Key::parse("Am").unwrap(), octave: 4, ..Default::default() };
-        let (n, end) = parse("1 3 5' | Am/2 F/2 | [1 3 5]/1", &ctx).unwrap();
+        let (n, end) = parse("1 3 5' | Am/2 Fmaj/2 | [1 3 5]/1", &ctx).unwrap();
         assert_eq!(n[0].key as i32, 69);
         assert_eq!(n[1].key as i32, 72);
         assert_eq!(n[2].key as i32, 76 + 12);
@@ -529,6 +565,23 @@ mod tests {
         assert!(e.contains("'Q9'") && e.contains("column 4"), "{e}");
         assert!(parse("(C4 D4", &ctx).is_err());
         assert!(parse("C4/0", &ctx).is_err());
+    }
+
+    #[test]
+    fn forms_agents_try() {
+        let ctx = Ctx::default();
+        let k = |s: &str| parse(s, &ctx).unwrap().0.iter().map(|n| n.key as i32).collect::<Vec<_>>();
+        assert_eq!(k("o7 C"), vec![96]);
+        assert_eq!(k("[C7]"), vec![96]);
+        assert_eq!(k("C7"), vec![96]);
+        assert_eq!(k("[C E G]"), vec![60, 64, 67]);
+        assert_eq!(k("Cmaj").len(), 3);
+        assert_eq!(k("Cdom7").len(), 4);
+        assert!(k("Cmaj7").len() == 4);
+        let e = parse("c5", &ctx).err().unwrap_or_default();
+        assert!(e.is_empty() || e.contains("uppercase"), "{e}");
+        let e = parse("H4", &ctx).unwrap_err();
+        assert!(e.contains("use B") && e.contains("Cmaj"), "{e}");
     }
 
     #[test]

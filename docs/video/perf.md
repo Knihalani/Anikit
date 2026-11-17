@@ -178,3 +178,23 @@ Open items, with their owners (all messaged with numbers):
 - `examples/post_cost.rs`: one frame's cost by stage (render, post, motion blur). `OPS=1` gives the cost of each top-level op (or layer subtree) by cumulative prefixes. `FIELD=1` gives the share of the gradient field.
 - `anikit-video render … --profile`: stage profile of a real render.
 - `cargo test -p anikit-video --lib upscale_timing -- --ignored --nocapture` and `blur_timing`: kernel timings.
+
+## Incremental re-render (render cache)
+
+`anikit-video render` caches each encoded GOP chunk on disk (`diskcache`: `$ANIKIT_CACHE_DIR`, `$XDG_CACHE_HOME/anikit` or `~/.cache/anikit`). A chunk's key covers:
+- the encoder config;
+- the chunk's index and length;
+- this binary (size and mtime);
+- for every frame in it, the evaluated display list, with image ids replaced by content identities (shader-job key, per-frame image key, pixel hash for stored images), plus the post look and motion-blur flag.
+
+A re-render splices unchanged chunks back in byte for byte and renders only the rest. An audio-only change reuses every video chunk; only the mux runs again. A frame with an image whose content can't be identified without rendering makes its chunk uncacheable, so it is simply rendered. `ANIKIT_RENDER_CACHE=0` turns the cache off. Progress output prints `render cache: reused N/M chunks`.
+
+Measured on the Tern launch spec (20 s, 1080p30, 4 vCPU):
+
+| render | time | md5 |
+|---|---:|---|
+| full, cache off | 148.3 s | 15becf74… |
+| cold cache (fills it) | 154.5 s | 15becf74… |
+| unchanged spec again | **1.7 s** (16/16 chunks reused) | 15becf74… |
+| one font size changed in the last scene | **32.8 s** (13/16 reused) | 2b3ea57d… |
+| the same edit, full render, cache off | 148.2 s | 2b3ea57d… |

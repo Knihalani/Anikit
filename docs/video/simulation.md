@@ -229,6 +229,15 @@ Stills split the frame into 64-row bands, each rendered from the particles
 that reach it in order, so a still is byte-identical to the same frame of a
 video render, at any thread count.
 
+**Previews.** Frames at most 400 px tall (agent `still`/`preview` at
+480–640 px wide) simulate an exact subset of the particles: every k-th one,
+k = (1080/height)² up to 16. Particles don't interact, so these follow
+exactly the paths they would in the full render. Each is drawn with k times
+the weight, spread over about k pixels, so density and brightness match. Cold
+640 px stills: glow at 1.5 s / 4.5 s in 0.46 / 1.06 s, custom in 0.46 / 1.55 s,
+the 3M sand assembly in 1.4 / 3.8 s (0.96 s warm, from the checkpoint cache).
+Full-size renders are unchanged.
+
 **Fidelity.** `cargo run --release -p anikit-video --example particles_reference`
 renders 1080p frames with the fast path and with a reference: exact discs
 sampled densely, 32 instants over the shutter. It compares them with PERF's

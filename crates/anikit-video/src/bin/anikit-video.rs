@@ -395,7 +395,15 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                             println!("{}", serde_json::json!({ "ok": true, "output": out, "at": t, "width": w, "height": h, "ms": ms, "shaders": shaders, "warnings": d }));
                         } else {
                             eprintln!("wrote {} ({w}×{h}, t = {t:.2} s) in {ms:.0} ms", out.display());
-                            for s in ev.shader_stats() {
+                            let stats = ev.shader_stats();
+                            let per_frame: f32 = stats.iter().map(|s| s.ms * full).sum();
+                            if per_frame > 0.0 {
+                                let frames = (ev.duration * ev.fps).round().max(1.0);
+                                let total = frames * per_frame / 1000.0;
+                                let fix = if per_frame > 120.0 { "  ← to cut it: \"supersample\": false on the heaviest layer, fewer march steps / octaves, or a smaller layer" } else { "" };
+                                eprintln!("  estimated render time: up to {total:.0} s of shader work for {frames:.0} frames (≈ {per_frame:.0} ms/frame if every shader is on screen){fix}");
+                            }
+                            for s in stats {
                                 let f = s.ms * full;
                                 let note = if f > 400.0 {
                                     "  ← heavy: cut march steps / noise octaves, bound the scene, or drop supersample (docs/video/shader.md#performance)"
