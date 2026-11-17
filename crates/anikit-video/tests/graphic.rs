@@ -63,3 +63,19 @@ fn treatments_become_layer_filters() {
         assert_eq!(cs[0], [0x10, 0x20, 0x40]);
     }
 }
+
+#[test]
+fn stepped_time_and_boil() {
+    let x_at = |e: &Evaluator, t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::RoundRect { transform, .. } = o { Some(transform[4]) } else { None }).unwrap();
+    let smooth = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "width": 10, "height": 10, "x": "=100 + t * 600" } ] } ] }"#);
+    let twos = ev(r#"{ "fps": 24, "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "width": 10, "height": 10, "x": "=100 + t * 600", "step": "twos" } ] } ] }"#);
+    assert!(x_at(&smooth, 0.50) != x_at(&smooth, 0.54));
+    // On twos at 24 fps: held for 1/12 s.
+    assert_eq!(x_at(&twos, 0.50), x_at(&twos, 0.53));
+    assert!(x_at(&twos, 0.50) != x_at(&twos, 0.59));
+    let boil = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "width": 10, "height": 10, "x": 500, "boil": { "amount": 4, "fps": 8, "seed": 3 } } ] } ] }"#);
+    let (a, b, c) = (x_at(&boil, 0.01), x_at(&boil, 0.05), x_at(&boil, 0.30));
+    assert_eq!(a, b, "held between redraws");
+    assert!(a != c && (a - 495.0).abs() <= 4.01 && (c - 495.0).abs() <= 4.01, "{a} {c}");
+    assert_eq!(x_at(&boil, 0.30), c, "deterministic");
+}

@@ -446,6 +446,8 @@ fn empty_node(kind: Kind) -> Node {
         shadow: None,
         glow: None,
         treat: Vec::new(),
+        step: 0.0,
+        boil: None,
         clip: false,
         clip_path: None,
         wipe_dir: 0,
@@ -1424,6 +1426,39 @@ impl C<'_> {
             n.glow = Some(Filter::Glow { radius: g.radius.unwrap_or(24.0) as f32, intensity: g.intensity.unwrap_or(1.0) as f32, color });
         }
         self.treatments(l, path, &mut n);
+        if let Some(st) = &l.step {
+            let sp = format!("{path}.step");
+            n.step = match st {
+                serde_json::Value::Number(x) => x.as_f64().unwrap_or(0.0) as f32,
+                serde_json::Value::String(x) => match x.as_str() {
+                    "ones" => self.fps,
+                    "twos" => self.fps / 2.0,
+                    "threes" => self.fps / 3.0,
+                    "fours" => self.fps / 4.0,
+                    _ => {
+                        self.d.push(Diagnostic::error(&sp, format!("unknown step '{x}'")).suggest(suggest(x, &["twos", "threes", "fours"])));
+                        0.0
+                    }
+                },
+                _ => {
+                    self.d.push(Diagnostic::error(&sp, "expected fps (e.g. 12) or \"twos\" / \"threes\""));
+                    0.0
+                }
+            };
+            if n.step < 0.0 || n.step > self.fps * 1.001 {
+                self.d.push(Diagnostic::warning(&sp, format!("step {} fps is outside 0..{} (the video's fps); ignored", n.step, self.fps)));
+                n.step = 0.0;
+            }
+        }
+        if let Some(b) = &l.boil {
+            let (amt, rot, fps, seed) = match b {
+                spec::BoilValue::Px(px) => (*px, 0.0, 12.0, 1),
+                spec::BoilValue::Full(o) => (o.amount.unwrap_or(2.0), o.rotate.unwrap_or(0.0), o.fps.unwrap_or(12.0), o.seed.unwrap_or(1)),
+            };
+            if amt > 0.0 || rot > 0.0 {
+                n.boil = Some([amt as f32, rot as f32, (fps as f32).clamp(0.5, self.fps), seed as f32]);
+            }
+        }
         if matches!(n.kind, Kind::Image { .. } | Kind::Video { .. }) {
             if let Some(r) = &l.radius {
                 let refl = n.base[prop::W].min(n.base[prop::H]);
@@ -2270,6 +2305,26 @@ impl C<'_> {
                 self.d.push(Diagnostic::warning(format!("{hp}.cell"), "cells under 3 px alias into moiré after encoding; use 4 px or more"));
             }
             n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: hs.angle.unwrap_or(45.0) as f32, shape, ink, paper, gain: hs.gain.unwrap_or(1.0) as f32, ox: 0.0, oy: 0.0 }));
+        }
+        if let Some(iv) = &l.ink_texture {
+            let (amount, scale, seed) = match iv {
+                spec::InkValue::Amount(a) => (*a, 28.0, 1),
+                spec::InkValue::Full(o) => (o.amount.unwrap_or(0.35), o.scale.unwrap_or(28.0), o.seed.unwrap_or(1)),
+            };
+            if amount > 0.0 {
+                n.treat.push(Filter::Ink { amount: amount.clamp(0.0, 1.0) as f32, scale: scale.max(1.0) as f32, seed, ox: 0.0, oy: 0.0 });
+            }
+        }
+        // Halftone on reading-size text breaks it into dots that H.264 smears.
+        if let (Some(_), Some(_), Some(Num::Num(sz))) = (&l.halftone, &l.text, &l.size) {
+            let cell = match &l.halftone {
+                Some(spec::HalftoneValue::Cell(c)) => *c,
+                Some(spec::HalftoneValue::Full(f)) => f.cell.unwrap_or(10.0),
+                None => 10.0,
+            };
+            if *sz < cell * 8.0 {
+                self.d.push(Diagnostic::warning(format!("{path}.halftone"), format!("halftone cells of {cell} px on {sz} px text: under ~8 cells per letter height it stops reading; use it on display type (≥ {} px) or a smaller cell", (cell * 8.0).round())));
+            }
         }
     }
 

@@ -114,6 +114,9 @@ pub enum Filter {
     /// Print halftone screen, anchored to the frame (`ox`, `oy`: the layer
     /// bitmap's frame origin, set by the renderer).
     Halftone(Halftone),
+    /// Uneven ink: coverage × (1 − amount × noise), value noise of `scale` px plus
+    /// per-pixel speckle, anchored to the frame (`ox`, `oy` set by the renderer).
+    Ink { amount: f32, scale: f32, seed: u32, ox: f32, oy: f32 },
 }
 
 /// A tone treatment, precomputed: `map` is a 256-entry gradient map indexed

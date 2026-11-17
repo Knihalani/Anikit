@@ -38,6 +38,7 @@ pub fn sanitize(f: &Filter) -> Filter {
         Filter::Glow { radius, intensity, color } => Filter::Glow { radius: s(radius), intensity: sane(intensity, 64.0).max(0.0), color: c(color) },
         Filter::ColorMatrix(m) => Filter::ColorMatrix(m.map(|v| sane(v, 1e6))),
         Filter::Tone(ref t) => Filter::Tone(t.clone()),
+        Filter::Ink { amount, scale, seed, ox, oy } => Filter::Ink { amount: sane(amount, 1.0).max(0.0), scale: sane(scale, 512.0).max(1.0), seed, ox: sane(ox, 1e7), oy: sane(oy, 1e7) },
         Filter::Halftone(h) => Filter::Halftone(Halftone {
             cell: sane(h.cell, 512.0).max(2.0),
             angle: sane(h.angle, 3600.0),
@@ -60,7 +61,7 @@ pub fn margin(f: &Filter) -> [f32; 4] {
             [e + (-dx).max(0.0), e + (-dy).max(0.0), e + dx.max(0.0), e + dy.max(0.0)]
         }
         Filter::Glow { radius, .. } => [blur_extent(radius); 4],
-        Filter::ColorMatrix(_) | Filter::Tone(_) | Filter::Halftone(_) => [0.0; 4],
+        Filter::ColorMatrix(_) | Filter::Tone(_) | Filter::Halftone(_) | Filter::Ink { .. } => [0.0; 4],
     }
 }
 
@@ -157,6 +158,7 @@ fn apply_inner(f: &Filter, buf: &mut [u8], w: usize, h: usize, s: &mut FilterScr
         }
         Filter::Tone(t) => tone(&t, buf),
         Filter::Halftone(ht) => halftone(&ht, buf, w),
+        Filter::Ink { amount, scale, seed, ox, oy } => ink(buf, w, amount, scale, seed, ox, oy),
     }
 }
 
@@ -281,6 +283,57 @@ fn halftone(h: &Halftone, buf: &mut [u8], w: usize) {
     }
 }
 
+#[inline(always)]
+fn hash2(x: i32, y: i32, seed: u32) -> f32 {
+    let mut h = (x as u32).wrapping_mul(0x8da6_b343) ^ (y as u32).wrapping_mul(0xd816_3841) ^ seed.wrapping_mul(0xcb1a_b31f);
+    h ^= h >> 13;
+    h = h.wrapping_mul(0x5bd1_e995);
+    h ^= h >> 15;
+    (h & 0xffff) as f32 / 65535.0
+}
+
+/// Uneven ink coverage: smooth value noise (`scale` px cells, two octaves) plus a
+/// fine speckle, multiplied into the layer's premultiplied pixels.
+fn ink(buf: &mut [u8], w: usize, amount: f32, scale: f32, seed: u32, ox: f32, oy: f32) {
+    let inv = 1.0 / scale;
+    let vn = |x: f32, y: f32, s: u32| {
+        let (fx, fy) = (x.floor(), y.floor());
+        let (tx, ty) = (x - fx, y - fy);
+        let (sx, sy) = (tx * tx * (3.0 - 2.0 * tx), ty * ty * (3.0 - 2.0 * ty));
+        let (ix, iy) = (fx as i32, fy as i32);
+        let a = hash2(ix, iy, s);
+        let b = hash2(ix + 1, iy, s);
+        let c = hash2(ix, iy + 1, s);
+        let d = hash2(ix + 1, iy + 1, s);
+        a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy
+    };
+    for (y, row) in buf.chunks_exact_mut(w * 4).enumerate() {
+        let gy = y as f32 + oy;
+        for (x, p) in row.chunks_exact_mut(4).enumerate() {
+            if p[3] == 0 {
+                continue;
+            }
+            let gx = x as f32 + ox;
+            // Three octaves on rotated lattices (no visible grid), thresholded so most of the
+            // area is solid and the thin spots are irregular patches, plus speckle and pinholes.
+            let (u, v) = (gx * inv, gy * inv);
+            let n = 0.5 * vn(u, v, seed)
+                + 0.3 * vn(0.8 * u - 0.6 * v + 17.3, 0.6 * u + 0.8 * v, seed ^ 0x9e37) * 1.0
+                + 0.2 * vn(2.9 * (0.28 * u + 0.96 * v), 2.9 * (-0.96 * u + 0.28 * v) + 5.1, seed ^ 0x7f4a);
+            let n2 = vn(u * 6.3 + 3.7, v * 6.3, seed ^ 0x2c1b);
+            let speck = hash2(gx as i32, gy as i32, seed ^ 0x51ed);
+            let t = ((n - 0.47) / 0.28).clamp(0.0, 1.0);
+            let patch = t * t * (3.0 - 2.0 * t);
+            let thin = (patch * (0.55 + 0.45 * n2) + 0.25 * (speck - 0.5).max(0.0) + if speck > 0.992 { 0.7 } else { 0.0 }).min(1.0);
+            let k = (1.0 - amount * thin).clamp(0.0, 1.0);
+            let m = (k * 256.0) as u32;
+            for c in p.iter_mut() {
+                *c = ((*c as u32 * m) >> 8) as u8;
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -368,5 +421,29 @@ mod perf {
             apply(&Filter::Blur(sigma), &mut buf, w, h, &mut s);
             eprintln!("blur4 sigma {sigma}: {:?}", t.elapsed());
         }
+    }
+}
+
+#[cfg(test)]
+mod ink_tests {
+    use super::*;
+
+    #[test]
+    fn ink_thins_coverage_deterministically_and_only_darkens_alpha() {
+        let (w, h) = (128, 64);
+        let src: Vec<u8> = (0..w * h).flat_map(|_| [200u8, 40, 120, 255]).collect();
+        let f = Filter::Ink { amount: 0.5, scale: 16.0, seed: 3, ox: 0.0, oy: 0.0 };
+        let mut a = src.clone();
+        apply(&f, &mut a, w, h, &mut FilterScratch::default());
+        let mut b = src.clone();
+        apply(&f, &mut b, w, h, &mut FilterScratch::default());
+        assert_eq!(a, b);
+        let mean = a.chunks(4).map(|p| p[3] as f64).sum::<f64>() / (w * h) as f64;
+        assert!(mean < 250.0 && mean > 150.0, "{mean}");
+        assert!(a.chunks(4).all(|p| p[0] <= p[3] && p[3] <= 255));
+        // Frame-anchored: shifting the origin by a whole tile row moves the texture with it.
+        let mut c = src[w * 4 * 8..].to_vec();
+        apply(&Filter::Ink { amount: 0.5, scale: 16.0, seed: 3, ox: 0.0, oy: 8.0 }, &mut c, w, h - 8, &mut FilterScratch::default());
+        assert_eq!(&c[..], &a[w * 4 * 8..]);
     }
 }

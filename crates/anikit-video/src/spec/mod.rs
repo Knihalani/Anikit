@@ -176,6 +176,44 @@ pub struct GridSpec {
     pub color: Option<String>,
 }
 
+/// `inkTexture`: amount, or the full settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum InkValue {
+    Amount(f64),
+    Full(InkSpec),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct InkSpec {
+    /// How much ink thins out in the worst spots (0..1). Default 0.35.
+    pub amount: Option<f64>,
+    /// Size of the blotches in px. Default 28.
+    pub scale: Option<f64>,
+    pub seed: Option<u32>,
+}
+
+/// `boil`: px, or the full settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum BoilValue {
+    Px(f64),
+    Full(BoilSpec),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BoilSpec {
+    /// Max offset in px. Default 2.
+    pub amount: Option<f64>,
+    /// Max rotation in degrees. Default 0.
+    pub rotate: Option<f64>,
+    /// New positions per second. Default 12.
+    pub fps: Option<f64>,
+    pub seed: Option<u32>,
+}
+
 /// `halftone`: a cell size in px, or the full settings.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
@@ -629,6 +667,16 @@ pub struct Layer {
     pub tone_range: Option<[f64; 2]>,
     /// Print halftone screen: a cell size in px, or `{ "cell", "angle", "shape", "ink", "paper", "gain" }`.
     pub halftone: Option<HalftoneValue>,
+    /// Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ "amount", "scale": px, "seed" }`.
+    /// Fixed to the frame like the paper, so moving shapes travel through it.
+    pub ink_texture: Option<InkValue>,
+    /// Stepped time: the layer (and its children) animate at this many fps, or `"twos"`/`"threes"`/`"fours"`
+    /// of the video's fps (stop-motion, hand-pulled print, cel looks) while the rest stays smooth.
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub step: Option<serde_json::Value>,
+    /// Boil: a seeded jitter re-drawn a few times a second: px, or `{ "amount": px, "rotate": deg, "fps": 12, "seed": 1 }`.
+    /// On a `multiply` ink layer it reads as plates drifting out of register.
+    pub boil: Option<BoilValue>,
     /// `true` clips children to the layer box, or a clip shape.
     pub clip: Option<Clip>,
     /// A layer whose alpha masks this one.

@@ -410,7 +410,18 @@ Avoid as defaults: Montserrat, Poppins, Playfair Display, Satoshi, Clash Display
 
 ## 11. Gap list: what a 2D engine needs for this work
 
-Status as of this writing (verify before relying on it): `blend` modes including `multiply` exist on every layer; `box` has `columns`; shape modifiers include `roundCorners`, `zigzag`, `puckerBloat`, `wigglePath`; the `post` look has `grain`; the shader library has frame filters `halftone`, `risograph`, `print-offset`, `screenprint`, `linocut`, `crosshatch`, `dither`, `pixelate`; and per-layer `Tone` (posterise + gradient map) and `Halftone` filters are in progress in `crates/anikit-video/src/dl.rs` / `render/filter.rs` (uncommitted at the time of writing).
+Status (updated after the GRAPHIC session's work; `anikit-video docs graphic`):
+- **Shipped:**
+  - 1: `grid` with named `areas`, `cell` placement, baseline leading, `show: true | "under"`. Gerstner-style multiple column counts: give a group its own `grid`.
+  - 2: `duotone`, `gradientMap`, `posterize`, `toneRange`, `toneAmount` on any layer or group.
+  - 3, single ink: `halftone` with dot, line or square spots, gain, ink/`source`, paper, frame-anchored. Multi-ink halftone works by stacking `multiply` layers with different angles.
+  - 6: `step` ("twos", fps).
+  - 7: `squircle`/`superellipse`.
+  - 8: `blob`, animatable with `wigglePath`.
+  - 9: `pattern` layers, 15 kinds with ramp and jitter. Inside text, use a pattern layer with `matte`.
+  - 4, partly: `multiply` overprint, `boil` for drifting plates, `inkTexture` for uneven coverage.
+  - 5, partly: `inkTexture` plus `post.grain`.
+- **Open:** 10 (torn cutout edges), 11 (photocopy), 12 (brush strokes), 13 (editorial chart defaults), 14 (op-art field-driven lines), 15 (critique checks: off-grid elements, pattern pitch, halftone on reading text. Compile-time warnings for pitch < 4 px and halftone on small text exist).
 
 1. **Named modular grid.** A scene-level `grid` (columns, rows, unit, gutters, margins, baseline) with Gerstner-style multiple column counts on one unit, and layer placement by cell (`"cell": "B2:D3"`, `"col": "2/5"`), with baseline snapping of text. Moves that target grid lines.
 2. **Gradient map / duotone / tritone per layer and per group**, with a pre-curve (black point, white point, gamma) and posterise levels. (In progress as `Tone`.)

@@ -329,6 +329,10 @@ pub(crate) struct Node {
     pub glow: Option<Filter>,
     /// Image treatments (tone map, halftone), applied first.
     pub treat: Vec<Filter>,
+    /// Stepped time in fps (0 = smooth): the layer animates "on twos" etc.
+    pub step: f32,
+    /// Boil: `[px, degrees, fps, seed]` seeded jitter.
+    pub boil: Option<[f32; 4]>,
     /// Clip children to the box (with radius).
     pub clip: bool,
     /// A clip path in the layer's local box (clip shapes, shape masks).
@@ -1102,9 +1106,30 @@ impl Evaluator {
         if st < n.start || st >= n.end {
             return;
         }
+        // Stepped time ("on twos"): this layer and its children see time held at `step` fps.
+        let stepped;
+        let cx = if n.step > 0.0 {
+            let lt = st - n.start;
+            let held = (lt * n.step + 1e-4).floor() / n.step;
+            let d = lt - held;
+            stepped = Cx { scene_t: st - d, gt: cx.gt - d, ..*cx };
+            &stepped
+        } else {
+            cx
+        };
+        let st = cx.scene_t;
         let lt = st - n.start;
         let mut v = [0.0f32; prop::N];
         self.props(n, cx, lt, &mut v);
+        if let Some([amt, rot, fps, seed]) = n.boil {
+            // Boil: a seeded jitter re-drawn `fps` times a second (hand-drawn / misregistered plates).
+            let k = ((cx.gt * fps) + 1e-4).floor() as i64 as u32;
+            let sd = seed as u32;
+            let r = |j: u32| (graphic::rnd(sd, k.wrapping_mul(3).wrapping_add(j)) as f32 - 0.5) * 2.0;
+            v[prop::X] += r(0) * amt;
+            v[prop::Y] += r(1) * amt;
+            v[prop::ROT] += r(2) * rot;
+        }
         if let Some(fx) = n.fx.as_deref() {
             if let Some(mp) = &fx.path {
                 let (q, ang) = mp.at(v[prop::PROGRESS] * mp.len());
@@ -1587,6 +1612,7 @@ pub(crate) fn scale_filters(ops: &mut [Op], s: f32) {
                     }
                     Filter::Glow { radius, .. } => *radius *= s,
                     Filter::Halftone(h) => h.cell *= s,
+                    Filter::Ink { scale, .. } => *scale *= s,
                     Filter::ColorMatrix(_) | Filter::Tone(_) => {}
                 }
             }
@@ -1603,7 +1629,7 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
         return true; // invisible throughout
     }
     let (la, lb) = (a - n.start, b - n.start);
-    if n.update.is_some() || n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
+    if n.boil.is_some() || n.update.is_some() || n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
         return false;
     }
     match &n.kind {

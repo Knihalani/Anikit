@@ -240,6 +240,7 @@ pub fn scale_list(dl: &mut DisplayList, s: f32) {
                     }
                     dl::Filter::Glow { radius, .. } => *radius *= s,
                     dl::Filter::Halftone(h) => h.cell *= s,
+                    dl::Filter::Ink { scale, .. } => *scale *= s,
                     dl::Filter::ColorMatrix(_) | dl::Filter::Tone(_) => {}
                 }
             }

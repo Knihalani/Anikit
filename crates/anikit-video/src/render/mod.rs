@@ -1472,7 +1472,10 @@ fn draw_offscreen(
             sub.reset();
             st.pool.push(sub);
             for f in filters {
-                if let dl::Filter::Halftone(ht) = f {
+                if let dl::Filter::Ink { amount, scale, seed, ox, oy } = f {
+                    let g = dl::Filter::Ink { amount: *amount, scale: *scale, seed: *seed, ox: ox + (org.0 as f64 + r.x0) as f32, oy: oy + (org.1 as f64 + r.y0) as f32 };
+                    filter::apply(&g, pm.data_as_u8_slice_mut(), w as usize, h as usize, &mut st.filters);
+                } else if let dl::Filter::Halftone(ht) = f {
                     // The screen is fixed to the frame, not to this bitmap.
                     let ht = dl::Halftone { ox: ht.ox + (org.0 as f64 + r.x0) as f32, oy: ht.oy + (org.1 as f64 + r.y0) as f32, ..*ht };
                     filter::apply(&dl::Filter::Halftone(ht), pm.data_as_u8_slice_mut(), w as usize, h as usize, &mut st.filters);
