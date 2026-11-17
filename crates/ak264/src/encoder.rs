@@ -698,7 +698,17 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             return false;
         }
         let mut a = [0u8; 256];
-        crate::mc::luma_pred(&c.refp.y, mbx as isize * 16, mby as isize * 16, mv, &mut a);
+        match c.hpel {
+            Some(hp) => hp.pred(
+                &c.refp.y,
+                mbx as isize * 16 + (mv.0 >> 2) as isize,
+                mby as isize * 16 + (mv.1 >> 2) as isize,
+                mv.0 & 3,
+                mv.1 & 3,
+                &mut a,
+            ),
+            None => crate::mc::luma_pred(&c.refp.y, mbx as isize * 16, mby as isize * 16, mv, &mut a),
+        }
         let (z, sz) = self.luma_ref_int(mbx, mby, (0, 0));
         if !dsp::block_eq(&a, 16, z, sz, 16, 16) {
             return false;
@@ -1736,8 +1746,8 @@ pub struct Encoder {
     stale: Vec<bool>,
     touched: Vec<bool>,
     hpel: Option<crate::mc::HpelPlanes>,
-    /// `hpel` holds the planes of the current reference.
-    hpel_valid: bool,
+    /// Macroblocks of the reference changed since `hpel` was last updated.
+    hpel_dirty: Vec<bool>,
     recon: Pic,
     refp: Pic,
     info: Vec<MbInfo>,
@@ -1782,7 +1792,7 @@ impl Encoder {
             stale: vec![true; mbw * mbh],
             touched: vec![false; mbw * mbh],
             hpel: None,
-            hpel_valid: false,
+            hpel_dirty: vec![true; mbw * mbh],
             recon: Pic::new(mbw, mbh, PAD),
             refp: Pic::new(mbw, mbh, PAD),
             info: vec![MbInfo::default(); mbw * mbh],
@@ -1974,15 +1984,20 @@ impl Encoder {
             stats.skip = nmb as u32;
         } else {
             self.encode_slices(idr, frame_num, &mut stats);
+            if self.cfg.deblock && self.writers.len() == 1 {
+                crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &self.q, &mut self.touched);
+            }
             for ((st, inf), &t) in self.stale.iter_mut().zip(&self.info).zip(&self.touched) {
                 *st = inf.coded || t;
             }
-            if self.cfg.deblock && self.writers.len() == 1 {
-                crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &self.q, &mut self.stale);
-            }
             self.recon.extend();
             std::mem::swap(&mut self.recon, &mut self.refp);
-            self.hpel_valid = false;
+            if self.cfg.subpel {
+                // only where the reconstruction differs from the old reference
+                for ((d, inf), &t) in self.hpel_dirty.iter_mut().zip(&self.info).zip(&self.touched) {
+                    *d |= t || (inf.coded && (inf.kind != 0 || inf.mv != (0, 0) || inf.cbp != 0));
+                }
+            }
         }
         if idr {
             self.idr_count = self.idr_count.wrapping_add(1);
@@ -2018,14 +2033,32 @@ impl Encoder {
     }
 
     fn encode_slices(&mut self, idr: bool, frame_num: u32, stats: &mut FrameStats) {
-        // Sub-pel refinement on a busy frame: build the half-sample planes once.
-        if self.cfg.subpel && !idr && !self.hpel_valid {
-            let busy = self.changed.iter().filter(|&&c| c).count() * 4 > self.changed.len();
-            if busy {
-                let r = &self.refp.y;
-                self.hpel.get_or_insert_with(|| crate::mc::HpelPlanes::new(r)).compute(r);
-                self.hpel_valid = true;
+        // Sub-pel refinement: keep the half-sample planes of the reference up
+        // to date, recomputing only the MB rows that changed.
+        if self.cfg.subpel && !idr && self.hpel_dirty.iter().any(|&d| d) {
+            let r = &self.refp.y;
+            let hp = self.hpel.get_or_insert_with(|| crate::mc::HpelPlanes::new(r));
+            let (p, s, rows) = (r.pad, r.stride, r.data.len() / r.stride);
+            let (mbw, mbh) = (self.mbw, self.mbh);
+            for (my, drow) in self.hpel_dirty.chunks(mbw).enumerate() {
+                let ya = if my == 0 { 0 } else { p + my * 16 };
+                let yb = if my == mbh - 1 { rows } else { p + my * 16 + 16 };
+                let mut x = 0;
+                while x < mbw {
+                    if !drow[x] {
+                        x += 1;
+                        continue;
+                    }
+                    let x0 = x;
+                    while x < mbw && drow[x] {
+                        x += 1;
+                    }
+                    let xa = if x0 == 0 { 0 } else { p + x0 * 16 };
+                    let xb = if x == mbw { s } else { p + x * 16 };
+                    hp.compute_rect(r, xa, xb, ya, yb);
+                }
             }
+            self.hpel_dirty.fill(false);
         }
         let ctx = FrameCtx {
             mbw: self.mbw,
@@ -2050,7 +2083,7 @@ impl Encoder {
             idr,
             max_mvy: max_mv_y(self.level),
             subpel: self.cfg.subpel,
-            hpel: if self.hpel_valid { self.hpel.as_ref() } else { None },
+            hpel: if self.cfg.subpel && !idr { self.hpel.as_ref() } else { None },
             cabac: self.cfg.cabac,
             hdr_frame_num: frame_num,
             idr_id: self.idr_count & 0xffff,

@@ -163,34 +163,126 @@ impl HpelPlanes {
     }
 
     /// Recompute from the (border-extended) reference luma plane.
+    #[cfg(test)]
     pub fn compute(&mut self, r: &Plane) {
+        let rows = r.data.len() / r.stride;
+        self.compute_rect(r, 0, r.stride, 0, rows)
+    }
+
+    /// Update after the reference samples in columns `[xa, xb)` × rows `[a, b)`
+    /// (plane coordinates, border included) changed.
+    pub fn compute_rect(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize) {
         #[cfg(target_arch = "x86_64")]
         {
             if crate::simd::level() >= 2 {
                 #[target_feature(enable = "avx2")]
-                unsafe fn f(s: &mut HpelPlanes, r: &Plane) {
-                    s.compute_impl(r)
+                unsafe fn f(s: &mut HpelPlanes, r: &Plane, xa: usize, xb: usize, a: usize, b: usize) {
+                    s.compute_avx2(r, xa, xb, a, b)
                 }
                 // SAFETY: AVX2 detected at run time.
-                return unsafe { f(self, r) };
+                return unsafe { f(self, r, xa, xb, a, b) };
             }
         }
-        self.compute_impl(r)
+        self.compute_impl(r, xa, xb, a, b)
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "avx2")]
+    unsafe fn compute_avx2(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize) {
+        use std::arch::x86_64::*;
+        let s = r.stride;
+        let rows = r.data.len() / s;
+        let b = b.min(rows);
+        self.b1.resize(rows * s, 0);
+        let d = r.data.as_ptr();
+        let b1 = self.b1.as_mut_ptr();
+        let (bo, ho, jo) = (self.b.data.as_mut_ptr(), self.h.data.as_mut_ptr(), self.j.data.as_mut_ptr());
+        let (c5, c20, c16) = (_mm256_set1_epi16(5), _mm256_set1_epi16(20), _mm256_set1_epi16(16));
+        let (c5d, c20d, c512) = (_mm256_set1_epi32(5), _mm256_set1_epi32(20), _mm256_set1_epi32(512));
+        #[inline]
+        #[target_feature(enable = "avx2")]
+        unsafe fn ld(p: *const u8) -> __m256i {
+            _mm256_cvtepu8_epi16(_mm_loadu_si128(p as *const __m128i))
+        }
+        #[inline]
+        #[target_feature(enable = "avx2")]
+        unsafe fn tap(a: __m256i, b: __m256i, c: __m256i, d: __m256i, e: __m256i, f: __m256i, c5: __m256i, c20: __m256i) -> __m256i {
+            let t = _mm256_add_epi16(a, f);
+            let t = _mm256_sub_epi16(t, _mm256_mullo_epi16(_mm256_add_epi16(b, e), c5));
+            _mm256_add_epi16(t, _mm256_mullo_epi16(_mm256_add_epi16(c, d), c20))
+        }
+        #[inline]
+        #[target_feature(enable = "avx2")]
+        unsafe fn st8(p: *mut u8, v: __m256i, c16: __m256i) {
+            let v = _mm256_srai_epi16(_mm256_add_epi16(v, c16), 5);
+            let pk = _mm256_packus_epi16(v, v);
+            let pk = _mm256_permute4x64_epi64(pk, 0b1000);
+            _mm_storeu_si128(p as *mut __m128i, _mm256_castsi256_si128(pk));
+        }
+        // horizontal: affected columns within 2..s-3, in blocks of 16 (last block aligned to the end)
+        let hi = (xb + 2).min(s - 3);
+        let xlast = hi - 16;
+        let lo = xa.saturating_sub(3).max(2).min(xlast);
+        for y in a..b {
+            let row = d.add(y * s);
+            let mut x = lo;
+            loop {
+                let xx = x.min(xlast);
+                let p = row.add(xx);
+                let v = tap(ld(p.sub(2)), ld(p.sub(1)), ld(p), ld(p.add(1)), ld(p.add(2)), ld(p.add(3)), c5, c20);
+                _mm256_storeu_si256(b1.add(y * s + xx) as *mut __m256i, v);
+                st8(bo.add(y * s + xx), v, c16);
+                if xx == xlast {
+                    break;
+                }
+                x += 16;
+            }
+        }
+        let hi = (xb + 2).min(s);
+        let xlast = hi - 16;
+        let lo = xa.saturating_sub(3).min(xlast);
+        for y in a.saturating_sub(3).max(2)..(b + 2).min(rows - 3) {
+            let mut x0 = lo;
+            loop {
+                let x = x0.min(xlast);
+                let p = d.add((y - 2) * s + x);
+                let v = tap(ld(p), ld(p.add(s)), ld(p.add(2 * s)), ld(p.add(3 * s)), ld(p.add(4 * s)), ld(p.add(5 * s)), c5, c20);
+                st8(ho.add(y * s + x), v, c16);
+                let q = b1.add((y - 2) * s + x) as *const i16;
+                let mut out = [_mm256_setzero_si256(); 2];
+                for (h, o) in out.iter_mut().enumerate() {
+                    let l = |k: usize| _mm256_cvtepi16_epi32(_mm_loadu_si128(q.add(k * s + h * 8) as *const __m128i));
+                    let t = _mm256_add_epi32(l(0), l(5));
+                    let t = _mm256_sub_epi32(t, _mm256_mullo_epi32(_mm256_add_epi32(l(1), l(4)), c5d));
+                    let t = _mm256_add_epi32(t, _mm256_mullo_epi32(_mm256_add_epi32(l(2), l(3)), c20d));
+                    *o = _mm256_srai_epi32(_mm256_add_epi32(t, c512), 10);
+                }
+                let pk = _mm256_permute4x64_epi64(_mm256_packs_epi32(out[0], out[1]), 0b11011000);
+                let pk = _mm256_packus_epi16(pk, pk);
+                let pk = _mm256_permute4x64_epi64(pk, 0b1000);
+                _mm_storeu_si128(jo.add(y * s + x) as *mut __m128i, _mm256_castsi256_si128(pk));
+                if x == xlast {
+                    break;
+                }
+                x0 += 16;
+            }
+        }
     }
 
     #[inline(always)]
-    fn compute_impl(&mut self, r: &Plane) {
+    fn compute_impl(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize) {
         let s = r.stride;
         let rows = r.data.len() / s;
         let d = &r.data;
         // columns 2..s-3 of every row get b; rows 2..rows-3 get h and j
         let mut b1 = std::mem::take(&mut self.b1);
         b1.resize(rows * s, 0);
-        for y in 0..rows {
+        let b = b.min(rows);
+        for y in a..b {
             let row = &d[y * s..y * s + s];
             let o = &mut b1[y * s..y * s + s];
             let bo = &mut self.b.data[y * s..y * s + s];
-            for x in 2..s - 3 {
+            for x in xa.saturating_sub(3).max(2)..(xb + 2).min(s - 3) {
                 let v = row[x - 2] as i16 - 5 * row[x - 1] as i16 + 20 * row[x] as i16 + 20 * row[x + 1] as i16
                     - 5 * row[x + 2] as i16
                     + row[x + 3] as i16;
@@ -198,7 +290,7 @@ impl HpelPlanes {
                 bo[x] = ((v + 16) >> 5).clamp(0, 255) as u8;
             }
         }
-        for y in 2..rows - 3 {
+        for y in a.saturating_sub(3).max(2)..(b + 2).min(rows - 3) {
             let r0 = &d[(y - 2) * s..(y - 1) * s];
             let r1 = &d[(y - 1) * s..y * s];
             let r2 = &d[y * s..(y + 1) * s];
@@ -206,7 +298,7 @@ impl HpelPlanes {
             let r4 = &d[(y + 2) * s..(y + 3) * s];
             let r5 = &d[(y + 3) * s..(y + 4) * s];
             let ho = &mut self.h.data[y * s..(y + 1) * s];
-            for x in 0..s {
+            for x in xa.saturating_sub(3)..(xb + 2).min(s) {
                 let v = r0[x] as i16 - 5 * r1[x] as i16 + 20 * r2[x] as i16 + 20 * r3[x] as i16 - 5 * r4[x] as i16
                     + r5[x] as i16;
                 ho[x] = ((v + 16) >> 5).clamp(0, 255) as u8;
@@ -214,7 +306,7 @@ impl HpelPlanes {
             let (c0, c1, c2) = (&b1[(y - 2) * s..(y - 1) * s], &b1[(y - 1) * s..y * s], &b1[y * s..(y + 1) * s]);
             let (c3, c4, c5) = (&b1[(y + 1) * s..(y + 2) * s], &b1[(y + 2) * s..(y + 3) * s], &b1[(y + 3) * s..(y + 4) * s]);
             let jo = &mut self.j.data[y * s..(y + 1) * s];
-            for x in 0..s {
+            for x in xa.saturating_sub(3)..(xb + 2).min(s) {
                 let v = c0[x] as i32 - 5 * c1[x] as i32 + 20 * c2[x] as i32 + 20 * c3[x] as i32 - 5 * c4[x] as i32
                     + c5[x] as i32;
                 jo[x] = ((v + 512) >> 10).clamp(0, 255) as u8;
@@ -248,6 +340,37 @@ impl HpelPlanes {
             (3, 2) => ((j, 0), Some((h, 1))),
             _ => ((j, 0), None),
         };
+        let (q1, end1) = (o + p1.1, o + p1.1 + 15 * s + 16);
+        assert!(end1 <= p1.0.len());
+        if let Some(q) = p2 {
+            assert!(o + q.1 + 15 * s + 16 <= q.0.len());
+        }
+        #[cfg(target_arch = "x86_64")]
+        // SAFETY: the asserts above bound every 16-byte row read; `out` has 256 bytes.
+        unsafe {
+            use std::arch::x86_64::*;
+            let a = p1.0.as_ptr().add(q1);
+            let d = out.as_mut_ptr();
+            match p2 {
+                None => {
+                    for r in 0..16 {
+                        let v = _mm_loadu_si128(a.add(r * s) as *const __m128i);
+                        _mm_storeu_si128(d.add(r * 16) as *mut __m128i, v);
+                    }
+                }
+                Some(q) => {
+                    let b = q.0.as_ptr().add(o + q.1);
+                    for r in 0..16 {
+                        let v = _mm_avg_epu8(
+                            _mm_loadu_si128(a.add(r * s) as *const __m128i),
+                            _mm_loadu_si128(b.add(r * s) as *const __m128i),
+                        );
+                        _mm_storeu_si128(d.add(r * 16) as *mut __m128i, v);
+                    }
+                }
+            }
+        }
+        #[cfg(not(target_arch = "x86_64"))]
         for r in 0..16 {
             let i = o + r * s;
             let a: [u8; 16] = p1.0[i + p1.1..i + p1.1 + 16].try_into().unwrap();
@@ -272,6 +395,22 @@ mod planes_test {
         p.extend();
         let mut hp = HpelPlanes::new(&p);
         hp.compute(&p);
+        let mut sc = HpelPlanes::new(&p);
+        let rows = p.data.len() / p.stride;
+        sc.compute_impl(&p, 0, p.stride, 0, rows);
+        // partial update after a local change equals a full recompute
+        let mut q = p.clone();
+        for y in 40..60 {
+            for x in 50..70 {
+                q.data[y * q.stride + x] ^= 0x5a;
+            }
+        }
+        hp.compute_rect(&q, 50, 70, 40, 60);
+        sc.compute(&q);
+        assert!(sc.b.data == hp.b.data && sc.h.data == hp.h.data && sc.j.data == hp.j.data);
+        hp.compute(&p);
+        sc.compute_impl(&p, 0, p.stride, 0, rows);
+        assert!(sc.b.data == hp.b.data && sc.h.data == hp.h.data && sc.j.data == hp.j.data);
         for (x, y) in [(0isize, 0isize), (-17, -17), (40, 20), (48, 32), (-5, 30)] {
             let w = Hpel::new(&p, x, y);
             for dy in -3..=3 {
