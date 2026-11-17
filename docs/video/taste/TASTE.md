@@ -4,6 +4,21 @@ What separates work a studio would post from generic, templated or "AI slop" vid
 
 **This is not a style and not a rulebook.** It describes what tends to work and why, what tends to fail and why, and how to check, with ranges and contrasting valid choices. The one through-line: every choice is made for this subject, on purpose, and you can say why. A default you didn't choose is the tell (prg.sh, 925Studios); a choice that would fit any product is wrong (swap test, §8). If two of your pieces look alike, at least one of them is wrong: **range is the goal**. Two briefs should come out as different in medium, world, palette, type, motion and sound as two studios' work would (taste pass step 1, *Diverge*).
 
+## The craft library (depth behind each section)
+
+TASTE.md is the index and the short pass (§10). Each craft doc in `docs/video/craft/` gives principles, techniques with numbers, what separates studio work from amateur work, and a gap list against Anikit. All of it is advice, not rules.
+
+| Doc | What it covers | Feeds |
+|---|---|---|
+| [`art-direction.md`](../craft/art-direction.md) | brief → unexpected idea: volume (30+ lines), turning the obvious one, point of view, treatments, world rules, style frames | §8, §10 step 1 |
+| [`storytelling.md`](../craft/storytelling.md) | 10–30 s: hook data, beat budgets, 20 structures, endings with payoff, button and rhyme | §6, §8 |
+| [`editing.md`](../craft/editing.md) | professional cutting: rhythm types, shot-length variance, eye-trace on fast cuts, anticipating the beat, frame shaving | §6 |
+| [`grading.md`](../craft/grading.md) | grading: the invisible grade, the tone curve as the film look, halation and grain physics, no grade for design-led work | §2, §4 |
+| [`award-level.md`](../craft/award-level.md) | 17 winning short-form pieces: one idea, one material pushed to the limit, systems, type that carries meaning | §11 |
+| [`ai-tells.md`](../craft/ai-tells.md) | what reads as generated in 2024–26, and automatable checks | §9 |
+| [`review-div.md`](../craft/review-div.md) | why the div-a…g films read as boring: seven structural failures | §9, §11 |
+| `typography.md`, `graphic-design.md`, `motion-design.md`, `3d-design.md`, `illustration.md`, `sound-design.md`, `music.md`, `generative.md` | domain depth from the TYPE, GRAPHIC, MOGRAPH, 3D, COMPONENTS, SOUND, MUSIC and SHADER sessions (as they land) | §1–§7, §11 |
+
 Each section runs **principles → rules (numbers from practice) → tells → checks**. Numbers marked *(heuristic)* are our proposals built on sources; tune them by eye. `anikit-video critique` implements the checks marked ⚙.
 
 ---
