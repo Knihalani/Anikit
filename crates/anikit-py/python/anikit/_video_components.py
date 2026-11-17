@@ -76,5 +76,6 @@ COMPONENT_KINDS = {
     "hatch": "Hand-drawn hatched, cross-hatched, stippled or scribbled fill of a shape, with a tone gradient from a light direction, wobble, boil and a line-by-line draw-on.",
     "paper": "Full-frame paper stock with real tooth: paper, cotton, kraft, canvas weave, cold-press watercolor or newsprint; computed once and dithered.",
     "cutout": "Cut or torn paper shape (flat colour or paper/kraft/newsprint stock) with a fibrous rim, lifted drop shadow, hand-placed wobble and a drop or slide entrance.",
+    "illo": "Illustration toolkit: a scene graph of layered vector shapes (paths, circles, rects, blobs, polygons, stars, groups) lit by one global light into hue-shifted form shadows, rims and hard cast shadows, with dithered OKLab gradients, object-locked grain, halftone, riso, paper or hatch, a consistent hand (weighted, broken outlines; wobble; boil), palette and ink snapping, clip and cut, keyframes, morphs, sway and stepped timing.",
     "lottie": "Minimal Lottie player (shape layers, transforms, trim paths).",
 }
