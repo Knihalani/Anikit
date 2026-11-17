@@ -69,11 +69,13 @@ pub struct EncoderConfig {
     /// Try 16×8, 8×16 and 8×8 partitions for P macroblocks (CABAC only). About
     /// 1.5% smaller at equal SSIM on motion graphics, at ~1.5× the encode time.
     pub partitions: bool,
+    /// 8×8 transform for inter macroblocks (High profile; CABAC only).
+    pub transform8: bool,
 }
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: -0.5, ssim_floor: 0.985, ssim_max_drop: 8, bframes: 0, partitions: false }
+        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: -0.5, ssim_floor: 0.985, ssim_max_drop: 8, bframes: 0, partitions: false, transform8: true }
     }
 }
 
@@ -185,6 +187,8 @@ pub(crate) struct MbInfo {
     pub part: u8,
     pub mv8: [(i16, i16); 4],
     pub mvd8: [(i16, i16); 4],
+    /// transform_size_8x8_flag.
+    pub t8: bool,
 }
 
 const BLK_X: [usize; 16] = [0, 1, 0, 1, 2, 3, 2, 3, 0, 1, 0, 1, 2, 3, 2, 3];
@@ -213,6 +217,9 @@ struct Coded {
     nz: [u8; 16],
     nzc: [[u8; 4]; 2],
     cbp: u8,
+    /// 8×8 transform: luma levels per 8×8 block (raster) instead of `luma`.
+    t8: bool,
+    l8: [[i16; 64]; 4],
 }
 
 impl Coded {
@@ -225,6 +232,8 @@ impl Coded {
             nz: [0; 16],
             nzc: [[0; 4]; 2],
             cbp: 0,
+            t8: false,
+            l8: [[0; 64]; 4],
         }
     }
 }
@@ -242,6 +251,7 @@ pub(crate) struct QpSet {
     pub qc: Quant,
     pub qs: QuantS,
     pub qcs: QuantS,
+    pub q8: crate::transform::Quant8,
     /// SAD bounds (luma 16×16, chroma 8×8) under which inter residuals are all zero.
     /// (luma, chroma, chroma DC limit on the 8x8 SAD), inter.
     pub zero_sad: (u32, u32, u32),
@@ -285,6 +295,7 @@ impl QpSet {
             zero_dc_intra: (crate::soa::chroma_dc_limit(&q, true), crate::soa::chroma_dc_limit(&qc, true)),
             zero_sad_intra: crate::soa::zero_sad_bounds(&q, &qs, &qc, &qcs, true),
             lambda: (0.85f64 * 2f64.powf((qp as f64 - 12.0) / 6.0)).round().max(1.0) as i32,
+            q8: crate::transform::Quant8::new(qp),
             q,
             qc,
             qs,
@@ -328,6 +339,8 @@ pub(crate) struct FrameCtx<'a> {
     pub cabac: bool,
     /// P partitions (see [`EncoderConfig::partitions`]).
     pub partitions: bool,
+    /// 8×8 transform allowed (transform_8x8_mode_flag).
+    pub t8: bool,
     pub hdr_frame_num: u32,
     /// pic_order_cnt_lsb (POC type 0 streams).
     pub poc: Option<u32>,
@@ -371,6 +384,7 @@ fn mb_equal(a: &Pic, b: &Pic, mx: usize, my: usize) -> bool {
 
 mod bframe;
 mod part;
+mod t8;
 
 const SKIP_INFO: MbInfo = MbInfo {
     kind: 0,
@@ -392,6 +406,7 @@ const SKIP_INFO: MbInfo = MbInfo {
     part: 0,
     mv8: [(0, 0); 4],
     mvd8: [(0, 0); 4],
+    t8: false,
 };
 
 /// Mutable band of the reconstructed picture owned by one slice.
@@ -1079,7 +1094,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mut recon = [0u8; 256];
         let sad = crate::simd::sad16(src_y, 16, pred, 16);
         let ry = if sad > self.p.zero_sad.0 && crate::simd::max_sad4(src_y, pred, 16, 16) > self.p.zero_sad4.0 {
-            luma_inter(src_y, pred, &self.p.qs, &mut cd, &mut recon);
+            self.luma_resid(src_y, pred, &mut cd, &mut recon);
             &recon
         } else {
             pred
@@ -1123,6 +1138,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             part: 0,
             mv8: [(0, 0); 4],
             mvd8: [(0, 0); 4],
+            t8: cd.t8 && cd.cbp & 15 != 0,
         };
         if skip {
             self.emit_skip(mbx, mby);
@@ -1132,6 +1148,16 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             self.emit_p16(mbx, mby, mvd, &cd);
         }
         self.emit_end(mbx, mby);
+    }
+
+    /// Inter luma residual with the 4×4 or (when it suits the residual) the
+    /// 8×8 transform.
+    fn luma_resid(&self, src: &[u8; 256], pred: &[u8; 256], cd: &mut Coded, recon: &mut [u8; 256]) {
+        if self.c.t8 && t8::prefer_t8(src, pred) {
+            t8::luma_inter8(src, pred, &self.p.q8, cd, recon);
+        } else {
+            luma_inter(src, pred, &self.p.qs, cd, recon);
+        }
     }
 
     fn store_recon(&mut self, mbx: usize, mby: usize, y16: &[u8; 256], c8: &[[u8; 64]; 2]) {
@@ -1376,6 +1402,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             part: 0,
             mv8: [(0, 0); 4],
             mvd8: [(0, 0); 4],
+            t8: false,
         };
         if is16 {
             self.stats.intra16 += 1;
@@ -1459,6 +1486,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         cb.mvd(w, 40, mvd.0, sx);
         cb.mvd(w, 47, mvd.1, sy);
         cabac_cbp(cb, w, &a, &b, cd.cbp);
+        if self.c.t8 && cd.cbp & 15 != 0 {
+            cb.decision(w, 399 + t8::t8_ctx(&a, &b), cd.t8 as u32);
+        }
         if cd.cbp != 0 {
             let d = self.mb_qp as i32 - self.qp_pred as i32;
             cabac_dqp(cb, w, d, self.dqp_prev_nz);
@@ -1554,6 +1584,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
             _ => {
                 cb.decision(w, bin0_ctx, 0);
+                if self.c.t8 {
+                    cb.decision(w, 399 + t8::t8_ctx(&a, &b), 0); // transform_size_8x8_flag: I4x4
+                }
                 for &(f, r) in m4sig {
                     cb.decision(w, 68, f as u32);
                     if !f {
@@ -1886,6 +1919,10 @@ fn cabac_residual(
                 scan[j] = blk[ZIGZAG[j + 1]] as i32;
             }
             cb.residual(w, &scan[..15], Cat::LumaAc, luma_inc(bx, by));
+        } else if cd.t8 {
+            if k % 4 == 0 && cd.cbp & (1 << (k / 4)) != 0 {
+                t8::cabac_block8(cb, w, &cd.l8[k / 4]);
+            }
         } else {
             if cd.cbp & (1 << (k / 4)) == 0 {
                 continue;
@@ -2287,6 +2324,8 @@ pub struct Encoder {
     /// (buffer, display index in the GOP, input index), spare buffers, the
     /// change map since the last reference, and the B picture's state.
     bf: usize,
+    /// 8×8 transform on (High profile).
+    t8: bool,
     pend: Vec<Held>,
 
     pend_pool: Vec<crate::frame::YuvBuffer>,
@@ -2360,6 +2399,7 @@ impl Encoder {
             last: FrameStats::default(),
             skip_cache: Vec::new(),
             bf: if cfg.cabac && threads == 1 { cfg.bframes as usize } else { 0 },
+            t8: cfg.cabac && cfg.transform8,
             pend: Vec::new(),
 
             pend_pool: Vec::new(),
@@ -2641,6 +2681,7 @@ impl Encoder {
                 hpel1: if self.cfg.subpel { if swapped { self.hpel1.as_ref() } else { self.hpel.as_ref() } } else { None },
                 cabac: true,
                 partitions: false,
+                t8: self.t8,
                 hdr_frame_num: self.ref_num,
                 poc: Some((2 * disp) as u32),
                 idr_id: 0,
@@ -2792,12 +2833,13 @@ impl Encoder {
                     full_range: self.cfg.full_range,
                     cabac: self.cfg.cabac,
                     bframes: self.bf > 0,
+                    high: self.t8,
                 },
                 self.level,
             );
             write_nal(&mut self.out, 3, 7, &self.hdr.buf);
             self.hdr.clear();
-            write_pps(&mut self.hdr, self.cfg.qp, self.cfg.cabac);
+            write_pps(&mut self.hdr, self.cfg.qp, self.cfg.cabac, self.t8);
             write_nal(&mut self.out, 3, 8, &self.hdr.buf);
         }
         let frame_num = self.ref_num;
@@ -3008,6 +3050,7 @@ impl Encoder {
             hpel1: None,
             cabac: self.cfg.cabac,
             partitions: self.cfg.partitions && self.cfg.cabac,
+            t8: self.t8,
             hdr_frame_num: frame_num,
             poc: self.cur_poc,
             idr_id: self.idr_count & 0xffff,

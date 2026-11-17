@@ -295,7 +295,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mut recon = [0u8; 256];
         let sad = crate::simd::sad16(src_y, 16, pred, 16);
         let ry = if sad > self.p.zero_sad.0 && crate::simd::max_sad4(src_y, pred, 16, 16) > self.p.zero_sad4.0 {
-            luma_inter(src_y, pred, &self.p.qs, &mut cd, &mut recon);
+            self.luma_resid(src_y, pred, &mut cd, &mut recon);
             &recon
         } else {
             pred
@@ -354,6 +354,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             part: part as u8,
             mv8: pc.mv.map(to16),
             mvd8: mvd8.map(to16),
+            t8: cd.t8 && cd.cbp & 15 != 0,
         };
         self.stats.inter += 1;
         self.emit_part(mbx, mby, part, &mvds, &mvd8, &cd);
@@ -417,6 +418,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             cb.mvd(w, 47, d.1, s.1);
         }
         cabac_cbp(cb, w, &a, &b, cd.cbp);
+        if self.c.t8 && cd.cbp & 15 != 0 {
+            cb.decision(w, 399 + super::t8::t8_ctx(&a, &b), cd.t8 as u32);
+        }
         if cd.cbp != 0 {
             let d = self.mb_qp as i32 - self.qp_pred as i32;
             cabac_dqp(cb, w, d, self.dqp_prev_nz);

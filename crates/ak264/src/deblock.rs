@@ -360,6 +360,9 @@ fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize)
     let intra = cur.kind != 0;
     for e in 1..4 {
         for k in 0..4 {
+            if cur.t8 && e != 2 {
+                continue; // inside an 8×8 transform block: not filtered
+            }
             let mut v = if intra { 3 } else { 2 * ((nzm >> (k * 4 + e - 1) | nzm >> (k * 4 + e)) & 1) as u8 };
             let mut h = if intra { 3 } else { 2 * ((nzm >> ((e - 1) * 4 + k) | nzm >> (e * 4 + k)) & 1) as u8 };
             if e == 2 && cur.part != 0 && !intra {

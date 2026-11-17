@@ -106,7 +106,15 @@ fn sps_poc(sps: &[u8]) -> (u32, u32, u32) {
     r.u(16);
     r.ue();
     if matches!(profile, 100 | 110 | 122 | 244 | 44 | 83 | 86 | 118 | 128 | 138 | 139 | 134 | 135) {
-        return (4, 2, 4); // not written by this encoder: assume no reordering
+        if r.ue() == 3 {
+            r.bit();
+        }
+        r.ue();
+        r.ue();
+        r.bit();
+        if r.bit() != 0 {
+            return (4, 2, 4); // scaling matrices: not written by this encoder; assume no reordering
+        }
     }
     let fn_bits = r.ue() + 4;
     let poc_type = r.ue();
@@ -299,6 +307,13 @@ pub fn mux(annexb: &[u8], width: u32, height: u32, fps: f64) -> Vec<u8> {
         b.u8(1);
         b.u16(pps.len() as u16);
         b.bytes(pps);
+        if matches!(sps[1], 100 | 110 | 122 | 144) {
+            // chroma_format 4:2:0, 8-bit luma and chroma, no SPS extensions
+            b.u8(0xfc | 1);
+            b.u8(0xf8);
+            b.u8(0xf8);
+            b.u8(0);
+        }
         b.close(avcc);
         b.close(avc1);
         b.close(stsd);

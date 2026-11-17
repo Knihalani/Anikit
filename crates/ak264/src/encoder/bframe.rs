@@ -3,6 +3,7 @@
 //! 16×16. CABAC only.
 
 use super::*;
+use super::t8;
 
 /// Prediction of a B macroblock.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -269,7 +270,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mut recon = [0u8; 256];
         let sad = crate::simd::sad16(src_y, 16, py, 16);
         let ry = if sad > self.p.zero_sad.0 && crate::simd::max_sad4(src_y, py, 16, 16) > self.p.zero_sad4.0 {
-            luma_inter(src_y, py, &self.p.qs, &mut cd, &mut recon);
+            self.luma_resid(src_y, py, &mut cd, &mut recon);
             recon
         } else {
             *py
@@ -340,6 +341,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             part: 0,
             mv8: [(0, 0); 4],
             mvd8: [(0, 0); 4],
+            t8: cd.t8 && cd.cbp & 15 != 0,
         };
         if skip {
             self.stats.skip += 1;
@@ -392,6 +394,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         }
         cabac_cbp(cb, w, &a, &b, cd.cbp);
+        if self.c.t8 && cd.cbp & 15 != 0 {
+            cb.decision(w, 399 + t8::t8_ctx(&a, &b), cd.t8 as u32);
+        }
         if cd.cbp != 0 {
             let d = self.mb_qp as i32 - self.qp_pred as i32;
             cabac_dqp(cb, w, d, self.dqp_prev_nz);
