@@ -6,7 +6,7 @@ studio: "ManvsMachine with BBC Creative"
 client: "BBC One"
 year: 2022
 url: https://vimeo.com/709436376
-alt_urls: [https://itsnicethat.com/news/manvsmachine-bbc-creative-bbc-one-film-010622]
+alt_urls: ["https://itsnicethat.com/news/manvsmachine-bbc-creative-bbc-one-film-010622"]
 length_s: 340
 verified: oembed
 aspect: "16:9"

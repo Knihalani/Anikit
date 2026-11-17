@@ -6,7 +6,7 @@ studio: "Blinkink (director: Nicos Livesey; lead designer Dan Evans)"
 client: "BBC Sport / BBC Creative"
 year: 2026
 url: https://www.youtube.com/watch?v=ff2k22F4qNM
-alt_urls: [https://www.youtube.com/watch?v=rQKrA9MTKxs, https://www.stashmedia.tv/nicos-livesey-animates-on-everything-in-buildup-to-bbcs-world-cup-coverage/]
+alt_urls: ["https://www.youtube.com/watch?v=rQKrA9MTKxs", "https://www.stashmedia.tv/nicos-livesey-animates-on-everything-in-buildup-to-bbcs-world-cup-coverage/"]
 length_s: 52
 verified: oembed
 aspect: "16:9"

@@ -6,7 +6,7 @@ studio: "Nexus Studios (director: Fx Goby)"
 client: "BBC Sport / BBC Creative"
 year: 2024
 url: https://www.youtube.com/watch?v=j7wDrDsMJhU
-alt_urls: [https://www.youtube.com/watch?v=iVc61V4xhlw, https://nexusstudios.com/work/bbc-paris-olympics/]
+alt_urls: ["https://www.youtube.com/watch?v=iVc61V4xhlw", "https://nexusstudios.com/work/bbc-paris-olympics/"]
 length_s: 60
 verified: oembed
 aspect: "16:9"

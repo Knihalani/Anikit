@@ -6,7 +6,7 @@ studio: "Factory Fifteen (directors: Paul Nicholls, Jonathan Gales, Kibwe Tavare
 client: "BBC Sport / BBC Creative"
 year: 2021
 url: https://vimeo.com/566015251
-alt_urls: [https://www.youtube.com/watch?v=Qrym1Lk3c1Q, https://vimeo.com/820939870, https://factoryfifteen.com/world/tokyo-olympics]
+alt_urls: ["https://www.youtube.com/watch?v=Qrym1Lk3c1Q", "https://vimeo.com/820939870", "https://factoryfifteen.com/world/tokyo-olympics"]
 length_s: 60
 verified: oembed
 aspect: "16:9"

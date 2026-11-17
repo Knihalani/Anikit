@@ -6,7 +6,7 @@ studio: "Lambie-Nairn (Martin Lambie-Nairn)"
 client: "BBC Two"
 year: 1991
 url: https://www.youtube.com/watch?v=cYwa3W9IiKk
-alt_urls: [https://www.youtube.com/watch?v=s8ar1aavGXk]
+alt_urls: ["https://www.youtube.com/watch?v=s8ar1aavGXk"]
 length_s: 47
 verified: oembed
 aspect: "other"

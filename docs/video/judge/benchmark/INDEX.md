@@ -63,6 +63,17 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [The Imaginary Friend Society // Finding Out You Have Cancer](explainer-2d/giant-ant-imaginary-friend-society-2017.md) | Giant Ant (CD: Jay Grandin; animation director: Conor Whelan; AD: Rafael Mayani) | 2017 | 1:59 | steady | 2d-illustrated, cel | [watch](https://vimeo.com/235372654) |
 | [Optimistic Nihilism](explainer-2d/kurzgesagt-optimistic-nihilism-2017.md) | Kurzgesagt – In a Nutshell | 2017 | ? | steady | 2d-vector | [watch](https://www.youtube.com/watch?v=MBRqu0YOH14) |
 
+### Software / UI launch films (`ui-product/`, 6)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [Introducing Linear Agent](ui-product/linear-introducing-linear-agent-2026.md) | Linear (in-house; individual credits not published) | 2026 | 0:55 | steady | ui, 3d-cg | [watch](https://www.youtube.com/watch?v=mRql2VJ99gM) |
+| [That's Framer: The pro site builder loved by designers](ui-product/framer-thats-framer-2025.md) | Framer (in-house; individual credits not published) | 2025 | 0:38 | fast | ui, 2d-vector, kinetic-type | [watch](https://www.youtube.com/watch?v=8AHPXm9Y6mI) |
+| [Introducing: Material 3 Expressive](ui-product/google-design-introducing-material-3-expressive-2025.md) | Google Design (in-house; individual credits not published) | 2025 | 0:39 | fast | ui, 2d-vector, photo | [watch](https://www.youtube.com/watch?v=n17dnMChX14) |
+| [Launching Whisk with Google Labs](ui-product/hook-launching-whisk-with-google-labs-2025.md) | Hook Studios | 2025 | 0:52 | fast | ui, kinetic-type, photo | [watch](https://www.youtube.com/watch?v=dTtshFSBIQw) |
+| [New Raycast. Coming 2026](ui-product/raycast-new-raycast-coming-2026-2025.md) | Raycast (in-house; individual credits not published) | 2025 | 0:39 | fast | ui, 3d-cg | [watch](https://www.youtube.com/watch?v=Mi173xGb0ZA) |
+| [Introducing the new Notion AI](ui-product/notion-introducing-the-new-notion-ai-2024.md) | Notion (in-house; individual credits not published) | 2024 | 0:57 | fast | ui, 2d-vector, kinetic-type | [watch](https://www.youtube.com/watch?v=S92KX8-Hmlc) |
+
 ### 3D / CG product & abstract (`cg-3d/`, 7)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
@@ -86,22 +97,26 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [Skyline](generative/raven-kwok-skyline-2015.md) | Raven Kwok | 2015 | 4:56 | fast | generative, 2d-vector | [watch](https://vimeo.com/139977231) |
 | [Walking City](generative/universal-everything-walking-city-2014.md) | Universal Everything (creative director: Matt Pyke; animation: Chris Perry) | 2014 | 7:48 | calm | 3d-cg, generative, sim | [watch](https://vimeo.com/85596568) |
 
-### Data storytelling (`data-story/`, 4)
+### Data storytelling (`data-story/`, 5)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
 |---|---|---|---|---|---|---|
+| [Syria's war: Who is fighting and why](data-story/vox-syria-war-who-is-fighting-2017.md) | Vox (Johnny Harris, Max Fisher) | 2017 | ? | steady | data-viz, collage, photo | [watch](https://www.youtube.com/watch?v=JFpanWNgfQY) |
 | [The Fallen of World War II](data-story/halloran-fallen-of-wwii-2015.md) | Neil Halloran (writer, director, coder, narrator) | 2015 | ? | calm | data-viz, 3d-cg | [watch](https://www.youtube.com/watch?v=DwKPFT-RioU) |
 | [How many trees are there in the world?](data-story/nature-tulp-how-many-trees-2015.md) | Nature Video (data visualization: Jan Willem Tulp; art direction: Kelly Krause) | 2015 | ? | steady | data-viz, 3d-cg, generative | [watch](https://www.youtube.com/watch?v=jqdOkXQngw8) |
 | [NASA | A Year in the Life of Earth's CO2](data-story/nasa-year-in-the-life-of-co2-2014.md) | NASA Goddard (GMAO; animator/scientist: Bill Putman) | 2014 | ? | calm | data-viz, sim | [watch](https://www.youtube.com/watch?v=x1SgmFa0r04) |
 | [Hans Rosling's 200 Countries, 200 Years, 4 Minutes - The Joy of Stats - BBC](data-story/bbc-rosling-200-countries-2010.md) | BBC Four, The Joy of Stats (presenter: Hans Rosling; data: Gapminder) | 2010 | ? | steady | data-viz, live-action, mixed | [watch](https://www.youtube.com/watch?v=jbkSRLYSojo) |
 
-### Music videos & lyric videos (`music-video/`, 3)
+### Music videos & lyric videos (`music-video/`, 6)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
 |---|---|---|---|---|---|---|
+| [Coldplay - feelslikeimfallinginlove (Official Video)](music-video/blinkink-djafari-coldplay-feelslikeimfallinginlove-2024.md) | Blinkink (director: Raman Djafari) with 14 guest animators | 2024 | 4:21 | steady | 2d-illustrated, frame-by-frame, stop-motion | [watch](https://www.youtube.com/watch?v=V3IVdLo-2NM) |
 | [Pharrell Williams - Cash In Cash Out (Official Video) ft. 21 Savage, Tyler, The Creator](music-video/rousselet-pharrell-cash-in-cash-out-2022.md) | Division (director: François Rousselet); animation/VFX: Electric Theatre Collective | 2022 | 3:56 | fast | photoreal-cg, stylised-3d | [watch](https://www.youtube.com/watch?v=cKEwnhc8ItY) |
 | [Thom Yorke - Last I Heard (…He Was Circling The Drain)](music-video/artcamp-moosajee-thom-yorke-last-i-heard-2019.md) | Art Camp (directors: Saad Moosajee with Art Camp; technical director: James Bartolozzi) | 2019 | 5:08 | steady | mixed, 3d-cg, cel | [watch](https://www.youtube.com/watch?v=I03xFqbxUp8) |
+| [Aphex Twin - T69 Collapse](music-video/weirdcore-aphex-twin-t69-collapse-2018.md) | Weirdcore (Nicky Smith) | 2018 | 5:19 | frantic | generative, 3d-cg, photo | [watch](https://www.youtube.com/watch?v=SqayDnQ2wmw) |
 | [The Chemical Brothers - Wide Open (Official Music Video) ft. Beck](music-video/domnic-chemical-brothers-wide-open-2016.md) | Outsider (directors: Dom&Nic); VFX: The Mill; choreography: Wayne McGregor | 2016 | 5:31 | calm | live-action, photoreal-cg | [watch](https://www.youtube.com/watch?v=BC2dRkm8ATU) |
+| [Radiohead - Burn The Witch](music-video/hopewell-radiohead-burn-the-witch-2016.md) | Jacknife (director: Chris Hopewell) | 2016 | 4:00 | steady | stop-motion | [watch](https://www.youtube.com/watch?v=yI2oS2hoL0k) |
 
 ### Sports & broadcast packages (`broadcast-sports/`, 5)
 
@@ -112,5 +127,16 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [Paris 2024 Olympic Games - BBC Official Trailer | Directed by Fx Goby | Nexus Studios](broadcast-sports/nexus-fx-goby-bbc-paris-2024.md) | Nexus Studios (director: Fx Goby) | 2024 | 1:00 | fast | 2d-illustrated, cel | [watch](https://www.youtube.com/watch?v=j7wDrDsMJhU) |
 | [#Paris2024 - Look of the Games](broadcast-sports/w-conran-paris-2024-look-of-the-games.md) | W Conran Design with the Paris 2024 brand team | 2023 | 2:01 | steady | 2d-vector, kinetic-type, mixed | [watch](https://www.youtube.com/watch?v=08aeo0WZMOY) |
 | [BBC Tokyo 2020](broadcast-sports/factory-fifteen-bbc-tokyo-2020.md) | Factory Fifteen (directors: Paul Nicholls, Jonathan Gales, Kibwe Tavares), produced by Nexus Studios | 2021 | 1:00 | fast | mixed, live-action, 3d-cg | [watch](https://vimeo.com/566015251) |
+
+### Festival, conference & event promos (`event-promo/`, 6)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [Demo 2027 trailer 16x9](event-promo/studio-dumbar-demo-festival-trailer.md) | Studio Dumbar/DEPT | 2026 | 1:08 | fast | kinetic-type, 2d-vector, generative | [watch](https://vimeo.com/1189394573) |
+| [OFFF Barcelona 2026 'Cultured' campaign by Uncommon](event-promo/uncommon-offf-barcelona-2026-cultured.md) | Uncommon Creative Studio (with artist Dasha Plesen; type by Ryan Bugden) | 2026 | 1:50 | steady | mixed, photo, kinetic-type | [watch](https://vimeo.com/1185548924) |
+| [A TISZÁN - Annecy Festival 2025](event-promo/gobelins-annecy-2025-a-tiszan.md) | GOBELINS Paris (students: Simon Crouzeix, Maëva Dubois, Arthur Laboudigue, Xinjun She) | 2025 | 0:55 | steady | 2d-illustrated, cel | [watch](https://www.youtube.com/watch?v=INrfSjjxnwE) |
+| [OFFFMX 2025 Main Titles by XK Studio](event-promo/xk-studio-offfmx-2025-main-titles.md) | XK Studio (directors: Alexa Sirbu, Lukas Vojir) | 2025 | 1:39 | fast | 3d-cg, stylised-3d | [watch](https://vimeo.com/1119375393) |
+| [MOTION PLUS DESIGN TOKYO - OPENER](event-promo/studio-river-motion-plus-design-tokyo-2024.md) | Studio River (director: Keyvan Nourian) | 2024 | 2:13 | steady | 3d-cg, stylised-3d | [watch](https://vimeo.com/955846057) |
+| [Pictoplasma 2019 Opener - Character Proxemics 1](event-promo/laurie-rowan-pictoplasma-2019-opener.md) | Laurie Rowan (Nexus Studios) | 2019 | 0:33 | steady | stylised-3d, 3d-cg | [watch](https://vimeo.com/367464935) |
 
 <!-- TABLES:END -->

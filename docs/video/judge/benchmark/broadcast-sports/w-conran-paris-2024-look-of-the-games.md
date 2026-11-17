@@ -6,7 +6,7 @@ studio: "W Conran Design with the Paris 2024 brand team"
 client: "Paris 2024 (COJOP)"
 year: 2023
 url: https://www.youtube.com/watch?v=08aeo0WZMOY
-alt_urls: [https://www.youtube.com/watch?v=mhsYRlQrt1o, https://www.red-dot.org/project/paris-2024-look-of-the-games-73164]
+alt_urls: ["https://www.youtube.com/watch?v=mhsYRlQrt1o", "https://www.red-dot.org/project/paris-2024-look-of-the-games-73164"]
 length_s: 121
 verified: oembed
 aspect: "16:9"

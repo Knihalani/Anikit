@@ -6,7 +6,7 @@ studio: "DixonBaxi"
 client: "The CW Network"
 year: 2024
 url: https://vimeo.com/905627809
-alt_urls: [https://vimeo.com/905638729, https://www.itsnicethat.com/news/dixonbaxi-the-cw-graphic-design-240124]
+alt_urls: ["https://vimeo.com/905638729", "https://www.itsnicethat.com/news/dixonbaxi-the-cw-graphic-design-240124"]
 length_s: 48
 verified: oembed
 aspect: "16:9"

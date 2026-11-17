@@ -6,7 +6,7 @@ studio: "Netflix brand team with Imaginary Forces"
 client: "Netflix"
 year: 2019
 url: https://www.youtube.com/watch?v=GV3HUDMQ-F8
-alt_urls: [https://imaginaryforces.com/project/netflix]
+alt_urls: ["https://imaginaryforces.com/project/netflix"]
 length_s: 4
 verified: oembed
 aspect: "16:9"

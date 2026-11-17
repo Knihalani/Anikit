@@ -1397,6 +1397,381 @@
   "path": "docs/video/judge/benchmark/explainer-2d/ordinary-folk-school-of-motion-manifesto-2019.md"
  },
  {
+  "slug": "framer-thats-framer-2025",
+  "category": "ui-product",
+  "title": "That's Framer: The pro site builder loved by designers",
+  "studio": "Framer (in-house; individual credits not published)",
+  "client": "Framer",
+  "year": 2025,
+  "url": "https://www.youtube.com/watch?v=8AHPXm9Y6mI",
+  "alt_urls": [],
+  "length_s": 38,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "ui",
+   "2d-vector",
+   "kinetic-type"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "high-contrast",
+   "brand-colour"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "energetic",
+   "minimal",
+   "technical"
+  ],
+  "purpose": "ad",
+  "techniques": [
+   "ui-zoom",
+   "cursor",
+   "kinetic-type",
+   "scale-contrast",
+   "hard-cut",
+   "rhythmic-edit",
+   "typographic-grid"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "composition",
+   "component.cursor",
+   "component.browser",
+   "text",
+   "camera",
+   "shape",
+   "motionBlur",
+   "transitions",
+   "audio"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/8AHPXm9Y6mI/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/8AHPXm9Y6mI/hq1.jpg",
+   "https://i.ytimg.com/vi/8AHPXm9Y6mI/hq2.jpg",
+   "https://i.ytimg.com/vi/8AHPXm9Y6mI/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/ui-product/framer-thats-framer-2025.md"
+ },
+ {
+  "slug": "google-design-introducing-material-3-expressive-2025",
+  "category": "ui-product",
+  "title": "Introducing: Material 3 Expressive",
+  "studio": "Google Design (in-house; individual credits not published)",
+  "client": "Google",
+  "year": 2025,
+  "url": "https://www.youtube.com/watch?v=n17dnMChX14",
+  "alt_urls": [
+   "https://m3.material.io/"
+  ],
+  "length_s": 39,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "ui",
+   "2d-vector",
+   "photo"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "pastel",
+   "brand-colour"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "energetic",
+   "warm"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "morph",
+   "grid",
+   "colour-swap",
+   "rhythmic-edit",
+   "scale-contrast",
+   "ui-zoom"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "composition",
+   "shape",
+   "box",
+   "text",
+   "mograph",
+   "transitions",
+   "audio",
+   "GAP: spring-physics presets matching Material motion (spatial vs effects springs)",
+   "GAP: shape-morph between arbitrary rounded polygons (35 M3 shapes)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/n17dnMChX14/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/n17dnMChX14/hq1.jpg",
+   "https://i.ytimg.com/vi/n17dnMChX14/hq2.jpg",
+   "https://i.ytimg.com/vi/n17dnMChX14/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/ui-product/google-design-introducing-material-3-expressive-2025.md"
+ },
+ {
+  "slug": "hook-launching-whisk-with-google-labs-2025",
+  "category": "ui-product",
+  "title": "Launching Whisk with Google Labs",
+  "studio": "Hook Studios",
+  "client": "Google Labs",
+  "year": 2025,
+  "url": "https://www.youtube.com/watch?v=dTtshFSBIQw",
+  "alt_urls": [
+   "https://byhook.com/work/bringing-ideas-to-life-with-google-labs",
+   "https://www.stashmedia.tv/hook-taps-into-the-joy-of-the-creative-process-to-launch-whisk-for-google-labs/"
+  ],
+  "length_s": 52,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "ui",
+   "kinetic-type",
+   "photo",
+   "2d-vector"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "brand-colour",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "playful",
+   "energetic",
+   "witty"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "cursor",
+   "kinetic-type",
+   "ui-zoom",
+   "grid",
+   "collage-cutout",
+   "rhythmic-edit",
+   "beat-sync",
+   "hard-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "composition",
+   "component.cursor",
+   "image",
+   "text",
+   "box",
+   "transitions",
+   "audio",
+   "camera"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/dTtshFSBIQw/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/dTtshFSBIQw/hq1.jpg",
+   "https://i.ytimg.com/vi/dTtshFSBIQw/hq2.jpg",
+   "https://i.ytimg.com/vi/dTtshFSBIQw/hq3.jpg",
+   "https://cdn.sanity.io/images/qckremhp/production/6caec7116a75c176ddab8808f5ea53c46bb4f910-2880x1400.png",
+   "https://cdn.sanity.io/images/qckremhp/production/908973374ff51a8f9a4d0a4e80401eea8c0ca34b-5760x2800.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/ui-product/hook-launching-whisk-with-google-labs-2025.md"
+ },
+ {
+  "slug": "linear-introducing-linear-agent-2026",
+  "category": "ui-product",
+  "title": "Introducing Linear Agent",
+  "studio": "Linear (in-house; individual credits not published)",
+  "client": "Linear",
+  "year": 2026,
+  "url": "https://www.youtube.com/watch?v=mRql2VJ99gM",
+  "alt_urls": [
+   "https://linear.app/changelog/2026-03-24-introducing-linear-agent"
+  ],
+  "length_s": 55,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "ui",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "mono",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "premium",
+   "minimal",
+   "technical"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "ui-zoom",
+   "camera-move",
+   "depth-of-field",
+   "kinetic-type",
+   "logo-build"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "composition",
+   "scene3d",
+   "camera",
+   "text",
+   "component.browser",
+   "motionBlur",
+   "post",
+   "GAP: real app UI rendered as a tilted 3D plane with DOF and per-row reveal (composition-as-texture works; live UI data needs authoring)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/mRql2VJ99gM/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/mRql2VJ99gM/hq1.jpg",
+   "https://i.ytimg.com/vi/mRql2VJ99gM/hq2.jpg",
+   "https://i.ytimg.com/vi/mRql2VJ99gM/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/ui-product/linear-introducing-linear-agent-2026.md"
+ },
+ {
+  "slug": "notion-introducing-the-new-notion-ai-2024",
+  "category": "ui-product",
+  "title": "Introducing the new Notion AI",
+  "studio": "Notion (in-house; individual credits not published)",
+  "client": "Notion",
+  "year": 2024,
+  "url": "https://www.youtube.com/watch?v=S92KX8-Hmlc",
+  "alt_urls": [
+   "https://www.notion.ai"
+  ],
+  "length_s": 57,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "ui",
+   "2d-vector",
+   "kinetic-type",
+   "2d-illustrated"
+  ],
+  "pace": "fast",
+  "palette": [
+   "light",
+   "high-contrast",
+   "brand-colour",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "playful",
+   "witty",
+   "minimal"
+  ],
+  "purpose": "launch",
+  "techniques": [
+   "ui-zoom",
+   "kinetic-type",
+   "split-screen",
+   "masks",
+   "hard-cut",
+   "rhythmic-edit",
+   "logo-build"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "composition",
+   "text",
+   "shape",
+   "component.browser",
+   "camera",
+   "transitions",
+   "mask",
+   "audio",
+   "GAP: hand-drawn underline/scribble draw-on with brush texture (trimEnd on a path works; brush texture is missing)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/S92KX8-Hmlc/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/S92KX8-Hmlc/hq1.jpg",
+   "https://i.ytimg.com/vi/S92KX8-Hmlc/hq2.jpg",
+   "https://i.ytimg.com/vi/S92KX8-Hmlc/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/ui-product/notion-introducing-the-new-notion-ai-2024.md"
+ },
+ {
+  "slug": "raycast-new-raycast-coming-2026-2025",
+  "category": "ui-product",
+  "title": "New Raycast. Coming 2026",
+  "studio": "Raycast (in-house; individual credits not published)",
+  "client": "Raycast",
+  "year": 2025,
+  "url": "https://www.youtube.com/watch?v=Mi173xGb0ZA",
+  "alt_urls": [
+   "https://raycast.com/"
+  ],
+  "length_s": 39,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "ui",
+   "3d-cg"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "mono",
+   "limited"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "premium",
+   "technical",
+   "minimal"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "ui-zoom",
+   "macro",
+   "depth-of-field",
+   "grain",
+   "camera-move",
+   "kinetic-type",
+   "grid"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "composition",
+   "text",
+   "camera",
+   "scene3d",
+   "post",
+   "motionBlur",
+   "component.grain",
+   "GAP: frosted/refractive glass UI material over a moving backdrop (blur + edge highlight)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/Mi173xGb0ZA/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/Mi173xGb0ZA/hq1.jpg",
+   "https://i.ytimg.com/vi/Mi173xGb0ZA/hq2.jpg",
+   "https://i.ytimg.com/vi/Mi173xGb0ZA/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/ui-product/raycast-new-raycast-coming-2026-2025.md"
+ },
+ {
   "slug": "andreas-wannerstedt-eternal-installations-2020",
   "category": "cg-3d",
   "title": "Eternal Installations",
@@ -2465,6 +2840,67 @@
   "path": "docs/video/judge/benchmark/data-story/nature-tulp-how-many-trees-2015.md"
  },
  {
+  "slug": "vox-syria-war-who-is-fighting-2017",
+  "category": "data-story",
+  "title": "Syria's war: Who is fighting and why",
+  "studio": "Vox (Johnny Harris, Max Fisher)",
+  "client": "Vox",
+  "year": 2017,
+  "url": "https://www.youtube.com/watch?v=JFpanWNgfQY",
+  "alt_urls": [
+   "http://www.vox.com/2015/10/14/9525469/syrias-war-a-5-minute-history"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "data-viz",
+   "collage",
+   "photo",
+   "mixed"
+  ],
+  "pace": "steady",
+  "palette": [
+   "light",
+   "earthy",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "editorial",
+   "technical"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "map",
+   "collage-cutout",
+   "camera-move",
+   "kinetic-type",
+   "chart-build"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "image",
+   "image (cut-out photos)",
+   "text",
+   "shape (map paths, timeline chips)",
+   "camera",
+   "box (timeline row)",
+   "post.grain",
+   "audio",
+   "GAP: map component (country outlines, territory fills that animate over time)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/JFpanWNgfQY/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/JFpanWNgfQY/hq1.jpg",
+   "https://i.ytimg.com/vi/JFpanWNgfQY/hq2.jpg",
+   "https://i.ytimg.com/vi/JFpanWNgfQY/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/vox-syria-war-who-is-fighting-2017.md"
+ },
+ {
   "slug": "artcamp-moosajee-thom-yorke-last-i-heard-2019",
   "category": "music-video",
   "title": "Thom Yorke - Last I Heard (…He Was Circling The Drain)",
@@ -2530,6 +2966,70 @@
   "path": "docs/video/judge/benchmark/music-video/artcamp-moosajee-thom-yorke-last-i-heard-2019.md"
  },
  {
+  "slug": "blinkink-djafari-coldplay-feelslikeimfallinginlove-2024",
+  "category": "music-video",
+  "title": "Coldplay - feelslikeimfallinginlove (Official Video)",
+  "studio": "Blinkink (director: Raman Djafari) with 14 guest animators",
+  "client": "Coldplay / Parlophone",
+  "year": 2024,
+  "url": "https://www.youtube.com/watch?v=V3IVdLo-2NM",
+  "alt_urls": [
+   "https://www.stashmedia.tv/raman-djafari-and-friends-collab-for-coldplay/"
+  ],
+  "length_s": 261,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "frame-by-frame",
+   "stop-motion",
+   "3d-cg",
+   "mixed"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "pastel",
+   "warm"
+  ],
+  "type_role": "none",
+  "mood": [
+   "emotional",
+   "warm",
+   "playful"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "morph",
+   "transitions-in-camera",
+   "boil",
+   "stop-motion-feel",
+   "match-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "video",
+   "shape",
+   "camera",
+   "transitions",
+   "matte",
+   "GAP: frame-by-frame drawn animation in many hand media (oil pastel, watercolour, felt)",
+   "GAP: style-to-style morph transitions"
+  ],
+  "awards": [
+   "UK Music Video Awards 2024: Best Animation in a Video"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/V3IVdLo-2NM/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/V3IVdLo-2NM/hq1.jpg",
+   "https://i.ytimg.com/vi/V3IVdLo-2NM/hq2.jpg",
+   "https://i.ytimg.com/vi/V3IVdLo-2NM/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/blinkink-djafari-coldplay-feelslikeimfallinginlove-2024.md"
+ },
+ {
   "slug": "domnic-chemical-brothers-wide-open-2016",
   "category": "music-video",
   "title": "The Chemical Brothers - Wide Open (Official Music Video) ft. Beck",
@@ -2592,6 +3092,56 @@
   ],
   "measured": null,
   "path": "docs/video/judge/benchmark/music-video/domnic-chemical-brothers-wide-open-2016.md"
+ },
+ {
+  "slug": "hopewell-radiohead-burn-the-witch-2016",
+  "category": "music-video",
+  "title": "Radiohead - Burn The Witch",
+  "studio": "Jacknife (director: Chris Hopewell)",
+  "client": "Radiohead / XL Recordings",
+  "year": 2016,
+  "url": "https://www.youtube.com/watch?v=yI2oS2hoL0k",
+  "alt_urls": [],
+  "length_s": 240,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stop-motion"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "warm",
+   "pastel"
+  ],
+  "type_role": "none",
+  "mood": [
+   "eerie",
+   "witty",
+   "retro"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "stop-motion-feel",
+   "camera-move",
+   "hard-cut"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "post",
+   "GAP: stop-motion puppet look (on-twos stepped motion, felt/wood materials, miniature lighting)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/yI2oS2hoL0k/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/yI2oS2hoL0k/hq1.jpg",
+   "https://i.ytimg.com/vi/yI2oS2hoL0k/hq2.jpg",
+   "https://i.ytimg.com/vi/yI2oS2hoL0k/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/hopewell-radiohead-burn-the-witch-2016.md"
  },
  {
   "slug": "rousselet-pharrell-cash-in-cash-out-2022",
@@ -2660,6 +3210,72 @@
   ],
   "measured": null,
   "path": "docs/video/judge/benchmark/music-video/rousselet-pharrell-cash-in-cash-out-2022.md"
+ },
+ {
+  "slug": "weirdcore-aphex-twin-t69-collapse-2018",
+  "category": "music-video",
+  "title": "Aphex Twin - T69 Collapse",
+  "studio": "Weirdcore (Nicky Smith)",
+  "client": "Aphex Twin / Warp Records",
+  "year": 2018,
+  "url": "https://www.youtube.com/watch?v=SqayDnQ2wmw",
+  "alt_urls": [],
+  "length_s": 319,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "generative",
+   "3d-cg",
+   "photo",
+   "kinetic-type"
+  ],
+  "pace": "frantic",
+  "palette": [
+   "neon",
+   "saturated",
+   "dark"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "energetic",
+   "raw",
+   "technical",
+   "eerie"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "beat-sync",
+   "camera-move",
+   "glitch",
+   "flash-frame",
+   "shader",
+   "noise-field",
+   "particles",
+   "colour-swap"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "cloud",
+   "splat",
+   "shader",
+   "camera",
+   "text",
+   "transitions",
+   "post",
+   "audio (beat-sync)",
+   "GAP: photogrammetry / point-cloud capture import",
+   "GAP: neural style-transfer pass"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/SqayDnQ2wmw/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/SqayDnQ2wmw/hq1.jpg",
+   "https://i.ytimg.com/vi/SqayDnQ2wmw/hq2.jpg",
+   "https://i.ytimg.com/vi/SqayDnQ2wmw/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/weirdcore-aphex-twin-t69-collapse-2018.md"
  },
  {
   "slug": "blinkink-bbc-world-cup-2026",
@@ -2975,5 +3591,348 @@
   ],
   "measured": null,
   "path": "docs/video/judge/benchmark/broadcast-sports/w-conran-paris-2024-look-of-the-games.md"
+ },
+ {
+  "slug": "gobelins-annecy-2025-a-tiszan",
+  "category": "event-promo",
+  "title": "A TISZÁN - Annecy Festival 2025",
+  "studio": "GOBELINS Paris (students: Simon Crouzeix, Maëva Dubois, Arthur Laboudigue, Xinjun She)",
+  "client": "Annecy International Animation Film Festival",
+  "year": 2025,
+  "url": "https://www.youtube.com/watch?v=INrfSjjxnwE",
+  "alt_urls": [
+   "https://www.youtube.com/watch?v=Dwc_WERFdX0",
+   "https://3dvf.com/annecy-2025-redecouvrez-les-animations-des-gobelins/"
+  ],
+  "length_s": 55,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "cel"
+  ],
+  "pace": "steady",
+  "palette": [
+   "earthy",
+   "cool"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "warm",
+   "emotional",
+   "calm"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "camera-move",
+   "parallax"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "camera",
+   "group",
+   "post",
+   "audio",
+   "GAP: hand-drawn character animation"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/INrfSjjxnwE/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/INrfSjjxnwE/hq1.jpg",
+   "https://i.ytimg.com/vi/INrfSjjxnwE/hq2.jpg",
+   "https://i.ytimg.com/vi/INrfSjjxnwE/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/event-promo/gobelins-annecy-2025-a-tiszan.md"
+ },
+ {
+  "slug": "laurie-rowan-pictoplasma-2019-opener",
+  "category": "event-promo",
+  "title": "Pictoplasma 2019 Opener - Character Proxemics 1",
+  "studio": "Laurie Rowan (Nexus Studios)",
+  "client": "Pictoplasma Festival, Berlin",
+  "year": 2019,
+  "url": "https://vimeo.com/367464935",
+  "alt_urls": [
+   "https://nexusstudios.com/work/character_proxemics"
+  ],
+  "length_s": 33,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stylised-3d",
+   "3d-cg"
+  ],
+  "pace": "steady",
+  "palette": [
+   "saturated",
+   "dark"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "eerie"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "loop",
+   "camera-move",
+   "glow",
+   "instancing"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "glow",
+   "post",
+   "audio",
+   "loop",
+   "GAP: character design and rigged stacked character animation"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/823831771-46d669e15c8ac959f95e42e05bf604e5aff877ce78ef6beb6a4f28e04b5befc6-d_1280"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/event-promo/laurie-rowan-pictoplasma-2019-opener.md"
+ },
+ {
+  "slug": "studio-dumbar-demo-festival-trailer",
+  "category": "event-promo",
+  "title": "Demo 2027 trailer 16x9",
+  "studio": "Studio Dumbar/DEPT",
+  "client": "DEMO Design in Motion Festival (self-initiated with Global)",
+  "year": 2026,
+  "url": "https://vimeo.com/1189394573",
+  "alt_urls": [
+   "https://studiodumbar.com/work/demo",
+   "https://studiodumbar.com/work/demo-2025"
+  ],
+  "length_s": 68,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "kinetic-type",
+   "2d-vector",
+   "generative"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "limited",
+   "high-contrast"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "energetic",
+   "playful",
+   "editorial"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "kinetic-type",
+   "type-morph",
+   "typographic-grid",
+   "colour-swap",
+   "beat-sync",
+   "scale-contrast"
+  ],
+  "audio": "sound-design-led",
+  "anikit_features": [
+   "text",
+   "text.split",
+   "mograph",
+   "shape",
+   "mask",
+   "transitions",
+   "audio",
+   "GAP: variable-font axis animation and script-driven glyph distortion"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/2153898094-d42f2bab0ecefeac23dd945ab0e0fce763e366cc9234177ca77171a73f26bc44-d_1280",
+   "https://studiodumbar.com/media/pages/work/demo/1368cf28e7-1682344555/163demo.jpg",
+   "https://studiodumbar.com/media/pages/work/demo/313fdbc37d-1682344554/77demo.jpg",
+   "https://studiodumbar.com/media/pages/work/demo-2025/563fde532b-1739226108/render_3_edited_4x5.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/event-promo/studio-dumbar-demo-festival-trailer.md"
+ },
+ {
+  "slug": "studio-river-motion-plus-design-tokyo-2024",
+  "category": "event-promo",
+  "title": "MOTION PLUS DESIGN TOKYO - OPENER",
+  "studio": "Studio River (director: Keyvan Nourian)",
+  "client": "Motion Plus Design",
+  "year": 2024,
+  "url": "https://vimeo.com/955846057",
+  "alt_urls": [
+   "https://vimeo.com/1032996351",
+   "https://www.stashmedia.tv/studio-river-ponders-ais-creative-future-for-motion-plus-design-tokyo-trailer/",
+   "https://2024.motionawards.com/?p=3952"
+  ],
+  "length_s": 133,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "stylised-3d"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "cool"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "technical",
+   "eerie",
+   "premium"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "cloth",
+   "sim",
+   "camera-move",
+   "depth-of-field",
+   "macro",
+   "light-sweep",
+   "kinetic-type"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "text",
+   "post",
+   "motionBlur",
+   "audio",
+   "GAP: cloth-shaded character with sim",
+   "GAP: modelled city/train environment"
+  ],
+  "awards": [
+   "Motion Awards 2024 nominee, Title Sequence (live event)"
+  ],
+  "stills": [
+   "https://i.vimeocdn.com/video/2030363516-5d6dabb511d5a9602c91d1ee2146e23624131424d8922116b15e75895a78b9bd-d_1280"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/event-promo/studio-river-motion-plus-design-tokyo-2024.md"
+ },
+ {
+  "slug": "uncommon-offf-barcelona-2026-cultured",
+  "category": "event-promo",
+  "title": "OFFF Barcelona 2026 'Cultured' campaign by Uncommon",
+  "studio": "Uncommon Creative Studio (with artist Dasha Plesen; type by Ryan Bugden)",
+  "client": "OFFF Barcelona",
+  "year": 2026,
+  "url": "https://vimeo.com/1185548924",
+  "alt_urls": [
+   "https://www.offf.barcelona/post/offf-2026-visual-campaign-cultured-by-uncommon-studio-hero-film-revealed",
+   "https://itsnicethat.com/articles/uncommon-offf-barcelona-graphic-design-project-070526"
+  ],
+  "length_s": 110,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "mixed",
+   "photo",
+   "kinetic-type"
+  ],
+  "pace": "steady",
+  "palette": [
+   "earthy",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "raw",
+   "eerie",
+   "editorial"
+  ],
+  "purpose": "promo",
+  "techniques": [
+   "macro",
+   "morph",
+   "noise-field",
+   "kinetic-type",
+   "type-morph",
+   "grain"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "video",
+   "image",
+   "text",
+   "mask",
+   "shader",
+   "post",
+   "GAP: biomorphic custom typefaces",
+   "GAP: real microbial growth footage"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/2149007295-393ed2a4e254719ca5e30c7c5e5b158c6df3e90041a659beadca77df0e3922ac-d_1280",
+   "https://static.wixstatic.com/media/b8d8db_1263823978a64ddeb956e26058639a8f~mv2.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/event-promo/uncommon-offf-barcelona-2026-cultured.md"
+ },
+ {
+  "slug": "xk-studio-offfmx-2025-main-titles",
+  "category": "event-promo",
+  "title": "OFFFMX 2025 Main Titles by XK Studio",
+  "studio": "XK Studio (directors: Alexa Sirbu, Lukas Vojir)",
+  "client": "OFFF Festival (OFFFMX, Mexico City)",
+  "year": 2025,
+  "url": "https://vimeo.com/1119375393",
+  "alt_urls": [
+   "https://www.stashmedia.tv/?p=114512"
+  ],
+  "length_s": 99,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "stylised-3d"
+  ],
+  "pace": "fast",
+  "palette": [
+   "saturated",
+   "warm"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "technical",
+   "premium"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "macro",
+   "soft-body",
+   "camera-move",
+   "depth-of-field",
+   "rhythmic-edit",
+   "kinetic-type"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "text",
+   "motionBlur",
+   "post",
+   "audio",
+   "GAP: animated CG hands with skin/subsurface shading"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/2059820107-a45bef5efaad0d1f56b4f8cabdd27256aec564018e9a1a07090799cd1ed8cdbb-d_1280"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/event-promo/xk-studio-offfmx-2025-main-titles.md"
  }
 ]

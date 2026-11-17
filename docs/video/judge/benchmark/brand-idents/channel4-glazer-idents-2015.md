@@ -6,7 +6,7 @@ studio: "4creative with Jonathan Glazer (Academy Films), Neville Brody, DBLG"
 client: "Channel 4"
 year: 2015
 url: https://www.youtube.com/watch?v=8Ua5m6lPTbA
-alt_urls: [https://www.youtube.com/watch?v=aWvUJATjJDE, https://www.youtube.com/watch?v=FTsmtfR9MP8, https://www.academyfilms.com/blog/channel-4-by-jonathan-glazer]
+alt_urls: ["https://www.youtube.com/watch?v=aWvUJATjJDE", "https://www.youtube.com/watch?v=FTsmtfR9MP8", "https://www.academyfilms.com/blog/channel-4-by-jonathan-glazer"]
 length_s: 61
 verified: oembed
 aspect: "16:9"

@@ -6,7 +6,7 @@ studio: "Drive Studio"
 client: "FOX Sports"
 year: 2026
 url: https://vimeo.com/1206272473
-alt_urls: [https://vimeo.com/1211433063, https://www.stashmedia.tv/?p=121328]
+alt_urls: ["https://vimeo.com/1211433063", "https://www.stashmedia.tv/?p=121328"]
 length_s: 84
 verified: oembed
 aspect: "16:9"
