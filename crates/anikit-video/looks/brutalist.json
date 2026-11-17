@@ -1,0 +1,76 @@
+{
+ "title": "Brutalist mono",
+ "summary": "Raw dark concrete, monospace everything, acid-lime ink, hard cuts and typing; loud and honest.",
+ "direction": "Raw, honest, loud. Monospace for everything, uppercase, oversized, crammed to the edges; acid lime on dark concrete, black boxes, visible structure (borders, index numbers, timestamps). Motion is mechanical: typing, steps(), hard cuts and glitches. No rounded corners, no soft shadows, no gradients.",
+ "mode": "dark",
+ "theme": {
+  "colors": {
+   "bg": "#121211",
+   "surface": "#1D1D1B",
+   "text": "#ECECE4",
+   "muted": "#A3A39A",
+   "primary": "#C8FF00",
+   "secondary": "#ECECE4",
+   "accent": "#C8FF00"
+  },
+  "fonts": {
+   "heading": "JetBrains Mono",
+   "body": "JetBrains Mono"
+  },
+  "radius": 0,
+  "styles": {
+   "title": {
+    "weight": 800,
+    "uppercase": true,
+    "letterSpacing": "-0.06em",
+    "lineHeight": 0.92,
+    "align": "left"
+   },
+   "heading": {
+    "weight": 750,
+    "uppercase": true,
+    "letterSpacing": "-0.04em",
+    "align": "left"
+   },
+   "body": {
+    "weight": 450,
+    "align": "left"
+   },
+   "label": {
+    "weight": 700,
+    "color": "$accent",
+    "letterSpacing": "0.02em",
+    "size": "2.4vh"
+   },
+   "subtitle": {
+    "align": "left"
+   }
+  },
+  "material": {
+   "surface": "outline",
+   "shadow": 0,
+   "glow": 0,
+   "motion": "mechanical"
+  }
+ },
+ "transition": "cut",
+ "enter": "type",
+ "backdrop": [
+  {
+   "id": "look-grid",
+   "component": "grid",
+   "props": {
+    "cell": 64,
+    "color": "#ECECE414",
+    "lineWidth": 1,
+    "fade": 0
+   },
+   "width": "100%",
+   "height": "100%"
+  }
+ ],
+ "overlay": [],
+ "post": {
+  "preset": "punchy"
+ }
+}

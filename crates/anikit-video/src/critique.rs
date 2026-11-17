@@ -243,7 +243,10 @@ pub fn critique_in_range(spec: &Value, range: Option<(f64, f64)>) -> Report {
 }
 
 /// Review a spec.
-pub fn critique(spec: &Value) -> Report {
+pub fn critique(raw: &Value) -> Report {
+    // Judge what renders: with a look applied (its theme, backdrop and post layers).
+    let applied = raw.get("look").and_then(|_| crate::looks::apply(raw.clone()).ok());
+    let spec = applied.as_ref().unwrap_or(raw);
     let empty = Map::new();
     let theme = spec.get("theme").and_then(|t| t.as_object()).unwrap_or(&empty);
     let mut colors: Map<String, Value> = DEFAULT_COLORS.iter().map(|(k, v)| (k.to_string(), Value::String(v.to_string()))).collect();
@@ -302,6 +305,15 @@ pub fn critique(spec: &Value) -> Report {
                 }
                 if let Some(f) = l.get("font").and_then(|f| f.as_str()) {
                     fonts.insert(f.to_string());
+                }
+                // Components that show words (a terminal, a prompt, a title card) count for the hook.
+                if first_text_at.is_none() && l.get("component").is_some() {
+                    if let Some(p) = l.get("props").and_then(|p| p.as_object()) {
+                        if ["text", "title", "lines", "code", "label", "words", "messages", "items"].iter().any(|k| p.get(*k).is_some_and(|v| !v.is_null())) {
+                            let delay = p.get("delay").and_then(|d| d.as_f64()).unwrap_or(0.0);
+                            first_text_at = Some(scene_start.max(0.0) + vis_from + delay + 0.3);
+                        }
+                    }
                 }
                 let Some(raw) = l.get("text").and_then(|t| t.as_str()) else { return };
                 let text_owned = with_value(raw, l.get("value"));
@@ -381,6 +393,14 @@ pub fn critique(spec: &Value) -> Report {
     }
     if cx.portrait && total > 60.0 {
         cx.note("tip", "pacing", "scenes", format!("{total:.0} s vertical video; social platforms favour 6–30 s"), "cut to the hook, two beats and the payoff");
+    }
+    sameness(raw, spec, &mut cx);
+    bar(spec, &mut cx);
+    if applied.is_some() {
+        let off = crate::looks::layer_offsets(raw);
+        for n in &mut cx.notes {
+            n.path = crate::looks::remap_path(&off, &n.path);
+        }
     }
     let score = cx.notes.iter().fold(100i32, |s, n| s - match n.severity { "error" => 15, "warning" => 6, _ => 1 }).max(0) as u32;
     Report { score, duration: (total * 100.0).round() / 100.0, notes: cx.notes }
@@ -542,8 +562,181 @@ fn check_safe(cx: &mut Ctx, layer: &Value, path: &str) {
     }
 }
 
+/// The quality bar (`docs/video/quality/BAR.md`): patterns a viewer reads as slides or slop.
+fn bar(spec: &Value, cx: &mut Ctx) {
+    const WASH: &[&str] = &["mesh-gradient", "aurora", "gradient", "bokeh", "light-leak"];
+    let scenes = spec.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
+    let mut slides = Vec::new();
+    for (si, sc) in scenes.iter().enumerate() {
+        let layers = sc.get("layers").and_then(|l| l.as_array()).cloned().unwrap_or_default();
+        let wash = layers.iter().any(|l| l.get("component").and_then(|c| c.as_str()).is_some_and(|c| WASH.contains(&c)));
+        let rest: Vec<&Value> = layers.iter().filter(|l| !l.get("component").and_then(|c| c.as_str()).is_some_and(|c| WASH.contains(&c) || c == "grain")).collect();
+        let centred_text_only = !rest.is_empty() && rest.iter().all(|l| l.get("text").is_some() && l.get("x").is_none() && l.get("component").is_none());
+        if wash && centred_text_only {
+            slides.push(format!("scenes[{si}]"));
+        }
+    }
+    if !slides.is_empty() {
+        cx.note("warning", "bar", &slides[0], format!("centred text on a gradient or blob backdrop ({} scene{}): reads as a slide (BAR #1–2)", slides.len(), if slides.len() == 1 { "" } else { "s" }), "compose the frame: a subject with light and material (3D, a shader, photography), type placed with intent, the frame filled");
+    }
+    let dims = |v: &Value| -> bool {
+        fn walk(v: &Value) -> bool {
+            match v {
+                Value::Object(m) => {
+                    m.contains_key("shader")
+                        || m.get("type").and_then(|t| t.as_str()) == Some("shader")
+                        || m.get("component").and_then(|c| c.as_str()).is_some_and(|c| ["text-3d", "model", "globe", "scene3d", "ken-burns"].contains(&c))
+                        || m.get("aperture").is_some()
+                        || m.get("src").and_then(|s| s.as_str()).is_some_and(|s| !s.ends_with(".svg"))
+                        || m.values().any(walk)
+                }
+                Value::Array(a) => a.iter().any(walk),
+                _ => false,
+            }
+        }
+        walk(v)
+    };
+    if scenes.len() >= 2 && !dims(spec) {
+        cx.note("warning", "bar", "scenes", "flat 2D only: no 3D, light, lens or real imagery anywhere (BAR #5)".into(), "give the film a world with depth: a shader or text-3d/model/scene3d subject, camera depth + aperture, or real photos");
+    }
+}
+
+/// Generic defaults make every video look the same: flag them and suggest a direction.
+fn sameness(raw: &Value, spec: &Value, cx: &mut Ctx) {
+    let scenes = spec.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
+    if scenes.len() < 2 {
+        return;
+    }
+    let has_look = raw.get("look").is_some_and(|l| l.as_str() != Some("none") && *l != Value::Bool(false));
+    let theme = spec.get("theme");
+    let mut signals = Vec::new();
+    if !has_look {
+        let primary = theme.and_then(|t| t.pointer("/colors/primary")).and_then(|p| p.as_str()).and_then(|p| color::parse(p).ok());
+        let house = match primary {
+            None => true,
+            // Violet on near-black: the default every tool ships.
+            Some(c) => {
+                let (h, sat) = hue_sat(c);
+                let bg = cx.color(&Value::String("$bg".into())).unwrap_or([0.0; 4]);
+                (240.0..290.0).contains(&h) && sat > 0.4 && color::luminance(bg) < 0.03
+            }
+        };
+        if house {
+            signals.push("the house palette (violet on near-black)");
+        }
+        let fonts = theme.and_then(|t| t.get("fonts")).and_then(|f| f.as_object());
+        let custom_type = fonts.is_some_and(|f| f.values().any(|v| v.as_str().is_some_and(|s| !s.starts_with("Inter") && !s.contains("JetBrains"))))
+            || theme.and_then(|t| t.get("styles")).is_some_and(|s| s.as_object().is_some_and(|m| !m.is_empty()));
+        if !custom_type {
+            signals.push("default typography (Inter, stock sizes and weights)");
+        }
+    }
+    let first_kind = |sc: &Value| sc.get("layers").and_then(|l| l.as_array()).and_then(|l| l.first()).and_then(|l| l.get("component")).and_then(|c| c.as_str()).map(String::from);
+    if !has_look && scenes.iter().all(|sc| first_kind(sc).as_deref() == Some("mesh-gradient")) {
+        signals.push("the same mesh-gradient backdrop in every scene");
+    }
+    // One entrance everywhere.
+    let mut enters = std::collections::BTreeMap::<String, usize>::new();
+    let mut texts = 0;
+    for sc in &scenes {
+        for l in sc.get("layers").and_then(|l| l.as_array()).into_iter().flatten() {
+            if l.get("text").is_some() {
+                texts += 1;
+                let e = match l.get("enter") {
+                    Some(Value::String(s)) => s.clone(),
+                    Some(o) => o.get("preset").and_then(|p| p.as_str()).unwrap_or("custom").to_string(),
+                    None => "none".into(),
+                };
+                *enters.entry(e).or_default() += 1;
+            }
+        }
+    }
+    if texts >= 6 && enters.values().any(|&n| n * 10 >= texts * 9) {
+        signals.push("one text entrance everywhere");
+    }
+    // Layout repeated: consecutive scenes with the same layer signature.
+    let sig = |sc: &Value| -> String {
+        sc.get("layers").and_then(|l| l.as_array()).map(|ls| ls.iter().map(|l| l.get("component").or(l.get("style")).or(l.get("shape")).and_then(|x| x.as_str()).unwrap_or("?").to_string()).collect::<Vec<_>>().join(",")).unwrap_or_default()
+    };
+    let sigs: Vec<String> = scenes.iter().map(sig).collect();
+    if sigs.windows(3).any(|w| w[0] == w[1] && w[1] == w[2] && !w[0].is_empty()) {
+        signals.push("three scenes in a row with the same layout");
+    }
+    if signals.is_empty() {
+        return;
+    }
+    // A direction to try: two looks, picked from the copy so suggestions vary.
+    let words = crate::critique::all_text(spec);
+    let h = words.bytes().fold(7u64, |h, b| h.wrapping_mul(31).wrapping_add(b as u64));
+    let names = crate::looks::names();
+    let (a, b) = (names[(h % names.len() as u64) as usize], names[((h / 7 + 3) % names.len() as u64) as usize]);
+    let sev = if signals.len() >= 2 { "warning" } else { "tip" };
+    cx.note(
+        sev,
+        "sameness",
+        "spec",
+        format!("generic: {}; this will look like every other generated video", signals.join("; ")),
+        if has_look {
+            "vary layouts and entrances per beat, and build one signature visual from the brief's own subject (3D, paths, real footage)".to_string()
+        } else {
+            format!("give it a point of view: set \"look\" (e.g. \"{a}\" or \"{b}\"; anikit-video looks), vary layouts and entrances per beat, and build one signature visual (3D, paths, real footage)")
+        },
+    );
+}
+
+fn hue_sat(c: color::C) -> (f64, f64) {
+    let (r, g, b) = (c[0], c[1], c[2]);
+    let mx = r.max(g).max(b);
+    let mn = r.min(g).min(b);
+    let d = mx - mn;
+    if d < 1e-6 {
+        return (0.0, 0.0);
+    }
+    let h = if mx == r { 60.0 * (((g - b) / d) % 6.0) } else if mx == g { 60.0 * ((b - r) / d + 2.0) } else { 60.0 * ((r - g) / d + 4.0) };
+    ((h + 360.0) % 360.0, d / mx)
+}
+
+/// All visible copy, for seeding suggestions.
+pub fn all_text(v: &Value) -> String {
+    let mut out = String::new();
+    fn walk(v: &Value, out: &mut String) {
+        match v {
+            Value::Object(m) => {
+                if let Some(Value::String(t)) = m.get("text") {
+                    out.push_str(t);
+                }
+                m.values().for_each(|x| walk(x, out));
+            }
+            Value::Array(a) => a.iter().for_each(|x| walk(x, out)),
+            _ => {}
+        }
+    }
+    walk(v, &mut out);
+    out
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn sameness_flags_generic_defaults_not_a_look() {
+        let generic = serde_json::json!({ "theme": { "colors": { "primary": "#7C5CFF" } }, "scenes": [
+            { "layers": [ { "component": "mesh-gradient" }, { "text": "One", "style": "title" } ] },
+            { "layers": [ { "component": "mesh-gradient" }, { "text": "Two", "style": "title" } ] },
+            { "layers": [ { "component": "mesh-gradient" }, { "text": "Three", "style": "title" } ] } ] });
+        let r = super::critique(&generic);
+        let n = r.notes.iter().find(|n| n.check == "sameness").expect("flagged");
+        assert_eq!(n.severity, "warning");
+        assert!(n.message.contains("house palette") && n.message.contains("mesh-gradient") && n.fix.contains("\"look\""), "{n:?}");
+        let mut directed = generic.clone();
+        directed["look"] = serde_json::json!("editorial");
+        directed.as_object_mut().unwrap().remove("theme");
+        for s in directed["scenes"].as_array_mut().unwrap() {
+            s["layers"].as_array_mut().unwrap().remove(0);
+        }
+        directed["scenes"][1]["layers"][0]["style"] = serde_json::json!("heading");
+        assert!(super::critique(&directed).notes.iter().all(|n| n.check != "sameness"));
+    }
+
     use super::*;
     use serde_json::json;
 
@@ -594,7 +787,8 @@ mod template_quality {
                 for b in [Brand::default(), Brand::from_json(r##"{"theme":"light","colors":{"primary":"#0F766E"},"logo":"logo.svg"}"##).unwrap()] {
                     let spec = t.expand(&t.example_params(), &b, Format::parse(f).unwrap()).unwrap();
                     let r = super::critique(&spec);
-                    let bad: Vec<_> = r.notes.iter().filter(|n| n.severity != "tip").collect();
+                    // Templates are flat 2D quick starts: the quality bar (BAR #5) flags that honestly.
+                    let bad: Vec<_> = r.notes.iter().filter(|n| n.severity != "tip" && n.check != "bar").collect();
                     if !bad.is_empty() {
                         failures += &format!("--- {name} {f} {}\n", b.theme.as_deref().unwrap_or("dark"));
                         for n in bad {

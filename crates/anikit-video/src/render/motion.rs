@@ -3,8 +3,9 @@
 //! The pipeline hands the renderer an `eval(t)` closure. The renderer looks
 //! at the shutter's open and close: if nothing differs, it renders once.
 //! Otherwise it estimates how far things move on screen (matched op bounds)
-//! and takes enough evenly spaced sub-frame samples (2–24) that each step
-//! moves about 1.5 px. The samples are averaged in linear light, then post
+//! and takes enough evenly spaced sub-frame samples (2–32) that each step
+//! moves at most 1.25 px; streaks longer than 40 px (at 1080p) are clamped
+//! by shortening the effective shutter, so very fast moves never strobe. The samples are averaged in linear light, then post
 //! runs once on the result.
 
 use super::incremental::{hash_op, op_rects};
@@ -12,7 +13,10 @@ use super::{rgba_to_yuv420, FrameRgba, Renderer, YuvFrame};
 use crate::dl::DisplayList;
 
 /// Most samples per frame.
-pub const MAX_SAMPLES: usize = 24;
+pub const MAX_SAMPLES: usize = 32;
+/// Longest streak (px at 1080p): faster motion gets a shorter effective
+/// shutter, as motion-graphics renderers clamp blur, so samples stay ≤ 1.25 px apart.
+pub const MAX_STREAK: f64 = 40.0;
 
 /// Most samples per frame at [`super::Quality::Reference`].
 pub const REFERENCE_SAMPLES: usize = 96;
@@ -102,13 +106,19 @@ impl Renderer {
             return self.render(&center);
         }
         let (mut ra, mut rb) = (Vec::new(), Vec::new());
-        let d = displacement(&a, &b, &mut ra, &mut rb);
+        let mut d = displacement(&a, &b, &mut ra, &mut rb);
+        let max_streak = (MAX_STREAK * center.height.max(1) as f64 / 1080.0).max(16.0);
+        let mut shutter = shutter;
+        if d > max_streak {
+            shutter *= (max_streak / d) as f32;
+            d = max_streak;
+        }
         let reference = self.quality() == super::Quality::Reference;
         let n = if reference {
             // Ground truth: ~0.5 px steps, at least 8 samples.
             ((d / 0.5).ceil() as usize).clamp(8, REFERENCE_SAMPLES)
         } else {
-            ((d / 1.5).ceil() as usize).clamp(2, MAX_SAMPLES)
+            ((d / 1.25).ceil() as usize).clamp(2, MAX_SAMPLES)
         };
         let (w, h) = (center.width.max(1) as usize, center.height.max(1) as usize);
         // Sample times spread evenly over the open shutter (centres of n slots).

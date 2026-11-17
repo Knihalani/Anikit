@@ -9,6 +9,8 @@
 pub mod assets;
 pub mod beat_markers;
 mod compile;
+/// Shader layers and transitions (anikit-shader).
+pub(crate) mod shader;
 pub mod expr;
 pub mod theme;
 
@@ -54,7 +56,9 @@ pub(crate) mod prop {
     pub const DEPTH: usize = 30;
     pub const FOCUS: usize = 31;
     pub const APERTURE: usize = 32;
-    pub const N: usize = 33;
+    /// Shader uniforms: `UNIFORM_SLOTS` floats, mapped per layer by name.
+    pub const U0: usize = 33;
+    pub const N: usize = U0 + super::shader::UNIFORM_SLOTS;
 
     /// Default values.
     pub const DEFAULTS: [f32; N] = {
@@ -271,6 +275,8 @@ pub(crate) enum Kind {
         border: Option<(f32, Rgba)>,
     },
     Component(Box<dyn crate::components::Component>, Option<crate::components::Theme>),
+    /// A JIT-compiled fragment shader (see `shader.rs`).
+    Shader(Box<shader::ShaderC>),
 }
 
 pub(crate) struct Counter {
@@ -323,6 +329,8 @@ pub(crate) struct TransC {
     pub color: Rgba,
     pub origin: [f32; 2],
     pub amount: f32,
+    /// `TransKind::Shader`: the compiled gl-transitions style shader.
+    pub shader: Option<shader::ShaderRef>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -338,6 +346,7 @@ pub(crate) enum TransKind {
     Blur,
     Glitch,
     MorphCut,
+    Shader,
 }
 
 pub(crate) struct SceneC {
@@ -558,6 +567,10 @@ impl Evaluator {
         let local = t - s.start;
         let in_trans = cur > 0 && s.trans.kind != TransKind::Cut && local < s.trans.dur && s.trans.dur > 0.0;
         let black = Rgba([0.0, 0.0, 0.0, 1.0]);
+        if !bg_rect {
+            // Filters composite "below" onto the frame's background (shader.rs).
+            shader::set_frame_bg(if !in_trans && matches!(s.bg, PaintC::Solid) { s.bg_color } else { black });
+        }
         let background = if !in_trans {
             let solid = matches!(s.bg, PaintC::Solid);
             self.emit_scene(s, t, &dl::IDENTITY, solid && !(bg_rect && s.bg_color.0[3] > 0.0), out);
@@ -691,6 +704,15 @@ impl Evaluator {
         };
         match tr.kind {
             TransKind::Cut => self.emit_scene(b, t, &id, false, out),
+            TransKind::Shader => {
+                let (mut fa, mut fb) = (Vec::new(), Vec::new());
+                self.emit_scene(a, t, &id, false, &mut fa);
+                self.emit_scene(b, t, &id, false, &mut fb);
+                match &tr.shader {
+                    Some(sc) => self.emit_shader_transition(&sc.0, (fa, a.bg_color), (fb, b.bg_color), t, e, out),
+                    None => out.extend(fb),
+                }
+            }
             TransKind::Crossfade => {
                 self.emit_scene(a, t, &id, false, out);
                 layer(out, e, vec![], None);
@@ -867,7 +889,7 @@ impl Evaluator {
         let xf = dl::mul(parent, &local_xf(&v, n.anchor, w, h));
         let blur = v[prop::BLUR].max(0.0) + cx.dof;
         let wipe = v[prop::WIPE].clamp(0.0, 1.0);
-        let is_leaf = matches!(n.kind, Kind::Text { kinetic: None, .. } | Kind::Image { .. } | Kind::Video { .. })
+        let is_leaf = matches!(n.kind, Kind::Text { kinetic: None, .. } | Kind::Image { .. } | Kind::Video { .. } | Kind::Shader(_))
             || matches!(&n.kind, Kind::Shape { fill, stroke, .. } if fill.is_none() || stroke.is_none());
         let needs_layer = blur > 0.05
             || n.blend != Blend::Normal
@@ -1060,6 +1082,7 @@ impl Evaluator {
                     out.push(Op::Image { image: frames[k], dst, opacity: alpha, transform: xf });
                 }
             }
+            Kind::Shader(sc) => self.emit_shader(sc, cx, &v, &xf, w, h, alpha, lt, out),
             Kind::Comp { ev, natural, fit, time } => {
                 let ct = time.map(lt, ev.duration);
                 let dst = fit_rect(*natural, [w, h], *fit);
@@ -1108,7 +1131,7 @@ impl Evaluator {
                 }
             }
             Kind::Component(c, th) => {
-                let ctx = crate::components::Ctx { width: w, height: h, fps: self.fps, theme: th.as_ref().unwrap_or(&self.ctheme), assets: &*self.assets };
+                let ctx = crate::components::Ctx { width: w, height: h, fps: self.fps, theme: th.as_ref().unwrap_or(&self.ctheme), assets: &*self.assets, root: Some(self) };
                 let ops = c.eval(lt.max(0.0), &ctx);
                 let k = out.len();
                 out.extend(ops);
@@ -1208,6 +1231,17 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
             }
         }
         Kind::Component(c, _) => c.duration().is_some_and(|d| la >= d),
+        // A shader is static only if it ignores time and every input is static
+        // (animated uniforms are tracks and expressions, checked above).
+        Kind::Shader(sc) => !sc.dynamic && sc.channels.iter().all(|(c, _)| match c {
+            shader::ChannelC::Layers(ns) => ns.iter().all(|c| node_static(c, a, b)),
+            shader::ChannelC::Comp { ev, time } => {
+                let (ca, cb) = (time.map(la, ev.duration), time.map(lb, ev.duration));
+                let wraps = time.looped && (cb < ca || lb - la >= ev.duration / time.speed.abs().max(1e-6));
+                if wraps { ev.is_static(0.0, ev.duration) } else { ev.is_static(ca.min(cb), ca.max(cb)) }
+            }
+            _ => true,
+        }),
         _ => true,
     }
 }

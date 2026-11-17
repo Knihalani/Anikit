@@ -22,10 +22,10 @@ recipe('parallax-gallery', '.gallery');
 Scaffold: `npx anikit new vanilla|vite|react <dir>`. React hooks: `anikit/react` (useAnikit, useAnimate, useRecipe, useSpring, useScroll, Presence).
 
 ## Video (anikit-video)
-Native programmatic video for agents: a JSON spec (or a template plus a brand kit) in, an MP4 out, no browser. Builders: `anikit/video` (TS), `anikit.video` (Python); MCP server: `anikit-video mcp`.
-- [Video quick start for agents](docs/video/AGENTS.md): templates, the review loop, builders, MCP tools
+Native programmatic video for agents: a JSON spec with an art-direction look (or a template plus a brand kit) in, an MP4 out, no browser. Builders: `anikit/video` (TS), `anikit.video` (Python); MCP server: `anikit-video mcp`.
+- [Video quick start for agents](docs/video/AGENTS.md): directing method, looks, the review loop, templates, builders, MCP tools
 - [Video spec reference](docs/video/spec.md): scenes, layers, animation presets, transitions, theme
-- [Prompt library](prompts/): launch video generator, script writer, storyboarder, critic, copy guard, brand kit, motion rules
+- [Prompt library](prompts/): director, launch video generator, script writer, storyboarder, critic, copy guard, brand kit, motion rules
 
 ## Recipes
 - A whole landing page in a few calls

@@ -26,6 +26,7 @@ use serde_json::{Map, Value};
 use std::sync::Arc;
 
 pub mod style;
+pub mod polish;
 pub mod host;
 pub mod text;
 
@@ -46,6 +47,7 @@ pub mod three;
 pub mod globe;
 pub mod transitions;
 pub mod ui;
+pub mod uikit;
 pub mod visualizer;
 pub mod ken_burns;
 pub mod tiles;
@@ -104,6 +106,9 @@ pub struct Ctx<'a> {
     pub fps: f32,
     pub theme: &'a Theme,
     pub assets: &'a dyn Assets,
+    /// The evaluator running this component, when there is one: gives
+    /// access to the spec's `compositions` (e.g. as 3D textures).
+    pub root: Option<&'a crate::eval::Evaluator>,
 }
 
 /// A preprocessed component, evaluated once per frame.
@@ -139,6 +144,7 @@ impl Placed {
             fps,
             theme: self.theme.as_ref().unwrap_or(theme),
             assets,
+            root: None,
         };
         let mut ops = self.component.eval(t.max(0.0), &ctx);
         if self.x != 0.0 || self.y != 0.0 {
@@ -276,6 +282,70 @@ pub const COMMON_KEYS: &[&str] = &["type", "kind", "id", "x", "y", "width", "hei
 
 /// Build a component from its kind and the spec object (which may still
 /// contain `type`, `kind` and the other [`COMMON_KEYS`]).
+/// Replace `"$token"` strings in component props with colours from the scene theme
+/// (`lookup` maps a token name to a CSS colour). Unknown tokens are left as they are,
+/// so the component reports them.
+pub fn resolve_tokens(props: &mut Value, lookup: &dyn Fn(&str) -> Option<String>) {
+    match props {
+        Value::String(s) => {
+            if let Some(c) = s.strip_prefix('$').and_then(lookup) {
+                *s = c;
+            }
+        }
+        Value::Array(a) => a.iter_mut().for_each(|v| resolve_tokens(v, lookup)),
+        Value::Object(m) => {
+            for (k, v) in m.iter_mut() {
+                // `data`/`text`-like content stays literal.
+                if !matches!(k.as_str(), "text" | "code" | "title" | "label" | "body" | "lines" | "messages") {
+                    resolve_tokens(v, lookup);
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Fill a component's props with the theme's material defaults (`theme.material`:
+/// `surface`, `motion`, `glow`, `shadow`, `texture`) where the props leave them out and
+/// the kind accepts them. Explicit props always win; a value a kind can't take is skipped.
+pub fn with_material(kind: &str, props: &Value, material: &Value) -> Value {
+    let Some(m) = material.as_object().filter(|m| !m.is_empty()) else { return props.clone() };
+    let mut out = match props {
+        Value::Object(o) => o.clone(),
+        _ => Map::new(),
+    };
+    let has = |o: &Map<String, Value>, k: &str| o.contains_key(k) || o.contains_key(&camel(k));
+    let candidates = |key: &str, v: &Value| -> Vec<Value> {
+        match (key, v) {
+            ("motion", Value::String(s)) => {
+                let s = if s == "mechanical" { "snappy" } else { s.as_str() };
+                vec![Value::String(s.into())]
+            }
+            ("surface", Value::String(s)) => vec![Value::String(s.clone())],
+            ("glow", Value::Number(n)) => {
+                let g = n.as_f64().unwrap_or(0.0);
+                vec![v.clone(), Value::Bool(g >= 0.5)]
+            }
+            ("shadow", Value::Number(_)) => vec![v.clone()],
+            _ => Vec::new(),
+        }
+    };
+    for (key, v) in m {
+        if v.is_null() || has(&out, key) {
+            continue;
+        }
+        for cand in candidates(key, v) {
+            let mut trial = out.clone();
+            trial.insert(key.clone(), cand.clone());
+            if build(kind, &Value::Object(trial)).is_ok() {
+                out.insert(key.clone(), cand);
+                break;
+            }
+        }
+    }
+    Value::Object(out)
+}
+
 pub fn build(kind: &str, params: &Value) -> Result<Placed, Error> {
     let kebab = canonical(kind);
     let Some(k) = KINDS.iter().find(|k| k.name == kebab) else {
@@ -594,6 +664,24 @@ mod tests {
             }
         }
         assert!(n > 20);
+    }
+
+    #[test]
+    fn material_and_tokens() {
+        let m = serde_json::json!({"surface": "paper", "motion": "mechanical", "glow": 1.0, "shadow": null});
+        let p = with_material("card", &serde_json::json!({"title": "x"}), &m);
+        assert_eq!(p["surface"], "paper");
+        assert_eq!(p["motion"], "snappy");
+        // explicit props win
+        let p = with_material("card", &serde_json::json!({"surface": "glass"}), &m);
+        assert_eq!(p["surface"], "glass");
+        // kinds without the key are untouched
+        assert!(with_material("aurora", &serde_json::json!({}), &m).get("motion").is_none_or(|v| build("aurora", &serde_json::json!({"motion": v})).is_ok()));
+        let mut p = serde_json::json!({"color": "$accent", "title": "$accent", "colors": ["$accent", "#fff"]});
+        resolve_tokens(&mut p, &|k| (k == "accent").then(|| "#ff0000ff".to_string()));
+        assert_eq!(p["color"], "#ff0000ff");
+        assert_eq!(p["title"], "$accent");
+        assert_eq!(p["colors"][0], "#ff0000ff");
     }
 
     #[test]

@@ -141,7 +141,8 @@ impl Env {
         for b in &self.boxes {
             c = add(c, b.eval(d, blur));
         }
-        c
+        // Flags (negative boxes) darken but never below black.
+        vmax(c, v3(0.0, 0.0, 0.0))
     }
 
     fn radiance_nokey(&self, d: V3) -> V3 {
@@ -151,7 +152,7 @@ impl Env {
                 c = add(c, b.eval(d, 0.0));
             }
         }
-        c
+        vmax(c, v3(0.0, 0.0, 0.0))
     }
 
     fn project_sh(&mut self) {
@@ -193,10 +194,38 @@ impl Env {
         self.key.map(|k| &self.boxes[k])
     }
 
-    /// Built-in presets: `studio`, `night`, `neon`, `sunset`.
+    /// Built-in presets: `cyc`, `studio`, `night`, `neon`, `sunset`.
+    /// `tint` is the cyc colour (linear); presets ignore it otherwise.
     pub fn preset(name: &str, accent: V3, accent2: V3) -> Option<Env> {
+        Env::preset_tinted(name, accent, accent2, v3(0.855, 0.83, 0.78), norm(v3(-0.55, 1.0, 0.45)))
+    }
+
+    pub fn preset_tinted(name: &str, accent: V3, accent2: V3, tint: V3, key_dir: V3) -> Option<Env> {
         let w = |s: f32| v3(s, s, s);
         Some(match name {
+            "cyc" | "white" | "white-cyc" => {
+                // A bright white photo studio: the cyc wall and floor bounce
+                // light everywhere (bright sky), a huge soft key from the upper
+                // left, a strip for crisp highlights, and two black flags so
+                // chrome and glass have dark edges to reflect.
+                let mut key = Softbox::new(key_dir, 80.0, 55.0, 15.0, scale(tint, 5.0));
+                key.falloff = 0.3;
+                key.soft = 0.06;
+                let mut strip = Softbox::new(v3(1.0, 0.35, 0.15), 8.0, 70.0, 0.0, w(5.0));
+                strip.falloff = 0.1;
+                let mut top = Softbox::new(v3(0.2, 1.0, -0.6), 30.0, 100.0, 70.0, scale(tint, 1.6));
+                top.soft = 0.04;
+                let mut flag_l = Softbox::new(v3(-1.0, 0.1, -0.35), 30.0, 60.0, 0.0, w(-1.2));
+                flag_l.soft = 0.03;
+                flag_l.falloff = 0.0;
+                let mut flag_r = Softbox::new(v3(0.85, 0.12, -1.0), 18.0, 50.0, 0.0, w(-1.2));
+                flag_r.soft = 0.03;
+                flag_r.falloff = 0.0;
+                let mut flag_f = Softbox::new(v3(0.0, 0.15, 1.0), 50.0, 18.0, 0.0, w(-0.7));
+                flag_f.soft = 0.06;
+                flag_f.falloff = 0.0;
+                Env::new(vec![key, strip, top, flag_l, flag_r, flag_f], Some(0), scale(tint, 0.85), scale(tint, 1.0), scale(tint, 0.62), w(0.0))
+            }
             "studio" => {
                 let mut key = Softbox::new(v3(-0.25, 1.0, 0.35), 70.0, 46.0, 0.0, w(4.2));
                 key.falloff = 0.35;

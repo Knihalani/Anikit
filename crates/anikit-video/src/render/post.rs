@@ -184,7 +184,7 @@ impl PostSettings {
         })
     }
 
-    /// Whether this changes anything at all.
+    /// Whether this changes anything at all (for an 8-bit frame).
     pub fn is_identity(&self) -> bool {
         self.bloom == 0.0
             && self.halation == 0.0
@@ -198,10 +198,11 @@ impl PostSettings {
             && self.gain == [1.0; 3]
             && self.contrast == 1.0
             && self.saturation == 1.0
-            && self.tonemap == Tonemap::None
+            && self.tonemap != Tonemap::Aces
             && self.vignette == 0.0
             && self.grain == 0.0
-            && !self.dither
+        // An 8-bit input stays within 0..1 and on the 8-bit grid without the
+        // effects above, so the soft shoulder and dither change nothing.
     }
 }
 
@@ -313,6 +314,9 @@ pub struct PostProcessor {
     tmp: Vec<[f32; 3]>,
     pyr: Vec<(usize, usize, Vec<[f32; 3]>)>,
     grade: [Vec<f32>; 3],
+    /// Bloom + halation at half resolution (empty when off), and its size.
+    glow: Vec<[f32; 3]>,
+    glow_dims: (usize, usize),
 }
 
 const SRGB_LUT: usize = 4096;
@@ -366,7 +370,8 @@ impl PostProcessor {
         if p.distortion != 0.0 || p.aberration != 0.0 {
             self.lens(w, h, p.distortion, p.aberration * scale1080);
         }
-        // 3. Bloom + halation.
+        // 3. Bloom + halation (into `glow`, added in the final pass).
+        self.glow.clear();
         if p.bloom > 0.0 || p.halation > 0.0 {
             self.bloom(w, h, p);
         }
@@ -397,14 +402,22 @@ impl PostProcessor {
         let gsize = p.grain_size.max(1.0);
         let grain_amp = p.grain * 255.0;
         let (lut, grade, img) = (&self.to_srgb, &self.grade, &self.img);
+        let (glow, (gw, gh)) = (&self.glow, self.glow_dims);
         use rayon::prelude::*;
         rgba.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
             let src = &img[y * w..(y + 1) * w];
             let dy = (y as f32 + 0.5 - cy) * inv_diag;
             for (x, px) in row.chunks_exact_mut(4).enumerate() {
+                let mut v = src[x];
+                if !glow.is_empty() {
+                    let g = sample_grid(glow, gw, gh, x, y, w, h);
+                    for k in 0..3 {
+                        v[k] += g[k];
+                    }
+                }
                 let mut c = [0f32; 3];
                 for k in 0..3 {
-                    c[k] = Self::lookup(&grade[k], src[x][k]);
+                    c[k] = Self::lookup(&grade[k], v[k]);
                 }
                 if p.saturation != 1.0 {
                     let l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
@@ -609,42 +622,50 @@ impl PostProcessor {
             }
         }
         let norm = 1.0 / nl as f32;
-        let (bw, bh, b) = (&self.pyr[0].0, &self.pyr[0].1, &self.pyr[0].2);
-        let (bw, bh) = (*bw, *bh);
-        // Sample a level at full resolution with a bilinear lookup.
-        let sample = |src: &[[f32; 3]], sw: usize, sh: usize, x: usize, y: usize| -> [f32; 3] {
-            let sx = ((x as f32 + 0.5) * sw as f32 / w as f32 - 0.5).clamp(0.0, (sw - 1) as f32);
-            let sy = ((y as f32 + 0.5) * sh as f32 / h as f32 - 0.5).clamp(0.0, (sh - 1) as f32);
-            let (x0, y0) = (sx as usize, sy as usize);
-            let (x1, y1) = ((x0 + 1).min(sw - 1), (y0 + 1).min(sh - 1));
-            let (tx, ty) = (sx - x0 as f32, sy - y0 as f32);
-            let mut o = [0f32; 3];
-            for k in 0..3 {
-                let a = src[y0 * sw + x0][k] + (src[y0 * sw + x1][k] - src[y0 * sw + x0][k]) * tx;
-                let c = src[y1 * sw + x0][k] + (src[y1 * sw + x1][k] - src[y1 * sw + x0][k]) * tx;
-                o[k] = a + (c - a) * ty;
-            }
-            o
-        };
+        let (bw, bh) = (self.pyr[0].0, self.pyr[0].1);
         let hal_tint = [1.0f32, 0.32, 0.12];
-        self.img.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
-            for (x, px) in row.iter_mut().enumerate() {
-                let bl = sample(b, bw, bh, x, y);
+        // Combine bloom and halation at the base (half) resolution; the final
+        // pass adds it with one bilinear lookup per pixel.
+        let mut glow = std::mem::take(&mut self.glow);
+        glow.clear();
+        glow.resize(bw * bh, [0.0; 3]);
+        let base = &self.pyr[0].2;
+        glow.par_chunks_mut(bw).enumerate().for_each(|(y, row)| {
+            for (x, g) in row.iter_mut().enumerate() {
+                let b = base[y * bw + x];
                 for k in 0..3 {
-                    px[k] += bl[k] * norm * p.bloom * p.bloom_tint[k] * 2.0;
+                    g[k] = b[k] * norm * p.bloom * p.bloom_tint[k] * 2.0;
                 }
                 if p.halation > 0.0 {
                     if let Some((hw2, hh2, hv)) = &halo {
-                        let hb = sample(hv, *hw2, *hh2, x, y);
+                        let hb = sample_grid(hv, *hw2, *hh2, x, y, bw, bh);
                         let l = 0.2126 * hb[0] + 0.7152 * hb[1] + 0.0722 * hb[2];
                         for k in 0..3 {
-                            px[k] += l * hal_tint[k] * p.halation * 1.5 * norm * 2.0;
+                            g[k] += l * hal_tint[k] * p.halation * 3.0 * norm;
                         }
                     }
                 }
             }
         });
+        self.glow = glow;
+        self.glow_dims = (bw, bh);
     }
+}
+
+/// Bilinear lookup of grid `src` (`sw × sh`) at the centre of pixel (`x`, `y`) of a `dw × dh` grid.
+#[inline(always)]
+fn sample_grid(src: &[[f32; 3]], sw: usize, sh: usize, x: usize, y: usize, dw: usize, dh: usize) -> [f32; 3] {
+    let sx = ((x as f32 + 0.5) * sw as f32 / dw as f32 - 0.5).clamp(0.0, (sw - 1) as f32);
+    let sy = ((y as f32 + 0.5) * sh as f32 / dh as f32 - 0.5).clamp(0.0, (sh - 1) as f32);
+    let (x0, y0) = (sx as usize, sy as usize);
+    let (x1, y1) = ((x0 + 1).min(sw - 1), (y0 + 1).min(sh - 1));
+    let (tx, ty) = (sx - x0 as f32, sy - y0 as f32);
+    let (a, b, c, d) = (src[y0 * sw + x0], src[y0 * sw + x1], src[y1 * sw + x0], src[y1 * sw + x1]);
+    std::array::from_fn(|k| {
+        let top = a[k] + (b[k] - a[k]) * tx;
+        let bot = c[k] + (d[k] - c[k]) * tx;
+        top + (bot - top) * ty
+    })
 }
 
 #[cfg(test)]
@@ -686,8 +707,7 @@ mod tests {
         let mut a = src.clone();
         let mut pp = PostProcessor::default();
         pp.apply(&mut a, w, h, &PostSettings::preset("clean").unwrap(), 3);
-        let max = a.iter().zip(&src).map(|(p, q)| p.abs_diff(*q)).max().unwrap();
-        assert!(max <= 2, "clean changes pixels by {max}");
+        assert_eq!(a, src, "clean is the identity on 8-bit frames");
         let mut b = src.clone();
         PostProcessor::default().apply(&mut b, w, h, &PostSettings::preset("clean").unwrap(), 3);
         assert_eq!(a, b);

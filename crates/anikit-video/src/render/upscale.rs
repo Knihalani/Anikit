@@ -15,10 +15,7 @@ pub struct Upscaler {
     /// Cubic kernel: `None` picks from the scale (B-spline for ≥ 12× enlargement,
     /// Mitchell otherwise); `Some(true)` forces B-spline, `Some(false)` Mitchell.
     pub bspline: Option<bool>,
-    cubic_rows: Vec<(usize, Vec<i32>)>,
-    row_pool: Vec<Vec<i32>>,
-    /// Per-row dither (cubic path).
-    drow: Vec<f32>,
+    hrows: Vec<i32>,
     xtab: Vec<(u32, u32, u32)>,
     rows: [Vec<u8>; 2],
     row_ids: [usize; 2],
@@ -251,85 +248,78 @@ impl Upscaler {
                 (idx, wi)
             })
             .collect();
-        // Recycle last call's row buffers (the source may have changed: no reuse of contents).
-        for (_, r) in self.cubic_rows.drain(..) {
-            self.row_pool.push(r);
-        }
+        // 1. Horizontal pass over every source row (sources are small when enlarging).
         let srow = sw * C;
-        let mut drow = std::mem::take(&mut self.drow);
-        drow.resize(ow * C, 0.0);
-        #[cfg(target_arch = "x86_64")]
-        let avx2 = std::arch::is_x86_feature_detected!("avx2");
-        for y in 0..oh {
-            let v = ((oy + y as i64) as f64 + 0.5 - dev.y0) * sy - 0.5;
-            let j = v.floor();
-            let wy = kernel((v - j) as f32);
-            let j = j as i64;
-            let rows = [clampi(j - 1, sh), clampi(j, sh), clampi(j + 1, sh), clampi(j + 2, sh)];
-            // Horizontal pass for the needed source rows (cached; rows advance slowly).
-            for &r in &rows {
-                if self.cubic_rows.iter().any(|(k, _)| *k == r) {
-                    continue;
-                }
+        let mut hrows = std::mem::take(&mut self.hrows);
+        hrows.clear();
+        hrows.resize(sh * ow * C, 0);
+        {
+            use rayon::prelude::*;
+            hrows.par_chunks_mut(ow * C).enumerate().for_each(|(r, hrow)| {
                 let s = &src[r * srow..(r + 1) * srow];
-                let mut hrow = if self.cubic_rows.len() >= 6 { self.cubic_rows.remove(0).1 } else { self.row_pool.pop().unwrap_or_default() };
-                hrow.resize(ow * C, 0);
                 for (x, (idx, wi)) in cols.iter().enumerate() {
                     for c in 0..C {
                         hrow[x * C + c] = wi[0] * s[idx[0] * C + c] as i32 + wi[1] * s[idx[1] * C + c] as i32 + wi[2] * s[idx[2] * C + c] as i32 + wi[3] * s[idx[3] * C + c] as i32;
                     }
                 }
-                self.cubic_rows.push((r, hrow));
-            }
-            let get = |r: usize| self.cubic_rows.iter().find(|(k, _)| *k == r).unwrap().1.as_slice();
-            let rr = [get(rows[0]), get(rows[1]), get(rows[2]), get(rows[3])];
-            let d = &mut out[y * stride..y * stride + ow * C];
-            let yy = (oy + y as i64) as u32;
-            #[cfg(target_arch = "x86_64")]
-            if avx2 {
-                // SAFETY: feature checked above.
-                unsafe { cubic_row_avx2::<C>(rr, wy, &mut drow, d, ox as u32, yy) };
-                continue;
-            }
-            cubic_row::<C>(rr, wy, &mut drow, d, ox as u32, yy);
+            });
         }
-        self.drow = drow;
+        // 2. Vertical pass, rows in parallel, fixed point (rows ×4096, weights
+        // ×256 → ×2^20), with a tiled triangular dither (±0.5 LSB) in the rounding.
+        let row_len = ow * C;
+        let dtab = dither_table();
+        let x0 = ox as usize;
+        use rayon::prelude::*;
+        out.par_chunks_mut(stride).take(oh).enumerate().for_each(|(y, orow)| {
+            let v = ((oy + y as i64) as f64 + 0.5 - dev.y0) * sy - 0.5;
+            let j = v.floor();
+            let wy = kernel((v - j) as f32);
+            let j = j as i64;
+            let rs = [clampi(j - 1, sh), clampi(j, sh), clampi(j + 1, sh), clampi(j + 2, sh)];
+            let mut wq = wy.map(|v| (v * 256.0).round() as i32);
+            wq[1] += 256 - wq.iter().sum::<i32>();
+            let (r0, r1, r2, r3) = (
+                &hrows[rs[0] * row_len..(rs[0] + 1) * row_len],
+                &hrows[rs[1] * row_len..(rs[1] + 1) * row_len],
+                &hrows[rs[2] * row_len..(rs[2] + 1) * row_len],
+                &hrows[rs[3] * row_len..(rs[3] + 1) * row_len],
+            );
+            let yy = (oy + y as i64) as usize;
+            let dt = &dtab[(yy & 63) * 64..(yy & 63) * 64 + 64];
+            let d = &mut orow[..row_len];
+            for (x, (((o, a), b), (c, e))) in d.chunks_exact_mut(C).zip(r0.chunks_exact(C)).zip(r1.chunks_exact(C)).zip(r2.chunks_exact(C).zip(r3.chunks_exact(C))).enumerate() {
+                let dz = dt[(x0 + x) & 63];
+                for k in 0..C {
+                    let v = wq[0] * a[k] + wq[1] * b[k] + wq[2] * c[k] + wq[3] * e[k];
+                    // No dither on alpha.
+                    let z = if C == 4 && k == 3 { 1 << 19 } else { dz };
+                    o[k] = ((v + z) >> 20).clamp(0, 255) as u8;
+                }
+                // Premultiplied: overshoot (Mitchell's lobes) must not exceed alpha.
+                if C == 4 {
+                    let al = o[3];
+                    for v in &mut o[..3] {
+                        *v = (*v).min(al);
+                    }
+                }
+            }
+        });
+        self.hrows = hrows;
     }
 }
 
-/// One output row of the cubic upscale: vertical 4-tap blend of horizontally
-/// filtered rows (fixed point, ×4096), plus the fixed per-pixel dither
-/// (none on alpha), rounded to 8 bits; premultiplied overshoot clamped to alpha.
-/// Straight elementwise loops, so they vectorise; same float operations, in the
-/// same order, as a per-pixel loop.
-#[inline(always)]
-fn cubic_row<const C: usize>(r: [&[i32]; 4], w: [f32; 4], drow: &mut [f32], d: &mut [u8], ox: u32, yy: u32) {
-    let n = d.len();
-    let (r0, r1, r2, r3, drow) = (&r[0][..n], &r[1][..n], &r[2][..n], &r[3][..n], &mut drow[..n]);
-    for (x, dc) in drow.chunks_exact_mut(C).enumerate() {
-        let dz = super::post::tri_dither(ox + x as u32, yy) * 0.5;
-        for (c, v) in dc.iter_mut().enumerate() {
-            *v = if C == 4 && c == 3 { 0.0 } else { dz };
-        }
-    }
-    for k in 0..n {
-        let v = (w[0] * r0[k] as f32 + w[1] * r1[k] as f32 + w[2] * r2[k] as f32 + w[3] * r3[k] as f32) / 4096.0;
-        d[k] = super::sat_u8(v + drow[k] + 0.5);
-    }
-    if C == 4 {
-        for o in d.chunks_exact_mut(4) {
-            let a = o[3];
-            o[0] = o[0].min(a);
-            o[1] = o[1].min(a);
-            o[2] = o[2].min(a);
-        }
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx2")]
-unsafe fn cubic_row_avx2<const C: usize>(r: [&[i32]; 4], w: [f32; 4], drow: &mut [f32], d: &mut [u8], ox: u32, yy: u32) {
-    cubic_row::<C>(r, w, drow, d, ox, yy)
+/// 64×64 tile of rounding offsets in 1/2^20 units: 0.5 (round) plus a
+/// triangular dither of ±0.5 LSB, fixed per pixel position.
+fn dither_table() -> &'static [i32] {
+    static T: std::sync::OnceLock<Vec<i32>> = std::sync::OnceLock::new();
+    T.get_or_init(|| {
+        (0..64 * 64)
+            .map(|i| {
+                let d = super::post::tri_dither((i % 64) as u32, (i / 64) as u32) * 0.5;
+                ((0.5 + d) * (1 << 20) as f32) as i32
+            })
+            .collect()
+    })
 }
 
 #[cfg(test)]
@@ -366,20 +356,6 @@ mod perf {
             let t = std::time::Instant::now();
             u.run(&src, sw, sh, Rect::new(0.0, 0.0, 1924.0, 1084.0), &mut out, 1920, 1080, 0, 0);
             eprintln!("upscale {:?}", t.elapsed());
-        }
-        // Cubic B-spline field (≥ 12×) and Mitchell (2×).
-        let mut c = Upscaler::cubic();
-        let (fw, fh) = (160usize, 90usize);
-        let field: Vec<u8> = (0..fw * fh * 4).map(|i| if i % 4 == 3 { 255 } else { (i % 251) as u8 }).collect();
-        for _ in 0..3 {
-            let t = std::time::Instant::now();
-            c.run(&field, fw, fh, Rect::new(0.0, 0.0, 1920.0, 1080.0), &mut out, 1920, 1080, 0, 0);
-            eprintln!("cubic rgba 12x {:?}", t.elapsed());
-        }
-        for _ in 0..3 {
-            let t = std::time::Instant::now();
-            c.run(&src, sw, sh, Rect::new(0.0, 0.0, 1924.0, 1084.0), &mut out, 1920, 1080, 0, 0);
-            eprintln!("cubic rgba 4x {:?}", t.elapsed());
         }
         let plane: Vec<u8> = (0..sw * sh + 4).map(|i| (i % 251) as u8).collect();
         let mut y = vec![0u8; 1920 * 1080];

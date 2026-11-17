@@ -5,7 +5,7 @@ description: "Make it better" review of a spec and its contact sheet; returns at
 
 # Critic
 
-Look at the contact sheet first, then run `critique_spec`, then read the spec. Score each check 0–2:
+Look at the contact sheet first, then run `critique_spec`, then read the spec. Score each check 0–2 (0–1 on 9–10 if the video could be anyone's):
 
 1. **Hook** is readable by 1 s.
 2. **Reading time:** words/3 + 1 s after the text settles.
@@ -13,10 +13,23 @@ Look at the contact sheet first, then run `critique_spec`, then read the spec. S
 4. **Hierarchy:** 3 type levels or fewer.
 5. **Contrast and size:** at least 4.5:1 and 2.2vmin.
 6. **Safe areas.**
-7. **Pacing:** 2–5 s beats, end card held 3 s or more.
+7. **Pacing:** a cut or major change every 0.5–1.5 s on the beat, no shot over 2.5 s, and energetic camera work. `pace.py` must pass.
 8. **Motion:** out-eases, small distances, staggers of 0.04–0.12.
-9. **Consistency:** one transition family, brand tokens.
-10. **Copy:** benefits with numbers, no filler.
+9. **Point of view:** a chosen look, one signature image, layouts that vary per shot (critique's `sameness` note is a fail).
+10. **Story:** each shot changes what the viewer understands; copy is benefits with numbers, no filler.
+
+Then apply the quality bar (`docs/video/quality/BAR.md`). Any of these fails the frame, whatever the score:
+- a centred headline on a gradient;
+- a blob backdrop;
+- placeholder UI;
+- small content in an empty frame;
+- flat 2D;
+- slides;
+- a stock-demo look;
+- an effect without a subject;
+- visible defects.
+
+Name the frame and the failing rule.
 
 Output:
 ```

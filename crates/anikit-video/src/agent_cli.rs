@@ -37,8 +37,9 @@ Agent commands:
   anikit-video templates            list templates
   anikit-video templates schema <name> [--json] a template's parameters (compact; --json: JSON Schema)
   anikit-video templates guide <name>           how to fill it well (markdown)
-  anikit-video templates expand <name> [params.json] [--brand brand.json] [--format 9:16] [-o spec.json]
-  anikit-video prompt [name]        list prompts, or print one (e.g. launch-video-generator)
+  anikit-video templates expand <name> [params.json] [--brand brand.json] [--format 9:16] [--look noir] [-o spec.json]
+  anikit-video prompt [name]        list prompts, or print one (e.g. director)
+  anikit-video looks [name] [--json] art-direction looks (palette, type, motion, world); a spec takes \"look\": \"noir\"
   anikit-video critique <spec.json> [--render] [--json]  design review; --render also checks rendered frames
                                     (contrast against real pixels, overlaps, cut text, empty frames)
   anikit-video preview <spec.json|template> [--at T] [--width W] [-o out.png] [--format 9:16] [--brand b.json] [--params p.json]
@@ -47,7 +48,7 @@ Agent commands:
 ";
 
 /// Commands this module handles.
-pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "critique", "preview", "mcp"];
+pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "looks", "look", "critique", "preview", "mcp"];
 
 /// Run an agent command. `args` excludes the program name.
 pub fn run(args: &[String]) -> Option<i32> {
@@ -64,6 +65,7 @@ pub fn run(args: &[String]) -> Option<i32> {
         "new" => cmd_new(rest),
         "templates" | "template" => cmd_templates(rest),
         "prompt" | "prompts" => cmd_prompt(rest),
+        "looks" | "look" => cmd_looks(rest),
         "critique" => cmd_critique(rest),
         "preview" => cmd_preview(rest),
         "mcp" => mcp::serve_stdio().map_err(|e| e.to_string()),
@@ -158,7 +160,7 @@ fn pretty(v: &Value) -> String {
 }
 
 fn cmd_templates(args: &[String]) -> Result<(), String> {
-    let a = parse(args, &["brand", "format", "o", "out"], &["json"])?;
+    let a = parse(args, &["brand", "format", "o", "out", "look"], &["json"])?;
     match a.pos.first().map(|s| s.as_str()) {
         None | Some("list") => {
             if a.has("json") {
@@ -192,6 +194,7 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
                 Some(p) => read_json(p)?,
                 None => t.example_params(),
             };
+            let params = with_look(params, a.get("look"))?;
             let brand = load_brand(a.get("brand"))?;
             let format = Format::parse(a.get("format").unwrap_or("16:9"))?;
             let spec = t.expand(&params, &brand, format).map_err(|e| e.join("\n  "))?;
@@ -202,7 +205,7 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
                     let base = Path::new(o).parent().map(Path::to_path_buf).unwrap_or_default();
                     // Pixel checks too, so the printed score is the honest one.
                     if let Ok(p) = crate::preview::Preview::new(spec.clone(), &if base.as_os_str().is_empty() { PathBuf::from(".") } else { base.clone() }) {
-                        let extra = crate::render_check::check(&p.ev);
+                        let extra = crate::render_check::check_spec(&spec, &p.ev);
                         r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
                         r.notes.extend(extra);
                     }
@@ -260,7 +263,7 @@ fn cmd_critique(args: &[String]) -> Result<(), String> {
     if a.has("render") {
         let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
         let p = crate::preview::Preview::new(spec.clone(), &base)?;
-        let extra = crate::render_check::check(&p.ev);
+        let extra = crate::render_check::check_spec(&spec, &p.ev);
         r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
         r.notes.extend(extra);
     }
@@ -268,12 +271,13 @@ fn cmd_critique(args: &[String]) -> Result<(), String> {
         out!("{}", pretty(&serde_json::to_value(&r).unwrap()));
     } else {
         out!("{}", r.to_text());
+        out!("A score is not evidence of quality: look at full-size frames against docs/video/quality/BAR.md.\n");
     }
     Ok(())
 }
 
 fn cmd_preview(args: &[String]) -> Result<(), String> {
-    let a = parse(args, &["at", "width", "o", "out", "format", "brand", "params"], &[])?;
+    let a = parse(args, &["at", "width", "o", "out", "format", "brand", "params", "look"], &[])?;
     let src = a.pos.first().ok_or("usage: preview <spec.json|template> [--at T] [--width W] [-o out.png]")?;
     let (spec, base, stem) = if src.ends_with(".json") || src.ends_with(".yaml") || Path::new(src).is_file() {
         let text = read(src)?;
@@ -288,6 +292,7 @@ fn cmd_preview(args: &[String]) -> Result<(), String> {
             Some(p) => read_json(p)?,
             None => t.example_params(),
         };
+        let params = with_look(params, a.get("look"))?;
         let spec = t.expand(&params, &load_brand(a.get("brand"))?, Format::parse(a.get("format").unwrap_or("16:9"))?).map_err(|e| e.join("\n  "))?;
         let base = a.get("params").and_then(|p| Path::new(p).parent()).map(Path::to_path_buf).unwrap_or_default();
         (spec, base, src.clone())
@@ -547,6 +552,86 @@ fn cmd_new(args: &[String]) -> Result<(), String> {
         outln!("  still example copy (replace): {}", leftover.join(", ").replace('`', ""));
     }
     outln!("next: edit {d}/params.json, then follow {d}/NEXT.md");
+    Ok(())
+}
+
+/// A `--look` flag value: a name, `a+b` (composed), or JSON (list or object).
+pub fn parse_look(s: &str) -> Result<Value, String> {
+    let s = s.trim();
+    if s.starts_with('[') || s.starts_with('{') {
+        return serde_json::from_str(s).map_err(|e| format!("--look: {e}"));
+    }
+    if s.contains('+') {
+        return Ok(Value::Array(s.split('+').map(|x| Value::String(x.trim().into())).collect()));
+    }
+    Ok(Value::String(s.into()))
+}
+
+fn with_look(mut params: Value, look: Option<&str>) -> Result<Value, String> {
+    if let Some(l) = look {
+        let v = parse_look(l)?;
+        if v.as_str() != Some("none") {
+            crate::looks::resolve(&v)?;
+        }
+        if !params.is_object() {
+            params = serde_json::json!({});
+        }
+        params["look"] = v;
+    }
+    Ok(params)
+}
+
+/// `looks [name] [--json]`.
+pub fn looks_text(name: Option<&str>, full: bool) -> Result<String, String> {
+    let Some(n) = name else {
+        return Ok(format!(
+            "{}\nUse: \"look\": \"noir\" in a spec, [\"editorial\", \"noir\"] to compose, {{\"base\": \"swiss\", \"theme\": {{...}}}} to override. Details: looks <name>.\n",
+            crate::looks::list_lines().join("\n")
+        ));
+    };
+    let l = crate::looks::resolve(&parse_look(name.unwrap_or(n))?)?;
+    if full {
+        return Ok(format!("{}\n", serde_json::to_string_pretty(&l).unwrap()));
+    }
+    let g = |k: &str| l.get(k).and_then(|x| x.as_str()).unwrap_or("").to_string();
+    let c = &l["theme"]["colors"];
+    let f = &l["theme"]["fonts"];
+    let comp = |k: &str| l.get(k).and_then(|x| x.as_array()).map(|a| a.iter().filter_map(|x| x["component"].as_str()).collect::<Vec<_>>().join(", ")).unwrap_or_default();
+    Ok(format!(
+        "{} ({n}, {})\n{}\npalette: bg {} · text {} · primary {} · accent {}\ntype: {} / {}\nmotion: enter {} · transition {}\nworld: {} · over: {}\nOverride anything: {{\"look\": {{\"base\": \"{n}\", \"theme\": {{\"colors\": {{\"primary\": \"#...\"}}}}}}}}; --json prints it all.\n",
+        g("title"),
+        g("mode"),
+        g("direction"),
+        c["bg"].as_str().unwrap_or("-"),
+        c["text"].as_str().unwrap_or("-"),
+        c["primary"].as_str().unwrap_or("-"),
+        c["accent"].as_str().unwrap_or("-"),
+        f["heading"].as_str().unwrap_or("Inter Display"),
+        f["body"].as_str().unwrap_or("Inter"),
+        compact(&l["enter"]),
+        compact(&l["transition"]),
+        comp("backdrop"),
+        {
+            let p = comp("overlay");
+            let g = compact(&l["post"]);
+            if p.is_empty() { format!("grade {g}") } else { format!("{p} · grade {g}") }
+        },
+        n = l["name"].as_str().unwrap_or(n),
+    ))
+}
+
+fn compact(v: &Value) -> String {
+    match v {
+        Value::String(s) => s.clone(),
+        Value::Null => "-".into(),
+        o => o.get("type").or(o.get("preset")).and_then(|x| x.as_str()).map(String::from).unwrap_or_else(|| o.to_string()),
+    }
+}
+
+fn cmd_looks(args: &[String]) -> Result<(), String> {
+    let a = parse(args, &[], &["json"])?;
+    let t = looks_text(a.pos.first().map(|s| s.as_str()), a.has("json"))?;
+    out!("{t}");
     Ok(())
 }
 
