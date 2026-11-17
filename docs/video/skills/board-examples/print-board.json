@@ -1,0 +1,209 @@
+{
+  "images": [
+    {
+      "file": "hokusai-great-wave.jpg",
+      "width": 800,
+      "height": 538,
+      "palette": [
+        {
+          "hex": "#F5ECD4",
+          "share": 0.52,
+          "l": 0.94,
+          "c": 0.034
+        },
+        {
+          "hex": "#D8D4BD",
+          "share": 0.18,
+          "l": 0.87,
+          "c": 0.031
+        },
+        {
+          "hex": "#274362",
+          "share": 0.1,
+          "l": 0.38,
+          "c": 0.063
+        },
+        {
+          "hex": "#7F878A",
+          "share": 0.07,
+          "l": 0.62,
+          "c": 0.011
+        },
+        {
+          "hex": "#406683",
+          "share": 0.07,
+          "l": 0.49,
+          "c": 0.064
+        },
+        {
+          "hex": "#A9AEA7",
+          "share": 0.06,
+          "l": 0.74,
+          "c": 0.011
+        }
+      ],
+      "accents": [
+        {
+          "hex": "#244263",
+          "share": 0.58,
+          "l": 0.37,
+          "c": 0.067
+        },
+        {
+          "hex": "#33688D",
+          "share": 0.35,
+          "l": 0.5,
+          "c": 0.081
+        },
+        {
+          "hex": "#E4B494",
+          "share": 0.04,
+          "l": 0.81,
+          "c": 0.071
+        },
+        {
+          "hex": "#F0D2A6",
+          "share": 0.03,
+          "l": 0.88,
+          "c": 0.067
+        }
+      ],
+      "chromatic_share": 0.131,
+      "luma": 0.81,
+      "contrast": 0.2,
+      "key": "high-key",
+      "saturation": 0.038,
+      "grade": {
+        "black": 0.35,
+        "mid": 0.91,
+        "white": 0.98,
+        "warmth": -0.033,
+        "tint": -0.017,
+        "label": "lifted (milky) blacks, bright, clipped highlights, medium contrast, cool, green tint, desaturated"
+      },
+      "grain": 0.004,
+      "detail": 0.087,
+      "hard_edges": 0.26,
+      "layout": {
+        "symmetry": 0.43,
+        "weight_x": 0.49,
+        "weight_y": 0.55,
+        "label": "centred"
+      },
+      "negative_space": 0.36,
+      "lines": {
+        "horizontal": 0.3,
+        "vertical": 0.19,
+        "diagonal": 0.51,
+        "spread": 0.99,
+        "character": "diagonal / dynamic"
+      },
+      "vignette": 0.09
+    }
+  ],
+  "palette": [
+    {
+      "hex": "#F2EAD1",
+      "share": 0.62,
+      "l": 0.94,
+      "c": 0.034
+    },
+    {
+      "hex": "#CAC8B5",
+      "share": 0.09,
+      "l": 0.83,
+      "c": 0.026
+    },
+    {
+      "hex": "#24405F",
+      "share": 0.08,
+      "l": 0.37,
+      "c": 0.064
+    },
+    {
+      "hex": "#7F878A",
+      "share": 0.06,
+      "l": 0.62,
+      "c": 0.011
+    },
+    {
+      "hex": "#426A87",
+      "share": 0.05,
+      "l": 0.51,
+      "c": 0.065
+    },
+    {
+      "hex": "#A2A7A2",
+      "share": 0.05,
+      "l": 0.72,
+      "c": 0.009
+    },
+    {
+      "hex": "#355370",
+      "share": 0.04,
+      "l": 0.43,
+      "c": 0.06
+    }
+  ],
+  "accents": [
+    {
+      "hex": "#234162",
+      "share": 0.54,
+      "l": 0.37,
+      "c": 0.067
+    },
+    {
+      "hex": "#376F93",
+      "share": 0.2,
+      "l": 0.52,
+      "c": 0.082
+    },
+    {
+      "hex": "#2D5C80",
+      "share": 0.19,
+      "l": 0.46,
+      "c": 0.079
+    },
+    {
+      "hex": "#E5B595",
+      "share": 0.04,
+      "l": 0.81,
+      "c": 0.071
+    },
+    {
+      "hex": "#F0D3A6",
+      "share": 0.03,
+      "l": 0.88,
+      "c": 0.067
+    }
+  ],
+  "tokens": {
+    "bg": "#F2EAD1",
+    "surface": "#E0DBC8",
+    "text": "#24405F",
+    "muted": "#7B8992",
+    "primary": "#234162",
+    "accent": "#E5B595"
+  },
+  "spec_patch": {
+    "theme": {
+      "colors": {
+        "bg": "#F2EAD1",
+        "surface": "#E0DBC8",
+        "text": "#24405F",
+        "muted": "#7B8992",
+        "primary": "#234162",
+        "accent": "#E5B595"
+      }
+    },
+    "post": {
+      "lift": 0.15
+    }
+  },
+  "summary": "1 image. Palette: #F2EAD1 62%, #CAC8B5 9%, #24405F 8%, #7F878A 6%, #426A87 5%; vivid accents #234162, #376F93, #2D5C80, #E5B595 (ground #F2EAD1, text #24405F, primary #234162, accent #E5B595). Value: high-key on average (mean L 0.81), medium contrast (black 0.35, white 0.98), cool, muted colour. Texture: clean, dense detail, hard graphic edges. Composition: 1/1 centred, 36% negative space on average. Line character: diagonal / dynamic ×1.",
+  "notes": [
+    "tokens are a starting point: check text on bg (≥ 4.5:1 is enforced) and pick the accent by eye.",
+    "Use the board for colour, value, texture, composition and line character; the subject matter of the references is not yours to copy.",
+    "grain/detail/hard_edges are relative measures: compare images against each other and your render's stills against the board."
+  ]
+}

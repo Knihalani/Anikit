@@ -1,0 +1,391 @@
+{
+  "images": [
+    {
+      "file": "aurora2.jpg",
+      "width": 800,
+      "height": 532,
+      "palette": [
+        {
+          "hex": "#050407",
+          "share": 0.85,
+          "l": 0.11,
+          "c": 0.012
+        },
+        {
+          "hex": "#1A1414",
+          "share": 0.12,
+          "l": 0.2,
+          "c": 0.01
+        },
+        {
+          "hex": "#494126",
+          "share": 0.02,
+          "l": 0.37,
+          "c": 0.042
+        },
+        {
+          "hex": "#D1744A",
+          "share": 0.01,
+          "l": 0.65,
+          "c": 0.129
+        },
+        {
+          "hex": "#273A8F",
+          "share": 0.01,
+          "l": 0.39,
+          "c": 0.142
+        },
+        {
+          "hex": "#899CF1",
+          "share": 0.0,
+          "l": 0.71,
+          "c": 0.126
+        }
+      ],
+      "accents": [
+        {
+          "hex": "#453B1F",
+          "share": 0.55,
+          "l": 0.36,
+          "c": 0.045
+        },
+        {
+          "hex": "#CA7047",
+          "share": 0.19,
+          "l": 0.64,
+          "c": 0.126
+        },
+        {
+          "hex": "#27398C",
+          "share": 0.16,
+          "l": 0.38,
+          "c": 0.139
+        },
+        {
+          "hex": "#8598F0",
+          "share": 0.1,
+          "l": 0.7,
+          "c": 0.13
+        }
+      ],
+      "chromatic_share": 0.033,
+      "luma": 0.13,
+      "contrast": 0.08,
+      "key": "low-key",
+      "saturation": 0.019,
+      "grade": {
+        "black": 0.06,
+        "mid": 0.13,
+        "white": 0.38,
+        "warmth": 0.009,
+        "tint": 0.011,
+        "label": "clean blacks, soft, rolled-off highlights, low contrast, neutral, near monochrome"
+      },
+      "grain": 0.001,
+      "detail": 0.008,
+      "hard_edges": 0.06,
+      "layout": {
+        "symmetry": 0.36,
+        "weight_x": 0.57,
+        "weight_y": 0.45,
+        "label": "right-weighted"
+      },
+      "negative_space": 0.81,
+      "lines": {
+        "horizontal": 0.51,
+        "vertical": 0.17,
+        "diagonal": 0.32,
+        "spread": 0.89,
+        "character": "mixed"
+      },
+      "vignette": 0.0
+    },
+    {
+      "file": "earthris.jpg",
+      "width": 800,
+      "height": 1200,
+      "palette": [
+        {
+          "hex": "#030406",
+          "share": 0.98,
+          "l": 0.11,
+          "c": 0.008
+        },
+        {
+          "hex": "#131820",
+          "share": 0.01,
+          "l": 0.21,
+          "c": 0.017
+        },
+        {
+          "hex": "#CFD0D4",
+          "share": 0.0,
+          "l": 0.86,
+          "c": 0.004
+        },
+        {
+          "hex": "#6B7077",
+          "share": 0.0,
+          "l": 0.54,
+          "c": 0.012
+        },
+        {
+          "hex": "#3E444D",
+          "share": 0.0,
+          "l": 0.38,
+          "c": 0.017
+        },
+        {
+          "hex": "#9AA1A8",
+          "share": 0.0,
+          "l": 0.71,
+          "c": 0.013
+        }
+      ],
+      "accents": [],
+      "chromatic_share": 0.0,
+      "luma": 0.11,
+      "contrast": 0.07,
+      "key": "low-key",
+      "saturation": 0.008,
+      "grade": {
+        "black": 0.08,
+        "mid": 0.11,
+        "white": 0.17,
+        "warmth": -0.014,
+        "tint": -0.003,
+        "label": "clean blacks, soft, rolled-off highlights, low contrast, neutral, near monochrome"
+      },
+      "grain": 0.004,
+      "detail": 0.002,
+      "hard_edges": 0.19,
+      "layout": {
+        "symmetry": 0.43,
+        "weight_x": 0.56,
+        "weight_y": 0.46,
+        "label": "centred"
+      },
+      "negative_space": 0.96,
+      "lines": {
+        "horizontal": 0.17,
+        "vertical": 0.33,
+        "diagonal": 0.5,
+        "spread": 0.98,
+        "character": "organic, curving"
+      },
+      "vignette": 0.85
+    },
+    {
+      "file": "pillars.jpg",
+      "width": 800,
+      "height": 750,
+      "palette": [
+        {
+          "hex": "#090A14",
+          "share": 0.39,
+          "l": 0.15,
+          "c": 0.02
+        },
+        {
+          "hex": "#1F232B",
+          "share": 0.28,
+          "l": 0.25,
+          "c": 0.016
+        },
+        {
+          "hex": "#3C4148",
+          "share": 0.18,
+          "l": 0.37,
+          "c": 0.013
+        },
+        {
+          "hex": "#636468",
+          "share": 0.09,
+          "l": 0.5,
+          "c": 0.007
+        },
+        {
+          "hex": "#988F8B",
+          "share": 0.04,
+          "l": 0.66,
+          "c": 0.012
+        },
+        {
+          "hex": "#D8C8B8",
+          "share": 0.02,
+          "l": 0.84,
+          "c": 0.029
+        }
+      ],
+      "accents": [
+        {
+          "hex": "#153651",
+          "share": 0.46,
+          "l": 0.32,
+          "c": 0.062
+        },
+        {
+          "hex": "#385872",
+          "share": 0.31,
+          "l": 0.45,
+          "c": 0.057
+        },
+        {
+          "hex": "#8D6F53",
+          "share": 0.14,
+          "l": 0.56,
+          "c": 0.056
+        },
+        {
+          "hex": "#D9B487",
+          "share": 0.1,
+          "l": 0.79,
+          "c": 0.073
+        }
+      ],
+      "chromatic_share": 0.051,
+      "luma": 0.28,
+      "contrast": 0.16,
+      "key": "low-key",
+      "saturation": 0.029,
+      "grade": {
+        "black": 0.1,
+        "mid": 0.24,
+        "white": 0.74,
+        "warmth": -0.01,
+        "tint": -0.0,
+        "label": "clean blacks, soft, rolled-off highlights, medium contrast, neutral, near monochrome"
+      },
+      "grain": 0.042,
+      "detail": 0.14,
+      "hard_edges": 0.47,
+      "layout": {
+        "symmetry": 0.37,
+        "weight_x": 0.49,
+        "weight_y": 0.48,
+        "label": "centred"
+      },
+      "negative_space": 0.0,
+      "lines": {
+        "horizontal": 0.32,
+        "vertical": 0.32,
+        "diagonal": 0.36,
+        "spread": 0.97,
+        "character": "organic, curving"
+      },
+      "vignette": 0.49
+    }
+  ],
+  "palette": [
+    {
+      "hex": "#040407",
+      "share": 0.67,
+      "l": 0.11,
+      "c": 0.01
+    },
+    {
+      "hex": "#14141A",
+      "share": 0.16,
+      "l": 0.19,
+      "c": 0.012
+    },
+    {
+      "hex": "#2C2E32",
+      "share": 0.07,
+      "l": 0.3,
+      "c": 0.007
+    },
+    {
+      "hex": "#464A51",
+      "share": 0.04,
+      "l": 0.41,
+      "c": 0.012
+    },
+    {
+      "hex": "#68666A",
+      "share": 0.02,
+      "l": 0.51,
+      "c": 0.006
+    },
+    {
+      "hex": "#998377",
+      "share": 0.01,
+      "l": 0.63,
+      "c": 0.032
+    },
+    {
+      "hex": "#ADA5A9",
+      "share": 0.01,
+      "l": 0.73,
+      "c": 0.01
+    },
+    {
+      "hex": "#E0D1C3",
+      "share": 0.0,
+      "l": 0.87,
+      "c": 0.026
+    }
+  ],
+  "accents": [
+    {
+      "hex": "#2A3334",
+      "share": 0.36,
+      "l": 0.31,
+      "c": 0.013
+    },
+    {
+      "hex": "#214C6D",
+      "share": 0.27,
+      "l": 0.4,
+      "c": 0.073
+    },
+    {
+      "hex": "#8D5432",
+      "share": 0.16,
+      "l": 0.5,
+      "c": 0.09
+    },
+    {
+      "hex": "#D7A484",
+      "share": 0.12,
+      "l": 0.76,
+      "c": 0.075
+    },
+    {
+      "hex": "#5A78C2",
+      "share": 0.08,
+      "l": 0.58,
+      "c": 0.12
+    }
+  ],
+  "tokens": {
+    "bg": "#040407",
+    "surface": "#0F0F12",
+    "text": "#E0D1C3",
+    "muted": "#706965",
+    "primary": "#5A78C2",
+    "accent": "#8D5432"
+  },
+  "spec_patch": {
+    "theme": {
+      "colors": {
+        "bg": "#040407",
+        "surface": "#0F0F12",
+        "text": "#E0D1C3",
+        "muted": "#706965",
+        "primary": "#5A78C2",
+        "accent": "#8D5432"
+      }
+    },
+    "post": {
+      "grain": 0.02,
+      "vignette": 0.45
+    }
+  },
+  "summary": "3 images. Palette: #040407 67%, #14141A 16%, #2C2E32 7%, #464A51 4%, #68666A 2%; vivid accents #2A3334, #214C6D, #8D5432, #D7A484 (ground #040407, text #E0D1C3, primary #5A78C2, accent #8D5432). Value: low-key on average (mean L 0.17), low contrast (black 0.08, white 0.43), neutral, near monochrome. Texture: visible grain, moderate detail, hard graphic edges. Composition: 2/3 centred, 59% negative space on average. Line character: organic, curving ×2, mixed ×1.",
+  "notes": [
+    "tokens are a starting point: check text on bg (≥ 4.5:1 is enforced) and pick the accent by eye.",
+    "Use the board for colour, value, texture, composition and line character; the subject matter of the references is not yours to copy.",
+    "grain/detail/hard_edges are relative measures: compare images against each other and your render's stills against the board."
+  ]
+}

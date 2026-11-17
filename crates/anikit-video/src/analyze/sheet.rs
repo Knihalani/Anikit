@@ -52,14 +52,14 @@ fn glyph(c: char) -> [u8; 5] {
     }
 }
 
-struct Canvas {
-    w: usize,
-    h: usize,
-    px: Vec<u8>,
+pub(super) struct Canvas {
+    pub(super) w: usize,
+    pub(super) h: usize,
+    pub(super) px: Vec<u8>,
 }
 
 impl Canvas {
-    fn rect(&mut self, x: i32, y: i32, w: i32, h: i32, c: [u8; 3]) {
+    pub(super) fn rect(&mut self, x: i32, y: i32, w: i32, h: i32, c: [u8; 3]) {
         for yy in y.max(0)..(y + h).min(self.h as i32) {
             for xx in x.max(0)..(x + w).min(self.w as i32) {
                 let i = (yy as usize * self.w + xx as usize) * 3;
@@ -67,7 +67,7 @@ impl Canvas {
             }
         }
     }
-    fn text(&mut self, x: i32, y: i32, s: &str, scale: i32, c: [u8; 3]) {
+    pub(super) fn text(&mut self, x: i32, y: i32, s: &str, scale: i32, c: [u8; 3]) {
         let tw = s.chars().count() as i32 * 4 * scale;
         self.rect(x - scale, y - scale, tw + scale, 7 * scale, [0, 0, 0]);
         for (k, ch) in s.chars().enumerate() {

@@ -28,6 +28,7 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|b
   beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
   music  spec.json -o out.wav   generate a mastered soundtrack (anikit-video docs music)
   analyze ref.mp4 [-o analysis.json] [--sheet sheet.jpg] [--spec draft.json]
+  board  refs/ [-o board.json] [--sheet board.jpg]   palette, value, texture, composition → theme tokens (docs board)
                                 reverse-engineer a reference video (anikit-video docs analyze)
 common: --json (machine-readable output)
 start:  docs [topic] | recipes [name] (-o file) | music | critique --render | looks | templates | preview | mcp | --version";
@@ -273,6 +274,15 @@ fn main() -> ExitCode {
     if let Some(code) = anikit_video::agent_cli::run(&raw) {
         return ExitCode::from(code as u8);
     }
+    if raw.first().is_some_and(|c| c == "board") {
+        return match run_board(&raw[1..]) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("error: {e}");
+                ExitCode::from(1)
+            }
+        };
+    }
     let args = match Args::parse() {
         Ok(a) => a,
         Err(e) => {
@@ -292,6 +302,43 @@ fn main() -> ExitCode {
             ExitCode::from(1)
         }
     }
+}
+
+/// `board <images or folders…> [-o board.json] [--sheet board.jpg] [--json]`.
+fn run_board(raw: &[String]) -> Result<(), String> {
+    let (mut inputs, mut out, mut sheet, mut json) = (Vec::new(), None, None, false);
+    let mut it = raw.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "-o" | "--out" => out = it.next().cloned(),
+            "--sheet" => sheet = it.next().cloned(),
+            "--json" => json = true,
+            s if s.starts_with('-') => return Err(format!("board: unknown option '{s}'")),
+            s => inputs.push(s.to_string()),
+        }
+    }
+    if inputs.is_empty() {
+        return Err("usage: anikit-video board <images or a folder> [-o board.json] [--sheet board.jpg]  (anikit-video docs board)".into());
+    }
+    let t = Instant::now();
+    let files = anikit_video::analyze::collect_images(&inputs)?;
+    let b = anikit_video::analyze::board(&files)?;
+    let js = serde_json::to_string_pretty(&b).map_err(|e| e.to_string())?;
+    match &out {
+        Some(o) => std::fs::write(o, js + "\n").map_err(|e| format!("{o}: {e}"))?,
+        None if !json => println!("{js}"),
+        None => {}
+    }
+    if let Some(sh) = &sheet {
+        let (w, h, px) = anikit_video::analyze::board_sheet(&b);
+        image::RgbImage::from_raw(w, h, px).ok_or("sheet buffer")?.save(sh).map_err(|e| format!("{sh}: {e}"))?;
+    }
+    if json {
+        println!("{}", serde_json::json!({ "ok": true, "summary": b.summary, "spec_patch": b.spec_patch }));
+    } else {
+        eprintln!("{}\nspec patch: {}\n{} image(s) in {:.2} s", b.summary, b.spec_patch, b.images.len(), t.elapsed().as_secs_f64());
+    }
+    Ok(())
 }
 
 fn need_input(a: &Args) -> Result<&str, String> {
