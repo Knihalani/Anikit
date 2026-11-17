@@ -1,0 +1,21 @@
+{
+  "slug": "espn-mnf-2023",
+  "title": "ESPN Monday Night Football — graphics package",
+  "studio": "ESPN Creative",
+  "year": 2023,
+  "url": "https://www.youtube.com/watch?v=VHNrjP2_qCg",
+  "frame_sources": [
+    "https://i.ytimg.com/vi/VHNrjP2_qCg/maxres1.jpg",
+    "https://i.ytimg.com/vi/VHNrjP2_qCg/maxres2.jpg",
+    "https://i.ytimg.com/vi/VHNrjP2_qCg/maxres3.jpg"
+  ],
+  "style_tags": [
+    "sports-broadcast",
+    "3d-cg"
+  ],
+  "format": "16:9",
+  "medium": "live+gfx",
+  "description": "Player portraits in dramatic light with repeating triptychs and a chrome MNF shield in a stadium of light.",
+  "why_top_tier": "Contemporary sports broadcast package with high finish.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright ESPN / NFL"
+}

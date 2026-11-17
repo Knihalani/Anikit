@@ -242,7 +242,11 @@ impl SubSynth {
     /// A voice playing `patch` instead of this synth's own (per-note
     /// automation), sharing this synth's glide state.
     pub fn voice_with(&self, patch: &Patch, note: &NoteOn) -> Box<dyn Voice> {
-        Box::new(SubVoice::new(patch, note, if patch.mono || patch.glide > 0.0 { Some(&self.glide) } else { None }))
+        self.voice_ex(patch, note, true)
+    }
+    /// A voice with an explicit legato flag (glide only on legato notes).
+    pub fn voice_ex(&self, patch: &Patch, note: &NoteOn, legato: bool) -> Box<dyn Voice> {
+        Box::new(SubVoice::new_ex(patch, note, if patch.mono || patch.glide > 0.0 { Some(&self.glide) } else { None }, legato))
     }
 }
 
@@ -263,6 +267,9 @@ impl Instrument for SubSynth {
     }
     fn ordered_voices(&self) -> bool {
         self.patch.mono || self.patch.glide > 0.0
+    }
+    fn voice_legato(&self, note: &NoteOn, legato: bool) -> Box<dyn Voice> {
+        self.voice_ex(&self.patch, note, legato)
     }
 }
 
@@ -305,6 +312,11 @@ struct SubVoice {
 
 impl SubVoice {
     fn new(p: &Patch, n: &NoteOn, glide: Option<&Arc<GlideState>>) -> SubVoice {
+        Self::new_ex(p, n, glide, true)
+    }
+
+    /// `legato = false` starts the note on its own pitch (no glide) unless the patch glides always.
+    fn new_ex(p: &Patch, n: &NoteOn, glide: Option<&Arc<GlideState>>, legato: bool) -> SubVoice {
         let rate = n.rate;
         let mut rng = Rng::new(n.seed);
         let mut banks = Vec::with_capacity(4);
@@ -349,6 +361,7 @@ impl SubVoice {
             }
             None => (None, None),
         };
+        let from = if legato || p.glide_always { from } else { None };
         let gl = Glide::new(
             from.unwrap_or(n.key),
             n.key,

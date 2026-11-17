@@ -48,7 +48,7 @@ Agent commands:
                                     (contrast, overlaps, cut text, frame fill, centred layouts); --pack writes frames
                                     to look at (strip, cuts, worst frames, peak) and a review.md rubric
   anikit-video preview <spec.json> [-o sheet.png] [--detail] [--no-critique]   # THE inner loop: check + 1 frame/s sheet + critique + pace, in one call (draft quality)
-  anikit-video preview <spec.json|template> --at T [--width W] [-o f.png]       # one frame
+  anikit-video preview <spec.json|template> --at T [--width W] [-o f.png]       # one frame; --at 1,4.5,8 = one strip of several
                                     contact sheet (one frame per scene), or one still with --at
   anikit-video mcp                  Model Context Protocol server on stdio
 ";
@@ -334,8 +334,18 @@ fn cmd_preview(args: &[String]) -> Result<(), String> {
             per * p.ev.frames() as f64 + 1.0
         };
         if a.has("json") {
-            out!("{}", pretty(&serde_json::json!({ "sheet": out, "seconds_per_cell": 1, "duration": p.ev.duration, "final_render_estimate_s": est.round(), "critique": report })));
+            let warns: Vec<String> = crate::spec::parse::from_value(spec.clone()).map(|p| p.warnings.iter().map(|d| d.to_string()).collect()).unwrap_or_default();
+            out!("{}", pretty(&serde_json::json!({ "spec_warnings": warns, "sheet": out, "seconds_per_cell": 1, "duration": p.ev.duration, "final_render_estimate_s": est.round(), "critique": report })));
             return Ok(());
+        }
+        // Spec warnings first (unknown or ignored keys): they are the cheapest
+        // fixes, and render would print them anyway after the expensive part.
+        let warns: Vec<String> = crate::spec::parse::from_value(spec.clone()).map(|p| p.warnings.iter().map(|d| d.to_string()).collect()).unwrap_or_default();
+        for w in warns.iter().take(8) {
+            outln!("spec {w}");
+        }
+        if warns.len() > 8 {
+            outln!("spec … {} more (anikit-video check {src})", warns.len() - 8);
         }
         outln!("sheet: {out} (one cell per second, {:.1} s video; open it and look)", p.ev.duration);
         if let Some(r) = report {
@@ -347,6 +357,11 @@ fn cmd_preview(args: &[String]) -> Result<(), String> {
     }
     let width = a.get("width").map(|w| w.parse::<u32>().map_err(|_| format!("--width: '{w}' is not a number"))).transpose()?;
     let (img, default_out) = match a.get("at") {
+        // `--at 1.2,4,7.5`: one strip of several moments in one image.
+        Some(t) if t.contains(',') => {
+            let ts = t.split(',').map(|x| x.trim().parse::<f32>().map_err(|_| format!("--at: '{x}' is not a number of seconds"))).collect::<Result<Vec<_>, _>>()?;
+            (p.sheet(Some(ts), width.unwrap_or(960)), format!("{stem}-strip.png"))
+        }
         Some(t) => {
             let t: f32 = t.parse().map_err(|_| format!("--at: '{t}' is not a number of seconds"))?;
             (p.frame(t, width), format!("{stem}-{t}s.png"))

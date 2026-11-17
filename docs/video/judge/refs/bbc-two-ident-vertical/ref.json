@@ -1,0 +1,22 @@
+{
+  "slug": "bbc-two-ident-vertical",
+  "title": "BBC Two — idents (vertical social cut)",
+  "studio": "BUCK",
+  "year": 2018,
+  "url": "https://buck.co/work/bbc2",
+  "frame_sources": [
+    "https://cdn.sanity.io/images/uk7b627p/production/9beb1bba3061c6f6416014f8ab6df21d35030d71-1320x2436.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/e61faddd8c6fe12b96f7fb0eb81a624e6b807acf-1320x2436.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/4810ad2f9a6d23fae2e4b7299a31727fb4e93545-1320x2436.png"
+  ],
+  "style_tags": [
+    "ident",
+    "3d-cg",
+    "vertical"
+  ],
+  "format": "9:16",
+  "medium": "3D",
+  "description": "Vertical versions of the BBC Two ident: close, dense piles of textured foam, rubber and metal shapes in teal, coral, green and silver with the BBC Two wordmark low in frame.",
+  "why_top_tier": "The same tactile ident system recomposed natively for portrait screens.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright BBC"
+}
