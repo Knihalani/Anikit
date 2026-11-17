@@ -212,21 +212,6 @@
           },
           {
             "type": "component",
-            "component": "kinetic-grid",
-            "props": {
-              "shape": "dot",
-              "wave": "radial",
-              "colors": [
-                "{{brand.colors.primary}}",
-                "{{brand.colors.secondary}}"
-              ],
-              "speed": 1.5,
-              "cols": "{{fmt.portrait ? 20 : 30}}"
-            },
-            "opacity": 0.06
-          },
-          {
-            "type": "component",
             "component": "sparks",
             "props": {
               "bursts": [
@@ -244,6 +229,21 @@
               "power": 1.2,
               "seed": 3
             }
+          },
+          {
+            "type": "component",
+            "component": "kinetic-grid",
+            "props": {
+              "shape": "dot",
+              "wave": "radial",
+              "colors": [
+                "{{brand.colors.primary}}",
+                "{{brand.colors.secondary}}"
+              ],
+              "speed": 1.5,
+              "cols": "{{fmt.portrait ? 20 : 30}}"
+            },
+            "opacity": 0.06
           },
           {
             "$if": "brand.logo",

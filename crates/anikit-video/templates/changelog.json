@@ -263,7 +263,7 @@
               "props": {
                 "label": "{{upper(product ?? brand.name)}}",
                 "solid": true,
-                "color": "{{brand.colors.primary}}",
+                "color": "{{brand.colors.fill}}",
                 "size": "{{fmt.u * 2.3}}",
                 "align": 0
               },
@@ -319,7 +319,7 @@
               "y": "{{fmt.portrait ? fmt.h * 0.34 : (fmt.square ? fmt.h * 0.33 : fmt.h * 0.52)}}",
               "width": "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 1.7}}",
               "height": "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 1.7}}",
-              "fill": "radial-gradient({{alpha(it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E'), 0.35)}} 0%, {{alpha(it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E'), 0)}} 70%)",
+              "fill": "radial-gradient({{alpha(it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D'), 0.35)}} 0%, {{alpha(it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D'), 0)}} 70%)",
               "enter": {
                 "preset": "fadeIn",
                 "duration": 0.6
@@ -336,7 +336,7 @@
                 "y": "{{fmt.portrait ? fmt.h * 0.34 : (fmt.square ? fmt.h * 0.33 : fmt.h * 0.52)}}",
                 "width": "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22)}}",
                 "height": "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22)}}",
-                "fill": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E')}}",
+                "fill": "{{it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D')}}",
                 "enter": {
                   "preset": "rotateIn",
                   "duration": 0.6
@@ -378,7 +378,7 @@
                     "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.38}}"
                   ]
                 ],
-                "fill": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E')}}",
+                "fill": "{{it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D')}}",
                 "enter": {
                   "preset": "popIn",
                   "duration": 0.5
@@ -409,7 +409,7 @@
                   ]
                 ],
                 "stroke": {
-                  "color": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E')}}",
+                  "color": "{{it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D')}}",
                   "width": "{{fmt.u * 3}}",
                   "cap": "round",
                   "join": "round"
@@ -438,7 +438,7 @@
                     "y": "{{fmt.h * 0.5 - (fmt.u * 10 + ln * ts * 1.08 + bh) / 2}}",
                     "width": "{{fmt.u * 0.7}}",
                     "height": "{{fmt.u * 10 + ln * ts * 1.08 + bh}}",
-                    "fill": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E')}}",
+                    "fill": "{{it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D')}}",
                     "radius": "{{fmt.u * 0.35}}",
                     "enter": {
                       "preset": "wipeIn",
@@ -453,7 +453,7 @@
                   "props": {
                     "label": "{{upper(it.type)}}",
                     "solid": true,
-                    "color": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E')}}",
+                    "color": "{{it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D')}}",
                     "size": "{{fmt.portrait ? fmt.u * 3.6 : fmt.u * 3}}",
                     "align": "{{fmt.landscape ? 0 : 0.5}}",
                     "delay": 0.15
@@ -513,6 +513,25 @@
             }
           },
           {
+            "type": "component",
+            "component": "sparks",
+            "props": {
+              "bursts": [
+                1.6
+              ],
+              "origin": [
+                0.5,
+                "{{fmt.portrait ? 0.56 : 0.65}}"
+              ],
+              "count": 90,
+              "colors": [
+                "{{brand.colors.primary}}",
+                "{{brand.colors.secondary}}"
+              ],
+              "seed": 5
+            }
+          },
+          {
             "text": "{{(product ?? brand.name) + ' ' + version + ' is out'}}",
             "style": "label",
             "y": "{{fmt.portrait ? '30%' : '26%'}}",
@@ -545,25 +564,6 @@
                 "preset": "fadeIn",
                 "delay": 1.0
               }
-            }
-          },
-          {
-            "type": "component",
-            "component": "sparks",
-            "props": {
-              "bursts": [
-                1.6
-              ],
-              "origin": [
-                0.5,
-                "{{fmt.portrait ? 0.56 : 0.65}}"
-              ],
-              "count": 90,
-              "colors": [
-                "{{brand.colors.primary}}",
-                "{{brand.colors.secondary}}"
-              ],
-              "seed": 5
             }
           }
         ]

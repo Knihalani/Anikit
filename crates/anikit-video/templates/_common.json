@@ -13,7 +13,8 @@
         "muted": "{{brand.colors.muted}}",
         "border": "{{brand.colors.border}}",
         "onPrimary": "{{brand.colors.onPrimary}}",
-        "onAccent": "{{brand.colors.onAccent}}"
+        "onAccent": "{{brand.colors.onAccent}}",
+        "fill": "{{brand.colors.fill}}"
       },
       "fonts": {
         "heading": "{{brand.fonts.heading}}",
@@ -404,12 +405,13 @@
       "component": "button",
       "props": {
         "label": "{{label}}",
-        "variant": "gradient",
+        "variant": "primary",
         "size": "{{fmt.portrait ? fmt.u * 4.6 : fmt.u * 3.6}}",
         "press": [
           "{{press ?? 1.4}}"
         ],
-        "delay": "{{delay ?? 0.5}}"
+        "delay": "{{delay ?? 0.5}}",
+        "color": "{{brand.colors.fill}}"
       },
       "x": "50%",
       "y": "{{y ?? '60%'}}",

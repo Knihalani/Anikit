@@ -198,8 +198,14 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
             match a.get("o").or(a.get("out")) {
                 Some(o) => {
                     write(Path::new(o), &pretty(&spec))?;
-                    let r = crate::critique::critique_in_range(&spec, t.duration_range());
+                    let mut r = crate::critique::critique_in_range(&spec, t.duration_range());
                     let base = Path::new(o).parent().map(Path::to_path_buf).unwrap_or_default();
+                    // Pixel checks too, so the printed score is the honest one.
+                    if let Ok(p) = crate::preview::Preview::new(spec.clone(), &if base.as_os_str().is_empty() { PathBuf::from(".") } else { base.clone() }) {
+                        let extra = crate::render_check::check(&p.ev);
+                        r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
+                        r.notes.extend(extra);
+                    }
                     let v = mcp::validate(spec.clone(), &base);
                     for k in ["errors", "warnings"] {
                         for d in v[k].as_array().into_iter().flatten() {

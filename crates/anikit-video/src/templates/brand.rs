@@ -168,6 +168,16 @@ impl Brand {
                 "text": h(text),
                 "muted": h(muted),
                 "onPrimary": h(color::contrast_text(primary)),
+                // The primary, darkened until white labels on it read (≥ 4.5:1): solid buttons, badges, chips.
+                "fill": h({
+                    let mut c = primary;
+                    let mut k = 0.0;
+                    while color::contrast(c, [1.0, 1.0, 1.0, 1.0]) < 4.5 && k < 1.0 {
+                        k += 0.05;
+                        c = color::mix(primary, [0.0, 0.0, 0.0, 1.0], k);
+                    }
+                    c
+                }),
                 "onAccent": h(color::contrast_text(accent)),
                 "border": h(color::mix(bg, text, 0.14)),
                 "glow": h([primary[0], primary[1], primary[2], 0.35]),
