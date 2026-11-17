@@ -480,6 +480,41 @@ fn write_floor_vis(path: &std::path::Path, v: &FloorVis) {
     }
 }
 
+/// Look warnings for `check`: combinations that render, but badly.
+pub fn lint(props: &Value) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    let env = match props.get("env") {
+        Some(Value::String(s)) => s.as_str(),
+        Some(Value::Object(m)) => m.get("preset").and_then(|p| p.as_str()).unwrap_or("cyc"),
+        _ => "cyc",
+    };
+    let objs = props.get("objects").and_then(|o| o.as_array()).cloned().unwrap_or_default();
+    let mat_of = |o: &Value| -> String {
+        match o.get("material").or(props.get("material")) {
+            Some(Value::String(s)) => s.to_lowercase(),
+            Some(Value::Object(m)) => m.get("extends").and_then(|e| e.as_str()).unwrap_or("").to_lowercase(),
+            _ => if o.get("type").and_then(|t| t.as_str()).is_some_and(|t| t == "slab" || t == "pane") { "glass".into() } else { "chrome".into() },
+        }
+    };
+    let warm = ["gold", "copper"];
+    if matches!(env, "sunset" | "neon") {
+        for (i, o) in objs.iter().enumerate() {
+            let m = mat_of(o);
+            if warm.contains(&m.as_str()) {
+                out.push((format!(".objects[{i}].material"), format!("`{m}` under env `{env}` washes out into the coloured light; use `chrome` or `aluminium`, or env `studio`/`night` for warm metals")));
+            }
+        }
+    }
+    if env == "cyc" {
+        let dark_card = objs.iter().any(|o| o.get("type").and_then(|t| t.as_str()) == Some("card") && o.get("intensity").and_then(|k| k.as_f64()).is_some_and(|k| k < 0.2));
+        let chrome = objs.iter().position(|o| matches!(mat_of(o).as_str(), "chrome" | "mirror") && o.get("type").and_then(|t| t.as_str()) != Some("card"));
+        if let (Some(i), false) = (chrome, dark_card) {
+            out.push((format!(".objects[{i}].material"), "chrome on the white `cyc` reflects only white and reads flat; add a black card ({ \"type\": \"card\", \"color\": \"#000\", \"intensity\": 0, \"pos\": [0, 0.5, 2.5], \"rot\": [0, 180, 0] }) or use env `studio`".into()));
+        }
+    }
+    out
+}
+
 /// Where simulations are cached: `$ANIKIT_CACHE/sim` (default
 /// `$XDG_CACHE_HOME/anikit/sim` or `~/.cache/anikit/sim`); `ANIKIT_CACHE=off`
 /// disables caching.
@@ -646,7 +681,7 @@ impl Scene3d {
             scene.micro(&cam, w, h);
         }
 
-        let mut px: kernel::pool::Buf<trace::Px> = kernel::pool::Buf::uninit(w * h);
+        let mut px = post::Planes::new(w * h);
         let mut q = p.quality;
         if crate::components::reference() || std::env::var_os("ANIKIT_SCENE3D_REFERENCE").is_some() {
             // Converged sampling with the same image model: 1 + 24 samples per
@@ -666,13 +701,13 @@ impl Scene3d {
             post::dump(std::path::Path::new(&path), &px, w, h, &pp);
         }
         let vol = if p.shafts && p.haze.0 > 0.0 {
-            let depth: Vec<f32> = px.iter().map(|q| q.depth).collect();
+            let depth: &[f32] = &px.depth;
             let steps = match p.quality.edge_spp { 0..=3 => 8, 4..=8 => 16, _ => 32 };
-            Some(scene.volumetrics(&cam, w, h, &depth, p.haze.0, steps))
+            Some(scene.volumetrics(&cam, w, h, depth, p.haze.0, steps))
         } else {
             None
         };
-        let out = post::process(&px, w, h, &pp, vol.as_ref().map(|v| post::Volume { px: v, w: w.div_ceil(2), h: h.div_ceil(2) }), layer.as_ref());
+        let out = post::process_planes(&px, w, h, &pp, vol.as_ref().map(|v| post::Volume { px: v, w: w.div_ceil(2), h: h.div_ceil(2) }), layer.as_ref());
         if prof {
             let ms = |d: std::time::Duration| d.as_secs_f64() * 1e3;
             eprintln!(
@@ -693,7 +728,7 @@ impl Scene3d {
 
     /// Simulate and splat the particle systems live at `t`.
     #[allow(clippy::too_many_arguments)]
-    fn particles(&self, t: f32, dt: f32, cam: &trace::Camera, prev: &trace::Camera, px: &mut [trace::Px], w: usize, h: usize, assets: Option<&dyn Assets>) -> Option<particles::Layer> {
+    fn particles(&self, t: f32, dt: f32, cam: &trace::Camera, prev: &trace::Camera, px: &mut post::Planes, w: usize, h: usize, assets: Option<&dyn Assets>) -> Option<particles::Layer> {
         let p = self.p();
         if p.parts.is_empty() {
             return None;
@@ -722,7 +757,6 @@ impl Scene3d {
         if live.is_empty() {
             return None;
         }
-        let depth: Vec<f32> = px.iter().map(|q| q.depth).collect();
         let up = v3(0.0, 1.0, 0.0);
         let key = p.env.key_box().map(|k| (k.c, scale(k.radiance, p.env.key_solid_angle))).unwrap_or((up, v3(0.0, 0.0, 0.0)));
         // Particle shadows on the scene: dim the key light by the particles' transmittance.
@@ -731,27 +765,24 @@ impl Scene3d {
         let c1 = c0.elapsed();
         if let Some(sm) = &shadow {
             let (fwd, _, _) = cam.basis();
-            let body = |(y, row): (usize, &mut [trace::Px])| {
-                for (x, q) in row.iter_mut().enumerate() {
-                    if q.depth > 1e5 || q.vk <= 0.0 {
+            let rig = trace::Rig::new(cam, w, h);
+            let depth = &px.depth;
+            kernel::par::rows(&mut px.vk, w, |y, row| {
+                for (x, vk) in row.iter_mut().enumerate() {
+                    let z = depth[y * w + x];
+                    if z > 1e5 || *vk <= 0.0 {
                         continue;
                     }
-                    let d = Scene::cam_ray(cam, w, h, x as f32 + 0.5, y as f32 + 0.5);
-                    let wp = madd(cam.pos, d, q.depth / dot(d, fwd).max(1e-4));
-                    q.vk *= sm.trans(wp);
+                    let d = rig.ray(x as f32 + 0.5, y as f32 + 0.5);
+                    let wp = madd(cam.pos, d, z / dot(d, fwd).max(1e-4));
+                    *vk *= sm.trans(wp);
                 }
-            };
-            use rayon::prelude::*;
-            if rayon::current_thread_index().is_some() {
-                px.chunks_mut(w).enumerate().for_each(body);
-            } else {
-                px.par_chunks_mut(w).enumerate().for_each(body);
-            }
+            });
         }
         if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() && shadow.is_some() {
             eprintln!("  particle shadows: map {:.0} ms, scene lookups {:.0} ms", c1.as_secs_f64() * 1e3, (c0.elapsed() - c1).as_secs_f64() * 1e3);
         }
-        let view = particles::View { cam, prev, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key, amb: (p.env.diffuse(up), p.env.diffuse(scale(up, -1.0))), shadow: shadow.as_ref(), draft: p.draft };
+        let view = particles::View { cam, prev, w, h, depth: &px.depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key, amb: (p.env.diffuse(up), p.env.diffuse(scale(up, -1.0))), shadow: shadow.as_ref(), draft: p.draft };
         Some(particles::render(&live, &view, t))
     }
 
@@ -892,6 +923,9 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        assert_eq!(lint(&json!({ "env": "sunset", "objects": [ { "text": "A", "material": "gold" } ] })).len(), 1);
+        assert_eq!(lint(&json!({ "objects": [ { "text": "A" } ] })).len(), 1, "chrome on cyc without a flag");
+        assert!(lint(&json!({ "objects": [ { "text": "A" }, { "type": "card", "intensity": 0 } ] })).is_empty());
         // Scripts expand inside `objects`; open geometry parses.
         scene(json!({ "objects": [ { "script": "let o = []; for k in 0..3 { o.push(#{ type: \"lathe\", points: [[0.0, 0.0], [0.2, 0.3], [0.0, 0.6]], pos: [k * 0.5, 0.0, 0.0] }); } o" } ] })).unwrap();
         let e = scene(json!({ "objects": [ { "type": "sphere", "material": "crome" } ] })).err().unwrap();

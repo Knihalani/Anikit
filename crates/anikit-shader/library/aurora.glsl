@@ -24,6 +24,10 @@ float fbm(vec2 p) {
 
 // Curtain brightness at ground-plane position q (x across, z away).
 float curtain(vec2 q, float t) {
+    // The sheet sits at q.y = 6 + fold + 1.5·sin(…), within [-0.1, 11.23]
+    // (fold is in [-4.6, 3.73]). Farther than 5.92 from that band the envelope
+    // is below 1e-4, where this returns 0 anyway: skip the noise.
+    if (q.y < -6.02 || q.y > 17.15) return 0.0;
     // The sheet's path folds at two scales; where it turns edge-on it brightens.
     float fold = fbm(vec2(q.x * 0.22 + t * 0.12, t * 0.05)) * 7.0 - 3.5 + 1.1 * sin(q.x * 0.85 + t * 0.45);
     float d = abs(q.y - 6.0 - fold - 1.5 * sin(q.x * 0.27 + t * 0.3));
@@ -61,6 +65,9 @@ vec3 sky(vec3 rd, float t) {
         float y = 0.8 + fi * fi * 6.0;
         float dist = y / max(rd.y, 0.02);
         vec2 q = vec2(rd.x, -rd.z) * dist;
+        // q.y grows with every layer (higher and farther along the ray): once
+        // past the curtain band, the rest all add exactly 0.
+        if (q.y > 17.15) break;
         float c = curtain(q, t);
         vec3 tint = mix(vec3(0.1, 1.0, 0.45), vec3(0.55, 0.2, 0.95), smoothstep(0.25, 0.9, fi));
         tint = mix(tint, vec3(1.0, 0.25, 0.35), smoothstep(0.85, 1.0, fi) * 0.6);
