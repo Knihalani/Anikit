@@ -19,13 +19,15 @@ A scene string is a title card (`"Title | subtitle"`); a layer string is centred
 | time | `1.5` · `"1.5s"` · `"500ms"` · `"12f"` · `"@marker"` · `"@marker+0.2"` |
 | length | `120` (px) · `"50%"` (of parent) · `"10vw"` · `"8vh"` · `"5vmin"` |
 | colour | `"#7c5cff"` · `"#fff8"` · `"oklch(70% 0.15 250)"` · `"$primary"` · `"linear-gradient(135deg, $primary, $accent)"` |
-| expression | `"=960 + 300 * sin(t * 2)"` (vars `t T gt p i n w h fps frame`; `sin cos abs min max clamp mix smoothstep noise rand …`) |
+| expression | `"=960 + 300 * sin(t * 2)"` (vars `t T gt p i n w h fps frame beat bar level bpm`; `c ? a : b`, `&& ||`; `sin mix remap smoothstep ease noise rand …`). Colours too: `"=hsl(t * 60, 70, 55)"`, `"=mix($primary, $accent, level)"`. See [`authoring.md`](authoring.md) |
 
 ## Top level
 
 `size` (`"16:9"` `"9:16"` `"1:1"` `"4:5"` `"720p"` `"4k"` or `[w, h]`) · `fps` · `background` · `theme { colors, fonts, radius, styles }` · `scenes` · `transition` · `markers { name: time }` (plus automatic `"@beat17"`, `"@bar5+0.25"` from the first music track) · `audio [...]` · `captions` · `fonts { family: file }` · `duration` · `compositions` · `post` (`clean cinematic dreamy punchy noir vintage`, or `{ "preset": "cinematic", "bloom": 0.4 }`; per scene too) · `motionBlur` (`true`, or `{ "shutter": 90 }`; default only with `--quality high`).
 
 Theme colours (used as `$name`): `primary secondary accent bg surface text muted`. Text styles: `title heading subtitle body caption label code`.
+
+**Generate:** `{ "script": "let out = []; for k in 0..24 { out.push(#{ shape: \"circle\", x: 80 * k }) } out" }` in any layer or scene list (Rhai: loops, maths, `rand`, `hsl`); a top-level `script` can rewrite `spec`. See [`authoring.md`](authoring.md).
 
 **Reuse (fewer tokens):** `"defs": { "card": {…layer or scene…} }`, then `{ "use": "card", "with": { "title": "Hi" }, "x": 200 }` anywhere a layer or scene goes. Overrides deep-merge; `"$title"` in the def is replaced. `"repeat": 3` copies a layer or scene, with `"$i"` (0-based), `"$n"` and arithmetic `"=160 + $i*420"`. `{ "repeat": 3, "scenes": [ … ] }` loops a sequence of scenes.
 
@@ -50,11 +52,12 @@ Every layer: `x y` (default centre) · `anchor` (`center`, `topLeft`, …) · `w
 | image / video | `src` · `fit` (`contain cover fill none`) · `radius` · video: `trimStart speed volume loop` |
 | box | flexbox: `style { direction gap padding align justify wrap background radius border columns }` · `children` |
 | group | `layers` |
+| draw | `draw: [ { "d": "M0 0 C…", "stroke": "$accent", "width": 4 }, { "points": [[x, y], …], "smooth": true, "colors": [...] }, { "circle": [x, y, r], "fill": "#fff" }, { "rect": [x, y, w, h] }, { "line": [x1, y1, x2, y2] } ]` in frame px |
 | composition | `composition` (a name from top-level `"compositions": { "ui": { "size": [800, 500], "duration": 4, "background": "#111", "layers": [...] } }`, or `scenes`) · `fit` · `trimStart speed` · `loop: true`. It has its own clock and is clipped to its box; 3D layers use it as a texture |
 | component | `component` (`bar-chart line-chart donut-chart counter stat code terminal phone laptop browser card button toast cursor lower-third title-card mesh-gradient aurora grid confetti model lottie …`; `anikit-video info --components`) · `props` |
-| shader | `shader` (Shadertoy GLSL `mainImage`, WGSL, or a built-in: `sdf-scene liquid-chrome aurora caustics flow-ink turing film-burn glitch`) or `src: "fx.glsl"` · `uniforms` (animatable by name) · `channels` (`below noise` · image/video · `#composition` · `{layers}`) · `filter` · `supersample` · `alpha` |
+| shader | `shader` (Shadertoy GLSL `mainImage`, WGSL, or a built-in: `hero mesh-gradient light-shafts particles liquid-chrome sdf-scene aurora caustics flow-ink turing film-burn glitch lake-mirror`, see `info --shaders`) or `src: "fx.glsl"` · `uniforms` (animatable by name) · `channels` (`below noise` · image/video · `#composition` · `{layers}` · buffers `A`–`D`) · `buffers` (multi-pass, feedback) · `filter` · `supersample` · `alpha` |
 
-**Shaders** run JIT-compiled on the CPU at full resolution: `{ "shader": "aurora", "uniforms": { "intensity": 1.4 } }`. `"filter": true` reads the composited layers below as `iChannel0` and replaces them. Guide, built-ins, costs and limits: [`shader.md`](shader.md).
+**Shaders** run JIT-compiled on the CPU at full resolution: `{ "shader": "aurora", "uniforms": { "intensity": 1.4 } }`. `"filter": true` reads the composited layers below as `iChannel0` and replaces them. `iAudio`/`iBeat` follow the music; `still` prints each shader's ms/frame. Guide, built-ins, costs and limits: [`shader.md`](shader.md).
 
 ## Animation
 

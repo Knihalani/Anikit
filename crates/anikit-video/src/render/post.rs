@@ -265,6 +265,21 @@ pub(crate) fn linear_to_srgb(v: f32) -> f32 {
     }
 }
 
+/// Linear 0..1 → sRGB 0..255 through a shared table (sqrt-indexed for dark precision).
+#[inline(always)]
+pub(crate) fn encode_srgb255(v: f32) -> f32 {
+    static T: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
+    let lut = T.get_or_init(|| {
+        (0..=SRGB_LUT)
+            .map(|i| {
+                let t = i as f32 / SRGB_LUT as f32;
+                linear_to_srgb(t * t) * 255.0
+            })
+            .collect()
+    });
+    PostProcessor::encode(lut, v)
+}
+
 /// Triangular dither in −1..1 LSB, fixed per pixel.
 #[inline(always)]
 pub(crate) fn tri_dither(x: u32, y: u32) -> f32 {
@@ -295,6 +310,9 @@ pub struct PostProcessor {
     /// Bloom + halation at half resolution (empty when off), and its size.
     glow: Vec<[f32; 3]>,
     glow_dims: (usize, usize),
+    /// `tri_dither` for every pixel, and the size it was built for.
+    dith: Vec<f32>,
+    dith_dims: (usize, usize),
 }
 
 const SRGB_LUT: usize = 4096;
@@ -379,31 +397,75 @@ impl PostProcessor {
         let seed = (frame as u32).wrapping_mul(0x9e37_79b9) ^ 0x51ed_270b;
         let gsize = p.grain_size.max(1.0);
         let grain_amp = p.grain * 255.0;
-        let (lut, grade, img) = (&self.to_srgb, &self.grade, &self.img);
+        // Static per-pixel tables, rebuilt only when the size changes: the fixed
+        // dither and the glow grid's column taps (same values as computing them
+        // per pixel).
+        if self.dith_dims != (w, h) {
+            self.dith.clear();
+            self.dith.extend((0..h).flat_map(|y| (0..w).map(move |x| tri_dither(x as u32, y as u32))));
+            self.dith_dims = (w, h);
+        }
         let (glow, (gw, gh)) = (&self.glow, self.glow_dims);
+        let gcols: Vec<(usize, usize, f32)> = if glow.is_empty() {
+            Vec::new()
+        } else {
+            (0..w)
+                .map(|x| {
+                    let sx = ((x as f32 + 0.5) * gw as f32 / w as f32 - 0.5).clamp(0.0, (gw - 1) as f32);
+                    let x0 = sx as usize;
+                    (x0, (x0 + 1).min(gw - 1), sx - x0 as f32)
+                })
+                .collect()
+        };
+        let (lut, grade, img, dith) = (&self.to_srgb[..], &self.grade, &self.img, &self.dith);
+        let (sat, tonemap, vig, dither) = (p.saturation, p.tonemap, p.vignette, p.dither);
+        let enc = |v: f32| -> f32 {
+            let s = v.clamp(0.0, 1.0).sqrt() * SRGB_LUT as f32;
+            let i = (s as usize).min(SRGB_LUT - 1);
+            let f = s - i as f32;
+            // SAFETY: i + 1 ≤ SRGB_LUT and the table has SRGB_LUT + 1 entries.
+            let (a, b) = unsafe { (*lut.get_unchecked(i), *lut.get_unchecked(i + 1)) };
+            a + (b - a) * f
+        };
+        let look = |t: &[f32], v: f32| -> f32 {
+            let s = (v.max(0.0) / GRADE_MAX).sqrt().min(1.0) * GRADE_LUT as f32;
+            let i = (s as usize).min(GRADE_LUT - 1);
+            let f = s - i as f32;
+            // SAFETY: i + 1 ≤ GRADE_LUT and the table has GRADE_LUT + 1 entries.
+            let (a, b) = unsafe { (*t.get_unchecked(i), *t.get_unchecked(i + 1)) };
+            a + (b - a) * f
+        };
+        let (g0, g1, g2) = (&grade[0][..], &grade[1][..], &grade[2][..]);
         use rayon::prelude::*;
         rgba.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
             let src = &img[y * w..(y + 1) * w];
+            let drow = &dith[y * w..(y + 1) * w];
             let dy = (y as f32 + 0.5 - cy) * inv_diag;
+            // Glow rows for this output row (same arithmetic as `sample_grid`).
+            let grow = (!glow.is_empty()).then(|| {
+                let sy = ((y as f32 + 0.5) * gh as f32 / h as f32 - 0.5).clamp(0.0, (gh - 1) as f32);
+                let y0 = sy as usize;
+                (&glow[y0 * gw..(y0 + 1) * gw], &glow[(y0 + 1).min(gh - 1) * gw..((y0 + 1).min(gh - 1) + 1) * gw], sy - y0 as f32)
+            });
             for (x, px) in row.chunks_exact_mut(4).enumerate() {
                 let mut v = src[x];
-                if !glow.is_empty() {
-                    let g = sample_grid(glow, gw, gh, x, y, w, h);
+                if let Some((ra, rb, ty)) = grow {
+                    let (x0, x1, tx) = gcols[x];
+                    let (a, b, c, d) = (ra[x0], ra[x1], rb[x0], rb[x1]);
                     for k in 0..3 {
-                        v[k] += g[k];
+                        let top = a[k] + (b[k] - a[k]) * tx;
+                        let bot = c[k] + (d[k] - c[k]) * tx;
+                        v[k] += top + (bot - top) * ty;
                     }
                 }
-                let mut c = [0f32; 3];
-                for k in 0..3 {
-                    c[k] = Self::lookup(&grade[k], v[k]);
-                }
-                if p.saturation != 1.0 {
+                let mut c = [look(g0, v[0]), look(g1, v[1]), look(g2, v[2])];
+                if sat != 1.0 {
                     let l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
                     for v in &mut c {
-                        *v = (l + (*v - l) * p.saturation).max(0.0);
+                        *v = (l + (*v - l) * sat).max(0.0);
                     }
                 }
-                match p.tonemap {
+                match tonemap {
                     Tonemap::None => {}
                     Tonemap::Soft => {
                         // Identity up to white; overshoot (bloom) rolls off towards
@@ -425,17 +487,17 @@ impl PostProcessor {
                         }
                     }
                 }
-                if p.vignette > 0.0 {
+                if vig > 0.0 {
                     let dx = (x as f32 + 0.5 - cx) * inv_diag;
                     let r = (dx * dx + dy * dy).sqrt() * std::f32::consts::SQRT_2;
                     let t = ((r - (1.0 - soft)) / soft).clamp(0.0, 1.0);
-                    let m = 1.0 - p.vignette * t * t * (3.0 - 2.0 * t);
+                    let m = 1.0 - vig * t * t * (3.0 - 2.0 * t);
                     for v in &mut c {
                         *v *= m;
                     }
                 }
                 // Encode, then grain (strongest in the midtones) and dither in 8-bit units.
-                let mut o = [Self::encode(lut, c[0]), Self::encode(lut, c[1]), Self::encode(lut, c[2])];
+                let mut o = [enc(c[0]), enc(c[1]), enc(c[2])];
                 if grain_amp > 0.0 {
                     let (gx, gy) = ((x as f32 / gsize) as u32, (y as f32 / gsize) as u32);
                     let g = (hash01(gx, gy, seed) + hash01(gx, gy, seed ^ 0x68e3_1da4) - 1.0) * grain_amp;
@@ -445,9 +507,9 @@ impl PostProcessor {
                         *v += g * wgt;
                     }
                 }
-                if p.dither {
+                if dither {
                     // Triangular noise, ±1 LSB, fixed per pixel (static regions stay static).
-                    let d = tri_dither(x as u32, y as u32);
+                    let d = drow[x];
                     for v in &mut o {
                         *v += d;
                     }
@@ -461,13 +523,6 @@ impl PostProcessor {
         let _ = n;
     }
 
-    #[inline(always)]
-    fn lookup(lut: &[f32], v: f32) -> f32 {
-        let s = (v.max(0.0) / GRADE_MAX).sqrt().min(1.0) * GRADE_LUT as f32;
-        let i = (s as usize).min(GRADE_LUT - 1);
-        let f = s - i as f32;
-        lut[i] + (lut[i + 1] - lut[i]) * f
-    }
 
     /// Barrel distortion and radial chromatic aberration in one bilinear resample.
     fn lens(&mut self, w: usize, h: usize, k: f32, ca_px: f32) {
@@ -478,26 +533,42 @@ impl PostProcessor {
         let ca = ca_px * inv; // fraction of the half-diagonal at the corner
         self.tmp.clear();
         self.tmp.resize(w * h, [0.0; 3]);
-        let img = &self.img;
-        let sample = |sx: f32, sy: f32, ch: usize| -> f32 {
-            let sx = sx.clamp(0.0, (w - 1) as f32);
-            let sy = sy.clamp(0.0, (h - 1) as f32);
+        let img = &self.img[..w * h];
+        let (wm, hm) = ((w - 1) as f32, (h - 1) as f32);
+        // Bilinear sample of channel `ch`, clamped to the frame. Same arithmetic
+        // as a checked version; the clamps keep every index in range.
+        #[inline(always)]
+        fn sample(img: &[[f32; 3]], w: usize, wm: f32, hm: f32, sx: f32, sy: f32, ch: usize) -> f32 {
+            let sx = sx.clamp(0.0, wm);
+            let sy = sy.clamp(0.0, hm);
             let (x0, y0) = (sx as usize, sy as usize);
-            let (x1, y1) = ((x0 + 1).min(w - 1), (y0 + 1).min(h - 1));
+            let x1 = if (x0 as f32) < wm { x0 + 1 } else { x0 };
+            let y1 = if (y0 as f32) < hm { y0 + 1 } else { y0 };
             let (fx, fy) = (sx - x0 as f32, sy - y0 as f32);
-            let a = img[y0 * w + x0][ch] + (img[y0 * w + x1][ch] - img[y0 * w + x0][ch]) * fx;
-            let b = img[y1 * w + x0][ch] + (img[y1 * w + x1][ch] - img[y1 * w + x0][ch]) * fx;
+            // SAFETY: x0, x1 ≤ w − 1 and y0, y1 ≤ h − 1 (clamped above); img holds w·h pixels.
+            let (p00, p01, p10, p11) = unsafe {
+                (
+                    img.get_unchecked(y0 * w + x0)[ch],
+                    img.get_unchecked(y0 * w + x1)[ch],
+                    img.get_unchecked(y1 * w + x0)[ch],
+                    img.get_unchecked(y1 * w + x1)[ch],
+                )
+            };
+            let a = p00 + (p01 - p00) * fx;
+            let b = p10 + (p11 - p10) * fx;
             a + (b - a) * fy
-        };
+        }
         use rayon::prelude::*;
         self.tmp.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+            let dy = y as f32 + 0.5 - cy;
             for (x, out) in row.iter_mut().enumerate() {
-                let (dx, dy) = (x as f32 + 0.5 - cx, y as f32 + 0.5 - cy);
+                let dx = x as f32 + 0.5 - cx;
                 let r2 = (dx * dx + dy * dy) * inv * inv;
                 let f = (1.0 + k * r2) * zoom;
-                for (ch, s) in [(0usize, 1.0 + ca * r2.sqrt()), (1, 1.0), (2, 1.0 - ca * r2.sqrt())] {
+                let cr = ca * r2.sqrt();
+                for (ch, s) in [(0usize, 1.0 + cr), (1, 1.0), (2, 1.0 - cr)] {
                     let m = f * s;
-                    out[ch] = sample(cx + dx * m - 0.5, cy + dy * m - 0.5, ch);
+                    out[ch] = sample(img, w, wm, hm, cx + dx * m - 0.5, cy + dy * m - 0.5, ch);
                 }
             }
         });

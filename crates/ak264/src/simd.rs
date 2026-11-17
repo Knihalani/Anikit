@@ -609,6 +609,56 @@ pub fn avg16(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     core::array::from_fn(|i| ((a[i] as u16 + b[i] as u16 + 1) >> 1) as u8)
 }
 
+/// Load 8 lines of 4 bytes (`d[o + l*s .. o + l*s + 4]`) transposed: `out[j][l]`.
+#[inline(always)]
+pub fn load_t8x4(d: &[u8], o: usize, s: usize) -> [[u8; 8]; 4] {
+    assert!(o + 7 * s + 4 <= d.len());
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: bounds checked above; SSE2 is baseline (unaligned 4-byte reads).
+    unsafe {
+        use std::arch::x86_64::*;
+        let p = d.as_ptr().add(o);
+        let r = |l: usize| (p.add(l * s) as *const i32).read_unaligned();
+        // Lines in order (0, 2, 1, 3): a byte unpack then a word unpack leave
+        // column j in dword j with the lines in order 0, 1, 2, 3.
+        let t = |v: __m128i| {
+            let x = _mm_unpacklo_epi8(v, _mm_srli_si128::<8>(v));
+            _mm_unpacklo_epi16(x, _mm_srli_si128::<8>(x))
+        };
+        let a = t(_mm_setr_epi32(r(0), r(2), r(1), r(3)));
+        let b = t(_mm_setr_epi32(r(4), r(6), r(5), r(7)));
+        let mut out = [[0u8; 8]; 4];
+        _mm_storeu_si128(out.as_mut_ptr() as *mut __m128i, _mm_unpacklo_epi32(a, b));
+        _mm_storeu_si128(out.as_mut_ptr().add(2) as *mut __m128i, _mm_unpackhi_epi32(a, b));
+        out
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    core::array::from_fn(|j| core::array::from_fn(|l| d[o + l * s + j]))
+}
+
+/// Store two columns (`p0`, `q0`) of 8 lines: `d[o + l*s] = p0[l]`, `d[o + l*s + 1] = q0[l]`.
+#[inline(always)]
+pub fn store_t8x2(d: &mut [u8], o: usize, s: usize, p0: &[u8; 8], q0: &[u8; 8]) {
+    assert!(o + 7 * s + 2 <= d.len());
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: bounds checked above; SSE2 is baseline (unaligned 2-byte writes).
+    unsafe {
+        use std::arch::x86_64::*;
+        let v = _mm_unpacklo_epi8(_mm_loadl_epi64(p0.as_ptr() as *const __m128i), _mm_loadl_epi64(q0.as_ptr() as *const __m128i));
+        let mut w = [0u16; 8];
+        _mm_storeu_si128(w.as_mut_ptr() as *mut __m128i, v);
+        let p = d.as_mut_ptr().add(o);
+        for (l, &x) in w.iter().enumerate() {
+            (p.add(l * s) as *mut u16).write_unaligned(x);
+        }
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    for l in 0..8 {
+        d[o + l * s] = p0[l];
+        d[o + l * s + 1] = q0[l];
+    }
+}
+
 /// Copy a `W`×`h` block between strided buffers: one bounds check per block
 /// instead of one per row.
 #[inline(always)]
@@ -881,6 +931,22 @@ mod maxsad_test {
                     }
                 }
             }
+        }
+    }
+
+    #[test]
+    fn transposes_8x4() {
+        let mut d: Vec<u8> = (0..20 * 10).map(|i| (i * 31 % 256) as u8).collect();
+        let t = super::load_t8x4(&d, 5, 20);
+        for j in 0..4 {
+            for l in 0..8 {
+                assert_eq!(t[j][l], d[5 + l * 20 + j]);
+            }
+        }
+        let (p, q): ([u8; 8], [u8; 8]) = (core::array::from_fn(|i| i as u8 + 100), core::array::from_fn(|i| i as u8 + 200));
+        super::store_t8x2(&mut d, 6, 20, &p, &q);
+        for l in 0..8 {
+            assert_eq!((d[6 + l * 20], d[7 + l * 20]), (p[l], q[l]));
         }
     }
 

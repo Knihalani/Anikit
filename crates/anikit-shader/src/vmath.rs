@@ -617,6 +617,21 @@ pub fn shuffle4(b: B, v: Value, idx: [u8; 4]) -> Value {
     b.ins().bitcast(ty, lane_flags(), s)
 }
 
+/// Lanes of two 4-lane vectors: index 0..3 picks from `a`, 4..7 from `c`.
+pub fn shuffle2x4(b: B, a: Value, c: Value, idx: [u8; 4]) -> Value {
+    let ty = b.func.dfg.value_type(a);
+    let (ba, bc) = (as_bytes(b, a), as_bytes(b, c));
+    let mut mask = [0u8; 16];
+    for (l, &i) in idx.iter().enumerate() {
+        for k in 0..4 {
+            mask[l * 4 + k] = i * 4 + k as u8;
+        }
+    }
+    let imm = b.func.dfg.immediates.push(cranelift_codegen::ir::ConstantData::from(&mask[..]));
+    let s = b.ins().shuffle(ba, bc, imm);
+    b.ins().bitcast(ty, lane_flags(), s)
+}
+
 /// True when any lane of an `i32x4` mask is set.
 pub fn any(b: B, m: Value) -> Value {
     b.ins().vany_true(m)

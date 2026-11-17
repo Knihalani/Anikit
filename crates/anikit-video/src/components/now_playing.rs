@@ -190,7 +190,7 @@ impl NowPlaying {
         let id = a.image(fnv(&[b"np-grain-v1"]), g, g, &mut || {
             let mut v = vec![0u8; (g * g * 4) as usize];
             for (i, px) in v.chunks_exact_mut(4).enumerate() {
-                let n = hash01((i as u32 * 2654435761) ^ 0x9e37);
+                let n = hash01((i as u32).wrapping_mul(2654435761) ^ 0x9e37);
                 let l = if n > 0.5 { 255 } else { 0 };
                 px.copy_from_slice(&[l, l, l, (((n - 0.5).abs() * 2.0).powf(3.0) * 46.0) as u8]);
             }

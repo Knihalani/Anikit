@@ -384,7 +384,7 @@ impl PExpr {
 
     #[inline]
     fn at(&self, p: V3, v: V3, t: f32, age: f32, i: usize) -> f32 {
-        let vars = Vars { t: t as f64, scene_t: v.x as f64, gt: v.y as f64, p: v.z as f64, i: i as f64, n: age as f64, w: p.x as f64, h: p.y as f64, fps: p.z as f64 };
+        let vars = Vars { t: t as f64, scene_t: v.x as f64, gt: v.y as f64, p: v.z as f64, i: i as f64, n: age as f64, w: p.x as f64, h: p.y as f64, fps: p.z as f64, ..Vars::default() };
         self.0.eval(&vars) as f32
     }
 }

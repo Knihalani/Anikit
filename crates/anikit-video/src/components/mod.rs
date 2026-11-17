@@ -62,7 +62,7 @@ pub mod product_shot;
 #[cfg(test)]
 pub(crate) mod preview;
 
-pub use style::{set_draft, Theme};
+pub use style::{reference, set_draft, set_reference, Theme};
 pub use text::{Face, TextStyle};
 
 /// What a component can ask the engine for while evaluating.
