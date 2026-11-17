@@ -264,3 +264,16 @@ Renders are **byte-identical across runs and thread counts** (test `render_is_by
 - a worker's renderer was recreated when another thread interned a new font face, dropping its incremental state at a moment set by scheduling: now the newer font snapshot is swapped into the same renderer (`Renderer::update_assets`).
 
 Cost: a fresh renderer per chunk, about 10% on `launch` (about 4.8–5.0 s against 4.4 s). Some renderer caches still change pixels depending on what they drew before, so renderers can't yet be reused across chunks. Fixing that would recover the 10%.
+
+## Phase 2 table (15:40 UTC, 4-vCPU VM, `--quality standard`, best of 3)
+
+| spec | frames | render | fps | wall | outside the render (startup, estimate, mux) |
+|---|---|---|---|---|---|
+| `docs/video/examples/showcase.json` | 222 | 1.05 s | 211 | 1.09 s | 38 ms |
+| `launch` template (`anikit-video new launch`) | 868 | 4.30 s | 202 | 4.39 s | 87 ms |
+| `bench/video/anikit/kinetic.json` | 600 | 1.00 s | 599 | 1.02 s | 15 ms |
+| `raymarch-world` recipe, `--to 1` | 30 | 16.3 s | 1.8 | 16.7 s | 410 ms (shader JIT 121 ms + estimate) |
+
+- Startup: the estimate runs only for specs with heavy layers (shader, 3D, video) or over 3,600 frames; elsewhere startup and mux take 15–87 ms. The progress line shows an ETA.
+- MP4s are byte-identical across thread counts, with renderers pooled across chunks.
+- Tried and dropped: shorter chunks for heavy specs (4+ frames, up to 32 chunks). The raymarch range went 22.1 → 23.7 s, because the shader already parallelises within each frame (1 thread: 88 s).

@@ -29,8 +29,12 @@
       50.72
     ],
     "shader": [
-      0.9318,
-      39.79
+      0.9409,
+      40.29
+    ],
+    "shader-hero": [
+      0.9964,
+      50.55
     ],
     "text": [
       0.9995,
@@ -47,6 +51,12 @@
       "de_p999_max": 2.51,
       "flicker_p999_max": 1.9,
       "owner": "COMPONENTS: fxkit/backgrounds fast paths (source-over light, sprite defocus, low-res mesh field); see docs/video/perf.md"
+    },
+    "shader": {
+      "ssim_min": 0.9537615618690154,
+      "de_p999_max": 2.71,
+      "flicker_p999_max": 1.6,
+      "owner": "SHADER: point-sampled vs 2x2-supersampled reference (aliasing in fine detail, aurora); AA is SHADER's call"
     }
   }
 }

@@ -273,7 +273,7 @@ impl FloorVis {
         if fx < -1.0 || fz < -1.0 || fx > self.nx as f32 || fz > self.nz as f32 {
             return [1.0, 1.0];
         }
-        let (ix, iz) = (fx.floor(), fz.floor());
+        let (ix, iz) = (ffloor(fx), ffloor(fz));
         let (tx, tz) = (fx - ix, fz - iz);
         let at = |i: i32, k: i32| -> [f32; 2] {
             if i < 0 || k < 0 || i >= self.nx as i32 || k >= self.nz as i32 {
@@ -1333,7 +1333,7 @@ impl Scene {
     /// centre sample per pixel, then `edge_spp` more where a pixel disagrees
     /// with a neighbour, resolved into `out` (`w × h`). Fine-grained rows keep
     /// the cores evenly loaded, and no centre sample is computed twice.
-    pub fn render_frame(&self, cam: &Camera, prev: &Camera, w: usize, h: usize, q: &Quality, out: &mut [Px]) {
+    pub fn render_frame(&self, cam: &Camera, prev: &Camera, w: usize, h: usize, q: &Quality, out: &mut super::kernel::post::Planes) {
         use super::kernel::{par, pool::Buf};
         let (rig, prev) = (&Rig::new(cam, w, h), &Rig::new(prev, w, h));
         let clock = std::time::Instant::now();
@@ -1357,7 +1357,9 @@ impl Scene {
         let t_centre = clock.elapsed();
         let refined = std::sync::atomic::AtomicU64::new(0);
         let (centre, tms) = (&centre, &tms);
-        par::rows(out, w, |y, row| {
+        assert_eq!(out.len(), w * h);
+        let wr = out.writer();
+        par::each_row(h, |y| {
             let mut samples: Vec<Sample> = Vec::with_capacity(q.edge_spp as usize + 1);
             let mut nref = 0u64;
             for x in 0..w {
@@ -1410,7 +1412,8 @@ impl Scene {
                         }
                     }
                 }
-                row[x] = resolve(&samples);
+                // SAFETY: pixel (x, y) belongs to this row's task; `out` outlives the loop.
+                unsafe { wr.put(ci, &resolve(&samples)) };
             }
             refined.fetch_add(nref, std::sync::atomic::Ordering::Relaxed);
         });
