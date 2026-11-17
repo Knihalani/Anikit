@@ -1030,6 +1030,12 @@ fn draw_offscreen(
 ) {
     let now = st.frame_no;
     let org = st.org;
+    // Filtered layers without a key are cached by content: a static glow or
+    // blur is filtered once, while its opacity can still animate.
+    let cache_key = cache_key.or_else(|| {
+        let frame_base = Affine::translate((org.0 as f64, org.1 as f64)) * base;
+        incremental::auto_layer_key(inner, filters, &frame_base)
+    });
     let cached = cache_key.and_then(|k| st.cache.get_mut(&k)).map(|e| {
         e.last_used = now;
         (e.pix.clone(), e.x - org.0, e.y - org.1)
