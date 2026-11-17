@@ -1,0 +1,661 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "background": "#05090F",
+ "intent": {
+  "pace": "steady"
+ },
+ "music": {
+  "style": "orchestral",
+  "bpm": 96,
+  "key": "Dm",
+  "mood": "dark epic",
+  "hits": [
+   "@bar5"
+  ],
+  "sfx": [
+   {
+    "sfx": "riser",
+    "at": "@bar5"
+   },
+   {
+    "sfx": "boom",
+    "at": "@bar5"
+   },
+   {
+    "sfx": "swell",
+    "at": "@bar6"
+   }
+  ],
+  "end": "ring"
+ },
+ "scenes": [
+  {
+   "name": "wind",
+   "duration": 2.5,
+   "background": "#06101A",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.08,
+       "x": 60
+      },
+      "to": {
+       "zoom": 1,
+       "x": 0
+      },
+      "duration": 2.5,
+      "ease": "outCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "shape": "path",
+     "d": "M0 80 C 300 10, 520 170, 860 70 S 1400 150, 1720 40 S 2120 110, 2300 60",
+     "stroke": "#BFD0DE",
+     "strokeWidth": 1.5,
+     "fill": "none",
+     "repeat": 30,
+     "opacity": "=0.22 + 0.22*(($i % 5) == 0)",
+     "x": "=-180 - ($i % 6)*31 + 40*sin(t*1.3 + $i*0.5)",
+     "y": "=-40 + $i*39",
+     "anchor": "topLeft",
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 1.0,
+       "ease": "outQuart",
+       "at": "=$i*0.02"
+      }
+     ]
+    },
+    {
+     "shape": "path",
+     "d": "M0 420 C 240 380, 360 160, 640 220 S 1020 420, 1260 260 S 1560 90, 1820 140",
+     "stroke": "#FF6A3D",
+     "strokeWidth": 6,
+     "fill": "none",
+     "x": "4%",
+     "y": "8%",
+     "anchor": "topLeft",
+     "start": 0.25,
+     "glow": "#FF6A3D",
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 1.5,
+       "ease": "inOutQuart"
+      }
+     ]
+    },
+    {
+     "text": "58°N 21°W · WIND 38 KN · FETCH 1,200 KM",
+     "font": "JetBrains Mono",
+     "size": "2.6vh",
+     "weight": 500,
+     "letterSpacing": "0.06em",
+     "color": "#C9D6E2",
+     "x": "7%",
+     "y": "12%",
+     "anchor": "topLeft",
+     "enter": "type"
+    },
+    {
+     "text": "Every wave begins as *wind.*",
+     "font": "Instrument Serif",
+     "size": "10vh",
+     "color": "#F3F1EC",
+     "letterSpacing": "-0.01em",
+     "x": "7%",
+     "y": "84%",
+     "anchor": "bottomLeft",
+     "start": 0.3,
+     "enter": "mask by line up"
+    }
+   ]
+  },
+  {
+   "name": "swell",
+   "duration": 2.5,
+   "transition": "cut",
+   "layers": [
+    {
+     "src": "ridge.glsl",
+     "uniforms": {
+      "amp": 1.0,
+      "order": 0.0
+     },
+     "animate": [
+      {
+       "to": {
+        "order": 1,
+        "amp": 1.25
+       },
+       "duration": 1.8,
+       "ease": "inOutCubic",
+       "at": 0.1
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": "100%",
+     "height": "45%",
+     "y": 0,
+     "anchor": "top",
+     "fill": "linear-gradient(180deg, rgba(4,8,14,0.92), rgba(4,8,14,0))"
+    },
+    {
+     "text": "PERIOD 14 S · WAVELENGTH 306 M",
+     "font": "JetBrains Mono",
+     "size": "2.6vh",
+     "weight": 500,
+     "letterSpacing": "0.06em",
+     "color": "#C9D6E2",
+     "x": "7%",
+     "y": "8%",
+     "anchor": "topLeft",
+     "start": 0.2,
+     "enter": "type"
+    },
+    {
+     "text": "Chaos sorts itself into *swell.*",
+     "font": "Instrument Serif",
+     "size": "9vh",
+     "color": "#F3F1EC",
+     "x": "7%",
+     "y": "13%",
+     "anchor": "topLeft",
+     "start": 0.15,
+     "enter": "mask by line up"
+    }
+   ]
+  },
+  {
+   "name": "ocean",
+   "duration": 2.8,
+   "transition": {
+    "type": "zoom-blur",
+    "duration": 0.3
+   },
+   "layers": [
+    {
+     "shader": "ocean",
+     "uniforms": {
+      "sun": 0.5,
+      "swell": 1.6,
+      "chop": 0.9,
+      "speed": 1.3
+     },
+     "animate": [
+      {
+       "to": {
+        "sun": 0.62
+       },
+       "duration": 2.8,
+       "ease": "linear"
+      }
+     ]
+    },
+    {
+     "shape": "path",
+     "d": "M0 260 C 300 40, 820 0, 1100 120",
+     "stroke": "#FF6A3D",
+     "strokeWidth": 3,
+     "fill": "none",
+     "x": "38%",
+     "y": "40%",
+     "anchor": "topLeft",
+     "start": 0.3,
+     "opacity": 0.9,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 2.2,
+       "ease": "inOutCubic"
+      }
+     ]
+    },
+    {
+     "text": "78 KM/H · 2,000 KM · 26 HOURS",
+     "font": "JetBrains Mono",
+     "size": "2.6vh",
+     "weight": 500,
+     "letterSpacing": "0.06em",
+     "color": "#F3F1EC",
+     "x": "7%",
+     "y": "8%",
+     "anchor": "topLeft",
+     "start": 0.2,
+     "enter": "type",
+     "shadow": {
+      "x": 0,
+      "y": 2,
+      "blur": 12,
+      "color": "rgba(0,0,0,0.5)"
+     }
+    },
+    {
+     "text": "It crosses an ocean in a day,",
+     "font": "Instrument Serif",
+     "size": "9vh",
+     "color": "#FFFFFF",
+     "x": "7%",
+     "y": "13%",
+     "anchor": "topLeft",
+     "start": 0.1,
+     "enter": "mask by line up",
+     "shadow": {
+      "x": 0,
+      "y": 4,
+      "blur": 30,
+      "color": "rgba(0,0,0,0.45)"
+     }
+    }
+   ]
+  },
+  {
+   "name": "under",
+   "duration": 2.5,
+   "transition": "cut",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": "underwater",
+      "exposure": 0.85,
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.3,
+          1.7,
+          5.4
+         ],
+         "target": [
+          1.0,
+          1.7,
+          0
+         ],
+         "focal": 30,
+         "fstop": 4,
+         "focus": 4.4
+        },
+        {
+         "t": 2.5,
+         "pos": [
+          0.6,
+          1.72,
+          4.8
+         ],
+         "target": [
+          1.1,
+          1.72,
+          0
+         ],
+         "focal": 31,
+         "fstop": 4,
+         "focus": 3.8
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "particles",
+        "count": 80000,
+        "emit": {
+         "pos": "=[(rand(i)-0.5)*12, 0.2+3.0*rand(i+1), -6+6.2*rand(i+2)]",
+         "vel": "=[-2.4*0.34*exp((y-2.7)*0.75)*sin(2.1*x), 2.4*0.34*exp((y-2.7)*0.75)*cos(2.1*x), 0]"
+        },
+        "force": "=[-2.4*vy, 2.4*vx, 0]",
+        "gravity": 0,
+        "drag": 0,
+        "size": "=0.002+0.003*rand(i+9)",
+        "color": [
+         "#DFF6FF",
+         "#8FD3F0",
+         "#3A8FB8"
+        ],
+        "colorBy": "random",
+        "blend": "add",
+        "emissive": 1.3,
+        "stretch": 4
+       },
+       {
+        "type": "tube",
+        "path": "=[1.7+0.3400*cos(s*6.2832), 2.7+0.3400*sin(s*6.2832), 1.0]",
+        "radius": 0.004,
+        "segments": 120,
+        "material": {
+         "base": "#FFFFFF",
+         "emissive": "#EAF6FF",
+         "emissiveStrength": 2.5
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.03,
+        "material": {
+         "base": "#FF6A3D",
+         "emissive": "#FF6A3D",
+         "emissiveStrength": 6
+        },
+        "pos": "=[1.7+0.3400*cos(1.890+2.4*t+1.5708), 2.7+0.3400*sin(1.890+2.4*t+1.5708), 1.0]"
+       },
+       {
+        "type": "tube",
+        "path": "=[1.7+0.2337*cos(s*6.2832), 2.2+0.2337*sin(s*6.2832), 1.0]",
+        "radius": 0.004,
+        "segments": 120,
+        "material": {
+         "base": "#FFFFFF",
+         "emissive": "#EAF6FF",
+         "emissiveStrength": 2.5
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.03,
+        "material": {
+         "base": "#FF6A3D",
+         "emissive": "#FF6A3D",
+         "emissiveStrength": 6
+        },
+        "pos": "=[1.7+0.2337*cos(1.890+2.4*t+1.5708), 2.2+0.2337*sin(1.890+2.4*t+1.5708), 1.0]"
+       },
+       {
+        "type": "tube",
+        "path": "=[1.7+0.1606*cos(s*6.2832), 1.7000000000000002+0.1606*sin(s*6.2832), 1.0]",
+        "radius": 0.004,
+        "segments": 120,
+        "material": {
+         "base": "#FFFFFF",
+         "emissive": "#EAF6FF",
+         "emissiveStrength": 2.5
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.03,
+        "material": {
+         "base": "#FF6A3D",
+         "emissive": "#FF6A3D",
+         "emissiveStrength": 6
+        },
+        "pos": "=[1.7+0.1606*cos(1.890+2.4*t+1.5708), 1.7000000000000002+0.1606*sin(1.890+2.4*t+1.5708), 1.0]"
+       },
+       {
+        "type": "tube",
+        "path": "=[1.7+0.1104*cos(s*6.2832), 1.2000000000000002+0.1104*sin(s*6.2832), 1.0]",
+        "radius": 0.004,
+        "segments": 120,
+        "material": {
+         "base": "#FFFFFF",
+         "emissive": "#EAF6FF",
+         "emissiveStrength": 2.5
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.03,
+        "material": {
+         "base": "#FF6A3D",
+         "emissive": "#FF6A3D",
+         "emissiveStrength": 6
+        },
+        "pos": "=[1.7+0.1104*cos(1.890+2.4*t+1.5708), 1.2000000000000002+0.1104*sin(1.890+2.4*t+1.5708), 1.0]"
+       },
+       {
+        "type": "tube",
+        "path": "=[1.7+0.0759*cos(s*6.2832), 0.7000000000000002+0.0759*sin(s*6.2832), 1.0]",
+        "radius": 0.004,
+        "segments": 120,
+        "material": {
+         "base": "#FFFFFF",
+         "emissive": "#EAF6FF",
+         "emissiveStrength": 2.5
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.03,
+        "material": {
+         "base": "#FF6A3D",
+         "emissive": "#FF6A3D",
+         "emissiveStrength": 6
+        },
+        "pos": "=[1.7+0.0759*cos(1.890+2.4*t+1.5708), 0.7000000000000002+0.0759*sin(1.890+2.4*t+1.5708), 1.0]"
+       }
+      ]
+     }
+    },
+    {
+     "text": "WATER PARCEL · ORBIT Ø 4 M · NET DRIFT ≈ 0",
+     "font": "JetBrains Mono",
+     "size": "2.6vh",
+     "weight": 500,
+     "letterSpacing": "0.06em",
+     "color": "#EAF6FF",
+     "x": "7%",
+     "y": "8%",
+     "anchor": "topLeft",
+     "start": 0.2,
+     "enter": "type",
+     "shadow": {
+      "x": 0,
+      "y": 2,
+      "blur": 12,
+      "color": "rgba(0,20,40,0.6)"
+     }
+    },
+    {
+     "text": "yet the water hardly moves.",
+     "font": "Instrument Serif",
+     "size": "9vh",
+     "color": "#FFFFFF",
+     "x": "7%",
+     "y": "13%",
+     "anchor": "topLeft",
+     "start": 0.1,
+     "enter": "mask by line up",
+     "shadow": {
+      "x": 0,
+      "y": 4,
+      "blur": 30,
+      "color": "rgba(0,20,40,0.6)"
+     }
+    }
+   ]
+  },
+  {
+   "name": "break",
+   "duration": 2.5,
+   "transition": "cut",
+   "camera": {
+    "shake": {
+     "amount": 12,
+     "at": 0.0
+    },
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.25
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 0.6,
+      "ease": "outExpo"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "src": "ridge.glsl",
+     "uniforms": {
+      "amp": 1.3,
+      "order": 1.0,
+      "steep": 0.0
+     },
+     "animate": [
+      {
+       "to": {
+        "amp": 4.2,
+        "steep": 1.0
+       },
+       "duration": 0.9,
+       "ease": "outExpo",
+       "at": 0.0
+      },
+      {
+       "to": {
+        "amp": 3.2
+       },
+       "duration": 1.4,
+       "ease": "inOutCubic",
+       "at": 0.9
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": "100%",
+     "height": "100%",
+     "fill": "#FFF3E8",
+     "blend": "screen",
+     "animate": [
+      {
+       "from": {
+        "opacity": 0.7
+       },
+       "to": {
+        "opacity": 0
+       },
+       "duration": 0.35,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": "100%",
+     "height": "45%",
+     "y": 0,
+     "anchor": "top",
+     "fill": "linear-gradient(180deg, rgba(4,8,14,0.92), rgba(4,8,14,0))"
+    },
+    {
+     "text": "DEPTH < 1.3 × HEIGHT · THE WAVE BREAKS",
+     "font": "JetBrains Mono",
+     "size": "2.6vh",
+     "weight": 500,
+     "letterSpacing": "0.06em",
+     "color": "#C9D6E2",
+     "x": "7%",
+     "y": "8%",
+     "anchor": "topLeft",
+     "start": 0.3,
+     "enter": "type"
+    },
+    {
+     "text": "Then the shore stands it *up.*",
+     "font": "Instrument Serif",
+     "size": "9vh",
+     "color": "#FFFFFF",
+     "x": "7%",
+     "y": "13%",
+     "anchor": "topLeft",
+     "start": 0.2,
+     "enter": "mask by line up"
+    }
+   ]
+  },
+  {
+   "name": "title",
+   "duration": 3.0,
+   "transition": {
+    "type": "shader",
+    "shader": "ripple",
+    "duration": 0.5
+   },
+   "layers": [
+    {
+     "shader": "ocean",
+     "uniforms": {
+      "sun": 1.0,
+      "swell": 0.6,
+      "chop": 0.5,
+      "speed": 0.6,
+      "sky": [
+       0.25,
+       0.3,
+       0.5
+      ]
+     }
+    },
+    {
+     "shape": "rect",
+     "width": "100%",
+     "height": "100%",
+     "fill": "linear-gradient(90deg, rgba(4,8,14,0.55), rgba(4,8,14,0))"
+    },
+    {
+     "text": "Swell.",
+     "font": "Instrument Serif",
+     "size": "30vh",
+     "color": "#FFF8EE",
+     "letterSpacing": "-0.02em",
+     "x": "7%",
+     "y": "62%",
+     "anchor": "left",
+     "enter": "mask by line up"
+    },
+    {
+     "text": "THE LIFE OF A WAVE · 15 SECONDS",
+     "font": "JetBrains Mono",
+     "size": "2.6vh",
+     "weight": 500,
+     "letterSpacing": "0.12em",
+     "color": "#FFE7D2",
+     "x": "7.6%",
+     "y": "80%",
+     "anchor": "left",
+     "start": 0.5,
+     "enter": "type"
+    },
+    {
+     "shader": "film",
+     "filter": true,
+     "uniforms": {
+      "grain": 0.6,
+      "weave": 0.3,
+      "halation": 0.8,
+      "fade": 0.15
+     }
+    }
+   ]
+  }
+ ],
+ "post": {
+  "preset": "cinematic",
+  "bloom": 0.25
+ }
+}
