@@ -1017,6 +1017,71 @@
   "path": "docs/video/judge/benchmark/brand-idents/netflix-ribbon-logo-2019.md"
  },
  {
+  "slug": "pentagram-motogp-identity-2024",
+  "category": "brand-idents",
+  "title": "AH_MotoGP_03_v2",
+  "studio": "Pentagram (partner: Angus Hyland); typefaces with F37",
+  "client": "MotoGP (Dorna Sports)",
+  "year": 2024,
+  "url": "https://vimeo.com/1029958152",
+  "alt_urls": [
+   "https://www.pentagram.com/work/motogp",
+   "https://vimeo.com/1029682703",
+   "https://www.youtube.com/watch?v=2zqNtfYKcH4"
+  ],
+  "length_s": 133,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-vector",
+   "kinetic-type",
+   "mixed"
+  ],
+  "pace": "fast",
+  "palette": [
+   "mono",
+   "saturated",
+   "high-contrast"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "energetic",
+   "premium",
+   "editorial"
+  ],
+  "purpose": "ident",
+  "techniques": [
+   "logo-build",
+   "kinetic-type",
+   "type-morph",
+   "smear",
+   "speed-ramp",
+   "colour-swap",
+   "masks"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "shape",
+   "text",
+   "text.split",
+   "mask",
+   "motionBlur",
+   "transitions",
+   "mograph",
+   "GAP: variable-font axis animation",
+   "GAP: directional colour-streak smear on type and shapes"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1950403029-eaf3643eecab17f8ba2a196a7e59134e92a69fb63c72a3f24540943b8224af7d-d_1280",
+   "https://pentagram-production.imgix.net/daaef282-3878-41c9-9f4f-e8750c9b0299/AH_MotoGP_01.png",
+   "https://pentagram-production.imgix.net/daaef282-3878-41c9-9f4f-e8750c9b0299/AH_MotoGP_02_Thumbnail.png",
+   "https://pentagram-production.imgix.net/63e0d6b4-103e-4e33-854f-00babdffdac4/AH_MotoGP_27_v2.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/brand-idents/pentagram-motogp-identity-2024.md"
+ },
+ {
   "slug": "buck-github-what-is-github-2022",
   "category": "explainer-2d",
   "title": "What is GitHub?",
@@ -1772,69 +1837,64 @@
   "path": "docs/video/judge/benchmark/ui-product/raycast-new-raycast-coming-2026-2025.md"
  },
  {
-  "slug": "buck-good-books-metamorphosis-2012",
+  "slug": "blinkink-hornet-john-lewis-bear-and-hare-2013",
   "category": "illustration",
-  "title": "Good Books - Metamorphosis",
-  "studio": "BUCK (creative director: Ryan Honey; associate CD: Joshua Harvey; art director: Joe Mullen; animation director: Steve Day)",
-  "client": "Good Books (via String Theory)",
-  "year": 2012,
-  "url": "https://vimeo.com/35720685",
-  "alt_urls": [
-   "https://buck.co/work/goodbooks",
-   "https://vimeo.com/52422865"
-  ],
-  "length_s": 162,
+  "title": "John Lewis Christmas Advert 2013 - The Bear & The Hare",
+  "studio": "Blinkink / Hornet (directors: Elliot Dear, Yves Geleyn)",
+  "client": "John Lewis (agency: adam&eveDDB; writers: Aidan McClure, Laurent Simon)",
+  "year": 2013,
+  "url": "https://www.youtube.com/watch?v=XqWig2WARb0",
+  "alt_urls": [],
+  "length_s": null,
   "verified": "oembed",
   "aspect": "16:9",
   "medium": [
    "2d-illustrated",
    "cel",
-   "frame-by-frame",
+   "stop-motion",
    "mixed"
   ],
-  "pace": "fast",
+  "pace": "calm",
   "palette": [
-   "saturated",
+   "cool",
    "warm",
-   "high-contrast"
+   "pastel"
   ],
   "type_role": "none",
   "mood": [
-   "witty",
-   "energetic",
-   "raw"
+   "emotional",
+   "warm",
+   "calm"
   ],
   "purpose": "ad",
   "techniques": [
-   "morph",
-   "transitions-in-camera",
-   "boil",
-   "smear",
+   "stop-motion-feel",
    "camera-move",
-   "rhythmic-edit"
+   "depth-of-field",
+   "parallax",
+   "boil"
   ],
-  "audio": "vo-led",
+  "audio": "music-led",
   "anikit_features": [
    "image",
-   "shape",
    "camera",
-   "transitions",
+   "depth",
+   "post",
    "audio",
-   "captions",
-   "GAP: frame-by-frame cel animation with painterly texture",
-   "GAP: lens-distorted character drawing (wide-angle 'fish-eye' figures)"
+   "GAP: hand-drawn 2D characters printed and shot in camera on physical miniature sets",
+   "GAP: real-lens depth of field and practical light on drawn characters"
   ],
   "awards": [
-   "D&AD 2013 Yellow Pencil, Animation for Film Advertising (source: D&AD via search)",
-   "IAC Award 2013",
-   "AMP Awards Best of Show (Antfood, sound)"
+   "D&AD 2014, Film Advertising Crafts (entry listed; pencil level not checked)"
   ],
   "stills": [
-   "https://i.vimeocdn.com/video/265220175-20f8421101aef67938bdaaa6c127e631da35f1bd00174b1c45c0810a4fe90568-d_1280",
-   "https://i.vimeocdn.com/video/361674922-b7138d5d0ac779e615aabdfcdc1faa6e2801e413ea901f00d0a8b66998ad2b07-d_1280"
+   "https://i.ytimg.com/vi/XqWig2WARb0/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/XqWig2WARb0/hq1.jpg",
+   "https://i.ytimg.com/vi/XqWig2WARb0/hq2.jpg",
+   "https://i.ytimg.com/vi/XqWig2WARb0/hq3.jpg"
   ],
   "measured": null,
-  "path": "docs/video/judge/benchmark/illustration/buck-good-books-metamorphosis-2012.md"
+  "path": "docs/video/judge/benchmark/illustration/blinkink-hornet-john-lewis-bear-and-hare-2013.md"
  },
  {
   "slug": "giant-ant-right-now-2020",
@@ -1954,6 +2014,64 @@
   ],
   "measured": null,
   "path": "docs/video/judge/benchmark/illustration/golden-wolf-weetabix-three-little-pigs-2022.md"
+ },
+ {
+  "slug": "miyu-lefevre-naive-new-beaters-ye-kou-si-kuo-2024",
+  "category": "illustration",
+  "title": "Naive New Beaters, Star Feminine Band - Ye Kou Si Kuo",
+  "studio": "Miyu Productions (director: Lola Lefèvre; producers: Pierre Baussaron, Emmanuel-Alain Raynal)",
+  "client": "Naive New Beaters / Star Feminine Band",
+  "year": 2024,
+  "url": "https://www.youtube.com/watch?v=1SXCE5NB4WA",
+  "alt_urls": [
+   "https://www.annecyfestival.com/en/archives/2025/the-festival/2025-official-selection/2025-commissioned-films/naive-new-beaters-star-feminine-band-ye-kou-si-kuo"
+  ],
+  "length_s": 148,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-illustrated",
+   "frame-by-frame"
+  ],
+  "pace": "fast",
+  "palette": [
+   "neon",
+   "saturated"
+  ],
+  "type_role": "none",
+  "mood": [
+   "playful",
+   "energetic",
+   "warm"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "boil",
+   "camera-move",
+   "beat-sync",
+   "rhythmic-edit",
+   "macro"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "image",
+   "shape",
+   "camera",
+   "audio",
+   "GAP: frame-by-frame 2D character animation with chunky line",
+   "GAP: dense patterned line-art backgrounds that animate with the characters"
+  ],
+  "awards": [
+   "Annecy 2025 Cristal for a Commissioned Film"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/1SXCE5NB4WA/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/1SXCE5NB4WA/hq1.jpg",
+   "https://i.ytimg.com/vi/1SXCE5NB4WA/hq2.jpg",
+   "https://i.ytimg.com/vi/1SXCE5NB4WA/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/illustration/miyu-lefevre-naive-new-beaters-ye-kou-si-kuo-2024.md"
  },
  {
   "slug": "nexus-smith-foulkes-honda-grrr-2004",
@@ -2851,6 +2969,69 @@
   "path": "docs/video/judge/benchmark/generative/universal-everything-walking-city-2014.md"
  },
  {
+  "slug": "3blue1brown-fourier-series-2019",
+  "category": "data-story",
+  "title": "But what is a Fourier series?  From heat flow to drawing with circles | DE4",
+  "studio": "3Blue1Brown (Grant Sanderson)",
+  "client": "Self-initiated",
+  "year": 2019,
+  "url": "https://www.youtube.com/watch?v=r6sGWTCMz2k",
+  "alt_urls": [
+   "https://github.com/3b1b/manim"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "2d-vector",
+   "data-viz",
+   "kinetic-type"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "limited",
+   "cool"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "technical",
+   "calm",
+   "witty"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "chart-build",
+   "morph",
+   "type-morph",
+   "loop",
+   "long-take",
+   "transitions-in-camera"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "shape",
+   "shape path trimStart/trimEnd (traced curves)",
+   "mograph path/progress (epicycles)",
+   "text",
+   "text (LaTeX maths: GAP)",
+   "animate (transform)",
+   "camera",
+   "audio",
+   "GAP: native LaTeX/maths typesetting with glyph-level morphs between equations",
+   "GAP: programmatic/procedural animation driven by computed data (epicycle sums)"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/r6sGWTCMz2k/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/r6sGWTCMz2k/hq1.jpg",
+   "https://i.ytimg.com/vi/r6sGWTCMz2k/hq2.jpg",
+   "https://i.ytimg.com/vi/r6sGWTCMz2k/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/3blue1brown-fourier-series-2019.md"
+ },
+ {
   "slug": "bbc-rosling-200-countries-2010",
   "category": "data-story",
   "title": "Hans Rosling's 200 Countries, 200 Years, 4 Minutes - The Joy of Stats - BBC",
@@ -3085,6 +3266,68 @@
   ],
   "measured": null,
   "path": "docs/video/judge/benchmark/data-story/nature-tulp-how-many-trees-2015.md"
+ },
+ {
+  "slug": "primer-simulating-natural-selection-2018",
+  "category": "data-story",
+  "title": "Simulating Natural Selection",
+  "studio": "Primer (Justin Helps)",
+  "client": "Self-initiated",
+  "year": 2018,
+  "url": "https://www.youtube.com/watch?v=0ZGbIKd0XrM",
+  "alt_urls": [
+   "https://github.com/Helpsypoo/primer",
+   "https://flowingdata.com/2019/07/31/natural-selection-simulation/"
+  ],
+  "length_s": null,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "stylised-3d",
+   "sim",
+   "data-viz"
+  ],
+  "pace": "steady",
+  "palette": [
+   "dark",
+   "limited",
+   "cool"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "playful",
+   "technical",
+   "witty"
+  ],
+  "purpose": "data-story",
+  "techniques": [
+   "sim",
+   "chart-build",
+   "soft-body",
+   "instancing",
+   "camera-move"
+  ],
+  "audio": "vo-led",
+  "anikit_features": [
+   "scene3d",
+   "scene3d model (blob characters)",
+   "component (histogram/bar-chart)",
+   "text",
+   "camera",
+   "physics world (agents)",
+   "audio",
+   "GAP: agent-based simulation whose population feeds a live histogram in the same frame",
+   "GAP: squash-and-stretch soft-body characters"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/0ZGbIKd0XrM/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/0ZGbIKd0XrM/hq1.jpg",
+   "https://i.ytimg.com/vi/0ZGbIKd0XrM/hq2.jpg",
+   "https://i.ytimg.com/vi/0ZGbIKd0XrM/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/data-story/primer-simulating-natural-selection-2018.md"
  },
  {
   "slug": "vox-syria-war-who-is-fighting-2017",
@@ -3462,7 +3705,7 @@
   "slug": "weirdcore-aphex-twin-t69-collapse-2018",
   "category": "music-video",
   "title": "Aphex Twin - T69 Collapse",
-  "studio": "Weirdcore (Nicky Smith)",
+  "studio": "Weirdcore",
   "client": "Aphex Twin / Warp Records",
   "year": 2018,
   "url": "https://www.youtube.com/watch?v=SqayDnQ2wmw",
@@ -3584,6 +3827,135 @@
   ],
   "measured": null,
   "path": "docs/video/judge/benchmark/broadcast-sports/blinkink-bbc-world-cup-2026.md"
+ },
+ {
+  "slug": "dissembargo-f1-2026-opening-titles",
+  "category": "broadcast-sports",
+  "title": "New 2026 F1 Opening Titles",
+  "studio": "DissEmbargo (directors: Sam Humphries, Sebastian Helene)",
+  "client": "Formula 1",
+  "year": 2026,
+  "url": "https://www.youtube.com/watch?v=Sks_fMr2Yss",
+  "alt_urls": [
+   "https://www.stashmedia.tv/peek-into-the-process-behind-dissembargos-f1-2026-titles/",
+   "https://vimeo.com/1201922086",
+   "https://vimeo.com/1205777379"
+  ],
+  "length_s": 58,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "3d-cg",
+   "mixed",
+   "live-action"
+  ],
+  "pace": "fast",
+  "palette": [
+   "dark",
+   "high-contrast",
+   "brand-colour"
+  ],
+  "type_role": "supporting",
+  "mood": [
+   "epic",
+   "premium",
+   "technical"
+  ],
+  "purpose": "title-sequence",
+  "techniques": [
+   "camera-move",
+   "light-sweep",
+   "glow",
+   "depth-of-field",
+   "rhythmic-edit",
+   "beat-sync",
+   "3d-type"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "video",
+   "camera",
+   "glow",
+   "text",
+   "post",
+   "motionBlur",
+   "audio",
+   "GAP: compositing filmed drivers into 3D environments",
+   "GAP: airflow streamline visualisation"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.ytimg.com/vi/Sks_fMr2Yss/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/Sks_fMr2Yss/hq1.jpg",
+   "https://i.ytimg.com/vi/Sks_fMr2Yss/hq2.jpg",
+   "https://i.ytimg.com/vi/Sks_fMr2Yss/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/broadcast-sports/dissembargo-f1-2026-opening-titles.md"
+ },
+ {
+  "slug": "dixonbaxi-tnt-sports-2023",
+  "category": "broadcast-sports",
+  "title": "TNT_CLOCK_00003",
+  "studio": "DixonBaxi (type with F37)",
+  "client": "TNT Sports (BT Group / Warner Bros. Discovery)",
+  "year": 2023,
+  "url": "https://vimeo.com/863534078",
+  "alt_urls": [
+   "https://www.dixonbaxi.com/case-study/tnt-sports"
+  ],
+  "length_s": 12,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "mixed",
+   "kinetic-type",
+   "ui",
+   "live-action"
+  ],
+  "pace": "fast",
+  "palette": [
+   "high-contrast",
+   "brand-colour",
+   "limited"
+  ],
+  "type_role": "lead",
+  "mood": [
+   "raw",
+   "energetic",
+   "editorial"
+  ],
+  "purpose": "broadcast",
+  "techniques": [
+   "masks",
+   "kinetic-type",
+   "scale-contrast",
+   "ui-zoom",
+   "hard-cut",
+   "grid"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "mask",
+   "shape",
+   "text",
+   "video",
+   "box",
+   "component",
+   "transitions",
+   "camera"
+  ],
+  "awards": [],
+  "stills": [
+   "https://i.vimeocdn.com/video/1722778049-ee0be6308af09481089ceb330ada04da5e3d3c94fbdad22ab8dd7600ad80f059-d_1280",
+   "https://www.datocms-assets.com/160962/1748963771-1-hero.jpg",
+   "https://www.datocms-assets.com/160962/1749225389-tnt_2-1.png",
+   "https://www.datocms-assets.com/160962/1749225585-tnt_4.png",
+   "https://www.datocms-assets.com/160962/1749225622-tnt_5.png"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/broadcast-sports/dixonbaxi-tnt-sports-2023.md"
  },
  {
   "slug": "drive-studio-fox-world-cup-2026",

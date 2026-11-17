@@ -42,11 +42,12 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [OPPO | Reno6 Jin Series](product-launch/tendril-oppo-reno6-jin-2021.md) | Tendril (CD: Nidia Dias; directors: Miguel Rato & Joey Recoskie) | 2021 | 0:31 | steady | 3d-cg, photoreal-cg | [watch](https://vimeo.com/646512105) |
 | [Nike ~ Air Max](product-launch/manvsmachine-nike-air-max-17-2016.md) | ManvsMachine (concept, design & direction) | 2016 | 0:32 | fast | 3d-cg, stylised-3d | [watch](https://vimeo.com/192130017) |
 
-### Brand identity motion & idents (`brand-idents/`, 5)
+### Brand identity motion & idents (`brand-idents/`, 6)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
 |---|---|---|---|---|---|---|
 | [DixonBaxi | CW](brand-idents/dixonbaxi-the-cw-brand-2024.md) | DixonBaxi | 2024 | 0:48 | fast | 2d-vector, kinetic-type | [watch](https://vimeo.com/905627809) |
+| [AH_MotoGP_03_v2](brand-idents/pentagram-motogp-identity-2024.md) | Pentagram (partner: Angus Hyland); typefaces with F37 | 2024 | 2:13 | fast | 2d-vector, kinetic-type, mixed | [watch](https://vimeo.com/1029958152) |
 | [BBC ONE ~ Idents](brand-idents/manvsmachine-bbc-one-lens-2022.md) | ManvsMachine with BBC Creative | 2022 | 5:40 | calm | live-action, mixed | [watch](https://vimeo.com/709436376) |
 | [Netflix New Logo Animation 2019](brand-idents/netflix-ribbon-logo-2019.md) | Netflix brand team with Imaginary Forces | 2019 | 0:04 | fast | 3d-cg, generative | [watch](https://www.youtube.com/watch?v=GV3HUDMQ-F8) |
 | [CHANNEL 4 REBRAND](brand-idents/channel4-glazer-idents-2015.md) | 4creative with Jonathan Glazer (Academy Films), Neville Brody, DBLG | 2015 | 1:01 | calm | live-action, photoreal-cg | [watch](https://www.youtube.com/watch?v=8Ua5m6lPTbA) |
@@ -74,13 +75,14 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [New Raycast. Coming 2026](ui-product/raycast-new-raycast-coming-2026-2025.md) | Raycast (in-house; individual credits not published) | 2025 | 0:39 | fast | ui, 3d-cg | [watch](https://www.youtube.com/watch?v=Mi173xGb0ZA) |
 | [Introducing the new Notion AI](ui-product/notion-introducing-the-new-notion-ai-2024.md) | Notion (in-house; individual credits not published) | 2024 | 0:57 | fast | ui, 2d-vector, kinetic-type | [watch](https://www.youtube.com/watch?v=S92KX8-Hmlc) |
 
-### Illustration-led animation (`illustration/`, 4)
+### Illustration-led animation (`illustration/`, 5)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
 |---|---|---|---|---|---|---|
+| [Naive New Beaters, Star Feminine Band - Ye Kou Si Kuo](illustration/miyu-lefevre-naive-new-beaters-ye-kou-si-kuo-2024.md) | Miyu Productions (director: Lola Lefèvre; producers: Pierre Baussaron, Emmanuel-Alain Raynal) | 2024 | 2:28 | fast | 2d-illustrated, frame-by-frame | [watch](https://www.youtube.com/watch?v=1SXCE5NB4WA) |
 | [Weetabix: Three Little Pigs](illustration/golden-wolf-weetabix-three-little-pigs-2022.md) | Golden Wolf (animation lead/storyboard: Stephanie Mercier), with Stink Films | 2022 | 0:30 | fast | cel, 2d-illustrated, frame-by-frame | [watch](https://vimeo.com/710889465) |
 | [Right Now // A Giant Ant Short](illustration/giant-ant-right-now-2020.md) | Giant Ant (written by Jay Grandin; storyboard: Esther Cheung) | 2020 | 1:46 | steady | 2d-illustrated, cel, frame-by-frame | [watch](https://vimeo.com/453482133) |
-| [Good Books - Metamorphosis](illustration/buck-good-books-metamorphosis-2012.md) | BUCK (creative director: Ryan Honey; associate CD: Joshua Harvey; art director: Joe Mullen; animation director: Steve Day) | 2012 | 2:42 | fast | 2d-illustrated, cel, frame-by-frame | [watch](https://vimeo.com/35720685) |
+| [John Lewis Christmas Advert 2013 - The Bear & The Hare](illustration/blinkink-hornet-john-lewis-bear-and-hare-2013.md) | Blinkink / Hornet (directors: Elliot Dear, Yves Geleyn) | 2013 | ? | calm | 2d-illustrated, cel, stop-motion | [watch](https://www.youtube.com/watch?v=XqWig2WARb0) |
 | [Honda Grrr | Animated Commercial | Nexus Studios](illustration/nexus-smith-foulkes-honda-grrr-2004.md) | Nexus Productions (directors: Smith & Foulkes — Alan Smith, Adam Foulkes) | 2004 | 1:30 | steady | 2d-illustrated, 3d-cg | [watch](https://www.youtube.com/watch?v=AF4iLRb0a90) |
 
 ### 3D / CG product & abstract (`cg-3d/`, 7)
@@ -106,10 +108,12 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [Skyline](generative/raven-kwok-skyline-2015.md) | Raven Kwok | 2015 | 4:56 | fast | generative, 2d-vector | [watch](https://vimeo.com/139977231) |
 | [Walking City](generative/universal-everything-walking-city-2014.md) | Universal Everything (creative director: Matt Pyke; animation: Chris Perry) | 2014 | 7:48 | calm | 3d-cg, generative, sim | [watch](https://vimeo.com/85596568) |
 
-### Data storytelling (`data-story/`, 5)
+### Data storytelling (`data-story/`, 7)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
 |---|---|---|---|---|---|---|
+| [But what is a Fourier series?  From heat flow to drawing with circles | DE4](data-story/3blue1brown-fourier-series-2019.md) | 3Blue1Brown (Grant Sanderson) | 2019 | ? | steady | 2d-vector, data-viz, kinetic-type | [watch](https://www.youtube.com/watch?v=r6sGWTCMz2k) |
+| [Simulating Natural Selection](data-story/primer-simulating-natural-selection-2018.md) | Primer (Justin Helps) | 2018 | ? | steady | stylised-3d, sim, data-viz | [watch](https://www.youtube.com/watch?v=0ZGbIKd0XrM) |
 | [Syria's war: Who is fighting and why](data-story/vox-syria-war-who-is-fighting-2017.md) | Vox (Johnny Harris, Max Fisher) | 2017 | ? | steady | data-viz, collage, photo | [watch](https://www.youtube.com/watch?v=JFpanWNgfQY) |
 | [The Fallen of World War II](data-story/halloran-fallen-of-wwii-2015.md) | Neil Halloran (writer, director, coder, narrator) | 2015 | ? | calm | data-viz, 3d-cg | [watch](https://www.youtube.com/watch?v=DwKPFT-RioU) |
 | [How many trees are there in the world?](data-story/nature-tulp-how-many-trees-2015.md) | Nature Video (data visualization: Jan Willem Tulp; art direction: Kelly Krause) | 2015 | ? | steady | data-viz, 3d-cg, generative | [watch](https://www.youtube.com/watch?v=jqdOkXQngw8) |
@@ -123,17 +127,19 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [Coldplay - feelslikeimfallinginlove (Official Video)](music-video/blinkink-djafari-coldplay-feelslikeimfallinginlove-2024.md) | Blinkink (director: Raman Djafari) with 14 guest animators | 2024 | 4:21 | steady | 2d-illustrated, frame-by-frame, stop-motion | [watch](https://www.youtube.com/watch?v=V3IVdLo-2NM) |
 | [Pharrell Williams - Cash In Cash Out (Official Video) ft. 21 Savage, Tyler, The Creator](music-video/rousselet-pharrell-cash-in-cash-out-2022.md) | Division (director: François Rousselet); animation/VFX: Electric Theatre Collective | 2022 | 3:56 | fast | photoreal-cg, stylised-3d | [watch](https://www.youtube.com/watch?v=cKEwnhc8ItY) |
 | [Thom Yorke - Last I Heard (…He Was Circling The Drain)](music-video/artcamp-moosajee-thom-yorke-last-i-heard-2019.md) | Art Camp (directors: Saad Moosajee with Art Camp; technical director: James Bartolozzi) | 2019 | 5:08 | steady | mixed, 3d-cg, cel | [watch](https://www.youtube.com/watch?v=I03xFqbxUp8) |
-| [Aphex Twin - T69 Collapse](music-video/weirdcore-aphex-twin-t69-collapse-2018.md) | Weirdcore (Nicky Smith) | 2018 | 5:19 | frantic | generative, 3d-cg, photo | [watch](https://www.youtube.com/watch?v=SqayDnQ2wmw) |
+| [Aphex Twin - T69 Collapse](music-video/weirdcore-aphex-twin-t69-collapse-2018.md) | Weirdcore | 2018 | 5:19 | frantic | generative, 3d-cg, photo | [watch](https://www.youtube.com/watch?v=SqayDnQ2wmw) |
 | [The Chemical Brothers - Wide Open (Official Music Video) ft. Beck](music-video/domnic-chemical-brothers-wide-open-2016.md) | Outsider (directors: Dom&Nic); VFX: The Mill; choreography: Wayne McGregor | 2016 | 5:31 | calm | live-action, photoreal-cg | [watch](https://www.youtube.com/watch?v=BC2dRkm8ATU) |
 | [Radiohead - Burn The Witch](music-video/hopewell-radiohead-burn-the-witch-2016.md) | Jacknife (director: Chris Hopewell) | 2016 | 4:00 | steady | stop-motion | [watch](https://www.youtube.com/watch?v=yI2oS2hoL0k) |
 
-### Sports & broadcast packages (`broadcast-sports/`, 5)
+### Sports & broadcast packages (`broadcast-sports/`, 7)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
 |---|---|---|---|---|---|---|
 | [FIFA World Cup 2026 - Let's Make It Iconic | Official Trailer - BBC](broadcast-sports/blinkink-bbc-world-cup-2026.md) | Blinkink (director: Nicos Livesey; lead designer Dan Evans) | 2026 | 0:52 | fast | mixed, stop-motion, live-action | [watch](https://www.youtube.com/watch?v=ff2k22F4qNM) |
+| [New 2026 F1 Opening Titles](broadcast-sports/dissembargo-f1-2026-opening-titles.md) | DissEmbargo (directors: Sam Humphries, Sebastian Helene) | 2026 | 0:58 | fast | 3d-cg, mixed, live-action | [watch](https://www.youtube.com/watch?v=Sks_fMr2Yss) |
 | [FIFA Men's World Cup 2026 | FOX Sports |](broadcast-sports/drive-studio-fox-world-cup-2026.md) | Drive Studio | 2026 | 1:24 | fast | 3d-cg, kinetic-type, mixed | [watch](https://vimeo.com/1206272473) |
 | [Paris 2024 Olympic Games - BBC Official Trailer | Directed by Fx Goby | Nexus Studios](broadcast-sports/nexus-fx-goby-bbc-paris-2024.md) | Nexus Studios (director: Fx Goby) | 2024 | 1:00 | fast | 2d-illustrated, cel | [watch](https://www.youtube.com/watch?v=j7wDrDsMJhU) |
+| [TNT_CLOCK_00003](broadcast-sports/dixonbaxi-tnt-sports-2023.md) | DixonBaxi (type with F37) | 2023 | 0:12 | fast | mixed, kinetic-type, ui | [watch](https://vimeo.com/863534078) |
 | [#Paris2024 - Look of the Games](broadcast-sports/w-conran-paris-2024-look-of-the-games.md) | W Conran Design with the Paris 2024 brand team | 2023 | 2:01 | steady | 2d-vector, kinetic-type, mixed | [watch](https://www.youtube.com/watch?v=08aeo0WZMOY) |
 | [BBC Tokyo 2020](broadcast-sports/factory-fifteen-bbc-tokyo-2020.md) | Factory Fifteen (directors: Paul Nicholls, Jonathan Gales, Kibwe Tavares), produced by Nexus Studios | 2021 | 1:00 | fast | mixed, live-action, 3d-cg | [watch](https://vimeo.com/566015251) |
 

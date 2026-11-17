@@ -171,6 +171,7 @@ def cmd_index(a):
 # ---------------------------------------------------------------- verify / fetch
 
 def _get(url, timeout=20):
+    url = urllib.parse.quote(url, safe=":/?&=%#,+;@~")
     req = urllib.request.Request(url, headers={"User-Agent": "anikit-benchmark/1.0"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read()

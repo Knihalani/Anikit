@@ -2,7 +2,7 @@
 slug: weirdcore-aphex-twin-t69-collapse-2018
 category: music-video
 title: "Aphex Twin - T69 Collapse"
-studio: "Weirdcore (Nicky Smith)"
+studio: "Weirdcore"
 client: "Aphex Twin / Warp Records"
 year: 2018
 url: https://www.youtube.com/watch?v=SqayDnQ2wmw
