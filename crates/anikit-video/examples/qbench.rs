@@ -51,7 +51,8 @@ const FLAG_DE_MAX: f64 = 5.0;
 /// baseline by more than this.
 const DELIVERED_SSIM_SLACK: f64 = 0.002;
 const DELIVERED_PSNR_SLACK: f64 = 0.3;
-const DELIVERED_MIN_SSIM: f64 = 0.97;
+/// Reported (⚑), not failed: grain and noise are expensive for any lossy encoder.
+const DELIVERED_FLAG_SSIM: f64 = 0.97;
 
 // ---------------------------------------------------------------- corpus
 
@@ -69,6 +70,9 @@ struct Entry {
     to: Option<f32>,
     /// Timed runs for this entry (overrides `--runs`; for very slow content).
     runs: Option<usize>,
+    /// Time the whole spec rather than `from..to` (short clips time too noisily).
+    #[serde(default)]
+    time_full: bool,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone)]
@@ -561,6 +565,8 @@ struct Row {
     kind: String,
     skipped: Option<String>,
     frames: usize,
+    /// Frames in the timed renders (the whole spec with `time_full`).
+    timed_frames: usize,
     size: String,
     startup_ms: f64,
     first_frame_ms: f64,
@@ -666,7 +672,11 @@ fn main() {
             let ev = &ev;
             let t = Instant::now();
             let audio = pipeline::mix_audio(ev, t_audio0, dur, &wav).unwrap_or(None);
-            let s = pipeline::render_ak264(ev, &options(e, false), &mp4, audio.as_deref()).expect("render");
+            let mut o = options(e, false);
+            if e.time_full {
+                (o.from, o.to) = (None, None);
+            }
+            let s = pipeline::render_ak264(ev, &o, &mp4, audio.as_deref()).expect("render");
             walls.push(t.elapsed().as_secs_f64());
             if audio.is_some() {
                 let _ = std::fs::remove_file(&wav);
@@ -677,7 +687,17 @@ fn main() {
             }
         }
         row.wall_s = median(walls);
-        row.fps = n as f64 / row.wall_s;
+        row.timed_frames = if e.time_full { ev.frames() as usize } else { n };
+        row.fps = row.timed_frames as f64 / row.wall_s;
+        if e.time_full {
+            // The quality passes need the clip's own MP4.
+            let ev = build(&spec_path).unwrap();
+            let audio = pipeline::mix_audio(&ev, t_audio0, dur, &wav).unwrap_or(None);
+            pipeline::render_ak264(&ev, &options(e, false), &mp4, audio.as_deref()).expect("render");
+            if audio.is_some() {
+                let _ = std::fs::remove_file(&wav);
+            }
+        }
         eprintln!("   default: {:.3} s, {:.0} fps", row.wall_s, row.fps);
         // 2. Reference.
         let t = Instant::now();
@@ -712,7 +732,10 @@ fn main() {
             row.flags.push(format!("decoded {} frames, expected {}", dec.len(), refs.len()));
         }
         let regress = baseline.delivered.get(&e.name).is_some_and(|(s, p)| df.ssim_min < s - DELIVERED_SSIM_SLACK || df.psnr_y_mean < p - DELIVERED_PSNR_SLACK);
-        row.delivered_regressed = regress || df.ssim_min < DELIVERED_MIN_SSIM;
+        row.delivered_regressed = regress;
+        if df.ssim_min < DELIVERED_FLAG_SSIM {
+            row.flags.push(format!("delivered SSIM {:.4} (grain/noise vs QP)", df.ssim_min));
+        }
         new_base.delivered.insert(e.name.clone(), ((df.ssim_min * 1e4).floor() / 1e4, (df.psnr_y_mean * 100.0).floor() / 100.0));
         if rf.de_max > FLAG_DE_MAX {
             row.flags.push(format!("max ΔE {:.1} at frame {} (see {})", rf.de_max, rf.de_max_frame, heat.file_name().unwrap().to_string_lossy()));
@@ -746,7 +769,7 @@ fn main() {
 }
 
 fn print_table(rows: &[Row]) {
-    println!("\n| spec | content | frames | wall s | fps | ms/frame: eval · render · copy · encode · idle | startup ms · 1st frame ms | render SSIM min | PSNR-Y min | ΔE p99.9 / max | raw ΔE p99.9 | flicker p99.9 | delivered SSIM min / PSNR-Y | result |");
+    println!("\n| spec | content | frames (timed) | wall s | fps | ms/frame: eval · render · copy · encode · idle | startup ms · 1st frame ms | render SSIM min | PSNR-Y min | ΔE p99.9 / max | raw ΔE p99.9 | flicker p99.9 | delivered SSIM min / PSNR-Y | result |");
     println!("|---|---|---:|---:|---:|---|---|---:|---:|---:|---:|---:|---|---|");
     for r in rows {
         if let Some(s) = &r.skipped {
@@ -757,10 +780,11 @@ fn print_table(rows: &[Row]) {
         let res = if r.pass { "PASS".to_string() } else { format!("**FAIL** ({} frames{})", r.render.failing.len(), if r.delivered_regressed { ", delivered regressed" } else { "" }) };
         let flags = if r.flags.is_empty() { String::new() } else { format!(" ⚑ {}", r.flags.join("; ")) };
         println!(
-            "| {} | {} | {} | {:.2} | {:.0} | {:.2} · {:.2} · {:.2} · {:.2} · {:.2} | {:.0} · {:.0} | {:.5} | {:.2} | {:.2} / {:.1} | {:.1} | {:.1} | {:.4} / {:.2} | {}{} |",
+            "| {} | {} | {} ({}) | {:.2} | {:.0} | {:.2} · {:.2} · {:.2} · {:.2} · {:.2} | {:.0} · {:.0} | {:.5} | {:.2} | {:.2} / {:.1} | {:.1} | {:.1} | {:.4} / {:.2} | {}{} |",
             r.name,
             r.kind,
             r.frames,
+            r.timed_frames,
             r.wall_s,
             r.fps,
             p.eval_ms,

@@ -880,12 +880,14 @@ fn draw_cached_run(
         st.run = run;
         return ok;
     }
-    let (qx, qy) = (((tx - fx) * 4.0).round() as u8, ((ty - fy) * 4.0).round() as u8);
-    let (ox, oy) = (qx as f64 / 4.0, qy as f64 / 4.0);
+    // The exact sub-pixel phase: static text still hits the cache every frame,
+    // and moving text lands where it should (quarter-pixel phases made slow
+    // eases advance in visible ¼ px steps).
+    let (ox, oy) = (tx - fx, ty - fy);
     let key = {
         use std::hash::{Hash, Hasher};
         let mut hs = std::collections::hash_map::DefaultHasher::new();
-        (font_id.0, size.to_bits(), qx, qy, c.0.map(f32::to_bits)).hash(&mut hs);
+        (font_id.0, size.to_bits(), ox.to_bits(), oy.to_bits(), c.0.map(f32::to_bits)).hash(&mut hs);
         for g in glyphs {
             (g.id, g.x.to_bits(), g.y.to_bits()).hash(&mut hs);
         }
