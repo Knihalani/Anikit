@@ -366,10 +366,51 @@ impl Template {
 
     /// Expand with parameters, a brand kit and a format into a spec.
     pub fn expand(&self, params: &Value, brand: &brand::Brand, format: Format) -> Result<Value, Vec<String>> {
+        // `look` is accepted by every template: a look name, list or object
+        // (see `looks`), or "none" for the plain brand look. Default: the template's own.
+        let mut params = params.clone();
+        let look_v = params.as_object_mut().and_then(|m| m.remove("look")).or_else(|| self.doc.get("look").cloned());
+        let look = match &look_v {
+            None | Some(Value::Null) | Some(Value::Bool(false)) => None,
+            Some(Value::String(s)) if s == "none" => None,
+            Some(v) => Some(crate::looks::resolve(v).map_err(|e| vec![e])?),
+        };
+        // A kit with its own canvas keeps it: the look brings type, motion and post only.
+        let (look, look_v) = match (look, look_v) {
+            (Some(mut l), Some(v)) if brand.colors.background.is_some() => {
+                l["backdrop"] = Value::Null;
+                if let Some(c) = l.pointer_mut("/theme/colors").and_then(|c| c.as_object_mut()) {
+                    for k in ["bg", "surface", "text", "muted"] {
+                        c.remove(k);
+                    }
+                }
+                l.as_object_mut().unwrap().remove("mode");
+                let v = json!({"base": v, "backdrop": null});
+                (Some(l), Some(v))
+            }
+            other => other,
+        };
+        let brand = match &look {
+            Some(l) => brand.with_look(l),
+            None => brand.clone(),
+        };
         let b = brand.resolve();
         let fmt = format.scope();
-        let p = self.resolve_params(params, &b, &fmt)?;
-        let globals = json!({"brand": b, "fmt": fmt, "template": self.name}).as_object().cloned().unwrap();
+        let p = self.resolve_params(&params, &b, &fmt)?;
+        // `cw`: average glyph advance of title type in em, for line-count estimates
+        // (wider for uppercase and mono looks, narrower for the serif).
+        let cw = look.as_ref().map_or(0.5, |l| {
+            let st = &l["theme"]["styles"];
+            let font = l["theme"]["fonts"]["heading"].as_str().unwrap_or("");
+            let upper = st["title"]["uppercase"] == json!(true) || st["heading"]["uppercase"] == json!(true);
+            match (font.contains("Mono"), font.contains("Serif"), upper) {
+                (true, _, _) => 0.64,
+                (_, true, _) => 0.42,
+                (_, _, true) => 0.64,
+                _ => 0.5,
+            }
+        });
+        let globals = json!({"brand": b, "fmt": fmt, "template": self.name, "look": look.clone().unwrap_or(Value::Null), "cw": cw}).as_object().cloned().unwrap();
         let common: Value = serde_json::from_str(COMMON).expect("templates/_common.json is valid JSON");
         let mut defs = common.get("defs").and_then(|d| d.as_object()).cloned().unwrap_or_default();
         if let Some(own) = self.doc.get("defs").and_then(|d| d.as_object()) {
@@ -379,7 +420,19 @@ impl Template {
         sc.push(&globals);
         sc.push(&p);
         let spec = self.doc.get("spec").unwrap();
-        expand_value(spec, &mut sc, &defs, "spec").map(|v| v.unwrap_or(Value::Null)).map_err(|e| vec![format!("template '{}': {e}", self.name)])
+        let mut out = expand_value(spec, &mut sc, &defs, "spec").map(|v| v.unwrap_or(Value::Null)).map_err(|e| vec![format!("template '{}': {e}", self.name)])?;
+        if let (Some(lv), Some(m)) = (look.as_ref().and(look_v), out.as_object_mut()) {
+            // Template layers choose their own entrances: the look's default does not apply.
+            let lv = match lv {
+                Value::Object(mut o) if o.contains_key("base") => {
+                    o.insert("enter".into(), Value::Null);
+                    Value::Object(o)
+                }
+                other => json!({"base": other, "enter": null}),
+            };
+            m.insert("look".into(), lv);
+        }
+        Ok(out)
     }
 }
 

@@ -5,10 +5,11 @@
 //! functions, strings, numbers, comments), done once in `prepare`. Each frame
 //! only lays out visible tokens.
 
+use super::polish::{self, Surface};
 use super::style::*;
 use super::text::{draw, Face, TextStyle};
 use super::{Component, Ctx, Error, Prepare};
-use crate::dl::{Op, Rgba};
+use crate::dl::{Op, Paint, Rgba, IDENTITY};
 use serde::Deserialize;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -266,6 +267,22 @@ fn scroll_dur() -> f32 {
     0.6
 }
 
+/// A selection sweeping across part of a line (1-based line, 0-based columns).
+#[derive(Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct Selection {
+    pub line: usize,
+    #[serde(default)]
+    pub from: usize,
+    /// End column (exclusive); default: end of line.
+    #[serde(default)]
+    pub to: Option<usize>,
+    #[serde(default)]
+    pub at: f32,
+    #[serde(default)]
+    pub until: Option<f32>,
+}
+
 #[derive(Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum Chrome {
@@ -299,6 +316,22 @@ pub struct CodeBlock {
     pub background: Option<Color>,
     /// Soft coloured glow behind the window.
     pub glow: Option<Color>,
+    /// Text selections that sweep in: `[{ "line": 3, "from": 6, "to": 18, "at": 2.0 }]`.
+    pub selections: Vec<Selection>,
+    /// Code minimap down the right edge.
+    pub minimap: bool,
+    /// Status bar (language, line and column) along the bottom.
+    pub status_bar: bool,
+    /// Tint the line the caret is on.
+    pub active_line: bool,
+    /// Window finish: solid (default), glass, outline, flat, paper.
+    pub surface: Surface,
+    /// Corner radius (default: from the theme).
+    pub radius: Option<f32>,
+    /// Line height multiplier.
+    pub line_height: f32,
+    /// Accent for caret, highlights and selection (default: theme accent).
+    pub accent: Option<Color>,
     #[serde(skip)]
     lines: Vec<Vec<Span>>,
     /// Same lines coloured by the TEXT highlighter for [night, day] themes.
@@ -329,6 +362,14 @@ impl Default for CodeBlock {
             cursor: true,
             background: None,
             glow: None,
+            selections: Vec::new(),
+            minimap: false,
+            status_bar: false,
+            active_line: true,
+            surface: Surface::Solid,
+            radius: None,
+            line_height: 1.6,
+            accent: None,
             lines: Vec::new(),
             themed: None,
             marks: Vec::new(),
@@ -426,41 +467,80 @@ impl CodeBlock {
     }
 }
 
+impl CodeBlock {
+    /// Caret (line, column) while typing at local time `t`.
+    fn caret_at(&self, t: f32) -> Option<(usize, usize)> {
+        if self.typing <= 0.0 || self.lines.is_empty() {
+            return None;
+        }
+        let tt = t - self.delay;
+        let i = (0..self.lines.len()).rev().find(|&i| tt >= self.line_t[i]).unwrap_or(0);
+        let len: usize = self.lines[i].iter().map(|s| s.text.chars().count()).sum();
+        Some((i, self.visible(i, t).min(len)))
+    }
+}
+
 impl Component for CodeBlock {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let th = ctx.theme;
         let (w, h) = (ctx.width, ctx.height);
         let fs = self.font_size;
-        let lh = fs * 1.6;
-        let r = th.radius * 0.8;
-        let bg = self.background.map(|c| c.0).unwrap_or(if th.dark { parse_color("#0e0f14").unwrap() } else { Rgba([1.0, 1.0, 1.0, 1.0]) });
+        let lh = fs * self.line_height.max(1.0);
+        let r = self.radius.unwrap_or(th.radius * 0.8);
+        let acc = self.accent.map(|c| c.0).unwrap_or(th.accent);
+        let bg = self.background.map(|c| c.0).unwrap_or(if th.dark { parse_color("#0d0e13").unwrap() } else { Rgba([1.0, 1.0, 1.0, 1.0]) });
+        let ink = if self.surface == Surface::Glass || self.surface == Surface::Outline { th.text } else { on_color(&[bg]) };
+        let dark = luminance(ink) > 0.5;
         let mut o = Vec::new();
         if let Some(g) = self.glow {
-            glow(&mut o, 0.0, 0.0, w, h, r, 60.0, alpha(g.0, 0.5));
+            glow(&mut o, 0.0, 0.0, w, h, r, 60.0, alpha(g.0, 0.45));
         }
-        shadow(&mut o, 0.0, 0.0, w, h, r, 24.0, 48.0, if th.dark { 0.6 } else { 0.18 });
-        o.push(rect(0.0, 0.0, w, h, r, solid(bg)));
+        polish::finish(&mut o, th, self.surface, 0.0, 0.0, w, h, r, 2.0, Some(bg));
+        let muted = alpha(ink, 0.45);
         // Chrome.
         let top = match self.chrome {
             Chrome::Mac | Chrome::Minimal => {
-                let bar = (fs * 2.0).max(36.0);
+                let bar = (fs * 2.1).max(38.0);
+                if !matches!(self.surface, Surface::Outline | Surface::Glass) {
+                    push_clip(&mut o, 0.0, 0.0, w, h, r);
+                    o.push(rect(0.0, 0.0, w, bar, 0.0, solid(shade(bg, if dark { 0.022 } else { -0.03 }))));
+                    o.push(Op::PopLayer);
+                }
+                let mut tab_x = bar * 0.4;
                 if self.chrome == Chrome::Mac {
                     for (i, c) in ["#ff5f57", "#febc2e", "#28c840"].iter().enumerate() {
-                        o.push(circle(bar * 0.5 + i as f32 * bar * 0.42, bar * 0.5, bar * 0.15, solid(parse_color(c).unwrap())));
+                        let c = parse_color(c).unwrap();
+                        let (cx, cy, cr) = (bar * 0.5 + i as f32 * bar * 0.4, bar * 0.5, bar * 0.135);
+                        o.push(circle(cx, cy, cr, solid(c)));
+                        o.push(Op::Stroke { path: circle_path(cx, cy, cr - 0.5), paint: solid(alpha(shade(c, -0.4), 0.6)), stroke: line(1.0, [0.0, 1.0]), transform: IDENTITY });
                     }
+                    tab_x = bar * 1.75;
                 }
                 if !self.title.is_empty() {
-                    draw(&mut o, ctx.assets, &self.title, &TextStyle::new(Face::Sans, fs * 0.68, 500, th.muted), w * 0.5, bar * 0.5 + fs * 0.24, 0.5);
+                    let ts = polish::ui(fs * 0.62, 500, alpha(ink, 0.85));
+                    if self.chrome == Chrome::Mac {
+                        // An active editor tab with a language dot.
+                        let tw = ctx.assets.measure(&self.title, &ts);
+                        let (tx, ty, tww, th_) = (tab_x, bar * 0.18, tw + fs * 2.2, bar * 0.82);
+                        o.push(Op::Fill { path: tab_path(tx, ty, tww, th_, fs * 0.4), paint: solid(bg), rule: crate::dl::FillRule::NonZero, transform: IDENTITY });
+                        o.push(rect(tx + fs * 0.4, ty, tww - fs * 0.8, 1.5, 0.0, solid(acc)));
+                        o.push(circle(tx + fs * 0.85, ty + th_ * 0.5, fs * 0.16, solid(lang_color(&self.language))));
+                        draw(&mut o, ctx.assets, &self.title, &ts, tx + fs * 1.3, ty + th_ * 0.5 + ts.size * 0.36, 0.0);
+                    } else {
+                        draw(&mut o, ctx.assets, &self.title, &ts.clone().color(muted), w * 0.5, bar * 0.5 + ts.size * 0.36, 0.5);
+                    }
                 }
-                o.push(rect(0.0, bar, w, 1.0, 0.0, solid(th.border)));
+                o.push(rect(0.0, bar - 1.0, w, 1.0, 0.0, solid(alpha(ink, 0.07))));
                 bar
             }
             Chrome::None => 0.0,
         };
+        let status_h = if self.status_bar { (fs * 1.25).max(24.0) } else { 0.0 };
+        let mini_w = if self.minimap { (w * 0.085).clamp(60.0, 130.0) } else { 0.0 };
         let pad = fs * 1.0;
-        let st = TextStyle::new(Face::Mono, fs, 400, th.text);
+        let st = TextStyle::new(Face::Mono, fs, 400, ink).tracking(-0.01);
         let cw = ctx.assets.measure("M", &st);
-        let gutter = if self.line_numbers { cw * (self.lines.len().to_string().len() as f32 + 2.0) } else { 0.0 };
+        let gutter = if self.line_numbers { cw * (self.lines.len().to_string().len() as f32 + 2.2) } else { 0.0 };
         let x0 = pad + gutter + if self.diff { cw * 2.0 } else { 0.0 };
         // Scroll offset in lines.
         let mut scroll = 0.0;
@@ -468,14 +548,21 @@ impl Component for CodeBlock {
             let k = ease_in_out(seg(t, s.at, s.duration));
             scroll = lerp(scroll, s.line.saturating_sub(1) as f32, k);
         }
-        // Auto-scroll to keep the typing line in view.
-        let rows = ((h - top - pad) / lh).floor().max(1.0);
-        let typing_line = (0..self.lines.len()).rev().find(|&i| self.typing <= 0.0 || self.visible(i, t) > 0 || (t - self.delay) >= self.line_t[i]).unwrap_or(0);
-        if self.typing > 0.0 && typing_line as f32 >= rows - 1.0 + scroll {
-            scroll = typing_line as f32 - rows + 2.0;
+        let body_h = h - top - status_h;
+        let rows = ((body_h - pad) / lh).floor().max(1.0);
+        // Auto-scroll (smoothly) to keep the typing line in view.
+        if self.typing > 0.0 {
+            let follow = |tt: f32| -> f32 {
+                let tl = self.caret_at(tt).map(|c| c.0).unwrap_or(0) as f32;
+                (tl - rows + 2.0).max(0.0)
+            };
+            let auto = (0..6).map(|k| follow(t - k as f32 * 0.04)).sum::<f32>() / 6.0;
+            scroll = scroll.max(auto);
         }
         let body_y = top + pad * 0.6;
-        o.push(Op::PushLayer { opacity: 1.0, blend: crate::dl::Blend::Normal, filters: vec![], clip: Some((rrect_path(0.0, top, w, h - top, 0.0), crate::dl::IDENTITY)), cache_key: None });
+        let caret = self.caret_at(t);
+        let active = if self.typing > 0.0 { caret.map(|c| c.0) } else { None };
+        o.push(Op::PushLayer { opacity: 1.0, blend: crate::dl::Blend::Normal, filters: vec![], clip: Some((rrect_path(0.0, top, w - mini_w, body_h, 0.0), IDENTITY)), cache_key: None });
         // Highlights.
         let mut dim = 0.0f32;
         let mut lit = vec![0.0f32; self.lines.len()];
@@ -497,11 +584,17 @@ impl Component for CodeBlock {
                 }
             }
         }
-        let mut caret = None;
         let lines = match &self.themed {
-            Some([n, d]) => if th.dark { n } else { d },
+            Some([n, d]) => {
+                if dark {
+                    n
+                } else {
+                    d
+                }
+            }
             None => &self.lines,
         };
+        let mut caret_y = None;
         for (i, line) in lines.iter().enumerate() {
             let y = body_y + (i as f32 - scroll) * lh;
             if y + lh < top || y > h {
@@ -512,19 +605,33 @@ impl Component for CodeBlock {
                 continue;
             }
             let mark = self.marks[i];
+            if self.active_line && active == Some(i) && lit[i] <= 0.0 && mark == 0 {
+                o.push(rect(0.0, y, w, lh, 0.0, solid(alpha(ink, 0.045))));
+            }
             if mark != 0 {
                 let c = if mark > 0 { th.positive } else { th.negative };
-                o.push(rect(0.0, y, w, lh, 0.0, solid(alpha(c, 0.13))));
+                o.push(rect(0.0, y, w, lh, 0.0, Paint::Linear { p0: [0.0, 0.0], p1: [w, 0.0], stops: vec![(0.0, alpha(c, 0.2)), (1.0, alpha(c, 0.07))] }));
                 o.push(rect(0.0, y, 3.0, lh, 0.0, solid(c)));
-                draw(&mut o, ctx.assets, if mark > 0 { "+" } else { "-" }, &st.clone().color(c), pad + gutter, y + lh * 0.7, 0.0);
+                draw(&mut o, ctx.assets, if mark > 0 { "+" } else { "-" }, &st.clone().color(c), pad + gutter, y + lh * 0.68, 0.0);
             }
             if lit[i] > 0.0 {
-                o.push(rect(0.0, y, w, lh, 0.0, solid(alpha(th.accent, 0.16 * lit[i]))));
-                o.push(rect(0.0, y, 3.0, lh, 0.0, solid(alpha(th.accent, lit[i]))));
+                o.push(rect(0.0, y, w, lh, 0.0, Paint::Linear { p0: [0.0, 0.0], p1: [w, 0.0], stops: vec![(0.0, alpha(acc, 0.2 * lit[i])), (1.0, alpha(acc, 0.06 * lit[i]))] }));
+                o.push(rect(0.0, y, 3.0, lh, 0.0, solid(alpha(acc, lit[i]))));
+            }
+            // Selections on this line.
+            for sel in self.selections.iter().filter(|s| s.line == i + 1) {
+                let k = polish::ease_out_expo(seg(t, sel.at, 0.3)) * sel.until.map(|u| 1.0 - ease_out(seg(t, u, 0.25))).unwrap_or(1.0);
+                if k > 0.0 {
+                    let len: usize = line.iter().map(|s| s.text.chars().count()).sum();
+                    let to = sel.to.unwrap_or(len).min(len.max(sel.from));
+                    let sw = (to.saturating_sub(sel.from)) as f32 * cw * k;
+                    o.push(rect(x0 + sel.from as f32 * cw - 1.0, y + lh * 0.08, sw + 2.0, lh * 0.84, 3.0, solid(alpha(acc, 0.32 * k.min(1.0)))));
+                }
             }
             let fade = 1.0 - dim * (1.0 - lit[i]) * 0.65;
             if self.line_numbers {
-                draw(&mut o, ctx.assets, &(i + 1).to_string(), &st.clone().color(alpha(th.muted, 0.6 * fade)), pad + gutter - cw * 1.5, y + lh * 0.7, 1.0);
+                let na = if active == Some(i) || lit[i] > 0.5 { 0.85 } else { 0.32 };
+                draw(&mut o, ctx.assets, &(i + 1).to_string(), &st.clone().color(alpha(ink, na * fade)), pad + gutter - cw * 1.6, y + lh * 0.68, 1.0);
             }
             let mut x = x0;
             let mut shown = 0usize;
@@ -535,36 +642,110 @@ impl Component for CodeBlock {
                 let n = s.text.chars().count();
                 let take = n.min(vis - shown);
                 let text: String = if take < n { s.text.chars().take(take).collect() } else { s.text.clone() };
-                let c = s.color.unwrap_or_else(|| syntax_color(s.kind, th.dark));
-                let c = if mark < 0 { alpha(c, 0.75) } else { c };
+                let c = s.color.unwrap_or_else(|| syntax_color(s.kind, dark));
+                let c = if mark < 0 { alpha(c, 0.7) } else { c };
                 if !text.trim().is_empty() {
-                    let (ops, _) = ctx.assets.text(&text, &st.clone().color(alpha(c, fade)), x, y + lh * 0.7);
+                    let (ops, _) = ctx.assets.text(&text, &st.clone().color(alpha(c, fade)), x, y + lh * 0.68);
                     o.extend(ops);
                 }
                 x += cw * take as f32;
                 shown += take;
             }
-            if self.typing > 0.0 && (vis != usize::MAX || i == self.lines.len() - 1) && (t - self.delay) >= self.line_t[i] {
-                caret = Some((x, y));
+            if active == Some(i) {
+                caret_y = Some(y);
             }
         }
-        if self.cursor {
-            let (cx, cy) = caret.unwrap_or((x0, body_y));
-            let typing_now = self.typing > 0.0 && t - self.delay < self.total_t;
-            let blink = if typing_now { 1.0 } else { (0.5 + 0.5 * (t * std::f32::consts::TAU / 1.05).cos()).round() };
-            if caret.is_some() || self.typing > 0.0 {
-                o.push(rect(cx + 1.0, cy + lh * 0.18, (fs * 0.09).max(2.0), lh * 0.66, 1.0, solid(alpha(th.accent, blink))));
+        if self.cursor && self.typing > 0.0 {
+            if let (Some((ci, _)), Some(cy)) = (caret, caret_y) {
+                // Smooth caret: average recent positions on the same line so it glides.
+                let xs: Vec<f32> = (0..4).filter_map(|k| self.caret_at(t - k as f32 * 0.016).filter(|c| c.0 == ci).map(|c| c.1 as f32)).collect();
+                let col = xs.iter().sum::<f32>() / xs.len().max(1) as f32;
+                let cx = x0 + col * cw;
+                let typing_now = t - self.delay < self.total_t;
+                let blink = if typing_now { 1.0 } else { polish::smoothstep(0.0, 1.0, 0.5 + 0.8 * (t * std::f32::consts::TAU / 1.1).cos()) };
+                o.push(rect(cx, cy + lh * 0.16, (fs * 0.085).max(2.0), lh * 0.68, 1.0, solid(alpha(acc, blink))));
             }
         }
         o.push(Op::PopLayer);
-        border(&mut o, 0.0, 0.0, w, h, r, th.border);
+        // Minimap.
+        if self.minimap {
+            let mx = w - mini_w + 8.0;
+            let rowh = (fs * 0.13).max(2.0);
+            let gap = rowh * 1.6;
+            let cpx = (mini_w - 16.0) / 80.0;
+            o.push(rect(w - mini_w, top, 1.0, body_h, 0.0, solid(alpha(ink, 0.06))));
+            for (i, line) in lines.iter().enumerate() {
+                let vis = self.visible(i, t);
+                if vis == 0 && self.typing > 0.0 && (t - self.delay) < self.line_t[i] {
+                    continue;
+                }
+                let y = top + 10.0 + i as f32 * gap;
+                if y > h - status_h - 6.0 {
+                    break;
+                }
+                let mut col = 0usize;
+                for s in line {
+                    let n = s.text.chars().count().min(vis.saturating_sub(col));
+                    let lead = s.text.chars().take_while(|c| c.is_whitespace()).count().min(n);
+                    if n > lead {
+                        let c = s.color.unwrap_or_else(|| syntax_color(s.kind, dark));
+                        o.push(rect(mx + (col + lead) as f32 * cpx, y, (n - lead) as f32 * cpx, rowh, 0.0, solid(alpha(c, 0.55))));
+                    }
+                    col += s.text.chars().count();
+                }
+            }
+            let vy = top + 10.0 + scroll * gap - 4.0;
+            o.push(rect(w - mini_w + 2.0, vy, mini_w - 4.0, rows * gap + 8.0, 3.0, solid(alpha(ink, 0.06))));
+        }
+        // Status bar.
+        if self.status_bar {
+            let sy = h - status_h;
+            push_clip(&mut o, 0.0, 0.0, w, h, r);
+            o.push(rect(0.0, sy, w, status_h, 0.0, solid(shade(bg, if dark { 0.022 } else { -0.03 }))));
+            o.push(Op::PopLayer);
+            o.push(rect(0.0, sy, w, 1.0, 0.0, solid(alpha(ink, 0.07))));
+            let ss = polish::ui(status_h * 0.5, 500, muted);
+            let base = sy + status_h * 0.5 + ss.size * 0.36;
+            o.push(circle(pad * 0.6 + ss.size * 0.3, sy + status_h * 0.5, ss.size * 0.28, solid(th.positive)));
+            draw(&mut o, ctx.assets, &self.language, &ss, pad * 0.6 + ss.size * 0.9, base, 0.0);
+            let (ln, colnum) = caret.map(|(l, c)| (l + 1, c + 1)).unwrap_or((1, 1));
+            draw(&mut o, ctx.assets, &format!("Ln {ln}, Col {colnum}    UTF-8    Spaces: 4"), &ss.clone().tabular(), w - pad * 0.6, base, 1.0);
+        }
+        if !matches!(self.surface, Surface::Outline) {
+            border(&mut o, 0.0, 0.0, w, h, r, alpha(ink, 0.1));
+        }
         o
     }
     fn duration(&self) -> Option<f32> {
         let s = self.scroll.iter().fold(0.0f32, |m, s| m.max(s.at + s.duration));
         let hl = self.highlights.iter().fold(0.0f32, |m, h| m.max(h.until.unwrap_or(h.at) + 0.35));
-        Some((self.delay + self.total_t).max(s).max(hl))
+        let sel = self.selections.iter().fold(0.0f32, |m, s| m.max(s.until.unwrap_or(s.at) + 0.35));
+        Some((self.delay + self.total_t).max(s).max(hl).max(sel))
     }
+}
+
+/// Editor tab: rounded top corners, square bottom.
+fn tab_path(x: f32, y: f32, w: f32, h: f32, r: f32) -> crate::dl::Path {
+    use kurbo::Shape;
+    kurbo::RoundedRect::from_rect(kurbo::Rect::new(x as f64, y as f64, (x + w) as f64, (y + h) as f64), kurbo::RoundedRectRadii::new(r as f64, r as f64, 0.0, 0.0)).to_path(0.1)
+}
+
+/// File-type dot colour for the tab.
+fn lang_color(lang: &str) -> Rgba {
+    let c = match lang.to_ascii_lowercase().as_str() {
+        "ts" | "typescript" | "tsx" => "#3178c6",
+        "js" | "javascript" | "jsx" => "#f1e05a",
+        "rust" | "rs" => "#dea584",
+        "python" | "py" => "#3572a5",
+        "go" => "#00add8",
+        "swift" => "#f05138",
+        "json" => "#cbcb41",
+        "bash" | "sh" | "shell" => "#89e051",
+        "css" => "#663399",
+        "html" => "#e34c26",
+        _ => "#8b8f9c",
+    };
+    parse_color(c).unwrap()
 }
 
 // ------------------------------------------------------------------ terminal
@@ -623,8 +804,10 @@ impl Component for Terminal {
         let lh = fs * 1.55;
         let r = th.radius * 0.8;
         let mut o = Vec::new();
-        shadow(&mut o, 0.0, 0.0, w, h, r, 24.0, 48.0, 0.6);
-        o.push(rect(0.0, 0.0, w, h, r, solid(parse_color("#0b0c10").unwrap())));
+        polish::elevation(&mut o, th, 0.0, 0.0, w, h, r, 2.0);
+        let bg = parse_color("#0b0c10").unwrap();
+        o.push(rect(0.0, 0.0, w, h, r, vgrad(0.0, h, shade(bg, 0.02), bg)));
+        polish::bevel(&mut o, 0.0, 0.0, w, h, r, 0.8);
         let bar = (fs * 2.0).max(36.0);
         for (i, c) in ["#ff5f57", "#febc2e", "#28c840"].iter().enumerate() {
             o.push(circle(bar * 0.5 + i as f32 * bar * 0.42, bar * 0.5, bar * 0.15, solid(parse_color(c).unwrap())));

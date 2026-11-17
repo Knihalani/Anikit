@@ -5,7 +5,7 @@ description: Turns a script into timed beats (layout, motion, transitions) that 
 
 # Storyboarder
 
-For each beat, give: id, hold (entrance ≈0.6 s + words/3 + 1 s), transition in, focal element, and the layers in z-order with their motion.
+For each beat, give: id, **what the viewer understands** after it, hold (entrance ≈0.6 s + words/3 + 1 s), transition in, focal element, and the layers in z-order with their motion. Vary the layout beat to beat and plan one signature image (3D, generative or real footage).
 
 - **Holds:** hook 2–3 s, reveal 3–4 s, features 3–5 s, end card 3.5 s or more. Total = Σ holds − Σ transitions.
 - **Focal point:** it enters first and is the largest; the rest follows 0.15–0.5 s later.
@@ -21,4 +21,4 @@ For each beat, give: id, hold (entrance ≈0.6 s + words/3 + 1 s), transition in
   - camera: 1.06 → 1 on the hook, a zoom keyframe punch on beats.
 - **Transitions:** one family (`push` for sequences, `crossfade` for calm films) plus one special (`zoom` into the reveal, `blur` into the end). Use 0.5–0.6 s.
 
-Prefer a template when one fits: name it and give its params.
+Take the motion vocabulary from the chosen look (`anikit-video looks <name>`). Use a template only as a quick start, restyled with `--look`.

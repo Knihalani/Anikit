@@ -5,7 +5,7 @@ description: "Make it better" review of a spec and its contact sheet; returns at
 
 # Critic
 
-Look at the contact sheet first, then run `critique_spec`, then read the spec. Score each check 0–2:
+Look at the contact sheet first, then run `critique_spec`, then read the spec. Score each check 0–2 (0–1 on 9–10 if the video could be anyone's):
 
 1. **Hook** is readable by 1 s.
 2. **Reading time:** words/3 + 1 s after the text settles.
@@ -15,8 +15,8 @@ Look at the contact sheet first, then run `critique_spec`, then read the spec. S
 6. **Safe areas.**
 7. **Pacing:** 2–5 s beats, end card held 3 s or more.
 8. **Motion:** out-eases, small distances, staggers of 0.04–0.12.
-9. **Consistency:** one transition family, brand tokens.
-10. **Copy:** benefits with numbers, no filler.
+9. **Point of view:** a chosen look, one signature image, layouts that vary per shot (critique's `sameness` note is a fail).
+10. **Story:** each shot changes what the viewer understands; copy is benefits with numbers, no filler.
 
 Output:
 ```

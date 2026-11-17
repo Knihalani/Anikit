@@ -15,6 +15,7 @@ path = "src/bin/anikit-video.rs"
 
 [dependencies]
 anikit-core = { path = "../anikit-core", features = ["std"] }
+anikit-shader = { path = "../anikit-shader" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 rayon = "1"
