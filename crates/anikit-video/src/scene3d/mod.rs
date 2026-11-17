@@ -225,6 +225,8 @@ impl Prepare for Scene3d {
             }
         }
         let objs_v: Vec<Value> = match m.get("objects") {
+            // A physics-only scene is not the lookdev demo: no stray "ANIKIT" wordmark.
+            None if m.contains_key("physics") => Vec::new(),
             None => lookdev_objects(m),
             Some(Value::Array(a)) => {
                 // `{ "script": "..." }` items expand to the objects they return.
