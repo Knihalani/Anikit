@@ -53,8 +53,15 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
             Ok(Processed { l, r, reverb: t.mix.reverb, delay: t.mix.delay, stem: stem_of(&t.role) })
         })
         .collect::<Result<_, String>>()?;
+    let prof = std::env::var_os("ANIKIT_MUSIC_PROFILE").is_some();
+    if prof {
+        eprintln!("mix: tracks {:.3}s", t.elapsed().as_secs_f64());
+    }
     // Sound effects, aligned by their hit point.
     let fx = render_sfx(a, rate, frames)?;
+    if prof {
+        eprintln!("mix: sfx {:.3}s", t.elapsed().as_secs_f64());
+    }
     // Groups: one set of buses per stem when stems are wanted (so stems sum
     // exactly to the mix), otherwise one shared set.
     let groups: Vec<&'static str> = if opts.stems { vec!["drums", "bass", "music"] } else { vec!["all"] };
