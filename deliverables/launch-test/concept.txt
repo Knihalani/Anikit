@@ -1,0 +1,20 @@
+Tern: launch film concept (20 s, 16:9)
+
+Noun: birdsong, the spectrogram (a picture of sound), the migration map.  Verb: listens, names, maps.
+Before -> after: an unseen singer in the dark -> a named bird -> one dot among thousands moving north.
+Motif: the song trace. One event list drives BOTH the synthesised birdsong and the GLSL spectrogram,
+  so every syllable you hear is the syllable you see. The trace is named on the phone, becomes a dot on
+  the map, and at the end a tern's two-note call ("kee-arr", an up-slur into a down-slur) draws a ^ on the
+  spectrogram: the wingbeat that becomes the logo mark.
+Structure: sound before light. 0-2.5 s full-frame live spectrogram, no context (a wood thrush sings);
+  pull back: it is Tern's listening screen; four species named as they sing (thrush, robin, cardinal,
+  sparrow); cut to the map: this morning's IDs at one spot, pull out to spring arrivals rolling north,
+  flyways across the Gulf; a tern calls, its call draws the tern, the tern is the name.
+World and look: pre-dawn ink (#061114) and teal noise floor, the song in warm amber-to-white, Inter Display
+  for words, JetBrains Mono for instrument readouts. 2D: UI, shader, cartography. No 3D (nothing physical here).
+Trend check: avoided cyc/chrome/tiles/terrain/cream-paper editorial; closest risk is "dark data dashboard",
+  countered by an authentic spectrogram and a real map with honest seasonal data shapes.
+Music: acoustic, 96 BPM in D (bar = 2.5 s): strings pad, harp, cello, nylon guitar, piano, brushes;
+  the birds are the melody. Hits at bar 5 (map) and bar 7 (the tern's call). Intent: steady.
+Honesty: no stats, users or partners invented. Map dots are an illustrative demo of the feature;
+  ranges follow the wood thrush's real winter range (S Mexico-Panama) and eastern breeding range.
