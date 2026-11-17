@@ -67,3 +67,13 @@ So, in addition to the checks above, a piece FAILS if:
 - **Text is not crisp and instantly readable.** Every word at full resolution (no reduced-resolution tracing, no DOF, motion blur or bloom on words while they are meant to be read), ≥ 4.5:1 contrast, set in a deliberate typeface at a deliberate size, held long enough to read.
 - **The light is unmotivated.** Blown highlights, muddy blacks, flat ambient fill, or light that doesn't match the world. Check stills at 100% for exposure and a clear key light.
 - **The score is generic.** Instrumentation must suit the brand and concept (acoustic, orchestral, band, piano, percussion, found sound…); synthesizers only when the concept calls for them.
+
+## Fourth rejection: Margin ("complete AI slop")
+
+The user's verdict on `docs/video/skills/launch-examples/margin/`: "margin also looks like complete AI slop." Swapping 3D clichés for restraint did not fix it; it swapped one generic look for another. A piece FAILS if it shows the **tasteful-AI look**:
+- cream/off-white "paper" ground + an editorial serif (Instrument Serif and kin) + a single red or terracotta accent;
+- aphorism copy ("Your first draft is a mess", "Less noise. More signal."), small-caps tracked labels over a serif line;
+- sparse, near-static frames: a few lines of type in a mostly empty frame, slow drift as the only motion;
+- any combination that could be a Notion/Linear/Arc-alike landing page turned into a video.
+
+What the user is asking for instead is **amazing and specific**: density of craft (many considered layers per frame, real imagery made with the engine: illustration, simulation, shader worlds, photographic-grade compositing), motion with choreography and weight, an idea only this product could have, and a look a designer would not recognise as a trend. Restraint is a choice that must still be rich (cf. title sequences), never emptiness.
