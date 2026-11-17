@@ -50,8 +50,8 @@ pub(super) fn run(raw: &Value, spec: &Value, cx: &mut Ctx) {
         }
     }
     if let Some(p) = blurred {
-        cx.note("warning", "text-crisp", &p, "words stay blurred while they are meant to be read".into(),
-            "keep blur, defocus and glow off words once they settle: animate blur to 0 by the end of the entrance (TASTE.md §1)");
+        cx.note("warning", "text-crisp", &p, "words stay blurred while they are meant to be read, which tends to look low-resolution and slows reading".into(),
+            "consider animating blur to 0 by the end of the entrance so the words are sharp while read (TASTE.md §1)");
     }
     type_scale(&texts, cx);
     centred(&texts, scenes.len(), cx);
@@ -87,8 +87,8 @@ fn type_scale(texts: &[TextInfo], cx: &mut Ctx) {
     }
     if levels.len() > 4 {
         let list: Vec<String> = levels.iter().map(|s| format!("{s:.0}")).collect();
-        cx.note("tip", "type-scale", "scenes", format!("{} type sizes across the video ({} px): the hierarchy blurs", levels.len(), list.join(", ")),
-            "use 2–4 levels from one ratio (2:1 or 1.618 for statements, 1.25–1.333 only for dense data) and reuse them (TASTE.md §1)");
+        cx.note("tip", "type-scale", "scenes", format!("{} type sizes across the video ({} px); this many levels tends to blur the hierarchy", levels.len(), list.join(", ")),
+            "consider 2–4 levels from one ratio (2:1 or 1.618 suit statements, 1.25–1.333 dense data) and reusing them (TASTE.md §1)");
     }
     let scenes: std::collections::BTreeSet<usize> = texts.iter().map(|t| t.scene).collect();
     for si in scenes {
@@ -96,8 +96,8 @@ fn type_scale(texts: &[TextInfo], cx: &mut Ctx) {
         s.sort_by(|a, b| a.total_cmp(b));
         s.dedup_by(|a, b| (*a - *b).abs() < 0.5);
         if let Some(w) = s.windows(2).find(|w| w[1] / w[0] < 1.2) {
-            cx.note("tip", "type-scale", &format!("scenes[{si}]"), format!("text sizes {:.0} and {:.0} px are within 20%: neither the same nor clearly different", w[0], w[1]),
-                "make them equal, or separate them by a clear step (≥ 1.25×; motion usually wants 1.5–3×)");
+            cx.note("tip", "type-scale", &format!("scenes[{si}]"), format!("text sizes {:.0} and {:.0} px are within 20%, so they tend to read as an accident rather than a hierarchy", w[0], w[1]),
+                "consider making them equal, or separating them by a clear step (≥ 1.25×; motion often reads best at 1.5–3×)");
             return;
         }
     }
@@ -112,8 +112,8 @@ fn centred(texts: &[TextInfo], n_scenes: usize, cx: &mut Ctx) {
     let all_centred = text_scenes.iter().filter(|&&s| texts.iter().filter(|t| t.scene == s).all(|t| t.centred)).count();
     let r = all_centred as f64 / text_scenes.len() as f64;
     if r >= 0.8 {
-        cx.note("tip", "composition", "scenes", format!("{:.0}% of text scenes centre every word: centred-everything reads as slides", r * 100.0),
-            "centre on purpose (a statement, a symmetric world); otherwise anchor type to a grid edge and let scale and negative space do the work (TASTE.md §3)");
+        cx.note("tip", "composition", "scenes", format!("{:.0}% of text scenes centre every word; centred-everything tends to read as slides", r * 100.0),
+            "centring works as a committed system (a statement, a symmetric world); otherwise consider anchoring type to a grid edge and letting scale and negative space work (TASTE.md §3)");
     }
 }
 
@@ -152,8 +152,8 @@ fn palette(spec: &Value, cx: &mut Ctx) {
         }
     }
     if bins.len() >= 5 {
-        cx.note("tip", "palette", "scenes", format!("{} saturated hue families in use: no colour carries meaning", bins.len()),
-            "settle the values first, then one base family plus one accent (2–3 hues); take them from the subject, not the colour wheel (TASTE.md §2)");
+        cx.note("tip", "palette", "scenes", format!("{} saturated hue families in use; with this many, no colour tends to carry meaning", bins.len()),
+            "consider settling the values first, then a base family plus an accent taken from the subject (TASTE.md §2); a deliberate rainbow is fine when it is the idea");
     }
 }
 
@@ -166,8 +166,8 @@ fn rhythm(scenes: &[Value], cx: &mut Ctx) {
     let mean = d.iter().sum::<f64>() / d.len() as f64;
     let sd = (d.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / d.len() as f64).sqrt();
     if mean > 0.0 && sd / mean < 0.25 {
-        cx.note("tip", "rhythm", "scenes", format!("{} shots all about {mean:.1} s (variation {:.0}%): the cut is a metronome", d.len(), sd / mean * 100.0),
-            "vary shot lengths with the phrase: a run of short cuts, then a hold on a downbeat (edited film runs a shot-length variation of 60–120%; TASTE.md §6)");
+        cx.note("tip", "rhythm", "scenes", format!("{} shots all about {mean:.1} s (variation {:.0}%); equal lengths tend to feel like a metronome", d.len(), sd / mean * 100.0),
+            "consider varying lengths with the phrase: a run of short cuts, then a hold on a downbeat (edited film typically varies 60–120%; TASTE.md §6)");
     }
 }
 
@@ -182,8 +182,8 @@ fn music(raw: &Value, spec: &Value, cx: &mut Ctx) {
     let own_instruments = m.and_then(|m| m.get("instruments")).is_some_and(|i| i.as_object().is_some_and(|o| !o.is_empty()))
         || m.and_then(|m| m.get("instrumentation")).and_then(|i| i.as_str()).is_some_and(|i| i != "electronic");
     if matches!(style, "corporate" | "upbeat" | "uplifting") {
-        cx.note("tip", "music", "music", format!("the \"{style}\" style is the stock uplifting bed viewers have heard a thousand times"),
-            "choose instrumentation from the concept (piano, acoustic, orchestral, jazz, rock, or found percussion) and score its hit points (TASTE.md §7)");
+        cx.note("tip", "music", "music", format!("the \"{style}\" style tends to sound like the stock uplifting bed viewers have heard many times"),
+            "consider instrumentation from the concept's world (piano, acoustic, orchestral, jazz, rock, found percussion…) scored to its hit points (TASTE.md §7)");
         return;
     }
     // `medium()` already flags electronic styles on calm/steady pieces ("audio"): don't say it twice.
@@ -198,10 +198,10 @@ fn music(raw: &Value, spec: &Value, cx: &mut Ctx) {
         _ => None,
     };
     let msg = match look.as_deref() {
-        Some(l) if ACOUSTIC_LOOKS.contains(&l) => format!("a synth-led \"{style}\" score under the \"{l}\" look: the sound and the picture describe different worlds"),
-        _ => format!("a synth-led \"{style}\" score: synths only when the concept calls for them (the user has rejected \"too much synthesizer\")"),
+        Some(l) if ACOUSTIC_LOOKS.contains(&l) => format!("a synth-led \"{style}\" score under the \"{l}\" look, so sound and picture tend to describe different worlds"),
+        _ => format!("a synth-led \"{style}\" score: synth-led scores tend to read as generic unless the concept is electronic"),
     };
-    cx.note("tip", "music", "music", msg, "pick instruments from the concept's world: keep the groove with \"instrumentation\": \"band\" | \"acoustic\" | \"orchestral\" | \"piano\", set \"instruments\": {\"lead\": \"cello\"}, or use the piano / acoustic / orchestral / jazz / rock styles (TASTE.md §7)");
+    cx.note("tip", "music", "music", msg, "consider instruments from the concept's world: keep the groove with \"instrumentation\": \"band\" | \"acoustic\" | \"orchestral\" | \"piano\", set \"instruments\": {\"lead\": \"cello\"}, or use the piano / acoustic / orchestral / jazz / rock styles (TASTE.md §7)");
 }
 
 #[cfg(test)]
