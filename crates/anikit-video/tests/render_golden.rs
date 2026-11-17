@@ -739,3 +739,24 @@ fn random_edits_run(seed0: u32) -> usize {
     }
     partial
 }
+
+#[test]
+fn motion_blur_smears_moving_layers_only() {
+    let assets = Arc::new(Assets::default());
+    let mut r = Renderer::new(assets.clone());
+    // A card moving 600 px/s to the right; at 30 fps with a 180° shutter it moves 10 px.
+    let mut eval = |t: f32| list(vec![card(20.0 + 600.0 * t, 30.0, 20.0, 30.0, solid(1.0, 1.0, 1.0))]);
+    let t = 0.05;
+    let blurred = r.render_motion_blur(&mut eval, t, 1.0 / 60.0).data_as_u8_slice().to_vec();
+    let sharp = Renderer::new(assets.clone()).render(&eval(t)).data_as_u8_slice().to_vec();
+    // Card spans x ≈ 50..70 at t; blur spreads ±5 px: x = 47 partly lit only when blurred.
+    let at = |px: &[u8], x: usize| px[(45 * W as usize + x) * 4];
+    assert!(at(&blurred, 47) > at(&sharp, 47) + 20, "{} vs {}", at(&blurred, 47), at(&sharp, 47));
+    assert!(at(&blurred, 72) > at(&sharp, 72) + 20);
+    assert!(at(&blurred, 60) > 200, "the core stays solid");
+    // Static content: exactly the plain render.
+    let mut still = |_t: f32| list(vec![card(20.0, 30.0, 20.0, 30.0, solid(1.0, 1.0, 1.0))]);
+    let a = r.render_motion_blur(&mut still, t, 1.0 / 60.0).data_as_u8_slice().to_vec();
+    let b = Renderer::new(assets).render(&still(t)).data_as_u8_slice().to_vec();
+    assert_eq!(a, b);
+}

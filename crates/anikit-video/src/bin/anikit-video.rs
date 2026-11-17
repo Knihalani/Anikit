@@ -100,7 +100,7 @@ fn options(spec: &spec::Spec, base: &Path, load_assets: bool) -> (Options, Vec<D
             }
         }
     }
-    (Options { base_dir: base.to_path_buf(), fonts: Some(Arc::new(fonts)), load_assets }, d)
+    (Options { base_dir: base.to_path_buf(), fonts: Some(Arc::new(fonts)), load_assets, assets: None }, d)
 }
 
 /// Parse + compile; prints diagnostics. Returns the evaluator or exits with errors.

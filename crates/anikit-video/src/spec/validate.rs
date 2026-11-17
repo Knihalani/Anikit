@@ -6,7 +6,7 @@
 
 use std::sync::OnceLock;
 
-pub const LAYER_TYPES: &[&str] = &["text", "shape", "image", "video", "group", "box", "component", "shader"];
+pub const LAYER_TYPES: &[&str] = &["text", "shape", "image", "video", "group", "box", "component", "composition", "shader"];
 pub const SHAPES: &[&str] = &["rect", "circle", "ellipse", "line", "arrow", "polygon", "star", "path"];
 pub const TRANSITIONS: &[&str] = &[
     "cut", "crossfade", "fade", "fadeBlack", "fadeWhite", "slide", "push", "zoom", "wipe", "iris", "blur", "glitch",
@@ -132,7 +132,11 @@ pub fn keys_at(path: &[Seg]) -> Option<Vec<String>> {
     let mut cur = resolve(root, defs, false)?;
     for seg in path {
         cur = match seg {
-            Seg::Key(k) => resolve(cur.get("properties")?.get(*k)?, defs, false).or_else(|| resolve(cur.get("properties")?.get(*k)?, defs, true))?,
+            Seg::Key(k) => {
+                // A named entry of a map (`compositions.ui`) resolves through `additionalProperties`.
+                let f = cur.get("properties").and_then(|p| p.get(*k)).or_else(|| cur.get("additionalProperties").filter(|a| a.is_object()))?;
+                resolve(f, defs, false).or_else(|| resolve(f, defs, true))?
+            }
             Seg::Index => resolve(resolve(cur, defs, true)?.get("items")?, defs, false)?,
         };
     }

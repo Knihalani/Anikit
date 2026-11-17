@@ -19,11 +19,13 @@ pub struct Options {
     pub fonts: Option<Arc<FontStore>>,
     /// Decode images (off for `check`).
     pub load_assets: bool,
+    /// Share an existing asset store (fonts and images) instead of making a new one.
+    pub assets: Option<Arc<SharedAssets>>,
 }
 
 impl Default for Options {
     fn default() -> Self {
-        Options { base_dir: PathBuf::from("."), fonts: None, load_assets: true }
+        Options { base_dir: PathBuf::from("."), fonts: None, load_assets: true, assets: None }
     }
 }
 
@@ -86,6 +88,8 @@ struct C<'a> {
     beat_marks: super::beat_markers::BeatMarkers,
     /// Uniform name → (slot after `prop::U0`, components) of the shader layer being compiled.
     uniform_slots: Vec<(String, usize, usize)>,
+    /// Compiled sub-compositions by name, with their own `loop` default.
+    comps: Vec<(String, Arc<Evaluator>, bool)>,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -120,6 +124,10 @@ impl Evaluator {
 
     /// Compile a spec, returning whatever could be built and every diagnostic.
     pub fn build(spec: &Spec, opts: &Options) -> (Option<Evaluator>, Vec<Diagnostic>) {
+        Self::build_with(spec, opts, Vec::new())
+    }
+
+    fn build_with(spec: &Spec, opts: &Options, comps: Vec<(String, Arc<Evaluator>, bool)>) -> (Option<Evaluator>, Vec<Diagnostic>) {
         let mut c = C {
             o: opts,
             w: 1920.0,
@@ -137,7 +145,8 @@ impl Evaluator {
             audio_extra: Vec::new(),
             layer_info: Vec::new(),
             beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
-            assets: Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new())))),
+            assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
+            comps,
             uniform_slots: Vec::new(),
         };
         c.assets.shaders.bind(&c.assets);
@@ -175,6 +184,20 @@ impl Evaluator {
                 c.gmarkers.insert(k.clone(), t);
             }
         }
+        if let Some(defs) = &spec.compositions {
+            c.compositions(spec, defs);
+        }
+        let gpost = spec.post.as_ref().and_then(|p| c.post(p, "post"));
+        let shutter = match &spec.motion_blur {
+            None | Some(spec::MotionBlur::On(true)) => 0.5 / c.fps,
+            Some(spec::MotionBlur::On(false)) => 0.0,
+            Some(spec::MotionBlur::Shutter { shutter }) => {
+                if !(0.0..=720.0).contains(shutter) {
+                    c.d.push(Diagnostic::error("motionBlur.shutter", format!("{shutter}° is out of range (0..720)")));
+                }
+                (shutter.clamp(0.0, 720.0) as f32 / 360.0) / c.fps
+            }
+        };
         let default_bg = spec.background.clone().unwrap_or(spec::Paint::Css("$bg".into()));
         let default_trans = spec.transition.clone();
         if spec.scenes.is_empty() {
@@ -258,7 +281,11 @@ impl Evaluator {
                     covers && still && n.start <= 0.0 && n.exprs.is_empty() && !matches!(n.kind, Kind::Text { .. })
                 })
                 .count();
-            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers });
+            let post = match &s.post {
+                Some(p) => c.post(p, &format!("{path}.post")),
+                None => gpost.clone(),
+            };
+            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers, post });
             t = start + dur;
             prev_dur = dur;
         }
@@ -294,6 +321,9 @@ impl Evaluator {
             captions,
             ctheme: components_theme(&c.theme),
             theme: c.theme,
+            comps: c.comps.into_iter().map(|(n, e, _)| (n, e)).collect(),
+            shutter,
+            shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
         };
         (Some(ev), c.d)
     }
@@ -887,6 +917,8 @@ impl C<'_> {
             "shape"
         } else if l.component.is_some() {
             "component"
+        } else if l.composition.is_some() {
+            "composition"
         } else if l.shader.is_some() || l.src.as_deref().is_some_and(|s| s.ends_with(".glsl") || s.ends_with(".wgsl") || s.ends_with(".frag")) {
             "shader"
         } else if l.children.is_some() {
@@ -932,7 +964,8 @@ impl C<'_> {
         };
         check(&mut self.d, &text_only, kind == "text", "text");
         check(&mut self.d, &shape_only, kind == "shape", "shape");
-        check(&mut self.d, &img_only, kind == "image" || kind == "video", "image/video");
+        check(&mut self.d, &img_only[..1], kind == "image" || kind == "video", "image/video");
+        check(&mut self.d, &img_only[1..], kind == "image" || kind == "video" || kind == "composition", "image/video/composition");
         if l.layers.is_some() && kind != "group" {
             self.d.push(Diagnostic::warning(format!("{path}.layers"), format!("'layers' only applies to group layers (a box uses 'children'); this is a {kind} layer")));
         }
@@ -1024,13 +1057,14 @@ impl C<'_> {
             }
             "box" => self.box_layer(l, path, given_w, given_h, start, end, pc, &mut n),
             "shader" => self.shader_layer(l, path, given_w, given_h, start, end, &mut n)?,
+            "composition" => self.comp_layer(l, path)?,
             _ => self.component_layer(l, path, given_w, given_h)?,
         };
         n.kind = kind_v;
         n.base[prop::W] = given_w.unwrap_or(nat[0]);
         n.base[prop::H] = given_h.unwrap_or(nat[1]);
         let natural = match &n.kind {
-            Kind::Image { natural, .. } | Kind::Video { natural, .. } => Some(*natural),
+            Kind::Image { natural, .. } | Kind::Video { natural, .. } | Kind::Comp { natural, .. } => Some(*natural),
             _ => None,
         };
         if let Some(nat) = natural {
@@ -1888,6 +1922,155 @@ impl C<'_> {
         let m = super::local_xf(&n.base, n.anchor, w, h);
         p.apply_affine(kurbo::Affine::new(m.map(|x| x as f64)));
         Some(p)
+    }
+
+    /// Resolve a `post` value (RENDER's presets and settings); `"none"` gives `None`.
+    fn post(&mut self, v: &serde_json::Value, path: &str) -> Option<crate::render::post::PostSettings> {
+        use crate::render::post::{PostSettings, PostSpec, PRESETS};
+        // The spec is camelCase (`bloomThreshold`); the settings are snake_case.
+        let snake = |k: &str| k.chars().fold(String::new(), |mut o, ch| {
+            if ch.is_ascii_uppercase() {
+                o.push('_');
+                o.push(ch.to_ascii_lowercase());
+            } else {
+                o.push(ch);
+            }
+            o
+        });
+        let camel = |k: &str| k.split('_').enumerate().map(|(i, w)| if i == 0 { w.to_string() } else { w[..1].to_uppercase() + &w[1..] }).collect::<String>();
+        let v = match v {
+            serde_json::Value::Object(m) => serde_json::Value::Object(m.iter().map(|(k, x)| (snake(k), x.clone())).collect()),
+            x => x.clone(),
+        };
+        let r = serde_json::from_value::<PostSpec>(v).map_err(|e| e.to_string()).and_then(|p| p.resolve());
+        match r {
+            Ok(s) => (!s.is_identity()).then_some(s),
+            Err(e) => {
+                let word = e.split('"').nth(1).unwrap_or_default().to_string();
+                let (msg, sug) = if e.contains("field") {
+                    let fields: Vec<String> = serde_json::to_value(PostSettings::preset("clean"))
+                        .ok()
+                        .and_then(|v| v.as_object().map(|m| m.keys().map(|k| camel(k)).collect()))
+                        .unwrap_or_default();
+                    let w = camel(&word);
+                    (format!("unknown post setting '{w}'"), suggest(&w, &fields))
+                } else {
+                    (e, suggest(&word, PRESETS))
+                };
+                self.d.push(Diagnostic::error(path, msg).suggest(sug));
+                None
+            }
+        }
+    }
+
+    /// Compile `compositions` in dependency order, each as a nested evaluator sharing this one's assets.
+    fn compositions(&mut self, spec: &Spec, defs: &BTreeMap<String, spec::Composition>) {
+        // Names each composition references through `"composition": "…"` layers.
+        fn refs(v: &serde_json::Value, out: &mut Vec<String>) {
+            match v {
+                serde_json::Value::Object(m) => {
+                    if let Some(serde_json::Value::String(n)) = m.get("composition") {
+                        out.push(n.clone());
+                    }
+                    m.values().for_each(|x| refs(x, out));
+                }
+                serde_json::Value::Array(a) => a.iter().for_each(|x| refs(x, out)),
+                _ => {}
+            }
+        }
+        let deps: BTreeMap<&str, Vec<String>> = defs
+            .iter()
+            .map(|(k, c)| {
+                let mut r = Vec::new();
+                refs(&serde_json::json!({ "l": serde_json::to_value(&c.layers).unwrap_or_default(), "s": serde_json::to_value(&c.scenes).unwrap_or_default() }), &mut r);
+                (k.as_str(), r)
+            })
+            .collect();
+        let mut done: Vec<&str> = Vec::new();
+        loop {
+            let ready = defs.keys().find(|k| !done.contains(&k.as_str()) && deps[k.as_str()].iter().all(|d| done.contains(&d.as_str()) || !defs.contains_key(d)));
+            let Some(name) = ready else { break };
+            done.push(name);
+            self.composition(spec, name, &defs[name]);
+        }
+        for k in defs.keys().filter(|k| !done.contains(&k.as_str())) {
+            self.d.push(Diagnostic::error(format!("compositions.{k}"), "compositions refer to each other in a cycle"));
+        }
+    }
+
+    fn composition(&mut self, spec: &Spec, name: &str, cdef: &spec::Composition) {
+        let path = format!("compositions.{name}");
+        let (scenes, from) = match (&cdef.layers, &cdef.scenes) {
+            (Some(_), Some(_)) => {
+                self.d.push(Diagnostic::error(&path, "a composition has 'layers' or 'scenes', not both"));
+                return;
+            }
+            (_, Some(s)) => (s.clone(), "scenes"),
+            (l, None) => (
+                vec![spec::Scene {
+                    duration: Some(cdef.duration.clone().unwrap_or(Num::Str("auto".into()))),
+                    layers: l.clone().unwrap_or_default(),
+                    ..Default::default()
+                }],
+                "scenes[0].layers",
+            ),
+        };
+        let sub = Spec {
+            size: cdef.size.clone().or(Some(spec::Size::Wh([self.w as u32, self.h as u32]))),
+            fps: Some(self.fps as f64),
+            background: Some(cdef.background.clone().unwrap_or(spec::Paint::Css("#00000000".into()))),
+            theme: spec.theme.clone(),
+            scenes,
+            transition: cdef.transition.clone(),
+            duration: if from == "scenes" { cdef.duration.clone() } else { None },
+            ..Default::default()
+        };
+        let opts = Options { assets: Some(self.assets.clone()), ..self.o.clone() };
+        let (ev, d) = Evaluator::build_with(&sub, &opts, self.comps.clone());
+        let to = if from == "scenes" { format!("{path}.scenes") } else { format!("{path}.layers") };
+        for mut x in d {
+            x.path = match x.path.strip_prefix(from) {
+                Some(rest) => format!("{to}{rest}"),
+                None => format!("{path}.{}", x.path),
+            };
+            self.d.push(x);
+        }
+        if let Some(ev) = ev {
+            let ev = Arc::new(ev);
+            self.assets.register_composition(name, &ev, cdef.loop_.unwrap_or(false));
+            self.comps.push((name.to_string(), ev, cdef.loop_.unwrap_or(false)));
+        }
+    }
+
+    fn comp_layer(&mut self, l: &Layer, path: &str) -> Option<(Kind, [f32; 2])> {
+        let name = l.composition.as_deref().unwrap_or_default();
+        let Some((_, ev, looped)) = self.comps.iter().find(|c| c.0 == name).cloned() else {
+            let names: Vec<&str> = self.comps.iter().map(|c| c.0.as_str()).collect();
+            let msg = if names.is_empty() { format!("unknown composition '{name}' (define it in top-level 'compositions')") } else { format!("unknown composition '{name}'") };
+            self.d.push(Diagnostic::error(format!("{path}.composition"), msg).suggest(suggest(name, &names)));
+            return None;
+        };
+        let fit = match l.fit.as_deref() {
+            None | Some("contain") => 0,
+            Some("cover") => 1,
+            Some("fill") => 2,
+            Some("none") => 3,
+            Some(x) => {
+                self.d.push(Diagnostic::error(format!("{path}.fit"), format!("unknown fit '{x}'")).suggest(suggest(x, val::FITS)));
+                0
+            }
+        };
+        let looped = match &l.loop_ {
+            Some(spec::LoopValue::Clip(b)) => *b,
+            _ => looped,
+        };
+        let time = super::CompTime {
+            trim: l.trim_start.as_ref().map(|t| self.time_raw(t, &format!("{path}.trimStart"))).unwrap_or(0.0),
+            speed: l.speed.unwrap_or(1.0) as f32,
+            looped,
+        };
+        let nat = [ev.width as f32, ev.height as f32];
+        Some((Kind::Comp { ev, natural: nat, fit, time }, nat))
     }
 
     /// Decode a clip's frames for the layer's lifetime (once, via ffmpeg) into the shared image store.
