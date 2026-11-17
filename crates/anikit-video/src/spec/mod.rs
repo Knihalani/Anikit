@@ -596,6 +596,9 @@ pub struct Layer {
     /// `true`, a preset (`soft`, `bouncy`, `tight`, `heavy`) or `{"stiffness": 170, "damping": 12, "mass": 1, "props": ["x", "y", "rotation", "scale"]}`.
     #[schemars(with = "Option<serde_json::Value>")]
     pub inertia: Option<serde_json::Value>,
+    /// Posterize time (After Effects style): this layer and its children move at this many frames per second
+    /// (`12` animates "on twos" at 24 fps: a handmade, stop-motion feel). The video's frame rate is unchanged.
+    pub posterize_time: Option<f64>,
     /// Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default).
     #[schemars(with = "Option<serde_json::Value>")]
     pub smear: Option<serde_json::Value>,

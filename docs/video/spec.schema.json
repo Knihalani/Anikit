@@ -1330,6 +1330,14 @@
         "inertia": {
           "description": "Follow-through: a spring chases the layer's own motion, so every move overshoots and settles.\n`true`, a preset (`soft`, `bouncy`, `tight`, `heavy`) or `{\"stiffness\": 170, \"damping\": 12, \"mass\": 1, \"props\": [\"x\", \"y\", \"rotation\", \"scale\"]}`."
         },
+        "posterizeTime": {
+          "description": "Posterize time (After Effects style): this layer and its children move at this many frames per second\n(`12` animates \"on twos\" at 24 fps: a handmade, stop-motion feel). The video's frame rate is unchanged.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
         "smear": {
           "description": "Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default)."
         },

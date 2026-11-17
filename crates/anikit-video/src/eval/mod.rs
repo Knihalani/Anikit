@@ -348,6 +348,8 @@ pub(crate) struct Node {
     pub matte: Option<Box<(Node, u8)>>,
     /// Inertia: a spring that follows the layer's own animated transform (follow-through, overshoot).
     pub inertia: Option<Box<fx::InertiaC>>,
+    /// Posterize time: frames per second of this subtree's motion (0 = off).
+    pub posterize_time: f32,
 }
 
 pub(crate) const PART_BG: u8 = 1;
@@ -1184,6 +1186,15 @@ impl Evaluator {
 
     fn emit_node(&self, n: &Node, cx: &Cx, parent: &Affine, psize: [f32; 2], po: f32, out: &mut Vec<Op>) {
         let tagging = n.tag != u32::MAX && TAGS.with(|t| t.borrow().is_some());
+        let pcx;
+        let cx = if n.posterize_time > 0.0 {
+            // Hold each pose for 1/posterizeTime s: quantize the clock this subtree sees.
+            let st = (cx.scene_t * n.posterize_time + 1e-4).floor() / n.posterize_time;
+            pcx = Cx { scene_t: st, gt: cx.gt - (cx.scene_t - st), ..*cx };
+            &pcx
+        } else {
+            cx
+        };
         let start = out.len();
         if n.matte.is_some() {
             out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });

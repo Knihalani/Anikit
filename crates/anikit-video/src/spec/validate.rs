@@ -81,6 +81,11 @@ pub fn easings() -> &'static [String] {
             }
         }
         v.extend(SPRINGS.iter().map(|s| s.to_string()));
+        v.extend(
+            ["glide", "snap", "land", "launch", "material", "emphasizedDecelerate", "emphasizedAccelerate", "productive", "expressive", "expressiveEntrance", "expressiveExit"]
+                .iter()
+                .map(|s| s.to_string()),
+        );
         v
     })
 }

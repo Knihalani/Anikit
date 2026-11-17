@@ -116,3 +116,15 @@ fn idea_transitions_render_both_scenes() {
     let bad = parse_json(r#"{ "scenes": [ { "layers": ["a"] }, { "transition": "zoomThrough", "layers": ["b"] } ] }"#).unwrap();
     assert!(Evaluator::new(&bad.spec, Options::default()).is_err(), "zoomThrough without a layer is an error");
 }
+
+#[test]
+fn posterize_holds_poses_and_named_curves_parse() {
+    let e = ev(r#"{ "fps": 30, "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "x": 100, "width": 10, "height": 10, "posterizeTime": 10,
+        "animate": { "to": { "x": 1100 }, "duration": 1, "ease": "glide" } } ] } ] }"#);
+    // 10 poses per second: frames 0.30 and 0.3667 share a pose, 0.4 is the next one.
+    assert_eq!(rect_x(&e, 0.30), rect_x(&e, 0.3667));
+    assert!(rect_x(&e, 0.40) > rect_x(&e, 0.3667));
+    for name in ["snap", "land", "launch", "material", "emphasizedDecelerate", "productive", "expressive", "expressiveExit"] {
+        ev(&format!(r#"{{ "scenes": [ {{ "layers": [ {{ "text": "x", "animate": {{ "from": {{ "x": 0 }}, "ease": "{name}" }} }} ] }} ] }}"#));
+    }
+}

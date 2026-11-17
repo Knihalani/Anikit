@@ -456,6 +456,7 @@ fn empty_node(kind: Kind) -> Node {
         fx: None,
         matte: None,
         inertia: None,
+        posterize_time: 0.0,
     }
 }
 
@@ -636,7 +637,22 @@ impl C<'_> {
         if let Some(&i) = self.ease_ids.get(name) {
             return i;
         }
-        match Easing::parse(name) {
+        // Named curves from studio and design-system practice (docs/video/craft/motion-design.md).
+        let named = match name {
+            "glide" => Some("cubic-bezier(0.16, 1, 0.3, 1)"),
+            "snap" => Some("cubic-bezier(0.87, 0, 0.13, 1)"),
+            "land" => Some("cubic-bezier(0.25, 0.1, 0.1, 1)"),
+            "launch" => Some("cubic-bezier(0.7, 0, 0.84, 0)"),
+            "material" | "standard" => Some("cubic-bezier(0.2, 0, 0, 1)"),
+            "emphasizedDecelerate" => Some("cubic-bezier(0.05, 0.7, 0.1, 1)"),
+            "emphasizedAccelerate" => Some("cubic-bezier(0.3, 0, 0.8, 0.15)"),
+            "productive" => Some("cubic-bezier(0.2, 0, 0.38, 0.9)"),
+            "expressive" => Some("cubic-bezier(0.4, 0.14, 0.3, 1)"),
+            "expressiveEntrance" => Some("cubic-bezier(0, 0, 0.3, 1)"),
+            "expressiveExit" => Some("cubic-bezier(0.4, 0.14, 1, 1)"),
+            _ => None,
+        };
+        match Easing::parse(named.unwrap_or(name)) {
             Some(e) => {
                 let i = self.easings.len() as u32;
                 self.easings.push(e);
@@ -1800,6 +1816,13 @@ impl C<'_> {
                 }
                 slots.dedup();
                 n.inertia = Some(Box::new(fx::InertiaC { slots, stiffness: k as f32, damping: c as f32, mass: m as f32, table: Default::default() }));
+            }
+        }
+        if let Some(p) = l.posterize_time {
+            if p > 0.0 && p <= 240.0 {
+                n.posterize_time = p as f32;
+            } else {
+                self.d.push(Diagnostic::error(format!("{path}.posterizeTime"), "posterizeTime is poses per second (e.g. 12)"));
             }
         }
         f.smear = match &l.smear {
