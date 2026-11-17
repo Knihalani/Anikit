@@ -394,6 +394,13 @@ impl ShaderJobs {
         ImageId(id)
     }
 
+    /// The content key a shader image id was submitted with (`None` for unkeyed
+    /// jobs, whose content isn't identified without rendering).
+    pub(crate) fn key_of(&self, id: ImageId) -> Option<u64> {
+        let g = self.inner.lock().unwrap();
+        g.map.get(&id.0).map(|e| e.key).filter(|k| *k != 0)
+    }
+
     /// Pixels for a shader image id (rendering it on first use).
     pub(crate) fn get(&self, id: ImageId) -> Option<Arc<Pixmap>> {
         let e = self.inner.lock().unwrap().map.get(&id.0).cloned()?;
