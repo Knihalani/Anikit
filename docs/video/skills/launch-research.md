@@ -27,10 +27,15 @@ About 15 minutes of web research (2026-11-17) for `skills/anikit-launch-video`. 
 
 ## Gaps this skill fills
 
-1. **Music as structure.** No skill we read defines a BPM grid. Ours times every section in beats at 128 BPM, puts music `hits` on the reveal, and places sfx (whoosh, impact, riser peak) on cuts. The generated score is mastered and deterministic.
-2. **Numeric copy budgets** per length: ≤ 20 / 40 / 80 words, ≤ 4 per shot.
-3. **A first-second hook spec.** Motion in frame 1 and a still at 0.3 s judged with no context.
-4. **A concept generator** (`concepts.md`): 12 worlds chosen from the product's own noun, verb and before→after, with a forced motif, so outputs don't converge on one template. The concept is recorded so the next video can't reuse it.
-5. **QA on motion, not stills.** `pace.py` (measured shot lengths and same-second ratio), `critique --render --pack`, the BAR fail list, and five questions answered by looking.
+1. **Music as structure, not as a bed.** No skill we read defines how cuts relate to the beat. Ours teaches beat
+   maths, `@beatN`/`@barN`, hits at the film's turn and sfx on moments. The tempo comes from the film's idea
+   (`beats.md`); none is prescribed.
+2. **No template.** The other skills prescribe a fixed arc (hook → tension → reveal → proof → CTA, or fixed act
+   ratios), so their outputs share one shape. Ours gives principles and a process, plus contrasting shapes labelled
+   as inspiration. It requires a structure invented from the product's own story, with the test "would this fit any
+   product?".
+3. **An idea method** (`concepts.md`): nouns and verbs, before → after, one motif, recorded so the next film differs.
+4. **Mechanical quality checks:** no flat type (with a self-test), contrast and obstruction rules for hero words,
+   the logo owning the end frame, and the BAR fail list.
+5. **QA on motion, not stills:** `critique --render --pack`, and `pace.py` for fast intents.
 6. **Truthfulness.** No fake stats. Proof is a fact from the brief or a demonstration.
-7. **What browsers can't do** (ray-traced hero, 400k particles, physics, raymarched worlds), used only where it serves the story.
