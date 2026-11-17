@@ -45,7 +45,7 @@ struct FaceKey {
 
 /// Bundled faces (see `fonts/LICENSE-*`): Inter (variable, with the `opsz`
 /// axis that gives Inter Display), JetBrains Mono (variable), Instrument Serif
-/// and Twemoji (COLR emoji).
+/// Twemoji (COLR emoji), and Noto Sans Arabic / Hebrew as script fallbacks.
 pub mod bundled {
     pub const INTER: &[u8] = include_bytes!("../../fonts/InterVariable.ttf");
     pub const INTER_ITALIC: &[u8] = include_bytes!("../../fonts/InterVariable-Italic.ttf");
@@ -54,6 +54,8 @@ pub mod bundled {
     pub const INSTRUMENT_SERIF: &[u8] = include_bytes!("../../fonts/InstrumentSerif-Regular.ttf");
     pub const INSTRUMENT_SERIF_ITALIC: &[u8] = include_bytes!("../../fonts/InstrumentSerif-Italic.ttf");
     pub const TWEMOJI: &[u8] = include_bytes!("../../fonts/Twemoji.ttf");
+    pub const NOTO_ARABIC: &[u8] = include_bytes!("../../fonts/NotoSansArabic.ttf");
+    pub const NOTO_HEBREW: &[u8] = include_bytes!("../../fonts/NotoSansHebrew.ttf");
 }
 
 pub(crate) struct Shaper {
@@ -62,6 +64,8 @@ pub(crate) struct Shaper {
     /// Lower-cased family name (and aliases) → canonical family name.
     pub families: HashMap<String, String>,
     pub emoji: Option<String>,
+    /// Script fallbacks appended after every family list (Arabic, Hebrew).
+    pub fallbacks: Vec<String>,
 }
 
 /// Fonts for one render: loaded once, shared read-only (`Arc<FontStore>`).
@@ -95,7 +99,7 @@ impl FontStore {
         let fcx = FontContext { collection, source_cache: SourceCache::default() };
         let store = FontStore {
             paths: Mutex::new(HashMap::new()),
-            shaper: Mutex::new(Shaper { fcx, lcx: LayoutContext::new(), families: HashMap::new(), emoji: None }),
+            shaper: Mutex::new(Shaper { fcx, lcx: LayoutContext::new(), families: HashMap::new(), emoji: None, fallbacks: Vec::new() }),
             faces: RwLock::new(Vec::new()),
             index: Mutex::new(HashMap::new()),
             cache: RwLock::new(HashMap::new()),
@@ -107,6 +111,8 @@ impl FontStore {
         let serif = store.add_blob(Blob::new(Arc::new(bundled::INSTRUMENT_SERIF)));
         store.add_blob(Blob::new(Arc::new(bundled::INSTRUMENT_SERIF_ITALIC)));
         let emoji = store.add_blob(Blob::new(Arc::new(bundled::TWEMOJI)));
+        let mut fallbacks = store.add_blob(Blob::new(Arc::new(bundled::NOTO_ARABIC)));
+        fallbacks.extend(store.add_blob(Blob::new(Arc::new(bundled::NOTO_HEBREW))));
         {
             let mut s = store.shaper.lock().unwrap();
             let s = &mut *s;
@@ -126,6 +132,7 @@ impl FontStore {
             let ids = fid(&mut s.fcx.collection, &emoji);
             s.fcx.collection.set_generic_families(GenericFamily::Emoji, ids.into_iter());
             s.emoji = emoji.first().cloned();
+            s.fallbacks = fallbacks.clone();
             // Friendly aliases.
             for (alias, target) in [
                 ("inter", sans.first()),

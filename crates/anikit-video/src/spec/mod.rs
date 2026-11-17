@@ -702,8 +702,46 @@ pub struct CaptionCue {
 
 /// The JSON Schema of the spec, as pretty JSON.
 pub fn schema_json() -> String {
+    use validate as v;
     let mut s = schemars::schema_for!(Spec);
     s.insert("$id".into(), "https://anikit.dev/video/spec.schema.json".into());
     s.insert("title".into(), "Anikit Video spec".into());
-    serde_json::to_string_pretty(&s).unwrap()
+    let mut root = serde_json::to_value(&s).unwrap();
+    // Allowed words (strings are validated by the compiler; the schema lists them for tools and agents).
+    let enums: &[(&str, &str, &[&str])] = &[
+        ("Layer", "type", v::LAYER_TYPES),
+        ("Layer", "shape", v::SHAPES),
+        ("Layer", "blend", v::BLENDS),
+        ("Layer", "split", v::SPLITS),
+        ("Layer", "fit", v::FITS),
+        ("Layer", "align", &["left", "center", "right", "justify"]),
+        ("TransitionObj", "type", v::TRANSITIONS),
+        ("TransitionObj", "direction", v::DIRECTIONS),
+        ("BoxStyle", "direction", &["row", "column"]),
+        ("BoxStyle", "align", v::BOX_ALIGNS),
+        ("BoxStyle", "justify", v::JUSTIFIES),
+        ("StrokeObj", "cap", &["butt", "round", "square"]),
+        ("StrokeObj", "join", &["miter", "round", "bevel"]),
+        ("StaggerObj", "from", v::STAGGER_FROM),
+        ("AudioCue", "sfx", crate::audio::SFX_NAMES),
+    ];
+    for (def, prop, words) in enums {
+        if let Some(p) = root.pointer_mut(&format!("/$defs/{def}/properties/{prop}")) {
+            p["examples"] = serde_json::json!(words);
+            let desc = p.get("description").and_then(|d| d.as_str()).unwrap_or("").to_string();
+            p["description"] = format!("{desc} One of: {}.", words.join(", ")).trim().into();
+        }
+    }
+    if let Some(p) = root.pointer_mut("/$defs/Layer/properties/component") {
+        let names: Vec<&str> = crate::components::KINDS.iter().map(|k| k.name).collect();
+        p["examples"] = serde_json::json!(names);
+        p["description"] = format!("Component kind. One of: {}.", names.join(", ")).into();
+    }
+    if let Some(p) = root.pointer_mut("/$defs/PresetObj/properties/preset") {
+        let mut all: Vec<&str> = v::ENTER_PRESETS.to_vec();
+        all.extend(v::EXIT_PRESETS.iter().filter(|x| !v::ENTER_PRESETS.contains(x)));
+        all.extend(v::LOOP_PRESETS);
+        p["examples"] = serde_json::json!(all);
+    }
+    serde_json::to_string_pretty(&root).unwrap()
 }

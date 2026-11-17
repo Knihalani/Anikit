@@ -433,6 +433,8 @@ pub struct TextLayout {
     pub backgrounds: Vec<([f32; 4], f32, Rgba)>,
     /// Layer filters (shadow, glow) wrapping the glyphs.
     pub filters: Vec<dl::Filter>,
+    /// The style's accent colour (highlight/underline defaults).
+    pub accent: Rgba,
 }
 
 /// Unit granularity for per-unit addressing and animation.
@@ -460,6 +462,26 @@ impl TextLayout {
         let g = self.glyphs[i as usize];
         let r = &self.runs[g.run as usize];
         (r, r.glyphs[g.index as usize])
+    }
+
+    /// Unit indices sorted by reading (logical text) order. Units are stored
+    /// in visual order, which differs inside right-to-left runs.
+    pub fn logical_order(&self, kind: UnitKind) -> Vec<usize> {
+        let u = self.units(kind);
+        let mut o: Vec<usize> = (0..u.len()).collect();
+        o.sort_by_key(|&i| (u[i].text.start, i));
+        o
+    }
+
+    /// Box `[x, y, w, h]` around all lines in layout coordinates (aligned
+    /// lines can start right of 0 when a wrap width is set).
+    pub fn bounds(&self) -> [f32; 4] {
+        if self.lines.is_empty() {
+            return [0.0, 0.0, self.width, self.height];
+        }
+        let x0 = self.lines.iter().map(|l| l.rect[0]).fold(f32::MAX, f32::min);
+        let x1 = self.lines.iter().map(|l| l.rect[0] + l.rect[2]).fold(f32::MIN, f32::max);
+        [x0, 0.0, (x1 - x0).max(0.0), self.height]
     }
 
     /// The paint for a run's glyphs with an extra alpha factor.
@@ -691,6 +713,7 @@ impl FontStore {
             }
         }
         let mut out = self.extract(&layout, &text);
+        out.accent = spec.style.accent.0;
         out.fill = spec.style.gradient.clone().filter(|g| !g.colors.is_empty());
         let em = base * scale;
         if let Some(bg) = &spec.style.background {
@@ -985,6 +1008,9 @@ fn family_css(sh: &mut super::fonts::Shaper, names: &str) -> (String, bool) {
     }
     if let Some(e) = &sh.emoji {
         out.push(format!("\"{e}\""));
+    }
+    for f in &sh.fallbacks {
+        out.push(format!("\"{f}\""));
     }
     (out.join(", "), display)
 }
