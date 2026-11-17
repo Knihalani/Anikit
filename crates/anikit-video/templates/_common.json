@@ -319,12 +319,12 @@
         "component": "mesh-gradient",
         "props": {
           "colors": [
-            "{{brand.theme == 'light' ? mix(brand.colors.background, brand.colors.primary, 0.22) : brand.colors.primary}}",
-            "{{brand.theme == 'light' ? mix(brand.colors.background, brand.colors.secondary, 0.18) : brand.colors.secondary}}",
-            "{{brand.theme == 'light' ? mix(brand.colors.background, brand.colors.text, 0.05) : mix(brand.colors.background, brand.colors.primary, 0.35)}}"
+            "{{brand.theme == 'light' ? mix(brand.colors.background, brand.colors.primary, 0.22) : (contrast(brand.colors.primary) == '#000000' ? darken(brand.colors.primary, 0.55) : brand.colors.primary)}}",
+            "{{brand.theme == 'light' ? mix(brand.colors.background, brand.colors.secondary, 0.18) : (contrast(brand.colors.primary) == '#000000' ? darken(brand.colors.secondary, 0.7) : brand.colors.secondary)}}",
+            "{{brand.theme == 'light' ? mix(brand.colors.background, brand.colors.text, 0.05) : mix(brand.colors.background, brand.colors.primary, contrast(brand.colors.primary) == '#000000' ? 0.15 : 0.35)}}"
           ],
           "base": "{{brand.theme == 'light' ? brand.colors.background : brand.colors.backgroundDeep}}",
-          "intensity": "{{(intensity ?? 0.32) * (brand.theme == 'light' ? 1.6 : 1)}}",
+          "intensity": "{{(intensity ?? 0.32) * (brand.theme == 'light' ? 1.6 : (contrast(brand.colors.primary) == '#000000' ? 0.55 : 1))}}",
           "seed": "{{seed ?? 1}}",
           "speed": "{{(still ?? false) ? 0 : 0.3}}",
           "rate": 3
