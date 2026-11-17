@@ -5,7 +5,7 @@ description: How to fill the 'logo-reveal' template well.
 
 # Template guide: Logo reveal / intro (`logo-reveal`)
 
-A restrained 3–6 s brand sting: the logo (or the name as a wordmark) revealed in one of four styles (glow, draw, assemble, minimal), with a slow camera settle and an optional tagline. Use it as an intro or outro for other videos.
+A 3–6 s brand sting: a chrome 3D wordmark (or your logo) revealed with god rays and a lens flare (glow), dropping in with sparks (draw), assembled from particles (assemble), or matte and calm (minimal), plus an optional tagline.
 
 **Typical length:** 3–6 s. **Formats:** 16:9, 9:16 and 1:1 (pass `--format`); the layout adapts automatically.
 

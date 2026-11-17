@@ -221,6 +221,27 @@ const DEFAULT_COLORS: &[(&str, &str)] = &[
     ("muted", "#9a9ab0"),
 ];
 
+/// Review a spec made from a template whose stated length is `range` seconds:
+/// [`critique`] plus a `length` warning when the video falls outside it.
+pub fn critique_in_range(spec: &Value, range: Option<(f64, f64)>) -> Report {
+    let mut r = critique(spec);
+    if let Some((lo, hi)) = range {
+        let d = r.duration;
+        if d > hi + 0.5 || d + 0.5 < lo {
+            let mut per: Vec<String> = Vec::new();
+            for (i, sc) in spec.get("scenes").and_then(|s| s.as_array()).into_iter().flatten().enumerate() {
+                let id = sc.get("id").and_then(|x| x.as_str()).map(String::from).unwrap_or_else(|| format!("scene{}", i + 1));
+                let dur = sc.get("duration").and_then(|x| x.as_f64()).unwrap_or(3.0);
+                per.push(format!("{id} {dur:.1}"));
+            }
+            let fix = if d > hi { format!("cut about {:.0} s: drop a list item or shorten copy (scene seconds: {})", (d - hi).ceil(), per.join(", ")) } else { format!("add about {:.0} s of content", (lo - d).ceil()) };
+            r.notes.push(Note { severity: "warning", check: "length", path: "scenes".into(), message: format!("{d:.1} s is outside this template's {lo}–{hi} s"), fix });
+            r.score = r.score.saturating_sub(6);
+        }
+    }
+    r
+}
+
 /// Review a spec.
 pub fn critique(spec: &Value) -> Report {
     let empty = Map::new();
@@ -347,6 +368,9 @@ pub fn critique(spec: &Value) -> Report {
         }
     }
 
+    // Generated device screens: they must carry the product's own copy, not sample data.
+    scan_placeholders(spec, "", &mut cx);
+
     match first_text_at {
         Some(t) if t > 2.0 => cx.note("warning", "hook", "scenes[0]", format!("the first words appear at {t:.1} s; viewers decide in the first 2 s"), "open with the hook line on screen by 0.3–1 s"),
         None if !scenes.is_empty() => cx.note("tip", "hook", "scenes[0]", "the video has no text; make sure the opening image is a strong hook".into(), "consider a 3–6 word hook line in the first scene"),
@@ -360,6 +384,40 @@ pub fn critique(spec: &Value) -> Report {
     }
     let score = cx.notes.iter().fold(100i32, |s, n| s - match n.severity { "error" => 15, "warning" => 6, _ => 1 }).max(0) as u32;
     Report { score, duration: (total * 100.0).round() / 100.0, notes: cx.notes }
+}
+
+/// Device mockups showing a generated screen without the product's copy (or a
+/// dashboard with invented numbers) read as a different product.
+fn scan_placeholders(v: &Value, path: &str, cx: &mut Ctx) {
+    match v {
+        Value::Object(m) => {
+            let kind = m.get("component").and_then(|k| k.as_str()).unwrap_or("");
+            let kind = kind.trim_start_matches("device.");
+            if ["phone", "laptop", "browser"].contains(&kind) {
+                if let Some(p) = m.get("props").and_then(|p| p.as_object()) {
+                    let has_src = p.get("src").is_some_and(|s| s.as_str().is_some_and(|s| !s.is_empty()));
+                    let items = p.get("items").and_then(|i| i.as_array()).map_or(0, |a| a.iter().filter(|x| x.as_str().is_some_and(|s| !s.is_empty())).count());
+                    if !has_src {
+                        if items == 0 {
+                            cx.note("warning", "placeholder", path, format!("the {kind} shows a generated screen with sample content that isn't this product's"), "pass a screenshot (`src`), or the product's features as `items` so the screen shows its own copy");
+                        } else if p.get("screen").and_then(|s| s.as_str()) == Some("dashboard") && p.get("kpis").is_none() {
+                            cx.note("warning", "placeholder", path, format!("the {kind} dashboard shows invented numbers"), "pass real `kpis` ([{label, value}]) or use `screen: \"app\"`");
+                        }
+                    }
+                }
+            }
+            for (k, x) in m {
+                let p = if path.is_empty() { k.clone() } else { format!("{path}.{k}") };
+                scan_placeholders(x, &p, cx);
+            }
+        }
+        Value::Array(a) => {
+            for (i, x) in a.iter().enumerate() {
+                scan_placeholders(x, &format!("{path}[{i}]"), cx);
+            }
+        }
+        _ => {}
+    }
 }
 
 fn transition_secs(cx: &Ctx, t: &Value) -> Option<f64> {

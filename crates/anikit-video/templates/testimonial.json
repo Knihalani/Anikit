@@ -1,103 +1,372 @@
 {
   "name": "testimonial",
   "title": "Testimonial / quote",
-  "description": "1–3 customer quotes, each with a big accent quote mark, the words fading up in reading rhythm, the author (optional circular avatar, role and company) and an optional star rating, then a logo end card. Paced by word count.",
+  "description": "1–3 customer quotes, each revealed word by word with stars and the author beside a large avatar with floating reactions; an optional 'loved by' hook with an avatar stack and a scrolling company strip; a gradient CTA end card with confetti.",
   "duration": "8–30 s",
-  "tags": ["testimonial", "quote", "social proof", "review"],
+  "tags": [
+    "testimonial",
+    "quote",
+    "social proof",
+    "review"
+  ],
   "params": {
-    "headline": { "type": "string", "maxWords": 6, "description": "Optional opening line before the quotes (the hook). Leave it out to open on the first quote.", "example": "Loved by 4,000 teams" },
+    "headline": {
+      "type": "string",
+      "maxWords": 6,
+      "description": "Optional opening line before the quotes (the hook). Leave it out to open on the first quote.",
+      "example": "Loved by product teams"
+    },
     "quotes": {
-      "type": "array", "required": true, "minItems": 1, "maxItems": 3,
+      "type": "array",
+      "required": true,
+      "minItems": 1,
+      "maxItems": 3,
       "description": "1–3 quotes, strongest first. Cut each to the sentence that carries the emotion.",
       "items": {
         "type": "object",
         "properties": {
-          "quote": { "type": "string", "required": true, "maxWords": 30, "description": "The quote, without quotation marks. Under 20 words reads best." },
-          "author": { "type": "string", "required": true, "maxWords": 4, "description": "Person's name." },
-          "role": { "type": "string", "maxWords": 7, "description": "Role and company, e.g. 'Head of Design, Linearly'." },
-          "avatar": { "type": "image", "description": "Optional square headshot; shown in a circle." },
-          "rating": { "type": "integer", "minimum": 1, "maximum": 5, "description": "Optional star rating (1–5)." }
+          "quote": {
+            "type": "string",
+            "required": true,
+            "maxWords": 30,
+            "description": "The quote, without quotation marks. Under 20 words reads best."
+          },
+          "author": {
+            "type": "string",
+            "required": true,
+            "maxWords": 4,
+            "description": "Person's name."
+          },
+          "role": {
+            "type": "string",
+            "maxWords": 7,
+            "description": "Role and company, e.g. 'Head of Design, Linearly'."
+          },
+          "avatar": {
+            "type": "image",
+            "description": "Optional square headshot; shown in a circle."
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Optional star rating (1–5)."
+          }
         }
       },
       "example": [
-        { "quote": "We replaced a week of motion work with one prompt. The renders are faster than our preview used to be.", "author": "Maya Okafor", "role": "Head of Growth, Fieldnote", "rating": 5 },
-        { "quote": "It just does what the spec says. Every time.", "author": "Jonas Berg", "role": "Staff Engineer, Tiller" }
+        {
+          "quote": "We replaced a week of motion work with one prompt.",
+          "author": "Maya Okafor",
+          "role": "Head of Growth, Fieldnote",
+          "rating": 5
+        },
+        {
+          "quote": "It just does what the spec says. Every time.",
+          "author": "Jonas Berg",
+          "role": "Staff Engineer, Tiller"
+        }
       ]
     },
-    "cta": { "type": "string", "default": "{{brand.voice.cta}}", "maxWords": 4, "description": "Call to action on the end card.", "example": "Join them" },
-    "url": { "type": "string", "default": "{{brand.voice.url}}", "maxChars": 32, "description": "Address on the end card.", "example": "fieldnote.app" },
-    "music": { "type": "string", "description": "Optional music file. Warm, mid-tempo (80–110 BPM) suits testimonials." }
+    "cta": {
+      "type": "string",
+      "default": "{{brand.voice.cta}}",
+      "maxWords": 4,
+      "description": "Call to action on the end card.",
+      "example": "Join them"
+    },
+    "url": {
+      "type": "string",
+      "default": "{{brand.voice.url}}",
+      "maxChars": 32,
+      "description": "Address on the end card.",
+      "example": "fieldnote.app"
+    },
+    "music": {
+      "type": "string",
+      "description": "Optional music file. Warm, mid-tempo (80–110 BPM) suits testimonials."
+    },
+    "companies": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "string",
+        "maxWords": 2
+      },
+      "description": "Optional customer or company names for a scrolling logo strip on the hook and end card.",
+      "example": [
+        "Fieldnote",
+        "Tiller",
+        "Northwind",
+        "Lumen",
+        "Arcade"
+      ]
+    },
+    "product": {
+      "type": "string",
+      "default": "{{brand.name}}",
+      "maxWords": 3,
+      "description": "Name on the end card.",
+      "example": "Anikit Video"
+    }
   },
   "defs": {
     "stars": {
-      "type": "box", "id": "stars", "style": { "direction": "row", "gap": "{{fmt.u * 1}}", "padding": ["{{fmt.u * 2.5}}", 0, 0, 0] }, "stagger": 0.07,
+      "type": "box",
+      "id": "stars",
+      "style": {
+        "direction": "row",
+        "gap": "{{fmt.u * 1}}",
+        "padding": [
+          "{{fmt.u * 2.5}}",
+          0,
+          0,
+          0
+        ]
+      },
+      "stagger": 0.07,
       "children": {
-        "$each": "range(rating)", "as": "s",
-        "do": { "shape": "star", "sides": 5, "innerRadius": 0.46, "width": "{{fmt.u * (fmt.portrait ? 5 : 4)}}", "height": "{{fmt.u * (fmt.portrait ? 5 : 4)}}", "fill": "$accent", "enter": { "preset": "popIn", "delay": "{{delay}}", "duration": 0.45 } }
+        "$each": "range(rating)",
+        "as": "s",
+        "do": {
+          "shape": "star",
+          "sides": 5,
+          "innerRadius": 0.46,
+          "width": "{{fmt.u * (fmt.portrait ? 5 : 4)}}",
+          "height": "{{fmt.u * (fmt.portrait ? 5 : 4)}}",
+          "fill": "$accent",
+          "enter": {
+            "preset": "popIn",
+            "delay": "{{delay}}",
+            "duration": 0.45
+          }
+        }
       }
     },
     "author": {
-      "type": "box", "id": "author", "style": { "direction": "row", "gap": "{{fmt.u * 2.2}}", "align": "center", "padding": ["{{fmt.u * 2.5}}", 0, 0, 0] },
-      "enter": { "preset": "fadeIn", "delay": "{{delay}}", "duration": 0.6 },
+      "type": "box",
+      "id": "author",
+      "style": {
+        "direction": "row",
+        "gap": "{{fmt.u * 2.2}}",
+        "align": "center",
+        "padding": [
+          "{{fmt.u * 2.5}}",
+          0,
+          0,
+          0
+        ]
+      },
+      "enter": {
+        "preset": "fadeIn",
+        "delay": "{{delay}}",
+        "duration": 0.6
+      },
       "children": [
-        { "$if": "q.avatar", "then": { "src": "{{q.avatar}}", "width": "{{fmt.u * (fmt.portrait ? 12 : 9)}}", "height": "{{fmt.u * (fmt.portrait ? 12 : 9)}}", "fit": "cover", "radius": "{{fmt.u * (fmt.portrait ? 6 : 4.5)}}" } },
         {
-          "type": "box", "style": { "direction": "column", "gap": "{{fmt.u * 0.5}}", "align": "{{q.avatar ? 'start' : 'center'}}" },
+          "$if": "q.avatar",
+          "then": {
+            "src": "{{q.avatar}}",
+            "width": "{{fmt.u * (fmt.portrait ? 12 : 9)}}",
+            "height": "{{fmt.u * (fmt.portrait ? 12 : 9)}}",
+            "fit": "cover",
+            "radius": "{{fmt.u * (fmt.portrait ? 6 : 4.5)}}"
+          }
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "column",
+            "gap": "{{fmt.u * 0.5}}",
+            "align": "{{q.avatar ? 'start' : 'center'}}"
+          },
           "children": [
-            { "text": "{{q.author}}", "style": "body", "weight": 650, "align": "{{q.avatar ? 'left' : 'center'}}" },
-            { "$if": "q.role", "then": { "text": "{{q.role}}", "style": "caption", "align": "{{q.avatar ? 'left' : 'center'}}" } }
+            {
+              "text": "{{q.author}}",
+              "style": "body",
+              "weight": 650,
+              "align": "{{q.avatar ? 'left' : 'center'}}"
+            },
+            {
+              "$if": "q.role",
+              "then": {
+                "text": "{{q.role}}",
+                "style": "caption",
+                "align": "{{q.avatar ? 'left' : 'center'}}"
+              }
+            }
           ]
         }
       ]
     }
   },
   "spec": {
-    "size": ["{{fmt.w}}", "{{fmt.h}}"],
+    "size": [
+      "{{fmt.w}}",
+      "{{fmt.h}}"
+    ],
     "fps": "{{fmt.fps}}",
-    "theme": { "$use": "theme" },
-    "background": "radial-gradient(circle at 50% 30%, $bg, $bgDeep)",
-    "transition": { "type": "crossfade", "duration": 0.6 },
+    "theme": {
+      "$use": "theme"
+    },
+    "background": "$bgDeep",
+    "transition": {
+      "type": "crossfade",
+      "duration": 0.5
+    },
     "scenes": [
       {
         "$if": "headline",
         "then": {
-          "id": "headline",
-          "duration": "{{max(2.2, readtime(headline) + 0.5 + 0.08 * words(headline))}}",
+          "id": "hook",
+          "duration": "{{max(2.8, readtime(headline) + 1.4)}}",
           "layers": [
-            { "$use": "glows", "with": { "strength": 0.7 } },
-            { "id": "headline", "text": "{{headline}}", "style": "hero", "width": "{{fmt.safe.w}}", "split": "words", "enter": { "preset": "fadeUp", "stagger": 0.08, "duration": 0.7, "ease": "outExpo" } }
+            {
+              "$use": "backdrop",
+              "with": {
+                "seed": 3,
+                "floor": true,
+                "intensity": 0.32
+              }
+            },
+            {
+              "type": "component",
+              "component": "avatar-stack",
+              "props": {
+                "names": "{{pick(quotes, 'author') + slice(['Ada', 'Grace', 'Alan', 'Linus', 'Margaret', 'Edsger'], 0, max(0, 6 - len(quotes)))}}",
+                "size": "{{fmt.u * 11}}",
+                "overlap": 0.3,
+                "stagger": 0.08
+              },
+              "y": "{{fmt.portrait ? '34%' : '30%'}}",
+              "width": "{{fmt.u * 11 * 4.5}}",
+              "height": "{{fmt.u * 11}}"
+            },
+            {
+              "id": "headline",
+              "text": "{{headline}}",
+              "style": "hero",
+              "y": "{{fmt.portrait ? '48%' : '52%'}}",
+              "width": "{{fmt.safe.w}}",
+              "enter": "mask by word up"
+            },
+            {
+              "$if": "companies",
+              "then": {
+                "type": "component",
+                "component": "marquee",
+                "props": {
+                  "items": "{{companies}}",
+                  "fontSize": "{{fmt.u * 3}}",
+                  "speed": "{{fmt.u * 9}}",
+                  "color": "{{brand.colors.muted}}"
+                },
+                "y": "{{fmt.portrait ? '64%' : '76%'}}",
+                "width": "{{fmt.w}}",
+                "height": "{{fmt.u * 9}}",
+                "enter": {
+                  "preset": "fadeIn",
+                  "delay": 0.6
+                }
+              }
+            }
           ]
         }
       },
       {
-        "$each": "quotes", "as": "q", "index": "i",
+        "$each": "quotes",
+        "as": "q",
+        "index": "i",
         "do": {
           "$let": {
-            "n": "words(q.quote)",
-            "stag": "clamp(1.4 / max(1, words(q.quote)), 0.05, 0.09)",
-            "long": "words(q.quote) > 18"
+            "qw": "words(q.quote)"
           },
           "in": {
             "id": "quote-{{i + 1}}",
-            "transition": { "type": "{{i == 0 && !headline ? 'crossfade' : 'blur'}}", "duration": 0.6 },
-            "duration": "{{readtime(q.quote) + n * stag + 2.2}}",
-            "camera": { "animate": [ { "from": { "zoom": 1.04 }, "to": { "zoom": 1 }, "duration": "{{readtime(q.quote) + n * stag + 2.2}}", "ease": "outCubic" } ] },
-            "layers": [
-              { "$use": "glows", "with": { "strength": 0.6, "gx": "{{i % 2 ? '88%' : '12%'}}", "gy": "15%", "hx": "{{i % 2 ? '15%' : '85%'}}", "hy": "92%" } },
-              {
-                "type": "box", "id": "card", "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.76}}",
-                "style": { "direction": "column", "gap": "{{fmt.u * (fmt.portrait ? 4 : 3)}}", "align": "center" },
-                "children": [
-                  { "id": "mark", "text": "“", "font": "Instrument Serif", "size": "{{fmt.portrait ? '34vmin' : '28vmin'}}", "lineHeight": 0.75, "color": "$accent", "height": "{{fmt.u * (fmt.portrait ? 14 : 11)}}", "enter": { "preset": "popIn", "duration": 0.5 } },
-                  {
-                    "id": "quote", "text": "{{q.quote}}", "style": "heading", "width": "100%",
-                    "size": "{{long ? (fmt.portrait ? '6.4vmin' : '5.4vmin') : (fmt.portrait ? '8.2vmin' : '7.2vmin')}}",
-                    "weight": "{{long ? 600 : 700}}", "lineHeight": "{{long ? 1.3 : 1.15}}",
-                    "split": "words", "enter": { "preset": "fadeUp", "stagger": "{{stag}}", "delay": 0.25, "duration": 0.6, "ease": "outCubic", "distance": "{{fmt.u * 2.5}}" }
+            "transition": {
+              "type": "push",
+              "direction": "{{fmt.portrait ? 'up' : 'left'}}",
+              "duration": 0.6,
+              "ease": "inOutQuart"
+            },
+            "duration": "{{max(4.5, readtime(q.quote) + 1.6)}}",
+            "camera": {
+              "animate": [
+                {
+                  "from": {
+                    "zoom": 1
                   },
-                  { "$if": "q.rating", "then": { "$use": "stars", "with": { "rating": "{{q.rating}}", "delay": "{{0.4 + n * stag}}" } } },
-                  { "$use": "author", "with": { "q": "{{q}}", "delay": "{{0.5 + n * stag}}" } }
-                ]
+                  "to": {
+                    "zoom": 1.04
+                  },
+                  "duration": "{{max(4.5, readtime(q.quote) + 1.6)}}",
+                  "ease": "inOutSine"
+                }
+              ]
+            },
+            "layers": [
+              {
+                "$use": "backdrop",
+                "with": {
+                  "seed": "{{13 + i * 5}}",
+                  "intensity": 0.3,
+                  "still": true
+                }
+              },
+              {
+                "type": "component",
+                "component": "avatar",
+                "props": {
+                  "name": "{{q.author}}",
+                  "src": "{{q.avatar}}",
+                  "size": "{{fmt.landscape ? fmt.u * 38 : fmt.u * 30}}",
+                  "delay": 0.1
+                },
+                "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.19 : fmt.cx}}",
+                "y": "{{fmt.landscape ? '46%' : (fmt.portrait ? '24%' : '22%')}}",
+                "width": "{{fmt.landscape ? fmt.u * 38 : fmt.u * 30}}",
+                "height": "{{fmt.landscape ? fmt.u * 38 : fmt.u * 30}}"
+              },
+              {
+                "type": "component",
+                "component": "reactions",
+                "props": {
+                  "kinds": [
+                    "heart",
+                    "star",
+                    "sparkles"
+                  ],
+                  "count": 18,
+                  "origin": [
+                    0.5,
+                    0.75
+                  ],
+                  "rise": 0.5,
+                  "size": "{{fmt.u * 4}}",
+                  "delay": 0.6,
+                  "seed": "{{i + 2}}"
+                },
+                "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.19 : fmt.cx}}",
+                "y": "{{fmt.landscape ? '46%' : (fmt.portrait ? '24%' : '22%')}}",
+                "width": "{{fmt.landscape ? fmt.w * 0.38 : fmt.safe.w}}",
+                "height": "{{fmt.landscape ? fmt.h * 0.7 : fmt.h * 0.3}}"
+              },
+              {
+                "type": "component",
+                "component": "quote",
+                "props": {
+                  "text": "{{q.quote}}",
+                  "name": "{{q.author}}",
+                  "title": "{{q.role ?? ''}}",
+                  "stars": "{{q.rating ?? 0}}",
+                  "reveal": 6,
+                  "delay": 0.3,
+                  "fontSize": "{{fmt.landscape ? (qw > 18 ? fmt.u * 4.2 : fmt.u * 5) : (qw > 18 ? fmt.u * 5.6 : fmt.u * 6.6)}}"
+                },
+                "x": "{{fmt.landscape ? fmt.safe.left + fmt.w * 0.25 : fmt.cx}}",
+                "y": "{{fmt.landscape ? '50%' : (fmt.portrait ? '58%' : '64%')}}",
+                "width": "{{fmt.landscape ? fmt.w * 0.5 : fmt.safe.w}}",
+                "height": "{{fmt.landscape ? fmt.h * 0.7 : fmt.h * 0.45}}"
               }
             ]
           }
@@ -105,16 +374,95 @@
       },
       {
         "id": "end",
-        "transition": { "type": "zoom", "duration": 0.6 },
-        "duration": "{{max(3.2, readtime(brand.name + ' ' + cta + ' ' + (url ?? '')) + 1)}}",
+        "transition": {
+          "type": "blur",
+          "duration": 0.6
+        },
+        "duration": "{{max(3.8, readtime(product + ' ' + (cta ?? '') + ' ' + (url ?? '')) + 1.6)}}",
         "layers": [
-          { "$use": "glows", "with": { "gx": "30%", "gy": "20%", "hx": "70%", "hy": "85%" } },
-          { "$use": "wordmark", "with": { "y": "{{fmt.portrait ? '38%' : '36%'}}", "height": "{{fmt.u * 10}}", "enter": "scaleIn" } },
-          { "$use": "button", "with": { "label": "{{cta}}", "delay": 0.4 }, "y": "{{fmt.portrait ? '52%' : '58%'}}" },
-          { "$if": "url", "then": { "text": "{{url}}", "style": "caption", "y": "{{fmt.portrait ? '60%' : '71%'}}", "enter": { "preset": "fadeIn", "delay": 0.7 } } }
+          {
+            "$use": "backdrop",
+            "with": {
+              "seed": 33,
+              "floor": true,
+              "intensity": 0.42
+            }
+          },
+          {
+            "$if": "brand.logo",
+            "then": {
+              "src": "{{brand.logo}}",
+              "height": "{{fmt.u * 10}}",
+              "fit": "contain",
+              "y": "{{fmt.portrait ? '33%' : '28%'}}",
+              "enter": "scaleIn"
+            }
+          },
+          {
+            "text": "{{product}}",
+            "style": "title",
+            "y": "42%",
+            "width": "{{fmt.safe.w}}",
+            "enter": "rise"
+          },
+          {
+            "$if": "cta",
+            "then": {
+              "$use": "ctaButton",
+              "with": {
+                "label": "{{cta}}",
+                "y": "{{fmt.portrait ? '58%' : '63%'}}",
+                "press": 1.5
+              }
+            }
+          },
+          {
+            "$if": "url",
+            "then": {
+              "text": "{{url}}",
+              "style": "caption",
+              "y": "{{fmt.portrait ? '65%' : '74%'}}",
+              "enter": {
+                "preset": "fadeIn",
+                "delay": 0.9
+              }
+            }
+          },
+          {
+            "$if": "companies",
+            "then": {
+              "type": "component",
+              "component": "marquee",
+              "props": {
+                "items": "{{companies}}",
+                "fontSize": "{{fmt.u * 3}}",
+                "speed": "{{fmt.u * 9}}",
+                "color": "{{brand.colors.muted}}"
+              },
+              "y": "{{fmt.portrait ? '74%' : '86%'}}",
+              "width": "{{fmt.w}}",
+              "height": "{{fmt.u * 9}}",
+              "enter": {
+                "preset": "fadeIn",
+                "delay": 0.6
+              }
+            }
+          },
+          {
+            "$if": "cta",
+            "then": {
+              "$use": "confetti",
+              "with": {
+                "at": 1.5,
+                "oy": "{{fmt.portrait ? 0.58 : 0.63}}"
+              }
+            }
+          }
         ]
       }
     ],
-    "audio": { "$use": "music" }
+    "audio": {
+      "$use": "music"
+    }
   }
 }

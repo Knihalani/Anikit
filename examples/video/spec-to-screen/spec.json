@@ -1,0 +1,1224 @@
+{
+ "size": "16:9",
+ "fps": 60,
+ "theme": {
+  "colors": {
+   "primary": "#7cc4ff",
+   "secondary": "#7af0c8",
+   "accent": "#b9a6ff",
+   "bg": "#07080c",
+   "surface": "#12141c",
+   "text": "#f4f2ee",
+   "muted": "#8b90a0"
+  },
+  "fonts": {
+   "heading": "Inter Display",
+   "body": "Inter",
+   "mono": "JetBrains Mono"
+  }
+ },
+ "transition": {
+  "type": "crossfade",
+  "duration": 0.4
+ },
+ "scenes": [
+  {
+   "id": "hook",
+   "duration": 4.5,
+   "background": "#07080c",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.07
+      },
+      "duration": 4.5,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "shape": "circle",
+     "width": 1100,
+     "height": 520,
+     "fill": "#7cc4ff",
+     "opacity": 0,
+     "blur": 160,
+     "y": "52%",
+     "animate": [
+      {
+       "to": {
+        "opacity": 0.1
+       },
+       "duration": 1.6,
+       "ease": "outCubic"
+      },
+      {
+       "to": {
+        "opacity": 0.22,
+        "fill": "#b9a6ff"
+       },
+       "at": 2.0,
+       "duration": 1.2
+      }
+     ]
+    },
+    {
+     "component": "dots",
+     "props": {
+      "spacing": 44,
+      "radius": 1.4,
+      "color": "#ffffff14",
+      "fade": 0.9
+     }
+    },
+    {
+     "text": "This film",
+     "style": "title",
+     "size": "12vh",
+     "letterSpacing": "-0.035em",
+     "kinetic": "mask by word up 0.7s 90ms outExpo",
+     "end": 1.9,
+     "exit": {
+      "preset": "blurOut",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "is a [JSON file.]{#7cc4ff}",
+     "style": "title",
+     "size": "11vh",
+     "letterSpacing": "-0.035em",
+     "start": 2.0,
+     "kinetic": "mask by word up 0.7s 90ms outExpo"
+    },
+    {
+     "component": "grain",
+     "props": {
+      "amount": 0.035,
+      "rate": 24,
+      "seed": 7
+     }
+    }
+   ]
+  },
+  {
+   "id": "spec",
+   "duration": 11.0,
+   "background": "#07080c",
+   "transition": {
+    "type": "cut"
+   },
+   "camera": {
+    "animate": [
+     {
+      "to": {
+       "zoom": 1.0066
+      },
+      "at": 1.49,
+      "duration": 0.6,
+      "ease": "outExpo"
+     },
+     {
+      "to": {
+       "zoom": 1.0132
+      },
+      "at": 1.98,
+      "duration": 0.6,
+      "ease": "outExpo"
+     },
+     {
+      "to": {
+       "zoom": 1.0198
+      },
+      "at": 3.67,
+      "duration": 0.6,
+      "ease": "outExpo"
+     },
+     {
+      "to": {
+       "zoom": 1.0264
+      },
+      "at": 5.41,
+      "duration": 0.6,
+      "ease": "outExpo"
+     },
+     {
+      "to": {
+       "zoom": 1.033
+      },
+      "at": 6.72,
+      "duration": 0.6,
+      "ease": "outExpo"
+     },
+     {
+      "to": {
+       "zoom": 1.0396
+      },
+      "at": 7.85,
+      "duration": 0.6,
+      "ease": "outExpo"
+     },
+     {
+      "to": {
+       "zoom": 2.1333333333333333,
+       "x": 440,
+       "y": 0
+      },
+      "at": 9.6,
+      "duration": 1.4,
+      "ease": "inOutQuart"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "component": "grid",
+     "props": {
+      "cell": 64,
+      "color": "#ffffff0a",
+      "fade": 0.8
+     }
+    },
+    {
+     "component": "code",
+     "props": {
+      "code": "{\n  \"size\": \"16:9\",\n  \"fps\": 60,\n  \"scenes\": [{\n    \"background\": \"#0b0d14\",\n    \"layers\": [\n      { \"component\": \"aurora\" },\n      { \"text\": \"Spec to Screen\" },\n      { \"component\": \"globe\" }\n    ]\n  }]\n}",
+      "language": "json",
+      "title": "spec.json",
+      "fontSize": 28,
+      "typing": 26.0,
+      "delay": 0.6,
+      "chrome": "mac",
+      "glow": "#7cc4ff30",
+      "highlights": [
+       {
+        "lines": [
+         2
+        ],
+        "at": 0.89,
+        "until": 1.5899999999999999,
+        "dim": false
+       },
+       {
+        "lines": [
+         3
+        ],
+        "at": 1.38,
+        "until": 2.08,
+        "dim": false
+       },
+       {
+        "lines": [
+         5
+        ],
+        "at": 3.07,
+        "until": 3.7699999999999996,
+        "dim": false
+       },
+       {
+        "lines": [
+         7
+        ],
+        "at": 4.8100000000000005,
+        "until": 5.510000000000001,
+        "dim": false
+       },
+       {
+        "lines": [
+         8
+        ],
+        "at": 6.12,
+        "until": 6.82,
+        "dim": false
+       },
+       {
+        "lines": [
+         9
+        ],
+        "at": 7.25,
+        "until": 7.95,
+        "dim": false
+       }
+      ]
+     },
+     "x": 495,
+     "y": 540,
+     "width": 870,
+     "height": 680,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.6
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 902,
+     "height": 508.25,
+     "radius": 19,
+     "fill": "none",
+     "stroke": {
+      "color": "#ffffff33",
+      "width": 2
+     },
+     "x": 1400,
+     "y": 540,
+     "start": 0.89,
+     "enter": {
+      "preset": "drawOn",
+      "duration": 0.6
+     }
+    },
+    {
+     "text": "1920 × 1080 · [60 fps]{#7cc4ff}",
+     "font": "$mono",
+     "size": 26,
+     "color": "#8b90a0",
+     "x": 950.0,
+     "y": 827.125,
+     "anchor": "left",
+     "start": 1.98,
+     "enter": "fadeIn"
+    },
+    {
+     "type": "group",
+     "x": 1400,
+     "y": 540,
+     "width": 1920,
+     "height": 1080,
+     "scale": 0.46875,
+     "clip": true,
+     "radius": 40,
+     "layers": [
+      {
+       "shape": "rect",
+       "width": 1920,
+       "height": 1080,
+       "fill": "#0b0d14",
+       "opacity": 0,
+       "animate": [
+        {
+         "to": {
+          "opacity": 1
+         },
+         "at": 3.67,
+         "duration": 0.4
+        }
+       ]
+      },
+      {
+       "component": "aurora",
+       "props": {
+        "colors": [
+         "#7cc4ff",
+         "#b9a6ff",
+         "#7af0c8"
+        ],
+        "intensity": 0.75,
+        "seed": 3
+       },
+       "start": 5.41,
+       "enter": {
+        "preset": "fadeIn",
+        "duration": 0.8
+       }
+      },
+      {
+       "component": "globe",
+       "props": {
+        "arcs": [
+         [
+          37.8,
+          -122.4,
+          51.5,
+          -0.1
+         ],
+         [
+          51.5,
+          -0.1,
+          35.7,
+          139.7
+         ],
+         [
+          37.8,
+          -122.4,
+          -33.9,
+          151.2
+         ],
+         [
+          35.7,
+          139.7,
+          1.35,
+          103.8
+         ]
+        ],
+        "markers": [
+         [
+          37.8,
+          -122.4
+         ],
+         [
+          51.5,
+          -0.1
+         ],
+         [
+          35.7,
+          139.7
+         ]
+        ],
+        "scale": 1.0,
+        "stagger": 0.25,
+        "draw": 1.0
+       },
+       "height": 1700,
+       "y": "96%",
+       "start": 7.85,
+       "enter": {
+        "preset": "fadeUp",
+        "duration": 0.7
+       }
+      },
+      {
+       "text": "Spec to Screen",
+       "style": "title",
+       "size": "12vh",
+       "letterSpacing": "-0.035em",
+       "y": "36%",
+       "shadow": {
+        "x": 0,
+        "y": 8,
+        "blur": 40,
+        "color": "#0009"
+       },
+       "start": 6.72,
+       "kinetic": "rise by char 0.6s 25ms outExpo"
+      }
+     ]
+    },
+    {
+     "component": "grain",
+     "props": {
+      "amount": 0.035,
+      "rate": 24,
+      "seed": 7
+     }
+    }
+   ]
+  },
+  {
+   "id": "screen",
+   "duration": 4.0,
+   "background": "#0b0d14",
+   "transition": {
+    "type": "cut"
+   },
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.04
+      },
+      "duration": 4,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#0b0d14"
+    },
+    {
+     "component": "aurora",
+     "props": {
+      "colors": [
+       "#7cc4ff",
+       "#b9a6ff",
+       "#7af0c8"
+      ],
+      "intensity": 0.75,
+      "seed": 3
+     }
+    },
+    {
+     "component": "globe",
+     "props": {
+      "arcs": [
+       [
+        37.8,
+        -122.4,
+        51.5,
+        -0.1
+       ],
+       [
+        51.5,
+        -0.1,
+        35.7,
+        139.7
+       ],
+       [
+        37.8,
+        -122.4,
+        -33.9,
+        151.2
+       ],
+       [
+        35.7,
+        139.7,
+        1.35,
+        103.8
+       ]
+      ],
+      "markers": [
+       [
+        37.8,
+        -122.4
+       ],
+       [
+        51.5,
+        -0.1
+       ],
+       [
+        35.7,
+        139.7
+       ]
+      ],
+      "scale": 1.0,
+      "stagger": 0.25,
+      "draw": 1.0
+     },
+     "height": 1700,
+     "y": "96%",
+     "start": -3.15
+    },
+    {
+     "text": "Spec to Screen",
+     "style": "title",
+     "size": "12vh",
+     "letterSpacing": "-0.035em",
+     "y": "36%",
+     "shadow": {
+      "x": 0,
+      "y": 8,
+      "blur": 40,
+      "color": "#0009"
+     }
+    },
+    {
+     "text": "one file  →  one film",
+     "font": "$mono",
+     "size": "2.6vh",
+     "color": "#8b90a0",
+     "y": "50%",
+     "enter": {
+      "preset": "fadeUp",
+      "delay": 0.6
+     }
+    },
+    {
+     "component": "grain",
+     "props": {
+      "amount": 0.035,
+      "rate": 24,
+      "seed": 7
+     }
+    }
+   ]
+  },
+  {
+   "id": "kinetic",
+   "duration": 9.5,
+   "background": "#07080c",
+   "transition": {
+    "type": "cut"
+   },
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.06
+      },
+      "duration": 9.5,
+      "ease": "linear"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "component": "dots",
+     "props": {
+      "spacing": 44,
+      "radius": 1.4,
+      "color": "#ffffff12",
+      "fade": 0.9
+     }
+    },
+    {
+     "text": "Write it.",
+     "style": "title",
+     "size": "16vh",
+     "letterSpacing": "-0.04em",
+     "start": 0.0,
+     "end": 2.0,
+     "y": "46%",
+     "kinetic": "mask by char up 0.45s 22ms outExpo",
+     "color": "#f4f2ee"
+    },
+    {
+     "text": "spec.json",
+     "font": "$mono",
+     "size": "3vh",
+     "color": "#8b90a0",
+     "start": 0.0,
+     "end": 2.0,
+     "y": "62%",
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.2
+     }
+    },
+    {
+     "text": "Check it.",
+     "style": "title",
+     "size": "16vh",
+     "letterSpacing": "-0.04em",
+     "start": 2.0,
+     "end": 4.0,
+     "y": "46%",
+     "kinetic": "mask by char up 0.45s 22ms outExpo",
+     "color": "#f4f2ee"
+    },
+    {
+     "text": "anikit-video check spec.json",
+     "font": "$mono",
+     "size": "3vh",
+     "color": "#8b90a0",
+     "start": 2.0,
+     "end": 4.0,
+     "y": "62%",
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.2
+     }
+    },
+    {
+     "text": "Render it.",
+     "style": "title",
+     "size": "16vh",
+     "letterSpacing": "-0.04em",
+     "start": 4.0,
+     "end": 6.0,
+     "y": "46%",
+     "kinetic": "mask by char up 0.45s 22ms outExpo",
+     "color": "#7cc4ff"
+    },
+    {
+     "text": "anikit-video render spec.json",
+     "font": "$mono",
+     "size": "3vh",
+     "color": "#8b90a0",
+     "start": 4.0,
+     "end": 6.0,
+     "y": "62%",
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.2
+     }
+    },
+    {
+     "text": "No browser.",
+     "style": "title",
+     "size": "11vh",
+     "letterSpacing": "-0.035em",
+     "start": 6.0,
+     "y": "40%",
+     "kinetic": "blur by word 0.6s 80ms outCubic",
+     "color": "#f4f2ee"
+    },
+    {
+     "text": "No screen capture.",
+     "style": "title",
+     "size": "11vh",
+     "letterSpacing": "-0.035em",
+     "start": 6.5,
+     "y": "54%",
+     "kinetic": "blur by word 0.6s 80ms outCubic",
+     "color": "#8b90a0"
+    },
+    {
+     "text": "Native Rust → H.264.",
+     "style": "subtitle",
+     "start": 7.0,
+     "y": "70%",
+     "enter": "fadeUp"
+    },
+    {
+     "component": "grain",
+     "props": {
+      "amount": 0.035,
+      "rate": 24,
+      "seed": 7
+     }
+    }
+   ]
+  },
+  {
+   "id": "devices",
+   "duration": 7.5,
+   "background": "radial-gradient(#141826, #07080c)",
+   "transition": {
+    "type": "push",
+    "direction": "up",
+    "duration": 0.5,
+    "ease": "inOutQuart"
+   },
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.12,
+       "x": 70,
+       "y": 30
+      },
+      "duration": 7.5,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "component": "bokeh",
+     "props": {
+      "count": 14,
+      "colors": [
+       "#7cc4ff",
+       "#b9a6ff"
+      ],
+      "minSize": 60,
+      "maxSize": 220,
+      "speed": 0.3,
+      "seed": 5
+     },
+     "opacity": 0.35
+    },
+    {
+     "text": "Product shots, [generated.]{#b9a6ff}",
+     "style": "heading",
+     "size": "6.4vh",
+     "letterSpacing": "-0.025em",
+     "y": "12%",
+     "kinetic": "rise by word 0.6s 70ms outExpo"
+    },
+    {
+     "component": "laptop",
+     "props": {
+      "screen": "dashboard",
+      "title": "Northwind",
+      "accent": "#7cc4ff",
+      "open": 1.0,
+      "delay": 0.3,
+      "shadow": true
+     },
+     "width": 1180,
+     "height": 720,
+     "x": "44%",
+     "y": "58%"
+    },
+    {
+     "component": "phone",
+     "props": {
+      "screen": "chat",
+      "title": "Relay",
+      "accent": "#b9a6ff",
+      "delay": 1.1,
+      "float": 6,
+      "time": "9:41"
+     },
+     "width": 360,
+     "height": 700,
+     "x": "77%",
+     "y": "60%"
+    },
+    {
+     "component": "cursor",
+     "props": {
+      "path": [
+       [
+        1150,
+        980
+       ],
+       [
+        640,
+        540
+       ],
+       [
+        905,
+        540
+       ],
+       [
+        1150,
+        620
+       ],
+       [
+        1500,
+        640
+       ]
+      ],
+      "times": [
+       1.6,
+       2.6,
+       3.6,
+       4.6,
+       5.8
+      ],
+      "clicks": [
+       2.7,
+       3.7,
+       4.7,
+       5.9
+      ],
+      "size": 34
+     },
+     "start": 0
+    },
+    {
+     "component": "badge",
+     "props": {
+      "label": "\"screen\": \"dashboard\"",
+      "color": "#7cc4ff",
+      "delay": 2.2
+     },
+     "width": 420,
+     "height": 56,
+     "x": "30%",
+     "y": "93%"
+    },
+    {
+     "component": "badge",
+     "props": {
+      "label": "\"screen\": \"chat\"",
+      "color": "#b9a6ff",
+      "delay": 2.5
+     },
+     "width": 320,
+     "height": 56,
+     "x": "77%",
+     "y": "93%"
+    },
+    {
+     "component": "grain",
+     "props": {
+      "amount": 0.035,
+      "rate": 24,
+      "seed": 7
+     }
+    }
+   ]
+  },
+  {
+   "id": "speed",
+   "duration": 5.0,
+   "background": "#07080c",
+   "transition": {
+    "type": "cut"
+   },
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.05
+      },
+      "duration": 5.0,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "component": "grid",
+     "props": {
+      "cell": 80,
+      "color": "#ffffff08",
+      "fade": 0.85
+     }
+    },
+    {
+     "shape": "circle",
+     "width": 1200,
+     "height": 600,
+     "fill": "#7cc4ff",
+     "opacity": 0.1,
+     "blur": 140,
+     "y": "46%"
+    },
+    {
+     "text": "This 58-second film rendered in",
+     "style": "heading",
+     "size": "5.2vh",
+     "y": "22%",
+     "letterSpacing": "-0.02em",
+     "kinetic": "rise by word 0.5s 60ms outExpo"
+    },
+    {
+     "component": "counter",
+     "props": {
+      "from": 0,
+      "to": 56,
+      "decimals": 0,
+      "suffix": " s",
+      "size": 300,
+      "duration": 1.4,
+      "delay": 0.4,
+      "gradient": [
+       "#f4f2ee",
+       "#7cc4ff"
+      ]
+     },
+     "width": 1400,
+     "height": 380,
+     "y": "47%"
+    },
+    {
+     "component": "progress-bar",
+     "props": {
+      "from": 0,
+      "to": 100,
+      "duration": 1.4,
+      "delay": 0.4,
+      "thickness": 8,
+      "color": "#7cc4ff",
+      "percent": false
+     },
+     "width": 900,
+     "height": 40,
+     "y": "66%"
+    },
+    {
+     "text": "3,510 frames · 1080p60 · H.264 · one 4-core cloud VM",
+     "style": "caption",
+     "size": "2.6vh",
+     "y": "71%",
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 1.0
+     }
+    },
+    {
+     "text": "[935 fps]{#f4f2ee} renderer alone      [1,268 fps]{#f4f2ee} encoder alone",
+     "style": "caption",
+     "size": "2.6vh",
+     "y": "84%",
+     "enter": {
+      "preset": "fadeUp",
+      "delay": 1.2
+     }
+    },
+    {
+     "component": "grain",
+     "props": {
+      "amount": 0.035,
+      "rate": 24,
+      "seed": 7
+     }
+    }
+   ]
+  },
+  {
+   "id": "chart",
+   "duration": 6.0,
+   "background": "#07080c",
+   "transition": {
+    "type": "slide",
+    "direction": "left",
+    "duration": 0.5,
+    "ease": "inOutQuart"
+   },
+   "layers": [
+    {
+     "text": "Encoder speed, typical motion graphics",
+     "style": "heading",
+     "size": "5vh",
+     "x": 160,
+     "y": "15%",
+     "anchor": "left",
+     "kinetic": "rise by word 0.5s 50ms outExpo"
+    },
+    {
+     "text": "1080p · 240 frames · same quality (≈ 50 dB PSNR) · frames per second",
+     "style": "caption",
+     "x": 160,
+     "y": "22%",
+     "anchor": "left",
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.3
+     }
+    },
+    {
+     "component": "bar-chart",
+     "props": {
+      "values": [
+       147,
+       1268,
+       1389
+      ],
+      "labels": [
+       "x264 veryfast",
+       "ak264",
+       "ak264 + renderer hints"
+      ],
+      "horizontal": true,
+      "highlight": 2,
+      "colors": [
+       "#8b90a0",
+       "#7cc4ff",
+       "#b9a6ff"
+      ],
+      "fontSize": 30,
+      "delay": 0.4,
+      "stagger": 0.15,
+      "grid": false
+     },
+     "width": 1000,
+     "height": 520,
+     "x": 660,
+     "y": "58%"
+    },
+    {
+     "component": "counter",
+     "props": {
+      "from": 1,
+      "to": 9.4,
+      "decimals": 1,
+      "suffix": "×",
+      "size": 220,
+      "delay": 1.2,
+      "duration": 1.4,
+      "gradient": [
+       "#f4f2ee",
+       "#b9a6ff"
+      ],
+      "label": "vs x264 veryfast, same quality"
+     },
+     "width": 480,
+     "height": 420,
+     "x": 1500,
+     "y": "56%"
+    },
+    {
+     "text": "Source: docs/video/encoder.md",
+     "font": "$mono",
+     "size": 24,
+     "color": "#8b90a0",
+     "x": 160,
+     "y": "89%",
+     "anchor": "left",
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 1.0
+     }
+    },
+    {
+     "component": "grain",
+     "props": {
+      "amount": 0.035,
+      "rate": 24,
+      "seed": 7
+     }
+    }
+   ]
+  },
+  {
+   "id": "particles",
+   "duration": 5.0,
+   "background": "#07080c",
+   "transition": {
+    "type": "crossfade",
+    "duration": 0.5
+   },
+   "layers": [
+    {
+     "component": "particleText",
+     "props": {
+      "words": [
+       "JSON in.",
+       "Film out."
+      ],
+      "count": 9000,
+      "size": 2.8,
+      "colors": [
+       "#7cc4ff",
+       "#b9a6ff"
+      ],
+      "form": 1.1,
+      "hold": 0.9,
+      "exit": "explode",
+      "exitTime": 1.0,
+      "seed": 4
+     }
+    }
+   ]
+  },
+  {
+   "id": "logo",
+   "duration": 8.0,
+   "background": "radial-gradient(#10131d, #040508)",
+   "transition": {
+    "type": "fadeWhite",
+    "duration": 0.5
+   },
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.08
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 8.0,
+      "ease": "outCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "component": "godRays",
+     "props": {
+      "at": [
+       0.5,
+       -0.15
+      ],
+      "angle": 90,
+      "spread": 60,
+      "color": "#cfe3ff",
+      "intensity": 0.35,
+      "dust": 80
+     }
+    },
+    {
+     "component": "text-3d",
+     "props": {
+      "text": "ANIKIT",
+      "gradient": [
+       "#dfe9ff",
+       "#e9e0ff"
+      ],
+      "intro": "rise",
+      "stagger": 0.08,
+      "delay": 0.2,
+      "tilt": 10,
+      "sway": 4,
+      "scale": 0.78
+     },
+     "y": "45%"
+    },
+    {
+     "component": "lensFlare",
+     "props": {
+      "path": [
+       [
+        0.12,
+        0.36
+       ],
+       [
+        0.88,
+        0.4
+       ]
+      ],
+      "times": [
+       1.6,
+       3.6
+      ],
+      "intensity": 0.8,
+      "ghosts": 3
+     },
+     "start": 0,
+     "blend": "screen"
+    },
+    {
+     "text": "VIDEO",
+     "style": "label",
+     "size": "3.2vh",
+     "letterSpacing": "0.6em",
+     "color": "#f4f2ee",
+     "y": "67%",
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 1.6,
+      "duration": 0.8
+     }
+    },
+    {
+     "text": "anikit-video render spec.json",
+     "font": "$mono",
+     "size": "2.4vh",
+     "color": "#8b90a0",
+     "y": "80%",
+     "enter": {
+      "preset": "fadeUp",
+      "delay": 2.8
+     }
+    },
+    {
+     "component": "grain",
+     "props": {
+      "amount": 0.035,
+      "rate": 24,
+      "seed": 7
+     }
+    }
+   ]
+  }
+ ],
+ "audio": [
+  {
+   "src": "music.mp3",
+   "volume": 0.9
+  },
+  {
+   "sfx": "typing",
+   "at": 5.1,
+   "duration": 7.8016356519552446,
+   "volume": 0.3
+  },
+  {
+   "sfx": "whoosh",
+   "at": 15.15,
+   "volume": 0.3
+  },
+  {
+   "sfx": "swoosh",
+   "at": 28.3,
+   "volume": 0.3
+  },
+  {
+   "sfx": "swoosh",
+   "at": 40.3,
+   "volume": 0.25
+  },
+  {
+   "sfx": "whoosh",
+   "at": 49.4,
+   "volume": 0.3
+  }
+ ]
+}

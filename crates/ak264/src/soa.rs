@@ -36,6 +36,21 @@ pub type Soa<const N: usize> = [[i16; N]; 16];
 
 impl QuantS {
     /// Largest |coefficient| that quantises to 0 at every position `from..16` (inter).
+    /// Largest SAD of a 4×4 residual block for which every coefficient at
+    /// positions `from..16` quantises to 0: |c_k| ≤ w_k·SAD with w = 1, 2 or 4
+    /// (the product of the basis magnitudes at that position).
+    pub fn zero_sad4(&self, from: usize, intra: bool) -> u32 {
+        let b = &self.bias[!intra as usize];
+        (from..16)
+            .map(|k| {
+                let (x, y) = (k & 3, k >> 2);
+                let w = (1 + (x & 1) as u32) * (1 + (y & 1) as u32);
+                (65535 / self.m[k] as u32).saturating_sub(b[k] as u32) / w
+            })
+            .min()
+            .unwrap_or(0)
+    }
+
     pub fn zero_coef(&self, from: usize, intra: bool) -> u32 {
         let b = &self.bias[!intra as usize];
         (from..16).map(|k| (65535 / self.m[k] as u32).saturating_sub(b[k] as u32)).min().unwrap_or(0)
@@ -45,6 +60,18 @@ impl QuantS {
 /// Bounds on the SAD of a 16×16 luma block / one 8×8 chroma block at or below
 /// which a residual provably quantises to all zeros (|coef| ≤ 4·SAD; DC sums ≤ SAD).
 /// Inter: luma 4×4 blocks. Intra: I16 (AC + Hadamard DC).
+/// Per-4×4-block SAD bounds (luma blocks, chroma blocks) under which the AC (and,
+/// for inter luma, DC) coefficients are all zero.
+pub fn zero_sad4_bounds(qs: &QuantS, qcs: &QuantS, intra: bool) -> (u32, u32) {
+    (qs.zero_sad4(if intra { 1 } else { 0 }, intra), qcs.zero_sad4(1, intra))
+}
+
+/// Largest 8×8 chroma SAD whose 2×2 DC Hadamard surely quantises to zero.
+pub fn chroma_dc_limit(qc: &Quant, intra: bool) -> u32 {
+    let f = if intra { qc.f_intra } else { qc.f_inter } as i64;
+    (((1i64 << (qc.qbits + 1)) - 2 * f - 1) / qc.mf[0] as i64).max(0) as u32
+}
+
 pub fn zero_sad_bounds(q: &Quant, qs: &QuantS, qc: &Quant, qcs: &QuantS, intra: bool) -> (u32, u32) {
     // largest |h| with (|h| * mf0 + 2f) >> (qbits + 1) == 0
     let dc_lim = |q: &Quant| {
@@ -222,3 +249,4 @@ pub fn scatter8x2(res: &Soa<8>, pred: &[[u8; 8]; 16], out: &mut [[u8; 64]; 2]) {
     }
     crate::simd::unsoa8x2_u8(&o, out);
 }
+

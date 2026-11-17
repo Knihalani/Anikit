@@ -20,11 +20,12 @@ use std::time::Instant;
 const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema> [spec.json|spec.yaml] [options]
   render spec.json -o out.mp4   [--quality draft|good|best] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
                                 [--from S] [--to S] [--scale K] [--no-audio]
-  still  spec.json -o f.png     [--at S | --at @scene] [--scale K] [--watch]
-  sheet  spec.json -o sheet.png [--cols 4] [--rows 3] [--width 480]
+  still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
+  sheet  spec.json -o sheet.png [--frames N | --cols 4 --rows 3] [--width 480]
   check  spec.json              validate; print errors, warnings and timing
   info   [--components]         version, encoders, component catalogue
   schema [-o file]              print the JSON Schema of the spec
+  beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
 common: --json (machine-readable output)
 agents: new | templates | prompt | critique | preview | mcp   (anikit-video templates, anikit-video prompt)";
 
@@ -40,7 +41,7 @@ impl Args {
         let cmd = it.next().ok_or(USAGE)?;
         let mut input = None;
         let mut flags = Vec::new();
-        const BOOL: &[&str] = &["--json", "--watch", "--no-audio", "--components", "--quiet"];
+        const BOOL: &[&str] = &["--json", "--watch", "--no-audio", "--components", "--quiet", "--profile"];
         while let Some(a) = it.next() {
             if a.starts_with('-') && a.len() > 1 {
                 let (k, v) = match a.split_once('=') {
@@ -262,6 +263,11 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                     Ok((ev, d)) => {
                         warn(&d, json);
                         let t = resolve_time(&ev, a.get("--at").unwrap_or("0"))?;
+                        // `--width W` (as the MCP tools pass) sets the scale from the output width.
+                        let scale = match a.num("--width")? {
+                            Some(wd) if a.get("--scale").is_none() => (wd / ev.width as f32).clamp(0.05, 4.0),
+                            _ => scale,
+                        };
                         let (w, h, px) = pipeline::render_rgba(&ev, t, scale);
                         pipeline::save_png(&out, w, h, px)?;
                         let ms = t0.elapsed().as_secs_f32() * 1000.0;
@@ -294,6 +300,17 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                 }
             }
         }
+        "beats" => {
+            let path = a.input.as_deref().ok_or("missing audio file")?;
+            let b = anikit_video::eval::beat_markers::refine(&anikit_video::audio::analyze_pcm(&anikit_video::audio::decode_file(path)?));
+            if json {
+                println!("{}", serde_json::json!({ "bpm": b.bpm, "beats": b.beats, "downbeats": b.downbeats }));
+            } else {
+                let f = |v: &[f64]| v.iter().map(|t| format!("{t:.3}")).collect::<Vec<_>>().join(" ");
+                println!("bpm {:.1}\nbeats ({}): {}\nbars ({}): {}", b.bpm, b.beats.len(), f(&b.beats), b.downbeats.len(), f(&b.downbeats));
+            }
+            Ok(ExitCode::SUCCESS)
+        }
         "sheet" => {
             let path = need_input(a)?;
             let out = PathBuf::from(a.get("-o").unwrap_or("sheet.png"));
@@ -302,8 +319,17 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                 Err(c) => return Ok(c),
             };
             warn(&d, json);
-            let cols = a.num("--cols")?.unwrap_or(4.0) as u32;
-            let rows = a.num("--rows")?.unwrap_or(3.0) as u32;
+            // `--frames N` picks a near-square grid of N frames.
+            let (dc, dr) = match a.num("--frames")? {
+                Some(n) => {
+                    let n = n.max(1.0);
+                    let c = n.sqrt().ceil();
+                    (c, (n / c).ceil())
+                }
+                None => (4.0, 3.0),
+            };
+            let cols = a.num("--cols")?.unwrap_or(dc) as u32;
+            let rows = a.num("--rows")?.unwrap_or(dr) as u32;
             let width = a.num("--width")?.unwrap_or(480.0) as u32;
             let (w, h, px) = pipeline::contact_sheet(&ev, cols.max(1), rows.max(1), width.max(16));
             pipeline::save_png(&out, w, h, px)?;
@@ -324,7 +350,7 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             warn(&d, json);
             let quality = match a.get("--quality") {
                 None => Quality::Good,
-                Some(q) => Quality::parse(q).ok_or_else(|| format!("--quality: use draft, good or best (got '{q}')"))?,
+                Some(q) => Quality::parse(q).ok_or_else(|| format!("--quality: use draft, standard or high (got '{q}')"))?,
             };
             let codec = match a.get("--codec") {
                 // Our encoder by default for MP4; x264 for `--quality best` (smallest files).
@@ -337,15 +363,18 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             let from = a.get("--from").map(|s| resolve_time(&ev, s)).transpose()?;
             let to = a.get("--to").map(|s| resolve_time(&ev, s)).transpose()?;
             let scale = a.num("--scale")?.unwrap_or(if quality == Quality::Draft { 0.5 } else { 1.0 });
-            let opts = RenderOptions { codec, quality, from, to, scale, progress: !json && !a.has("--quiet"), audio: !a.has("--no-audio") };
+            let opts = RenderOptions { codec, quality, from, to, scale, progress: !json && !a.has("--quiet"), audio: !a.has("--no-audio"), profile: a.has("--profile") };
             let w = ((ev.width as f32 * scale).round() as u32).max(2);
             let h = ((ev.height as f32 * scale).round() as u32).max(2);
             let t0 = from.unwrap_or(0.0);
             let dur = to.unwrap_or(ev.duration) - t0;
             let wav = std::env::temp_dir().join(format!("anikit-video-{}.wav", std::process::id()));
             let audio = if opts.audio { pipeline::mix_audio(&ev, t0, dur, &wav)? } else { None };
-            let mut enc = FfmpegEncoder::new(&out, w, h, ev.fps, codec, quality, audio.as_deref())?;
-            let s = pipeline::render_video(&ev, &opts, &mut enc);
+            let s = if codec == Codec::Ak264 {
+                pipeline::render_ak264(&ev, &opts, &out, audio.as_deref())
+            } else {
+                FfmpegEncoder::new(&out, w, h, ev.fps, codec, quality, audio.as_deref()).and_then(|mut enc| pipeline::render_video(&ev, &opts, &mut enc))
+            };
             if audio.is_some() {
                 let _ = std::fs::remove_file(&wav);
             }

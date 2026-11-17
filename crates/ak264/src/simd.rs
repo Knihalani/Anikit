@@ -686,3 +686,122 @@ pub fn plane_row16(base: i32, b: i32) -> [u8; 16] {
     #[cfg(not(target_arch = "x86_64"))]
     core::array::from_fn(|x| ((base + b * x as i32) >> 5).clamp(0, 255) as u8)
 }
+
+/// Maximum SAD over the 4×4 blocks of a w×h block (w = 16 or 8, rows of `w`).
+#[inline(always)]
+pub fn max_sad4(a: &[u8], b: &[u8], w: usize, h: usize) -> u32 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if level() >= 1 && w == 16 && a.len() >= 16 * h && b.len() >= 16 * h {
+            // SAFETY: SSSE3 detected (SSE4.1 implies it); lengths checked.
+            return unsafe { max_sad4_16_ssse3(a.as_ptr(), b.as_ptr(), h) };
+        }
+        if level() >= 1 && w == 8 && h == 8 && a.len() >= 64 && b.len() >= 64 {
+            // SAFETY: as above.
+            return unsafe { max_sad4_8x8_ssse3(a.as_ptr(), b.as_ptr()) };
+        }
+    }
+    let mut m = 0u32;
+    for by in (0..h).step_by(4) {
+        for bx in (0..w).step_by(4) {
+            let mut s = 0u32;
+            for y in 0..4 {
+                let o = (by + y) * w + bx;
+                for x in 0..4 {
+                    s += (a[o + x] as i32 - b[o + x] as i32).unsigned_abs();
+                }
+            }
+            m = m.max(s);
+        }
+    }
+    m
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "ssse3")]
+unsafe fn max_sad4_8x8_ssse3(a: *const u8, b: *const u8) -> u32 {
+    use std::arch::x86_64::*;
+    let ones8 = _mm_set1_epi8(1);
+    let ones16 = _mm_set1_epi16(1);
+    let mut m = 0u32;
+    for half in 0..2 {
+        // two 16-byte loads = rows 4h..4h+4; lanes: [b0 r, b1 r, b0 r+1, b1 r+1]
+        let mut acc = _mm_setzero_si128();
+        for k in 0..2 {
+            let off = half * 32 + k * 16;
+            let x = _mm_loadu_si128(a.add(off) as *const __m128i);
+            let z = _mm_loadu_si128(b.add(off) as *const __m128i);
+            let d = _mm_sub_epi8(_mm_max_epu8(x, z), _mm_min_epu8(x, z));
+            acc = _mm_add_epi32(acc, _mm_madd_epi16(_mm_maddubs_epi16(d, ones8), ones16));
+        }
+        let t = _mm_add_epi32(acc, _mm_shuffle_epi32(acc, 0b01_00_11_10)); // lanes 0,1 = blocks
+        let b0 = _mm_cvtsi128_si32(t) as u32;
+        let b1 = _mm_cvtsi128_si32(_mm_shuffle_epi32(t, 1)) as u32;
+        m = m.max(b0).max(b1);
+    }
+    m
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "ssse3")]
+unsafe fn max_sad4_16_ssse3(a: *const u8, b: *const u8, h: usize) -> u32 {
+    use std::arch::x86_64::*;
+    let ones8 = _mm_set1_epi8(1);
+    let ones16 = _mm_set1_epi16(1);
+    let mut mx = _mm_setzero_si128();
+    let mut by = 0;
+    while by < h {
+        let mut acc = _mm_setzero_si128();
+        for y in 0..4 {
+            let x = _mm_loadu_si128(a.add((by + y) * 16) as *const __m128i);
+            let z = _mm_loadu_si128(b.add((by + y) * 16) as *const __m128i);
+            let d = _mm_sub_epi8(_mm_max_epu8(x, z), _mm_min_epu8(x, z));
+            // bytes → pair sums (u16) → quad sums (i32): one per 4×4 block column
+            acc = _mm_add_epi32(acc, _mm_madd_epi16(_mm_maddubs_epi16(d, ones8), ones16));
+        }
+        mx = _mm_max_epi16(mx, acc); // sums ≤ 4080 fit the low 16 bits
+        by += 4;
+    }
+    let m = _mm_max_epi16(mx, _mm_shuffle_epi32(mx, 0b01_00_11_10));
+    let m = _mm_max_epi16(m, _mm_shuffle_epi32(m, 0b10_11_00_01));
+    (_mm_cvtsi128_si32(m) & 0xffff) as u32
+}
+
+#[cfg(test)]
+mod maxsad_test {
+    #[test]
+    fn max_sad4_matches() {
+        for k in 0..20u32 {
+            let a: Vec<u8> = (0..256u32).map(|i| ((i * 37 + k * 11) % 256) as u8).collect();
+            let b: Vec<u8> = (0..256u32).map(|i| ((i * 91 + k * 7) % 256) as u8).collect();
+            let mut m = 0;
+            for by in 0..4 {
+                for bx in 0..4 {
+                    let mut s = 0u32;
+                    for y in 0..4 {
+                        for x in 0..4 {
+                            let o = (by * 4 + y) * 16 + bx * 4 + x;
+                            s += (a[o] as i32 - b[o] as i32).unsigned_abs();
+                        }
+                    }
+                    m = m.max(s);
+                }
+            }
+            assert_eq!(super::max_sad4(&a, &b, 16, 16), m);
+            let mut mc = 0;
+            for by in 0..2 {
+                for bx in 0..2 {
+                    let mut s = 0u32;
+                    for y in 0..4 {
+                        for x in 0..4 {
+                            let o = (by * 4 + y) * 8 + bx * 4 + x;
+                            s += (a[o] as i32 - b[o] as i32).unsigned_abs();
+                        }
+                    }
+                    mc = mc.max(s);
+                }
+            }
+            assert_eq!(super::max_sad4(&a[..64], &b[..64], 8, 8), mc);
+        }
+    }
+}

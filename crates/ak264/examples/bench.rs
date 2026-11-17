@@ -42,7 +42,21 @@ fn main() {
     let (w, h) = (1920u32, 1080u32);
     let s = Scene::preset(&scene, w, h);
     let t0 = Instant::now();
-    let bufs: Vec<YuvBuffer> = (0..n).map(|t| s.frame(t)).collect();
+    let file = scene.strip_prefix("file:").map(|p| p.to_string());
+    let bufs: Vec<YuvBuffer> = match &file {
+        // raw yuv420p 1920x1080 (e.g. frames from the real renderer)
+        Some(p) => {
+            let data = std::fs::read(p).unwrap();
+            let (ys, cs) = ((w * h) as usize, (w * h / 4) as usize);
+            data.chunks_exact(ys + 2 * cs)
+                .take(n as usize)
+                .map(|f| YuvBuffer { width: w, height: h, y: f[..ys].to_vec(), u: f[ys..ys + cs].to_vec(), v: f[ys + cs..].to_vec() })
+                .collect()
+        }
+        None => (0..n).map(|t| s.frame(t)).collect(),
+    };
+    let n = bufs.len() as u32;
+    let scene = scene.rsplit('/').next().unwrap().trim_end_matches(".yuv").to_string();
     eprintln!("generated {n} frames in {:.2}s", t0.elapsed().as_secs_f64());
     let src: Vec<u8> = bufs.iter().flat_map(|b| b.to_bytes()).collect();
     let fsz = bufs[0].to_bytes().len();
@@ -55,14 +69,16 @@ fn main() {
     println!("| encoder | settings | fps | size KB | PSNR-Y | PSNR-all |");
     println!("|---|---|---|---|---|---|");
     for &qp in &qps {
-        let hints: Vec<FrameHints> = (0..n).map(|t| if t == 0 { FrameHints::default() } else { s.hints(t) }).collect();
+        let hints: Vec<FrameHints> =
+            (0..n).map(|t| if t == 0 || file.is_some() { FrameHints::default() } else { s.hints(t) }).collect();
         for (label, threads, chunked) in [
             ("ak264 1 thread", 1usize, 0),
             ("ak264 4 slices", 4, 0),
             ("ak264 chunks", 1, 1),
             ("ak264 chunks + renderer hints", 1, 2),
         ] {
-            let cfg = EncoderConfig { width: w, height: h, qp, gop: 60, fps: 30.0, threads, ..Default::default() };
+            let subpel = std::env::var("SUBPEL").map(|v| v != "0").unwrap_or(false);
+            let cfg = EncoderConfig { width: w, height: h, qp, gop: 60, fps: 30.0, threads, subpel, skip_threshold: std::env::var("SKIPT").ok().and_then(|v| v.parse().ok()).unwrap_or(0), ..Default::default() };
             // warm-up
             let _ = encode_chunks(&cfg, &frames[..2.min(frames.len())], &[]);
             let reps: usize = std::env::var("REPS").ok().and_then(|v| v.parse().ok()).unwrap_or(3);

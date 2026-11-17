@@ -71,3 +71,31 @@ fn golden_tiktok_captions() {
     assert!(d < 0.5, "golden diff {d}");
     common::save(pm, "captions_tiktok");
 }
+
+#[test]
+fn caption_pill_background_and_outline_helpers() {
+    let fonts = FontStore::new();
+    let st = CaptionStyle { background: Some(Color::hex("#000000b0").unwrap()), radius: 0.6, ..Default::default() };
+    let track = CaptionTrack::new(&fonts, &parse(SRT), &st);
+    let mut o = vec![];
+    track.ops(1.0, anikit_video::dl::IDENTITY, &mut o);
+    assert!(matches!(o[0], Op::RoundRect { .. }), "background first");
+    let mut dl = DisplayList { width: 700, height: 200, background: Rgba([0.3, 0.4, 0.5, 1.0]), ops: vec![] };
+    track.ops(1.0, [1.0, 0.0, 0.0, 1.0, 350.0, 170.0], &mut dl.ops);
+    let pm = common::render(&fonts, &dl);
+    let d = common::golden(&pm, "captions_pill");
+    assert!(d < 0.5, "golden diff {d}");
+    common::save(pm, "captions_pill");
+    // Helpers for callers that emit glyphs themselves.
+    let style = TextStyle {
+        outline: Some(anikit_video::text::layout::Outline { width: 0.03, color: None, hollow: true }),
+        background: Some(anikit_video::text::layout::LineBackground::default()),
+        ..Default::default()
+    };
+    let l = fonts.layout(&TextSpec::plain("Outlined", style));
+    assert!(l.hollow());
+    let mut o = vec![];
+    l.background_ops(0.5, anikit_video::dl::IDENTITY, &mut o);
+    l.outline_ops(1.0, anikit_video::dl::IDENTITY, &mut o);
+    assert!(matches!(o[0], Op::RoundRect { .. }) && o.iter().any(|x| matches!(x, Op::Stroke { .. })));
+}

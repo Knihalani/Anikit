@@ -146,3 +146,333 @@ pub fn luma_pred(p: &Plane, x: isize, y: isize, mv: (i32, i32), out: &mut [u8; 2
     }
     Hpel::new(p, bx, by).pred(mv.0 & 3, mv.1 & 3, out);
 }
+
+/// Half-sample planes of a whole reference picture (b: horizontal, h: vertical,
+/// j: centre), same geometry as the luma plane. Built once per reference when
+/// many macroblocks refine; predictions are identical to [`Hpel`].
+pub struct HpelPlanes {
+    pub b: Plane,
+    pub h: Plane,
+    pub j: Plane,
+    b1: Vec<i16>,
+}
+
+impl HpelPlanes {
+    pub fn new(r: &Plane) -> Self {
+        HpelPlanes { b: r.clone(), h: r.clone(), j: r.clone(), b1: vec![0; r.data.len()] }
+    }
+
+    /// Recompute from the (border-extended) reference luma plane.
+    #[cfg(test)]
+    pub fn compute(&mut self, r: &Plane) {
+        let rows = r.data.len() / r.stride;
+        self.compute_rect(r, 0, r.stride, 0, rows)
+    }
+
+    /// Update after the reference samples in columns `[xa, xb)` × rows `[a, b)`
+    /// (plane coordinates, border included) changed.
+    #[cfg(test)]
+    pub fn compute_rect(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize) {
+        self.filter(r, xa, xb, a, b, a.saturating_sub(3), b + 2)
+    }
+
+    /// Columns affected by a change in `[xa, xb)`: horizontal filter on rows
+    /// `[a, b)`, vertical and centre filters on rows `[va, vb)` (clipped).
+    pub fn filter(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize, va: usize, vb: usize) {
+        #[cfg(target_arch = "x86_64")]
+        {
+            if crate::simd::level() >= 2 {
+                #[target_feature(enable = "avx2")]
+                unsafe fn f(s: &mut HpelPlanes, r: &Plane, xa: usize, xb: usize, a: usize, b: usize, va: usize, vb: usize) {
+                    s.compute_avx2(r, xa, xb, a, b, va, vb)
+                }
+                // SAFETY: AVX2 detected at run time.
+                return unsafe { f(self, r, xa, xb, a, b, va, vb) };
+            }
+        }
+        self.compute_impl(r, xa, xb, a, b, va, vb)
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "avx2")]
+    unsafe fn compute_avx2(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize, va: usize, vb: usize) {
+        use std::arch::x86_64::*;
+        let s = r.stride;
+        let rows = r.data.len() / s;
+        let b = b.min(rows);
+        self.b1.resize(rows * s, 0);
+        let d = r.data.as_ptr();
+        let b1 = self.b1.as_mut_ptr();
+        let (bo, ho, jo) = (self.b.data.as_mut_ptr(), self.h.data.as_mut_ptr(), self.j.data.as_mut_ptr());
+        let (c5, c20, c16) = (_mm256_set1_epi16(5), _mm256_set1_epi16(20), _mm256_set1_epi16(16));
+        #[inline]
+        #[target_feature(enable = "avx2")]
+        unsafe fn ld(p: *const u8) -> __m256i {
+            _mm256_cvtepu8_epi16(_mm_loadu_si128(p as *const __m128i))
+        }
+        #[inline]
+        #[target_feature(enable = "avx2")]
+        unsafe fn tap(a: __m256i, b: __m256i, c: __m256i, d: __m256i, e: __m256i, f: __m256i, c5: __m256i, c20: __m256i) -> __m256i {
+            let t = _mm256_add_epi16(a, f);
+            let t = _mm256_sub_epi16(t, _mm256_mullo_epi16(_mm256_add_epi16(b, e), c5));
+            _mm256_add_epi16(t, _mm256_mullo_epi16(_mm256_add_epi16(c, d), c20))
+        }
+        #[inline]
+        #[target_feature(enable = "avx2")]
+        unsafe fn st8(p: *mut u8, v: __m256i, c16: __m256i) {
+            let v = _mm256_srai_epi16(_mm256_add_epi16(v, c16), 5);
+            let pk = _mm256_packus_epi16(v, v);
+            let pk = _mm256_permute4x64_epi64(pk, 0b1000);
+            _mm_storeu_si128(p as *mut __m128i, _mm256_castsi256_si128(pk));
+        }
+        // horizontal: affected columns within 2..s-3, in blocks of 16 (last block aligned to the end)
+        let hi = (xb + 2).min(s - 3);
+        let xlast = hi - 16;
+        let lo = xa.saturating_sub(3).max(2).min(xlast);
+        for y in a..b {
+            let row = d.add(y * s);
+            let mut x = lo;
+            loop {
+                let xx = x.min(xlast);
+                let p = row.add(xx);
+                let v = tap(ld(p.sub(2)), ld(p.sub(1)), ld(p), ld(p.add(1)), ld(p.add(2)), ld(p.add(3)), c5, c20);
+                _mm256_storeu_si256(b1.add(y * s + xx) as *mut __m256i, v);
+                st8(bo.add(y * s + xx), v, c16);
+                if xx == xlast {
+                    break;
+                }
+                x += 16;
+            }
+        }
+        let hi = (xb + 2).min(s);
+        let xlast = hi - 16;
+        let lo = xa.saturating_sub(3).min(xlast);
+        for y in va.max(2)..vb.min(rows - 3) {
+            let mut x0 = lo;
+            loop {
+                let x = x0.min(xlast);
+                let p = d.add((y - 2) * s + x);
+                let v = tap(ld(p), ld(p.add(s)), ld(p.add(2 * s)), ld(p.add(3 * s)), ld(p.add(4 * s)), ld(p.add(5 * s)), c5, c20);
+                st8(ho.add(y * s + x), v, c16);
+                // j = (a - 5b + 20c + 512) >> 10 in 16 bits, exactly (floor shifts compose):
+                // ((((a - b) >> 2) - b + c) >> 2) + c == (a - 5b + 20c) >> 4, and with the
+                // 6-tap row sums in [-2550, 10710] no step leaves the i16 range.
+                let q = b1.add((y - 2) * s + x) as *const i16;
+                let l = |k: usize| _mm256_loadu_si256(q.add(k * s) as *const __m256i);
+                let (ta, tb, tc) = (_mm256_add_epi16(l(0), l(5)), _mm256_add_epi16(l(1), l(4)), _mm256_add_epi16(l(2), l(3)));
+                let t = _mm256_srai_epi16(_mm256_sub_epi16(ta, tb), 2);
+                // (x + c) >> 2 == ((x + (c & 3)) >> 2) + (c >> 2), which stays inside i16
+                let x3 = _mm256_add_epi16(_mm256_sub_epi16(t, tb), _mm256_and_si256(tc, _mm256_set1_epi16(3)));
+                let t = _mm256_add_epi16(_mm256_srai_epi16(x3, 2), _mm256_srai_epi16(tc, 2));
+                let t = _mm256_add_epi16(t, tc);
+                let t = _mm256_srai_epi16(_mm256_add_epi16(t, _mm256_set1_epi16(32)), 6);
+                let pk = _mm256_packus_epi16(t, t);
+                let pk = _mm256_permute4x64_epi64(pk, 0b1000);
+                _mm_storeu_si128(jo.add(y * s + x) as *mut __m128i, _mm256_castsi256_si128(pk));
+                if x == xlast {
+                    break;
+                }
+                x0 += 16;
+            }
+        }
+    }
+
+    #[inline(always)]
+    fn compute_impl(&mut self, r: &Plane, xa: usize, xb: usize, a: usize, b: usize, va: usize, vb: usize) {
+        let s = r.stride;
+        let rows = r.data.len() / s;
+        let d = &r.data;
+        // columns 2..s-3 of every row get b; rows 2..rows-3 get h and j
+        let mut b1 = std::mem::take(&mut self.b1);
+        b1.resize(rows * s, 0);
+        let b = b.min(rows);
+        for y in a..b {
+            let row = &d[y * s..y * s + s];
+            let o = &mut b1[y * s..y * s + s];
+            let bo = &mut self.b.data[y * s..y * s + s];
+            for x in xa.saturating_sub(3).max(2)..(xb + 2).min(s - 3) {
+                let v = row[x - 2] as i16 - 5 * row[x - 1] as i16 + 20 * row[x] as i16 + 20 * row[x + 1] as i16
+                    - 5 * row[x + 2] as i16
+                    + row[x + 3] as i16;
+                o[x] = v;
+                bo[x] = ((v + 16) >> 5).clamp(0, 255) as u8;
+            }
+        }
+        for y in va.max(2)..vb.min(rows - 3) {
+            let r0 = &d[(y - 2) * s..(y - 1) * s];
+            let r1 = &d[(y - 1) * s..y * s];
+            let r2 = &d[y * s..(y + 1) * s];
+            let r3 = &d[(y + 1) * s..(y + 2) * s];
+            let r4 = &d[(y + 2) * s..(y + 3) * s];
+            let r5 = &d[(y + 3) * s..(y + 4) * s];
+            let ho = &mut self.h.data[y * s..(y + 1) * s];
+            for x in xa.saturating_sub(3)..(xb + 2).min(s) {
+                let v = r0[x] as i16 - 5 * r1[x] as i16 + 20 * r2[x] as i16 + 20 * r3[x] as i16 - 5 * r4[x] as i16
+                    + r5[x] as i16;
+                ho[x] = ((v + 16) >> 5).clamp(0, 255) as u8;
+            }
+            let (c0, c1, c2) = (&b1[(y - 2) * s..(y - 1) * s], &b1[(y - 1) * s..y * s], &b1[y * s..(y + 1) * s]);
+            let (c3, c4, c5) = (&b1[(y + 1) * s..(y + 2) * s], &b1[(y + 2) * s..(y + 3) * s], &b1[(y + 3) * s..(y + 4) * s]);
+            let jo = &mut self.j.data[y * s..(y + 1) * s];
+            for x in xa.saturating_sub(3)..(xb + 2).min(s) {
+                let v = c0[x] as i32 - 5 * c1[x] as i32 + 20 * c2[x] as i32 + 20 * c3[x] as i32 - 5 * c4[x] as i32
+                    + c5[x] as i32;
+                jo[x] = ((v + 512) >> 10).clamp(0, 255) as u8;
+            }
+        }
+        self.b1 = b1;
+    }
+
+    /// Prediction of the block whose integer top-left sample is (x, y) at the
+    /// quarter-pel fraction (fx, fy) ∈ [0, 3]².
+    pub fn pred(&self, g: &Plane, x: isize, y: isize, fx: i32, fy: i32, out: &mut [u8; 256]) {
+        let s = g.stride;
+        let o = g.off(x, y);
+        let (gd, b, h, j) = (&g.data, &self.b.data, &self.h.data, &self.j.data);
+        type P<'a> = (&'a [u8], usize);
+        let (p1, p2): (P, Option<P>) = match (fx, fy) {
+            (0, 0) => ((gd, 0), None),
+            (1, 0) => ((gd, 0), Some((b, 0))),
+            (2, 0) => ((b, 0), None),
+            (3, 0) => ((b, 0), Some((gd, 1))),
+            (0, 1) => ((gd, 0), Some((h, 0))),
+            (0, 2) => ((h, 0), None),
+            (0, 3) => ((h, 0), Some((gd, s))),
+            (1, 1) => ((b, 0), Some((h, 0))),
+            (3, 1) => ((b, 0), Some((h, 1))),
+            (1, 3) => ((h, 0), Some((b, s))),
+            (3, 3) => ((h, 1), Some((b, s))),
+            (2, 1) => ((b, 0), Some((j, 0))),
+            (2, 3) => ((j, 0), Some((b, s))),
+            (1, 2) => ((h, 0), Some((j, 0))),
+            (3, 2) => ((j, 0), Some((h, 1))),
+            _ => ((j, 0), None),
+        };
+        let (q1, end1) = (o + p1.1, o + p1.1 + 15 * s + 16);
+        assert!(end1 <= p1.0.len());
+        if let Some(q) = p2 {
+            assert!(o + q.1 + 15 * s + 16 <= q.0.len());
+        }
+        #[cfg(target_arch = "x86_64")]
+        // SAFETY: the asserts above bound every 16-byte row read; `out` has 256 bytes.
+        unsafe {
+            use std::arch::x86_64::*;
+            let a = p1.0.as_ptr().add(q1);
+            let d = out.as_mut_ptr();
+            match p2 {
+                None => {
+                    for r in 0..16 {
+                        let v = _mm_loadu_si128(a.add(r * s) as *const __m128i);
+                        _mm_storeu_si128(d.add(r * 16) as *mut __m128i, v);
+                    }
+                }
+                Some(q) => {
+                    let b = q.0.as_ptr().add(o + q.1);
+                    for r in 0..16 {
+                        let v = _mm_avg_epu8(
+                            _mm_loadu_si128(a.add(r * s) as *const __m128i),
+                            _mm_loadu_si128(b.add(r * s) as *const __m128i),
+                        );
+                        _mm_storeu_si128(d.add(r * 16) as *mut __m128i, v);
+                    }
+                }
+            }
+        }
+        #[cfg(not(target_arch = "x86_64"))]
+        for r in 0..16 {
+            let i = o + r * s;
+            let a: [u8; 16] = p1.0[i + p1.1..i + p1.1 + 16].try_into().unwrap();
+            let dst: &mut [u8; 16] = (&mut out[r * 16..r * 16 + 16]).try_into().unwrap();
+            *dst = match p2 {
+                None => a,
+                Some(q) => crate::simd::avg16(&a, q.0[i + q.1..i + q.1 + 16].try_into().unwrap()),
+            };
+        }
+    }
+}
+
+#[cfg(test)]
+mod planes_test {
+    use super::*;
+    #[test]
+    fn centre_filter_i16_identity() {
+        // same operations as the AVX2 centre filter, in wrapping i16
+        let f16 = |c: [i16; 6]| -> i32 {
+            let (ta, tb, tc) = (c[0].wrapping_add(c[5]), c[1].wrapping_add(c[4]), c[2].wrapping_add(c[3]));
+            let t = ta.wrapping_sub(tb) >> 2;
+            let x3 = t.wrapping_sub(tb).wrapping_add(tc & 3);
+            let t = (x3 >> 2).wrapping_add(tc >> 2).wrapping_add(tc);
+            (t.wrapping_add(32) >> 6) as i32
+        };
+        let vals = [-2550i16, -2549, -1000, -1, 0, 1, 3, 4000, 10709, 10710];
+        let n = vals.len();
+        for m in 0..n.pow(6) {
+            let mut c = [0i16; 6];
+            let mut k = m;
+            for v in c.iter_mut() {
+                *v = vals[k % n];
+                k /= n;
+            }
+            let v: i32 = c[0] as i32 - 5 * c[1] as i32 + 20 * c[2] as i32 + 20 * c[3] as i32 - 5 * c[4] as i32 + c[5] as i32;
+            assert_eq!(f16(c), (v + 512) >> 10, "{c:?}");
+        }
+    }
+
+    #[test]
+    fn planes_extremes() {
+        // rows/columns of 0 and 255 that drive the centre filter to its limits
+        let mut p = Plane::new(64, 48, 32);
+        let s = p.stride;
+        for (i, v) in p.data.iter_mut().enumerate() {
+            let (x, y) = (i % s, i / s);
+            let f = |k: usize| matches!(k % 6, 0 | 3);
+            *v = if f(x) ^ f(y) { 255 } else { 0 };
+            if (x / 7 + y / 5) % 3 == 0 {
+                *v = 255 - *v;
+            }
+        }
+        let rows = p.data.len() / s;
+        let (mut a, mut b) = (HpelPlanes::new(&p), HpelPlanes::new(&p));
+        a.compute(&p);
+        b.compute_impl(&p, 0, s, 0, rows, 0, rows);
+        assert!(a.j.data == b.j.data && a.b.data == b.b.data && a.h.data == b.h.data);
+    }
+
+    #[test]
+    fn planes_match_window() {
+        let mut p = Plane::new(64, 48, 32);
+        for (i, v) in p.data.iter_mut().enumerate() {
+            *v = ((i * 37 + i / 97 * 13) % 251) as u8;
+        }
+        p.extend();
+        let mut hp = HpelPlanes::new(&p);
+        hp.compute(&p);
+        let mut sc = HpelPlanes::new(&p);
+        let rows = p.data.len() / p.stride;
+        sc.compute_impl(&p, 0, p.stride, 0, rows, 0, rows);
+        // partial update after a local change equals a full recompute
+        let mut q = p.clone();
+        for y in 40..60 {
+            for x in 50..70 {
+                q.data[y * q.stride + x] ^= 0x5a;
+            }
+        }
+        hp.compute_rect(&q, 50, 70, 40, 60);
+        sc.compute(&q);
+        assert!(sc.b.data == hp.b.data && sc.h.data == hp.h.data && sc.j.data == hp.j.data);
+        hp.compute(&p);
+        sc.compute_impl(&p, 0, p.stride, 0, rows, 0, rows);
+        assert!(sc.b.data == hp.b.data && sc.h.data == hp.h.data && sc.j.data == hp.j.data);
+        for (x, y) in [(0isize, 0isize), (-17, -17), (40, 20), (48, 32), (-5, 30)] {
+            let w = Hpel::new(&p, x, y);
+            for dy in -3..=3 {
+                for dx in -3..=3 {
+                    let (mut a, mut b) = ([0u8; 256], [0u8; 256]);
+                    w.pred(dx, dy, &mut a);
+                    hp.pred(&p, x + (dx >> 2) as isize, y + (dy >> 2) as isize, dx & 3, dy & 3, &mut b);
+                    assert_eq!(a, b, "({x},{y}) d=({dx},{dy})");
+                }
+            }
+        }
+    }
+}

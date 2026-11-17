@@ -113,6 +113,14 @@ valid stream. Within a frame, slices can also run in parallel.
 - A second, independent decoder (Cisco OpenH264) decodes CABAC/Main and
   CAVLC/Baseline streams to exactly the same frames as ffmpeg:
   `cargo run --release --manifest-path crates/ak264/bench-openh264/Cargo.toml -- crosscheck`.
+- Browser playback: headless Chromium (Playwright) plays the MP4.
+  `canPlayType('avc1.4d4028')` returns "probably", playback advances, and a frame
+  drawn to a canvas matches the content. Run
+  `node crates/ak264/scripts/browser-check.js out.mp4`.
+- The stream is Main profile at a level computed from size and frame rate (4.0
+  for 1080p30), with an `avc1` sample entry and `avcC`. The VUI carries BT.709 and
+  the range, `max_num_reorder_frames = 0` and `max_dec_frame_buffering = 1`, as
+  strict players (Safari/QuickTime) expect for streams without B-frames.
 - PSNR is above 40 dB at the default QP on every test (47–50 dB in practice).
 - Unit tests check the transforms, the I4x4 prediction against the spec equations,
   the SIMD kernels against their scalar versions, and Exp-Golomb and emulation
@@ -121,33 +129,99 @@ valid stream. Within a frame, slices can also run in parallel.
 ## Benchmarks
 
 The machine is the 4-core Xeon (2.1 GHz, AVX2) that the rest of the project uses.
-The content is 1080p, 240 frames at 30 fps, and synthetic (`ak264::synth`): a
-gradient background, sub-pixel-moving anti-aliased cards, and rows of anti-aliased
-glyph shapes ("text").
+All clips are 1080p30, 300 frames (10 s).
 
-| Scene | What changes per frame |
-|---|---|
-| `hold` | One small card moves over held text (about 2% of macroblocks). |
-| `typical` | Six cards slide while a large panel pulses in brightness (about 12% of macroblocks). |
-| `full` | The background scrolls by 3 px: every macroblock changes. |
+| Clip | Source | What changes |
+|---|---|---|
+| `launch` | The real renderer: `anikit-video new launch`, frames 1–300 | An animated full-frame background (slowly drifting smooth blobs plus a grid), with titles. About 80% of macroblocks change by small amounts every frame, so skip rarely helps. |
+| `tutorial` | The real renderer: `anikit-video new tutorial`, frames 1–300 | Text-heavy: titles and steps appear and hold. |
+| `full` | Synthetic (`ak264::synth`) | The background scrolls 3 px per frame and six AA cards move at sub-pixel speeds, so every macroblock changes. |
+
+Real-clip frames were rendered with `--codec png` and converted to yuv420p
+(BT.709, limited range).
 
 **How the numbers were measured:**
 
-- fps is wall clock for the whole encode, best of 2–3 runs.
-- ak264 uses `encode_chunks` with GOP 60. x264 runs through ffmpeg (4 threads,
-  `-g 60`) from a raw YUV file in page cache. OpenH264 (crate `openh264` 0.8,
-  built from source) runs one encoder per 60-frame chunk on 4 threads.
+- fps is wall clock for the whole encode, best of 2–3 runs. Timings on this VM vary
+  by about ±10%.
+- ak264 uses `encode_chunks` with GOP 60. On 4 cores, 300 frames become 8 chunks
+  of 37–38 frames each, each starting with an IDR (`chunk_ranges`).
+- x264 runs through ffmpeg (4 threads, `-g 60`) from a raw YUV file in page cache.
 - PSNR is computed against the source over all frames. "Y" is luma; "all" covers
   Y, U and V weighted by sample count.
+- x264 sizes and speeds "at the same PSNR" are linear interpolations between the
+  measured CRF points.
+
+### Headline: QP 26 vs x264 at the same luma PSNR
+
+| Clip | ak264 | vs veryfast | vs ultrafast | vs medium |
+|---|---|---|---|---|
+| launch | 360 fps, 2420 KB, 47.5 dB | **3.2× faster**, 1.14× size (≈ 113 fps, 2130 KB) | **1.1× faster, 0.74× size** (≈ 330 fps, 3270 KB) | 7.2× faster, 1.33× size (≈ 50 fps, 1816 KB) |
+| tutorial | 836 fps, 499 KB, 51.1 dB | **4.5× faster**, 1.10× size (≈ 184 fps, 455 KB) | **2.3× faster, 0.93× size** (≈ 360 fps, ≈ 537 KB*) | 8× faster, 1.33× size (≈ 105 fps, 376 KB) |
+| full | 468 fps, 903 KB, 48.1 dB | **3.0× faster**, 1.05× size (≈ 154 fps, 856 KB) | **1.3× faster, 0.57× size** (≈ 370 fps, 1584 KB) | 5.4× faster, 1.34× size (≈ 87 fps, 673 KB) |
+
+\* x264 ultrafast's lowest measured point on `tutorial` is already 52.7 dB, so
+this figure is extrapolated.
+
+**Reading it:**
+
+- ak264 is faster than x264 ultrafast everywhere, with files 7–43% smaller.
+- Against veryfast it is 3–4.5× faster, with files 5–14% larger at the same
+  quality. The remaining gap is mostly B-frames and smaller partitions, which ak264
+  doesn't have.
+- On content that is mostly static between frames, the margin grows a lot. On the
+  synthetic `hold` scene (held text), ak264 is 13× faster than veryfast and 21%
+  smaller. With renderer change maps it is 24× faster.
+
+End to end in the pipeline, rendering now dominates on busy clips: SPEC measured
+the launch template at 118–167 fps including rendering.
+
+### Full tables (luma PSNR in dB)
+
+`launch` (real renderer):
+
+| Encoder | Setting | fps | KB | PSNR-Y | PSNR-all |
+|---|---|---|---|---|---|
+| ak264 chunks | qp 22 / 26 / 30 | 350 / 360 / 445 | 3660 / 2420 / 1630 | 50.21 / 47.52 / 44.59 | 50.72 / 47.92 / 45.35 |
+| ak264 1 thread | qp 22 / 26 / 30 | 96 / 99 / 105 | 3622 / 2385 / 1606 | 50.13 / 47.43 / 44.46 | |
+| ak264 4 slices (`threads: 4`) | qp 22 / 26 / 30 | 223 / 237 / 254 | 3682 / 2439 / 1650 | 50.10 / 47.41 / 44.44 | |
+| x264 ultrafast | crf 22 / 26 / 30 | 270 / 313 / 356 | 6700 / 4350 / 2806 | 52.69 / 49.73 / 46.57 | 53.01 / 50.42 / 47.38 |
+| x264 veryfast | crf 22 / 26 / 30 | 113 / 130 / 140 | 1998 / 1016 / 590 | 47.11 / 44.05 / 41.16 | 48.07 / 45.21 / 42.45 |
+| x264 medium | crf 22 / 26 / 30 | 46 / 55 / 64 | 2470 / 1424 / 843 | 49.22 / 46.50 / 44.00 | 50.17 / 47.61 / 45.20 |
+
+`tutorial` (real renderer):
+
+| Encoder | Setting | fps | KB | PSNR-Y | PSNR-all |
+|---|---|---|---|---|---|
+| ak264 chunks | qp 22 / 26 / 30 | ≈ 770 / 836 / 865 | 714 / 499 / 377 | 53.97 / 51.13 / 47.91 | 54.66 / 50.96 / 48.49 |
+| ak264 1 thread | qp 22 / 26 / 30 | 254 / 258 / 260 | 672 / 470 / 352 | 53.63 / 50.79 / 47.55 | |
+| x264 ultrafast | crf 22 / 26 / 30 | 342 / 374 / 360 | 1451 / 1008 / 675 | 59.42 / 56.39 / 52.67 | |
+| x264 veryfast | crf 22 / 26 / 30 | 181 / 186 / 188 | 479 / 295 / 200 | 51.57 / 48.22 / 44.95 | |
+| x264 medium | crf 22 / 26 / 30 | 98 / 104 / 118 | 586 / 393 / 275 | 54.77 / 51.62 / 48.29 | |
+
+`full` (synthetic):
+
+| Encoder | Setting | fps | KB | PSNR-Y |
+|---|---|---|---|---|
+| ak264 chunks | qp 22 / 26 / 30 | 483 / 468 / 456 | 1167 / 903 / 638 | 51.29 / 48.12 / 44.17 |
+| x264 ultrafast | crf 22 / 26 / 30 | 329 / 357 / 395 | 2507 / 2022 / 1371 | 53.95 / 50.38 / 47.02 |
+| x264 veryfast | crf 22 / 26 / 30 | 152 / 154 / 159 | 960 / 708 / 506 | 49.39 / 46.31 / 43.14 |
+| x264 medium | crf 22 / 26 / 30 | 86 / 86 / 93 | 904 / 698 / 531 | 51.74 / 48.58 / 45.50 |
 
 Reproduce:
 
 ```sh
-cargo run --release -p ak264 --example bench -- typical 240 22 26 30   # also hold, full
+anikit-video new launch && anikit-video render launch/spec.json -o launch/png/f.png --codec png --no-audio
+ffmpeg -framerate 30 -i launch/png/f_%05d.png -frames 300 \
+  -vf "scale=out_color_matrix=bt709:out_range=tv,format=yuv420p" -f rawvideo launch.yuv
+cargo run --release -p ak264 --example bench -- file:launch.yuv 300 22 26 30
+cargo run --release -p ak264 --example bench -- full 300 22 26 30   # also typical, hold
 cargo run --release --manifest-path crates/ak264/bench-openh264/Cargo.toml -- typical 240 26
 ```
 
-### Headline (QP 26 vs x264 interpolated to the same luma PSNR)
+### Earlier synthetic results
+
+These use 240 frames: `hold` is held text, and `typical` is sliding cards plus a pulsing panel. They were measured before the later speed work, so the ak264 numbers are conservative.
 
 | Scene | ak264 (4 cores) | x264 veryfast at the same PSNR | Speed | Size |
 |---|---|---|---|---|
@@ -164,10 +238,15 @@ better quality. Its constant-QP setting did not take effect through the crate, s
 this is one quality point.
 
 The target was 10× x264 veryfast on typical motion graphics. That is met on
-held-text content. On `typical`, which is about 12% changing and includes a
-full-brightness fade on 10% of the frame, it reaches 8.6–9.4×.
+held-text content. On `typical` (about 12% of macroblocks changing, including a
+full-brightness fade on 10% of the frame), the table shows 8.6–9.4×. After the
+later optimisations, `typical` runs at about 1500 fps without hints (≈ 10×) and
+about 1760 fps with them (≈ 12×), at 458 KB / 49.8 dB and 438 KB respectively
+(best of 3 runs).
 
-### Full tables (luma PSNR in dB)
+On real renderer output with a fully animated background (`launch`), the margin
+is 3.2× veryfast. Every macroblock really changes there, so ak264 has to do the
+work of a normal encoder.
 
 `typical`:
 

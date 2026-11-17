@@ -47,3 +47,10 @@ def test_absolutize():
 def test_missing_binary_is_actionable():
     with pytest.raises(AnikitVideoError, match="ANIKIT_VIDEO_BIN"):
         build().render("out.mp4", bin="/nonexistent/anikit-video")
+
+
+def test_component_kinds_and_suggestions():
+    from anikit._video_builder import COMPONENT_KINDS
+    assert "bar-chart" in COMPONENT_KINDS and "mesh-gradient" in COMPONENT_KINDS
+    with pytest.warns(UserWarning, match="did you mean 'bar-chart'"):
+        video().scene(lambda s: s.component("bar-chrt", {"data": [1, 2]}))

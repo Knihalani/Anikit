@@ -29,7 +29,7 @@
       "required": true,
       "maxWords": 7,
       "description": "The feature as a benefit, readable in 2 s.",
-      "example": "Render stills in 40 ms"
+      "example": "Stills from any frame"
     },
     "subhead": {
       "type": "string",
@@ -233,7 +233,7 @@
             {
               "$let": {
                 "cw": "fmt.landscape ? fmt.w * 0.4 : fmt.safe.w",
-                "fs": "fmt.portrait ? fmt.u * 4 : fmt.u * 3.4"
+                "fs": "fmt.portrait ? fmt.u * 4.6 : fmt.u * 4.2"
               },
               "in": {
                 "type": "component",

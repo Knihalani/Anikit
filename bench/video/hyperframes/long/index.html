@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" />
+<script src="assets/gsap.min.js"></script>
+<link rel="stylesheet" href="assets/base.css" />
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="60" data-width="1920" data-height="1080" data-fps="60">
+  <div data-composition-id="k1" data-composition-src="compositions/kinetic.html" data-start="0" data-duration="20"></div>
+  <div data-composition-id="k2" data-composition-src="compositions/kinetic.html" data-start="20" data-duration="20"></div>
+  <div data-composition-id="k3" data-composition-src="compositions/kinetic.html" data-start="40" data-duration="20"></div>
+</div>
+<script>
+  window.__timelines = window.__timelines || {};
+  window.__timelines["main"] = gsap.timeline({ paused: true }).set({}, {}, 60);
+</script>
+</body></html>
