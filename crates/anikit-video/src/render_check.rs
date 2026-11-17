@@ -53,9 +53,16 @@ fn text_blocks(dl: &DisplayList) -> Vec<Block> {
                 }
                 let (mut x0, mut x1) = (f32::MAX, f32::MIN);
                 let (mut y0, mut y1) = (f32::MAX, f32::MIN);
+                // The last glyph's width: the run's average advance (narrow letters end runs often).
+                let adv = if glyphs.len() > 1 {
+                    let (a, b) = glyphs.iter().fold((f32::MAX, f32::MIN), |(lo, hi), g| (lo.min(g.x), hi.max(g.x)));
+                    ((b - a) / (glyphs.len() - 1) as f32).clamp(size * 0.25, size * 0.55)
+                } else {
+                    size * 0.5
+                };
                 for g in glyphs {
                     x0 = x0.min(g.x);
-                    x1 = x1.max(g.x + size * 0.55);
+                    x1 = x1.max(g.x + adv);
                     y0 = y0.min(g.y - size * 0.72);
                     y1 = y1.max(g.y + size * 0.1);
                 }
