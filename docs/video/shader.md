@@ -82,6 +82,8 @@ Habits that make shaders look finished:
 
 **Loop unrolling.** Counted loops with a short constant trip count, such as `for (int i = 0; i < 6; i++)`, become straight-line copies with `i` a constant in each, as long as nothing but the guard leaves them. Everything that depends only on uniforms and `i`, like the `sin(iTime + float(i))` that places each sphere of a Shadertoy scene, then no longer varies per pixel and is hoisted out of the pixel loop. The arithmetic is the same, so the output is byte-identical. On a typical Shadertoy raymarch (six moving metaballs, shadows, AO, one reflection bounce) this went from 2867 to 1087 ms per 1080p frame. `turing` went from 144 to 26 ms.
 
+**`pow` with a whole-number exponent** from 1 to 16 (Fresnel's `pow(1.0 - c, 5.0)`) compiles to repeated squaring: a few multiplies instead of `exp2(y·log2 x)`, and closer to exact. liquid-chrome went from 163 to 139 ms, caustics from 58 to 50.
+
 **Division by a constant** compiles to a multiply by the reciprocal. That is exact for powers of two and within 1.5 ulp otherwise; GLSL allows 2.5. A multiply has about a third of a divide's latency, which matters in the serial `smin` chains of a raymarch: 1106 → 985 ms on the scene above, with 27 of 2 M pixels changing by 1–4/255.
 
 The JIT was built directly; there is no interpreter step. The masking optimisation is worth noting: when a store's lanes equal the lanes its function was entered with, it skips the mask blend. That took the SDF scene from 1190 to 358 ms per frame, because it lets Cranelift hoist uniform maths.

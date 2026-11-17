@@ -964,7 +964,34 @@ impl<'m, 'b> Lower<'m, 'b> {
             M::Exp2 => map1!(vm::exp2),
             M::Log => map1!(vm::log),
             M::Log2 => map1!(vm::log2),
-            M::Pow => map2!(vm::pow),
+            // A small whole-number exponent (Fresnel's `pow(1.0 - c, 5.0)`, `pow(x, 2.0)`) is a
+            // few multiplies by repeated squaring: faster than exp2(y·log2 x) and closer to exact.
+            M::Pow => (0..n)
+                .map(|i| {
+                    let (xv, yv) = (at(&x, i), at(&y, i));
+                    match const_splat_f32(b, yv) {
+                        Some(k) if k.fract() == 0.0 && (1.0..=16.0).contains(&k) => {
+                            let mut e = k as u32;
+                            let mut base = xv;
+                            let mut acc: Option<Value> = None;
+                            while e > 0 {
+                                if e & 1 == 1 {
+                                    acc = Some(match acc {
+                                        None => base,
+                                        Some(a) => b.ins().fmul(a, base),
+                                    });
+                                }
+                                e >>= 1;
+                                if e > 0 {
+                                    base = b.ins().fmul(base, base);
+                                }
+                            }
+                            acc.unwrap_or(xv)
+                        }
+                        _ => vm::pow(&mut *b, xv, yv),
+                    }
+                })
+                .collect::<Vec<Value>>(),
             M::Dot if int => {
                 let mut s = b.ins().imul(x[0], y[0]);
                 for i in 1..x.len() {
