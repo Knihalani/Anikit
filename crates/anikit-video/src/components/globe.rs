@@ -10,7 +10,7 @@
 
 use super::style::*;
 use super::{rgba, Component, Ctx, Error, Prepare};
-use crate::dl::{Blend, FillRule, Op, Paint, Path, IDENTITY};
+use crate::dl::{FillRule, Op, Paint, Path, IDENTITY};
 use kurbo::{BezPath, Point};
 use serde::Deserialize;
 
@@ -463,9 +463,7 @@ impl Component for Globe {
 
         if !glow_ops.is_empty() {
             // Additive glows under the crisp strokes would be hidden; put them on top, screened.
-            out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Screen, filters: Vec::new(), clip: None, cache_key: None });
             out.extend(glow_ops);
-            out.push(Op::PopLayer);
         }
         out
     }

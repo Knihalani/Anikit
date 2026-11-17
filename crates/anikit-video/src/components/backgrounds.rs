@@ -7,7 +7,7 @@
 
 use super::style::*;
 use super::{Component, Ctx, Prepare};
-use crate::dl::{Blend, Op, Paint, Path, Rgba, IDENTITY};
+use crate::dl::{Op, Paint, Path, Rgba, IDENTITY};
 use anikit_core::noise::Noise;
 use serde::Deserialize;
 use std::sync::{Arc, Mutex};
@@ -332,16 +332,24 @@ impl Component for Grain {
         const VARIANTS: u32 = 6;
         let frame = if self.rate > 0.0 { (t * self.rate).floor() as u32 } else { 0 };
         let v = (self.seed.wrapping_add(frame)) % VARIANTS;
-        let key = fnv(&[b"grain", &v.to_le_bytes(), &self.seed.to_le_bytes()]);
+        // Amount is baked into the tile, so the grain is one plain image fill:
+        // no layer and no overlay blend (it sits over every full redraw when
+        // the camera moves, so its cost matters).
+        let amt = (self.amount.clamp(0.0, 1.0) * 1000.0).round() as u32;
+        let key = fnv(&[b"grain2", &v.to_le_bytes(), &self.seed.to_le_bytes(), &amt.to_le_bytes()]);
         let seed = self.seed;
         let id = ctx.assets.image(key, TILE, TILE, &mut || {
             let mut rng = Rng::new(((seed as u64) << 8) ^ v as u64 ^ 0x5eed);
+            let k = amt as f32 / 1000.0;
             let mut px = vec![0u8; (TILE * TILE * 4) as usize];
             for p in px.chunks_mut(4) {
-                // Roughly Gaussian (sum of 3 uniforms), mid-grey centred.
-                let g = (rng.f() + rng.f() + rng.f()) / 3.0;
-                let b = (g * 255.0) as u8;
-                p.copy_from_slice(&[b, b, b, 255]);
+                // Roughly Gaussian (sum of 3 uniforms) around 0: light specks
+                // are white, dark specks black, strength in alpha. This is
+                // close to an overlay of mid-grey noise on mid tones.
+                let g = (rng.f() + rng.f() + rng.f()) / 3.0 - 0.5;
+                let c = if g > 0.0 { 255 } else { 0 };
+                let a = (g.abs() * 2.0 * k * 2.2 * 255.0).min(255.0) as u8;
+                p.copy_from_slice(&[c, c, c, a]);
             }
             px
         });
@@ -349,11 +357,7 @@ impl Component for Grain {
         let offy = (hash01(frame.wrapping_mul(104_729) ^ 99) * TILE as f32).floor();
         let s = self.size.max(0.25);
         let paint = Paint::Image { image: id, transform: [1.0 / s, 0.0, 0.0, 1.0 / s, off, offy], opacity: 1.0 };
-        let mut out = Vec::new();
-        push_layer(&mut out, self.amount.clamp(0.0, 1.0) * 2.0, Blend::Overlay, Vec::new());
-        out.push(rect(0.0, 0.0, ctx.width, ctx.height, 0.0, paint));
-        out.push(Op::PopLayer);
-        out
+        vec![rect(0.0, 0.0, ctx.width, ctx.height, 0.0, paint)]
     }
 }
 
@@ -525,7 +529,6 @@ impl Component for LightLeak {
         let n = Noise::new(self.seed);
         let (w, h) = (ctx.width, ctx.height);
         let mut out = Vec::new();
-        push_layer(&mut out, 1.0, Blend::Screen, Vec::new());
         let t = if self.rate > 0.0 { (t * self.rate).floor() / self.rate } else { t };
         let s = (t * 0.15 * self.speed) as f64;
         for (i, c) in cols.iter().enumerate() {
@@ -543,7 +546,6 @@ impl Component for LightLeak {
                 out.push(rect(x0, y0, x1 - x0, y1 - y0, 0.0, radial(cx, cy, r, vec![(0.0, alpha(*c, a)), (0.4, alpha(*c, a * 0.45)), (1.0, alpha(*c, 0.0))])));
             }
         }
-        out.push(Op::PopLayer);
         out
     }
 }
@@ -573,7 +575,6 @@ impl Component for Bokeh {
         let (w, h) = (ctx.width, ctx.height);
         let mut rng = Rng::new(self.seed as u64);
         let mut out = Vec::new();
-        push_layer(&mut out, 1.0, Blend::Screen, Vec::new());
         for i in 0..self.count {
             let (x0, y0) = (rng.f(), rng.f());
             let size = rng.range(self.min_size, self.max_size);
@@ -587,7 +588,6 @@ impl Component for Bokeh {
             // Disc with a slightly brighter rim, like a real aperture.
             out.push(circle(x, y, size * 0.5, radial(x, y, size * 0.5, vec![(0.0, alpha(c, a * 0.7)), (0.82, alpha(c, a)), (0.93, alpha(c, a * 1.3)), (1.0, alpha(c, 0.0))])));
         }
-        out.push(Op::PopLayer);
         out
     }
 }
