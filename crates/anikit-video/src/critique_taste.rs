@@ -58,6 +58,8 @@ pub(super) fn run(raw: &Value, spec: &Value, cx: &mut Ctx) {
     palette(spec, cx);
     rhythm(&scenes, cx);
     music(raw, spec, cx);
+    easing(spec, cx);
+    copy(spec, cx);
 }
 
 /// A static `blur`, or keyframes that end blurred, on a text layer.
@@ -204,6 +206,75 @@ fn music(raw: &Value, spec: &Value, cx: &mut Ctx) {
     cx.note("tip", "music", "music", msg, "consider instruments from the concept's world: keep the groove with \"instrumentation\": \"band\" | \"acoustic\" | \"orchestral\" | \"piano\", set \"instruments\": {\"lead\": \"cello\"}, or use the piano / acoustic / orchestral / jazz / rock styles (TASTE.md §7)");
 }
 
+/// One (ease, duration) pair on most tweens: motion with no register changes.
+fn easing(spec: &Value, cx: &mut Ctx) {
+    fn walk(v: &Value, out: &mut std::collections::BTreeMap<String, usize>) {
+        match v {
+            Value::Object(m) => {
+                for k in ["animate", "enter"] {
+                    let items: Vec<&Value> = match m.get(k) {
+                        Some(Value::Array(a)) => a.iter().collect(),
+                        Some(o @ Value::Object(_)) => vec![o],
+                        _ => Vec::new(),
+                    };
+                    for a in items {
+                        let ease = a.get("ease").and_then(|e| e.as_str()).unwrap_or("default");
+                        let dur = a.get("duration").and_then(|d| d.as_f64()).map(|d| format!("{d:.2}")).unwrap_or_else(|| "default".into());
+                        *out.entry(format!("{ease} {dur}s")).or_default() += 1;
+                    }
+                }
+                m.values().for_each(|x| walk(x, out));
+            }
+            Value::Array(a) => a.iter().for_each(|x| walk(x, out)),
+            _ => {}
+        }
+    }
+    let mut pairs = std::collections::BTreeMap::new();
+    walk(spec.get("scenes").unwrap_or(&Value::Null), &mut pairs);
+    let total: usize = pairs.values().sum();
+    if let Some((pair, n)) = pairs.iter().max_by_key(|(_, n)| **n) {
+        if total >= 8 && n * 2 > total {
+            cx.note("tip", "motion", "scenes", format!("{n} of {total} tweens use the same ease and duration ({pair}); one register everywhere tends to read as a template"),
+                "consider snappier moves (150–300 ms) for small things and longer, eased hero moves (0.5–1 s), with exits shorter than entrances (TASTE.md §5)");
+        }
+    }
+}
+
+/// Weightless copy: the vocabulary and constructions readers now associate with generated text.
+const WEIGHTLESS: &[&str] = &["unlock", "elevate", "seamless", "seamlessly", "empower", "reimagine", "reimagined", "delve", "tapestry", "testament", "supercharge", "effortless", "effortlessly", "game-changer", "revolutionary", "next-level"];
+
+fn copy(spec: &Value, cx: &mut Ctx) {
+    fn walk(v: &Value, out: &mut String) {
+        match v {
+            Value::Object(m) => {
+                if let Some(Value::String(t)) = m.get("text") {
+                    out.push_str(t);
+                    out.push('\n');
+                }
+                m.values().for_each(|x| walk(x, out));
+            }
+            Value::Array(a) => a.iter().for_each(|x| walk(x, out)),
+            _ => {}
+        }
+    }
+    let mut text = String::new();
+    walk(spec.get("scenes").unwrap_or(&Value::Null), &mut text);
+    let lower = text.to_lowercase();
+    let words: Vec<&str> = lower.split(|c: char| !(c.is_alphanumeric() || c == '-')).filter(|w| !w.is_empty()).collect();
+    let mut hits: Vec<&str> = WEIGHTLESS.iter().copied().filter(|w| words.contains(w)).collect();
+    if lower.contains("not just") && lower.contains(" but ") {
+        hits.push("\"not just … but\"");
+    }
+    let dashes = text.matches('—').count();
+    if dashes > 1 {
+        hits.push("more than one em dash");
+    }
+    if !hits.is_empty() {
+        cx.note("tip", "copy", "scenes", format!("on-screen copy uses {} — phrasing readers now associate with generated text", hits.join(", ")),
+            "consider the product's own nouns, numbers and verbs instead; a specific fact tends to land harder than an adjective (TASTE.md §8)");
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -257,5 +328,16 @@ mod tests {
         assert!(!checks(json!({ "music": { "style": "house", "instruments": { "lead": "violin" } }, "scenes": sc })).iter().any(|c| c.0 == "music"));
         assert!(!checks(json!({ "music": { "style": "house", "instrumentation": "band" }, "scenes": sc })).iter().any(|c| c.0 == "music"));
         assert!(checks(json!({ "music": "techno", "scenes": sc })).contains(&("music", "tip")));
+    }
+
+    #[test]
+    fn uniform_easing_and_weightless_copy() {
+        let ds = [0.6, 1.4, 0.5, 2.2, 0.8, 1.1, 0.7, 1.9, 0.9];
+        let scenes: Vec<_> = (0..9).map(|i| json!({ "duration": ds[i], "layers": [ { "text": format!("Line {i}"), "x": "8%", "anchor": "left", "animate": [{ "from": { "opacity": 0 }, "duration": 0.5, "ease": "inOutCubic" }] } ] })).collect();
+        assert!(checks(json!({ "scenes": scenes })).contains(&("motion", "tip")));
+        let sc = json!([ { "duration": 3, "layers": [ { "text": "Unlock seamless workflows" } ] } ]);
+        assert!(checks(json!({ "scenes": sc })).contains(&("copy", "tip")));
+        let plain = json!([ { "duration": 3, "layers": [ { "text": "Renders 4K in 9 seconds" } ] } ]);
+        assert!(!checks(json!({ "scenes": plain })).iter().any(|c| c.0 == "copy" || c.0 == "motion"));
     }
 }
