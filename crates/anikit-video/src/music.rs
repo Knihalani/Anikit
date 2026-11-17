@@ -109,10 +109,14 @@ Standalone:        anikit-video music '{"style":"house","length":"15s"}' -o bed.
                    anikit-video music --style trap --bpm 140 --key Cm --length 20s -o out.ogg   (ogg/mp3/flac via ffmpeg)
                    anikit-video music styles | instruments | sfx | fetch salamander|vsco2
 
-STYLES  real instruments: orchestral acoustic piano jazz rock corporate pop lofi cinematic-hybrid
-        synth-led (electronic): house synthwave trap tech dnb ambient   (aliases: epic trailer edm chill 80s classical upbeat folk …)
-ACOUSTIC SCORE in one line: "music": {"style":"house","instrumentation":"acoustic"}   (also orchestral band piano electronic hybrid;
-        swaps every part for real instruments, keeps the groove). Choose instrumentation from the concept: docs/video/taste/TASTE.md §7
+STYLES  played instruments: orchestral acoustic piano jazz rock corporate pop lofi · hybrid: cinematic-hybrid
+        synth-led: house synthwave trap tech dnb ambient   (aliases: epic trailer edm chill 80s classical upbeat folk …)
+CHOOSING (your call; see docs/video/taste/TASTE.md §7): pick from the film's concept, not habit.
+  works: piano/acoustic/orchestral for warm, human, editorial or documentary films; band for energetic product launches;
+         synth-led for tech, night, futurist or club-energy films; cinematic-hybrid for trailers and reveals.
+  avoid: a generic synth bed under a calm brand or people film; a busy beat under voice-over; four-on-the-floor under slow footage.
+  "instrumentation": "acoustic|orchestral|band|piano|electronic|hybrid" keeps a style's groove and swaps its instruments,
+  e.g. {"style":"house","instrumentation":"band"}; per-part {"instruments":{"lead":"violin"}} wins over both.
 KEYS    instrumentation  bpm  key "Am" "F# dorian"  meter "6/8"  swing 0..1  mood "dark epic"  length "15s"|"8 bars"  seed N
         sections ["intro:4","build:4","drop:8","outro:2"] or [{"name":"drop","bars":8,"energy":1}]
         hits ["@2.0","@bar9"] → impact + section change there; tempo nudged (±8%) so hits land on beats (fit:false to keep bpm)
@@ -127,7 +131,8 @@ TRACKS  (add to a style, or write everything yourself)
   {"inst":"drums:808","drums":{"kick":"x...x...x...x...","hat":"x.x.x.x.x.x.x3x."},"bars":4}
                                                               x hit X accent o ghost . rest 2/3/4 roll; voices kick snare clap hat ohh rim tom crash ride shaker…
   {"inst":"strings","notes":"o4 l4 A4 C5 E5/2 | [A3 C4 E4]/1","at":3,"gain":-4,"reverb":0.4,"pan":-0.3,"duck":6}
-NOTES   C4 Eb3 F#5 · degrees 1-7 b3 5' 3, · chords Am Cmaj7 G/B vi IV V7 [C4 E4 G4] · r rest · _ hold
+NOTES   C4 Eb3 F#5 (C7 = octave 7) · C = note in the current octave (o5 C) · degrees 1-7 b3 5' 3,
+        chords need a quality: Cmaj Am Cmaj7 Cdom7 G/B [C E G] or numerals vi IV V7 · r rest · _ hold
         /4 quarter /8 /16 /2 /1 /8t triplet . dotted :1.5 beats · ! accent ? ghost ^ staccato ~ legato
         o3 octave > < · l8 default length · v100 velocity · t+2 transpose · | bar line · @5 bar · (…)x4 repeat
 MAKE ANYTHING (example: docs/video/music/custom.json)
