@@ -343,35 +343,38 @@ def build():
 
     # --- Act 3 (26-50): the run. One kick, six outfits, a hop whoosh into every lane.
     run0 = W.T["run0"]
-    progs = [[C_MAJ, G_MAJ], [A_MIN, F_MAJ], [F_MAJ, C_MAJ], [A_MIN, G_MAJ], [F_MAJ, A_MIN], [C_MAJ, G_MAJ]]
+    # lane -> musical outfit: product = strings, fold = bloom, tide = marimba, type = acid
+    outfit = {"product": 1, "fold": 4, "tide": 2, "type": 3}
+    progs = {1: [A_MIN, F_MAJ, C_MAJ], 4: [F_MAJ, A_MIN, G_MAJ], 2: [C_MAJ, G_MAJ, A_MIN], 3: [A_MIN, G_MAJ, F_MAJ]}
     for lane in range(W.LANES):
         t0 = run0 + lane * W.RUN_LANE_SECONDS
-        for bar in range(2):
+        style = outfit[W.FILMS[lane]["id"]]
+        for bar in range(int(W.RUN_LANE_SECONDS / W.BAR)):
             b0 = t0 + bar * W.BAR
-            ch = progs[lane][bar]
+            ch = progs[style][bar % 3]
             root = ch[0] - 12
-            soft = lane == 4
+            soft = style == 4
             for k in range(4):
                 add(kick(0.6 if soft else 1.0), b0 + k * B)
             add(sub(root - 12, W.BAR), b0, 0.8 if not soft else 1.0)
-            if lane == 0:      # Sundial: warm piano house
+            if style == 0:      # Sundial: warm piano house
                 for k in range(4):
                     for m in ch:
                         add(piano(m + 12, 0.6, 0.55), b0 + k * B + B / 2, rev=0.4)
                     add(hat(0.6), b0 + k * B + B / 2, pan=0.3)
                 for k in range(8):
                     add(pluck_bass(root), b0 + k * B / 2, 0.7)
-            elif lane == 1:    # Maison Lune: string staccato, minor, elegant
+            elif style == 1:    # Maison Lune: string staccato, minor, elegant
                 for k in range(8):
                     add(string_stab([m + 12 for m in ch], 0.16, 0.9 if k % 2 == 0 else 0.6), b0 + k * B / 2,
                         pan=-0.2 + 0.4 * (k % 2), rev=0.5)
                 add(snare(0.5), b0 + 2 * B, rev=0.5)
-            elif lane == 2:    # Rain: marimba arpeggio and clicks
+            elif style == 2:    # Rain: marimba arpeggio and clicks
                 arp = [ch[0] + 12, ch[1] + 12, ch[2] + 12, ch[1] + 24]
                 for k in range(16):
                     add(marimba(arp[k % 4], 0.9), b0 + k * B / 4, pan=-0.4 + 0.8 * ((k * 3) % 8) / 7, rev=0.35)
                     add(click(0.25, 6000), b0 + k * B / 4 + 0.06, pan=0.5)
-            elif lane == 3:    # No Sleep: acid stabs and claps
+            elif style == 3:    # No Sleep: acid stabs and claps
                 pat = [0, 0, 12, 0, 3, 0, 12, 7, 0, 0, 12, 0, 3, 15, 12, 7]
                 for k in range(16):
                     add(acid(root + 12 + pat[k], 0.12, 0.8, sweep=0.5 + 0.5 * ((k % 4) == 0)), b0 + k * B / 4,
@@ -380,12 +383,12 @@ def build():
                 add(clap(1.0), b0 + 3 * B, rev=0.3)
                 for k in range(8):
                     add(hat(0.8, 0.015), b0 + k * B / 2 + B / 4, pan=0.4)
-            elif lane == 4:    # Fold: bloom and reversed swells
+            elif style == 4:    # Fold: bloom and reversed swells
                 add(pad([midi(m + 12) for m in ch] + [midi(ch[0] + 24)], W.BAR + 0.5, a=0.6, r=0.8, bright=0.9),
                     b0, 1.0, rev=0.9)
                 rs = reverse_swell(ch[2] + 24, 1.0)
                 add(rs, b0 + W.BAR - 1.0, 0.6, pan=0.3, rev=0.6)
-            elif lane == 5:    # Harbour Cup: brass hits and stadium drums
+            elif style == 5:    # Harbour Cup: brass hits and stadium drums
                 hits = [0, 1.5, 2.5, 3.0] if bar == 0 else [0, 1.0, 2.0, 3.5]
                 for hb in hits:
                     add(brass([m + 12 for m in ch] + [ch[0] + 24], 0.3, 1.0), b0 + hb * B, rev=0.45)
@@ -399,7 +402,7 @@ def build():
             add(tink(2600, 0.6), t_land, 0.6, rev=0.5)
     # a lead line over the last two lanes ties it together
     for k, (tt, m, d) in enumerate([(0, 76, 1.0), (1.0, 79, 0.5), (1.5, 81, 0.5), (2.0, 79, 1.0), (3.0, 76, 1.0)]):
-        add(lead(m, d * 0.95), run0 + 20.0 + tt * 0.5 * 2, 0.9, pan=-0.1, rev=0.45)
+        add(lead(m, d * 0.95), run0 + W.RUN_LANE_SECONDS * (W.LANES - 1) + tt, 0.9, pan=-0.1, rev=0.45)
 
     # --- Act 4 (50-58): brake, fold, land, crush, shrink, six tiles
     t = tvec(W.T["brake1"] - W.T["run1"])
