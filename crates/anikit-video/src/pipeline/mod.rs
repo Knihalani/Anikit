@@ -736,7 +736,8 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
         eprintln!();
     }
     let secs = t0.elapsed().as_secs_f32();
-    let (w, h) = (((ev.width as f32 * opts.scale).round() as u32).max(2), ((ev.height as f32 * opts.scale).round() as u32).max(2));
+    // The ffmpeg encoder crops to even dimensions (4:2:0).
+    let (w, h) = (((ev.width as f32 * opts.scale).round() as u32).max(2) & !1, ((ev.height as f32 * opts.scale).round() as u32).max(2) & !1);
     Ok(Summary {
         output: enc.output().to_string(),
         width: w,
