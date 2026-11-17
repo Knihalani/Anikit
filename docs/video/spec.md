@@ -33,7 +33,7 @@ Theme colours (used as `$name`): `primary secondary accent bg surface text muted
 
 `id` · `duration` (default 3, or `"auto"`) · `background` · `transition` (into this scene) · `camera` · `markers` · `layers` · `audio`.
 
-Transitions: `cut crossfade fadeBlack fadeWhite slide push zoom wipe iris blur glitch morphCut`, as a string or `{ "type": "slide", "direction": "left", "duration": 0.6 }`.
+Transitions: `cut crossfade fadeBlack fadeWhite slide push zoom wipe iris blur glitch morphCut`, shader transitions `burn ripple pixelate swirl ink-bleed warp-wipe luma-melt zoom-blur`, or your own `{ "type": "shader", "shader": "vec4 transition(vec2 uv) {…}" }` (gl-transitions API). Write one as a string or as `{ "type": "slide", "direction": "left", "duration": 0.6 }`.
 
 Camera: `{ "zoom": 1, "x": 0, "y": 0, "rotation": 0, "focus": 0, "aperture": 0, "animate": [...], "shake": { "amount": 8, "at": "@drop", "duration": 0.4 } }`.
 
@@ -51,6 +51,9 @@ Every layer: `x y` (default centre) · `anchor` (`center`, `topLeft`, …) · `w
 | box | flexbox: `style { direction gap padding align justify wrap background radius border columns }` · `children` |
 | group | `layers` |
 | component | `component` (`bar-chart line-chart donut-chart counter stat code terminal phone laptop browser card button toast cursor lower-third title-card mesh-gradient aurora grid confetti model lottie …`; `anikit-video info --components`) · `props` |
+| shader | `shader` (Shadertoy GLSL `mainImage`, WGSL, or a built-in: `sdf-scene liquid-chrome aurora caustics flow-ink turing film-burn glitch`) or `src: "fx.glsl"` · `uniforms` (animatable by name) · `channels` (`below noise` · image/video · `{layers}`) · `filter` · `supersample` · `alpha` |
+
+**Shaders** run JIT-compiled on the CPU at full resolution: `{ "shader": "aurora", "uniforms": { "intensity": 1.4 } }`. `"filter": true` reads the composited layers below as `iChannel0` and replaces them. Guide, built-ins, costs and limits: [`shader.md`](shader.md).
 
 ## Animation
 
