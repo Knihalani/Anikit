@@ -1,27 +1,38 @@
-== railyard  sound: {"palette":"organic","density":0.5,"ambience":{"type":"room","level":-4},"space":"chamber"}
-sound: 12 cues, -14.0 LUFS, -1.0 dBTP, music ducked up to 5.0 dB, mixed in 244 ms
+== railyard  sound: {"palette":"organic","ambience":{"type":"room","level":-4},"space":"chamber"}
+sound: 12 cues, -14.0 LUFS, -1.0 dBTP, music ducked up to 5.0 dB, mixed in 237 ms
     0.367s  swish                  scenes[0].layers[53]: moves
     0.700s  thump                  scenes[0].layers[79]: lands
-    0.767s  swish                  scenes[0].layers[60]: moves
+    0.767s  air                    scenes[0].layers[60]: moves
     4.300s  wood                   scenes[2].layers[72]: lands
     5.667s  whoosh-air             camera: moves
     5.967s  wood                   scenes[3].layers[83]: lands
     7.433s  swish                  scenes[3].layers[84]: moves
-    9.433s  swish                  scenes[4].layers[93]: moves
+    9.433s  air                    scenes[4].layers[93]: moves
     9.867s  swish                  scenes[4].layers[133]: moves
-   10.000s  wood                   scenes[4].layers[132]: pops in
-   12.233s  swish                  scenes[5].layers[53]: moves
+   10.000s  wood+wood              scenes[4].layers[132]: pops in
+   12.233s  air                    scenes[5].layers[53]: moves
    12.733s  swish                  scenes[5].layers[58]: moves
-railyard-after.wav: 15.0 s of audio in 0.87 s (17× real time)
-== calibre9  sound: {"palette":"luxury","density":0.5,"ambience":"studio","space":"plate"}
-(re-run after the hero-reveal accent: the "72" reveal at 5.000s is now air+glass, tuned to D)
+railyard-after.wav: 15.0 s of audio in 0.62 s (24× real time)
+== calibre9  sound: {"palette":"luxury","ambience":"studio","space":"plate"}
+sound: 10 cues, -14.0 LUFS, -1.0 dBTP, music ducked up to 1.5 dB, mixed in 194 ms
+    0.500s  air                    scenes[0].layers[2]: appears
+    3.600s  air                    scenes[0].layers[6]: appears
+    3.733s  air                    scenes[0].layers[5]: moves
+    5.000s  air+glass              scenes[0].layers[9]: appears
+    5.067s  ticker                 scenes[0].layers[9]: counts
+    7.233s  whoosh-air             scenes[0].layers[9]: moves
+    8.233s  air                    scenes[0].layers[11]: appears
+    9.667s  air                    scenes[0].layers[14]: moves
+    9.900s  air                    scenes[0].layers[13]: appears
+   10.033s  whoosh-air             scenes[0].layers[15]: moves
+calibre9-after.wav: 12.0 s of audio in 0.39 s (31× real time)
 == offset2027  sound: {"palette":"clean","density":0.45,"space":"studio"}
-sound: 7 cues, -14.0 LUFS, -1.0 dBTP, music ducked up to 0.0 dB, mixed in 210 ms
+sound: 7 cues, -14.0 LUFS, -1.0 dBTP, music ducked up to 0.0 dB, mixed in 226 ms
     0.300s  swish                  scenes[0].layers[5]: appears
     2.700s  swish                  scenes[0].layers[2]: appears
     5.200s  swish                  scenes[0].layers[3]: appears
     7.633s  swish                  scenes[0].layers[4]: appears
     9.233s  air                    scenes[0].layers[6]: moves
-   12.333s  swish                  scenes[0].layers[7]: appears
+   12.333s  swish+blip             scenes[0].layers[7]: appears
    12.633s  swish                  scenes[0].layers[8]: appears
-offset2027-after.wav: 15.0 s of audio in 0.56 s (27× real time)
+offset2027-after.wav: 15.0 s of audio in 0.58 s (26× real time)

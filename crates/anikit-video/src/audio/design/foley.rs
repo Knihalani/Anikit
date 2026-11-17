@@ -219,6 +219,9 @@ pub(super) fn thump(c: &mut Ctx) -> (St, f32) {
         .map(|k| c.n.white() * env_ad(k, 4, 0.003 * sr))
         .collect();
     lowpass(&mut click, 2500.0 + 3000.0 * i, sr);
+    // Phone speakers start around 150–200 Hz: a little saturation puts
+    // harmonics of the 60–150 Hz body where they can be heard.
+    let body: Vec<f32> = body.iter().map(|x| 0.7 * x + 0.3 * soft(4.0 * x)).collect();
     let mut st = St::new(len);
     st.add_mono(0, &body, 0.0, 0.9);
     st.add_mono(0, &click, 0.0, 0.5);

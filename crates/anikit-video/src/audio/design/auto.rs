@@ -643,6 +643,7 @@ pub(crate) fn cues(evs: &[Event], plan: &SoundPlan) -> Vec<Cue> {
     // The film's biggest reveal / pop gets a tonal accent (tuned to the key).
     let accent_sal = evs.iter().filter(|e| matches!(e.kind, Kind::Reveal | Kind::Pop)).map(|e| e.salience).fold(0.0f32, f32::max);
     let mut out = Vec::new();
+    let mut moves = 0usize;
     for (i, e) in evs.iter().enumerate() {
         let hero = e.kind == Kind::Land && e.salience >= hero_sal * 0.999 && e.size > 0.15;
         let accent = matches!(e.kind, Kind::Reveal | Kind::Pop) && e.salience >= accent_sal * 0.999 && e.size > 0.1;
@@ -664,6 +665,24 @@ pub(crate) fn cues(evs: &[Event], plan: &SoundPlan) -> Vec<Cue> {
                     "playful" => format!("{n}+plastic"),
                     _ => format!("{n}+blip"),
                 },
+                // Alternate the family on consecutive moves so a run of them
+                // doesn't sound like one sample on repeat.
+                Some(n) if e.kind == Kind::Move && e.layer != CAMERA => {
+                    moves += 1;
+                    if moves % 2 == 0 {
+                        match n {
+                            "swish" => "air",
+                            "air" if plan.palette == "luxury" => "whoosh-air",
+                            "air" => "swish",
+                            "whoosh" => "whoosh-air",
+                            "passby" => "whoosh-air",
+                            n => n,
+                        }
+                        .to_string()
+                    } else {
+                        n.to_string()
+                    }
+                }
                 Some(n) => n.to_string(),
                 None => continue,
             },
