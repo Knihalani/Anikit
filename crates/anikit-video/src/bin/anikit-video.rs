@@ -28,7 +28,7 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|b
   beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
   music  spec.json -o out.wav   generate a mastered soundtrack (anikit-video docs music)
 common: --json (machine-readable output)
-agents: new | templates | prompt | critique | preview | mcp   (anikit-video templates, anikit-video prompt)";
+start:  docs [topic] | recipes [name] (-o file) | music | critique --render | looks | templates | preview | mcp | --version";
 
 struct Args {
     cmd: String,
@@ -271,6 +271,8 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             Ok(ExitCode::SUCCESS)
         }
         "still" => {
+            // One frame: compile latency matters more than per-frame throughput.
+            anikit_shader::set_lane_groups(1);
             let path = need_input(a)?;
             let out = PathBuf::from(a.get("-o").or(a.get("--out")).unwrap_or("still.png"));
             let scale = a.num("--scale")?.unwrap_or(1.0);

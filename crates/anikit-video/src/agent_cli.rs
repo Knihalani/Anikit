@@ -57,6 +57,10 @@ pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "promp
 /// Run an agent command. `args` excludes the program name.
 pub fn run(args: &[String]) -> Option<i32> {
     let cmd = args.first().map(|s| s.as_str()).unwrap_or("--help");
+    if matches!(cmd, "--version" | "-V" | "version") {
+        println!("anikit-video {}", env!("CARGO_PKG_VERSION"));
+        return Some(0);
+    }
     if matches!(cmd, "--help" | "-h" | "help") {
         print!("Render: anikit-video render|still|sheet|check|info|schema SPEC [options]   (anikit-video render spec.json -o out.mp4)\n{HELP}");
         return Some(0);
@@ -668,6 +672,36 @@ fn cmd_looks(args: &[String]) -> Result<(), String> {
     let a = parse(args, &[], &["json"])?;
     let t = looks_text(a.pos.first().map(|s| s.as_str()), a.has("json"))?;
     out!("{t}");
+    Ok(())
+}
+
+/// `recipes [name] [-o file] [--json]`: piped or with `-o`/`--json`, a named
+/// shot prints only its spec JSON (notes go to stderr), so it can be rendered directly.
+fn cmd_recipes(args: &[String]) -> Result<(), String> {
+    use std::io::IsTerminal;
+    let a = parse(args, &["o", "out"], &["json"])?;
+    let Some(name) = a.pos.first() else {
+        out!("{}", crate::agent_docs::recipes(None)?);
+        return Ok(());
+    };
+    let spec = crate::agent_docs::recipe_spec(name);
+    let raw = a.has("json") || a.get("o").or(a.get("out")).is_some() || !std::io::stdout().is_terminal();
+    match (spec, raw) {
+        (Some((about, spec)), true) => {
+            let text = format!("{}\n", serde_json::to_string_pretty(&spec).unwrap());
+            match a.get("o").or(a.get("out")) {
+                Some(o) => {
+                    write(Path::new(o), &text)?;
+                    eprintln!("wrote {o}: {about}\nnext: anikit-video still {o} --at 1 --width 640 -o f.png, then anikit-video render {o} -o out.mp4");
+                }
+                None => {
+                    eprintln!("{about}");
+                    out!("{text}");
+                }
+            }
+        }
+        _ => out!("{}", crate::agent_docs::recipes(Some(name))?),
+    }
     Ok(())
 }
 

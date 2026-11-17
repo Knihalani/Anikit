@@ -181,12 +181,38 @@ impl Prepare for Visualizer {
         if !(self.gain.is_finite() && self.offset.is_finite() && self.delay.is_finite()) {
             return Err(Error("`gain`, `offset` and `delay` must be finite".into()));
         }
+        // Several visualizers usually share one track: decode and analyse it
+        // once per (file, bands, smoothing) for the whole process.
+        // Keyed by the file's size and modification time too, so a rewritten
+        // file (MCP server, --watch) is analysed again.
+        type Key = (Option<String>, u64, u128, usize, u32);
+        static CACHE: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<Key, Arc<Table>>>> = std::sync::OnceLock::new();
+        let smoothing = clamp01(self.smoothing);
+        let (len, mtime) = self
+            .src
+            .as_deref()
+            .and_then(|p| std::fs::metadata(p).ok())
+            .map(|m| (m.len(), m.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map_or(0, |d| d.as_nanos())))
+            .unwrap_or((0, 0));
+        let key: Key = (self.src.clone(), len, mtime, bands, smoothing.to_bits());
+        let cache = CACHE.get_or_init(Default::default);
+        if let Some(t) = cache.lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
+            self.table = Some(t.clone());
+            return Ok(());
+        }
         let decoded = self.src.as_deref().and_then(|s| crate::audio::decode_file_at(s, SR).ok()).filter(|p| p.frames() > N);
         let (pcm, looped) = match decoded {
             Some(p) => (p, false),
             None => (synth(), true),
         };
-        self.table = Some(Arc::new(analyse(&pcm, bands, clamp01(self.smoothing), looped)));
+        let t = Arc::new(analyse(&pcm, bands, smoothing, looped));
+        let mut c = cache.lock().unwrap_or_else(|e| e.into_inner());
+        // Bounded: a long-lived process may see many tracks.
+        if c.len() > 32 {
+            c.clear();
+        }
+        c.insert(key, t.clone());
+        self.table = Some(t);
         Ok(())
     }
 }

@@ -29,7 +29,8 @@ use std::f32::consts::TAU;
 /// - stars, starfield, dots: alpha quantised into a few fills (exact: 256 levels);
 /// - grain: one baked tile moved to a random offset per update (exact: fresh noise every update).
 fn exact() -> bool {
-    false
+    // qbench reference renders (`components::reference()`).
+    super::style::reference()
 }
 
 /// Alpha levels for bucketed fills.
@@ -753,7 +754,9 @@ impl Component for Grain {
         let soft = self.softness.clamp(0.0, 1.0);
         // One baked tile, moved to a fresh random offset every update; the
         // exact path makes fresh noise every update instead.
-        let salt = if exact() { frame } else { 0 };
+        // Grain is not switched by reference mode: fresh noise and a moved tile are
+        // different random fields, which a per-pixel comparison can't judge.
+        let salt = 0u32;
         let key = fnv(&[b"grain4", &salt.to_le_bytes(), &self.seed.to_le_bytes(), &f32s_key(&[amt, soft]), &[mode]]);
         let seed = self.seed;
         let id = ctx.assets.image(key, TILE, TILE, &mut || {

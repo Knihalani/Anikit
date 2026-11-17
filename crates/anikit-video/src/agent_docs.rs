@@ -83,6 +83,17 @@ fn uniforms(src: &str) -> Vec<(String, String, String)> {
         .collect()
 }
 
+/// A hand-built recipe's notes and spec (`None` for shader-library entries).
+pub fn recipe_spec(name: &str) -> Option<(String, Value)> {
+    let (_, src) = RECIPES.iter().find(|(r, _)| *r == name)?;
+    let v: Value = serde_json::from_str(src).ok()?;
+    let mut about = v["about"].as_str().unwrap_or("").to_string();
+    if let Some(c) = v["cost"].as_str() {
+        about += &format!(" Cost: {c}.");
+    }
+    Some((about, v["spec"].clone()))
+}
+
 /// The recipe list, or one recipe: its notes and a ready spec.
 /// A recipe (or library shader) as a ready spec: what `recipes <name> -o file` writes
 /// and what a piped `recipes <name>` prints.
@@ -119,7 +130,8 @@ pub fn recipes(name: Option<&str>) -> Result<String, String> {
     };
     if let Some((_, src)) = RECIPES.iter().find(|(r, _)| *r == n) {
         let v: Value = serde_json::from_str(src).unwrap();
-        return Ok(format!("# {n}\n\n{}\n\n```json\n{}\n```\n", v["about"].as_str().unwrap_or(""), crate::agent_cli::compact_json(&v["spec"])));
+        let cost = v["cost"].as_str().map(|c| format!("\n\nCost: {c}.")).unwrap_or_default();
+        return Ok(format!("# {n}\n\n{}{cost}\n\n`anikit-video recipes {n} -o {n}.json` writes the spec.\n\n```json\n{}\n```\n", v["about"].as_str().unwrap_or(""), crate::agent_cli::compact_json(&v["spec"])));
     }
     if let Some(e) = lib.iter().find(|e| e.name == n) {
         let us = uniforms(e.src);
