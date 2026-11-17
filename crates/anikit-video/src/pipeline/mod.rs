@@ -225,6 +225,8 @@ struct Worker {
     yuv: YuvFrame,
     map: crate::render::MbMap,
     last: Option<usize>,
+    /// When this thread last returned a frame to the encoder (fused mode), to time encoding.
+    returned: Option<Instant>,
 }
 
 thread_local! {
@@ -235,6 +237,7 @@ thread_local! {
         yuv: YuvFrame::default(),
         map: crate::render::MbMap::new(0, 0),
         last: None,
+        returned: None,
     });
 }
 
@@ -263,6 +266,8 @@ pub struct Profile {
     pub eval_ns: AtomicU64,
     pub render_ns: AtomicU64,
     pub copy_ns: AtomicU64,
+    /// Time the encoder spent between our callbacks on the same chunk.
+    pub encode_ns: AtomicU64,
     pub unchanged: AtomicU64,
     /// Frames skipped without evaluating (static spans).
     pub held: AtomicU64,
@@ -336,7 +341,12 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
         with_renderer(ev, |_, _| {});
         let held = WORKER.with(|w| {
             let mut w = w.borrow_mut();
-            let Worker { dl, map, last, .. } = &mut *w;
+            if let (Some(r), Some(l)) = (w.returned.take(), w.last) {
+                if l + 1 == k && !starts.contains(&k) {
+                    prof.encode_ns.fetch_add((t - r).as_nanos() as u64, Ordering::Relaxed);
+                }
+            }
+            let Worker { dl, map, last, returned, .. } = &mut *w;
             let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
             // Held frame: provably identical to the previous one; skip eval and render.
             let fi = (f0 + k) as f32;
@@ -345,6 +355,7 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
                 prof.held.fetch_add(1, Ordering::Relaxed);
                 hints.changed = Some(vec![false; map.mb_width * map.mb_height]);
                 *last = Some(k);
+                *returned = Some(Instant::now());
                 return true;
             }
             eval_frame(ev, (f0 + k) as u32, opts.scale, dl);
@@ -387,6 +398,7 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
             }
             *last = Some(k);
             prof.copy_ns.fetch_add(ns(t), Ordering::Relaxed);
+            w.returned = Some(Instant::now());
         });
         let d = done.fetch_add(1, Ordering::Relaxed) + 1;
         if opts.progress {
@@ -565,9 +577,10 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
         let per = |x: &AtomicU64| x.load(Ordering::Relaxed) as f64 / 1e6 / n.max(1) as f64;
         let (e, r, c) = (per(&prof.eval_ns), per(&prof.render_ns), per(&prof.copy_ns));
         let wall = t_enc.as_secs_f64() * 1e3 / n.max(1) as f64;
-        let enc = (wall * threads as f64 - e - r - c).max(0.0);
+        let enc = per(&prof.encode_ns);
+        let idle = (wall * threads as f64 - e - r - c - enc).max(0.0);
         eprintln!(
-            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}  (remainder)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
+            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting: load imbalance, mux, startup)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
             unchanged,
             prof.held.load(Ordering::Relaxed),
             prof.partial.load(Ordering::Relaxed),
