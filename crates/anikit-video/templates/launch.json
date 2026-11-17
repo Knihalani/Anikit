@@ -160,8 +160,8 @@
                 "to": {
                   "zoom": 1
                 },
-                "duration": "{{max(2.4, readtime(hook) + 0.7)}}",
-                "ease": "outCubic"
+                "duration": 0.9,
+                "ease": "outExpo"
               }
             ]
           },
