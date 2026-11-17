@@ -826,3 +826,72 @@ impl Sim {
         (st.steps, st.sim_secs)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sim(v: Value) -> Parsed {
+        let mut shapes = spec::Shapes::new();
+        parse(&v, &[], &mut shapes, &mut Vec::new(), &HashMap::new(), &[], Some(0.0)).unwrap()
+    }
+
+    #[test]
+    fn sphere_comes_to_rest_on_the_ground() {
+        let p = sim(serde_json::json!({ "bodies": [ { "type": "sphere", "radius": 0.25, "layout": "expr", "pos": [0, 3, 0] } ] }));
+        let (a, _, _) = p.sim.at(4.0);
+        assert!((a[0][1] - 0.25).abs() < 0.02, "rest height {}", a[0][1]);
+    }
+
+    #[test]
+    fn fast_thin_panes_dont_tunnel_through_the_ground() {
+        let p = sim(serde_json::json!({ "bodies": [ { "type": "pane", "size": [0.5, 0.5, 0.01], "count": 20, "layout": "rain", "velocity": [0, -12, 0] } ] }));
+        for k in 1..120 {
+            let (a, _, _) = p.sim.at(k as f32 / 30.0);
+            for q in a.iter() {
+                assert!(q[1] > -0.02, "body below the ground at frame {k}: {}", q[1]);
+            }
+        }
+    }
+
+    #[test]
+    fn deterministic_whatever_the_order_frames_are_asked_in() {
+        let spec = serde_json::json!({ "bodies": [ { "type": "box", "size": 0.2, "count": 200, "layout": "pile" } ] });
+        let a = sim(spec.clone());
+        let b = sim(spec);
+        let x = a.sim.at(2.0).0;
+        let _ = b.sim.at(0.5);
+        let _ = b.sim.at(1.2);
+        let y = b.sim.at(2.0).0;
+        assert_eq!(x.as_slice(), y.as_slice());
+    }
+
+    #[test]
+    fn a_line_of_dominoes_all_falls() {
+        let p = sim(serde_json::json!({ "bodies": [ { "type": "pane", "count": 30, "layout": "dominoes", "path": "line" } ] }));
+        let (a, _, _) = p.sim.at(12.0);
+        for (i, q) in a.iter().enumerate() {
+            // Upright panes have their local Y along world Y.
+            let up = mat_of([q[3], q[4], q[5], q[6]])[1].y;
+            assert!(up < 0.8, "domino {i} still standing (up·y = {up})");
+        }
+    }
+
+    #[test]
+    fn standing_dominoes_wait_until_hit() {
+        let p = sim(serde_json::json!({ "bodies": [ { "type": "pane", "count": 50, "layout": "dominoes", "path": "line" } ] }));
+        let (a, _, _) = p.sim.at(0.4);
+        let up = mat_of([a[49][3], a[49][4], a[49][5], a[49][6]])[1].y;
+        assert!(up > 0.999 && (a[49][1] - p.sim.init[49][1]).abs() < 2e-3, "up {up}, y {} vs {}", a[49][1], p.sim.init[49][1]);
+    }
+
+    #[test]
+    fn quaternion_round_trip() {
+        let xf = Xf::new(v3(1.0, 2.0, 3.0), v3(30.0, -70.0, 145.0), 1.0);
+        let q = quat_of(&xf.r);
+        let r = mat_of(q);
+        for k in 0..3 {
+            assert!(len(sub(r[k], xf.r[k])) < 1e-5);
+        }
+    }
+}

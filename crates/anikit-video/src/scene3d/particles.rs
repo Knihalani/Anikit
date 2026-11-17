@@ -1151,3 +1151,64 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
         any_over,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sim(v: Value) -> Sim {
+        let mut shapes = spec::Shapes::new();
+        let d = parse(&v, &mut shapes, &mut Vec::new(), &HashMap::new(), &[], "p").unwrap();
+        Sim::new(&d, 30.0, Some(0.0), None, &crate::pipeline::textures::CompTextures::new(1 << 20)).unwrap()
+    }
+
+    #[test]
+    fn same_frames_in_any_order() {
+        let v = serde_json::json!({ "count": 5000, "flow": 1.0, "life": 1.0, "gravity": -1.0 });
+        let a = sim(v.clone());
+        let b = sim(v);
+        let x = a.at(1.0);
+        let _ = b.at(1.5);
+        let y = b.at(1.0);
+        assert_eq!(x.pos, y.pos);
+    }
+
+    #[test]
+    fn flow_is_divergence_free() {
+        let g = FlowGrid::new(3);
+        let (mut div, mut mag) = (0.0f32, 0.0f32);
+        for k in 0..200 {
+            let p = [u01(hash2(k, 1)) * 64.0, u01(hash2(k, 2)) * 64.0, u01(hash2(k, 3)) * 64.0];
+            let e = 0.5;
+            let dx = g.sample(p[0] + e, p[1], p[2])[0] - g.sample(p[0] - e, p[1], p[2])[0];
+            let dy = g.sample(p[0], p[1] + e, p[2])[1] - g.sample(p[0], p[1] - e, p[2])[1];
+            let dz = g.sample(p[0], p[1], p[2] + e)[2] - g.sample(p[0], p[1], p[2] - e)[2];
+            div += (dx + dy + dz).abs();
+            mag += dx.abs() + dy.abs() + dz.abs();
+        }
+        assert!(div < mag * 0.15, "divergence {div} vs gradient {mag}");
+    }
+
+    #[test]
+    fn particles_bounce_off_the_floor() {
+        let s = sim(serde_json::json!({ "count": 2000, "emit": { "shape": "box", "pos": [0, 1, 0], "size": 1 }, "gravity": -9.8, "velocity": [0, -5, 0] }));
+        let q = s.at(2.0);
+        assert!(q.pos.iter().all(|p| p[1] >= 0.0));
+    }
+
+    #[test]
+    fn splats_conserve_light_in_and_out_of_focus() {
+        let s = sim(serde_json::json!({ "count": 20000, "emit": { "shape": "ball", "radius": 0.3, "pos": [0, 1, 0] }, "size": 0.003, "size_var": 0 }));
+        let snap = s.at(0.0);
+        let (w, h) = (320usize, 180usize);
+        let depth = vec![1e9f32; w * h];
+        let total = |focus: f32, ap: f32| {
+            let cam = Camera { pos: v3(0.0, 1.0, 4.0), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus, aperture: ap, roll: 0.0, shutter: 0.0 };
+            let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus, aperture: ap, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) };
+            let l = render(&[(&s, snap.clone())], &v, 0.0);
+            l.emit.iter().map(|e| e[0] as f64).sum::<f64>()
+        };
+        let (sharp, blurred) = (total(4.0, 0.0), total(1.0, 30.0));
+        assert!(sharp > 0.0 && (sharp - blurred).abs() / sharp < 0.03, "sharp {sharp} vs blurred {blurred}");
+    }
+}
