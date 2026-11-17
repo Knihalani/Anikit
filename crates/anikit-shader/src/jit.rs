@@ -93,19 +93,24 @@ enum Val {
     Smp,
 }
 
+/// Lane groups per kernel iteration: two 2×2 quads side by side, run as one
+/// 8-lane SPMD program. Independent dependency chains for the CPU to overlap
+/// (a raymarch is latency-bound); per-lane results are identical to one group.
+const NG: usize = 2;
+
 enum Ctl {
-    Loop { mask: Variable, cnt: Variable },
-    Switch { brk: Variable },
+    Loop { mask: [Variable; NG], cnt: [Variable; NG] },
+    Switch { brk: [Variable; NG] },
 }
 
 struct Frame<'m> {
     f: &'m naga::Function,
     fi: &'m FunctionInfo,
-    args: Vec<Val>,
-    ex: Vec<Option<Val>>,
+    args: [Vec<Val>; NG],
+    ex: [Vec<Option<Val>>; NG],
     locals: Vec<usize>,
-    ret: Variable,
-    ret_vars: Vec<Variable>,
+    ret: [Variable; NG],
+    ret_vars: [Vec<Variable>; NG],
     ret_kinds: Vec<K>,
     ctl: Vec<Ctl>,
     /// Whether the caller's mask was its own entry mask at the call.
@@ -124,15 +129,20 @@ struct Lower<'m, 'b> {
     m: &'m naga::Module,
     info: &'m ModuleInfo,
     b: FunctionBuilder<'b>,
-    roots: Vec<Vec<Variable>>,
+    /// Per root: the slot variables of each lane group.
+    roots: Vec<[Vec<Variable>; NG]>,
     /// Frame depth that owns each root (0 = kernel: globals, output).
     root_owner: Vec<usize>,
     root_kinds: Vec<Vec<K>>,
     gexpr: Vec<Option<Val>>,
     globals: HashMap<Handle<naga::GlobalVariable>, Val>,
     frames: Vec<Frame<'m>>,
-    exec: Variable,
-    killed: Variable,
+    exec: [Variable; NG],
+    killed: [Variable; NG],
+    /// The lane group being lowered (expressions and per-lane state).
+    g: usize,
+    /// Groups in use: 1, or `NG` for two quads per iteration.
+    ng: usize,
     has_kill: bool,
     full: bool,
     /// Expressions emitted by loop unrolling so far (bounded code growth).
@@ -247,7 +257,7 @@ impl<'m, 'b> Lower<'m, 'b> {
     }
 
     fn new_root(&mut self, kinds: Vec<K>) -> usize {
-        let vars: Vec<Variable> = kinds.iter().map(|k| self.b.declare_var(k.ty())).collect();
+        let vars: [Vec<Variable>; NG] = std::array::from_fn(|g| if g < self.ng { kinds.iter().map(|k| self.b.declare_var(k.ty())).collect() } else { Vec::new() });
         self.roots.push(vars);
         self.root_kinds.push(kinds);
         self.root_owner.push(self.frames.len());
@@ -255,11 +265,20 @@ impl<'m, 'b> Lower<'m, 'b> {
     }
 
     fn exec(&mut self) -> Value {
-        self.b.use_var(self.exec)
+        self.b.use_var(self.exec[self.g])
     }
 
     fn set_exec(&mut self, v: Value) {
-        self.b.def_var(self.exec, v);
+        self.b.def_var(self.exec[self.g], v);
+    }
+
+    /// Any lane of any group set in `m[g]`.
+    fn any_g(&mut self, m: &[Value; NG]) -> Value {
+        let mut v = m[0];
+        for &x in m.iter().take(self.ng).skip(1) {
+            v = self.b.ins().bor(v, x);
+        }
+        any(&mut self.b, v)
     }
 
     /// Masked write of one slot.
@@ -289,11 +308,12 @@ impl<'m, 'b> Lower<'m, 'b> {
         match sc {
             Sc::Global => self.gexpr[h.index()].clone().ok_or_else(|| err("unsupported constant expression")),
             Sc::Top => {
-                if let Some(v) = &self.frames.last().unwrap().ex[h.index()] {
+                let g = self.g;
+                if let Some(v) = &self.frames.last().unwrap().ex[g][h.index()] {
                     return Ok(v.clone());
                 }
                 let v = self.lower(sc, h)?;
-                self.frames.last_mut().unwrap().ex[h.index()] = Some(v.clone());
+                self.frames.last_mut().unwrap().ex[g][h.index()] = Some(v.clone());
                 Ok(v)
             }
         }
@@ -308,7 +328,7 @@ impl<'m, 'b> Lower<'m, 'b> {
     }
 
     fn load(&mut self, p: &Ptr) -> R<Vec<Value>> {
-        let vars = self.roots[p.root].clone();
+        let vars = self.roots[p.root][self.g].clone();
         if p.dynx.is_empty() {
             return Ok((p.off..p.off + p.len).map(|i| self.b.use_var(vars[i.min(vars.len() - 1)])).collect());
         }
@@ -344,7 +364,7 @@ impl<'m, 'b> Lower<'m, 'b> {
     }
 
     fn store(&mut self, p: &Ptr, vals: &[Value]) -> R<()> {
-        let vars = self.roots[p.root].clone();
+        let vars = self.roots[p.root][self.g].clone();
         let mask = self.mask_for(self.root_owner[p.root]);
         if p.dynx.is_empty() {
             for i in 0..p.len.min(vals.len()) {
@@ -422,13 +442,13 @@ impl<'m, 'b> Lower<'m, 'b> {
             }
             E::AccessIndex { base, index } => self.access_index(sc, *base, *index as usize)?,
             E::Access { base, index } => self.access(sc, *base, *index)?,
-            E::FunctionArgument(i) => self.frames.last().unwrap().args[*i as usize].clone(),
+            E::FunctionArgument(i) => self.frames.last().unwrap().args[self.g][*i as usize].clone(),
             E::GlobalVariable(g) => {
                 self.globals.get(g).cloned().ok_or_else(|| err(format!("unsupported global variable `{}`", self.m.global_variables[*g].name.clone().unwrap_or_default())))?
             }
             E::LocalVariable(l) => {
                 let root = self.frames.last().unwrap().locals[l.index()];
-                let len = self.roots[root].len();
+                let len = self.roots[root][0].len();
                 Val::P(Ptr { root, off: 0, len, dynx: Vec::new() })
             }
             E::Load { pointer } => match self.get(sc, *pointer)? {
@@ -1341,15 +1361,16 @@ impl<'m, 'b> Lower<'m, 'b> {
 
     /// Lanes still alive after a structured statement that started with `before`.
     fn after_mask(&mut self, before: Value) -> Value {
+        let g = self.g;
         let fr = self.frames.last().unwrap();
-        let ret = fr.ret;
+        let ret = fr.ret[g];
         let mut parts: Vec<(Variable, bool)> = Vec::new(); // (var, negate)
         for c in fr.ctl.iter().rev() {
             match c {
-                Ctl::Switch { brk } => parts.push((*brk, true)),
+                Ctl::Switch { brk } => parts.push((brk[g], true)),
                 Ctl::Loop { mask, cnt } => {
-                    parts.push((*mask, false));
-                    parts.push((*cnt, true));
+                    parts.push((mask[g], false));
+                    parts.push((cnt[g], true));
                     break;
                 }
             }
@@ -1376,8 +1397,13 @@ impl<'m, 'b> Lower<'m, 'b> {
                 // Skip the rest of the block when no lane is left.
                 let rest = self.b.create_block();
                 let end = self.b.create_block();
-                let e = self.exec();
-                let a = any(&mut self.b, e);
+                let mut es = [self.exec(); NG];
+                for g in 1..self.ng {
+                    self.g = g;
+                    es[g] = self.exec();
+                }
+                self.g = 0;
+                let a = self.any_g(&es);
                 self.b.ins().brif(a, rest, &[], end, &[]);
                 self.b.switch_to_block(rest);
                 self.lower_block(&stmts[i + 1..])?;
@@ -1511,52 +1537,85 @@ impl<'m, 'b> Lower<'m, 'b> {
 
     fn unroll(&mut self, u: Unroll<'m>) -> R<()> {
         let root = self.frames.last().unwrap().locals[u.lv.index()];
-        let var = self.roots[root][0];
-        let entry = self.mask_for(self.root_owner[root]);
-        let old = self.b.use_var(var);
+        let mut entry = [None; NG];
+        let mut old = [None; NG];
+        for g in 0..self.ng {
+            self.g = g;
+            entry[g] = self.mask_for(self.root_owner[root]);
+            old[g] = Some(self.b.use_var(self.roots[root][g][0]));
+        }
+        self.g = 0;
         self.unrolled += u.weight * u.vals.len();
         self.frames.last_mut().unwrap().loops += 1;
         for &v in &u.vals {
             // Every lane sees the constant; lanes not running here don't read it.
             let c = isplat(&mut self.b, v as i32);
-            self.b.def_var(var, c);
+            for g in 0..self.ng {
+                self.b.def_var(self.roots[root][g][0], c);
+            }
             self.lower_block(u.guard)?;
             self.lower_block(u.rest)?;
         }
         self.frames.last_mut().unwrap().loops -= 1;
         // After the loop the counter holds its exit value, in the lanes that ran it.
         let e = isplat(&mut self.b, u.end as i32);
-        let fin = match entry {
-            None => e,
-            Some(m) => sel(&mut self.b, m, e, old),
-        };
-        self.b.def_var(var, fin);
+        for g in 0..self.ng {
+            let fin = match (entry[g], old[g]) {
+                (Some(m), Some(o)) => sel(&mut self.b, m, e, o),
+                _ => e,
+            };
+            self.b.def_var(self.roots[root][g][0], fin);
+        }
         Ok(())
     }
 
     fn stmt(&mut self, st: &'m S) -> R<()> {
+        // Straight-line statements run once per lane group; control flow runs
+        // once, branching when any lane of any group needs it.
+        if matches!(st, S::Emit(_) | S::Store { .. } | S::Break | S::Continue | S::Return { .. } | S::Kill) {
+            for g in 0..self.ng {
+                self.g = g;
+                self.stmt1(st)?;
+            }
+            self.g = 0;
+            return Ok(());
+        }
+        self.stmt1(st)
+    }
+
+    fn stmt1(&mut self, st: &'m S) -> R<()> {
         match st {
             S::Emit(range) => {
                 for h in range.clone() {
                     let v = self.lower(Sc::Top, h)?;
-                    self.frames.last_mut().unwrap().ex[h.index()] = Some(v);
+                    let g = self.g;
+                    self.frames.last_mut().unwrap().ex[g][h.index()] = Some(v);
                 }
             }
             S::Block(b) => self.lower_block(b)?,
             S::If { condition, accept, reject } => {
-                let c = self.vals(Sc::Top, *condition)?[0];
-                let e = self.exec();
                 let full = self.full;
-                let mt = self.b.ins().band(e, c);
-                let me = self.b.ins().band_not(e, c);
+                let (mut e, mut mt, mut me) = ([self.exec(); NG], [self.exec(); NG], [self.exec(); NG]);
+                for g in 0..self.ng {
+                    self.g = g;
+                    let c = self.vals(Sc::Top, *condition)?[0];
+                    e[g] = self.exec();
+                    mt[g] = self.b.ins().band(e[g], c);
+                    me[g] = self.b.ins().band_not(e[g], c);
+                }
+                self.g = 0;
                 let merge = self.b.create_block();
                 if !accept.is_empty() {
                     let tb = self.b.create_block();
                     let next = self.b.create_block();
-                    let a = any(&mut self.b, mt);
+                    let a = self.any_g(&mt);
                     self.b.ins().brif(a, tb, &[], next, &[]);
                     self.b.switch_to_block(tb);
-                    self.set_exec(mt);
+                    for g in 0..self.ng {
+                        self.g = g;
+                        self.set_exec(mt[g]);
+                    }
+                    self.g = 0;
                     self.full = false;
                     self.lower_block(accept)?;
                     self.b.ins().jump(next, &[]);
@@ -1564,33 +1623,43 @@ impl<'m, 'b> Lower<'m, 'b> {
                 }
                 if !reject.is_empty() {
                     let eb = self.b.create_block();
-                    let a = any(&mut self.b, me);
+                    let a = self.any_g(&me);
                     self.b.ins().brif(a, eb, &[], merge, &[]);
                     self.b.switch_to_block(eb);
-                    self.set_exec(me);
+                    for g in 0..self.ng {
+                        self.g = g;
+                        self.set_exec(me[g]);
+                    }
+                    self.g = 0;
                     self.full = false;
                     self.lower_block(reject)?;
                 }
                 self.b.ins().jump(merge, &[]);
                 self.b.switch_to_block(merge);
-                if may_exit(st) {
-                    let m = self.after_mask(e);
+                let exits = may_exit(st);
+                for g in 0..self.ng {
+                    self.g = g;
+                    let m = if exits { self.after_mask(e[g]) } else { e[g] };
                     self.set_exec(m);
-                    self.full = false;
-                } else {
-                    self.set_exec(e);
-                    self.full = full;
                 }
+                self.g = 0;
+                self.full = if exits { false } else { full };
             }
             S::Loop { body, continuing, break_if } => {
-                let e = self.exec();
                 let full = self.full;
-                let mask = self.b.declare_var(I32X4);
-                let cnt = self.b.declare_var(I32X4);
-                let iters = self.b.declare_var(I32);
-                self.b.def_var(mask, e);
+                let ng = self.ng;
+                let mut e = [self.exec(); NG];
+                let mask: [Variable; NG] = std::array::from_fn(|_| self.b.declare_var(I32X4));
+                let cnt: [Variable; NG] = std::array::from_fn(|_| self.b.declare_var(I32X4));
                 let z = isplat(&mut self.b, 0);
-                self.b.def_var(cnt, z);
+                for g in 0..ng {
+                    self.g = g;
+                    e[g] = self.exec();
+                    self.b.def_var(mask[g], e[g]);
+                    self.b.def_var(cnt[g], z);
+                }
+                self.g = 0;
+                let iters = self.b.declare_var(I32);
                 let z0 = self.b.ins().iconst(I32, 0);
                 self.b.def_var(iters, z0);
                 let hdr = self.b.create_block();
@@ -1599,15 +1668,20 @@ impl<'m, 'b> Lower<'m, 'b> {
                 let exit = self.b.create_block();
                 self.b.ins().jump(hdr, &[]);
                 self.b.switch_to_block(hdr);
-                let z = isplat(&mut self.b, 0);
-                self.b.def_var(cnt, z);
-                let lm = self.b.use_var(mask);
                 let ret = self.frames.last().unwrap().ret;
-                let r = self.b.use_var(ret);
-                let ex = self.b.ins().band_not(lm, r);
-                self.set_exec(ex);
+                let mut exs = [z; NG];
+                for g in 0..ng {
+                    self.g = g;
+                    let z = isplat(&mut self.b, 0);
+                    self.b.def_var(cnt[g], z);
+                    let lm = self.b.use_var(mask[g]);
+                    let r = self.b.use_var(ret[g]);
+                    exs[g] = self.b.ins().band_not(lm, r);
+                    self.set_exec(exs[g]);
+                }
+                self.g = 0;
                 self.full = false;
-                let a = any(&mut self.b, ex);
+                let a = self.any_g(&exs);
                 self.b.ins().brif(a, capped, &[], exit, &[]);
                 self.b.switch_to_block(capped);
                 let it = self.b.use_var(iters);
@@ -1620,106 +1694,135 @@ impl<'m, 'b> Lower<'m, 'b> {
                 self.frames.last_mut().unwrap().loops += 1;
                 self.lower_block(body)?;
                 // Continuing: every lane that didn't break or return.
-                let lm = self.b.use_var(mask);
-                let r = self.b.use_var(ret);
-                let ex = self.b.ins().band_not(lm, r);
-                self.set_exec(ex);
+                for g in 0..ng {
+                    self.g = g;
+                    let lm = self.b.use_var(mask[g]);
+                    let r = self.b.use_var(ret[g]);
+                    let ex = self.b.ins().band_not(lm, r);
+                    self.set_exec(ex);
+                }
+                self.g = 0;
                 self.lower_block(continuing)?;
                 if let Some(c) = break_if {
-                    let c = self.vals(Sc::Top, *c)?[0];
-                    let ex = self.exec();
-                    let brk = self.b.ins().band(ex, c);
-                    let lm = self.b.use_var(mask);
-                    let lm = self.b.ins().band_not(lm, brk);
-                    self.b.def_var(mask, lm);
+                    for g in 0..ng {
+                        self.g = g;
+                        let c = self.vals(Sc::Top, *c)?[0];
+                        let ex = self.exec();
+                        let brk = self.b.ins().band(ex, c);
+                        let lm = self.b.use_var(mask[g]);
+                        let lm = self.b.ins().band_not(lm, brk);
+                        self.b.def_var(mask[g], lm);
+                    }
+                    self.g = 0;
                 }
                 self.frames.last_mut().unwrap().ctl.pop();
                 self.frames.last_mut().unwrap().loops -= 1;
                 self.b.ins().jump(hdr, &[]);
                 self.b.switch_to_block(exit);
-                let r = self.b.use_var(ret);
-                let m = self.b.ins().band_not(e, r);
-                if self.has_kill {
-                    let k = self.b.use_var(self.killed);
-                    let m2 = self.b.ins().band_not(m, k);
-                    self.set_exec(m2);
-                } else {
-                    self.set_exec(m);
+                for g in 0..ng {
+                    self.g = g;
+                    let r = self.b.use_var(ret[g]);
+                    let m = self.b.ins().band_not(e[g], r);
+                    if self.has_kill {
+                        let k = self.b.use_var(self.killed[g]);
+                        let m2 = self.b.ins().band_not(m, k);
+                        self.set_exec(m2);
+                    } else {
+                        self.set_exec(m);
+                    }
                 }
+                self.g = 0;
                 self.full = full && !contains_ret(body) && !contains_ret(continuing);
-                if !self.full && full {
-                    // Return inside the loop: lanes may be gone.
-                }
             }
             S::Switch { selector, cases } => {
-                let s = self.vals(Sc::Top, *selector)?[0];
-                let e = self.exec();
                 let full = self.full;
-                let brk = self.b.declare_var(I32X4);
+                let ng = self.ng;
                 let z = isplat(&mut self.b, 0);
-                self.b.def_var(brk, z);
-                let fall = self.b.declare_var(I32X4);
-                self.b.def_var(fall, z);
-                let mut matched = z;
-                let mut masks = Vec::new();
-                for c in cases {
-                    let m = match c.value {
-                        naga::SwitchValue::I32(v) => Some(v),
-                        naga::SwitchValue::U32(v) => Some(v as i32),
-                        naga::SwitchValue::Default => None,
-                    };
-                    let mv = m.map(|v| {
-                        let kv = isplat(&mut self.b, v);
-                        let mm = self.b.ins().icmp(IntCC::Equal, s, kv);
-                        matched = self.b.ins().bor(matched, mm);
-                        mm
-                    });
-                    masks.push(mv);
+                let brk: [Variable; NG] = std::array::from_fn(|_| self.b.declare_var(I32X4));
+                let fall: [Variable; NG] = std::array::from_fn(|_| self.b.declare_var(I32X4));
+                let mut e = [z; NG];
+                // Per case, per group: the lanes whose selector picks it (None = default).
+                let mut masks: Vec<[Option<Value>; NG]> = vec![[None; NG]; cases.len()];
+                let mut not_matched = [z; NG];
+                for g in 0..ng {
+                    self.g = g;
+                    let sv = self.vals(Sc::Top, *selector)?[0];
+                    e[g] = self.exec();
+                    self.b.def_var(brk[g], z);
+                    self.b.def_var(fall[g], z);
+                    let mut matched = z;
+                    for (ci, c) in cases.iter().enumerate() {
+                        let m = match c.value {
+                            naga::SwitchValue::I32(v) => Some(v),
+                            naga::SwitchValue::U32(v) => Some(v as i32),
+                            naga::SwitchValue::Default => None,
+                        };
+                        masks[ci][g] = m.map(|v| {
+                            let kv = isplat(&mut self.b, v);
+                            let mm = self.b.ins().icmp(IntCC::Equal, sv, kv);
+                            matched = self.b.ins().bor(matched, mm);
+                            mm
+                        });
+                    }
+                    not_matched[g] = self.b.ins().bnot(matched);
                 }
-                let not_matched = self.b.ins().bnot(matched);
+                self.g = 0;
                 self.frames.last_mut().unwrap().ctl.push(Ctl::Switch { brk });
                 for (c, m) in cases.iter().zip(masks) {
-                    let m = m.unwrap_or(not_matched);
-                    let em = self.b.ins().band(e, m);
-                    let f = self.b.use_var(fall);
-                    let entry = self.b.ins().bor(em, f);
+                    let mut entry = [z; NG];
+                    for g in 0..ng {
+                        let mg = m[g].unwrap_or(not_matched[g]);
+                        let em = self.b.ins().band(e[g], mg);
+                        let f = self.b.use_var(fall[g]);
+                        entry[g] = self.b.ins().bor(em, f);
+                        let zero = isplat(&mut self.b, 0);
+                        self.b.def_var(fall[g], zero);
+                    }
                     let body = self.b.create_block();
                     let next = self.b.create_block();
-                    let zero = isplat(&mut self.b, 0);
-                    self.b.def_var(fall, zero);
-                    let a = any(&mut self.b, entry);
+                    let a = self.any_g(&entry);
                     self.b.ins().brif(a, body, &[], next, &[]);
                     self.b.switch_to_block(body);
-                    self.set_exec(entry);
+                    for g in 0..ng {
+                        self.g = g;
+                        self.set_exec(entry[g]);
+                    }
+                    self.g = 0;
                     self.full = false;
                     self.lower_block(&c.body)?;
                     if c.fall_through {
-                        let m = self.after_mask(entry);
-                        self.b.def_var(fall, m);
+                        for g in 0..ng {
+                            self.g = g;
+                            let m = self.after_mask(entry[g]);
+                            self.b.def_var(fall[g], m);
+                        }
+                        self.g = 0;
                     }
                     self.b.ins().jump(next, &[]);
                     self.b.switch_to_block(next);
                 }
                 self.frames.last_mut().unwrap().ctl.pop();
-                let m = self.after_mask(e);
-                self.set_exec(m);
-                self.full = full && !may_exit(st);
-                if full && !self.full {
-                    // keep masked
+                for g in 0..ng {
+                    self.g = g;
+                    let m = self.after_mask(e[g]);
+                    self.set_exec(m);
                 }
+                self.g = 0;
+                self.full = full && !may_exit(st);
             }
             S::Break => {
                 let e = self.exec();
+                let g = self.g;
                 let fr = self.frames.last().unwrap();
                 match fr.ctl.last() {
                     Some(Ctl::Loop { mask, .. }) => {
-                        let mask = *mask;
+                        let mask = mask[g];
                         let lm = self.b.use_var(mask);
                         let lm = self.b.ins().band_not(lm, e);
                         self.b.def_var(mask, lm);
                     }
                     Some(Ctl::Switch { brk }) => {
-                        let brk = *brk;
+                        let brk = brk[g];
                         let bm = self.b.use_var(brk);
                         let bm = self.b.ins().bor(bm, e);
                         self.b.def_var(brk, bm);
@@ -1731,8 +1834,9 @@ impl<'m, 'b> Lower<'m, 'b> {
             }
             S::Continue => {
                 let e = self.exec();
+                let g = self.g;
                 let cnt = self.frames.last().unwrap().ctl.iter().rev().find_map(|c| match c {
-                    Ctl::Loop { cnt, .. } => Some(*cnt),
+                    Ctl::Loop { cnt, .. } => Some(cnt[g]),
                     _ => None,
                 });
                 let Some(cnt) = cnt else { return Err(err("`continue` outside a loop")) };
@@ -1746,13 +1850,13 @@ impl<'m, 'b> Lower<'m, 'b> {
                 if let Some(v) = value {
                     let vals = self.vals(Sc::Top, *v)?;
                     let mask = self.mask_for(self.frames.len());
-                    let rv = self.frames.last().unwrap().ret_vars.clone();
+                    let rv = self.frames.last().unwrap().ret_vars[self.g].clone();
                     for (var, val) in rv.into_iter().zip(vals) {
                         self.write(var, val, mask);
                     }
                 }
                 let e = self.exec();
-                let ret = self.frames.last().unwrap().ret;
+                let ret = self.frames.last().unwrap().ret[self.g];
                 let r = self.b.use_var(ret);
                 let r = self.b.ins().bor(r, e);
                 self.b.def_var(ret, r);
@@ -1761,10 +1865,11 @@ impl<'m, 'b> Lower<'m, 'b> {
             }
             S::Kill => {
                 let e = self.exec();
-                let k = self.b.use_var(self.killed);
+                let g = self.g;
+                let k = self.b.use_var(self.killed[g]);
                 let k = self.b.ins().bor(k, e);
-                self.b.def_var(self.killed, k);
-                let rets: Vec<Variable> = self.frames.iter().map(|f| f.ret).collect();
+                self.b.def_var(self.killed[g], k);
+                let rets: Vec<Variable> = self.frames.iter().map(|f| f.ret[g]).collect();
                 for ret in rets {
                     let r = self.b.use_var(ret);
                     let r = self.b.ins().bor(r, e);
@@ -1782,25 +1887,35 @@ impl<'m, 'b> Lower<'m, 'b> {
                 self.store(&p, &v)?;
             }
             S::Call { function, arguments, result } => {
-                let mut args = Vec::with_capacity(arguments.len());
-                for a in arguments {
-                    args.push(self.get(Sc::Top, *a)?);
-                }
-                let e = self.exec();
                 let full = self.full;
+                let mut args: [Vec<Val>; NG] = Default::default();
+                let mut e = [None; NG];
+                for g in 0..self.ng {
+                    self.g = g;
+                    for a in arguments {
+                        let v = self.get(Sc::Top, *a)?;
+                        args[g].push(v);
+                    }
+                    e[g] = Some(self.exec());
+                }
+                self.g = 0;
                 let r = self.inline(*function, args)?;
-                if self.has_kill {
-                    let k = self.b.use_var(self.killed);
-                    let m = self.b.ins().band_not(e, k);
-                    self.set_exec(m);
-                    self.full = false;
-                } else {
-                    self.set_exec(e);
-                    self.full = full;
+                for g in 0..self.ng {
+                    self.g = g;
+                    let eg = e[g].unwrap();
+                    if self.has_kill {
+                        let k = self.b.use_var(self.killed[g]);
+                        let m = self.b.ins().band_not(eg, k);
+                        self.set_exec(m);
+                    } else {
+                        self.set_exec(eg);
+                    }
+                    if let Some(h) = result {
+                        self.frames.last_mut().unwrap().ex[g][h.index()] = Some(Val::V(r[g].clone()));
+                    }
                 }
-                if let Some(h) = result {
-                    self.frames.last_mut().unwrap().ex[h.index()] = Some(Val::V(r));
-                }
+                self.g = 0;
+                self.full = if self.has_kill { false } else { full };
             }
             S::ControlBarrier(_) | S::MemoryBarrier(_) => {}
             other => return Err(err(format!("unsupported statement {:?}", std::mem::discriminant(other)))),
@@ -1808,73 +1923,88 @@ impl<'m, 'b> Lower<'m, 'b> {
         Ok(())
     }
 
-    /// Inline `fh` with `args`; returns the result slots.
-    fn inline(&mut self, fh: Handle<naga::Function>, args: Vec<Val>) -> R<Vec<Value>> {
+    /// Inline `fh` with per-group `args`; returns each group's result slots.
+    fn inline(&mut self, fh: Handle<naga::Function>, args: [Vec<Val>; NG]) -> R<[Vec<Value>; NG]> {
         let f = &self.m.functions[fh];
         let fi = &self.info[fh];
         self.depth += 1;
         if self.depth > 64 {
             return Err(err("functions nest too deeply (recursion is not allowed in GLSL)"));
         }
-        let ret = self.b.declare_var(I32X4);
-        let z = isplat(&mut self.b, 0);
-        self.b.def_var(ret, z);
         let ret_kinds = match &f.result {
             Some(r) => self.kinds(&self.m.types[r.ty].inner)?,
             None => Vec::new(),
         };
-        let mut ret_vars = Vec::new();
-        for k in &ret_kinds {
-            let v = self.b.declare_var(k.ty());
-            let z = self.zero(*k);
-            self.b.def_var(v, z);
-            ret_vars.push(v);
+        let z = isplat(&mut self.b, 0);
+        let ret: [Variable; NG] = std::array::from_fn(|_| self.b.declare_var(I32X4));
+        let mut ret_vars: [Vec<Variable>; NG] = Default::default();
+        for g in 0..self.ng {
+            self.b.def_var(ret[g], z);
+            for k in &ret_kinds {
+                let v = self.b.declare_var(k.ty());
+                let zk = self.zero(*k);
+                self.b.def_var(v, zk);
+                ret_vars[g].push(v);
+            }
         }
         let entry_full = self.full;
-        self.frames.push(Frame { f, fi, args, ex: vec![None; f.expressions.len()], locals: Vec::new(), ret, ret_vars, ret_kinds, ctl: Vec::new(), entry_full, loops: 0 });
+        let ex: [Vec<Option<Val>>; NG] = std::array::from_fn(|_| vec![None; f.expressions.len()]);
+        self.frames.push(Frame { f, fi, args, ex, locals: Vec::new(), ret, ret_vars, ret_kinds, ctl: Vec::new(), entry_full, loops: 0 });
         // Inside the callee, "full" means "the lanes it was called with".
         self.full = true;
         // Expressions that need no Emit (literals, constants, arguments,
         // variables) are lowered here, where they dominate the whole body.
         let emitted = emitted_set(&f.body, f.expressions.len());
-        for (h, e) in f.expressions.iter() {
-            if emitted[h.index()] || matches!(e, E::CallResult(_) | E::LocalVariable(_)) {
-                continue;
-            }
-            if let Ok(v) = self.lower(Sc::Top, h) {
-                self.frames.last_mut().unwrap().ex[h.index()] = Some(v);
+        for g in 0..self.ng {
+            self.g = g;
+            for (h, e) in f.expressions.iter() {
+                if emitted[h.index()] || matches!(e, E::CallResult(_) | E::LocalVariable(_)) {
+                    continue;
+                }
+                if let Ok(v) = self.lower(Sc::Top, h) {
+                    self.frames.last_mut().unwrap().ex[g][h.index()] = Some(v);
+                }
             }
         }
+        self.g = 0;
         let mut locals = Vec::with_capacity(f.local_variables.len());
         for (_, lv) in f.local_variables.iter() {
             let ks = self.kinds(&self.m.types[lv.ty].inner)?;
             let root = self.new_root(ks.clone());
-            let init = match lv.init {
-                Some(h) => Some(self.vals(Sc::Top, h)?),
-                None => None,
-            };
-            for (i, k) in ks.iter().enumerate() {
-                let v = match &init {
-                    Some(iv) => iv[i.min(iv.len() - 1)],
-                    None => self.zero(*k),
+            for g in 0..self.ng {
+                self.g = g;
+                let init = match lv.init {
+                    Some(h) => Some(self.vals(Sc::Top, h)?),
+                    None => None,
                 };
-                let var = self.roots[root][i];
-                self.b.def_var(var, v);
+                for (i, k) in ks.iter().enumerate() {
+                    let v = match &init {
+                        Some(iv) => iv[i.min(iv.len() - 1)],
+                        None => self.zero(*k),
+                    };
+                    let var = self.roots[root][g][i];
+                    self.b.def_var(var, v);
+                }
             }
+            self.g = 0;
             locals.push(root);
         }
         self.frames.last_mut().unwrap().locals = locals;
-        for (h, e) in f.expressions.iter() {
-            if !emitted[h.index()] && matches!(e, E::LocalVariable(_)) {
-                let v = self.lower(Sc::Top, h)?;
-                self.frames.last_mut().unwrap().ex[h.index()] = Some(v);
+        for g in 0..self.ng {
+            self.g = g;
+            for (h, e) in f.expressions.iter() {
+                if !emitted[h.index()] && matches!(e, E::LocalVariable(_)) {
+                    let v = self.lower(Sc::Top, h)?;
+                    self.frames.last_mut().unwrap().ex[g][h.index()] = Some(v);
+                }
             }
         }
+        self.g = 0;
         self.lower_block(&f.body)?;
         let fr = self.frames.pop().unwrap();
         let _ = &fr.ret_kinds;
         self.depth -= 1;
-        Ok(fr.ret_vars.iter().map(|v| self.b.use_var(*v)).collect())
+        Ok(std::array::from_fn(|g| fr.ret_vars[g].iter().map(|v| self.b.use_var(*v)).collect()))
     }
 }
 
@@ -2086,6 +2216,7 @@ pub type Layout = HashMap<String, u32>;
 
 /// Compile the shader's entry into a kernel.
 pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function>, kind: Kind, layout: &Layout) -> R<Kernel> {
+    let ng = crate::lane_groups().min(NG);
     let mut flags = settings::builder();
     flags.set("opt_level", "speed").unwrap();
     flags.set("enable_verifier", if cfg!(debug_assertions) { "true" } else { "false" }).unwrap();
@@ -2127,8 +2258,8 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
         b.switch_to_block(entry_b);
         let p = b.block_params(entry_b).to_vec();
         let (env, uni, x0, y0, nq, out) = (p[0], p[1], p[2], p[3], p[4], p[5]);
-        let exec = b.declare_var(I32X4);
-        let killed = b.declare_var(I32X4);
+        let exec: [Variable; NG] = std::array::from_fn(|_| b.declare_var(I32X4));
+        let killed: [Variable; NG] = std::array::from_fn(|_| b.declare_var(I32X4));
         let has_kill = m.functions.iter().any(|(_, f)| any_stmt(&f.body, &|s| matches!(s, S::Kill)));
         let mut lw = Lower {
             m,
@@ -2142,6 +2273,8 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
             frames: Vec::new(),
             exec,
             killed,
+            g: 0,
+            ng,
             has_kill,
             full: true,
             unrolled: 0,
@@ -2230,34 +2363,61 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
         lw.b.ins().brif(c, body, &[], done, &[]);
         lw.b.switch_to_block(body);
         let x = lw.b.use_var(xi);
-        let xs = lw.b.ins().splat(F32X4, x);
-        let fx = lw.b.ins().fadd(xs, ldx);
-        let ys = lw.b.ins().splat(F32X4, y0);
-        let fy = lw.b.ins().fadd(ys, ldy);
+        // Group g shades the quad g places to the right; a group past the end of
+        // the row runs with no lanes on and stores nothing.
         let all = lw.mask_all();
-        lw.set_exec(all);
-        let zero = isplat(&mut lw.b, 0);
-        lw.b.def_var(killed, zero);
-        lw.full = true;
-        for (root, vals) in &pre {
-            let vars = lw.roots[*root].clone();
-            for (s, v) in vals.iter().enumerate() {
-                lw.b.def_var(vars[s], *v);
+        let none = isplat(&mut lw.b, 0);
+        let mut frag: Vec<(Value, Value)> = Vec::new();
+        let mut live: Vec<Value> = Vec::new();
+        for g in 0..ng {
+            let xg = if g == 0 {
+                x
+            } else {
+                let gs = lw.b.ins().f32const(g as f32);
+                let off = lw.b.ins().fmul(qstep, gs);
+                lw.b.ins().fadd(x, off)
+            };
+            let xs = lw.b.ins().splat(F32X4, xg);
+            let fx = lw.b.ins().fadd(xs, ldx);
+            let ys = lw.b.ins().splat(F32X4, y0);
+            let fy = lw.b.ins().fadd(ys, ldy);
+            frag.push((fx, fy));
+            let ig = lw.b.ins().iadd_imm_s(i, g as i64);
+            let inb = lw.b.ins().icmp(IntCC::SignedLessThan, ig, nq);
+            live.push(inb);
+            lw.g = g;
+            let m = if g == 0 { all } else { lw.b.ins().select(inb, all, none) };
+            lw.set_exec(m);
+            lw.b.def_var(killed[g], none);
+            for (root, vals) in &pre {
+                let vars = lw.roots[*root][g].clone();
+                for (s, v) in vals.iter().enumerate() {
+                    lw.b.def_var(vars[s], *v);
+                }
             }
         }
+        lw.g = 0;
+        lw.full = true;
         let f = &m.functions[entry];
-        let color: Vec<Value> = match kind {
+        let colors: [Vec<Value>; NG] = match kind {
             Kind::Image if f.arguments.len() == 2 => {
                 let root = lw.new_root(vec![K::F; 4]);
-                let vars = lw.roots[root].clone();
-                for (s, v) in [0.0, 0.0, 0.0, 1.0].iter().enumerate() {
-                    let c = fsplat(&mut lw.b, *v);
-                    lw.b.def_var(vars[s], c);
+                let mut args: [Vec<Val>; NG] = Default::default();
+                for g in 0..ng {
+                    let vars = lw.roots[root][g].clone();
+                    for (s, v) in [0.0, 0.0, 0.0, 1.0].iter().enumerate() {
+                        let c = fsplat(&mut lw.b, *v);
+                        lw.b.def_var(vars[s], c);
+                    }
+                    args[g] = vec![Val::P(Ptr { root, off: 0, len: 4, dynx: Vec::new() }), Val::V(vec![frag[g].0, frag[g].1])];
                 }
-                lw.inline(entry, vec![Val::P(Ptr { root, off: 0, len: 4, dynx: Vec::new() }), Val::V(vec![fx, fy])])?;
-                vars.iter().map(|v| lw.b.use_var(*v)).collect()
+                lw.inline(entry, args)?;
+                std::array::from_fn(|g| if g < ng { lw.roots[root][g].clone().iter().map(|v| lw.b.use_var(*v)).collect() } else { Vec::new() })
             }
-            Kind::Image if f.arguments.len() == 1 => lw.inline(entry, vec![Val::V(vec![fx, fy])])?,
+            Kind::Image if f.arguments.len() == 1 => {
+                let args: [Vec<Val>; NG] = std::array::from_fn(|g| if g < ng { vec![Val::V(vec![frag[g].0, frag[g].1])] } else { Vec::new() });
+                lw.inline(entry, args)?
+            }
             Kind::Image => return Err(err("mainImage must take (out vec4 fragColor, in vec2 fragCoord)")),
             Kind::Transition => {
                 let off = *layout.get("iResolution").ok_or_else(|| err("internal: no iResolution"))?;
@@ -2265,31 +2425,51 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
                 let ry = lw.b.ins().load(F32, fl, uni, (off * 4 + 4) as i32);
                 let rx = lw.b.ins().splat(F32X4, rx);
                 let ry = lw.b.ins().splat(F32X4, ry);
-                let u = lw.b.ins().fdiv(fx, rx);
-                let v = lw.b.ins().fdiv(fy, ry);
-                lw.inline(entry, vec![Val::V(vec![u, v])])?
+                let mut args: [Vec<Val>; NG] = Default::default();
+                for g in 0..ng {
+                    let u = lw.b.ins().fdiv(frag[g].0, rx);
+                    let v = lw.b.ins().fdiv(frag[g].1, ry);
+                    args[g] = vec![Val::V(vec![u, v])];
+                }
+                lw.inline(entry, args)?
             }
         };
-        if color.len() < 4 {
-            return Err(err("the entry function must produce a vec4"));
-        }
-        let mut color = color;
-        if has_kill {
-            let k = lw.b.use_var(killed);
-            for c in color.iter_mut() {
-                let z = fsplat(&mut lw.b, 0.0);
-                *c = sel(&mut lw.b, k, z, *c);
+        let o = lw.b.use_var(op);
+        for g in 0..ng {
+            let mut color = colors[g].clone();
+            if color.len() < 4 {
+                return Err(err("the entry function must produce a vec4"));
+            }
+            if has_kill {
+                let k = lw.b.use_var(killed[g]);
+                for c in color.iter_mut() {
+                    let z = fsplat(&mut lw.b, 0.0);
+                    *c = sel(&mut lw.b, k, z, *c);
+                }
+            }
+            if g == 0 {
+                for (k, c) in color.iter().take(4).enumerate() {
+                    lw.b.ins().store(fl, *c, o, (k * 16) as i32);
+                }
+            } else {
+                let st = lw.b.create_block();
+                let after = lw.b.create_block();
+                lw.b.ins().brif(live[g], st, &[], after, &[]);
+                lw.b.switch_to_block(st);
+                for (k, c) in color.iter().take(4).enumerate() {
+                    lw.b.ins().store(fl, *c, o, (g * 64 + k * 16) as i32);
+                }
+                lw.b.ins().jump(after, &[]);
+                lw.b.switch_to_block(after);
             }
         }
-        let o = lw.b.use_var(op);
-        for (i, c) in color.iter().take(4).enumerate() {
-            lw.b.ins().store(fl, *c, o, (i * 16) as i32);
-        }
-        let x1 = lw.b.ins().fadd(x, qstep);
+        let gs = lw.b.ins().f32const(ng as f32);
+        let adv = lw.b.ins().fmul(qstep, gs);
+        let x1 = lw.b.ins().fadd(x, adv);
         lw.b.def_var(xi, x1);
-        let i1 = lw.b.ins().iadd_imm_s(i, 1);
+        let i1 = lw.b.ins().iadd_imm_s(i, ng as i64);
         lw.b.def_var(iv, i1);
-        let o1 = lw.b.ins().iadd_imm_s(o, 64);
+        let o1 = lw.b.ins().iadd_imm_s(o, 64 * ng as i64);
         lw.b.def_var(op, o1);
         lw.b.ins().jump(hdr, &[]);
         lw.b.switch_to_block(done);

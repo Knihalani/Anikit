@@ -263,6 +263,8 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             Ok(ExitCode::SUCCESS)
         }
         "still" => {
+            // One frame: compile latency matters more than per-frame throughput.
+            anikit_shader::set_lane_groups(1);
             let path = need_input(a)?;
             let out = PathBuf::from(a.get("-o").or(a.get("--out")).unwrap_or("still.png"));
             let scale = a.num("--scale")?.unwrap_or(1.0);
