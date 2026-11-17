@@ -3841,6 +3841,17 @@ impl C<'_> {
         if !crate::assetlib::is_ref(src) {
             return self.o.base_dir.join(src);
         }
+        // An HDRI in a 2D layer is a photo: a rectilinear view of its panorama.
+        let hdri = crate::assetlib::find(src).is_some_and(|e| e.kind == "hdri") || src.starts_with("polyhaven:hdri/");
+        if hdri {
+            return match crate::assetlib::photo_view(crate::assetlib::global(), src) {
+                Ok(p) => p,
+                Err(e) => {
+                    self.d.push(Diagnostic::error(format!("{path}.src"), e));
+                    std::path::PathBuf::from("\0missing-asset")
+                }
+            };
+        }
         match crate::assetlib::get(src) {
             Ok(f) => f.main(),
             Err(e) => {
