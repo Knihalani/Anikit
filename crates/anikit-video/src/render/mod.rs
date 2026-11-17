@@ -252,6 +252,12 @@ impl Renderer {
         &self.assets
     }
 
+    /// Replace the font table with a superset of the current one (faces are
+    /// append-only: existing ids must keep their faces). Caches stay valid.
+    pub fn set_fonts(&mut self, assets: Arc<Assets>) {
+        self.assets = assets;
+    }
+
     /// Dynamic-image hook: draw `pixmap` (premultiplied RGBA8) for `id` in the
     /// following renders, overriding [`Assets::images`] — for decoded video
     /// frames or other per-frame textures. Set it before each frame whose
@@ -965,8 +971,9 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
         blit(ctx, pix.clone(), x0, y0, alpha);
         return true;
     }
+    // Exact placement: quarter-pixel snapping made slow moves (Ken Burns) step.
     let reference = st.reference;
-    let q = |v: f64| if reference { v } else { (v * 4.0).round() / 4.0 };
+    let q = |v: f64| v;
     let (fx, fy) = (x0.floor(), y0.floor());
     let (px, py, qw, qh) = (q(x0 - fx), q(y0 - fy), q(ew), q(eh));
     if qw < 1.0 || qh < 1.0 || qw > 8192.0 || qh > 8192.0 {
@@ -989,10 +996,9 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
     // Enlarged images (low-res fields, small textures) get the smooth cubic
     // filter at standard quality, every time; others are resampled once they repeat.
     let enlarge = st.cubic && (qw >= 2.0 * iw || qh >= 2.0 * ih);
-    let seen_last = reference || st.seen.insert(key, now).is_some_and(|f| f + 1 >= now);
-    if !seen_last && !enlarge {
-        return false;
-    }
+    // Always resample (no "bilinear until seen twice"): the filter must not depend
+    // on cache history, or a static image pops on its second frame and output
+    // depends on which frames a renderer happened to draw before.
     let (ow, oh) = ((px + qw).ceil() as usize, (py + qh).ceil() as usize);
     if enlarge {
         st.resample_buf.resize(ow * oh * 4, 0);

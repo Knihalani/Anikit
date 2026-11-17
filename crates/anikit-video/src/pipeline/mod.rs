@@ -246,6 +246,8 @@ pub fn scale_list(dl: &mut DisplayList, s: f32) {
 
 struct Worker {
     version: u64,
+    /// Font faces in the renderer's table.
+    fonts: usize,
     renderer: Option<Renderer>,
     dl: DisplayList,
     /// Fused mode: this thread's incremental YUV frame, change map and last frame index.
@@ -260,9 +262,19 @@ thread_local! {
     static WORKER: RefCell<Worker> = RefCell::new(new_worker());
 }
 
+/// Run `f` with a chunk's worker state (created on first use), keeping it for the chunk's next frame if `keep`.
+fn with_chunk_worker<R>(slot: &std::sync::Mutex<Option<Worker>>, keep: bool, f: impl FnOnce(&mut Worker) -> R) -> R {
+    let mut w = slot.lock().unwrap_or_else(|e| e.into_inner()).take().unwrap_or_else(new_worker);
+    let r = f(&mut w);
+    if keep {
+        *slot.lock().unwrap_or_else(|e| e.into_inner()) = Some(w);
+    }
+    r
+}
+
 /// Run `f` with this thread's renderer, (re)creating it when assets changed.
 fn new_worker() -> Worker {
-    Worker { version: 0, renderer: None, dl: DisplayList::default(), yuv: YuvFrame::default(), map: crate::render::MbMap::new(0, 0), last: None, returned: None }
+    Worker { version: 0, fonts: 0, renderer: None, dl: DisplayList::default(), yuv: YuvFrame::default(), map: crate::render::MbMap::new(0, 0), last: None, returned: None }
 }
 
 /// This thread's worker state. A nested call (rayon work-stealing while the state is
@@ -277,15 +289,29 @@ fn with_worker<R>(f: impl FnOnce(&mut Worker) -> R) -> R {
 
 /// Create (or re-create, when fonts were added) this worker's renderer.
 fn ensure_renderer(ev: &Evaluator, w: &mut Worker) {
-    // Only new font faces need a new renderer; images come from a live source.
-    let v = (ev.assets.font_count() as u64) ^ ((Arc::as_ptr(&ev.assets) as u64) << 16);
-    if w.renderer.is_none() || w.version != v {
-        let mut r = Renderer::new(ev.assets.snapshot_fonts());
-        let a = ev.assets.clone();
-        r.set_image_source(Arc::new(move |id| a.pixmap(id)));
-        w.renderer = Some(r);
-        w.version = v;
-        w.last = None;
+    // A new asset store needs a new renderer; images come from a live source.
+    let v = Arc::as_ptr(&ev.assets) as u64;
+    let fonts = ev.assets.font_count();
+    match &mut w.renderer {
+        Some(r) if w.version == v => {
+            // New font faces (interned by any thread while evaluating): faces are
+            // append-only, so swap the table in and keep every cache and the
+            // incremental state. (Re-creating the renderer here made output depend
+            // on when other threads interned fonts.)
+            if w.fonts != fonts {
+                r.set_fonts(ev.assets.snapshot_fonts());
+                w.fonts = fonts;
+            }
+        }
+        _ => {
+            let mut r = Renderer::new(ev.assets.snapshot_fonts());
+            let a = ev.assets.clone();
+            r.set_image_source(Arc::new(move |id| a.pixmap(id)));
+            w.renderer = Some(r);
+            w.version = v;
+            w.fonts = fonts;
+            w.last = None;
+        }
     }
 }
 
@@ -389,11 +415,19 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
         }
         v
     };
-    let starts: std::collections::HashSet<usize> = ak264::chunk_ranges(n, cfg.gop).into_iter().map(|r| r.0).collect();
+    let ranges = ak264::chunk_ranges(n, cfg.gop);
+    let starts: std::collections::HashSet<usize> = ranges.iter().map(|r| r.0).collect();
+    // Renderer state belongs to the chunk, not the thread: a thread that waits in
+    // nested parallel work (post, fields, 3D) may steal another chunk, and that
+    // chunk must continue with its own state. So every chunk renders the same
+    // way whichever threads run it, and stealing never costs a cold renderer.
+    let workers: Vec<std::sync::Mutex<Option<Worker>>> = ranges.iter().map(|_| Default::default()).collect();
     let out = ak264::encode_parallel(cfg, n, |k, buf, hints| {
         let t = Instant::now();
-        // One worker borrow for the whole frame (eval and render must share its state).
-        with_worker(|w| {
+        let ci = ranges.partition_point(|r| r.0 <= k) - 1;
+        let last_in_chunk = k + 1 >= ranges[ci].1;
+        // One worker for the whole frame (eval and render must share its state).
+        with_chunk_worker(&workers[ci], !last_in_chunk, |w| {
             ensure_renderer(ev, w);
             if let (Some(r), Some(l)) = (w.returned.take(), w.last) {
                 if l + 1 == k && !starts.contains(&k) {

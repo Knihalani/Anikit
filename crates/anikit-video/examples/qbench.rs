@@ -578,6 +578,8 @@ struct Row {
     render: Fidelity,
     delivered: Fidelity,
     delivered_regressed: bool,
+    /// Two default renders of the same clip disagreed.
+    nondeterministic: Option<String>,
     pass: bool,
     flags: Vec<String>,
 }
@@ -715,8 +717,34 @@ fn main() {
         };
         let tmp = out_dir.join(format!("{}.tap.mp4", e.name));
         pipeline::render_ak264_tap(&ev_t, &options(e, false), &tmp, None, Some(&tap)).expect("tapped render");
-        let _ = std::fs::remove_file(&tmp);
         let test: Vec<Frame> = slots.into_inner().unwrap().into_iter().map(|f| f.expect("frame not tapped")).collect();
+        // Determinism: a second default render of the clip must give the same frames.
+        {
+            let ev2 = build(&spec_path).unwrap();
+            let slots2: Mutex<Vec<Option<Frame>>> = Mutex::new(vec![None; n]);
+            let tap2 = |k: usize, b: &ak264::YuvBuffer| {
+                slots2.lock().unwrap()[k] = Some(Frame::from_buffer(b));
+            };
+            pipeline::render_ak264_tap(&ev2, &options(e, false), &tmp, None, Some(&tap2)).expect("tapped render");
+            let again: Vec<Frame> = slots2.into_inner().unwrap().into_iter().map(|f| f.unwrap()).collect();
+            let diff: Vec<usize> = (0..n).filter(|&k| test[k].y != again[k].y || test[k].u != again[k].u || test[k].v != again[k].v).collect();
+            if let Some(&k) = diff.first() {
+                let (a, b) = (&test[k], &again[k]);
+                let (mut x0, mut y0, mut x1, mut y1) = (usize::MAX, usize::MAX, 0, 0);
+                for (i, (p, q)) in a.y.iter().zip(&b.y).enumerate() {
+                    if p != q {
+                        let (x, y) = (i % a.w, i / a.w);
+                        (x0, y0, x1, y1) = (x0.min(x), y0.min(y), x1.max(x), y1.max(y));
+                    }
+                }
+                row.nondeterministic = Some(format!("{} frames differ between two renders, first {k} (luma box {x0},{y0}–{x1},{y1})", diff.len()));
+                eprintln!("   NONDETERMINISTIC: {}", row.nondeterministic.as_ref().unwrap());
+                if has("--dump-nondet") {
+                    dump(&out_dir.join(format!("{}-nondet{k}", e.name)), a, b, None);
+                }
+            }
+        }
+        let _ = std::fs::remove_file(&tmp);
         for k in get("--dump").into_iter().flat_map(|v| v.split(',').filter_map(|x| x.parse::<usize>().ok()).collect::<Vec<_>>()) {
             if k < n {
                 dump(&out_dir.join(format!("{}-f{k}", e.name)), &test[k], &refs[k], k.checked_sub(1).map(|j| (&test[j], &refs[j])));
@@ -744,7 +772,10 @@ fn main() {
         if worst > 0 {
             row.flags.push(format!("{worst} px > 1 JND in the worst frame"));
         }
-        row.pass = rf.failing.is_empty() && !row.delivered_regressed;
+        row.pass = rf.failing.is_empty() && !row.delivered_regressed && row.nondeterministic.is_none();
+        if let Some(nd) = &row.nondeterministic {
+            row.flags.push(format!("NONDETERMINISTIC: {nd}"));
+        }
         row.render = rf;
         row.delivered = df;
         let _ = std::fs::write(out_dir.join(format!("{}.frames.json", e.name)), serde_json::to_string(&rstats).unwrap());

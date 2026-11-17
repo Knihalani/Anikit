@@ -16,6 +16,9 @@ pub struct Upscaler {
     /// Mitchell otherwise); `Some(true)` forces B-spline, `Some(false)` Mitchell.
     pub bspline: Option<bool>,
     cubic_rows: Vec<(usize, Vec<i32>)>,
+    row_pool: Vec<Vec<i32>>,
+    /// Per-row dither (cubic path).
+    drow: Vec<f32>,
     xtab: Vec<(u32, u32, u32)>,
     rows: [Vec<u8>; 2],
     row_ids: [usize; 2],
@@ -248,8 +251,15 @@ impl Upscaler {
                 (idx, wi)
             })
             .collect();
-        self.cubic_rows.clear();
+        // Recycle last call's row buffers (the source may have changed: no reuse of contents).
+        for (_, r) in self.cubic_rows.drain(..) {
+            self.row_pool.push(r);
+        }
         let srow = sw * C;
+        let mut drow = std::mem::take(&mut self.drow);
+        drow.resize(ow * C, 0.0);
+        #[cfg(target_arch = "x86_64")]
+        let avx2 = std::arch::is_x86_feature_detected!("avx2");
         for y in 0..oh {
             let v = ((oy + y as i64) as f64 + 0.5 - dev.y0) * sy - 0.5;
             let j = v.floor();
@@ -262,42 +272,64 @@ impl Upscaler {
                     continue;
                 }
                 let s = &src[r * srow..(r + 1) * srow];
-                let mut hrow = vec![0i32; ow * C];
+                let mut hrow = if self.cubic_rows.len() >= 6 { self.cubic_rows.remove(0).1 } else { self.row_pool.pop().unwrap_or_default() };
+                hrow.resize(ow * C, 0);
                 for (x, (idx, wi)) in cols.iter().enumerate() {
                     for c in 0..C {
                         hrow[x * C + c] = wi[0] * s[idx[0] * C + c] as i32 + wi[1] * s[idx[1] * C + c] as i32 + wi[2] * s[idx[2] * C + c] as i32 + wi[3] * s[idx[3] * C + c] as i32;
                     }
                 }
-                if self.cubic_rows.len() >= 6 {
-                    self.cubic_rows.remove(0);
-                }
                 self.cubic_rows.push((r, hrow));
             }
-            let get = |r: usize| &self.cubic_rows.iter().find(|(k, _)| *k == r).unwrap().1;
-            let (r0, r1, r2, r3) = (get(rows[0]), get(rows[1]), get(rows[2]), get(rows[3]));
-            let w = wy;
+            let get = |r: usize| self.cubic_rows.iter().find(|(k, _)| *k == r).unwrap().1.as_slice();
+            let rr = [get(rows[0]), get(rows[1]), get(rows[2]), get(rows[3])];
             let d = &mut out[y * stride..y * stride + ow * C];
             let yy = (oy + y as i64) as u32;
-            for (x, o) in d.chunks_exact_mut(C).enumerate() {
-                let xx = (ox + x as i64) as u32;
-                let dither = super::post::tri_dither(xx, yy);
-                for c in 0..C {
-                    let k = x * C + c;
-                    let v = (w[0] * r0[k] as f32 + w[1] * r1[k] as f32 + w[2] * r2[k] as f32 + w[3] * r3[k] as f32) / 4096.0;
-                    // No dither on alpha.
-                    let dz = if C == 4 && c == 3 { 0.0 } else { dither * 0.5 };
-                    o[c] = (v + dz + 0.5).clamp(0.0, 255.0) as u8;
-                }
-                // Premultiplied: overshoot (Mitchell's lobes) must not exceed alpha.
-                if C == 4 {
-                    let a = o[3];
-                    for v in &mut o[..3] {
-                        *v = (*v).min(a);
-                    }
-                }
+            #[cfg(target_arch = "x86_64")]
+            if avx2 {
+                // SAFETY: feature checked above.
+                unsafe { cubic_row_avx2::<C>(rr, wy, &mut drow, d, ox as u32, yy) };
+                continue;
             }
+            cubic_row::<C>(rr, wy, &mut drow, d, ox as u32, yy);
+        }
+        self.drow = drow;
+    }
+}
+
+/// One output row of the cubic upscale: vertical 4-tap blend of horizontally
+/// filtered rows (fixed point, ×4096), plus the fixed per-pixel dither
+/// (none on alpha), rounded to 8 bits; premultiplied overshoot clamped to alpha.
+/// Straight elementwise loops, so they vectorise; same float operations, in the
+/// same order, as a per-pixel loop.
+#[inline(always)]
+fn cubic_row<const C: usize>(r: [&[i32]; 4], w: [f32; 4], drow: &mut [f32], d: &mut [u8], ox: u32, yy: u32) {
+    let n = d.len();
+    let (r0, r1, r2, r3, drow) = (&r[0][..n], &r[1][..n], &r[2][..n], &r[3][..n], &mut drow[..n]);
+    for (x, dc) in drow.chunks_exact_mut(C).enumerate() {
+        let dz = super::post::tri_dither(ox + x as u32, yy) * 0.5;
+        for (c, v) in dc.iter_mut().enumerate() {
+            *v = if C == 4 && c == 3 { 0.0 } else { dz };
         }
     }
+    for k in 0..n {
+        let v = (w[0] * r0[k] as f32 + w[1] * r1[k] as f32 + w[2] * r2[k] as f32 + w[3] * r3[k] as f32) / 4096.0;
+        d[k] = (v + drow[k] + 0.5).clamp(0.0, 255.0) as u8;
+    }
+    if C == 4 {
+        for o in d.chunks_exact_mut(4) {
+            let a = o[3];
+            o[0] = o[0].min(a);
+            o[1] = o[1].min(a);
+            o[2] = o[2].min(a);
+        }
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn cubic_row_avx2<const C: usize>(r: [&[i32]; 4], w: [f32; 4], drow: &mut [f32], d: &mut [u8], ox: u32, yy: u32) {
+    cubic_row::<C>(r, w, drow, d, ox, yy)
 }
 
 #[cfg(test)]
