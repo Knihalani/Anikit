@@ -889,7 +889,8 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         full_range: false,
         cabac: opts.quality != Quality::Draft,
         subpel: opts.quality != Quality::Draft,
-        aq_strength: ev.encode_aq.unwrap_or(0.0),
+        // The encoder decides per frame (auto AQ: on for gradient-dominated frames, off on flat UI) unless the spec sets `encode.aq`.
+        aq_strength: ev.encode_aq.unwrap_or(ak264::EncoderConfig::default().aq_strength),
         ..Default::default()
     };
     let prof = Profile::default();
