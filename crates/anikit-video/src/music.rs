@@ -149,6 +149,8 @@ INSTRUMENTS (sampled GM bank bundled; `music instruments` lists all) piano epian
         · synths: pad-warm pad-glass lead-saw pluck bell-fm epiano-fm supersaw bass-808 bass-reese bass-acid keys-lofi
         · kits: drums:808 909 trap lofi house techno cinematic, drums (GM) drums:jazz brush orchestra
         · files: "my.sfz", "font.sf2#0"   · fallbacks: "salamander-piano|piano"
+        · deeper samples: `anikit-video music fetch essentials` (≈190 MB: Splendid Grand, Wurlitzer/CP80/Pianet) — then
+          "piano" and lofi keys use them automatically (credit "E-Pianos by Greg Sullivan, CC BY 3.0" when used)
 EXAMPLES
   {"music":{"style":"cinematic-hybrid","key":"Dm","hits":["@bar5"],"sfx":[{"sfx":"braam","at":"@bar5"}]}}
   {"music":{"style":"lofi","mood":"chill","chords":"ii7 V7 Imaj7 vi7","instruments":{"lead":"kalimba"}}}

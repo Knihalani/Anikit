@@ -105,22 +105,31 @@ impl Lexer {
     }
 
     fn text(&mut self, text: &str) -> Result<(), String> {
-        // strip block comments
+        // Strip comments in one pass: `//` to the end of the line, `/* … */`
+        // blocks. (A `//****` separator line must not open a block comment.)
+        let b: Vec<char> = text.chars().collect();
         let mut t = String::with_capacity(text.len());
-        let mut rest = text;
-        while let Some(a) = rest.find("/*") {
-            t.push_str(&rest[..a]);
-            match rest[a..].find("*/") {
-                Some(b) => rest = &rest[a + b + 2..],
-                None => rest = "",
+        let mut i = 0;
+        while i < b.len() {
+            if b[i] == '/' && i + 1 < b.len() && b[i + 1] == '/' {
+                while i < b.len() && b[i] != '\n' {
+                    i += 1;
+                }
+            } else if b[i] == '/' && i + 1 < b.len() && b[i + 1] == '*' {
+                i += 2;
+                while i + 1 < b.len() && !(b[i] == '*' && b[i + 1] == '/') {
+                    if b[i] == '\n' {
+                        t.push('\n');
+                    }
+                    i += 1;
+                }
+                i += 2;
+            } else {
+                t.push(b[i]);
+                i += 1;
             }
         }
-        t.push_str(rest);
-        for raw in t.lines() {
-            let line = match raw.find("//") {
-                Some(i) => &raw[..i],
-                None => raw,
-            };
+        for line in t.lines() {
             self.line(line)?;
         }
         Ok(())
@@ -622,7 +631,12 @@ fn compile(
                 if n < 128 {
                     let amt = v.trim().parse::<f32>().unwrap_or(0.0);
                     let curve = m.get(&format!("{base}_curvecc{n}")).and_then(|c| c.trim().parse::<i32>().ok()).unwrap_or(0);
-                    let x = if curve == 2 { 1.0 - cc[n] } else { cc[n] };
+                    // Standard curves: 0 linear, 1 bipolar (−1…1, so a centred controller adds nothing), 2 inverted.
+                    let x = match curve {
+                        1 => 2.0 * cc[n] - 1.0,
+                        2 => 1.0 - cc[n],
+                        _ => cc[n],
+                    };
                     add += amt * x;
                 }
             }
@@ -926,5 +940,39 @@ mod tests {
         let peak = l[9_600..14_400].iter().fold(0f32, |m, v| m.max(v.abs()));
         assert!(peak > 0.2 && peak < 0.45, "{peak}");
         assert!(!alive);
+    }
+}
+
+#[cfg(test)]
+mod label_tests {
+    use super::*;
+
+    #[test]
+    fn region_labels_do_not_swallow_opcodes() {
+        let d = std::env::temp_dir().join(format!("ak-sfz-label-{}", std::process::id()));
+        std::fs::create_dir_all(&d).unwrap();
+        // A tiny WAV.
+        let n = 4800u32;
+        let mut b = Vec::new();
+        b.extend_from_slice(b"RIFF");
+        b.extend_from_slice(&(36 + n * 2).to_le_bytes());
+        b.extend_from_slice(b"WAVEfmt ");
+        b.extend_from_slice(&16u32.to_le_bytes());
+        b.extend_from_slice(&1u16.to_le_bytes());
+        b.extend_from_slice(&1u16.to_le_bytes());
+        b.extend_from_slice(&48_000u32.to_le_bytes());
+        b.extend_from_slice(&96_000u32.to_le_bytes());
+        b.extend_from_slice(&2u16.to_le_bytes());
+        b.extend_from_slice(&16u16.to_le_bytes());
+        b.extend_from_slice(b"data");
+        b.extend_from_slice(&(n * 2).to_le_bytes());
+        for i in 0..n {
+            b.extend_from_slice(&(((i as f32 * 0.05).sin() * 9000.0) as i16).to_le_bytes());
+        }
+        std::fs::write(d.join("a1pp.wav"), b).unwrap();
+        let text = "//******** separator\n#define $EXT wav\n<group>\n/* block\ncomment */<region> region_label=01 lokey=33 hikey=35 pitch_keycenter=33 volume=-3.2 sample=a1pp.$EXT tune=-5\n";
+        let i = SfzInstrument::from_str(text, &d, SfzOptions::default());
+        assert!(i.is_ok(), "{:?}", i.err());
+        let _ = std::fs::remove_dir_all(&d);
     }
 }

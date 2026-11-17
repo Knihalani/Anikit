@@ -104,7 +104,7 @@ pub static STYLES: &[StyleDef] = &[
             &[("kick", "x.....x...x..x.."), ("snare", "....x.......x..o"), ("hat", "x.oxx.o.x.oxx.o."), ("shaker", "..x...x...x...x.")],
         ],
         layers: &[
-            Layer { pan: 0.0, reverb: 0.18, humanize: 0.45, ..layer("keys", "rhodes|epiano", Gen::Chords("x.....x...x.....", 4, 62), 0.0, -5.0) },
+            Layer { pan: 0.0, reverb: 0.18, humanize: 0.45, ..layer("keys", "wurlitzer|rhodes|epiano", Gen::Chords("x.....x...x.....", 4, 62), 0.0, -5.0) },
             Layer { humanize: 0.3, ..layer("bass", "bass|bass-synth", Gen::Bass("synco", 2), 0.35, -3.0) },
             Layer { pan: 0.25, reverb: 0.3, delay: 0.2, humanize: 0.5, ..layer("lead", "vibraphone|kalimba|vibes", Gen::Melody(0.6, 74, None), 0.55, -7.0) },
             Layer { reverb: 0.4, ..layer("pad", "slow-strings|strings", Gen::Chords("pad", 3, 60), 0.0, -14.0) },
