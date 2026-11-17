@@ -226,7 +226,13 @@ pub fn kit_pan(key: i32) -> f32 {
 impl Instrument for KitStage {
     fn voice(&self, note: &crate::voice::NoteOn) -> Box<dyn crate::voice::Voice> {
         let p = kit_pan(note.key.round() as i32);
-        let inner = self.0.voice(note);
+        // Round-robin emulation: every hit is a slightly different strike (±8 cents,
+        // ±5 % level), so repeated hats and snares don't machine-gun. Deterministic per note.
+        let mut on = *note;
+        let mut rng = crate::voice::Rng::new(note.seed ^ 0x2B0B);
+        on.key += rng.bi() * 0.08;
+        on.vel = (on.vel * (1.0 + 0.05 * rng.bi())).clamp(0.01, 1.0);
+        let inner = self.0.voice(&on);
         if p == 0.0 {
             return inner;
         }
@@ -239,6 +245,10 @@ impl Instrument for KitStage {
     }
     fn ordered_voices(&self) -> bool {
         self.0.ordered_voices()
+    }
+    fn voice_legato(&self, note: &crate::voice::NoteOn, legato: bool) -> Box<dyn crate::voice::Voice> {
+        let _ = legato;
+        self.voice(note)
     }
 }
 

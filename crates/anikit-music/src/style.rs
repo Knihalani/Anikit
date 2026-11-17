@@ -187,8 +187,8 @@ pub static STYLES: &[StyleDef] = &[
         kit: "drums:trap|drums:808|drums",
         drums: [
             &[("hat", "x.x.x.x.x.x.x.x.")],
-            &[("kick", "x.........x....."), ("clap", "........x......."), ("hat", "x.x.x.x.x.x.x3x.")],
-            &[("kick", "x.....x...x...x."), ("clap", "........x......."), ("hat", "x.xxx.x.x3x.x.4."), ("ohh", "......x.........")],
+            &[("kick", "x.........x....."), ("clap", "........x......."), ("hat", "x.x.x.x.x.x.x.x.")],
+            &[("kick", "x.....x...x...x."), ("clap", "........x......."), ("hat", "x.xxx.x.x.xxx.x."), ("ohh", "......x.........")],
         ],
         layers: &[
             Layer { humanize: 0.0, ..layer("808", "bass-808|synth-bass", Gen::Bass("808", 1), 0.45, 0.0) },
@@ -814,6 +814,15 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                     }
                     if last && into_bigger {
                         continue; // the roll below takes the last bar
+                    }
+                    if st.name == "trap" && tier > 0 && b % 2 == 1 {
+                        // Hat rolls at phrase ends: triplet 16ths, then 32nds over the last beat.
+                        drum_notes.retain(|n| !(n.key == 42.0 && n.t >= t0 + bpb - 1.0 - 1e-9 && n.t < t0 + bpb - 1e-9));
+                        let per = if b % 4 == 3 { 8 } else { 6 };
+                        for i in 0..per {
+                            let f = i as f32 / per as f32;
+                            drum_notes.push(Note { t: t0 + bpb - 1.0 + i as f64 / per as f64, len: 0.08, key: 42.0, vel: 0.45 + 0.4 * f });
+                        }
                     }
                     if tier > 0 && b % 8 == 7 {
                         // Tom/snare fill over the last beat.
