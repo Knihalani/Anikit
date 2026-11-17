@@ -146,3 +146,142 @@ pub fn luma_pred(p: &Plane, x: isize, y: isize, mv: (i32, i32), out: &mut [u8; 2
     }
     Hpel::new(p, bx, by).pred(mv.0 & 3, mv.1 & 3, out);
 }
+
+/// Half-sample planes of a whole reference picture (b: horizontal, h: vertical,
+/// j: centre), same geometry as the luma plane. Built once per reference when
+/// many macroblocks refine; predictions are identical to [`Hpel`].
+pub struct HpelPlanes {
+    pub b: Plane,
+    pub h: Plane,
+    pub j: Plane,
+    b1: Vec<i16>,
+}
+
+impl HpelPlanes {
+    pub fn new(r: &Plane) -> Self {
+        HpelPlanes { b: r.clone(), h: r.clone(), j: r.clone(), b1: vec![0; r.data.len()] }
+    }
+
+    /// Recompute from the (border-extended) reference luma plane.
+    pub fn compute(&mut self, r: &Plane) {
+        #[cfg(target_arch = "x86_64")]
+        {
+            if crate::simd::level() >= 2 {
+                #[target_feature(enable = "avx2")]
+                unsafe fn f(s: &mut HpelPlanes, r: &Plane) {
+                    s.compute_impl(r)
+                }
+                // SAFETY: AVX2 detected at run time.
+                return unsafe { f(self, r) };
+            }
+        }
+        self.compute_impl(r)
+    }
+
+    #[inline(always)]
+    fn compute_impl(&mut self, r: &Plane) {
+        let s = r.stride;
+        let rows = r.data.len() / s;
+        let d = &r.data;
+        // columns 2..s-3 of every row get b; rows 2..rows-3 get h and j
+        let mut b1 = std::mem::take(&mut self.b1);
+        b1.resize(rows * s, 0);
+        for y in 0..rows {
+            let row = &d[y * s..y * s + s];
+            let o = &mut b1[y * s..y * s + s];
+            let bo = &mut self.b.data[y * s..y * s + s];
+            for x in 2..s - 3 {
+                let v = row[x - 2] as i16 - 5 * row[x - 1] as i16 + 20 * row[x] as i16 + 20 * row[x + 1] as i16
+                    - 5 * row[x + 2] as i16
+                    + row[x + 3] as i16;
+                o[x] = v;
+                bo[x] = ((v + 16) >> 5).clamp(0, 255) as u8;
+            }
+        }
+        for y in 2..rows - 3 {
+            let r0 = &d[(y - 2) * s..(y - 1) * s];
+            let r1 = &d[(y - 1) * s..y * s];
+            let r2 = &d[y * s..(y + 1) * s];
+            let r3 = &d[(y + 1) * s..(y + 2) * s];
+            let r4 = &d[(y + 2) * s..(y + 3) * s];
+            let r5 = &d[(y + 3) * s..(y + 4) * s];
+            let ho = &mut self.h.data[y * s..(y + 1) * s];
+            for x in 0..s {
+                let v = r0[x] as i16 - 5 * r1[x] as i16 + 20 * r2[x] as i16 + 20 * r3[x] as i16 - 5 * r4[x] as i16
+                    + r5[x] as i16;
+                ho[x] = ((v + 16) >> 5).clamp(0, 255) as u8;
+            }
+            let (c0, c1, c2) = (&b1[(y - 2) * s..(y - 1) * s], &b1[(y - 1) * s..y * s], &b1[y * s..(y + 1) * s]);
+            let (c3, c4, c5) = (&b1[(y + 1) * s..(y + 2) * s], &b1[(y + 2) * s..(y + 3) * s], &b1[(y + 3) * s..(y + 4) * s]);
+            let jo = &mut self.j.data[y * s..(y + 1) * s];
+            for x in 0..s {
+                let v = c0[x] as i32 - 5 * c1[x] as i32 + 20 * c2[x] as i32 + 20 * c3[x] as i32 - 5 * c4[x] as i32
+                    + c5[x] as i32;
+                jo[x] = ((v + 512) >> 10).clamp(0, 255) as u8;
+            }
+        }
+        self.b1 = b1;
+    }
+
+    /// Prediction of the block whose integer top-left sample is (x, y) at the
+    /// quarter-pel fraction (fx, fy) ∈ [0, 3]².
+    pub fn pred(&self, g: &Plane, x: isize, y: isize, fx: i32, fy: i32, out: &mut [u8; 256]) {
+        let s = g.stride;
+        let o = g.off(x, y);
+        let (gd, b, h, j) = (&g.data, &self.b.data, &self.h.data, &self.j.data);
+        type P<'a> = (&'a [u8], usize);
+        let (p1, p2): (P, Option<P>) = match (fx, fy) {
+            (0, 0) => ((gd, 0), None),
+            (1, 0) => ((gd, 0), Some((b, 0))),
+            (2, 0) => ((b, 0), None),
+            (3, 0) => ((b, 0), Some((gd, 1))),
+            (0, 1) => ((gd, 0), Some((h, 0))),
+            (0, 2) => ((h, 0), None),
+            (0, 3) => ((h, 0), Some((gd, s))),
+            (1, 1) => ((b, 0), Some((h, 0))),
+            (3, 1) => ((b, 0), Some((h, 1))),
+            (1, 3) => ((h, 0), Some((b, s))),
+            (3, 3) => ((h, 1), Some((b, s))),
+            (2, 1) => ((b, 0), Some((j, 0))),
+            (2, 3) => ((j, 0), Some((b, s))),
+            (1, 2) => ((h, 0), Some((j, 0))),
+            (3, 2) => ((j, 0), Some((h, 1))),
+            _ => ((j, 0), None),
+        };
+        for r in 0..16 {
+            let i = o + r * s;
+            let a: [u8; 16] = p1.0[i + p1.1..i + p1.1 + 16].try_into().unwrap();
+            let dst: &mut [u8; 16] = (&mut out[r * 16..r * 16 + 16]).try_into().unwrap();
+            *dst = match p2 {
+                None => a,
+                Some(q) => crate::simd::avg16(&a, q.0[i + q.1..i + q.1 + 16].try_into().unwrap()),
+            };
+        }
+    }
+}
+
+#[cfg(test)]
+mod planes_test {
+    use super::*;
+    #[test]
+    fn planes_match_window() {
+        let mut p = Plane::new(64, 48, 32);
+        for (i, v) in p.data.iter_mut().enumerate() {
+            *v = ((i * 37 + i / 97 * 13) % 251) as u8;
+        }
+        p.extend();
+        let mut hp = HpelPlanes::new(&p);
+        hp.compute(&p);
+        for (x, y) in [(0isize, 0isize), (-17, -17), (40, 20), (48, 32), (-5, 30)] {
+            let w = Hpel::new(&p, x, y);
+            for dy in -3..=3 {
+                for dx in -3..=3 {
+                    let (mut a, mut b) = ([0u8; 256], [0u8; 256]);
+                    w.pred(dx, dy, &mut a);
+                    hp.pred(&p, x + (dx >> 2) as isize, y + (dy >> 2) as isize, dx & 3, dy & 3, &mut b);
+                    assert_eq!(a, b, "({x},{y}) d=({dx},{dy})");
+                }
+            }
+        }
+    }
+}

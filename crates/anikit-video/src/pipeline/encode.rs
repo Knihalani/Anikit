@@ -77,8 +77,8 @@ impl Quality {
     pub fn parse(s: &str) -> Option<Quality> {
         Some(match s {
             "draft" => Quality::Draft,
-            "good" => Quality::Good,
-            "best" => Quality::Best,
+            "good" | "standard" | "normal" => Quality::Good,
+            "best" | "high" | "max" => Quality::Best,
             _ => return None,
         })
     }

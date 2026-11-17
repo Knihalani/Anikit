@@ -239,11 +239,15 @@ pub struct KineticGrid {
     /// Wavelength in cells.
     pub wavelength: f32,
     pub delay: f32,
+    /// Seconds per step (e.g. `0.5` = one beat at 120 BPM): the wave snaps
+    /// forward over the first 0.15 s of each step and holds, so frames between
+    /// steps are identical (rhythmic, and cheap to encode). `0` = continuous.
+    pub step: f32,
 }
 
 impl Default for KineticGrid {
     fn default() -> Self {
-        KineticGrid { cols: 18, shape: "rounded".into(), wave: "radial".into(), colors: Vec::new(), speed: 1.0, size: 0.8, min: 0.16, rotate: None, wavelength: 7.0, delay: 0.0 }
+        KineticGrid { cols: 18, shape: "rounded".into(), wave: "radial".into(), colors: Vec::new(), speed: 1.0, size: 0.8, min: 0.16, rotate: None, wavelength: 7.0, delay: 0.0, step: 0.0 }
     }
 }
 
@@ -253,6 +257,9 @@ impl Prepare for KineticGrid {
         check("wave", &self.wave, &["radial", "diagonal", "linear", "interference"])?;
         if self.cols == 0 || self.cols > 200 {
             return Err(Error("`cols` must be 1..200".into()));
+        }
+        if !(self.step >= 0.0 && self.step.is_finite()) {
+            return Err(Error("`step` must be ≥ 0 seconds".into()));
         }
         if !(self.wavelength > 0.0 && self.speed.is_finite()) {
             return Err(Error("`wavelength` must be > 0 and `speed` finite".into()));
@@ -276,7 +283,15 @@ impl Component for KineticGrid {
         cyc.push(cyc[0]);
         let rot = self.rotate.unwrap_or(if self.shape == "dot" { 0.0 } else { 90.0 }).to_radians();
         let k = TAU / self.wavelength;
-        let ph = at * self.speed * TAU * 0.45;
+        // Wave clock: continuous, or snapped forward once per `step`.
+        let wt = if self.step > 0.0 {
+            let n = (at / self.step).floor();
+            let f = ((at - n * self.step) / self.step.min(0.15)).min(1.0);
+            (n + 1.0 - (1.0 - f).powi(3)) * self.step
+        } else {
+            at
+        };
+        let ph = wt * self.speed * TAU * 0.45;
         let (gx, gy) = (cols as f32 * 0.5, rows as f32 * 0.5);
         let mut o = Vec::with_capacity(cols * rows);
         for j in 0..rows {
@@ -304,7 +319,7 @@ impl Component for KineticGrid {
                 let sz = cell * lerp(self.min, self.size, s) * pop;
                 let (px, py) = (i as f32 * cell + cell * 0.5, oy + j as f32 * cell + cell * 0.5);
                 let c = {
-                    let f = (d * 0.055 + s * 0.35 - at * 0.06 * self.speed).rem_euclid(1.0) * (cyc.len() - 1) as f32;
+                    let f = (d * 0.055 + s * 0.35 - wt * 0.06 * self.speed).rem_euclid(1.0) * (cyc.len() - 1) as f32;
                     let n = (f as usize).min(cyc.len() - 2);
                     mix(cyc[n], cyc[n + 1], f - n as f32)
                 };
@@ -362,5 +377,11 @@ mod tests {
         assert!(r.eval(10.0, 400.0, 200.0, 30.0, &th, a).is_empty());
         assert!(build("tile-reveal", &json!({"wave": "diagnal"})).err().unwrap().0.contains("did you mean `diagonal`"));
         assert!(build("kinetic-grid", &json!({"shape": "dots"})).err().unwrap().0.contains("did you mean `dot`"));
+        // `step`: frames between steps are identical once the entrance is over.
+        let c = build("kinetic-grid", &json!({"step": 0.5})).unwrap();
+        let (th, a) = (Theme::default(), preview::host());
+        assert_eq!(c.eval(3.2, 960.0, 540.0, 30.0, &th, a), c.eval(3.45, 960.0, 540.0, 30.0, &th, a));
+        assert_ne!(c.eval(3.45, 960.0, 540.0, 30.0, &th, a), c.eval(3.55, 960.0, 540.0, 30.0, &th, a));
+        assert!(build("kinetic-grid", &json!({"step": -1})).is_err());
     }
 }

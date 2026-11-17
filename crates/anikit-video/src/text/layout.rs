@@ -507,6 +507,39 @@ impl TextLayout {
         }
     }
 
+    /// Line background boxes (from `style.background`) with an alpha factor.
+    /// For callers that emit glyphs themselves; draw before the glyphs.
+    pub fn background_ops(&self, alpha: f32, transform: Affine, out: &mut Vec<Op>) {
+        for (r, rad, c) in &self.backgrounds {
+            let mut c = c.0;
+            c[3] *= alpha;
+            out.push(Op::RoundRect { x: r[0], y: r[1], w: r[2], h: r[3], radius: *rad, paint: Paint::Solid(Rgba(c)), transform });
+        }
+    }
+
+    /// Whether glyph fills should be skipped (`outline.hollow`).
+    pub fn hollow(&self) -> bool {
+        matches!(&self.outline, Some((_, _, _, true)))
+    }
+
+    /// Outline strokes (from `style.outline`) with an alpha factor. For callers
+    /// that emit glyphs themselves; draw after the glyph fills (or instead of
+    /// them when [`Self::hollow`]).
+    pub fn outline_ops(&self, alpha: f32, transform: Affine, out: &mut Vec<Op>) {
+        let Some((paths, stroke, color, _)) = &self.outline else { return };
+        for (r, p) in self.runs.iter().zip(paths) {
+            let paint = match color {
+                Some(c) => {
+                    let mut c = c.0;
+                    c[3] *= alpha;
+                    Paint::Solid(Rgba(c))
+                }
+                None => self.paint(r, alpha),
+            };
+            out.push(Op::Stroke { path: p.clone(), paint, stroke: stroke.clone(), transform });
+        }
+    }
+
     /// Close the effects layer opened by [`Self::begin_effects`].
     pub fn end_effects(&self, out: &mut Vec<Op>) {
         if !self.filters.is_empty() {
@@ -528,7 +561,7 @@ impl TextLayout {
         if let Some((paths, stroke, color, hollow)) = &self.outline {
             for (r, p) in self.runs.iter().zip(paths) {
                 if !hollow {
-                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: r.glyphs.clone(), paint: self.paint(r, 1.0), transform });
+                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: super::pool::copy(&r.glyphs), paint: self.paint(r, 1.0), transform });
                 }
                 let paint = color.map_or_else(|| self.paint(r, 1.0), Paint::Solid);
                 out.push(Op::Stroke { path: p.clone(), paint, stroke: stroke.clone(), transform });
@@ -539,7 +572,7 @@ impl TextLayout {
             out.push(Op::Glyphs {
                 font: r.font,
                 size: r.size,
-                glyphs: r.glyphs.clone(),
+                glyphs: super::pool::copy(&r.glyphs),
                 paint: self.paint(r, 1.0),
                 transform,
             });
@@ -573,7 +606,12 @@ impl FontStore {
         let mut l = self.layout_uncached(spec);
         l.key = key;
         let l = Arc::new(l);
-        self.cache.write().unwrap().insert(key, l.clone());
+        let mut c = self.cache.write().unwrap();
+        // Bounded: per-frame text (e.g. counters laid out per value) must not grow it forever.
+        if c.len() >= 8192 {
+            c.clear();
+        }
+        c.insert(key, l.clone());
         l
     }
 
@@ -846,6 +884,9 @@ impl FontStore {
         let mut out = TextLayout { text: text.to_string(), ..Default::default() };
         // Interned face per parley run, memoised by (blob, index, coords ptr).
         let mut last_face: Option<(u64, u32, usize, FontId)> = None;
+        // One run per (face, size, colour) across the whole block: syntax-highlighted
+        // code alternates colours, and merging cuts its ops ~20x.
+        let mut run_of: std::collections::HashMap<(u32, u32, [u32; 4]), usize> = std::collections::HashMap::new();
         for (li, line) in layout.lines().enumerate() {
             let m = *line.metrics();
             let li = li as u32;
@@ -893,12 +934,13 @@ impl FontStore {
                         let g0 = out.glyphs.len() as u32;
                         let mut gx = pen;
                         for g in cl.glyphs() {
+                            let key = (fid.0, size.to_bits(), color.0.map(f32::to_bits));
                             let run_i = match out.runs.last() {
                                 Some(r) if r.font == fid && r.size == size && r.color == color => out.runs.len() - 1,
-                                _ => {
+                                _ => *run_of.entry(key).or_insert_with(|| {
                                     out.runs.push(GlyphRun { font: fid, size, color, glyphs: Vec::new() });
                                     out.runs.len() - 1
-                                }
+                                }),
                             };
                             let r = &mut out.runs[run_i];
                             r.glyphs.push(dl::Glyph { id: g.id as u16, x: gx + g.x, y: m.baseline + g.y });

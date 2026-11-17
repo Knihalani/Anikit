@@ -77,3 +77,37 @@ fn ak264_with_sfx_audio() {
     assert!(streams.contains("h264") && streams.contains("aac"), "{streams}");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn fused_ak264_decodes_and_matches() {
+    if !ffmpeg() {
+        return;
+    }
+    // Holds (static spans), a moving shape and a cut: exercises held, partial and full frames across GOP chunks.
+    let src = r##"{ "size": [192, 108], "fps": 30, "scenes": [
+        { "duration": 2, "background": "#204080", "layers": [ { "shape": "rect", "width": 30, "height": 30, "fill": "#ff0000", "x": "=20 + 60 * clamp(t - 1, 0, 1)" } ] },
+        { "duration": 1.5, "transition": "cut", "background": "#103010", "layers": [ { "shape": "circle", "width": 40, "fill": "#ffffff" } ] } ] }"##;
+    let ev = Evaluator::new(&parse_json(src).unwrap().spec, Options::default()).unwrap();
+    let dir = std::env::temp_dir().join(format!("akv-fused-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let out = dir.join("f.mp4");
+    let s = pipeline::render_ak264(&ev, &RenderOptions::default(), &out, None).unwrap();
+    assert_eq!(s.frames, 105);
+    assert!(s.deduped > 30, "holds should be skipped: {}", s.deduped);
+    let o = Command::new("ffmpeg").args(["-v", "error", "-i"]).arg(&out).args(["-f", "rawvideo", "-pix_fmt", "rgb24", "-"]).output().unwrap();
+    assert!(o.status.success());
+    let fsz = 192 * 108 * 3;
+    assert_eq!(o.stdout.len(), fsz * 105);
+    let px = |f: usize, x: usize, y: usize| {
+        let i = f * fsz + (y * 192 + x) * 3;
+        [o.stdout[i] as i32, o.stdout[i + 1] as i32, o.stdout[i + 2] as i32]
+    };
+    // Frame 15 (held): square at x = 20 (centre), background elsewhere.
+    assert!(px(15, 20, 54)[0] > 200, "{:?}", px(15, 20, 54));
+    assert!((px(15, 150, 20)[2] - 0x80).abs() < 14, "{:?}", px(15, 150, 20));
+    // Frame 59 (after the move): square at x = 80.
+    assert!(px(59, 80, 54)[0] > 200 && px(59, 20, 54)[0] < 80, "{:?} {:?}", px(59, 80, 54), px(59, 20, 54));
+    // Frame 90 (second scene): white circle in the middle, green background.
+    assert!(px(90, 96, 54)[1] > 220 && (px(90, 5, 5)[1] - 0x30).abs() < 14, "{:?} {:?}", px(90, 96, 54), px(90, 5, 5));
+    let _ = std::fs::remove_dir_all(&dir);
+}

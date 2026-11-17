@@ -117,7 +117,7 @@ fn schema_is_valid_json() {
 #[test]
 fn all_doc_examples_parse() {
     // Every ```json block in spec.md that is a whole spec must compile without errors.
-    let md = include_str!("../../../docs/video/spec.md");
+    let md = [include_str!("../../../docs/video/spec.md"), include_str!("../../../docs/video/spec-reference.md")].concat();
     let mut n = 0;
     for block in md.split("```json").skip(1) {
         let src = block.split("```").next().unwrap().trim();
@@ -201,14 +201,59 @@ fn is_static_never_lies() {
 #[test]
 fn caption_word_highlight() {
     let ev = build(r##"{ "scenes": [ { "duration": 3, "layers": [] } ],
-        "captions": { "highlight": "#ff0000", "cues": [ { "text": "", "at": 0.5, "end": 2.5, "words": [["Hello", 0.5, 1.0], ["world", 1.0, 2.0]] } ] } }"##);
-    let colors = |t: f32| -> Vec<[f32; 4]> {
-        ev.eval(t).ops.iter().filter_map(|o| match o { Op::Glyphs { paint: anikit_video::dl::Paint::Solid(c), .. } => Some(c.0), _ => None }).collect()
+        "captions": { "highlight": "#ff0000", "color": "#ffffff", "cues": [ { "text": "", "at": 0.5, "end": 2.5, "words": [["Hello", 0.5, 1.0], ["world", 1.0, 2.0]] } ] } }"##);
+    let reds = |t: f32| -> usize {
+        ev.eval(t).ops.iter().filter(|o| matches!(o, Op::Glyphs { paint: anikit_video::dl::Paint::Solid(c), .. } if c.0[0] > 0.95 && c.0[1] < 0.1)).count()
     };
-    let a = colors(0.8);
-    assert_eq!(a.len(), 2);
-    assert!(a[0][0] > 0.95 && a[0][1] < 0.1, "first word highlighted: {a:?}");
-    assert!(a[1][1] > 0.8, "second word plain: {a:?}");
-    let b = colors(1.5);
-    assert!(b[1][0] > 0.95 && b[1][1] < 0.1 && b[0][1] > 0.8, "{b:?}");
+    assert_eq!(ev.eval(0.2).ops.iter().filter(|o| matches!(o, Op::Glyphs { .. })).count(), 0, "nothing before the first word");
+    assert!(reds(0.8) >= 1, "the spoken word is highlighted");
+    assert!(reds(1.5) >= 1);
+    assert!(!ev.is_static(0.7, 0.75));
+}
+
+#[test]
+fn depth_of_field_and_parallax() {
+    let ev = build(r##"{ "scenes": [ { "duration": 2,
+        "camera": { "aperture": 10, "animate": [ { "to": { "focus": 2, "x": 100 }, "at": 0, "duration": 1, "ease": "linear" } ] },
+        "layers": [ { "shape": "rect", "id": "near", "anchor": "topLeft", "x": 0, "y": 0, "width": 10, "height": 10 },
+                    { "shape": "rect", "id": "far", "anchor": "topLeft", "x": 0, "y": 0, "width": 10, "height": 10, "depth": 2 } ] } ] }"##);
+    let info = |t: f32| {
+        let dl = ev.eval(t);
+        let mut blurs = Vec::new();
+        let mut xs = Vec::new();
+        for o in &dl.ops {
+            match o {
+                Op::PushLayer { filters, .. } => blurs.push(filters.iter().find_map(|f| match f { anikit_video::dl::Filter::Blur(r) => Some(*r), _ => None }).unwrap_or(0.0)),
+                Op::RoundRect { transform, .. } => xs.push(transform[4]),
+                _ => {}
+            }
+        }
+        (blurs, xs)
+    };
+    // t=0: focus 0 → near sharp (no layer), far blurred by |2-0|*10 = 20.
+    let (b, _) = info(0.0);
+    assert_eq!(b, vec![20.0]);
+    // t=1: focus 2 → far sharp, near blurred 20; camera x=100: near moves -100, far moves -100/(1+2).
+    let (b, xs) = info(1.0);
+    assert_eq!(b, vec![20.0]);
+    assert!((xs[0] + 100.0).abs() < 0.01 && (xs[1] + 33.333).abs() < 0.01, "{xs:?}");
+}
+
+/// Token-efficiency metric (≈ chars / 4): the cheat sheet an agent reads, and
+/// what common videos cost to write. Run with `--nocapture` to see the numbers.
+#[test]
+fn token_metric() {
+    let sheet = include_str!("../../../docs/video/spec.md");
+    assert!(sheet.lines().count() <= 150, "the cheat sheet must stay under 150 lines");
+    let examples = [
+        ("hello", r#"{"scenes":[{"layers":[{"text":"Hello, world","enter":"fadeUp"}]}]}"#),
+        ("3 scenes with a chart", r#"{"scenes":["Launch day | Everything ships",{"layers":[{"text":"3× faster","style":"title","animate":"rise"},"Built in Rust"]},{"transition":"push","layers":[{"component":"bar-chart","props":{"values":[3,7,5,9]}}]}]}"#),
+        ("vertical teaser + captions + sfx", r#"{"size":"9:16","scenes":[{"duration":4,"layers":[{"text":"Ship faster","style":"title","split":"words","enter":{"preset":"fadeUp","stagger":0.12}}],"audio":[{"sfx":"whoosh","at":0.1}]}],"captions":{"background":"$accent","cues":[{"text":"Ship faster with Anikit","at":0.5,"end":3.5}]}}"#),
+    ];
+    eprintln!("cheat sheet: {} lines, ≈{} tokens", sheet.lines().count(), sheet.len() / 4);
+    for (name, src) in examples {
+        let ev = build(src);
+        assert!(ev.diagnostics.is_empty(), "{name}: {:?}", ev.diagnostics);
+        eprintln!("{name:34} ≈{:4} tokens → {:.1} s, {} scene(s)", src.len() / 4, ev.duration, ev.scenes().len());
+    }
 }

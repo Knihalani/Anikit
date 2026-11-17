@@ -13,48 +13,117 @@ pub struct Upscaler {
     xtab: Vec<(u32, u32, u32)>,
     rows: [Vec<u8>; 2],
     row_ids: [usize; 2],
+    /// What `xtab` and the cached rows were built for.
+    key: Option<(usize, usize, usize, [u64; 4], usize, i64)>,
+    /// Column table as structure of arrays (source index, weight) for the gather path.
+    gx: (Vec<i32>, Vec<i32>),
+}
+
+/// One source row of a single-channel plane, interpolated to `r.len()` columns
+/// with AVX2 gathers (8 columns per step). `s` must extend ≥ 4 bytes past the
+/// highest index read.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn gather_row(s: &[u8], (idx, wts): &(Vec<i32>, Vec<i32>), r: &mut [u8]) {
+    use std::arch::x86_64::*;
+    let n = r.len();
+    let mask = _mm256_set1_epi32(0xff);
+    let k256 = _mm256_set1_epi32(256);
+    let k128 = _mm256_set1_epi32(128);
+    let mut x = 0;
+    while x + 8 <= n {
+        let i = _mm256_loadu_si256(idx.as_ptr().add(x) as *const __m256i);
+        let w = _mm256_loadu_si256(wts.as_ptr().add(x) as *const __m256i);
+        // 4 bytes from each index: byte 0 is a, byte 1 is b (= s[i + 1]).
+        let g = _mm256_i32gather_epi32::<1>(s.as_ptr() as *const i32, i);
+        let a = _mm256_and_si256(g, mask);
+        let b = _mm256_and_si256(_mm256_srli_epi32::<8>(g), mask);
+        let v = _mm256_add_epi32(_mm256_add_epi32(_mm256_mullo_epi32(a, _mm256_sub_epi32(k256, w)), _mm256_mullo_epi32(b, w)), k128);
+        let v = _mm256_srli_epi32::<8>(v);
+        // 8 × i32 → 8 × u8.
+        let p16 = _mm256_packus_epi32(v, v); // [v0..3 v0..3 | v4..7 v4..7]
+        let p8 = _mm256_packus_epi16(p16, p16);
+        let lo = _mm256_castsi256_si128(p8);
+        let hi = _mm256_extracti128_si256::<1>(p8);
+        let out = _mm_unpacklo_epi32(lo, hi);
+        _mm_storel_epi64(r.as_mut_ptr().add(x) as *mut __m128i, out);
+        x += 8;
+    }
+    while x < n {
+        let (i, w) = (idx[x] as usize, wts[x] as u32);
+        let (a, b) = (s[i] as u32, s[i + 1] as u32);
+        r[x] = ((a * (256 - w) + b * w + 128) >> 8) as u8;
+        x += 1;
+    }
 }
 
 impl Upscaler {
+    /// Forget cached rows (the source pixels changed in place).
+    pub fn invalidate(&mut self) {
+        self.key = None;
+    }
+
     /// Write `src` (`sw × sh` premultiplied RGBA8), placed at device rect `dev`,
     /// into `out` (`ow × oh` pixels, tightly packed), whose pixel (0,0) is
     /// frame pixel (`ox`, `oy`). Samples are clamped at the image edges.
     #[allow(clippy::too_many_arguments)]
     pub fn run(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], ow: usize, oh: usize, ox: i64, oy: i64) {
+        self.run_c::<4>(src, sw, sh, dev, out, ow * 4, ow, oh, ox, oy)
+    }
+
+    /// As [`Self::run`] for a single 8-bit plane, with output row stride `stride` bytes.
+    #[allow(clippy::too_many_arguments)]
+    pub fn run_plane(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], stride: usize, ow: usize, oh: usize, ox: i64, oy: i64) {
+        self.run_c::<1>(src, sw, sh, dev, out, stride, ow, oh, ox, oy)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn run_c<const C: usize>(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], stride: usize, ow: usize, oh: usize, ox: i64, oy: i64) {
         #[cfg(target_arch = "x86_64")]
         if std::arch::is_x86_feature_detected!("avx2") {
             // SAFETY: feature checked above.
-            return unsafe { self.run_avx2(src, sw, sh, dev, out, ow, oh, ox, oy) };
+            return unsafe { self.run_avx2::<C>(src, sw, sh, dev, out, stride, ow, oh, ox, oy) };
         }
-        self.run_inner(src, sw, sh, dev, out, ow, oh, ox, oy)
+        self.run_inner::<C>(src, sw, sh, dev, out, stride, ow, oh, ox, oy, false)
     }
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
     #[allow(clippy::too_many_arguments)]
-    unsafe fn run_avx2(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], ow: usize, oh: usize, ox: i64, oy: i64) {
-        self.run_inner(src, sw, sh, dev, out, ow, oh, ox, oy)
+    unsafe fn run_avx2<const C: usize>(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], stride: usize, ow: usize, oh: usize, ox: i64, oy: i64) {
+        self.run_inner::<C>(src, sw, sh, dev, out, stride, ow, oh, ox, oy, true)
     }
 
     #[inline(always)]
     #[allow(clippy::too_many_arguments)]
-    fn run_inner(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], ow: usize, oh: usize, ox: i64, oy: i64) {
+    fn run_inner<const C: usize>(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], stride: usize, ow: usize, oh: usize, ox: i64, oy: i64, gather: bool) {
         let (sx, sy) = (sw as f64 / dev.width(), sh as f64 / dev.height());
         let lerp_tab = |o: f64, s: f64, n: usize| {
-            let u = (o + 0.5 - 0.0) * s - 0.5;
+            let u = (o + 0.5) * s - 0.5;
             let u = u.clamp(0.0, (n - 1) as f64);
             let i0 = u.floor() as u32;
             let i1 = (i0 + 1).min(n as u32 - 1);
             let w = ((u - i0 as f64) * 256.0).round() as u32;
             (i0, i1, w)
         };
-        self.xtab.clear();
-        self.xtab.extend((0..ow).map(|x| lerp_tab((ox + x as i64) as f64 - dev.x0, sx, sw)));
-        for r in &mut self.rows {
-            r.resize(ow * 4, 0);
+        // Repeated calls on the same image and columns (row streaming) keep
+        // the column table and the cached source rows.
+        let key = (src.as_ptr() as usize ^ C, sw, sh, [dev.x0, dev.y0, dev.x1, dev.y1].map(f64::to_bits), ow, ox);
+        if self.key != Some(key) {
+            self.xtab.clear();
+            self.xtab.extend((0..ow).map(|x| lerp_tab((ox + x as i64) as f64 - dev.x0, sx, sw)));
+            self.gx.0.clear();
+            self.gx.1.clear();
+            self.gx.0.extend(self.xtab.iter().map(|t| t.0 as i32));
+            // Weight in the low half, (256 - w) in the high half; i1 = i0 + (w > 0) is implied.
+            self.gx.1.extend(self.xtab.iter().map(|t| if t.1 == t.0 { 0 } else { t.2 as i32 }));
+            for r in &mut self.rows {
+                r.resize(ow * C, 0);
+            }
+            self.row_ids = [usize::MAX; 2];
+            self.key = Some(key);
         }
-        self.row_ids = [usize::MAX; 2];
-        let srow = sw * 4;
+        let srow = sw * C;
         for y in 0..oh {
             let (j0, j1, wy) = lerp_tab((oy + y as i64) as f64 - dev.y0, sy, sh);
             let (j0, j1) = (j0 as usize, j1 as usize);
@@ -69,26 +138,33 @@ impl Upscaler {
                 }
                 let s = &src[j * srow..(j + 1) * srow];
                 let r = &mut self.rows[slot];
-                debug_assert!(r.len() >= self.xtab.len() * 4);
+                debug_assert!(r.len() >= self.xtab.len() * C);
+                #[cfg(target_arch = "x86_64")]
+                if C == 1 && gather && src.len() >= (j + 1) * srow + 4 {
+                    // SAFETY: AVX2 checked by the caller (`gather`); reads stay
+                    // within `src` (≥ 4 bytes past this row, asserted above).
+                    unsafe { gather_row(&src[j * srow..], &self.gx, r) };
+                    self.row_ids[slot] = j;
+                    continue;
+                }
                 let (sp, rp) = (s.as_ptr(), r.as_mut_ptr());
                 for (x, &(i0, i1, w)) in self.xtab.iter().enumerate() {
-                    // SAFETY: i0, i1 < sw (clamped in `lerp_tab`); x < ow and r.len() == ow * 4.
+                    // SAFETY: i0, i1 < sw (clamped in `lerp_tab`); x < ow and r.len() == ow * C.
                     unsafe {
-                        let a = std::ptr::read_unaligned(sp.add(i0 as usize * 4) as *const [u8; 4]);
-                        let b = std::ptr::read_unaligned(sp.add(i1 as usize * 4) as *const [u8; 4]);
-                        let o: [u8; 4] = std::array::from_fn(|c| ((a[c] as u32 * (256 - w) + b[c] as u32 * w + 128) >> 8) as u8);
-                        std::ptr::write_unaligned(rp.add(x * 4) as *mut [u8; 4], o);
+                        let a = std::ptr::read_unaligned(sp.add(i0 as usize * C) as *const [u8; C]);
+                        let b = std::ptr::read_unaligned(sp.add(i1 as usize * C) as *const [u8; C]);
+                        let o: [u8; C] = std::array::from_fn(|c| ((a[c] as u32 * (256 - w) + b[c] as u32 * w + 128) >> 8) as u8);
+                        std::ptr::write_unaligned(rp.add(x * C) as *mut [u8; C], o);
                     }
                 }
                 self.row_ids[slot] = j;
             }
-            let (a, b) = (&self.rows[0], &self.rows[1]);
-            let d = &mut out[y * ow * 4..(y + 1) * ow * 4];
-            let iw = 256 - wy;
+            let (a, b) = (&self.rows[0][..ow * C], &self.rows[1][..ow * C]);
+            let d = &mut out[y * stride..y * stride + ow * C];
             if wy == 0 {
                 d.copy_from_slice(a);
             } else {
-                let (iw, wy) = (iw as u16, wy as u16);
+                let (iw, wy) = ((256 - wy) as u16, wy as u16);
                 for ((d, &a), &b) in d.iter_mut().zip(a.iter()).zip(b.iter()) {
                     *d = ((a as u16 * iw + b as u16 * wy + 128) >> 8) as u8;
                 }
@@ -131,6 +207,13 @@ mod perf {
             let t = std::time::Instant::now();
             u.run(&src, sw, sh, Rect::new(0.0, 0.0, 1924.0, 1084.0), &mut out, 1920, 1080, 0, 0);
             eprintln!("upscale {:?}", t.elapsed());
+        }
+        let plane: Vec<u8> = (0..sw * sh + 4).map(|i| (i % 251) as u8).collect();
+        let mut y = vec![0u8; 1920 * 1080];
+        for _ in 0..3 {
+            let t = std::time::Instant::now();
+            u.run_plane(&plane, sw, sh, Rect::new(0.0, 0.0, 1924.0, 1084.0), &mut y, 1920, 1920, 1080, 0, 0);
+            eprintln!("plane {:?}", t.elapsed());
         }
     }
 }

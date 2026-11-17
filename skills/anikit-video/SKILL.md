@@ -9,4 +9,4 @@ description: Make motion-graphics videos (launches, feature announcements, chang
 4. `anikit-video preview spec.json` (writes `spec-sheet.png`, one frame per scene; `--at 3.5 -o f.png` for a full-size still), then look at the PNG; make at most 3 fixes and re-check.
 5. `anikit-video render spec.json -o out.mp4`. For other aspects, use `--format 9:16` / `1:1` with the same params.
 
-Custom videos: `docs/video/spec.md`. Launch from a README or URL: `anikit-video prompt launch-video-generator`. Over MCP, the tools have the same names.
+Custom videos: `docs/video/spec.md` (one-page cheat sheet; full reference in `spec-reference.md`). Launch from a README or URL: `anikit-video prompt launch-video-generator`. Over MCP, the tools have the same names.

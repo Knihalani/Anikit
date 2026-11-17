@@ -164,8 +164,15 @@ pub(crate) struct FrameCtx<'a> {
     pub qs: QuantS,
     pub qcs: QuantS,
     /// SAD bounds (luma 16×16, chroma 8×8) under which inter residuals are all zero.
-    pub zero_sad: (u32, u32),
+    /// (luma, chroma, chroma DC limit on the 8x8 SAD), inter.
+    pub zero_sad: (u32, u32, u32),
     pub zero_sad_intra: (u32, u32),
+    /// Intra per-4×4 AC bounds (luma, chroma) and DC limits (luma I16 Hadamard on
+    /// SAD/2, chroma 8×8 SAD).
+    pub zero_sad4_intra: (u32, u32),
+    pub zero_dc_intra: (u32, u32),
+    /// Per-4×4-block SAD bounds (luma, chroma AC), inter.
+    pub zero_sad4: (u32, u32),
     pub lambda: i32,
     pub src: &'a Pic,
     pub refp: &'a Pic,
@@ -175,6 +182,8 @@ pub(crate) struct FrameCtx<'a> {
     pub idr: bool,
     pub max_mvy: i32,
     pub subpel: bool,
+    /// Frame-level half-sample planes of the reference (when many macroblocks change).
+    pub hpel: Option<&'a crate::mc::HpelPlanes>,
     pub cabac: bool,
     pub hdr_frame_num: u32,
     pub idr_id: u32,
@@ -414,7 +423,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         // Early inter: the predicted candidates already match (typical for layers
         // moving coherently) → no intra analysis, no search.
         if !c.idr {
-            let q = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, true);
+            let q = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, true, None);
             if q.sad <= lambda as u32 * 24 {
                 self.code_inter(mbx, mby, src_y, src_c, &q);
                 return;
@@ -427,23 +436,27 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mut pred = [0u8; 256];
         let mut pred16 = [0u8; 256];
         let mut best16 = (u32::MAX, 2u8);
+        // SAD pre-selection, SATD for the winner (P frames); full SATD for IDRs.
         for m in 0..4u8 {
             if !Self::intra16_modes_ok(&e16, m) {
                 continue;
             }
             intra::pred16(&e16, m, &mut pred);
-            let s = dsp::satd(src_y, &pred, 16, 16);
+            let s = if c.idr { dsp::satd(src_y, &pred, 16, 16) } else { crate::simd::sad16(src_y, 16, &pred, 16) };
             if s < best16.0 {
                 best16 = (s, m);
                 pred16 = pred;
             }
+        }
+        if !c.idr {
+            best16.0 = dsp::satd(src_y, &pred16, 16, 16);
         }
         let cost16 = best16.0 + lambda as u32 * if c.idr { 4 } else { 8 };
         // Full motion search unless intra prediction is already near-perfect.
         // (Skipped too when the predicted candidates are far worse than intra.)
         let hopeless = inter.as_ref().is_some_and(|q| q.sad > 4 * best16.0);
         if !c.idr && best16.0 > lambda as u32 * 4 && !hopeless {
-            let full = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, false);
+            let full = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, false, inter.as_ref());
             if full.cost < inter.as_ref().map_or(u32::MAX, |q| q.cost) {
                 inter = Some(full);
             }
@@ -464,23 +477,23 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         }
 
-        let mut cd = Coded::new();
         let try_i4 = best_cost > lambda as u32 * 24 + 256 && (c.idr || kind != Kind::P16 || best_cost > lambda as u32 * 64 + 1024);
         if try_i4 {
             // Encode I4x4 tentatively (writes recon).
+            let mut cd = Coded::new();
             let (cost4, modes) = self.code_i4(mbx, mby, src_y, &mut cd, true);
             if cost4 < best_cost {
                 self.finish_intra(mbx, mby, src_c, &mut cd, Kind::I4, Some(modes), None);
                 return;
             }
-            cd = Coded::new();
         }
         match kind {
             Kind::P16 => {
-                let it = inter.unwrap();
-                self.code_inter(mbx, mby, src_y, src_c, &it);
+                let it = inter.as_ref().unwrap();
+                self.code_inter(mbx, mby, src_y, src_c, it);
             }
             Kind::I16(_) | Kind::I4 => {
+                let mut cd = Coded::new();
                 self.finish_intra(mbx, mby, src_c, &mut cd, kind, None, Some((src_y, &pred16)));
             }
         }
@@ -497,6 +510,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         skip_mv: (i32, i32),
         mbi: usize,
         quick: bool,
+        seed: Option<&Inter>,
     ) -> Inter {
         let c = self.c;
         let lambda = c.lambda as u32;
@@ -516,29 +530,41 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mut best = (u32::MAX, (0, 0));
         let mut cands = [(0i32, 0i32); 7];
         let mut n = 0;
-        let mut push = |mv: (i32, i32)| {
-            let mv = clamp(mv);
-            if !cands[..n].contains(&mv) {
-                cands[n] = mv;
-                n += 1;
+        fn push_c(cands: &mut [(i32, i32); 7], n: &mut usize, mv: (i32, i32)) {
+            if !cands[..*n].contains(&mv) {
+                cands[*n] = mv;
+                *n += 1;
             }
-        };
-        push((0, 0));
-        push(round(skip_mv));
-        push(round(mvp));
+        }
+        macro_rules! push {
+            ($mv:expr) => {
+                push_c(&mut cands, &mut n, clamp($mv))
+            };
+        }
+        push!((0, 0));
+        push!(round(skip_mv));
+        push!(round(mvp));
         let h = c.hint[mbi];
         if h != NO_HINT {
-            push(round((h.0 as i32, h.1 as i32)));
+            push!(round((h.0 as i32, h.1 as i32)));
         }
         let (x, y) = (mbx as isize, mby as isize);
+        // A quick search already evaluated the candidates above.
+        let known = if let Some(q) = seed {
+            let mv = (q.mv.0 >> 2, q.mv.1 >> 2);
+            best = (q.sad + mvcost((mv.0 * 4, mv.1 * 4)), mv);
+            n
+        } else {
+            0
+        };
         if !quick {
             for nb in [self.nb(x - 1, y), self.nb(x, y - 1), self.nb(x + 1, y - 1)] {
                 if nb.inter {
-                    push(round(nb.mv));
+                    push!(round(nb.mv));
                 }
             }
         }
-        for &mv in &cands[..n] {
+        for &mv in &cands[known..n] {
             let s = eval(mv);
             if s < best.0 {
                 best = (s, mv);
@@ -590,27 +616,43 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mvp = it.mvp;
         let mvcost = |q: (i32, i32)| -> u32 { lambda * (se_len(q.0 - mvp.0) + se_len(q.1 - mvp.1)) };
         let base_q = it.mv;
-        let hp = crate::mc::Hpel::new(
-            &self.c.refp.y,
-            (mbx as i32 * 16 + (base_q.0 >> 2)) as isize,
-            (mby as i32 * 16 + (base_q.1 >> 2)) as isize,
-        );
+        let (bx, by) = ((mbx as i32 * 16 + (base_q.0 >> 2)) as isize, (mby as i32 * 16 + (base_q.1 >> 2)) as isize);
+        let win = if self.c.hpel.is_none() { Some(crate::mc::Hpel::new(&self.c.refp.y, bx, by)) } else { None };
         let mut p = [0u8; 256];
         let mut d = (0, 0);
+        // SAD for the candidates (cheap), SATD for the final cost.
+        let mut best = it.sad + mvcost(base_q);
+        let start = it.mv;
         for step in [2, 1] {
             let centre = d;
             for (sx, sy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
                 let cand = (centre.0 + sx * step, centre.1 + sy * step);
-                hp.pred(cand.0, cand.1, &mut p);
+                match (&win, self.c.hpel) {
+                    (Some(w), _) => w.pred(cand.0, cand.1, &mut p),
+                    (None, Some(hp)) => hp.pred(
+                        &self.c.refp.y,
+                        bx + (cand.0 >> 2) as isize,
+                        by + (cand.1 >> 2) as isize,
+                        cand.0 & 3,
+                        cand.1 & 3,
+                        &mut p,
+                    ),
+                    _ => unreachable!(),
+                }
                 let q = (base_q.0 + cand.0, base_q.1 + cand.1);
-                let cst = dsp::satd(src_y, &p, 16, 16) + mvcost(q);
-                if cst < it.cost {
-                    it.cost = cst;
+                let cst = crate::simd::sad16(src_y, 16, &p, 16) + mvcost(q);
+                if cst < best {
+                    best = cst;
                     it.mv = q;
                     d = cand;
                     it.pred = p;
                 }
             }
+        }
+        if it.mv != start {
+            let c = dsp::satd(src_y, &it.pred, 16, 16) + mvcost(it.mv);
+            it.cost = c;
+            it.sad = best - mvcost(it.mv);
         }
     }
 
@@ -694,23 +736,37 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
     fn code_inter(&mut self, mbx: usize, mby: usize, src_y: &[u8; 256], src_c: &[[u8; 64]; 2], it: &Inter) {
         let (mv, mvp, skip_mv) = (it.mv, it.mvp, it.skip_mv);
-        let pred = it.pred;
+        let pred = &it.pred;
         let mut predc = [[0u8; 64]; 2];
         self.mc_chroma(0, mbx, mby, mv, &mut predc[0]);
         self.mc_chroma(1, mbx, mby, mv, &mut predc[1]);
         let mut cd = Coded::new();
 
         // Residuals that provably quantise to zero are not transformed.
-        let mut recon = pred;
-        if crate::simd::sad16(src_y, 16, &pred, 16) > self.c.zero_sad.0 {
-            luma_inter(src_y, &pred, &self.c.qs, &mut cd, &mut recon);
-        }
-        let mut reconc = predc;
+        let mut recon = [0u8; 256];
+        let sad = crate::simd::sad16(src_y, 16, pred, 16);
+        let ry = if sad > self.c.zero_sad.0 && crate::simd::max_sad4(src_y, pred, 16, 16) > self.c.zero_sad4.0 {
+            luma_inter(src_y, pred, &self.c.qs, &mut cd, &mut recon);
+            &recon
+        } else {
+            pred
+        };
+        let mut reconc = [[0u8; 64]; 2];
         let zc = self.c.zero_sad.1;
-        if crate::simd::sad64(&src_c[0], &predc[0]) > zc || crate::simd::sad64(&src_c[1], &predc[1]) > zc {
+        let (s0, s1) = (crate::simd::sad64(&src_c[0], &predc[0]), crate::simd::sad64(&src_c[1], &predc[1]));
+        // chroma: AC by block, DC (2x2 Hadamard of block sums) by the 8x8 SAD
+        let dc_ok = s0 <= self.c.zero_sad.2 && s1 <= self.c.zero_sad.2;
+        let rc = if (s0 > zc || s1 > zc)
+            && !(dc_ok
+                && crate::simd::max_sad4(&src_c[0], &predc[0], 8, 8) <= self.c.zero_sad4.1
+                && crate::simd::max_sad4(&src_c[1], &predc[1], 8, 8) <= self.c.zero_sad4.1)
+        {
             chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, false, &mut cd, &mut reconc);
-        }
-        self.store_recon(mbx, mby, &recon, &reconc);
+            &reconc
+        } else {
+            &predc
+        };
+        self.store_recon(mbx, mby, ry, rc);
         let skip = cd.cbp == 0 && mv == skip_mv;
         let mvd = if skip { (0, 0) } else { (mv.0 - mvp.0, mv.1 - mvp.1) };
         let i = (mby - self.b.mby0) * self.c.mbw + mbx;
@@ -887,7 +943,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let q = self.c.q;
         if let (Kind::I16(_), Some((src, pred))) = (kind, i16) {
             let mut recon = *pred;
-            if crate::simd::sad16(src, 16, pred, 16) > self.c.zero_sad_intra.0 {
+            let sad = crate::simd::sad16(src, 16, pred, 16);
+            let (b4, dcl) = (self.c.zero_sad4_intra.0, self.c.zero_dc_intra.0);
+            if sad > self.c.zero_sad_intra.0 && !(sad < 2 * dcl && crate::simd::max_sad4(src, pred, 16, 16) <= b4) {
                 luma_i16(src, pred, &q, &self.c.qs, cd, &mut recon);
             }
             let base = self.yi(mbx * 16, mby * 16);
@@ -931,7 +989,13 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let cmode = best.1;
         let mut reconc = [[0u8; 64]; 2];
         let zc = self.c.zero_sad_intra.1;
-        if crate::simd::sad64(&src_c[0], &predc[0]) > zc || crate::simd::sad64(&src_c[1], &predc[1]) > zc {
+        let (s0, s1) = (crate::simd::sad64(&src_c[0], &predc[0]), crate::simd::sad64(&src_c[1], &predc[1]));
+        let (b4, dcl) = (self.c.zero_sad4_intra.1, self.c.zero_dc_intra.1);
+        let zero_c = s0 <= dcl
+            && s1 <= dcl
+            && crate::simd::max_sad4(&src_c[0], &predc[0], 8, 8) <= b4
+            && crate::simd::max_sad4(&src_c[1], &predc[1], 8, 8) <= b4;
+        if (s0 > zc || s1 > zc) && !zero_c {
             chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, true, cd, &mut reconc);
         } else {
             reconc = predc;
@@ -1671,6 +1735,9 @@ pub struct Encoder {
     /// Macroblocks where `recon` (the picture before the reference) differs from `refp`.
     stale: Vec<bool>,
     touched: Vec<bool>,
+    hpel: Option<crate::mc::HpelPlanes>,
+    /// `hpel` holds the planes of the current reference.
+    hpel_valid: bool,
     recon: Pic,
     refp: Pic,
     info: Vec<MbInfo>,
@@ -1714,6 +1781,8 @@ impl Encoder {
             cur: Pic::new(mbw, mbh, 0),
             stale: vec![true; mbw * mbh],
             touched: vec![false; mbw * mbh],
+            hpel: None,
+            hpel_valid: false,
             recon: Pic::new(mbw, mbh, PAD),
             refp: Pic::new(mbw, mbh, PAD),
             info: vec![MbInfo::default(); mbw * mbh],
@@ -1913,6 +1982,7 @@ impl Encoder {
             }
             self.recon.extend();
             std::mem::swap(&mut self.recon, &mut self.refp);
+            self.hpel_valid = false;
         }
         if idr {
             self.idr_count = self.idr_count.wrapping_add(1);
@@ -1948,13 +2018,28 @@ impl Encoder {
     }
 
     fn encode_slices(&mut self, idr: bool, frame_num: u32, stats: &mut FrameStats) {
+        // Sub-pel refinement on a busy frame: build the half-sample planes once.
+        if self.cfg.subpel && !idr && !self.hpel_valid {
+            let busy = self.changed.iter().filter(|&&c| c).count() * 4 > self.changed.len();
+            if busy {
+                let r = &self.refp.y;
+                self.hpel.get_or_insert_with(|| crate::mc::HpelPlanes::new(r)).compute(r);
+                self.hpel_valid = true;
+            }
+        }
         let ctx = FrameCtx {
             mbw: self.mbw,
             q: self.q,
             qc: self.qc,
             qs: QuantS::new(&self.q),
             qcs: QuantS::new(&self.qc),
-            zero_sad: crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc), false),
+            zero_sad: {
+                let (l, c) = crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc), false);
+                (l, c, crate::soa::chroma_dc_limit(&self.qc, false))
+            },
+            zero_sad4: crate::soa::zero_sad4_bounds(&QuantS::new(&self.q), &QuantS::new(&self.qc), false),
+            zero_sad4_intra: crate::soa::zero_sad4_bounds(&QuantS::new(&self.q), &QuantS::new(&self.qc), true),
+            zero_dc_intra: (crate::soa::chroma_dc_limit(&self.q, true), crate::soa::chroma_dc_limit(&self.qc, true)),
             zero_sad_intra: crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc), true),
             lambda: self.lambda,
             src: &self.cur,
@@ -1965,6 +2050,7 @@ impl Encoder {
             idr,
             max_mvy: max_mv_y(self.level),
             subpel: self.cfg.subpel,
+            hpel: if self.hpel_valid { self.hpel.as_ref() } else { None },
             cabac: self.cfg.cabac,
             hdr_frame_num: frame_num,
             idr_id: self.idr_count & 0xffff,
