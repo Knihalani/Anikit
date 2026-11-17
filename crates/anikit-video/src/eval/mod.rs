@@ -329,6 +329,8 @@ pub(crate) struct Node {
     pub glow: Option<Filter>,
     /// Image treatments (tone map, halftone), applied first.
     pub treat: Vec<Filter>,
+    /// First of 5 animatable slots for the treatments (toneAmount, halftone cell/angle/gain, ink amount); 0 = none.
+    pub treat_slot: u8,
     /// Stepped time in fps (0 = smooth): the layer animates "on twos" etc.
     pub step: f32,
     /// Boil: `[px, degrees, fps, seed]` seeded jitter.
@@ -1163,6 +1165,26 @@ impl Evaluator {
         let mut alpha = opacity;
         if needs_layer {
             let mut filters = n.treat.clone();
+            if n.treat_slot != 0 {
+                let b = n.treat_slot as usize;
+                for f in filters.iter_mut() {
+                    match f {
+                        Filter::Tone(t) => {
+                            let a = v[b].clamp(0.0, 1.0);
+                            if (a - t.amount).abs() > 1e-4 {
+                                *t = Arc::new(dl::ToneLut { amount: a, ..(**t).clone() });
+                            }
+                        }
+                        Filter::Halftone(h) => {
+                            h.cell = v[b + 1].max(2.0);
+                            h.angle = v[b + 2];
+                            h.gain = v[b + 3].max(0.05);
+                        }
+                        Filter::Ink { amount, .. } => *amount = v[b + 4].clamp(0.0, 1.0),
+                        _ => {}
+                    }
+                }
+            }
             if blur > 0.05 {
                 filters.push(Filter::Blur(blur));
             }

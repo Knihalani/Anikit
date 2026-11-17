@@ -92,3 +92,32 @@ fn cutout_wraps_the_layer_in_a_rimmed_clipped_piece() {
     let bad = parse_json(r#"{ "scenes": [ { "layers": [ { "shape": "rect", "cutout": "ripped" } ] } ] }"#).unwrap();
     assert!(Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string().contains("cutout"));
 }
+
+#[test]
+fn treatment_parameters_animate() {
+    let e = ev(r##"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "circle", "width": 300, "height": 300,
+        "duotone": ["#102040", "#ffd000"], "toneAmount": "=clamp(t, 0, 1)",
+        "halftone": { "cell": 8, "angle": "=t * 90" }, "inkTexture": 0.3,
+        "animate": [ { "to": { "halftoneCell": 24, "inkAmount": 0 }, "duration": 1 } ] } ] } ] }"##);
+    let at = |t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::PushLayer { filters, .. } = o { Some(filters.clone()) } else { None }).unwrap();
+    let (f0, f1) = (at(0.0), at(1.0));
+    let tone = |f: &[Filter]| f.iter().find_map(|x| if let Filter::Tone(t) = x { Some(t.amount) } else { None }).unwrap();
+    let ht = |f: &[Filter]| f.iter().find_map(|x| if let Filter::Halftone(h) = x { Some((h.cell, h.angle)) } else { None }).unwrap();
+    let ink = |f: &[Filter]| f.iter().find_map(|x| if let Filter::Ink { amount, .. } = x { Some(*amount) } else { None }).unwrap();
+    assert!(tone(&f0) < 0.01 && (tone(&f1) - 1.0).abs() < 1e-3, "{} {}", tone(&f0), tone(&f1));
+    assert_eq!(ht(&f0), (8.0, 0.0));
+    assert!((ht(&f1).0 - 24.0).abs() < 1e-3 && (ht(&f1).1 - 90.0).abs() < 1e-3, "{:?}", ht(&f1));
+    assert!((ink(&f0) - 0.3).abs() < 1e-4 && ink(&f1) < 1e-4);
+    // A shader layer keeps its own uniforms and still gets the treatment slots.
+    let s = ev(r##"{ "scenes": [ { "layers": [ { "shader": "void mainImage(out vec4 c, in vec2 p) { c = vec4(speed); }", "uniforms": { "speed": 0.5 },
+        "posterize": 3, "animate": [ { "to": { "speed": 1, "toneAmount": 0.5 }, "duration": 1 } ] } ] } ] }"##);
+    let _ = s.eval(0.5);
+}
+
+#[test]
+fn custom_tile_patterns() {
+    let e = ev(r#"{ "scenes": [ { "layers": [ { "pattern": { "tile": "M-8 -8 L8 -8 L0 9 Z", "spacing": 40, "turns": 4, "stagger": true, "seed": 3 }, "width": 400, "height": 300 } ] } ] }"#);
+    assert_eq!(e.eval(0.5).ops.iter().filter(|o| matches!(o, Op::Fill { .. })).count(), 1);
+    let bad = parse_json(r#"{ "scenes": [ { "layers": [ { "pattern": { "kind": "tile" }, "width": 100, "height": 100 } ] } ] }"#).unwrap();
+    assert!(Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string().contains("tile"));
+}

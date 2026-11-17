@@ -446,6 +446,7 @@ fn empty_node(kind: Kind) -> Node {
         shadow: None,
         glow: None,
         treat: Vec::new(),
+        treat_slot: 0,
         step: 0.0,
         boil: None,
         clip: false,
@@ -2300,6 +2301,8 @@ impl C<'_> {
 
     /// Image treatments (`duotone`, `gradientMap`, `posterize`, `halftone`) as layer filters.
     fn treatments(&mut self, l: &Layer, path: &str, n: &mut Node) {
+        let mut ht_nums: Option<(Option<Num>, Option<Num>, Option<Num>)> = None;
+        let mut ink_num: Option<Num> = None;
         let mut stops: Option<Vec<(f32, Rgba)>> = None;
         if let Some(d) = &l.duotone {
             if d.len() != 2 {
@@ -2344,7 +2347,7 @@ impl C<'_> {
                 }
                 m
             });
-            let amount = l.tone_amount.unwrap_or(1.0).clamp(0.0, 1.0) as f32;
+            let amount = 1.0;
             // With a map, posterising is baked into it.
             let levels = if map.is_some() { 0 } else { levels };
             n.treat.push(Filter::Tone(Arc::new(dl::ToneLut { map, levels, amount })));
@@ -2352,7 +2355,7 @@ impl C<'_> {
         if let Some(h) = &l.halftone {
             let hp = format!("{path}.halftone");
             let hs = match h {
-                spec::HalftoneValue::Cell(c) => spec::HalftoneSpec { cell: Some(*c), ..Default::default() },
+                spec::HalftoneValue::Cell(c) => spec::HalftoneSpec { cell: Some(Num::Num(*c)), ..Default::default() },
                 spec::HalftoneValue::Full(f) => f.clone(),
             };
             let shape = match hs.shape.as_deref().unwrap_or("dot") {
@@ -2373,30 +2376,54 @@ impl C<'_> {
             };
             let ink = col(self, &hs.ink, "ink", "source");
             let paper = col(self, &hs.paper, "paper", "none");
-            let cell = hs.cell.unwrap_or(10.0) as f32;
+            let cell = match &hs.cell {
+                Some(Num::Num(c)) => *c as f32,
+                _ => 10.0,
+            };
             if cell < 3.0 {
                 self.d.push(Diagnostic::warning(format!("{hp}.cell"), "cells under 3 px alias into moiré after encoding; use 4 px or more"));
             }
-            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: hs.angle.unwrap_or(45.0) as f32, shape, ink, paper, gain: hs.gain.unwrap_or(1.0) as f32, ox: 0.0, oy: 0.0 }));
+            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: 45.0, shape, ink, paper, gain: 1.0, ox: 0.0, oy: 0.0 }));
+            ht_nums = Some((hs.cell.clone(), hs.angle.clone(), hs.gain.clone()));
         }
         if let Some(iv) = &l.ink_texture {
             let (amount, scale, seed) = match iv {
-                spec::InkValue::Amount(a) => (*a, 28.0, 1),
-                spec::InkValue::Full(o) => (o.amount.unwrap_or(0.35), o.scale.unwrap_or(28.0), o.seed.unwrap_or(1)),
+                spec::InkValue::Amount(a) => (Num::Num(*a), 28.0, 1),
+                spec::InkValue::Full(o) => (o.amount.clone().unwrap_or(Num::Num(0.35)), o.scale.unwrap_or(28.0), o.seed.unwrap_or(1)),
             };
-            if amount > 0.0 {
-                n.treat.push(Filter::Ink { amount: amount.clamp(0.0, 1.0) as f32, scale: scale.max(1.0) as f32, seed, ox: 0.0, oy: 0.0 });
-            }
+            n.treat.push(Filter::Ink { amount: 0.35, scale: scale.max(1.0) as f32, seed, ox: 0.0, oy: 0.0 });
+            ink_num = Some(amount);
         }
         // Halftone on reading-size text breaks it into dots that H.264 smears.
         if let (Some(_), Some(_), Some(Num::Num(sz))) = (&l.halftone, &l.text, &l.size) {
             let cell = match &l.halftone {
                 Some(spec::HalftoneValue::Cell(c)) => *c,
-                Some(spec::HalftoneValue::Full(f)) => f.cell.unwrap_or(10.0),
+                Some(spec::HalftoneValue::Full(f)) => match &f.cell { Some(Num::Num(c)) => *c, _ => 10.0 },
                 None => 10.0,
             };
             if *sz < cell * 8.0 {
                 self.d.push(Diagnostic::warning(format!("{path}.halftone"), format!("halftone cells of {cell} px on {sz} px text: under ~8 cells per letter height it stops reading; use it on display type (≥ {} px) or a smaller cell", (cell * 8.0).round())));
+            }
+        }
+        // Animatable treatment parameters live in uniform slots after any shader uniforms,
+        // so `animate`, keyframes and "=expr" all reach them by name.
+        if !n.treat.is_empty() {
+            let used: usize = self.uniform_slots.iter().map(|(_, o, c)| o + c).max().unwrap_or(0);
+            if used + 5 > super::shader::UNIFORM_SLOTS {
+                self.d.push(Diagnostic::warning(path, "too many shader uniforms to also animate this layer's treatments; they stay fixed"));
+            } else {
+                let b = prop::U0 + used;
+                n.treat_slot = b as u8;
+                for (k, name) in ["toneAmount", "halftoneCell", "halftoneAngle", "halftoneGain", "inkAmount"].iter().enumerate() {
+                    self.uniform_slots.push((name.to_string(), used + k, 1));
+                }
+                let (c, a, g) = ht_nums.unwrap_or((None, None, None));
+                let one = Num::Num(1.0);
+                self.set(n, b, Some(l.tone_amount.as_ref().unwrap_or(&one)), &format!("{path}.toneAmount"), 1.0);
+                self.set(n, b + 1, Some(c.as_ref().unwrap_or(&Num::Num(10.0))), &format!("{path}.halftone.cell"), 1.0);
+                self.set(n, b + 2, Some(a.as_ref().unwrap_or(&Num::Num(45.0))), &format!("{path}.halftone.angle"), 1.0);
+                self.set(n, b + 3, Some(g.as_ref().unwrap_or(&one)), &format!("{path}.halftone.gain"), 1.0);
+                self.set(n, b + 4, Some(ink_num.as_ref().unwrap_or(&Num::Num(0.35))), &format!("{path}.inkTexture.amount"), 1.0);
             }
         }
     }
@@ -2466,10 +2493,23 @@ impl C<'_> {
                         let mut it = s.split_whitespace();
                         let kind = it.next().unwrap_or("dots").to_string();
                         let spacing = it.next().and_then(|x| x.trim_end_matches("px").parse::<f64>().ok()).unwrap_or(40.0);
-                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None })
+                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None, tile: None, turns: 0, stagger: false, tile_stroke: 0.0 })
                     }
                     Some(spec::PatternValue::Full(f)) => Some(super::graphic::Pat {
-                        kind: f.kind.clone(),
+                        kind: if f.kind.is_empty() && f.tile.is_some() { "tile".into() } else { f.kind.clone() },
+                        tile: match &f.tile {
+                            Some(d) => match Path::from_svg(d) {
+                                Ok(p) => Some(p),
+                                Err(e) => {
+                                    self.d.push(Diagnostic::error(format!("{pp}.tile"), format!("invalid SVG path: {e}")));
+                                    None
+                                }
+                            },
+                            None => None,
+                        },
+                        turns: f.turns.unwrap_or(0).min(360),
+                        stagger: f.stagger.unwrap_or(false),
+                        tile_stroke: f.tile_stroke.unwrap_or(0.0).max(0.0),
                         spacing: f.spacing.unwrap_or(40.0),
                         mark: f.mark,
                         angle: f.angle.unwrap_or(0.0),
@@ -2483,6 +2523,9 @@ impl C<'_> {
                         if !super::graphic::PATTERNS.contains(&pt.kind.as_str()) {
                             self.d.push(Diagnostic::error(&pp, format!("unknown pattern '{}'", pt.kind)).suggest(suggest(&pt.kind, super::graphic::PATTERNS)));
                             pt.kind = "dots".into();
+                        }
+                        if pt.kind == "tile" && pt.tile.is_none() {
+                            self.d.push(Diagnostic::error(&pp, "a \"tile\" pattern needs \"tile\": SVG path data centred on 0,0 (e.g. \"M-8 -8 L8 -8 L0 10 Z\")"));
                         }
                         if pt.spacing < 4.0 {
                             self.d.push(Diagnostic::warning(&pp, "spacing under 4 px turns to moiré after encoding"));

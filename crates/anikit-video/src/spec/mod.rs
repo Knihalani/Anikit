@@ -211,8 +211,8 @@ pub enum InkValue {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InkSpec {
-    /// How much ink thins out in the worst spots (0..1). Default 0.35.
-    pub amount: Option<f64>,
+    /// How much ink thins out in the worst spots (0..1). Default 0.35. Animatable as `inkAmount`, or `"=expr"`.
+    pub amount: Option<Num>,
     /// Size of the blotches in px. Default 28.
     pub scale: Option<f64>,
     pub seed: Option<u32>,
@@ -250,10 +250,11 @@ pub enum HalftoneValue {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct HalftoneSpec {
-    /// Screen pitch in px (distance between dot centres). Default 10.
-    pub cell: Option<f64>,
+    /// Screen pitch in px (distance between dot centres). Default 10. Animatable as `halftoneCell` (also `halftoneAngle`,
+    /// `halftoneGain`), or `"=expr"`.
+    pub cell: Option<Num>,
     /// Screen angle in degrees. Default 45 (black ink); 15/75/0 for other plates.
-    pub angle: Option<f64>,
+    pub angle: Option<Num>,
     /// `dot` (default), `line` or `square`.
     pub shape: Option<String>,
     /// Ink colour. Default `"source"`: each dot keeps the layer's colour there.
@@ -261,7 +262,7 @@ pub struct HalftoneSpec {
     /// Paper colour under the dots, or `"none"` (default): only the dots remain.
     pub paper: Option<String>,
     /// Dot gain: > 1 darkens (fatter dots), < 1 lightens. Default 1.
-    pub gain: Option<f64>,
+    pub gain: Option<Num>,
 }
 
 /// `pattern`: a kind with an optional spacing (`"dots 32"`), or the full settings.
@@ -276,7 +277,9 @@ pub enum PatternValue {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PatternSpec {
-    /// `dots`, `grid`, `lines`, `checker`, `triangles`, `diamonds`, `crosses`, `rings`, `waves`, `zigzag`, `truchet`, `arcs`, `scales`, `bricks`.
+    /// `dots`, `grid`, `lines`, `stripes`, `checker`, `triangles`, `diamonds`, `crosses`, `rings`, `waves`, `zigzag`, `truchet`, `arcs`,
+    /// `scales`, `bricks`, or `tile` (your own `tile` motif; implied when `tile` is given).
+    #[serde(default)]
     pub kind: String,
     /// Repeat distance in px. Default 40.
     pub spacing: Option<f64>,
@@ -290,6 +293,15 @@ pub struct PatternSpec {
     pub jitter: Option<f64>,
     /// Mark size from `[a, b]` across the box (left→right; with `angle` it follows the angle): a size ramp like a halftone. Fractions of `mark`.
     pub ramp: Option<[f64; 2]>,
+    /// Your own motif for `kind: "tile"` (the default when `tile` is given): SVG path data in px, centred on 0,0,
+    /// drawn at every lattice point and scaled by `mark` (default 1) × `ramp`.
+    pub tile: Option<String>,
+    /// Random rotation of each mark in steps of 360/turns degrees, seeded (`4` = quarter turns, Truchet-style).
+    pub turns: Option<u32>,
+    /// Shift every other row by half the spacing (brick / hexagonal lattice).
+    pub stagger: Option<bool>,
+    /// Stroke the `tile` motif at this width in px instead of filling it (open lines: squiggles, ticks, zigzags).
+    pub tile_stroke: Option<f64>,
 }
 
 /// `dots`: many points from an array or a CSV file (`x,y[,colour]` per line).
@@ -684,8 +696,8 @@ pub struct Layer {
     pub gradient_map: Option<Vec<serde_json::Value>>,
     /// Posterise to N tone levels (on luma when combined with `duotone`/`gradientMap`, else per channel).
     pub posterize: Option<u32>,
-    /// Strength of `duotone` / `gradientMap` / `posterize` (0..1). Default 1.
-    pub tone_amount: Option<f64>,
+    /// Strength of `duotone` / `gradientMap` / `posterize` (0..1). Default 1. Animatable (`toneAmount`), or `"=expr"`.
+    pub tone_amount: Option<Num>,
     /// Input luma range `[black, white]` (0..1) stretched to the full map before `duotone`/`gradientMap`:
     /// the pre-curve a print designer sets so a flat source still spans ink to paper. Default `[0, 1]`.
     pub tone_range: Option<[f64; 2]>,

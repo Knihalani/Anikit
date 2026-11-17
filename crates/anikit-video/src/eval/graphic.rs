@@ -109,7 +109,7 @@ pub fn arc(w: f64, h: f64, start: f64, end: f64, inner: f64) -> BezPath {
 }
 
 /// Pattern kinds.
-pub const PATTERNS: &[&str] = &["dots", "grid", "lines", "stripes", "checker", "triangles", "diamonds", "crosses", "rings", "waves", "zigzag", "truchet", "arcs", "scales", "bricks"];
+pub const PATTERNS: &[&str] = &["tile", "dots", "grid", "lines", "stripes", "checker", "triangles", "diamonds", "crosses", "rings", "waves", "zigzag", "truchet", "arcs", "scales", "bricks"];
 
 /// Parameters of a pattern.
 #[derive(Clone, Debug)]
@@ -121,6 +121,14 @@ pub struct Pat {
     pub seed: u32,
     pub jitter: f64,
     pub ramp: Option<[f64; 2]>,
+    /// `tile`: a motif (SVG path data, px, centred on 0,0) drawn at every lattice point.
+    pub tile: Option<BezPath>,
+    /// Random rotation per mark in steps of 360/turns degrees (0 = none).
+    pub turns: u32,
+    /// Offset every other row by half a spacing (brick / hex lattice).
+    pub stagger: bool,
+    /// Stroke the `tile` motif at this width (px) instead of filling it (for open lines: squiggles, ticks).
+    pub tile_stroke: f64,
 }
 
 fn default_mark(kind: &str) -> f64 {
@@ -187,11 +195,33 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
     let lo = -n;
     let hi = n;
     match pt.kind.as_str() {
+        "tile" => {
+            if let Some(motif) = &pt.tile {
+                for j in lo..=hi {
+                    for i in lo..=hi {
+                        let (jx, jy) = jit(i, j);
+                        let x = i as f64 * s + jx + if pt.stagger && j.rem_euclid(2) == 1 { s * 0.5 } else { 0.0 };
+                        let y = j as f64 * s + jy;
+                        let k = pt.mark.unwrap_or(1.0) * ramp(x);
+                        if k <= 0.001 {
+                            continue;
+                        }
+                        let turn = if pt.turns > 0 { (rnd(pt.seed, (((i as u32) << 16) ^ (j as u32)).wrapping_add(31)) * pt.turns as f64).floor() * TAU / pt.turns as f64 } else { 0.0 };
+                        let m = kurbo::Affine::translate((x, y)) * kurbo::Affine::rotate(turn) * kurbo::Affine::scale(k);
+                        if pt.tile_stroke > 0.0 {
+                            line.extend(motif.elements().iter().map(|e| m * *e));
+                        } else {
+                            fill.extend(motif.elements().iter().map(|e| m * *e));
+                        }
+                    }
+                }
+            }
+        }
         "dots" => {
             for j in lo..=hi {
                 for i in lo..=hi {
                     let (jx, jy) = jit(i, j);
-                    let x = i as f64 * s + jx;
+                    let x = i as f64 * s + jx + if pt.stagger && j.rem_euclid(2) == 1 { s * 0.5 } else { 0.0 };
                     let y = j as f64 * s + jy;
                     let r = 0.5 * mark * s * ramp(x);
                     if r > 0.05 {
@@ -342,8 +372,12 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
             }
         }
     }
+    if pt.kind == "tile" && pt.tile_stroke > 0.0 {
+        stroke_w = pt.tile_stroke;
+    }
     if !line.elements().is_empty() && stroke_w > 0.0 {
-        let st = Stroke::new(stroke_w).with_caps(Cap::Butt).with_join(Join::Miter);
+        let cap = if pt.kind == "tile" { Cap::Round } else { Cap::Butt };
+        let st = Stroke::new(stroke_w).with_caps(cap).with_join(if pt.kind == "tile" { Join::Round } else { Join::Miter });
         let outline = kurbo::stroke(line, &st, &StrokeOpts::default(), 0.05);
         fill.extend(outline);
     }
@@ -373,7 +407,8 @@ mod tests {
     #[test]
     fn patterns_are_deterministic_and_cover() {
         for k in PATTERNS {
-            let pt = Pat { kind: k.to_string(), spacing: 40.0, mark: None, angle: 15.0, seed: 2, jitter: 0.0, ramp: None };
+            let tile = (*k == "tile").then(|| BezPath::from_svg("M-10 -10 L10 -10 L0 12 Z").unwrap());
+            let pt = Pat { kind: k.to_string(), spacing: 40.0, mark: None, angle: 15.0, seed: 2, jitter: 0.0, ramp: None, tile, turns: 4, stagger: true, tile_stroke: 0.0 };
             let a = pattern(400.0, 300.0, &pt);
             let b = pattern(400.0, 300.0, &pt);
             assert_eq!(a, b, "{k}");

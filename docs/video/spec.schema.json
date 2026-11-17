@@ -1532,12 +1532,15 @@
           "minimum": 0
         },
         "toneAmount": {
-          "description": "Strength of `duotone` / `gradientMap` / `posterize` (0..1). Default 1.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
+          "description": "Strength of `duotone` / `gradientMap` / `posterize` (0..1). Default 1. Animatable (`toneAmount`), or `\"=expr\"`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "toneRange": {
           "description": "Input luma range `[black, white]` (0..1) stretched to the full map before `duotone`/`gradientMap`:\nthe pre-curve a print designer sets so a flat source still spans ink to paper. Default `[0, 1]`.",
@@ -2160,6 +2163,7 @@
             "dust",
             "particle-text",
             "morph",
+            "fluid",
             "metaballs",
             "god-rays",
             "lens-flare",
@@ -2194,7 +2198,7 @@
             "cutout",
             "lottie"
           ],
-          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, brush, sketch, hatch, paper, cutout, lottie."
+          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, fluid, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, brush, sketch, hatch, paper, cutout, lottie."
         },
         "props": true,
         "progress": {
@@ -2763,20 +2767,26 @@
       "type": "object",
       "properties": {
         "cell": {
-          "description": "Screen pitch in px (distance between dot centres). Default 10.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
+          "description": "Screen pitch in px (distance between dot centres). Default 10. Animatable as `halftoneCell` (also `halftoneAngle`,\n`halftoneGain`), or `\"=expr\"`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "angle": {
           "description": "Screen angle in degrees. Default 45 (black ink); 15/75/0 for other plates.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "shape": {
           "description": "`dot` (default), `line` or `square`.",
@@ -2801,11 +2811,14 @@
         },
         "gain": {
           "description": "Dot gain: > 1 darkens (fatter dots), < 1 lightens. Default 1.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -2826,12 +2839,15 @@
       "type": "object",
       "properties": {
         "amount": {
-          "description": "How much ink thins out in the worst spots (0..1). Default 0.35.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
+          "description": "How much ink thins out in the worst spots (0..1). Default 0.35. Animatable as `inkAmount`, or `\"=expr\"`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "scale": {
           "description": "Size of the blotches in px. Default 28.",
@@ -3409,8 +3425,9 @@
       "type": "object",
       "properties": {
         "kind": {
-          "description": "`dots`, `grid`, `lines`, `checker`, `triangles`, `diamonds`, `crosses`, `rings`, `waves`, `zigzag`, `truchet`, `arcs`, `scales`, `bricks`.",
-          "type": "string"
+          "description": "`dots`, `grid`, `lines`, `stripes`, `checker`, `triangles`, `diamonds`, `crosses`, `rings`, `waves`, `zigzag`, `truchet`, `arcs`,\n`scales`, `bricks`, or `tile` (your own `tile` motif; implied when `tile` is given).",
+          "type": "string",
+          "default": ""
         },
         "spacing": {
           "description": "Repeat distance in px. Default 40.",
@@ -3465,12 +3482,40 @@
           },
           "minItems": 2,
           "maxItems": 2
+        },
+        "tile": {
+          "description": "Your own motif for `kind: \"tile\"` (the default when `tile` is given): SVG path data in px, centred on 0,0,\ndrawn at every lattice point and scaled by `mark` (default 1) × `ramp`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "turns": {
+          "description": "Random rotation of each mark in steps of 360/turns degrees, seeded (`4` = quarter turns, Truchet-style).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "stagger": {
+          "description": "Shift every other row by half the spacing (brick / hexagonal lattice).",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "tileStroke": {
+          "description": "Stroke the `tile` motif at this width in px instead of filling it (open lines: squiggles, ticks, zigzags).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
         }
       },
-      "additionalProperties": false,
-      "required": [
-        "kind"
-      ]
+      "additionalProperties": false
     },
     "FitValue": {
       "description": "`fit`: an image mode (`\"cover\"`) or, on text, `true`. Derefs to the word\n(`\"true\"` / `\"false\"` for booleans) so callers match on strings.",

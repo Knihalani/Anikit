@@ -25,12 +25,17 @@
 - **Patterns** `"pattern": "dots 32"` or `{kind, spacing, mark, angle, seed, jitter, ramp}` fill the layer's box (clipped):
   `dots grid lines stripes checker triangles diamonds crosses rings waves zigzag truchet arcs scales bricks`.
   `mark` = mark size / spacing; `ramp: [0.05, 1]` grows marks across the box (a vector halftone ramp); `jitter` 0..1.
+  Your own motif: `{"tile": "M-12 -12 L12 -12 L0 14 Z", "spacing": 48, "turns": 4, "stagger": true}` draws that SVG path
+  (px, centred on 0,0) at every lattice point; `turns` rotates each mark by a seeded multiple of 360/turns, `stagger` offsets
+  alternate rows (also for `dots`), `tileStroke: 6` strokes an open motif (squiggles) instead of filling it. Patterns move with the layer: animate `x`, `rotation` or `scale` for drift.
   One path per layer: thousands of marks cost one fill. Keep `spacing` ≥ 6 px (finer turns to moiré after H.264).
 - **Treatments** on any layer (image, video, shader, text, group, composition), applied before blur/shadow:
   `duotone: [shadows, highlights]`, `gradientMap: [c1, c2, c3…]` (or `[offset, colour]` pairs; interpolated in OKLab),
   `posterize: N` (luma steps with a map, RGB steps alone), `toneRange: [black, white]` (stretch a flat source first),
   `toneAmount` 0..1, `halftone: 10` or `{cell, angle, shape: dot|line|square, ink, paper, gain}` (ink `"source"` keeps
   each dot's colour; paper `"none"` leaves only dots; the screen is fixed to the frame, as on press).
+  Animate them by name, or give `"=expr"`: `toneAmount`, `halftoneCell`, `halftoneAngle`, `halftoneGain`, `inkAmount`
+  (`"animate": [{"to": {"halftoneCell": 40}}]`, `"halftone": {"angle": "=t*30"}`): a screen that grows into a pattern, a duotone fading in.
 - **Cutout** (collage) `"cutout": "torn"` | `"scissor"` | `"clean"` or `{edge, amount, rim, rimColor, shadow, seed}` on any
   layer with a numeric width/height or a `cell`: clips it to a cut edge, backs it with a paper rim (torn: 8 px) and a tight
   printed shadow. Motion, time and blend move to the piece, so `enter`/`animate` move paper and content together.
