@@ -161,19 +161,25 @@ Real-clip frames were rendered with `--codec png` and converted to yuv420p
 
 | Clip | ak264 | vs veryfast | vs ultrafast | vs medium |
 |---|---|---|---|---|
-| launch | 349 fps, 2061 KB, 47.8 dB | **3.2× faster, 0.90× size*** (≈ 109 fps, 2302 KB) | 1.0× speed, **0.62× size** (≈ 340 fps, 3305 KB) | 6.9× faster, 1.12× size (≈ 51 fps, 1834 KB) |
-| tutorial | 750 fps, 492 KB, 51.2 dB | **4.1× faster**, 1.08× size (≈ 182 fps, 455 KB) | **2.1× faster, 0.85× size*** (≈ 355 fps, 577 KB) | 7.1× faster, 1.31× size (≈ 106 fps, 376 KB) |
-| full | 425 fps, 1075 KB, 48.9 dB | **2.8× faster**, 1.18× size (≈ 152 fps, 915 KB) | **1.1× faster, 0.63× size** (≈ 374 fps, 1704 KB) | 4.9× faster, 1.50× size (≈ 86 fps, 717 KB) |
-| spec-to-screen | 161 fps, 8332 KB, 42.0 dB | **1.8× faster, 0.97× size** (≈ 91 fps, 8557 KB) | 0.5× speed, **0.48× size** (≈ 295 fps, 17508 KB) | 3.8× faster, 1.40× size (≈ 42 fps, 5972 KB) |
+| launch | 344 fps, 2071 KB, 47.7 dB | **3.5× faster, 0.90× size*** (≈ 98 fps, 2291 KB) | 1.0× speed, **0.63× size** (≈ 329 fps, 3296 KB) | 7.2× faster, 1.13× size (≈ 48 fps, 1827 KB) |
+| tutorial | 437 fps, 498 KB, 51.2 dB | **2.2× faster**, 1.10× size (≈ 199 fps, 454 KB) | **1.5× faster, 0.86× size*** (≈ 286 fps, 576 KB) | 4.1× faster, 1.33× size (≈ 106 fps, 376 KB) |
+| full | 474 fps, 1074 KB, 48.9 dB | **3.2× faster**, 1.18× size (≈ 148 fps, 913 KB) | **1.3× faster, 0.63× size** (≈ 367 fps, 1700 KB) | 5.4× faster, 1.50× size (≈ 87 fps, 715 KB) |
+| spec-to-screen | 190 fps, 8392 KB, 42.0 dB | **2.1× faster, 0.97× size** (≈ 89 fps, 8611 KB) | 0.6× speed, **0.48× size** (≈ 322 fps, 17561 KB) | 4.7× faster, 1.40× size (≈ 41 fps, 6004 KB) |
+
+Measured on the final build (automatic AQ, smooth-ramp I4x4 rule, low-level
+optimisations). ak264 fps is the median of its three QP runs, because single
+runs on this VM varied by up to ±30%. Tutorial ran at 651 / 377 / 437 fps at
+QP 22 / 26 / 30, and earlier sessions measured 750–900 fps at QP 26. x264 ran
+in the same session, under the same conditions.
 
 **Reading it:**
 
-- Against veryfast, ak264 is 1.8–4× faster at about the same size (0.90–1.18×).
-- Against ultrafast, files are 15–52% smaller. Speed ranges from 2.1× faster
+- Against veryfast, ak264 is 2.1–3.5× faster at about the same size (0.90–1.18×).
+- Against ultrafast, files are 14–52% smaller. Speed ranges from 1.5× faster
   (text) to 0.5× (spec-to-screen, the hardest clip: nearly every macroblock
   changes with sub-pixel motion of smooth gradients). On that clip ultrafast is
   faster but needs twice the bytes for the same PSNR.
-- Medium is still 12–50% smaller. The gap is B-frames, smaller partitions and
+- Medium is still 11–50% smaller. The gap is B-frames, smaller partitions and
   psycho-visual tuning, which ak264 doesn't have.
 - On content that is mostly static between frames, the margin grows a lot. On the
   synthetic `hold` scene (held text), ak264 is 13× faster than veryfast and 21%
@@ -215,7 +221,7 @@ On spec-to-screen the saving grows with QP: −24% at QP 22 and −46% at QP 30.
 
 | Encoder | Setting | fps | KB | PSNR-Y | PSNR-all |
 |---|---|---|---|---|---|
-| ak264 chunks | qp 22 / 26 / 30 | 133 / 161 / 198 | 16934 / 8332 / 4202 | 43.55 / 42.03 / 40.07 | 44.73 / 43.04 / 41.17 |
+| ak264 chunks | qp 22 / 26 / 30 | 151 / 195 / 190 | 17156 / 8392 / 4265 | 43.57 / 42.04 / 40.09 | 44.74 / 43.05 / 41.18 |
 | ak264 chunks, integer-pel | qp 22 / 26 / 30 | 117 / 160 / 193 | 22160 / 12825 / 7816 | 43.45 / 41.83 / 39.83 | 44.63 / 42.85 / 40.94 |
 | ak264 1 thread | qp 22 / 26 / 30 | 43 / 53 / 58 | 16794 / 8241 / 4149 | 43.54 / 42.02 / 40.06 | |
 | ak264 4 slices | qp 22 / 26 / 30 | 88 / 113 / 131 | 17081 / 8493 / 4321 | 43.54 / 42.01 / 40.05 | |
