@@ -164,8 +164,8 @@ impl Server {
                 };
                 write_file(&out, &pretty(&spec))?;
                 let base = std::env::current_dir().unwrap_or_default();
-                let mut lines = vec![summary_line(&spec, &base, &out)];
-                lines.extend(issue_lines(&spec, &base));
+                let mut lines = vec![summary_line(&spec, &base, &out, t.duration_range())];
+                lines.extend(issue_lines(&spec, &base, t.duration_range()));
                 lines.extend(t.expansion_notes(&params, &spec, critique(&spec).duration));
                 if a.get("return_spec") == Some(&Value::Bool(true)) {
                     lines.push(spec.to_string());
@@ -294,9 +294,9 @@ impl Server {
 }
 
 /// `spec.json · 25.1 s · 6 scenes · valid · critique 100/100`.
-fn summary_line(spec: &Value, base: &Path, out: &Path) -> String {
+fn summary_line(spec: &Value, base: &Path, out: &Path, range: Option<(f64, f64)>) -> String {
     let v = validate(spec.clone(), base);
-    let r = critique(spec);
+    let r = crate::critique::critique_in_range(spec, range);
     format!(
         "{} · {:.1} s · {} scenes · {} · critique {}/100",
         out.display(),
@@ -308,9 +308,9 @@ fn summary_line(spec: &Value, base: &Path, out: &Path) -> String {
 }
 
 /// One line per validation diagnostic, then per critique note (tips omitted).
-fn issue_lines(spec: &Value, base: &Path) -> Vec<String> {
+fn issue_lines(spec: &Value, base: &Path, range: Option<(f64, f64)>) -> Vec<String> {
     let mut l = diag_lines(&validate(spec.clone(), base));
-    l.extend(critique(spec).notes.iter().filter(|n| n.severity != "tip").map(|n| format!("{} {}: {} → {}", n.severity, n.path, n.message, n.fix)));
+    l.extend(crate::critique::critique_in_range(spec, range).notes.iter().filter(|n| n.severity != "tip").map(|n| format!("{} {}: {} → {}", n.severity, n.path, n.message, n.fix)));
     l
 }
 

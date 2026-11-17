@@ -329,7 +329,7 @@
                 "delay": 0.2,
                 "size": "{{fmt.portrait ? fmt.u * 40 : fmt.u * 38}}",
                 "thickness": "{{fmt.u * 1.4}}",
-                "color": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? brand.colors.secondary : '#22C55E')}}",
+                "color": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E')}}",
                 "percent": false
               },
               "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
@@ -371,7 +371,7 @@
                     "y": "{{fmt.h * 0.5 - (fmt.u * 10 + ln * ts * 1.08) / 2}}",
                     "width": "{{fmt.u * 0.7}}",
                     "height": "{{fmt.u * 10 + ln * ts * 1.08}}",
-                    "fill": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? brand.colors.secondary : '#22C55E')}}",
+                    "fill": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E')}}",
                     "radius": "{{fmt.u * 0.35}}",
                     "enter": {
                       "preset": "wipeIn",
@@ -386,7 +386,7 @@
                   "props": {
                     "label": "{{upper(it.type)}}",
                     "solid": true,
-                    "color": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? brand.colors.secondary : '#22C55E')}}",
+                    "color": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E')}}",
                     "size": "{{fmt.portrait ? fmt.u * 3.6 : fmt.u * 3}}",
                     "align": "{{fmt.landscape ? 0 : 0.5}}",
                     "delay": 0.15

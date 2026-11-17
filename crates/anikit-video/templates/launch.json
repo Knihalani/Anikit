@@ -1,7 +1,7 @@
 {
   "name": "launch",
   "title": "Product launch",
-  "description": "A 15–35 s launch film on a living brand mesh: optional kinetic hook, product reveal in a browser (your screenshot or a generated UI), 2–4 split-screen feature beats (device, code editor or screenshot with a success toast), an animated proof counter with a rising chart, and a CTA button that bursts into confetti.",
+  "description": "A 15–35 s launch film on a living brand mesh: optional kinetic hook, product reveal in a browser (your screenshot or a generated UI), 2–4 split-screen feature beats (device, code editor or screenshot), an animated proof counter with a rising chart, and a CTA button that bursts into confetti.",
   "duration": "20–35 s",
   "tags": [
     "launch",
@@ -182,8 +182,8 @@
       {
         "id": "reveal",
         "transition": {
-          "type": "zoom",
-          "duration": 0.6
+          "type": "blur",
+          "duration": 0.5
         },
         "duration": "{{readtime(product + ' ' + tagline) + 2.2}}",
         "layers": [
@@ -361,21 +361,6 @@
                       "still": true,
                       "kpis": "{{stat ? [obj('label', stat.label, 'value', (stat.prefix ?? '') + str(stat.value) + (stat.suffix ?? ''))] : null}}"
                     }
-                  },
-                  {
-                    "type": "component",
-                    "component": "toast",
-                    "props": {
-                      "title": "{{f.title}}",
-                      "kind": "success",
-                      "delay": 1.2,
-                      "from": "{{fmt.landscape ? 'right' : 'bottom'}}",
-                      "width": "{{fmt.u * 46}}"
-                    },
-                    "x": "{{vx}}",
-                    "y": "{{vy + vw * (fmt.landscape ? 0.26 : 0.3)}}",
-                    "width": "{{fmt.u * 50}}",
-                    "height": "{{fmt.u * 14}}"
                   }
                 ]
               }

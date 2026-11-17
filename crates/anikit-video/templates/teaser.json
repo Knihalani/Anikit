@@ -87,7 +87,7 @@
           "in": {
             "id": "beat-{{i + 1}}",
             "duration": "{{d}}",
-            "background": "{{hot ? brand.colors.primary : '$bgDeep'}}",
+            "background": "{{hot ? (contrast(brand.colors.primary) == '#000000' ? darken(brand.colors.primary, 0.62) : brand.colors.primary) : '$bgDeep'}}",
             "transition": "cut",
             "camera": {
               "animate": [
@@ -173,7 +173,7 @@
                 "size": "{{fmt.u * 2.2}}",
                 "weight": 600,
                 "letterSpacing": "0.12em",
-                "color": "{{hot ? brand.colors.onPrimary : '$muted'}}",
+                "color": "{{hot ? (contrast(brand.colors.primary) == '#000000' ? brand.colors.text : brand.colors.onPrimary) : '$muted'}}",
                 "y": "{{fmt.safe.top + fmt.u * 2}}"
               },
               {
@@ -185,7 +185,7 @@
                 "lineHeight": 0.95,
                 "size": "{{len(w) <= 6 ? (fmt.portrait ? '24vmin' : '19vmin') : len(w) <= 11 ? (fmt.portrait ? '17vmin' : '15vmin') : (fmt.portrait ? '13vmin' : '12vmin')}}",
                 "width": "{{fmt.safe.w}}",
-                "color": "{{hot ? '$onPrimary' : '$text'}}",
+                "color": "{{hot ? (contrast(brand.colors.primary) == '#000000' ? '$text' : '$onPrimary') : '$text'}}",
                 "enter": "{{i % 3 == 0 ? 'pop by char from center 0.35s 25ms outBack' : i % 3 == 1 ? 'mask by word up' : 'rise by char 0.4s 20ms'}}"
               }
             ]

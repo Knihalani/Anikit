@@ -5,7 +5,7 @@ description: How to fill the 'launch' template well.
 
 # Template guide: Product launch (`launch`)
 
-A 15–35 s launch film on a living brand mesh: optional kinetic hook, product reveal in a browser (your screenshot or a generated UI), 2–4 split-screen feature beats (device, code editor or screenshot with a success toast), an animated proof counter with a rising chart, and a CTA button that bursts into confetti.
+A 15–35 s launch film on a living brand mesh: optional kinetic hook, product reveal in a browser (your screenshot or a generated UI), 2–4 split-screen feature beats (device, code editor or screenshot), an animated proof counter with a rising chart, and a CTA button that bursts into confetti.
 
 **Typical length:** 20–35 s. **Formats:** 16:9, 9:16 and 1:1 (pass `--format`); the layout adapts automatically.
 

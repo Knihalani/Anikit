@@ -221,6 +221,27 @@ const DEFAULT_COLORS: &[(&str, &str)] = &[
     ("muted", "#9a9ab0"),
 ];
 
+/// Review a spec made from a template whose stated length is `range` seconds:
+/// [`critique`] plus a `length` warning when the video falls outside it.
+pub fn critique_in_range(spec: &Value, range: Option<(f64, f64)>) -> Report {
+    let mut r = critique(spec);
+    if let Some((lo, hi)) = range {
+        let d = r.duration;
+        if d > hi + 0.5 || d + 0.5 < lo {
+            let mut per: Vec<String> = Vec::new();
+            for (i, sc) in spec.get("scenes").and_then(|s| s.as_array()).into_iter().flatten().enumerate() {
+                let id = sc.get("id").and_then(|x| x.as_str()).map(String::from).unwrap_or_else(|| format!("scene{}", i + 1));
+                let dur = sc.get("duration").and_then(|x| x.as_f64()).unwrap_or(3.0);
+                per.push(format!("{id} {dur:.1}"));
+            }
+            let fix = if d > hi { format!("cut about {:.0} s: drop a list item or shorten copy (scene seconds: {})", (d - hi).ceil(), per.join(", ")) } else { format!("add about {:.0} s of content", (lo - d).ceil()) };
+            r.notes.push(Note { severity: "warning", check: "length", path: "scenes".into(), message: format!("{d:.1} s is outside this template's {lo}–{hi} s"), fix });
+            r.score = r.score.saturating_sub(6);
+        }
+    }
+    r
+}
+
 /// Review a spec.
 pub fn critique(spec: &Value) -> Report {
     let empty = Map::new();
