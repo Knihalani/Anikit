@@ -86,14 +86,38 @@ impl BitWriter {
 
 /// Bits used by ue(v).
 #[inline(always)]
+#[cfg(test)]
 pub fn ue_len(v: u32) -> u32 {
     let x = v + 1;
     2 * (32 - x.leading_zeros()) - 1
 }
 #[inline(always)]
 pub fn se_len(v: i32) -> u32 {
-    ue_len(if v > 0 { 2 * v as u32 - 1 } else { (-2 * v) as u32 })
+    #[cfg(test)]
+    debug_assert_eq!(se_len_calc(v), ue_len(if v > 0 { 2 * v as u32 - 1 } else { (-2 * v) as u32 }));
+    // motion-vector costs call this tens of millions of times per second
+    match SE_LEN.get((v + SE_OFF) as usize) {
+        Some(&l) => l as u32,
+        None => se_len_calc(v),
+    }
 }
+
+#[inline(always)]
+const fn se_len_calc(v: i32) -> u32 {
+    let k = if v > 0 { 2 * v as u32 - 1 } else { (-2 * v) as u32 };
+    2 * (32 - (k + 1).leading_zeros()) - 1
+}
+
+const SE_OFF: i32 = 4096;
+static SE_LEN: [u8; 8192] = {
+    let mut t = [0u8; 8192];
+    let mut i = 0;
+    while i < 8192 {
+        t[i] = se_len_calc(i as i32 - SE_OFF) as u8;
+        i += 1;
+    }
+    t
+};
 
 /// Append a NAL unit (4-byte start code, header, escaped payload) to `out`.
 pub fn write_nal(out: &mut Vec<u8>, ref_idc: u8, nal_type: u8, rbsp: &[u8]) {

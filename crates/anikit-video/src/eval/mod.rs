@@ -11,6 +11,7 @@ pub mod beat_markers;
 mod compile;
 /// Shader layers and transitions (anikit-shader).
 pub(crate) mod shader;
+mod audio_react;
 pub mod expr;
 pub mod theme;
 
@@ -399,6 +400,8 @@ pub struct Evaluator {
     pub diagnostics: Vec<Diagnostic>,
     /// Audio tracks on the global timeline (paths resolved).
     pub audio: Vec<crate::audio::Track>,
+    /// Generated music (the spec's `music`), rendered when the audio is mixed.
+    pub music: Option<Arc<crate::music::MusicCue>>,
     /// Fonts and images, shared with the renderers.
     pub assets: Arc<SharedAssets>,
     pub(crate) easings: Vec<Easing>,

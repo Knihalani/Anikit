@@ -1,7 +1,7 @@
 // Transition: the new scene bleeds in like ink soaking into paper, with a
 // dark wet edge. Uniforms: softness, edge.
-uniform float softness; // = 0.04
-uniform float edge;     // = 0.5
+uniform float softness; // = 0.04  blur of the soak front
+uniform float edge;     // = 0.5  darkness of the wet edge
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(269.5, 183.3))) * 43758.5453); }
 float vnoise(vec2 p) {

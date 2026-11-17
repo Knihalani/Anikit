@@ -1,9 +1,9 @@
 // Flow-field ink: dye advected through a curl-noise velocity field, folding
 // into marbled filaments. Two inks on paper. Uniforms: speed, ink, ink2, paper.
-uniform float speed; // = 1.0
-uniform vec3 ink;    // = vec3(0.05, 0.18, 0.45)
-uniform vec3 ink2;   // = vec3(0.85, 0.32, 0.18)
-uniform vec3 paper;  // = vec3(0.95, 0.93, 0.88)
+uniform float speed; // = 1.0  flow speed
+uniform vec3 ink;    // = vec3(0.05, 0.18, 0.45)  first ink colour
+uniform vec3 ink2;   // = vec3(0.85, 0.32, 0.18)  second ink colour
+uniform vec3 paper;  // = vec3(0.95, 0.93, 0.88)  paper colour
 
 vec2 hash22(vec2 p) {
     uvec2 q = uvec2(ivec2(floor(p)) + 32768);
