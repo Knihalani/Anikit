@@ -14,7 +14,7 @@ fn main() {
     let (src, out) = (&a[0], &a[1]);
     let t = std::time::Instant::now();
     let inst: Arc<dyn Instrument> = if src.ends_with(".sfz") {
-        let i = SfzInstrument::load_with(src, SfzOptions { skip_missing: a.get(2).is_some() }).unwrap_or_else(|e| panic!("{e}"));
+        let i = SfzInstrument::load_with(src, SfzOptions { skip_missing: a.get(2).is_some(), ..Default::default() }).unwrap_or_else(|e| panic!("{e}"));
         println!("{} regions, parsed in {:.1?}", i.regions(), t.elapsed());
         Arc::new(i)
     } else {

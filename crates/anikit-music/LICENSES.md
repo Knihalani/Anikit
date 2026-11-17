@@ -56,6 +56,30 @@
   that derived SFZ files note they are derived from its mapping. The credit string is
   available at run time as `packs::PACKS[..].credit`.
 
+### Splendid Grand Piano (`splendid`)
+
+- **Source:** <https://github.com/sfzinstruments/SplendidGrandPiano>, Akai Steinway samples
+  (4 velocity layers) with an SFZ mapping and FLAC encoding by the sfzinstruments project.
+- **Licence:** public domain (released by Akai in 2000), verified from the repository's `README.md`.
+
+### Greg Sullivan E-Pianos (`epianos`)
+
+- **Source:** <https://github.com/sfzinstruments/GregSullivan.E-Pianos>: Wurlitzer EP200, Yamaha CP80
+  and Hohner Pianet T, with SFZ mapping by kinwie.
+- **Licence:** CC BY 3.0. **Required credit:** *"E-Pianos by Greg Sullivan (CC BY 3.0), SFZ mapping
+  by kinwie"* (available as `packs::PACKS[..].credit`).
+
+### FreePats packs (`freepats-bass`, `freepats-nylon`, `freepats-eguitar`)
+
+- **Sources** (pinned tags):
+  - <https://github.com/freepats/electric-bass-YR> (`2019-09-30`, Yamaha RBX finger and picked
+    bass by Andrea Biasior);
+  - <https://github.com/freepats/spanish-classical-guitar> (`v1.0.0`, by roberto@zenvoid.org);
+  - <https://github.com/freepats/electric-guitar-FSBS-clean> (`2026-08-07`; only the small bridge
+    set is checked out, ≈6 MB).
+- **Licence:** CC0 1.0 Universal for all three, verified from each repository's `LICENSE`. No
+  attribution required.
+
 <!-- end of sampler sections -->
 
 ## Everything else: original work (MIT, like the rest of Anikit)

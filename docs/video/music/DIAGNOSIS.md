@@ -165,3 +165,17 @@ Before and after renders, 40 s each:
 | Electronic (house) | [v2-electronic-before.ogg](v2-electronic-before.ogg) | [v2-electronic-after.ogg](v2-electronic-after.ogg) |
 
 **Next:** score to picture (the video's cuts drive section boundaries and hits), better samples by default when the packs are cached, and stereo for the narrow styles.
+
+## Progress: overnight push
+
+Each change has a before/after render in this folder.
+
+| Change | Measured | Before | After |
+|---|---|---|---|
+| Short forms (idents, spots under 8 bars) get set-up → lift → payoff and a 1–3 s ring-out after the button (d7a15ee) | ring-out room is 15 % of the length, clamped to 1–3 s; the button is the tonic in the lead, with an impact (≤30 s) and a half-beat breath before it (≤20 s) | [ident-house-5s-before](ident-house-5s-before.ogg), [piano 5 s](ident-piano-5s-before.ogg), [cinematic 10 s](ident-cinematic-10s-before.ogg), [corporate 15 s](ident-corporate-15s-before.ogg) | [ident-house-5s-after](ident-house-5s-after.ogg), [piano 5 s](ident-piano-5s-after.ogg), [cinematic 10 s](ident-cinematic-10s-after.ogg), [corporate 15 s](ident-corporate-15s-after.ogg) |
+| Lofi tape texture: wow 0.15 % at 0.8 Hz, flutter, an 8.5 kHz roll-off, crackle and hiss (e7036a8) | — | [lofi-before](lofi-before.ogg) | [lofi-texture-after](lofi-texture-after.ogg) |
+| Recorded samples by default when the essentials packs are cached: Splendid grand, Wurlitzer (1a829eb) | — | [samples-piano-gm](samples-piano-gm.ogg), [samples-lofi-gm](samples-lofi-gm.ogg) | [samples-piano-packs](samples-piano-packs.ogg), [samples-lofi-packs](samples-lofi-packs.ogg) |
+| Mono synths glide only on legato notes; trap 808 slides into octave jumps; hat rolls only at phrase ends; kit round-robin (8f5e584) | every synthwave bass note used to glide | [groove-trap-before](groove-trap-before.ogg), [groove-synthwave-before](groove-synthwave-before.ogg) | [groove-trap-after](groove-trap-after.ogg), [groove-synthwave-after](groove-synthwave-after.ogg) |
+| FreePats CC0 electric bass (finger/picked), nylon and clean electric guitars, part of `fetch essentials` | in tune within 4 cents at A4; bass parts (keys 33–50) stretch the top sample at most 5 semitones | [samples-pop-gm](samples-pop-gm.ogg), [samples-acoustic-gm](samples-acoustic-gm.ogg), [samples-rock-gm](samples-rock-gm.ogg) | [samples-pop-packs](samples-pop-packs.ogg), [samples-acoustic-packs](samples-acoustic-packs.ogg), [samples-rock-packs](samples-rock-packs.ogg) |
+
+The underscore mix (a6b081c) needs no render: under voice-over it mutes the lead, melody and countermelody tracks, and `underscore_tests` checks that.
