@@ -128,9 +128,9 @@
                         "{{brand.colors.secondary}}"
                       ],
                       "speed": 2,
-                      "cols": "{{fmt.portrait ? 9 : 14}}"
+                      "cols": "{{fmt.portrait ? 12 : 18}}"
                     },
-                    "opacity": 0.32
+                    "opacity": 0.16
                   }
                 ],
                 "else": {
@@ -144,9 +144,9 @@
                       "{{mix(brand.colors.primary, '#FFFFFF', 0.2)}}"
                     ],
                     "speed": 2,
-                    "cols": "{{fmt.portrait ? 9 : 14}}"
+                    "cols": "{{fmt.portrait ? 12 : 18}}"
                   },
-                  "opacity": 0.5
+                  "opacity": 0.3
                 }
               },
               {
@@ -204,7 +204,7 @@
             "$use": "backdrop",
             "with": {
               "seed": 41,
-              "intensity": 0.34
+              "intensity": 0.22
             }
           },
           {
@@ -218,9 +218,9 @@
                 "{{brand.colors.secondary}}"
               ],
               "speed": 1.5,
-              "cols": "{{fmt.portrait ? 9 : 14}}"
+              "cols": "{{fmt.portrait ? 12 : 18}}"
             },
-            "opacity": 0.25
+            "opacity": 0.16
           },
           {
             "type": "component",
@@ -257,13 +257,14 @@
               "props": {
                 "text": "{{upper(brand.name)}}",
                 "colors": [
-                  "{{brand.colors.primary}}",
-                  "{{brand.colors.secondary}}",
-                  "{{brand.colors.text}}"
+                  "{{brand.colors.text}}",
+                  "{{brand.colors.text}}",
+                  "{{brand.colors.primary}}"
                 ],
                 "fontSize": "{{fmt.portrait ? fmt.u * 20 : fmt.u * 17}}",
                 "weight": 900,
-                "seed": 7
+                "seed": 7,
+                "glow": true
               },
               "y": "{{payoff ? '44%' : '50%'}}",
               "width": "{{fmt.safe.w}}",
