@@ -372,7 +372,7 @@ fn collapse(nodes: &[Node]) -> Vec<Node4> {
 /// Top-level hierarchy over world-space boxes (one per object instance),
 /// rebuilt every frame (cheap: median splits over a few thousand boxes).
 pub struct Tlas {
-    nodes: Vec<Node>,
+    nodes4: Vec<Node4>,
     pub items: Vec<u32>,
 }
 
@@ -416,10 +416,8 @@ impl Tlas {
             stack.push(l);
             stack.push(l + 1);
         }
-        if n == 0 {
-            nodes.clear();
-        }
-        Tlas { nodes, items }
+        let nodes4 = if n == 0 { Vec::new() } else { collapse(&nodes) };
+        Tlas { nodes4, items }
     }
 
     /// Visit items whose boxes the ray enters before `tmax` (nearest first);
@@ -427,59 +425,37 @@ impl Tlas {
     /// `-1.0` to stop early for shadow rays).
     #[inline]
     pub fn visit(&self, o: V3, d: V3, tmin: f32, mut tmax: f32, mut f: impl FnMut(u32, f32) -> f32) {
-        if self.nodes.is_empty() {
+        if self.nodes4.is_empty() {
             return;
         }
-        let inv = v3(1.0 / d.x, 1.0 / d.y, 1.0 / d.z);
-        let mut stack = [0u32; 64];
-        let mut sp = 0usize;
-        let mut ni = 0u32;
-        if slab(&self.nodes[0], o, inv, tmin, tmax).is_none() {
-            return;
-        }
-        loop {
-            let node = &self.nodes[ni as usize];
-            if node.count > 0 {
-                for k in node.first..node.first + node.count {
+        let inv = [1.0 / d.x, 1.0 / d.y, 1.0 / d.z];
+        let org = [o.x, o.y, o.z];
+        let mut stack = [(0u32, 0u32, 0.0f32); 96];
+        stack[0] = (0, 0, tmin);
+        let mut sp = 1usize;
+        while sp > 0 {
+            sp -= 1;
+            let (kid, cnt, tn) = stack[sp];
+            if tn > tmax {
+                continue;
+            }
+            if cnt > 0 {
+                for k in kid..kid + cnt {
                     tmax = f(self.items[k as usize], tmax);
                     if tmax < 0.0 {
                         return;
                     }
                 }
-            } else {
-                let (a, b) = (node.first, node.first + 1);
-                let ta = slab(&self.nodes[a as usize], o, inv, tmin, tmax);
-                let tb = slab(&self.nodes[b as usize], o, inv, tmin, tmax);
-                match (ta, tb) {
-                    (Some(x), Some(y)) => {
-                        let (near, far) = if x <= y { (a, b) } else { (b, a) };
-                        if sp < 64 {
-                            stack[sp] = far;
-                            sp += 1;
-                        }
-                        ni = near;
-                        continue;
-                    }
-                    (Some(_), None) => {
-                        ni = a;
-                        continue;
-                    }
-                    (None, Some(_)) => {
-                        ni = b;
-                        continue;
-                    }
-                    _ => {}
-                }
+                continue;
             }
-            // Pop, skipping nodes now beyond the closest hit.
-            loop {
-                if sp == 0 {
-                    return;
-                }
-                sp -= 1;
-                ni = stack[sp];
-                if slab(&self.nodes[ni as usize], o, inv, tmin, tmax).is_some() {
-                    break;
+            let n = &self.nodes4[kid as usize];
+            let (near, hit) = slab4(n, org, inv, tmin, tmax);
+            let mut order = [0usize, 1, 2, 3];
+            order.sort_unstable_by(|a, b| near[*b].total_cmp(&near[*a]));
+            for &l in &order {
+                if hit[l] && sp < stack.len() {
+                    stack[sp] = (n.kid[l], n.cnt[l], near[l]);
+                    sp += 1;
                 }
             }
         }
@@ -505,6 +481,7 @@ fn fmax(a: f32, b: f32) -> f32 {
 }
 
 #[inline(always)]
+#[cfg_attr(not(test), allow(dead_code))]
 fn slab(n: &Node, o: V3, inv: V3, tmin: f32, tmax: f32) -> Option<f32> {
     let t1 = (n.lo.x - o.x) * inv.x;
     let t2 = (n.hi.x - o.x) * inv.x;
