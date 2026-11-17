@@ -25,12 +25,18 @@ const TC0: [[u8; 3]; 52] = [
 struct Params {
     alpha: i32,
     beta: i32,
-    tc0: [i32; 3],
+    /// tC0 by bS (0..=4): the table for bS 1..3, 0 for bS 0 and 4.
+    tct: [i16; 5],
 }
 
 fn params(qp: u8) -> Params {
     let i = qp as usize;
-    Params { alpha: ALPHA[i] as i32, beta: BETA[i] as i32, tc0: TC0[i].map(|v| v as i32) }
+    let t = TC0[i];
+    Params {
+        alpha: ALPHA[i] as i32,
+        beta: BETA[i] as i32,
+        tct: [0, t[0] as i16, t[1] as i16, t[2] as i16, 0],
+    }
 }
 
 #[inline(always)]
@@ -87,7 +93,7 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
     let mut tc0 = [0i16; N];
     let shift = if N == 16 { 2 } else { 1 };
     // per-strength constants, branch-free: tC0 for bS 1..3, 0 for bS 0 and 4
-    let tct = [0, p.tc0[0] as i16, p.tc0[1] as i16, p.tc0[2] as i16, 0];
+    let tct = &p.tct;
     let segc: [(i16, i16, i16); 4] = core::array::from_fn(|k| {
         let b = seg[k].min(4);
         (-((b != 0) as i16), -((b == 4) as i16), tct[b as usize])
@@ -257,31 +263,26 @@ fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize)
     // bS[dir][edge][segment]
     let mut b = [[[0u8; 4]; 4]; 2];
     let mut any = false;
-    for e in 0..4 {
+    // Internal edges: one 16×16 partition, so the MVs agree and bS is 3 (intra)
+    // or 2/0 by the coefficient flags of the two blocks.
+    let nzm = cur.nz.iter().enumerate().fold(0u32, |m, (i, &n)| m | (((n != 0) as u32) << i));
+    let intra = cur.kind != 0;
+    for e in 1..4 {
         for k in 0..4 {
-            // vertical edge e (x = 4e), segment k (rows 4k..)
-            let v = if e == 0 {
-                if mbx == 0 {
-                    0
-                } else {
-                    bs(&info[mby * mbw + mbx - 1], k * 4 + 3, cur, k * 4, true)
-                }
-            } else {
-                bs(cur, k * 4 + e - 1, cur, k * 4 + e, false)
-            };
-            let h = if e == 0 {
-                if mby == 0 {
-                    0
-                } else {
-                    bs(&info[(mby - 1) * mbw + mbx], 12 + k, cur, k, true)
-                }
-            } else {
-                bs(cur, (e - 1) * 4 + k, cur, e * 4 + k, false)
-            };
+            let v = if intra { 3 } else { 2 * ((nzm >> (k * 4 + e - 1) | nzm >> (k * 4 + e)) & 1) as u8 };
+            let h = if intra { 3 } else { 2 * ((nzm >> ((e - 1) * 4 + k) | nzm >> (e * 4 + k)) & 1) as u8 };
             b[0][e][k] = v;
             b[1][e][k] = h;
             any |= v != 0 || h != 0;
         }
+    }
+    for k in 0..4 {
+        // macroblock edges: vertical (x = 0), segment k (rows 4k..), and horizontal (y = 0)
+        let v = if mbx == 0 { 0 } else { bs(&info[mby * mbw + mbx - 1], k * 4 + 3, cur, k * 4, true) };
+        let h = if mby == 0 { 0 } else { bs(&info[(mby - 1) * mbw + mbx], 12 + k, cur, k, true) };
+        b[0][0][k] = v;
+        b[1][0][k] = h;
+        any |= v != 0 || h != 0;
     }
     if !any {
         return (false, false, false);
