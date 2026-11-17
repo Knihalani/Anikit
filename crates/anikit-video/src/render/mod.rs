@@ -346,6 +346,10 @@ impl Renderer {
             let (pw, ph) = (pix.width() as usize, pix.height() as usize);
             let [ly, lu, lv] = &mut self.lo;
             yuv::rgba_to_yuv444(pix.data_as_u8_slice(), ly, lu, lv);
+            // Padding for the gather path's 4-byte reads.
+            for p in [ly, lu, lv] {
+                p.extend_from_slice(&[0; 4]);
+            }
             let (cw, ch) = (wu.div_ceil(2), hu.div_ceil(2));
             let cdev = Rect::new(dev.x0 / 2.0, dev.y0 / 2.0, dev.x1 / 2.0, dev.y1 / 2.0);
             let (ys, cs) = (yuv.y_stride, yuv.c_stride);
