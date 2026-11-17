@@ -374,3 +374,133 @@ fn post_and_motion_blur_spec() {
     let graded = anikit_video::pipeline::render_rgba(&build(r##"{ "size": [64, 36], "post": "noir", "scenes": [ "x" ] }"##), 1.0, 1.0).2;
     assert_ne!(plain, graded);
 }
+
+#[test]
+fn colour_and_logic_expressions() {
+    let src = r##"{ "size": [64, 36], "motionBlur": false, "scenes": [ { "duration": 2, "background": "#000000", "layers": [
+        { "shape": "rect", "width": 64, "height": 36, "fill": "=t < 1 ? hsl(0, 100, 50) : mix(#0000ff, #00ff00, t - 1)" } ] } ] }"##;
+    let ev = build(src);
+    let px = |t: f32| {
+        let (w, _, p) = anikit_video::pipeline::render_rgba(&ev, t, 1.0);
+        let i = ((18 * w + 32) * 4) as usize;
+        [p[i], p[i + 1], p[i + 2]]
+    };
+    let red = px(0.5);
+    assert!(red[0] > 240 && red[1] < 15 && red[2] < 15, "{red:?}");
+    let blue = px(1.0);
+    assert!(blue[2] > 240 && blue[0] < 15, "{blue:?}");
+    let late = px(1.99);
+    assert!(late[1] > 200 && late[2] < 40, "{late:?}");
+    assert!(!ev.is_static(0.2, 0.4));
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "fill": "=hls(1, 2, 3)" }, { "text": "x", "x": "=level * 100" } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("unknown colour function 'hls'")), "{e:?}");
+    assert!(e.iter().any(|m| m.contains("add an `audio` track")), "{e:?}");
+}
+
+#[test]
+fn scripts_generate_layers_and_specs() {
+    // An item script: a ring of 12 dots with per-dot colour and staggered entrances.
+    let ev = build(r##"{ "scenes": [ { "layers": [
+        { "script": [
+            "let out = [];",
+            "for k in 0..12 {",
+            "  let a = k * 30.0;",
+            "  out.push(#{ shape: \"circle\", width: 40, x: w / 2 + 300 * cos(a.to_radians()), y: h / 2 + 300 * sin(a.to_radians()),",
+            "              fill: hsl(a, 80, 60), enter: #{ preset: \"popIn\", delay: k * 0.05 } });",
+            "}",
+            "out" ] },
+        "Centre" ] } ] }"##);
+    let dl = ev.eval(2.0);
+    let fills = dl.ops.iter().filter(|o| matches!(o, Op::Fill { .. } | Op::RoundRect { .. })).count();
+    assert!(fills >= 12, "{fills}");
+    // A top-level script rewrites the spec (here: one scene per word).
+    let ev = build(r##"{ "script": "spec.scenes = []; for w in [\"one\", \"two\", \"three\"] { spec.scenes.push(w) } spec", "scenes": [] }"##);
+    assert_eq!(ev.scenes().len(), 3);
+    // Deterministic helpers.
+    let a = build(r##"{ "scenes": [ { "layers": [ { "script": "[#{ text: fmt(rand(7) * 100.0, 3) }]" } ] } ] }"##).eval(1.0);
+    let b = build(r##"{ "scenes": [ { "layers": [ { "script": "[#{ text: fmt(rand(7) * 100.0, 3) }]" } ] } ] }"##).eval(1.0);
+    assert_eq!(a, b);
+    // Errors carry the path and the script's line; runaway loops stop.
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "script": "let x = ;" } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("scenes[0].layers[0].script") && m.contains("line 1")), "{e:?}");
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "script": "loop { }" } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("script")), "{e:?}");
+}
+
+#[test]
+fn draw_layer_primitives_in_frame_pixels() {
+    let ev = build(r##"{ "size": [64, 36], "motionBlur": false, "scenes": [ { "background": "#000000", "layers": [ { "draw": [
+        { "circle": [16, 18, 8], "fill": "#ff0000" },
+        { "rect": [40, 10, 16, 16], "fill": "#0000ff", "stroke": "#ffffff", "width": 1 },
+        { "points": [[2, 34], [62, 34]], "colors": ["#00ff00", "#ff00ff"], "width": 3 },
+        { "d": "M30 2 L34 2 L32 6 Z", "fill": "$accent" } ] } ] } ] }"##);
+    let (w, _, p) = anikit_video::pipeline::render_rgba(&ev, 1.0, 1.0);
+    let px = |x: u32, y: u32| {
+        let i = ((y * w + x) * 4) as usize;
+        [p[i], p[i + 1], p[i + 2]]
+    };
+    assert_eq!(px(16, 18), [255, 0, 0]);
+    assert_eq!(px(48, 18), [0, 0, 255]);
+    let left = px(4, 34);
+    let right = px(60, 34);
+    assert!(left[1] > 180 && left[0] < 80, "{left:?}");
+    assert!(right[0] > 180 && right[2] > 180, "{right:?}");
+    assert_eq!(px(2, 2), [0, 0, 0]);
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "draw": [ { "circle": [1, 2, 3], "line": [0, 0, 1, 1] }, { "points": [[0, 0], [1, 1]], "colors": ["#fff"] }, { "d": "M0 0 Q" } ] } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("draw[0]") && m.contains("exactly one")), "{e:?}");
+    assert!(e.iter().any(|m| m.contains("draw[1].colors") && m.contains("one per point")), "{e:?}");
+    assert!(e.iter().any(|m| m.contains("draw[2].d")), "{e:?}");
+}
+
+#[test]
+fn expressions_follow_generated_music() {
+    // Generated music gives the exact grid: at 120 bpm, beat = 2 * t.
+    let ev = build(r##"{ "music": { "style": "lofi", "bpm": 120 }, "motionBlur": false, "scenes": [ { "duration": 4, "layers": [
+        { "shape": "rect", "width": 10, "height": 10, "x": "=100 * beat", "y": "=100 + 100 * level" } ] } ] }"##);
+    let x_at = |t: f32| {
+        let dl = ev.eval(t);
+        dl.ops.iter().find_map(|o| match o { Op::RoundRect { transform, .. } => Some(transform[4]), _ => None }).unwrap()
+    };
+    let (a, b) = (x_at(1.0), x_at(2.0));
+    assert!((b - a - 200.0).abs() < 1.0, "{a} {b}");
+}
+
+#[test]
+fn scripts_anywhere_helpers_and_update() {
+    // A script inside draw items (any array) splices; helpers return SVG paths and palette colours.
+    let ev = build(r##"{ "size": [200, 100], "motionBlur": false, "scenes": [ { "background": "#000000", "layers": [ { "draw": [
+        { "script": "let o = []; for k in 0..5 { o.push(#{ d: path_star(20 + k * 40, 50, 15, 6, 5), fill: palette(\"viridis\", k / 4.0) }) } o" },
+        { "circle": [100, 90, 4], "fill": "#fff" } ] } ] } ] }"##);
+    let dl = ev.eval(1.0);
+    assert_eq!(dl.ops.iter().filter(|o| matches!(o, Op::Fill { .. })).count(), 6);
+    // Deterministic helpers.
+    let s = r##"{ "scenes": [ { "layers": [ { "script": "[#{ text: fmt(fbm(1.5, 2.5, 4) + noise3(1, 2, 3) + ease(\"outBack\", 0.5), 6) + palette(\"sunset\", 0.3) + path_circle(0, 0, 10) }]" } ] } ] }"##;
+    assert_eq!(build(s).eval(1.0), build(s).eval(1.0));
+    // Per-frame update scripts set props each frame.
+    let ev = build(r##"{ "motionBlur": false, "scenes": [ { "duration": 2, "layers": [
+        { "shape": "rect", "width": 10, "height": 10, "update": "#{ x: 100 + 400 * t, fill: if t > 1 { \"#ff0000\" } else { \"#00ff00\" } }" } ] } ] }"##);
+    let x_at = |t: f32| ev.eval(t).ops.iter().find_map(|o| match o { Op::RoundRect { transform, .. } => Some(transform[4]), _ => None }).unwrap();
+    assert!((x_at(1.0) - x_at(0.5) - 200.0).abs() < 0.5);
+    assert!(!ev.is_static(0.1, 0.2));
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "text": "a", "update": "#{ rotaton: t }" }, { "text": "b", "update": "42" } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("'rotaton'") && m.contains("did you mean 'rotation'")), "{e:?}");
+    assert!(e.iter().any(|m| m.contains("layers[1].update") && m.contains("map")), "{e:?}");
+}
+
+/// Cost of one `update` script per layer per frame (printed; run with --release for real numbers).
+#[test]
+fn update_script_cost() {
+    let ev = build(r##"{ "scenes": [ { "duration": 2, "layers": [
+        { "shape": "rect", "width": 10, "height": 10, "update": "#{ x: 960 + 300 * sin(t * 2.0), y: 540 + 100 * cos(t * 3.0), rotation: t * 45.0, fill: hsl(t * 90, 80, 60) }" } ] } ] }"##);
+    let plain = build(r##"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "width": 10, "height": 10 } ] } ] }"##);
+    let mut dl = anikit_video::dl::DisplayList::default();
+    let time = |e: &Evaluator, dl: &mut anikit_video::dl::DisplayList| {
+        let t0 = std::time::Instant::now();
+        for k in 0..2000 {
+            e.eval_into((k % 60) as f32 / 30.0, dl);
+        }
+        t0.elapsed().as_secs_f64() / 2000.0 * 1e6
+    };
+    let (a, b) = (time(&ev, &mut dl), time(&plain, &mut dl));
+    eprintln!("update script: {:.1} µs per layer per frame", a - b);
+}

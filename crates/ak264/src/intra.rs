@@ -40,6 +40,21 @@ pub fn pred16(e: &Edges<16>, mode: u8, out: &mut [u8; 256]) {
             out.fill(dc as u8);
         }
         _ => {
+            let (a, b, c) = plane_params(e);
+            for y in 0..16 {
+                let base = a + c * (y as i32 - 7) - 7 * b + 16;
+                let row: &mut [u8; 16] = (&mut out[y * 16..y * 16 + 16]).try_into().unwrap();
+                *row = crate::simd::plane_row16(base, b);
+            }
+        }
+    }
+}
+
+/// Plane prediction parameters (a, b, c) of a 16×16 block (8.3.3.4).
+#[inline]
+fn plane_params(e: &Edges<16>) -> (i32, i32, i32) {
+    {
+        {
             let p = |x: i32, y: i32| -> i32 {
                 if y < 0 {
                     if x < 0 {
@@ -60,13 +75,82 @@ pub fn pred16(e: &Edges<16>, mode: u8, out: &mut [u8; 256]) {
             let a = 16 * (p(-1, 15) + p(15, -1));
             let b = (5 * h + 32) >> 6;
             let c = (5 * v + 32) >> 6;
-            for y in 0..16 {
-                let base = a + c * (y as i32 - 7) - 7 * b + 16;
-                let row: &mut [u8; 16] = (&mut out[y * 16..y * 16 + 16]).try_into().unwrap();
-                *row = crate::simd::plane_row16(base, b);
-            }
+            (a, b, c)
         }
     }
+}
+
+/// SAD of `src` against the 16×16 prediction of `mode` without building it
+/// (modes 0 V, 1 H, 2 DC; plane builds the prediction).
+pub fn sad16_mode(e: &Edges<16>, mode: u8, src: &[u8; 256]) -> u32 {
+    #[cfg(target_arch = "x86_64")]
+    if mode == 3 {
+        let (a, b, c) = plane_params(e);
+        // SAFETY: SSE2 is baseline on x86_64; loads are inside `src`.
+        unsafe {
+            use std::arch::x86_64::*;
+            // row y, column x: clip((a + b·(x − 7) + c·(y − 7) + 16) >> 5)
+            let x0 = _mm_setr_epi16(0, 1, 2, 3, 4, 5, 6, 7);
+            let bb = _mm_set1_epi16(b as i16);
+            let start = (a - 7 * b - 7 * c + 16) as i16;
+            let mut lo = _mm_add_epi16(_mm_set1_epi16(start), _mm_mullo_epi16(x0, bb));
+            let mut hi = _mm_add_epi16(lo, _mm_slli_epi16::<3>(bb));
+            let cc = _mm_set1_epi16(c as i16);
+            let mut acc = _mm_setzero_si128();
+            for y in 0..16 {
+                let p = _mm_packus_epi16(_mm_srai_epi16::<5>(lo), _mm_srai_epi16::<5>(hi));
+                let r = _mm_loadu_si128(src.as_ptr().add(y * 16) as *const __m128i);
+                acc = _mm_add_epi64(acc, _mm_sad_epu8(r, p));
+                lo = _mm_add_epi16(lo, cc);
+                hi = _mm_add_epi16(hi, cc);
+            }
+            return (_mm_cvtsi128_si64(acc) + _mm_cvtsi128_si64(_mm_unpackhi_epi64(acc, acc))) as u32;
+        }
+    }
+    #[cfg(target_arch = "x86_64")]
+    if mode < 3 {
+        // SAFETY: SSE2 is baseline on x86_64; every load is inside `src`/`e.top`.
+        unsafe {
+            use std::arch::x86_64::*;
+            let row = |y: usize| _mm_loadu_si128(src.as_ptr().add(y * 16) as *const __m128i);
+            let mut acc = _mm_setzero_si128();
+            match mode {
+                0 => {
+                    let t = _mm_loadu_si128(e.top.as_ptr() as *const __m128i);
+                    for y in 0..16 {
+                        acc = _mm_add_epi64(acc, _mm_sad_epu8(row(y), t));
+                    }
+                }
+                1 => {
+                    for y in 0..16 {
+                        acc = _mm_add_epi64(acc, _mm_sad_epu8(row(y), _mm_set1_epi8(e.left[y] as i8)));
+                    }
+                }
+                _ => {
+                    let z = _mm_setzero_si128();
+                    let hsum = |p: *const u8| {
+                        let v = _mm_sad_epu8(_mm_loadu_si128(p as *const __m128i), z);
+                        (_mm_cvtsi128_si64(v) + _mm_cvtsi128_si64(_mm_unpackhi_epi64(v, v))) as u32
+                    };
+                    let (st, sl) = (hsum(e.top.as_ptr()), hsum(e.left.as_ptr()));
+                    let dc = match (e.has_top, e.has_left) {
+                        (true, true) => (st + sl + 16) >> 5,
+                        (true, false) => (st + 8) >> 4,
+                        (false, true) => (sl + 8) >> 4,
+                        _ => 128,
+                    };
+                    let d = _mm_set1_epi8(dc as u8 as i8);
+                    for y in 0..16 {
+                        acc = _mm_add_epi64(acc, _mm_sad_epu8(row(y), d));
+                    }
+                }
+            }
+            return (_mm_cvtsi128_si64(acc) + _mm_cvtsi128_si64(_mm_unpackhi_epi64(acc, acc))) as u32;
+        }
+    }
+    let mut p = [0u8; 256];
+    pred16(e, mode, &mut p);
+    crate::simd::sad16(src, 16, &p, 16)
 }
 
 /// Chroma 8×8 modes: 0 DC, 1 H, 2 V, 3 Plane.
@@ -377,6 +461,21 @@ pub fn pred4_ref(e: &Edges4, mode: u8, out: &mut [u8; 16]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn sad16_mode_matches() {
+        let src: [u8; 256] = core::array::from_fn(|i| (i * 37 % 251) as u8);
+        let tops: [[u8; 16]; 3] = [core::array::from_fn(|i| (i * 13 + 7) as u8), core::array::from_fn(|i| if i < 8 { 0 } else { 255 }), core::array::from_fn(|i| if i < 8 { 255 } else { 0 })];
+        for (k, (ht, hl)) in [(true, true), (true, false), (false, true), (false, false), (true, true), (true, true)].into_iter().enumerate() {
+            let t = tops[k.saturating_sub(3).min(2)];
+            let e = Edges { top: t, left: core::array::from_fn(|i| if k == 5 { if i < 8 { 0 } else { 255 } } else { (200 - i * 5) as u8 }), tl: if k == 4 { 255 } else { 90 }, has_top: ht, has_left: hl, has_tl: ht && hl };
+            for m in 0..4 {
+                let mut p = [0u8; 256];
+                pred16(&e, m, &mut p);
+                assert_eq!(sad16_mode(&e, m, &src), crate::simd::sad16(&src, 16, &p, 16));
+            }
+        }
+    }
+
     #[test]
     fn pred4_matches_spec() {
         let mut seed = 1u32;

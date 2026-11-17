@@ -1,0 +1,198 @@
+<!doctype html>
+<!-- The HyperFrames "floor": the most impressive 15 s we could build with what a browser renderer allows
+     (three.js WebGL, a raymarched GLSL shader, GPU particles, bloom post-processing, GSAP kinetic type).
+     Every frame is a pure function of the timeline time, so HyperFrames can seek it. -->
+<html lang="en"><head><meta charset="UTF-8" />
+<script src="assets/gsap.min.js"></script>
+<link rel="stylesheet" href="assets/base.css" />
+<script type="importmap">{ "imports": { "three": "./three/build/three.module.js", "three/addons/": "./three/examples/jsm/" } }</script>
+<style>
+  #gl { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+  .t { position: absolute; left: 0; right: 0; text-align: center; white-space: pre; font-weight: 800; font-variation-settings: "opsz" 32;
+       text-shadow: 0 0 40px rgba(124, 92, 255, 0.6); }
+  .ch { display: inline-block; white-space: pre; }
+  .k { font-size: 26px; font-weight: 600; letter-spacing: 0.3em; color: #b9b0ff; text-shadow: none; }
+</style></head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="15" data-width="1920" data-height="1080">
+  <canvas id="gl" width="1920" height="1080"></canvas>
+  <div class="t split" id="t1" style="top:430px;font-size:150px">30,000 OBJECTS</div>
+  <div class="t k" id="k1" style="top:620px">INSTANCED · PBR · BLOOM</div>
+  <div class="t split" id="t2" style="top:90px;font-size:120px">RAYMARCHED</div>
+  <div class="t k" id="k2" style="top:250px">SDF · SOFT SHADOWS · AO · REFLECTIONS</div>
+  <div class="t split" id="t3" style="top:430px;font-size:150px">500,000 PARTICLES</div>
+  <div class="t k" id="k3" style="top:620px">GPU POINTS · CURL FLOW · ADDITIVE</div>
+</div>
+<script>
+  // Timeline: a clock the WebGL scene renders from, plus GSAP kinetic type.
+  document.querySelectorAll(".split").forEach((el) => {
+    el.innerHTML = [...el.textContent].map((c) => `<span class="ch">${c}</span>`).join("");
+  });
+  const clock = { t: 0 };
+  window.__floor = { render: null, clock };
+  window.__hf = window.__hf || {};
+  window.__hf.buildReady = window.__hf.buildReady || {};
+  window.__hf.buildReady["main"] = new Promise((r) => (window.__floor.ready = r));
+  const tl = gsap.timeline({ paused: true });
+  tl.to(clock, { t: 15, duration: 15, ease: "none", onUpdate: () => window.__floor.render && window.__floor.render(clock.t) }, 0);
+  const words = (id, at, out) => {
+    tl.fromTo(`#${id} .ch`, { opacity: 0, y: 80, rotationX: -90, filter: "blur(12px)" },
+      { opacity: 1, y: 0, rotationX: 0, filter: "blur(0px)", duration: 0.7, ease: "expo.out", stagger: 0.035 }, at);
+    tl.to(`#${id} .ch`, { opacity: 0, y: -60, filter: "blur(16px)", duration: 0.5, ease: "power2.in", stagger: 0.02 }, out);
+  };
+  const kick = (id, at, out) => {
+    tl.fromTo(`#${id}`, { opacity: 0, letterSpacing: "0.8em" }, { opacity: 1, letterSpacing: "0.3em", duration: 1.2, ease: "expo.out" }, at);
+    tl.to(`#${id}`, { opacity: 0, duration: 0.4 }, out);
+  };
+  gsap.set(".ch, .k", { opacity: 0 });
+  words("t1", 0.6, 4.0); kick("k1", 1.2, 4.2);
+  words("t2", 5.6, 9.0); kick("k2", 6.2, 9.2);
+  words("t3", 10.6, 13.9); kick("k3", 11.2, 14.2);
+  window.__timelines = window.__timelines || {};
+  window.__timelines["main"] = tl;
+</script>
+<script type="module">
+  import * as THREE from "three";
+  import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+  import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+  import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+  import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+  import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+  const W = 1920, H = 1080;
+  const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("gl"), antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(1);
+  renderer.setSize(W, H, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  const rand = (() => { let s = 1234567; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); })();
+
+  // ---------- A: 30,000 instanced PBR cubes in a spiral galaxy ----------
+  const sceneA = new THREE.Scene();
+  sceneA.background = new THREE.Color(0x05040b);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  sceneA.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  sceneA.environmentIntensity = 0.35;
+  const camA = new THREE.PerspectiveCamera(50, W / H, 0.1, 400);
+  const N = 30000;
+  const cubes = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ metalness: 0.7, roughness: 0.25 }), N);
+  const base = [];
+  const col = new THREE.Color();
+  for (let i = 0; i < N; i++) {
+    const arm = i % 4, r = 4 + Math.pow(rand(), 0.6) * 60, a = arm * Math.PI / 2 + r * 0.12 + (rand() - 0.5) * 0.5;
+    base.push({ r, a, y: (rand() - 0.5) * (8 - r * 0.08), s: 0.25 + rand() * 0.7, spin: rand() * 6 });
+    col.setHSL(0.72 - r / 160 + (rand() - 0.5) * 0.08, 0.8, 0.45 + rand() * 0.2);
+    cubes.setColorAt(i, col);
+  }
+  sceneA.add(cubes);
+  const core = new THREE.PointLight(0xff5ca8, 600, 0, 2); sceneA.add(core);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), sc = new THREE.Vector3();
+  function poseA(t) {
+    for (let i = 0; i < N; i++) {
+      const b = base[i], a = b.a + t * (0.6 / Math.sqrt(b.r));
+      p.set(Math.cos(a) * b.r, b.y + Math.sin(t * 1.5 + b.r * 0.3) * 0.8, Math.sin(a) * b.r);
+      e.set(t * b.spin, t * b.spin * 0.7, 0); q.setFromEuler(e); sc.setScalar(b.s);
+      cubes.setMatrixAt(i, m.compose(p, q, sc));
+    }
+    cubes.instanceMatrix.needsUpdate = true;
+    const k = t / 5;
+    camA.position.set(Math.cos(k * 1.2) * (70 - 30 * k), 18 + 10 * Math.sin(k * 2), Math.sin(k * 1.2) * (70 - 30 * k));
+    camA.lookAt(0, 0, 0);
+  }
+
+  // ---------- B: full-screen raymarched SDF (metaballs, soft shadows, AO, one reflection) ----------
+  const sceneB = new THREE.Scene(), camB = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const matB = new THREE.ShaderMaterial({
+    uniforms: { uT: { value: 0 }, uRes: { value: new THREE.Vector2(W, H) } },
+    vertexShader: `void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+    fragmentShader: `
+      precision highp float; uniform float uT; uniform vec2 uRes;
+      float smin(float a, float b, float k){ float h = clamp(0.5 + 0.5*(b-a)/k, 0.0, 1.0); return mix(b, a, h) - k*h*(1.0-h); }
+      float map(vec3 p){
+        float d = p.y + 1.0;
+        float m = 1e9;
+        for (int i = 0; i < 6; i++) {
+          float fi = float(i);
+          vec3 c = vec3(sin(uT*0.9 + fi*1.7)*1.6, sin(uT*1.3 + fi*2.3)*0.6 + 0.2, cos(uT*0.7 + fi*1.1)*1.2);
+          m = smin(m, length(p - c) - (0.45 + 0.12*sin(fi + uT)), 0.6);
+        }
+        return min(d, m);
+      }
+      vec3 nrm(vec3 p){ vec2 e = vec2(1e-3, 0); return normalize(vec3(map(p+e.xyy)-map(p-e.xyy), map(p+e.yxy)-map(p-e.yxy), map(p+e.yyx)-map(p-e.yyx))); }
+      float march(vec3 ro, vec3 rd){ float t = 0.0; for (int i = 0; i < 96; i++){ float d = map(ro + rd*t); if (d < 1e-3 || t > 30.0) break; t += d; } return t; }
+      float shadow(vec3 ro, vec3 rd){ float r = 1.0, t = 0.02; for (int i = 0; i < 32; i++){ float h = map(ro + rd*t); r = min(r, 10.0*h/t); t += clamp(h, 0.02, 0.3); if (h < 1e-3 || t > 8.0) break; } return clamp(r, 0.0, 1.0); }
+      float ao(vec3 p, vec3 n){ float o = 0.0, s = 1.0; for (int i = 1; i <= 5; i++){ float h = 0.06*float(i); o += (h - map(p + n*h))*s; s *= 0.7; } return clamp(1.0 - 2.5*o, 0.0, 1.0); }
+      vec3 shade(vec3 ro, vec3 rd, out vec3 hitP, out vec3 hitN, out float hit){
+        float t = march(ro, rd); hit = step(t, 30.0);
+        vec3 sky = mix(vec3(0.02,0.015,0.05), vec3(0.25,0.12,0.5), clamp(rd.y*0.5+0.5, 0.0, 1.0));
+        if (hit < 0.5) { hitP = ro; hitN = vec3(0,1,0); return sky; }
+        vec3 p = ro + rd*t, n = nrm(p); hitP = p; hitN = n;
+        vec3 L = normalize(vec3(0.6, 0.8, 0.4));
+        float floorM = step(p.y, -0.99);
+        vec3 alb = floorM > 0.5 ? vec3(0.08) + 0.06*mod(floor(p.x)+floor(p.z), 2.0) : mix(vec3(0.49,0.36,1.0), vec3(1.0,0.36,0.66), 0.5+0.5*sin(p.y*3.0+uT));
+        float dif = max(dot(n, L), 0.0) * shadow(p + n*0.01, L);
+        float spec = pow(max(dot(reflect(-L, n), -rd), 0.0), 48.0);
+        float fr = pow(1.0 - max(dot(n, -rd), 0.0), 4.0);
+        return alb*(0.15 + 1.2*dif)*ao(p, n) + spec*0.8 + fr*0.3*vec3(0.6,0.5,1.0);
+      }
+      void main(){
+        vec2 uv = (gl_FragCoord.xy*2.0 - uRes)/uRes.y;
+        float a = uT*0.25;
+        vec3 ro = vec3(sin(a)*5.0, 1.4, cos(a)*5.0), ta = vec3(0, 0, 0);
+        vec3 f = normalize(ta - ro), r = normalize(cross(f, vec3(0,1,0))), u = cross(r, f);
+        vec3 rd = normalize(uv.x*r + uv.y*u + 1.8*f);
+        vec3 p, n; float h;
+        vec3 c = shade(ro, rd, p, n, h);
+        if (h > 0.5) { vec3 p2, n2; float h2; c += 0.35*shade(p + n*0.02, reflect(rd, n), p2, n2, h2); }
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+  });
+  sceneB.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), matB));
+
+  // ---------- C: 500,000 GPU particles in a curl-like flow (computed in the vertex shader from t) ----------
+  const sceneC = new THREE.Scene();
+  sceneC.background = new THREE.Color(0x020107);
+  const camC = new THREE.PerspectiveCamera(55, W / H, 0.1, 200);
+  const M = 500000, seeds = new Float32Array(M * 3);
+  for (let i = 0; i < M * 3; i++) seeds[i] = rand() * 2 - 1;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(seeds, 3));
+  const matC = new THREE.ShaderMaterial({
+    uniforms: { uT: { value: 0 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `
+      uniform float uT; varying vec3 vC;
+      vec3 field(vec3 p){ return vec3(sin(p.y*1.7+uT*0.6)+cos(p.z*1.3), sin(p.z*1.5+uT*0.5)+cos(p.x*1.1), sin(p.x*1.9+uT*0.4)+cos(p.y*1.4)); }
+      void main(){
+        vec3 p = position*6.0;
+        for (int i = 0; i < 6; i++) p += field(p*0.35)*0.35*(0.5+0.5*sin(uT*0.4));
+        float r = length(p);
+        vC = mix(vec3(0.49,0.36,1.0), vec3(1.0,0.36,0.66), clamp(r/9.0, 0.0, 1.0)) * 0.12;
+        vec4 mv = modelViewMatrix*vec4(p, 1.0);
+        gl_PointSize = 2.0*(30.0/-mv.z);
+        gl_Position = projectionMatrix*mv;
+      }`,
+    fragmentShader: `varying vec3 vC; void main(){ vec2 d = gl_PointCoord - 0.5; float a = smoothstep(0.5, 0.0, length(d)); gl_FragColor = vec4(vC*a, a); }`,
+  });
+  sceneC.add(new THREE.Points(g, matC));
+
+  // ---------- post: bloom on all segments ----------
+  const composer = new EffectComposer(renderer);
+  const pass = new RenderPass(sceneA, camA);
+  composer.addPass(pass);
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.5, 0.8));
+  composer.addPass(new OutputPass());
+
+  window.__floor.render = (t) => {
+    if (t < 5) { poseA(t); pass.scene = sceneA; pass.camera = camA; }
+    else if (t < 10) { matB.uniforms.uT.value = t - 5; pass.scene = sceneB; pass.camera = camB; }
+    else {
+      const k = t - 10; matC.uniforms.uT.value = k;
+      camC.position.set(Math.sin(k * 0.3) * 22, 4 + k, Math.cos(k * 0.3) * 22); camC.lookAt(0, 0, 0);
+      pass.scene = sceneC; pass.camera = camC;
+    }
+    composer.render();
+  };
+  window.__floor.render(window.__floor.clock.t);
+  window.__floor.ready();
+</script>
+</body></html>

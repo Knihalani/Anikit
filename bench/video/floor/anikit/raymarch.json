@@ -1,0 +1,13 @@
+{
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 5,
+   "layers": [
+    {
+     "shader": "float smin(float a, float b, float k){ float h = clamp(0.5 + 0.5*(b-a)/k, 0.0, 1.0); return mix(b, a, h) - k*h*(1.0-h); }\nfloat map(vec3 p){\nfloat d = p.y + 1.0;\nfloat m = 1e9;\nfor (int i = 0; i < 6; i++) {\nfloat fi = float(i);\nvec3 c = vec3(sin(iTime*0.9 + fi*1.7)*1.6, sin(iTime*1.3 + fi*2.3)*0.6 + 0.2, cos(iTime*0.7 + fi*1.1)*1.2);\nm = smin(m, length(p - c) - (0.45 + 0.12*sin(fi + iTime)), 0.6);\n}\nreturn min(d, m);\n}\nvec3 nrm(vec3 p){ vec2 e = vec2(1e-3, 0); return normalize(vec3(map(p+e.xyy)-map(p-e.xyy), map(p+e.yxy)-map(p-e.yxy), map(p+e.yyx)-map(p-e.yyx))); }\nfloat march(vec3 ro, vec3 rd){ float t = 0.0; for (int i = 0; i < 96; i++){ float d = map(ro + rd*t); if (d < 1e-3 || t > 30.0) break; t += d; } return t; }\nfloat shadow(vec3 ro, vec3 rd){ float r = 1.0, t = 0.02; for (int i = 0; i < 32; i++){ float h = map(ro + rd*t); r = min(r, 10.0*h/t); t += clamp(h, 0.02, 0.3); if (h < 1e-3 || t > 8.0) break; } return clamp(r, 0.0, 1.0); }\nfloat ao(vec3 p, vec3 n){ float o = 0.0, s = 1.0; for (int i = 1; i <= 5; i++){ float h = 0.06*float(i); o += (h - map(p + n*h))*s; s *= 0.7; } return clamp(1.0 - 2.5*o, 0.0, 1.0); }\nvec3 shade(vec3 ro, vec3 rd, out vec3 hitP, out vec3 hitN, out float hit){\nfloat t = march(ro, rd); hit = step(t, 30.0);\nvec3 sky = mix(vec3(0.02,0.015,0.05), vec3(0.25,0.12,0.5), clamp(rd.y*0.5+0.5, 0.0, 1.0));\nif (hit < 0.5) { hitP = ro; hitN = vec3(0,1,0); return sky; }\nvec3 p = ro + rd*t, n = nrm(p); hitP = p; hitN = n;\nvec3 L = normalize(vec3(0.6, 0.8, 0.4));\nfloat floorM = step(p.y, -0.99);\nvec3 alb = floorM > 0.5 ? vec3(0.08) + 0.06*mod(floor(p.x)+floor(p.z), 2.0) : mix(vec3(0.49,0.36,1.0), vec3(1.0,0.36,0.66), 0.5+0.5*sin(p.y*3.0+iTime));\nfloat dif = max(dot(n, L), 0.0) * shadow(p + n*0.01, L);\nfloat spec = pow(max(dot(reflect(-L, n), -rd), 0.0), 48.0);\nfloat fr = pow(1.0 - max(dot(n, -rd), 0.0), 4.0);\nreturn alb*(0.15 + 1.2*dif)*ao(p, n) + spec*0.8 + fr*0.3*vec3(0.6,0.5,1.0);\n}\nvoid mainImage(out vec4 fragColor, in vec2 fragCoord){\nvec2 uv = (fragCoord*2.0 - iResolution.xy)/iResolution.xy.y;\nfloat a = iTime*0.25;\nvec3 ro = vec3(sin(a)*5.0, 1.4, cos(a)*5.0), ta = vec3(0, 0, 0);\nvec3 f = normalize(ta - ro), r = normalize(cross(f, vec3(0,1,0))), u = cross(r, f);\nvec3 rd = normalize(uv.x*r + uv.y*u + 1.8*f);\nvec3 p, n; float h;\nvec3 c = shade(ro, rd, p, n, h);\nif (h > 0.5) { vec3 p2, n2; float h2; c += 0.35*shade(p + n*0.02, reflect(rd, n), p2, n2, h2); }\nc = c/(1.0+c); fragColor = vec4(pow(c, vec3(0.4545)), 1.0);\n}"
+    }
+   ]
+  }
+ ]
+}

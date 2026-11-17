@@ -399,8 +399,9 @@ impl Renderer {
     /// passed to the previous call (anything else forces a full frame).
     /// `changed` receives the exact changed-macroblock map versus that frame.
     pub fn render_yuv_incremental(&mut self, list: &DisplayList, yuv: &mut YuvFrame, changed: &mut MbMap) -> Update {
-        if self.post.is_some() {
+        if self.post.is_some() || self.quality() == super::Quality::Reference {
             // Post effects are global (bloom, grain): render whole frames.
+            // Reference quality: always a whole frame, no regions or fusion.
             let (w, h) = (list.width.max(1), list.height.max(1));
             self.render(list);
             let had = yuv.width == w && yuv.height == h;

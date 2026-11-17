@@ -1,0 +1,313 @@
+//! Generated music in videos (the spec's `music` key) and the `music` / `docs
+//! music` commands. The engine is the `anikit-music` crate; this module
+//! places its mastered output on the video timeline, ducks it under
+//! voice-over and exposes its exact beat grid to `@beatN` / `@barN` markers.
+
+use crate::audio::{self, Duck, Role, Source, Track};
+use anikit_music::{MusicSpec, RenderOpts};
+use std::path::{Path, PathBuf};
+
+/// A compiled `music` cue.
+#[derive(Debug, Clone)]
+pub struct MusicCue {
+    pub spec: MusicSpec,
+    pub base: PathBuf,
+    /// Start on the video timeline (seconds).
+    pub at: f64,
+    /// Level in dB.
+    pub gain: f64,
+    /// Duck under voice-over by this many dB (None = never).
+    pub duck: Option<f64>,
+}
+
+/// Parse the spec's `music` value.
+pub fn parse(v: &serde_json::Value, base: &Path) -> Result<MusicCue, String> {
+    let v = match v {
+        // Shorthand: "music": "lofi"
+        serde_json::Value::String(s) => serde_json::json!({ "style": s }),
+        v => v.clone(),
+    };
+    let spec = MusicSpec::from_json(&v.to_string())?;
+    let duck = match &spec.duck {
+        None | Some(serde_json::Value::Bool(true)) | Some(serde_json::Value::Null) => Some(10.0),
+        Some(serde_json::Value::Bool(false)) => None,
+        Some(serde_json::Value::Number(n)) => Some(n.as_f64().unwrap_or(10.0).abs()),
+        Some(o) => return Err(format!("music.duck: true, false or dB (got {o})")),
+    };
+    // Validate everything that can fail now (style, key, chords, notes, instruments)
+    // so `check` reports it, not the render.
+    let opts = RenderOpts { video_length: Some(10.0), base_dir: Some(base.to_path_buf()), ..Default::default() };
+    let a = anikit_music::arrange(&spec, &opts)?;
+    for t in &a.tracks {
+        anikit_music::instruments::resolve(&t.inst, Some(base)).map_err(|e| format!("track '{}': {e}", t.name))?;
+    }
+    Ok(MusicCue { at: spec.at.unwrap_or(0.0), gain: spec.gain.unwrap_or(0.0), duck, spec, base: base.to_path_buf() })
+}
+
+/// The exact time (video seconds) of `@beatN` / `@barN` (1-based).
+pub fn marker(cue: &MusicCue, kind: &str, n: usize) -> Result<f64, String> {
+    let g = anikit_music::beat_grid(&cue.spec)?;
+    let unit = if kind == "bar" { g.beats_per_bar } else { 1.0 };
+    Ok(cue.at + g.secs((n.max(1) - 1) as f64 * unit))
+}
+
+/// Render the music for a video of `video_len` seconds into a float WAV at
+/// `wav`, returning the track that places it (ducked under voice when the
+/// video has voice-over).
+pub fn render_track(cue: &MusicCue, video_len: f64, wav: &Path, has_voice: bool) -> Result<Track, String> {
+    let opts = RenderOpts { video_length: Some((video_len - cue.at).max(0.1)), base_dir: Some(cue.base.clone()), rate: audio::DEFAULT_RATE, stems: false };
+    let r = anikit_music::render(&cue.spec, &opts)?;
+    let pcm = audio::Pcm { rate: r.rate, channels: 2, samples: r.interleaved() };
+    audio::write_wav(wav, &pcm, audio::WavFormat::Float32)?;
+    Ok(Track {
+        src: Source::File(wav.to_string_lossy().into_owned()),
+        start: cue.at,
+        db: cue.gain,
+        role: Some(Role::Music),
+        duck: match (has_voice, cue.duck) {
+            (true, Some(db)) => Some(Duck { amount_db: db, ..Duck::default() }),
+            _ => None,
+        },
+        ..Default::default()
+    })
+}
+
+const DOCS: &str = r#"MUSIC — generated, mastered soundtracks (−14 LUFS, −1 dBTP), deterministic, 25–80× real time, rendered alongside the frames
+In a video spec:   "music": {"style":"lofi","bpm":84,"key":"Dm","mood":"warm","hits":["@bar5"]}
+  or just          "music": "synthwave"         (fills the video; @beatN/@barN follow its exact grid)
+Standalone:        anikit-video music '{"style":"house","length":"15s"}' -o bed.wav [--stems DIR] [--midi out.mid]
+                   anikit-video music --style trap --bpm 140 --key Cm --length 20s -o out.ogg   (ogg/mp3/flac via ffmpeg)
+                   anikit-video music styles | instruments | sfx | fetch salamander|vsco2
+
+STYLES  lofi house synthwave trap cinematic-hybrid orchestral ambient rock pop corporate tech dnb piano acoustic jazz
+        (aliases: epic trailer edm chill 80s classical upbeat folk …)
+KEYS    bpm  key "Am" "F# dorian"  meter "6/8"  swing 0..1  mood "dark epic"  length "15s"|"8 bars"  seed N
+        sections ["intro:4","build:4","drop:8","outro:2"] or [{"name":"drop","bars":8,"energy":1}]
+        hits ["@2.0","@bar9"] → impact + section change there; tempo nudged (±8%) so hits land on beats (fit:false to keep bpm)
+        chords "vi IV I V" | "Am F C G"   instruments {"lead":"violin","drums":"drums:909"}   mute ["lead"]
+        sfx [{"sfx":"riser","at":"@bar5"}]  (aligned by hit point: a riser PEAKS at "at")   end ring|fade|cut
+        master {"lufs":-14,"ceiling":-1,"reverb":"hall"}   video-only: at (s), gain (dB), duck (dB under voice, default 10)
+TRACKS  (add to a style, or write everything yourself)
+  {"inst":"piano","chords":"C Am F G","play":"broken"}        play: pad block stabs arp[-updown][/16] strum pulse/8 power broken x..x..x.
+  {"inst":"bass","chords":"C Am F G","bass":"walk"}           bass: root half pulse octave walk house synco rock arp 808
+  {"inst":"flute","chords":"C Am F G","melody":1.0}           generated melody, ~1 note per beat
+  {"inst":"drums:808","drums":{"kick":"x...x...x...x...","hat":"x.x.x.x.x.x.x3x."},"bars":4}
+                                                              x hit X accent o ghost . rest 2/3/4 roll; voices kick snare clap hat ohh rim tom crash ride shaker…
+  {"inst":"strings","notes":"o4 l4 A4 C5 E5/2 | [A3 C4 E4]/1","at":3,"gain":-4,"reverb":0.4,"pan":-0.3,"duck":6}
+NOTES   C4 Eb3 F#5 · degrees 1-7 b3 5' 3, · chords Am Cmaj7 G/B vi IV V7 [C4 E4 G4] · r rest · _ hold
+        /4 quarter /8 /16 /2 /1 /8t triplet . dotted :1.5 beats · ! accent ? ghost ^ staccato ~ legato
+        o3 octave > < · l8 default length · v100 velocity · t+2 transpose · | bar line · @5 bar · (…)x4 repeat
+INSTRUMENTS (sampled GM bank bundled; `music instruments` lists all) piano epiano rhodes organ strings violin cello
+        choir trumpet french-horn brass flute oboe clarinet sax harp timpani nylon-guitar steel-guitar overdrive-guitar
+        bass pick-bass fretless · models: marimba vibraphone kalimba glockenspiel celesta tubular-bells church-bell handpan
+        · synths: pad-warm pad-glass lead-saw pluck bell-fm epiano-fm supersaw bass-808 bass-reese bass-acid keys-lofi
+        · kits: drums:808 909 trap lofi house techno cinematic, drums (GM) drums:jazz brush orchestra
+        · files: "my.sfz", "font.sf2#0"   · fallbacks: "salamander-piano|piano"
+EXAMPLES
+  {"music":{"style":"cinematic-hybrid","key":"Dm","hits":["@bar5"],"sfx":[{"sfx":"braam","at":"@bar5"}]}}
+  {"music":{"style":"lofi","mood":"chill","chords":"ii7 V7 Imaj7 vi7","instruments":{"lead":"kalimba"}}}
+  {"music":{"bpm":96,"key":"G","tracks":[{"inst":"steel-guitar","chords":"G D Em C","play":"strum"},
+            {"inst":"drums","drums":{"kick":"x.......x.......","snare":"....x.......x..."}}]}}
+Errors name the field and suggest the closest word. Same spec + seed → bit-identical audio.
+"#;
+
+/// `anikit-video docs music` text (≤ 60 lines).
+pub fn docs() -> &'static str {
+    DOCS
+}
+
+/// Handle `music …` and `docs music`. `None` when `args` is not ours.
+pub fn run(args: &[String]) -> Option<i32> {
+    match (args.first().map(String::as_str), args.get(1).map(String::as_str)) {
+        (Some("docs"), Some("music")) => {
+            print!("{DOCS}");
+            Some(0)
+        }
+        (Some("music"), _) => Some(match cmd_music(&args[1..]) {
+            Ok(()) => 0,
+            Err(e) => {
+                eprintln!("anikit-video music: {e}");
+                1
+            }
+        }),
+        _ => None,
+    }
+}
+
+fn cmd_music(args: &[String]) -> Result<(), String> {
+    let mut input: Option<String> = None;
+    let mut flags: std::collections::BTreeMap<String, String> = Default::default();
+    let mut json = false;
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        if a == "--json" {
+            json = true;
+        } else if let Some(k) = a.strip_prefix("--").or_else(|| a.strip_prefix('-').filter(|k| *k == "o")) {
+            let (k, v) = match k.split_once('=') {
+                Some((k, v)) => (k.to_string(), v.to_string()),
+                None => (k.to_string(), it.next().cloned().ok_or_else(|| format!("--{k} needs a value"))?),
+            };
+            flags.insert(if k == "o" { "out".into() } else { k }, v);
+        } else if input.is_none() {
+            input = Some(a.clone());
+        } else {
+            return Err(format!("unexpected argument '{a}'"));
+        }
+    }
+    match input.as_deref() {
+        Some("styles") => {
+            for s in anikit_music::style::STYLES {
+                println!("{:<17} {:>3} bpm  {}", s.name, s.bpm, s.about);
+            }
+            return Ok(());
+        }
+        Some("instruments") => {
+            for (group, names) in anikit_music::instruments::names() {
+                println!("{group}: {}", names.join(" "));
+            }
+            return Ok(());
+        }
+        Some("sfx") => {
+            println!("{}", anikit_music::sfx::SFX.join(" "));
+            return Ok(());
+        }
+        Some("fetch") => {
+            let pack = flags.get("pack").cloned().or_else(|| args.get(1).cloned()).ok_or("fetch which pack? (salamander, vsco2)")?;
+            let p = anikit_music::sf2::packs::fetch(&pack)?;
+            println!("{}", p.display());
+            return Ok(());
+        }
+        _ => {}
+    }
+    // The spec: a file, inline JSON, or flags.
+    let (mut v, base): (serde_json::Value, PathBuf) = match input.as_deref() {
+        Some(s) if s.trim_start().starts_with('{') => (serde_json::from_str(s).map_err(|e| format!("inline JSON: {e}"))?, PathBuf::from(".")),
+        Some(p) => {
+            let text = std::fs::read_to_string(p).map_err(|e| format!("can't read {p}: {e}"))?;
+            let mut v: serde_json::Value = if p.ends_with(".yaml") || p.ends_with(".yml") {
+                serde_norway::from_str(&text).map_err(|e| format!("{p}: {e}"))?
+            } else {
+                serde_json::from_str(&text).map_err(|e| format!("{p}: {e}"))?
+            };
+            // A video spec: take its `music` and the video length.
+            if let Some(m) = v.get("music").cloned() {
+                v = match m {
+                    serde_json::Value::String(s) => serde_json::json!({ "style": s }),
+                    m => m,
+                };
+            }
+            (v, Path::new(p).parent().map(Path::to_path_buf).unwrap_or_default())
+        }
+        None => (serde_json::json!({}), PathBuf::from(".")),
+    };
+    for k in ["style", "key", "mood", "length", "meter", "chords"] {
+        if let Some(x) = flags.get(k) {
+            v[k] = serde_json::Value::String(x.clone());
+        }
+    }
+    for k in ["bpm", "swing", "seed"] {
+        if let Some(x) = flags.get(k) {
+            v[k] = serde_json::json!(x.parse::<f64>().map_err(|_| format!("--{k} needs a number"))?);
+        }
+    }
+    if let Some(s) = v.get("seed").and_then(|s| s.as_f64()) {
+        v["seed"] = serde_json::json!(s as u64);
+    }
+    if v.as_object().is_none_or(|o| o.is_empty()) {
+        return Err(format!("give a spec file, inline JSON or --style (try: anikit-video music --style lofi --length 20s -o lofi.wav)\n\n{DOCS}"));
+    }
+    let spec = MusicSpec::from_json(&v.to_string())?;
+    let stems_dir = flags.get("stems").map(PathBuf::from);
+    let opts = RenderOpts { video_length: None, base_dir: Some(base), rate: audio::DEFAULT_RATE, stems: stems_dir.is_some() };
+    let r = anikit_music::render(&spec, &opts)?;
+    let out = flags.get("out").cloned().unwrap_or_else(|| "music.wav".into());
+    write_audio(Path::new(&out), r.rate, &r.l, &r.r)?;
+    if let Some(dir) = &stems_dir {
+        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+        for s in &r.stems {
+            write_audio(&dir.join(format!("{}.wav", s.name)), r.rate, &s.l, &s.r)?;
+        }
+    }
+    if let Some(m) = flags.get("midi") {
+        let song = anikit_music::midi::MidiSong {
+            bpm: r.arrangement.grid.bpm,
+            beats_per_bar: r.arrangement.grid.beats_per_bar,
+            tracks: r
+                .arrangement
+                .tracks
+                .iter()
+                .enumerate()
+                .map(|(i, t)| anikit_music::midi::MidiTrack {
+                    name: t.name.clone(),
+                    channel: if t.role == "drums" { 9 } else { (i % 15) as u8 + u8::from(i % 15 >= 9) },
+                    program: None,
+                    notes: t.notes.clone(),
+                })
+                .collect(),
+        };
+        std::fs::write(m, anikit_music::midi::export(&song)).map_err(|e| format!("{m}: {e}"))?;
+    }
+    let a = &r.arrangement;
+    let summary = serde_json::json!({
+        "ok": true, "output": out, "seconds": r.duration(), "style": a.style, "bpm": a.grid.bpm, "key": format!("{} {}", anikit_music::theory::key_name(a.key.tonic, a.key.flats()).trim_end_matches(char::is_numeric).trim_end_matches('-'), a.key.scale.name),
+        "sections": a.sections, "beats": a.beats().len(), "tracks": a.tracks.iter().map(|t| format!("{} ({})", t.name, t.inst)).collect::<Vec<_>>(),
+        "report": r.report, "timings": r.timings,
+    });
+    if json {
+        println!("{summary}");
+    } else {
+        let rep = &r.report;
+        eprintln!(
+            "wrote {out} — {:.1} s {} at {:.1} bpm, {} tracks, {} notes; {:.1} LUFS, {:.1} dBTP; rendered in {:.2} s ({:.0}× real time)",
+            r.duration(),
+            a.style,
+            a.grid.bpm,
+            a.tracks.len(),
+            r.timings.notes,
+            rep["lufs"].as_f64().unwrap_or(f64::NAN),
+            rep["truePeak"].as_f64().unwrap_or(f64::NAN),
+            r.timings.total,
+            r.timings.realtime
+        );
+        let secs: Vec<String> = a.sections.iter().map(|s| format!("{} {}b@{:.1}s", s.name, s.bars, a.grid.secs(s.bar * a.grid.beats_per_bar))).collect();
+        eprintln!("sections: {}", secs.join(" · "));
+    }
+    Ok(())
+}
+
+/// Write audio: `.wav` natively (24-bit), anything else (ogg, mp3, flac, m4a) through ffmpeg.
+pub fn write_audio(path: &Path, rate: u32, l: &[f32], r: &[f32]) -> Result<(), String> {
+    let mut inter = Vec::with_capacity(l.len() * 2);
+    for (a, b) in l.iter().zip(r) {
+        inter.push(*a);
+        inter.push(*b);
+    }
+    let pcm = audio::Pcm { rate, channels: 2, samples: inter };
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("wav").to_ascii_lowercase();
+    if ext == "wav" {
+        return audio::write_wav(path, &pcm, audio::WavFormat::Float32);
+    }
+    let tmp = path.with_extension(format!("tmp-{}.wav", std::process::id()));
+    audio::write_wav(&tmp, &pcm, audio::WavFormat::Float32)?;
+    let codec: &[&str] = match ext.as_str() {
+        "ogg" | "oga" => &["-c:a", "libvorbis", "-q:a", "5"],
+        "opus" => &["-c:a", "libopus", "-b:a", "128k"],
+        "mp3" => &["-c:a", "libmp3lame", "-q:a", "2"],
+        "flac" => &["-c:a", "flac"],
+        "m4a" | "aac" => &["-c:a", "aac", "-b:a", "192k"],
+        _ => &[],
+    };
+    let o = std::process::Command::new("ffmpeg")
+        .args(["-hide_banner", "-loglevel", "error", "-y", "-i"])
+        .arg(&tmp)
+        .args(codec)
+        .arg(path)
+        .stdin(std::process::Stdio::null())
+        .output();
+    let _ = std::fs::remove_file(&tmp);
+    let o = o.map_err(|e| format!("can't start ffmpeg to write .{ext} (write .wav instead): {e}"))?;
+    if !o.status.success() {
+        return Err(format!("ffmpeg: {}", String::from_utf8_lossy(&o.stderr).trim()));
+    }
+    Ok(())
+}

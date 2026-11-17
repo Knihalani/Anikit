@@ -14,6 +14,9 @@ pub struct BlurScratch {
     c: Vec<u8>,
     sums16: Vec<u16>,
     sums32: Vec<u32>,
+    zero: Vec<u8>,
+    /// Reference quality: no decimation (only as much as the u16 box sums need).
+    pub exact: bool,
 }
 
 /// Box radii approximating a Gaussian of std-dev `sigma` with three passes.
@@ -35,6 +38,55 @@ pub fn box_radii(sigma: f32) -> [usize; 3] {
         *ri = ((w - 1) / 2) as usize;
     }
     r
+}
+
+/// Extended box (Gwosdek et al. 2011): integer radius `r` plus edge taps of
+/// weight `a` ∈ [0, 1), whose variance is exactly `var` — continuous in σ, so
+/// an animated blur grows smoothly instead of in whole-pixel radius steps.
+pub fn ext_box(var: f64) -> (usize, f32) {
+    let var = var.max(0.0);
+    let l = ((12.0 * var + 1.0).sqrt() - 1.0) / 2.0;
+    let r = l.floor().max(0.0);
+    let k = r * (r + 1.0) / 3.0;
+    let a = ((2.0 * r + 1.0) * (var - k) / (2.0 * ((r + 1.0) * (r + 1.0) - var))).clamp(0.0, 1.0);
+    (r as usize, a as f32)
+}
+
+/// Vertical extended-box blur of `n` rows × `row` bytes, zero outside: radius
+/// `r ≤ 126` plus edge rows at weight `a`. Fixed point (weights × 2¹⁶; the sum
+/// stays below 2³²: inner ≤ 255·2¹⁶, edges ≤ 510·2¹⁶), one fused pass per row.
+#[inline(always)]
+#[allow(clippy::too_many_arguments)]
+fn ext_box_rows(src: &[u8], dst: &mut [u8], row: usize, n: usize, r: usize, a: f32, sums: &mut Vec<u16>, zero: &mut Vec<u8>) {
+    if a <= 0.0 {
+        return box_rows(src, dst, row, n, r, sums);
+    }
+    debug_assert!(r <= 126);
+    let den = 2.0 * r as f64 + 1.0 + 2.0 * a as f64;
+    let k1 = (65536.0 / den).round() as u32;
+    let k2 = (a as f64 * 65536.0 / den).round() as u32;
+    sums.clear();
+    sums.resize(row, 0);
+    for y in 0..=r.min(n - 1) {
+        for (s, &v) in sums.iter_mut().zip(&src[y * row..(y + 1) * row]) {
+            *s += v as u16;
+        }
+    }
+    zero.clear();
+    zero.resize(row, 0);
+    for y in 0..n {
+        let d = &mut dst[y * row..(y + 1) * row];
+        // Edge rows y−r−1 and y+r+1 (zero outside); the window then slides:
+        // + row y+r+1, − row y−r.
+        let lo = if y > r { &src[(y - r - 1) * row..(y - r) * row] } else { &zero[..] };
+        let hi = if y + r + 1 < n { &src[(y + r + 1) * row..(y + r + 2) * row] } else { &zero[..] };
+        let sub = if y >= r { &src[(y - r) * row..(y - r + 1) * row] } else { &zero[..] };
+        for ((((d, s), &e0), &e1), &b) in d.iter_mut().zip(sums.iter_mut()).zip(lo).zip(hi).zip(sub) {
+            let v = (*s as u32 * k1 + (e0 as u32 + e1 as u32) * k2 + 32768) >> 16;
+            *d = v.min(255) as u8;
+            *s = s.wrapping_add(e1 as u16).wrapping_sub(b as u16);
+        }
+    }
 }
 
 /// Vertical box blur of `n` rows × `row` bytes, zero outside. `r ≤ 127`.
@@ -167,8 +219,8 @@ fn transpose<const B: usize>(src: &[u8], dst: &mut Vec<u8>, w: usize, h: usize) 
 }
 
 /// Decimation factor for a blur of std-dev `sigma`.
-fn factor(sigma: f32) -> usize {
-    let mut f = if sigma < 4.0 {
+fn factor(sigma: f32, exact: bool) -> usize {
+    let mut f = if sigma < 4.0 || exact {
         1
     } else if sigma < 8.0 {
         2
@@ -177,11 +229,20 @@ fn factor(sigma: f32) -> usize {
     } else {
         8
     };
-    // Keep box radii ≤ 127 (u16 sums).
-    while box_radii(sigma / f as f32)[2] > 127 {
+    // Keep box radii ≤ 126 (u16 sums).
+    while ext_box(pass_var(sigma, f)).0 > 126 {
         f *= 2;
     }
     f
+}
+
+/// Variance of each of the three box passes, in decimated pixels, so that
+/// decimation by `f` (an `f`-box, variance (f²−1)/12), the passes and the
+/// linear upsample (a tent of half-width f, variance f²/6) add up to σ².
+fn pass_var(sigma: f32, f: usize) -> f64 {
+    let (s, f) = (sigma as f64, f as f64);
+    let resample = if f > 1.0 { (f * f - 1.0) / 12.0 + f * f / 6.0 } else { 0.0 };
+    ((s * s - resample).max(0.0) / (f * f)) / 3.0
 }
 
 /// Blur `buf` (`w × h` elements of `B` bytes) in place.
@@ -191,26 +252,27 @@ pub fn blur<const B: usize>(buf: &mut [u8], w: usize, h: usize, sigma: f32, s: &
         return;
     }
     let sigma = sigma.min(1000.0);
-    let f = factor(sigma).min(w.max(1)).min(h.max(1));
-    let radii = box_radii(sigma / f as f32).map(|r| r.min(127));
+    let f = factor(sigma, s.exact).min(w.max(1)).min(h.max(1));
+    let (r, a) = ext_box(pass_var(sigma, f));
+    let r = r.min(126);
     // 1. decimate rows (y).
     let hs = down_rows(buf, &mut s.a, w * B, h, f, &mut s.sums32);
     transpose::<B>(&s.a, &mut s.b, w, hs);
     let ws = down_rows(&s.b, &mut s.c, hs * B, w, f, &mut s.sums32);
     // 4. blur along original x.
     s.a.resize(ws * hs * B, 0);
-    for (i, &r) in radii.iter().enumerate() {
+    for i in 0..3 {
         let (src, dst) = if i % 2 == 0 { (&s.c, &mut s.a) } else { (&s.a, &mut s.c) };
-        box_rows(src, dst, hs * B, ws, r, &mut s.sums16);
+        ext_box_rows(src, dst, hs * B, ws, r, a, &mut s.sums16, &mut s.zero);
     }
     // 5. upsample back to w rows.
     s.b.resize(w * hs * B, 0);
     up_rows(&s.a, &mut s.b, hs * B, ws, w, f);
     transpose::<B>(&s.b, &mut s.c, hs, w);
     s.a.resize(w * hs * B, 0);
-    for (i, &r) in radii.iter().enumerate() {
+    for i in 0..3 {
         let (src, dst) = if i % 2 == 0 { (&s.c, &mut s.a) } else { (&s.a, &mut s.c) };
-        box_rows(src, dst, w * B, hs, r, &mut s.sums16);
+        ext_box_rows(src, dst, w * B, hs, r, a, &mut s.sums16, &mut s.zero);
     }
     // 8. upsample to h rows, into `buf`.
     up_rows(&s.a, buf, w * B, hs, h, f);
@@ -226,6 +288,21 @@ mod tests {
             let r = box_radii(s);
             let var: f64 = r.iter().map(|&r| ((2 * r + 1) as f64).powi(2) - 1.0).sum::<f64>() / 12.0;
             assert!((var.sqrt() - s as f64).abs() < 0.8, "{s} {r:?} {var}");
+        }
+    }
+
+    #[test]
+    fn ext_box_variance_is_exact_and_continuous() {
+        let mut prev = (0usize, 0f32);
+        for i in 0..400 {
+            let var = i as f64 * 0.37;
+            let (r, a) = ext_box(var);
+            let (rf, af) = (r as f64, a as f64);
+            let got = ((2.0 * rf + 1.0) * rf * (rf + 1.0) / 3.0 + 2.0 * af * (rf + 1.0) * (rf + 1.0)) / (2.0 * rf + 1.0 + 2.0 * af);
+            assert!((got - var).abs() < 1e-4 * var.max(1.0), "var {var}: r {r} a {a} -> {got}");
+            // Monotone: the radius never shrinks as the variance grows.
+            assert!(r as f32 + a >= prev.0 as f32 + prev.1 - 1e-6);
+            prev = (r, a);
         }
     }
 

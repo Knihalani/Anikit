@@ -5,17 +5,8 @@
 //! object-to-world transform its rays are mapped through; the hierarchy is
 //! never rebuilt per frame.
 
+use super::kernel::wide::{BNode as Node, Boxes8, Mesh8};
 use super::math::*;
-
-/// One BVH node: bounds plus either two children (`count == 0`, left child
-/// at `first`, right at `first + 1`) or a run of `count` triangles.
-#[derive(Clone, Copy)]
-struct Node {
-    lo: V3,
-    hi: V3,
-    first: u32,
-    count: u32,
-}
 
 /// A triangle ready for Möller–Trumbore: a vertex and two edges, plus the
 /// three vertex normals for smooth shading.
@@ -39,7 +30,11 @@ pub struct Hit {
 }
 
 pub struct Bvh {
+    /// The binary tree the 8-wide one was collapsed from (tests traverse it as a reference).
+    #[allow(dead_code)]
     nodes: Vec<Node>,
+    /// The traversal structure (see [`super::kernel::wide`]).
+    wide: Mesh8,
     pub tris: Vec<Tri>,
     pub lo: V3,
     pub hi: V3,
@@ -169,121 +164,54 @@ impl Bvh {
         }
         let tris: Vec<Tri> = order.iter().map(|&i| tris[i as usize]).collect();
         let (lo, hi) = if n == 0 { (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) } else { (nodes[0].lo, nodes[0].hi) };
-        Bvh { nodes, tris, lo, hi }
+        let geo: Vec<(V3, V3, V3)> = tris.iter().map(|t| (t.v0, t.e1, t.e2)).collect();
+        let wide = if n == 0 { Mesh8::new(&[], &[]) } else { Mesh8::new(&nodes, &geo) };
+        Bvh { nodes, wide, tris, lo, hi }
     }
 
     /// Closest hit along `o + t·d` with `t` in `(tmin, tmax)`.
     #[inline]
-    pub fn intersect(&self, o: V3, d: V3, tmin: f32, mut tmax: f32) -> Option<Hit> {
-        if self.tris.is_empty() {
-            return None;
-        }
-        let inv = v3(1.0 / d.x, 1.0 / d.y, 1.0 / d.z);
-        let mut best: Option<Hit> = None;
-        let mut stack = [0u32; 64];
-        let mut sp = 0usize;
-        let mut ni = 0u32;
-        if slab(&self.nodes[0], o, inv, tmin, tmax).is_none() {
-            return None;
-        }
-        loop {
-            let node = &self.nodes[ni as usize];
-            if node.count > 0 {
-                for k in node.first..node.first + node.count {
-                    let tr = &self.tris[k as usize];
-                    if let Some((t, u, v)) = tri_hit(tr, o, d, tmin, tmax) {
-                        tmax = t;
-                        best = Some(Hit { t, tri: k, u, v });
-                    }
-                }
-            } else {
-                let (a, b) = (node.first, node.first + 1);
-                let ta = slab(&self.nodes[a as usize], o, inv, tmin, tmax);
-                let tb = slab(&self.nodes[b as usize], o, inv, tmin, tmax);
-                match (ta, tb) {
-                    (Some(x), Some(y)) => {
-                        let (near, far) = if x <= y { (a, b) } else { (b, a) };
-                        if sp < 64 {
-                            stack[sp] = far;
-                            sp += 1;
-                        }
-                        ni = near;
-                        continue;
-                    }
-                    (Some(_), None) => {
-                        ni = a;
-                        continue;
-                    }
-                    (None, Some(_)) => {
-                        ni = b;
-                        continue;
-                    }
-                    _ => {}
-                }
-            }
-            if sp == 0 {
-                break;
-            }
-            sp -= 1;
-            ni = stack[sp];
-        }
-        best
+    pub fn intersect(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> Option<Hit> {
+        self.wide.closest(o, d, tmin, tmax).map(|h| Hit { t: h.t, tri: h.tri, u: h.u, v: h.v })
     }
 
     /// Whether anything is hit along the segment (shadow and AO rays).
     #[inline]
     pub fn occluded(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> bool {
-        if self.tris.is_empty() {
-            return false;
-        }
+        self.wide.occluded(o, d, tmin, tmax)
+    }
+
+    /// Reference traversal of the binary tree (tests compare against it).
+    #[cfg(test)]
+    fn intersect2(&self, o: V3, d: V3, tmin: f32, mut tmax: f32) -> Option<f32> {
         let inv = v3(1.0 / d.x, 1.0 / d.y, 1.0 / d.z);
-        let mut stack = [0u32; 64];
-        let mut sp = 0usize;
-        let mut ni = 0u32;
-        if slab(&self.nodes[0], o, inv, tmin, tmax).is_none() {
-            return false;
-        }
-        loop {
+        let mut best = None;
+        let mut stack = vec![0u32];
+        while let Some(ni) = stack.pop() {
             let node = &self.nodes[ni as usize];
+            if slab(node, o, inv, tmin, tmax).is_none() {
+                continue;
+            }
             if node.count > 0 {
                 for k in node.first..node.first + node.count {
-                    if tri_hit(&self.tris[k as usize], o, d, tmin, tmax).is_some() {
-                        return true;
+                    if let Some((t, _, _)) = tri_hit(&self.tris[k as usize], o, d, tmin, tmax) {
+                        tmax = t;
+                        best = Some(t);
                     }
                 }
             } else {
-                let (a, b) = (node.first, node.first + 1);
-                let ta = slab(&self.nodes[a as usize], o, inv, tmin, tmax).is_some();
-                let tb = slab(&self.nodes[b as usize], o, inv, tmin, tmax).is_some();
-                if ta && tb {
-                    if sp < 64 {
-                        stack[sp] = b;
-                        sp += 1;
-                    }
-                    ni = a;
-                    continue;
-                } else if ta {
-                    ni = a;
-                    continue;
-                } else if tb {
-                    ni = b;
-                    continue;
-                }
+                stack.push(node.first);
+                stack.push(node.first + 1);
             }
-            if sp == 0 {
-                return false;
-            }
-            sp -= 1;
-            ni = stack[sp];
         }
+        best
     }
 }
 
 /// Top-level hierarchy over world-space boxes (one per object instance),
 /// rebuilt every frame (cheap: median splits over a few thousand boxes).
 pub struct Tlas {
-    nodes: Vec<Node>,
-    pub items: Vec<u32>,
+    wide: Boxes8,
 }
 
 impl Tlas {
@@ -326,77 +254,38 @@ impl Tlas {
             stack.push(l);
             stack.push(l + 1);
         }
-        if n == 0 {
-            nodes.clear();
-        }
-        Tlas { nodes, items }
+        Tlas { wide: if n == 0 { Boxes8::new(&[], items) } else { Boxes8::new(&nodes, items) } }
     }
 
     /// Visit items whose boxes the ray enters before `tmax` (nearest first);
     /// `f(item, tmax) -> new tmax` (return a smaller value on a hit, or
     /// `-1.0` to stop early for shadow rays).
     #[inline]
-    pub fn visit(&self, o: V3, d: V3, tmin: f32, mut tmax: f32, mut f: impl FnMut(u32, f32) -> f32) {
-        if self.nodes.is_empty() {
-            return;
-        }
-        let inv = v3(1.0 / d.x, 1.0 / d.y, 1.0 / d.z);
-        let mut stack = [0u32; 64];
-        let mut sp = 0usize;
-        let mut ni = 0u32;
-        if slab(&self.nodes[0], o, inv, tmin, tmax).is_none() {
-            return;
-        }
-        loop {
-            let node = &self.nodes[ni as usize];
-            if node.count > 0 {
-                for k in node.first..node.first + node.count {
-                    tmax = f(self.items[k as usize], tmax);
-                    if tmax < 0.0 {
-                        return;
-                    }
-                }
-            } else {
-                let (a, b) = (node.first, node.first + 1);
-                let ta = slab(&self.nodes[a as usize], o, inv, tmin, tmax);
-                let tb = slab(&self.nodes[b as usize], o, inv, tmin, tmax);
-                match (ta, tb) {
-                    (Some(x), Some(y)) => {
-                        let (near, far) = if x <= y { (a, b) } else { (b, a) };
-                        if sp < 64 {
-                            stack[sp] = far;
-                            sp += 1;
-                        }
-                        ni = near;
-                        continue;
-                    }
-                    (Some(_), None) => {
-                        ni = a;
-                        continue;
-                    }
-                    (None, Some(_)) => {
-                        ni = b;
-                        continue;
-                    }
-                    _ => {}
-                }
-            }
-            // Pop, skipping nodes now beyond the closest hit.
-            loop {
-                if sp == 0 {
-                    return;
-                }
-                sp -= 1;
-                ni = stack[sp];
-                if slab(&self.nodes[ni as usize], o, inv, tmin, tmax).is_some() {
-                    break;
-                }
-            }
-        }
+    pub fn visit(&self, o: V3, d: V3, tmin: f32, tmax: f32, f: impl FnMut(u32, f32) -> f32) {
+        self.wide.visit(o, d, tmin, tmax, f)
     }
 }
 
-#[inline]
+/// NaN-oblivious min/max (plain compare + select; `f32::min` adds NaN handling).
+#[inline(always)]
+fn fmin(a: f32, b: f32) -> f32 {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+#[inline(always)]
+fn fmax(a: f32, b: f32) -> f32 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+#[inline(always)]
+#[cfg_attr(not(test), allow(dead_code))]
 fn slab(n: &Node, o: V3, inv: V3, tmin: f32, tmax: f32) -> Option<f32> {
     let t1 = (n.lo.x - o.x) * inv.x;
     let t2 = (n.hi.x - o.x) * inv.x;
@@ -404,12 +293,13 @@ fn slab(n: &Node, o: V3, inv: V3, tmin: f32, tmax: f32) -> Option<f32> {
     let t4 = (n.hi.y - o.y) * inv.y;
     let t5 = (n.lo.z - o.z) * inv.z;
     let t6 = (n.hi.z - o.z) * inv.z;
-    let a = t1.min(t2).max(t3.min(t4)).max(t5.min(t6)).max(tmin);
-    let b = t1.max(t2).min(t3.max(t4)).min(t5.max(t6)).min(tmax);
+    let a = fmax(fmax(fmax(fmin(t1, t2), fmin(t3, t4)), fmin(t5, t6)), tmin);
+    let b = fmin(fmin(fmin(fmax(t1, t2), fmax(t3, t4)), fmax(t5, t6)), tmax);
     (a <= b).then_some(a)
 }
 
 #[inline]
+#[cfg_attr(not(test), allow(dead_code))]
 fn tri_hit(tr: &Tri, o: V3, d: V3, tmin: f32, tmax: f32) -> Option<(f32, f32, f32)> {
     let p = cross(d, tr.e2);
     let det = dot(tr.e1, p);
@@ -459,6 +349,8 @@ mod tests {
                 assert!((a - c).abs() < 1e-4);
             }
             assert_eq!(b.occluded(o, d, 1e-4, 1e9), best.is_some());
+            let two = b.intersect2(o, d, 1e-4, 1e9);
+            assert_eq!(two.is_some(), best.is_some());
         }
     }
 }

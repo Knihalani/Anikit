@@ -1,67 +1,57 @@
 ---
 name: anikit-video
-description: Direct and render distinctive motion videos (launches, explainers, teasers, data stories, brand films, changelogs, demos) with the native anikit-video renderer: a JSON spec with art-direction looks, 3D, depth and post. Use when asked to create, review or render a video or animated clip.
+description: Make extraordinary motion videos fast with anikit-video, a native renderer for JSON specs with ray-traced 3D, GLSL shaders, particles, physics, generated music and a reviewer that judges frames. Use when asked to create, review or render a video or animated clip.
 ---
 
-You are the director. A video that looks like every other generated video has failed, however clean it is. So has a slow one: single long dollies and 6 s holds read as boring, however beautiful.
+**Setup:** if `anikit-video` isn't on PATH, install the prebuilt binary (seconds; don't compile it): `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh`, then `export PATH="$HOME/.local/bin:$PATH"`.
 
-**1. Direct before you build** (write it down, 10 lines max):
-- *Logline*: who it is for, what changes for them, in one sentence.
-- *One feeling* the viewer leaves with (calm precision, dread, joy, awe…).
-- *Shot list*, cut to the music: per shot, **what the viewer understands** after it, the image, and its length in beats. Aim for 12–25 shots in a 15 s test, on a 120–140 BPM track. Each shot earns its place or goes; the story must make sense with the sound off.
+**The loop:** write `s.json` → `anikit-video check s.json` (errors and the real length: scenes overlap by their transitions) → `anikit-video still s.json --at 2.4 --width 640 -o f.png` (look) → `anikit-video render s.json -o out.mp4` → `anikit-video critique s.json --render --pack rv/` (then look at `rv/`).
 
-**2. Choose a world:** `anikit-video looks` lists 10 (daylight-lab, editorial, swiss, brutalist, y2k-chrome, noir, risograph, neon-night, soft-clay, documentary). Pick from the brief's audience and feeling, never by habit, and pick a different one for different briefs. `"look": "noir"` at the top of the spec sets the palette, type, motion, transitions, camera, backdrop and grain. Compose (`["editorial", "noir"]`) or override (`{"base": "swiss", "theme": {"colors": {"primary": "#0050FF"}}}`). `anikit-video looks <name>` gives its direction in one paragraph: follow it.
+**Need detail? Don't grep the docs: run `anikit-video docs <topic>`** (30 lines each, with a working example): `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything`.
 
-**3. Build the world from the brief's own nouns.** Sailing means water, tide lines and rope; coffee means cherries, hands, soil and a map; horror means sea, rock and fog. Draw them with shapes and paths (`shape: "path"` with `d`, lines that draw on with `trimEnd`, `morph`) or with real photos. Stock effects (a halftone or kinetic grid, bokeh, a mesh) are seasoning, never the subject, and never the same one across your videos.
+## Build from the open primitives (anything is possible)
 
-**Then build one signature image** that no template has, and give it the longest hold:
-- a shader world: `{"type": "shader", "src": "scene.glsl"}` (Shadertoy GLSL, raymarched light, fog and water; `docs/video/shader.md`). Animate its uniforms hard, and cut between angles;
-- 3D: `text-3d` (extruded chrome or matte type), `model` (rounded box, torus, knot, an extruded logo or an `.obj`), `globe`, and `scene3d` when `anikit-video info --components` lists it;
-- generative: `particle-text`, `metaballs`, `kinetic-grid`, `morph`, `god-rays`, `tile-reveal`;
-- real: photos or footage via `ken-burns` or `src` with `fit: "cover"`;
-- depth: give layers `depth` (+ farther), then move `camera.x`: parallax. `camera.aperture` with an animated `focus` gives a rack focus.
+A spec: `{ "size": "16:9", "intent": {"pace": "fast"}, "music": "synthwave", "scenes": [ { "duration": 1.2, "layers": [ … ] } ] }`.
 
-**4. Pace: fast, dense and on the beat** (BAR's pace test; `python3 docs/video/quality/pace.py out.mp4`):
-- Cut or make a major change every 0.5–1.5 s on the beat (`"at": "@beat17"`). No shot holds over 2.5 s; the median shot is 1.5 s or less; under 20% of seconds look like the second before.
-- Camera with energy:
-  - whip pans (`camera.x` across the frame in 0.15 s, with `motionBlur`);
-  - snap zooms (`zoom` punch with `outExpo` in 0.2 s);
-  - speed ramps (`inOutExpo` over a long move);
-  - impacts (`shake` at a beat);
-  - match cuts (one shape carried across a cut).
-- Density: several things move in counterpoint, with layers in depth and parallax. Never one element alone on a still frame.
+1. **Text, shapes and paths, fully styled:**
+   `{ "text": "Make **anything**.", "font": "Instrument Serif", "size": "14vh", "x": "8%", "anchor": "left", "enter": "mask by line up" }`
+   `{ "shape": "path", "d": "M0 200 C 300 0, 600 400, 900 120", "stroke": "#FF5A1F", "strokeWidth": 6, "animate": [{ "from": {"trimEnd": 0}, "to": {"trimEnd": 1}, "duration": 1 }] }`
+2. **Keyframes and expressions on any property:**
+   `"animate": [{ "from": {"scale": 3, "blur": 20}, "duration": 0.25, "ease": "outExpo" }]` · `"rotation": "=t*90"` · `"x": "=960 + 300*sin(t*2)"` · `"repeat": 40` with `$i`.
+3. **Camera:**
+   `"camera": { "animate": [{ "from": {"zoom": 1.3, "x": -600}, "to": {"zoom": 1, "x": 0}, "duration": 0.3, "ease": "outExpo" }], "shake": {"amount": 8, "at": 0} }`, plus `"motionBlur": true`. Layer `depth` + `aperture`/`focus` = parallax and rack focus.
+4. **Your own GLSL** (a layer, `"filter": true`, or a transition), JIT-compiled at full resolution:
+   `{ "shader": "void mainImage(out vec4 o, in vec2 f) { … iTime … }", "uniforms": {"speed": 1} }`
+5. **Ray-traced 3D** (PBR, glass and chrome, glTF, instancing, real DOF):
+   `{ "component": "scene3d", "props": { "env": "studio", "objects": [{ "text": "ANIKIT", "material": "chrome" }], "camera": "orbit" } }`
+6. **Particles and physics** inside scene3d: `{ "type": "particles", "count": 400000, "emit": {"text": "IGNITE"}, "flow": 0.8 }`, `"physics": { "bodies": [{ "type": "box", "count": 400, "layout": "pile" }], "timeScale": "=1 - 0.7*smoothstep(2, 2.5, t)" }`.
+7. **Compositions:** nested timelines used as layers, looped, or as textures on 3D objects: `"compositions": { "ui": {…} }` → `{ "composition": "ui", "loop": true }`.
+8. **Music and grade:** `"music": "synthwave"` or `{"style": "trap", "bpm": 140, "key": "Cm", "hits": ["@bar5"]}` generates a mastered score that fills the video (`anikit-video docs music`: styles, instruments, note language). Cut on its exact grid with `"@beat9"` / `"@bar2"`, and never hand-write a synth. Grade: `"post": {"preset": "cinematic", "bloom": 0.4}`.
 
-**5. Show what browsers can't.** Each shot shows something a browser tool (Remotion, or WebGL/three.js in HyperFrames) can't realistically render: see `docs/video/quality/ONLY_ANIKIT.md`. Examples are heavy per-frame compute at full resolution, true motion blur, and huge particle or ray counts. A pretty shader or a 3D logo alone doesn't count.
+Combine them. `anikit-video docs make-anything` lists the escape hatches.
 
-**6. Vary the grammar shot by shot:**
-- Change the layout every shot: full-bleed type, one giant word, a split, a macro crop of the UI, data as the hero, an object in space.
-- Use scale contrast: one huge thing per frame, everything else small.
-- Entrances follow role: a headline `"mask by line up"`, a name `"pop by char from center"`, data `countUp`/`drawOn`.
-- Motivate transitions: `zoom` into the object, `iris` on a circle, `cut` on the beat.
-- Hand off between shots: an outgoing text never crossfades over an incoming one. Use a push, slide or cut, or an exit and then the entrance.
-- Fill the format. In 9:16 and 1:1, stack the composition top to bottom: no band of empty frame bigger than a third.
-- Match materials to the look. In flat looks (daylight-lab, swiss, editorial, risograph), 3D is matte (`metallic: 0`, `roughness: 0.8`, the look's colours); chrome belongs to y2k-chrome and noir. Show the brand once, at the end.
+No limits: expressions on any number or colour (`"=hsl(beat * 30, 80, 60)"`, `level`, `c ? a : b`), `{ "script": … }` loops that generate layers, and `draw` layers of raw paths and points (`docs/video/authoring.md`).
 
-**7. Write the spec:**
-- [`docs/video/spec.md`](../../docs/video/spec.md) is the one-page cheat sheet. `defs`/`use`/`repeat` keep specs short.
-- Templates (`anikit-video templates`) are quick starts only. Restyle them with `--look`, then make them yours.
+**Costs (stay on the fast path):**
+- 2D layers render at 100+ fps; shaders cost 50–400 ms a frame (`still` prints it).
+- Ray-traced 3D and particles cost 0.3–1.5 s a frame. Use `"quality": "draft"` and `"resolution": 0.5` on scene3d, and keep 3D shots to 2–4 s.
+- `motionBlur` re-renders 2D layers per sub-frame (shader and 3D images are reused), so turn it on where motion is fast, not globally.
+- While iterating, use `still --width 640` and `render --quality draft --scale 0.5`, never `--quality best`.
+- A layer's own timing is `start`/`end`; `at` is for tweens and `audio` cues.
 
-**8. Judge in motion against the bar** ([`docs/video/quality/BAR.md`](../../docs/video/quality/BAR.md)). A frame fails if it shows:
-- a centred headline on a gradient;
-- a blob or mesh backdrop doing the design;
-- placeholder UI (grey bars, fake cards);
-- small content in an empty frame;
-- flat 2D with no light, material, depth or lens;
-- a slide-deck structure;
-- a stock-demo look (primitives, default Inter-on-dark, generic dashboard);
-- an effect with no subject;
-- any judder, banding, aliasing or clipped text.
+## Shortcuts (optional; each is made from the primitives above)
 
-A critique score is not evidence:
-- `anikit-video critique spec.json --render` checks rendered frames for contrast, overlaps and cut text, and flags *sameness*.
-- `anikit-video preview spec.json` makes a contact sheet. Look at it and ask, shot by shot, "do I understand X within 1 s?" and "would I screenshot this frame?"
-- For motion, check stills at transitions and at entrances (`--at 2.3`). Fix three things, then re-check.
+- `anikit-video recipes`: drop-in high-end shots to adapt (launch-sting: particles + 3D + shader + music on the beat; kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, raymarch-world) and the shader library.
+- `anikit-video looks`: art direction (palette, type, motion, grade). Use `"look": "noir"`.
+- `anikit-video info --components`: prebuilt widgets (charts, devices, UI).
+- `anikit-video templates`: quick starts. They are optional; don't let them define the piece.
 
-**9. Render, then run the pace check on the MP4:** `anikit-video render spec.json -o out.mp4 && python3 docs/video/quality/pace.py out.mp4`, with `--format 9:16` on templates or `"size": "9:16"` in a spec.
+## Direct it
 
-Over MCP the same tools exist (`list_looks`, `create_from_template`, `critique_spec` with `render: true`, `render_contact_sheet`, `render_video`).
+- **Logline and feeling first,** then a shot list where each shot says what the viewer *understands*.
+- **Declare `intent`** (`calm|steady|fast|frantic`). Fast means a cut or major change every 0.5–1.5 s on the beat, with whips, snaps, speed ramps and impacts. Calm can hold long, but never lifeless.
+- **Show what browsers can't:** heavy per-frame compute such as ray-traced 3D, a million particles, real motion blur and raymarched worlds.
+- **Build the world from the brief's own nouns,** with one subject per shot that fills the frame. Avoid centred headlines on gradients, placeholder UI and stock looks (docs/video/quality/BAR.md).
+- **Judge by looking:** `critique --render --pack rv/` writes a strip, the cut frames and the worst frames boxed, plus `review.md` questions. The score is not a quality verdict; the frames are.
+
+Over MCP (`anikit-video mcp`) the same exists: `docs`, `recipes`, `list_looks`, `validate_spec`, `critique_spec` (`render`, `detail`), `render_still`, `render_contact_sheet`, `render_video`.

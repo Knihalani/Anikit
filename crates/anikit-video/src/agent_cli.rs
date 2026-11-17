@@ -31,6 +31,8 @@ macro_rules! outln {
 }
 
 pub const HELP: &str = "\
+Start: anikit-video docs   (compact pages per primitive; docs 3d, docs shader, docs particles, ...)
+       anikit-video recipes (drop-in high-end shots and the shader library)
 Agent commands:
   anikit-video new <template> [--brand brand.json] [--from README.md] [--format 16:9] [--dir DIR]
                                     scaffold a project: params.json, brand.json, spec.json, NEXT.md
@@ -40,19 +42,25 @@ Agent commands:
   anikit-video templates expand <name> [params.json] [--brand brand.json] [--format 9:16] [--look noir] [-o spec.json]
   anikit-video prompt [name]        list prompts, or print one (e.g. director)
   anikit-video looks [name] [--json] art-direction looks (palette, type, motion, world); a spec takes \"look\": \"noir\"
-  anikit-video critique <spec.json> [--render] [--json]  design review; --render also checks rendered frames
-                                    (contrast against real pixels, overlaps, cut text, empty frames)
+  anikit-video critique <spec.json> [--render] [--pack dir] [--detail] [--json]  review; --render also checks rendered frames
+                                    and the timeline against the spec's \"intent\" (pace, dead air, beats, arc)
+                                    (contrast, overlaps, cut text, frame fill, centred layouts); --pack writes frames
+                                    to look at (strip, cuts, worst frames, peak) and a review.md rubric
   anikit-video preview <spec.json|template> [--at T] [--width W] [-o out.png] [--format 9:16] [--brand b.json] [--params p.json]
                                     contact sheet (one frame per scene), or one still with --at
   anikit-video mcp                  Model Context Protocol server on stdio
 ";
 
 /// Commands this module handles.
-pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "looks", "look", "critique", "preview", "mcp"];
+pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "looks", "look", "critique", "preview", "mcp", "docs", "doc", "recipes", "recipe"];
 
 /// Run an agent command. `args` excludes the program name.
 pub fn run(args: &[String]) -> Option<i32> {
     let cmd = args.first().map(|s| s.as_str()).unwrap_or("--help");
+    if matches!(cmd, "--version" | "-V" | "version") {
+        println!("anikit-video {}", env!("CARGO_PKG_VERSION"));
+        return Some(0);
+    }
     if matches!(cmd, "--help" | "-h" | "help") {
         print!("Render: anikit-video render|still|sheet|check|info|schema SPEC [options]   (anikit-video render spec.json -o out.mp4)\n{HELP}");
         return Some(0);
@@ -66,6 +74,8 @@ pub fn run(args: &[String]) -> Option<i32> {
         "templates" | "template" => cmd_templates(rest),
         "prompt" | "prompts" => cmd_prompt(rest),
         "looks" | "look" => cmd_looks(rest),
+        "docs" | "doc" => crate::agent_docs::docs((!rest.is_empty()).then(|| rest.join(" ")).as_deref()).map(|s| out!("{s}")),
+        "recipes" | "recipe" => cmd_recipes(rest),
         "critique" => cmd_critique(rest),
         "preview" => cmd_preview(rest),
         "mcp" => mcp::serve_stdio().map_err(|e| e.to_string()),
@@ -201,14 +211,9 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
             match a.get("o").or(a.get("out")) {
                 Some(o) => {
                     write(Path::new(o), &pretty(&spec))?;
-                    let mut r = crate::critique::critique_in_range(&spec, t.duration_range());
                     let base = Path::new(o).parent().map(Path::to_path_buf).unwrap_or_default();
-                    // Pixel checks too, so the printed score is the honest one.
-                    if let Ok(p) = crate::preview::Preview::new(spec.clone(), &if base.as_os_str().is_empty() { PathBuf::from(".") } else { base.clone() }) {
-                        let extra = crate::render_check::check_spec(&spec, &p.ev);
-                        r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
-                        r.notes.extend(extra);
-                    }
+                    // Pixel and timeline checks too, so the printed score is the honest one.
+                    let r = crate::critique::review(&spec, &base, t.duration_range(), true);
                     let v = mcp::validate(spec.clone(), &base);
                     for k in ["errors", "warnings"] {
                         for d in v[k].as_array().into_iter().flatten() {
@@ -256,21 +261,19 @@ fn cmd_prompt(args: &[String]) -> Result<(), String> {
 }
 
 fn cmd_critique(args: &[String]) -> Result<(), String> {
-    let a = parse(args, &[], &["json", "render"])?;
-    let path = a.pos.first().ok_or("usage: critique <spec.json> [--render] [--json]")?;
+    let a = parse(args, &["pack"], &["json", "render", "detail"])?;
+    let path = a.pos.first().ok_or("usage: critique <spec.json> [--render] [--pack dir] [--detail] [--json]")?;
     let spec = read_json(path)?;
-    let mut r = critique(&spec);
-    if a.has("render") {
-        let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
-        let p = crate::preview::Preview::new(spec.clone(), &base)?;
-        let extra = crate::render_check::check_spec(&spec, &p.ev);
-        r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
-        r.notes.extend(extra);
+    let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
+    let (r, files) = crate::critique::review_pack(&spec, &base, None, a.has("render"), a.get("pack").map(Path::new));
+    if let Some(dir) = a.get("pack") {
+        let files = files?;
+        eprintln!("review pack: {dir}/ ({} files): open review.md and look at every image", files.len());
     }
     if a.has("json") {
         out!("{}", pretty(&serde_json::to_value(&r).unwrap()));
     } else {
-        out!("{}", r.to_text());
+        out!("{}", r.to_text_detail(a.has("detail")));
         out!("A score is not evidence of quality: look at full-size frames against docs/video/quality/BAR.md.\n");
     }
     Ok(())
@@ -633,6 +636,72 @@ fn cmd_looks(args: &[String]) -> Result<(), String> {
     let t = looks_text(a.pos.first().map(|s| s.as_str()), a.has("json"))?;
     out!("{t}");
     Ok(())
+}
+
+/// `recipes [name] [-o file] [--json]`: piped or with `-o`/`--json`, a named
+/// shot prints only its spec JSON (notes go to stderr), so it can be rendered directly.
+fn cmd_recipes(args: &[String]) -> Result<(), String> {
+    use std::io::IsTerminal;
+    let a = parse(args, &["o", "out"], &["json"])?;
+    let Some(name) = a.pos.first() else {
+        out!("{}", crate::agent_docs::recipes(None)?);
+        return Ok(());
+    };
+    let spec = crate::agent_docs::recipe_spec(name);
+    let raw = a.has("json") || a.get("o").or(a.get("out")).is_some() || !std::io::stdout().is_terminal();
+    match (spec, raw) {
+        (Some((about, spec)), true) => {
+            let text = format!("{}\n", serde_json::to_string_pretty(&spec).unwrap());
+            match a.get("o").or(a.get("out")) {
+                Some(o) => {
+                    write(Path::new(o), &text)?;
+                    eprintln!("wrote {o}: {about}\nnext: anikit-video still {o} --at 1 --width 640 -o f.png, then anikit-video render {o} -o out.mp4");
+                }
+                None => {
+                    eprintln!("{about}");
+                    out!("{text}");
+                }
+            }
+        }
+        _ => out!("{}", crate::agent_docs::recipes(Some(name))?),
+    }
+    Ok(())
+}
+
+/// Pretty JSON with short arrays and leaf objects kept on one line (fewer tokens).
+pub fn compact_json(v: &Value) -> String {
+    fn go(v: &Value, ind: usize, out: &mut String) {
+        let flat = serde_json::to_string(v).unwrap();
+        if flat.len() + ind <= 110 {
+            out.push_str(&flat);
+            return;
+        }
+        let pad = " ".repeat(ind + 1);
+        match v {
+            Value::Object(m) => {
+                out.push_str("{\n");
+                for (i, (k, x)) in m.iter().enumerate() {
+                    out.push_str(&format!("{pad}{}: ", serde_json::to_string(k).unwrap()));
+                    go(x, ind + 1, out);
+                    out.push_str(if i + 1 < m.len() { ",\n" } else { "\n" });
+                }
+                out.push_str(&format!("{}}}", " ".repeat(ind)));
+            }
+            Value::Array(a) => {
+                out.push_str("[\n");
+                for (i, x) in a.iter().enumerate() {
+                    out.push_str(&pad);
+                    go(x, ind + 1, out);
+                    out.push_str(if i + 1 < a.len() { ",\n" } else { "\n" });
+                }
+                out.push_str(&format!("{}]", " ".repeat(ind)));
+            }
+            _ => out.push_str(&flat),
+        }
+    }
+    let mut s = String::new();
+    go(v, 0, &mut s);
+    s
 }
 
 #[cfg(test)]

@@ -2,7 +2,7 @@
 
 use crate::encoder::MbInfo;
 use crate::frame::Pic;
-use crate::transform::{chroma_qp, Quant};
+use crate::transform::chroma_qp;
 
 const ALPHA: [u8; 52] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 17, 20, 22, 25, 28, 32, 36, 40,
@@ -25,12 +25,18 @@ const TC0: [[u8; 3]; 52] = [
 struct Params {
     alpha: i32,
     beta: i32,
-    tc0: [i32; 3],
+    /// tC0 by bS (0..=4): the table for bS 1..3, 0 for bS 0 and 4.
+    tct: [i16; 5],
 }
 
 fn params(qp: u8) -> Params {
     let i = qp as usize;
-    Params { alpha: ALPHA[i] as i32, beta: BETA[i] as i32, tc0: TC0[i].map(|v| v as i32) }
+    let t = TC0[i];
+    Params {
+        alpha: ALPHA[i] as i32,
+        beta: BETA[i] as i32,
+        tct: [0, t[0] as i16, t[1] as i16, t[2] as i16, 0],
+    }
 }
 
 #[inline(always)]
@@ -49,9 +55,12 @@ fn bs(p: &MbInfo, bp: usize, q: &MbInfo, bq: usize, mb_edge: bool) -> u8 {
 /// `ls` the step along it; `bs[l]` is the strength of line `l`.
 #[inline(always)]
 #[allow(clippy::manual_clamp)]
-fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: usize, ls: usize, seg: &[u8; 4], p: &Params) {
+fn filter_edge<const N: usize, const CHROMA: bool, const STRONG: bool>(d: &mut [u8], o: usize, xs: usize, ls: usize, seg: &[u8; 4], p: &Params) {
     let mut v = [[0i16; N]; 8]; // p3 p2 p1 p0 q0 q1 q2 q3
     let vertical = xs == 1;
+    // Every access is in rows/columns o − 4·xs .. o + 3·xs (+ (N − 1)·ls): one check
+    // here, unchecked accesses below.
+    assert!(o >= 4 * xs && o + 3 * xs + (N - 1) * ls < d.len());
     if !CHROMA && vertical {
         let t = crate::simd::load_t16x8(d, o - 4, ls);
         for j in 0..8 {
@@ -62,16 +71,18 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
     } else if !vertical {
         let lo = if CHROMA { 2 } else { 0 };
         for j in lo..8 - lo {
-            let r = &d[o + j * xs - 4 * xs..][..N];
+            let b = o + j * xs - 4 * xs;
             for l in 0..N {
-                v[j][l] = r[l] as i16;
+                // SAFETY: within the asserted range (ls == 1 here).
+                v[j][l] = unsafe { *d.get_unchecked(b + l) } as i16;
             }
         }
     } else {
-        for l in 0..N {
-            let r = &d[o + l * ls - 2..][..4];
-            for j in 0..4 {
-                v[2 + j][l] = r[j] as i16;
+        // chroma, vertical edge: 8 lines × (p1 p0 q0 q1)
+        let t = crate::simd::load_t8x4(d, o - 2, ls);
+        for j in 0..4 {
+            for l in 0..N {
+                v[2 + j][l] = t[j][l] as i16;
             }
         }
     }
@@ -81,9 +92,11 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
     let mut s4 = [0i16; N]; // -1 where bS == 4
     let mut tc0 = [0i16; N];
     let shift = if N == 16 { 2 } else { 1 };
+    // per-strength constants, branch-free: tC0 for bS 1..3, 0 for bS 0 and 4
+    let tct = &p.tct;
     let segc: [(i16, i16, i16); 4] = core::array::from_fn(|k| {
-        let b = seg[k];
-        (-((b > 0) as i16), -((b == 4) as i16), if b > 0 && b < 4 { p.tc0[(b - 1) as usize] as i16 } else { 0 })
+        let b = seg[k].min(4);
+        (-((b != 0) as i16), -((b == 4) as i16), tct[b as usize])
     });
     for l in 0..N {
         let c = segc[l >> shift];
@@ -109,8 +122,12 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
         if CHROMA {
             let tc = tc0 + 1;
             let delta = base_delta.max(-tc).min(tc);
-            let np0 = sel(strong, (2 * p1 + p0 + q1 + 2) >> 2, (p0 + delta).max(0).min(255));
-            let nq0 = sel(strong, (2 * q1 + q0 + p1 + 2) >> 2, (q0 - delta).max(0).min(255));
+            let (wp0, wq0) = ((p0 + delta).max(0).min(255), (q0 - delta).max(0).min(255));
+            let (np0, nq0) = if STRONG {
+                (sel(strong, (2 * p1 + p0 + q1 + 2) >> 2, wp0), sel(strong, (2 * q1 + q0 + p1 + 2) >> 2, wq0))
+            } else {
+                (wp0, wq0)
+            };
             out[3][l] = sel(filt, np0, p0);
             out[4][l] = sel(filt, nq0, q0);
         } else {
@@ -124,6 +141,14 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
             let n_q1 = sel(aq, q1 + ((q2 + avg - (q1 << 1)) >> 1).max(-tc0).min(tc0), q1);
             let n_p0 = (p0 + delta).max(0).min(255);
             let n_q0 = (q0 - delta).max(0).min(255);
+            if !STRONG {
+                // no bS 4 on this edge: normal filter only
+                out[2][l] = sel(filt, n_p1, p1);
+                out[3][l] = sel(filt, n_p0, p0);
+                out[4][l] = sel(filt, n_q0, q0);
+                out[5][l] = sel(filt, n_q1, q1);
+                continue;
+            }
             let small = lt((p0 - q0).abs(), (alpha >> 2) + 2);
             let sp = ap & small;
             let sq = aq & small;
@@ -153,22 +178,98 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
     } else if !vertical {
         let (lo, hi) = if CHROMA { (3, 5) } else { (1, 7) };
         for j in lo..hi {
-            let r = &mut d[o + j * xs - 4 * xs..][..N];
+            let b = o + j * xs - 4 * xs;
             if N == 16 {
                 let row: &[i16; 16] = out[j][..16].try_into().unwrap();
-                r.copy_from_slice(&crate::simd::pack16(row));
+                let pk = crate::simd::pack16(row);
+                // SAFETY: within the asserted range (ls == 1 here).
+                unsafe { core::ptr::copy_nonoverlapping(pk.as_ptr(), d.as_mut_ptr().add(b), 16) };
             } else {
                 for l in 0..N {
-                    r[l] = out[j][l] as u8;
+                    // SAFETY: within the asserted range.
+                    unsafe { *d.get_unchecked_mut(b + l) = out[j][l] as u8 };
                 }
             }
         }
     } else {
-        for l in 0..N {
-            let r = &mut d[o + l * ls - 1..][..2];
-            r[0] = out[3][l] as u8;
-            r[1] = out[4][l] as u8;
+        let (p0, q0): ([u8; 8], [u8; 8]) = (core::array::from_fn(|l| out[3][l] as u8), core::array::from_fn(|l| out[4][l] as u8));
+        crate::simd::store_t8x2(d, o - 1, ls, &p0, &q0);
+    }
+}
+
+/// One chroma edge in both chroma planes at once: lanes 0..8 are the 8 lines of
+/// Cb, lanes 8..16 the same lines of Cr (they share bS and QP), so the filter runs
+/// as one 16-lane pass instead of two 8-lane ones.
+#[inline(always)]
+#[allow(clippy::manual_clamp)]
+fn filter_chroma_uv<const STRONG: bool>(u: &mut [u8], v: &mut [u8], o: usize, xs: usize, ls: usize, seg: &[u8; 4], p: &Params) {
+    let vertical = xs == 1;
+    assert!(o >= 2 * xs && o + xs + 7 * ls < u.len() && o + xs + 7 * ls < v.len());
+    let mut w = [[0i16; 16]; 4]; // p1 p0 q0 q1
+    if vertical {
+        let (tu, tv) = (crate::simd::load_t8x4(u, o - 2, ls), crate::simd::load_t8x4(v, o - 2, ls));
+        for j in 0..4 {
+            for l in 0..8 {
+                w[j][l] = tu[j][l] as i16;
+                w[j][l + 8] = tv[j][l] as i16;
+            }
         }
+    } else {
+        for j in 0..4 {
+            let b = o + j * xs - 2 * xs;
+            let (mut ru, mut rv) = ([0u8; 8], [0u8; 8]);
+            ru.copy_from_slice(&u[b..b + 8]);
+            rv.copy_from_slice(&v[b..b + 8]);
+            for l in 0..8 {
+                w[j][l] = ru[l] as i16;
+                w[j][l + 8] = rv[l] as i16;
+            }
+        }
+    }
+    let (alpha, beta) = (p.alpha as i16, p.beta as i16);
+    let segc: [(i16, i16, i16); 4] = core::array::from_fn(|k| {
+        let b = seg[k].min(4);
+        (-((b != 0) as i16), -((b == 4) as i16), p.tct[b as usize])
+    });
+    let (mut bsm, mut s4, mut tc0) = ([0i16; 16], [0i16; 16], [0i16; 16]);
+    for l in 0..16 {
+        // chroma line l (of 8) uses luma segment l / 2
+        let c = segc[(l & 7) >> 1];
+        bsm[l] = c.0;
+        s4[l] = c.1;
+        tc0[l] = c.2;
+    }
+    let sel = |m: i16, a: i16, b: i16| (a & m) | (b & !m);
+    let lt = |a: i16, b: i16| -((a < b) as i16);
+    let (mut np0, mut nq0) = ([0i16; 16], [0i16; 16]);
+    for l in 0..16 {
+        let (p1, p0, q0, q1) = (w[0][l], w[1][l], w[2][l], w[3][l]);
+        let filt = bsm[l] & lt((p0 - q0).abs(), alpha) & lt((p1 - p0).abs(), beta) & lt((q1 - q0).abs(), beta);
+        let base_delta = (((q0 - p0) << 2) + (p1 - q1) + 4) >> 3;
+        let tc = tc0[l] + 1;
+        let delta = base_delta.max(-tc).min(tc);
+        let (wp0, wq0) = ((p0 + delta).max(0).min(255), (q0 - delta).max(0).min(255));
+        let (a0, b0) = if STRONG {
+            let strong = s4[l];
+            (sel(strong, (2 * p1 + p0 + q1 + 2) >> 2, wp0), sel(strong, (2 * q1 + q0 + p1 + 2) >> 2, wq0))
+        } else {
+            (wp0, wq0)
+        };
+        np0[l] = sel(filt, a0, p0);
+        nq0[l] = sel(filt, b0, q0);
+    }
+    let pu: [u8; 8] = core::array::from_fn(|l| np0[l] as u8);
+    let qu: [u8; 8] = core::array::from_fn(|l| nq0[l] as u8);
+    let pv: [u8; 8] = core::array::from_fn(|l| np0[l + 8] as u8);
+    let qv: [u8; 8] = core::array::from_fn(|l| nq0[l + 8] as u8);
+    if vertical {
+        crate::simd::store_t8x2(u, o - 1, ls, &pu, &qu);
+        crate::simd::store_t8x2(v, o - 1, ls, &pv, &qv);
+    } else {
+        u[o - xs..o - xs + 8].copy_from_slice(&pu);
+        u[o..o + 8].copy_from_slice(&qu);
+        v[o - xs..o - xs + 8].copy_from_slice(&pv);
+        v[o..o + 8].copy_from_slice(&qv);
     }
 }
 
@@ -186,7 +287,7 @@ pub(crate) struct View<'a> {
 
 /// Deblock the whole picture (one slice). Marks every macroblock whose samples
 /// may change in `touched`.
-pub(crate) fn deblock(p: &mut Pic, info: &[MbInfo], mbw: usize, mbh: usize, q: &Quant, touched: &mut [bool]) {
+pub(crate) fn deblock(p: &mut Pic, info: &[MbInfo], mbw: usize, mbh: usize, touched: &mut [bool]) {
     let (ys, yp, cs, cp) = (p.y.stride, p.y.pad, p.u.stride, p.u.pad);
     let mut view = View {
         y: &mut p.y.data[yp * ys..],
@@ -197,31 +298,29 @@ pub(crate) fn deblock(p: &mut Pic, info: &[MbInfo], mbw: usize, mbh: usize, q: &
         yp,
         cp,
     };
-    deblock_rows(&mut view, info, mbw, mbh, q, touched);
+    deblock_rows(&mut view, info, mbw, mbh, touched);
 }
 
 /// Deblock the macroblock rows of `view` (`rows` of them); `info`/`touched` are
 /// band-local. Edges at the band's top are not filtered (a slice boundary with
 /// disable_deblocking_filter_idc 2, or the picture edge).
-pub(crate) fn deblock_rows(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, q: &Quant, touched: &mut [bool]) {
+pub(crate) fn deblock_rows(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, touched: &mut [bool]) {
     #[cfg(target_arch = "x86_64")]
     {
         if crate::simd::level() >= 2 {
             #[target_feature(enable = "avx2")]
-            unsafe fn f(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, q: &Quant, touched: &mut [bool]) {
-                deblock_impl(view, info, mbw, rows, q, touched)
+            unsafe fn f(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, touched: &mut [bool]) {
+                deblock_impl(view, info, mbw, rows, touched)
             }
             // SAFETY: AVX2 detected at run time.
-            return unsafe { f(view, info, mbw, rows, q, touched) };
+            return unsafe { f(view, info, mbw, rows, touched) };
         }
     }
-    deblock_impl(view, info, mbw, rows, q, touched)
+    deblock_impl(view, info, mbw, rows, touched)
 }
 
 #[inline(always)]
-fn deblock_impl(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, q: &Quant, touched: &mut [bool]) {
-    let lp = params(q.qp);
-    let cpar = params(chroma_qp(q.qp));
+fn deblock_impl(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, touched: &mut [bool]) {
     for mby in 0..rows {
         for mbx in 0..mbw {
             let i = mby * mbw + mbx;
@@ -233,7 +332,7 @@ fn deblock_impl(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, q: &Q
             {
                 continue;
             }
-            let (any, l, t) = deblock_mb(view, info, mbw, mbx, mby, &lp, &cpar);
+            let (any, l, t) = deblock_mb(view, info, mbw, mbx, mby);
             touched[i] |= any;
             if l {
                 touched[i - 1] = true;
@@ -247,64 +346,89 @@ fn deblock_impl(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, q: &Q
 
 /// Returns whether the left / top macroblock edges were filtered.
 #[inline(always)]
-fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize, lp: &Params, cp: &Params) -> (bool, bool, bool) {
+fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize) -> (bool, bool, bool) {
     let cur = &info[mby * mbw + mbx];
     // bS[dir][edge][segment]
     let mut b = [[[0u8; 4]; 4]; 2];
     let mut any = false;
-    for e in 0..4 {
+    // Internal edges: one 16×16 partition, so the MVs agree and bS is 3 (intra)
+    // or 2/0 by the coefficient flags of the two blocks.
+    let nzm = cur.nz.iter().enumerate().fold(0u32, |m, (i, &n)| m | (((n != 0) as u32) << i));
+    let intra = cur.kind != 0;
+    for e in 1..4 {
         for k in 0..4 {
-            // vertical edge e (x = 4e), segment k (rows 4k..)
-            let v = if e == 0 {
-                if mbx == 0 {
-                    0
-                } else {
-                    bs(&info[mby * mbw + mbx - 1], k * 4 + 3, cur, k * 4, true)
-                }
-            } else {
-                bs(cur, k * 4 + e - 1, cur, k * 4 + e, false)
-            };
-            let h = if e == 0 {
-                if mby == 0 {
-                    0
-                } else {
-                    bs(&info[(mby - 1) * mbw + mbx], 12 + k, cur, k, true)
-                }
-            } else {
-                bs(cur, (e - 1) * 4 + k, cur, e * 4 + k, false)
-            };
+            let v = if intra { 3 } else { 2 * ((nzm >> (k * 4 + e - 1) | nzm >> (k * 4 + e)) & 1) as u8 };
+            let h = if intra { 3 } else { 2 * ((nzm >> ((e - 1) * 4 + k) | nzm >> (e * 4 + k)) & 1) as u8 };
             b[0][e][k] = v;
             b[1][e][k] = h;
             any |= v != 0 || h != 0;
         }
     }
+    for k in 0..4 {
+        // macroblock edges: vertical (x = 0), segment k (rows 4k..), and horizontal (y = 0)
+        let v = if mbx == 0 { 0 } else { bs(&info[mby * mbw + mbx - 1], k * 4 + 3, cur, k * 4, true) };
+        let h = if mby == 0 { 0 } else { bs(&info[(mby - 1) * mbw + mbx], 12 + k, cur, k, true) };
+        b[0][0][k] = v;
+        b[1][0][k] = h;
+        any |= v != 0 || h != 0;
+    }
     if !any {
         return (false, false, false);
     }
+    // Internal edges use the macroblock's QP; edges to a neighbour use the
+    // average of both QPs (luma) and of both chroma QPs (chroma).
+    let avg = |a: u8, b: u8| ((a as u32 + b as u32 + 1) >> 1) as u8;
+    let (lpi, cpi) = (params(cur.qp), params(chroma_qp(cur.qp)));
+    let nb = |n: Option<&MbInfo>| match n {
+        Some(n) if n.qp != cur.qp => (params(avg(n.qp, cur.qp)), params(avg(chroma_qp(n.qp), chroma_qp(cur.qp)))),
+        _ => (lpi, cpi),
+    };
+    let (lpl, cpl) = nb(if mbx > 0 { Some(&info[mby * mbw + mbx - 1]) } else { None });
+    let (lpt, cpt) = nb(if mby > 0 { Some(&info[(mby - 1) * mbw + mbx]) } else { None });
     let (s, base) = (p.ys, mby * 16 * p.ys + p.yp + mbx * 16);
     for e in 0..4 {
         if b[0][e] == [0; 4] {
             continue;
         }
-        filter_edge::<16, false>(p.y, base + e * 4, 1, s, &b[0][e], lp);
+        // only macroblock edges can carry bS 4 (the strong filter)
+        if e == 0 && b[0][0].contains(&4) {
+            filter_edge::<16, false, true>(p.y, base, 1, s, &b[0][0], &lpl);
+        } else {
+            filter_edge::<16, false, false>(p.y, base + e * 4, 1, s, &b[0][e], if e == 0 { &lpl } else { &lpi });
+        }
     }
     for e in 0..4 {
         if b[1][e] == [0; 4] {
             continue;
         }
-        filter_edge::<16, false>(p.y, base + e * 4 * s, s, 1, &b[1][e], lp);
+        if e == 0 && b[1][0].contains(&4) {
+            filter_edge::<16, false, true>(p.y, base, s, 1, &b[1][0], &lpt);
+        } else {
+            filter_edge::<16, false, false>(p.y, base + e * 4 * s, s, 1, &b[1][e], if e == 0 { &lpt } else { &lpi });
+        }
     }
     let (s, base) = (p.cs, mby * 8 * p.cs + p.cp + mbx * 8);
-    for pl in [&mut *p.u, &mut *p.v] {
-        // chroma edges 0 and 4 use luma edges 0 and 2; chroma line l uses luma segment l/2.
-        for (ce, le) in [(0usize, 0usize), (1, 2)] {
-            if b[0][le] != [0; 4] {
-                filter_edge::<8, true>(pl, base + ce * 4, 1, s, &b[0][le], cp);
+    // chroma edges 0 and 4 use luma edges 0 and 2; chroma line l uses luma segment l/2
+    let (u, v) = (&mut *p.u, &mut *p.v);
+    for (ce, le) in [(0usize, 0usize), (1, 2)] {
+        let bs = &b[0][le];
+        if *bs != [0; 4] {
+            let par = if ce == 0 { &cpl } else { &cpi };
+            if ce == 0 && bs.contains(&4) {
+                filter_chroma_uv::<true>(u, v, base, 1, s, bs, par);
+            } else {
+                filter_chroma_uv::<false>(u, v, base + ce * 4, 1, s, bs, par);
             }
         }
-        for (ce, le) in [(0usize, 0usize), (1, 2)] {
-            if b[1][le] != [0; 4] {
-                filter_edge::<8, true>(pl, base + ce * 4 * s, s, 1, &b[1][le], cp);
+    }
+    for (ce, le) in [(0usize, 0usize), (1, 2)] {
+        let bs = &b[1][le];
+        if *bs != [0; 4] {
+            let par = if ce == 0 { &cpt } else { &cpi };
+            if ce == 0 && bs.contains(&4) {
+                filter_chroma_uv::<true>(u, v, base, s, 1, bs, par);
+            } else {
+                filter_chroma_uv::<false>(u, v, base + ce * 4 * s, s, 1, bs, par);
             }
         }
     }

@@ -1,0 +1,15 @@
+{
+  "note": "Quality-locked perf corpus (see docs/video/perf.md). Paths are relative to the repo root. from/to in seconds.",
+  "entries": [
+    { "name": "ui",        "kind": "2D UI (product)",          "spec": "bench/video/anikit/product.json",   "from": 6.0, "to": 10.0, "time_full": true },
+    { "name": "text",      "kind": "text-heavy kinetic type",  "spec": "bench/video/anikit/kinetic.json",   "from": 0.0, "to": 4.0, "time_full": true },
+    { "name": "explainer", "kind": "held slides + crossfade",  "spec": "bench/video/anikit/explainer.json", "from": 4.0, "to": 8.0, "time_full": true },
+    { "name": "backdrop",  "kind": "gradient / glow fields",   "spec": "crates/anikit-video/qbench/backdrop.json" },
+    { "name": "particles", "kind": "particles",                "spec": "crates/anikit-video/qbench/particles.json" },
+    { "name": "launch",    "kind": "template (backdrop + UI)", "spec": "crates/anikit-video/qbench/launch.json", "from": 2.0, "to": 6.0, "time_full": true },
+    { "name": "scene3d",   "kind": "3D ray-traced scene3d",    "spec": "crates/anikit-video/qbench/scene3d.json", "from": 0.0, "to": 0.3, "runs": 1 },
+    { "name": "shader",    "kind": "GLSL shader layer",        "spec": "crates/anikit-video/qbench/shader.json", "from": 0.0, "to": 2.0 },
+    { "name": "post",      "kind": "post stack + motion blur", "spec": "crates/anikit-video/qbench/post.json" },
+    { "name": "audio",     "kind": "music + sfx, beat-synced", "spec": "examples/video/pulse/spec.json", "from": 0.0, "to": 4.0 }
+  ]
+}
