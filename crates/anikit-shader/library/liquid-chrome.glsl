@@ -24,10 +24,13 @@ float map(vec3 p) {
     float t = iTime * speed * 0.35;
     p /= size;
     // A heavy liquid mass whose surface wobbles in a few low modes…
-    float w = 0.06 * sin(2.1 * p.x + 1.3 * t) * sin(1.9 * p.y - 0.9 * t + 1.0)
-            + 0.045 * sin(3.0 * p.z + 1.1 * t + 2.0) * sin(2.6 * p.x - 0.7 * t)
-            + 0.022 * sin(5.3 * p.y + 2.0 * t) * sin(4.7 * p.z - 1.7 * t);
-    float d = length(p) - 0.95 - w;
+    float d = length(p) - 0.95;
+    // The wobble is bounded by 0.127: only evaluate it near the surface.
+    if (d < 0.25) {
+        d -= 0.06 * sin(2.1 * p.x + 1.3 * t) * sin(1.9 * p.y - 0.9 * t + 1.0)
+           + 0.045 * sin(3.0 * p.z + 1.1 * t + 2.0) * sin(2.6 * p.x - 0.7 * t)
+           + 0.022 * sin(5.3 * p.y + 2.0 * t) * sin(4.7 * p.z - 1.7 * t);
+    }
     // …and drops that fall into it, neck, merge and tear away again: each one's
     // orbit radius swings from inside the mass to well outside it.
     for (int i = 0; i < 3; i++) {
@@ -129,11 +132,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float disc = bb * bb - dot(ro, ro) + bR * bR;
     int steps = disc > 0.0 ? 110 : 0;
     tt = disc > 0.0 ? max(-bb - sqrt(disc), 0.0) : 0.0;
+    float tExit = disc > 0.0 ? -bb + sqrt(disc) : 0.0;   // nothing to hit beyond the bound
     for (int i = 0; i < steps; i++) {
         float d = map(ro + rd * tt);
         if (d < 0.0004 * tt) { hit = true; break; }
         tt += d;
-        if (tt > 9.0) break;
+        if (tt > tExit) break;
     }
     if (hit) {
         vec3 p = ro + rd * tt;
