@@ -9,8 +9,8 @@ const teaser = video({ size: '9:16', fps: 30 })
     .text('Ship the video', { style: 'title', split: 'words', enter: { preset: 'fadeUp', stagger: 0.08, ease: 'outExpo' } })
     .text('before the meeting.', { style: 'subtitle', y: '60%', animate: 'rise' }), { duration: 2.6 })
   .scene((s) => s
-    .text('{value:,} fps', { value: 935, style: 'title', enter: 'countUp' })
-    .text('on a laptop', { style: 'subtitle', y: '62%', enter: { preset: 'fadeUp', delay: 0.6 } }), { duration: 3, transition: { type: 'push', direction: 'up' } });
+    .text('{value:,} fps', { value: 76, style: 'title', enter: 'countUp' })
+    .text('1080p, 4-core VM', { style: 'subtitle', y: '62%', enter: { preset: 'fadeUp', delay: 0.6 } }), { duration: 3, transition: { type: 'push', direction: 'up' } });
 console.log(JSON.stringify(teaser.toJSON()).length, 'bytes of spec');
 await teaser.render('teaser.mp4');
 

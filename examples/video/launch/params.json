@@ -3,10 +3,10 @@
   "hook": "Video, without the browser.",
   "tagline": "Programmatic video for AI agents, rendered natively.",
   "features": [
-    { "title": "Renders 10× faster", "body": "Native Rust on every core. No headless Chrome." },
+    { "title": "No headless browser", "body": "Native Rust on every core." },
     { "title": "Speaks JSON", "body": "One declarative spec, typed templates, clear errors." },
     { "title": "Built for agents", "body": "An MCP server that can see its own work." }
   ],
-  "stat": { "value": 935, "suffix": " fps", "label": "frames rendered per second, 1080p" },
+  "stat": { "value": 76, "suffix": " fps", "label": "1080p, end to end, on a 4-core VM" },
   "cta": "npm i anikit"
 }

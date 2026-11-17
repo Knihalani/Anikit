@@ -22,7 +22,7 @@ Output:
 ```
 Score: N/20 — one-sentence verdict
 1. [check] problem (scene/frame)
-   edit: scenes[2].layers[1].text = "Renders 10× faster"   (was: "…")
+   edit: scenes[2].layers[1].text = "Renders in seconds"   (was: "…")
 2. …
 Keep: what works
 ```
