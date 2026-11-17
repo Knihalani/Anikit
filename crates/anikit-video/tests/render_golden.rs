@@ -840,3 +840,28 @@ fn motion_blur_fetches_image_content_once() {
     r.render_motion_blur(&mut eval, 0.05, 1.0 / 60.0);
     assert_eq!(fetched.lock().unwrap().len(), 1, "image content fetched for {:?}", fetched.lock().unwrap());
 }
+
+/// Output depends only on the display list, never on what the renderer drew
+/// before (cache fills are keyed on everything that affects their pixels).
+#[test]
+fn output_is_independent_of_render_history() {
+    let assets = Arc::new(Assets::default());
+    let shadowed = |w: f32, x: f32| {
+        list(vec![
+            Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::Shadow { dx: 0.0, dy: 4.0, blur: 6.0, color: rgba(0.0, 0.0, 0.0, 0.5) }], clip: None, cache_key: None },
+            card(x, 30.0, w, 30.0, solid(0.9, 0.9, 0.95)),
+            Op::PopLayer,
+        ])
+    };
+    // A, B and C differ by less than the caches' quantisation steps.
+    let (a, b, c) = (shadowed(40.01, 20.0), shadowed(40.03, 20.3), shadowed(40.05, 20.6));
+    let render_after = |prev: &DisplayList| {
+        let mut r = Renderer::new(assets.clone());
+        r.render(prev);
+        r.invalidate();
+        r.render(&b).data_as_u8_slice().to_vec()
+    };
+    let fresh = Renderer::new(assets.clone()).render(&b).data_as_u8_slice().to_vec();
+    assert!(render_after(&a) == fresh, "B after A differs from a fresh render");
+    assert!(render_after(&c) == fresh, "B after C differs from a fresh render");
+}
