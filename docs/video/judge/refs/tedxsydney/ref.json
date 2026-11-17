@@ -1,0 +1,25 @@
+{
+  "slug": "tedxsydney",
+  "title": "TEDxSydney — titles and identity",
+  "studio": "BUCK",
+  "year": 2018,
+  "url": "https://buck.co/work/tedxsydney",
+  "frame_sources": [
+    "https://cdn.sanity.io/images/uk7b627p/production/2bab37e9f18fb9e3736528dfc7a14ef60ef2cffb-2048x1280.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/c461c8be51ef61dce1b5d6704d39dd5a917b8372-2048x1280.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/f3caef851fd9aec23d3fe93bfc1f6d13f979cc94-990x1407.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/5663490f98566c22e2ceb5a60b388decec6a93cc-1368x938.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/1933dd4a4e438686fc76f3cdc0518f38aed4cbf5-2076x1177.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/c8d42ebcb53ade2a390b9422f529ba379c0b5eb1-2076x1177.png"
+  ],
+  "style_tags": [
+    "title-sequence",
+    "motion-design",
+    "illustration"
+  ],
+  "format": "16:9",
+  "medium": "2D",
+  "description": "A tile-pattern system: harlequin diamonds, dot grids and geometric fragments in sand, coral, slate blue and black build crowds and scenery.",
+  "why_top_tier": "Pattern-based conference identity where every tile can animate; strong system design.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright TEDxSydney"
+}

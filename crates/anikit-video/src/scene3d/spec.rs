@@ -826,6 +826,8 @@ pub struct CamKey {
     pub focal: Option<f32>,
     /// Focus distance (`None` = the target).
     pub focus: Option<f32>,
+    /// Focus on a named object instead (a rack focus between two keys).
+    pub focus_obj: Option<String>,
     pub fstop: Option<f32>,
     /// Blur radius in px at 1080p for points at infinity (overrides `fstop`).
     pub aperture: Option<f32>,
@@ -843,8 +845,12 @@ pub struct CamSpec {
     /// (and positions) become offsets from its centre.
     pub target_obj: Option<String>,
     pub follow: bool,
-    /// Handheld shake: amplitude (m) and frequency (Hz).
+    /// Handheld shake: amplitude (m) and frequency (Hz) of the legacy
+    /// positional wobble.
     pub shake: (f32, f32),
+    /// Rotational camera noise: (amplitude as a fraction of the frame height,
+    /// base frequency Hz, roll amplitude in degrees, vertical bob in metres).
+    pub noise: (f32, f32, f32, f32),
 }
 
 const CAM_KEYS: &[&str] = &["t", "at", "pos", "target", "fov", "focal", "focus", "fstop", "aperture", "shutter", "roll"];
@@ -865,7 +871,8 @@ fn cam_key(v: &Value, path: &str) -> Res<CamKey> {
         target: if m.contains_key("target") { v3c("target")? } else { v3(0.0, 0.0, 0.0) },
         fov: of("fov")?,
         focal: of("focal")?,
-        focus: of("focus")?,
+        focus: if m.get("focus").is_some_and(|x| x.is_string()) { None } else { of("focus")? },
+        focus_obj: m.get("focus").and_then(|x| x.as_str()).map(|x| x.to_string()),
         fstop: of("fstop")?,
         aperture: of("aperture")?,
         shutter: of("shutter")?,
@@ -883,7 +890,7 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
         let dist = r * 2.9;
         let tgt = c;
         let at = |ang: f32, d: f32, y: f32| v3(c.x + ang.to_radians().sin() * d, c.y + y, c.z + ang.to_radians().cos() * d);
-        let key = |t: f32, pos: V3| CamKey { t, pos, target: tgt, fov: Some(30.0), focal: None, focus: None, fstop: Some(4.0), aperture: None, shutter: None, roll: 0.0 };
+        let key = |t: f32, pos: V3| CamKey { t, pos, target: tgt, fov: Some(30.0), focal: None, focus: None, focus_obj: None, fstop: Some(4.0), aperture: None, shutter: None, roll: 0.0 };
         let keys = match name {
             "orbit" => (0..=8).map(|k| k as f32 / 8.0).map(|u| key(u * dur, at(-amount * 0.5 + amount * u, dist, r * height))).collect(),
             "dolly" => vec![key(0.0, at(-8.0, dist * 1.25, r * height)), key(dur, at(4.0, dist * 0.85, r * height * 0.8))],
@@ -898,7 +905,7 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
                 return Err(format!("{path}: unknown camera preset `{other}`{hint}"));
             }
         };
-        Ok(CamSpec { target_obj: None, follow: false, keys, linear: matches!(name, "orbit" | "flyby"), ease: !matches!(name, "orbit" | "flyby"), shake: (0.0, 0.0) })
+        Ok(CamSpec { target_obj: None, follow: false, keys, linear: matches!(name, "orbit" | "flyby"), ease: !matches!(name, "orbit" | "flyby"), shake: (0.0, 0.0), noise: (0.0, 0.0, 0.0, 0.0) })
     };
     match v {
         // Defaults are brisk: 5 s, 70° for an orbit.
@@ -909,10 +916,10 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
             if keys.is_empty() {
                 return Err(format!("{path}: at least one key"));
             }
-            Ok(CamSpec { target_obj: None, follow: false, keys, linear: false, ease: true, shake: (0.0, 0.0) })
+            Ok(CamSpec { target_obj: None, follow: false, keys, linear: false, ease: true, shake: (0.0, 0.0), noise: (0.0, 0.0, 0.0, 0.0) })
         }
         Value::Object(m) => {
-            check_keys(m, &["keys", "interp", "ease", "shake", "preset", "duration", "degrees", "height", "target", "follow"], path)?;
+            check_keys(m, &["keys", "interp", "ease", "shake", "preset", "duration", "degrees", "height", "target", "follow", "lens"], path)?;
             let mut spec = if let Some(p) = m.get("preset").and_then(|p| p.as_str()) {
                 let dur = m.get("duration").and_then(|x| x.as_f64()).unwrap_or(5.0) as f32;
                 let deg = m.get("degrees").and_then(|x| x.as_f64()).unwrap_or(70.0) as f32;
@@ -924,7 +931,7 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
                 if keys.is_empty() {
                     return Err(format!("{path}.keys: at least one key"));
                 }
-                CamSpec { target_obj: None, follow: false, keys, linear: false, ease: false, shake: (0.0, 0.0) }
+                CamSpec { target_obj: None, follow: false, keys, linear: false, ease: false, shake: (0.0, 0.0), noise: (0.0, 0.0, 0.0, 0.0) }
             };
             if let Some(i) = m.get("interp") {
                 spec.linear = match i.as_str() {
@@ -943,8 +950,67 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
             match m.get("shake") {
                 None => {}
                 Some(Value::Number(n)) => spec.shake = (n.as_f64().unwrap_or(0.0) as f32, 0.7),
+                // Rotational noise presets, sized as a fraction of the frame (so
+                // they read the same at any focal length): a locked-off camera
+                // that breathes, handheld, shoulder rig, running.
+                Some(Value::String(name)) => {
+                    spec.noise = match name.as_str() {
+                        "breath" | "locked" => (0.0015, 0.3, 0.04, 0.0),
+                        "handheld" => (0.006, 0.8, 0.35, 0.002),
+                        "shoulder" => (0.004, 0.55, 0.2, 0.001),
+                        "run" | "running" => (0.018, 1.9, 1.2, 0.025),
+                        o => {
+                            let hint = crate::components::style::closest(o, &["breath", "handheld", "shoulder", "run"]).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+                            return Err(format!("{path}.shake: unknown shake `{o}`{hint} (breath, handheld, shoulder, run)"));
+                        }
+                    }
+                }
+                Some(Value::Object(s)) if s.contains_key("frame") || s.contains_key("roll") => {
+                    let g = |k: &str, d: f64| s.get(k).and_then(|x| x.as_f64()).unwrap_or(d) as f32;
+                    spec.noise = (g("frame", 0.004), g("frequency", 0.7), g("roll", 0.2), g("bob", 0.0));
+                }
                 Some(Value::Object(s)) => spec.shake = (s.get("amount").and_then(|x| x.as_f64()).unwrap_or(0.01) as f32, s.get("frequency").and_then(|x| x.as_f64()).unwrap_or(0.7) as f32),
-                Some(_) => return Err(format!("{path}.shake: expected a number (metres) or {{amount, frequency}}")),
+                Some(_) => return Err(format!("{path}.shake: expected breath, handheld, shoulder, run, a number (metres) or {{frame, frequency, roll, bob}}")),
+            }
+            // `lens`: a focal length and its usual working aperture, for keys
+            // that set neither.
+            if let Some(l) = m.get("lens") {
+                let name = l.as_str().ok_or_else(|| format!("{path}.lens: expected a lens name"))?;
+                let (fm, n) = match name {
+                    "wide24" | "wide" => (24.0, 8.0),
+                    "normal35" => (35.0, 5.6),
+                    "normal50" | "normal" => (50.0, 4.0),
+                    "portrait85" | "portrait" => (85.0, 2.8),
+                    "macro100" | "macro" => (100.0, 5.6),
+                    "tele135" | "tele" => (135.0, 4.0),
+                    "tele200" => (200.0, 4.0),
+                    o => {
+                        let names = ["wide24", "normal35", "normal50", "portrait85", "macro100", "tele135", "tele200"];
+                        let hint = crate::components::style::closest(o, &names).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+                        return Err(format!("{path}.lens: unknown lens `{o}`{hint}"));
+                    }
+                };
+                for k in &mut spec.keys {
+                    if k.fov.is_none() && k.focal.is_none() {
+                        k.focal = Some(fm);
+                    }
+                    if k.fstop.is_none() && k.aperture.is_none() {
+                        k.fstop = Some(n);
+                    }
+                }
+                if m.get("preset").is_some() {
+                    // Presets frame with a 30° fov: keep the framing by moving
+                    // the camera along its view to match the new focal length.
+                    for k in &mut spec.keys {
+                        // Vertical half-angle of this lens at 16:9 vs the presets' 15°.
+                        let half_v = ((18.0f32 / fm) / (16.0 / 9.0)).atan();
+                        let ratio = (15.0f32.to_radians().tan() / half_v.tan()).max(0.2);
+                        k.pos = add(k.target, scale(sub(k.pos, k.target), ratio));
+                        k.fov = None;
+                        k.focal = Some(fm);
+                        k.fstop = Some(n);
+                    }
+                }
             }
             Ok(spec)
         }
@@ -955,6 +1021,17 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
 impl CamSpec {
     /// Camera pose and lens at time `t` for an image of `aspect`.
     pub fn at(&self, t: f32, aspect: f32, default_aperture: f32) -> super::trace::Camera {
+        self.at_with(t, aspect, default_aperture, &|_| None)
+    }
+
+    /// Whether any key focuses on a named object.
+    pub fn focuses_on_objects(&self) -> bool {
+        self.keys.iter().any(|k| k.focus_obj.is_some())
+    }
+
+    /// [`CamSpec::at`], resolving `focus: "name"` keys to the named object's
+    /// centre with `resolve`.
+    pub fn at_with(&self, t: f32, aspect: f32, default_aperture: f32, resolve: &dyn Fn(&str) -> Option<V3>) -> super::trace::Camera {
         let ks = &self.keys;
         let (t0, t1) = (ks[0].t, ks[ks.len() - 1].t);
         let t = if self.ease && t1 > t0 {
@@ -996,7 +1073,8 @@ impl CamSpec {
         };
         let fov = mix(vfov_of(a), vfov_of(b)).unwrap_or(30.0);
         let dist_t = len(sub(target, pos));
-        let focus = a.focus.unwrap_or(dist_t) + (b.focus.unwrap_or(dist_t) - a.focus.unwrap_or(dist_t)) * ss;
+        let kf = |k: &CamKey| -> f32 { k.focus_obj.as_deref().and_then(resolve).map(|c| len(sub(c, pos))).or(k.focus).unwrap_or(dist_t) };
+        let focus = kf(a) + (kf(b) - kf(a)) * ss;
         // Aperture: explicit px, or from the f-stop and focal length (thin lens,
         // 36 mm-wide sensor), as a blur radius at 1080p for points at infinity.
         let aperture = match mix(a.aperture, b.aperture) {
@@ -1015,6 +1093,33 @@ impl CamSpec {
         let shutter = mix(a.shutter, b.shutter).unwrap_or(0.5);
         let roll = a.roll + (b.roll - a.roll) * ss;
         let (mut pos, mut target) = (pos, target);
+        let mut roll = roll;
+        if self.noise.0 > 0.0 {
+            // Layered smooth noise (three bands), as rotation of the view so it
+            // reads as a fraction of the frame at any focal length.
+            let (amp, fq, roll_deg, bob) = self.noise;
+            let n = |seed: u32| -> f32 {
+                let band = |f: f32, s: u32| {
+                    let x = t * f;
+                    let (i, u) = (x.floor(), x - x.floor());
+                    let u = u * u * (3.0 - 2.0 * u);
+                    let h = |k: f32| u01(hash2(k as i32 as u32, s)) * 2.0 - 1.0;
+                    h(i) + (h(i + 1.0) - h(i)) * u
+                };
+                band(fq, seed) * 0.62 + band(fq * 2.37, seed + 101) * 0.28 + band(fq * 5.9, seed + 211) * 0.1
+            };
+            let fwd = sub(target, pos);
+            let d = len(fwd);
+            let fw = scale(fwd, 1.0 / d.max(1e-6));
+            let right = norm(cross(fw, v3(0.0, 1.0, 0.0)));
+            let up = cross(right, fw);
+            // Half the frame height spans fov/2.
+            let ang = (fov.to_radians() * 0.5).tan() * 2.0 * amp;
+            target = add(target, add(scale(right, n(1) * ang * d * aspect.min(1.5)), scale(up, n(2) * ang * d)));
+            roll += n(3) * roll_deg;
+            pos = add(pos, scale(up, n(4) * bob));
+            target = add(target, scale(up, n(4) * bob));
+        }
         if self.shake.0 > 0.0 {
             let n = |k: f32| {
                 let x = t * self.shake.1 + k;

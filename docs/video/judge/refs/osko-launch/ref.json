@@ -1,0 +1,25 @@
+{
+  "slug": "osko-launch",
+  "title": "Osko — launch",
+  "studio": "BUCK",
+  "year": 2018,
+  "url": "https://buck.co/work/osko-launch",
+  "frame_sources": [
+    "https://cdn.sanity.io/images/uk7b627p/production/809bbad83ec4c371e5bf39bef7bb487e1af983ff-2048x1152.jpg",
+    "https://cdn.sanity.io/images/uk7b627p/production/a6f2cff8cb1be492110dbe98132f72389e8857a5-2048x1736.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/89bb0c5f78f2af8dbb99ef42b6fd10df2cd371e0-1368x938.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/c0910184387c998e8e4fc813e8876ad0ce574d20-990x1407.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/0072d67b15cd29a51fa4c85d583687b2766598dd-990x915.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/3429a84a89eaa9046785b34f652eaa305dde6e6b-990x915.png"
+  ],
+  "style_tags": [
+    "product-launch",
+    "3d-cg",
+    "illustration"
+  ],
+  "format": "16:9",
+  "medium": "mixed",
+  "description": "A fast-payments service introduced via cute 3D and flat 2D vignettes: IOU sticky notes on a fridge, cars, golfers, everyday objects on soft grey grounds.",
+  "why_top_tier": "Makes instant bank payments human with charming character design and crisp object animation.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright BPAY Group / Osko"
+}

@@ -423,6 +423,8 @@ pub struct Scene {
     /// Underwater caustics on the key light (0 = off) and the time they animate with.
     pub caustics: f32,
     pub time: f32,
+    /// A gobo (cookie) in front of the key light.
+    pub gobo: super::rig::Gobo,
 }
 
 #[derive(Clone, Copy)]
@@ -655,6 +657,13 @@ fn count(k: usize) {
         });
     }
 }
+/// Neighbour normals on a smooth specular object closer than this cosine
+/// don't trigger edge samples (`ANIKIT_SCENE3D_NCOS` overrides; -2 = off).
+fn normal_cos() -> f32 {
+    static C: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    *C.get_or_init(|| std::env::var("ANIKIT_SCENE3D_NCOS").ok().and_then(|v| v.parse().ok()).unwrap_or(0.995))
+}
+
 /// Profiling: wall µs of the centre pass and the refinement pass, refined pixels.
 pub static TIMES: [std::sync::atomic::AtomicU64; 3] = [const { std::sync::atomic::AtomicU64::new(0) }; 3];
 pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -812,6 +821,7 @@ impl Scene {
             inv: Vec::new(),
             caustics: 0.0,
             time: 0.0,
+            gobo: super::rig::Gobo::default(),
             up_light: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)),
         };
         let up = v3(0.0, 1.0, 0.0);
@@ -1267,8 +1277,9 @@ impl Scene {
     /// Underwater caustics: a bright, moving net of light (mean about 1).
     #[inline]
     fn caustic(&self, p: V3) -> f32 {
+        let g = self.gobo.at(p);
         if self.caustics <= 0.0 {
-            return 1.0;
+            return g;
         }
         let t = self.time;
         let mut a = 0.0;
@@ -1279,7 +1290,7 @@ impl Scene {
             a += (u * 6.0 + (w * 2.3 + t * 0.9).sin() * 0.9 + t * 1.1 + k as f32).sin();
         }
         let c = (1.0 - (a / 3.0).abs()).powi(6);
-        1.0 + self.caustics * (c * 3.2 - 0.45)
+        g * (1.0 + self.caustics * (c * 3.2 - 0.45))
     }
 
     /// Non-photoreal styles. They keep the diffuse split (so traced shadows and
@@ -1537,6 +1548,15 @@ impl Scene {
         let (centre, tms) = (&centre, &tms);
         assert_eq!(out.len(), w * h);
         let wr = out.writer();
+        // Smooth metal: thin specular highlights (bevels) live inside
+        // one object, so neighbours with the same id but turned normals also
+        // get edge samples (otherwise the lines come out dotted and crawl).
+        let shiny: Vec<bool> = self
+            .insts
+            .iter()
+            .map(|i| self.mats.get(i.mat as usize).is_some_and(|m| m.roughness < 0.3 && m.metallic > 0.5 && m.transmission <= 0.0))
+            .collect();
+        let ncos = normal_cos();
         par::each_row(h, |y| {
             let mut samples: Vec<Sample> = Vec::with_capacity(q.edge_spp as usize + 1);
             let mut nref = 0u64;
@@ -1550,7 +1570,9 @@ impl Scene {
                         continue;
                     }
                     let ni = ny as usize * w + nx as usize;
-                    if centre[ni].id != c.id || (tms[ni] - tms[ci]).abs() > q.contrast {
+                    let n = &centre[ni];
+                    let turned = n.id == c.id && c.id < shiny.len() && shiny[c.id] && dot(n.nrm, c.nrm) < ncos;
+                    if n.id != c.id || (tms[ni] - tms[ci]).abs() > q.contrast || turned {
                         refine = true;
                         break;
                     }

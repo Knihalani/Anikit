@@ -1,0 +1,520 @@
+{
+  "name": "div-g-offset",
+  "tags": [
+    "title-sequence",
+    "kinetic-type",
+    "motion-design"
+  ],
+  "refs": [
+    "fitc-tokyo-2015",
+    "catch-me-if-you-can",
+    "semi-permanent-sydney-2014"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 5,
+      "composition": 4,
+      "typography": 4,
+      "colour": 5,
+      "light_texture": 4,
+      "motion": 4,
+      "craft": 5,
+      "originality": 4
+    },
+    "overall": 4.38,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Let the tile system do the talking: remove the numbered caption pills and the slide footer and build the information into the tiles and grout, the way D threads credits through its architecture",
+      "Add real material and light, such as glazed ceramic, crazing, uneven hand-painted cobalt, raking Lisbon sun, so the azulejo reference feels physical rather than a vector repeat",
+      "Choreograph a turn: the pattern-to-wordmark build is predictable, and two of six frames are a static centred lockup. The tiles should break, offset or reveal something surprising",
+      "Drop the captions and pill labels and let the tile logic show itself through motion, as B builds TOKYO out of fragments",
+      "Give the azulejo real material: hand-painted cobalt variance, glaze speculars, cracked grout and raking Lisbon light",
+      "Build a typographic idea out of the tile geometry (letterforms drawn from the module's curves) instead of a bitmap font, and vary composition and scale across frames",
+      "Replace the literal tile-to-pattern-to-logo diagram with a specific, surprising idea, such as tiles on real Lisbon fa\u00e7ades, the human craft of painting azulejos, or offsets that tell a story, giving the narrative weight A gets from its chase",
+      "Drop the slide UI (numbered pills, corner chips, info bar) and design typography with a point of view that is integrated with the image, rather than stacked on top as captions",
+      "Add real material and light, such as glazed ceramic sheen, crazing, chipped edges and raking sunlight, plus varied camera and scale across frames instead of flat front-on repeats"
+    ],
+    "tells": [
+      "The idea is literal and narrated on screen: chapter pills reading '01 one module / 02 one rule / 03 offset / 04 a system' spell out the concept instead of letting the image carry it",
+      "Placeholder-style UI: small monospace label pills in the corners and a full-width info bar in a generic grotesk ('Design conference \u00b7 Theme: Systems \u00b7 Lisboa \u00b7 3\u20135 June 2027'), placed like a slide",
+      "The azulejo tile patterns are clean and symmetrical, vector-default repeats with flat, unmotivated light; the 3D tile bevel in frame 1 looks like a stock primitive",
+      "Frames 5 and 6 are nearly the same centred 'OFFSET 2027' lockup, with only the footer bar added, so little happens in the second half",
+      "A single cobalt accent on a pale ground with an empty frame is the generic 'tasteful automated' look; the pixel-tile wordmark is the only typographic idea",
+      "Placeholder UI chrome: small navy pill labels in monospace ('01 one module', '02 one rule', '03 offset', '04 a system') plus a mirrored 'OFFSET 2027 \u00b7 LISBOA' tag, a slide-deck numbering structure",
+      "The concept is literal: Lisbon conference, so azulejo tiles; theme 'Systems', so module, rule, pattern, pixel word; it explains itself in captions",
+      "The pixel-tile 'OFFSET' wordmark is a basic bitmap font filled with tiles, and '2027' plus the footer are set in a default bold grotesk",
+      "The last three frames repeat one centred composition and only add elements, so little happens",
+      "Flat, even CG lighting on clean procedural tiles, with none of the glaze, crazing or grout of real azulejo",
+      "The footer is a generic info bar ('Design conference \u00b7 Theme: Systems', yellow date accent), the way a template ends",
+      "Slide-deck structure: numbered pill labels ('01 one module', '02 one rule', '03 offset', '04 a system') in a small mono face sit in the corner like presentation chapter tabs, with a matching corner chip 'OFFSET 2027 \u00b7 LISBOA'",
+      "The idea is literal and obvious: Lisbon conference, so azulejo tiles; theme 'Systems', so a module repeats into a pattern; then pixel-block letters spell the name",
+      "The end card is a centred headline, a bold generic grotesk '2027', and a bottom info bar with a single yellow accent, which is the default event-promo layout",
+      "Typography is default grotesk plus mono, with the tile-pixel wordmark as the only typographic gesture, and it is a common bitmap-from-tiles trick",
+      "Frames 5 and 6 are nearly identical, so little happens at the payoff; the light is flat soft-box with a generic vignette, and the tile renders read as procedural",
+      "Its strongest moment is frame 1's single tile under bevelled blank tiles, but the piece doesn't build on it"
+    ]
+  },
+  "refs_summary": {
+    "fitc-tokyo-2015": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "catch-me-if-you-can": {
+      "overall": 9.38,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "semi-permanent-sydney-2014": {
+      "overall": 5.62,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 7.54,
+  "delta": -3.16,
+  "trials": [
+    {
+      "key": {
+        "A": "semi-permanent-sydney-2014",
+        "B": "fitc-tokyo-2015",
+        "C": "candidate",
+        "D": "catch-me-if-you-can"
+      },
+      "answer": {
+        "entries": {
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "Mid-century silhouette illustration with a clear point of view: the figure, the airport, the pool and the piano each set a different scene, so every frame is a separate poster",
+              "Vertical stroke lines act as both set (pillars, ladder, lift cables, piano strings) and the thread connecting the credits, which shows choreography between frames",
+              "Type is woven into the picture: the descenders of 'Catch me if you can' turn into the architectural lines, and credits sit inside the scenes",
+              "Bold, unusual palette that changes from scene to scene (cyan, saffron/orange, green-black, pink, night blue) yet holds together as one system",
+              "Printed, stamped texture in the fills (the speckled white figure, the grainy shapes) gives it a handmade, material feel",
+              "The cat-and-mouse chase is the idea, and it is told entirely through movement and staging"
+            ],
+            "gaps": [
+              "It is the benchmark here, so the gaps are small: the closing night-sky frame uses a softer airbrush gradient that is a little more generic than the flat screen-print scenes",
+              "A few credit placements (the stacked green names) are utilitarian compared with the hero title lockup",
+              "Some silhouettes are close to the period style they quote; pushing further past the pastiche would make it more original"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered frames: modular glyphs, katakana fragments, pixel matrices and UI-like marks pile up into a real visual system",
+              "The letters are built from modules: broken D, stencil cuts, a dot-matrix lettering pass, glyphs that mix Latin and katakana ('TOKYO'), so the type itself carries the idea",
+              "A deliberate, harsh palette (hot pink, cyan, acid lime, violet on near-black) that shifts from frame to frame",
+              "Each frame has a different layout (macro crop, horizontal band, framed grid, diagonal, pixel field, collage), which points to real editing rhythm",
+              "Print and scan texture and fine halftone dots in the fields"
+            ],
+            "gaps": [
+              "The Tokyo/glitch/cyber-signage language is a well-worn genre; it needs a more specific idea than 'Tokyo as signal noise'",
+              "No human, place or narrative anchor: it is all effect, with no story a viewer would retell, unlike D's chase",
+              "Some frames (the pixel field) get busy enough that hierarchy and readability collapse; the piece needs a held, quiet beat to pace the density"
+            ]
+          },
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 6,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "Speaker-reveal titles for a real event, where each speaker's initials or a glyph ('&', 'TMP', 'J', 'FX') dissolves into simulated ink and smoke, which is competent fluid-sim work",
+              "Credits are set with real hierarchy: name, role in small tracked caps, and a large glyph shifting position from card to card",
+              "But the look is very 2014 stock: teal on a dark vignette, a perspective grid floor, bokeh, one accent colour",
+              "It is one effect repeated on every card with only the letters swapped, close to a slide structure"
+            ],
+            "gaps": [
+              "Swap the single teal-smoke-on-black-grid treatment for something tied to each speaker or to the event, as D gives every credit its own scene",
+              "Bring in an owned palette and texture: the teal and black with bokeh reads as a preset, while the best entry commits to bold flat colour and printed grain",
+              "Vary the framing and staging across cards (scale, crop, cuts), because right now the composition is the same centred glyph and label every time"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 5,
+              "originality": 4
+            },
+            "tells": [
+              "The idea is literal and narrated on screen: chapter pills reading '01 one module / 02 one rule / 03 offset / 04 a system' spell out the concept instead of letting the image carry it",
+              "Placeholder-style UI: small monospace label pills in the corners and a full-width info bar in a generic grotesk ('Design conference \u00b7 Theme: Systems \u00b7 Lisboa \u00b7 3\u20135 June 2027'), placed like a slide",
+              "The azulejo tile patterns are clean and symmetrical, vector-default repeats with flat, unmotivated light; the 3D tile bevel in frame 1 looks like a stock primitive",
+              "Frames 5 and 6 are nearly the same centred 'OFFSET 2027' lockup, with only the footer bar added, so little happens in the second half",
+              "A single cobalt accent on a pale ground with an empty frame is the generic 'tasteful automated' look; the pixel-tile wordmark is the only typographic idea"
+            ],
+            "gaps": [
+              "Let the tile system do the talking: remove the numbered caption pills and the slide footer and build the information into the tiles and grout, the way D threads credits through its architecture",
+              "Add real material and light, such as glazed ceramic, crazing, uneven hand-painted cobalt, raking Lisbon sun, so the azulejo reference feels physical rather than a vector repeat",
+              "Choreograph a turn: the pattern-to-wordmark build is predictable, and two of six frames are a static centred lockup. The tiles should break, offset or reveal something surprising"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 33.0,
+        "cost_usd": 0.16145740000000003,
+        "tokens": 72238,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "semi-permanent-sydney-2014",
+        "B": "fitc-tokyo-2015",
+        "C": "catch-me-if-you-can",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 5,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Real fluid/ink-smoke simulation eating into extruded letterforms (the '&', 'TMP', 'J', 'FX'), which takes proper VFX work to make",
+              "The structure changes from frame to frame: ligature, monogram, initial, dissolving letters, particle burst, then the end card, so the speaker list builds to the title",
+              "Per-speaker monograms tie the type to each person rather than just swapping names",
+              "Lit perspective grid floor with vignette and bokeh gives real depth",
+              "Against it: a single teal accent on near-black, a generic geometric/grotesk sans with tracked-caps sublines and a stock 'smoke reveal' look are very much the 2014 conference-opener formula"
+            ],
+            "gaps": [
+              "Swap the one-teal-on-black palette for colour that belongs to the event, as C does with its period palette",
+              "Make the smoke carry the idea (some link between particle and speaker) rather than serve as a reveal effect",
+              "Push the typography past default caps grotesk into a face or layout with a point of view, with more scale contrast between names and roles"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Letterforms built from modular pieces (split counters, Latin mixed with katakana fragments like '\u30ba', '\u30e9', '\u30ce') so 'TOKYO' resolves out of a hybrid script; the type is the idea",
+              "A deliberate, unusual palette of hot pink, cyan, acid lime, violet and red on aubergine-black that changes per frame",
+              "Every frame uses a different layout: centred monogram, horizontal band, framed letter grid, diagonal scatter, dot-matrix, dense layered collage",
+              "Texture everywhere: halftone dot fields, scanline grain, printed-paper noise",
+              "Heavy choreography: the elements rotate, rebuild and stack into a dense finale"
+            ],
+            "gaps": [
+              "The glitch/HUD language sits near a familiar genre; it needs one more conceptual twist to stand fully apart",
+              "The finale gets so dense that the title nearly drowns; give the resolve a clearer hierarchy",
+              "Let a human or narrative element in, as C does with its figures, so it says more than 'Tokyo as typographic texture'"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea: a chase told through 1960s Saul Bass-style silhouettes, with the vertical lines doubling as architecture, type strokes and the path of the chase",
+              "Type integrated with the image: the descender of 'Catch' and the 'y' extend into the scene's lines, and names sit inside the set pieces",
+              "Each frame is a different location with its own palette (airport cyan, poolside ochre, green lift, pink lounge, night-blue horizon), so there is real narrative progression",
+              "Hand-made stamped texture on the silhouettes (the woman, the piano, the hanging ornaments) avoids vector flatness",
+              "Every frame works as a poster, with wit (arrows in the lift, the plane as a punctuation mark)"
+            ],
+            "gaps": [
+              "Within the sequence, the lighting barely changes beyond flat graphic fields; the final glow is the only atmospheric moment",
+              "The secondary credit type (the stacked green names) is more utilitarian than the title setting",
+              "Its period pastiche is a known reference point, so its originality is a borrowed idiom executed perfectly rather than a new language"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 5,
+              "originality": 4
+            },
+            "tells": [
+              "Placeholder UI chrome: small navy pill labels in monospace ('01 one module', '02 one rule', '03 offset', '04 a system') plus a mirrored 'OFFSET 2027 \u00b7 LISBOA' tag, a slide-deck numbering structure",
+              "The concept is literal: Lisbon conference, so azulejo tiles; theme 'Systems', so module, rule, pattern, pixel word; it explains itself in captions",
+              "The pixel-tile 'OFFSET' wordmark is a basic bitmap font filled with tiles, and '2027' plus the footer are set in a default bold grotesk",
+              "The last three frames repeat one centred composition and only add elements, so little happens",
+              "Flat, even CG lighting on clean procedural tiles, with none of the glaze, crazing or grout of real azulejo",
+              "The footer is a generic info bar ('Design conference \u00b7 Theme: Systems', yellow date accent), the way a template ends"
+            ],
+            "gaps": [
+              "Drop the captions and pill labels and let the tile logic show itself through motion, as B builds TOKYO out of fragments",
+              "Give the azulejo real material: hand-painted cobalt variance, glaze speculars, cracked grout and raking Lisbon light",
+              "Build a typographic idea out of the tile geometry (letterforms drawn from the module's curves) instead of a bitmap font, and vary composition and scale across frames"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.4,
+        "cost_usd": 0.1593536,
+        "tokens": 72138,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "catch-me-if-you-can",
+        "B": "fitc-tokyo-2015",
+        "C": "semi-permanent-sydney-2014",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A clear mid-century, Saul Bass-style graphic language used for a cat-and-mouse story: silhouette figures move through airport, poolside, elevator and piano-bar sets, so the credits tell the plot",
+              "Type is part of the image: vertical rules come down through 'Catch me if you can' and become the descenders, and the elevator-cable lines pull the green credit names down",
+              "Every frame has its own palette (cyan, saffron/orange, black/acid green, pink, night blue), yet the six read as one system, and each frame works as a poster",
+              "Changing locations, a recurring hat-wearing figure, and the cables and lines carried from frame to frame show choreography that moves the story along",
+              "Printed and stamped textures on the flat shapes (the pool-side figures, the chandelier) keep the flat vector style from feeling sterile",
+              "Credit blocks such as 'MUSIC BY' in a small slab face over a heavier grotesk show deliberate type pairing"
+            ],
+            "gaps": [
+              "Its quieter frames, like the starfield and horizon, are less dense than the set-piece frames, so they could carry more story detail",
+              "Credit placement sometimes falls back to plain centred text (Amy Adams, Jeff Nathanson) instead of the integrated typography of the title card",
+              "Texture is used unevenly, heavy in some scenes and almost none in others, so it could be pushed further and applied consistently"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A modular glitch type system that mixes Latin and katakana-like glyph fragments: letters are built and broken, and the system itself is the subject",
+              "Dense, layered frames: grids, scanline bands, pixel matrices, framing rectangles and dot fields all overlap with depth",
+              "An unusual, deliberate palette of hot coral, aqua, acid lime and violet on near-black and warm grey, which never collapses to a single accent",
+              "Real variety between frames: tight crop on a single glyph, horizontal band, bordered grid, a 45\u00b0 diagonal break, pixel-matrix type, and a final collage resolve, which implies energetic, rhythmic cutting",
+              "Grain and print-like dirt in the grounds add material"
+            ],
+            "gaps": [
+              "The idea is the glitch/cyber-Tokyo aesthetic, a well-worn genre, so it needs a more specific concept that only this piece could have",
+              "Legibility and hierarchy are sacrificed throughout, and even the resolve (T?K?) never lands a confident, readable payoff the way A's title card does",
+              "There is no narrative or human element, so the result is impressive texture with weak memorability; it needs a subject beyond the effect"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 6,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "Real fluid and smoke simulation dissolving large initials (TMP, J, FX), with letterforms that disintegrate believably and have volume",
+              "Solid speaker-credit hierarchy: large monogram, name in caps, tiny tracked role line, set with care",
+              "But it is a generic event-opener formula: dark vignetted ground, faint grid floor, a single teal accent, centred clean grotesk, and bokeh",
+              "The same composition repeats across frames (glyph plus name block on a dark grid), with only the letters swapped",
+              "The light is a generic centre glow and vignette, lit by the effect rather than motivated by anything"
+            ],
+            "gaps": [
+              "There is no idea beyond 'speakers' initials turn to smoke', so it needs a concept tied to each speaker or to the event's theme, as A ties its graphics to the plot",
+              "The palette and ground are template-safe (teal on charcoal), so it needs a committed, unexpected colour world and per-section variation",
+              "Composition repeats card after card, so it needs varied scale, cropping and spatial choreography so each frame is a distinct poster"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 5,
+              "craft": 5,
+              "originality": 4
+            },
+            "tells": [
+              "Slide-deck structure: numbered pill labels ('01 one module', '02 one rule', '03 offset', '04 a system') in a small mono face sit in the corner like presentation chapter tabs, with a matching corner chip 'OFFSET 2027 \u00b7 LISBOA'",
+              "The idea is literal and obvious: Lisbon conference, so azulejo tiles; theme 'Systems', so a module repeats into a pattern; then pixel-block letters spell the name",
+              "The end card is a centred headline, a bold generic grotesk '2027', and a bottom info bar with a single yellow accent, which is the default event-promo layout",
+              "Typography is default grotesk plus mono, with the tile-pixel wordmark as the only typographic gesture, and it is a common bitmap-from-tiles trick",
+              "Frames 5 and 6 are nearly identical, so little happens at the payoff; the light is flat soft-box with a generic vignette, and the tile renders read as procedural",
+              "Its strongest moment is frame 1's single tile under bevelled blank tiles, but the piece doesn't build on it"
+            ],
+            "gaps": [
+              "Replace the literal tile-to-pattern-to-logo diagram with a specific, surprising idea, such as tiles on real Lisbon fa\u00e7ades, the human craft of painting azulejos, or offsets that tell a story, giving the narrative weight A gets from its chase",
+              "Drop the slide UI (numbered pills, corner chips, info bar) and design typography with a point of view that is integrated with the image, rather than stacked on top as captions",
+              "Add real material and light, such as glazed ceramic sheen, crazing, chipped edges and raking sunlight, plus varied camera and scale across frames instead of flat front-on repeats"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 37.2,
+        "cost_usd": 0.1670954,
+        "tokens": 72507,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 6,
+        "craft": 7
+      },
+      "defects": [
+        "Stray wireframe outline squares stay visible at lower-left after the wordmark resolves (pairs row 3, right frame): leftover build scaffolding",
+        "The tiled 'S' in OFFSET reads as '$' because the vertical stroke runs through the bowl, which hurts legibility of the hero word",
+        "The wordmark build shows half-resolved tiles with dark navy/black fills and outline placeholders. That reads as unfinished, not designed",
+        "The shot structure fails pace (longest shot 7.9s, median 3.2s). Per-second change falls to 1.5\u20132.6 around 9\u201311s, so the end card sits almost static",
+        "The pattern-to-pattern transitions look procedural: tiles flip with a uniform stagger and a similar arc each time, with no visible overshoot, settle or per-tile weight",
+        "Lighting is flat and even across the tile wall, and the bevels and grout give little sense of material. Crop edges are clean but slightly soft, with no specular or glaze detail on the ceramic",
+        "End-card lower-third text is small and low-contrast (yellow on mid-blue) next to the hero lockup"
+      ],
+      "gaps": [
+        "Choreography: one transition device (mass tile rotation) is repeated across all four beats with the same timing curve. Top work would vary scale, camera, direction and rhythm, and give the flips physical weight (anticipation, overshoot, staggered settle with offsets that land on the beat). It would also cut the 7.9s hold into tighter beats",
+        "Finish and materiality: the azulejo concept calls for real ceramic (glaze, specular roll-off, irregular grout, subtle surface variation), but the render is clean flat CG. The build state of the wordmark (placeholder outlines, stray squares) needs to be designed, not left showing",
+        "Sound: the spectrogram shows a dense, steady broadband percussive grid with one lift at ~7.5s and little dynamic arc. The hits look regular, not keyed to individual tile flips, and the track lacks foley-grade ceramic clicks and placement sounds. There is also no clear swell or silence to sell the logo resolve"
+      ]
+    },
+    "meta": {
+      "seconds": 20.5,
+      "cost_usd": 0.147751,
+      "tokens": 70258,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "offset2027.mp4: 15.0s, 4 shots, median 3.23s, longest 7.90s\nper-second change: [19.8, 9.9, 80.1, 71.1, 67.5, 66.7, 63.0, 67.8, 20.6, 1.5, 2.6, 35.0, 21.2, 13.6]\nPACE: FAIL \u2014 longest shot 7.9s > 2.5s; median shot 3.2s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 5,
+    "composition": 4,
+    "typography": 4,
+    "colour": 5,
+    "light_texture": 4,
+    "motion": 5.0,
+    "craft": 6.0,
+    "originality": 4,
+    "sound": 6
+  },
+  "full_overall": 4.78,
+  "cost_usd": 0.636,
+  "judge_seconds": 122.1,
+  "verdict": "FAIL"
+}
