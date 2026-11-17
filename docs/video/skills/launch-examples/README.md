@@ -1,8 +1,13 @@
 # Launch-video skill examples
 
-## Margin (after the rejection): 2D editorial typography, solo piano
+## Margin: 2D editorial typography, solo piano (REJECTED)
 
-`margin/` (`make.py`, `margin.json`, `margin.mp4`, `margin-contact.jpg`). It is one possible film, not the format.
+> **Rejected by the user:** "margin also looks like complete AI slop." The combination of cream paper, an editorial
+> serif, a red accent, aphorism copy ("Your first draft is a mess") and sparse, mostly static frames is the
+> "tasteful AI" look (BAR.md, last section). It was crisp and readable, but generic: the copy could belong to any
+> writing app, and the frames were empty restraint rather than rich craft. Kept as a cautionary example; don't copy it.
+
+`margin/` (`make.py`, `margin.json`, `margin.mp4`, `margin-contact.jpg`).
 - **Product:** a fictional writing app that edits in the margin.
 - **Idea:** the film is one manuscript page that the camera reads down, one passage per bar. The product shows up
   as red pencil in the margin: a strike, then a note. The motif is the red margin rule, which becomes the logo's
