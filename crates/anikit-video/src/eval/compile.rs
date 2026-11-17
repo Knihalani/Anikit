@@ -1756,6 +1756,7 @@ impl C<'_> {
         if (matches!(n.kind, Kind::Component(..)) || l.path.is_some()) && l.progress.is_none() && life_end.is_finite() {
             tw.insert(0, TweenC { at: 0.0, dur: life_end.max(1e-3), ease: 0, from: vec![(prop::PROGRESS, 1, ValS::Abs(0.0))], to: vec![(prop::PROGRESS, 1, ValS::Abs(1.0))], kf: vec![], repeat: 0, yoyo: false });
         }
+        self.warn_from_overrides(&tw, path);
         n.tracks = self.tracks(&n.base, &n.exprs, &mut tw, life_end);
         self.mograph(l, path, &mut n);
 
@@ -4147,6 +4148,34 @@ impl C<'_> {
             return None;
         }
         Some(TweenC { at, dur, ease, from, to, kf, repeat: t.repeat.unwrap_or(0), yoyo: t.yoyo.unwrap_or(false) })
+    }
+
+    /// A `from` holds its value until the tween starts, so a later `from` on a property an
+    /// earlier move already animated snaps it back for the whole gap. Say so, with the fix.
+    fn warn_from_overrides(&mut self, tw: &[TweenC], path: &str) {
+        const NAMES: [&str; 18] = ["x", "y", "width", "height", "scale", "scaleY", "rotation", "skewX", "skewY", "opacity", "blur", "radius", "strokeWidth", "trimStart", "trimEnd", "fill", "stroke", "value"];
+        let touches = |t: &TweenC, s: usize| t.from.iter().chain(&t.to).any(|f| f.0 == s) || t.kf.iter().any(|k| k.0 == s);
+        let mut seen = Vec::new();
+        for b in tw.iter().filter(|b| b.at > 1e-3) {
+            for &(slot, _, _) in &b.from {
+                if seen.contains(&slot) {
+                    continue;
+                }
+                if let Some(a) = tw.iter().find(|a| a.at + 1e-3 < b.at && a.at + a.dur <= b.at + 1e-3 && touches(a, slot)) {
+                    seen.push(slot);
+                    let name = NAMES.iter().find(|n| prop::lookup(n).is_some_and(|(s, _)| s == slot)).copied().unwrap_or("a property");
+                    self.d.push(Diagnostic::warning(
+                        format!("{path}.animate"),
+                        format!(
+                            "'{name}': the 'from' at {:.2} s holds its start value from the beginning, undoing the move at {:.2}–{:.2} s; use 'to' (it continues from where the earlier move ended) or keyframes",
+                            b.at,
+                            a.at,
+                            a.at + a.dur
+                        ),
+                    ));
+                }
+            }
+        }
     }
 
     /// Build per-slot tracks from tweens.

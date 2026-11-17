@@ -640,3 +640,15 @@ fn on_notes_places_a_layer_on_each_note() {
     let e = errors(r##"{ "scenes": [ { "layers": [ { "onNotes": { "layer": { "shape": "rect" } } } ] } ] }"##);
     assert!(e.iter().any(|m| m.contains("add a top-level \"music\"")), "{e:?}");
 }
+
+#[test]
+fn later_from_that_overrides_an_earlier_move_warns() {
+    let src = r##"{ "scenes": [ { "duration": 4, "layers": [ { "shape": "rect", "x": 100, "anchor": "topLeft", "width": 10, "height": 10,
+        "animate": [ { "to": { "x": 500 }, "at": 0, "duration": 1 }, { "from": { "x": 0 }, "at": 2, "duration": 1 } ] } ] } ] }"##;
+    let e = errors(src);
+    assert!(e.iter().any(|m| m.contains("'x'") && m.contains("use 'to'")), "{e:?}");
+    // `to` after a move is fine, and so is a from at 0 alongside later moves.
+    let ok = errors(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "animate": [ { "to": { "x": 500 }, "duration": 1 }, { "to": { "x": 0 }, "at": 2 } ] },
+        { "shape": "rect", "animate": [ { "from": { "opacity": 0 } }, { "to": { "opacity": 0.5 }, "at": 2 } ] } ] } ] }"##);
+    assert!(!ok.iter().any(|m| m.contains("holds its start value")), "{ok:?}");
+}
