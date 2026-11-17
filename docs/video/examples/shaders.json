@@ -3,11 +3,20 @@
     { "shader": "sdf-scene" },
     { "text": "sdf-scene", "style": "label", "x": 160, "y": 1000, "color": "#222" } ] },
   { "duration": 2.5, "transition": "burn", "layers": [
-    { "shader": "liquid-chrome", "supersample": false, "uniforms": { "warmth": 0.7 } },
+    { "shader": "liquid-chrome", "uniforms": { "film": 0.4 } },
     { "text": "liquid-chrome", "style": "label", "x": 160, "y": 1000 } ] },
   { "duration": 2.5, "transition": "ripple", "layers": [
     { "shader": "aurora", "uniforms": { "intensity": 0.8 }, "animate": [ { "to": { "intensity": 1.5 }, "duration": 2 } ] },
     { "text": "aurora", "style": "label", "x": 160, "y": 1000 } ] },
+  { "duration": 2.5, "transition": "zoom-blur", "layers": [
+    { "shader": "hero", "uniforms": { "shape": 1, "metal": 1, "rough": 0.08, "color": [0.95, 0.75, 0.4] } },
+    { "text": "hero", "style": "label", "x": 160, "y": 1000 } ] },
+  { "duration": 2.5, "transition": "luma-melt", "layers": [
+    { "shader": "light-shafts" },
+    { "text": "light-shafts", "style": "label", "x": 160, "y": 1000 } ] },
+  { "duration": 2.5, "transition": "ripple", "layers": [
+    { "shader": "particles", "uniforms": { "focus": 0.1 }, "animate": [ { "to": { "focus": 0.9 }, "duration": 2.5 } ] },
+    { "text": "particles (rack focus)", "style": "label", "x": 160, "y": 1000 } ] },
   { "duration": 2.5, "transition": "ink-bleed", "layers": [
     { "shader": "caustics" },
     { "text": "caustics", "style": "label", "x": 160, "y": 1000 } ] },

@@ -361,6 +361,7 @@ pub fn validate(spec: Value, base_dir: &Path) -> Value {
 /// Resources served to clients.
 const RESOURCES: &[(&str, &str, &str, &str)] = &[
     ("anikit://docs/spec", "Spec cheat sheet", "One page: the Anikit Video JSON spec (layers, animation, presets, transitions, CLI).", include_str!("../../../../docs/video/spec.md")),
+    ("anikit://docs/authoring", "Authoring anything", "Expressions (numbers and colours, music-reactive), script blocks that generate layers, and raw draw layers.", include_str!("../../../../docs/video/authoring.md")),
     ("anikit://docs/spec-reference", "Spec reference", "The complete Anikit Video JSON spec reference, with every key and recipes.", include_str!("../../../../docs/video/spec-reference.md")),
     ("anikit://docs/agents", "Agent quick start", "How to make a great video with Anikit Video as an agent.", include_str!("../../../../docs/video/AGENTS.md")),
     ("anikit://prompts/motion-rules", "Motion rules", "Timing, hierarchy, easing, reading time, safe areas.", include_str!("../../../../prompts/motion-rules.md")),
@@ -393,7 +394,7 @@ pub fn tools() -> Vec<Value> {
         json!({ "name": "render_still", "description": "One frame → PNG path.", "inputSchema": obj(img(json!({ "at": { "type": "number", "description": "seconds" } })), &[]) }),
         json!({ "name": "render_contact_sheet", "description": "One frame per scene in one PNG → path. Cheapest full review.", "inputSchema": obj(img(json!({ "frames": { "type": "integer" } })), &[]) }),
         json!({ "name": "render_video", "description": "Final render → path.", "inputSchema": obj(with(spec(), json!({ "out": { "type": "string", "description": "e.g. out.mp4" }, "quality": { "type": "string", "description": "draft|standard|high" } })), &[]) }),
-        json!({ "name": "docs", "description": "Start here. Compact page per primitive (no topic: the index): primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything components.", "inputSchema": obj(json!({ "topic": { "type": "string" } }), &[]) }),
+        json!({ "name": "docs", "description": "Start here. Compact page per primitive (no topic: the index): primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything expressions script draw components.", "inputSchema": obj(json!({ "topic": { "type": "string" } }), &[]) }),
         json!({ "name": "recipes", "description": "Drop-in high-end shots (kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, ...) and the shader library. name → a ready spec or snippet.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &[]) }),
         json!({ "name": "list_looks", "description": "Art-direction looks (palette, type, motion, world layers). name → its direction; full:true → JSON to override.", "inputSchema": obj(json!({ "name": { "type": "string" }, "full": { "type": "boolean" } }), &[]) }),
         json!({ "name": "get_prompt", "description": "Prompt library: director, launch-video-generator, script-writer, storyboarder, critic, copy-guard, brand-kit, motion-rules, template:<name>.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &["name"]) }),

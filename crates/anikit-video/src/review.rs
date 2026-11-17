@@ -323,6 +323,24 @@ pub fn time_axis(ev: &Evaluator, s: &Samples, intent: &Intent, beats: Option<&[f
                 note("warning", "ending", format!("t={dur:.1}s"), "the video ends mid-motion: it will feel cut off".into(), "end on a held frame (0.5–1.5 s) or a deliberate hard cut to black on a beat");
             }
         }
+        // Flashes: one sample (≥ ~0.17 s) that differs hard from both neighbours, which agree.
+        // Single-frame flashes need full-rate sampling (PERF metrics).
+        let mut flashes = Vec::new();
+        for i in 1..n.saturating_sub(1) {
+            for w in 1..=2usize {
+                if i + w >= n {
+                    break;
+                }
+                let (a, b, c) = (diff(&s.coarse[i - 1], &s.coarse[i]), diff(&s.coarse[i + w - 1], &s.coarse[i + w]), diff(&s.coarse[i - 1], &s.coarse[i + w]));
+                if a > 40.0 && b > 40.0 && c < 12.0 && flashes.last().is_none_or(|t| s.time(i) - t > 0.5) {
+                    flashes.push(s.time(i));
+                    break;
+                }
+            }
+        }
+        if !flashes.is_empty() {
+            note("warning", "flicker", format!("t={:.1}s", flashes[0]), format!("{} single-frame flash/pop{} (first at t={:.1}s): reads as a glitch unless it's on purpose", flashes.len(), if flashes.len() == 1 { "" } else { "s" }, flashes[0]), "check the cut or transition there: a layer appearing for one frame, a background flashing, or a mismatched cut");
+        }
         // Cuts against the music.
         if let Some(r) = tl.on_beat {
             if matches!(intent.pace, Pace::Fast | Pace::Frantic) && r < 0.6 {
@@ -606,6 +624,39 @@ pub fn write_pack(dir: &std::path::Path, p: &crate::preview::Preview, tl: &Timel
     Ok(files)
 }
 
+/// Audio levels of the final mix: approximate loudness (gated RMS, ≈ LUFS), peak and clipping.
+pub fn audio(ev: &Evaluator, base: &std::path::Path) -> (Option<String>, Vec<Note>) {
+    if ev.audio.is_empty() {
+        return (None, Vec::new());
+    }
+    let Ok(pcm) = crate::audio::mix(&ev.audio, ev.duration as f64, 24_000, Some(base)) else { return (None, Vec::new()) };
+    let mono: Vec<f32> = pcm.samples.chunks(2).map(|c| (c[0] + c.get(1).copied().unwrap_or(c[0])) * 0.5).collect();
+    let peak = pcm.samples.iter().fold(0.0f32, |m, x| m.max(x.abs()));
+    let clipped = pcm.samples.iter().filter(|x| x.abs() >= 0.999).count();
+    // 400 ms blocks, gated at −70 dB absolute and −10 dB relative (BS.1770-style, unweighted).
+    let blk = (pcm.rate as usize * 2) / 5;
+    let ms: Vec<f64> = mono.chunks(blk).filter(|c| c.len() == blk).map(|c| c.iter().map(|x| (*x as f64).powi(2)).sum::<f64>() / c.len() as f64).collect();
+    let db = |m: f64| -0.691 + 10.0 * m.max(1e-12).log10();
+    let abs: Vec<f64> = ms.iter().copied().filter(|m| db(*m) > -70.0).collect();
+    let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len().max(1) as f64;
+    let rel = db(mean(&abs)) - 10.0;
+    let gated: Vec<f64> = abs.iter().copied().filter(|m| db(*m) > rel).collect();
+    let lufs = if gated.is_empty() { -70.0 } else { db(mean(&gated)) };
+    let peak_db = 20.0 * (peak.max(1e-9) as f64).log10();
+    let mut notes = Vec::new();
+    if clipped > 0 {
+        notes.push(Note { severity: "error", check: "audio", path: "audio".into(), message: format!("{clipped} clipped samples (peak {peak_db:.1} dBFS)"), fix: "lower the loudest cue's volume, or let the music engine master it (\"music\")".into() });
+    } else if peak_db > -1.0 {
+        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("peak {peak_db:.1} dBFS leaves no headroom (true peak may clip after encoding)"), fix: "keep peaks under −1 dBFS".into() });
+    }
+    if lufs < -20.0 && lufs > -69.0 {
+        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("quiet: ≈{lufs:.0} LUFS (web and social normalise to about −14)"), fix: "raise the music/voice volume towards −14 LUFS".into() });
+    } else if lufs > -9.0 {
+        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("very loud: ≈{lufs:.0} LUFS (platforms will turn it down and it may sound crushed)"), fix: "lower the volume towards −14 LUFS".into() });
+    }
+    (Some(format!("audio: ≈{lufs:.1} LUFS, peak {peak_db:.1} dBFS")), notes)
+}
+
 /// One line on intent versus what was measured.
 pub fn summary(intent: &Intent, tl: &Timeline) -> String {
     let mut s = format!(
@@ -680,6 +731,19 @@ mod tests {
         let (tl, _) = time_axis(&e, &s, &intent(&full, None), None);
         let (n, _) = composition(&e, &s, &tl);
         assert!(!n.iter().any(|x| x.check == "frame-fill" || x.check == "bar"), "{n:?}");
+    }
+
+    #[test]
+    fn flash_frames_and_audio_levels() {
+        let spec = json!({ "size": [320, 180], "scenes": [
+            { "duration": 1.5, "background": "#101010", "layers": [ { "text": "A", "color": "#888888" } ] },
+            { "duration": 0.25, "transition": "cut", "background": "#ffffff", "layers": [] },
+            { "duration": 1.5, "transition": "cut", "background": "#101010", "layers": [ { "text": "A", "color": "#888888" } ] } ] });
+        let (_, n) = run(spec);
+        assert!(n.iter().any(|x| x.check == "flicker"), "{n:?}");
+        let loud = ev(json!({ "size": [320, 180], "audio": [ { "sfx": "impact", "at": 0.5, "volume": 12 } ], "scenes": [ { "duration": 2, "layers": [] } ] }));
+        let (line, n) = audio(&loud, std::path::Path::new("."));
+        assert!(line.is_some() && n.iter().any(|x| x.check == "audio"), "{line:?} {n:?}");
     }
 
     #[test]

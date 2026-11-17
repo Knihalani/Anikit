@@ -12,6 +12,13 @@ pub struct FilterScratch {
     blur: BlurScratch,
 }
 
+impl FilterScratch {
+    /// Reference quality: blurs without decimation.
+    pub fn set_exact(&mut self, on: bool) {
+        self.blur.exact = on;
+    }
+}
+
 /// Finite and within ±`max` (NaN → 0).
 pub fn sane(v: f32, max: f32) -> f32 {
     if v.is_nan() {

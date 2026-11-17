@@ -92,6 +92,12 @@ struct C<'a> {
     uniform_slots: Vec<(String, usize, usize)>,
     /// Compiled sub-compositions by name, with their own `loop` default.
     comps: Vec<(String, Arc<Evaluator>, bool)>,
+    /// The colour expression the last `paint` call compiled (claimed by the caller for its slot).
+    last_cexpr: Option<super::expr::ColorExpr>,
+    /// Music analysis for `beat`/`bar`/`level`/`bpm` in expressions (loaded on first use).
+    groove: Option<Result<Arc<super::beat_markers::Music>, String>>,
+    /// `groove` includes the loudness envelope.
+    groove_level: bool,
     /// The spec's theme as written (nested compositions inherit it).
     spec_theme: Option<spec::Theme>,
 }
@@ -153,6 +159,9 @@ impl Evaluator {
             assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
             comps,
             spec_theme: spec.theme.clone(),
+            groove: None,
+            groove_level: false,
+            last_cexpr: None,
             uniform_slots: Vec::new(),
         };
         c.assets.shaders.bind(&c.assets);
@@ -341,6 +350,7 @@ impl Evaluator {
             theme: c.theme,
             comps: c.comps.into_iter().map(|(n, e, _)| (n, e)).collect(),
             shutter,
+            groove: c.groove.and_then(|m| m.ok()),
             shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
         };
         (Some(ev), c.d)
@@ -396,6 +406,7 @@ fn empty_node(kind: Kind) -> Node {
         end: f32::INFINITY,
         base: prop::DEFAULTS,
         exprs: Vec::new(),
+        cexprs: Vec::new(),
         tracks: Vec::new(),
         loops: Vec::new(),
         anchor: [0.5, 0.5],
@@ -515,6 +526,10 @@ impl C<'_> {
             Num::Str(s) => {
                 if let Some(e) = s.trim().strip_prefix('=') {
                     match Expr::compile(e, refl as f64, self.w as f64, self.h as f64) {
+                        Ok(x) if x.music && (self.groove.is_none() || (x.level && !self.groove_level)) => {
+                            self.load_groove(x.level, path);
+                            V::E(x)
+                        }
                         Ok(x) => match x.constant() {
                             Some(c) => V::C(c as f32),
                             None => V::E(x),
@@ -623,7 +638,26 @@ impl C<'_> {
 
     /// Compile a paint. Returns the paint and its solid colour (for the colour slots).
     fn paint(&mut self, p: &spec::Paint, path: &str) -> Option<(PaintC, Rgba)> {
+        self.last_cexpr = None;
         match p {
+            spec::Paint::Css(s) if s.trim().starts_with('=') => {
+                let src = s.trim()[1..].to_string();
+                let mut resolve = |c: &str| self.theme.color(c).map(|x| x.0);
+                match super::expr::ColorExpr::compile(&src, &mut resolve) {
+                    Ok(ce) => {
+                        if ce.music && (self.groove.is_none() || (ce.level && !self.groove_level)) {
+                            self.load_groove(ce.level, path);
+                        }
+                        let c = Rgba(ce.eval(&super::expr::Vars { w: self.w as f64, h: self.h as f64, fps: self.fps as f64, ..Default::default() }));
+                        self.last_cexpr = Some(ce);
+                        Some((PaintC::Solid, c))
+                    }
+                    Err(m) => {
+                        self.d.push(Diagnostic::error(path, format!("colour expression: {m}")));
+                        None
+                    }
+                }
+            }
             spec::Paint::Css(s) => {
                 let st = s.trim();
                 if st.eq_ignore_ascii_case("none") || st.eq_ignore_ascii_case("transparent") {
@@ -937,6 +971,8 @@ impl C<'_> {
             "component"
         } else if l.composition.is_some() {
             "composition"
+        } else if l.draw.is_some() {
+            "draw"
         } else if l.shader.is_some() || l.src.as_deref().is_some_and(|s| s.ends_with(".glsl") || s.ends_with(".wgsl") || s.ends_with(".frag")) {
             "shader"
         } else if l.children.is_some() {
@@ -1085,6 +1121,7 @@ impl C<'_> {
             "box" => self.box_layer(l, path, given_w, given_h, start, end, pc, &mut n),
             "shader" => self.shader_layer(l, path, given_w, given_h, start, end, &mut n)?,
             "composition" => self.comp_layer(l, path)?,
+            "draw" => (self.draw_layer(l, path), [given_w.unwrap_or(pw), given_h.unwrap_or(ph)]),
             _ => self.component_layer(l, path, given_w, given_h)?,
         };
         n.kind = kind_v;
@@ -1382,6 +1419,9 @@ impl C<'_> {
         let col = st.color.clone().unwrap_or(spec::Paint::Css("$text".into()));
         let (paint, c) = self.paint(&col, &format!("{path}.color")).unwrap_or((PaintC::Solid, Rgba([1.0; 4])));
         n.base[prop::FILL..prop::FILL + 4].copy_from_slice(&rgba_to_oklab(c));
+        if let Some(ce) = self.last_cexpr.take() {
+            n.cexprs.push((prop::FILL as u8, ce));
+        }
         n.base[prop::SIZE] = size;
         // Outlined text: `stroke` (colour or object); `color: "none"` draws only the outline.
         let hollow = matches!(&st.color, Some(spec::Paint::Css(c)) if c.trim() == "none" || c.trim() == "transparent");
@@ -1715,6 +1755,9 @@ impl C<'_> {
             n.base[prop::FILL..prop::FILL + 4].copy_from_slice(&rgba_to_oklab(c));
             pc
         });
+        if let Some(ce) = self.last_cexpr.take() {
+            n.cexprs.push((prop::FILL as u8, ce));
+        }
         if let Some(c) = &l.color {
             self.d.push(Diagnostic::warning(format!("{path}.color"), "shapes use 'fill' (and 'stroke'); 'color' is for text").suggest(Some("fill")));
             let _ = c;
@@ -1730,6 +1773,9 @@ impl C<'_> {
             Some(so) => self.stroke(&so, l.stroke_width.as_ref(), &format!("{path}.stroke")).map(|(sc, c, w)| {
                 n.base[prop::STROKE..prop::STROKE + 4].copy_from_slice(&rgba_to_oklab(c));
                 n.base[prop::SW] = w;
+                if let Some(ce) = self.last_cexpr.take() {
+                    n.cexprs.push((prop::STROKE as u8, ce));
+                }
                 sc
             }),
             None => None,
@@ -1901,6 +1947,9 @@ impl C<'_> {
         let bg = match &st.background {
             Some(b) => self.paint(b, &format!("{sp}.background")).map(|(p, c)| {
                 n.base[prop::FILL..prop::FILL + 4].copy_from_slice(&rgba_to_oklab(c));
+                if let Some(ce) = self.last_cexpr.take() {
+                    n.cexprs.push((prop::FILL as u8, ce));
+                }
                 p
             }),
             None => None,
@@ -1961,6 +2010,17 @@ impl C<'_> {
         let m = super::local_xf(&n.base, n.anchor, w, h);
         p.apply_affine(kurbo::Affine::new(m.map(|x| x as f64)));
         Some(p)
+    }
+
+    /// Load the music for expressions (with its loudness envelope when `level` is read).
+    fn load_groove(&mut self, level: bool, path: &str) {
+        let need = level || self.groove_level;
+        let g = self.beat_marks.groove(need);
+        if let Err(m) = &g {
+            self.d.push(Diagnostic::error(path, format!("expression uses the music: {m}")));
+        }
+        self.groove = Some(g);
+        self.groove_level = need;
     }
 
     /// Resolve a `post` value (RENDER's presets and settings); `"none"` gives `None`.
@@ -2083,6 +2143,114 @@ impl C<'_> {
             return Some(ev);
         }
         None
+    }
+
+    fn draw_layer(&mut self, l: &Layer, path: &str) -> Kind {
+        use kurbo::Shape;
+        let mut out = Vec::new();
+        for (k, it) in l.draw.iter().flatten().enumerate() {
+            let p = format!("{path}.draw[{k}]");
+            let given = [it.d.is_some(), it.points.is_some(), it.circle.is_some(), it.rect.is_some(), it.line.is_some()];
+            if given.iter().filter(|g| **g).count() != 1 {
+                self.d.push(Diagnostic::error(&p, "give exactly one of 'd', 'points', 'circle', 'rect', 'line'"));
+                continue;
+            }
+            let closed = it.closed == Some(true);
+            let pt = |q: [f64; 2]| kurbo::Point::new(q[0], q[1]);
+            let mut bp = Path::new();
+            if let Some(d) = &it.d {
+                match Path::from_svg(d) {
+                    Ok(b) => bp = b,
+                    Err(e) => {
+                        self.d.push(Diagnostic::error(format!("{p}.d"), format!("invalid SVG path: {e}")));
+                        continue;
+                    }
+                }
+            } else if let Some(ps) = &it.points {
+                if ps.len() < 2 {
+                    self.d.push(Diagnostic::error(format!("{p}.points"), "needs at least 2 points"));
+                    continue;
+                }
+                bp.move_to(pt(ps[0]));
+                let n = ps.len();
+                if it.smooth == Some(true) && n > 2 {
+                    // Catmull-Rom through the points, as cubic Béziers.
+                    let get = |i: isize| pt(ps[if closed { i.rem_euclid(n as isize) as usize } else { i.clamp(0, n as isize - 1) as usize }]);
+                    for i in 0..(if closed { n } else { n - 1 }) as isize {
+                        let (p0, p1, p2, p3) = (get(i - 1), get(i), get(i + 1), get(i + 2));
+                        bp.curve_to(p1 + (p2 - p0) / 6.0, p2 - (p3 - p1) / 6.0, p2);
+                    }
+                } else {
+                    for q in &ps[1..] {
+                        bp.line_to(pt(*q));
+                    }
+                }
+                if closed {
+                    bp.close_path();
+                }
+            } else if let Some([cx, cy, r]) = it.circle {
+                bp = kurbo::Circle::new((cx, cy), r.max(0.0)).to_path(0.1);
+            } else if let Some([x, y, w, h]) = it.rect {
+                bp = kurbo::RoundedRect::new(x, y, x + w, y + h, it.radius.unwrap_or(0.0).max(0.0)).to_path(0.1);
+            } else if let Some([x1, y1, x2, y2]) = it.line {
+                bp.move_to((x1, y1));
+                bp.line_to((x2, y2));
+            }
+            let fill = it.fill.as_deref().filter(|f| *f != "none").and_then(|f| self.color(f, &format!("{p}.fill")));
+            let cap = match it.cap.as_deref() {
+                None | Some("butt") => 0,
+                Some("round") => 1,
+                Some("square") => 2,
+                Some(x) => {
+                    self.d.push(Diagnostic::error(format!("{p}.cap"), format!("unknown cap '{x}'")).suggest(suggest(x, &["butt", "round", "square"])));
+                    0
+                }
+            };
+            let join = match it.join.as_deref() {
+                None | Some("miter") => 0,
+                Some("round") => 1,
+                Some("bevel") => 2,
+                Some(x) => {
+                    self.d.push(Diagnostic::error(format!("{p}.join"), format!("unknown join '{x}'")).suggest(suggest(x, &["miter", "round", "bevel"])));
+                    0
+                }
+            };
+            let mut segs = Vec::new();
+            if let (Some(cs), Some(ps)) = (&it.colors, &it.points) {
+                let cols: Vec<Rgba> = cs.iter().enumerate().map(|(i, c)| self.color(c, &format!("{p}.colors[{i}]")).unwrap_or(Rgba([1.0; 4]))).collect();
+                if cols.len() != ps.len() {
+                    self.d.push(Diagnostic::error(format!("{p}.colors"), format!("{} colours for {} points (one per point)", cols.len(), ps.len())));
+                } else {
+                    let n = ps.len();
+                    for i in 0..(if closed { n } else { n - 1 }) {
+                        let (a, b) = (ps[i], ps[(i + 1) % n]);
+                        let mut sp = Path::new();
+                        sp.move_to(pt(a));
+                        sp.line_to(pt(b));
+                        segs.push((sp, [a[0] as f32, a[1] as f32], [b[0] as f32, b[1] as f32], cols[i], cols[(i + 1) % n]));
+                    }
+                }
+            }
+            // Stroked when asked, or when nothing else would show (lines, open polylines, no fill).
+            let stroked = segs.is_empty() && (it.stroke.is_some() || it.width.is_some() || fill.is_none());
+            let stroke = if stroked {
+                match it.stroke.as_deref() {
+                    Some(s) => self.color(s, &format!("{p}.stroke")),
+                    None => self.theme.color("$text"),
+                }
+            } else {
+                None
+            };
+            out.push(super::DrawC {
+                path: bp,
+                fill,
+                stroke,
+                style: (it.width.unwrap_or(2.0).max(0.0) as f32, cap, join),
+                segs,
+                opacity: it.opacity.unwrap_or(1.0).clamp(0.0, 1.0) as f32,
+            });
+        }
+        Kind::Draw(out)
     }
 
     fn comp_layer(&mut self, l: &Layer, path: &str) -> Option<(Kind, [f32; 2])> {

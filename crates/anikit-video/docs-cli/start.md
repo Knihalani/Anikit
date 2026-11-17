@@ -28,6 +28,7 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 | `docs pacing` | intent, beat-cut timing, holds that stay alive |
 | `docs critique` | the reviewer and the review pack |
 | `docs make-anything` | escape hatches and how to combine them |
+| `docs expressions` · `docs script` · `docs draw` | per-frame maths and colours (music-reactive), generator loops, raw paths and points |
 
 Shortcuts (optional): `anikit-video recipes` (drop-in high-end shots), `looks` (art direction),
 `info --components` (prebuilt widgets), `templates` (quick starts).

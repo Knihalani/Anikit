@@ -1,0 +1,1091 @@
+{
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "theme": {
+    "colors": {
+      "primary": "#6E57FA",
+      "secondary": "#5776FA",
+      "accent": "#C6BEF7",
+      "bg": "#09090D",
+      "bgDeep": "#060608",
+      "surface": "#19191D",
+      "text": "#F5F5F5",
+      "muted": "#C6C6C7",
+      "border": "#2A2A2D",
+      "onPrimary": "#FFFFFF",
+      "onAccent": "#000000",
+      "fill": "#5D4AD4"
+    },
+    "fonts": {
+      "heading": "Inter Display",
+      "body": "Inter",
+      "mono": "JetBrains Mono"
+    },
+    "radius": 28,
+    "styles": {
+      "hero": {
+        "font": "$heading",
+        "size": "12vmin",
+        "weight": 800,
+        "letterSpacing": "-0.035em",
+        "lineHeight": 1.02,
+        "color": "$text"
+      },
+      "title": {
+        "font": "$heading",
+        "size": "9.5vmin",
+        "weight": 800,
+        "letterSpacing": "-0.03em",
+        "lineHeight": 1.05,
+        "color": "$text"
+      },
+      "heading": {
+        "font": "$heading",
+        "size": "6.4vmin",
+        "weight": 700,
+        "letterSpacing": "-0.02em",
+        "lineHeight": 1.1,
+        "color": "$text"
+      },
+      "subtitle": {
+        "font": "$body",
+        "size": "3.7vmin",
+        "weight": 500,
+        "lineHeight": 1.35,
+        "color": "$muted"
+      },
+      "body": {
+        "font": "$body",
+        "size": "3.2vmin",
+        "weight": 400,
+        "lineHeight": 1.4,
+        "color": "$text"
+      },
+      "caption": {
+        "font": "$body",
+        "size": "2.5vmin",
+        "weight": 500,
+        "lineHeight": 1.35,
+        "color": "$muted"
+      },
+      "label": {
+        "font": "$body",
+        "size": "2.7vmin",
+        "weight": 700,
+        "uppercase": true,
+        "letterSpacing": "0.14em",
+        "color": "$accent"
+      },
+      "button": {
+        "font": "$body",
+        "size": "3.1vmin",
+        "weight": 650,
+        "color": "$onPrimary"
+      },
+      "stat": {
+        "font": "$heading",
+        "size": "20vmin",
+        "weight": 800,
+        "letterSpacing": "-0.045em",
+        "lineHeight": 1,
+        "color": "$text"
+      },
+      "code": {
+        "font": "$mono",
+        "size": "2.4vmin",
+        "weight": 400,
+        "lineHeight": 1.55,
+        "color": "$text"
+      }
+    }
+  },
+  "background": "$bgDeep",
+  "transition": {
+    "type": "crossfade",
+    "duration": 0.5
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "duration": 3.393333,
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1.06
+            },
+            "to": {
+              "zoom": 1
+            },
+            "duration": 0.9,
+            "ease": "outExpo"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "id": "mesh",
+          "type": "component",
+          "component": "mesh-gradient",
+          "props": {
+            "colors": [
+              "#6E57FA",
+              "#5776FA",
+              "#2C2460"
+            ],
+            "base": "#060608",
+            "intensity": 0.32,
+            "seed": 2,
+            "speed": 0.3,
+            "rate": 3
+          }
+        },
+        {
+          "id": "floor",
+          "type": "component",
+          "component": "grid",
+          "props": {
+            "perspective": true,
+            "color": "#F5F5F512",
+            "speed": 0,
+            "fade": 0.85
+          }
+        },
+        {
+          "id": "hook",
+          "text": "Video, without the browser.",
+          "style": "hero",
+          "width": 1651.2,
+          "enter": "mask by word up"
+        },
+        {
+          "id": "hud-kicker",
+          "text": "01 / 07 · ANIKIT VIDEO",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$muted",
+          "x": 134.4,
+          "anchor": "topLeft",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-label",
+          "text": "INTRO",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$accent",
+          "x": 1785.6,
+          "anchor": "topRight",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-progress",
+          "type": "component",
+          "component": "progress-bar",
+          "props": {
+            "from": 0,
+            "to": 0.142857,
+            "duration": 0.6,
+            "thickness": 3.78,
+            "color": "#6E57FA",
+            "percent": false
+          },
+          "x": "50%",
+          "y": 1031.4,
+          "width": 1651.2,
+          "height": 21.6
+        }
+      ]
+    },
+    {
+      "id": "reveal",
+      "transition": {
+        "type": "blur",
+        "duration": 0.5
+      },
+      "duration": 6.2,
+      "layers": [
+        {
+          "id": "mesh",
+          "type": "component",
+          "component": "mesh-gradient",
+          "props": {
+            "colors": [
+              "#6E57FA",
+              "#5776FA",
+              "#2C2460"
+            ],
+            "base": "#060608",
+            "intensity": 0.32,
+            "seed": 5,
+            "speed": 0,
+            "rate": 3
+          }
+        },
+        {
+          "id": "name",
+          "text": "Anikit Video",
+          "style": "title",
+          "y": "42%",
+          "width": 691.2,
+          "enter": "pop by char from center",
+          "x": 134.4,
+          "anchor": "left",
+          "align": "left"
+        },
+        {
+          "id": "tagline",
+          "text": "Programmatic video for AI agents, rendered natively.",
+          "style": "subtitle",
+          "y": "55%",
+          "width": 595.2,
+          "enter": {
+            "preset": "fadeUp",
+            "delay": 0.45
+          },
+          "x": 134.4,
+          "anchor": "left",
+          "align": "left"
+        },
+        {
+          "id": "hero-prompt",
+          "type": "component",
+          "component": "prompt",
+          "props": {
+            "text": "No headless browser",
+            "typing": 16,
+            "delay": 0.5,
+            "sendAt": 999,
+            "fontSize": 28.08,
+            "glow": false
+          },
+          "x": 1344,
+          "y": 324,
+          "width": 883.2,
+          "height": 129.6
+        },
+        {
+          "id": "hero-result-0",
+          "type": "component",
+          "component": "card",
+          "props": {
+            "title": "No headless browser",
+            "body": "Native Rust on every core.",
+            "icon": "spark",
+            "glow": true,
+            "delay": 2.1875,
+            "fontSize": 24.84
+          },
+          "x": 1344,
+          "y": 507.6,
+          "width": 883.2,
+          "height": 118.8
+        },
+        {
+          "id": "hero-result-1",
+          "type": "component",
+          "component": "card",
+          "props": {
+            "title": "Speaks JSON",
+            "body": "One declarative spec, typed templates, clear errors.",
+            "icon": "bolt",
+            "glow": false,
+            "delay": 2.3675,
+            "fontSize": 24.84
+          },
+          "x": 1344,
+          "y": 642.6,
+          "width": 883.2,
+          "height": 118.8
+        },
+        {
+          "id": "hero-result-2",
+          "type": "component",
+          "component": "card",
+          "props": {
+            "title": "Built for agents",
+            "body": "An MCP server that can see its own work.",
+            "icon": "check",
+            "glow": false,
+            "delay": 2.5475,
+            "fontSize": 24.84
+          },
+          "x": 1344,
+          "y": 777.6,
+          "width": 883.2,
+          "height": 118.8
+        },
+        {
+          "id": "hud-kicker",
+          "text": "02 / 07 · ANIKIT VIDEO",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$muted",
+          "x": 134.4,
+          "anchor": "topLeft",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-label",
+          "text": "INTRODUCING",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$accent",
+          "x": 1785.6,
+          "anchor": "topRight",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-progress",
+          "type": "component",
+          "component": "progress-bar",
+          "props": {
+            "from": 0.142857,
+            "to": 0.285714,
+            "duration": 0.6,
+            "thickness": 3.78,
+            "color": "#6E57FA",
+            "percent": false
+          },
+          "x": "50%",
+          "y": 1031.4,
+          "width": 1651.2,
+          "height": 21.6
+        }
+      ]
+    },
+    {
+      "id": "feature-1",
+      "transition": {
+        "type": "push",
+        "direction": "left",
+        "duration": 0.6,
+        "ease": "inOutQuart"
+      },
+      "duration": 5.166667,
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1.04
+            },
+            "to": {
+              "zoom": 1
+            },
+            "duration": 0.9,
+            "ease": "outExpo"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "id": "mesh",
+          "type": "component",
+          "component": "mesh-gradient",
+          "props": {
+            "colors": [
+              "#6E57FA",
+              "#5776FA",
+              "#2C2460"
+            ],
+            "base": "#060608",
+            "intensity": 0.32,
+            "seed": 11,
+            "speed": 0,
+            "rate": 3
+          }
+        },
+        {
+          "text": "01",
+          "style": "label",
+          "x": 134.4,
+          "anchor": "topLeft",
+          "y": 437.184,
+          "enter": "fadeUp"
+        },
+        {
+          "text": "No headless browser",
+          "style": "heading",
+          "weight": 750,
+          "width": 691.2,
+          "align": "left",
+          "x": 134.4,
+          "anchor": "topLeft",
+          "y": 485.784,
+          "enter": "mask by word up"
+        },
+        {
+          "text": "Native Rust on every core.",
+          "style": "subtitle",
+          "width": 656.64,
+          "align": "left",
+          "x": 134.4,
+          "anchor": "topLeft",
+          "y": 588.816,
+          "enter": {
+            "preset": "fadeUp",
+            "delay": 0.35
+          }
+        },
+        {
+          "id": "device",
+          "type": "component",
+          "component": "browser",
+          "props": {
+            "delay": 0.3,
+            "float": 0,
+            "screen": "app",
+            "title": "Anikit Video",
+            "accent": "#6E57FA",
+            "items": [
+              "No headless browser",
+              "Speaks JSON",
+              "Built for agents"
+            ],
+            "kpis": [
+              {
+                "label": "1080p, end to end, on a 4-core VM",
+                "value": "365 fps"
+              }
+            ]
+          },
+          "x": 1305.6,
+          "y": 540,
+          "width": 960,
+          "height": 691.2
+        },
+        {
+          "id": "hud-kicker",
+          "text": "03 / 07 · ANIKIT VIDEO",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$muted",
+          "x": 134.4,
+          "anchor": "topLeft",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-label",
+          "text": "FEATURE",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$accent",
+          "x": 1785.6,
+          "anchor": "topRight",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-progress",
+          "type": "component",
+          "component": "progress-bar",
+          "props": {
+            "from": 0.285714,
+            "to": 0.428571,
+            "duration": 0.6,
+            "thickness": 3.78,
+            "color": "#6E57FA",
+            "percent": false
+          },
+          "x": "50%",
+          "y": 1031.4,
+          "width": 1651.2,
+          "height": 21.6
+        }
+      ]
+    },
+    {
+      "id": "feature-2",
+      "transition": {
+        "type": "push",
+        "direction": "left",
+        "duration": 0.6,
+        "ease": "inOutQuart"
+      },
+      "duration": 5.5,
+      "camera": {
+        "zoom": 1
+      },
+      "layers": [
+        {
+          "id": "mesh",
+          "type": "component",
+          "component": "mesh-gradient",
+          "props": {
+            "colors": [
+              "#6E57FA",
+              "#5776FA",
+              "#2C2460"
+            ],
+            "base": "#060608",
+            "intensity": 0.32,
+            "seed": 14,
+            "speed": 0,
+            "rate": 3
+          }
+        },
+        {
+          "id": "device",
+          "type": "component",
+          "component": "browser",
+          "props": {
+            "delay": 0.1,
+            "float": 0,
+            "screen": "app",
+            "title": "Anikit Video",
+            "accent": "#6E57FA",
+            "items": [
+              "No headless browser",
+              "Speaks JSON",
+              "Built for agents"
+            ]
+          },
+          "x": 960,
+          "y": 572.4,
+          "width": 1228.8,
+          "height": 768.0
+        },
+        {
+          "type": "shape",
+          "shape": "rect",
+          "x": "50%",
+          "y": 907.2,
+          "width": 1920,
+          "height": 388.8,
+          "fill": "linear-gradient(180deg, #06060800, #060608EB)"
+        },
+        {
+          "id": "callout",
+          "type": "component",
+          "component": "callout",
+          "props": {
+            "from": [
+              691.2,
+              388.8
+            ],
+            "to": [
+              1190.4,
+              216
+            ],
+            "text": "SPEAKS JSON",
+            "color": "#C6BEF7",
+            "size": 25.92,
+            "delay": 0.8
+          },
+          "x": "50%",
+          "y": "50%",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "id": "lower-third",
+          "type": "component",
+          "component": "lower-third",
+          "props": {
+            "title": "Speaks JSON",
+            "subtitle": "One declarative spec, typed templates, clear errors.",
+            "accent": "#6E57FA",
+            "size": 45.36,
+            "delay": 0.35,
+            "margin": 0
+          },
+          "x": 960,
+          "y": 540,
+          "width": 1651.2,
+          "height": 885.6
+        },
+        {
+          "id": "hud-kicker",
+          "text": "04 / 07 · ANIKIT VIDEO",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$muted",
+          "x": 134.4,
+          "anchor": "topLeft",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-label",
+          "text": "FEATURE",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$accent",
+          "x": 1785.6,
+          "anchor": "topRight",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-progress",
+          "type": "component",
+          "component": "progress-bar",
+          "props": {
+            "from": 0.428571,
+            "to": 0.571429,
+            "duration": 0.6,
+            "thickness": 3.78,
+            "color": "#6E57FA",
+            "percent": false
+          },
+          "x": "50%",
+          "y": 1031.4,
+          "width": 1651.2,
+          "height": 21.6
+        }
+      ]
+    },
+    {
+      "id": "feature-3",
+      "transition": {
+        "type": "push",
+        "direction": "left",
+        "duration": 0.6,
+        "ease": "inOutQuart"
+      },
+      "duration": 6.5,
+      "camera": {
+        "zoom": 1
+      },
+      "layers": [
+        {
+          "id": "mesh",
+          "type": "component",
+          "component": "mesh-gradient",
+          "props": {
+            "colors": [
+              "#6E57FA",
+              "#5776FA",
+              "#2C2460"
+            ],
+            "base": "#060608",
+            "intensity": 0.32,
+            "seed": 17,
+            "speed": 0,
+            "rate": 3
+          }
+        },
+        {
+          "text": "Built for agents",
+          "style": "hero",
+          "width": 1651.2,
+          "y": "38%",
+          "anchor": "bottom",
+          "enter": "pop by word from center"
+        },
+        {
+          "text": "An MCP server that can see its own work.",
+          "style": "subtitle",
+          "width": 1152,
+          "y": "42%",
+          "anchor": "top",
+          "enter": {
+            "preset": "fadeUp",
+            "delay": 0.35
+          }
+        },
+        {
+          "type": "component",
+          "component": "card",
+          "props": {
+            "title": "No headless browser",
+            "icon": "spark",
+            "glow": false,
+            "delay": 0.5,
+            "fontSize": 25.92
+          },
+          "opacity": 0.5,
+          "x": 441.6,
+          "y": 734.4,
+          "width": 480,
+          "height": 183.6
+        },
+        {
+          "type": "component",
+          "component": "card",
+          "props": {
+            "title": "Speaks JSON",
+            "icon": "bolt",
+            "glow": false,
+            "delay": 0.62,
+            "fontSize": 25.92
+          },
+          "opacity": 0.5,
+          "x": 960,
+          "y": 734.4,
+          "width": 480,
+          "height": 183.6
+        },
+        {
+          "type": "component",
+          "component": "card",
+          "props": {
+            "title": "Built for agents",
+            "icon": "check",
+            "glow": true,
+            "delay": 0.74,
+            "fontSize": 25.92
+          },
+          "opacity": 1,
+          "x": 1478.4,
+          "y": 734.4,
+          "width": 480,
+          "height": 183.6
+        },
+        {
+          "id": "hud-kicker",
+          "text": "05 / 07 · ANIKIT VIDEO",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$muted",
+          "x": 134.4,
+          "anchor": "topLeft",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-label",
+          "text": "FEATURE",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$accent",
+          "x": 1785.6,
+          "anchor": "topRight",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-progress",
+          "type": "component",
+          "component": "progress-bar",
+          "props": {
+            "from": 0.571429,
+            "to": 0.714286,
+            "duration": 0.6,
+            "thickness": 3.78,
+            "color": "#6E57FA",
+            "percent": false
+          },
+          "x": "50%",
+          "y": 1031.4,
+          "width": 1651.2,
+          "height": 21.6
+        }
+      ]
+    },
+    {
+      "id": "proof",
+      "transition": {
+        "type": "blur",
+        "duration": 0.5
+      },
+      "duration": 5.866667,
+      "layers": [
+        {
+          "id": "mesh",
+          "type": "component",
+          "component": "mesh-gradient",
+          "props": {
+            "colors": [
+              "#6E57FA",
+              "#5776FA",
+              "#2C2460"
+            ],
+            "base": "#060608",
+            "intensity": 0.4,
+            "seed": 21,
+            "speed": 0,
+            "rate": 3
+          }
+        },
+        {
+          "type": "component",
+          "component": "progress-ring",
+          "props": {
+            "from": 0,
+            "to": 1,
+            "duration": 1.6,
+            "percent": false,
+            "thickness": 9.72,
+            "color": "#6E57FA",
+            "size": 734.4
+          },
+          "y": "45%",
+          "width": 777.6,
+          "height": 777.6
+        },
+        {
+          "type": "component",
+          "component": "counter",
+          "props": {
+            "to": 365,
+            "prefix": "",
+            "suffix": " fps",
+            "size": 129.6,
+            "weight": 800,
+            "gradient": [
+              "#F5F5F5",
+              "#AB9EF8"
+            ],
+            "duration": 1.6
+          },
+          "y": "45%",
+          "width": 1651.2,
+          "height": 324
+        },
+        {
+          "text": "1080p, end to end, on a 4-core VM",
+          "style": "subtitle",
+          "y": "60%",
+          "width": 1651.2,
+          "enter": {
+            "preset": "fadeUp",
+            "delay": 0.8
+          }
+        },
+        {
+          "id": "hud-kicker",
+          "text": "06 / 07 · ANIKIT VIDEO",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$muted",
+          "x": 134.4,
+          "anchor": "topLeft",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-label",
+          "text": "PROOF",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$accent",
+          "x": 1785.6,
+          "anchor": "topRight",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-progress",
+          "type": "component",
+          "component": "progress-bar",
+          "props": {
+            "from": 0.714286,
+            "to": 0.857143,
+            "duration": 0.6,
+            "thickness": 3.78,
+            "color": "#6E57FA",
+            "percent": false
+          },
+          "x": "50%",
+          "y": 1031.4,
+          "width": 1651.2,
+          "height": 21.6
+        }
+      ]
+    },
+    {
+      "id": "cta",
+      "transition": {
+        "type": "blur",
+        "duration": 0.6
+      },
+      "duration": 4.266667,
+      "layers": [
+        {
+          "id": "mesh",
+          "type": "component",
+          "component": "mesh-gradient",
+          "props": {
+            "colors": [
+              "#6E57FA",
+              "#5776FA",
+              "#2C2460"
+            ],
+            "base": "#060608",
+            "intensity": 0.42,
+            "seed": 31,
+            "speed": 0,
+            "rate": 3
+          }
+        },
+        {
+          "id": "floor",
+          "type": "component",
+          "component": "grid",
+          "props": {
+            "perspective": true,
+            "color": "#F5F5F512",
+            "speed": 0,
+            "fade": 0.85
+          }
+        },
+        {
+          "id": "confetti",
+          "type": "component",
+          "component": "confetti",
+          "props": {
+            "mode": "burst",
+            "at": 1.5,
+            "origin": [
+              0.5,
+              0.58
+            ],
+            "count": 120,
+            "colors": [
+              "#6E57FA",
+              "#5776FA",
+              "#C6BEF7",
+              "#F5F5F5"
+            ],
+            "seed": 7
+          }
+        },
+        {
+          "text": "Anikit Video",
+          "style": "title",
+          "y": "42%",
+          "width": 1651.2,
+          "enter": "rise"
+        },
+        {
+          "id": "cta-button",
+          "type": "component",
+          "component": "button",
+          "props": {
+            "label": "npm i anikit",
+            "variant": "primary",
+            "size": 38.88,
+            "press": [
+              1.5
+            ],
+            "delay": 0.5,
+            "color": "#5D4AD4"
+          },
+          "x": "50%",
+          "y": "58%",
+          "width": 1152,
+          "height": 151.2
+        },
+        {
+          "id": "hud-kicker",
+          "text": "07 / 07 · ANIKIT VIDEO",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$muted",
+          "x": 134.4,
+          "anchor": "topLeft",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-label",
+          "text": "GET STARTED",
+          "style": "label",
+          "font": "$mono",
+          "size": "2.2vmin",
+          "letterSpacing": "0.14em",
+          "color": "$accent",
+          "x": 1785.6,
+          "anchor": "topRight",
+          "y": 97.2,
+          "enter": {
+            "preset": "fadeIn",
+            "duration": 0.4
+          }
+        },
+        {
+          "id": "hud-progress",
+          "type": "component",
+          "component": "progress-bar",
+          "props": {
+            "from": 0.857143,
+            "to": 1,
+            "duration": 0.6,
+            "thickness": 3.78,
+            "color": "#6E57FA",
+            "percent": false
+          },
+          "x": "50%",
+          "y": 1031.4,
+          "width": 1651.2,
+          "height": 21.6
+        }
+      ]
+    }
+  ],
+  "audio": []
+}
