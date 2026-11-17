@@ -568,6 +568,7 @@ impl Default for Bokeh {
 impl Prepare for Bokeh {}
 impl Component for Bokeh {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let t = step(t, AMBIENT_RATE);
         let cols = colors_or(&self.colors, &[ctx.theme.accent, ctx.theme.pal(1), ctx.theme.pal(2), hx3("#ffd9a0")]);
         let (w, h) = (ctx.width, ctx.height);
         let mut rng = Rng::new(self.seed as u64);
@@ -611,6 +612,7 @@ impl Default for Starfield {
 impl Prepare for Starfield {}
 impl Component for Starfield {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let t = if self.fly { t } else { step(t, AMBIENT_RATE) };
         let (w, h) = (ctx.width, ctx.height);
         let c = self.color.map(|c| c.0).unwrap_or(Rgba([0.92, 0.94, 1.0, 1.0]));
         let mut rng = Rng::new(self.seed as u64);

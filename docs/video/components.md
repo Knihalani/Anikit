@@ -151,7 +151,7 @@ Devices keep their aspect ratio and are centred in the box. Screen props are sha
 - `scrollTo` (0 to 1), `scrollAt` and `scrollDuration`: scroll a tall screenshot;
 - `delay`: spring entrance;
 - `float`: bobbing amplitude in px.
-- `screen`: a generated app screen, used when there is no `src`. It is one of `dashboard` (KPI tiles, an area chart and a list), `chat`, `feed`, `editor` or `settings`. Add `title` for the product name and `accent` for the colour. Screens lay out for portrait or landscape and build in with a stagger. Example: `{ "component": "device.phone", "props": { "screen": "dashboard", "title": "Northwind" } }`.
+- `screen`: a generated app screen, used when there is no `src`. It is one of `app` (neutral: the product name and its items, no invented numbers or names), `dashboard` (KPI tiles, an area chart and a list), `chat`, `feed`, `editor` or `settings`. Add `title` for the product name and `accent` for the colour. `items` (the product's features or changelog entries) fill the sidebar, list and card titles, chat lines and settings rows. `kpis` (`[{"label": "Notes", "value": "12,400"}]`) replace the dashboard numbers, which count up. Screens lay out for portrait or landscape and build in with a stagger. Example: `{ "component": "device.phone", "props": { "screen": "dashboard", "title": "Northwind" } }`.
 
 | Kind | Extra props |
 |---|---|
@@ -167,10 +167,10 @@ Devices keep their aspect ratio and are centred in the box. Screen props are sha
 | `button` | `align` (0 left, 0.5 centre (default), 1 right; vertically centred in the box), `label`, `variant` (`primary`, `secondary`, `ghost`, `gradient`), `size`, `color`, `press` (times), `arrow`, `delay`, `out` |
 | `toggle` | `at` (flip time), `on` (initial state), `size`, `color`, `label` |
 | `badge` | `align` (as `button`), `label`, `color`, `size`, `dot` (pulsing "live" dot), `solid`, `delay`, `out` |
-| `avatar` | `name` (gives the initials and colour), `src`, `size`, `status` (`online`, `away`, `busy`), `delay` |
-| `avatarStack` | `names`, `srcs`, `size`, `overlap`, `max` (then "+N"), `delay`, `stagger` |
+| `avatar` | `align`, `name` (gives the initials and colour), `src`, `size`, `status` (`online`, `away`, `busy`), `delay` |
+| `avatarStack` | `align`, `names`, `srcs`, `size`, `overlap`, `max` (then "+N"), `delay`, `stagger` |
 | `progressBar` | `from`, `to`, `duration`, `delay`, `thickness`, `color`, `label`, `percent` |
-| `progressRing` | `from`, `to`, `duration`, `delay`, `size`, `thickness`, `color`, `label` |
+| `progressRing` | `percent` (false hides the number, e.g. behind a countdown), `align`, `from`, `to`, `duration`, `delay`, `size`, `thickness`, `color`, `label` |
 | `toast` | `title`, `body`, `kind` (`success`, `info`, `warning`, `error`), `delay`, `hold`, `from` (`top`, `bottom`, `right`), `width` |
 | `cursor` | `path` (`[[x, y], ...]` waypoints in box px), `times` (arrival time of each), `clicks` (times; each gives a ripple), `size`, `style` (`arrow` or `hand`), `ripple` (colour) |
 | `tooltip` | `text`, `at` (`[x, y]` arrow tip), `side` (`top` or `bottom`), `size`, `delay`, `out` |
@@ -185,7 +185,7 @@ Devices keep their aspect ratio and are centred in the box. Screen props are sha
 |---|---|
 | `chat` | `messages` (`[{ "from": "user" \| "assistant" \| name, "text", "at"? }]`), `fontSize`, `stream` (words per second for replies), `thinking` (seconds of typing dots), `gap`, `delay`, `maxWidth`. Replies stream word by word; the thread scrolls up. |
 | `prompt` | `text`, `placeholder`, `typing` (characters per second), `delay`, `sendAt`, `fontSize`, `glow` (an animated gradient rim). It types, presses send and clears. |
-| `checklist` | `items`, `stagger`, `checkAfter`, `fontSize`, `color`, `strike` (to-do style), `delay` |
+| `checklist` | `align` (the list is centred as a block by default), `items`, `stagger`, `checkAfter`, `fontSize`, `color`, `strike` (to-do style), `delay` |
 | `quote` | `text`, `name`, `title`, `avatar` (src), `stars` (0–5), `reveal` (words per second), `fontSize`, `delay` |
 | `table` | `columns`, `rows` (cells are text, or `true`/`false`/`"✓"`/`"✗"` for icons), `highlight` (index of the column to emphasise), `fontSize`, `delay`, `stagger` |
 | `timeline` | `items` (`[{ "label", "title", "body" }]`), `current` (pulses; later items dim), `vertical`, `fontSize`, `step` (seconds per milestone), `delay` |
@@ -565,3 +565,85 @@ Music ducks smoothly under voice tracks. The master bus has a soft limiter.
 **Built-in SFX** (`"sfx:<name>"`) are synthesised procedurally, so no asset files are needed: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `drop`/`impact`, `ding`, `chime`, `typing`, `success`.
 
 **Music analysis** (`audio::analyze_pcm`) gives `bpm`, `beats[]`, `downbeats[]`, `onsets[]` and `energy` (100 values per second). Use it to snap cuts and animations to the beat.
+
+## Cost per frame
+
+1080p from `cargo run --release -p anikit-video --example component_cost`:
+- **eval** builds the ops (3D kinds rasterise on all cores here);
+- **full render** rasterises every frame from scratch;
+- **incremental YUV** is the pipeline's path, which redraws only what changed since the previous frame;
+- **static frames** counts frames identical to the one before (from 0.5 s to 1.5 s). Those are deduplicated and encode as P_Skip almost free.
+
+Slow ambient effects step their time (backgrounds 6–15 updates per second, ambient particles 15 per second) and settled springs land exactly on 1, so most frames repeat once entrances end.
+
+| kind | eval ms | full render ms | incremental YUV ms | static frames |
+|---|---:|---:|---:|---:|
+| `code` | 0.027 | 1.84 | 0.00 | 29/29 |
+| `terminal` | 0.011 | 1.25 | 0.20 | 21/29 |
+| `bar-chart` | 0.051 | 2.03 | 2.01 | 7/29 |
+| `line-chart` | 0.028 | 1.64 | 2.84 | 0/29 |
+| `area-chart` | 0.024 | 2.40 | 3.69 | 0/29 |
+| `donut-chart` | 0.042 | 1.32 | 1.42 | 0/29 |
+| `pie-chart` | 0.006 | 1.52 | 0.68 | 0/29 |
+| `counter` | 0.016 | 0.91 | 0.93 | 0/29 |
+| `stat` | 0.016 | 5.93 | 8.73 | 0/29 |
+| `phone` | 0.005 | 3.84 | 5.07 | 7/29 |
+| `laptop` | 0.006 | 4.20 | 4.45 | 7/29 |
+| `browser` | 0.006 | 11.35 | 11.25 | 7/29 |
+| `card` | 0.006 | 5.07 | 5.65 | 14/29 |
+| `button` | 0.004 | 0.78 | 0.13 | 14/29 |
+| `toggle` | 0.001 | 0.70 | 0.04 | 4/29 |
+| `badge` | 0.003 | 0.64 | 0.02 | 14/29 |
+| `avatar` | 0.003 | 0.68 | 0.02 | 17/29 |
+| `avatar-stack` | 0.010 | 0.66 | 0.05 | 14/29 |
+| `progress-bar` | 0.009 | 1.58 | 0.79 | 0/29 |
+| `progress-ring` | 0.009 | 0.73 | 0.16 | 0/29 |
+| `toast` | 0.006 | 0.81 | 0.23 | 11/29 |
+| `cursor` | 0.001 | 0.66 | 0.15 | 5/29 |
+| `tooltip` | 0.003 | 0.70 | 0.10 | 14/29 |
+| `callout` | 0.007 | 0.75 | 0.86 | 0/29 |
+| `arrow` | 0.000 | 0.70 | 0.03 | 23/29 |
+| `lower-third` | 0.006 | 0.75 | 0.46 | 14/29 |
+| `title-card` | 0.015 | 0.84 | 0.60 | 19/29 |
+| `mesh-gradient` | 0.279 | 2.52 | 1.09 | 22/29 |
+| `aurora` | 1.607 | 2.33 | 1.71 | 18/29 |
+| `grain` | 0.000 | 14.66 | 0.00 | 29/29 |
+| `grid` | 0.001 | 2.51 | 0.00 | 29/29 |
+| `dots` | 0.298 | 4.99 | 0.75 | 29/29 |
+| `light-leak` | 0.002 | 13.62 | 4.46 | 20/29 |
+| `bokeh` | 0.007 | 10.35 | 5.88 | 14/29 |
+| `starfield` | 0.087 | 1.08 | 1.41 | 14/29 |
+| `gradient` | 0.000 | 1.86 | 0.00 | 29/29 |
+| `confetti` | 0.024 | 0.83 | 2.21 | 0/29 |
+| `sparks` | 0.003 | 3.41 | 2.52 | 3/29 |
+| `snow` | 0.035 | 0.94 | 1.27 | 14/29 |
+| `dust` | 0.031 | 9.67 | 5.68 | 14/29 |
+| `particle-text` | 1.005 | 18.43 | 19.88 | 0/29 |
+| `morph` | 0.001 | 11.48 | 10.53 | 0/29 |
+| `metaballs` | 0.089 | 15.19 | 9.09 | 14/29 |
+| `god-rays` | 0.040 | 20.33 | 10.93 | 14/29 |
+| `lens-flare` | 0.003 | 10.34 | 6.21 | 14/29 |
+| `model` | 32.984 | 2.01 | 2.80 | 0/29 |
+| `text-3d` | 19.773 | 1.68 | 2.08 | 0/29 |
+| `globe` | 0.316 | 9.81 | 11.84 | 0/29 |
+| `wipe` | 0.001 | 2.02 | 2.52 | 9/29 |
+| `iris` | 0.001 | 0.60 | 1.08 | 13/29 |
+| `glitch` | 0.000 | 0.59 | 0.00 | 29/29 |
+| `chat` | 0.016 | 0.68 | 0.35 | 5/29 |
+| `prompt` | 0.018 | 2.09 | 2.67 | 0/29 |
+| `checklist` | 0.006 | 0.66 | 0.37 | 0/29 |
+| `quote` | 0.021 | 0.71 | 0.60 | 11/29 |
+| `table` | 0.009 | 3.05 | 0.70 | 23/29 |
+| `timeline` | 0.013 | 0.68 | 0.33 | 0/29 |
+| `marquee` | 0.045 | 0.81 | 0.40 | 0/29 |
+| `spotlight` | 0.002 | 0.95 | 1.40 | 11/29 |
+| `keys` | 0.012 | 0.68 | 0.05 | 14/29 |
+| `visualizer` | 0.007 | 3.31 | 4.61 | 0/29 |
+| `ken-burns` | 0.004 | 10.38 | 11.75 | 0/29 |
+| `tile-reveal` | 0.005 | 3.08 | 4.33 | 0/29 |
+| `kinetic-grid` | 0.013 | 1.68 | 2.92 | 0/29 |
+| `reactions` | 0.007 | 0.91 | 0.39 | 0/29 |
+| `card-stack` | 0.018 | 8.13 | 7.63 | 4/29 |
+| `lottie` | 0.000 | 0.63 | 0.00 | 29/29 |
+
+Totals: eval 90.44 ms, full render 255.14 ms, incremental 193.17 ms

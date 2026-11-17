@@ -26,6 +26,11 @@ pub struct Screen {
     pub screen: Option<String>,
     /// Product name shown on generated screens.
     pub title: String,
+    /// The product's own copy (features, changelog items): sidebar entries,
+    /// list and card titles, chat lines, settings rows.
+    pub items: Vec<String>,
+    /// Dashboard numbers: `[{ "label": "Notes", "value": "12,400" }]` (numbers count up).
+    pub kpis: Vec<super::screens::Kpi>,
     /// Accent colour of generated screens (default: theme accent).
     pub accent: Option<Color>,
 }
@@ -43,7 +48,7 @@ fn screen(o: &mut Vec<Op>, ctx: &Ctx, s: &Screen, t: f32, x: f32, y: f32, w: f32
     } else if let Some(kind) = s.screen.as_deref() {
         // Portrait screens leave room for the phone's status bar.
         let top = if h > w * 1.3 { w * 0.13 } else { 0.0 };
-        super::screens::draw_screen(o, ctx, kind, &s.title, s.accent.map(|c| c.0), t, x, y, w, h, top);
+        super::screens::draw_screen(o, ctx, kind, &s.title, &s.items, &s.kpis, s.accent.map(|c| c.0), t, x, y, w, h, top);
     } else {
         let th = ctx.theme;
         let cols: Vec<Rgba> = if s.colors.is_empty() { vec![shade(th.accent, -0.35), shade(th.pal(2), -0.3), shade(th.pal(1), -0.45)] } else { s.colors.iter().map(|c| c.0).collect() };
@@ -357,7 +362,7 @@ mod tests {
         preview::validate(&ops).unwrap();
         preview::snapshot("devices", 960, 540, th.background, ops, a);
         // Every generated screen, phone and laptop.
-        for (i, kind) in ["dashboard", "chat", "feed", "editor", "settings"].iter().enumerate() {
+        for (i, kind) in ["app", "dashboard", "chat", "feed", "editor", "settings"].iter().enumerate() {
             let mut ops = Vec::new();
             ops.extend(build("phone", &json!({"x": 0, "y": 0, "width": 300, "height": 540, "screen": kind, "title": "Northwind", "accent": "#ff6fb1"})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a));
             ops.extend(build("laptop", &json!({"x": 300, "y": 60, "width": 660, "height": 420, "screen": kind, "title": "Northwind"})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a));
@@ -365,5 +370,15 @@ mod tests {
             preview::snapshot(&format!("screen-{i}-{kind}"), 960, 540, th.background, ops, a);
         }
         assert!(build("phone", &json!({"screen": "dashbord"})).err().unwrap().0.contains("dashboard"));
+        // Product copy instead of invented data.
+        let items = json!(["Capture in one keystroke", "Handwriting search in sketches", "Offline mode", "Shared notebooks with live cursors", "Templates", "Version history"]);
+        let mut ops = Vec::new();
+        ops.extend(build("phone", &json!({"x": 0, "y": 0, "width": 300, "height": 540, "screen": "app", "title": "Quill", "items": items})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a));
+        ops.extend(build("browser", &json!({"x": 300, "y": 20, "width": 660, "height": 420, "screen": "app", "title": "Quill", "items": items})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a));
+        preview::validate(&ops).unwrap();
+        preview::snapshot("screen-quill", 960, 540, th.background, ops, a);
+        let ops = build("laptop", &json!({"screen": "dashboard", "title": "Quill", "items": items, "kpis": [{"label": "Notes captured this week", "value": "12,400"}]})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a);
+        preview::validate(&ops).unwrap();
+        preview::snapshot("screen-quill-kpi", 960, 540, th.background, ops, a);
     }
 }
