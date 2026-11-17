@@ -2465,6 +2465,135 @@
   "path": "docs/video/judge/benchmark/data-story/nature-tulp-how-many-trees-2015.md"
  },
  {
+  "slug": "artcamp-moosajee-thom-yorke-last-i-heard-2019",
+  "category": "music-video",
+  "title": "Thom Yorke - Last I Heard (…He Was Circling The Drain)",
+  "studio": "Art Camp (directors: Saad Moosajee with Art Camp; technical director: James Bartolozzi)",
+  "client": "Thom Yorke / XL Recordings",
+  "year": 2019,
+  "url": "https://www.youtube.com/watch?v=I03xFqbxUp8",
+  "alt_urls": [
+   "https://www.dandad.org/awards/professional/2020/231860/thom-yorke-last-i-heard-he-was-circling-the-drain"
+  ],
+  "length_s": 308,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "mixed",
+   "3d-cg",
+   "cel",
+   "stop-motion",
+   "sim"
+  ],
+  "pace": "steady",
+  "palette": [
+   "mono",
+   "dark",
+   "high-contrast"
+  ],
+  "type_role": "none",
+  "mood": [
+   "eerie",
+   "emotional",
+   "raw"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "sim",
+   "boil",
+   "grain",
+   "camera-move",
+   "particles",
+   "instancing",
+   "stop-motion-feel"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "scene3d",
+   "camera",
+   "post",
+   "shader",
+   "GAP: crowd simulation of thousands of agents",
+   "GAP: per-frame hand-treated texture (charcoal wash, powder) over 3D renders",
+   "GAP: fire simulation"
+  ],
+  "awards": [
+   "D&AD 2020 Graphite Pencil, Music Videos / Animation"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/I03xFqbxUp8/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/I03xFqbxUp8/hq1.jpg",
+   "https://i.ytimg.com/vi/I03xFqbxUp8/hq2.jpg",
+   "https://i.ytimg.com/vi/I03xFqbxUp8/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/artcamp-moosajee-thom-yorke-last-i-heard-2019.md"
+ },
+ {
+  "slug": "domnic-chemical-brothers-wide-open-2016",
+  "category": "music-video",
+  "title": "The Chemical Brothers - Wide Open (Official Music Video) ft. Beck",
+  "studio": "Outsider (directors: Dom&Nic); VFX: The Mill; choreography: Wayne McGregor",
+  "client": "The Chemical Brothers / Virgin EMI",
+  "year": 2016,
+  "url": "https://www.youtube.com/watch?v=BC2dRkm8ATU",
+  "alt_urls": [
+   "https://waynemcgregor.com/productions/wide-open",
+   "https://www.youtube.com/watch?v=ifAE5MWR-4k"
+  ],
+  "length_s": 331,
+  "verified": "oembed",
+  "aspect": "16:9",
+  "medium": [
+   "live-action",
+   "photoreal-cg"
+  ],
+  "pace": "calm",
+  "palette": [
+   "light",
+   "cool",
+   "limited"
+  ],
+  "type_role": "none",
+  "mood": [
+   "premium",
+   "emotional",
+   "minimal",
+   "technical"
+  ],
+  "purpose": "music-video",
+  "techniques": [
+   "long-take",
+   "morph",
+   "camera-move",
+   "instancing"
+  ],
+  "audio": "music-led",
+  "anikit_features": [
+   "video",
+   "scene3d",
+   "camera",
+   "matte",
+   "post",
+   "GAP: match-moved CG body replacing a live dancer limb by limb",
+   "GAP: lattice / Voronoi mesh body material",
+   "GAP: lidar-based camera tracking"
+  ],
+  "awards": [
+   "UK Music Video Awards 2016: Best Dance Video",
+   "UK Music Video Awards 2016: Best VFX",
+   "Cannes Lions 2016: Bronze, Entertainment Lions for Music / Music Content (one of one Gold and two Bronze per Station Film)"
+  ],
+  "stills": [
+   "https://i.ytimg.com/vi/BC2dRkm8ATU/maxresdefault.jpg",
+   "https://i.ytimg.com/vi/BC2dRkm8ATU/hq1.jpg",
+   "https://i.ytimg.com/vi/BC2dRkm8ATU/hq2.jpg",
+   "https://i.ytimg.com/vi/BC2dRkm8ATU/hq3.jpg"
+  ],
+  "measured": null,
+  "path": "docs/video/judge/benchmark/music-video/domnic-chemical-brothers-wide-open-2016.md"
+ },
+ {
   "slug": "rousselet-pharrell-cash-in-cash-out-2022",
   "category": "music-video",
   "title": "Pharrell Williams - Cash In Cash Out (Official Video) ft. 21 Savage, Tyler, The Creator",

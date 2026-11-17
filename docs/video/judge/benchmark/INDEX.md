@@ -95,11 +95,13 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [NASA | A Year in the Life of Earth's CO2](data-story/nasa-year-in-the-life-of-co2-2014.md) | NASA Goddard (GMAO; animator/scientist: Bill Putman) | 2014 | ? | calm | data-viz, sim | [watch](https://www.youtube.com/watch?v=x1SgmFa0r04) |
 | [Hans Rosling's 200 Countries, 200 Years, 4 Minutes - The Joy of Stats - BBC](data-story/bbc-rosling-200-countries-2010.md) | BBC Four, The Joy of Stats (presenter: Hans Rosling; data: Gapminder) | 2010 | ? | steady | data-viz, live-action, mixed | [watch](https://www.youtube.com/watch?v=jbkSRLYSojo) |
 
-### Music videos & lyric videos (`music-video/`, 1)
+### Music videos & lyric videos (`music-video/`, 3)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |
 |---|---|---|---|---|---|---|
 | [Pharrell Williams - Cash In Cash Out (Official Video) ft. 21 Savage, Tyler, The Creator](music-video/rousselet-pharrell-cash-in-cash-out-2022.md) | Division (director: François Rousselet); animation/VFX: Electric Theatre Collective | 2022 | 3:56 | fast | photoreal-cg, stylised-3d | [watch](https://www.youtube.com/watch?v=cKEwnhc8ItY) |
+| [Thom Yorke - Last I Heard (…He Was Circling The Drain)](music-video/artcamp-moosajee-thom-yorke-last-i-heard-2019.md) | Art Camp (directors: Saad Moosajee with Art Camp; technical director: James Bartolozzi) | 2019 | 5:08 | steady | mixed, 3d-cg, cel | [watch](https://www.youtube.com/watch?v=I03xFqbxUp8) |
+| [The Chemical Brothers - Wide Open (Official Music Video) ft. Beck](music-video/domnic-chemical-brothers-wide-open-2016.md) | Outsider (directors: Dom&Nic); VFX: The Mill; choreography: Wayne McGregor | 2016 | 5:31 | calm | live-action, photoreal-cg | [watch](https://www.youtube.com/watch?v=BC2dRkm8ATU) |
 
 ### Sports & broadcast packages (`broadcast-sports/`, 5)
 
