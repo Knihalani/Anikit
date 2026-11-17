@@ -1,0 +1,466 @@
+{
+  "name": "rej-components",
+  "tags": [
+    "motion-design"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "fitc-tokyo-2015",
+    "new-yorker-festival"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 2,
+      "typography": 2,
+      "colour": 3,
+      "light_texture": 2,
+      "motion": 2,
+      "craft": 3,
+      "originality": 1
+    },
+    "overall": 2.12,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Needs an actual idea: a metaphor or world for 'the machine' instead of mock UI widgets shown one at a time",
+      "Typography needs a point of view, with scale contrast, a distinctive face and integration with the image, instead of a default serif headline over grey caption text",
+      "Frames need density, material and real light (texture, depth, layered elements) and transitions that carry objects from one shot to the next, as B and D do",
+      "Find an actual idea: replace the product-demo slide structure with a visual metaphor a viewer would remember (as B does with its map of clockwork)",
+      "Build typography with a point of view: scale contrast, a custom or characterful face, type integrated with image instead of centred on empty grounds",
+      "Add material, light and density: fill frames with layered, textured, lit imagery rather than default UI shadows on flat fields",
+      "It has no concept: it needs a specific visual metaphor for its subject instead of generic UI chrome (B builds a whole world from one idea)",
+      "Frames have no density, light or material; it needs layered, lit, textured imagery so every frame works as a poster",
+      "Typography needs a point of view: expressive scale, a chosen face integrated with the image, and choreography between frames instead of swapped slides"
+    ],
+    "tells": [
+      "The textbook 'tasteful AI' look: cream and near-black grounds, a single orange accent, mostly empty frames",
+      "A generic editorial-serif headline ('The quiet machine') with a small red label above and a grey subline, placed like a slide",
+      "Placeholder UI throughout: a code card, an orange pill button, a prompt input bar with a send dot, stacked cards labelled 'Design'",
+      "One frame is entirely blank cream, which shows how little is happening",
+      "A slide-deck structure: each frame is a separate layout with no choreography between them; the idea is literal (product UI plus a feature label)",
+      "Textbook 'tasteful AI' look: cream and near-black grounds, a single amber accent, mostly empty frames",
+      "Generic editorial serif headline 'The quiet machine' with a tiny accent label above and a grey subtitle below, set like a slide",
+      "Placeholder UI throughout: code-editor card, a lone pill button, a chat prompt bar ('Summarise this quarter in a chart'), stacked gradient cards labelled 'Design'",
+      "One frame is entirely blank cream; the structure is a slide deck with nothing in it",
+      "Stock gradient 3D card with default bold-sans label; an effect with no subject",
+      "Textbook 'tasteful AI' look: cream and near-black grounds, a single amber accent, mostly empty frames",
+      "A small tracked label above a generic editorial-serif headline ('The quiet machine') with a tiny subline, set like a slide with no scale contrast or typographic idea",
+      "Placeholder UI: a centred pill button, a code card, a chat input bar, and a stock 3D stacked-card render labelled 'Design'",
+      "One frame is completely empty; the others repeat a slide-deck structure in which little happens",
+      "The idea is literal product-feature listing (code, prompt, cards), and nothing in it is memorable"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "fitc-tokyo-2015": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "new-yorker-festival": {
+      "overall": 7,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 7.96,
+  "delta": -5.84,
+  "trials": [
+    {
+      "key": {
+        "A": "new-yorker-festival",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "fitc-tokyo-2015"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "Hand-painted gouache/brush texture with visible dry-brush streaks that a vector default doesn't produce; the marks are deliberately imperfect, not clip-art",
+              "The aspect ratio changes from frame to frame (tall portrait, small window inside a black field, wide landscape), so the frame shape itself is part of the idea",
+              "A tight primary palette of cobalt, cadmium yellow, vermilion and black, used with a Matisse/Bauhaus point of view rather than one accent colour",
+              "A clear progression: the Chrysler spire, then a subway-window vignette with a figure, then abstraction into grid, plaid and street-map strokes, reads as the city dissolving into gesture",
+              "No type is visible; its absence suits a painterly, wordless city poem"
+            ],
+            "gaps": [
+              "The middle frames (plaid, crossed lines, yellow loops) drift into pure pattern and lose the figurative anchor; more frames should pivot back to people or places so the abstraction keeps its meaning",
+              "No light or depth of the kind B has; adding layered paint passes, paper grain or shifting light would give the flat fields more physical presence",
+              "Needs a closing image or typographic signature as strong as B's title reveal, so the piece resolves instead of just stopping on a grid"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea only this piece could have: the show's world is a clockwork map whose cities unfold mechanically, so the title doubles as a geography lesson",
+              "Real material and light: engraved bronze, aged wood, gears, warm blown-out sun through an astrolabe, shallow depth of field",
+              "Credits are integrated into the world with sigil glyphs and a period-appropriate engraved Roman serif, tracked and small, not slide text",
+              "Implied choreography: a camera fly-through across the map, mechanisms rising out of it, and a closing push into the astrolabe ring holding the logotype",
+              "Every frame works as a poster, and the bookend sun frames give the piece a shape"
+            ],
+            "gaps": [
+              "The palette leans on a familiar warm sepia/bronze fantasy grade; a bolder chromatic accent would make it even more distinctive",
+              "The credit typography is classical and safe; it is carefully chosen but doesn't take the risks D does",
+              "Some frames, such as the plain parchment-map close-up, are lighter on detail than the mechanical set pieces"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 2,
+              "composition": 2,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "The textbook 'tasteful AI' look: cream and near-black grounds, a single orange accent, mostly empty frames",
+              "A generic editorial-serif headline ('The quiet machine') with a small red label above and a grey subline, placed like a slide",
+              "Placeholder UI throughout: a code card, an orange pill button, a prompt input bar with a send dot, stacked cards labelled 'Design'",
+              "One frame is entirely blank cream, which shows how little is happening",
+              "A slide-deck structure: each frame is a separate layout with no choreography between them; the idea is literal (product UI plus a feature label)"
+            ],
+            "gaps": [
+              "Needs an actual idea: a metaphor or world for 'the machine' instead of mock UI widgets shown one at a time",
+              "Typography needs a point of view, with scale contrast, a distinctive face and integration with the image, instead of a default serif headline over grey caption text",
+              "Frames need density, material and real light (texture, depth, layered elements) and transitions that carry objects from one shot to the next, as B and D do"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The typography is the subject: Latin and katakana letterforms are fragmented and constructed from modular parts, and the word TOKYO resolves out of glitch noise",
+              "A deliberate, unusual neon palette (hot pink, cyan, acid lime, violet on near-black), held consistently",
+              "Dense, layered frames: scanlines, dot-matrix pixel type, halftone grids, registration marks, paper-like print texture over the digital elements",
+              "Strong variety and choreography: a giant cropped glyph, a horizontal band, a framed letter field, a diagonal spray of letters, pixel-matrix type, then the logo build",
+              "Building the word out of mixed scripts gives it a specific cultural idea rather than effect for its own sake"
+            ],
+            "gaps": [
+              "The glitch and cyber-Tokyo vocabulary is well-trodden; it needs one image or gesture only this piece owns to approach B's originality",
+              "Light is graphic rather than physical; a real optical layer (bloom, CRT glow, photographic plates) would add depth",
+              "Frame 5 (pixel matrix) is murky and lower in contrast than the rest; tightening its hierarchy would keep every frame poster-grade"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.4,
+        "cost_usd": 0.1566964,
+        "tokens": 71698,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "new-yorker-festival",
+        "B": "game-of-thrones",
+        "C": "fitc-tokyo-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "Hand-painted brush texture with visible dry-brush streaks and uneven edges, a deliberate rejection of vector defaults",
+              "Restricted palette of primary blue, yellow, red, black and off-white held consistently, which recalls Mondrian's 'Broadway Boogie Woogie', an apt reference for New York",
+              "Each frame has a different composition: Chrysler spire, subway-window vignette with a figure, plaid field, crossing lines, abstract taxi forms, grid. Shapes seem to morph from figurative to abstract, which implies choreographed transitions",
+              "Changing aspect ratios and frame masks (square, rounded window, full bleed) show deliberate formal play",
+              "No type at all, which suits a painterly city poem, though the piece stays lightweight"
+            ],
+            "gaps": [
+              "Build a stronger narrative or conceptual spine so the abstraction reads as authored progression, not a mood sequence; B carries a whole world-map conceit from start to finish",
+              "Add depth and light: the flat painted planes have no atmosphere or dimensional staging, while B lights every frame like a sculpture",
+              "Bring in a title or typographic moment painted in the same hand, so the film has a signature beat"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, memorable conceit: clockwork cities unfold out of a map inside an astrolabe, so the world itself is the title sequence and only this piece could have it",
+              "Real material and light: tarnished brass, engraved relief bands, warm volumetric sun flare, painted parchment map, dramatic tilt-shift depth of field",
+              "Credits set in a carved Trajan-like serif with small heraldic sigils, tucked into the 3D world rather than laid over it",
+              "Clear choreography: the camera moves between mechanisms and locations, and the opening and closing frames bookend on the sun-lit astrolabe band",
+              "Logo lock-up integrated into the sculpted band with dragons and lion, so title and object are one"
+            ],
+            "gaps": [
+              "Typography is classical and safe; it serves the piece but takes no risk in the way the 3D world does",
+              "The palette leans heavily on warm sepia and bloom; more cold contrast in the map and stone areas would add range",
+              "Credit placement is somewhat standard (lower third, small caps) next to the ambition of the image"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Typography is the subject: a modular, stencil-cut custom Latin face that dissolves into katakana-like fragments ('TOKYO' resolving through glyph collisions), a real typographic idea",
+              "Unusual, deliberate palette: hot pink, cyan, acid lime and violet on aubergine-black, with a printed-grain texture",
+              "Every frame is built differently: a giant cropped D with a target motif, a scanline band, a framed letter field, diagonal scattered glyphs, an LED dot-matrix grid, a dense layered collage",
+              "Dense, layered frames with pixel grids, registration marks and glitch bars suggest complex motion and kinetic type choreography"
+            ],
+            "gaps": [
+              "The cyber-glitch and Tokyo-signage vocabulary is a well-worn genre; it needs a more singular conceptual hook, like B's map-as-world",
+              "No physical light or depth: everything stays on the screen plane, while B gives its world real material",
+              "Some frames (the dot-matrix frame especially) lose hierarchy in the noise; edit for clearer focal moments"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 2,
+              "composition": 2,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "Textbook 'tasteful AI' look: cream and near-black grounds, a single amber accent, mostly empty frames",
+              "Generic editorial serif headline 'The quiet machine' with a tiny accent label above and a grey subtitle below, set like a slide",
+              "Placeholder UI throughout: code-editor card, a lone pill button, a chat prompt bar ('Summarise this quarter in a chart'), stacked gradient cards labelled 'Design'",
+              "One frame is entirely blank cream; the structure is a slide deck with nothing in it",
+              "Stock gradient 3D card with default bold-sans label; an effect with no subject"
+            ],
+            "gaps": [
+              "Find an actual idea: replace the product-demo slide structure with a visual metaphor a viewer would remember (as B does with its map of clockwork)",
+              "Build typography with a point of view: scale contrast, a custom or characterful face, type integrated with image instead of centred on empty grounds",
+              "Add material, light and density: fill frames with layered, textured, lit imagery rather than default UI shadows on flat fields"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.7,
+        "cost_usd": 0.15316800000000003,
+        "tokens": 71516,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "fitc-tokyo-2015",
+        "B": "game-of-thrones",
+        "C": "new-yorker-festival",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Type is the subject: a custom modular, stencil-like display face that breaks down into glyph fragments, katakana and dot-matrix letterforms, so the typography carries an idea of a city (Tokyo) translated into signal",
+              "Deliberate neon palette (hot pink, mint, chartreuse, violet on near-black) held consistently but remixed in every frame",
+              "Each frame uses a different structure (giant cropped letters, horizontal scanband, framed letter field, diagonal rain, LED dot grid, layered collage), which points to real choreography rather than one swapped layout",
+              "Grain, scanline and print-misregistration texture, plus layered depth in the final frame that builds to the TOKYO lockup"
+            ],
+            "gaps": [
+              "The glitch/HUD language is well-trodden; it needs one concept-specific device only this piece could have, the way B's clockwork map is",
+              "No real light or physical material; the textures are overlays rather than lit surfaces, so the frames lack B's depth and atmosphere",
+              "The narrative arc is thin: it reads as a sequence of style frames resolving to a word, and it needs a structural through-line that pays off the way B's map-to-logo journey does"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.98,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, ownable idea: the world drawn as a clockwork map that builds itself, with the astrolabe sun as the light source, so the sequence's form is the story's geography",
+              "Real light and material: brass, carved wood, engraved metal, warm volumetric flare, shallow depth of field and macro detail",
+              "Credits are integrated into the world with sigil icons and a carefully chosen inscriptional serif in small caps, not laid over it like a slide",
+              "Clear choreography: macro band, then city rising, then gears, then armillary, then map pull-out, then a logo lockup that bookends the opening frame"
+            ],
+            "gaps": [
+              "Credit type is small and occasionally fights the busy miniatures for legibility",
+              "Palette leans heavily on warm sepia; some frames (the map) go flat by comparison",
+              "The final title lockup is more conventional fantasy-epic than the inventive world-building before it"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 8
+            },
+            "tells": [
+              "Hand-painted brush texture with real stroke variation and dry-brush edges: authored mark-making, not vector default",
+              "A strong limited palette (cobalt, sky blue, cadmium yellow, red, black, white) used with conviction, with a Mondrian/Boogie-Woogie nod that fits a New York subject",
+              "The city is abstracted in an idea-led way: Chrysler spire, subway-window figure, grid and street map, and traffic lines become the same gestural grid",
+              "Frames vary in format and structure, which suggests transitions driven by graphic match cuts",
+              "No type is visible, and its absence serves the piece: the painted marks do all the communicating"
+            ],
+            "gaps": [
+              "Compositions are sometimes thin (frames 4 and 5 read as loose sketches rather than finished posters), so it needs B's frame-to-frame density",
+              "No through-line or payoff: it needs a structural device or ending that lands the way B's logo lockup does",
+              "Inconsistent aspect ratios and canvas handling suggest an unresolved delivery format; the mixed formats need committing to as a choice or unifying"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 2,
+              "composition": 2,
+              "typography": 2,
+              "colour": 2,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "Textbook 'tasteful AI' look: cream and near-black grounds, a single amber accent, mostly empty frames",
+              "A small tracked label above a generic editorial-serif headline ('The quiet machine') with a tiny subline, set like a slide with no scale contrast or typographic idea",
+              "Placeholder UI: a centred pill button, a code card, a chat input bar, and a stock 3D stacked-card render labelled 'Design'",
+              "One frame is completely empty; the others repeat a slide-deck structure in which little happens",
+              "The idea is literal product-feature listing (code, prompt, cards), and nothing in it is memorable"
+            ],
+            "gaps": [
+              "It has no concept: it needs a specific visual metaphor for its subject instead of generic UI chrome (B builds a whole world from one idea)",
+              "Frames have no density, light or material; it needs layered, lit, textured imagery so every frame works as a poster",
+              "Typography needs a point of view: expressive scale, a chosen face integrated with the image, and choreography between frames instead of swapped slides"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 27.7,
+        "cost_usd": 0.15320440000000002,
+        "tokens": 71521,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.463,
+  "judge_seconds": 86.8,
+  "verdict": "FAIL"
+}

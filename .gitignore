@@ -20,3 +20,4 @@ isolate-*-v8.log
 
 # Benchmark-set stills and reference clips (evaluation only, never committed): docs/video/judge/benchmark/README
 .cache/benchmark/
+.cache/

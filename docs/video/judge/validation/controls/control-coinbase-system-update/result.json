@@ -1,0 +1,467 @@
+{
+  "name": "control-coinbase-system-update",
+  "tags": [
+    "product-launch",
+    "motion-design",
+    "generative",
+    "kinetic-type"
+  ],
+  "refs": [
+    "fitc-tokyo-2015",
+    "halt-and-catch-fire",
+    "vertigo"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 5,
+      "composition": 6,
+      "typography": 5,
+      "colour": 6,
+      "light_texture": 5,
+      "motion": 6,
+      "craft": 6,
+      "originality": 4
+    },
+    "overall": 5.38,
+    "judged_professional": "2/3",
+    "pro_rate": 0.6666666666666666,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a specific, non-obvious idea about its subject. Right now it illustrates the product category with clip-art symbols",
+      "The text needs real typographic intent, with scale contrast, hierarchy and integration with the image, instead of monospace boilerplate and highlighted pill labels",
+      "It needs a palette and light that develop across the film, plus choreographed transitions with a structure from beginning to payoff, instead of one blue filter held for the whole running time",
+      "The idea needs to go beyond 'crypto = $ signs, coins, locks' to a metaphor a viewer would remember, the way A's spiral works",
+      "The type is default monospace and small label boxes; it needs a typographic point of view and expressive scale at the hero moments",
+      "The palette and texture are a single flat blue; it needs light, depth or a second colour to create hierarchy and climax",
+      "Find a specific idea beyond 'crypto equals coins and locks'. The best entry, C, builds everything around one visual metaphor that belongs to its subject",
+      "Give the type a point of view: scale contrast, a chosen display face, and integration with the ASCII forms instead of caption boxes",
+      "Break the single blue-on-blue treatment with a deliberate palette or light shift, and choreograph a transformation between scenes instead of cutting between ASCII-rendered props"
+    ],
+    "tells": [
+      "The idea is literal: crypto is shown as dollar signs, a coin with an orbit ring, padlocks for security and a grid of Bitcoin coins. The copy fragments are 'Crypto is...' and 'Faster'",
+      "The fake code reads like leaked prompt or pipeline text, for example 'Broadcasting Visual Layer \u2013 Matching Cut Transition(\"circular\") \u2013 CenterLocked: TRUE'. That is a strong sign of automated generation",
+      "The ASCII-filter treatment is applied evenly to stock-like subjects. The effect does the work, and there is no designed image underneath",
+      "The palette is one default electric blue with white throughout, with no variation, accent or tonal development",
+      "The frames repeat: a filter over an icon, then grids of the same icon (three padlocks, 28 coins), which reads like a slide deck",
+      "A consistent ASCII-art rendering system with real effort in it: the walking figure, the coin planet with a ring, the padlocks, a grid of spinning coins",
+      "Varied shots and implied match cuts (the code screen even names a 'matchcut_engine' and a 'circular' transition), so the motion is choreographed",
+      "The idea is literal: 'Crypto is... Faster' with dollar signs, coins and padlocks, close to a diagram of the product promise",
+      "Monochrome IKB-style blue with white monospace is a familiar 'tech brand' look; the code-dump frame is filler",
+      "A consistent ASCII-render system is applied to 3D scenes on an International Klein-style blue: a figure, a coin planet, padlocks and a coin grid. It is coherent and well executed",
+      "The idea is literal: crypto shown as dollar signs, coins, locks, code dumps and labels like 'Crypto is...' and 'Faster'. Nothing here is a memorable metaphor",
+      "The typography is a default monospace terminal font plus small highlighted label boxes. The text sits like captions with no scale contrast",
+      "Frame 4 is a filler wall of pseudo-code, which is effect without subject",
+      "The ASCII filter is a widely available, trendy treatment, so the look depends more on the effect than on authorship"
+    ]
+  },
+  "refs_summary": {
+    "fitc-tokyo-2015": {
+      "overall": 7.5,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "halt-and-catch-fire": {
+      "overall": 8.12,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "vertigo": {
+      "overall": 9.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 8.25,
+  "delta": -2.87,
+  "trials": [
+    {
+      "key": {
+        "A": "vertigo",
+        "B": "fitc-tokyo-2015",
+        "C": "candidate",
+        "D": "halt-and-catch-fire"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "The central idea is specific to this film: an extreme close-up of an eye turns into a spiral, so obsession and dizziness become a single image",
+              "The frames alternate between photography and geometry: a red-washed eye, Lissajous spirals in violet and then green on black, and a return to the eye. That gives the sequence a clear beginning, middle and end",
+              "The type is outlined slab-serif display caps with small-caps job titles. Credits are set flush against the spirals, and the director credit sits right over the eye",
+              "The palette is unusual and deliberate: a monochrome red for the face, with acid violet and mint for the graphics",
+              "The spirals change between frames, from a flat curl to an annulus to a twisted ribbon to a tunnel. That shows real development and weight, not one effect repeated"
+            ],
+            "gaps": [
+              "The typographic hierarchy in the middle credits frame is dense and close to evenly weighted. More contrast in scale between job titles and names would make it read faster",
+              "The spiral frames sit on flat black with no texture, so they feel thinner than the photographic frames. Some grain or optical bloom would make the two halves match",
+              "A few credits are placed in conventional upper or lower bands. Tying more of them into the motion of the spirals would carry the idea through every frame"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The idea fits the subject: early-computing hardware and the people who built it are shown through scan-line glitch, a silicon die and a glowing red disc that resolves into the 'HALT AND CATCH FIRE' title card",
+              "The light and materials are real: a refractive glass chip with caustics, a burnt-in light streak, and smoky edges on the red disc",
+              "A deliberate, almost monochrome palette runs from hot pink to oxblood, with one cream accent in the chip-quad frame",
+              "The choreography builds: abstract glitch, then a silhouetted portrait, then a macro of the chip, then the title. The sense of scale changes every beat",
+              "The credits are set in a restrained classic serif, which contrasts with a heavy wide-caps title. That pairing is a choice, not a default"
+            ],
+            "gaps": [
+              "The credit typography is placed passively in the lower third and never interacts with the image the way A's type does",
+              "The glitch and scan-line language is a familiar genre convention. A more singular visual metaphor, like A's eye turning into a spiral, would make it harder to mistake for something else",
+              "The frames are less varied in composition, with several relying on a centred object on red. Bolder framing or asymmetry would turn more frames into posters"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The frames are dense and layered: letterforms are broken into modular fragments, Latin and katakana glyphs are mixed, and there are pixel-grid letters and frame-within-frame constructions",
+              "The type is the image. The letters are custom, built from segments and assembled across frames before resolving into 'TOKYO'-like forms",
+              "The palette is unusual but controlled: coral, cyan, chartreuse and violet on near-black or grey, with a print-like grain in some frames",
+              "The composition changes in every frame (a giant cropped D, a horizontal band, a bordered field, a diagonal slash, a dot matrix, a collage), which points to real choreography"
+            ],
+            "gaps": [
+              "There is no single image or metaphor a viewer would remember. Compared with A's eye and spiral, the idea stays at 'kinetic type as texture'",
+              "The light and depth are mostly flat graphic layers. Some optical or material treatment would add the physical presence that A and D have",
+              "The density sometimes turns into noise, as in the pixel-grid frame. A clearer focal hierarchy per frame would make each one hold up as a poster"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The idea is literal: crypto is shown as dollar signs, a coin with an orbit ring, padlocks for security and a grid of Bitcoin coins. The copy fragments are 'Crypto is...' and 'Faster'",
+              "The fake code reads like leaked prompt or pipeline text, for example 'Broadcasting Visual Layer \u2013 Matching Cut Transition(\"circular\") \u2013 CenterLocked: TRUE'. That is a strong sign of automated generation",
+              "The ASCII-filter treatment is applied evenly to stock-like subjects. The effect does the work, and there is no designed image underneath",
+              "The palette is one default electric blue with white throughout, with no variation, accent or tonal development",
+              "The frames repeat: a filter over an icon, then grids of the same icon (three padlocks, 28 coins), which reads like a slide deck"
+            ],
+            "gaps": [
+              "It needs a specific, non-obvious idea about its subject. Right now it illustrates the product category with clip-art symbols",
+              "The text needs real typographic intent, with scale contrast, hierarchy and integration with the image, instead of monospace boilerplate and highlighted pill labels",
+              "It needs a palette and light that develop across the film, plus choreographed transitions with a structure from beginning to payoff, instead of one blue filter held for the whole running time"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.8,
+        "cost_usd": 0.1608432,
+        "tokens": 71891,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "vertigo",
+        "B": "fitc-tokyo-2015",
+        "C": "halt-and-catch-fire",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One idea tied to the film's subject: the extreme close-up of an eye turns into a spiral, and the spiral becomes the vertigo itself",
+              "Red-graded photography cuts to black with Lissajous/spirograph curves in magenta and then mint; a bold, unusual palette",
+              "The slab-serif title is outlined and sits right in the eye; credits are set in mixed weights and sizes, ranged right against the curves",
+              "The piece is built as a loop: eye, spiral, abstract curves, back to the eye for the director credit",
+              "The curves change shape from frame to frame (ring, then M\u00f6bius band, then a tunnel), so the motion clearly progresses",
+              "Uses its own technique (mechanical harmonograph curves) rather than a stock effect"
+            ],
+            "gaps": [
+              "It is the benchmark, so the gaps are small: the middle credit frames are less dense than the eye shots",
+              "The black spirograph frames give up the photographic texture the eye shots set up",
+              "The credit blocks in frame 4 are a little crowded against the curve"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A single saturated red-magenta palette carries the whole piece and calls up early-computer phosphor and heat",
+              "Real optical texture throughout: scan-line smearing, glitch slicing, a lit chip-die macro with depth of field, a blown-out orb of light",
+              "Clear progression: abstract signal, then a silhouetted figure, a pixel grid, a horizon line, a physical chip, and finally the title on a burning sun, which pays off 'catch fire'",
+              "The type pairs a refined old-style serif for credits with a heavy extended-caps title and a square glyph; restrained but chosen on purpose"
+            ],
+            "gaps": [
+              "The serif credits are placed like standard lower thirds; unlike A, the type never becomes part of the image",
+              "The glitch and scan-line language is close to the genre default for 'tech drama' and is less specific than A's single spiral idea",
+              "The frames look alike in tone and colour; they need more contrast in scale and value between beats"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A modular, deconstructed type system: letterforms broken into stencil segments, katakana-Latin hybrids, glyphs built from dot matrices",
+              "A deliberate neon palette (coral, cyan, chartreuse, violet on near-black) used with discipline from frame to frame",
+              "Every frame uses a different structure (giant crop, horizontal band, framed grid, diagonal, pixel matrix, layered collage), so the choreography varies a lot",
+              "Dense, layered compositions with a subtle print and grain texture; the 'TOKYO' resolve lands at the end"
+            ],
+            "gaps": [
+              "The concept (Tokyo signage, glitch, pixel type) is a recognised genre; it needs a single idea specific to this subject, like A's eye and spiral",
+              "Light and material are flat graphic surfaces, with none of the depth or lit texture that C has",
+              "Density sometimes turns into noise; some frames need one dominant focal point and stronger scale contrast"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "A consistent ASCII-art rendering system with real effort in it: the walking figure, the coin planet with a ring, the padlocks, a grid of spinning coins",
+              "Varied shots and implied match cuts (the code screen even names a 'matchcut_engine' and a 'circular' transition), so the motion is choreographed",
+              "The idea is literal: 'Crypto is... Faster' with dollar signs, coins and padlocks, close to a diagram of the product promise",
+              "Monochrome IKB-style blue with white monospace is a familiar 'tech brand' look; the code-dump frame is filler"
+            ],
+            "gaps": [
+              "The idea needs to go beyond 'crypto = $ signs, coins, locks' to a metaphor a viewer would remember, the way A's spiral works",
+              "The type is default monospace and small label boxes; it needs a typographic point of view and expressive scale at the hero moments",
+              "The palette and texture are a single flat blue; it needs light, depth or a second colour to create hierarchy and climax"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 26.0,
+        "cost_usd": 0.151356,
+        "tokens": 71423,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "halt-and-catch-fire",
+        "B": "fitc-tokyo-2015",
+        "C": "vertigo",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A near-monochrome red palette carries all six frames and reads like the heat of a CRT or a failing chip, so the colour is the concept",
+              "Real texture throughout: scan-line smear, signal tearing, a lit silicon die sitting on a reflective dish, and halation on the final disc",
+              "The subject changes from abstract glitch to a degraded silhouette, a macro of the chip grid, a light streak, a hero die and finally the title card. That is a clear arc, not one repeated layout",
+              "Small humanist serif credits pull back so the image dominates. The title card switches to heavy extended caps with a square bullet, which is a deliberate typographic shift",
+              "Faces dissolving into signal noise and the chip turning into fire tie the show's themes of people, hardware and breakdown together"
+            ],
+            "gaps": [
+              "The credit type is reserved but generic: it sits on top of the image instead of joining it the way C's type is part of the eye and the spirals",
+              "Glitch as a visual language has been used a lot since this piece. A more distinctive graphic system, like C's spirograph motif, would make it more memorable",
+              "The structure from frame to frame relies on atmosphere more than a single unforgettable transformation. Build towards one signature move, like C's spiral coming out of the eye"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A custom modular display face mixes Latin and katakana-style glyphs, broken into parts and reassembled, so the typography is the subject",
+              "The palette is unusual and deliberate: hot pink, cyan, acid lime, violet and yellow on near-black, with a cream ground in frame 3",
+              "Every frame uses a different system: giant cropped letters, a horizontal band, a framed letter grid, diagonal scatter, a dot-matrix build and a final layered collage. Variety this choreographed points to designed motion",
+              "The frames are dense and layered, with grain, registration offsets and halftone dot fields. Nothing reads as placeholder UI"
+            ],
+            "gaps": [
+              "Light and texture are flat graphic layers with almost no depth or material presence. A physical texture or light pass would add weight",
+              "The idea of a city or conference ident through glitchy bilingual type is familiar. A more specific concept beyond 'Tokyo, digital' would raise originality",
+              "Busy frames such as frames 5 and 6 compete for focus. Clearer hierarchy and a few moments of restraint would make the payoff hit harder"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One specific idea runs the whole piece: vertigo as a spiral that comes out of the eye. It could only belong to this film",
+              "An extreme close-up of the eye, washed in red, turns into Lissajous and spirograph forms in magenta and then green. That is a striking, unusual palette shift",
+              "Wood-type slab-serif outline lettering for the title, set against a caps hierarchy of small labels and large names. The type has a strong point of view and expressive scale",
+              "The structure is circular, opening and closing on the eye, and the spiral changes form between frames. That is clear choreography with a beginning, middle and end",
+              "Every frame works as a poster, and the negative space is active, not empty"
+            ],
+            "gaps": [
+              "The credit blocks in frame 4 are set rag-right against the curve and feel a little crowded",
+              "The texture of the photography is limited by its period and the black fields are flat, although that suits the graphic restraint",
+              "The middle credit run repeats the black-field-plus-spiral layout across several cards. Varying the scale or position more would add surprise"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 6,
+              "originality": 4
+            },
+            "tells": [
+              "A consistent ASCII-render system is applied to 3D scenes on an International Klein-style blue: a figure, a coin planet, padlocks and a coin grid. It is coherent and well executed",
+              "The idea is literal: crypto shown as dollar signs, coins, locks, code dumps and labels like 'Crypto is...' and 'Faster'. Nothing here is a memorable metaphor",
+              "The typography is a default monospace terminal font plus small highlighted label boxes. The text sits like captions with no scale contrast",
+              "Frame 4 is a filler wall of pseudo-code, which is effect without subject",
+              "The ASCII filter is a widely available, trendy treatment, so the look depends more on the effect than on authorship"
+            ],
+            "gaps": [
+              "Find a specific idea beyond 'crypto equals coins and locks'. The best entry, C, builds everything around one visual metaphor that belongs to its subject",
+              "Give the type a point of view: scale contrast, a chosen display face, and integration with the ASCII forms instead of caption boxes",
+              "Break the single blue-on-blue treatment with a deliberate palette or light shift, and choreograph a transformation between scenes instead of cutting between ASCII-rendered props"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.1,
+        "cost_usd": 0.158428,
+        "tokens": 71779,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.471,
+  "judge_seconds": 89.9,
+  "verdict": "PRO"
+}
