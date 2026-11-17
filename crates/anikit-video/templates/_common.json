@@ -340,7 +340,7 @@
           "props": {
             "perspective": true,
             "color": "{{alpha(brand.colors.text, 0.07)}}",
-            "speed": 24,
+            "speed": 0.4,
             "fade": 0.85
           }
         }
