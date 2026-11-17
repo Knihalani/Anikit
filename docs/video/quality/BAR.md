@@ -28,7 +28,7 @@ Those frames scored 100/100 on `critique --render` and up to 8/10 from an LLM gr
 ## Process
 
 - Judge every shot against this list *before* sending it to the parent. A failing frame never reaches the user.
-- Show work as one composed shot (5–8 s) at a time, not as galleries of isolated parts.
+- Show work as a fast-cut test of at most 15 s that passes the pace check below, not as single slow shots or as galleries of isolated parts.
 
 ## Second rejection: pace and "beyond other tools"
 
