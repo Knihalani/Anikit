@@ -752,7 +752,8 @@ fn sameness(raw: &Value, spec: &Value, cx: &mut Ctx) {
                 (240.0..290.0).contains(&h) && sat > 0.4 && color::luminance(bg) < 0.03
             }
         };
-        if house && !own_palette {
+        // Layer colours excuse a missing theme, not a violet one.
+        if house && (primary.is_some() || !own_palette) {
             signals.push("the house palette (violet on near-black)");
         }
         let fonts = theme.and_then(|t| t.get("fonts")).and_then(|f| f.as_object());

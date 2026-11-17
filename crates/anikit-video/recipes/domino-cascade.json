@@ -4,7 +4,7 @@
   "size": "16:9",
   "scenes": [
    {
-    "duration": 6,
+    "duration": 4,
     "layers": [
      {
       "component": "scene3d",
@@ -27,7 +27,7 @@
           "focal": 32
          },
          {
-          "t": 6,
+          "t": 4,
           "pos": [
            1.5,
            1.6,
@@ -43,11 +43,11 @@
         ]
        },
        "physics": {
-        "timeScale": "=1 - 0.7*smoothstep(2.5, 3.0, t)",
+        "timeScale": "=1 - 0.7*smoothstep(1.6, 2.0, t)",
         "bodies": [
          {
           "type": "pane",
-          "count": 600,
+          "count": 300,
           "layout": "dominoes",
           "path": "fan",
           "angle": 100,
@@ -72,7 +72,8 @@
          ],
          "material": "chrome"
         }
-       ]
+       ],
+       "resolution": 0.5
       }
      }
     ]

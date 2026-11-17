@@ -32,7 +32,12 @@ Combine them. `anikit-video docs make-anything` lists the escape hatches.
 
 No limits: expressions on any number or colour (`"=hsl(beat * 30, 80, 60)"`, `level`, `c ? a : b`), `{ "script": … }` loops that generate layers, and `draw` layers of raw paths and points (`docs/video/authoring.md`).
 
-**Costs:** 2D layers render at 100+ fps. Shaders run 50–400 ms per frame (`still` prints it). Ray-traced 3D and particles take 0.3–1 s per frame: use `"quality": "draft"` while iterating, keep 3D shots short, and preview with `still --width 640`. A layer's own timing is `start`/`end`; `at` is for tweens and `audio` cues.
+**Costs (stay on the fast path):**
+- 2D layers render at 100+ fps; shaders cost 50–400 ms a frame (`still` prints it).
+- Ray-traced 3D and particles cost 0.3–1.5 s a frame. Use `"quality": "draft"` and `"resolution": 0.5` on scene3d, and keep 3D shots to 2–4 s.
+- `motionBlur` re-renders 2D layers per sub-frame (shader and 3D images are reused), so turn it on where motion is fast, not globally.
+- While iterating, use `still --width 640` and `render --quality draft --scale 0.5`, never `--quality best`.
+- A layer's own timing is `start`/`end`; `at` is for tweens and `audio` cues.
 
 ## Shortcuts (optional; each is made from the primitives above)
 
