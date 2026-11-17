@@ -326,8 +326,8 @@
           "base": "{{brand.colors.backgroundDeep}}",
           "intensity": "{{(intensity ?? 0.38) * (brand.theme == 'light' ? 0.6 : 1)}}",
           "seed": "{{seed ?? 1}}",
-          "speed": "{{(still ?? false) ? 0 : 0.6}}",
-          "rate": 6
+          "speed": "{{(still ?? false) ? 0 : 0.3}}",
+          "rate": 3
         }
       },
       {
@@ -376,7 +376,7 @@
           "$merge": [
             {
               "delay": "{{delay ?? 0.3}}",
-              "float": "{{(still ?? false) ? 0 : fmt.u * 0.6}}"
+              "float": "{{(bob ?? false) ? fmt.u * 0.6 : 0}}"
             },
             {
               "$if": "src",
