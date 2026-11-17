@@ -106,8 +106,8 @@ fn keyframe_cache() -> &'static KeyframeCache {
 }
 
 /// The field for keyframe `key`, made once and kept while it is recent. Threads
-/// asking for a keyframe that another thread is making wait for it instead of
-/// making it again (neighbouring frames render in parallel and share keyframes).
+/// asking for a keyframe that another thread is still making compute it too
+/// (never blocking) and all callers get the first one stored.
 fn keyframe(key: u64, make: impl FnOnce() -> Lin) -> std::sync::Arc<Lin> {
     let slot = {
         let mut c = keyframe_cache().lock().unwrap();
@@ -123,7 +123,15 @@ fn keyframe(key: u64, make: impl FnOnce() -> Lin) -> std::sync::Arc<Lin> {
             }
         }
     };
-    slot.get_or_init(|| std::sync::Arc::new(make())).clone()
+    // Never block a rayon worker on another frame's computation (nested rayon
+    // work elsewhere could need this thread): if it isn't ready, make it here
+    // too and keep whichever lands first (same pixels either way).
+    if let Some(l) = slot.get() {
+        return l.clone();
+    }
+    let l = std::sync::Arc::new(make());
+    let _ = slot.set(l.clone());
+    slot.get().cloned().unwrap_or(l)
 }
 
 /// Slow fields: computed at `rate` keyframes per second (at the field's own
