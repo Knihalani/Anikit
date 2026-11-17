@@ -1071,14 +1071,12 @@ impl Sim {
     /// State at video time `t` (rounded to a frame of this system's fps).
     pub fn at(&self, t: f32) -> Arc<Snap> {
         let f = ((t - self.def.start) / self.dt).round().max(0.0) as i64;
-        // Wait for a stepping thread without blocking rayon: help with its work.
-        loop {
-            if !self.busy.swap(true, std::sync::atomic::Ordering::Acquire) {
-                break;
-            }
-            if rayon::yield_now().is_none() {
-                std::thread::yield_now();
-            }
+        // Wait for the thread that is stepping. Don't help with rayon work
+        // meanwhile (`rayon::yield_now`): a stolen task can be another frame
+        // calling `at` on this same Sim. The stepping itself runs on the
+        // simulation pool (`scene3d::sim_blocking`), so it always progresses.
+        while self.busy.swap(true, std::sync::atomic::Ordering::Acquire) {
+            std::thread::yield_now();
         }
         let r = self.at_locked(f);
         self.busy.store(false, std::sync::atomic::Ordering::Release);
@@ -1086,7 +1084,14 @@ impl Sim {
     }
 
     fn at_locked(&self, f: i64) -> Arc<Snap> {
-        let mut st = self.state.lock().unwrap();
+        let mut guard = self.state.lock().unwrap();
+        let st: &mut SimState = &mut guard;
+        // The parallel stepping runs on the simulation pool while the lock is
+        // held (see `scene3d::sim_pool`).
+        super::sim_blocking(move || self.at_locked_in(st, f))
+    }
+
+    fn at_locked_in(&self, st: &mut SimState, f: i64) -> Arc<Snap> {
         if let Some(s) = st.snaps.get(&f) {
             return s.clone();
         }
