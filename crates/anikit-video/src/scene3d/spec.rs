@@ -192,7 +192,7 @@ pub fn builtin_material(name: &str) -> Option<Material> {
             absorb: v3(0.9, 0.2, 0.6),
             ..c
         },
-        "aluminium" | "aluminum" => Material { base: v3(0.91, 0.92, 0.92), metallic: 1.0, roughness: 0.26, ..c },
+        "aluminium" | "aluminum" => Material { base: v3(0.91, 0.92, 0.92), metallic: 1.0, roughness: 0.32, ..c },
         "aluminium-bead" | "aluminum-bead" | "bead-blasted" => Material { base: v3(0.86, 0.87, 0.87), metallic: 1.0, roughness: 0.48, ..c },
         "matte" | "white" => Material { base: v3(0.8, 0.79, 0.77), metallic: 0.0, roughness: 0.75, specular: 0.6, ..c },
         "ceramic" => Material { base: v3(0.82, 0.81, 0.79), metallic: 0.0, roughness: 0.2, ..c },

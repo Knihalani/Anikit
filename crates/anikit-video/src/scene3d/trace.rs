@@ -754,7 +754,7 @@ impl Scene {
         if m.transmission > 0.0 {
             // Dielectric interface.
             let eta = if entering { 1.0 / m.ior } else { m.ior };
-            let fr = fresnel_dielectric(nv.min(1.0), eta);
+            let fr = fresnel_dielectric(nv.min(1.0), if ob.thin { 1.0 / m.ior } else { eta });
             let rough = m.roughness.clamp(0.0, 1.0);
             let r = reflect(d, n);
             let refl_l = if depth < q.max_depth.min(2) && entering { self.radiance(madd(s.p, ng, 1e-4), r, depth + 1, glass + 1, q, rough, rot) } else { self.sky(r, rough.max(0.05)) };
@@ -887,8 +887,11 @@ impl Scene {
                         n = scale(n, -1.0);
                     }
                     let nv = dot(n, scale(d, -1.0)).clamp(1e-4, 1.0);
-                    let eta = if entering { 1.0 / m.ior } else { m.ior };
-                    let fr = fresnel_dielectric(nv, eta);
+                    // A thin parallel slab: both faces reflect like the entry
+                    // face (the ray isn't bent inside, so evaluating the exit
+                    // with the outside angle would wrongly hit total internal
+                    // reflection).
+                    let fr = fresnel_dielectric(nv, 1.0 / m.ior);
                     let mut a = 0.0;
                     if let Some(t) = self.print(ob, &s) {
                         col = add(col, scale(mul(self.print_light(t, n, m.tex_glow), thr), haze_f));

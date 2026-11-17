@@ -451,3 +451,92 @@ impl Component for Scene3d {
         vec![Op::Image { image, dst: [0.0, 0.0, ctx.width, ctx.height], opacity: 1.0, transform: crate::dl::IDENTITY }]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn scene(v: Value) -> Result<Scene3d, String> {
+        let mut s = Scene3d::try_from(v)?;
+        s.prepare().map_err(|e| e.0)?;
+        Ok(s)
+    }
+
+    #[test]
+    fn renders_cyc_objects_deterministically() {
+        let s = scene(json!({
+            "env": "cyc", "quality": "draft",
+            "camera": { "keys": [ { "t": 0, "pos": [0, 1, 4], "target": [0, 0.4, 0], "focal": 35 } ] },
+            "objects": [
+                { "text": "AK", "height": 0.5, "material": "chrome" },
+                { "type": "slab", "count": 3, "pos": "=[i - 1, 0.47, -1]", "material": "glass" },
+                { "type": "sphere", "radius": 0.2, "pos": [1, 0.2, 0.5], "material": "matte" }
+            ]
+        }))
+        .unwrap();
+        let a = s.render(0.0, 1.0 / 30.0, 96, 54, None);
+        let b = s.render(0.0, 1.0 / 30.0, 96, 54, None);
+        assert_eq!(a.len(), 96 * 54 * 4);
+        assert_eq!(a, b, "frames must be deterministic");
+        // A bright cyc: the mean is light, and the objects add contrast.
+        let lum: Vec<f32> = a.chunks_exact(4).map(|p| (p[0] as f32 + p[1] as f32 + p[2] as f32) / 765.0).collect();
+        let mean = lum.iter().sum::<f32>() / lum.len() as f32;
+        let min = lum.iter().cloned().fold(1.0f32, f32::min);
+        assert!(mean > 0.6, "cyc should be bright, mean {mean}");
+        assert!(min < 0.45, "objects should show, min {min}");
+    }
+
+    #[test]
+    fn lookdev_props_still_work() {
+        let s = scene(json!({ "text": "ANIKIT", "quality": "draft", "primitives": false })).unwrap();
+        let px = s.render(1.0, 1.0 / 30.0, 64, 36, None);
+        assert!(px.chunks_exact(4).any(|p| p[0] > 40));
+    }
+
+    #[test]
+    fn errors_suggest_fixes() {
+        let e = scene(json!({ "objects": [ { "type": "sphere", "material": "crome" } ] })).err().unwrap();
+        assert!(e.contains("did you mean `chrome`"), "{e}");
+        let e = scene(json!({ "objects": [ { "type": "spere" } ] })).err().unwrap();
+        assert!(e.contains("did you mean `sphere`"), "{e}");
+        let e = scene(json!({ "env": "cyk", "objects": [] })).err().unwrap();
+        assert!(e.contains("did you mean `cyc`"), "{e}");
+        let e = scene(json!({ "objects": [ { "type": "box", "postion": [0, 0, 0] } ] })).err().unwrap();
+        assert!(e.contains("did you mean `position`"), "{e}");
+        let e = scene(json!({ "objects": [], "camra": "orbit" })).err().unwrap();
+        assert!(e.contains("did you mean `camera`"), "{e}");
+    }
+
+    #[test]
+    fn instances_follow_expressions_and_keys() {
+        let s = scene(json!({
+            "objects": [
+                { "type": "box", "count": 4, "lanes": 2, "pos": "=[1.7*i, 0.5, -4*lane]" },
+                { "type": "sphere", "keys": [ { "t": 0, "pos": [0, 0, 0] }, { "t": 2, "pos": [2, 0, 0], "ease": "linear" } ] }
+            ]
+        }))
+        .unwrap();
+        let p = s.p();
+        let insts = instances(&p.objs, 1.0, 0.0);
+        assert_eq!(insts.len(), 9);
+        assert!((insts[3].xf.t.x - 5.1).abs() < 1e-4);
+        assert!((insts[4].xf.t.z + 4.0).abs() < 1e-4);
+        assert!((insts[8].xf.t.x - 1.0).abs() < 1e-4, "linear key halfway");
+    }
+
+    #[test]
+    fn camera_lens_and_linear_track() {
+        let cs = spec::camera(&json!({ "interp": "linear", "keys": [
+            { "t": 0, "pos": [0, 1, 0], "target": [10, 1, 0], "focal": 35, "fstop": 2.8, "shutter": 0.5 },
+            { "t": 6, "pos": [612, 1, 0], "target": [622, 1, 0], "focal": 35, "fstop": 2.8, "shutter": 0.0 } ] }), (v3(0.0, 0.0, 0.0), 1.0), "camera")
+        .unwrap();
+        let c = cs.at(3.0, 16.0 / 9.0, 0.0);
+        assert!((c.pos.x - 306.0).abs() < 1e-3, "exactly linear: {}", c.pos.x);
+        assert!((c.shutter - 0.25).abs() < 1e-4);
+        // 35 mm on a 36 mm-wide sensor: about 54.4° horizontal.
+        let hf = 2.0 * ((c.fov.to_radians() * 0.5).tan() * 16.0 / 9.0).atan();
+        assert!((hf.to_degrees() - 54.43).abs() < 0.1, "{}", hf.to_degrees());
+        assert!(c.aperture > 0.5, "f/2.8 at 10 m focus blurs the far field");
+    }
+}
