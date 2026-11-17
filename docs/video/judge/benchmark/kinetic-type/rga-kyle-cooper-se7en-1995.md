@@ -6,7 +6,7 @@ studio: "R/Greenberg Associates West (director: Kyle Cooper; designer: Jenny Sha
 client: "New Line Cinema (director: David Fincher)"
 year: 1995
 url: https://vimeo.com/87617487
-alt_urls: [https://imaginaryforces.com/project/se7en, https://www.artofthetitle.com/title/se7en/]
+alt_urls: ["https://imaginaryforces.com/project/se7en", "https://www.artofthetitle.com/title/se7en/"]
 length_s: 128
 verified: oembed
 aspect: "2.39:1"
@@ -25,6 +25,10 @@ stills:
   - https://www.artofthetitle.com/assets/sm/upload/kv/vg/9u/1d/seven_t.jpg
   - https://media.artofthetitle.com/media/se7en-the-notebooks-sueks2w5/poster.jpg
   - https://media.artofthetitle.com/media/se7en-early-storyboards-w3nazcd1/poster.jpg
+  - https://www.artofthetitle.com/assets/sm/upload/90/0m/3j/ev/s_type+photos_02.jpg
+  - https://www.artofthetitle.com/assets/sm/upload/1x/y0/o4/15/s_type+photos_04.jpg
+  - https://www.artofthetitle.com/assets/sm/upload/9d/op/5q/fk/s_type+photos_05.jpg
+  - https://www.artofthetitle.com/assets/sm/upload/8c/m4/s0/10/s_type+photos_08.jpg
 measured: null
 ---
 

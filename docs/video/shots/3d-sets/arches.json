@@ -1,0 +1,83 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 2,
+   "scene3d": {
+    "env": "cyc",
+    "rig": "golden",
+    "set": "arches",
+    "camera": {
+     "shake": "breath",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        1.9249999999999998,
+        1.0,
+        5.5
+       ],
+       "target": [
+        0,
+        0.8,
+        0
+       ],
+       "focal": 35,
+       "fstop": 8
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "hero",
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.17,
+        0.0
+       ],
+       [
+        0.2,
+        0.03
+       ],
+       [
+        0.2,
+        0.55
+       ],
+       [
+        0.16,
+        0.68
+       ],
+       [
+        0.07,
+        0.78
+       ],
+       [
+        0.07,
+        0.9
+       ],
+       [
+        0.0,
+        0.9
+       ]
+      ],
+      "segments": 128,
+      "material": {
+       "extends": "ceramic",
+       "base": "#2F4858"
+      }
+     }
+    ]
+   },
+   "layers": []
+  }
+ ]
+}

@@ -25,6 +25,8 @@ stills:
   - https://i.ytimg.com/vi/XqWig2WARb0/hq1.jpg
   - https://i.ytimg.com/vi/XqWig2WARb0/hq2.jpg
   - https://i.ytimg.com/vi/XqWig2WARb0/hq3.jpg
+  - https://www.cartoonbrew.com/wp-content/uploads/2013/11/bearandhare.jpg
+  - https://3dvf.com/wp-content/uploads/2024/12/bear-hare.jpg
 measured: null
 ---
 

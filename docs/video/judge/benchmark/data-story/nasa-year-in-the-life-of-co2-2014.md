@@ -6,7 +6,7 @@ studio: "NASA Goddard (GMAO; animator/scientist: Bill Putman)"
 client: "NASA"
 year: 2014
 url: https://www.youtube.com/watch?v=x1SgmFa0r04
-alt_urls: [https://svs.gsfc.nasa.gov/11719]
+alt_urls: ["https://svs.gsfc.nasa.gov/11719"]
 length_s: null
 verified: oembed
 aspect: "16:9"
@@ -25,6 +25,7 @@ stills:
   - https://i.ytimg.com/vi/x1SgmFa0r04/hq1.jpg
   - https://i.ytimg.com/vi/x1SgmFa0r04/hq2.jpg
   - https://i.ytimg.com/vi/x1SgmFa0r04/hq3.jpg
+  - https://www.geeksaresexy.net/wp-content/uploads/2016/03/carbon.jpg
 measured: null
 ---
 

@@ -2,7 +2,7 @@
 
 **Install:** `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh` (prebuilt, about 2 s). Don't build from source to render.
 
-Start with [`skills/anikit-video/SKILL.md`](../../skills/anikit-video/SKILL.md) (48 lines): install, the loop, the open primitives and the shortcuts. Then use `anikit-video docs <topic>` (30-line pages, each with a working example) instead of reading long files: `taste` (read before designing) `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything expressions script draw components analyze board`.
+Start with [`skills/anikit-video/SKILL.md`](../../skills/anikit-video/SKILL.md) (48 lines): install, the loop, the open primitives and the shortcuts. Then use `anikit-video docs <topic>` (30-line pages, each with a working example) instead of reading long files: `taste` (read before designing) `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything expressions script draw components analyze board graphic`.
 
 ```bash
 anikit-video docs                                    # topics

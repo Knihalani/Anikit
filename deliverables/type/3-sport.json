@@ -1,0 +1,80 @@
+{
+ "size": "1080p",
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 4,
+   "background": "#0b0b0b",
+   "layers": [
+    {
+     "text": "NO\nDAYS\nOFF",
+     "font": "Big Shoulders",
+     "size": "37vh",
+     "weight": 900,
+     "color": "#e8ff3a",
+     "lineHeight": 0.86,
+     "letterSpacing": "-0.01em",
+     "align": "left",
+     "x": "5vw",
+     "y": "3vh",
+     "anchor": "topLeft",
+     "skewX": -8,
+     "enter": {
+      "preset": "mask by line up",
+      "stagger": 0.08
+     }
+    },
+    {
+     "text": "SEASON 26",
+     "font": "Saira",
+     "size": "11vh",
+     "weight": 800,
+     "axes": {
+      "wdth": 50
+     },
+     "color": "#0b0b0b",
+     "align": "right",
+     "x": "96vw",
+     "y": "62vh",
+     "anchor": "right",
+     "stroke": {
+      "color": "#e8ff3a"
+     },
+     "strokeWidth": 3,
+     "animate": [
+      {
+       "keyframes": {
+        "axes.wdth": [
+         50,
+         125
+        ]
+       },
+       "at": 0.4,
+       "duration": 1.4,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "text": "MATCHDAY 01 — 19:45 — ESTADIO NORTE",
+     "font": "Martian Mono",
+     "size": "2vh",
+     "weight": 600,
+     "axes": {
+      "wdth": 112.5
+     },
+     "color": "#e8ff3a",
+     "letterSpacing": "0.08em",
+     "align": "right",
+     "x": "96vw",
+     "y": "92vh",
+     "anchor": "right",
+     "enter": {
+      "preset": "type",
+      "delay": 1.2
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -347,6 +347,26 @@ impl Doc {
         buf.get(o..o + n).map(|b| Some(b.to_vec())).ok_or_else(|| "image bufferView out of range".into())
     }
 
+    /// `textures/x_leaves_diff_1k.jpg` → an existing `textures/x_leaves_alpha_1k.png` (or .jpg).
+    fn sibling_alpha(&self, t: &Value) -> Option<std::path::PathBuf> {
+        let tex = &self.json["textures"][t["index"].as_u64()? as usize];
+        let uri = percent_decode(self.json["images"][tex["source"].as_u64()? as usize]["uri"].as_str()?);
+        let stem = uri.rsplit_once('.')?.0;
+        for (a, b) in [("_diff_", "_alpha_"), ("_diffuse_", "_alpha_"), ("_color_", "_alpha_"), ("_basecolor_", "_alpha_")] {
+            if stem.to_lowercase().contains(a) {
+                let i = stem.to_lowercase().find(a)?;
+                let cand = format!("{}{b}{}", &stem[..i], &stem[i + a.len()..]);
+                for ext in ["png", "jpg"] {
+                    let p = self.dir.join(format!("{cand}.{ext}"));
+                    if p.exists() && !cand.contains("..") {
+                        return Some(p);
+                    }
+                }
+            }
+        }
+        None
+    }
+
     /// The material's base colour / normal / metallic-roughness / occlusion
     /// textures as a UV-mapped PBR set (cached per file and material).
     fn textures(&self, i: usize, m: &Material) -> Result<Option<u32>, String> {
@@ -385,7 +405,28 @@ impl Doc {
             Some(b) => Some(chan(b, 0)?),
             None => None,
         };
+        // Cutouts (leaves, fences): coverage from the base colour's alpha.
+        let cutoff = match j["alphaMode"].as_str() {
+            Some("MASK") => Some(j["alphaCutoff"].as_f64().unwrap_or(0.5) as f32),
+            Some("BLEND") => Some(0.5),
+            _ => None,
+        };
+        let alpha = match (cutoff, &albedo) {
+            (Some(c), Some(b)) => {
+                let im = fit(dec(b.clone())?);
+                if im.color().has_alpha() {
+                    let im = im.to_rgba8();
+                    Some((Mips::from_raw(im.width() as usize, im.height() as usize, 1, im.pixels().map(|p| p[3]).collect()), c))
+                } else {
+                    // A JPEG colour map (Poly Haven's exports): the cutout is a
+                    // sibling `…_alpha_…` file, when there is one.
+                    self.sibling_alpha(&pbr["baseColorTexture"]).map(|p| Mips::load(&p, 1, MAX)).transpose()?.map(|m| (m, c))
+                }
+            }
+            _ => None,
+        };
         let set = PbrSet {
+            alpha,
             albedo: albedo.map(rgb).transpose()?,
             normal: normal.map(rgb).transpose()?,
             rough,

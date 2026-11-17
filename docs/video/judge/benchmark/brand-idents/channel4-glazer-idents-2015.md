@@ -26,6 +26,9 @@ stills:
   - https://i.ytimg.com/vi/8Ua5m6lPTbA/hq2.jpg
   - https://i.ytimg.com/vi/8Ua5m6lPTbA/hq3.jpg
   - https://i.ytimg.com/vi/aWvUJATjJDE/maxresdefault.jpg
+  - https://i.ytimg.com/vi/aWvUJATjJDE/hq1.jpg
+  - https://i.ytimg.com/vi/aWvUJATjJDE/hq2.jpg
+  - https://i.ytimg.com/vi/aWvUJATjJDE/hq3.jpg
 measured: null
 ---
 
