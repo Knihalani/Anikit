@@ -151,24 +151,18 @@ Before → after, same benchmarks:
 
 ## End-to-end pipeline (spec → MP4), measured
 
-`anikit-video render` with ak264 (the MP4 default) runs **fused**: frames are split into GOP chunks (`gop = clamp(n / (3 × threads), 30, 300)`), and each worker evaluates, renders incrementally (`render_yuv_incremental`), copies only changed macroblocks into its chunk buffer and encodes, with the exact change map as the encoder hint. Spans that `Evaluator::is_static` proves identical are **held**: no eval, no render, all-skip P frames. `--profile` prints the per-stage breakdown.
+`anikit-video render` with ak264 (the MP4 default) runs **fused**: frames are split into the encoder's GOP chunks (`ak264::chunk_ranges`), and each worker evaluates, renders incrementally (`render_yuv_incremental`), copies only changed macroblocks into its chunk buffer and encodes, with the exact change map as the encoder hint. Spans that `Evaluator::is_static` proves identical are **held**: no eval, no render, all-skip P frames. `--profile` prints the per-stage breakdown (eval / render / copy / encode / idle). The ffmpeg encoders (x264, VP9, AV1, ProRes, GIF) also render incrementally, with contiguous frame runs per worker.
 
-4-core container, 1080p, wall clock including spec compile and the MP4 mux (`render --json`, `render_fps`), 2026-11-17 02:35 UTC:
+4-core container, 1080p, wall clock including spec compile and mux (`render --json` → `render_fps`), 04:10 UTC, all branches merged:
 
-| Content | Frames | ak264 (fused) | x264 veryfast (ffmpeg pipe) | Frames skipped |
+| Content | Frames | ak264 (fused) | x264 veryfast | Skipped |
 |---|---|---|---|---|
-| `new launch` template (benchmark of record: mesh backdrop, devices, chart, confetti) | 881 @ 30 | **125 fps** (7.0 s, 7.1 MB) | 75 fps (11.8 s, 6.3 MB) | 0 |
-| same, without the animated mesh backdrop | 881 @ 30 | **333 fps** (2.6 s) | 122 fps | 83 |
-| `docs/video/examples/showcase.json` | 222 @ 30 | **573 fps** (0.39 s) | 135 fps | 23 |
-| title + chart slides (mostly holds) | 570 @ 60 | **2197 fps** (0.26 s) | 214 fps | 392 |
+| `new launch` template (benchmark of record) | 868 @ 30 | **320–366 fps** (2.4–2.7 s, 3.9 MB) | 54 fps with `--quality high` | 417 Unchanged |
+| `docs/video/examples/showcase.json` | 222 @ 30 | **510–580 fps** | 162 fps | 23 |
+| title + chart slides (mostly holds) | 570 @ 60 | **≈2200 fps** | 240 fps | ≈400 |
 
-Before the fused path (render batches → separate encoder thread), the benchmark of record ran at 109 fps.
+History of the benchmark of record: 63 fps (22:55) → 109 → 143 (fused) → 125 → 353 (backdrop holds, settled components) → 320–366 now.
 
-**After the backdrop and settle fixes from RENDER, COMPONENTS and AGENTS (merged 02:40 UTC):** the current `new launch` template renders 901 frames in 2.55 s = **353 fps** with ak264. 404 frames are skipped as Unchanged (eval 0.5 / render 6.2 / encode 4.7 CPU ms per frame). The older launch spec above now runs at 268 fps.
+`--profile` on the benchmark of record (CPU ms per frame, summed over 4 threads): eval 0.1 · render 6.9 · copy 0.15 · encode 2.9 · idle 1.0. Render time is almost all from the ~424 Full frames (about 13 ms each). `CHURN_DETAIL=1 cargo run --release -p anikit-video --example dl_churn -- spec.json` shows what forces them. Mostly it's a clip layer (no filter, opacity 1) that moved by a pixel or grew (device screens, wipes), which `render_yuv_incremental` treats as a full-frame change. Bounding those by the clip would make them Partial.
 
-`--profile` on the benchmark of record (CPU ms per frame, summed over 4 threads): eval 0.5, render 17–18 (all 881 frames Full), copy 0.4, encode 10–12. Two things keep it from being incremental:
-
-1. The animated `mesh-gradient` backdrop changes every pixel of every frame (a keyframe blend), so no frame is Unchanged or Partial. Removing it gives 333 fps; `speed: 0` gives 230 fps.
-2. Without the mesh, 770 / 881 frames are still Full, because any changed `PushLayer` (mostly clip layers inside device and toast components) forces a full frame (`examples/dl_churn.rs` counts them).
-
-Correctness: fused outputs decode with ffmpeg and match the x264 path at 50–54 dB PSNR (`tests/pipeline_e2e.rs` checks pixels across held, partial and full frames and GOP boundaries).
+Correctness: fused output decodes with ffmpeg and matches x264 `--quality high` at ≥ 48.6 dB on every frame of the launch template, and at 53.6 dB average on the showcase. `tests/pipeline_e2e.rs` compares fused and plain paths frame by frame, including a many-chunk stress case.
