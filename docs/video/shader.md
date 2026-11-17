@@ -188,7 +188,7 @@ void mainImage(out vec4 c, in vec2 p) {
 ```
 
 - **Channels.** A channel `"A"` (in the layer's `channels` or a buffer's) reads buffer A. If A runs earlier in the order, it reads this frame's A; if A is the reading pass itself or a later one, it reads last frame's A (feedback). On the layer's first frame, previous buffers are zero. Buffer channels can also be `"noise"` or `"none"`, with `wrap` and `filter` options as usual.
-- **Determinism.** Frame *n* is the same whether the render reaches it in order or a still jumps straight to it: a jump runs the buffers from the layer's first frame. Running from the start makes a still deep into a long feedback shot cost *n* buffer frames (about 10 ms each at 960×540). Renders step one frame at a time.
+- **Determinism.** Frame *n* is the same whether the render reaches it in order or a still jumps straight to it: a jump runs the buffers from the layer's first frame. Running from the start makes a still deep into a long feedback shot cost *n* buffer frames (about 6 ms each at 960×540). Float buffers and `texelFetch` are sampled inline, with no call per read. Renders step one frame at a time.
 - **Uniforms.** Buffers see the spec's uniform values (or the declared defaults), not animated ones. Otherwise a frame would depend on how it was reached. Animate the image pass, or drive buffers from `iTime`, `iAudio` and `iBeat`.
 
 ### WGSL

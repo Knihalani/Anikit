@@ -1264,6 +1264,29 @@ impl<'m, 'b> Lower<'m, 'b> {
         out
     }
 
+    /// Four float texels (16 bytes each) at byte offsets `off`, as r, g, b, a lanes.
+    fn gather_f(&mut self, data: Value, off: Value) -> [Value; 4] {
+        let fl = MemFlagsData::trusted();
+        let t: [Value; 4] = std::array::from_fn(|l| {
+            let o = self.b.ins().extractlane(off, l as u8);
+            let o = self.b.ins().uextend(I64, o);
+            let a = self.b.ins().iadd(data, o);
+            self.b.ins().load(F32X4, fl, a, 0)
+        });
+        // 4×4 transpose: texel-per-vector to channel-per-vector.
+        let b = &mut self.b;
+        let lo01 = vm::shuffle2x4(b, t[0], t[1], [0, 4, 1, 5]); // r0 r1 g0 g1
+        let lo23 = vm::shuffle2x4(b, t[2], t[3], [0, 4, 1, 5]); // r2 r3 g2 g3
+        let hi01 = vm::shuffle2x4(b, t[0], t[1], [2, 6, 3, 7]); // b0 b1 a0 a1
+        let hi23 = vm::shuffle2x4(b, t[2], t[3], [2, 6, 3, 7]); // b2 b3 a2 a3
+        [
+            vm::shuffle2x4(b, lo01, lo23, [0, 1, 4, 5]),
+            vm::shuffle2x4(b, lo01, lo23, [2, 3, 6, 7]),
+            vm::shuffle2x4(b, hi01, hi23, [0, 1, 4, 5]),
+            vm::shuffle2x4(b, hi01, hi23, [2, 3, 6, 7]),
+        ]
+    }
+
     fn unpack(&mut self, px: Value) -> [Value; 4] {
         let k = fsplat(&mut self.b, 1.0 / 255.0);
         let m = isplat(&mut self.b, 0xff);
@@ -1317,13 +1340,33 @@ impl<'m, 'b> Lower<'m, 'b> {
         let yb = self.wrap_axis(fy1, hf, h, rep);
         let ra = self.b.ins().imul(ya, w);
         let rb = self.b.ins().imul(yb, w);
-        let mut corners = Vec::with_capacity(4);
-        for (r, c) in [(ra, xa), (ra, xb), (rb, xa), (rb, xb)] {
-            let i = self.b.ins().iadd(r, c);
+        // RGBA8 or float texels: one uniform, predictable branch per sample.
+        let idx: Vec<Value> = [(ra, xa), (ra, xb), (rb, xa), (rb, xb)].iter().map(|&(r, c)| self.b.ins().iadd(r, c)).collect();
+        let cv: Vec<[Variable; 4]> = (0..4).map(|_| std::array::from_fn(|_| self.b.declare_var(F32X4))).collect();
+        let isf = self.b.ins().load(I32, fl, env, base + 36);
+        let (fb, ub, mb) = (self.b.create_block(), self.b.create_block(), self.b.create_block());
+        self.b.ins().brif(isf, fb, &[], ub, &[]);
+        self.b.switch_to_block(fb);
+        for (k, &i) in idx.iter().enumerate() {
+            let off = self.b.ins().ishl_imm_s(i, 4);
+            let ch = self.gather_f(data, off);
+            for c in 0..4 {
+                self.b.def_var(cv[k][c], ch[c]);
+            }
+        }
+        self.b.ins().jump(mb, &[]);
+        self.b.switch_to_block(ub);
+        for (k, &i) in idx.iter().enumerate() {
             let off = self.b.ins().ishl_imm_s(i, 2);
             let g = self.gather(data, off);
-            corners.push(self.unpack(g));
+            let ch = self.unpack(g);
+            for c in 0..4 {
+                self.b.def_var(cv[k][c], ch[c]);
+            }
         }
+        self.b.ins().jump(mb, &[]);
+        self.b.switch_to_block(mb);
+        let corners: Vec<[Value; 4]> = cv.iter().map(|vs| std::array::from_fn(|c| self.b.use_var(vs[c]))).collect();
         (0..4)
             .map(|k| {
                 let (p00, p10, p01, p11) = (corners[0][k], corners[1][k], corners[2][k], corners[3][k]);
@@ -1347,14 +1390,85 @@ impl<'m, 'b> Lower<'m, 'b> {
             Some(l) => self.vals(sc, l)?[0],
             None => isplat(&mut self.b, 0),
         };
-        let addr = self.b.ins().stack_addr(self.ptr_ty, self.scratch, 0);
         let fl = MemFlagsData::trusted();
+        let env = self.env;
+        let base = texture::ENV_CHAN + ch as i32 * texture::CHAN_SIZE;
+        let out: Vec<Variable> = (0..4).map(|_| self.b.declare_var(F32X4)).collect();
+        let (inl, slow, merge) = (self.b.create_block(), self.b.create_block(), self.b.create_block());
+        // Inline when the channel is bound and every lane reads level 0 (the
+        // buffer-simulation case); other levels go through the sampler.
+        let data = self.b.ins().load(self.ptr_ty, fl, env, base);
+        let bound = self.b.ins().icmp_imm_s(IntCC::NotEqual, data, 0);
+        let z = isplat(&mut self.b, 0);
+        let l0 = self.b.ins().icmp(IntCC::Equal, lod, z);
+        let l0 = self.b.ins().vall_true(l0);
+        let ok = self.b.ins().band(bound, l0);
+        self.b.ins().brif(ok, inl, &[], slow, &[]);
+        self.b.switch_to_block(inl);
+        {
+            let ld = |s: &mut Self, o: i32| {
+                let x = s.b.ins().load(I32, fl, env, base + o);
+                s.b.ins().splat(I32X4, x)
+            };
+            let (w, h) = (ld(self, 8), ld(self, 12));
+            let one = isplat(&mut self.b, 1);
+            let (x, y) = (xy[0], xy[1]);
+            // In range: 0 <= x < w and 0 <= y < h; outside reads as 0, like the sampler.
+            let gx = self.b.ins().icmp(IntCC::SignedGreaterThanOrEqual, x, z);
+            let gy = self.b.ins().icmp(IntCC::SignedGreaterThanOrEqual, y, z);
+            let lx = self.b.ins().icmp(IntCC::SignedLessThan, x, w);
+            let ly = self.b.ins().icmp(IntCC::SignedLessThan, y, h);
+            let a = self.b.ins().band(gx, gy);
+            let c = self.b.ins().band(lx, ly);
+            let inside = self.b.ins().band(a, c);
+            let wm = self.b.ins().isub(w, one);
+            let hm = self.b.ins().isub(h, one);
+            let xc = self.b.ins().smax(x, z);
+            let xc = self.b.ins().smin(xc, wm);
+            let yc = self.b.ins().smax(y, z);
+            let yc = self.b.ins().smin(yc, hm);
+            // Row 0 is the top of the image; y = 0 is the bottom.
+            let row = self.b.ins().isub(hm, yc);
+            let row = self.b.ins().imul(row, w);
+            let idx = self.b.ins().iadd(row, xc);
+            let isf = self.b.ins().load(I32, fl, env, base + 36);
+            let zf = fsplat(&mut self.b, 0.0);
+            let (fb, ub, mb) = (self.b.create_block(), self.b.create_block(), self.b.create_block());
+            self.b.ins().brif(isf, fb, &[], ub, &[]);
+            self.b.switch_to_block(fb);
+            let off = self.b.ins().ishl_imm_s(idx, 4);
+            let chv = self.gather_f(data, off);
+            for (var, v) in out.iter().zip(chv) {
+                let v = sel(&mut self.b, inside, v, zf);
+                self.b.def_var(*var, v);
+            }
+            self.b.ins().jump(mb, &[]);
+            self.b.switch_to_block(ub);
+            let off = self.b.ins().ishl_imm_s(idx, 2);
+            let g = self.gather(data, off);
+            let chv = self.unpack(g);
+            for (var, v) in out.iter().zip(chv) {
+                let v = sel(&mut self.b, inside, v, zf);
+                self.b.def_var(*var, v);
+            }
+            self.b.ins().jump(mb, &[]);
+            self.b.switch_to_block(mb);
+            self.b.ins().jump(merge, &[]);
+        }
+        self.b.switch_to_block(slow);
+        let addr = self.b.ins().stack_addr(self.ptr_ty, self.scratch, 0);
         for (i, val) in [xy[0], xy[1], lod].into_iter().enumerate() {
             self.b.ins().store(fl, val, addr, (i * 16) as i32);
         }
         let chv = self.b.ins().iconst(I32, ch as i64);
         self.b.ins().call(self.fetch_ref, &[self.env, chv, addr]);
-        Ok((0..4).map(|i| self.b.ins().load(F32X4, fl, addr, i * 16)).collect())
+        for (i, var) in out.iter().enumerate() {
+            let x = self.b.ins().load(F32X4, fl, addr, i as i32 * 16);
+            self.b.def_var(*var, x);
+        }
+        self.b.ins().jump(merge, &[]);
+        self.b.switch_to_block(merge);
+        Ok(out.iter().map(|v| self.b.use_var(*v)).collect())
     }
 
     // ---------- statements ----------
