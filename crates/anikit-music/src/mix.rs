@@ -7,7 +7,7 @@
 //! `gain`). Instruments from different sources (samples, models, synths)
 //! therefore sit right in the mix without per-instrument trims.
 
-use crate::dsp;
+use crate::dsp::{self, Processor};
 use crate::render::{RenderOpts, Stem, Timings};
 use crate::spec::{Arrangement, TrackMix};
 use rayon::prelude::*;
@@ -58,7 +58,10 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
     // Groups: one set of buses per stem when stems are wanted (so stems sum
     // exactly to the mix), otherwise one shared set.
     let groups: Vec<&'static str> = if opts.stems { vec!["drums", "bass", "music"] } else { vec!["all"] };
-    let reverb = dsp::ReverbParams::preset(&a.reverb).ok_or_else(|| format!("music: reverb preset '{}' (use room, hall, plate, chamber, cathedral, ambience)", a.reverb))?;
+    if !dsp::REVERB_PRESETS.contains(&a.reverb.as_str()) {
+        return Err(format!("music: reverb preset '{}' (use {})", a.reverb, dsp::REVERB_PRESETS.join(", ")));
+    }
+    let reverb = dsp::ReverbParams { preset: Some(a.reverb.clone()), wet: Some(1.0), dry: Some(0.0), ..Default::default() };
     let delay_time = beat * 0.75; // dotted 8th
     let stems: Vec<Stem> = groups
         .par_iter()
@@ -86,7 +89,7 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
                 }
             }
             if any_d {
-                let mut d = dsp::Delay::new(rate, &dsp::DelayParams { time: delay_time as f32, feedback: 0.35, ping_pong: true, mix: 1.0, ..Default::default() });
+                let mut d = dsp::Delay::new(rate as f32, &dsp::DelayParams { time: Some(delay_time as f32), feedback: 0.35, ping_pong: true, wet: 1.0, dry: 0.0, ..Default::default() });
                 d.process(&mut dl, &mut dr);
                 add(&mut l, &dl, 0.5);
                 add(&mut r, &dr, 0.5);
@@ -96,7 +99,7 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
                 any_r = true;
             }
             if any_r {
-                let mut rv = dsp::Reverb::new(rate, &reverb);
+                let mut rv = dsp::Reverb::new(rate as f32, &reverb);
                 rv.process(&mut rl, &mut rr);
                 let g = 10f32.powf(a.master.reverb_gain as f32 / 20.0) * 0.6;
                 add(&mut l, &rl, g);
@@ -124,7 +127,7 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
         add(&mut r, &s.r, 1.0);
     }
     fades(a, &mut l, &mut r, rate);
-    let rep = dsp::master(&mut l, &mut r, rate, a.master.lufs, a.master.ceiling);
+    let rep = dsp::master(&mut l, &mut r, rate, a.master.lufs as f32, a.master.ceiling as f32);
     // Stems carry the master's static gain (not its limiter) so they line up with the mix.
     let g = 10f32.powf(rep.gain_db as f32 / 20.0);
     let mut stems = if opts.stems { stems } else { Vec::new() };
@@ -132,9 +135,11 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
         s.l.iter_mut().chain(s.r.iter_mut()).for_each(|x| *x *= g);
         fades(a, &mut s.l, &mut s.r, rate);
     }
-    let report = dsp::analyze(&l, &r, rate);
+    let report = dsp::analyze(&l, &r, rate as f32);
     tm.master = t.elapsed().as_secs_f64();
     let mut report = serde_json::to_value(&report).unwrap_or_default();
+    report["lufs"] = serde_json::json!(rep.output.integrated);
+    report["truePeak"] = serde_json::json!(rep.output.true_peak);
     report["master"] = serde_json::to_value(&rep).unwrap_or_default();
     Ok(MixOut { l, r, stems, report })
 }
@@ -148,7 +153,7 @@ fn add(dst: &mut [f32], src: &[f32], g: f32) {
 /// Auto-level, filters, EQ, compression, drive, width, pan, sidechain pump.
 fn process_track(l: &mut [f32], r: &mut [f32], m: &TrackMix, rate: u32, kicks: &[f64], beat: f64) -> Result<(), String> {
     // Loudness while playing → target.
-    let loud = dsp::loudness::active_lufs(l, r, rate);
+    let loud = dsp::measure(l, r, rate as f32).integrated;
     if loud.is_finite() {
         let g = 10f32.powf(((REF + m.gain) - loud) as f32 / 20.0);
         l.iter_mut().for_each(|x| *x *= g);
@@ -156,25 +161,25 @@ fn process_track(l: &mut [f32], r: &mut [f32], m: &TrackMix, rate: u32, kicks: &
     }
     if m.hp > 0.0 || m.lp > 0.0 {
         let p = dsp::EqParams { hp: if m.hp > 0.0 { Some(m.hp) } else { None }, lp: if m.lp > 0.0 { Some(m.lp) } else { None }, ..Default::default() };
-        dsp::Eq::new(rate, &p).process(l, r);
+        dsp::Eq::new(rate as f32, &p).process(l, r);
     }
     if let Some(eq) = &m.eq {
         let p: dsp::EqParams = serde_json::from_value(eq.clone()).map_err(|e| format!("eq: {e}"))?;
-        dsp::Eq::new(rate, &p).process(l, r);
+        dsp::Eq::new(rate as f32, &p).process(l, r);
     }
     if let Some(c) = &m.comp {
-        let p: dsp::CompParams = match c {
+        let p: dsp::CompressorParams = match c {
             serde_json::Value::Bool(true) => Default::default(),
             serde_json::Value::Bool(false) => return Ok(()),
             v => serde_json::from_value(v.clone()).map_err(|e| format!("comp: {e}"))?,
         };
-        dsp::Compressor::new(rate, &p).process(l, r);
+        dsp::Compressor::new(rate as f32, &p).process(l, r);
     }
     if m.drive > 0.0 {
-        dsp::Saturator::new(rate, &dsp::SaturateParams { drive: m.drive, ..Default::default() }).process(l, r);
+        dsp::Saturator::new(rate as f32, &dsp::SaturatorParams { drive: m.drive, ..Default::default() }).process(l, r);
     }
     if (m.width - 1.0).abs() > 1e-3 {
-        dsp::width(l, r, m.width);
+        dsp::Widener::new(rate as f32, &dsp::WidenerParams { width: m.width, ..Default::default() }).process(l, r);
     }
     if m.pan.abs() > 1e-3 {
         // Balance-style pan for stereo sources.
@@ -184,8 +189,8 @@ fn process_track(l: &mut [f32], r: &mut [f32], m: &TrackMix, rate: u32, kicks: &
         r.iter_mut().for_each(|x| *x *= gr * s);
     }
     if m.duck > 0.0 && !kicks.is_empty() {
-        let d = dsp::DuckParams { depth_db: m.duck, attack: 0.004, hold: 0.02, release: (beat * 0.55) as f32, ..Default::default() };
-        dsp::Ducker::new(rate, &d, kicks).process(l, r);
+        let d = dsp::DuckerParams { depth: -m.duck.abs(), attack: 4.0, hold: 20.0, release: (beat * 550.0) as f32, ..Default::default() };
+        dsp::Ducker::new(rate as f32, &d, kicks).process(l, r);
     }
     Ok(())
 }
