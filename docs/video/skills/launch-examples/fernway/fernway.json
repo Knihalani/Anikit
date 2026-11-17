@@ -353,6 +353,7 @@
       "quality": "draft",
       "resolution": 0.5,
       "bloom": 0.45,
+      "exposure": 1.3,
       "env": {
        "preset": "night"
       },
@@ -368,30 +369,30 @@
       "lights": [
        {
         "dir": [
-         -0.6,
-         0.25,
-         -0.7
+         -0.85,
+         0.2,
+         -0.45
         ],
         "size": [
-         20,
-         6
+         14,
+         5
         ],
         "color": "#FFC27A",
-        "intensity": 16,
+        "intensity": 22,
         "key": true
        },
        {
         "dir": [
+         0.6,
          0.5,
-         0.8,
          0.6
         ],
         "size": [
-         60,
-         30
+         40,
+         20
         ],
-        "color": "#8FA6C0",
-        "intensity": 3
+        "color": "#6F8BB0",
+        "intensity": 2.5
        }
       ],
       "camera": {
@@ -438,8 +439,8 @@
         ],
         "res": 160,
         "material": {
-         "base": "#8FA77E",
-         "roughness": 0.8
+         "base": "#B3C79C",
+         "roughness": 0.75
         }
        },
        {
@@ -462,22 +463,7 @@
   {
    "duration": 0.9375,
    "transition": "cut",
-   "background": "#0D1712",
    "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.18,
-       "rotation": -3
-      },
-      "to": {
-       "zoom": 1,
-       "rotation": 0
-      },
-      "duration": 0.2,
-      "ease": "outExpo"
-     }
-    ],
     "shake": {
      "amount": 7,
      "at": 0,
@@ -486,47 +472,147 @@
    },
    "layers": [
     {
-     "text": "No signal.",
-     "font": "Instrument Serif",
-     "size": "16vw",
-     "color": "#D6E2C4",
-     "x": "50%",
-     "y": "50%",
-     "anchor": "center",
-     "letterSpacing": "-0.04em",
-     "animate": [
-      {
-       "from": {
-        "scale": 1.9,
-        "opacity": 0,
-        "blur": 14
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 1,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.09,
+       "color": "#A9B4AE"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#1B261F",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
        },
-       "duration": 0.12,
-       "ease": "outExpo"
-      }
-     ]
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0,
+          0.95,
+          3.9
+         ],
+         "target": [
+          0,
+          0.85,
+          0.9
+         ],
+         "focal": 40,
+         "fstop": 4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          0,
+          0.9,
+          3.7
+         ],
+         "target": [
+          0,
+          0.85,
+          0.9
+         ],
+         "focal": 41,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.55*sin(x*0.9)*cos(z*0.7) + 0.25*sin(x*2.3 + z*1.7) + 0.08*sin(x*7 + z*5)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#B3C79C",
+         "roughness": 0.75
+        }
+       },
+       {
+        "text": "No signal.",
+        "height": 0.5,
+        "depth": 0.16,
+        "bevel": 0.015,
+        "font": "Instrument Serif",
+        "material": {
+         "base": "#0D1712",
+         "roughness": 0.4
+        },
+        "pos": [
+         0,
+         0.62,
+         0.9
+        ],
+        "keys": [
+         {
+          "t": 0,
+          "rot": [
+           -25,
+           0,
+           0
+          ],
+          "scale": 1.3,
+          "ease": "outExpo"
+         },
+         {
+          "t": 0.22,
+          "rot": [
+           0,
+           0,
+           0
+          ],
+          "scale": 1
+         }
+        ]
+       }
+      ]
+     }
     }
    ]
   },
   {
    "duration": 0.9375,
    "transition": "cut",
-   "background": "#FFB23F",
    "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.18,
-       "rotation": 3
-      },
-      "to": {
-       "zoom": 1,
-       "rotation": 0
-      },
-      "duration": 0.2,
-      "ease": "outExpo"
-     }
-    ],
     "shake": {
      "amount": 7,
      "at": 0,
@@ -535,26 +621,141 @@
    },
    "layers": [
     {
-     "text": "No map.",
-     "font": "Inter Display",
-     "size": "18vw",
-     "color": "#0D1712",
-     "x": "50%",
-     "y": "50%",
-     "anchor": "center",
-     "letterSpacing": "-0.04em",
-     "animate": [
-      {
-       "from": {
-        "scale": 1.9,
-        "opacity": 0,
-        "blur": 14
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 1,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.04,
+       "color": "#18222A"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#1B261F",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
        },
-       "duration": 0.12,
-       "ease": "outExpo"
-      }
-     ],
-     "weight": 900
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.3,
+          0.8,
+          3.8
+         ],
+         "target": [
+          0,
+          0.85,
+          0.9
+         ],
+         "focal": 40,
+         "fstop": 4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          0.15,
+          0.78,
+          3.6
+         ],
+         "target": [
+          0,
+          0.85,
+          0.9
+         ],
+         "focal": 41,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.55*sin(x*0.9)*cos(z*0.7) + 0.25*sin(x*2.3 + z*1.7) + 0.08*sin(x*7 + z*5)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#B3C79C",
+         "roughness": 0.75
+        }
+       },
+       {
+        "text": "No map.",
+        "height": 0.5,
+        "depth": 0.16,
+        "bevel": 0.015,
+        "font": "Instrument Serif",
+        "material": {
+         "base": "#FFB23F",
+         "emissive": "#FFB23F",
+         "emissiveStrength": 4
+        },
+        "pos": [
+         0,
+         0.62,
+         0.9
+        ],
+        "keys": [
+         {
+          "t": 0,
+          "rot": [
+           25,
+           0,
+           0
+          ],
+          "scale": 1.3,
+          "ease": "outExpo"
+         },
+         {
+          "t": 0.22,
+          "rot": [
+           0,
+           0,
+           0
+          ],
+          "scale": 1
+         }
+        ]
+       }
+      ]
+     }
     }
    ]
   },
@@ -576,6 +777,7 @@
       "quality": "draft",
       "resolution": 0.5,
       "bloom": 0.45,
+      "exposure": 1.3,
       "env": {
        "preset": "night"
       },
@@ -591,30 +793,30 @@
       "lights": [
        {
         "dir": [
-         -0.6,
-         0.25,
-         -0.7
+         -0.85,
+         0.2,
+         -0.45
         ],
         "size": [
-         20,
-         6
+         14,
+         5
         ],
         "color": "#FFC27A",
-        "intensity": 16,
+        "intensity": 22,
         "key": true
        },
        {
         "dir": [
+         0.6,
          0.5,
-         0.8,
          0.6
         ],
         "size": [
-         60,
-         30
+         40,
+         20
         ],
-        "color": "#8FA6C0",
-        "intensity": 3
+        "color": "#6F8BB0",
+        "intensity": 2.5
        }
       ],
       "camera": {
@@ -661,8 +863,8 @@
         ],
         "res": 160,
         "material": {
-         "base": "#8FA77E",
-         "roughness": 0.8
+         "base": "#B3C79C",
+         "roughness": 0.75
         }
        },
        {
@@ -710,6 +912,7 @@
       "quality": "draft",
       "resolution": 0.5,
       "bloom": 0.45,
+      "exposure": 1.3,
       "env": {
        "preset": "night"
       },
@@ -725,30 +928,30 @@
       "lights": [
        {
         "dir": [
-         -0.6,
-         0.25,
-         -0.7
+         -0.85,
+         0.2,
+         -0.45
         ],
         "size": [
-         20,
-         6
+         14,
+         5
         ],
         "color": "#FFC27A",
-        "intensity": 16,
+        "intensity": 22,
         "key": true
        },
        {
         "dir": [
+         0.6,
          0.5,
-         0.8,
          0.6
         ],
         "size": [
-         60,
-         30
+         40,
+         20
         ],
-        "color": "#8FA6C0",
-        "intensity": 3
+        "color": "#6F8BB0",
+        "intensity": 2.5
        }
       ],
       "camera": {
@@ -795,8 +998,8 @@
         ],
         "res": 160,
         "material": {
-         "base": "#8FA77E",
-         "roughness": 0.8
+         "base": "#B3C79C",
+         "roughness": 0.75
         }
        },
        {
@@ -924,6 +1127,7 @@
       "quality": "draft",
       "resolution": 0.5,
       "bloom": 0.45,
+      "exposure": 1.3,
       "env": {
        "preset": "night"
       },
@@ -939,30 +1143,30 @@
       "lights": [
        {
         "dir": [
-         -0.6,
-         0.25,
-         -0.7
+         -0.85,
+         0.2,
+         -0.45
         ],
         "size": [
-         20,
-         6
+         14,
+         5
         ],
         "color": "#FFC27A",
-        "intensity": 16,
+        "intensity": 22,
         "key": true
        },
        {
         "dir": [
+         0.6,
          0.5,
-         0.8,
          0.6
         ],
         "size": [
-         60,
-         30
+         40,
+         20
         ],
-        "color": "#8FA6C0",
-        "intensity": 3
+        "color": "#6F8BB0",
+        "intensity": 2.5
        }
       ],
       "camera": {
@@ -1009,8 +1213,8 @@
         ],
         "res": 160,
         "material": {
-         "base": "#8FA77E",
-         "roughness": 0.8
+         "base": "#B3C79C",
+         "roughness": 0.75
         }
        },
        {
@@ -1087,6 +1291,7 @@
       "quality": "draft",
       "resolution": 0.5,
       "bloom": 0.45,
+      "exposure": 1.3,
       "env": {
        "preset": "night"
       },
@@ -1102,30 +1307,30 @@
       "lights": [
        {
         "dir": [
-         -0.6,
-         0.25,
-         -0.7
+         -0.85,
+         0.2,
+         -0.45
         ],
         "size": [
-         20,
-         6
+         14,
+         5
         ],
         "color": "#FFC27A",
-        "intensity": 16,
+        "intensity": 22,
         "key": true
        },
        {
         "dir": [
+         0.6,
          0.5,
-         0.8,
          0.6
         ],
         "size": [
-         60,
-         30
+         40,
+         20
         ],
-        "color": "#8FA6C0",
-        "intensity": 3
+        "color": "#6F8BB0",
+        "intensity": 2.5
        }
       ],
       "camera": {
@@ -1187,8 +1392,8 @@
         ],
         "res": 160,
         "material": {
-         "base": "#8FA77E",
-         "roughness": 0.8
+         "base": "#B3C79C",
+         "roughness": 0.75
         }
        },
        {
@@ -1251,7 +1456,7 @@
   },
   {
    "id": "f3",
-   "duration": 0.9375,
+   "duration": 1.875,
    "transition": "cut",
    "background": "#D6E2C4",
    "camera": {
@@ -1265,8 +1470,22 @@
       },
       "duration": 0.25,
       "ease": "outExpo"
+     },
+     {
+      "to": {
+       "zoom": 1.15,
+       "y": -120
+      },
+      "at": 0.9375,
+      "duration": 0.2,
+      "ease": "outExpo"
      }
-    ]
+    ],
+    "shake": {
+     "amount": 6,
+     "at": 0.9375,
+     "duration": 0.12
+    }
    },
    "layers": [
     {
@@ -1440,50 +1659,22 @@
      "y": "76%",
      "anchor": "center",
      "letterSpacing": "-0.04em"
-    }
-   ]
-  },
-  {
-   "duration": 0.9375,
-   "transition": "cut",
-   "background": "#FFB23F",
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.18,
-       "rotation": 3
-      },
-      "to": {
-       "zoom": 1,
-       "rotation": 0
-      },
-      "duration": 0.2,
-      "ease": "outExpo"
-     }
-    ],
-    "shake": {
-     "amount": 7,
-     "at": 0,
-     "duration": 0.15
-    }
-   },
-   "layers": [
+    },
     {
      "text": "*without bars.*",
      "font": "Instrument Serif",
-     "size": "17vw",
-     "color": "#0D1712",
+     "size": "14vw",
+     "color": "#B0570A",
      "x": "50%",
-     "y": "50%",
+     "y": "76%",
      "anchor": "center",
-     "letterSpacing": "-0.04em",
+     "start": 0.9375,
      "animate": [
       {
        "from": {
-        "scale": 1.9,
+        "scale": 1.6,
         "opacity": 0,
-        "blur": 14
+        "blur": 10
        },
        "duration": 0.12,
        "ease": "outExpo"
@@ -1493,110 +1684,23 @@
    ]
   },
   {
-   "id": "proof",
    "duration": 0.9375,
    "transition": "cut",
-   "background": "#0D1712",
    "camera": {
-    "shake": {
-     "amount": 6,
-     "at": 0,
-     "duration": 0.12
-    }
-   },
-   "layers": [
-    {
-     "text": "0",
-     "font": "Inter Display",
-     "size": "70vw",
-     "weight": 900,
-     "color": "#FFB23F",
-     "x": "50%",
-     "y": "42%",
-     "anchor": "center",
-     "letterSpacing": "-0.06em",
-     "animate": [
-      {
-       "from": {
-        "scale": 1.5,
-        "opacity": 0
-       },
-       "duration": 0.12,
-       "ease": "outExpo"
-      }
-     ]
-    },
-    {
-     "text": "BARS NEEDED",
-     "font": "JetBrains Mono",
-     "size": "6vw",
-     "color": "#D6E2C4",
-     "x": "50%",
-     "y": "70%",
-     "anchor": "center"
-    }
-   ]
-  },
-  {
-   "duration": 0.9375,
-   "transition": "cut",
-   "background": "#D6E2C4",
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.18,
-       "rotation": -3
-      },
-      "to": {
-       "zoom": 1,
-       "rotation": 0
-      },
-      "duration": 0.2,
-      "ease": "outExpo"
-     }
-    ],
     "shake": {
      "amount": 7,
      "at": 0,
      "duration": 0.15
     }
    },
-   "layers": [
-    {
-     "text": "Fernway",
-     "font": "Instrument Serif",
-     "size": "27vw",
-     "color": "#0D1712",
-     "x": "50%",
-     "y": "50%",
-     "anchor": "center",
-     "letterSpacing": "-0.04em",
-     "animate": [
-      {
-       "from": {
-        "scale": 1.9,
-        "opacity": 0,
-        "blur": 14
-       },
-       "duration": 0.12,
-       "ease": "outExpo"
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "id": "end",
-   "duration": 1.875,
-   "transition": "cut",
    "layers": [
     {
      "component": "scene3d",
      "props": {
       "quality": "draft",
-      "resolution": 0.5,
+      "resolution": 1,
       "bloom": 0.45,
+      "exposure": 1.3,
       "env": {
        "preset": "night"
       },
@@ -1612,30 +1716,344 @@
       "lights": [
        {
         "dir": [
-         -0.6,
-         0.25,
-         -0.7
+         -0.85,
+         0.2,
+         -0.45
         ],
         "size": [
-         20,
-         6
+         14,
+         5
         ],
         "color": "#FFC27A",
-        "intensity": 16,
+        "intensity": 22,
         "key": true
        },
        {
         "dir": [
+         0.6,
          0.5,
-         0.8,
          0.6
         ],
         "size": [
-         60,
-         30
+         40,
+         20
         ],
-        "color": "#8FA6C0",
-        "intensity": 3
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0,
+          1.0,
+          3.0
+         ],
+         "target": [
+          0,
+          0.95,
+          0.9
+         ],
+         "focal": 40,
+         "fstop": 4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          0,
+          0.95,
+          2.7
+         ],
+         "target": [
+          0,
+          0.95,
+          0.9
+         ],
+         "focal": 42,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.55*sin(x*0.9)*cos(z*0.7) + 0.25*sin(x*2.3 + z*1.7) + 0.08*sin(x*7 + z*5)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#B3C79C",
+         "roughness": 0.75
+        }
+       },
+       {
+        "text": "0",
+        "height": 1.0,
+        "depth": 0.16,
+        "bevel": 0.015,
+        "font": "Instrument Serif",
+        "material": {
+         "base": "#FFB23F",
+         "emissive": "#FFB23F",
+         "emissiveStrength": 4
+        },
+        "pos": [
+         0,
+         0.62,
+         0.9
+        ],
+        "keys": [
+         {
+          "t": 0,
+          "rot": [
+           -25,
+           0,
+           0
+          ],
+          "scale": 1.3,
+          "ease": "outExpo"
+         },
+         {
+          "t": 0.22,
+          "rot": [
+           0,
+           0,
+           0
+          ],
+          "scale": 1
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "text": "BARS NEEDED",
+     "font": "JetBrains Mono",
+     "size": "6vw",
+     "color": "#D6E2C4",
+     "x": "50%",
+     "y": "74%",
+     "anchor": "center"
+    }
+   ]
+  },
+  {
+   "duration": 0.9375,
+   "transition": "cut",
+   "camera": {
+    "shake": {
+     "amount": 7,
+     "at": 0,
+     "duration": 0.15
+    }
+   },
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 1,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.09,
+       "color": "#A9B4AE"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#1B261F",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
+       },
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0,
+          0.95,
+          3.9
+         ],
+         "target": [
+          0,
+          0.85,
+          0.9
+         ],
+         "focal": 40,
+         "fstop": 4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          0,
+          0.9,
+          3.7
+         ],
+         "target": [
+          0,
+          0.85,
+          0.9
+         ],
+         "focal": 41,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.55*sin(x*0.9)*cos(z*0.7) + 0.25*sin(x*2.3 + z*1.7) + 0.08*sin(x*7 + z*5)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#B3C79C",
+         "roughness": 0.75
+        }
+       },
+       {
+        "text": "Fernway",
+        "height": 0.5,
+        "depth": 0.16,
+        "bevel": 0.015,
+        "font": "Instrument Serif",
+        "material": {
+         "base": "#0D1712",
+         "roughness": 0.4
+        },
+        "pos": [
+         0,
+         0.62,
+         0.9
+        ],
+        "keys": [
+         {
+          "t": 0,
+          "rot": [
+           -25,
+           0,
+           0
+          ],
+          "scale": 1.3,
+          "ease": "outExpo"
+         },
+         {
+          "t": 0.22,
+          "rot": [
+           0,
+           0,
+           0
+          ],
+          "scale": 1
+         }
+        ]
+       },
+       {
+        "type": "sphere",
+        "radius": 0.035,
+        "count": 220,
+        "pos": "=[(-5 + 10*i/n), (0.55*sin((-5 + 10*i/n)*0.9)*cos((1.6*sin(i/n*7.5))*0.7) + 0.25*sin((-5 + 10*i/n)*2.3 + (1.6*sin(i/n*7.5))*1.7) + 0.08*sin((-5 + 10*i/n)*7 + (1.6*sin(i/n*7.5))*5) + 0.05), (1.6*sin(i/n*7.5))]",
+        "scale": "=[(i/n < 0.3 + t*0.8 ? 1 : 0), (i/n < 0.3 + t*0.8 ? 1 : 0), (i/n < 0.3 + t*0.8 ? 1 : 0)]",
+        "material": {
+         "base": "#FFB23F",
+         "emissive": "#FFB23F",
+         "emissiveStrength": 6
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "end",
+   "duration": 1.875,
+   "transition": "cut",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 0.5,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.04,
+       "color": "#18222A"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#1B261F",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
+       },
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
        }
       ],
       "camera": {
@@ -1682,8 +2100,8 @@
         ],
         "res": 160,
         "material": {
-         "base": "#8FA77E",
-         "roughness": 0.8
+         "base": "#B3C79C",
+         "roughness": 0.75
         }
        },
        {

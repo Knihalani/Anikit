@@ -52,8 +52,15 @@ Copy budget: 15 s ≤ 20 words total, 30 s ≤ 40, 60 s ≤ 80. One idea per sho
   chrome/glass/aluminium, env `studio`/`night`/`cyc`; or `product-shot` (a phone on a plinth under window blinds).
 - **Chaos→order:** `particles` (`emit: {text}`, `flow`, 200k–400k) or `physics` (piles, dominoes, `timeScale` ramps).
 - **Worlds:** a library shader (`anikit-video recipes`) as the set, with type on top.
-- **Kinetic type:** `Inter Display` 900 / `Instrument Serif`, 18–30 vh, `split: chars`, slam in 0.12 s `outExpo` with
-  `camera.shake`; alternate background colours per slam (recipe `kinetic-slam`).
+- **Type lives in the world — never flat type on a solid or gradient fill** (BAR rule 1; it reads as a slide).
+  Every word shot uses one of these instead:
+  1. **Extruded 3D type** in the concept's set: a `scene3d` `text` object (`font`, `depth`, `bevel`) among the motif's
+     objects (falling tiles, terrain, fog), snapped in with `keys` (`rot` + `scale` 1.3 → 1 in 0.22 s) + `camera.shake`;
+  2. **Type made of particles** (`particles` `emit: {"text": …}` + `flow`), or emissive type that lights the set;
+  3. **Type as a texture** on the motif's objects (a composition of the word on panes, cards or a device screen);
+  4. **Type over the product's own UI or map** (the composition full-frame), cut on the beat;
+  5. **Type masked by the motif** (a group with `mask`/`clip` by the motif shape, or revealed by a moving light).
+  2D kinetic type (`split: chars`, 0.12 s `outExpo` slams) is fine *on top of* a 3D or UI shot, never on an empty fill.
 - **Music:** `"music": {"style": "...", "bpm": 128, "key": "...", "hits": ["@bar3", "@bar7"], "end": "ring"}`.
   Scene durations in multiples of 0.469 s so cuts land on beats; `audio` sfx (`whoosh` on whips, `impact` on the
   reveal, `riser` peaking at the reveal, `click`/`tick` on UI changes). Pulse with `"=1 + 0.04*(1 - fract(beat))"`.

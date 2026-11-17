@@ -649,22 +649,7 @@
   {
    "duration": 0.9375,
    "transition": "cut",
-   "background": "#14161B",
    "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.18,
-       "rotation": -3
-      },
-      "to": {
-       "zoom": 1,
-       "rotation": 0
-      },
-      "duration": 0.2,
-      "ease": "outExpo"
-     }
-    ],
     "shake": {
      "amount": 7,
      "at": 0,
@@ -673,48 +658,136 @@
    },
    "layers": [
     {
-     "text": "Too much",
-     "font": "Inter Display",
-     "size": "30vh",
-     "weight": 900,
-     "color": "#F2EFE8",
-     "letterSpacing": "-0.05em",
-     "x": "46%",
-     "y": "50%",
-     "anchor": "center",
-     "animate": [
-      {
-       "from": {
-        "scale": 1.9,
-        "opacity": 0,
-        "blur": 14
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 0.5,
+      "bloom": 0.25,
+      "lights": [
+       {
+        "dir": [
+         -0.5,
+         0.8,
+         0.6
+        ],
+        "size": [
+         40,
+         12
+        ],
+        "color": "#FFF4E8",
+        "intensity": 5,
+        "key": true
        },
-       "duration": 0.12,
-       "ease": "outExpo"
-      }
-     ]
+       {
+        "dir": [
+         0.7,
+         0.3,
+         -0.6
+        ],
+        "size": [
+         8,
+         50
+        ],
+        "color": "#FF6A4A",
+        "intensity": 3
+       }
+      ],
+      "env": {
+       "preset": "studio",
+       "color": "#1A1C22"
+      },
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.5,
+          0.6,
+          5.6
+         ],
+         "target": [
+          0,
+          0.32,
+          0
+         ],
+         "focal": 36,
+         "fstop": 3.2
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          0.3,
+          0.55,
+          5.2
+         ],
+         "target": [
+          0,
+          0.32,
+          0
+         ],
+         "focal": 37,
+         "fstop": 3.2
+        }
+       ]
+      },
+      "objects": [
+       {
+        "text": "Too much",
+        "height": 0.62,
+        "depth": 0.22,
+        "bevel": 0.02,
+        "font": "Inter Display",
+        "weight": 900,
+        "material": {
+         "base": "#F2EFE8",
+         "roughness": 0.35
+        },
+        "keys": [
+         {
+          "t": 0,
+          "rot": [
+           -30,
+           -25,
+           0
+          ],
+          "scale": 1.25,
+          "ease": "outExpo"
+         },
+         {
+          "t": 0.22,
+          "rot": [
+           0,
+           -8,
+           0
+          ],
+          "scale": 1
+         }
+        ]
+       },
+       {
+        "type": "box",
+        "size": [
+         0.62,
+         0.4,
+         0.02
+        ],
+        "material": {
+         "base": "#F2EFE8",
+         "roughness": 0.45
+        },
+        "count": 90,
+        "pos": "=[-3 + 6*rand(i), 3.2 - 3.4*fract(rand(i+5) + 0.2*t), -2.4 + 2.8*rand(i+9)]",
+        "rot": "=[360*rand(i+1) + 40*t, 360*rand(i+2) + 30*t, 0]"
+       }
+      ]
+     }
     }
    ]
   },
   {
    "duration": 0.9375,
    "transition": "cut",
-   "background": "#FF4D2E",
    "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.18,
-       "rotation": 3
-      },
-      "to": {
-       "zoom": 1,
-       "rotation": 0
-      },
-      "duration": 0.2,
-      "ease": "outExpo"
-     }
-    ],
     "shake": {
      "amount": 7,
      "at": 0,
@@ -723,26 +796,130 @@
    },
    "layers": [
     {
-     "text": "mail.",
-     "font": "Inter Display",
-     "size": "30vh",
-     "weight": 900,
-     "color": "#14161B",
-     "letterSpacing": "-0.05em",
-     "x": "55%",
-     "y": "50%",
-     "anchor": "center",
-     "animate": [
-      {
-       "from": {
-        "scale": 1.9,
-        "opacity": 0,
-        "blur": 14
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 0.5,
+      "bloom": 0.25,
+      "lights": [
+       {
+        "dir": [
+         -0.5,
+         0.8,
+         0.6
+        ],
+        "size": [
+         40,
+         12
+        ],
+        "color": "#FFF4E8",
+        "intensity": 5,
+        "key": true
        },
-       "duration": 0.12,
-       "ease": "outExpo"
-      }
-     ]
+       {
+        "dir": [
+         0.7,
+         0.3,
+         -0.6
+        ],
+        "size": [
+         8,
+         50
+        ],
+        "color": "#FF6A4A",
+        "intensity": 3
+       }
+      ],
+      "env": {
+       "preset": "cyc",
+       "color": "#F2EFE8"
+      },
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -0.4,
+          0.55,
+          3.4
+         ],
+         "target": [
+          0,
+          0.32,
+          0
+         ],
+         "focal": 36,
+         "fstop": 2.4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          -0.2,
+          0.5,
+          3.1
+         ],
+         "target": [
+          0,
+          0.32,
+          0
+         ],
+         "focal": 38,
+         "fstop": 2.4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "text": "mail.",
+        "height": 0.62,
+        "depth": 0.22,
+        "bevel": 0.02,
+        "font": "Inter Display",
+        "weight": 900,
+        "material": {
+         "base": "#FF4D2E",
+         "roughness": 0.3,
+         "clearcoat": 1
+        },
+        "keys": [
+         {
+          "t": 0,
+          "rot": [
+           30,
+           -25,
+           0
+          ],
+          "scale": 1.25,
+          "ease": "outExpo"
+         },
+         {
+          "t": 0.22,
+          "rot": [
+           0,
+           -8,
+           0
+          ],
+          "scale": 1
+         }
+        ]
+       },
+       {
+        "type": "box",
+        "size": [
+         0.62,
+         0.4,
+         0.02
+        ],
+        "material": {
+         "base": "#F2EFE8",
+         "roughness": 0.45
+        },
+        "count": 90,
+        "pos": "=[-3 + 6*rand(i), 3.2 - 3.4*fract(rand(i+5) + 0.2*t), -2.4 + 2.8*rand(i+9)]",
+        "rot": "=[360*rand(i+1) + 40*t, 360*rand(i+2) + 30*t, 0]"
+       }
+      ]
+     }
     }
    ]
   },
@@ -1593,7 +1770,6 @@
    "id": "proof",
    "duration": 0.9375,
    "transition": "cut",
-   "background": "#FF4D2E",
    "camera": {
     "shake": {
      "amount": 6,
@@ -1603,108 +1779,200 @@
    },
    "layers": [
     {
-     "text": "214",
-     "start": 0.0,
-     "end": 0.1,
-     "font": "Inter Display",
-     "size": "40vh",
-     "weight": 900,
-     "color": "#14161B",
-     "letterSpacing": "-0.06em",
-     "x": "50%",
-     "y": "48%",
-     "anchor": "center"
-    },
-    {
-     "text": "171",
-     "start": 0.1,
-     "end": 0.2,
-     "font": "Inter Display",
-     "size": "40vh",
-     "weight": 900,
-     "color": "#14161B",
-     "letterSpacing": "-0.06em",
-     "x": "50%",
-     "y": "48%",
-     "anchor": "center"
-    },
-    {
-     "text": "126",
-     "start": 0.2,
-     "end": 0.30000000000000004,
-     "font": "Inter Display",
-     "size": "40vh",
-     "weight": 900,
-     "color": "#14161B",
-     "letterSpacing": "-0.06em",
-     "x": "50%",
-     "y": "48%",
-     "anchor": "center"
-    },
-    {
-     "text": "88",
-     "start": 0.30000000000000004,
-     "end": 0.4,
-     "font": "Inter Display",
-     "size": "40vh",
-     "weight": 900,
-     "color": "#14161B",
-     "letterSpacing": "-0.06em",
-     "x": "50%",
-     "y": "48%",
-     "anchor": "center"
-    },
-    {
-     "text": "53",
-     "start": 0.4,
-     "end": 0.5,
-     "font": "Inter Display",
-     "size": "40vh",
-     "weight": 900,
-     "color": "#14161B",
-     "letterSpacing": "-0.06em",
-     "x": "50%",
-     "y": "48%",
-     "anchor": "center"
-    },
-    {
-     "text": "24",
-     "start": 0.5,
-     "end": 0.6000000000000001,
-     "font": "Inter Display",
-     "size": "40vh",
-     "weight": 900,
-     "color": "#14161B",
-     "letterSpacing": "-0.06em",
-     "x": "50%",
-     "y": "48%",
-     "anchor": "center"
-    },
-    {
-     "text": "9",
-     "start": 0.6000000000000001,
-     "end": 0.7000000000000001,
-     "font": "Inter Display",
-     "size": "40vh",
-     "weight": 900,
-     "color": "#14161B",
-     "letterSpacing": "-0.06em",
-     "x": "50%",
-     "y": "48%",
-     "anchor": "center"
-    },
-    {
-     "text": "0",
-     "start": 0.7000000000000001,
-     "end": 99,
-     "font": "Inter Display",
-     "size": "40vh",
-     "weight": 900,
-     "color": "#14161B",
-     "letterSpacing": "-0.06em",
-     "x": "50%",
-     "y": "48%",
-     "anchor": "center"
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 0.5,
+      "bloom": 0.25,
+      "lights": [
+       {
+        "dir": [
+         -0.5,
+         0.8,
+         0.6
+        ],
+        "size": [
+         40,
+         12
+        ],
+        "color": "#FFF4E8",
+        "intensity": 5,
+        "key": true
+       },
+       {
+        "dir": [
+         0.7,
+         0.3,
+         -0.6
+        ],
+        "size": [
+         8,
+         50
+        ],
+        "color": "#FF6A4A",
+        "intensity": 3
+       }
+      ],
+      "env": {
+       "preset": "cyc",
+       "color": "#FF4D2E"
+      },
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0,
+          0.55,
+          3.0
+         ],
+         "target": [
+          0,
+          0.45,
+          0
+         ],
+         "focal": 40,
+         "fstop": 4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          0,
+          0.5,
+          2.7
+         ],
+         "target": [
+          0,
+          0.45,
+          0
+         ],
+         "focal": 42,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "text": "214",
+        "height": 0.9,
+        "depth": 0.3,
+        "bevel": 0.02,
+        "font": "Inter Display",
+        "weight": 900,
+        "material": {
+         "base": "#14161B",
+         "roughness": 0.25,
+         "clearcoat": 1
+        },
+        "start": 0.0,
+        "end": 0.1
+       },
+       {
+        "text": "171",
+        "height": 0.9,
+        "depth": 0.3,
+        "bevel": 0.02,
+        "font": "Inter Display",
+        "weight": 900,
+        "material": {
+         "base": "#14161B",
+         "roughness": 0.25,
+         "clearcoat": 1
+        },
+        "start": 0.1,
+        "end": 0.2
+       },
+       {
+        "text": "126",
+        "height": 0.9,
+        "depth": 0.3,
+        "bevel": 0.02,
+        "font": "Inter Display",
+        "weight": 900,
+        "material": {
+         "base": "#14161B",
+         "roughness": 0.25,
+         "clearcoat": 1
+        },
+        "start": 0.2,
+        "end": 0.30000000000000004
+       },
+       {
+        "text": "88",
+        "height": 0.9,
+        "depth": 0.3,
+        "bevel": 0.02,
+        "font": "Inter Display",
+        "weight": 900,
+        "material": {
+         "base": "#14161B",
+         "roughness": 0.25,
+         "clearcoat": 1
+        },
+        "start": 0.30000000000000004,
+        "end": 0.4
+       },
+       {
+        "text": "53",
+        "height": 0.9,
+        "depth": 0.3,
+        "bevel": 0.02,
+        "font": "Inter Display",
+        "weight": 900,
+        "material": {
+         "base": "#14161B",
+         "roughness": 0.25,
+         "clearcoat": 1
+        },
+        "start": 0.4,
+        "end": 0.5
+       },
+       {
+        "text": "24",
+        "height": 0.9,
+        "depth": 0.3,
+        "bevel": 0.02,
+        "font": "Inter Display",
+        "weight": 900,
+        "material": {
+         "base": "#14161B",
+         "roughness": 0.25,
+         "clearcoat": 1
+        },
+        "start": 0.5,
+        "end": 0.6000000000000001
+       },
+       {
+        "text": "9",
+        "height": 0.9,
+        "depth": 0.3,
+        "bevel": 0.02,
+        "font": "Inter Display",
+        "weight": 900,
+        "material": {
+         "base": "#14161B",
+         "roughness": 0.25,
+         "clearcoat": 1
+        },
+        "start": 0.6000000000000001,
+        "end": 0.7000000000000001
+       },
+       {
+        "text": "0",
+        "height": 0.9,
+        "depth": 0.3,
+        "bevel": 0.02,
+        "font": "Inter Display",
+        "weight": 900,
+        "material": {
+         "base": "#14161B",
+         "roughness": 0.25,
+         "clearcoat": 1
+        },
+        "start": 0.7000000000000001
+       }
+      ]
+     }
     },
     {
      "text": "UNREAD \u00b7 06:58",
@@ -1712,7 +1980,8 @@
      "size": "3.4vh",
      "color": "#14161B",
      "x": "50%",
-     "y": "86%"
+     "y": "88%",
+     "anchor": "center"
     }
    ]
   },

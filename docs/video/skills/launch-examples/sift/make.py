@@ -50,8 +50,18 @@ scenes.append({"id": "hook", "duration": 2 * B, "layers": [s3d({
     "objects": [dict(tile, count=180, pos="=[-3 + 6*rand(i), 3.4 - 3.6*fract(rand(i+5) + 0.12*t), -2.5 + 3*rand(i+9)]", rot="=[360*rand(i+1) + 30*t, 360*rand(i+2) + 20*t, 0]")] +
                [dict(red_tile, pos="=[0.1, 1.45 - 0.35*t, 0.6]", rot="=[18, 25 + 40*t, 8]")]})]})
 # 2-3 Tension slams
-scenes.append(slam("Too much", INK, PAPER, 2 * B, "46%"))
-scenes.append(slam("mail.", SIG, INK, 2 * B, "55%", 3))
+def word3d(word, mat, env_, rot_from, cam_keys):
+    """Type inside the world: an extruded word standing among falling tiles, snapped in on the beat."""
+    return {"duration": 2 * B, "transition": "cut", "camera": {"shake": {"amount": 7, "at": 0, "duration": 0.15}}, "layers": [s3d({
+        "env": env_, "camera": cam(cam_keys),
+        "objects": [{"text": word, "height": 0.62, "depth": 0.22, "bevel": 0.02, "font": FD, "weight": 900, "material": mat,
+                     "keys": [{"t": 0, "rot": [rot_from, -25, 0], "scale": 1.25, "ease": "outExpo"}, {"t": 0.22, "rot": [0, -8, 0], "scale": 1}]},
+                    dict(tile, count=90, pos="=[-3 + 6*rand(i), 3.2 - 3.4*fract(rand(i+5) + 0.2*t), -2.4 + 2.8*rand(i+9)]",
+                         rot="=[360*rand(i+1) + 40*t, 360*rand(i+2) + 30*t, 0]")]})]}
+scenes.append(word3d("Too much", {"base": PAPER, "roughness": 0.35}, env,
+                     -30, [(0, [0.5, 0.6, 5.6], [0, 0.32, 0], 36, 3.2), (2 * B, [0.3, 0.55, 5.2], [0, 0.32, 0], 37, 3.2)]))
+scenes.append(word3d("mail.", {"base": SIG, "roughness": 0.3, "clearcoat": 1}, {"preset": "cyc", "color": PAPER},
+                     30, [(0, [-0.4, 0.55, 3.4], [0, 0.32, 0], 36, 2.4), (2 * B, [-0.2, 0.5, 3.1], [0, 0.32, 0], 38, 2.4)]))
 # 4 Tension 3: the pile, blown apart in slow motion (riser peaks at the reveal)
 scenes.append({"id": "pile", "duration": 2 * B, "transition": "cut", "layers": [s3d({
     "env": env, "camera": cam([(0, [0, 2.2, 5.5], [0, 0.4, 0], 35, 2.8), (2 * B, [0, 1.6, 4.4], [0, 0.4, 0], 38, 2.8)]),
@@ -103,12 +113,12 @@ scenes.append({"id": "f3b", "duration": 2 * B, "transition": "cut", "background"
                           "shake": {"amount": 6, "at": 0, "duration": 0.12}}, "layers": [
     {"composition": "inbox_focus", "width": 3000, "height": 1900, "x": "62%", "y": "88%", "rotation": -2},
     {"text": "needs you.", "font": FD, "size": "20vh", "weight": 900, "color": SIG, "x": "50%", "y": "22%", "letterSpacing": "-0.05em"}]})
-# 9 Proof: a demonstration, the counter runs to zero
-scenes.append({"id": "proof", "duration": 2 * B, "transition": "cut", "background": SIG,
-               "camera": {"shake": {"amount": 6, "at": 0, "duration": 0.12}}, "layers": [
-    *[{"text": str(v), "start": k * 0.1, "end": (k + 1) * 0.1 if v else 99, "font": FD, "size": "40vh", "weight": 900, "color": INK, "letterSpacing": "-0.06em", "x": "50%", "y": "48%", "anchor": "center"}
-      for k, v in enumerate([214, 171, 126, 88, 53, 24, 9, 0])],
-    {"text": "UNREAD · 06:58", "font": FM, "size": "3.4vh", "color": INK, "x": "50%", "y": "86%"}]})
+# 9 Proof: a demonstration — 3D numerals count the unread to zero on a red cyc
+scenes.append({"id": "proof", "duration": 2 * B, "transition": "cut", "camera": {"shake": {"amount": 6, "at": 0, "duration": 0.12}}, "layers": [s3d({
+    "env": {"preset": "cyc", "color": SIG}, "camera": cam([(0, [0, 0.55, 3.0], [0, 0.45, 0], 40, 4), (2 * B, [0, 0.5, 2.7], [0, 0.45, 0], 42, 4)]),
+    "objects": [{"text": str(v), "height": 0.9, "depth": 0.3, "bevel": 0.02, "font": FD, "weight": 900, "material": {"base": INK, "roughness": 0.25, "clearcoat": 1},
+                 "start": k * 0.1, **({"end": (k + 1) * 0.1} if v else {})} for k, v in enumerate([214, 171, 126, 88, 53, 24, 9, 0])]}),
+    {"text": "UNREAD · 06:58", "font": FM, "size": "3.4vh", "color": INK, "x": "50%", "y": "88%", "anchor": "center"}]})
 # 10 Logo + CTA: the tiles settle into one neat stack beside the name
 end3d = lambda keys: s3d({"env": env, "camera": cam(keys),
     "objects": [dict(tile, count=24, pos="=[1.9, 0.011 + 0.021*i + max(0, 2.5 - 3*(t + %s) + 0.12*i), 0]", rot="=[90, 3*sin(i*7.1), 0]"),

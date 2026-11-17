@@ -6,7 +6,7 @@ MOSS, LICHEN, AMBER, FOG = "#0D1712", "#D6E2C4", "#FFB23F", "#5E6E62"
 SERIF, SANS, MONO = "Instrument Serif", "Inter Display", "JetBrains Mono"
 
 TERRAIN = {"type": "heightfield", "expr": "=0.55*sin(x*0.9)*cos(z*0.7) + 0.25*sin(x*2.3 + z*1.7) + 0.08*sin(x*7 + z*5)",
-           "size": [14, 14], "res": 160, "material": {"base": "#8FA77E", "roughness": 0.8}}
+           "size": [14, 14], "res": 160, "material": {"base": "#B3C79C", "roughness": 0.75}}
 # The motif: an amber trail of glowing beads that draws itself across every shot.
 def trail(n=220, speed=1.0, lead=0.0):
     x = "(-5 + 10*i/n)"
@@ -16,9 +16,9 @@ def trail(n=220, speed=1.0, lead=0.0):
             "scale": "=[" + ", ".join([f"(i/n < {lead} + t*{speed} ? 1 : 0)"] * 3) + "]", "material": {"base": AMBER, "emissive": AMBER, "emissiveStrength": 6}}
 
 def s3d(props):
-    base = {"quality": "draft", "resolution": 0.5, "bloom": 0.45,
+    base = {"quality": "draft", "resolution": 0.5, "bloom": 0.45, "exposure": 1.3,
             "env": {"preset": "night"}, "fog": {"density": 0.04, "color": "#18222A"}, "floor": {"y": -0.9, "color": "#1B261F", "roughness": 0.9},
-            "lights": [{"dir": [-0.6, 0.25, -0.7], "size": [20, 6], "color": "#FFC27A", "intensity": 16, "key": True}, {"dir": [0.5, 0.8, 0.6], "size": [60, 30], "color": "#8FA6C0", "intensity": 3}]}
+            "lights": [{"dir": [-0.85, 0.2, -0.45], "size": [14, 5], "color": "#FFC27A", "intensity": 22, "key": True}, {"dir": [0.6, 0.5, 0.6], "size": [40, 20], "color": "#6F8BB0", "intensity": 2.5}]}
     base.update(props)
     return {"component": "scene3d", "props": base}
 
@@ -33,6 +33,19 @@ def slam(text, bg, fg, dur, rot=-3, font=SANS, size="24vw", y="50%"):
     return {"duration": dur, "transition": "cut", "background": bg,
             "camera": {"animate": [{"from": {"zoom": 1.18, "rotation": rot}, "to": {"zoom": 1, "rotation": 0}, "duration": 0.2, "ease": "outExpo"}],
                        "shake": {"amount": 7, "at": 0, "duration": 0.15}}, "layers": [t]}
+
+def word3d(word, mat, pale, cam_keys, extra=(), rot_from=-25, layers=()):
+    """Type inside the world: an extruded word standing on the ridge, snapped in on the beat."""
+    props = {"camera": cam(cam_keys), "objects": [TERRAIN, {"text": word, "height": 0.5, "depth": 0.16, "bevel": 0.015, "font": SERIF,
+             "material": mat, "pos": [0, 0.62, 0.9], "keys": [{"t": 0, "rot": [rot_from, 0, 0], "scale": 1.3, "ease": "outExpo"}, {"t": 0.22, "rot": [0, 0, 0], "scale": 1}]},
+             *extra]}
+    props["resolution"] = 1
+    if pale:
+        props["fog"] = {"density": 0.09, "color": "#A9B4AE"}
+    return {"duration": 2 * B, "transition": "cut", "camera": {"shake": {"amount": 7, "at": 0, "duration": 0.15}}, "layers": [s3d(props), *layers]}
+WCAM = [(0, [0, 0.95, 3.9], [0, 0.85, 0.9], 40), (2 * B, [0, 0.9, 3.7], [0, 0.85, 0.9], 41)]
+EMIT = {"base": AMBER, "emissive": AMBER, "emissiveStrength": 4}
+INKMAT = {"base": MOSS, "roughness": 0.4}
 
 # The product's screen: a topographic map with the trail and live position.
 def map_layers(progress_expr):
@@ -61,8 +74,8 @@ scenes = []
 scenes.append({"id": "hook", "duration": 2 * B, "layers": [s3d({
     "camera": cam([(0, [-5.5, 1.2, 3.5], [-2, 0.3, 0], 30), (2 * B, [-4.6, 1.0, 3.0], [-1.5, 0.3, 0], 32)]),
     "objects": [TERRAIN, trail(speed=0.5)]})]})
-scenes.append(slam("No signal.", MOSS, LICHEN, 2 * B, font=SERIF, size="16vw"))
-scenes.append(slam("No map.", AMBER, MOSS, 2 * B, 3, size="18vw"))
+scenes.append(word3d("No signal.", INKMAT, True, WCAM))
+scenes.append(word3d("No map.", EMIT, False, [(0, [0.3, 0.8, 3.8], [0, 0.85, 0.9], 40), (2 * B, [0.15, 0.78, 3.6], [0, 0.85, 0.9], 41)], rot_from=25))
 scenes.append({"id": "lost", "duration": 2 * B, "transition": "cut", "camera": {"shake": {"amount": 10, "at": 0, "duration": 0.9}}, "layers": [s3d({
     "fog": {"density": 0.09, "color": "#A9B4AE"},
     "camera": cam([(0, [-4.6, 2.4, 3.0], [-2, 0.3, 0], 24), (2 * B, [-4.0, 1.9, 2.4], [-1.8, 0.3, 0], 28)]),
@@ -94,24 +107,24 @@ scenes.append({"id": "f2", "duration": 4 * B, "transition": "cut",
     {"text": "*switchback.*", "font": SERIF, "size": "17vw", "color": AMBER, "x": "50%", "y": "24%", "anchor": "center", "start": 2 * B,
      "animate": [{"from": {"scale": 1.6, "opacity": 0}, "duration": 0.12, "ease": "outExpo"}]}]})
 # Feature 3: share where you are without bars — two beacons linked by an arc
-scenes.append({"id": "f3", "duration": 2 * B, "transition": "cut", "background": LICHEN,
-               "camera": {"animate": [{"from": {"zoom": 1.2}, "to": {"zoom": 1}, "duration": 0.25, "ease": "outExpo"}]}, "layers": [
+scenes.append({"id": "f3", "duration": 4 * B, "transition": "cut", "background": LICHEN,
+               "camera": {"animate": [{"from": {"zoom": 1.2}, "to": {"zoom": 1}, "duration": 0.25, "ease": "outExpo"},
+                                      {"to": {"zoom": 1.15, "y": -120}, "at": 2 * B, "duration": 0.2, "ease": "outExpo"}],
+                          "shake": {"amount": 6, "at": 2 * B, "duration": 0.12}}, "layers": [
     *[{"shape": "path", "d": f"M-60 {300 + k*130} C 300 {200 + k*130}, 700 {420 + k*130}, 1140 {260 + k*130}", "stroke": "#AFC09E", "strokeWidth": 4, "fill": "none",
        "x": -60, "y": 250 + k*130, "anchor": "topLeft"} for k in range(12)],
     {"shape": "path", "d": "M220 1300 C 260 700, 820 900, 860 520", "stroke": AMBER, "strokeWidth": 10, "fill": "none", "x": 220, "y": 520, "anchor": "topLeft",
      "animate": [{"from": {"trimEnd": 0}, "to": {"trimEnd": 1}, "duration": 0.7, "ease": "inOutExpo"}]},
     {"shape": "circle", "width": 70, "height": 70, "fill": AMBER, "x": 220, "y": 1300, "glow": AMBER, "scale": "=1 + 0.25*(1 - fract(beat))"},
     {"shape": "circle", "width": 70, "height": 70, "fill": MOSS, "x": 860, "y": 520, "start": 0.6},
-    {"text": "Share where", "font": SANS, "size": "13vw", "weight": 900, "color": MOSS, "x": "50%", "y": "76%", "anchor": "center", "letterSpacing": "-0.04em"}]})
-scenes.append(slam("*without bars.*", AMBER, MOSS, 2 * B, 3, font=SERIF, size="17vw"))
+    {"text": "Share where", "font": SANS, "size": "13vw", "weight": 900, "color": MOSS, "x": "50%", "y": "76%", "anchor": "center", "letterSpacing": "-0.04em"},
+    {"text": "*without bars.*", "font": SERIF, "size": "14vw", "color": "#B0570A", "x": "50%", "y": "76%", "anchor": "center", "start": 2 * B,
+     "animate": [{"from": {"scale": 1.6, "opacity": 0, "blur": 10}, "duration": 0.12, "ease": "outExpo"}]}]})
 # Proof: a demonstration, the signal meter at zero while navigation keeps going
-scenes.append({"id": "proof", "duration": 2 * B, "transition": "cut", "background": MOSS,
-               "camera": {"shake": {"amount": 6, "at": 0, "duration": 0.12}}, "layers": [
-    {"text": "0", "font": SANS, "size": "70vw", "weight": 900, "color": AMBER, "x": "50%", "y": "42%", "anchor": "center", "letterSpacing": "-0.06em",
-     "animate": [{"from": {"scale": 1.5, "opacity": 0}, "duration": 0.12, "ease": "outExpo"}]},
-    {"text": "BARS NEEDED", "font": MONO, "size": "6vw", "color": LICHEN, "x": "50%", "y": "70%", "anchor": "center"}]})
-# Logo + CTA: the trail finishes under the name
-scenes.append(slam("Fernway", LICHEN, MOSS, 2 * B, font=SERIF, size="27vw"))
+scenes.append(word3d("0", EMIT, False, [(0, [0, 1.0, 3.0], [0, 0.95, 0.9], 40), (2 * B, [0, 0.95, 2.7], [0, 0.95, 0.9], 42)],
+                     layers=[{"text": "BARS NEEDED", "font": MONO, "size": "6vw", "color": LICHEN, "x": "50%", "y": "74%", "anchor": "center"}]))
+scenes[-1]["layers"][0]["props"]["objects"][1]["height"] = 1.0
+scenes.append(word3d("Fernway", INKMAT, True, WCAM, extra=[trail(lead=0.3, speed=0.8)]))
 scenes.append({"id": "end", "duration": 4 * B, "transition": "cut", "layers": [s3d({
     "camera": cam([(0, [0, 6.5, 3.2], [0, 0, -0.2], 24), (4 * B, [0, 5.8, 2.6], [0, 0, -0.2], 26)]),
     "objects": [TERRAIN, trail(lead=0.6, speed=0.3)]}),
