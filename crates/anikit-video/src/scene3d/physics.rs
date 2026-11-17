@@ -197,7 +197,8 @@ pub fn lerp_pose(a: &Pose7, b: &Pose7, u: f32) -> Pose7 {
 
 #[inline]
 pub fn xf_of(p: &Pose7, s: f32) -> Xf {
-    Xf { r: mat_of([p[3], p[4], p[5], p[6]]), s, t: v3(p[0], p[1], p[2]) }
+    // Physics bodies scale uniformly.
+    Xf { r: mat_of([p[3], p[4], p[5], p[6]]), s: v3(s, s, s), t: v3(p[0], p[1], p[2]) }
 }
 
 fn hash_u(seed: u32, i: u32, k: u32) -> f32 {
@@ -414,7 +415,7 @@ fn layout_poses(layout: &str, gm: &Map<String, Value>, obj: &ObjDef, count: u32,
     let gfl = |k: &str, d: f32| -> Res<f32> { gm.get(k).map(|x| spec::f(x, &format!("{path}.{k}"))).transpose().map(|o| o.unwrap_or(d)) };
     let sc = |i: u32| -> f32 {
         let vars = Vars { i: i as f64, n: count as f64, ..Vars::default() };
-        (obj.scale.at(&vars) * obj.scale_mul).max(1e-6)
+        (obj.scale[0].at(&vars) * obj.scale_mul).max(1e-6)
     };
     let s0 = sc(0);
     let size = scale(sub(hi, lo), s0);
@@ -423,8 +424,8 @@ fn layout_poses(layout: &str, gm: &Map<String, Value>, obj: &ObjDef, count: u32,
     let n = count as usize;
     let mut out = Vec::with_capacity(n);
     let pose_at = |p: V3, yaw: f32, pitch: f32, roll: f32, s: f32| -> (Pose7, f32) {
-        let xf = Xf::new(p, v3(pitch, yaw, roll), 1.0);
-        (pose7(&Xf { s, ..xf }), s)
+        let xf = Xf::new(p, v3(pitch, yaw, roll), v3(1.0, 1.0, 1.0));
+        (pose7(&Xf { s: v3(s, s, s), ..xf }), s)
     };
     match layout {
         "dominoes" => {
@@ -570,7 +571,7 @@ fn layout_poses(layout: &str, gm: &Map<String, Value>, obj: &ObjDef, count: u32,
             // `expr`: the object's own pos/rot expressions of `i`.
             for i in 0..count {
                 let xf = obj.xf_at(0.0, i, 0);
-                out.push((pose7(&xf), xf.s));
+                out.push((pose7(&xf), xf.smax()));
             }
         }
     }
@@ -639,7 +640,7 @@ impl Sim {
             for lane in 0..o.lanes {
                 for i in 0..o.count {
                     let xf = o.xf_at(self.start, i, lane);
-                    let Some((shape, off)) = shared_shape(&o.col, xf.s) else { continue };
+                    let Some((shape, off)) = shared_shape(&o.col, xf.smax()) else { continue };
                     let p = to_pose(&pose7(&xf));
                     let rb = if mv.kinematic { RigidBodyBuilder::kinematic_position_based() } else { RigidBodyBuilder::fixed() }.pose(p);
                     let col = ColliderBuilder::new(shape).translation(Vector::new(off.x, off.y, off.z)).friction(0.5).restitution(0.1);
@@ -792,7 +793,7 @@ impl Sim {
                     for i in 0..mv.obj.count {
                         let xf = mv.obj.xf_at(t + 0.25, i, lane);
                         let c = xf.point(scale(add(lo, hi), 0.5));
-                        let r = len(sub(hi, lo)) * 0.5 * xf.s + 0.5;
+                        let r = len(sub(hi, lo)) * 0.5 * xf.smax() + 0.5;
                         for (k, h) in st.handles.iter().enumerate() {
                             if st.still[k] >= 0.0 {
                                 continue;
@@ -1056,7 +1057,7 @@ mod tests {
 
     #[test]
     fn quaternion_round_trip() {
-        let xf = Xf::new(v3(1.0, 2.0, 3.0), v3(30.0, -70.0, 145.0), 1.0);
+        let xf = Xf::new(v3(1.0, 2.0, 3.0), v3(30.0, -70.0, 145.0), v3(1.0, 1.0, 1.0));
         let q = quat_of(&xf.r);
         let r = mat_of(q);
         for k in 0..3 {

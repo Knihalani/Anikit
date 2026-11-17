@@ -5,7 +5,7 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 
 **Setup:** if `anikit-video` isn't on PATH, install the prebuilt binary (seconds; don't compile it): `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh`, then `export PATH="$HOME/.local/bin:$PATH"`.
 
-**The loop:** write `s.json` → `anikit-video still s.json --at 2.4 --width 640 -o f.png` (look) → `anikit-video render s.json -o out.mp4` → `anikit-video critique s.json --render --pack rv/` (then look at `rv/`).
+**The loop:** write `s.json` → `anikit-video check s.json` (errors and the real length: scenes overlap by their transitions) → `anikit-video still s.json --at 2.4 --width 640 -o f.png` (look) → `anikit-video render s.json -o out.mp4` → `anikit-video critique s.json --render --pack rv/` (then look at `rv/`).
 
 **Need detail? Don't grep the docs: run `anikit-video docs <topic>`** (30 lines each, with a working example): `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything`.
 
@@ -26,11 +26,13 @@ A spec: `{ "size": "16:9", "intent": {"pace": "fast"}, "music": "synthwave", "sc
    `{ "component": "scene3d", "props": { "env": "studio", "objects": [{ "text": "ANIKIT", "material": "chrome" }], "camera": "orbit" } }`
 6. **Particles and physics** inside scene3d: `{ "type": "particles", "count": 400000, "emit": {"text": "IGNITE"}, "flow": 0.8 }`, `"physics": { "bodies": [{ "type": "box", "count": 400, "layout": "pile" }], "timeScale": "=1 - 0.7*smoothstep(2, 2.5, t)" }`.
 7. **Compositions:** nested timelines used as layers, looped, or as textures on 3D objects: `"compositions": { "ui": {…} }` → `{ "composition": "ui", "loop": true }`.
-8. **Music and grade:** `"music": {"style": "synthwave", "bpm": 128}` (generated; cut with `"duration": "@bar2"`, `"at": "@beat9"`; never hand-write a synth); `"post": {"preset": "cinematic", "bloom": 0.4}`.
+8. **Music and grade:** `"music": {"style": "synthwave", "bpm": 128}` generates a score, when `anikit-video music styles` works in your build. Otherwise use `"audio": [{"src": "track.mp3"}, {"sfx": "impact", "at": "@beat9"}]`. Cut on `"@beat9"` / `"@bar2"`, and never hand-write a synth. Grade: `"post": {"preset": "cinematic", "bloom": 0.4}`.
 
 Combine them. `anikit-video docs make-anything` lists the escape hatches.
 
 No limits: expressions on any number or colour (`"=hsl(beat * 30, 80, 60)"`, `level`, `c ? a : b`), `{ "script": … }` loops that generate layers, and `draw` layers of raw paths and points (`docs/video/authoring.md`).
+
+**Costs:** 2D layers render at 100+ fps. Shaders run 50–400 ms per frame (`still` prints it). Ray-traced 3D and particles take 0.3–1 s per frame: use `"quality": "draft"` while iterating, keep 3D shots short, and preview with `still --width 640`. A layer's own timing is `start`/`end`; `at` is for tweens and `audio` cues.
 
 ## Shortcuts (optional; each is made from the primitives above)
 

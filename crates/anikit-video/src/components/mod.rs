@@ -117,9 +117,6 @@ pub struct Ctx<'a> {
     pub fps: f32,
     pub theme: &'a Theme,
     pub assets: &'a dyn Assets,
-    /// The evaluator running this component, when there is one: gives
-    /// access to the spec's `compositions` (e.g. as 3D textures).
-    pub root: Option<&'a crate::eval::Evaluator>,
 }
 
 /// A preprocessed component, evaluated once per frame.
@@ -155,7 +152,6 @@ impl Placed {
             fps,
             theme: self.theme.as_ref().unwrap_or(theme),
             assets,
-            root: None,
         };
         let mut ops = self.component.eval(t.max(0.0), &ctx);
         if self.x != 0.0 || self.y != 0.0 {

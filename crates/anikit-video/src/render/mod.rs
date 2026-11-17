@@ -402,6 +402,25 @@ impl Renderer {
         if field && !smooth::field_ok(&list.ops[..n_smooth]) {
             n_smooth = 0;
         }
+        // vello treats the clear colour and pixels already in the target as an
+        // isolated backdrop, so a non-Normal blend (Overlay grain, Screen glow…)
+        // would blend against transparency. With such a layer, draw the background
+        // inside the scene and skip the pre-filled backdrop paths.
+        let blends = list.ops.iter().any(|o| matches!(o, Op::PushLayer { blend, .. } if *blend != Blend::Normal));
+        if blends {
+            backdrop = None;
+            n_smooth = 0;
+        }
+        let with_bg: Vec<Op>;
+        let list_ops: &[Op] = if blends {
+            with_bg = std::iter::once(Op::RoundRect { x: 0.0, y: 0.0, w: w as f32, h: h as f32, radius: 0.0, paint: Paint::Solid(list.background), transform: dl::IDENTITY })
+                .chain(list.ops.iter().cloned())
+                .collect();
+            &with_bg
+        } else {
+            &list.ops
+        };
+        let rects = if blends { None } else { rects };
         if n_smooth > 0 && backdrop.as_ref().is_none_or(|(k, _, _)| *k < n_smooth) {
             let f = smooth::FACTOR;
             let (lw, lh) = ((w as u32).div_ceil(f).max(2), (h as u32).div_ceil(f).max(2));
@@ -444,7 +463,7 @@ impl Renderer {
         }
         let (ops, skip) = match &backdrop {
             Some((k, _, _)) => (&list.ops[k + 1..], k + 1),
-            None => (&list.ops[..], 0),
+            None => (list_ops, 0),
         };
         let settings = if backdrop.is_some() { RasterizerSettings { target_init: TargetInit::SrcOver, ..Default::default() } } else { settings };
         if backdrop.is_some() {
