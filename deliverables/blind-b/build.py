@@ -124,19 +124,21 @@ scenes.append({"duration": b(2), "camera": {"shake": {"amount": 18, "frequency":
                  {"to": {"steam": 1.0}, "duration": 0.25, "ease": "outCubic"},
                  {"to": {"cool": 0.45}, "duration": b(2), "ease": "outCubic"},
                  {"to": {"camD": 2.0}, "duration": b(2), "ease": "outCubic"}]},
+    {"shape": "rect", "width": 1920, "height": 1080, "fill": "#FFF1DD", "blend": "screen",
+     "animate": [{"from": {"opacity": 1.0}, "duration": 0.2, "ease": "outQuad"}]},
     {"text": "Quenched in", "font": SERIF, "size": 120, "color": BONE, "x": 120, "y": 760, "anchor": "bottomLeft",
      "enter": {"preset": "mask by line up", "delay": b(0.5)}, "shadow": {"x": 0, "y": 6, "blur": 30, "color": "#000000D0"}},
     {"text": "*one breath.*", "font": SERIF, "size": 120, "color": HOT, "x": 120, "y": 900, "anchor": "bottomLeft",
      "enter": {"preset": "mask by line up", "delay": b(1)}, "shadow": {"x": 0, "y": 6, "blur": 30, "color": "#000000D0"}},
 ]})
 # 10. b20-22  Closer, the cooling front climbs.
-scenes.append({"duration": b(2), "layers": [
+scenes.append({"duration": b(2) + 0.12, "layers": [
     {"src": "shaders/quench.glsl", "uniforms": dict(Q, dip=0.85, steam=1.0, cool=0.45, camA=1.05, camH=0.06, camD=1.25, camY=0.32, lens=1.3),
      "animate": [{"to": {"cool": 1.0, "steam": 0.8, "camY": 0.42}, "duration": b(2), "ease": "inOutSine"}]},
 ]})
 
 # 11. b22-25  Cold steel: a glint runs along the pattern.
-scenes.append({"duration": b(3) + 0.12, "transition": "cut",
+scenes.append({"duration": b(3) + 0.12, "transition": {"type": "fadeWhite", "duration": 0.12},
   "camera": {"animate": [{"from": {"x": -260}, "duration": 0.16, "ease": "outExpo"}]},
   "layers": [
     {"src": "shaders/damascus.glsl", "uniforms": {"layers": 72.0, "light": -1.4, "zoom": 1.25, "glow": 0.0},

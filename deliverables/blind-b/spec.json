@@ -1048,6 +1048,22 @@
      ]
     },
     {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#FFF1DD",
+     "blend": "screen",
+     "animate": [
+      {
+       "from": {
+        "opacity": 1.0
+       },
+       "duration": 0.2,
+       "ease": "outQuad"
+      }
+     ]
+    },
+    {
      "text": "Quenched in",
      "font": "Instrument Serif",
      "size": 120,
@@ -1088,7 +1104,7 @@
    ]
   },
   {
-   "duration": 0.9375,
+   "duration": 1.0575,
    "layers": [
     {
      "src": "shaders/quench.glsl",
@@ -1119,7 +1135,10 @@
   },
   {
    "duration": 1.5261999999999998,
-   "transition": "cut",
+   "transition": {
+    "type": "fadeWhite",
+    "duration": 0.12
+   },
    "camera": {
     "animate": [
      {
