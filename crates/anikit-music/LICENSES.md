@@ -57,3 +57,15 @@
   available at run time as `packs::PACKS[..].credit`.
 
 <!-- end of sampler sections -->
+
+## Everything else: original work (MIT, like the rest of Anikit)
+
+- **Physical models, synths and drum machines** (`src/physical`, `src/synth`): all sound is
+  synthesised at run time from code; no samples or third-party presets.
+- **Sound effects** (`src/sfx.rs`): synthesised (filtered noise, oscillators, FM, the
+  engine's own reverb); no samples.
+- **Reverb impulse responses**: rendered at run time from the engine's own algorithmic
+  reverb and cached in the music cache directory.
+- **Demo renders** in `docs/video/music/*.ogg`: rendered by this engine from the specs in
+  `docs/video/music/README.md`, using the bundled GeneralUser GS bank and the models above.
+  They are covered by the GeneralUser GS licence (free use, including commercial) plus MIT.

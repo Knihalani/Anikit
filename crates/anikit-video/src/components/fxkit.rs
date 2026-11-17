@@ -298,7 +298,8 @@ pub fn sparkle(p: &mut Path, cx: f32, cy: f32, r: f32, rot: f32, pinch: f32) {
 /// Still approximate: metaball iso-contours on a `detail` px grid.
 #[inline]
 pub fn exact() -> bool {
-    false
+    // qbench reference renders (`components::reference()`).
+    super::style::reference()
 }
 
 // ---------------------------------------------------------------- sprites

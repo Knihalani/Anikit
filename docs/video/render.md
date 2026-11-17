@@ -2,6 +2,8 @@
 
 The renderer turns a `dl::DisplayList` into pixels on **vello_cpu 0.4**. It then converts them to YUV 4:2:0 for the encoder, and works out which macroblocks changed.
 
+**Before changing anything here, run the quality gate:** `cargo run --release -p anikit-video --example qbench -- --gate` measures speed and frame-by-frame fidelity against a reference render ([`perf.md`](perf.md)). A speed-up that changes pixels visibly fails it.
+
 ## API
 
 ```rust

@@ -865,3 +865,40 @@ fn output_is_independent_of_render_history() {
     assert!(render_after(&a) == fresh, "B after A differs from a fresh render");
     assert!(render_after(&c) == fresh, "B after C differs from a fresh render");
 }
+
+/// Trailing grain (tiled image under Overlay / Soft Light) blended straight
+/// into the frame matches vello drawing the same layers.
+#[test]
+fn grain_fast_path_matches_vello() {
+    let mut assets = Assets::default();
+    let mut img = image::RgbaImage::new(8, 8);
+    for (x, y, p) in img.enumerate_pixels_mut() {
+        let g = ((x * 37 + y * 91) % 256) as u8;
+        *p = image::Rgba([g, g, g, 255]);
+    }
+    let mut png = Vec::new();
+    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+    assets.images.insert_encoded(ImageId(7), &png).unwrap();
+    let assets = Arc::new(assets);
+    for blend in [Blend::Overlay, Blend::SoftLight] {
+        let mut ops = vec![
+            Op::RoundRect { x: 0.0, y: 0.0, w: 96.0, h: 96.0, radius: 0.0, paint: Paint::Linear { p0: [0.0, 0.0], p1: [96.0, 96.0], stops: vec![(0.0, rgba(0.05, 0.1, 0.3, 1.0)), (1.0, rgba(0.95, 0.8, 0.6, 1.0))] }, transform: IDENTITY },
+            card(20.0, 20.0, 40.0, 30.0, solid(1.0, 1.0, 1.0)),
+            layer(0.7, blend, vec![], None, None),
+            Op::RoundRect { x: 0.0, y: 0.0, w: 96.0, h: 96.0, radius: 0.0, paint: Paint::Image { image: ImageId(7), transform: [1.0, 0.0, 0.0, 1.0, 3.0, 5.0], opacity: 1.0 }, transform: IDENTITY },
+            Op::PopLayer,
+        ];
+        let fast = Renderer::new(assets.clone()).render(&list(ops.clone())).data_as_u8_slice().to_vec();
+        // A trailing transparent op: not a grain tail any more, so vello draws it.
+        ops.push(card(0.0, 0.0, 1.0, 1.0, Paint::Solid(rgba(0.0, 0.0, 0.0, 0.0))));
+        let slow = Renderer::new(assets.clone()).render(&list(ops)).data_as_u8_slice().to_vec();
+        let worst = fast.iter().zip(&slow).map(|(a, b)| a.abs_diff(*b)).max().unwrap();
+        let plain = Renderer::new(assets.clone()).render(&list(vec![])).data_as_u8_slice().to_vec();
+        assert!(fast != plain);
+        let over = fast.iter().zip(&slow).filter(|(a, b)| a.abs_diff(**b) > 1).count();
+        let mean = fast.iter().zip(&slow).map(|(a, b)| a.abs_diff(*b) as f64).sum::<f64>() / fast.len() as f64;
+        println!("{blend:?}: max {worst}, mean {mean:.3}, >1: {over}");
+        // vello rounds its intermediate layer to 8 bits; one float pass differs by a few levels at most.
+        assert!(worst <= 4 && mean < 0.5, "{blend:?}: max diff {worst}, mean {mean:.3}");
+    }
+}

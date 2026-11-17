@@ -74,6 +74,48 @@ pub struct Limiter {
 }
 
 impl Limiter {
+    /// Like `process`, but with the detector input precomputed by
+    /// [`peak_env`](super::loudness::peak_env) on the signal *before* a gain
+    /// `scale` (true peak scales linearly), so iterative mastering pays for
+    /// the 4× interpolation once.
+    pub fn process_env(&mut self, l: &mut [f32], r: &mut [f32], env: &[f32], scale: f32) {
+        let alen = self.a + 1;
+        for ((x, y), e) in l.iter_mut().zip(r.iter_mut()).zip(env) {
+            let v = if self.true_peak { e * scale } else { x.abs().max(y.abs()) };
+            let q = if v > self.ceil { self.ceil / v } else { 1.0 };
+            self.push_min(q);
+            let m = self.dq[self.dq_head].1;
+            // Instant attack (the window already looks ahead), exponential release.
+            self.r = if m < self.r { m } else { m + self.rel * (self.r - m) };
+            // Two cascaded moving averages (triangular kernel of support `s`).
+            let (i1, s1) = self.b1;
+            let sum1 = s1 - self.box1[i1] as f64 + self.r as f64;
+            self.box1[i1] = self.r;
+            self.b1 = ((i1 + 1) % self.box1.len(), sum1);
+            let g1 = (sum1 / self.box1.len() as f64) as f32;
+            let (i2, s2) = self.b2;
+            let sum2 = s2 - self.box2[i2] as f64 + g1 as f64;
+            self.box2[i2] = g1;
+            self.b2 = ((i2 + 1) % self.box2.len(), sum2);
+            let g = ((sum2 / self.box2.len() as f64) as f32).min(1.0);
+            self.min_gain = self.min_gain.min(g);
+            // Delay the audio by `a` samples.
+            let rd = (self.apos + 1) % alen;
+            self.audio[0][self.apos] = *x;
+            self.audio[1][self.apos] = *y;
+            *x = self.audio[0][rd] * g;
+            *y = self.audio[1][rd] * g;
+            self.apos = rd;
+            self.n += 1;
+        }
+        // Re-sum the box filters occasionally to cancel rounding drift.
+        if self.n % 65_536 < l.len() as u64 {
+            self.b1.1 = self.box1.iter().map(|v| *v as f64).sum();
+            self.b2.1 = self.box2.iter().map(|v| *v as f64).sum();
+        }
+    }
+
+
     pub fn new(rate: f32, p: &LimiterParams) -> Limiter {
         let s = ((p.lookahead.max(0.2) * 0.001 * rate).round() as usize).max(4);
         let d = if p.true_peak { TP_HALF } else { 0 };
@@ -291,6 +333,59 @@ pub struct MasterReport {
     pub true_peak_ok: bool,
 }
 
+/// Run the limiter over whole buffers from a precomputed detector envelope and
+/// remove its latency (the tail is flushed with silence).
+/// Returns the maximum gain reduction (dB, ≤ 0). Serial on purpose: the
+/// release recursion runs in f32 and settles to within ~3e-4 of its target
+/// depending on its whole history, so chunked runs differ at −70…−80 dB.
+fn limit_par(rate: f32, params: &LimiterParams, l: &mut [f32], r: &mut [f32], env: &[f32], g: f32) -> f32 {
+    let mut lim = Limiter::new(rate, params);
+    limit_aligned_serial(&mut lim, l, r, env, g);
+    lim.max_reduction()
+}
+
+#[allow(dead_code)]
+fn limit_chunked(rate: f32, params: &LimiterParams, l: &mut [f32], r: &mut [f32], env: &[f32], g: f32) -> f32 {
+    // Parallel chunks (see `par_offline`).
+    let max_red = std::sync::Mutex::new(0.0f32);
+    let d = Limiter::new(rate, params).latency();
+    let n = l.len().min(r.len());
+    // A 4 s pre-roll: shorter ones leave −80 dB differences at chunk joins
+    // (measured), 4 s matches the serial pass to −150 dB.
+    super::par_offline(l, r, rate, 4.0, d, |wl, wr, w0| {
+        let mut lm = Limiter::new(rate, params);
+        let len = wl.len();
+        let mut e = vec![0.0f32; len];
+        let k = len.min(n.saturating_sub(w0));
+        e[..k].copy_from_slice(&env[w0..w0 + k]);
+        lm.process_env(wl, wr, &e, g);
+        let m = lm.max_reduction();
+        let mut x = max_red.lock().unwrap();
+        *x = x.min(m);
+    });
+    let m = *max_red.lock().unwrap();
+    m
+}
+
+fn limit_aligned_serial(lim: &mut Limiter, l: &mut [f32], r: &mut [f32], env: &[f32], g: f32) {
+    let n = l.len().min(r.len());
+    let d = lim.latency();
+    lim.process_env(&mut l[..n], &mut r[..n], &env[..n], g);
+    if d == 0 {
+        return;
+    }
+    let mut zl = vec![0.0f32; d];
+    let mut zr = vec![0.0f32; d];
+    let ze = vec![0.0f32; d];
+    lim.process_env(&mut zl, &mut zr, &ze, g);
+    let keep = n.saturating_sub(d);
+    l.copy_within(n - keep..n, 0);
+    r.copy_within(n - keep..n, 0);
+    let take = d.min(n);
+    l[keep..].copy_from_slice(&zl[d - take..]);
+    r[keep..].copy_from_slice(&zr[d - take..]);
+}
+
 /// Master to `target_lufs` with a `ceiling_dbtp` true-peak ceiling (in place).
 pub fn master(l: &mut [f32], r: &mut [f32], rate: u32, target_lufs: f32, ceiling_dbtp: f32) -> MasterReport {
     master_with(l, r, rate, &MasterParams { target: target_lufs, ceiling: ceiling_dbtp, ..Default::default() })
@@ -299,9 +394,20 @@ pub fn master(l: &mut [f32], r: &mut [f32], rate: u32, target_lufs: f32, ceiling
 /// Master with full parameters (in place).
 pub fn master_with(l: &mut [f32], r: &mut [f32], rate: u32, p: &MasterParams) -> MasterReport {
     let fs = rate as f32;
+    let prof = std::env::var_os("ANIKIT_MUSIC_PROFILE").is_some();
+    let t0 = std::time::Instant::now();
+    let lap = |what: &str| {
+        if prof {
+            eprintln!("    master {what}: {:.1} ms", t0.elapsed().as_secs_f64() * 1e3);
+        }
+    };
     let n = l.len().min(r.len());
     let (l, r) = (&mut l[..n], &mut r[..n]);
-    let input = super::loudness::fast_measure(l, r, fs);
+    let input = {
+        let i = super::loudness::integrated_lufs(l, r, fs);
+        let sp = l.iter().chain(r.iter()).fold(0.0f32, |m, x| m.max(x.abs()));
+        Loudness { integrated: i, lra: 0.0, max_momentary: f64::NEG_INFINITY, max_short_term: f64::NEG_INFINITY, true_peak: f64::NAN, sample_peak: 20.0 * (sp.max(1e-12) as f64).log10() }
+    };
     let mut report = MasterReport {
         input,
         output: input,
@@ -317,6 +423,7 @@ pub fn master_with(l: &mut [f32], r: &mut [f32], rate: u32, p: &MasterParams) ->
     if input.integrated <= -70.0 || n == 0 {
         return report;
     }
+    lap("input");
     // 1. Normalise to the chain's reference level, then EQ → glue → saturation.
     let reference = -18.0f32;
     let pre = (reference as f64 - input.integrated) as f32;
@@ -327,6 +434,9 @@ pub fn master_with(l: &mut [f32], r: &mut [f32], rate: u32, p: &MasterParams) ->
         tilt: p.tilt,
         ..Default::default()
     };
+    // Serial on purpose: the master's decisions (true peak vs ceiling, which
+    // iteration wins) are discrete, so even −150 dB chunk-join differences can
+    // flip them; the chain stays bit-exact.
     Eq::new(fs, &base).process(&mut pl, &mut pr);
     if let Some(eq) = &p.eq {
         Eq::new(fs, eq).process(&mut pl, &mut pr);
@@ -340,7 +450,11 @@ pub fn master_with(l: &mut [f32], r: &mut [f32], rate: u32, p: &MasterParams) ->
         let mut sat = Saturator::new(fs, s);
         process_aligned(&mut sat, &mut pl, &mut pr);
     }
-    // 2. Gain + limiter, iterated on the measured result.
+    // 2. Gain + limiter, iterated on the measured result. The limiter's
+    // detector input is computed once (it scales with the gain).
+    lap("eq+glue");
+    let env = super::loudness::peak_env(&pl, &pr);
+    lap("env");
     let processed = super::loudness::integrated_lufs(&pl, &pr, fs);
     let mut gain = (p.target as f64 - processed) as f32;
     let mut ceil = p.ceiling;
@@ -353,16 +467,21 @@ pub fn master_with(l: &mut [f32], r: &mut [f32], rate: u32, p: &MasterParams) ->
             *a = x * g;
             *b = y * g;
         }
-        let mut lim = Limiter::new(fs, &LimiterParams { ceiling: ceil, ..p.limiter.clone() });
-        process_aligned(&mut lim, l, r);
-        let out = super::loudness::fast_measure(l, r, fs);
-        let err = out.integrated - p.target as f64;
+        let lim_red = limit_par(fs, &LimiterParams { ceiling: ceil, ..p.limiter.clone() }, l, r, &env, g);
+        // Loudness first (cheap); the true peak only once loudness converged.
+        let integrated = super::loudness::integrated_lufs(l, r, fs);
+        let err = integrated - p.target as f64;
+        report.limiter_reduction_db = lim_red;
+        if err.abs() > tol && it < 10 {
+            gain -= (err * if err < 0.0 { 1.15 } else { 1.0 }) as f32;
+            continue;
+        }
+        let out = super::loudness::fast_measure_with(l, r, integrated);
         let over = out.true_peak - p.ceiling as f64;
         let score = err.abs().max(tol) + over.max(0.0) * 10.0;
         if best.as_ref().is_none_or(|b| score < b.0) {
             best = Some((score, out, gain, ceil));
         }
-        report.limiter_reduction_db = lim.max_reduction();
         if err.abs() <= tol && over <= 0.0 {
             break;
         }
@@ -372,6 +491,7 @@ pub fn master_with(l: &mut [f32], r: &mut [f32], rate: u32, p: &MasterParams) ->
         // Limiting makes loudness grow slower than gain: step a little further.
         gain -= (err * if err < 0.0 { 1.15 } else { 1.0 }) as f32;
     }
+    lap("iterations");
     let (_, out, g, c) = best.expect("at least one iteration");
     if g != gain || c != ceil {
         // Re-render the best attempt.
@@ -380,10 +500,9 @@ pub fn master_with(l: &mut [f32], r: &mut [f32], rate: u32, p: &MasterParams) ->
             *a = x * gl;
             *b = y * gl;
         }
-        let mut lim = Limiter::new(fs, &LimiterParams { ceiling: c, ..p.limiter.clone() });
-        process_aligned(&mut lim, l, r);
-        report.limiter_reduction_db = lim.max_reduction();
+        report.limiter_reduction_db = limit_par(fs, &LimiterParams { ceiling: c, ..p.limiter.clone() }, l, r, &env, gl);
     }
+    lap("rerender");
     report.output = out;
     report.gain_db = pre + g;
     report.loudness_ok = (out.integrated - p.target as f64).abs() <= tol;

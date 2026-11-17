@@ -147,6 +147,8 @@ pub struct LoudnessMeter {
     subs: Vec<f64>,
     tp: [TruePeak; 2],
     sample_peak: f32,
+    /// Run the 4× true-peak detectors (off: true peak reads the sample peak).
+    pub tp_on: bool,
 }
 
 impl LoudnessMeter {
@@ -160,12 +162,24 @@ impl LoudnessMeter {
             subs: Vec::new(),
             tp: [TruePeak::default(), TruePeak::default()],
             sample_peak: 0.0,
+            tp_on: true,
         }
     }
 
     pub fn reset(&mut self) {
         let rate = self.sub_len as f32 * 10.0;
         *self = LoudnessMeter::new(rate);
+    }
+
+    /// After silence the filter state decays toward the subnormal range, where
+    /// f64 arithmetic is ~100× slower; zero it well before (once per 100 ms
+    /// block: the slowest pole decays ~1e-11 per block, so it never gets there).
+    fn flush_denormals(z: &mut [[f64; 2]; 4]) {
+        for v in z.iter_mut().flatten() {
+            if v.abs() < 1e-60 {
+                *v = 0.0;
+            }
+        }
     }
 
     #[inline(always)]
@@ -192,9 +206,12 @@ impl LoudnessMeter {
                 self.subs.push(self.acc);
                 self.acc = 0.0;
                 self.count = 0;
+                Self::flush_denormals(&mut self.z);
             }
-            self.tp[0].push(a);
-            self.tp[1].push(b);
+            if self.tp_on {
+                self.tp[0].push(a);
+                self.tp[1].push(b);
+            }
             self.sample_peak = self.sample_peak.max(a.abs()).max(b.abs());
         }
         for st in self.z.iter_mut() {
@@ -315,50 +332,135 @@ fn to_db(p: f32) -> f64 {
 
 /// Measure a whole stereo buffer.
 pub fn measure(l: &[f32], r: &[f32], rate: f32) -> Loudness {
-    let mut m = LoudnessMeter::new(rate);
-    m.process(l, r);
-    m.result()
+    // The gated loudness pass and the (parallel, chunked) true-peak pass run concurrently.
+    let (mut res, tp) = rayon::join(
+        || {
+            let mut m = LoudnessMeter::new(rate);
+            m.tp_on = false;
+            m.process(l, r);
+            m.result()
+        },
+        || true_peak_par(l, r),
+    );
+    res.true_peak = res.true_peak.max(to_db(tp));
+    res
 }
 
 /// Integrated loudness only (cheaper: no true-peak oversampling).
 pub fn integrated_lufs(l: &[f32], r: &[f32], rate: f32) -> f64 {
-    let mut m = LoudnessMeter::new(rate);
-    // Same filter and blocks as `process`, without the peak detectors.
-    for (&a, &b) in l.iter().zip(r) {
-        let yl = LoudnessMeter::kfilter(&m.kw, &mut m.z, 0, a as f64);
-        let yr = LoudnessMeter::kfilter(&m.kw, &mut m.z, 1, b as f64);
-        m.acc += yl * yl + yr * yr;
-        m.count += 1;
-        if m.count == m.sub_len {
-            m.subs.push(m.acc);
-            m.acc = 0.0;
-            m.count = 0;
-        }
+    use rayon::prelude::*;
+    // Parallel: chunks aligned to the 100 ms sub-blocks, each K-filter warmed up
+    // on 0.5 s of preceding input (its slowest pole decays ~1e-11 per 100 ms, so
+    // the warmed state matches a serial pass to rounding).
+    let m0 = LoudnessMeter::new(rate);
+    let sub = m0.sub_len;
+    let n = l.len().min(r.len());
+    let chunk = (n.div_ceil(8).max(1 << 17)).div_ceil(sub) * sub;
+    let pre = 5 * sub;
+    let parts: Vec<(Vec<f64>, f64, usize)> = (0..n.div_ceil(chunk).max(1))
+        .into_par_iter()
+        .map(|k| {
+            let (a, b) = (k * chunk, ((k + 1) * chunk).min(n));
+            let mut z = [[0.0f64; 2]; 4];
+            for i in a.saturating_sub(pre)..a {
+                LoudnessMeter::kfilter(&m0.kw, &mut z, 0, l[i] as f64);
+                LoudnessMeter::kfilter(&m0.kw, &mut z, 1, r[i] as f64);
+            }
+            let (mut subs, mut acc, mut count) = (Vec::with_capacity((b - a) / sub + 1), 0.0f64, 0usize);
+            for i in a..b {
+                let yl = LoudnessMeter::kfilter(&m0.kw, &mut z, 0, l[i] as f64);
+                let yr = LoudnessMeter::kfilter(&m0.kw, &mut z, 1, r[i] as f64);
+                acc += yl * yl + yr * yr;
+                count += 1;
+                if count == sub {
+                    subs.push(acc);
+                    acc = 0.0;
+                    count = 0;
+                    LoudnessMeter::flush_denormals(&mut z);
+                }
+            }
+            (subs, acc, count)
+        })
+        .collect();
+    let mut m = m0;
+    for (subs, acc, count) in parts {
+        m.subs.extend(subs);
+        // Only the last chunk can end mid-block (chunks are whole sub-blocks).
+        m.acc = acc;
+        m.count = count;
     }
     m.integrated()
 }
 
 /// True peak (dBTP) of a stereo buffer.
+/// Per-sample peak envelope as the limiter's detector sees it:
+/// `max(|l|, |r|, tp(l), tp(r))` with the 4× true-peak interpolator (delayed
+/// by `TP_HALF` like [`TruePeak::push`]). Computed in parallel chunks with a
+/// pre-roll, so it equals the sequential result exactly.
+pub fn peak_env(l: &[f32], r: &[f32]) -> Vec<f32> {
+    use rayon::prelude::*;
+    const CH: usize = 1 << 15;
+    let n = l.len().min(r.len());
+    let mut out = vec![0.0f32; n];
+    out.par_chunks_mut(CH).enumerate().for_each(|(k, o)| {
+        let a = k * CH;
+        let mut tl = TruePeak::default();
+        let mut tr = TruePeak::default();
+        for i in a.saturating_sub(2 * TP_TAPS)..a {
+            tl.push(l[i]);
+            tr.push(r[i]);
+        }
+        for (j, v) in o.iter_mut().enumerate() {
+            let (x, y) = (l[a + j], r[a + j]);
+            *v = x.abs().max(y.abs()).max(tl.push(x)).max(tr.push(y));
+        }
+    });
+    out
+}
+
+/// True peak (linear) of a stereo signal, computed in parallel chunks.
+pub fn true_peak_par(l: &[f32], r: &[f32]) -> f32 {
+    use rayon::prelude::*;
+    const CH: usize = 1 << 15;
+    let n = l.len().min(r.len());
+    (0..n.div_ceil(CH))
+        .into_par_iter()
+        .map(|k| {
+            let (a, b) = (k * CH, ((k + 1) * CH).min(n));
+            let mut tl = TruePeak::default();
+            let mut tr = TruePeak::default();
+            for i in a.saturating_sub(2 * TP_TAPS)..a {
+                tl.push(l[i]);
+                tr.push(r[i]);
+            }
+            let mut m = 0.0f32;
+            for i in a..b {
+                m = m.max(l[i].abs()).max(r[i].abs()).max(tl.push(l[i])).max(tr.push(r[i]));
+            }
+            m
+        })
+        .reduce(|| 0.0, f32::max)
+}
+
+/// [`fast_measure`] with the integrated loudness already known.
+pub fn fast_measure_with(l: &[f32], r: &[f32], integrated: f64) -> Loudness {
+    let sp = |x: &[f32]| x.iter().fold(0.0f32, |m, v| m.max(v.abs()));
+    let (tp, s) = rayon::join(|| true_peak_par(l, r), || sp(l).max(sp(r)));
+    Loudness { integrated, lra: 0.0, max_momentary: f64::NEG_INFINITY, max_short_term: f64::NEG_INFINITY, true_peak: to_db(tp.max(s)), sample_peak: to_db(s) }
+}
+
 /// Integrated loudness and true peak, computed in parallel (the fast path for
 /// iterative mastering; LRA and momentary/short-term maxima are left at −∞).
 pub fn fast_measure(l: &[f32], r: &[f32], rate: f32) -> Loudness {
-    let one = |x: &[f32]| {
-        let mut t = TruePeak::default();
-        let mut sp = 0.0f32;
-        for &v in x {
-            t.push(v);
-            sp = sp.max(v.abs());
-        }
-        (t.peak.max(sp), sp)
-    };
-    let (i, ((pa, sa), (pb, sb))) = rayon::join(|| integrated_lufs(l, r, rate), || rayon::join(|| one(l), || one(r)));
+    let sp = |x: &[f32]| x.iter().fold(0.0f32, |m, v| m.max(v.abs()));
+    let (i, (tp, s)) = rayon::join(|| integrated_lufs(l, r, rate), || rayon::join(|| true_peak_par(l, r), || sp(l).max(sp(r))));
     Loudness {
         integrated: i,
         lra: 0.0,
         max_momentary: f64::NEG_INFINITY,
         max_short_term: f64::NEG_INFINITY,
-        true_peak: to_db(pa.max(pb)),
-        sample_peak: to_db(sa.max(sb)),
+        true_peak: to_db(tp.max(s)),
+        sample_peak: to_db(s),
     }
 }
 

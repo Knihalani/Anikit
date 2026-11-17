@@ -24,6 +24,26 @@ mod vmath;
 pub use front::{DeclaredUniform, Kind, Lang, ShaderError, UType};
 pub use texture::{Filter, Texture, Wrap};
 
+static LANE_GROUPS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(2);
+
+/// Quads shaded together per kernel iteration, for shaders compiled from now on.
+/// 2 (the default) gives the CPU two independent dependency chains, which makes
+/// raymarchers up to 1.4× faster, at about twice the compile time. 1 compiles
+/// fastest: best for a single still. Output is identical either way.
+/// `ANIKIT_SHADER_GROUPS=1|2` overrides it.
+pub fn set_lane_groups(n: usize) {
+    LANE_GROUPS.store(n.clamp(1, 2), std::sync::atomic::Ordering::Relaxed);
+}
+
+/// See [`set_lane_groups`].
+pub fn lane_groups() -> usize {
+    match std::env::var("ANIKIT_SHADER_GROUPS").ok().as_deref() {
+        Some("1") => 1,
+        Some("2") => 2,
+        _ => LANE_GROUPS.load(std::sync::atomic::Ordering::Relaxed),
+    }
+}
+
 use rayon::prelude::*;
 use std::collections::HashMap;
 use texture::Env;
@@ -136,6 +156,7 @@ impl Shader {
             n.hash(&mut h);
             format!("{t:?}").hash(&mut h);
         }
+        lane_groups().hash(&mut h);
         let key = h.finish();
         let cell = CACHE.get_or_init(Default::default).lock().unwrap().entry(key).or_default().clone();
         // Concurrent requests for the same shader wait for one compile.

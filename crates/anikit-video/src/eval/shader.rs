@@ -615,7 +615,7 @@ impl Evaluator {
             progress,
             uniforms,
             channels: chans,
-            supersample: sc.supersample,
+            supersample: sc.supersample || crate::components::reference(),
             alpha: sc.alpha,
             label: sc.label.clone(),
             audio,
