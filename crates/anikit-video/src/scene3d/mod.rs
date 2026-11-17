@@ -906,31 +906,38 @@ impl Scene3d {
             q.shadow_rays = q.shadow_rays.min(1);
             q.secondary_rays = 0;
         }
-        scene.render_frame(&cam, &prev, w, h, &q, &mut px);
-        let t_trace = clock.elapsed();
-        let layer = self.particles(t, dt, &cam, &prev, &mut px, w, h, assets);
-        let t_parts = clock.elapsed();
-        let mut pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
-        if draft {
-            // Drafts: a lighter denoise and no motion blur (focus blur stays: it is composition).
-            pp.denoise = pp.denoise.min(2);
-            pp.shutter = 0.0;
-        }
-        if let Some(path) = std::env::var_os("ANIKIT_SCENE3D_DUMP") {
-            // Development aid: the primary pass and post settings, for examples/post_bench.
-            post::dump(std::path::Path::new(&path), &px, w, h, &pp);
-        }
-        let vol = if p.shafts && p.haze.0 > 0.0 {
-            let depth: &[f32] = &px.depth;
-            let steps = match p.quality.edge_spp { 0..=3 => 8, 4..=8 => 16, _ => 32 };
-            Some(scene.volumetrics(&cam, w, h, depth, p.haze.0, steps))
-        } else {
-            None
-        };
-        let mut out = post::process_planes(&px, w, h, &pp, vol.as_ref().map(|v| post::Volume { px: v, w: w.div_ceil(2), h: h.div_ceil(2) }), layer.as_ref());
-        if let Some((width, ink)) = p.outline {
-            outlines(&mut out, &px, w, h, width, ink);
-        }
+        // Trace, particles and post run on the render pool (see `kernel::par::isolated`).
+        let (out, t_trace, t_parts) = kernel::par::isolated(|| {
+            scene.render_frame(&cam, &prev, w, h, &q, &mut px);
+            let t_trace = clock.elapsed();
+            let layer = self.particles(t, dt, &cam, &prev, &mut px, w, h, assets);
+            let t_parts = clock.elapsed();
+            let mut pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
+            if draft {
+                // Drafts: a lighter denoise and no motion blur (focus blur stays: it is composition).
+                pp.denoise = pp.denoise.min(2);
+                pp.shutter = 0.0;
+            }
+            if let Some(path) = std::env::var_os("ANIKIT_SCENE3D_DUMP") {
+                // Development aid: the primary pass and post settings, for examples/post_bench.
+                post::dump(std::path::Path::new(&path), &px, w, h, &pp);
+            }
+            let out = {
+                let vol = if p.shafts && p.haze.0 > 0.0 {
+                    let depth: &[f32] = &px.depth;
+                    let steps = match p.quality.edge_spp { 0..=3 => 8, 4..=8 => 16, _ => 32 };
+                    Some(scene.volumetrics(&cam, w, h, depth, p.haze.0, steps))
+                } else {
+                    None
+                };
+                let mut out = post::process_planes(&px, w, h, &pp, vol.as_ref().map(|v| post::Volume { px: v, w: w.div_ceil(2), h: h.div_ceil(2) }), layer.as_ref());
+                if let Some((width, ink)) = p.outline {
+                    outlines(&mut out, &px, w, h, width, ink);
+                }
+                out
+            };
+            (out, t_trace, t_parts)
+        });
         if prof {
             let ms = |d: std::time::Duration| d.as_secs_f64() * 1e3;
             eprintln!(
