@@ -2234,7 +2234,9 @@ impl Encoder {
                         continue;
                     }
                     let x0 = x;
-                    while x < mbw && mask(x) {
+                    // a one-macroblock gap costs less to filter through than a
+                    // second run (rounding and dilation at both ends)
+                    while x < mbw && (mask(x) || (x + 1 < mbw && mask(x + 1))) {
                         x += 1;
                     }
                     f(if x0 == 0 { 0 } else { p + x0 * 16 }, if x == mbw { s } else { p + x * 16 });
