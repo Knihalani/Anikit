@@ -103,8 +103,8 @@
               "to": {
                 "zoom": 1
               },
-              "duration": 3,
-              "ease": "outCubic"
+              "duration": 0.9,
+              "ease": "outExpo"
             }
           ]
         },
@@ -218,8 +218,8 @@
                 "to": {
                   "zoom": 1.04
                 },
-                "duration": "{{readtime(join(points, ' ')) + 2.4}}",
-                "ease": "inOutSine"
+                "duration": 0.9,
+                "ease": "outExpo"
               }
             ]
           },

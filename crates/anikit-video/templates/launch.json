@@ -1,7 +1,7 @@
 {
   "name": "launch",
   "title": "Product launch",
-  "description": "A 15–35 s launch film on a living brand mesh: optional kinetic hook, product reveal in a browser (your screenshot or a generated UI), 2–4 split-screen feature beats (device, code editor or screenshot), an animated proof counter with a rising chart, and a CTA button that bursts into confetti.",
+  "description": "A 20–35 s launch film with a broadcast-style HUD (beat counter, section label, progress bar): optional kinetic hook; product reveal where a search types feature 1 and returns the features as results (or your screenshot in a browser); feature beats that cycle three layouts (split with a camera push, a full-bleed UI crop with callout and lower third, a centred title over feature cards); a proof counter in a brand ring (or a chart of your real series); a CTA with confetti.",
   "duration": "20–35 s",
   "tags": [
     "launch",
@@ -103,6 +103,14 @@
           "type": "string",
           "required": true,
           "maxWords": 8
+        },
+        "series": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 12,
+          "description": "Optional real data behind the stat (e.g. monthly values); drawn as a brand-coloured chart. Without it, no chart is invented."
         }
       },
       "example": {
@@ -152,8 +160,8 @@
                 "to": {
                   "zoom": 1
                 },
-                "duration": "{{max(2.4, readtime(hook) + 0.7)}}",
-                "ease": "outCubic"
+                "duration": 0.9,
+                "ease": "outExpo"
               }
             ]
           },
@@ -172,6 +180,14 @@
               "style": "hero",
               "width": "{{fmt.safe.w}}",
               "enter": "mask by word up"
+            },
+            {
+              "$use": "hud",
+              "with": {
+                "k": "{{1}}",
+                "label": "Intro",
+                "dur": "{{max(2.4, readtime(hook) + 0.7 + 0.09 * words(hook))}}"
+              }
             },
             {
               "$use": "grain"
@@ -209,7 +225,7 @@
             "id": "name",
             "text": "{{product}}",
             "style": "title",
-            "y": "{{fmt.portrait ? '22%' : (fmt.landscape ? '42%' : (brand.logo ? '19%' : '17%'))}}",
+            "y": "{{fmt.portrait ? '17%' : (fmt.landscape ? '42%' : (brand.logo ? '19%' : '15%'))}}",
             "width": "{{fmt.landscape ? fmt.w * 0.36 : fmt.safe.w}}",
             "enter": "pop by char from center",
             "x": "{{fmt.landscape ? fmt.safe.left : '50%'}}",
@@ -220,7 +236,7 @@
             "id": "tagline",
             "text": "{{tagline}}",
             "style": "subtitle",
-            "y": "{{fmt.portrait ? '31%' : (fmt.landscape ? '55%' : '27%')}}",
+            "y": "{{fmt.portrait ? '25%' : (fmt.landscape ? '55%' : '24%')}}",
             "width": "{{fmt.landscape ? fmt.w * 0.31 : fmt.safe.w}}",
             "enter": {
               "preset": "fadeUp",
@@ -231,17 +247,69 @@
             "align": "{{fmt.landscape ? 'left' : 'center'}}"
           },
           {
-            "$use": "device",
+            "$if": "screenshot",
+            "then": {
+              "$use": "device",
+              "with": {
+                "kind": "browser",
+                "src": "{{screenshot}}",
+                "url": "{{url}}",
+                "delay": 0.6,
+                "width": "{{fmt.portrait ? fmt.safe.w : (fmt.square ? fmt.w * 0.78 : fmt.w * 0.5)}}",
+                "height": "{{(fmt.portrait ? fmt.safe.w : (fmt.square ? fmt.w * 0.78 : fmt.w * 0.5)) / 1.6 + fmt.u * 6}}",
+                "y": "{{fmt.portrait ? '58%' : (fmt.square ? '64%' : '50%')}}",
+                "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.25 : '50%'}}",
+                "bob": true
+              }
+            },
+            "else": [
+              {
+                "id": "hero-prompt",
+                "type": "component",
+                "component": "prompt",
+                "props": {
+                  "text": "{{features[0].title}}",
+                  "typing": 16,
+                  "delay": 0.5,
+                  "sendAt": 999,
+                  "fontSize": "{{fmt.portrait ? fmt.u * 3.6 : fmt.u * 2.6}}",
+                  "glow": true
+                },
+                "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.23 : '50%'}}",
+                "y": "{{fmt.landscape ? fmt.h * 0.3 : fmt.h * 0.42}}",
+                "width": "{{fmt.landscape ? fmt.w * 0.46 : fmt.safe.w}}",
+                "height": "{{fmt.u * 12}}"
+              },
+              {
+                "$each": "slice(features, 0, 3)",
+                "as": "r",
+                "index": "j",
+                "do": {
+                  "id": "hero-result-{{j}}",
+                  "type": "component",
+                  "component": "card",
+                  "props": {
+                    "title": "{{r.title}}",
+                    "body": "{{r.body ?? ''}}",
+                    "icon": "{{['spark', 'bolt', 'check'][j]}}",
+                    "glow": "{{j == 0}}",
+                    "delay": "{{1.0 + len(features[0].title) / 16 + j * 0.18}}",
+                    "fontSize": "{{fmt.portrait ? fmt.u * 3.2 : fmt.u * 2.3}}"
+                  },
+                  "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.23 : '50%'}}",
+                  "y": "{{(fmt.landscape ? fmt.h * 0.47 : fmt.h * 0.54) + j * (fmt.landscape ? fmt.u * 12.5 : fmt.u * 11.5)}}",
+                  "width": "{{fmt.landscape ? fmt.w * 0.46 : fmt.safe.w}}",
+                  "height": "{{fmt.landscape ? fmt.u * 11 : fmt.u * 10.5}}"
+                }
+              }
+            ]
+          },
+          {
+            "$use": "hud",
             "with": {
-              "kind": "browser",
-              "src": "{{screenshot}}",
-              "url": "{{url}}",
-              "delay": 0.6,
-              "width": "{{fmt.portrait ? fmt.safe.w : (fmt.square ? fmt.w * 0.78 : fmt.w * 0.5)}}",
-              "height": "{{(fmt.portrait ? fmt.safe.w : (fmt.square ? fmt.w * 0.78 : fmt.w * 0.5)) / 1.6 + fmt.u * 6}}",
-              "y": "{{fmt.portrait ? '58%' : (fmt.square ? '64%' : '50%')}}",
-              "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.25 : '50%'}}",
-              "bob": true
+              "k": "{{(hook ? 2 : 1)}}",
+              "label": "Introducing",
+              "dur": "{{readtime(product + ' ' + tagline) + 2.2}}"
             }
           },
           {
@@ -254,121 +322,303 @@
         "as": "f",
         "index": "i",
         "do": {
-          "id": "feature-{{i + 1}}",
-          "transition": {
-            "type": "push",
-            "direction": "{{fmt.portrait ? 'up' : 'left'}}",
-            "duration": 0.6,
-            "ease": "inOutQuart"
+          "$let": {
+            "k": "(hook ? 2 : 1) + 1 + i",
+            "layout": "['a', 'b', 'c'][i % 3]"
           },
-          "duration": "{{readtime(f.title + ' ' + (f.body ?? '')) + 1.4}}",
-          "layers": [
-            {
-              "$use": "backdrop",
-              "with": {
-                "seed": "{{11 + i * 3}}",
-                "still": true
-              }
+          "in": {
+            "id": "feature-{{i + 1}}",
+            "transition": {
+              "type": "push",
+              "direction": "{{fmt.portrait ? 'up' : 'left'}}",
+              "duration": 0.6,
+              "ease": "inOutQuart"
             },
-            {
-              "$let": {
-                "tw": "fmt.landscape ? fmt.w * 0.36 : fmt.safe.w",
-                "ts": "fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4",
-                "lines": "ceil(len(f.title) * 0.52 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.36 : fmt.safe.w))",
-                "top": "fmt.landscape ? fmt.h * 0.5 - (ceil(len(f.title) * 0.52 * fmt.u * 6.4 / (fmt.w * 0.36)) * fmt.u * 6.4 * 1.1 + fmt.u * 12) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1)",
-                "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
-                "an": "fmt.landscape ? 'topLeft' : 'top'",
-                "al": "fmt.landscape ? 'left' : 'center'"
-              },
-              "in": [
-                {
-                  "text": "{{(i + 1) < 10 ? '0' + str(i + 1) : str(i + 1)}}",
-                  "style": "label",
-                  "x": "{{ax}}",
-                  "anchor": "{{an}}",
-                  "y": "{{top}}",
-                  "enter": "fadeUp"
-                },
-                {
-                  "text": "{{f.title}}",
-                  "style": "heading",
-                  "weight": 750,
-                  "width": "{{tw}}",
-                  "align": "{{al}}",
-                  "x": "{{ax}}",
-                  "anchor": "{{an}}",
-                  "y": "{{top + fmt.u * 4.5}}",
-                  "enter": "mask by word up"
-                },
-                {
-                  "$if": "f.body",
-                  "then": {
-                    "text": "{{f.body}}",
-                    "style": "subtitle",
-                    "width": "{{tw * 0.95}}",
-                    "align": "{{al}}",
-                    "x": "{{ax}}",
-                    "anchor": "{{an}}",
-                    "y": "{{top + fmt.u * 4.5 + lines * ts * 1.1 + fmt.u * 2.5}}",
-                    "enter": {
-                      "preset": "fadeUp",
-                      "delay": 0.35
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              "$let": {
-                "vx": "fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.25 : fmt.cx",
-                "vy": "fmt.landscape ? fmt.h * 0.5 : (fmt.portrait ? fmt.h * 0.6 : fmt.h * 0.66)",
-                "vw": "fmt.landscape ? fmt.w * 0.5 : (fmt.portrait ? fmt.safe.w : fmt.w * 0.7)"
-              },
-              "in": {
-                "$if": "f.code",
-                "then": {
-                  "type": "component",
-                  "component": "code",
-                  "props": {
-                    "code": "{{f.code}}",
-                    "typing": 28,
-                    "delay": 0.4,
-                    "fontSize": "{{fmt.u * 2.4}}",
-                    "glow": "{{brand.colors.primary}}"
-                  },
-                  "x": "{{vx}}",
-                  "y": "{{vy}}",
-                  "width": "{{vw}}",
-                  "height": "{{vw * 0.62}}",
-                  "enter": {
-                    "preset": "slideLeft",
-                    "duration": 0.8
-                  }
-                },
-                "else": [
+            "duration": "{{readtime(f.title + ' ' + (f.body ?? '')) + 1.5}}",
+            "camera": {
+              "$if": "layout == 'a'",
+              "then": {
+                "animate": [
                   {
-                    "$use": "device",
-                    "with": {
-                      "kind": "browser",
-                      "screen": "{{['app', 'feed', 'settings', 'app'][i % 4]}}",
-                      "src": "{{f.image}}",
-                      "url": "{{url}}",
-                      "x": "{{vx}}",
-                      "y": "{{vy}}",
-                      "width": "{{vw}}",
-                      "height": "{{f.image || i % 2 == 0 ? (fmt.landscape ? vw * 0.72 : vw * 0.78) : (fmt.portrait ? fmt.h * 0.44 : fmt.h * 0.8)}}",
-                      "delay": 0.3,
-                      "still": true,
-                      "kpis": "{{stat ? [obj('label', stat.label, 'value', (stat.prefix ?? '') + str(stat.value) + (stat.suffix ?? ''))] : null}}"
-                    }
+                    "from": {
+                      "zoom": 1
+                    },
+                    "to": {
+                      "zoom": 1.025
+                    },
+                    "duration": "{{readtime(f.title + ' ' + (f.body ?? '')) + 1.5}}",
+                    "ease": "inOutSine"
                   }
                 ]
+              },
+              "else": {
+                "zoom": 1
               }
             },
-            {
-              "$use": "grain"
-            }
-          ]
+            "layers": [
+              {
+                "$if": "layout == 'a'",
+                "then": [
+                  {
+                    "$use": "backdrop",
+                    "with": {
+                      "seed": "{{11 + i * 3}}",
+                      "still": true
+                    }
+                  },
+                  {
+                    "$let": {
+                      "tw": "fmt.landscape ? fmt.w * 0.36 : fmt.safe.w",
+                      "ts": "fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4",
+                      "lines": "ceil(len(f.title) * 0.52 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.36 : fmt.safe.w))",
+                      "top": "fmt.landscape ? fmt.h * 0.5 - (ceil(len(f.title) * 0.52 * fmt.u * 6.4 / (fmt.w * 0.36)) * fmt.u * 6.4 * 1.1 + fmt.u * 12) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1)",
+                      "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
+                      "an": "fmt.landscape ? 'topLeft' : 'top'",
+                      "al": "fmt.landscape ? 'left' : 'center'"
+                    },
+                    "in": [
+                      {
+                        "text": "{{(i + 1) < 10 ? '0' + str(i + 1) : str(i + 1)}}",
+                        "style": "label",
+                        "x": "{{ax}}",
+                        "anchor": "{{an}}",
+                        "y": "{{top}}",
+                        "enter": "fadeUp"
+                      },
+                      {
+                        "text": "{{f.title}}",
+                        "style": "heading",
+                        "weight": 750,
+                        "width": "{{tw}}",
+                        "align": "{{al}}",
+                        "x": "{{ax}}",
+                        "anchor": "{{an}}",
+                        "y": "{{top + fmt.u * 4.5}}",
+                        "enter": "mask by word up"
+                      },
+                      {
+                        "$if": "f.body",
+                        "then": {
+                          "text": "{{f.body}}",
+                          "style": "subtitle",
+                          "width": "{{tw * 0.95}}",
+                          "align": "{{al}}",
+                          "x": "{{ax}}",
+                          "anchor": "{{an}}",
+                          "y": "{{top + fmt.u * 4.5 + lines * ts * 1.1 + fmt.u * 2.5}}",
+                          "enter": {
+                            "preset": "fadeUp",
+                            "delay": 0.35
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "$let": {
+                      "vx": "fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.25 : fmt.cx",
+                      "vy": "fmt.landscape ? fmt.h * 0.5 : (fmt.portrait ? fmt.h * 0.6 : fmt.h * 0.66)",
+                      "vw": "fmt.landscape ? fmt.w * 0.5 : (fmt.portrait ? fmt.safe.w : fmt.w * 0.7)"
+                    },
+                    "in": {
+                      "$if": "f.code",
+                      "then": {
+                        "type": "component",
+                        "component": "code",
+                        "props": {
+                          "code": "{{f.code}}",
+                          "typing": 28,
+                          "delay": 0.4,
+                          "fontSize": "{{fmt.u * 2.4}}",
+                          "glow": "{{brand.colors.primary}}"
+                        },
+                        "x": "{{vx}}",
+                        "y": "{{vy}}",
+                        "width": "{{vw}}",
+                        "height": "{{vw * 0.62}}",
+                        "enter": {
+                          "preset": "slideLeft",
+                          "duration": 0.8
+                        }
+                      },
+                      "else": [
+                        {
+                          "$use": "device",
+                          "with": {
+                            "kind": "browser",
+                            "screen": "{{['app', 'feed', 'settings', 'app'][i % 4]}}",
+                            "src": "{{f.image}}",
+                            "url": "{{url}}",
+                            "x": "{{vx}}",
+                            "y": "{{vy}}",
+                            "width": "{{vw}}",
+                            "height": "{{f.image || i % 2 == 0 ? (fmt.landscape ? vw * 0.72 : vw * 0.78) : (fmt.portrait ? fmt.h * 0.44 : fmt.h * 0.8)}}",
+                            "delay": 0.3,
+                            "still": true,
+                            "kpis": "{{stat ? [obj('label', stat.label, 'value', (stat.prefix ?? '') + str(stat.value) + (stat.suffix ?? ''))] : null}}"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "else": {
+                  "$if": "layout == 'b'",
+                  "then": [
+                    {
+                      "$use": "backdrop",
+                      "with": {
+                        "seed": "{{11 + i * 3}}",
+                        "still": true
+                      }
+                    },
+                    {
+                      "$if": "f.image",
+                      "then": {
+                        "$use": "device",
+                        "with": {
+                          "kind": "{{fmt.landscape ? 'browser' : 'phone'}}",
+                          "src": "{{f.image}}",
+                          "url": "{{url}}",
+                          "still": true,
+                          "x": "{{fmt.cx}}",
+                          "y": "{{fmt.landscape ? fmt.h * 0.53 : fmt.h * 0.45}}",
+                          "width": "{{(fmt.landscape ? fmt.w * 0.64 : fmt.safe.w)}}",
+                          "height": "{{fmt.landscape ? fmt.w * 0.64 / 1.6 : fmt.h * 0.52}}",
+                          "delay": 0.1
+                        }
+                      },
+                      "else": {
+                        "$use": "device",
+                        "with": {
+                          "kind": "{{fmt.landscape ? 'browser' : 'phone'}}",
+                          "url": "{{url}}",
+                          "still": true,
+                          "x": "{{fmt.cx}}",
+                          "y": "{{fmt.landscape ? fmt.h * 0.53 : fmt.h * 0.45}}",
+                          "width": "{{(fmt.landscape ? fmt.w * 0.64 : fmt.safe.w)}}",
+                          "height": "{{fmt.landscape ? fmt.w * 0.64 / 1.6 : fmt.h * 0.52}}",
+                          "delay": 0.1
+                        }
+                      }
+                    },
+                    {
+                      "type": "shape",
+                      "shape": "rect",
+                      "x": "50%",
+                      "y": "{{fmt.h * 0.84}}",
+                      "width": "{{fmt.w}}",
+                      "height": "{{fmt.h * 0.36}}",
+                      "fill": "linear-gradient(180deg, {{alpha(brand.colors.backgroundDeep, 0)}}, {{alpha(brand.colors.backgroundDeep, 0.92)}})"
+                    },
+                    {
+                      "id": "callout",
+                      "type": "component",
+                      "component": "callout",
+                      "props": {
+                        "from": [
+                          "{{fmt.w * (fmt.landscape ? 0.36 : 0.12)}}",
+                          "{{fmt.h * (fmt.landscape ? 0.36 : (fmt.portrait ? 0.27 : 0.34))}}"
+                        ],
+                        "to": [
+                          "{{fmt.w * (fmt.landscape ? 0.62 : 0.22)}}",
+                          "{{fmt.h * 0.2}}"
+                        ],
+                        "text": "{{upper(f.title)}}",
+                        "color": "{{brand.colors.accent}}",
+                        "size": "{{fmt.portrait ? fmt.u * 3.2 : fmt.u * 2.4}}",
+                        "delay": 0.8
+                      },
+                      "x": "50%",
+                      "y": "50%",
+                      "width": "{{fmt.w}}",
+                      "height": "{{fmt.h}}"
+                    },
+                    {
+                      "id": "lower-third",
+                      "type": "component",
+                      "component": "lower-third",
+                      "props": {
+                        "title": "{{f.title}}",
+                        "subtitle": "{{f.body ?? product}}",
+                        "accent": "{{brand.colors.primary}}",
+                        "size": "{{fmt.portrait ? fmt.u * 5.2 : fmt.u * 4.2}}",
+                        "delay": 0.35,
+                        "margin": 0
+                      },
+                      "x": "{{fmt.cx}}",
+                      "y": "{{fmt.safe.top + fmt.safe.h / 2}}",
+                      "width": "{{fmt.safe.w}}",
+                      "height": "{{fmt.safe.h}}"
+                    }
+                  ],
+                  "else": [
+                    {
+                      "$use": "backdrop",
+                      "with": {
+                        "seed": "{{11 + i * 3}}",
+                        "still": true
+                      }
+                    },
+                    {
+                      "text": "{{f.title}}",
+                      "style": "hero",
+                      "width": "{{fmt.safe.w}}",
+                      "y": "{{fmt.portrait ? '34%' : '38%'}}",
+                      "anchor": "bottom",
+                      "enter": "pop by word from center"
+                    },
+                    {
+                      "$if": "f.body",
+                      "then": {
+                        "text": "{{f.body}}",
+                        "style": "subtitle",
+                        "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.6}}",
+                        "y": "{{fmt.portrait ? '37%' : '42%'}}",
+                        "anchor": "top",
+                        "enter": {
+                          "preset": "fadeUp",
+                          "delay": 0.35
+                        }
+                      }
+                    },
+                    {
+                      "$each": "slice(features, 0, 3)",
+                      "as": "o",
+                      "index": "j",
+                      "do": {
+                        "type": "component",
+                        "component": "card",
+                        "props": {
+                          "title": "{{o.title}}",
+                          "icon": "{{['spark', 'bolt', 'check'][j]}}",
+                          "glow": "{{j == i % 3}}",
+                          "delay": "{{0.5 + j * 0.12}}",
+                          "fontSize": "{{fmt.portrait ? fmt.u * 3.2 : fmt.u * 2.4}}"
+                        },
+                        "opacity": "{{j == i % 3 ? 1 : 0.5}}",
+                        "x": "{{fmt.landscape ? fmt.cx + (j - (min(len(features), 3) - 1) / 2) * fmt.w * 0.27 : fmt.cx}}",
+                        "y": "{{fmt.landscape ? fmt.h * 0.68 : fmt.h * 0.52 + j * fmt.u * 13}}",
+                        "width": "{{fmt.landscape ? fmt.w * 0.25 : fmt.safe.w}}",
+                        "height": "{{fmt.landscape ? fmt.u * 17 : fmt.u * 11.5}}"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "$use": "hud",
+                "with": {
+                  "k": "{{k}}",
+                  "label": "Feature",
+                  "dur": "{{readtime(f.title + ' ' + (f.body ?? '')) + 1.5}}"
+                }
+              },
+              {
+                "$use": "grain"
+              }
+            ]
+          }
         }
       },
       {
@@ -379,14 +629,53 @@
             "type": "blur",
             "duration": 0.5
           },
-          "duration": "{{readtime(stat.label) + 2.4}}",
+          "duration": "{{readtime(stat.label) + 2.2}}",
           "layers": [
             {
               "$use": "backdrop",
               "with": {
                 "seed": 21,
-                "intensity": 0.45,
-                "still": true
+                "still": true,
+                "intensity": 0.4
+              }
+            },
+            {
+              "$if": "stat.series",
+              "then": {
+                "type": "component",
+                "component": "area-chart",
+                "props": {
+                  "series": [
+                    "{{stat.series}}"
+                  ],
+                  "colors": [
+                    "{{brand.colors.primary}}"
+                  ],
+                  "grid": false,
+                  "endLabel": false,
+                  "width": "{{fmt.u * 0.6}}",
+                  "delay": 0.3,
+                  "duration": 1.6
+                },
+                "y": "{{fmt.portrait ? '72%' : '78%'}}",
+                "width": "{{fmt.safe.w}}",
+                "height": "{{fmt.u * 22}}"
+              },
+              "else": {
+                "type": "component",
+                "component": "progress-ring",
+                "props": {
+                  "from": 0,
+                  "to": 1,
+                  "duration": 1.6,
+                  "percent": false,
+                  "thickness": "{{fmt.u * 0.9}}",
+                  "color": "{{brand.colors.primary}}",
+                  "size": "{{fmt.portrait ? min(fmt.u * 92, fmt.safe.w) : fmt.u * 68}}"
+                },
+                "y": "{{fmt.portrait ? '42%' : '45%'}}",
+                "width": "{{fmt.portrait ? min(fmt.u * 96, fmt.safe.w) : fmt.u * 72}}",
+                "height": "{{fmt.portrait ? min(fmt.u * 96, fmt.safe.w) : fmt.u * 72}}"
               }
             },
             {
@@ -396,7 +685,7 @@
                 "to": "{{stat.value}}",
                 "prefix": "{{stat.prefix ?? ''}}",
                 "suffix": "{{stat.suffix ?? ''}}",
-                "size": "{{fmt.portrait ? fmt.u * 24 : fmt.u * 22}}",
+                "size": "{{fmt.portrait ? fmt.u * 15 : fmt.u * 12}}",
                 "weight": 800,
                 "gradient": [
                   "{{brand.colors.text}}",
@@ -404,14 +693,14 @@
                 ],
                 "duration": 1.6
               },
-              "y": "42%",
+              "y": "{{fmt.portrait ? '42%' : '45%'}}",
               "width": "{{fmt.safe.w}}",
               "height": "{{fmt.u * 30}}"
             },
             {
               "text": "{{stat.label}}",
               "style": "subtitle",
-              "y": "{{fmt.portrait ? '56%' : '62%'}}",
+              "y": "{{fmt.portrait ? '56%' : '60%'}}",
               "width": "{{fmt.safe.w}}",
               "enter": {
                 "preset": "fadeUp",
@@ -419,34 +708,12 @@
               }
             },
             {
-              "type": "component",
-              "component": "area-chart",
-              "props": {
-                "series": [
-                  [
-                    2,
-                    3,
-                    3,
-                    5,
-                    4,
-                    7,
-                    9,
-                    14
-                  ]
-                ],
-                "grid": false,
-                "endLabel": false,
-                "delay": 0.4,
-                "duration": 1.6,
-                "width": "{{fmt.u * 0.6}}",
-                "colors": [
-                  "{{brand.colors.secondary}}"
-                ]
-              },
-              "y": "{{fmt.portrait ? '72%' : '82%'}}",
-              "width": "{{fmt.safe.w}}",
-              "height": "{{fmt.u * 16}}",
-              "opacity": 0.9
+              "$use": "hud",
+              "with": {
+                "k": "{{(hook ? 2 : 1) + 1 + len(features)}}",
+                "label": "Proof",
+                "dur": "{{readtime(stat.label) + 2.2}}"
+              }
             },
             {
               "$use": "grain"
@@ -515,6 +782,14 @@
             }
           },
           {
+            "$use": "hud",
+            "with": {
+              "k": "{{((hook ? 1 : 0) + 2 + len(features) + (stat ? 1 : 0))}}",
+              "label": "Get started",
+              "dur": "{{max(3.8, readtime(product + ' ' + cta + ' ' + (url ?? '')) + 1.6)}}"
+            }
+          },
+          {
             "$use": "grain"
           }
         ]
@@ -523,5 +798,58 @@
     "audio": {
       "$use": "music"
     }
+  },
+  "defs": {
+    "hud": [
+      {
+        "id": "hud-kicker",
+        "text": "{{((k) < 10 ? '0' : '') + str(k) + ' / ' + ((((hook ? 1 : 0) + 2 + len(features) + (stat ? 1 : 0))) < 10 ? '0' : '') + str(((hook ? 1 : 0) + 2 + len(features) + (stat ? 1 : 0))) + ' · ' + upper(product)}}",
+        "style": "label",
+        "font": "$mono",
+        "size": "{{fmt.portrait ? '2.6vmin' : '2.2vmin'}}",
+        "letterSpacing": "0.14em",
+        "color": "$muted",
+        "x": "{{fmt.safe.left}}",
+        "anchor": "topLeft",
+        "y": "{{fmt.safe.top}}",
+        "enter": {
+          "preset": "fadeIn",
+          "duration": 0.4
+        }
+      },
+      {
+        "id": "hud-label",
+        "text": "{{upper(label)}}",
+        "style": "label",
+        "font": "$mono",
+        "size": "{{fmt.portrait ? '2.6vmin' : '2.2vmin'}}",
+        "letterSpacing": "0.14em",
+        "color": "$accent",
+        "x": "{{fmt.w - fmt.safe.right}}",
+        "anchor": "topRight",
+        "y": "{{fmt.safe.top}}",
+        "enter": {
+          "preset": "fadeIn",
+          "duration": 0.4
+        }
+      },
+      {
+        "id": "hud-progress",
+        "type": "component",
+        "component": "progress-bar",
+        "props": {
+          "from": "{{(k - 1) / ((hook ? 1 : 0) + 2 + len(features) + (stat ? 1 : 0))}}",
+          "to": "{{k / ((hook ? 1 : 0) + 2 + len(features) + (stat ? 1 : 0))}}",
+          "duration": "{{dur}}",
+          "thickness": "{{fmt.u * 0.35}}",
+          "color": "{{brand.colors.primary}}",
+          "percent": false
+        },
+        "x": "50%",
+        "y": "{{fmt.h - fmt.safe.bottom * 0.5}}",
+        "width": "{{fmt.safe.w}}",
+        "height": "{{fmt.u * 2}}"
+      }
+    ]
   }
 }

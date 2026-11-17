@@ -26,20 +26,6 @@
    "id": "hook",
    "duration": 4.5,
    "background": "#07080c",
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.0
-      },
-      "to": {
-       "zoom": 1.07
-      },
-      "duration": 4.5,
-      "ease": "inOutSine"
-     }
-    ]
-   },
    "layers": [
     {
      "shape": "circle",
@@ -100,7 +86,7 @@
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -117,60 +103,60 @@
     "animate": [
      {
       "to": {
-       "zoom": 1.0066
+       "zoom": 1.0035
       },
       "at": 1.49,
-      "duration": 0.6,
-      "ease": "outExpo"
+      "duration": 0.4,
+      "ease": "outCubic"
      },
      {
       "to": {
-       "zoom": 1.0132
+       "zoom": 1.007
       },
       "at": 1.98,
-      "duration": 0.6,
-      "ease": "outExpo"
+      "duration": 0.4,
+      "ease": "outCubic"
      },
      {
       "to": {
-       "zoom": 1.0198
+       "zoom": 1.0105
       },
       "at": 3.67,
-      "duration": 0.6,
-      "ease": "outExpo"
+      "duration": 0.4,
+      "ease": "outCubic"
      },
      {
       "to": {
-       "zoom": 1.0264
+       "zoom": 1.014
       },
       "at": 5.41,
-      "duration": 0.6,
-      "ease": "outExpo"
+      "duration": 0.4,
+      "ease": "outCubic"
      },
      {
       "to": {
-       "zoom": 1.033
+       "zoom": 1.0175
       },
       "at": 6.72,
-      "duration": 0.6,
-      "ease": "outExpo"
+      "duration": 0.4,
+      "ease": "outCubic"
      },
      {
       "to": {
-       "zoom": 1.0396
+       "zoom": 1.021
       },
       "at": 7.85,
-      "duration": 0.6,
-      "ease": "outExpo"
+      "duration": 0.4,
+      "ease": "outCubic"
      },
      {
       "to": {
-       "zoom": 2.1333333333333333,
-       "x": 440,
+       "zoom": 2.4,
+       "x": 515,
        "y": 0
       },
-      "at": 9.6,
-      "duration": 1.4,
+      "at": 9.9,
+      "duration": 1.1,
       "ease": "inOutQuart"
      }
     ]
@@ -190,7 +176,7 @@
       "code": "{\n  \"size\": \"16:9\",\n  \"fps\": 60,\n  \"scenes\": [{\n    \"background\": \"#0b0d14\",\n    \"layers\": [\n      { \"component\": \"aurora\" },\n      { \"text\": \"Spec to Screen\" },\n      { \"component\": \"globe\" }\n    ]\n  }]\n}",
       "language": "json",
       "title": "spec.json",
-      "fontSize": 28,
+      "fontSize": 32,
       "typing": 26.0,
       "delay": 0.6,
       "chrome": "mac",
@@ -246,10 +232,10 @@
        }
       ]
      },
-     "x": 495,
+     "x": 555,
      "y": 540,
-     "width": 870,
-     "height": 680,
+     "width": 1010,
+     "height": 820,
      "enter": {
       "preset": "fadeUp",
       "duration": 0.6
@@ -257,15 +243,15 @@
     },
     {
      "shape": "rect",
-     "width": 902,
-     "height": 508.25,
+     "width": 802,
+     "height": 452,
      "radius": 19,
      "fill": "none",
      "stroke": {
       "color": "#ffffff33",
       "width": 2
      },
-     "x": 1400,
+     "x": 1475,
      "y": 540,
      "start": 0.89,
      "enter": {
@@ -278,19 +264,19 @@
      "font": "$mono",
      "size": 26,
      "color": "#8b90a0",
-     "x": 950.0,
-     "y": 827.125,
+     "x": 1075.0,
+     "y": 799.0,
      "anchor": "left",
      "start": 1.98,
      "enter": "fadeIn"
     },
     {
      "type": "group",
-     "x": 1400,
+     "x": 1475,
      "y": 540,
      "width": 1920,
      "height": 1080,
-     "scale": 0.46875,
+     "scale": 0.4166666666666667,
      "clip": true,
      "radius": 40,
      "layers": [
@@ -319,7 +305,9 @@
          "#7af0c8"
         ],
         "intensity": 0.75,
-        "seed": 3
+        "seed": 3,
+        "rate": 4,
+        "speed": 0.6
        },
        "start": 5.41,
        "enter": {
@@ -371,6 +359,7 @@
          ]
         ],
         "scale": 1.0,
+        "spin": 2.5,
         "stagger": 0.25,
         "draw": 1.0
        },
@@ -403,7 +392,7 @@
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -415,20 +404,6 @@
    "background": "#0b0d14",
    "transition": {
     "type": "cut"
-   },
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.0
-      },
-      "to": {
-       "zoom": 1.04
-      },
-      "duration": 4,
-      "ease": "inOutSine"
-     }
-    ]
    },
    "layers": [
     {
@@ -446,7 +421,9 @@
        "#7af0c8"
       ],
       "intensity": 0.75,
-      "seed": 3
+      "seed": 3,
+      "rate": 4,
+      "speed": 0.6
      }
     },
     {
@@ -493,6 +470,7 @@
        ]
       ],
       "scale": 1.0,
+      "spin": 2.5,
       "stagger": 0.25,
       "draw": 1.0
      },
@@ -514,21 +492,10 @@
      }
     },
     {
-     "text": "one file  →  one film",
-     "font": "$mono",
-     "size": "2.6vh",
-     "color": "#8b90a0",
-     "y": "50%",
-     "enter": {
-      "preset": "fadeUp",
-      "delay": 0.6
-     }
-    },
-    {
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -536,24 +503,10 @@
   },
   {
    "id": "kinetic",
-   "duration": 9.5,
+   "duration": 8.5,
    "background": "#07080c",
    "transition": {
     "type": "cut"
-   },
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.0
-      },
-      "to": {
-       "zoom": 1.06
-      },
-      "duration": 9.5,
-      "ease": "linear"
-     }
-    ]
    },
    "layers": [
     {
@@ -658,17 +611,10 @@
      "color": "#8b90a0"
     },
     {
-     "text": "Native Rust → H.264.",
-     "style": "subtitle",
-     "start": 7.0,
-     "y": "70%",
-     "enter": "fadeUp"
-    },
-    {
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -683,22 +629,6 @@
     "direction": "up",
     "duration": 0.5,
     "ease": "inOutQuart"
-   },
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.0
-      },
-      "to": {
-       "zoom": 1.12,
-       "x": 70,
-       "y": 30
-      },
-      "duration": 7.5,
-      "ease": "inOutSine"
-     }
-    ]
    },
    "layers": [
     {
@@ -728,8 +658,33 @@
      "component": "laptop",
      "props": {
       "screen": "dashboard",
-      "title": "Northwind",
+      "title": "spec.json",
       "accent": "#7cc4ff",
+      "items": [
+       "hook",
+       "spec",
+       "screen",
+       "kinetic",
+       "devices",
+       "speed",
+       "chart",
+       "particles",
+       "logo"
+      ],
+      "kpis": [
+       {
+        "label": "Frames",
+        "value": "3,300"
+       },
+       {
+        "label": "Scenes",
+        "value": "9"
+       },
+       {
+        "label": "Seconds",
+        "value": "55"
+       }
+      ],
       "open": 1.0,
       "delay": 0.3,
       "shadow": true
@@ -743,8 +698,13 @@
      "component": "phone",
      "props": {
       "screen": "chat",
-      "title": "Relay",
+      "title": "anikit-video",
       "accent": "#b9a6ff",
+      "items": [
+       "JSON in",
+       "MP4 out",
+       "No browser in the loop"
+      ],
       "delay": 1.1,
       "float": 6,
       "time": "9:41"
@@ -824,7 +784,7 @@
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -832,24 +792,10 @@
   },
   {
    "id": "speed",
-   "duration": 5.0,
+   "duration": 4.5,
    "background": "#07080c",
    "transition": {
     "type": "cut"
-   },
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.0
-      },
-      "to": {
-       "zoom": 1.05
-      },
-      "duration": 5.0,
-      "ease": "inOutSine"
-     }
-    ]
    },
    "layers": [
     {
@@ -870,7 +816,7 @@
      "y": "46%"
     },
     {
-     "text": "This 58-second film rendered in",
+     "text": "This 55-second film rendered in",
      "style": "heading",
      "size": "5.2vh",
      "y": "22%",
@@ -881,11 +827,11 @@
      "component": "counter",
      "props": {
       "from": 0,
-      "to": 56,
+      "to": 31,
       "decimals": 0,
       "suffix": " s",
       "size": 300,
-      "duration": 1.4,
+      "duration": 2.2,
       "delay": 0.4,
       "gradient": [
        "#f4f2ee",
@@ -901,7 +847,7 @@
      "props": {
       "from": 0,
       "to": 100,
-      "duration": 1.4,
+      "duration": 2.2,
       "delay": 0.4,
       "thickness": 8,
       "color": "#7cc4ff",
@@ -912,30 +858,20 @@
      "y": "66%"
     },
     {
-     "text": "3,510 frames · 1080p60 · H.264 · one 4-core cloud VM",
+     "text": "3,300 frames · 1080p60 · one 4-core VM",
      "style": "caption",
      "size": "2.6vh",
      "y": "71%",
      "enter": {
       "preset": "fadeIn",
-      "delay": 1.0
-     }
-    },
-    {
-     "text": "[935 fps]{#f4f2ee} renderer alone      [1,268 fps]{#f4f2ee} encoder alone",
-     "style": "caption",
-     "size": "2.6vh",
-     "y": "84%",
-     "enter": {
-      "preset": "fadeUp",
-      "delay": 1.2
+      "delay": 0.6
      }
     },
     {
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -943,7 +879,7 @@
   },
   {
    "id": "chart",
-   "duration": 6.0,
+   "duration": 5.0,
    "background": "#07080c",
    "transition": {
     "type": "slide",
@@ -953,7 +889,7 @@
    },
    "layers": [
     {
-     "text": "Encoder speed, typical motion graphics",
+     "text": "60 s of 1080p60 motion graphics → MP4",
      "style": "heading",
      "size": "5vh",
      "x": 160,
@@ -962,7 +898,7 @@
      "kinetic": "rise by word 0.5s 50ms outExpo"
     },
     {
-     "text": "1080p · 240 frames · same quality (≈ 50 dB PSNR) · frames per second",
+     "text": "Wall time in seconds, same composition, default settings · lower is better",
      "style": "caption",
      "x": 160,
      "y": "22%",
@@ -976,60 +912,63 @@
      "component": "bar-chart",
      "props": {
       "values": [
-       147,
-       1268,
-       1389
+       6.95,
+       139.5,
+       152.0
       ],
       "labels": [
-       "x264 veryfast",
-       "ak264",
-       "ak264 + renderer hints"
+       "Anikit Video",
+       "Remotion",
+       "HyperFrames"
       ],
       "horizontal": true,
-      "highlight": 2,
+      "highlight": 0,
       "colors": [
-       "#8b90a0",
        "#7cc4ff",
-       "#b9a6ff"
+       "#8b90a0",
+       "#8b90a0"
       ],
       "fontSize": 30,
+      "format": {
+       "suffix": " s",
+       "decimals": 1
+      },
       "delay": 0.4,
       "stagger": 0.15,
       "grid": false
      },
      "width": 1000,
-     "height": 520,
+     "height": 440,
      "x": 660,
-     "y": "58%"
+     "y": "56%"
     },
     {
      "component": "counter",
      "props": {
       "from": 1,
-      "to": 9.4,
-      "decimals": 1,
+      "to": 20,
       "suffix": "×",
       "size": 220,
       "delay": 1.2,
       "duration": 1.4,
       "gradient": [
        "#f4f2ee",
-       "#b9a6ff"
+       "#7cc4ff"
       ],
-      "label": "vs x264 veryfast, same quality"
+      "label": "faster than Remotion"
      },
      "width": 480,
      "height": 420,
      "x": 1500,
-     "y": "56%"
+     "y": "54%"
     },
     {
-     "text": "Source: docs/video/encoder.md",
+     "text": "Measured: docs/video/BENCHMARKS.md · 4 vCPU Xeon · median of 3",
      "font": "$mono",
      "size": 24,
      "color": "#8b90a0",
      "x": 160,
-     "y": "89%",
+     "y": "86%",
      "anchor": "left",
      "enter": {
       "preset": "fadeIn",
@@ -1040,7 +979,7 @@
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -1048,7 +987,7 @@
   },
   {
    "id": "particles",
-   "duration": 5.0,
+   "duration": 4.0,
    "background": "#07080c",
    "transition": {
     "type": "crossfade",
@@ -1062,16 +1001,17 @@
        "JSON in.",
        "Film out."
       ],
-      "count": 9000,
-      "size": 2.8,
+      "count": 2600,
+      "size": 4.2,
+      "glow": false,
       "colors": [
        "#7cc4ff",
        "#b9a6ff"
       ],
-      "form": 1.1,
-      "hold": 0.9,
+      "form": 0.8,
+      "hold": 0.8,
       "exit": "explode",
-      "exitTime": 1.0,
+      "exitTime": 0.8,
       "seed": 4
      }
     }
@@ -1082,22 +1022,8 @@
    "duration": 8.0,
    "background": "radial-gradient(#10131d, #040508)",
    "transition": {
-    "type": "fadeWhite",
+    "type": "fadeBlack",
     "duration": 0.5
-   },
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.08
-      },
-      "to": {
-       "zoom": 1.0
-      },
-      "duration": 8.0,
-      "ease": "outCubic"
-     }
-    ]
    },
    "layers": [
     {
@@ -1105,14 +1031,18 @@
      "props": {
       "at": [
        0.5,
-       -0.15
+       -0.3
       ],
       "angle": 90,
       "spread": 60,
       "color": "#cfe3ff",
       "intensity": 0.35,
-      "dust": 80
-     }
+      "dust": 30,
+      "spin": 0
+     },
+     "width": 1920,
+     "height": 640,
+     "y": 320
     },
     {
      "component": "text-3d",
@@ -1126,7 +1056,8 @@
       "stagger": 0.08,
       "delay": 0.2,
       "tilt": 10,
-      "sway": 4,
+      "sway": 0,
+      "shine": 0,
       "scale": 0.78
      },
      "y": "45%"
@@ -1152,6 +1083,11 @@
       "ghosts": 3
      },
      "start": 0,
+     "end": 5.4,
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.8
+     },
      "blend": "screen"
     },
     {
@@ -1182,7 +1118,7 @@
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -1207,17 +1143,17 @@
   },
   {
    "sfx": "swoosh",
-   "at": 28.3,
+   "at": 27.3,
    "volume": 0.3
   },
   {
    "sfx": "swoosh",
-   "at": 40.3,
+   "at": 38.8,
    "volume": 0.25
   },
   {
    "sfx": "whoosh",
-   "at": 49.4,
+   "at": 46.9,
    "volume": 0.3
   }
  ]

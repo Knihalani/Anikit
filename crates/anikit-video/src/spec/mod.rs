@@ -394,8 +394,10 @@ pub struct Layer {
 
     // ---- image / video
     pub src: Option<String>,
-    /// `contain`, `cover`, `fill`, `none`.
-    pub fit: Option<String>,
+    /// Images: `contain`, `cover`, `fill`, `none`. Text: `true` shrinks the
+    /// size (never grows it) so the widest line fits `width` (default 85% of
+    /// the parent), keeping line breaks.
+    pub fit: Option<FitValue>,
     pub speed: Option<f64>,
     pub volume: Option<f64>,
 
@@ -788,4 +790,24 @@ pub fn schema_json() -> String {
         p["examples"] = serde_json::json!(all);
     }
     serde_json::to_string_pretty(&root).unwrap()
+}
+
+/// `fit`: an image mode (`"cover"`) or, on text, `true`. Derefs to the word
+/// (`"true"` / `"false"` for booleans) so callers match on strings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum FitValue {
+    Flag(bool),
+    Mode(String),
+}
+
+impl std::ops::Deref for FitValue {
+    type Target = str;
+    fn deref(&self) -> &str {
+        match self {
+            FitValue::Flag(true) => "true",
+            FitValue::Flag(false) => "false",
+            FitValue::Mode(m) => m,
+        }
+    }
 }

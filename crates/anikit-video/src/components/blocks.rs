@@ -622,8 +622,9 @@ impl Component for Timeline {
             let c = if future { th.muted } else { th.accent };
             let mut e = Vec::new();
             if self.current == Some(i) {
-                let ph = ((t - ti) * 0.9).fract();
-                e.push(circle(x, y, fs * 0.5 + ph * fs * 1.2, solid(alpha(c, 0.4 * (1.0 - ph)))));
+                if let Some(ph) = pulse(t - ti, 0.9) {
+                    e.push(circle(x, y, fs * 0.5 + ph * fs * 1.2, solid(alpha(c, 0.4 * (1.0 - ph)))));
+                }
             }
             e.push(circle(x, y, fs * 0.55, solid(th.background)));
             e.push(circle(x, y, fs * 0.42, solid(c)));
