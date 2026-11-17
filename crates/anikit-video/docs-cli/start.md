@@ -3,6 +3,7 @@
 Install the prebuilt binary (seconds; do not build from source): `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh`. Then:
 
 ```bash
+anikit-video docs essentials       # ONE read (~13k chars): primitives, animation, expressions, compositions, shaders, music
 anikit-video docs <topic>        # one compact page per primitive (this list)
 anikit-video preview s.json      # THE loop: validate + s-sheet.png (1 frame/s) + critique + pace, ~1 s for 2D
 anikit-video preview s.json --at 2.4 -o f.png               # one moment at full size
