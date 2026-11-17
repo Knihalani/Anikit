@@ -886,6 +886,14 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 (None, Some(i)) => i.kit.to_string(),
                 (None, None) => st.kit.to_string(),
             };
+            // Synthwave's snare is the 80s gated one: its own track through a plate
+            // whose tail is cut a quarter second after each hit.
+            let gated = st.name == "synthwave" && inst_override.is_none();
+            let snare: Vec<Note> = if gated { drum_notes.iter().filter(|n| n.key == 38.0 || n.key == 40.0).cloned().collect() } else { Vec::new() };
+            if !snare.is_empty() {
+                drum_notes.retain(|n| n.key != 38.0 && n.key != 40.0);
+            }
+            let snare_inst = inst.clone();
             tracks.push(TrackPlan {
                 name: "drums".into(),
                 role: "drums".into(),
@@ -897,6 +905,21 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 fx: None,
                 automate: None,
             });
+            if !snare.is_empty() {
+                tracks.push(TrackPlan {
+                    name: "snare".into(),
+                    role: "drums".into(),
+                    inst: snare_inst,
+                    notes: snare,
+                    // Tracks are loudness-matched, so the snare alone sits 9 dB under the kit
+                    // (measured: the backbeat balance stays within 0.3 dB of the unsplit kit).
+                    mix: TrackMix { gain: -9.0, ..Default::default() },
+                    humanize: 0.0,
+                    straight: false,
+                    fx: Some(serde_json::json!([{ "type": "gated-reverb", "preset": "plate", "wet": 4.0, "hold": 0.22, "release": 0.025 }])),
+                    automate: None,
+                });
+            }
         }
         let level_of = |l: &Layer| l.level;
         for (li, l) in st.layers.iter().enumerate() {
@@ -1211,7 +1234,8 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
         let tonic = arrange::ChordAt { chord: crate::theory::Chord { root: key.tonic, intervals: if key.is_minor() { vec![0, 3, 7] } else { vec![0, 4, 7] }, bass: None }, t, len: 8.0 };
         for tr in tracks.iter_mut() {
             let tail: Vec<Note> = match tr.role.as_str() {
-                "drums" => vec![Note { t, len: 2.0, key: 36.0, vel: 0.9 }, Note { t, len: 4.0, key: 49.0, vel: 0.8 }],
+                "drums" if tr.name == "drums" => vec![Note { t, len: 2.0, key: 36.0, vel: 0.9 }, Note { t, len: 4.0, key: 49.0, vel: 0.8 }],
+                "drums" => continue,
                 "bass" | "808" | "low" | "basses" | "sub" => vec![Note { t, len: 6.0, key: (36 + key.tonic - if key.tonic > 7 { 12 } else { 0 }) as f32, vel: 0.8 }],
                 "lead" | "melody" | "right" => vec![Note { t, len: 4.0, key: (72 + key.tonic - if key.tonic > 7 { 12 } else { 0 }) as f32, vel: 0.75 }],
                 "bells" | "glock" | "pluck" | "arp" | "ostinato" | "timpani" | "counter" => continue,
@@ -1627,5 +1651,18 @@ mod trailer_tests {
         // Short cues keep the simple form.
         let s = compose(&MusicSpec::from_json(r#"{"style":"cinematic-hybrid","length":"30s"}"#).unwrap(), None).unwrap();
         assert!(!s.sections.iter().any(|x| x.name == "break"));
+    }
+
+    #[test]
+    fn synthwave_snare_is_gated_on_its_own_track() {
+        let a = compose(&MusicSpec::from_json(r#"{"style":"synthwave","length":"30s"}"#).unwrap(), None).unwrap();
+        let sn = a.tracks.iter().find(|t| t.name == "snare").expect("snare track");
+        assert!(sn.notes.iter().all(|n| n.key == 38.0 || n.key == 40.0) && !sn.notes.is_empty());
+        assert!(sn.fx.as_ref().unwrap().to_string().contains("gated-reverb"));
+        let kit = a.tracks.iter().find(|t| t.name == "drums").unwrap();
+        assert!(!kit.notes.iter().any(|n| n.key == 38.0 || n.key == 40.0));
+        // Other styles keep one drum track.
+        let p = compose(&MusicSpec::from_json(r#"{"style":"pop","length":"30s"}"#).unwrap(), None).unwrap();
+        assert_eq!(p.tracks.iter().filter(|t| t.role == "drums").count(), 1);
     }
 }

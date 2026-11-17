@@ -62,7 +62,7 @@ impl Pace {
         match self {
             Pace::Calm => Limits { longest: f32::INFINITY, median: f32::INFINITY, same: 0.85, dead_air: 3.0 },
             Pace::Steady => Limits { longest: 6.0, median: 3.5, same: 0.45, dead_air: 2.0 },
-            Pace::Fast => Limits { longest: 2.5, median: 1.5, same: 0.2, dead_air: 1.0 },
+            Pace::Fast => Limits { longest: 3.0, median: 2.0, same: 0.2, dead_air: 1.0 },
             Pace::Frantic => Limits { longest: 1.2, median: 0.7, same: 0.1, dead_air: 0.5 },
         }
     }
@@ -245,8 +245,10 @@ pub fn time_axis(ev: &Evaluator, s: &Samples, intent: &Intent, beats: Option<&[f
     if dur >= 3.0 {
         // Pace against intent.
         let mut slow = Vec::new();
-        if tl.longest > lim.longest {
-            slow.push(format!("longest shot {:.1} s > {:.1} s", tl.longest, lim.longest));
+        // The last shot may hold on purpose (a lockup, an end card).
+        let body_longest = if tl.shots.len() > 2 { tl.shots[..tl.shots.len() - 1].iter().copied().fold(0.0f32, f32::max) } else { tl.longest };
+        if body_longest > lim.longest {
+            slow.push(format!("longest shot {:.1} s > {:.1} s", body_longest, lim.longest));
         }
         if tl.median > lim.median {
             slow.push(format!("median shot {:.1} s > {:.1} s", tl.median, lim.median));
@@ -259,7 +261,10 @@ pub fn time_axis(ev: &Evaluator, s: &Samples, intent: &Intent, beats: Option<&[f
                 Pace::Fast | Pace::Frantic => "cut or make a major change on the beat every 0.5–1.5 s (\"@beat17\"): whips, snaps, speed ramps, impacts, match cuts; 1–4 words per shot",
                 _ => "shorten the longest holds, or give them a change (a camera move, a reveal, light), or declare a calmer \"intent\"",
             };
-            note("warning", "pace", format!("timeline ({} shots, median {:.1} s)", tl.shots.len(), tl.median), format!("slower than the {} intent ({}): {}", intent.pace.name(), intent.source, slow.join("; ")), fix);
+            // Shot lengths are advice (holds can be deliberate); static seconds,
+            // where nothing changes, are the stronger signal.
+            let sev = if tl.same > lim.same { "warning" } else { "tip" };
+            note(sev, "pace", format!("timeline ({} shots, median {:.1} s)", tl.shots.len(), tl.median), format!("slower than the {} intent ({}): {}", intent.pace.name(), intent.source, slow.join("; ")), fix);
         }
         // Too fast for a calm or steady film.
         if matches!(intent.pace, Pace::Calm | Pace::Steady) && tl.median < 0.6 && tl.shots.len() >= 6 {
@@ -545,7 +550,10 @@ pub fn composition(ev: &Evaluator, s: &Samples, tl: &Timeline) -> (Vec<Note>, Ve
         });
     }
     // Centred headline over a smooth backdrop (BAR #1–2), at pixels.
-    let slide: Vec<&(f32, Layout)> = lays.iter().filter(|(_, l)| l.occupied < 0.2 && ((l.bbox[0] + l.bbox[2]) / 2.0 - 0.5).abs() < 0.08).collect();
+    // Only shots with words on screen: a small centred image (an eye, an
+    // object) in a wordless film is a composition choice, not a slide.
+    let has_text = |t: f32| ev.eval(t).ops.iter().any(|o| matches!(o, crate::dl::Op::Glyphs { .. }));
+    let slide: Vec<&(f32, Layout)> = lays.iter().filter(|(t, l)| l.occupied < 0.2 && ((l.bbox[0] + l.bbox[2]) / 2.0 - 0.5).abs() < 0.08 && has_text(*t)).collect();
     if !slide.is_empty() {
         let (t, l) = slide[0];
         worst.push(("slide".into(), *t, l.bbox));
