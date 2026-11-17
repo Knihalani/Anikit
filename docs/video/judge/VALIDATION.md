@@ -49,9 +49,12 @@ Run after merging REFS's benchmark set and adding automatic letterbox trimming (
 | channel4-glazer-idents-2015 | PRO | 3/3 | 7.0 | 8.04 | −1.04 |
 | dissembargo-f1-2026-opening-titles | PASS | 3/3 | 7.5 | 6.79 | +0.71 |
 | weirdcore-aphex-twin-t69-collapse-2018 | PASS | 3/3 | 5.88 | 6.71 | −0.83 |
-| artcamp-moosajee-thom-yorke-last-i-heard-2019 | **FAIL** | 1/3 | 4.38 | 6.58 | −2.2 |
+| artcamp-moosajee-thom-yorke-last-i-heard-2019 (480p grabs) | FAIL | 1/3 | 4.38 | 6.58 | −2.2 |
+| artcamp-moosajee-thom-yorke-last-i-heard-2019 (1280px frames) | **PASS** | 3/3 | 8.0 | 6.58 | +1.42 |
 
-Across all 10 controls: 9 PASS or PRO, 1 false reject. The Thom Yorke video is shown from four grainy 480p YouTube grabs. The jury's own tells praise it ("every frame works as a poster"), but in two trials it took the treated monochrome for generated imagery. Austere, lo-fi or deliberately degraded work, judged from low-resolution stills, is the judge's known blind spot. The rejected work never benefits from that blind spot. Before the trim, Aphex Twin also failed (1/3), because of its letterbox bars.
+With four grainy 480p YouTube grabs, the Thom Yorke video was a false reject: 1 of 3 trials, scoring 4.38. The jury took the treated monochrome for generated imagery, even though its own notes said "every frame works as a poster". REFS then replaced YouTube thumbnails with YouTube's own 1280×720 frames and dropped designed thumbnails. Re-run on the new frames, it **PASSES: 3/3 trials, 8.0 against refs at 6.58**.
+
+**Final control tally: 10 of 10 PASS or PRO, 0 false rejects. Rejected work: 20 of 20 FAIL, 0 of 60 trials judged professional.** Lesson: references must be real frames at a decent resolution. Low-resolution stills make austere or lo-fi work look generated, so `sync-bench` now uses `--no-thumbs` and 1280px frames.
 
 ## Do the gaps match the user's words?
 
