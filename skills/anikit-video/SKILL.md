@@ -46,7 +46,7 @@ No limits: expressions on any number or colour (`"=hsl(beat * 30, 80, 60)"`, `le
 
 ## Shortcuts (optional; each is made from the primitives above)
 
-- **Launch, product or announcement video?** Use the `skills/anikit-launch-video/SKILL.md` skill (`anikit-video docs launch`): brief → concept → beat sheet → QA.
+- **Launch, product or announcement video?** Use the `skills/anikit-launch-video/SKILL.md` skill (`anikit-video docs launch`): principles, process and quality checks; no template.
 
 - `anikit-video recipes`: high-end shots to learn a technique from (copy the shot you need into your own concept) (launch-sting: particles + 3D + shader + music on the beat; kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, raymarch-world) and the shader library.
 - `anikit-video looks`: art direction (palette, type, motion, grade). Use `"look": "noir"`.
