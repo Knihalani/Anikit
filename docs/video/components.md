@@ -488,6 +488,8 @@ An anamorphic flare: hot core, halo, faint rainbow ring, a blue horizontal strea
 ## 3D
 
 ### `scene3d`: ray-traced 3D scenes
+Agent guide: [`scene3d.md`](scene3d.md). It also covers `lights`, `fog`, reflector cards (`type: card`), per-axis `scale`, texture lists and text `align`.
+
 A software ray tracer for product films: PBR materials (chrome, aluminium, glass and more), a procedural HDR studio, soft traced shadows, glossy floor reflections, haze, depth of field, motion blur, bloom and tone mapping. Any spec `composition` can be a live texture, including on thousands of instances at per-instance frame offsets. Kind names: `scene3d`, `scene-3d`, `3d.scene`. Examples: `examples/video/lookdev/` (`cyc.json`, `panes.json`, `glass.json`, and `chrome.json`, the phase-1 dark-studio shot).
 
 ```json
@@ -508,7 +510,7 @@ A software ray tracer for product films: PBR materials (chrome, aluminium, glass
 | Prop | Default | Meaning |
 |---|---|---|
 | `env` | `cyc` | `cyc` (bright warm-white cyclorama: a seamless floor and backdrop, a big soft key from the upper left, a strip light, black flags for chrome contrast), `studio`, `night`, `neon` or `sunset`. Or `{ "preset", "color": "#EEEBE5", "key": [x, y, z], "haze": 0.0015 }`. |
-| `camera` | `orbit` | A preset (`orbit`, `dolly`, `crane`, `static`, or `{ "preset", "duration", "degrees", "height" }`), framed on the objects. Or keys: `{ "interp": "smooth"\|"linear", "ease": false, "shake": 0.01, "keys": [ { "t", "pos", "target", "focal" (mm, 36 mm-wide sensor) or "fov" (vertical degrees), "focus" (m; default is the target distance), "fstop" or "aperture" (px at 1080p), "shutter" (0 means no blur), "roll" } ] }`. A dense per-frame key list is fine. |
+| `camera` | `orbit` | A preset (`push`, `reveal`, `flyby`, `orbit` (5 s by default), `dolly`, `crane`, `static`, or `{ "preset", "duration", "degrees", "height" }`), framed on the objects. Or keys: `{ "interp": "smooth"\|"linear", "ease": false, "shake": 0.01, "keys": [ { "t", "pos", "target", "focal" (mm, 36 mm-wide sensor) or "fov" (vertical degrees), "focus" (m; default is the target distance), "fstop" or "aperture" (px at 1080p), "shutter" (0 means no blur), "roll" } ] }`. A dense per-frame key list is fine. |
 | `objects` | | See below. |
 | `materials` | | Named materials: `{ "brushed": { "extends": "aluminium", "roughness": 0.3 } }`. |
 | `floor` | per env | `false`, or `{ "color", "roughness", "reflect", "mirror", "y" }`. |

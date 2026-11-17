@@ -707,16 +707,21 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
             "dolly" => vec![key(0.0, at(-8.0, dist * 1.25, r * height)), key(dur, at(4.0, dist * 0.85, r * height * 0.8))],
             "crane" => vec![key(0.0, at(-10.0, dist, r * 0.15)), key(dur, at(10.0, dist * 0.95, r * height * 2.2))],
             "static" => vec![key(0.0, at(-12.0, dist, r * height))],
+            // Energetic moves: a fast push in, a low-to-high reveal, a lateral fly-by.
+            "push" => vec![key(0.0, at(-6.0, dist * 1.7, r * height * 1.2)), key(dur * 0.55, at(-2.0, dist * 0.85, r * height)), key(dur, at(0.0, dist * 0.72, r * height * 0.9))],
+            "reveal" => vec![key(0.0, at(-25.0, dist * 0.55, r * 0.05)), key(dur, at(8.0, dist * 1.05, r * height * 1.8))],
+            "flyby" => vec![key(0.0, at(-amount, dist * 0.8, r * height * 0.7)), key(dur, at(amount, dist * 0.8, r * height * 0.7))],
             other => {
-                let hint = crate::components::style::closest(other, &["orbit", "dolly", "crane", "static"]).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+                let hint = crate::components::style::closest(other, &["orbit", "dolly", "crane", "static", "push", "reveal", "flyby"]).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
                 return Err(format!("{path}: unknown camera preset `{other}`{hint}"));
             }
         };
-        Ok(CamSpec { keys, linear: name == "orbit", ease: name != "orbit", shake: (0.0, 0.0) })
+        Ok(CamSpec { keys, linear: matches!(name, "orbit" | "flyby"), ease: !matches!(name, "orbit" | "flyby"), shake: (0.0, 0.0) })
     };
     match v {
-        Value::Null => preset("orbit", 8.0, 50.0, 0.45),
-        Value::String(s) => preset(s, 8.0, 50.0, 0.45),
+        // Defaults are brisk: 5 s, 70° for an orbit.
+        Value::Null => preset("orbit", 5.0, 70.0, 0.45),
+        Value::String(s) => preset(&crate::components::kebab(s), 5.0, 70.0, 0.45),
         Value::Array(a) => {
             let keys: Vec<CamKey> = a.iter().enumerate().map(|(i, k)| cam_key(k, &format!("{path}[{i}]"))).collect::<Res<_>>()?;
             if keys.is_empty() {
@@ -727,8 +732,8 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
         Value::Object(m) => {
             check_keys(m, &["keys", "interp", "ease", "shake", "preset", "duration", "degrees", "height"], path)?;
             let mut spec = if let Some(p) = m.get("preset").and_then(|p| p.as_str()) {
-                let dur = m.get("duration").and_then(|x| x.as_f64()).unwrap_or(8.0) as f32;
-                let deg = m.get("degrees").and_then(|x| x.as_f64()).unwrap_or(50.0) as f32;
+                let dur = m.get("duration").and_then(|x| x.as_f64()).unwrap_or(5.0) as f32;
+                let deg = m.get("degrees").and_then(|x| x.as_f64()).unwrap_or(70.0) as f32;
                 let hgt = m.get("height").and_then(|x| x.as_f64()).unwrap_or(0.45) as f32;
                 preset(p, dur, deg, hgt)?
             } else {
