@@ -16,7 +16,7 @@ All keys are optional. Other keys:
 - `radius`;
 - `voice.tone`.
 
-Missing colours are derived: text gets the best contrast against the background, muted is 38% of the way from text to background, and secondary is the primary shifted −20° in hue (analogous).
+Missing colours are derived: text gets the best contrast against the background, muted is 28% of the way from text to background, and secondary is the primary shifted −20° in hue (analogous).
 
 - **primary:** the main button or logo colour; prefer exact hex values from CSS or the theme over guesses.
 - **theme:** match the product's own UI. If unsure, use dark.

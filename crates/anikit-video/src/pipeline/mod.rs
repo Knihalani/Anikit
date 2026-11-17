@@ -248,9 +248,14 @@ pub fn eval_frame(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) {
 pub fn render_rgba(ev: &Evaluator, t: f32, scale: f32) -> (u32, u32, Vec<u8>) {
     let mut dl = ev.eval(t);
     scale_list(&mut dl, scale);
+    render_list_rgba(ev, &dl)
+}
+
+/// Render an already evaluated (and possibly edited) display list to straight RGBA8.
+pub fn render_list_rgba(ev: &Evaluator, dl: &DisplayList) -> (u32, u32, Vec<u8>) {
     // Evaluating may have created images (components); render after.
     with_renderer(ev, |r, _| {
-        let pm = r.render(&dl);
+        let pm = r.render(dl);
         let (w, h) = (pm.width() as u32, pm.height() as u32);
         let mut px = pm.data_as_u8_slice().to_vec();
         for p in px.chunks_exact_mut(4) {

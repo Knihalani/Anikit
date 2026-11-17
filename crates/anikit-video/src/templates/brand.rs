@@ -23,7 +23,7 @@ pub struct Colors {
     pub surface: Option<String>,
     /// Main text colour. Default: black or white for the best contrast on background.
     pub text: Option<String>,
-    /// Secondary text colour. Default: text mixed 38% towards background.
+    /// Secondary text colour. Default: text mixed 28% towards background.
     pub muted: Option<String>,
 }
 
@@ -144,14 +144,16 @@ impl Brand {
             // The primary, lifted toward the text colour until small labels read (≥ 4.5:1).
             let mut c = primary;
             let mut k = 0.0;
-            while color::contrast(c, bg) < 4.6 && k < 1.0 {
+            // Text sits on the brand mesh too, so check against the mesh's brightest blend.
+            let mesh = color::mix(bg, primary, 0.45);
+            while (color::contrast(c, bg) < 4.6 || color::contrast(c, mesh) < 3.2) && k < 1.0 {
                 k += 0.05;
                 c = color::mix(primary, text, k);
             }
             c
         });
         let surface = p(&self.colors.surface).unwrap_or_else(|| color::mix(bg, text, if light { 0.04 } else { 0.07 }));
-        let muted = p(&self.colors.muted).unwrap_or_else(|| color::mix(text, bg, 0.38));
+        let muted = p(&self.colors.muted).unwrap_or_else(|| color::mix(text, bg, 0.28));
         let h = color::to_hex;
         let name = self.name.clone().unwrap_or_else(|| "Your Product".into());
         json!({

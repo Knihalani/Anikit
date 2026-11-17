@@ -39,7 +39,8 @@ Agent commands:
   anikit-video templates guide <name>           how to fill it well (markdown)
   anikit-video templates expand <name> [params.json] [--brand brand.json] [--format 9:16] [-o spec.json]
   anikit-video prompt [name]        list prompts, or print one (e.g. launch-video-generator)
-  anikit-video critique <spec.json> [--json]    heuristic review: reading time, contrast, safe areas, pacing
+  anikit-video critique <spec.json> [--render] [--json]  design review; --render also checks rendered frames
+                                    (contrast against real pixels, overlaps, cut text, empty frames)
   anikit-video preview <spec.json|template> [--at T] [--width W] [-o out.png] [--format 9:16] [--brand b.json] [--params p.json]
                                     contact sheet (one frame per scene), or one still with --at
   anikit-video mcp                  Model Context Protocol server on stdio
@@ -246,10 +247,17 @@ fn cmd_prompt(args: &[String]) -> Result<(), String> {
 }
 
 fn cmd_critique(args: &[String]) -> Result<(), String> {
-    let a = parse(args, &[], &["json"])?;
-    let path = a.pos.first().ok_or("usage: critique <spec.json> [--json]")?;
+    let a = parse(args, &[], &["json", "render"])?;
+    let path = a.pos.first().ok_or("usage: critique <spec.json> [--render] [--json]")?;
     let spec = read_json(path)?;
-    let r = critique(&spec);
+    let mut r = critique(&spec);
+    if a.has("render") {
+        let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
+        let p = crate::preview::Preview::new(spec.clone(), &base)?;
+        let extra = crate::render_check::check(&p.ev);
+        r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
+        r.notes.extend(extra);
+    }
     if a.has("json") {
         out!("{}", pretty(&serde_json::to_value(&r).unwrap()));
     } else {
