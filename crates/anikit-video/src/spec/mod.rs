@@ -11,6 +11,7 @@
 
 mod de;
 pub mod parse;
+pub mod reuse;
 pub mod validate;
 
 use schemars::JsonSchema;
@@ -106,6 +107,9 @@ pub struct Spec {
     pub background: Option<Paint>,
     /// Colour tokens, fonts and text styles.
     pub theme: Option<Theme>,
+    /// Reusable scenes and layers, referenced with `{ "use": "name", "with": {…}, …overrides }`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub defs: Option<BTreeMap<String, serde_json::Value>>,
     /// The scenes, in order.
     #[serde(deserialize_with = "de::scenes")]
     #[schemars(with = "Vec<de::SceneItem>")]
@@ -192,6 +196,17 @@ pub struct Gradient {
 #[serde(rename_all = "camelCase")]
 pub struct Scene {
     pub id: Option<String>,
+    /// Reuse: the name of an entry in top-level `defs`; other keys here override it
+    /// (expanded before typing, see `spec/reuse.rs`).
+    #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]
+    pub use_def: Option<String>,
+    /// Values for `"$param"` placeholders in the `use`d def.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub with: Option<BTreeMap<String, serde_json::Value>>,
+    /// Emit this many copies; `"$i"` (0-based) and `"$n"` are available, and
+    /// `"=…"` strings are arithmetic (`"x": "=160 + $i * 420"`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repeat: Option<u32>,
     /// Seconds (or a time string), or `"auto"`. Default 3.
     pub duration: Option<Num>,
     pub background: Option<Paint>,
@@ -287,6 +302,17 @@ pub struct Layer {
     #[serde(rename = "type")]
     pub kind: Option<String>,
     pub id: Option<String>,
+    /// Reuse: the name of an entry in top-level `defs`; other keys here override it
+    /// (expanded before typing, see `spec/reuse.rs`).
+    #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]
+    pub use_def: Option<String>,
+    /// Values for `"$param"` placeholders in the `use`d def.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub with: Option<BTreeMap<String, serde_json::Value>>,
+    /// Emit this many copies; `"$i"` (0-based) and `"$n"` are available, and
+    /// `"=…"` strings are arithmetic (`"x": "=160 + $i * 420"`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repeat: Option<u32>,
 
     // ---- transform & appearance (all kinds)
     pub x: Option<Num>,
@@ -368,8 +394,10 @@ pub struct Layer {
 
     // ---- image / video
     pub src: Option<String>,
-    /// `contain`, `cover`, `fill`, `none`.
-    pub fit: Option<String>,
+    /// Images: `contain`, `cover`, `fill`, `none`. Text: `true` shrinks the
+    /// size (never grows it) so the widest line fits `width` (default 85% of
+    /// the parent), keeping line breaks.
+    pub fit: Option<FitValue>,
     pub speed: Option<f64>,
     pub volume: Option<f64>,
 
@@ -695,8 +723,10 @@ pub struct CaptionFile {
     /// Colour of the word being spoken (default `$accent`).
     pub highlight: Option<String>,
     pub color: Option<String>,
-    /// Box behind the word being spoken (TikTok style).
+    /// A pill behind the caption line.
     pub background: Option<String>,
+    /// A box behind the word being spoken (TikTok style).
+    pub highlight_box: Option<String>,
     /// Words per caption page (default 4; 1 = one word at a time).
     pub max_words: Option<usize>,
     pub uppercase: Option<bool>,
@@ -760,4 +790,24 @@ pub fn schema_json() -> String {
         p["examples"] = serde_json::json!(all);
     }
     serde_json::to_string_pretty(&root).unwrap()
+}
+
+/// `fit`: an image mode (`"cover"`) or, on text, `true`. Derefs to the word
+/// (`"true"` / `"false"` for booleans) so callers match on strings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum FitValue {
+    Flag(bool),
+    Mode(String),
+}
+
+impl std::ops::Deref for FitValue {
+    type Target = str;
+    fn deref(&self) -> &str {
+        match self {
+            FitValue::Flag(true) => "true",
+            FitValue::Flag(false) => "false",
+            FitValue::Mode(m) => m,
+        }
+    }
 }

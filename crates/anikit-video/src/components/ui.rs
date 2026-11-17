@@ -96,7 +96,7 @@ fn icon(out: &mut Vec<Op>, kind: &str, cx: f32, cy: f32, s: f32, c: Rgba) {
 fn icon_tile(out: &mut Vec<Op>, kind: &str, x: f32, y: f32, s: f32, c: Rgba) {
     out.push(rect(x, y, s, s, s * 0.28, Paint_lin(x, y, s, shade(c, 0.15), shade(c, -0.2))));
     out.push(rect(x, y, s, s * 0.5, s * 0.28, vgrad(y, y + s * 0.5, Rgba([1.0, 1.0, 1.0, 0.18]), Rgba([1.0, 1.0, 1.0, 0.0]))));
-    icon(out, kind, x + s * 0.5, y + s * 0.5, s * 0.5, Rgba([1.0, 1.0, 1.0, 1.0]));
+    icon(out, kind, x + s * 0.5, y + s * 0.5, s * 0.5, on_color(&[shade(c, 0.15), shade(c, -0.2)]));
 }
 
 #[allow(non_snake_case)]
@@ -180,6 +180,8 @@ pub struct Button {
     pub press: Vec<f32>,
     /// Trailing arrow icon.
     pub arrow: bool,
+    /// Label colour (default: white or near-black, whichever contrasts best with the fill).
+    pub label_color: Option<Color>,
     pub delay: f32,
     pub out: Option<f32>,
     /// Horizontal placement in the box: 0 left, 0.5 centre (default), 1 right. Vertically centred.
@@ -187,7 +189,7 @@ pub struct Button {
 }
 impl Default for Button {
     fn default() -> Self {
-        Button { label: "Button".into(), variant: "primary".into(), size: 26.0, color: None, press: Vec::new(), arrow: false, delay: 0.0, out: None, align: 0.5 }
+        Button { label: "Button".into(), variant: "primary".into(), size: 26.0, color: None, press: Vec::new(), arrow: false, delay: 0.0, out: None, align: 0.5, label_color: None }
     }
 }
 impl Prepare for Button {
@@ -207,9 +209,15 @@ impl Component for Button {
         }
         let acc = self.color.map(|c| c.0).unwrap_or(th.accent);
         let fs = self.size;
-        let fg = match self.variant.as_str() {
-            "primary" | "gradient" => Rgba([1.0, 1.0, 1.0, 1.0]),
-            _ => th.text,
+        let fills = match self.variant.as_str() {
+            "gradient" => vec![acc, th.pal(2)],
+            "primary" => vec![shade(acc, 0.12), shade(acc, -0.08)],
+            _ => vec![],
+        };
+        let fg = match (self.label_color, fills.is_empty()) {
+            (Some(c), _) => c.0,
+            (None, false) => on_color(&fills),
+            (None, true) => th.text,
         };
         let st = sans(fs, 600, fg);
         let tw = ctx.assets.measure(&self.label, &st);
@@ -312,6 +320,8 @@ pub struct Badge {
     pub dot: bool,
     /// Solid fill instead of a tint.
     pub solid: bool,
+    /// Label colour (default: by contrast with the fill).
+    pub label_color: Option<Color>,
     pub delay: f32,
     pub out: Option<f32>,
     /// Horizontal placement in the box: 0 left, 0.5 centre (default), 1 right. Vertically centred.
@@ -319,7 +329,7 @@ pub struct Badge {
 }
 impl Default for Badge {
     fn default() -> Self {
-        Badge { label: "New".into(), color: None, size: 20.0, dot: false, solid: false, delay: 0.0, out: None, align: 0.5 }
+        Badge { label: "New".into(), color: None, size: 20.0, dot: false, solid: false, delay: 0.0, out: None, align: 0.5, label_color: None }
     }
 }
 impl Prepare for Badge {}
@@ -332,7 +342,23 @@ impl Component for Badge {
         }
         let c = self.color.map(|c| c.0).unwrap_or(th.accent);
         let fs = self.size;
-        let st = sans(fs, 600, if self.solid { Rgba([1.0, 1.0, 1.0, 1.0]) } else { shade(c, if th.dark { 0.35 } else { -0.2 }) }).tracking(0.01);
+        let fg = match self.label_color {
+            Some(l) => l.0,
+            None if self.solid => on_color(&[c]),
+            // Tinted badge: the label is the hue itself, pushed towards the
+            // background's opposite until it reads (≥ 4.5:1 where possible).
+            None => {
+                let mut l = shade(c, if th.dark { 0.35 } else { -0.2 });
+                for _ in 0..6 {
+                    if contrast(l, mix(th.background, c, 0.16)) >= 4.5 {
+                        break;
+                    }
+                    l = shade(l, if th.dark { 0.25 } else { -0.25 });
+                }
+                l
+            }
+        };
+        let st = sans(fs, 600, fg).tracking(0.01);
         let tw = ctx.assets.measure(&self.label, &st);
         let dw = if self.dot { fs * 0.9 } else { 0.0 };
         let (px, h) = (fs * 0.7, fs * 1.75);
@@ -343,9 +369,10 @@ impl Component for Badge {
         }
         if self.dot {
             let (cx, cy) = (px + fs * 0.25, h * 0.5);
-            let ph = (t * 1.2).fract();
-            o.push(circle(cx, cy, fs * 0.25 + ph * fs * 0.5, solid(alpha(c, 0.5 * (1.0 - ph)))));
-            o.push(circle(cx, cy, fs * 0.25, solid(if self.solid { Rgba([1.0, 1.0, 1.0, 1.0]) } else { c })));
+            if let Some(ph) = pulse(t - self.delay, 1.2) {
+                o.push(circle(cx, cy, fs * 0.25 + ph * fs * 0.5, solid(alpha(c, 0.5 * (1.0 - ph)))));
+            }
+            o.push(circle(cx, cy, fs * 0.25, solid(if self.solid { fg } else { c })));
         }
         draw(&mut o, ctx.assets, &self.label, &st, px + dw, h * 0.5 + fs * 0.36, 0.0);
         transform_ops(&mut o, &translate((ctx.width - w) * self.align, (ctx.height - h).max(0.0) * 0.5));
@@ -868,8 +895,9 @@ impl Component for Callout {
         let [tx, ty] = self.to;
         let mut o = Vec::new();
         let dot = spring(t, 1.2);
-        let ph = (t * 0.9).fract();
-        o.push(circle(fx, fy, 6.0 + ph * 18.0, solid(alpha(c, 0.4 * (1.0 - ph)))));
+        if let Some(ph) = pulse(t, 0.9) {
+            o.push(circle(fx, fy, 6.0 + ph * 18.0, solid(alpha(c, 0.4 * (1.0 - ph)))));
+        }
         o.push(circle(fx, fy, 6.0 * dot, solid(c)));
         o.push(circle(fx, fy, 2.5 * dot, solid(Rgba([1.0, 1.0, 1.0, 1.0]))));
         // Elbow leader: diagonal then horizontal.

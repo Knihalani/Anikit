@@ -41,7 +41,8 @@ Other entry points:
 | `gop` | 250 | IDR interval, which is also the chunk length for parallel encoding. |
 | `cabac` | `true` | Main profile with CABAC. `false` gives Constrained Baseline with CAVLC: 35–60% larger files, slightly faster. |
 | `deblock` | `false` | The in-loop filter. It helps only at QP ≥ 34 (+0.1–0.2 dB) and costs about 25% speed; at QP ≤ 28 it *lowers* PSNR on this content (sharp edges, and copied macroblocks next to changing areas get re-filtered every frame). | With `threads > 1`, each slice deblocks its own rows in parallel (`disable_deblocking_filter_idc` 2).
-| `subpel` | `false` | Quarter-pel motion refinement (exact 6-tap interpolation). On our scenes it saves 3–4% size for 20–40% more time. Turn it on for slow sub-pixel pans. |
+| `subpel` | `true` | Quarter-pel motion refinement (exact 6-tap interpolation, half-pel planes kept up to date incrementally). It saves 16–46% on real renderer clips with sub-pixel motion, for 15–25% more time. |
+| `skip_threshold` | `0` | Perceptual skip: code a changed macroblock as a copy when every sample is within this distance of the reconstructed reference. Off by default (see the measurements below). |
 | `threads` | 1 | Slices per frame for `encode()`. Chunk-parallel modes ignore it. |
 | `full_range` | `false` | Signals the colour range (BT.709 primaries/matrix are always signalled). |
 
@@ -149,34 +150,95 @@ Real-clip frames were rendered with `--codec png` and converted to yuv420p
 - x264 runs through ffmpeg (4 threads, `-g 60`) from a raw YUV file in page cache.
 - PSNR is computed against the source over all frames. "Y" is luma; "all" covers
   Y, U and V weighted by sample count.
-- x264 sizes and speeds "at the same PSNR" are linear interpolations between the
-  measured CRF points.
+- x264 sizes and speeds "at the same PSNR" are interpolated between the two
+  nearest measured CRF points (linear in PSNR, logarithmic in size). Values marked
+  \* lie outside the measured range and are extrapolated.
 
-### Headline: QP 26 vs x264 at the same luma PSNR
+### Headline: QP 26 (defaults, quarter-pel on) vs x264 at the same luma PSNR
 
 | Clip | ak264 | vs veryfast | vs ultrafast | vs medium |
 |---|---|---|---|---|
-| launch | 360 fps, 2420 KB, 47.5 dB | **3.2× faster**, 1.14× size (≈ 113 fps, 2130 KB) | **1.1× faster, 0.74× size** (≈ 330 fps, 3270 KB) | 7.2× faster, 1.33× size (≈ 50 fps, 1816 KB) |
-| tutorial | 836 fps, 499 KB, 51.1 dB | **4.5× faster**, 1.10× size (≈ 184 fps, 455 KB) | **2.3× faster, 0.93× size** (≈ 360 fps, ≈ 537 KB*) | 8× faster, 1.33× size (≈ 105 fps, 376 KB) |
-| full | 468 fps, 903 KB, 48.1 dB | **3.0× faster**, 1.05× size (≈ 154 fps, 856 KB) | **1.3× faster, 0.57× size** (≈ 370 fps, 1584 KB) | 5.4× faster, 1.34× size (≈ 87 fps, 673 KB) |
-
-\* x264 ultrafast's lowest measured point on `tutorial` is already 52.7 dB, so
-this figure is extrapolated.
+| launch | 349 fps, 2061 KB, 47.8 dB | **3.2× faster, 0.90× size*** (≈ 109 fps, 2302 KB) | 1.0× speed, **0.62× size** (≈ 340 fps, 3305 KB) | 6.9× faster, 1.12× size (≈ 51 fps, 1834 KB) |
+| tutorial | 750 fps, 492 KB, 51.2 dB | **4.1× faster**, 1.08× size (≈ 182 fps, 455 KB) | **2.1× faster, 0.85× size*** (≈ 355 fps, 577 KB) | 7.1× faster, 1.31× size (≈ 106 fps, 376 KB) |
+| full | 425 fps, 1075 KB, 48.9 dB | **2.8× faster**, 1.18× size (≈ 152 fps, 915 KB) | **1.1× faster, 0.63× size** (≈ 374 fps, 1704 KB) | 4.9× faster, 1.50× size (≈ 86 fps, 717 KB) |
+| spec-to-screen | 161 fps, 8332 KB, 42.0 dB | **1.8× faster, 0.97× size** (≈ 91 fps, 8557 KB) | 0.5× speed, **0.48× size** (≈ 295 fps, 17508 KB) | 3.8× faster, 1.40× size (≈ 42 fps, 5972 KB) |
 
 **Reading it:**
 
-- ak264 is faster than x264 ultrafast everywhere, with files 7–43% smaller.
-- Against veryfast it is 3–4.5× faster, with files 5–14% larger at the same
-  quality. The remaining gap is mostly B-frames and smaller partitions, which ak264
-  doesn't have.
+- Against veryfast, ak264 is 1.8–4× faster at about the same size (0.90–1.18×).
+- Against ultrafast, files are 15–52% smaller. Speed ranges from 2.1× faster
+  (text) to 0.5× (spec-to-screen, the hardest clip: nearly every macroblock
+  changes with sub-pixel motion of smooth gradients). On that clip ultrafast is
+  faster but needs twice the bytes for the same PSNR.
+- Medium is still 12–50% smaller. The gap is B-frames, smaller partitions and
+  psycho-visual tuning, which ak264 doesn't have.
 - On content that is mostly static between frames, the margin grows a lot. On the
   synthetic `hold` scene (held text), ak264 is 13× faster than veryfast and 21%
   smaller. With renderer change maps it is 24× faster.
 
-End to end in the pipeline, rendering now dominates on busy clips: SPEC measured
-the launch template at 118–167 fps including rendering.
+**Quarter-pel is the default since it pays on real renderer output.** Integer-pel
+(`subpel: false`) is 15–25% faster but much larger on smooth sub-pixel motion:
+
+| Clip, QP 26 | integer-pel | quarter-pel (default) |
+|---|---|---|
+| launch | 395 fps, 2420 KB, 47.52 dB | 349 fps, 2061 KB (−15%), 47.75 dB |
+| tutorial | ≈ 940 fps, 499 KB, 51.13 dB | 750–900 fps, 492 KB (−1%), 51.21 dB |
+| full (synthetic) | 565 fps, 903 KB, 48.12 dB | 425 fps, 1075 KB (+19%), 48.90 dB |
+| spec-to-screen | 160 fps, 12825 KB, 41.83 dB | 161 fps, 8332 KB (−35%), 42.03 dB |
+
+(Integer-pel rows were measured before the I4x4 gate change below; quarter-pel rows
+after it. The gate made spec-to-screen about 18% cheaper in instructions.)
+
+On spec-to-screen the saving grows with QP: −24% at QP 22 and −46% at QP 30.
+
+### Spec-to-screen, 10–20 s (the hardest real clip)
+
+`examples/video/spec-to-screen/spec.json --from 10 --to 20`: 600 frames at
+1920×1080, 60 fps, with the globe and aurora moving under the code block. About
+70% of macroblocks change every frame.
+
+| Encoder | Setting | fps | KB | PSNR-Y | PSNR-all |
+|---|---|---|---|---|---|
+| ak264 chunks | qp 22 / 26 / 30 | 133 / 161 / 198 | 16934 / 8332 / 4202 | 43.55 / 42.03 / 40.07 | 44.73 / 43.04 / 41.17 |
+| ak264 chunks, integer-pel | qp 22 / 26 / 30 | 117 / 160 / 193 | 22160 / 12825 / 7816 | 43.45 / 41.83 / 39.83 | 44.63 / 42.85 / 40.94 |
+| ak264 1 thread | qp 22 / 26 / 30 | 43 / 53 / 58 | 16794 / 8241 / 4149 | 43.54 / 42.02 / 40.06 | |
+| ak264 4 slices | qp 22 / 26 / 30 | 88 / 113 / 131 | 17081 / 8493 / 4321 | 43.54 / 42.01 / 40.05 | |
+| x264 ultrafast | crf 18 / 23 / 28 | 222 / 276 / 315 | 61502 / 24532 / 12158 | 45.83 / 43.14 / 40.83 | 46.99 / 44.34 / 41.99 |
+| x264 veryfast | crf 18 / 23 / 28 | 73 / 105 / 109 | 21760 / 4296 / 1627 | 43.52 / 40.93 / 38.41 | 44.67 / 42.15 / 39.70 |
+| x264 medium | crf 18 / 23 / 28 | 25 / 41 / 56 | 23138 / 6294 / 2474 | 43.96 / 42.13 / 40.35 | 45.28 / 43.43 / 41.62 |
+
+One thread spends about 19 ms per frame here (53 fps at QP 26). In P frames,
+I4x4 is tried only when both P16x16 and I16x16 cost more than λ·64 + 1024: before
+that gate, I4x4 trials were a quarter of the instructions while winning about 30
+macroblocks per frame. The profile below was taken before the gate. By inclusive instruction
+count, a profile splits that roughly as follows:
+
+| Work | Share |
+|---|---|
+| inter coding (transform, quant, reconstruction) | 17% |
+| motion search | 13% |
+| intra decisions (I16 and I4) | 19% |
+| CABAC | 10% |
+| half-pel plane updates | 5% |
+| sub-pel prediction | 6% |
+
+The rest is mode decision and copies.
+
+Perceptual skip (`skip_threshold`) was measured and left off. At QP 26 it saved
+only 0.6–4% (launch 2420 → 2328 KB at T = 2) while costing 0.4–1.3 dB, which is
+worse than raising the QP. On `full`, T = 1 made the file 20% larger. Holding slow
+backgrounds still in the renderer removes ±1 drift at the source instead.
+
+For camera moves, `FrameHints::from_affine(w, h, [a, b, c, d, e, f])` turns the
+camera transform into one motion hint per macroblock. In tests, zooms of 1.5%, 6%
+and 12% per frame (192×128) produced byte-identical output with or without the
+hints, because the motion search already finds that motion. The hints matter only
+when motion goes beyond the search range, for example fast zooms at 1080p.
 
 ### Full tables (luma PSNR in dB)
+
+These ak264 rows were measured with integer-pel motion (`subpel: false`, the
+earlier default). For quarter-pel, see the comparison above.
 
 `launch` (real renderer):
 

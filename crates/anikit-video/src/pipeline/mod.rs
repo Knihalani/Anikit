@@ -225,6 +225,8 @@ struct Worker {
     yuv: YuvFrame,
     map: crate::render::MbMap,
     last: Option<usize>,
+    /// When this thread last returned a frame to the encoder (fused mode), to time encoding.
+    returned: Option<Instant>,
 }
 
 thread_local! {
@@ -235,6 +237,7 @@ thread_local! {
         yuv: YuvFrame::default(),
         map: crate::render::MbMap::new(0, 0),
         last: None,
+        returned: None,
     });
 }
 
@@ -263,6 +266,8 @@ pub struct Profile {
     pub eval_ns: AtomicU64,
     pub render_ns: AtomicU64,
     pub copy_ns: AtomicU64,
+    /// Time the encoder spent between our callbacks on the same chunk.
+    pub encode_ns: AtomicU64,
     pub unchanged: AtomicU64,
     /// Frames skipped without evaluating (static spans).
     pub held: AtomicU64,
@@ -330,21 +335,38 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
     let last_report = std::sync::Mutex::new(Instant::now());
     let n = f1 - f0;
     // Chunk starts exactly as the encoder splits them (each starts with a fresh buffer and an IDR).
+    // Hints use the encoder's macroblock grid (its size is cropped to even dimensions).
+    let (emw, emh) = ((cfg.width as usize).div_ceil(16), (cfg.height as usize).div_ceil(16));
+    let hint_map = |map: &crate::render::MbMap| -> Vec<bool> {
+        let mut v = vec![false; emw * emh];
+        for y in 0..emh.min(map.mb_height) {
+            for x in 0..emw.min(map.mb_width) {
+                v[y * emw + x] = map.get(x, y);
+            }
+        }
+        v
+    };
     let starts: std::collections::HashSet<usize> = ak264::chunk_ranges(n, cfg.gop).into_iter().map(|r| r.0).collect();
     let out = ak264::encode_parallel(cfg, n, |k, buf, hints| {
         let t = Instant::now();
         with_renderer(ev, |_, _| {});
         let held = WORKER.with(|w| {
             let mut w = w.borrow_mut();
-            let Worker { dl, map, last, .. } = &mut *w;
+            if let (Some(r), Some(l)) = (w.returned.take(), w.last) {
+                if l + 1 == k && !starts.contains(&k) {
+                    prof.encode_ns.fetch_add((t - r).as_nanos() as u64, Ordering::Relaxed);
+                }
+            }
+            let Worker { dl, last, returned, .. } = &mut *w;
             let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
             // Held frame: provably identical to the previous one; skip eval and render.
             let fi = (f0 + k) as f32;
             if continuing && ev.is_static((fi - 1.0) / ev.fps, fi / ev.fps) {
                 prof.unchanged.fetch_add(1, Ordering::Relaxed);
                 prof.held.fetch_add(1, Ordering::Relaxed);
-                hints.changed = Some(vec![false; map.mb_width * map.mb_height]);
+                hints.changed = Some(vec![false; emw * emh]);
                 *last = Some(k);
+                *returned = Some(Instant::now());
                 return true;
             }
             eval_frame(ev, (f0 + k) as u32, opts.scale, dl);
@@ -373,12 +395,11 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
             };
             if continuing {
                 // `map` is exact versus the previous frame, which `buf` still holds.
-                let n_mb = map.mb_width * map.mb_height;
                 match upd {
-                    Update::Unchanged => hints.changed = Some(vec![false; n_mb]),
+                    Update::Unchanged => hints.changed = Some(vec![false; emw * emh]),
                     _ => {
                         copy_yuv(yuv, buf, Some(map));
-                        hints.changed = Some((0..n_mb).map(|i| map.get(i % map.mb_width, i / map.mb_width)).collect());
+                        hints.changed = Some(hint_map(map));
                     }
                 }
             } else {
@@ -387,6 +408,7 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
             }
             *last = Some(k);
             prof.copy_ns.fetch_add(ns(t), Ordering::Relaxed);
+            w.returned = Some(Instant::now());
         });
         let d = done.fetch_add(1, Ordering::Relaxed) + 1;
         if opts.progress {
@@ -407,7 +429,7 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
 
 /// Evaluate frame `i` into `out` at `scale`.
 pub fn eval_frame(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) {
-    ev.eval_into(i as f32 / ev.fps, out);
+    ev.eval_into(frame_time(ev, i), out);
     scale_list(out, scale);
 }
 
@@ -531,7 +553,7 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
         threads: 1,
         full_range: false,
         cabac: opts.quality != Quality::Draft,
-        subpel: opts.quality == Quality::Best,
+        subpel: opts.quality != Quality::Draft,
         ..Default::default()
     };
     let prof = Profile::default();
@@ -565,9 +587,10 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
         let per = |x: &AtomicU64| x.load(Ordering::Relaxed) as f64 / 1e6 / n.max(1) as f64;
         let (e, r, c) = (per(&prof.eval_ns), per(&prof.render_ns), per(&prof.copy_ns));
         let wall = t_enc.as_secs_f64() * 1e3 / n.max(1) as f64;
-        let enc = (wall * threads as f64 - e - r - c).max(0.0);
+        let enc = per(&prof.encode_ns);
+        let idle = (wall * threads as f64 - e - r - c - enc).max(0.0);
         eprintln!(
-            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}  (remainder)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
+            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting: load imbalance, mux, startup)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
             unchanged,
             prof.held.load(Ordering::Relaxed),
             prof.partial.load(Ordering::Relaxed),
@@ -591,8 +614,61 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
     })
 }
 
+/// RGBA path (PNG sequences, GIF): straight-alpha frames, cropped to even dimensions.
+fn render_video_rgba(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder) -> Result<Summary, String> {
+    let t0 = Instant::now();
+    let total = ev.frames();
+    let f0 = opts.from.map(|t| (t * ev.fps).round() as u32).unwrap_or(0).min(total);
+    let f1 = opts.to.map(|t| (t * ev.fps).round() as u32).unwrap_or(total).clamp(f0, total);
+    let n = f1 - f0;
+    let (w, h) = (((ev.width as f32 * opts.scale).round() as u32).max(2) & !1, ((ev.height as f32 * opts.scale).round() as u32).max(2) & !1);
+    let batch = (rayon::current_num_threads() as u32 * 4).max(8);
+    let mut start = f0;
+    while start < f1 {
+        let end = (start + batch).min(f1);
+        let frames: Vec<Vec<u8>> = (start..end)
+            .into_par_iter()
+            .map(|i| {
+                let (fw, _, px) = render_rgba(ev, frame_time(ev, i), opts.scale);
+                let mut out = Vec::with_capacity((w * h * 4) as usize);
+                for y in 0..h as usize {
+                    out.extend_from_slice(&px[y * fw as usize * 4..(y * fw as usize + w as usize) * 4]);
+                }
+                out
+            })
+            .collect();
+        for f in &frames {
+            enc.write_rgba(f)?;
+        }
+        start = end;
+    }
+    let bytes = enc.finish()?;
+    let secs = t0.elapsed().as_secs_f32();
+    Ok(Summary {
+        output: enc.output().to_string(),
+        width: w,
+        height: h,
+        fps: round3(ev.fps as f64),
+        frames: n,
+        deduped: 0,
+        duration: round3((n as f32 / ev.fps) as f64),
+        seconds: round3(secs as f64),
+        render_fps: (n as f64 / secs.max(1e-6) as f64).round(),
+        bytes,
+        codec: enc.name().to_string(),
+    })
+}
+
+/// The time of frame `i`, computed the same way on every path (render, still, sheet).
+pub fn frame_time(ev: &Evaluator, i: u32) -> f32 {
+    (i as f64 / ev.fps as f64) as f32
+}
+
 /// Render the video (or a range of it) into `enc`.
 pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder) -> Result<Summary, String> {
+    if enc.wants_rgba() {
+        return render_video_rgba(ev, opts, enc);
+    }
     let t0 = Instant::now();
     let total = ev.frames();
     let f0 = opts.from.map(|t| (t * ev.fps).round() as u32).unwrap_or(0).min(total);
@@ -713,7 +789,8 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
         eprintln!();
     }
     let secs = t0.elapsed().as_secs_f32();
-    let (w, h) = (((ev.width as f32 * opts.scale).round() as u32).max(2), ((ev.height as f32 * opts.scale).round() as u32).max(2));
+    // The ffmpeg encoder crops to even dimensions (4:2:0).
+    let (w, h) = (((ev.width as f32 * opts.scale).round() as u32).max(2) & !1, ((ev.height as f32 * opts.scale).round() as u32).max(2) & !1);
     Ok(Summary {
         output: enc.output().to_string(),
         width: w,

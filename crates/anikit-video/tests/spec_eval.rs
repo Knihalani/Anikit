@@ -257,3 +257,22 @@ fn token_metric() {
         eprintln!("{name:34} ≈{:4} tokens → {:.1} s, {} scene(s)", src.len() / 4, ev.duration, ev.scenes().len());
     }
 }
+
+#[test]
+fn moving_transitions_keep_backdrops_in_place() {
+    // Full-frame backdrop layers must not be translated by push/slide/zoom (their edges would show).
+    for kind in ["push", "slide", "zoom", "morphCut"] {
+        let ev = build(&format!(
+            r##"{{ "scenes": [ {{ "duration": 2, "layers": [ {{ "shape": "rect", "width": "100%", "height": "100%", "fill": "#204080" }}, {{ "text": "A" }} ] }},
+                {{ "duration": 2, "transition": {{ "type": "{kind}", "duration": 1 }}, "layers": [ {{ "shape": "rect", "width": "100%", "height": "100%", "fill": "#802040" }}, {{ "text": "B" }} ] }} ] }}"##
+        ));
+        let dl = ev.eval(1.5);
+        for o in &dl.ops {
+            if let Op::RoundRect { w, transform, .. } = o {
+                if *w >= 1919.0 {
+                    assert!(transform[4].abs() < 0.01 && transform[5].abs() < 0.01 && (transform[0] - 1.0).abs() < 1e-4, "{kind}: backdrop moved: {transform:?}");
+                }
+            }
+        }
+    }
+}

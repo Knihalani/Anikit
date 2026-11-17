@@ -27,7 +27,7 @@ let update = r.render_yuv_incremental(&list, &mut yuv, &mut changed); // dirty r
 | `Image` | `dst` is `[x, y, w, h]` in local coordinates. 1:1 images at integer positions are blitted directly. Axis-aligned scaled images that repeat across consecutive frames are resampled **once** with a tent filter (true area filtering when shrinking), then blitted. Anything else uses vello's bilinear filter. |
 | `Paint::Image` | `transform` maps local coordinates → image pixels. It **tiles** (repeat); `Op::Image` draws once. |
 | `Glyphs` | Drawn with the face instance in `FontStore` (`insert_face(id, Face { data, coords, embolden, skew })`): variable-font `coords` (F2Dot14 bits), synthetic bold (2% of the em per side) and oblique skew (degrees). Outlines are cached per (font, glyph). Each run is drawn as **one** path. Solid, translation-only runs are cached as bitmaps, keyed by content and quarter-pixel phase, and blitted. Colour fonts (COLR/CBDT/sbix) go through vello's glyph runs. |
-| `PushLayer` | A layer with no filter and no `cache_key` becomes a native vello layer, or nothing at all when opacity is 1, the blend is normal and there is no clip. A layer with filters or a `cache_key` is rendered offscreen, sized to its filter-expanded bounds ∩ view ∩ clip, filtered and composited. A `cache_key` keeps that bitmap while the key repeats. |
+| `PushLayer` | A layer with no filter and no `cache_key` becomes a native vello layer, or nothing at all when opacity is 1, the blend is normal and there is no clip. A layer with filters or a `cache_key` is rendered offscreen, sized to its filter-expanded bounds ∩ view ∩ clip, filtered and composited. A `cache_key` keeps that bitmap while the key repeats. A filtered layer without one is cached automatically by a hash of its content, filters and transform (layers drawing images excepted), so a static glow or blur is filtered once while its opacity animates. |
 | `Filter::Blur(σ)` | Gaussian σ, as in CSS. Three variance-matched box passes; every pass is a vectorised row operation (horizontal passes run on a transposed copy). Decimated 2/4/8× for σ ≥ 4/8/24. |
 | `Filter::Shadow` | σ blur, offset, colour. **Fast path:** when the layer's alpha is a single axis-aligned `RoundRect` (a card, optionally with content inside an opaque card), the shadow is a blurred sprite cached per size, radius, σ and colour, and drawn at an integer offset. No offscreen pass is needed. |
 | `Filter::Glow` | Blurred alpha × intensity, tinted, drawn behind. |
@@ -70,6 +70,9 @@ This applies once the run paints a frame's worth of pixels with a gradient or im
 When `render_yuv` has a backdrop and the ops drawn over it fit in a macroblock-aligned box covering at most 60% of the frame, the low-res backdrop is converted to YUV 4:4:4 once and its planes are upscaled straight into the YUV frame: 1.5 bytes per pixel, with no full-frame RGBA. Odd frame sizes get edge-corrected chroma. Only the box goes through vello. When every top-level layer over the backdrop blends normally (the usual case), the box is drawn on a transparent canvas and composited source-over directly in YUV space (`Y = (Y_bg − 16)(1 − α) + 16 + luma(src)`, chroma per 2×2 block, fully transparent spans skipped), so no RGBA backdrop is made at all, however large the box. Otherwise the box is seeded with the upscaled backdrop in RGBA, but only while it covers at most 60% of the frame. The full RGBA frame is never written, so `frame()` is stale afterwards; call `render()` when you need RGBA. The output is within 2 LSB (luma) and 4 LSB (chroma) of `render()` followed by RGBA→YUV conversion (tested). On the launch template (restarted, slower VM) render + YUV goes from 6.4 ms unfused to 4.9 ms.
 
 ### Incremental frames
+
+**Op alignment (insertion-tolerant):** ops are matched by content hash, in order, with a 24-op look-ahead resync, so an inserted or removed op marks only its own bounds. An unmatched layer marker, for example a clip that moved by 1 px or a wipe that widened, marks its whole subtree's old and new bounds (leaf bounds already include enclosing filter margins) instead of forcing a full frame. Any pixel outside the marks is covered by the same ops in the same order. Full-frame incremental renders take the fused backdrop → YUV path when it applies. On the launch template: Full 421 → 312 of 868 frames and Partial 27 → 136. The remaining Full frames are ones where the animated background glows really change every pixel.
+
 
 `render_yuv_incremental` is the fastest path for real videos. Each worker keeps its previous frame and does the following:
 
@@ -123,6 +126,21 @@ Source: `cargo run --release -p anikit-video --example parts_bench`. Single thre
 | Blur layer 400×300, σ 8 / full-frame blur, σ 20 | 1.19 / 8.2 |
 | YUV conversion alone (AVX2) | 0.75 |
 
+### End to end (templates, after the speed phase)
+
+(See also **End-to-end pipeline** at the end of this page for the fused render+encode path and per-stage profiles.)
+
+`anikit-video render` at 1080p30 with the `ak264` encoder, on a restarted VM that measures about 1.5–2× slower than the one used for the tables above:
+
+| Template | Frames | Wall time | Throughput |
+|---|---|---|---|
+| launch | 752 | 2.38 s | 315 fps (was 167 before the backdrop paths) |
+| testimonial | 699 | 2.11 s | 332 fps |
+| tutorial | 818 | 2.04 s | 400 fps |
+| logo-reveal | 120 | 0.51 s | 235 fps |
+
+Single-thread `render_yuv` on these templates now costs 4–5 ms per frame. Most of that is the 1080p plane writes, the overlay boxes and text; the background gradients are nearly free.
+
 ### What moved the numbers
 
 Before → after, same benchmarks:
@@ -151,24 +169,37 @@ Before → after, same benchmarks:
 
 ## End-to-end pipeline (spec → MP4), measured
 
-`anikit-video render` with ak264 (the MP4 default) runs **fused**: frames are split into GOP chunks (`gop = clamp(n / (3 × threads), 30, 300)`), and each worker evaluates, renders incrementally (`render_yuv_incremental`), copies only changed macroblocks into its chunk buffer and encodes, with the exact change map as the encoder hint. Spans that `Evaluator::is_static` proves identical are **held**: no eval, no render, all-skip P frames. `--profile` prints the per-stage breakdown.
+`anikit-video render` with ak264 (the MP4 default) runs **fused**: frames are split into the encoder's GOP chunks (`ak264::chunk_ranges`), and each worker evaluates, renders incrementally (`render_yuv_incremental`), copies only changed macroblocks into its chunk buffer and encodes, with the exact change map as the encoder hint. Spans that `Evaluator::is_static` proves identical are **held**: no eval, no render, all-skip P frames. `--profile` prints the per-stage breakdown (eval / render / copy / encode / idle). The ffmpeg encoders (x264, VP9, AV1, ProRes, GIF) also render incrementally, with contiguous frame runs per worker.
 
-4-core container, 1080p, wall clock including spec compile and the MP4 mux (`render --json`, `render_fps`), 2026-11-17 02:35 UTC:
+4-core container, 1080p, wall clock including spec compile and mux (`render --json` → `render_fps`), 04:10 UTC, all branches merged:
 
-| Content | Frames | ak264 (fused) | x264 veryfast (ffmpeg pipe) | Frames skipped |
+| Content | Frames | ak264 (fused) | x264 veryfast | Skipped |
 |---|---|---|---|---|
-| `new launch` template (benchmark of record: mesh backdrop, devices, chart, confetti) | 881 @ 30 | **125 fps** (7.0 s, 7.1 MB) | 75 fps (11.8 s, 6.3 MB) | 0 |
-| same, without the animated mesh backdrop | 881 @ 30 | **333 fps** (2.6 s) | 122 fps | 83 |
-| `docs/video/examples/showcase.json` | 222 @ 30 | **573 fps** (0.39 s) | 135 fps | 23 |
-| title + chart slides (mostly holds) | 570 @ 60 | **2197 fps** (0.26 s) | 214 fps | 392 |
+| `new launch` template (benchmark of record) | 868 @ 30 | **320–366 fps** (2.4–2.7 s, 3.9 MB) | 54 fps with `--quality high` | 417 Unchanged |
+| `docs/video/examples/showcase.json` | 222 @ 30 | **510–580 fps** | 162 fps | 23 |
+| title + chart slides (mostly holds) | 570 @ 60 | **≈2200 fps** | 240 fps | ≈400 |
 
-Before the fused path (render batches → separate encoder thread), the benchmark of record ran at 109 fps.
+History of the benchmark of record: 63 fps (22:55) → 109 → 143 (fused) → 125 → 353 (backdrop holds, settled components) → 320–366 now.
 
-**After the backdrop and settle fixes from RENDER, COMPONENTS and AGENTS (merged 02:40 UTC):** the current `new launch` template renders 901 frames in 2.55 s = **353 fps** with ak264. 404 frames are skipped as Unchanged (eval 0.5 / render 6.2 / encode 4.7 CPU ms per frame). The older launch spec above now runs at 268 fps.
+`--profile` on the benchmark of record (CPU ms per frame, summed over 4 threads): eval 0.1 · render 6.9 · copy 0.15 · encode 2.9 · idle 1.0. Render time is almost all from the ~424 Full frames (about 13 ms each). `CHURN_DETAIL=1 cargo run --release -p anikit-video --example dl_churn -- spec.json` shows what forces them. Mostly it's a clip layer (no filter, opacity 1) that moved by a pixel or grew (device screens, wipes), which `render_yuv_incremental` treats as a full-frame change. Bounding those by the clip would make them Partial.
 
-`--profile` on the benchmark of record (CPU ms per frame, summed over 4 threads): eval 0.5, render 17–18 (all 881 frames Full), copy 0.4, encode 10–12. Two things keep it from being incremental:
+Correctness: fused output decodes with ffmpeg and matches x264 `--quality high` at ≥ 48.6 dB on every frame of the launch template, and at 53.6 dB average on the showcase. `tests/pipeline_e2e.rs` compares fused and plain paths frame by frame, including a many-chunk stress case.
 
-1. The animated `mesh-gradient` backdrop changes every pixel of every frame (a keyframe blend), so no frame is Unchanged or Partial. Removing it gives 333 fps; `speed: 0` gives 230 fps.
-2. Without the mesh, 770 / 881 frames are still Full, because any changed `PushLayer` (mostly clip layers inside device and toast components) forces a full frame (`examples/dl_churn.rs` counts them).
+### Every template through the fused pipeline (04:45 UTC)
 
-Correctness: fused outputs decode with ffmpeg and match the x264 path at 50–54 dB PSNR (`tests/pipeline_e2e.rs` checks pixels across held, partial and full frames and GOP boundaries).
+`anikit-video new <template> --dir t && anikit-video render t/spec.json` (16:9, 1080p30, ak264), on the 4-core container:
+
+| Template | Frames | Wall | Throughput | Frames skipped |
+|---|---|---|---|---|
+| launch | 868 | 2.33 s | 372 fps | 417 |
+| tutorial | 807 | 2.48 s | 325 fps | 217 |
+| changelog | 680 | 2.12 s | 321 fps | 302 |
+| data-story | 616 | 2.01 s | 307 fps | 133 |
+| demo | 665 | 2.45 s | 271 fps | 158 |
+| testimonial | 532 | 2.12 s | 251 fps | 0 |
+| feature | 560 | 3.01 s | 186 fps | 0 |
+| teaser | 275 | 2.07 s | 133 fps | 0 |
+| countdown | 466 | 4.31 s | 108 fps | 0 |
+| logo-reveal | 120 | 1.55 s | 77 fps | 0 |
+
+The slow ones are dominated by per-frame effect components. logo-reveal (`text-3d`, `god-rays`, `lens-flare`): eval 15.8 + render 25.0 CPU ms per frame. countdown (`globe`, `particle-text`, `sparks`): render 21.6 per frame.

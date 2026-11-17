@@ -532,7 +532,7 @@ pub(crate) fn render(draws: &[(&Mesh, [f32; 15])], vp: &M4, eye: [f32; 3], mat: 
     const SS: usize = 2;
     let band = h.div_ceil(rayon::current_num_threads().max(1) * 3).max(24);
     let mut out = vec![0u8; w * h * 4];
-    out.par_chunks_mut(band * w * 4).enumerate().for_each(|(k, dst)| {
+    let body = |(k, dst): (usize, &mut [u8])| {
         let rows = dst.len() / (w * 4);
         let (y0, y1) = ((k * band) as f32, (k * band + rows) as f32);
         let (cy, hy) = (1.0 - (y0 + y1) / h as f32, (y1 - y0) / h as f32);
@@ -583,7 +583,15 @@ pub(crate) fn render(draws: &[(&Mesh, [f32; 15])], vp: &M4, eye: [f32; 3], mat: 
                 dst[o + 3] = ((n * 255 + (SS * SS) as u32 / 2) / (SS * SS) as u32) as u8;
             }
         }
-    });
+    };
+    // Inside a rayon worker (frame-parallel render) run serially: nested
+    // par_iter lets rayon steal another frame job onto this thread while the
+    // caller holds per-thread state (RefCell/locks), which panicked or hung.
+    if rayon::current_thread_index().is_some() {
+        out.chunks_mut(band * w * 4).enumerate().for_each(body);
+    } else {
+        out.par_chunks_mut(band * w * 4).enumerate().for_each(body);
+    }
     out
 }
 

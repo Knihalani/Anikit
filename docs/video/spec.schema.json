@@ -46,6 +46,14 @@
         }
       ]
     },
+    "defs": {
+      "description": "Reusable scenes and layers, referenced with `{ \"use\": \"name\", \"with\": {…}, …overrides }`.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": true
+    },
     "scenes": {
       "description": "The scenes, in order.",
       "type": "array",
@@ -365,6 +373,30 @@
             "string",
             "null"
           ]
+        },
+        "use": {
+          "description": "Reuse: the name of an entry in top-level `defs`; other keys here override it\n(expanded before typing, see `spec/reuse.rs`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "with": {
+          "description": "Values for `\"$param\"` placeholders in the `use`d def.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": true
+        },
+        "repeat": {
+          "description": "Emit this many copies; `\"$i\"` (0-based) and `\"$n\"` are available, and\n`\"=…\"` strings are arithmetic (`\"x\": \"=160 + $i * 420\"`).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
         },
         "duration": {
           "description": "Seconds (or a time string), or `\"auto\"`. Default 3.",
@@ -872,6 +904,30 @@
             "string",
             "null"
           ]
+        },
+        "use": {
+          "description": "Reuse: the name of an entry in top-level `defs`; other keys here override it\n(expanded before typing, see `spec/reuse.rs`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "with": {
+          "description": "Values for `\"$param\"` placeholders in the `use`d def.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": true
+        },
+        "repeat": {
+          "description": "Emit this many copies; `\"$i\"` (0-based) and `\"$n\"` are available, and\n`\"=…\"` strings are arithmetic (`\"x\": \"=160 + $i * 420\"`).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
         },
         "x": {
           "anyOf": [
@@ -1427,10 +1483,14 @@
           ]
         },
         "fit": {
-          "description": "`contain`, `cover`, `fill`, `none`. One of: contain, cover, fill, none.",
-          "type": [
-            "string",
-            "null"
+          "description": "Images: `contain`, `cover`, `fill`, `none`. Text: `true` shrinks the\nsize (never grows it) so the widest line fits `width` (default 85% of\nthe parent), keeping line breaks. One of: contain, cover, fill, none.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FitValue"
+            },
+            {
+              "type": "null"
+            }
           ],
           "examples": [
             "contain",
@@ -2102,6 +2162,17 @@
           "format": "double"
         }
       }
+    },
+    "FitValue": {
+      "description": "`fit`: an image mode (`\"cover\"`) or, on text, `true`. Derefs to the word\n(`\"true\"` / `\"false\"` for booleans) so callers match on strings.",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ]
     },
     "AudioCue": {
       "description": "An audio cue: a file (`src`) or a built-in sound effect (`sfx`).",
