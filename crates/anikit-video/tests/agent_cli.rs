@@ -98,3 +98,13 @@ fn mcp_over_stdio() {
     assert_eq!(lines[1]["result"]["isError"], false);
     assert!(lines[2]["result"]["prompts"].as_array().unwrap().iter().any(|p| p["name"] == "launch-video-generator"));
 }
+
+#[test]
+fn preview_is_the_one_call_inner_loop() {
+    let d = tmp("preview-loop");
+    std::fs::write(d.join("s.json"), r##"{"size":"16:9","scenes":[{"duration":2.5,"background":"#101014","layers":[{"text":"One call","x":"8%","anchor":"left","color":"#f4f1ea"}]}]}"##).unwrap();
+    let (ok, out, err) = run(&["preview", "s.json"], &d);
+    assert!(ok, "{out}{err}");
+    assert!(out.contains("sheet: s-sheet.png") && out.contains("score") && out.contains("intent"), "{out}");
+    assert!(d.join("s-sheet.png").is_file());
+}

@@ -46,7 +46,8 @@ Agent commands:
                                     and the timeline against the spec's \"intent\" (pace, dead air, beats, arc)
                                     (contrast, overlaps, cut text, frame fill, centred layouts); --pack writes frames
                                     to look at (strip, cuts, worst frames, peak) and a review.md rubric
-  anikit-video preview <spec.json|template> [--at T] [--width W] [-o out.png] [--format 9:16] [--brand b.json] [--params p.json]
+  anikit-video preview <spec.json> [-o sheet.png] [--detail] [--no-critique]   # THE inner loop: check + 1 frame/s sheet + critique + pace, in one call (draft quality)
+  anikit-video preview <spec.json|template> --at T [--width W] [-o f.png]       # one frame
                                     contact sheet (one frame per scene), or one still with --at
   anikit-video mcp                  Model Context Protocol server on stdio
 ";
@@ -280,8 +281,8 @@ fn cmd_critique(args: &[String]) -> Result<(), String> {
 }
 
 fn cmd_preview(args: &[String]) -> Result<(), String> {
-    let a = parse(args, &["at", "width", "o", "out", "format", "brand", "params", "look"], &[])?;
-    let src = a.pos.first().ok_or("usage: preview <spec.json|template> [--at T] [--width W] [-o out.png]")?;
+    let a = parse(args, &["at", "width", "o", "out", "format", "brand", "params", "look"], &["no-critique", "json", "detail"])?;
+    let src = a.pos.first().ok_or("usage: preview <spec.json> [--at T] [--width W] [-o sheet.png] [--no-critique] [--detail]")?;
     let (spec, base, stem) = if src.ends_with(".json") || src.ends_with(".yaml") || Path::new(src).is_file() {
         let text = read(src)?;
         let spec = crate::spec::parse::parse_str(&text).map(|_| ()).map_err(|d| d.iter().map(|x| x.to_string()).collect::<Vec<_>>().join("\n"));
@@ -300,7 +301,33 @@ fn cmd_preview(args: &[String]) -> Result<(), String> {
         let base = a.get("params").and_then(|p| Path::new(p).parent()).map(Path::to_path_buf).unwrap_or_default();
         (spec, base, src.clone())
     };
-    let p = crate::preview::Preview::new(spec, &base)?;
+    let t0 = std::time::Instant::now();
+    // The inner loop: draft quality (3D traces at half size), so it stays fast.
+    let was_draft = crate::components::draft();
+    crate::components::set_draft(true);
+    let p = crate::preview::Preview::new(spec.clone(), &base)?;
+    if a.get("at").is_none() {
+        // One frame a second (at its middle), 480 px cells, then the critique
+        // with the light render pass (6 fps at 192 px) and the pace summary.
+        let n = p.ev.duration.ceil().max(1.0) as usize;
+        let times: Vec<f32> = (0..n).map(|i| (i as f32 + 0.5).min(p.ev.duration - 0.05).max(0.0)).collect();
+        let img = p.sheet(Some(times), a.get("width").and_then(|w| w.parse().ok()).unwrap_or(480));
+        let out = a.get("o").or(a.get("out")).map(String::from).unwrap_or(format!("{stem}-sheet.png"));
+        write(Path::new(&out), "")?;
+        std::fs::write(&out, crate::preview::png(&img)).map_err(|e| format!("cannot write {out}: {e}"))?;
+        let report = (!a.has("no-critique")).then(|| crate::critique::review(&spec, &base, None, true));
+        crate::components::set_draft(was_draft);
+        if a.has("json") {
+            out!("{}", pretty(&serde_json::json!({ "sheet": out, "seconds_per_cell": 1, "duration": p.ev.duration, "critique": report })));
+            return Ok(());
+        }
+        outln!("sheet: {out} (one cell per second, {:.1} s video; open it and look)", p.ev.duration);
+        if let Some(r) = report {
+            out!("{}", r.to_text_detail(a.has("detail")));
+        }
+        outln!("[{:.1} s] next: fix the notes, then `render {src} -o out.mp4`", t0.elapsed().as_secs_f32());
+        return Ok(());
+    }
     let width = a.get("width").map(|w| w.parse::<u32>().map_err(|_| format!("--width: '{w}' is not a number"))).transpose()?;
     let (img, default_out) = match a.get("at") {
         Some(t) => {
