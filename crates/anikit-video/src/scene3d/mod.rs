@@ -563,6 +563,10 @@ impl Scene3d {
         let layer = self.particles(t, dt, &cam, &prev, &mut px, w, h, assets);
         let t_parts = clock.elapsed();
         let pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
+        if let Some(path) = std::env::var_os("ANIKIT_SCENE3D_DUMP") {
+            // Development aid: the primary pass and post settings, for examples/post_bench.
+            post::dump(std::path::Path::new(&path), &px, w, h, &pp);
+        }
         let vol = if p.shafts && p.haze.0 > 0.0 {
             let depth: Vec<f32> = px.iter().map(|q| q.depth).collect();
             let steps = match p.quality.edge_spp { 0..=3 => 8, 4..=8 => 16, _ => 32 };

@@ -386,27 +386,10 @@ fn denoise_vis(pl: &Planes, w: usize, h: usize, passes: u32) -> (Buf<f32>, Buf<f
                     let kk = ky * kx;
                     let n = xb - xa;
                     let t0 = (r0 as isize + dx + xa as isize) as usize;
-                    let (td, tid) = (&pl.depth[t0..t0 + n], &pl.id[t0..t0 + n]);
                     let tlit = if first_gaps { &gw[t0..t0 + n] } else { &pl.lit[t0..t0 + n] };
-                    let (tnx, tny, tnz) = (&pl.nx[t0..t0 + n], &pl.ny[t0..t0 + n], &pl.nz[t0..t0 + n]);
-                    let (ta, tv) = (&sa[t0..t0 + n], &sv[t0..t0 + n]);
-                    let (cd, ct, cid) = (&cd[xa..xb], &ct[xa..xb], &cid[xa..xb]);
-                    let (cnx, cny, cnz) = (&cnx[xa..xb], &cny[xa..xb], &cnz[xa..xb]);
-                    let (a0, a1, ws) = (&mut acc0[xa..xb], &mut acc1[xa..xb], &mut wsum[xa..xb]);
-                    for x in 0..n {
-                        // Different objects only blend at the floor (id MAX). Branch-free.
-                        let same = (tid[x] == cid[x]) | (tid[x] == u32::MAX) | (cid[x] == u32::MAX);
-                        let dz = (td[x] - cd[x]).abs() * ct[x];
-                        let mut nd = (cnx[x] * tnx[x] + cny[x] * tny[x] + cnz[x] * tnz[x]).max(0.0);
-                        nd *= nd;
-                        nd *= nd;
-                        nd *= nd;
-                        let wt = kk * nd * nd / (1.0 + dz * dz) * tlit[x];
-                        let wt = if same { wt } else { 0.0 };
-                        a0[x] += ta[x] * wt;
-                        a1[x] += tv[x] * wt;
-                        ws[x] += wt;
-                    }
+                    let t = (&pl.depth[t0..t0 + n], &pl.id[t0..t0 + n], tlit, &pl.nx[t0..t0 + n], &pl.ny[t0..t0 + n], &pl.nz[t0..t0 + n], &sa[t0..t0 + n], &sv[t0..t0 + n]);
+                    let c = (&cd[xa..xb], &ct[xa..xb], &cid[xa..xb], &cnx[xa..xb], &cny[xa..xb], &cnz[xa..xb]);
+                    denoise_taps(kk, t, c, (&mut acc0[xa..xb], &mut acc1[xa..xb], &mut wsum[xa..xb]));
                 }
             }
             for x in 0..w {
@@ -420,6 +403,39 @@ fn denoise_vis(pl: &Planes, w: usize, h: usize, passes: u32) -> (Buf<f32>, Buf<f
         std::mem::swap(&mut vk, &mut vk2);
     }
     (ao, vk)
+}
+
+type Taps<'a> = (&'a [f32], &'a [u32], &'a [f32], &'a [f32], &'a [f32], &'a [f32], &'a [f32], &'a [f32]);
+type Centres<'a> = (&'a [f32], &'a [f32], &'a [u32], &'a [f32], &'a [f32], &'a [f32]);
+type Accs<'a> = (&'a mut [f32], &'a mut [f32], &'a mut [f32]);
+
+simd_fn! {
+    /// One à-trous tap for a run of centre pixels: tap (depth, id, lit,
+    /// normal, AO, key visibility), centre (depth, 1/tolerance, id, normal),
+    /// accumulators (AO, visibility, weight). Branch-free, so it vectorises.
+    fn denoise_taps(kk: f32, t: Taps, c: Centres, a: Accs) {
+        let (td, tid, tlit, tnx, tny, tnz, ta, tv) = t;
+        let (cd, ct, cid, cnx, cny, cnz) = c;
+        let (a0, a1, ws) = a;
+        let n = a0.len();
+        let (td, tid, tlit, tnx, tny, tnz, ta, tv) = (&td[..n], &tid[..n], &tlit[..n], &tnx[..n], &tny[..n], &tnz[..n], &ta[..n], &tv[..n]);
+        let (cd, ct, cid, cnx, cny, cnz) = (&cd[..n], &ct[..n], &cid[..n], &cnx[..n], &cny[..n], &cnz[..n]);
+        let (a1, ws) = (&mut a1[..n], &mut ws[..n]);
+        for x in 0..n {
+            // Different objects only blend at the floor (id MAX).
+            let same = (tid[x] == cid[x]) | (tid[x] == u32::MAX) | (cid[x] == u32::MAX);
+            let dz = (td[x] - cd[x]).abs() * ct[x];
+            let mut nd = (cnx[x] * tnx[x] + cny[x] * tny[x] + cnz[x] * tnz[x]).max(0.0);
+            nd *= nd;
+            nd *= nd;
+            nd *= nd;
+            let wt = kk * nd * nd / (1.0 + dz * dz) * tlit[x];
+            let wt = if same { wt } else { 0.0 };
+            a0[x] += ta[x] * wt;
+            a1[x] += tv[x] * wt;
+            ws[x] += wt;
+        }
+    }
 }
 
 /// Vogel (golden-angle) disc: `n` points with radius ≤ 1.
@@ -745,12 +761,62 @@ fn srgb_lut() -> &'static [f32; SRGB_N + 2] {
 }
 const SRGB_N: usize = 4096;
 
+/// Khronos PBR Neutral, branch-free (both branches computed, one selected).
 #[inline(always)]
-fn srgb_fast(lut: &[f32; SRGB_N + 2], v: f32) -> f32 {
-    let f = v.clamp(0.0, 1.0) * SRGB_N as f32;
-    let i = f as usize;
-    let t = f - i as f32;
-    lut[i] + (lut[i + 1] - lut[i]) * t
+fn neutral_bf(c: [f32; 3]) -> [f32; 3] {
+    const START: f32 = 0.8 - 0.04;
+    const DESAT: f32 = 0.15;
+    let x = c[0].min(c[1]).min(c[2]);
+    let off = if x < 0.08 { x - 6.25 * x * x } else { 0.04 };
+    let c = c.map(|v| v - off);
+    let peak = c[0].max(c[1]).max(c[2]);
+    let d = 1.0 - START;
+    let np = 1.0 - d * d / (peak + d - START);
+    let g = 1.0 - 1.0 / (DESAT * (peak - np) + 1.0);
+    let low = peak < START;
+    c.map(|v| {
+        let hi = v * np / peak;
+        let r = if low { v } else { hi * (1.0 - g) + np * g };
+        r.clamp(0.0, 1.0)
+    })
+}
+
+simd_fn! {
+    /// One output row: exposure × vignette, tone map, sRGB (table), dither,
+    /// quantise. Written as lane loops over the row so each step vectorises.
+    #[allow(clippy::too_many_arguments)]
+    fn finish_row(src: &[[f32; 3]], row: &mut [u8], y: usize, cx: f32, cy: f32, inv_d: f32, exposure: f32, vignette: f32, neutral_tm: bool, lut: &[f32; SRGB_N + 2]) {
+        let w = src.len();
+        let mut m = [[0.0f32; 3]; 2048];
+        let dy = (y as f32 - cy) * inv_d;
+        for (x0, chunk) in src.chunks(2048).enumerate() {
+            let x0 = x0 * 2048;
+            let n = chunk.len();
+            let m = &mut m[..n];
+            for i in 0..n {
+                let dx = ((x0 + i) as f32 - cx) * inv_d;
+                let r2 = dx * dx + dy * dy;
+                let e = exposure * (1.0 - vignette * r2 * r2.sqrt().sqrt() * 1.6);
+                let c = chunk[i];
+                let e = [c[0] * e, c[1] * e, c[2] * e];
+                m[i] = if neutral_tm { neutral_bf(e) } else { aces(e) };
+            }
+            let out = &mut row[x0 * 4..(x0 + n) * 4];
+            for i in 0..n {
+                let x = x0 + i;
+                let hs = hash2(x as u32 ^ 0x51ed, y as u32 ^ 0x27d4);
+                let dith = (u01(hs) + u01(hash2(hs, 77)) - 1.0) / 255.0;
+                for k in 0..3 {
+                    let f = m[i][k] * SRGB_N as f32;
+                    let j = (f as usize).min(SRGB_N);
+                    let s = lut[j] + (lut[j + 1] - lut[j]) * (f - j as f32);
+                    out[i * 4 + k] = ((s + dith) * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
+                }
+                out[i * 4 + 3] = 255;
+            }
+        }
+        let _ = w;
+    }
 }
 
 /// Tone map, vignette, sRGB, dither.
@@ -759,33 +825,8 @@ fn finish(hdr: &Img, w: usize, h: usize, p: &Post) -> Vec<u8> {
     let (cx, cy) = (w as f32 * 0.5, h as f32 * 0.5);
     let inv_d = 1.0 / (cx * cx + cy * cy).sqrt();
     let lut = srgb_lut();
-    // Vignette factor (exposure folded in) as a function of the squared radius.
-    const VN: usize = 1024;
-    let vt: Vec<f32> = (0..=VN + 1)
-        .map(|i| {
-            let r2 = (i as f32 / VN as f32).min(1.0);
-            p.exposure * (1.0 - p.vignette * r2 * r2.sqrt().sqrt() * 1.6)
-        })
-        .collect();
     let neutral_tm = p.tonemap == Tonemap::Neutral;
-    par::rows(&mut out, w * 4, |y, row| {
-        let dy = (y as f32 - cy) * inv_d;
-        for x in 0..w {
-            let c = hdr[y * w + x];
-            let dx = (x as f32 - cx) * inv_d;
-            let r2 = ((dx * dx + dy * dy) * VN as f32).min(VN as f32);
-            let vi = r2 as usize;
-            let e = vt[vi] + (vt[vi + 1] - vt[vi]) * (r2 - vi as f32);
-            let hs = hash2(x as u32 ^ 0x51ed, y as u32 ^ 0x27d4);
-            let dith = (u01(hs) + u01(hash2(hs, 77)) - 1.0) / 255.0;
-            let e = [c[0] * e, c[1] * e, c[2] * e];
-            let mapped = if neutral_tm { neutral(e) } else { aces(e) };
-            for k in 0..3 {
-                row[x * 4 + k] = ((srgb_fast(lut, mapped[k]) + dith) * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
-            }
-            row[x * 4 + 3] = 255;
-        }
-    });
+    par::rows(&mut out, w * 4, |y, row| finish_row(&hdr[y * w..y * w + w], row, y, cx, cy, inv_d, p.exposure, p.vignette, neutral_tm, lut));
     out
 }
 
@@ -798,6 +839,34 @@ fn debug() -> u8 {
         Ok("diffuse") => 3,
         _ => 0,
     })
+}
+
+/// Write a primary pass and its post settings to `path` (see [`load`]).
+pub fn dump(path: &std::path::Path, px: &[Px], w: usize, h: usize, p: &Post) {
+    let mut b: Vec<u8> = Vec::with_capacity(px.len() * std::mem::size_of::<Px>() + 64);
+    for v in [w as f32, h as f32, p.focus, p.aperture, p.shutter, p.bloom, p.exposure, p.vignette, (p.tonemap == Tonemap::Neutral) as u32 as f32, p.denoise as f32] {
+        b.extend_from_slice(&v.to_le_bytes());
+    }
+    // SAFETY: `Px` is plain `repr(C)` data without padding.
+    b.extend_from_slice(unsafe { std::slice::from_raw_parts(px.as_ptr() as *const u8, std::mem::size_of_val(px)) });
+    let _ = std::fs::write(path, b);
+}
+
+/// Read what [`dump`] wrote.
+pub fn load(path: &std::path::Path) -> Option<(Vec<Px>, usize, usize, Post)> {
+    let b = std::fs::read(path).ok()?;
+    let f = |i: usize| f32::from_le_bytes(b[i * 4..i * 4 + 4].try_into().unwrap());
+    let (w, h) = (f(0) as usize, f(1) as usize);
+    let p = Post { focus: f(2), aperture: f(3), shutter: f(4), bloom: f(5), exposure: f(6), vignette: f(7), tonemap: if f(8) > 0.5 { Tonemap::Neutral } else { Tonemap::Aces }, denoise: f(9) as u32 };
+    let body = &b[40..];
+    let n = w * h;
+    if body.len() != n * std::mem::size_of::<Px>() {
+        return None;
+    }
+    let mut px = vec![Px::default(); n];
+    // SAFETY: sizes match and `Px` accepts any bits.
+    unsafe { std::ptr::copy_nonoverlapping(body.as_ptr(), px.as_mut_ptr() as *mut u8, body.len()) };
+    Some((px, w, h, p))
 }
 
 pub fn process(px: &[Px], w: usize, h: usize, p: &Post, vol: Option<Volume>, parts: Option<&super::super::particles::Layer>) -> Vec<u8> {
@@ -888,25 +957,6 @@ fn aces(c: [f32; 3]) -> [f32; 3] {
         n / d
     });
     std::array::from_fn(|r| (o[r][0] * b[0] + o[r][1] * b[1] + o[r][2] * b[2]).clamp(0.0, 1.0))
-}
-
-/// Khronos PBR Neutral tone mapping: colours stay true, white stays white.
-#[inline]
-fn neutral(c: [f32; 3]) -> [f32; 3] {
-    const START: f32 = 0.8 - 0.04;
-    const DESAT: f32 = 0.15;
-    let x = c[0].min(c[1]).min(c[2]);
-    let off = if x < 0.08 { x - 6.25 * x * x } else { 0.04 };
-    let mut c = c.map(|v| v - off);
-    let peak = c[0].max(c[1]).max(c[2]);
-    if peak < START {
-        return c.map(|v| v.clamp(0.0, 1.0));
-    }
-    let d = 1.0 - START;
-    let np = 1.0 - d * d / (peak + d - START);
-    c = c.map(|v| v * np / peak);
-    let g = 1.0 - 1.0 / (DESAT * (peak - np) + 1.0);
-    c.map(|v| (v * (1.0 - g) + np * g).clamp(0.0, 1.0))
 }
 
 fn srgb(v: f32) -> f32 {
