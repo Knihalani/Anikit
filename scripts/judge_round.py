@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Eval rounds: 8 fixed briefs (docs/video/judge/briefs.json) made by fresh agent sessions on
+"""Eval rounds: 12 fixed briefs (docs/video/judge/BRIEFS.md, briefs.json) made by fresh agent sessions on
 current main, then judged blind against professional references (scripts/judge.py).
 
 1. Parent:  python3 scripts/judge_round.py prompts --round r1 > r1-sessions.json
@@ -116,8 +116,8 @@ def cmd_table(a):
     rd = J / "rounds" / a.round
     usage = json.loads((rd / "usage.json").read_text()) if (rd / "usage.json").exists() else {}
     lines = [f"## Round {a.round}", "",
-             "| Brief | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens | Cost ($) | Peak RSS render (MB) |",
-             "|---|---|---|---|---|---|---|---|---|---|---|"]
+             "| Brief | Category | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens | Cost ($) | Peak RSS render (MB) |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|"]
     gaps_by = {}
     scores = []
     for b in briefs():
@@ -125,12 +125,12 @@ def cmd_table(a):
         wall, rss = _stats(rd, b["id"])
         u = usage.get(b["id"], {})
         if not p.exists():
-            lines.append(f"| {b['id']} | no output | | | | | | {wall or ''} | {u.get('tokens', '')} | {u.get('cost_usd', '')} | {rss or ''} |")
+            lines.append(f"| {b['id']} | {b.get('category','')} | no output | | | | | | {wall or ''} | {u.get('tokens', '')} | {u.get('cost_usd', '')} | {rss or ''} |")
             continue
         r = json.loads(p.read_text())
         c = r["candidate"]
         scores.append(c.get("overall") or 0)
-        lines.append(f"| {b['id']} | {r['verdict']} | {c.get('judged_professional')} | {c.get('overall')} | {r['ref_mean']} | {r['delta']} | "
+        lines.append(f"| {b['id']} | {b.get('category','')} | {r['verdict']} | {c.get('judged_professional')} | {c.get('overall')} | {r['ref_mean']} | {r['delta']} | "
                      f"{r.get('full_overall', '–')} | {wall or '?'} | {u.get('tokens', '?')} | {u.get('cost_usd', '?')} | {rss or '?'} |")
         gaps_by[b["id"]] = c.get("gaps", [])[:3] + (r.get("critic", {}).get("answer", {}).get("gaps", [])[:1])
     if scores:

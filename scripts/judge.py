@@ -27,7 +27,7 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
-REFS = ROOT / "docs/video/judge/refs"
+REFS = Path(os.environ.get("JUDGE_REFS", ROOT / "docs/video/judge/refs"))
 PACE = ROOT / "docs/video/quality/pace.py"
 DIMS = ["idea", "composition", "typography", "colour", "light_texture", "motion", "craft", "originality"]
 CRITIC_DIMS = ["motion", "sound", "craft"]
