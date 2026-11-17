@@ -150,6 +150,7 @@ pub fn luma_pred(p: &Plane, x: isize, y: isize, mv: (i32, i32), out: &mut [u8; 2
 /// Half-sample planes of a whole reference picture (b: horizontal, h: vertical,
 /// j: centre), same geometry as the luma plane. Built once per reference when
 /// many macroblocks refine; predictions are identical to [`Hpel`].
+#[derive(Clone)]
 pub struct HpelPlanes {
     pub b: Plane,
     pub h: Plane,

@@ -1,0 +1,514 @@
+{
+  "name": "div-b-railyard",
+  "tags": [
+    "product-launch",
+    "motion-design",
+    "editorial-data"
+  ],
+  "refs": [
+    "coinbase-system-update",
+    "jpmorgan-payments",
+    "game-of-thrones"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 4,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 4,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 3.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Commit to the railyard world with real material, scale and light (switching levers, signal lamps, wet steel) instead of flat line diagrams on a dark ground",
+      "Give the type an idea: integrate it with the tracks, vary its scale dramatically, and choose a face with character in place of the default grotesk headline-plus-caps-label pairing",
+      "Choreograph a journey with a different composition in each frame rather than repeating one diagram with a webhook card added each time",
+      "Build a real world, not a diagram. Turn the railyard into a crafted, lit, textured environment (as A does with its clockwork map) instead of lines and glowing pills.",
+      "Find a typographic idea: integrate type with the tracks and signals, use expressive scale, and pick a face with character instead of a default grotesk headline in the top-left.",
+      "Vary and choreograph the frames. Replace the repeated diagram layouts with camera moves, scale shifts and a memorable transformation, and fix the broken lever frame.",
+      "Find an idea beyond the literal rail diagram; make the railyard a place with material, light and scale (see C's built world) rather than vector lines",
+      "Develop the typography: integrate it with the image and vary scale and placement, instead of a slide-style headline in the same corner every frame",
+      "Choreograph the frames so each one is a distinct poster; remove the repeated layout and fix the broken or empty type states"
+    ],
+    "tells": [
+      "It matches the generic 'tasteful AI' recipe: dark green-black ground, a bold generic grotesk headline set top-left like a slide, small tracked-caps labels (BANK A / BANK B / REAL-TIME PAYMENTS API), and a single amber accent",
+      "Frames 3 and 4 use the same layout with only the elements added, so the film reads as a slide deck",
+      "Placeholder UI: webhook pill cards and dot-on-a-stick signals, plus a text box laid over the track diagram",
+      "Frame 2 has a broken, half-faded headline fragment and generic 3D lever primitives that do not match the 2D vector language of the rest",
+      "The idea is literal: product name 'Railyard' plus a diagram of rails, and the closing frame is a centred wordmark with a tagline",
+      "It matches the generic 'tasteful AI' recipe: a dark green-black ground with a faint grid, a bold generic grotesk headline set top-left like a slide, a single amber accent, and small tracked-caps labels ('BANK A', 'REAL-TIME PAYMENTS API').",
+      "Frames 3 and 4 repeat the same composition with an identical headline and only more pills added, which is slide-deck structure.",
+      "The metaphor is literal and the visuals are diagrammatic: product name 'Railyard' plus a railway diagram of payments, with webhook event names in placeholder UI boxes.",
+      "Light is flat and unmotivated, with glow on vector pills and no material. The lever frame is a crude stock-3D insert, and its headline is broken or clipped ('OneAPI...' cut off).",
+      "The end card is a centred logo with a tagline over converging lines, a template payoff.",
+      "A literal metaphor turned into a diagram: product name 'Railyard', so payments are shown as train cars on tracks between 'BANK A' and 'BANK B'",
+      "Default bold grotesk headlines set top-left like slides, with tracked small-caps labels and a single amber accent on a dark ground (the textbook 'tasteful AI' recipe)",
+      "The same layout repeats ('A webhook at every signal.' appears in two consecutive frames with only the pills added)",
+      "Frame 2 shows broken, half-rendered type ('...API...' fragment top-left) and a lever frame with an empty 'P' readout, which point to automated or unfinished output",
+      "Placeholder UI: pills, a bordered caption card, webhook tooltip boxes, flat unmotivated glow, and no material or depth",
+      "The end card is a centred wordmark with a tracked-caps tagline"
+    ]
+  },
+  "refs_summary": {
+    "coinbase-system-update": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "jpmorgan-payments": {
+      "overall": 6.38,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "game-of-thrones": {
+      "overall": 9.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.79,
+  "delta": -4.17,
+  "trials": [
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "coinbase-system-update",
+        "C": "candidate",
+        "D": "jpmorgan-payments"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A single strong idea carries the whole film: the world is shown as a clockwork map that builds itself, so the geography becomes the story's machinery",
+              "Astrolabe bands engraved with heraldic narrative relief give it a rich surface and an object to hold the piece together",
+              "Real light: the warm sun-core glow leaks around the bands, there is atmospheric haze, the tabletop is lit from a low angle, and the shots fall off in depth of field",
+              "Credits are set in a period-appropriate small-caps serif with sigil glyphs and sit inside the world, placed in perspective next to the cities, rather than laid over it as a slide",
+              "The frames are choreographed: you move from the sun-lit armillary down to cities cranking up out of the map, then to a 2D map read, then back to the emblem, so the opening and closing frames bookend each other",
+              "Muted bronze, verdigris and parchment palette with a lot of material detail: gears, carved bone, cast metal"
+            ],
+            "gaps": [
+              "It sets the benchmark for this group; any gaps are relative to the best work of the year, not to the other entries",
+              "The flat 2D map frame drops some of the depth and material richness of the surrounding 3D shots",
+              "The end lockup's glow and bloom are a little heavy and flatten the detail of the emblem"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The idea is specific: payments are rendered as a living ASCII/terminal field, so the medium (code, symbols, $ glyphs) becomes the imagery",
+              "Bold, deliberate palette: saturated International Klein-style blue with white monospace characters, committed to across the whole film",
+              "Every frame uses a different structure: a figure built from glyphs, a $ particle stream, a symbol planet with an orbit ring, a full screen of code text, padlock forms, a grid of coin tokens",
+              "Type is the image itself: monospace density is used as tone, and the highlighted inverse-video labels ('<<Crypto is...', 'Faster', '--Direct--') act as typographic beats",
+              "The code text contains in-jokes ('Matching Cut Transition(\"circular\")') and points to match-cut choreography between scenes"
+            ],
+            "gaps": [
+              "Nothing gives a sense of depth or light, and the field can turn into a texture with no subject (for example the coin grid in frame 6)",
+              "The concept stops at 'crypto is digital'; it needs a sharper narrative turn or emotional payoff like the build-the-world conceit in A",
+              "The full screen of code text (frame 4) is hard to read and works as filler; it needs stronger hierarchy and a clearer typographic scale jump"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "The light is convincing: a raking window/gobo light casts long, soft shadows on a warm plaster ground, and the glass and gold have refraction and edge highlights",
+              "The coin token comes back as a recurring object in every frame (on the graph wave, on the phone, slotted into a tile floor, on a conveyor, as a stacked lock), which shows some systematic thinking",
+              "The brand UI is legible and correct (J.P.Morgan, Balance, $2.45M, Monthly Summary), with none of the garbling typical of generated imagery",
+              "Against that, it relies heavily on the current 'premium glass-and-gold fintech' render language on a cream ground with a single gold accent, and on an obvious metaphor set (padlock = security, conveyor = flow, graph = growth)"
+            ],
+            "gaps": [
+              "Replace the literal icon metaphors (lock, chart, conveyor) with one specific conceit that only this brand could own, as A does with its clockwork map",
+              "The type has no point of view: there is only default UI on the devices and no expressive typography that interacts with the objects",
+              "The staging is nearly the same in every frame (one object, cream ground, hard shadow from the top left); it needs changes of camera, scale and pace to show choreography"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "It matches the generic 'tasteful AI' recipe: dark green-black ground, a bold generic grotesk headline set top-left like a slide, small tracked-caps labels (BANK A / BANK B / REAL-TIME PAYMENTS API), and a single amber accent",
+              "Frames 3 and 4 use the same layout with only the elements added, so the film reads as a slide deck",
+              "Placeholder UI: webhook pill cards and dot-on-a-stick signals, plus a text box laid over the track diagram",
+              "Frame 2 has a broken, half-faded headline fragment and generic 3D lever primitives that do not match the 2D vector language of the rest",
+              "The idea is literal: product name 'Railyard' plus a diagram of rails, and the closing frame is a centred wordmark with a tagline"
+            ],
+            "gaps": [
+              "Commit to the railyard world with real material, scale and light (switching levers, signal lamps, wet steel) instead of flat line diagrams on a dark ground",
+              "Give the type an idea: integrate it with the tracks, vary its scale dramatically, and choose a face with character in place of the default grotesk headline-plus-caps-label pairing",
+              "Choreograph a journey with a different composition in each frame rather than repeating one diagram with a webhook card added each time"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 35.3,
+        "cost_usd": 0.179057,
+        "tokens": 72438,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "coinbase-system-update",
+        "C": "jpmorgan-payments",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "The core idea belongs to this piece alone: the world is a clockwork map that builds itself, and the camera travels across it. Story, geography and cast are explained in one mechanical metaphor.",
+              "Real material and light: engraved metal bands, carved wooden towns, brass gears, and a hot sun inside an astrolabe with bloom and depth of field.",
+              "The frames show clear choreography and variety: an extreme close-up of the engraved band, a low pass over a city, gears unfolding, an orbit through the armillary rings, a top-down map with a pin drop, and a logo resolve that returns to the opening band.",
+              "Credits sit inside the world with small heraldic sigils, and the type is a chosen engraved-feeling face that matches the period.",
+              "The palette is disciplined: warm sepia and bronze against cold slate and teal sea. Every frame works as a poster."
+            ],
+            "gaps": [
+              "This is the benchmark entry. The credit type is small and sometimes reads weakly over busy detail, so it could use more contrast or a darker ground under the names.",
+              "The title card leans on a fairly conventional lens-flare glow, which is less inventive than the mechanical sections.",
+              "Lens bloom and overexposed highlights are used often, which slightly flattens the most luminous frames."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "It commits fully to one system: everything is built from ASCII and code glyphs in a single saturated ultramarine. The palette is deliberate and the system is pushed into figures, planets, padlocks and coins.",
+              "Glyph density varies to model form: the walking figure, the sphere with its orbit ring, and the shaded locks and coins. This shows real craft in the character-mapping and tone.",
+              "Frames change in mode and scale (a figure, cosmic flow, a planet, a full code dump, a triptych of locks, a coin grid), which suggests real transitions and match cuts. The code even mentions a 'matchcut_engine'.",
+              "The type works as image: inverted highlight tags ('<<Crypto is...', 'Faster', '--Direct--') are set in the glyph layer rather than placed like slides."
+            ],
+            "gaps": [
+              "The ASCII/terminal look is a well-worn crypto and tech trope. It needs a more specific conceptual turn so it reads as more than 'crypto = code'.",
+              "There is no real light or depth beyond tonal density. Adding layered depth, focus or light play inside the glyph field would give it A's dimensionality.",
+              "Message frames like the code dump are mostly texture. Choreograph a stronger narrative arc and a memorable payoff frame instead of ending on a coin grid."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "It has strong art direction: a warm sand ground, a raking window-light gobo, and glass-and-brushed-gold objects with believable refraction and contact shadows.",
+              "The camera and set vary: a coin rolling over waveform ribbons, a coin on a device, a top-down tiled floor with gold inlay, a glass conveyor, a stylus on a glass tablet, and a stacked coin with a lock.",
+              "The brand is integrated into the UI in a restrained, plausible way (J.P. Morgan Payments).",
+              "Against it: the metaphors are literal (coin, lock = security, conveyor = flow), and the glass-gold 'premium fintech' render style is very common right now."
+            ],
+            "gaps": [
+              "The idea is generic fintech iconography. It needs a specific visual concept beyond 'coins in nice light'.",
+              "Typography is limited to default-ish UI text. Give the type a role and a point of view rather than leaving it to the mock UI.",
+              "The single beige-and-gold mood repeats in every frame. Add contrast in palette, scale or environment to create surprise across the arc."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "It matches the generic 'tasteful AI' recipe: a dark green-black ground with a faint grid, a bold generic grotesk headline set top-left like a slide, a single amber accent, and small tracked-caps labels ('BANK A', 'REAL-TIME PAYMENTS API').",
+              "Frames 3 and 4 repeat the same composition with an identical headline and only more pills added, which is slide-deck structure.",
+              "The metaphor is literal and the visuals are diagrammatic: product name 'Railyard' plus a railway diagram of payments, with webhook event names in placeholder UI boxes.",
+              "Light is flat and unmotivated, with glow on vector pills and no material. The lever frame is a crude stock-3D insert, and its headline is broken or clipped ('OneAPI...' cut off).",
+              "The end card is a centred logo with a tagline over converging lines, a template payoff."
+            ],
+            "gaps": [
+              "Build a real world, not a diagram. Turn the railyard into a crafted, lit, textured environment (as A does with its clockwork map) instead of lines and glowing pills.",
+              "Find a typographic idea: integrate type with the tracks and signals, use expressive scale, and pick a face with character instead of a default grotesk headline in the top-left.",
+              "Vary and choreograph the frames. Replace the repeated diagram layouts with camera moves, scale shifts and a memorable transformation, and fix the broken lever frame."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.9,
+        "cost_usd": 0.1619048,
+        "tokens": 72258,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "jpmorgan-payments",
+        "B": "coinbase-system-update",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea only this piece could have: the world built as a clockwork map that assembles itself, so the geography of the story becomes the title sequence",
+              "Real material and texture: engraved metal, carved wood and gears, aged parchment map, with blown-out warm light flaring through the astrolabe bands",
+              "The frames show choreography: a macro on the engraved band, a camera flight over mechanised cities, the map in top-down view, then a resolve on the logo lockup that mirrors the opening frame",
+              "Credits are set in a period-appropriate engraved-caps face with heraldic sigil bullets, sitting inside the 3D space rather than placed on top like a slide",
+              "Restrained bronze, umber and verdigris palette that is consistent across every frame"
+            ],
+            "gaps": [
+              "Credit type is small and sometimes fights busy mid-tones (the Clapton and Fairley cards); a little more local darkening would help legibility",
+              "Mid-sequence frames lean on a shallow-depth-of-field miniature look that gets repetitive across many city fly-overs",
+              "Only a few frames reach full graphic poster contrast; the map frame is flat next to the lit mechanisms"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A committed system: everything (walking figure, coin planet, padlocks, coin grid) is rendered from ASCII and code glyphs, so the medium carries the message about money as software",
+              "A deliberate single-hue palette (full International Klein-style blue with white) that turns the constraint into a voice",
+              "Monospace typography used as both texture and image, with highlighted inline labels ('<<Crypto is...', 'Faster', '--Direct--') acting as kinetic captions",
+              "Clear variety in scale and density from frame to frame: a character, cosmic flow, a planet, a full code wall, a triptych of padlocks, a grid of coins, which suggests match-cut choreography",
+              "There is wit in the details, such as a code dump that refers to its own 'MatchCut Transition(\"circular\")'"
+            ],
+            "gaps": [
+              "The ASCII-art aesthetic is a well-trodden trend, so the idea needs one surprising turn beyond 'crypto = code'",
+              "Some frames (the code-dump frame) are illegible walls with no hierarchy or focal point",
+              "Light and depth are mostly flat; a few dimensional or volumetric moments would add weight next to C's material richness"
+            ]
+          },
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Accomplished CG lighting: hard window-light shadows across a warm plaster ground, caustics through glass, and a consistent gold-and-glass material language",
+              "A coherent system for a real brand (J.P. Morgan Payments): a token coin travels through a wave chart, a phone, a tiled floor, a conveyor and a lock, which implies continuity between shots",
+              "However, it leans hard into the generic 'premium glass and gold on cream' fintech look that AI tools now produce by default; the icons (cart, padlock, ring) are stock UI glyphs",
+              "The ideas are literal (coin + lock = security, coin + phone = mobile payment), and the UI frame shows placeholder-ish dashboard type ('$2.45M', 'MONTHLY SUMMARY')"
+            ],
+            "gaps": [
+              "Replace the literal icon-on-a-coin metaphors with one ownable idea that only this brand could have",
+              "Give the typography a point of view; right now it is default dashboard UI with no scale play or integration into the image",
+              "Break the single cream-and-gold mood with at least one compositional or tonal surprise so it doesn't read as a generic premium render template"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "A literal metaphor turned into a diagram: product name 'Railyard', so payments are shown as train cars on tracks between 'BANK A' and 'BANK B'",
+              "Default bold grotesk headlines set top-left like slides, with tracked small-caps labels and a single amber accent on a dark ground (the textbook 'tasteful AI' recipe)",
+              "The same layout repeats ('A webhook at every signal.' appears in two consecutive frames with only the pills added)",
+              "Frame 2 shows broken, half-rendered type ('...API...' fragment top-left) and a lever frame with an empty 'P' readout, which point to automated or unfinished output",
+              "Placeholder UI: pills, a bordered caption card, webhook tooltip boxes, flat unmotivated glow, and no material or depth",
+              "The end card is a centred wordmark with a tracked-caps tagline"
+            ],
+            "gaps": [
+              "Find an idea beyond the literal rail diagram; make the railyard a place with material, light and scale (see C's built world) rather than vector lines",
+              "Develop the typography: integrate it with the image and vary scale and placement, instead of a slide-style headline in the same corner every frame",
+              "Choreograph the frames so each one is a distinct poster; remove the repeated layout and fix the broken or empty type states"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.8,
+        "cost_usd": 0.1609452,
+        "tokens": 72224,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 6,
+        "craft": 6
+      },
+      "defects": [
+        "Lever shot headline ('One API call.') is caught mid-reveal as flat horizontal stubs cut off by a hard mask. It reads as a clipped glyph wipe, not a designed type transition.",
+        "Lever-frame motion blur is applied evenly across the whole frame, including the signal post, labels and the POST field. The numerals 5/6/7 smear into illegibility, so it looks like a post-process smear rather than per-object blur.",
+        "Webhook shot is almost static across the 1/6 s pair. The cards, nodes and 'SETTLED' label hold dead still while only the pill sits at Bank B. There is no settle or overshoot and no secondary motion.",
+        "In the 1:1 crop, the amber pills show a doubled edge: a hard inner capsule plus an offset, semi-transparent outer ring. This looks like a misregistered glow or stroke layer, not a clean bloom.",
+        "In the settlement shot, the text card sits on top of moving pills and lines with only a thin dark plate and no depth separation. Pills slide under the card edge and get clipped.",
+        "Pace fails the brief: the longest shot is 3.8 s and the median 2.8 s. The diagram holds (webhook, yard) sit long while the motion inside them is minimal.",
+        "Logo end card: the fan-in curves and the pill/red buffer stop next to the wordmark compete with the type. The red stop marker is a stray hard-edged sliver."
+      ],
+      "gaps": [
+        "Choreography is mostly linear slides and pop-ons. The pills translate at near-constant speed with no weight, anticipation, coupling or acceleration, and there is no follow-through on lever throws or signal changes. Top studio work would give the lever a mechanical overshoot and settle that sets off the next action.",
+        "Transitions are hard scene swaps between separate diagrams rather than one continuous system: one track should become the next, and the camera should travel through the yard. The long, low-change holds (webhook beat about 2.4/s of change) drain energy that a top piece would keep with layered secondary motion and continuous camera moves.",
+        "Sound is busy and full-band, with dense transient hits, one noise riser around 6.2 s and a harmonic lift around 7.5 s and 13.4 s. But the hits form an even grid rather than clear accents on the cuts, the dynamic contour is fairly flat at -14 LUFS, and there are no distinct foley layers (lever clunk, track clack, signal chime) shaped to specific actions. Finish also falls short: the doubled glow edges, the blanket motion blur and the clipped type reveal would not pass a top studio's final QC."
+      ]
+    },
+    "meta": {
+      "seconds": 24.5,
+      "cost_usd": 0.152972,
+      "tokens": 70533,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "railyard.mp4: 15.0s, 5 shots, median 2.80s, longest 3.77s\nper-second change: [17.7, 8.4, 8.3, 24.7, 2.4, 17.4, 9.2, 7.9, 27.0, 33.9, 9.2, 20.2, 11.5, 4.7]\nPACE: FAIL \u2014 longest shot 3.8s > 2.5s; median shot 2.8s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 4,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 4.5,
+    "craft": 5.0,
+    "originality": 3,
+    "sound": 6
+  },
+  "full_overall": 4.06,
+  "cost_usd": 0.655,
+  "judge_seconds": 123.5,
+  "verdict": "FAIL"
+}
