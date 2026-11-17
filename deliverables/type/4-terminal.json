@@ -1,0 +1,76 @@
+{
+ "size": "1080p",
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 5,
+   "background": "#050805",
+   "layers": [
+    {
+     "text": "SIGNAL",
+     "font": "Sixtyfour",
+     "size": "21vh",
+     "color": "#7dff9b",
+     "align": "left",
+     "x": "5vw",
+     "y": "34vh",
+     "anchor": "left",
+     "axes": {
+      "SCAN": 0,
+      "BLED": 0
+     },
+     "glow": {
+      "radius": 26,
+      "intensity": 0.7,
+      "color": "#2bff6a"
+     },
+     "animate": [
+      {
+       "keyframes": {
+        "axes.SCAN": [
+         -53,
+         -53,
+         0
+        ],
+        "axes.BLED": [
+         100,
+         60,
+         15
+        ]
+       },
+       "duration": 2.4,
+       "ease": "outQuart"
+      }
+     ]
+    },
+    {
+     "text": "> boot sequence 0x7F3A … ok\n> carrier detected at 2400 baud\n> handshake: [##########] 100%\n> awaiting operator_",
+     "font": "VT323",
+     "size": "4.2vh",
+     "color": "#7dff9b",
+     "lineHeight": 1.15,
+     "align": "left",
+     "x": "5vw",
+     "y": "56vh",
+     "anchor": "topLeft",
+     "enter": {
+      "preset": "type",
+      "delay": 1.4,
+      "duration": 2.4
+     }
+    },
+    {
+     "text": "CH.03  ·  LOCAL 23:59",
+     "font": "Silkscreen",
+     "size": "2.2vh",
+     "color": "#7dff9b88",
+     "letterSpacing": "0.1em",
+     "align": "right",
+     "x": "95vw",
+     "y": "8vh",
+     "anchor": "topRight"
+    }
+   ]
+  }
+ ]
+}

@@ -1657,6 +1657,31 @@
         "kinetic": {
           "description": "Kinetic text animation (TEXT module): shorthand like `\"pop by char from center 0.4s 30ms outBack\"`, or an object."
         },
+        "axes": {
+          "description": "Variable-font axes: `{\"wght\": 720, \"wdth\": 125, \"opsz\": 144, \"SOFT\": 100}`\n(`anikit-video fonts NAME` lists a face's axes). Animate one with\n`\"axes.wght\"` in `animate`; the text re-lays out per frame.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "features": {
+          "description": "OpenType features: `\"ss01 tnum smcp -liga\"` (or CSS `\"\\\"ss01\\\" on\"`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "typeset": {
+          "description": "Typesetting pass (default on): curly quotes, `...` → …, ` -- ` → –,\n`---` → —, and no one-word last line. `false` keeps the text verbatim.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "shape": {
           "description": "`rect`, `circle`, `ellipse`, `line`, `arrow`, `polygon`, `star`, `path`. One of: rect, circle, ellipse, line, arrow, polygon, star, path.",
           "type": [
@@ -1941,9 +1966,14 @@
             "card-stack",
             "product-shot",
             "now-playing",
+            "brush",
+            "sketch",
+            "hatch",
+            "paper",
+            "cutout",
             "lottie"
           ],
-          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, lottie."
+          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, brush, sketch, hatch, paper, cutout, lottie."
         },
         "props": true,
         "progress": {

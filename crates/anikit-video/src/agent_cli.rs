@@ -34,6 +34,7 @@ pub const HELP: &str = "\
 Start: anikit-video docs   (compact pages per primitive; docs 3d, docs shader, docs particles, ...)
        anikit-video recipes (drop-in high-end shots and the shader library)
        anikit-video snippets [name] (paste-able fragments: type treatments, camera moves, music and grade blocks)
+       anikit-video fonts [query]   (~130 curated typefaces by genre with pairings; \"font\": \"Name\" fetches on first use)
 Agent commands:
   anikit-video new <template> [--brand brand.json] [--from README.md] [--format 16:9] [--dir DIR]
                                     scaffold a project: params.json, brand.json, spec.json, NEXT.md
@@ -54,7 +55,7 @@ Agent commands:
 ";
 
 /// Commands this module handles.
-pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "looks", "look", "critique", "preview", "mcp", "docs", "doc", "recipes", "recipe", "snippets", "snippet"];
+pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "looks", "look", "critique", "preview", "mcp", "docs", "doc", "recipes", "recipe", "snippets", "snippet", "fonts", "font"];
 
 /// Run an agent command. `args` excludes the program name.
 pub fn run(args: &[String]) -> Option<i32> {
@@ -79,6 +80,7 @@ pub fn run(args: &[String]) -> Option<i32> {
         "docs" | "doc" => crate::agent_docs::docs((!rest.is_empty()).then(|| rest.join(" ")).as_deref()).map(|s| out!("{s}")),
         "recipes" | "recipe" => cmd_recipes(rest),
         "snippets" | "snippet" => crate::agent_docs::snippets(rest.first().map(|s| s.as_str())).map(|s| out!("{s}")),
+        "fonts" | "font" => cmd_fonts(rest),
         "critique" => cmd_critique(rest),
         "preview" => cmd_preview(rest),
         "mcp" => mcp::serve_stdio().map_err(|e| e.to_string()),
@@ -91,6 +93,61 @@ pub fn run(args: &[String]) -> Option<i32> {
             1
         }
     })
+}
+
+/// `fonts [query] [--json]`, `fonts --fetch NAME…` (or `--fetch all`).
+fn cmd_fonts(rest: &[String]) -> Result<(), String> {
+    use crate::text::library;
+    let json = rest.iter().any(|a| a == "--json");
+    if let Some(i) = rest.iter().position(|a| a == "--fetch") {
+        let names: Vec<&String> = rest[i + 1..].iter().filter(|a| !a.starts_with("--")).collect();
+        let fams: Vec<&library::Family> = if names.iter().any(|n| n.as_str() == "all") {
+            library::families().iter().collect()
+        } else {
+            names
+                .iter()
+                .map(|n| {
+                    library::find(n).ok_or_else(|| format!("unknown font '{n}'; did you mean {}?", library::suggest(n).join(", ")))
+                })
+                .collect::<Result<_, _>>()?
+        };
+        if fams.is_empty() {
+            return Err("usage: anikit-video fonts --fetch NAME… | all".into());
+        }
+        for f in fams {
+            f.load()?;
+            println!("{} ok ({} KB)", f.name, f.size() / 1000);
+        }
+        return Ok(());
+    }
+    let q: Vec<&str> = rest.iter().filter(|a| !a.starts_with("--")).map(String::as_str).collect();
+    let q = q.join(" ");
+    if let Some(f) = library::find(&q) {
+        // One family: full card.
+        let axes: Vec<String> = f.axes.iter().map(|a| format!("{} {}..{}", a.0, a.1, a.2)).collect();
+        if json {
+            println!("{}", library::listing(&q, true));
+        } else {
+            println!(
+                "{} ({}{})\n{}\naxes: {}\npairs with: {}\nsize: {} KB, {}\nuse: \"font\": \"{}\"",
+                f.name,
+                f.genre,
+                if f.bundled { ", bundled" } else { "" },
+                f.desc,
+                if axes.is_empty() { "none (static)".into() } else { axes.join(", ") },
+                f.pairs.join(", "),
+                f.size() / 1000,
+                if f.is_cached() { "cached" } else { "fetched on first use" },
+                f.name
+            );
+        }
+        return Ok(());
+    }
+    print!("{}", library::listing(&q, json));
+    if json {
+        println!();
+    }
+    Ok(())
 }
 
 /// Simple flag parsing: positionals plus `--flag value` / `-o value` / `--switch`.

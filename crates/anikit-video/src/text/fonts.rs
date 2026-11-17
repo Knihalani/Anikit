@@ -176,6 +176,18 @@ impl FontStore {
         names
     }
 
+    /// Make a catalogue family (see [`super::library`]) available, fetching
+    /// it on first use. `Ok(false)`: already known or not a library family.
+    pub fn ensure_family(&self, name: &str) -> Result<bool, String> {
+        let mut s = self.shaper.lock().unwrap();
+        let r = load_library_locked(&mut s, name);
+        drop(s);
+        if r == Ok(true) {
+            self.cache.write().unwrap().clear();
+        }
+        r
+    }
+
     /// Register a font file from disk.
     pub fn add_font_file(&self, path: impl AsRef<Path>) -> std::io::Result<Vec<String>> {
         Ok(self.add_font_bytes(std::fs::read(path)?))
@@ -236,6 +248,16 @@ impl FontStore {
             .map_or(0, |g| g.to_u32() as u16)
     }
 
+    /// The default value of variable axis `tag` in a face (`None` if it has no such axis).
+    pub fn axis_default(&self, id: FontId, tag: &str) -> Option<f32> {
+        use skrifa::MetadataProvider;
+        let face = self.face(id);
+        let f = skrifa::FontRef::from_index(face.data.data.as_ref(), face.data.index).ok()?;
+        let t = tag.as_bytes();
+        let ax = f.axes().iter().find(|a| a.tag().to_be_bytes() == [t[0], t[1], t[2], t[3]])?;
+        Some(ax.default_value())
+    }
+
     /// Horizontal advance of glyph `gid` at `size` px (variation-aware).
     pub fn advance(&self, id: FontId, gid: u16, size: f32) -> f32 {
         use skrifa::MetadataProvider;
@@ -248,6 +270,35 @@ impl FontStore {
             .advance_width(skrifa::GlyphId::new(gid as u32))
             .unwrap_or(0.0)
     }
+}
+
+/// Register a library family into a locked shaper (no-op if already known).
+pub(crate) fn load_library_locked(s: &mut Shaper, name: &str) -> Result<bool, String> {
+    let lower = name.trim().to_lowercase();
+    if s.families.contains_key(&lower) {
+        return Ok(false);
+    }
+    let Some(fam) = super::library::find(name) else { return Ok(false) };
+    if fam.bundled || s.families.contains_key(&fam.name.to_lowercase()) {
+        if let Some(t) = s.families.get(&fam.name.to_lowercase()).cloned() {
+            s.families.insert(lower, t);
+        }
+        return Ok(false);
+    }
+    let mut first = None;
+    for bytes in fam.load()? {
+        for (id, _) in s.fcx.collection.register_fonts(Blob::new(Arc::new(bytes)), None) {
+            if let Some(n) = s.fcx.collection.family_name(id) {
+                let n = n.to_string();
+                first.get_or_insert_with(|| n.clone());
+                s.families.entry(n.to_lowercase()).or_insert(n);
+            }
+        }
+    }
+    let target = first.ok_or_else(|| format!("font '{}': the files contain no usable face", fam.name))?;
+    s.families.entry(fam.name.to_lowercase()).or_insert_with(|| target.clone());
+    s.families.entry(lower).or_insert(target);
+    Ok(true)
 }
 
 struct PathPen<'a>(&'a mut kurbo::BezPath);
