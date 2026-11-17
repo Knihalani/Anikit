@@ -146,6 +146,34 @@ pub fn recipes(name: Option<&str>) -> Result<String, String> {
     Err(format!("unknown recipe '{n}'. {hint}`anikit-video recipes` lists them"))
 }
 
+/// Paste-able fragments: type treatments, camera moves, music and grade blocks.
+const SNIPPETS: &str = include_str!("../snippets/snippets.json");
+
+/// Where a snippet goes in a spec, and the fragment itself.
+fn snippet_place(v: &Value) -> String {
+    match v["kind"].as_str().unwrap_or("") {
+        "layer" => "a layer: put it in a scene's \"layers\"".into(),
+        "scene-key" => format!("a scene key: \"{}\": <this>", v["key"].as_str().unwrap_or("")),
+        _ => format!("a top-level key: \"{}\": <this>", v["key"].as_str().unwrap_or("")),
+    }
+}
+
+/// The snippet list, or one snippet as compact JSON with where it goes.
+pub fn snippets(name: Option<&str>) -> Result<String, String> {
+    let all: Vec<Value> = serde_json::from_str(SNIPPETS).map_err(|e| e.to_string())?;
+    let Some(n) = name else {
+        let mut s = String::from("Snippets (anikit-video snippets <name> prints one; paste and change the words and colours):\n");
+        for v in &all {
+            s += &format!("  {:18} {:9} {}\n", v["name"].as_str().unwrap_or(""), v["kind"].as_str().unwrap_or(""), v["about"].as_str().unwrap_or(""));
+        }
+        return Ok(s);
+    };
+    match all.iter().find(|v| v["name"] == n) {
+        Some(v) => Ok(format!("// {}\n// {}\n{}\n", v["about"].as_str().unwrap_or(""), snippet_place(v), crate::agent_cli::compact_json(&v["json"]))),
+        None => Err(format!("no snippet '{n}'; run `anikit-video snippets` for the list")),
+    }
+}
+
 /// A shader-library entry as a minimal ready spec (layer, filter or transition).
 fn library_spec(n: &str) -> Option<(String, Value)> {
     let e = anikit_shader::library::ALL.iter().find(|e| e.name == n)?;
@@ -163,6 +191,23 @@ fn library_spec(n: &str) -> Option<(String, Value)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn every_snippet_compiles_in_place() {
+        let all: Vec<Value> = serde_json::from_str(SNIPPETS).unwrap();
+        for v in &all {
+            let frag = v["json"].clone();
+            let key = v["key"].as_str().unwrap_or("");
+            let mut spec = serde_json::json!({ "size": "16:9", "scenes": [{ "duration": 3, "layers": [{ "text": "x" }] }] });
+            match v["kind"].as_str().unwrap() {
+                "layer" => spec["scenes"][0]["layers"].as_array_mut().unwrap().push(frag),
+                "scene-key" => spec["scenes"][0][key] = frag,
+                _ => spec[key] = frag,
+            }
+            crate::spec::parse::from_value(spec).unwrap_or_else(|d| panic!("{}: {:?}", v["name"], d.iter().map(|x| x.to_string()).collect::<Vec<_>>()));
+        }
+        assert!(snippets(None).unwrap().contains("type-slam"));
+        assert!(snippets(Some("snap-zoom")).unwrap().contains("\"shake\""));
+    }
 
     fn compiles(spec: Value, what: &str) {
         let p = crate::spec::parse::from_value(spec).unwrap_or_else(|e| panic!("{what}: {e:?}"));
