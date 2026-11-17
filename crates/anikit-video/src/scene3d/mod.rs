@@ -591,7 +591,16 @@ impl Scene3d {
             cam.shutter = s;
         }
         let mut prev_cam = p.camera.at(t - dt, aspect, p.default_aperture);
-        let mut scene = Scene::new(p.shapes.clone(), p.mats.clone(), Vec::new(), p.env.clone(), p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
+        // Open geometry that reads `t` is re-tessellated for this frame.
+        let mut shapes = p.shapes.clone();
+        for o in &p.objs {
+            if let Some(r) = &o.regen {
+                if let Ok(Some(m)) = authoring::build(&r.0, &r.1, &r.2, t) {
+                    shapes[r.3 as usize] = spec::mesh_shape(m);
+                }
+            }
+        }
+        let mut scene = Scene::new(shapes, p.mats.clone(), Vec::new(), p.env.clone(), p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
         scene.backdrop = p.backdrop;
         scene.glow = p.glow;
         scene.haze = p.haze;
