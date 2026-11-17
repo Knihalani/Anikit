@@ -1,0 +1,121 @@
+{
+ "size": [
+  1080,
+  1920
+ ],
+ "fps": 30,
+ "transition": "cut",
+ "background": "#000",
+ "audio": [
+  {
+   "src": "score.wav"
+  }
+ ],
+ "intent": {
+  "pace": "fast",
+  "feeling": "alive, hypnotic, precise"
+ },
+ "theme": {
+  "fonts": {
+   "mono": "JetBrains Mono"
+  }
+ },
+ "scenes": [
+  {
+   "duration": 10.0,
+   "layers": [
+    {
+     "shader": "#define BPM 124.0\n#define PRE 0.000\n// Dark-field microscope: the field's membranes become glowing filaments, its body fine contour lines.\nfloat h11(float p){ p = fract(p*0.1031); p *= p + 33.33; p *= p + p; return fract(p); }\nfloat h21(vec2 p){ vec3 p3 = fract(vec3(p.xyx)*0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y)*p3.z); }\nfloat V(vec2 uv){ return texture(iChannel0, uv).g; }\n\nvoid mainImage(out vec4 o, in vec2 fc){\n    vec2 res = iResolution.xy;\n    float beat = (iTime - PRE)*BPM/60.0;\n    // cut grid: every 2 beats, then every beat in the drop (beats 8-16), then the long outro\n    float cut = beat < 8.0 ? floor(max(beat, 0.0)/2.0) : (beat < 16.0 ? 4.0 + floor(beat - 8.0) : 12.0);\n    float outro = smoothstep(16.0, 19.5, beat);\n    float pulse = exp(-fract(max(beat, 0.0))*5.0)*step(4.0, beat);\n    float k = mod(cut, 3.0);\n    float seed = cut*1.37 + 0.5;\n    float zoomed = step(0.5, mod(cut, 2.0))*(1.0 - outro);\n    vec2 q = (fc - 0.5*res)/res.x;\n    float inCut = beat < 8.0 ? fract(beat/2.0) : fract(beat);\n    float z = mix(1.3, 1.7 + 0.8*h11(seed), zoomed)*(1.0 + 0.05*inCut);\n    z = mix(z, 0.86, outro);\n    float ca = h11(seed + 1.0)*6.2832, cr = 0.28*sqrt(h11(seed + 2.0));\n    vec2 cen = vec2(cos(ca), sin(ca))*cr*zoomed*(1.0 - outro);\n    float rot = (h11(seed + 3.0) - 0.5)*1.4*zoomed;\n    vec2 p = vec2(cos(rot)*q.x - sin(rot)*q.y, sin(rot)*q.x + cos(rot)*q.y)/z + cen;\n    vec2 uv = vec2(p.x + 0.5, p.y*(res.x/res.y) + 0.5);\n    vec2 tx = 1.0/res;\n    float v = V(uv);\n    float vx = V(uv + vec2(tx.x, 0.0)) - V(uv - vec2(tx.x, 0.0));\n    float vy = V(uv + vec2(0.0, tx.y)) - V(uv - vec2(0.0, tx.y));\n    vec2 gr = vec2(vx, vy)*0.5/tx.x*z;          // gradient per screen px * res\n    float gl = length(gr) + 1e-5;\n    // membrane wall: the iso-line v = 0.18, drawn as a thin bright filament with constant screen width\n    float wall = exp(-pow((v - 0.18)/(gl*1.6/res.x), 2.0));\n    // inner contour lines (fine engraving)\n    float N = 22.0;\n    float cl = abs(fract(v*N) - 0.5)/(N*gl/res.x);\n    float lines = exp(-cl*cl*1.4)*smoothstep(0.18, 0.26, v);\n    // body: soft translucent fill, brighter where thick\n    float body = smoothstep(0.12, 0.40, v);\n    // light: normal from the field, key from upper left\n    vec3 n = normalize(vec3(-gr*0.02, 1.0));\n    float diff = clamp(dot(n, normalize(vec3(-0.5, 0.6, 0.6))), 0.0, 1.0);\n    float spec = pow(max(dot(n, normalize(vec3(-0.25, 0.3, 1.0))), 0.0), 40.0)*body;\n\n    vec3 ink, glow, bg;\n    if(k < 0.5){ bg = vec3(0.006, 0.006, 0.008); ink = vec3(0.86, 0.84, 0.80); glow = vec3(1.0, 0.96, 0.9); }\n    else if(k < 1.5){ bg = vec3(0.020, 0.006, 0.003); ink = vec3(1.0, 0.36, 0.10); glow = vec3(1.0, 0.82, 0.55); }\n    else { bg = vec3(0.80, 0.78, 0.74); ink = vec3(0.02, 0.02, 0.025); glow = vec3(0.0); }\n    bool inv = k > 1.5 && outro < 0.5;\n    // the outro settles to bone white\n    ink = mix(ink, vec3(0.86, 0.84, 0.80), outro); glow = mix(glow, vec3(1.0, 0.96, 0.9), outro); bg = mix(bg, vec3(0.006), outro);\n\n    vec3 col = bg;\n    if(inv){\n        // printed plate: black ink membranes on bone paper\n        float ink_ = clamp(wall*1.2 + lines*0.5 + body*0.35, 0.0, 1.0);\n        col = mix(bg, ink, ink_);\n        float dr0 = length(p) - 0.468;\n        col = mix(col, ink, exp(-pow(dr0/(0.0016/z), 2.0)));\n        vec2 qq = q*vec2(1.0, 0.56);\n        col *= 1.0 - 0.25*dot(qq, qq)*4.0;\n        col += (h21(fc + floor(iTime*30.0)*vec2(3.1, 7.7)) - 0.5)*0.02;\n        o = vec4(pow(clamp(col, 0.0, 1.0), vec3(1.0)), 1.0);\n        return;\n    }\n    col += ink*body*(0.10 + 0.25*diff);\n    col += ink*lines*0.45;\n    col += glow*wall*(1.1 + 0.8*pulse);\n    col += glow*spec*0.5;\n    // halo around walls (bloom-like, cheap): wider gaussian of the same iso-line\n    col += ink*0.07*exp(-pow((v - 0.18)/(gl*9.0/res.x), 2.0));\n    // the dish's glass wall: a thin ring with two specular arcs\n    float dr = length(p) - 0.468;\n    float ring = exp(-pow(dr/(0.0016/z), 2.0));\n    float ang = atan(p.y, p.x);\n    float arcs = pow(max(cos(ang - 2.2), 0.0), 8.0) + 0.6*pow(max(cos(ang + 0.9), 0.0), 14.0);\n    col += glow*ring*(0.25 + 1.4*arcs);\n    col += glow*0.05*exp(-abs(dr)*60.0*z)*arcs;\n    float vig = 1.0 - 0.45*pow(length(q*vec2(1.0, 0.56))*1.6, 2.0);\n    col *= clamp(vig, 0.0, 1.0);\n    col += (h21(fc + floor(iTime*30.0)*vec2(3.1, 7.7)) - 0.5)*0.01;\n    col = 1.0 - exp(-col*1.5);\n    o = vec4(pow(max(col, 0.0), vec3(0.4545)), 1.0);\n}\n",
+     "channels": [
+      "D"
+     ],
+     "supersample": false,
+     "buffers": {
+      "A": {
+       "shader": "#define BPM 124.0\n#define PRE 0.000\n// One Gray-Scott step. iChannel0 = previous state (r = u, g = v). Spatially varying feed/kill gives coral, worms and spots in one dish.\n// anikit:aa off\nfloat h21(vec2 p){ vec3 p3 = fract(vec3(p.xyx)*0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y)*p3.z); }\n#define SC 3.6\nvoid mainImage(out vec4 o, in vec2 fc){\n    vec2 res = iResolution.xy;\n    vec2 px1 = 1.0/res;\n    vec2 px = SC/res;\n    vec2 uv = fc*px1;\n    vec4 c0 = texture(iChannel0, uv);\n    // couple neighbouring pixels so the coarse stencil stays one smooth field\n    vec4 c = 0.9*c0 + 0.025*(texture(iChannel0, uv + vec2(px1.x, 0.0)) + texture(iChannel0, uv - vec2(px1.x, 0.0)) + texture(iChannel0, uv + vec2(0.0, px1.y)) + texture(iChannel0, uv - vec2(0.0, px1.y)));\n    if(iFrame < 1 || (c0.r + c0.g) < 1e-6){\n        // seed: a cluster of irregular spores near the centre + a few strays\n        vec2 q = (fc - 0.5*res)/res.y;\n        float v = 0.0;\n        for(int i=0;i<40;i++){\n            float fi = float(i);\n            vec2 s = vec2(h21(vec2(fi, 1.0)) - 0.5, h21(vec2(fi, 7.0)) - 0.5)*vec2(0.56, 1.0);\n            if(i < 8) s *= 0.2;\n            v = max(v, step(length(q - s), 0.008 + 0.014*h21(vec2(fi, 3.0))));\n        }\n        o = vec4(1.0, v*0.5 + 0.0, 0.0, 1.0);\n        return;\n    }\n    vec4 l = texture(iChannel0, uv + vec2(-px.x, 0.0));\n    vec4 r = texture(iChannel0, uv + vec2( px.x, 0.0));\n    vec4 d = texture(iChannel0, uv + vec2(0.0, -px.y));\n    vec4 t = texture(iChannel0, uv + vec2(0.0,  px.y));\n    vec4 a = texture(iChannel0, uv + vec2(-px.x, -px.y));\n    vec4 b = texture(iChannel0, uv + vec2( px.x, -px.y));\n    vec4 e = texture(iChannel0, uv + vec2(-px.x,  px.y));\n    vec4 g = texture(iChannel0, uv + vec2( px.x,  px.y));\n    vec2 lap = (0.2*(l.xy + r.xy + d.xy + t.xy) + 0.05*(a.xy + b.xy + e.xy + g.xy) - c.xy);\n    float u = c.x, v = c.y;\n    // feed/kill map: vertical drift from coral (top) to mitosis/worms (bottom), plus a slow swirl\n    vec2 q = (fc - 0.5*res)/res.y;\n    float m = smoothstep(-0.25, 0.35, q.y + 0.15*sin(q.x*5.0 + 1.0));\n    float F = mix(0.0545, 0.030, m);      // labyrinth coral below, dividing cells above\n    float K = mix(0.062, 0.062, m);\n    float uvv = u*v*v;\n    u += 1.0*lap.x - uvv + F*(1.0 - u);\n    v += 0.5*lap.y + uvv - (F + K)*v;\n    // on each kick (from the score's grid) new spores land at a beat-chosen spot\n    float beat = (iTime - PRE)*BPM/60.0;\n    float bn = floor(beat);\n    float kick = step(0.0, beat)*step(fract(beat), 0.05);\n    vec2 sp = vec2(h21(vec2(bn, 2.0)) - 0.5, h21(vec2(bn, 5.0)) - 0.5)*vec2(0.45, 0.85);\n    v = max(v, kick*0.5*step(length(q - sp), 0.03));\n    // the dish: nothing grows past its wall\n    vec2 dq = (fc - 0.5*res)/res.x;\n    float dish = smoothstep(0.47, 0.455, length(dq));\n    v *= dish; u = mix(1.0, u, dish);\n    o = vec4(clamp(u, 0.0, 1.0), clamp(v, 0.0, 1.0), 0.0, 1.0);\n}\n",
+       "channels": [
+        "D"
+       ]
+      },
+      "B": {
+       "shader": "#define BPM 124.0\n#define PRE 0.000\n// One Gray-Scott step. iChannel0 = previous state (r = u, g = v). Spatially varying feed/kill gives coral, worms and spots in one dish.\n// anikit:aa off\nfloat h21(vec2 p){ vec3 p3 = fract(vec3(p.xyx)*0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y)*p3.z); }\n#define SC 3.6\nvoid mainImage(out vec4 o, in vec2 fc){\n    vec2 res = iResolution.xy;\n    vec2 px1 = 1.0/res;\n    vec2 px = SC/res;\n    vec2 uv = fc*px1;\n    vec4 c0 = texture(iChannel0, uv);\n    // couple neighbouring pixels so the coarse stencil stays one smooth field\n    vec4 c = 0.9*c0 + 0.025*(texture(iChannel0, uv + vec2(px1.x, 0.0)) + texture(iChannel0, uv - vec2(px1.x, 0.0)) + texture(iChannel0, uv + vec2(0.0, px1.y)) + texture(iChannel0, uv - vec2(0.0, px1.y)));\n    if(iFrame < 1 || (c0.r + c0.g) < 1e-6){\n        // seed: a cluster of irregular spores near the centre + a few strays\n        vec2 q = (fc - 0.5*res)/res.y;\n        float v = 0.0;\n        for(int i=0;i<40;i++){\n            float fi = float(i);\n            vec2 s = vec2(h21(vec2(fi, 1.0)) - 0.5, h21(vec2(fi, 7.0)) - 0.5)*vec2(0.56, 1.0);\n            if(i < 8) s *= 0.2;\n            v = max(v, step(length(q - s), 0.008 + 0.014*h21(vec2(fi, 3.0))));\n        }\n        o = vec4(1.0, v*0.5 + 0.0, 0.0, 1.0);\n        return;\n    }\n    vec4 l = texture(iChannel0, uv + vec2(-px.x, 0.0));\n    vec4 r = texture(iChannel0, uv + vec2( px.x, 0.0));\n    vec4 d = texture(iChannel0, uv + vec2(0.0, -px.y));\n    vec4 t = texture(iChannel0, uv + vec2(0.0,  px.y));\n    vec4 a = texture(iChannel0, uv + vec2(-px.x, -px.y));\n    vec4 b = texture(iChannel0, uv + vec2( px.x, -px.y));\n    vec4 e = texture(iChannel0, uv + vec2(-px.x,  px.y));\n    vec4 g = texture(iChannel0, uv + vec2( px.x,  px.y));\n    vec2 lap = (0.2*(l.xy + r.xy + d.xy + t.xy) + 0.05*(a.xy + b.xy + e.xy + g.xy) - c.xy);\n    float u = c.x, v = c.y;\n    // feed/kill map: vertical drift from coral (top) to mitosis/worms (bottom), plus a slow swirl\n    vec2 q = (fc - 0.5*res)/res.y;\n    float m = smoothstep(-0.25, 0.35, q.y + 0.15*sin(q.x*5.0 + 1.0));\n    float F = mix(0.0545, 0.030, m);      // labyrinth coral below, dividing cells above\n    float K = mix(0.062, 0.062, m);\n    float uvv = u*v*v;\n    u += 1.0*lap.x - uvv + F*(1.0 - u);\n    v += 0.5*lap.y + uvv - (F + K)*v;\n    // on each kick (from the score's grid) new spores land at a beat-chosen spot\n    float beat = (iTime - PRE)*BPM/60.0;\n    float bn = floor(beat);\n    float kick = step(0.0, beat)*step(fract(beat), 0.05);\n    vec2 sp = vec2(h21(vec2(bn, 2.0)) - 0.5, h21(vec2(bn, 5.0)) - 0.5)*vec2(0.45, 0.85);\n    v = max(v, kick*0.5*step(length(q - sp), 0.03));\n    // the dish: nothing grows past its wall\n    vec2 dq = (fc - 0.5*res)/res.x;\n    float dish = smoothstep(0.47, 0.455, length(dq));\n    v *= dish; u = mix(1.0, u, dish);\n    o = vec4(clamp(u, 0.0, 1.0), clamp(v, 0.0, 1.0), 0.0, 1.0);\n}\n",
+       "channels": [
+        "A"
+       ]
+      },
+      "C": {
+       "shader": "#define BPM 124.0\n#define PRE 0.000\n// One Gray-Scott step. iChannel0 = previous state (r = u, g = v). Spatially varying feed/kill gives coral, worms and spots in one dish.\n// anikit:aa off\nfloat h21(vec2 p){ vec3 p3 = fract(vec3(p.xyx)*0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y)*p3.z); }\n#define SC 3.6\nvoid mainImage(out vec4 o, in vec2 fc){\n    vec2 res = iResolution.xy;\n    vec2 px1 = 1.0/res;\n    vec2 px = SC/res;\n    vec2 uv = fc*px1;\n    vec4 c0 = texture(iChannel0, uv);\n    // couple neighbouring pixels so the coarse stencil stays one smooth field\n    vec4 c = 0.9*c0 + 0.025*(texture(iChannel0, uv + vec2(px1.x, 0.0)) + texture(iChannel0, uv - vec2(px1.x, 0.0)) + texture(iChannel0, uv + vec2(0.0, px1.y)) + texture(iChannel0, uv - vec2(0.0, px1.y)));\n    if(iFrame < 1 || (c0.r + c0.g) < 1e-6){\n        // seed: a cluster of irregular spores near the centre + a few strays\n        vec2 q = (fc - 0.5*res)/res.y;\n        float v = 0.0;\n        for(int i=0;i<40;i++){\n            float fi = float(i);\n            vec2 s = vec2(h21(vec2(fi, 1.0)) - 0.5, h21(vec2(fi, 7.0)) - 0.5)*vec2(0.56, 1.0);\n            if(i < 8) s *= 0.2;\n            v = max(v, step(length(q - s), 0.008 + 0.014*h21(vec2(fi, 3.0))));\n        }\n        o = vec4(1.0, v*0.5 + 0.0, 0.0, 1.0);\n        return;\n    }\n    vec4 l = texture(iChannel0, uv + vec2(-px.x, 0.0));\n    vec4 r = texture(iChannel0, uv + vec2( px.x, 0.0));\n    vec4 d = texture(iChannel0, uv + vec2(0.0, -px.y));\n    vec4 t = texture(iChannel0, uv + vec2(0.0,  px.y));\n    vec4 a = texture(iChannel0, uv + vec2(-px.x, -px.y));\n    vec4 b = texture(iChannel0, uv + vec2( px.x, -px.y));\n    vec4 e = texture(iChannel0, uv + vec2(-px.x,  px.y));\n    vec4 g = texture(iChannel0, uv + vec2( px.x,  px.y));\n    vec2 lap = (0.2*(l.xy + r.xy + d.xy + t.xy) + 0.05*(a.xy + b.xy + e.xy + g.xy) - c.xy);\n    float u = c.x, v = c.y;\n    // feed/kill map: vertical drift from coral (top) to mitosis/worms (bottom), plus a slow swirl\n    vec2 q = (fc - 0.5*res)/res.y;\n    float m = smoothstep(-0.25, 0.35, q.y + 0.15*sin(q.x*5.0 + 1.0));\n    float F = mix(0.0545, 0.030, m);      // labyrinth coral below, dividing cells above\n    float K = mix(0.062, 0.062, m);\n    float uvv = u*v*v;\n    u += 1.0*lap.x - uvv + F*(1.0 - u);\n    v += 0.5*lap.y + uvv - (F + K)*v;\n    // on each kick (from the score's grid) new spores land at a beat-chosen spot\n    float beat = (iTime - PRE)*BPM/60.0;\n    float bn = floor(beat);\n    float kick = step(0.0, beat)*step(fract(beat), 0.05);\n    vec2 sp = vec2(h21(vec2(bn, 2.0)) - 0.5, h21(vec2(bn, 5.0)) - 0.5)*vec2(0.45, 0.85);\n    v = max(v, kick*0.5*step(length(q - sp), 0.03));\n    // the dish: nothing grows past its wall\n    vec2 dq = (fc - 0.5*res)/res.x;\n    float dish = smoothstep(0.47, 0.455, length(dq));\n    v *= dish; u = mix(1.0, u, dish);\n    o = vec4(clamp(u, 0.0, 1.0), clamp(v, 0.0, 1.0), 0.0, 1.0);\n}\n",
+       "channels": [
+        "B"
+       ]
+      },
+      "D": {
+       "shader": "#define BPM 124.0\n#define PRE 0.000\n// One Gray-Scott step. iChannel0 = previous state (r = u, g = v). Spatially varying feed/kill gives coral, worms and spots in one dish.\n// anikit:aa off\nfloat h21(vec2 p){ vec3 p3 = fract(vec3(p.xyx)*0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y)*p3.z); }\n#define SC 3.6\nvoid mainImage(out vec4 o, in vec2 fc){\n    vec2 res = iResolution.xy;\n    vec2 px1 = 1.0/res;\n    vec2 px = SC/res;\n    vec2 uv = fc*px1;\n    vec4 c0 = texture(iChannel0, uv);\n    // couple neighbouring pixels so the coarse stencil stays one smooth field\n    vec4 c = 0.9*c0 + 0.025*(texture(iChannel0, uv + vec2(px1.x, 0.0)) + texture(iChannel0, uv - vec2(px1.x, 0.0)) + texture(iChannel0, uv + vec2(0.0, px1.y)) + texture(iChannel0, uv - vec2(0.0, px1.y)));\n    if(iFrame < 1 || (c0.r + c0.g) < 1e-6){\n        // seed: a cluster of irregular spores near the centre + a few strays\n        vec2 q = (fc - 0.5*res)/res.y;\n        float v = 0.0;\n        for(int i=0;i<40;i++){\n            float fi = float(i);\n            vec2 s = vec2(h21(vec2(fi, 1.0)) - 0.5, h21(vec2(fi, 7.0)) - 0.5)*vec2(0.56, 1.0);\n            if(i < 8) s *= 0.2;\n            v = max(v, step(length(q - s), 0.008 + 0.014*h21(vec2(fi, 3.0))));\n        }\n        o = vec4(1.0, v*0.5 + 0.0, 0.0, 1.0);\n        return;\n    }\n    vec4 l = texture(iChannel0, uv + vec2(-px.x, 0.0));\n    vec4 r = texture(iChannel0, uv + vec2( px.x, 0.0));\n    vec4 d = texture(iChannel0, uv + vec2(0.0, -px.y));\n    vec4 t = texture(iChannel0, uv + vec2(0.0,  px.y));\n    vec4 a = texture(iChannel0, uv + vec2(-px.x, -px.y));\n    vec4 b = texture(iChannel0, uv + vec2( px.x, -px.y));\n    vec4 e = texture(iChannel0, uv + vec2(-px.x,  px.y));\n    vec4 g = texture(iChannel0, uv + vec2( px.x,  px.y));\n    vec2 lap = (0.2*(l.xy + r.xy + d.xy + t.xy) + 0.05*(a.xy + b.xy + e.xy + g.xy) - c.xy);\n    float u = c.x, v = c.y;\n    // feed/kill map: vertical drift from coral (top) to mitosis/worms (bottom), plus a slow swirl\n    vec2 q = (fc - 0.5*res)/res.y;\n    float m = smoothstep(-0.25, 0.35, q.y + 0.15*sin(q.x*5.0 + 1.0));\n    float F = mix(0.0545, 0.030, m);      // labyrinth coral below, dividing cells above\n    float K = mix(0.062, 0.062, m);\n    float uvv = u*v*v;\n    u += 1.0*lap.x - uvv + F*(1.0 - u);\n    v += 0.5*lap.y + uvv - (F + K)*v;\n    // on each kick (from the score's grid) new spores land at a beat-chosen spot\n    float beat = (iTime - PRE)*BPM/60.0;\n    float bn = floor(beat);\n    float kick = step(0.0, beat)*step(fract(beat), 0.05);\n    vec2 sp = vec2(h21(vec2(bn, 2.0)) - 0.5, h21(vec2(bn, 5.0)) - 0.5)*vec2(0.45, 0.85);\n    v = max(v, kick*0.5*step(length(q - sp), 0.03));\n    // the dish: nothing grows past its wall\n    vec2 dq = (fc - 0.5*res)/res.x;\n    float dish = smoothstep(0.47, 0.455, length(dq));\n    v *= dish; u = mix(1.0, u, dish);\n    o = vec4(clamp(u, 0.0, 1.0), clamp(v, 0.0, 1.0), 0.0, 1.0);\n}\n",
+       "channels": [
+        "C"
+       ]
+      }
+     }
+    },
+    {
+     "text": "SPECIMEN 07",
+     "font": "JetBrains Mono",
+     "size": 30,
+     "weight": 500,
+     "color": "#E8E4DC",
+     "letterSpacing": "0.18em",
+     "x": "7%",
+     "y": "6.5%",
+     "anchor": "left",
+     "start": 8.041935483870969,
+     "animate": [
+      {
+       "from": {
+        "opacity": 0
+       },
+       "duration": 0.4
+      }
+     ]
+    },
+    {
+     "text": "grown live, on the beat",
+     "font": "JetBrains Mono",
+     "size": 30,
+     "color": "#9B978F",
+     "letterSpacing": "0.04em",
+     "x": "7%",
+     "y": "9%",
+     "anchor": "left",
+     "start": 8.191935483870967,
+     "animate": [
+      {
+       "from": {
+        "opacity": 0
+       },
+       "duration": 0.4
+      }
+     ]
+    },
+    {
+     "text": "{value:,} generations",
+     "value": "=floor(min(gt, 10) * 120)",
+     "font": "JetBrains Mono",
+     "size": 30,
+     "color": "#E8E4DC",
+     "x": "93%",
+     "y": "93.5%",
+     "anchor": "right",
+     "start": 8.041935483870969,
+     "animate": [
+      {
+       "from": {
+        "opacity": 0
+       },
+       "duration": 0.4
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
