@@ -26,6 +26,7 @@ use serde_json::{Map, Value};
 use std::sync::Arc;
 
 pub mod style;
+pub mod docs;
 pub mod fxkit;
 pub mod polish;
 pub mod host;
