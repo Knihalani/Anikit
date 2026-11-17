@@ -35,11 +35,17 @@ pub struct EncoderConfig {
     /// CABAC entropy coding (Main profile; smaller files) instead of CAVLC
     /// (Constrained Baseline; faster).
     pub cabac: bool,
+    /// Perceptual skip: in P frames, a changed macroblock whose samples (Y, Cb, Cr)
+    /// all lie within this distance of the co-located *reconstructed* reference is
+    /// coded as a copy. Comparing against the reconstruction keeps the error
+    /// bounded by the threshold (it cannot accumulate). 0 = off; 1–2 hides
+    /// renderer dither and ±1 drift.
+    pub skip_threshold: u8,
 }
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: false, cabac: true }
+        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: false, cabac: true, skip_threshold: 0 }
     }
 }
 
@@ -182,6 +188,7 @@ pub(crate) struct FrameCtx<'a> {
     pub idr: bool,
     pub max_mvy: i32,
     pub subpel: bool,
+    pub skip_t: u8,
     /// Frame-level half-sample planes of the reference (when many macroblocks change).
     pub hpel: Option<&'a crate::mc::HpelPlanes>,
     pub cabac: bool,
@@ -324,6 +331,22 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         (&p.data[o..], p.stride)
     }
 
+    /// Every sample within `t` of the co-located reference (luma and chroma)?
+    fn near_ref(&self, mbx: usize, mby: usize, src_y: &[u8; 256], src_c: &[[u8; 64]; 2], t: u8) -> bool {
+        let (r, rs) = self.luma_ref_int(mbx, mby, (0, 0));
+        if !dsp::max_abs_le(src_y, 16, r, rs, 16, 16, t) {
+            return false;
+        }
+        for (comp, sc) in src_c.iter().enumerate() {
+            let p = if comp == 0 { &self.c.refp.u } else { &self.c.refp.v };
+            let o = p.off(mbx as isize * 8, mby as isize * 8);
+            if !dsp::max_abs_le(sc, 8, &p.data[o..], p.stride, 8, 8, t) {
+                return false;
+            }
+        }
+        true
+    }
+
     fn mc_chroma(&self, comp: usize, mbx: usize, mby: usize, mv: (i32, i32), out: &mut [u8; 64]) {
         let p = if comp == 0 { &self.c.refp.u } else { &self.c.refp.v };
         let (mx, my) = mv; // quarter luma = 1/8 chroma units
@@ -414,6 +437,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             (mvp, skip_mv) = self.mv_pred(mbx, mby);
             if !c.changed[mbi] {
                 // Unchanged: copy of the reference.
+                self.code_copy(mbx, mby, mvp, skip_mv);
+                return;
+            }
+            if c.skip_t > 0 && self.near_ref(mbx, mby, src_y, src_c, c.skip_t) {
+                self.stats.changed += 1;
                 self.code_copy(mbx, mby, mvp, skip_mv);
                 return;
             }
@@ -2103,6 +2131,7 @@ impl Encoder {
             idr,
             max_mvy: max_mv_y(self.level),
             subpel: self.cfg.subpel,
+            skip_t: self.cfg.skip_threshold,
             hpel: if self.cfg.subpel && !idr { self.hpel.as_ref() } else { None },
             cabac: self.cfg.cabac,
             hdr_frame_num: frame_num,
