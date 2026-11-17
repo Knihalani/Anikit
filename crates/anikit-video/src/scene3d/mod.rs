@@ -138,6 +138,8 @@ struct Prepared {
     tonemap: post::Tonemap,
     quality: Quality,
     denoise: u32,
+    /// `quality: draft`: cheaper particle splats.
+    draft: bool,
     key: u64,
     /// Average colour per (composition, frame), for far panes; frame
     /// `u32::MAX` is the composition's fallback (its first frame).
@@ -197,6 +199,7 @@ fn lookdev_camera() -> Value {
 
 impl Prepare for Scene3d {
     fn prepare(&mut self) -> Result<(), Error> {
+        let clock = std::time::Instant::now();
         let m = &self.raw;
         for k in m.keys() {
             if !TOP_KEYS.contains(&k.as_str()) {
@@ -351,6 +354,7 @@ impl Prepare for Scene3d {
             Some(o) => return Err(Error(format!("unknown tonemap `{o}`; expected aces or neutral"))),
         };
         let quality_s = m.get("quality").and_then(|q| q.as_str()).unwrap_or("standard");
+        let draft = quality_s == "draft";
         let (quality, denoise, bake) = match quality_s {
             "draft" => (Quality { edge_spp: 3, ao_rays: 1, shadow_rays: 1, max_depth: 2, max_glass: 6, contrast: 0.1, secondary_rays: 0, full: false }, 5, (384, 24)),
             "standard" => (Quality::default(), 5, (768, 64)),
@@ -367,15 +371,48 @@ impl Prepare for Scene3d {
 
         // Static layouts get a baked, noise-free floor.
         let total: u64 = objs.iter().map(|o| o.count as u64 * o.lanes as u64).sum();
+        let t_objs = clock.elapsed();
         let floor_vis = if floor.is_some() && total <= 400 && objs.iter().all(|o| !o.dynamic()) {
             let fp = floor.clone().unwrap();
-            let mut s = Scene::new(shapes.clone(), mats.clone(), instances(&objs, 0.0, 0.0), es.env.clone(), Some(make_floor(&fp, None)));
-            s.bake_floor(bake.0, bake.1);
-            s.floor.and_then(|f| f.vis)
+            // The bake is deterministic, so it is cached on disk by the scene's
+            // description (plus model files' size and mtime).
+            let mut srcs = Vec::new();
+            fn walk(v: &Value, out: &mut Vec<u8>) {
+                match v {
+                    Value::Object(m) => {
+                        if let Some(Value::String(src)) = m.get("src") {
+                            if let Ok(md) = std::fs::metadata(src) {
+                                out.extend_from_slice(format!("{src}|{}|{:?}", md.len(), md.modified().ok()).as_bytes());
+                            }
+                        }
+                        m.values().for_each(|x| walk(x, out));
+                    }
+                    Value::Array(a) => a.iter().for_each(|x| walk(x, out)),
+                    _ => {}
+                }
+            }
+            walk(&Value::Object(m.clone()), &mut srcs);
+            let bkey = fnv(&[b"floor-bake-v1", Value::Object(m.clone()).to_string().as_bytes(), &srcs, &(bake.0 as u64).to_le_bytes(), &(bake.1 as u64).to_le_bytes()]);
+            let file = sim_cache_dir().map(|d| d.join(format!("floor-{bkey:016x}.bin")));
+            match file.as_ref().and_then(|f| read_floor_vis(f)) {
+                Some(v) => Some(Arc::new(v)),
+                None => {
+                    let mut s = Scene::new(shapes.clone(), mats.clone(), instances(&objs, 0.0, 0.0), es.env.clone(), Some(make_floor(&fp, None)));
+                    s.bake_floor(bake.0, bake.1);
+                    let vis = s.floor.and_then(|f| f.vis);
+                    if let (Some(f), Some(v)) = (&file, &vis) {
+                        write_floor_vis(f, v);
+                    }
+                    vis
+                }
+            }
         } else {
             None
         };
 
+        if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
+            eprintln!("scene3d prepare: objects {:.0} ms, floor bake {:.0} ms", t_objs.as_secs_f64() * 1e3, (clock.elapsed() - t_objs).as_secs_f64() * 1e3);
+        }
         let key = fnv(&[b"scene3d-v2", Value::Object(m.clone()).to_string().as_bytes()]);
         self.prepared = Some(Prepared {
             shapes,
@@ -398,6 +435,7 @@ impl Prepare for Scene3d {
             tonemap,
             quality,
             denoise,
+            draft,
             key,
             parts,
             psims: OnceLock::new(),
@@ -409,6 +447,72 @@ impl Prepare for Scene3d {
 
 fn make_floor(f: &FloorParams, vis: Option<Arc<FloorVis>>) -> Floor {
     Floor { y: f.y, color: f.color, roughness: f.roughness, mirror: f.mirror, reflect: f.reflect, pool: f.pool, fade: f.fade, vis }
+}
+
+fn read_floor_vis(path: &std::path::Path) -> Option<FloorVis> {
+    let b = std::fs::read(path).ok()?;
+    let u = |k: usize| -> Option<u64> { Some(u64::from_le_bytes(b.get(k..k + 8)?.try_into().ok()?)) };
+    let g = |k: usize| -> Option<f32> { Some(f32::from_le_bytes(b.get(k..k + 4)?.try_into().ok()?)) };
+    let (nx, nz) = (u(0)? as usize, u(8)? as usize);
+    let n = nx.checked_mul(nz)?;
+    if b.len() != 32 + n * 8 {
+        return None;
+    }
+    let data = (0..n).map(|i| [g(32 + i * 8).unwrap(), g(36 + i * 8).unwrap()]).collect();
+    Some(FloorVis { x0: g(16)?, z0: g(20)?, x1: g(24)?, z1: g(28)?, nx, nz, data })
+}
+
+fn write_floor_vis(path: &std::path::Path, v: &FloorVis) {
+    let mut b = Vec::with_capacity(32 + v.data.len() * 8);
+    b.extend_from_slice(&(v.nx as u64).to_le_bytes());
+    b.extend_from_slice(&(v.nz as u64).to_le_bytes());
+    for x in [v.x0, v.z0, v.x1, v.z1] {
+        b.extend_from_slice(&x.to_le_bytes());
+    }
+    for d in &v.data {
+        b.extend_from_slice(&d[0].to_le_bytes());
+        b.extend_from_slice(&d[1].to_le_bytes());
+    }
+    // Write then rename, so parallel renders never read a partial file.
+    let tmp = path.with_extension(format!("tmp{}", std::process::id()));
+    if std::fs::write(&tmp, &b).is_ok() {
+        let _ = std::fs::rename(&tmp, path);
+    }
+}
+
+/// Look warnings for `check`: combinations that render, but badly.
+pub fn lint(props: &Value) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    let env = match props.get("env") {
+        Some(Value::String(s)) => s.as_str(),
+        Some(Value::Object(m)) => m.get("preset").and_then(|p| p.as_str()).unwrap_or("cyc"),
+        _ => "cyc",
+    };
+    let objs = props.get("objects").and_then(|o| o.as_array()).cloned().unwrap_or_default();
+    let mat_of = |o: &Value| -> String {
+        match o.get("material").or(props.get("material")) {
+            Some(Value::String(s)) => s.to_lowercase(),
+            Some(Value::Object(m)) => m.get("extends").and_then(|e| e.as_str()).unwrap_or("").to_lowercase(),
+            _ => if o.get("type").and_then(|t| t.as_str()).is_some_and(|t| t == "slab" || t == "pane") { "glass".into() } else { "chrome".into() },
+        }
+    };
+    let warm = ["gold", "copper"];
+    if matches!(env, "sunset" | "neon") {
+        for (i, o) in objs.iter().enumerate() {
+            let m = mat_of(o);
+            if warm.contains(&m.as_str()) {
+                out.push((format!(".objects[{i}].material"), format!("`{m}` under env `{env}` washes out into the coloured light; use `chrome` or `aluminium`, or env `studio`/`night` for warm metals")));
+            }
+        }
+    }
+    if env == "cyc" {
+        let dark_card = objs.iter().any(|o| o.get("type").and_then(|t| t.as_str()) == Some("card") && o.get("intensity").and_then(|k| k.as_f64()).is_some_and(|k| k < 0.2));
+        let chrome = objs.iter().position(|o| matches!(mat_of(o).as_str(), "chrome" | "mirror") && o.get("type").and_then(|t| t.as_str()) != Some("card"));
+        if let (Some(i), false) = (chrome, dark_card) {
+            out.push((format!(".objects[{i}].material"), "chrome on the white `cyc` reflects only white and reads flat; add a black card ({ \"type\": \"card\", \"color\": \"#000\", \"intensity\": 0, \"pos\": [0, 0.5, 2.5], \"rot\": [0, 180, 0] }) or use env `studio`".into()));
+        }
+    }
+    out
 }
 
 /// Where simulations are cached: `$ANIKIT_CACHE/sim` (default
@@ -526,7 +630,16 @@ impl Scene3d {
             cam.shutter = s;
         }
         let mut prev_cam = p.camera.at(t - dt, aspect, p.default_aperture);
-        let mut scene = Scene::new(p.shapes.clone(), p.mats.clone(), Vec::new(), p.env.clone(), p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
+        // Open geometry that reads `t` is re-tessellated for this frame.
+        let mut shapes = p.shapes.clone();
+        for o in &p.objs {
+            if let Some(r) = &o.regen {
+                if let Ok(Some(m)) = authoring::build(&r.0, &r.1, &r.2, t) {
+                    shapes[r.3 as usize] = spec::mesh_shape(m);
+                }
+            }
+        }
+        let mut scene = Scene::new(shapes, p.mats.clone(), Vec::new(), p.env.clone(), p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
         scene.backdrop = p.backdrop;
         scene.glow = p.glow;
         scene.haze = p.haze;
@@ -568,9 +681,9 @@ impl Scene3d {
             scene.micro(&cam, w, h);
         }
 
-        let mut px: kernel::pool::Buf<trace::Px> = kernel::pool::Buf::uninit(w * h);
+        let mut px = post::Planes::new(w * h);
         let mut q = p.quality;
-        if std::env::var_os("ANIKIT_SCENE3D_REFERENCE").is_some() {
+        if crate::components::reference() || std::env::var_os("ANIKIT_SCENE3D_REFERENCE").is_some() {
             // Converged sampling with the same image model: 1 + 24 samples per
             // pixel everywhere, 4 shadow and AO rays per sample.
             q.full = true;
@@ -588,13 +701,13 @@ impl Scene3d {
             post::dump(std::path::Path::new(&path), &px, w, h, &pp);
         }
         let vol = if p.shafts && p.haze.0 > 0.0 {
-            let depth: Vec<f32> = px.iter().map(|q| q.depth).collect();
+            let depth: &[f32] = &px.depth;
             let steps = match p.quality.edge_spp { 0..=3 => 8, 4..=8 => 16, _ => 32 };
-            Some(scene.volumetrics(&cam, w, h, &depth, p.haze.0, steps))
+            Some(scene.volumetrics(&cam, w, h, depth, p.haze.0, steps))
         } else {
             None
         };
-        let out = post::process(&px, w, h, &pp, vol.as_ref().map(|v| post::Volume { px: v, w: w.div_ceil(2), h: h.div_ceil(2) }), layer.as_ref());
+        let out = post::process_planes(&px, w, h, &pp, vol.as_ref().map(|v| post::Volume { px: v, w: w.div_ceil(2), h: h.div_ceil(2) }), layer.as_ref());
         if prof {
             let ms = |d: std::time::Duration| d.as_secs_f64() * 1e3;
             eprintln!(
@@ -615,7 +728,7 @@ impl Scene3d {
 
     /// Simulate and splat the particle systems live at `t`.
     #[allow(clippy::too_many_arguments)]
-    fn particles(&self, t: f32, dt: f32, cam: &trace::Camera, prev: &trace::Camera, px: &mut [trace::Px], w: usize, h: usize, assets: Option<&dyn Assets>) -> Option<particles::Layer> {
+    fn particles(&self, t: f32, dt: f32, cam: &trace::Camera, prev: &trace::Camera, px: &mut post::Planes, w: usize, h: usize, assets: Option<&dyn Assets>) -> Option<particles::Layer> {
         let p = self.p();
         if p.parts.is_empty() {
             return None;
@@ -644,31 +757,32 @@ impl Scene3d {
         if live.is_empty() {
             return None;
         }
-        let depth: Vec<f32> = px.iter().map(|q| q.depth).collect();
         let up = v3(0.0, 1.0, 0.0);
         let key = p.env.key_box().map(|k| (k.c, scale(k.radiance, p.env.key_solid_angle))).unwrap_or((up, v3(0.0, 0.0, 0.0)));
         // Particle shadows on the scene: dim the key light by the particles' transmittance.
+        let c0 = std::time::Instant::now();
         let shadow = particles::ShadowMap::build(&live, key.0, t);
+        let c1 = c0.elapsed();
         if let Some(sm) = &shadow {
             let (fwd, _, _) = cam.basis();
-            let body = |(y, row): (usize, &mut [trace::Px])| {
-                for (x, q) in row.iter_mut().enumerate() {
-                    if q.depth > 1e5 || q.vk <= 0.0 {
+            let rig = trace::Rig::new(cam, w, h);
+            let depth = &px.depth;
+            kernel::par::rows(&mut px.vk, w, |y, row| {
+                for (x, vk) in row.iter_mut().enumerate() {
+                    let z = depth[y * w + x];
+                    if z > 1e5 || *vk <= 0.0 {
                         continue;
                     }
-                    let d = Scene::cam_ray(cam, w, h, x as f32 + 0.5, y as f32 + 0.5);
-                    let wp = madd(cam.pos, d, q.depth / dot(d, fwd).max(1e-4));
-                    q.vk *= sm.trans(wp);
+                    let d = rig.ray(x as f32 + 0.5, y as f32 + 0.5);
+                    let wp = madd(cam.pos, d, z / dot(d, fwd).max(1e-4));
+                    *vk *= sm.trans(wp);
                 }
-            };
-            use rayon::prelude::*;
-            if rayon::current_thread_index().is_some() {
-                px.chunks_mut(w).enumerate().for_each(body);
-            } else {
-                px.par_chunks_mut(w).enumerate().for_each(body);
-            }
+            });
         }
-        let view = particles::View { cam, prev, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key, amb: (p.env.diffuse(up), p.env.diffuse(scale(up, -1.0))), shadow: shadow.as_ref() };
+        if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() && shadow.is_some() {
+            eprintln!("  particle shadows: map {:.0} ms, scene lookups {:.0} ms", c1.as_secs_f64() * 1e3, (c0.elapsed() - c1).as_secs_f64() * 1e3);
+        }
+        let view = particles::View { cam, prev, w, h, depth: &px.depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key, amb: (p.env.diffuse(up), p.env.diffuse(scale(up, -1.0))), shadow: shadow.as_ref(), draft: p.draft };
         Some(particles::render(&live, &view, t))
     }
 
@@ -748,8 +862,11 @@ impl Component for Scene3d {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let p = self.p();
         // Previews and reviews (`still --width`, `critique --render`) trace at the size they show.
-        // `resolution` (0.25–1): trace at a fraction of the layer size and upscale (fast drafts, soft looks).
-        let res = self.raw.get("resolution").and_then(|r| r.as_f64()).unwrap_or(1.0).clamp(0.25, 1.0) as f32;
+        // `resolution` (0.25–1): trace at a fraction of the layer size and upscale. Unset, it is
+        // full size at standard/high quality and half size in drafts (`--quality draft`), so
+        // iterating is fast and final renders lose nothing.
+        let default_res = if crate::components::draft() { 0.5 } else { 1.0 };
+        let res = self.raw.get("resolution").and_then(|r| r.as_f64()).unwrap_or(default_res).clamp(0.25, 1.0) as f32;
         let ps = crate::eval::shader::preview_scale() * res;
         let (w, h) = ((ctx.width * ps).round().max(2.0) as u32, (ctx.height * ps).round().max(2.0) as u32);
         let fps = ctx.fps.max(1.0);
@@ -806,6 +923,9 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        assert_eq!(lint(&json!({ "env": "sunset", "objects": [ { "text": "A", "material": "gold" } ] })).len(), 1);
+        assert_eq!(lint(&json!({ "objects": [ { "text": "A" } ] })).len(), 1, "chrome on cyc without a flag");
+        assert!(lint(&json!({ "objects": [ { "text": "A" }, { "type": "card", "intensity": 0 } ] })).is_empty());
         // Scripts expand inside `objects`; open geometry parses.
         scene(json!({ "objects": [ { "script": "let o = []; for k in 0..3 { o.push(#{ type: \"lathe\", points: [[0.0, 0.0], [0.2, 0.3], [0.0, 0.6]], pos: [k * 0.5, 0.0, 0.0] }); } o" } ] })).unwrap();
         let e = scene(json!({ "objects": [ { "type": "sphere", "material": "crome" } ] })).err().unwrap();

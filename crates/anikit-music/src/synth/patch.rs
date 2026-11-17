@@ -238,6 +238,14 @@ fn filt2<F: Fn(&mut [Svf; 3], f32, usize) -> f32>(
     }
 }
 
+impl SubSynth {
+    /// A voice playing `patch` instead of this synth's own (per-note
+    /// automation), sharing this synth's glide state.
+    pub fn voice_with(&self, patch: &Patch, note: &NoteOn) -> Box<dyn Voice> {
+        Box::new(SubVoice::new(patch, note, if patch.mono || patch.glide > 0.0 { Some(&self.glide) } else { None }))
+    }
+}
+
 impl Instrument for SubSynth {
     fn voice(&self, note: &NoteOn) -> Box<dyn Voice> {
         Box::new(SubVoice::new(
@@ -252,6 +260,9 @@ impl Instrument for SubSynth {
     }
     fn mono(&self) -> bool {
         self.patch.mono
+    }
+    fn ordered_voices(&self) -> bool {
+        self.patch.mono || self.patch.glide > 0.0
     }
 }
 

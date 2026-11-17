@@ -210,11 +210,30 @@ Particle slots are kept in Morton (Z-curve) order of position, re-sorted
 every second with stable ids, so neighbours in space are neighbours in memory
 and both the splats and the flow lookups stay in cache.
 
+**Cost** (4 cores, 1080p, `cargo run --release -p anikit-video --example particles_bench`;
+"per video frame" is the amortised cost when a render runs 8 frames on 4 threads):
+
+| Particles | Sim per frame | Splat per video frame, exact (`add` / `over`) | Splat, `quality: draft` | Single still (all threads) |
+|---|---|---|---|---|
+| 1M | 0.03 s | 0.09 / 0.10 s | 0.04 / 0.05 s | 0.17 s |
+| 10M | 0.29 s | 0.95 / 0.96 s | 0.35 / 0.34 s | 1.33 s |
+
+In a real render (`glow.json`, 2M particles at 1080p) the particles take
+0.15–0.2 s of a 1.9 s frame; the rest is the traced scene and its post.
+Stills split the frame into 64-row bands, each rendered from the particles
+that reach it in order, so a still is byte-identical to the same frame of a
+video render, at any thread count.
+
 **Fidelity.** `cargo run --release -p anikit-video --example particles_reference`
 renders 1080p frames with the fast path and with a reference: exact discs
 sampled densely, 32 instants over the shutter. It compares them with PERF's
-qbench thresholds (SSIM ≥ 0.995, PSNR-Y ≥ 42 dB, ΔE p99.9 ≤ 2.3); see the
-table in the PR notes for current numbers.
+qbench thresholds (SSIM ≥ 0.995, PSNR-Y ≥ 42 dB, ΔE p99.9 ≤ 2.3):
+
+| Frame | PSNR-Y | SSIM | ΔE p99.9 | |
+|---|---|---|---|---|
+| glow (2M, in focus) | 53.2 dB | 0.99983 | 2.19 | ok |
+| sand assembly at 1 s (3M, `over`, shadows, DOF, motion) | 61.4 dB | 0.99970 | 0.74 | ok |
+| glow with motion streaks | 50.7 dB | 0.99956 | 4.6 | ΔE over (reference re-run with denser shutter sampling pending) |
 
 Particles are depth tested against
 the traced scene and composited before bloom, so bright ones glow.

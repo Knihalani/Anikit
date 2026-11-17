@@ -28,6 +28,7 @@ use std::sync::Arc;
 pub mod style;
 pub mod docs;
 pub mod fxkit;
+pub mod fxpix;
 pub mod polish;
 pub mod host;
 pub mod text;
@@ -62,7 +63,7 @@ pub mod product_shot;
 #[cfg(test)]
 pub(crate) mod preview;
 
-pub use style::{reference, set_draft, set_reference, Theme};
+pub use style::{draft, reference, set_draft, set_reference, Theme};
 pub use text::{Face, TextStyle};
 
 /// What a component can ask the engine for while evaluating.
@@ -76,6 +77,23 @@ pub trait Assets: Sync {
     /// per-frame renders don't accumulate. Defaults to [`Assets::image`].
     fn frame_image(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> ImageId {
         self.image(key, w, h, make)
+    }
+    /// Like [`Assets::image`], for pixels already in the renderer's format:
+    /// premultiplied RGBA8 (each colour byte ≤ its alpha). Per-frame images
+    /// made by components skip two conversion passes this way.
+    fn image_premul(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> ImageId {
+        self.image(key, w, h, &mut || {
+            let mut px = make();
+            for p in px.chunks_exact_mut(4) {
+                let a = p[3] as u32;
+                if a != 0 && a != 255 {
+                    for c in &mut p[..3] {
+                        *c = ((*c as u32 * 255 + a / 2) / a).min(255) as u8;
+                    }
+                }
+            }
+            px
+        })
     }
     /// A user image (or the current frame of a user video) by its spec `src`,
     /// with its pixel size. `t` is the component's local time (for videos).

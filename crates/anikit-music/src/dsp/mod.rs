@@ -96,6 +96,53 @@ pub fn process_aligned(p: &mut dyn Processor, l: &mut [f32], r: &mut [f32]) {
     }
 }
 
+/// Run an offline processor over whole buffers in parallel: the signal is cut
+/// into fixed chunks (their size depends only on the length, never on the
+/// thread count) and each chunk is processed by a fresh processor that first
+/// runs over `pre_secs` of the preceding input (pre-roll) so its state has
+/// converged by the chunk start. For processors whose memory decays well
+/// within the pre-roll (filters, compressors, limiters) the result matches a
+/// single serial pass far below −100 dB. `latency` is removed (tail flushed
+/// with silence), like [`process_aligned`]. `f(l, r, start)` processes one
+/// window in place; `start` is the window's first sample in the full signal.
+pub fn par_offline<F>(l: &mut [f32], r: &mut [f32], rate: f32, pre_secs: f32, latency: usize, f: F)
+where
+    F: Fn(&mut [f32], &mut [f32], usize) + Sync,
+{
+    use rayon::prelude::*;
+    let n = l.len().min(r.len());
+    let pre = (pre_secs * rate) as usize;
+    let chunk = n.div_ceil(6).max(1 << 17);
+    if n <= chunk {
+        let mut wl = l[..n].to_vec();
+        let mut wr = r[..n].to_vec();
+        wl.resize(n + latency, 0.0);
+        wr.resize(n + latency, 0.0);
+        f(&mut wl, &mut wr, 0);
+        l[..n].copy_from_slice(&wl[latency..latency + n]);
+        r[..n].copy_from_slice(&wr[latency..latency + n]);
+        return;
+    }
+    let (sl, sr) = (l[..n].to_vec(), r[..n].to_vec());
+    l[..n].par_chunks_mut(chunk).zip(r[..n].par_chunks_mut(chunk)).enumerate().for_each(|(k, (ol, or))| {
+        let a = k * chunk;
+        let b = a + ol.len();
+        let w0 = a.saturating_sub(pre);
+        let w1 = (b + latency).min(n);
+        let len = b - w0 + latency;
+        let mut wl = Vec::with_capacity(len);
+        let mut wr = Vec::with_capacity(len);
+        wl.extend_from_slice(&sl[w0..w1]);
+        wr.extend_from_slice(&sr[w0..w1]);
+        wl.resize(len, 0.0);
+        wr.resize(len, 0.0);
+        f(&mut wl, &mut wr, w0);
+        let off = a - w0 + latency;
+        ol.copy_from_slice(&wl[off..off + ol.len()]);
+        or.copy_from_slice(&wr[off..off + or.len()]);
+    });
+}
+
 /// Mix `src` into `dst` with gain `g`.
 #[inline]
 pub fn mix_into(dst: &mut [f32], src: &[f32], g: f32) {

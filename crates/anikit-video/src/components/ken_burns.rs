@@ -2,6 +2,8 @@
 //! (cut-outs that move at different rates), a vignette and a gentle film
 //! grade. Without a `src` it pans over a generated landscape placeholder.
 
+use super::fxkit;
+use super::fxpix;
 use super::style::*;
 use super::{Component, Ctx, Error, Prepare};
 use crate::dl::{Op, Paint, Path, Rgba};
@@ -154,15 +156,15 @@ impl Component for KenBurns {
             }
         }
         // Film look in one cheap overlay: warm highlights top-left, lifted
-        // blacks through the middle, teal shadows bottom-right.
-        let f = clamp01(self.film);
-        if f > 0.0 {
-            o.push(rect(0.0, 0.0, w, h, 0.0, Paint::Linear { p0: [0.0, 0.0], p1: [w * 0.45, h], stops: vec![(0.0, Rgba([1.0, 0.7, 0.42, 0.16 * f])), (0.5, Rgba([0.16, 0.13, 0.17, 0.1 * f])), (1.0, Rgba([0.04, 0.3, 0.36, 0.2 * f]))] }));
-        }
-        let v = clamp01(self.vignette);
-        if v > 0.0 {
-            let r = (w * w + h * h).sqrt() * 0.5;
-            o.push(rect(0.0, 0.0, w, h, 0.0, radial(w * 0.5, h * 0.5, r, vec![(0.45, Rgba([0.0, 0.0, 0.0, 0.0])), (0.8, Rgba([0.0, 0.0, 0.0, 0.45 * v])), (1.0, Rgba([0.0, 0.0, 0.0, v]))])));
+        // blacks through the middle, teal shadows bottom-right; then the vignette.
+        let (film, vig) = self.overlays(w, h);
+        if fxkit::exact() {
+            o.extend(film.map(|p| rect(0.0, 0.0, w, h, 0.0, p)));
+            o.extend(vig.map(|p| rect(0.0, 0.0, w, h, 0.0, p)));
+        } else if film.is_some() || vig.is_some() {
+            // Shortcut: both are static, so they are baked once into one
+            // image (vignette over film, as drawn) and blitted.
+            o.push(overlay_image(ctx, film, vig));
         }
         o
     }
@@ -173,6 +175,16 @@ impl Component for KenBurns {
 }
 
 impl KenBurns {
+    /// The film grade and vignette paints over a `w × h` box.
+    fn overlays(&self, w: f32, h: f32) -> (Option<Paint>, Option<Paint>) {
+        let f = clamp01(self.film);
+        let film = (f > 0.0).then(|| Paint::Linear { p0: [0.0, 0.0], p1: [w * 0.45, h], stops: vec![(0.0, Rgba([1.0, 0.7, 0.42, 0.16 * f])), (0.5, Rgba([0.16, 0.13, 0.17, 0.1 * f])), (1.0, Rgba([0.04, 0.3, 0.36, 0.2 * f]))] });
+        let v = clamp01(self.vignette);
+        let r = (w * w + h * h).sqrt() * 0.5;
+        let vig = (v > 0.0).then(|| radial(w * 0.5, h * 0.5, r, vec![(0.45, Rgba([0.0, 0.0, 0.0, 0.0])), (0.8, Rgba([0.0, 0.0, 0.0, 0.45 * v])), (1.0, Rgba([0.0, 0.0, 0.0, v]))]));
+        (film, vig)
+    }
+
     /// A generated dusk landscape, drawn as if it were a `w × h` image.
     fn placeholder(&self, o: &mut Vec<Op>, cam: (f32, f32, f32), ctx: &Ctx) {
         let (w, h) = (ctx.width, ctx.height);
@@ -218,6 +230,57 @@ impl KenBurns {
         super::transform_ops(&mut s, &m);
         o.extend(s);
     }
+}
+
+/// The film and vignette overlays evaluated per pixel (gradients in
+/// premultiplied sRGB at pixel centres, as the renderer draws them),
+/// composited and cached as one box-sized image.
+fn overlay_image(ctx: &Ctx, film: Option<Paint>, vig: Option<Paint>) -> Op {
+    let (iw, ih) = (ctx.width.ceil().max(1.0) as usize, ctx.height.ceil().max(1.0) as usize);
+    let mut hs = fxpix::Hash::new();
+    hs.bytes(b"ken-burns-overlay");
+    hs.f32s(&[ctx.width, ctx.height]);
+    for p in [&film, &vig] {
+        let (geo, stops): (Vec<f32>, &[(f32, Rgba)]) = match p {
+            Some(Paint::Linear { p0, p1, stops }) => (vec![1.0, p0[0], p0[1], p1[0], p1[1]], stops),
+            Some(Paint::Radial { c, r, stops }) => (vec![2.0, c[0], c[1], *r], stops),
+            _ => (vec![0.0], &[]),
+        };
+        hs.f32s(&geo);
+        for (o, c) in stops {
+            hs.f32s(&[*o]);
+            hs.f32s(&c.0);
+        }
+    }
+    let at = |p: &Option<Paint>, x: f32, y: f32| -> [f32; 4] {
+        match p {
+            Some(Paint::Linear { p0, p1, stops }) => {
+                let (dx, dy) = (p1[0] - p0[0], p1[1] - p0[1]);
+                let t = ((x - p0[0]) * dx + (y - p0[1]) * dy) / (dx * dx + dy * dy).max(1e-6);
+                fxpix::stops_at(stops, t)
+            }
+            Some(Paint::Radial { c, r, stops }) => {
+                let t = ((x - c[0]) * (x - c[0]) + (y - c[1]) * (y - c[1])).sqrt() / r.max(1e-3);
+                fxpix::stops_at(stops, t)
+            }
+            _ => [0.0; 4],
+        }
+    };
+    let id = ctx.assets.image(hs.finish(), iw as u32, ih as u32, &mut || {
+        let mut px = vec![0u8; iw * ih * 4];
+        for (j, row) in px.chunks_exact_mut(iw * 4).enumerate() {
+            let y = j as f32 + 0.5;
+            for (i, o) in row.chunks_exact_mut(4).enumerate() {
+                let x = i as f32 + 0.5;
+                let c = fxpix::over(at(&vig, x, y), at(&film, x, y));
+                let a = c[3].clamp(0.0, 1.0);
+                let k = if a > 0.0 { 255.0 / a } else { 0.0 };
+                o.copy_from_slice(&[fxpix::byte(c[0] * k), fxpix::byte(c[1] * k), fxpix::byte(c[2] * k), fxpix::byte(a * 255.0)]);
+            }
+        }
+        px
+    });
+    Op::Image { image: id, dst: [0.0, 0.0, iw as f32, ih as f32], opacity: 1.0, transform: crate::dl::IDENTITY }
 }
 
 #[cfg(test)]

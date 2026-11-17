@@ -1,5 +1,6 @@
 {
  "about": "A 10 s launch sting that combines particles, ray-traced chrome, beat-slammed type, a raymarched shader world and generated music. Every cut lands on the beat at 124 BPM, with sfx on the hits. Swap the name, words and colours, or move a shot to another beat.",
+ "cost": "draft ~69 s, final ~238 s (1080p, 4 cores)",
  "spec": {
   "size": "16:9",
   "intent": {
@@ -39,7 +40,6 @@
       "component": "scene3d",
       "props": {
        "env": "night",
-       "quality": "draft",
        "camera": {
         "keys": [
          {
@@ -75,7 +75,7 @@
        "objects": [
         {
          "type": "particles",
-         "count": 400000,
+         "count": 200000,
          "emit": {
           "text": "NOVA",
           "height": 0.6,
@@ -108,8 +108,7 @@
          "emissive": 3,
          "blend": "add"
         }
-       ],
-       "resolution": 0.5
+       ]
       }
      }
     ]
@@ -137,7 +136,6 @@
       "component": "scene3d",
       "props": {
        "env": "studio",
-       "quality": "draft",
        "camera": {
         "keys": [
          {
@@ -188,8 +186,7 @@
          ],
          "material": "glass"
         }
-       ],
-       "resolution": 0.5
+       ]
       }
      }
     ]
@@ -392,7 +389,7 @@
    },
    {
     "id": "world",
-    "duration": 2.419,
+    "duration": 1.935,
     "transition": {
      "type": "zoom-blur",
      "duration": 0.3

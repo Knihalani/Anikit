@@ -214,6 +214,13 @@ impl Evaluator {
                 (shutter.clamp(0.0, 720.0) as f32 / 360.0) / c.fps
             }
         };
+        let encode_aq = spec.encode.as_ref().and_then(|e| e.aq).filter(|a| {
+            let ok = (0.0..=2.0).contains(a);
+            if !ok {
+                c.d.push(Diagnostic::error("encode.aq", format!("{a} is out of range (0..2)")));
+            }
+            ok
+        });
         let default_bg = spec.background.clone().unwrap_or(spec::Paint::Css("$bg".into()));
         let default_trans = spec.transition.clone();
         if spec.scenes.is_empty() {
@@ -350,6 +357,7 @@ impl Evaluator {
             theme: c.theme,
             comps: c.comps.into_iter().map(|(n, e, _)| (n, e)).collect(),
             shutter,
+            encode_aq: encode_aq.map(|a| a as f32),
             groove: c.groove.and_then(|m| m.ok()),
             shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
         };
@@ -2901,6 +2909,11 @@ impl C<'_> {
         // Load the images the component refers to, so `Assets::media` finds them.
         for src in crate::components::media_srcs(&props) {
             self.load_media(&src, &format!("{path}.props"));
+        }
+        if name == "scene-3d" {
+            for (sub, msg) in crate::scene3d::lint(&props) {
+                self.d.push(Diagnostic::warning(format!("{path}.props{sub}"), msg));
+            }
         }
         match crate::components::build(&name, &props) {
             Ok(p) => {
