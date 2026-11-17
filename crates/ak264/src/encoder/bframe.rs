@@ -24,11 +24,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
     /// 16×16 motion vector predictor in list `l` (8.4.1.3, refIdx 0).
     pub(super) fn mvp_l(&self, mbx: usize, mby: usize, l: usize) -> (i32, i32) {
         let (x, y) = (mbx as isize, mby as isize);
-        let a = self.nbl(x - 1, y, l);
-        let mut b = self.nbl(x, y - 1, l);
-        let mut c = self.nbl(x + 1, y - 1, l);
+        let a = self.nbl(x - 1, y, l, 1);
+        let mut b = self.nbl(x, y - 1, l, 2);
+        let mut c = self.nbl(x + 1, y - 1, l, 2);
         if !c.avail {
-            c = self.nbl(x - 1, y - 1, l);
+            c = self.nbl(x - 1, y - 1, l, 3);
         }
         if !b.avail && !c.avail && a.avail {
             b = a;
@@ -56,11 +56,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let (x, y) = (mbx as isize, mby as isize);
         let mut refs = 0u8;
         for l in 0..2 {
-            let a = self.nbl(x - 1, y, l);
-            let b = self.nbl(x, y - 1, l);
-            let mut c = self.nbl(x + 1, y - 1, l);
+            let a = self.nbl(x - 1, y, l, 1);
+            let b = self.nbl(x, y - 1, l, 2);
+            let mut c = self.nbl(x + 1, y - 1, l, 2);
             if !c.avail {
-                c = self.nbl(x - 1, y - 1, l);
+                c = self.nbl(x - 1, y - 1, l, 3);
             }
             if a.inter || b.inter || c.inter {
                 refs |= 1 << l;
@@ -129,7 +129,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         self.mb_qp = self.c.qp;
         self.p = &self.c.qsets[self.mb_qp as usize];
         let (refs, mv0, mv1) = self.direct_spatial(mbx, mby);
-        let zero = (refs & 1 == 0 || mv0 == (0, 0)) && (refs & 2 == 0 || mv1 == (0, 0));
+        // (a partitioned co-located macroblock would make direct prediction
+        // per 8×8 block: not used)
+        let zero = (refs & 1 == 0 || mv0 == (0, 0)) && (refs & 2 == 0 || mv1 == (0, 0)) && self.c.col[mby * self.c.mbw + mbx].part == 0;
         let mut py = [0u8; 256];
         let mut pc = [[0u8; 64]; 2];
         let cd = Coded::new();
@@ -157,7 +159,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
         // Direct (and B_Skip when nothing is left to code).
         let (drefs, dmv0, dmv1) = self.direct_spatial(mbx, mby);
-        let direct_ok = (drefs & 1 == 0 || self.mv_in_range(mbx, mby, dmv0)) && (drefs & 2 == 0 || self.mv_in_range(mbx, mby, dmv1));
+        let direct_ok = c.col[mbi].part == 0
+            && (drefs & 1 == 0 || self.mv_in_range(mbx, mby, dmv0))
+            && (drefs & 2 == 0 || self.mv_in_range(mbx, mby, dmv1));
         let mut dpy = [0u8; 256];
         let mut dpc = [[0u8; 64]; 2];
         let mut best = (u32::MAX, BMode::Direct);
@@ -333,6 +337,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             mv1: if refs & 2 != 0 { (mv1.0 as i16, mv1.1 as i16) } else { (0, 0) },
             mvd1: (mvd1.0 as i16, mvd1.1 as i16),
             direct: mode == BMode::Direct,
+            part: 0,
+            mv8: [(0, 0); 4],
+            mvd8: [(0, 0); 4],
         };
         if skip {
             self.stats.skip += 1;

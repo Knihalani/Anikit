@@ -511,6 +511,22 @@ fn roundtrip_b(cfg: EncoderConfig, frames: &[YuvBuffer], name: &str) -> (Vec<u8>
 }
 
 #[test]
+fn partitions_decode_bit_exact() {
+    let s = Scene::new(176, 144);
+    let frames: Vec<_> = (0..10).map(|t| s.frame(t)).collect();
+    for deblock in [false, true] {
+        let c = EncoderConfig { partitions: true, deblock, ..cfg(176, 144) };
+        let (st, p) = roundtrip(c, &frames, &format!("part{}", deblock as u8));
+        let c = EncoderConfig { partitions: true, bframes: 1, deblock, ..cfg(176, 144) };
+        let (stb, pb) = roundtrip_b(c, &frames, &format!("partb{}", deblock as u8));
+        eprintln!("partitions deblock {deblock}: {} bytes psnr {p:.2}; with B {} bytes psnr {pb:.2}", st.len(), stb.len());
+        if have_ffmpeg() {
+            assert!(p > 38.0 && pb > 38.0);
+        }
+    }
+}
+
+#[test]
 fn bframes_decode_bit_exact() {
     let s = Scene::new(176, 144);
     let frames: Vec<_> = (0..14).map(|t| s.frame(t)).collect();
