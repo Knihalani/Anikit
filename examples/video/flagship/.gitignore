@@ -3,3 +3,5 @@ __pycache__/
 films/
 spec.json
 spec-proxy.json
+fast.json
+fast-proxy.json
