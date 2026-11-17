@@ -310,7 +310,7 @@ impl Component for Prompt {
         // Send button: fills when there is text, pops when pressed.
         let bs = h * 0.64;
         let (bx, by) = (w - (h - bs) * 0.5 - bs, (h - bs) * 0.5);
-        let ready = ease_out(clamp01(k as f32));
+        let ready = if sent { 1.0 - ease_out(seg(t, send + 0.3, 0.3)) } else { ease_out(clamp01(k as f32)) };
         let pd = t - send;
         let press = if pd < 0.0 { 1.0 } else if pd < 0.08 { 1.0 - 0.14 * ease_out(pd / 0.08) } else { 0.86 + 0.14 * spring_z(pd - 0.08, 1.2, 0.5) };
         let (cx, cy) = (bx + bs * 0.5, by + bs * 0.5);
@@ -400,7 +400,7 @@ impl Component for Checklist {
             if let Some(sf) = self.surface {
                 finish(&mut o, th, sf, 0.0, y, bw, lh - fs * 0.45, fs * 0.5, 0.6, None);
             }
-            let by = y + (lh - if rowed { fs * 0.45 } else { 0.0 }) * 0.5 - s * 0.5 - if rowed { 0.0 } else { (lh - s) * 0.5 - (lh - s) * 0.5 };
+            let by = y + (lh - if rowed { fs * 0.45 } else { 0.0 }) * 0.5 - s * 0.5;
             let bx = rpad;
             let r = match self.shape.as_str() {
                 "circle" => s * 0.5,

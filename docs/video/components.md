@@ -29,6 +29,12 @@ High-level blocks for Anikit Video specs: code, charts, devices, UI, backgrounds
 
 **Theme:** components default to the scene theme, a dark launch-video look. Override it per component with `"theme": "light"` or `{ "accent": "#ff5ca8", "palette": [...] }`. The theme keys are `background`, `surface`, `surface2`, `border`, `text`, `muted`, `accent`, `positive`, `negative`, `palette` and `radius`.
 
+**Looks (make videos look different):** the UI kit, content blocks, charts, code and card stack share a small look vocabulary, so the same component can be dressed very differently. Defaults take every colour from the theme and add no glows.
+- `surface`: `solid` (lit panel: layered contact, key and ambient shadows, top-lit fill, bevel, hairline), `glass` (translucent pane with a sheen and bright rim), `outline` (no fill, a 1.5 px line), `flat` (one colour, no shadow) or `paper` (matte fill, one soft low shadow).
+- `motion`: `smooth` (critically damped, the default), `snappy` (fast, no overshoot), `soft` (slow ease in-out) or `bouncy` (springy overshoot). It also scales travel distances and staggers.
+- `face`: `sans`, `display` (Inter Display, tight tracking), `serif` (Instrument Serif, editorial) or `mono`. Without it, text uses optical sizing: Inter Display from 28 px up, Inter below, with Inter's dynamic tracking.
+- `radius`: corner radius in px (default: from the theme or the component's natural shape).
+
 **Determinism:** particles and backgrounds take a `seed`. The same seed always gives the same frames.
 
 ## Code
@@ -52,6 +58,16 @@ The window has syntax highlighting (TypeScript, JavaScript, Rust, Python, Go, Ba
 | `cursor` | `true` | Blinking caret at the typing position. |
 | `background` | theme | Window colour. |
 | `glow` | none | A coloured glow behind the window. |
+| `selections` | `[]` | `[{ "line": 4, "from": 6, "to": 10, "at": 2, "until": 3 }]`: a selection sweeps across columns `from..to` (0-based; `to` defaults to the line end). |
+| `minimap` | `false` | A code minimap down the right edge with a viewport marker. |
+| `statusBar` | `false` | Status bar: language, `Ln, Col` of the caret, encoding. |
+| `activeLine` | `true` | Tint the line the caret is on and brighten its number. |
+| `surface` | `solid` | Window finish (see Looks). |
+| `radius` | theme | |
+| `lineHeight` | `1.6` | |
+| `accent` | theme | Caret, highlight, selection and tab colour. |
+
+The caret glides between characters and fades when idle; typing auto-scrolls smoothly. With `chrome: "mac"` and a `title`, the title is an active editor tab with a file-type dot.
 
 ### `terminal`
 Lines starting with `$ ` or `> ` are typed. Other lines print one after another, coloured green for success and red for errors.
@@ -86,6 +102,12 @@ Charts build on with springs.
 | `barWidth` | `0.62` | |
 | `fontSize` | `22` | |
 | `format` | | `{ "prefix": "$", "suffix": "%", "decimals": 1, "compact": true }` |
+| `shape` | `rounded` | `rounded` (rounded top), `square` or `pill`. |
+| `fill` | `gradient` | `gradient` (lit top, deeper base, lit edge), `solid` or `outline`. |
+| `glow` | `false` | Soft bloom under the bars. |
+| `dashed` | `false` | Dashed gridlines instead of hairlines. |
+| `notes` | `[]` | Pinned value pills: `[{ "index": 5, "text": "+38%" }]`. |
+| `motion` | `smooth` | Bar growth: `smooth`, `snappy`, `soft`, `bouncy`. |
 | `delay`, `duration`, `stagger` | | |
 
 ### `lineChart` and `areaChart`
@@ -102,6 +124,11 @@ Charts build on with springs.
 | `min`, `max` | | |
 | `grid` | `true` | |
 | `width` | `4` | Line width. |
+| `glow` | `false` | Soft bloom along the lines. |
+| `dashed` | `false` | Dashed gridlines. |
+| `notes` | `[]` | `[{ "index": 4, "text": "Launch", "series": 0 }]`: a ring and a pill appear when the line reaches the point. |
+| `crosshair` | `false` | A vertical guide follows the drawing head. |
+| `motion` | `soft` | Draw-on curve. |
 | `format`, `fontSize`, `delay`, `duration`, `stagger` | | |
 
 ### `donutChart` and `pieChart`
@@ -130,6 +157,8 @@ Charts build on with springs.
 | `gradient` | | `[top, bottom]` |
 | `align` | `0.5` | 0 left, 1 right. |
 | `label` | | Caption. |
+| `face` | display | `sans`, `display`, `serif`, `mono`. |
+| `motion` | `smooth` | Count curve (`smooth` is an exponential ease-out; `bouncy` overshoots). |
 | `delay`, `duration` | | |
 
 Digits are tabular, and the width is reserved for the final value, so the number never jitters.
@@ -141,6 +170,7 @@ Digits are tabular, and the width is reserved for the final value, so the number
 | `delta` | Percentage change; shown as ▲ in green or ▼ in red. |
 | `spark` | Sparkline values. |
 | `color` | |
+| `surface`, `face`, `radius`, `motion` | See Looks. |
 | `delay`, `duration` | |
 
 ## Devices
@@ -163,35 +193,35 @@ Devices keep their aspect ratio and are centred in the box. Screen props are sha
 
 | Kind | Props |
 |---|---|
-| `card` | `title`, `body`, `fontSize` (default scales with the card), `icon` (`spark`, `bolt`, `check`, `plus`, `arrow`, `info`, `warning`, `x`), `accent`, `glow`, `delay`, `out` |
-| `button` | `align` (0 left, 0.5 centre (default), 1 right; vertically centred in the box), `labelColor` (default: white or near-black by WCAG contrast with the fill), `label`, `variant` (`primary`, `secondary`, `ghost`, `gradient`), `size`, `color`, `press` (times), `arrow`, `delay`, `out` |
-| `toggle` | `at` (flip time), `on` (initial state), `size`, `color`, `label` |
-| `badge` | `align` (as `button`), `labelColor` (default: by contrast), `label`, `color`, `size`, `dot` (pulsing "live" dot), `solid`, `delay`, `out` |
-| `avatar` | `align`, `name` (gives the initials and colour), `src`, `size`, `status` (`online`, `away`, `busy`), `delay` |
-| `avatarStack` | `align`, `names`, `srcs`, `size`, `overlap`, `max` (then "+N"), `delay`, `stagger` |
-| `progressBar` | `from`, `to`, `duration`, `delay`, `thickness`, `color`, `label`, `percent` |
-| `progressRing` | `percent` (false hides the number, e.g. behind a countdown), `align`, `from`, `to`, `duration`, `delay`, `size`, `thickness`, `color`, `label` |
-| `toast` | `title`, `body`, `kind` (`success`, `info`, `warning`, `error`), `delay`, `hold`, `from` (`top`, `bottom`, `right`), `width` |
-| `cursor` | `path` (`[[x, y], ...]` waypoints in box px), `times` (arrival time of each), `clicks` (times; each gives a ripple), `size`, `style` (`arrow` or `hand`), `ripple` (colour) |
-| `tooltip` | `text`, `at` (`[x, y]` arrow tip), `side` (`top` or `bottom`), `size`, `delay`, `out` |
-| `callout` | `from` (the annotated point), `to` (label position), `text`, `color`, `size`, `delay`, `out` |
-| `arrow` | `from`, `to`, `bend` (−1 to 1), `color`, `width`, `dashed`, `delay`, `duration` |
-| `lowerThird` | `title`, `subtitle`, `accent`, `size`, `align` (`left` or `center`), `margin`, `delay`, `out` |
-| `titleCard` | `title`, `eyebrow`, `subtitle`, `size`, `gradient` (`[from, to]`), `reveal` (`word`, `line`, `fade`), `stagger`, `align`, `delay`, `out` |
+| `card` | `title`, `body`, `eyebrow`, `fontSize` (default scales with the card), `icon` (`spark`, `bolt`, `check`, `plus`, `arrow`, `info`, `warning`, `x`), `accent`, `color` (fill), `glow` (travelling rim light, off by default), `surface`, `motion`, `radius`, `face`, `delay`, `out`. Icon, title and body stagger in. |
+| `button` | `align` (0 left, 0.5 centre (default), 1 right; vertically centred in the box), `labelColor` (default: white or near-black by WCAG contrast with the fill), `label`, `variant` (`primary`, `secondary`, `ghost`, `gradient`, `outline`), `size`, `color`, `color2` (gradient end), `radius` (default pill), `weight`, `face`, `motion`, `sheen` (light sweep after it appears), `press` (times: dip and spring back), `arrow` (nudges on press), `delay`, `out` |
+| `toggle` | `at` (flip time), `on` (initial state), `size`, `color`, `label`, `motion`, `surface` (`solid` lit knob, `flat`, `outline`) |
+| `badge` | `align` (as `button`), `labelColor` (default: by contrast), `label`, `color`, `size`, `dot` (pulsing "live" dot), `solid`, `outline`, `caps` (tracked uppercase tag), `radius`, `face`, `motion`, `delay`, `out` |
+| `avatar` | `align`, `name` (gives the initials and colour), `src`, `size`, `status` (`online`, `away`, `busy`), `square`, `ring` (colour; default a background cut-out), `motion` (default `bouncy`), `delay` |
+| `avatarStack` | `align`, `names`, `srcs`, `size`, `overlap`, `max` (then "+N"), `square`, `ring`, `motion`, `delay`, `stagger` |
+| `progressBar` | `from`, `to`, `duration`, `delay`, `thickness`, `color`, `color2`, `label`, `percent`, `shimmer` (default true), `radius`, `segments` (stepped look), `motion` (default `soft`) |
+| `progressRing` | `percent` (false hides the number, e.g. behind a countdown), `align`, `from`, `to`, `duration`, `delay`, `size`, `thickness`, `color`, `color2`, `label`, `glow`, `square` (butt ends), `face`, `motion` |
+| `toast` | `title`, `body`, `kind` (`success`, `info`, `warning`, `error`), `color`, `delay`, `hold`, `timer` (countdown line while it holds), `from` (`top`, `bottom`, `right`), `width`, `surface`, `motion`, `radius` |
+| `cursor` | `path` (`[[x, y], ...]` waypoints in box px), `times` (arrival time of each), `clicks` (times; each gives a double ripple and a press), `size`, `style` (`arrow`, `hand` or `dot`), `color`, `ripple` (colour), `trail` (motion trail on fast moves; default true) |
+| `tooltip` | `text`, `shortcut` (dimmed hint, e.g. `"⌘C"`), `at` (`[x, y]` arrow tip), `side` (`top` or `bottom`), `size`, `color`, `radius`, `motion`, `delay`, `out` |
+| `callout` | `from` (the annotated point), `to` (label position), `text`, `color`, `size`, `surface` (default `glass`), `leader` (`elbow` or `straight`), `face`, `delay`, `out` |
+| `arrow` | `from`, `to`, `bend` (−1 to 1), `color`, `width`, `dashed`, `head` (`open`, `solid`, `dot`), `sketch` (hand-drawn wobble), `delay`, `duration` |
+| `lowerThird` | `title`, `subtitle` (set in tracked caps on an accent strip), `style` (`plate`: broadcast name plate over an accent strip; `glass`; `minimal`: rule and type only), `accent`, `color` (plate), `size`, `align` (`left`, `center`, `right`), `margin`, `face`, `radius`, `motion`, `sheen` (light sweep across the name; default true), `delay`, `out`. The rule grows, the plates wipe out of it and the type rises through masks; the exit reverses it. |
+| `titleCard` | `title`, `eyebrow`, `chip` (eyebrow as a pill), `subtitle`, `size`, `face` (default display), `weight`, `color`, `uppercase`, `leading`, `gradient` (two or more colours), `sheen` (light sweep once it lands), `reveal` (`word`: words rise through line masks; `line`; `fade`: soft focus pull; `type`), `stagger`, `motion`, `align`, `delay`, `out` (lines leave upwards through their masks) |
 
 ## Content blocks
 
 | Kind | Props |
 |---|---|
-| `chat` | `messages` (`[{ "from": "user" \| "assistant" \| name, "text", "at"? }]`), `fontSize`, `stream` (words per second for replies), `thinking` (seconds of typing dots), `gap`, `delay`, `maxWidth`. Replies stream word by word; the thread scrolls up. |
-| `prompt` | `text`, `placeholder`, `typing` (characters per second), `delay`, `sendAt`, `fontSize`, `glow` (an animated gradient rim). It types, presses send and clears. |
-| `checklist` | `align` (the list is centred as a block by default), `items`, `stagger`, `checkAfter`, `fontSize`, `color`, `strike` (to-do style), `delay` |
-| `quote` | `text`, `name`, `title`, `avatar` (src), `stars` (0–5), `reveal` (words per second), `fontSize`, `delay` |
-| `table` | `columns`, `rows` (cells are text, or `true`/`false`/`"✓"`/`"✗"` for icons), `highlight` (index of the column to emphasise), `fontSize`, `delay`, `stagger` |
-| `timeline` | `items` (`[{ "label", "title", "body" }]`), `current` (pulses; later items dim), `vertical`, `fontSize`, `step` (seconds per milestone), `delay` |
-| `spotlight` | `targets` (`[[x, y, w, h], ...]` in box px), `times`, `dim` (0–1), `radius`, `padding`, `color`, `delay`, `out`. Everything outside the focus darkens; the focus glides between targets. |
-| `keys` | `align` (as `button`), `keys` (e.g. `["⌘", "K"]`), `press` (times), `size`, `delay`, `out` |
-| `marquee` | `items` (words, or image srcs with `images: true`), `speed` (px/s), `fontSize`, `gap`, `separator`, `fade`, `color` |
+| `chat` | `messages` (`[{ "from": "user" \| "assistant" \| name, "text", "at"? }]`), `style` (`bubbles`, or `plain`: replies as text beside a small mark), `userColor`, `surface` (other speakers' bubbles; default `flat`), `radius`, `face`, `motion`, `fontSize`, `stream` (words per second for replies; the newest word fades in), `thinking` (seconds of typing dots), `gap`, `delay`, `maxWidth`. The thread scrolls up. |
+| `prompt` | `text`, `placeholder`, `typing` (characters per second), `delay`, `sendAt`, `fontSize`, `surface`, `radius`, `face`, `motion`, `glow` (animated gradient rim, off by default) and `colors` (rim colours; default shades of the accent). It types, presses send (the arrow flies off) and clears. |
+| `checklist` | `align` (the list is centred as a block by default), `items`, `stagger`, `checkAfter`, `fontSize`, `color`, `strike` (to-do style), `shape` (`square`, `circle`, `none`), `surface` (each row on its own surface), `spacing`, `face`, `motion`, `delay` |
+| `quote` | `text`, `name`, `title`, `avatar` (src), `stars` (0–5), `reveal` (words per second; words focus in), `face` (default display; `serif` for editorial), `mark` (big quote mark), `color`, `align` (0 left, 0.5 centred), `motion`, `fontSize`, `delay` |
+| `table` | `columns`, `rows` (cells are text, or `true`/`false`/`"✓"`/`"✗"` for icons), `highlight` (index of the column to emphasise; it lifts as a tinted panel), `tag` (label above it, e.g. `"Recommended"`), `color`, `surface` (behind the whole table), `zebra`, `face`, `motion`, `fontSize`, `delay`, `stagger` |
+| `timeline` | `items` (`[{ "label", "title", "body" }]`), `current` (pulses; later items dim), `vertical`, `oneSide` (labels below only), `node` (`dot`, `ring`, `square`), `color`, `thickness`, `face`, `motion`, `fontSize`, `step` (seconds per milestone), `delay` |
+| `spotlight` | `targets` (`[[x, y, w, h], ...]` in box px), `times`, `dim` (0–1), `tint` (dim colour), `feather` (soft edge px; default 24), `ring` (default true), `radius`, `padding`, `color`, `delay`, `out`. Everything outside the focus darkens; the focus glides between targets. |
+| `keys` | `align` (as `button`), `keys` (e.g. `["⌘", "K"]`), `press` (times), `size`, `surface` (`solid`: 3D keycaps; or `flat`, `outline`, `glass`, `paper`), `color`, `plus`, `motion` (default `bouncy`), `delay`, `out` |
+| `marquee` | `items` (words, or image srcs with `images: true`), `speed` (px/s), `fontSize`, `gap`, `separator`, `separatorColor`, `fade`, `color`, `face`, `weight`, `uppercase`, `outline` (outlined letters), `chips` (each item in a pill) |
 
 ## Backgrounds
 
@@ -231,7 +261,7 @@ The audio is decoded once and analysed with an FFT at 60 Hz into a small table o
 | `src` | synthetic | Audio file (mp3, wav, ogg, flac, m4a). |
 | `style` | `bars` | `bars` (rounded gradient bars with peak caps and a reflection), `wave` (smooth mirrored waveform, lows in the middle) or `circle` (radial bars around a ring). |
 | `bands` | 48 / 32 / 96 | Number of bars (bars / wave / circle). |
-| `colors` | accent → pink → cyan | Gradient, low → high. |
+| `colors` | accent ramp | Gradient, low → high (default: dark, base and light shades of the theme accent). |
 | `beats` | `false` | Pulse (glow, ring, scale) on detected beats. |
 | `smoothing` | `0.6` | How slowly levels fall (0–1). |
 | `gain` | `1` | Level multiplier. |
@@ -271,7 +301,7 @@ Put the same file in the spec's `audio` so you hear what you see; use `offset` w
 | Prop | Default | Meaning |
 |---|---|---|
 | `src` | | Image to reveal (cover-fitted across the grid); without it a gradient of `colors`. |
-| `colors` | accent → pink → cyan | |
+| `colors` | accent ramp | |
 | `cols`, `rows` | `10`, from the aspect | |
 | `effect` | `flip` | `flip` (turns over from a tinted back face), `scale` (pops with a twist) or `fade` (rises and fades). |
 | `wave` | `diagonal` | Order: `diagonal`, `radial`, `random`, `left`, `right`, `top` or `bottom`. |
@@ -293,7 +323,7 @@ Put the same file in the spec's `audio` so you hear what you see; use `offset` w
 | `cols` | `18` | Rows follow from the box aspect. |
 | `shape` | `rounded` | `rounded` (circles at rest, rounded squares at the crest), `square`, `dot` or `diamond`. |
 | `wave` | `radial` | `radial`, `diagonal`, `linear` or `interference` (two sources). |
-| `colors` | accent → pink → cyan | Cycled across the grid and over time. |
+| `colors` | accent ramp | Cycled across the grid and over time. |
 | `speed` | `1` | |
 | `wavelength` | `7` | In cells. |
 | `size`, `min` | `0.8`, `0.16` | Shape size at the crest and trough, as fractions of a cell. |
@@ -340,6 +370,9 @@ Cards behind are smaller, higher and darker; every `interval` the front card swi
 | `radius` | theme | |
 | `loop` | `true` | `false` stops on the last card. |
 | `delay` | `0` | The stack springs in from the back. |
+| `surface` | none | Without it, titled cards get rich palette gradients; with `solid`, `glass`, `outline`, `flat` or `paper` they become quiet theme-coloured UI cards. |
+| `face` | display | Title face. |
+| `trail` | `true` | Motion trail on the card being swiped away. |
 
 ### `particleText`: words made of particles
 Thousands of glowing particles fly in from all around, form the text, hold with a soft shimmer, re-form into the next word, then blow away. Points are sampled from the real glyph outlines, so any phrase works.
@@ -539,8 +572,8 @@ Scene transitions: `"transition": { "type": "wipe", "duration": 0.6, "direction"
 
 | Kind | Effect | Props |
 |---|---|---|
-| `wipe` | Layered colour panels sweep across, hold, then sweep away. Cut your scenes inside the `hold` window. | `at`, `duration`, `hold`, `colors`, `direction`, `slant` |
-| `iris` | The iris closes and reopens. | `at`, `duration`, `hold`, `color`, `center` |
+| `wipe` | Layered colour panels (default: accent, a deep accent and the surface) sweep across with motion-blurred edges, hold, then sweep away. Cut your scenes inside the `hold` window. | `at`, `duration`, `hold`, `colors`, `direction`, `slant`, `blur` (default true) |
+| `iris` | The iris closes and reopens. | `at`, `duration`, `hold`, `color`, `center`, `edge` (glowing rim colour), `feather` (soft edge px) |
 | `glitch` | Glitch bars. | `at`, `duration`, `intensity`, `colors`, `seed` |
 
 ## Audio (`src/audio/`)

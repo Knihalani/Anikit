@@ -126,9 +126,14 @@ pub fn elevation(out: &mut Vec<Op>, th: &Theme, x: f32, y: f32, w: f32, h: f32, 
         return;
     }
     let k = if th.dark { 1.0 } else { 0.32 };
-    shadow(out, x, y, w, h, r, 1.0 + 0.5 * level, 1.5 + level, 0.32 * k);
+    // Big surfaces skip the contact shadow and cap the ambient blur: their
+    // sprites are re-blurred every frame while they animate in.
+    let big = w * h > 500_000.0;
+    if !big {
+        shadow(out, x, y, w, h, r, 1.0 + 0.5 * level, 1.5 + level, 0.32 * k);
+    }
     shadow(out, x, y, w, h, r, 6.0 * level, 12.0 * level, 0.30 * k);
-    shadow(out, x, y, w, h, r, 22.0 * level, 44.0 * level, 0.38 * k);
+    shadow(out, x, y, w, h, r, 22.0 * level, (44.0 * level).min(if big { 32.0 } else { 64.0 }), 0.38 * k);
 }
 
 /// Lit top edge: a 1 px inner highlight that fades out down the sides, plus
