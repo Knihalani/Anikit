@@ -87,6 +87,7 @@ version = "0.1.0"
 dependencies = [
  "ak264",
  "anikit-core",
+ "anikit-music",
  "anikit-shader",
  "glifo",
  "image",

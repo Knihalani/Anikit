@@ -12,6 +12,7 @@
 //! See `docs/video/ARCHITECTURE.md` for ownership and contracts.
 
 pub mod audio;
+pub mod music;
 pub mod components;
 pub mod dl;
 pub mod agent_cli;

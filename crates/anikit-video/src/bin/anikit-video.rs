@@ -26,6 +26,7 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema> 
   info   [--components] [--shaders]  version, encoders, component and shader catalogue
   schema [-o file]              print the JSON Schema of the spec
   beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
+  music  spec.json -o out.wav   generate a mastered soundtrack (anikit-video docs music)
 common: --json (machine-readable output)
 agents: new | templates | prompt | critique | preview | mcp   (anikit-video templates, anikit-video prompt)";
 
@@ -172,6 +173,9 @@ fn resolve_time(ev: &Evaluator, s: &str) -> Result<f32, String> {
 fn main() -> ExitCode {
     // Agent commands (new, templates, prompt, critique, preview, mcp) live in the library.
     let raw: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(code) = anikit_video::music::run(&raw) {
+        return ExitCode::from(code as u8);
+    }
     if let Some(code) = anikit_video::agent_cli::run(&raw) {
         return ExitCode::from(code as u8);
     }
@@ -383,12 +387,16 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             let t0 = from.unwrap_or(0.0);
             let dur = to.unwrap_or(ev.duration) - t0;
             let wav = std::env::temp_dir().join(format!("anikit-video-{}.wav", std::process::id()));
-            let audio = if opts.audio { pipeline::mix_audio(&ev, t0, dur, &wav)? } else { None };
+            let job = if opts.audio { pipeline::audio_job(&ev, t0, dur, &wav) } else { None };
+            let had_audio = job.is_some();
             let s = if codec == Codec::Ak264 {
-                pipeline::render_ak264(&ev, &opts, &out, audio.as_deref())
+                // The audio (and any generated music) mixes on a thread while frames render.
+                pipeline::render_ak264_job(&ev, &opts, &out, job)
             } else {
+                let audio = job.map(|j| j.run()).transpose()?;
                 FfmpegEncoder::new(&out, w, h, ev.fps, codec, quality, audio.as_deref()).and_then(|mut enc| pipeline::render_video(&ev, &opts, &mut enc))
             };
+            let audio = had_audio.then_some(());
             if audio.is_some() {
                 let _ = std::fs::remove_file(&wav);
             }

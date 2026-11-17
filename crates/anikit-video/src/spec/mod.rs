@@ -120,6 +120,10 @@ pub struct Spec {
     pub markers: Option<BTreeMap<String, Num>>,
     /// Music and sound effects.
     pub audio: Option<Vec<AudioCue>>,
+    /// Generated, mastered music (`anikit-video docs music`): `{"style":"lofi","bpm":84,"key":"Dm","hits":["@bar5"]}`.
+    /// Fills the video's length; `@beatN`/`@barN` markers follow its exact grid.
+    #[schemars(with = "Option<serde_json::Map<String, serde_json::Value>>")]
+    pub music: Option<serde_json::Value>,
     /// Burned-in captions.
     pub captions: Option<Captions>,
     /// Extra fonts: family name → file path.

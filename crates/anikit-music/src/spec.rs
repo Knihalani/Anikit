@@ -241,6 +241,12 @@ pub struct MusicSpec {
     pub end: Option<String>,
     /// Import a MIDI file as tracks (instruments from its programs).
     pub midi: Option<String>,
+    /// Video only: where the music starts on the video timeline (seconds).
+    pub at: Option<f64>,
+    /// Video only: music bed level in dB relative to the mastered track (default 0).
+    pub gain: Option<f64>,
+    /// Video only: duck under voice-over (`true` = 10 dB, a number = dB, `false` = never).
+    pub duck: Option<serde_json::Value>,
 }
 
 impl MusicSpec {
@@ -261,7 +267,7 @@ fn serde_path_to_error_free(de: &mut serde_json::Deserializer<serde_json::de::St
         if let Some(rest) = msg.strip_prefix("unknown field `") {
             let name = rest.split('`').next().unwrap_or("");
             let fields = [
-                "style", "bpm", "key", "meter", "swing", "mood", "length", "sections", "hits", "chords", "instruments", "mute", "tracks", "sfx", "master", "seed", "fit", "end", "midi",
+                "style", "bpm", "key", "meter", "swing", "mood", "length", "sections", "hits", "chords", "instruments", "mute", "tracks", "sfx", "master", "seed", "fit", "end", "midi", "at", "duck",
                 "inst", "clips", "notes", "drums", "steps", "play", "bass", "melody", "bars", "repeat", "octave", "vel", "transpose", "gain", "pan", "width", "reverb", "delay",
                 "duck", "eq", "comp", "drive", "lp", "hp", "humanize", "straight", "name", "at", "lufs", "ceiling", "fadeOut", "fadeIn", "reverbGain",
             ];
