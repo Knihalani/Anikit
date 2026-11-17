@@ -9,6 +9,8 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 
 **Need detail? Don't grep the docs: run `anikit-video docs <topic>`** (30 lines each, with a working example): `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything`.
 
+**Concept before JSON (two minutes, three lines):** (1) the one image only *this* brief could have, built from its own nouns (a lock that shatters into particles for a security product; its real data as a physics pile); (2) which primitive below makes it unforgettable; (3) the music style and the beat it lands on. Recipes are techniques to borrow for a shot, not the piece: `critique` flags a spec that is mostly a recipe with new words.
+
 ## Build from the open primitives (anything is possible)
 
 A spec: `{ "size": "16:9", "intent": {"pace": "fast"}, "music": "synthwave", "scenes": [ { "duration": 1.2, "layers": [ … ] } ] }`.
@@ -44,7 +46,7 @@ No limits: expressions on any number or colour (`"=hsl(beat * 30, 80, 60)"`, `le
 
 - **Launch, product or announcement video?** Use the `skills/anikit-launch-video/SKILL.md` skill (`anikit-video docs launch`): brief → concept → beat sheet → QA.
 
-- `anikit-video recipes`: drop-in high-end shots to adapt (launch-sting: particles + 3D + shader + music on the beat; kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, raymarch-world) and the shader library.
+- `anikit-video recipes`: high-end shots to learn a technique from (copy the shot you need into your own concept) (launch-sting: particles + 3D + shader + music on the beat; kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, raymarch-world) and the shader library.
 - `anikit-video looks`: art direction (palette, type, motion, grade). Use `"look": "noir"`.
 - `anikit-video info --components`: prebuilt widgets (charts, devices, UI).
 - `anikit-video templates`: quick starts. They are optional; don't let them define the piece.

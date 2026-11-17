@@ -199,4 +199,3 @@ mod tests {
         assert!(recipes(Some("kinetic-slm")).unwrap_err().contains("did you mean 'kinetic-slam'"));
     }
 }
-
