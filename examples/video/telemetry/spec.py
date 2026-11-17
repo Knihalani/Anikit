@@ -385,7 +385,7 @@ def scene_map():
         text("P3", px + 172, py - 64, 26, TEXT, HEAD, 800, "left"),
     ], start=r(tp - 0.1), end=r(tp + 2.6), enter={"preset": "fadeIn", "duration": 0.2}, exit="fadeOut"))
     return {"id": "map", "duration": dur, "background": BG,
-            "transition": {"type": "push", "direction": "left", "duration": 0.5, "ease": "inOutQuart"},
+            "transition": {"type": "slide", "direction": "left", "duration": 0.5, "ease": "inOutQuart"},
             "layers": layers}
 
 
@@ -548,7 +548,7 @@ def scene_onboard():
 
 
 # ---- replay wipe (two halves straddling a cut) ------------------------------------
-WIPE = {"duration": 0.4, "hold": 0.32, "colors": [PANEL2, "#FFFFFF", RED], "direction": "right", "slant": 14}
+WIPE = {"duration": 0.4, "hold": 0.32, "colors": [PANEL2, "#8E1422", RED], "direction": "right", "slant": 14}
 
 
 def replay_wipe_out(scene_dur):
@@ -567,7 +567,10 @@ def replay_wipe_in():
 
 
 # ---- scene 4: overtake replay --------------------------------------------------------
-def scene_overtake():
+def scene_overtake(L=None):
+    """L: layout overrides for other aspect ratios (see vertical.py)."""
+    L = dict({"zx": 120, "zy": -40, "card_x": W - M - 520, "card_y": 150, "card_w": 520, "banner_x": W / 2 + 120,
+              "banner_y": H - 300, "banner_w": 760, "cap_y": H - 150, "tag_y": 52, "slow_y": H - 60, "slow_x": W - M}, **(L or {}))
     dur = 8.0
     T_pass = DATA["overtakes"]["OKA_MAR"]["t"]
     t_pass = OT_PASS  # video time of the pass
@@ -583,7 +586,7 @@ def scene_overtake():
     f_pass = frac_at("OKA", T_pass) % 1.0
     scale = 4.2
     px, py = TRACK[sample_idx(f_pass)]
-    xf = lambda x, y: (W / 2 + (x - px) * scale + 120, H / 2 + (y - py) * scale - 40)
+    xf = lambda x, y: (W / 2 + (x - px) * scale + L["zx"], H / 2 + (y - py) * scale + L["zy"])
     ts = [i / 60 for i in range(int(dur * 60) + 1)]
     layers = [{"shape": "rect", "width": W, "height": H, "x": W / 2, "y": H / 2, "fill": "radial-gradient(#101826, #05070B)"},
               {"component": "grid", "props": {"cell": 96, "color": "#FFFFFF07", "lineWidth": 1, "fade": 0.8}}]
@@ -673,19 +676,19 @@ def scene_overtake():
         return (frac_at(code, T_of(t) + e) - frac_at(code, T_of(t) - e)) / (2 * e) * race.TRACK_M * 3.6
 
     ts2 = [i / 20 for i in range(int(dur * 20) + 1)]
-    cx0 = W - M - 520
-    layers.append(rect(cx0, 150, 520, 300, PANEL, opacity=0.92))
-    layers.append(rect(cx0, 150, 520, 44, PANEL2))
-    layers.append(text("BATTLE FOR THE LEAD  ·  LAP 57", cx0 + 20, 172, 18, TEXT, MONO, 800, "left", letterSpacing="0.06em"))
+    cx0, cy0, cw = L["card_x"], L["card_y"], L["card_w"]
+    layers.append(rect(cx0, cy0, cw, 300, PANEL, opacity=0.92))
+    layers.append(rect(cx0, cy0, cw, 44, PANEL2))
+    layers.append(text("BATTLE FOR THE LEAD  ·  LAP 57", cx0 + 20, cy0 + 22, 18, TEXT, MONO, 800, "left", letterSpacing="0.06em"))
     for k, code in enumerate(("MAR", "OKA")):
-        yy = 230 + k * 74
+        yy = cy0 + 80 + k * 74
         layers.append(rect(cx0 + 20, yy, 6, 54, COL[code], anchor="left"))
         layers.append(text(code, cx0 + 44, yy, 34, TEXT, HEAD, 900, "left"))
         layers.append(text(TEAM[code], cx0 + 130, yy, 16, MUTED, MONO, 600, "left"))
         sp = [(t, spd(code, t)) for t in ts2]
-        layers.append(text("{value:0}", cx0 + 430, yy, 40, TEXT, MONO, 800, "right", value=r(sp[0][1]),
+        layers.append(text("{value:0}", cx0 + cw - 90, yy, 40, TEXT, MONO, 800, "right", value=r(sp[0][1]),
                            animate=[kf({"value": sp}, dur)]))
-        layers.append(text("KM/H", cx0 + 440, yy + 6, 15, MUTED, MONO, 600, "left"))
+        layers.append(text("KM/H", cx0 + cw - 80, yy + 6, 15, MUTED, MONO, 600, "left"))
     # interval: time for the chaser to reach the leader's current distance
     gaps = []
     for t in ts2:
@@ -701,27 +704,27 @@ def scene_overtake():
             else:
                 hi2 = mid
         gaps.append((t, (lo2 - T) * (1 if lead == "MAR" else -1)))
-    layers.append(text("INTERVAL", cx0 + 20, 410, 16, MUTED, MONO, 700, "left", letterSpacing="0.1em"))
-    layers.append(text("{value:+0.000}", cx0 + 500, 410, 30, YELLOW, MONO, 800, "right", value=r(gaps[0][1], 3),
+    layers.append(text("INTERVAL", cx0 + 20, cy0 + 260, 16, MUTED, MONO, 700, "left", letterSpacing="0.1em"))
+    layers.append(text("{value:+0.000}", cx0 + cw - 20, cy0 + 260, 30, YELLOW, MONO, 800, "right", value=r(gaps[0][1], 3),
                        animate=[kf({"value": gaps}, dur)]))
     # pass banner
     layers.append(group([
-        rect(W / 2 + 120, H - 300, 760, 96, COL["OKA"], anchor="center", skewX=-10),
-        text("OKAFOR TAKES THE LEAD", W / 2 + 120, H - 300, 50, "#05070B", HEAD, 900, "center", italic=True),
+        rect(L["banner_x"], L["banner_y"], L["banner_w"], 96, COL["OKA"], anchor="center", skewX=-10),
+        text("OKAFOR TAKES THE LEAD", L["banner_x"], L["banner_y"], 50, "#05070B", HEAD, 900, "center", italic=True),
     ], start=t_pass + 0.15, enter={"preset": "wipeIn", "direction": "right", "duration": 0.35, "ease": "outExpo"}))
     layers.append(group([
-        rect(M, H - 150, 8, 86, RED),
-        text("TURN 1", M + 32, H - 124, 44, TEXT, HEAD, 900, "left", italic=True, letterSpacing="0.04em"),
-        text("BRAKING ZONE  ·  2ND GEAR HAIRPIN  ·  140 KM/H APEX", M + 34, H - 80, 18, MUTED, MONO, 700, "left", letterSpacing="0.08em"),
+        rect(M, L["cap_y"], 8, 86, RED),
+        text("TURN 1", M + 32, L["cap_y"] + 26, 44, TEXT, HEAD, 900, "left", italic=True, letterSpacing="0.04em"),
+        text("BRAKING ZONE  ·  2ND GEAR HAIRPIN  ·  140 KM/H APEX", M + 34, L["cap_y"] + 70, 18, MUTED, MONO, 700, "left", letterSpacing="0.08em"),
     ], enter={"preset": "fadeRight", "delay": 0.4, "duration": 0.5, "ease": "outExpo"}))
     # replay tag
     layers.append(group([
-        rect(M, 52, 200, 44, RED, skewX=-12),
-        text("REPLAY", M + 100, 74, 24, "#fff", HEAD, 900, "center", letterSpacing="0.14em", italic=True),
-        {"shape": "circle", "width": 12, "height": 12, "x": M + 228, "y": 74, "fill": RED, "loop": "blink"},
-        text("LAP 57  ·  TURN 1", M + 248, 74, 20, TEXT, MONO, 700, "left", letterSpacing="0.06em"),
+        rect(M, L["tag_y"], 200, 44, RED, skewX=-12),
+        text("REPLAY", M + 100, L["tag_y"] + 22, 24, "#fff", HEAD, 900, "center", letterSpacing="0.14em", italic=True),
+        {"shape": "circle", "width": 12, "height": 12, "x": M + 228, "y": L["tag_y"] + 22, "fill": RED, "loop": "blink"},
+        text("LAP 57  ·  TURN 1", M + 248, L["tag_y"] + 22, 20, TEXT, MONO, 700, "left", letterSpacing="0.06em"),
     ]))
-    slow = text("SLOW MOTION ×0.35", W - M, H - 60, 18, MUTED, MONO, 700, "right", letterSpacing="0.1em",
+    slow = text("SLOW MOTION ×0.35", L["slow_x"], L["slow_y"], 18, MUTED, MONO, 700, "right", letterSpacing="0.1em",
                 start=r(t_pass - 0.9), end=r(t_pass + 1.0), enter={"preset": "fadeIn", "duration": 0.1}, exit={"preset": "fadeOut", "duration": 0.1})
     layers.append(slow)
     layers += replay_wipe_in()
@@ -753,8 +756,12 @@ def scene_fastest():
              letterSpacing="0.06em", enter={"preset": "fadeUp", "delay": 0.4}),
     ]
     # replace the {value} counter with a lap-time string reveal (mono, scrambled)
-    layers[-2] = text(fmt_lap(fl["time"]), M + 96, 540, 140, PURPLE, MONO, 800, "left",
-                      glow={"radius": 30, "intensity": 0.9, "color": PURPLE}, enter="scramble")
+    # a timer settling: minutes fixed, seconds count up to the lap time (digits only)
+    mins = int(fl["time"] // 60)
+    secs_v = fl["time"] - 60 * mins
+    layers[-2] = text(f"{mins}:{{value:00.000}}", M + 96, 540, 140, PURPLE, MONO, 800, "left", value=r(secs_v, 3),
+                      glow={"radius": 30, "intensity": 0.9, "color": PURPLE},
+                      animate=[{"from": {"value": r(secs_v - 6.5, 3)}, "at": 0.1, "duration": 0.45, "ease": "outExpo"}])
     for k, s in enumerate(secs):
         x = 1240 + k * 0
         y = 360 + k * 110
@@ -805,7 +812,7 @@ def scene_analysis():
             layers.append(rect(x0 + 124, yy + 6, r(bw), 36, col, scaleX=1,
                                anchor="topLeft", animate=[{"from": {"width": 0}, "at": 0.3 + 0.3 * k + 0.1 * j, "duration": 0.7, "ease": "outExpo"}]))
             layers.append(text("{value:0.000}", x0 + pw - 32, yy + 24, 30, TEXT, MONO, 800, "right", value=r(tv, 3),
-                               enter={"preset": "countUp", "delay": 0.3 + 0.3 * k + 0.1 * j, "duration": 0.7}))
+                               start=r(0.3 + 0.3 * k + 0.1 * j), enter={"preset": "countUp", "duration": 0.7}))
         dlt = ta - tb
         layers.append(text(f"{dlt:+.3f}", x0 + pw - 32, yk, 20, GREEN if dlt < 0 else RED, MONO, 800, "right",
                            enter={"preset": "fadeIn", "delay": 0.9 + 0.3 * k}))
