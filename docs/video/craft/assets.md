@@ -73,7 +73,7 @@ and what is still missing.
 | Gap | Status |
 |---|---|
 | HDRI env, PBR sets, textured glTF, alpha cutouts, LUTs, 2D image refs | done |
-| Floor/ground PBR texture (`floor.texture`) | to do: today use a thin textured box |
+| Floor/ground PBR texture (`floor.texture`) | done |
 | Displacement maps (only normal maps today: silhouettes stay smooth) | to do (needs tessellation or parallax) |
 | EXR HDRIs, 8k+ backgrounds | `.hdr` only; 4k max per the index |
 | Kenney stylised kits, Quaternius low-poly | blocked (host 403) |

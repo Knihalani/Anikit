@@ -44,6 +44,7 @@ Any Poly Haven slug or ambientCG id works even if it isn't in the curated index
   real key light with traced shadows.
 - `material.texture`: a PBR set. `scale` = tiles per metre multiplier, `color` tints the albedo,
   `roughness`/`metallic` still override. Triplanar mapped, so no UVs are needed.
+- `"floor": {"texture": "ambientcg:WoodFloor051", "scale": 1}`: the same on the ground.
 - `"src": "polyhaven:model/…"` on a model object: any glTF from the library.
 - 2D image layers: `{"type": "image", "src": "polyhaven:texture/concrete_wall_008"}` uses the
   albedo map (a texture, paper, plaster, fabric background).

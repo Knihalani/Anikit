@@ -183,6 +183,8 @@ struct FloorParams {
     reflect: f32,
     pool: (f32, f32, f32),
     fade: (f32, f32),
+    /// PBR texture set (`floor.texture`), 0 = none.
+    pbr: u32,
 }
 
 fn num_or(m: &Map<String, Value>, k: &str, d: f32) -> Result<f32, String> {
@@ -361,7 +363,7 @@ impl Prepare for Scene3d {
                     let g = es.env.map.as_ref().map(|m| m.ground()).unwrap_or(v3(0.1, 0.1, 0.1));
                     let alb = |a: f32, b: f32| (a / b.max(1e-5)).clamp(0.03, 0.85);
                     let color = v3(alb(g.x, lit.x), alb(g.y, lit.y), alb(g.z, lit.z));
-                    FloorParams { y: 0.0, color, roughness: 0.6, mirror: 0.0, reflect: 0.12, pool: (0.0, 0.0, 0.0), fade: (4.0, 18.0) }
+                    FloorParams { y: 0.0, color, roughness: 0.6, mirror: 0.0, reflect: 0.12, pool: (0.0, 0.0, 0.0), fade: (4.0, 18.0), pbr: 0 }
                 } else if bright {
                     let color = match es.name.as_str() {
                         "overcast" => v3(0.2, 0.27, 0.12),
@@ -374,14 +376,36 @@ impl Prepare for Scene3d {
                         "interior" => (0.3, 0.5),
                         _ => (0.35, 0.35),
                     };
-                    FloorParams { y: 0.0, color, roughness, mirror: 0.0, reflect, pool: (0.0, 0.0, 0.0), fade: (25.0, 250.0) }
+                    FloorParams { y: 0.0, color, roughness, mirror: 0.0, reflect, pool: (0.0, 0.0, 0.0), fade: (25.0, 250.0), pbr: 0 }
                 } else {
-                    FloorParams { y: 0.0, color: v3(0.035, 0.035, 0.04), roughness: 0.09, mirror: 0.06, reflect: 1.0, pool: (0.0, 0.0, 5.0), fade: (7.0, 16.0) }
+                    FloorParams { y: 0.0, color: v3(0.035, 0.035, 0.04), roughness: 0.09, mirror: 0.06, reflect: 1.0, pool: (0.0, 0.0, 5.0), fade: (7.0, 16.0), pbr: 0 }
                 };
                 if let Some(Value::Object(fm)) = v {
                     for k in fm.keys() {
-                        if !["color", "roughness", "reflect", "mirror", "y"].contains(&k.as_str()) {
-                            return Err(Error(format!("floor: unknown key `{k}` (color, roughness, reflect, mirror, y)")));
+                        if !["color", "roughness", "reflect", "mirror", "y", "texture", "scale", "texture_rotate"].contains(&k.as_str()) {
+                            return Err(Error(format!("floor: unknown key `{k}` (color, roughness, reflect, mirror, y, texture, scale, textureRotate)")));
+                        }
+                    }
+                    if let Some(t) = fm.get("texture") {
+                        // A ground material: the set's albedo times `color` (white unless given).
+                        let src = t.as_str().ok_or_else(|| Error("floor.texture: expected an asset ref (`ambientcg:WoodFloor051`) or a folder of maps".into()))?;
+                        let o = pbr::SetOpts {
+                            scale: num_or(fm, "scale", 1.0).map_err(Error)?.max(1e-3),
+                            tint: v3(1.0, 1.0, 1.0),
+                            mapping: pbr::Mapping::Triplanar,
+                            rough_mul: 1.0,
+                            normal_strength: 1.0,
+                            keep_rough: false,
+                            keep_metal: true,
+                            rotate: num_or(fm, "texture_rotate", 0.0).map_err(Error)?,
+                            max: 2048,
+                        };
+                        fp.pbr = pbr::load(src, &o).map_err(|e| Error(format!("floor.texture: {e}")))?;
+                        if !fm.contains_key("color") {
+                            fp.color = v3(1.0, 1.0, 1.0);
+                        }
+                        if !fm.contains_key("reflect") {
+                            fp.reflect = 0.6;
                         }
                     }
                     if let Some(c) = fm.get("color") {
@@ -620,7 +644,7 @@ impl Prepare for Scene3d {
 }
 
 fn make_floor(f: &FloorParams, vis: Option<Arc<FloorVis>>) -> Floor {
-    Floor { y: f.y, color: f.color, roughness: f.roughness, mirror: f.mirror, reflect: f.reflect, pool: f.pool, fade: f.fade, vis }
+    Floor { y: f.y, color: f.color, roughness: f.roughness, mirror: f.mirror, reflect: f.reflect, pool: f.pool, fade: f.fade, vis, pbr: f.pbr }
 }
 
 fn read_floor_vis(path: &std::path::Path) -> Option<FloorVis> {
@@ -1482,6 +1506,17 @@ mod asset_tests {
         // The sphere in the middle reads red.
         let c = &px[(24 * 48 + 24) * 4..(24 * 48 + 24) * 4 + 3];
         assert!(c[0] as i32 > c[1] as i32 + 30, "{c:?}");
+        // The same set on the ground: the floor reads red too.
+        let g = Scene3d::try_from(json!({
+            "env": "studio", "floor": { "texture": d.to_string_lossy() },
+            "camera": { "keys": [ { "t": 0, "pos": [0, 2, 2], "target": [0, 0, 0], "focal": 30 } ] },
+            "objects": [ { "type": "sphere", "radius": 0.1, "pos": [5, 0.1, 5] } ]
+        }))
+        .and_then(|mut s| s.prepare().map_err(|e| e.0).map(|_| s))
+        .unwrap();
+        let px = g.render(0.0, 1.0 / 30.0, 32, 32, None);
+        let c = &px[(16 * 32 + 16) * 4..(16 * 32 + 16) * 4 + 3];
+        assert!(c[0] as i32 > c[1] as i32 + 20, "floor {c:?}");
         // A folder without a colour map is an error that says so.
         let empty = dir("pbr-empty");
         let e = Scene3d::try_from(json!({ "objects": [ { "type": "sphere", "material": { "texture": empty.to_string_lossy() } } ] })).and_then(|mut s| s.prepare().map_err(|e| e.0));

@@ -73,4 +73,9 @@ for lut in ["neutral-print", "teal-orange", "warm-negative", "bleach-bypass", "f
     s = spec(props, [label(f"post.lut  anikit:lut/{lut}", "4%", "93%")])
     s["post"] = {"preset": "clean", "lut": f"anikit:lut/{lut}"}
     write(f"lut-{lut}", s)
+# 5. A textured ground: the hero scene on a wood floor.
+s = json.load(open(os.path.join(HERE, "hdri-studio_small_09.json")))
+s["scenes"][0]["layers"][0]["props"]["floor"] = {"texture": "ambientcg:WoodFloor051", "scale": 1}
+s["scenes"][0]["layers"][1]["text"] = "floor.texture  ambientcg:WoodFloor051"
+write("floor", s)
 print("ok")
