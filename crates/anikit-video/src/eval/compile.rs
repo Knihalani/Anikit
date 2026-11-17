@@ -1349,7 +1349,19 @@ impl C<'_> {
         };
         let mut raw = l.text.clone().unwrap_or_default();
         if st.uppercase == Some(true) {
-            raw = raw.to_uppercase();
+            // Not inside `[word]{$token}` markup: colour tokens stay as written.
+            let mut depth = 0;
+            raw = raw
+                .chars()
+                .flat_map(|c| {
+                    match c {
+                        '{' => depth += 1,
+                        '}' => depth = (depth - 1).max(0),
+                        _ => {}
+                    }
+                    if depth > 0 { vec![c] } else { c.to_uppercase().collect() }
+                })
+                .collect();
         }
         let col = st.color.clone().unwrap_or(spec::Paint::Css("$text".into()));
         let (paint, c) = self.paint(&col, &format!("{path}.color")).unwrap_or((PaintC::Solid, Rgba([1.0; 4])));

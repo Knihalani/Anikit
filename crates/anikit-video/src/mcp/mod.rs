@@ -153,7 +153,13 @@ impl Server {
                 };
                 let fmt_s = a.get("format").and_then(|f| f.as_str()).unwrap_or("16:9");
                 let format = Format::parse(fmt_s)?;
-                let params = a.get("params").cloned().unwrap_or(json!({}));
+                let mut params = a.get("params").cloned().unwrap_or(json!({}));
+                if let (Some(l), Some(m)) = (a.get("look"), params.as_object_mut()) {
+                    m.insert("look".into(), match l.as_str() {
+                        Some(s) => agent_cli::parse_look(s)?,
+                        None => l.clone(),
+                    });
+                }
                 let spec = t.expand(&params, &brand, format).map_err(|e| e.join("\n"))?;
                 let out = match a.get("out").and_then(|o| o.as_str()) {
                     Some(p) => PathBuf::from(p),
@@ -177,7 +183,7 @@ impl Server {
                 let mut r = critique(&spec);
                 if a.get("render") == Some(&Value::Bool(true)) {
                     let p = crate::preview::Preview::new(spec.clone(), path.parent().unwrap_or(Path::new(".")))?;
-                    let extra = crate::render_check::check(&p.ev);
+                    let extra = crate::render_check::check_spec(&spec, &p.ev);
                     r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
                     r.notes.extend(extra);
                 }
@@ -236,6 +242,7 @@ impl Server {
                 Ok(vec![text(&format!("rendered {}\n{}", out.display(), log.trim()))])
             }
             "get_prompt" => Ok(vec![text(&prompts::get(str_arg(a, "name")?)?)]),
+            "list_looks" => Ok(vec![text(&agent_cli::looks_text(a.get("name").and_then(|x| x.as_str()), a.get("full") == Some(&json!(true)))?)]),
             _ => {
                 let names: Vec<String> = tools().iter().filter_map(|t| t["name"].as_str().map(String::from)).collect();
                 let hint = crate::templates::suggest(name, names.iter().map(|s| s.as_str())).map(|s| format!(" (did you mean '{s}'?)")).unwrap_or_default();
@@ -384,6 +391,7 @@ pub fn tools() -> Vec<Value> {
             "template": { "type": "string" }, "params": { "type": "object" },
             "brand": { "type": ["object", "string"], "description": "{name, colors:{primary}, logo, voice:{cta,url}} or brand.json path" },
             "format": { "type": "string", "description": "16:9 | 9:16 | 1:1" }, "out": { "type": "string" },
+            "look": { "description": "art direction: a look name (list_looks), a+b, or {base, ...overrides}; default: the template's own" },
             "return_spec": { "type": "boolean" }
         }), &["template", "params"]) }),
         json!({ "name": "validate_spec", "description": "Errors/warnings, one line each, with did-you-mean.", "inputSchema": obj(spec(), &[]) }),
@@ -391,7 +399,8 @@ pub fn tools() -> Vec<Value> {
         json!({ "name": "render_still", "description": "One frame → PNG path.", "inputSchema": obj(img(json!({ "at": { "type": "number", "description": "seconds" } })), &[]) }),
         json!({ "name": "render_contact_sheet", "description": "One frame per scene in one PNG → path. Cheapest full review.", "inputSchema": obj(img(json!({ "frames": { "type": "integer" } })), &[]) }),
         json!({ "name": "render_video", "description": "Final render → path.", "inputSchema": obj(with(spec(), json!({ "out": { "type": "string", "description": "e.g. out.mp4" }, "quality": { "type": "string", "description": "draft|standard|high" } })), &[]) }),
-        json!({ "name": "get_prompt", "description": "Prompt library: launch-video-generator, script-writer, storyboarder, critic, copy-guard, brand-kit, motion-rules, template:<name>.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &["name"]) }),
+        json!({ "name": "list_looks", "description": "Art-direction looks (palette, type, motion, world layers). name → its direction; full:true → JSON to override.", "inputSchema": obj(json!({ "name": { "type": "string" }, "full": { "type": "boolean" } }), &[]) }),
+        json!({ "name": "get_prompt", "description": "Prompt library: director, launch-video-generator, script-writer, storyboarder, critic, copy-guard, brand-kit, motion-rules, template:<name>.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &["name"]) }),
     ]
 }
 

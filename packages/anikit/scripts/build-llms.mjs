@@ -37,10 +37,10 @@ recipe('parallax-gallery', '.gallery');
 Scaffold: \`npx anikit new vanilla|vite|react <dir>\`. React hooks: \`anikit/react\` (useAnikit, useAnimate, useRecipe, useSpring, useScroll, Presence).
 
 ## Video (anikit-video)
-Native programmatic video for agents: a JSON spec (or a template plus a brand kit) in, an MP4 out, no browser. Builders: \`anikit/video\` (TS), \`anikit.video\` (Python); MCP server: \`anikit-video mcp\`.
-${links.video ? `- [Video quick start for agents](${links.video.agents}): templates, the review loop, builders, MCP tools
+Native programmatic video for agents: a JSON spec with an art-direction look (or a template plus a brand kit) in, an MP4 out, no browser. Builders: \`anikit/video\` (TS), \`anikit.video\` (Python); MCP server: \`anikit-video mcp\`.
+${links.video ? `- [Video quick start for agents](${links.video.agents}): directing method, looks, the review loop, templates, builders, MCP tools
 - [Video spec reference](${links.video.spec}): scenes, layers, animation presets, transitions, theme
-- [Prompt library](${links.video.prompts}): launch video generator, script writer, storyboarder, critic, copy guard, brand kit, motion rules
+- [Prompt library](${links.video.prompts}): director, launch video generator, script writer, storyboarder, critic, copy guard, brand kit, motion rules
 ` : '- Full guide and spec: section 4 of llms-full.txt\n'}
 ## Recipes
 ${headings(recipes).map((s) => `- ${s}`).join('\n')}
