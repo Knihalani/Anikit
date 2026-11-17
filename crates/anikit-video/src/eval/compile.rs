@@ -82,6 +82,7 @@ struct C<'a> {
     assets: Arc<SharedAssets>,
     /// Audio from video clips.
     audio_extra: Vec<crate::audio::Track>,
+    layer_info: Vec<(String, String)>,
     beat_marks: super::beat_markers::BeatMarkers,
 }
 
@@ -132,6 +133,7 @@ impl Evaluator {
             scene_dur: 3.0,
             image_ids: HashMap::new(),
             audio_extra: Vec::new(),
+            layer_info: Vec::new(),
             beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
             assets: Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new())))),
         };
@@ -284,6 +286,7 @@ impl Evaluator {
             easings: c.easings,
             scenes,
             overlay,
+            layer_info: c.layer_info,
             captions,
             ctheme: components_theme(&c.theme),
             theme: c.theme,
@@ -352,6 +355,7 @@ fn empty_node(kind: Kind) -> Node {
         wipe_dir: 0,
         index: 0.0,
         count: 1.0,
+        tag: u32::MAX,
     }
 }
 
@@ -938,6 +942,12 @@ impl C<'_> {
             _ => l,
         };
         let kind = self.infer_kind(l, path)?;
+        let label = match (kind, &l.component) {
+            ("component", Some(c)) => format!("component:{c}"),
+            _ => kind.to_string(),
+        };
+        let tag = self.layer_info.len() as u32;
+        self.layer_info.push((path.to_string(), label));
         if l.visible == Some(false) {
             return None;
         }
@@ -963,6 +973,7 @@ impl C<'_> {
         n.start = start;
         n.end = end;
         n.index = pc.index as f32;
+        n.tag = tag;
         n.count = pc.count as f32;
 
         // Size (explicit).

@@ -230,32 +230,43 @@ struct Worker {
 }
 
 thread_local! {
-    static WORKER: RefCell<Worker> = RefCell::new(Worker {
-        version: 0,
-        renderer: None,
-        dl: DisplayList::default(),
-        yuv: YuvFrame::default(),
-        map: crate::render::MbMap::new(0, 0),
-        last: None,
-        returned: None,
-    });
+    static WORKER: RefCell<Worker> = RefCell::new(new_worker());
+}
+
+/// Run `f` with this thread's renderer, (re)creating it when assets changed.
+fn new_worker() -> Worker {
+    Worker { version: 0, renderer: None, dl: DisplayList::default(), yuv: YuvFrame::default(), map: crate::render::MbMap::new(0, 0), last: None, returned: None }
+}
+
+/// This thread's worker state. A nested call (rayon work-stealing while the state is
+/// in use further up the stack) gets a fresh temporary worker instead of panicking:
+/// it renders a full frame and shares no incremental state, which is always correct.
+fn with_worker<R>(f: impl FnOnce(&mut Worker) -> R) -> R {
+    WORKER.with(|c| match c.try_borrow_mut() {
+        Ok(mut w) => f(&mut w),
+        Err(_) => f(&mut new_worker()),
+    })
+}
+
+/// Create (or re-create, when fonts were added) this worker's renderer.
+fn ensure_renderer(ev: &Evaluator, w: &mut Worker) {
+    // Only new font faces need a new renderer; images come from a live source.
+    let v = (ev.assets.font_count() as u64) ^ ((Arc::as_ptr(&ev.assets) as u64) << 16);
+    if w.renderer.is_none() || w.version != v {
+        let mut r = Renderer::new(ev.assets.snapshot_fonts());
+        let a = ev.assets.clone();
+        r.set_image_source(Arc::new(move |id| a.pixmap(id)));
+        w.renderer = Some(r);
+        w.version = v;
+        w.last = None;
+    }
 }
 
 /// Run `f` with this thread's renderer, (re)creating it when assets changed.
 fn with_renderer<R>(ev: &Evaluator, f: impl FnOnce(&mut Renderer, &mut DisplayList) -> R) -> R {
-    WORKER.with(|w| {
-        let mut w = w.borrow_mut();
-        // Only new font faces need a new renderer; images come from a live source.
-        let v = (ev.assets.font_count() as u64) ^ ((Arc::as_ptr(&ev.assets) as u64) << 16);
-        if w.renderer.is_none() || w.version != v {
-            let mut r = Renderer::new(ev.assets.snapshot_fonts());
-            let a = ev.assets.clone();
-            r.set_image_source(Arc::new(move |id| a.pixmap(id)));
-            w.renderer = Some(r);
-            w.version = v;
-            w.last = None;
-        }
-        let Worker { renderer, dl, .. } = &mut *w;
+    with_worker(|w| {
+        ensure_renderer(ev, w);
+        let Worker { renderer, dl, .. } = w;
         f(renderer.as_mut().unwrap(), dl)
     })
 }
@@ -349,9 +360,9 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
     let starts: std::collections::HashSet<usize> = ak264::chunk_ranges(n, cfg.gop).into_iter().map(|r| r.0).collect();
     let out = ak264::encode_parallel(cfg, n, |k, buf, hints| {
         let t = Instant::now();
-        with_renderer(ev, |_, _| {});
-        let held = WORKER.with(|w| {
-            let mut w = w.borrow_mut();
+        // One worker borrow for the whole frame (eval and render must share its state).
+        with_worker(|w| {
+            ensure_renderer(ev, w);
             if let (Some(r), Some(l)) = (w.returned.take(), w.last) {
                 if l + 1 == k && !starts.contains(&k) {
                     prof.encode_ns.fetch_add((t - r).as_nanos() as u64, Ordering::Relaxed);
@@ -367,19 +378,12 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
                 hints.changed = Some(vec![false; emw * emh]);
                 *last = Some(k);
                 *returned = Some(Instant::now());
-                return true;
+                return;
             }
             eval_frame(ev, (f0 + k) as u32, opts.scale, dl);
-            false
-        });
-        if held {
-            return;
-        }
-        prof.eval_ns.fetch_add(ns(t), Ordering::Relaxed);
-        // Evaluating can intern new font faces (layouts, counters): sync the renderer after it.
-        with_renderer(ev, |_, _| {});
-        WORKER.with(|w| {
-            let mut w = w.borrow_mut();
+            prof.eval_ns.fetch_add(ns(t), Ordering::Relaxed);
+            // Evaluating can intern new font faces (layouts, counters): sync the renderer after it.
+            ensure_renderer(ev, w);
             let Worker { renderer, dl, yuv, map, last, .. } = &mut *w;
             let r = renderer.as_mut().unwrap();
             let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
@@ -557,24 +561,52 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
         ..Default::default()
     };
     let prof = Profile::default();
+    // Encode the audio to AAC while the frames render, so the final mux is a stream copy.
+    let m4a = audio.map(|_| out.with_extension(format!("audio-{}.m4a", std::process::id())));
+    let aac_job = match (audio, &m4a) {
+        (Some(a), Some(m)) => {
+            let (a, m) = (a.to_path_buf(), m.clone());
+            Some(std::thread::spawn(move || {
+                std::process::Command::new("ffmpeg")
+                    .args(["-hide_banner", "-loglevel", "error", "-y", "-i"])
+                    .arg(&a)
+                    .args(["-c:a", "aac", "-b:a", "192k"])
+                    .arg(&m)
+                    .stdin(std::process::Stdio::null())
+                    .output()
+            }))
+        }
+        _ => None,
+    };
     let annexb = render_fused(ev, opts, &cfg, &prof);
     let t_enc = t0.elapsed();
     let tm = Instant::now();
     match audio {
         None => std::fs::write(out, ak264::mp4::mux(&annexb, w, h, ev.fps as f64)).map_err(|e| format!("can't write {}: {e}", out.display()))?,
-        Some(a) => {
-            use std::io::Write;
-            let mut c = std::process::Command::new("ffmpeg")
-                .args(["-hide_banner", "-loglevel", "error", "-y", "-f", "h264", "-r", &format!("{}", ev.fps), "-i", "-", "-i"])
-                .arg(a)
-                .args(["-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart"])
+        Some(_) => {
+            // Mux from a temp MP4 (real timestamps), not a raw H.264 pipe: ffmpeg can stall
+            // draining a timestamp-less pipe while it waits on the audio input.
+            let tmp = out.with_extension(format!("video-{}.mp4", std::process::id()));
+            std::fs::write(&tmp, ak264::mp4::mux(&annexb, w, h, ev.fps as f64)).map_err(|e| format!("can't write {}: {e}", tmp.display()))?;
+            let m4a = m4a.clone().unwrap();
+            let aac = aac_job.unwrap().join().map_err(|_| "audio encoder thread panicked".to_string())?.map_err(|e| format!("can't start ffmpeg for audio: {e}"))?;
+            if !aac.status.success() {
+                let _ = std::fs::remove_file(&tmp);
+                return Err(format!("ffmpeg (audio) failed: {}", String::from_utf8_lossy(&aac.stderr).trim()));
+            }
+            let o = std::process::Command::new("ffmpeg")
+                .args(["-hide_banner", "-loglevel", "error", "-y", "-i"])
+                .arg(&tmp)
+                .arg("-i")
+                .arg(&m4a)
+                .args(["-map", "0:v", "-map", "1:a", "-c", "copy", "-shortest", "-movflags", "+faststart"])
                 .arg(out)
-                .stdin(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::piped())
-                .spawn()
-                .map_err(|e| format!("can't start ffmpeg for the audio mux: {e}"))?;
-            c.stdin.take().unwrap().write_all(&annexb).map_err(|e| e.to_string())?;
-            let o = c.wait_with_output().map_err(|e| e.to_string())?;
+                .stdin(std::process::Stdio::null())
+                .output()
+                .map_err(|e| format!("can't start ffmpeg for the audio mux: {e}"));
+            let _ = std::fs::remove_file(&tmp);
+            let _ = std::fs::remove_file(&m4a);
+            let o = o?;
             if !o.status.success() {
                 return Err(format!("ffmpeg failed: {}", String::from_utf8_lossy(&o.stderr).trim()));
             }
@@ -739,9 +771,8 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
                             } else {
                                 None
                             };
-                            with_renderer(ev, |_, _| {});
-                            let f = WORKER.with(|w| {
-                                let mut w = w.borrow_mut();
+                            let f = with_worker(|w| {
+                                ensure_renderer(ev, w);
                                 let Worker { renderer, yuv, map, last, .. } = &mut *w;
                                 renderer.as_mut().unwrap().render_yuv_incremental(dl, yuv, map);
                                 *last = None; // the fused path must not reuse this state as its chunk continuation

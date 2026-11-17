@@ -220,3 +220,25 @@ fn colour_round_trip_every_codec() {
     assert!((c[0] - 0x7c).abs() <= 4 && (c[1] - 0x5c).abs() <= 4 && (c[2] - 0xff).abs() <= 4, "ak264: {c:?}");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn long_render_with_audio_does_not_hang() {
+    if !ffmpeg() {
+        return;
+    }
+    // 60 s with audio through the fused ak264 path (this used to stall on a raw h264 pipe).
+    let src = r#"{ "size": [160, 90], "fps": 30, "scenes": [ { "duration": 60, "layers": [ { "shape": "circle", "width": 20, "x": "=10 + 140 * fract(t / 5)" } ] } ],
+        "audio": [ { "sfx": "riser", "at": 0, "duration": 3 }, { "sfx": "impact", "at": 58 } ] }"#;
+    let ev = Evaluator::new(&parse_json(src).unwrap().spec, Options::default()).unwrap();
+    let dir = std::env::temp_dir().join(format!("akv-long-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let wav = pipeline::mix_audio(&ev, 0.0, ev.duration, &dir.join("a.wav")).unwrap();
+    let out = dir.join("long.mp4");
+    let t = std::time::Instant::now();
+    pipeline::render_ak264(&ev, &RenderOptions::default(), &out, wav.as_deref()).unwrap();
+    assert!(t.elapsed().as_secs() < 60, "too slow / stalled");
+    let o = Command::new("ffprobe").args(["-v", "error", "-show_entries", "stream=codec_name,duration", "-of", "csv=p=0"]).arg(&out).output().unwrap();
+    let s = String::from_utf8_lossy(&o.stdout);
+    assert!(s.contains("h264,60.0") && s.contains("aac,60.0"), "{s}");
+    let _ = std::fs::remove_dir_all(&dir);
+}
