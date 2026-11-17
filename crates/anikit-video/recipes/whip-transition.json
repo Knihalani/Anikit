@@ -1,0 +1,62 @@
+{
+ "about": "A whip pan between two shots: the camera rips sideways in 0.2 s with real motion blur and cuts at peak speed. Replace the layers with your two shots.",
+ "spec": {
+  "size": "16:9",
+  "motionBlur": {
+   "shutter": 270
+  },
+  "scenes": [
+   {
+    "duration": 1.4,
+    "background": "#101014",
+    "camera": {
+     "animate": [
+      {
+       "to": {
+        "x": 1600
+       },
+       "at": 1.2,
+       "duration": 0.2,
+       "ease": "inExpo"
+      }
+     ]
+    },
+    "layers": [
+     {
+      "text": "BEFORE",
+      "size": "20vh",
+      "weight": 900,
+      "color": "#F4F4F0"
+     }
+    ]
+   },
+   {
+    "duration": 1.4,
+    "transition": "cut",
+    "background": "#F4F4F0",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "x": -1600
+       },
+       "to": {
+        "x": 0
+       },
+       "duration": 0.22,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    "layers": [
+     {
+      "text": "AFTER",
+      "size": "20vh",
+      "weight": 900,
+      "color": "#101014"
+     }
+    ]
+   }
+  ]
+ }
+}

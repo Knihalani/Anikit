@@ -17,6 +17,7 @@ pub mod theme;
 use crate::dl::{self, Affine, Blend, DisplayList, Filter, Glyph, ImageId, Op, Paint, Path, Rgba};
 use crate::text::{kinetic::KineticPlan, TextLayout, TextSpec, UnitKind};
 pub use assets::SharedAssets;
+pub use shader::{set_preview_scale, ShaderStat};
 use crate::spec::Diagnostic;
 use anikit_core::easing::Easing;
 use expr::{Expr, Vars};
@@ -398,6 +399,8 @@ pub struct Evaluator {
     pub diagnostics: Vec<Diagnostic>,
     /// Audio tracks on the global timeline (paths resolved).
     pub audio: Vec<crate::audio::Track>,
+    /// Generated music (the spec's `music`), rendered when the audio is mixed.
+    pub music: Option<Arc<crate::music::MusicCue>>,
     /// Fonts and images, shared with the renderers.
     pub assets: Arc<SharedAssets>,
     pub(crate) easings: Vec<Easing>,
@@ -1131,7 +1134,7 @@ impl Evaluator {
                 }
             }
             Kind::Component(c, th) => {
-                let ctx = crate::components::Ctx { width: w, height: h, fps: self.fps, theme: th.as_ref().unwrap_or(&self.ctheme), assets: &*self.assets };
+                let ctx = crate::components::Ctx { width: w, height: h, fps: self.fps, theme: th.as_ref().unwrap_or(&self.ctheme), assets: &*self.assets, root: Some(self) };
                 let ops = c.eval(lt.max(0.0), &ctx);
                 let k = out.len();
                 out.extend(ops);

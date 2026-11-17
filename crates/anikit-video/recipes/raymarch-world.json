@@ -1,0 +1,38 @@
+{
+ "about": "A raymarched still-life world from the shader library with flush-left type and a cinematic grade. Swap the shader for any library entry (anikit-video recipes) or your own GLSL.",
+ "spec": {
+  "size": "16:9",
+  "post": {
+   "preset": "cinematic",
+   "vignette": 0.3
+  },
+  "scenes": [
+   {
+    "duration": 4,
+    "layers": [
+     {
+      "shader": "sdf-scene",
+      "uniforms": {
+       "speed": 0.6
+      }
+     },
+     {
+      "text": "Forms in\n*light*.",
+      "font": "Instrument Serif",
+      "size": "13vh",
+      "lineHeight": 0.92,
+      "color": "#F4EFE6",
+      "align": "left",
+      "anchor": "bottomLeft",
+      "x": "7%",
+      "y": "86%",
+      "enter": {
+       "preset": "mask by line up",
+       "delay": 0.4
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

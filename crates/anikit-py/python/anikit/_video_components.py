@@ -48,6 +48,7 @@ COMPONENT_KINDS = {
     "god-rays": "Volumetric light rays from a point, slowly turning, with dust motes in the beams.",
     "lens-flare": "Anamorphic lens flare: streak, halo and ghosts along the axis through the centre; `at` can travel a path.",
     "model": "Product spin/orbit of a 3D primitive (rounded box, sphere, torus, knot, extruded logo).",
+    "scene-3d": "Ray-traced studio product shot: chrome wordmark, primitives, glossy floor, soft shadows, depth of field, motion blur and bloom.",
     "text-3d": "Extruded, bevelled chrome 3D text or logo whose letters rise in, with studio lighting, sway and a glint sweep.",
     "globe": "Rotating dot-matrix globe with glowing great-circle arcs, travelling pulses, pulsing markers and an atmosphere.",
     "wipe": "Soft-edged wipe mask as a transition overlay.",

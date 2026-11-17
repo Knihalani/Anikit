@@ -180,16 +180,8 @@ impl Server {
             }
             "critique_spec" => {
                 let (spec, path) = self.spec_arg(a)?;
-                let mut r = critique(&spec);
-                if a.get("render") == Some(&Value::Bool(true)) {
-                    let p = crate::preview::Preview::new(spec.clone(), path.parent().unwrap_or(Path::new(".")))?;
-                    let extra = crate::render_check::check_spec(&spec, &p.ev);
-                    r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
-                    r.notes.extend(extra);
-                }
-                let mut lines = vec![format!("score {}/100 · {:.1} s", r.score, r.duration)];
-                lines.extend(r.notes.iter().map(|n| format!("{} {}: {} → {}", n.severity, n.path, n.message, n.fix)));
-                Ok(vec![text(&lines.join("\n"))])
+                let r = crate::critique::review(&spec, path.parent().unwrap_or(Path::new(".")), None, a.get("render") == Some(&Value::Bool(true)));
+                Ok(vec![text(r.to_text_detail(a.get("detail") == Some(&Value::Bool(true))).trim_end())])
             }
             "validate_spec" => {
                 let (spec, path) = self.spec_arg(a)?;
@@ -242,6 +234,8 @@ impl Server {
                 Ok(vec![text(&format!("rendered {}\n{}", out.display(), log.trim()))])
             }
             "get_prompt" => Ok(vec![text(&prompts::get(str_arg(a, "name")?)?)]),
+            "docs" => Ok(vec![text(&crate::agent_docs::docs(a.get("topic").and_then(|x| x.as_str()))?)]),
+            "recipes" => Ok(vec![text(&crate::agent_docs::recipes(a.get("name").and_then(|x| x.as_str()))?)]),
             "list_looks" => Ok(vec![text(&agent_cli::looks_text(a.get("name").and_then(|x| x.as_str()), a.get("full") == Some(&json!(true)))?)]),
             _ => {
                 let names: Vec<String> = tools().iter().filter_map(|t| t["name"].as_str().map(String::from)).collect();
@@ -395,10 +389,12 @@ pub fn tools() -> Vec<Value> {
             "return_spec": { "type": "boolean" }
         }), &["template", "params"]) }),
         json!({ "name": "validate_spec", "description": "Errors/warnings, one line each, with did-you-mean.", "inputSchema": obj(spec(), &[]) }),
-        json!({ "name": "critique_spec", "description": "Design review: reading time, hook, contrast, safe areas, pacing. render:true also checks rendered frames (contrast vs real pixels, overlaps, cut text). One line per issue with a fix.", "inputSchema": obj(with(spec(), json!({ "render": { "type": "boolean" } })), &[]) }),
+        json!({ "name": "critique_spec", "description": "Review: reading time, hook, contrast, safe areas, sameness. render:true also checks rendered frames and the timeline against the spec's intent (pace, dead air, beats, arc). Summary + top issues; detail:true for all.", "inputSchema": obj(with(spec(), json!({ "render": { "type": "boolean" }, "detail": { "type": "boolean" } })), &[]) }),
         json!({ "name": "render_still", "description": "One frame → PNG path.", "inputSchema": obj(img(json!({ "at": { "type": "number", "description": "seconds" } })), &[]) }),
         json!({ "name": "render_contact_sheet", "description": "One frame per scene in one PNG → path. Cheapest full review.", "inputSchema": obj(img(json!({ "frames": { "type": "integer" } })), &[]) }),
         json!({ "name": "render_video", "description": "Final render → path.", "inputSchema": obj(with(spec(), json!({ "out": { "type": "string", "description": "e.g. out.mp4" }, "quality": { "type": "string", "description": "draft|standard|high" } })), &[]) }),
+        json!({ "name": "docs", "description": "Start here. Compact page per primitive (no topic: the index): primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything components.", "inputSchema": obj(json!({ "topic": { "type": "string" } }), &[]) }),
+        json!({ "name": "recipes", "description": "Drop-in high-end shots (kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, ...) and the shader library. name → a ready spec or snippet.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &[]) }),
         json!({ "name": "list_looks", "description": "Art-direction looks (palette, type, motion, world layers). name → its direction; full:true → JSON to override.", "inputSchema": obj(json!({ "name": { "type": "string" }, "full": { "type": "boolean" } }), &[]) }),
         json!({ "name": "get_prompt", "description": "Prompt library: director, launch-video-generator, script-writer, storyboarder, critic, copy-guard, brand-kit, motion-rules, template:<name>.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &["name"]) }),
     ]
@@ -530,7 +526,8 @@ mod tests {
         let out = s.workdir.join("t.json");
         let r = call(&mut s, "tools/call", json!({ "name": "create_from_template", "arguments": { "template": "launch", "params": schema["example"], "format": "9:16", "out": out, "brand": { "name": "Acme", "colors": { "primary": "#FF5500" } } } }));
         assert_eq!(r["result"]["isError"], false, "{r}");
-        assert!(t(&r).contains("valid · critique 100/100"), "{}", t(&r));
+        // 94: the quality bar flags templates as flat 2D (BAR #5), and nothing else.
+        assert!(t(&r).contains("valid · critique 94/100") && t(&r).contains("BAR #5"), "{}", t(&r));
         let spec: Value = serde_json::from_str(&std::fs::read_to_string(&out).unwrap()).unwrap();
         assert_eq!(spec["size"], json!([1080, 1920]));
         assert_eq!(spec["theme"]["colors"]["primary"], "#FF5500");
@@ -538,7 +535,7 @@ mod tests {
         let r = call(&mut s, "tools/call", json!({ "name": "validate_spec", "arguments": { "spec": { "scenes": [ { "layers": [ { "type": "txt", "text": "x" } ] } ] } } }));
         assert!(t(&r).starts_with("invalid\nerror scenes[0].layers[0]"), "{}", t(&r));
         let r = call(&mut s, "tools/call", json!({ "name": "critique_spec", "arguments": { "path": out } }));
-        assert!(t(&r).starts_with("score 100/100"), "{}", t(&r));
+        assert!(t(&r).starts_with("score 94/100"), "{}", t(&r));
 
         // Errors are tool errors with actionable text, not protocol errors.
         let r = call(&mut s, "tools/call", json!({ "name": "create_from_template", "arguments": { "template": "lanch", "params": {} } }));

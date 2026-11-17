@@ -39,21 +39,106 @@ pub struct Note {
 /// The result of [`critique`].
 #[derive(Clone, Debug, Serialize)]
 pub struct Report {
-    /// 0..100: starts at 100, minus 15 per error, 6 per warning, 1 per tip.
+    /// 0..100: starts at 100, minus 15 per error, 6 per warning, 1 per tip. Not a quality verdict.
     pub score: u32,
     pub duration: f64,
     pub notes: Vec<Note>,
+    /// Per-category scores (`time`, `text`, `composition`, `story`, `technical`), same arithmetic.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub categories: Vec<(String, u32)>,
+    /// Intent versus what the render measured, and the energy curve (render reviews only).
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub summary: String,
+}
+
+/// The category a check belongs to.
+pub fn category(check: &str) -> &'static str {
+    match check {
+        "pace" | "dead-air" | "rhythm" | "arc" | "ending" | "beat" | "pacing" | "length" => "time",
+        "reading-time" | "legibility" | "contrast" | "render-contrast" | "typography" | "density" | "render-overlap" => "text",
+        "hook" | "structure" | "placeholder" | "copy" => "story",
+        "frame-fill" | "layout" => "composition",
+        "flicker" | "judder" | "banding" | "audio" => "technical",
+        _ => "composition",
+    }
+}
+
+fn deduct(notes: &[&Note]) -> u32 {
+    notes.iter().fold(100i32, |s, n| s - match n.severity { "error" => 15, "warning" => 6, _ => 1 }).max(0) as u32
 }
 
 impl Report {
-    /// Plain-text rendering for the terminal.
-    pub fn to_text(&self) -> String {
-        let mut s = format!("score {}/100 · {:.1} s · {} notes\n", self.score, self.duration, self.notes.len());
-        for n in &self.notes {
+    /// Recompute the score and the category breakdown from the notes.
+    pub fn rescore(&mut self) {
+        self.score = deduct(&self.notes.iter().collect::<Vec<_>>());
+        self.categories = ["time", "text", "composition", "story", "technical"]
+            .iter()
+            .map(|c| (c.to_string(), deduct(&self.notes.iter().filter(|n| category(n.check) == *c).collect::<Vec<_>>())))
+            .collect();
+    }
+
+    /// Plain-text rendering for the terminal: a short summary, then the issues
+    /// most severe first (the first 6 unless `detail`).
+    pub fn to_text_detail(&self, detail: bool) -> String {
+        let mut s = format!("score {}/100 (not a quality verdict) · {:.1} s", self.score, self.duration);
+        for (c, v) in &self.categories {
+            s += &format!(" · {c} {v}");
+        }
+        s += "\n";
+        if !self.summary.is_empty() {
+            s += &self.summary;
+            s += "\n";
+        }
+        let rank = |n: &&Note| match n.severity { "error" => 0, "warning" => 1, _ => 2 };
+        let mut v: Vec<&Note> = self.notes.iter().collect();
+        v.sort_by_key(rank);
+        let shown = if detail { v.len() } else { v.len().min(6) };
+        for n in &v[..shown] {
             s += &format!("{:<7} {:<13} {}: {}\n        fix: {}\n", n.severity, n.check, n.path, n.message, n.fix);
+        }
+        if shown < v.len() {
+            s += &format!("… {} more (--detail)\n", v.len() - shown);
         }
         s
     }
+
+    /// [`Report::to_text_detail`] with every issue.
+    pub fn to_text(&self) -> String {
+        self.to_text_detail(true)
+    }
+}
+
+/// The full review: the spec heuristics and, with `render`, the pixel checks
+/// on sampled frames plus the time axis judged against the spec's intent.
+pub fn review(spec: &Value, base: &std::path::Path, range: Option<(f64, f64)>, render: bool) -> Report {
+    review_pack(spec, base, range, render, None).0
+}
+
+/// [`review`], optionally writing the review pack (see `review::write_pack`) to `pack`.
+pub fn review_pack(spec: &Value, base: &std::path::Path, range: Option<(f64, f64)>, render: bool, pack: Option<&std::path::Path>) -> (Report, Result<Vec<String>, String>) {
+    let mut r = critique_in_range(spec, range);
+    let mut files = Ok(Vec::new());
+    if render || pack.is_some() {
+        let base = if base.as_os_str().is_empty() { std::path::Path::new(".") } else { base };
+        if let Ok(p) = crate::preview::Preview::new(spec.clone(), base) {
+            r.notes.extend(crate::render_check::check_spec(spec, &p.ev));
+            let beats = crate::review::music_beats(spec, base);
+            let intent = crate::review::intent(spec, beats.as_ref().map(|b| b.bpm));
+            let samples = crate::review::Samples::take(&p.ev, 6.0, 192);
+            let (tl, notes) = crate::review::time_axis(&p.ev, &samples, &intent, beats.as_ref().map(|b| &b.beats[..]));
+            r.summary = crate::review::summary(&intent, &tl);
+            r.notes.extend(notes);
+            let (cn, worst) = crate::review::composition(&p.ev, &samples, &tl);
+            r.notes.extend(cn);
+            r.rescore();
+            if let Some(dir) = pack {
+                files = crate::review::write_pack(dir, &p, &tl, &worst, &r.to_text_detail(true));
+            }
+            return (r, files);
+        }
+    }
+    r.rescore();
+    (r, files)
 }
 
 struct Ctx<'a> {
@@ -306,6 +391,15 @@ pub fn critique(raw: &Value) -> Report {
                 if let Some(f) = l.get("font").and_then(|f| f.as_str()) {
                     fonts.insert(f.to_string());
                 }
+                // Components that show words (a terminal, a prompt, a title card) count for the hook.
+                if first_text_at.is_none() && l.get("component").is_some() {
+                    if let Some(p) = l.get("props").and_then(|p| p.as_object()) {
+                        if ["text", "title", "lines", "code", "label", "words", "messages", "items"].iter().any(|k| p.get(*k).is_some_and(|v| !v.is_null())) {
+                            let delay = p.get("delay").and_then(|d| d.as_f64()).unwrap_or(0.0);
+                            first_text_at = Some(scene_start.max(0.0) + vis_from + delay + 0.3);
+                        }
+                    }
+                }
                 let Some(raw) = l.get("text").and_then(|t| t.as_str()) else { return };
                 let text_owned = with_value(raw, l.get("value"));
                 let text = text_owned.as_str();
@@ -386,6 +480,7 @@ pub fn critique(raw: &Value) -> Report {
         cx.note("tip", "pacing", "scenes", format!("{total:.0} s vertical video; social platforms favour 6–30 s"), "cut to the hook, two beats and the payoff");
     }
     sameness(raw, spec, &mut cx);
+    bar(spec, &mut cx);
     if applied.is_some() {
         let off = crate::looks::layer_offsets(raw);
         for n in &mut cx.notes {
@@ -393,7 +488,7 @@ pub fn critique(raw: &Value) -> Report {
         }
     }
     let score = cx.notes.iter().fold(100i32, |s, n| s - match n.severity { "error" => 15, "warning" => 6, _ => 1 }).max(0) as u32;
-    Report { score, duration: (total * 100.0).round() / 100.0, notes: cx.notes }
+    Report { score, duration: (total * 100.0).round() / 100.0, notes: cx.notes, categories: Vec::new(), summary: String::new() }
 }
 
 /// Device mockups showing a generated screen without the product's copy (or a
@@ -552,6 +647,45 @@ fn check_safe(cx: &mut Ctx, layer: &Value, path: &str) {
     }
 }
 
+/// The quality bar (`docs/video/quality/BAR.md`): patterns a viewer reads as slides or slop.
+fn bar(spec: &Value, cx: &mut Ctx) {
+    const WASH: &[&str] = &["mesh-gradient", "aurora", "gradient", "bokeh", "light-leak"];
+    let scenes = spec.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
+    let mut slides = Vec::new();
+    for (si, sc) in scenes.iter().enumerate() {
+        let layers = sc.get("layers").and_then(|l| l.as_array()).cloned().unwrap_or_default();
+        let wash = layers.iter().any(|l| l.get("component").and_then(|c| c.as_str()).is_some_and(|c| WASH.contains(&c)));
+        let rest: Vec<&Value> = layers.iter().filter(|l| !l.get("component").and_then(|c| c.as_str()).is_some_and(|c| WASH.contains(&c) || c == "grain")).collect();
+        let centred_text_only = !rest.is_empty() && rest.iter().all(|l| l.get("text").is_some() && l.get("x").is_none() && l.get("component").is_none());
+        if wash && centred_text_only {
+            slides.push(format!("scenes[{si}]"));
+        }
+    }
+    if !slides.is_empty() {
+        cx.note("warning", "bar", &slides[0], format!("centred text on a gradient or blob backdrop ({} scene{}): reads as a slide (BAR #1–2)", slides.len(), if slides.len() == 1 { "" } else { "s" }), "compose the frame: a subject with light and material (3D, a shader, photography), type placed with intent, the frame filled");
+    }
+    let dims = |v: &Value| -> bool {
+        fn walk(v: &Value) -> bool {
+            match v {
+                Value::Object(m) => {
+                    m.contains_key("shader")
+                        || m.get("type").and_then(|t| t.as_str()) == Some("shader")
+                        || m.get("component").and_then(|c| c.as_str()).is_some_and(|c| ["text-3d", "model", "globe", "scene3d", "ken-burns"].contains(&c))
+                        || m.get("aperture").is_some()
+                        || m.get("src").and_then(|s| s.as_str()).is_some_and(|s| !s.ends_with(".svg"))
+                        || m.values().any(walk)
+                }
+                Value::Array(a) => a.iter().any(walk),
+                _ => false,
+            }
+        }
+        walk(v)
+    };
+    if scenes.len() >= 2 && !dims(spec) {
+        cx.note("warning", "bar", "scenes", "flat 2D only: no 3D, light, lens or real imagery anywhere (BAR #5)".into(), "give the film a world with depth: a shader or text-3d/model/scene3d subject, camera depth + aperture, or real photos");
+    }
+}
+
 /// Generic defaults make every video look the same: flag them and suggest a direction.
 fn sameness(raw: &Value, spec: &Value, cx: &mut Ctx) {
     let scenes = spec.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
@@ -627,7 +761,11 @@ fn sameness(raw: &Value, spec: &Value, cx: &mut Ctx) {
         "sameness",
         "spec",
         format!("generic: {}; this will look like every other generated video", signals.join("; ")),
-        format!("give it a point of view: set \"look\" (e.g. \"{a}\" or \"{b}\"; anikit-video looks), vary layouts and entrances per beat, and build one signature visual (3D, a shader, real footage)"),
+        if has_look {
+            "vary layouts and entrances per beat, and build one signature visual from the brief's own subject (3D, paths, real footage)".to_string()
+        } else {
+            format!("give it a point of view: set \"look\" (e.g. \"{a}\" or \"{b}\"; anikit-video looks), vary layouts and entrances per beat, and build one signature visual (3D, paths, real footage)")
+        },
     );
 }
 
@@ -734,7 +872,8 @@ mod template_quality {
                 for b in [Brand::default(), Brand::from_json(r##"{"theme":"light","colors":{"primary":"#0F766E"},"logo":"logo.svg"}"##).unwrap()] {
                     let spec = t.expand(&t.example_params(), &b, Format::parse(f).unwrap()).unwrap();
                     let r = super::critique(&spec);
-                    let bad: Vec<_> = r.notes.iter().filter(|n| n.severity != "tip").collect();
+                    // Templates are flat 2D quick starts: the quality bar (BAR #5) flags that honestly.
+                    let bad: Vec<_> = r.notes.iter().filter(|n| n.severity != "tip" && n.check != "bar").collect();
                     if !bad.is_empty() {
                         failures += &format!("--- {name} {f} {}\n", b.theme.as_deref().unwrap_or("dark"));
                         for n in bad {

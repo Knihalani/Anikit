@@ -1,5 +1,7 @@
 # Anikit Video for agents
 
+**Install:** `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh` (prebuilt binary, seconds). Don't build from source to render.
+
 JSON spec → MP4, rendered natively (no browser). You direct; the engine renders; the critic checks every frame. Read [`skills/anikit-video/SKILL.md`](../../skills/anikit-video/SKILL.md) first (a 1-page method) and [`spec.md`](spec.md) (a 1-page spec).
 
 ```bash
@@ -10,7 +12,7 @@ anikit-video render spec.json -o out.mp4
 anikit-video templates                              # quick starts; expand <t> --look <name> to restyle
 ```
 
-**Method:** logline → one feeling → a look → a shot list of what the viewer *understands* → one signature image (3D `text-3d`/`model`/`globe`/`scene3d`, generative, real footage, depth parallax) → vary the layout every shot → judge in motion. `anikit-video prompt director` gives the full procedure. A worked example is [`examples/video/directed/`](../../examples/video/directed/).
+**Method:** logline → one feeling → a look → a beat-cut shot list (12–25 shots in a 15 s test; each one says what the viewer *understands*) → show what browsers can't (`docs/video/quality/ONLY_ANIKIT.md`) → energetic camera (whips, snaps, speed ramps, impacts, match cuts) → judge against [`quality/BAR.md`](quality/BAR.md) and its pace check (`python3 docs/video/quality/pace.py out.mp4`). `anikit-video prompt director` gives the procedure.
 
 **Looks:** `"look": "noir"` at the top of a spec sets the palette, type, text styles, entrance, transition, camera, backdrop and post. `["editorial", "noir"]` composes looks; `{"base": "swiss", "theme": {"colors": {"primary": "#0050FF"}}}` overrides one; a scene with `"look": false` opts out. Spec keys always win.
 

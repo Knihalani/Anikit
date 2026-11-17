@@ -1,0 +1,24 @@
+{
+  "size": [1920, 1080],
+  "fps": 60,
+  "scenes": [
+    {
+      "duration": 4,
+      "layers": [
+        { "component": "scene3d", "props": {
+          "env": "cyc",
+          "camera": { "keys": [
+            { "t": 0, "pos": [-1.6, 0.75, 3.2], "target": [0.3, 0.45, 0], "focal": 50, "fstop": 2.8 },
+            { "t": 4, "pos": [1.4, 0.8, 3.3], "target": [0.1, 0.45, 0], "focal": 50, "fstop": 2.8 } ] },
+          "objects": [
+            { "type": "slab", "count": 5, "size": [1.6, 0.9, 0.008], "pos": "=[0.25*i - 0.5, 0.47, -0.45*i]", "rot": "=[0, 35, 0]", "material": "glass" },
+            { "type": "box", "size": [0.5, 0.06, 0.32], "radius": 0.01, "pos": [-0.9, 0.03, 0.9], "rot": [0, 20, 0], "material": "glass" },
+            { "type": "sphere", "radius": 0.18, "pos": [0.8, 0.18, 0.9], "material": "glass" },
+            { "type": "text", "text": "GLASS", "height": 0.22, "depth": 0.06, "material": "aluminium", "pos": [0.2, 0, 0.6] },
+            { "type": "box", "size": [0.4, 0.22, 0.3], "radius": 0.02, "pos": [-0.3, 0.11, 1.1], "rot": [0, -15, 0], "material": "chrome" }
+          ]
+        } }
+      ]
+    }
+  ]
+}

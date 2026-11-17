@@ -242,3 +242,23 @@ Cost per 1080p frame on this VM: about 0 ms for `clean` (identity on 8-bit frame
   - enlarged images (≥ 2×) use a dithered cubic filter: B-spline from 12× up (fields: C²-smooth, no creases), Mitchell–Netravali below that (keeps detail);
   - cached text runs get gamma-aware coverage.
 - **`Draft`** keeps the fastest paths: ¼-resolution gradient backdrops and bilinear upscaling.
+
+## Install and build time (measured 2026-11-17, 4-vCPU VM)
+
+| Path | Time to the first still |
+|---|---|
+| `install.sh` (prebuilt binary, ~13 MB download) | download ≈ 1.2 s (a 13 MB GitHub release asset from this VM) + install and first 1080p still 0.53 s from a local mirror; a cold first still alone is 0.38 s |
+| `cargo build --release -p anikit-video`, clean, before (fat LTO, 1 codegen unit) | 474 s |
+| same, now (`release` = thin LTO, 16 codegen units) | 222 s |
+| `lto = false` (tried) | 225 s: no gain over thin, so not used |
+
+Runtime is unchanged: the `launch` template renders in 4.25 s minimum and 4.43 s median with thin LTO, against 4.33 s and 4.71 s with fat LTO (7 alternating runs each). Published binaries use `--profile dist` (fat LTO) anyway. The clean build's critical path: the shader JIT's `cranelift-codegen` (58 s), then the `anikit-video` library (38 s), then the binary's thin-LTO link (94 s).
+
+## Determinism
+
+Renders are **byte-identical across runs and thread counts** (test `render_is_byte_identical_across_runs_and_thread_counts`; checked by hand on `bench/video/anikit/kinetic.json` and the `launch` template at 1–4 threads). Three things used to break it:
+- chunk (GOP) ranges depended on the core count: now `pipeline::chunk_plan` uses the frame count alone;
+- workers' incremental state followed whatever frames rayon scheduled on a thread: now each chunk renders with its own state, fresh at the chunk start;
+- a worker's renderer was recreated when another thread interned a new font face, dropping its incremental state at a moment set by scheduling: now the newer font snapshot is swapped into the same renderer (`Renderer::update_assets`).
+
+Cost: a fresh renderer per chunk, about 10% on `launch` (about 4.8–5.0 s against 4.4 s). Some renderer caches still change pixels depending on what they drew before, so renderers can't yet be reused across chunks. Fixing that would recover the 10%.

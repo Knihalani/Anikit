@@ -124,7 +124,10 @@ fn is_background(layer: &Value) -> bool {
     if m.get("component").and_then(|x| x.as_str()).is_some_and(|c| BACKGROUNDS.contains(&c)) {
         return true;
     }
-    // A full-bleed image or video.
+    // A full-frame shader, or a full-bleed image or video.
+    if (m.contains_key("shader") || m.get("type").and_then(|t| t.as_str()) == Some("shader")) && m.get("filter") != Some(&Value::Bool(true)) && !m.contains_key("width") {
+        return true;
+    }
     m.contains_key("src") && m.get("fit").and_then(|x| x.as_str()) == Some("cover")
 }
 
@@ -135,6 +138,8 @@ fn is_text(layer: &Value) -> bool {
 /// Apply the spec's top-level `look` (if any). Runs after `defs`/`use` expansion.
 pub fn apply(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
     let Some(root) = v.as_object_mut() else { return Ok(v) };
+    // `intent` is for the reviewer (`review.rs`), not the renderer.
+    root.remove("intent");
     let Some(lv) = root.remove("look") else { return Ok(v) };
     if lv == Value::Bool(false) || lv.as_str() == Some("none") {
         return Ok(v);

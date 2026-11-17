@@ -1,6 +1,7 @@
 {
   "name": "demo",
   "look": "soft-clay",
+  "intent": { "pace": "steady", "genre": "explainer" },
   "title": "Product demo walkthrough",
   "description": "A 15–35 s walkthrough: a kinetic title beside the product, then 2–5 steps, each a screenshot in a browser (or phone) with an animated cursor that glides to the click point, clicks with a ripple and shows a tooltip callout, then a CTA with confetti.",
   "duration": "15–35 s",
@@ -363,8 +364,10 @@
               "ease": "inOutQuart"
             },
             "else": {
-              "type": "crossfade",
-              "duration": 0.4
+              "type": "push",
+              "direction": "{{fmt.portrait ? 'up' : 'left'}}",
+              "duration": 0.5,
+              "ease": "inOutQuart"
             }
           },
           "duration": "{{readtime(st.title) + 2.6}}",

@@ -1,0 +1,95 @@
+{
+ "about": "Ray-traced chrome wordmark on a studio set: glossy floor, glass and gold accents, a slow dolly with real depth of field. Change the text, materials and camera keys.",
+ "spec": {
+  "size": "16:9",
+  "post": {
+   "preset": "cinematic",
+   "bloom": 0.3
+  },
+  "scenes": [
+   {
+    "duration": 5,
+    "layers": [
+     {
+      "component": "scene3d",
+      "props": {
+       "env": "studio",
+       "camera": {
+        "keys": [
+         {
+          "t": 0,
+          "pos": [
+           -2.6,
+           0.9,
+           5.2
+          ],
+          "target": [
+           0,
+           0.45,
+           0
+          ],
+          "focal": 45,
+          "fstop": 2.2
+         },
+         {
+          "t": 5,
+          "pos": [
+           2.2,
+           0.7,
+           4.4
+          ],
+          "target": [
+           0,
+           0.45,
+           0
+          ],
+          "focal": 55,
+          "fstop": 2.0
+         }
+        ]
+       },
+       "objects": [
+        {
+         "text": "ANIKIT",
+         "height": 0.7,
+         "material": "chrome"
+        },
+        {
+         "type": "sphere",
+         "radius": 0.28,
+         "pos": [
+          1.9,
+          0.28,
+          0.9
+         ],
+         "material": "glass"
+        },
+        {
+         "type": "torus",
+         "radius": 0.3,
+         "tube": 0.07,
+         "pos": [
+          -1.9,
+          0.3,
+          0.7
+         ],
+         "rot": [
+          0,
+          30,
+          70
+         ],
+         "material": "gold",
+         "spin": [
+          0,
+          40,
+          0
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  ]
+ }
+}
