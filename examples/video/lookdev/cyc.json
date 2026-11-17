@@ -1,0 +1,37 @@
+{
+  "size": [1920, 1080],
+  "fps": 60,
+  "compositions": {
+    "film": {
+      "size": [640, 360],
+      "duration": 4,
+      "background": "linear-gradient(135deg, #1b1f3a, #3b1f5a)",
+      "layers": [
+        { "text": "Frame {value}", "value": "=floor(t*60)", "style": "title", "color": "#ffffff" },
+        { "shape": "circle", "width": 60, "height": 60, "fill": "#ffb02e", "x": "=320 + 220*sin(t*3)", "y": 280 }
+      ]
+    }
+  },
+  "scenes": [
+    {
+      "duration": 6,
+      "layers": [
+        { "component": "scene3d", "props": {
+          "env": "cyc",
+          "quality": "standard",
+          "camera": { "keys": [
+            { "t": 0, "pos": [-3.2, 1.25, 6.2], "target": [0.2, 0.55, 0], "focal": 40, "fstop": 2.8 },
+            { "t": 6, "pos": [2.6, 1.05, 5.4], "target": [0.4, 0.55, -0.4], "focal": 45, "fstop": 2.8 } ] },
+          "objects": [
+            { "text": "ANIKIT", "height": 0.7, "material": "chrome", "pos": [0, 0, 0.6] },
+            { "type": "slab", "count": 6, "size": [1.6, 0.9, 0.008], "pos": "=[1.75*i - 4.2, 0.47, -1.2]", "rot": [0, 0, 0], "material": "glass",
+              "texture": { "composition": "film", "frame": "=i*20 + t*60", "face": "back" } },
+            { "type": "box", "size": [0.9, 0.5, 0.5], "radius": 0.04, "pos": [-2.2, 0.25, 1.0], "rot": [0, 25, 0], "material": "aluminium-bead" },
+            { "type": "sphere", "radius": 0.3, "pos": [2.3, 0.3, 1.2], "material": "glass" },
+            { "type": "box", "size": [0.12, 0.12, 0.12], "radius": 0.03, "pos": [-2.2, 0.56, 1.0], "material": { "base": "#ff6a00", "emissive": "#ff6a00", "emissiveStrength": 6 } }
+          ]
+        } }
+      ]
+    }
+  ]
+}

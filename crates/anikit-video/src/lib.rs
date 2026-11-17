@@ -27,4 +27,5 @@ pub mod eval;
 pub mod render;
 pub mod layout;
 pub mod text;
+pub mod scene3d;
 pub mod pipeline;
