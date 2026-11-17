@@ -1,4 +1,4 @@
-# Motion graphics: repeaters, trails, motion paths, shape modifiers
+# Motion graphics: repeaters, trails, motion paths, mattes, shape modifiers, text animators
 
 ```json
 { "scenes": [ { "duration": 4, "layers": [
@@ -25,6 +25,8 @@
 - **Text on a path** `"textPath": "<d in the text box's px>"`, slide it with `pathOffset` (px, animatable).
 - **Shape modifiers** (any shape; applied offset → round → pucker → zigzag → twist): `roundCorners` px, `offsetPath` px
   (±), `puckerBloat` −1..1, `zigzag {size, ridges, smooth}`, `twist` deg, `wigglePath {amount, detail, speed, seed}` (animated, deterministic).
+- **Track matte** `"matte": "logo"` or `{"layer": "logo", "mode": "alpha|alphaInverted|luma|lumaInverted"}`: the layer shows only through
+  the sibling with that `id` (which is then not drawn itself). Gradient inside text: a gradient rect with `"matte": "word"`.
 - **Dashes**: `stroke.dash` + `dashOffset` (animatable: `"=t*-60"` marches) — combine with `trimEnd` for write-ons.
 - **Easing**: any name (`outExpo`, `inOutBack`, `elastic.out(1, 0.3)`, `steps(4)`), `"ease": [x1, y1, x2, y2]` (cubic-bezier),
   `"spring": {"stiffness": 300, "damping": 18}`; per keyframe: `"keyframes": {"x": [[0, 200], [0.5, 960, "outBack"], [1, 1700, [0.9, 0, 0.1, 1]]]}` (the ease *into* that key).
@@ -32,3 +34,5 @@
   "blur": 6, "color": "#f36", "smooth": 0.3, "order": "forward|reverse|center|random", "seed": 7, "duration": 1.2, "delay": 0.2, "ease": "outExpo"}`.
   Units in the range take the props; with no `offset` the range sweeps away (a reveal). Drive it yourself with `start`/`end`/`offset`
   (0..1, or animate `rangeStart`/`rangeEnd`/`rangeOffset`): `"offset": "=sin(t*2)"` makes a travelling wave.
+
+Full pieces: `examples/video/mograph/` (pulse-ident, kinetic-poster, night-line).

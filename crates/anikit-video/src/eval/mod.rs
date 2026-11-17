@@ -338,6 +338,9 @@ pub(crate) struct Node {
     pub tag: u32,
     /// Motion-graphics extras (repeater, echo, motion path, text path, wiggle path).
     pub fx: Option<Box<fx::Fx>>,
+    /// Track matte: the matte layer (a sibling, not drawn itself) and mode
+    /// (0 alpha, 1 alphaInverted, 2 luma, 3 lumaInverted).
+    pub matte: Option<Box<(Node, u8)>>,
 }
 
 pub(crate) const PART_BG: u8 = 1;
@@ -975,9 +978,41 @@ impl Evaluator {
     fn emit_node(&self, n: &Node, cx: &Cx, parent: &Affine, psize: [f32; 2], po: f32, out: &mut Vec<Op>) {
         let tagging = n.tag != u32::MAX && TAGS.with(|t| t.borrow().is_some());
         let start = out.len();
+        if n.matte.is_some() {
+            out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
+        }
+        let body = out.len();
         match n.fx.as_deref() {
             Some(fx) if fx.repeat.is_some() || fx.echo.is_some() => self.emit_fx(n, fx, cx, parent, psize, po, out),
             _ => self.emit_node_inner(n, cx, parent, psize, po, out),
+        }
+        if let Some(m) = n.matte.as_deref() {
+            let (mnode, mode) = (&m.0, m.1);
+            if out.len() == body {
+                out.truncate(start);
+            } else {
+                // Luma modes turn the matte's luminance into alpha; inverted modes cut instead of keep.
+                const LUMA: [f32; 20] = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.2126, 0.7152, 0.0722, 0.0, 0.0];
+                let filters = if mode >= 2 { vec![Filter::ColorMatrix(LUMA)] } else { Vec::new() };
+                let blend = if mode % 2 == 0 { Blend::DestIn } else { Blend::DestOut };
+                let mstart = out.len();
+                out.push(Op::PushLayer { opacity: 1.0, blend, filters, clip: None, cache_key: None });
+                let mb = out.len();
+                let mcx = Cx { amul: 1.0, ..*cx };
+                self.emit_node(mnode, &mcx, parent, psize, po, out);
+                if out.len() == mb {
+                    // An empty matte hides everything (keep modes) or nothing (cut modes).
+                    if blend == Blend::DestIn {
+                        recycle_from(out, start);
+                    } else {
+                        out.truncate(mstart);
+                        out.push(Op::PopLayer);
+                    }
+                } else {
+                    out.push(Op::PopLayer);
+                    out.push(Op::PopLayer);
+                }
+            }
         }
         if tagging && out.len() > start {
             TAGS.with(|t| {
@@ -992,15 +1027,19 @@ impl Evaluator {
     #[allow(clippy::too_many_arguments)]
     fn emit_fx(&self, n: &Node, fx: &fx::Fx, cx: &Cx, parent: &Affine, psize: [f32; 2], po: f32, out: &mut Vec<Op>) {
         let (ec, delay, decay, eblend) = fx.echo.as_ref().map_or((0, 0.0, 1.0, Blend::Normal), |e| (e.count, e.delay, e.decay, e.blend));
+        // Echoes (oldest first) share one blended layer; the live copy draws on top, unblended.
+        let layered = ec > 0 && eblend != Blend::Normal;
+        if layered {
+            out.push(Op::PushLayer { opacity: 1.0, blend: eblend, filters: Vec::new(), clip: None, cache_key: None });
+        }
         for k in (0..=ec).rev() {
+            if k == 0 && layered {
+                out.push(Op::PopLayer);
+            }
             let tk = k as f32 * delay;
             let ak = decay.powi(k as i32);
             if ak <= 0.002 {
                 continue;
-            }
-            let layered = k > 0 && eblend != Blend::Normal;
-            if layered {
-                out.push(Op::PushLayer { opacity: 1.0, blend: eblend, filters: Vec::new(), clip: None, cache_key: None });
             }
             match &fx.repeat {
                 None => {
@@ -1020,9 +1059,6 @@ impl Evaluator {
                         self.emit_node_inner(n, &c, &px, psize, po, out);
                     }
                 }
-            }
-            if layered {
-                out.push(Op::PopLayer);
             }
         }
     }
@@ -1757,6 +1793,18 @@ fn shape_path(s: &impl kurbo::Shape, tol: f64) -> Path {
 }
 
 /// Drain `ops`, returning glyph and path buffers to this thread's pools.
+/// Recycle the ops from `start` on.
+fn recycle_from(ops: &mut Vec<Op>, start: usize) {
+    for op in ops.drain(start..) {
+        match op {
+            Op::Glyphs { glyphs, .. } => crate::text::pool::give(glyphs),
+            Op::Fill { path, .. } | Op::Stroke { path, .. } => give_path(path),
+            Op::PushLayer { clip: Some((path, _)), .. } => give_path(path),
+            _ => {}
+        }
+    }
+}
+
 pub(crate) fn recycle(ops: &mut Vec<Op>) {
     for op in ops.drain(..) {
         match op {

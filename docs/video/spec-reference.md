@@ -389,14 +389,14 @@ Three layers of control, from simplest to most precise.
 - `to`: animates from the current value **to** these values, and holds them afterwards.
 - `from` and `to` together: an explicit range.
 - Relative values: `"+60"`, `"-20"`, `"*1.5"` are relative to the value being animated from or to.
-- `keyframes`: `{ prop: [v0, v1, …] }`, evenly spaced over `duration`, or `{ prop: [[time, value], …] }` with times in 0..1 of the tween. `ease` applies between each pair.
+- `keyframes`: `{ prop: [v0, v1, …] }`, evenly spaced over `duration`, or `{ prop: [[time, value], …] }` with times in 0..1 of the tween. `ease` applies between each pair; a third item sets the ease of the move *into* that key: `[[0, 200], [0.5, 960, "outBack"], [1, 1700, [0.9, 0, 0.1, 1]]]`.
 - `duration` default `0.6`. `ease` default `outCubic`.
 - `spring`: instead of `ease` + `duration`: a preset (`gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy`) or `{ "stiffness": 180, "damping": 12, "mass": 1 }`; duration becomes the settle time.
 - `repeat` (count, `-1` = forever) and `yoyo` (bool) repeat a tween.
 
-**Animatable properties:** `x`, `y`, `width`, `height`, `scale`, `scaleX`, `scaleY`, `rotation`, `skewX`, `skewY`, `opacity`, `blur`, `radius`, `fill`/`color` (interpolated in OKLab), `stroke`(colour), `strokeWidth`, `trimStart`, `trimEnd`, `reveal`, `value`, `wipe`, `depth`; camera: `zoom`, `focus`, `aperture`.
+**Animatable properties:** `x`, `y`, `width`, `height`, `scale`, `scaleX`, `scaleY`, `rotation`, `skewX`, `skewY`, `opacity`, `blur`, `radius`, `fill`/`color` (interpolated in OKLab), `stroke`(colour), `strokeWidth`, `trimStart`, `trimEnd`, `reveal`, `value`, `wipe`, `depth`, `pathOffset`, `dashOffset`, `rangeStart`/`rangeEnd`/`rangeOffset` (text animator); camera: `zoom`, `focus`, `aperture`.
 
-**Easings:** `linear`, `ease`, `easeIn`, `easeOut`, `easeInOut`; Penner names as `in`/`out`/`inOut` + `Sine`, `Quad`, `Cubic`, `Quart`, `Quint`, `Expo`, `Circ`, `Back`, `Elastic`, `Bounce` (e.g. `outCubic`, `inOutBack`; `easeOutCubic` also works); `cubicBezier(0.2, 0, 0, 1)`; `steps(4)`; springs `gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy`.
+**Easings:** `linear`, `ease`, `easeIn`, `easeOut`, `easeInOut`; Penner names as `in`/`out`/`inOut` + `Sine`, `Quad`, `Cubic`, `Quart`, `Quint`, `Expo`, `Circ`, `Back`, `Elastic`, `Bounce` (e.g. `outCubic`, `inOutBack`; `easeOutCubic` also works); `cubicBezier(0.2, 0, 0, 1)` or an array `"ease": [0.2, 0, 0, 1]`; `steps(4)`; GSAP-style `back.out(1.7)`, `elastic.out(1, 0.3)`; springs `gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy`.
 
 ### 3. Expressions
 
@@ -411,6 +411,21 @@ Variables: `t` (seconds since the layer's start), `T` (seconds since the scene's
 ### Stagger
 
 On a `group`/`box` (or a `split` text), `"stagger": 0.08` delays each child's `enter` and `animate` by `index × 0.08 s` (exits are not staggered). Object form: `{ "each": 0.08, "from": "start" | "center" | "end" | "random", "ease": "inQuad" }`; or `"total": 0.6` to spread the delays over a fixed time.
+
+### Motion graphics (`anikit-video docs mograph`)
+
+Render-time, per layer (examples: `examples/video/mograph/`):
+
+| Key | Does |
+|---|---|
+| `repeat: {count, offset: {x, y, rotate, scale, opacity}, stagger, center}` | Repeater: copy *i* moved i×(x, y), rotated i×rotate and scaled scaleⁱ about `center` (default the layer position), opacity +i×opacity, i×stagger s later. A plain number is still the spec-level copy (`$i`). |
+| `echo: {count, delay, decay, blend}` | Motion trail: earlier-time copies under the layer (one blended layer for all of them). |
+| `path`, `progress`, `orient` | Follow SVG path data (parent px) at constant speed; `progress` 0..1 defaults to linear over the layer's life; `orient: true` (or extra degrees) turns along the tangent. |
+| `textPath`, `pathOffset` | Text on a path (layer-local px; never wraps); `pathOffset` slides it (px, animatable). |
+| `roundCorners`, `offsetPath`, `puckerBloat`, `zigzag: {size, ridges, smooth}`, `twist`, `wigglePath: {amount, detail, speed, seed}` | Shape modifiers, applied in this order (rects and ellipses become paths). `wigglePath` animates, deterministically. |
+| `matte: "id"` or `{layer, mode}` | Track matte through a sibling layer (`alpha`, `alphaInverted`, `luma`, `lumaInverted`); the matte layer is not drawn itself. |
+| `dashOffset` | Added to `stroke.dashOffset`; animatable (`"=t*-60"` marches ants). |
+| `animator: {by, x, y, rotation, scale, opacity, blur, color, start, end, offset, smooth, order, seed, duration, delay, ease}` | Text animator with a range selector (plain text). Units in `[start, end] + offset` take the props (soft edges `smooth`); with no `offset` the range sweeps away over `duration` (a reveal). `order`: `forward`, `reverse`, `center`, `random` (+`seed`). |
 
 ## Audio
 

@@ -110,7 +110,7 @@ fn color(c: Rgba) -> AlphaColor<Srgb> {
 
 fn blend_mode(b: Blend) -> BlendMode {
     let mix = match b {
-        Blend::Normal | Blend::Add => Mix::Normal,
+        Blend::Normal | Blend::Add | Blend::DestIn | Blend::DestOut => Mix::Normal,
         Blend::Multiply => Mix::Multiply,
         Blend::Screen => Mix::Screen,
         Blend::Overlay => Mix::Overlay,
@@ -119,7 +119,12 @@ fn blend_mode(b: Blend) -> BlendMode {
         Blend::SoftLight => Mix::SoftLight,
         Blend::Difference => Mix::Difference,
     };
-    let compose = if b == Blend::Add { Compose::Plus } else { Compose::SrcOver };
+    let compose = match b {
+        Blend::Add => Compose::Plus,
+        Blend::DestIn => Compose::DestIn,
+        Blend::DestOut => Compose::DestOut,
+        _ => Compose::SrcOver,
+    };
     BlendMode::new(mix, compose)
 }
 
@@ -835,6 +840,24 @@ pub(crate) struct Cull<'a> {
 }
 
 /// As [`draw_ops`], skipping top-level ops and layers whose bounds miss the cull region.
+/// True if a direct child layer of `inner` is a compose layer (a matte), so the parent must be isolated.
+fn has_compose(inner: &[Op]) -> bool {
+    let mut depth = 0usize;
+    for o in inner {
+        match o {
+            Op::PushLayer { blend, .. } => {
+                if depth == 0 && blend.is_compose() {
+                    return true;
+                }
+                depth += 1;
+            }
+            Op::PopLayer => depth = depth.saturating_sub(1),
+            _ => {}
+        }
+    }
+    false
+}
+
 fn draw_ops_culled(st: &mut State, assets: &View, ctx: &mut RenderContext, ops: &[Op], base: Affine, cull: Option<Cull>) {
     let misses = |a: usize, b: usize| -> bool {
         let Some(c) = cull else { return false };
@@ -856,7 +879,8 @@ fn draw_ops_culled(st: &mut State, assets: &View, ctx: &mut RenderContext, ops: 
                 if opacity <= 0.0 || inner.is_empty() {
                     continue;
                 }
-                if misses(start + 1, end) {
+                // A matte (compose layer) clears what is below even where it draws nothing.
+                if misses(start + 1, end) && !blend.is_compose() {
                     continue;
                 }
                 if let (false, [dl::Filter::Shadow { dx, dy, blur, color: sc }]) = (st.reference, filters.as_slice()) {
@@ -881,7 +905,7 @@ fn draw_ops_culled(st: &mut State, assets: &View, ctx: &mut RenderContext, ops: 
                     draw_offscreen(st, assets, ctx, inner, base, opacity, *blend, filters, clip.as_ref(), *cache_key);
                     continue;
                 }
-                let trivial = opacity >= 1.0 && *blend == Blend::Normal && clip.is_none();
+                let trivial = opacity >= 1.0 && *blend == Blend::Normal && clip.is_none() && !has_compose(inner);
                 if !trivial {
                     push_layer(ctx, base, clip.as_ref(), *blend, opacity);
                 }

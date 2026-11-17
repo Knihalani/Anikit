@@ -447,6 +447,7 @@ fn empty_node(kind: Kind) -> Node {
         count: 1.0,
         tag: u32::MAX,
         fx: None,
+        matte: None,
     }
 }
 
@@ -988,14 +989,74 @@ impl C<'_> {
     fn layers(&mut self, ls: &[Layer], path: &str, pc: PCtx, stagger: Option<&spec::Stagger>) -> Vec<Node> {
         let delays = self.stagger_delays(stagger, ls.len(), &format!("{path}.stagger"));
         let mut out = Vec::new();
+        let mut at: Vec<Option<usize>> = Vec::with_capacity(ls.len());
         for (i, l) in ls.iter().enumerate() {
             let p = format!("{path}[{i}]");
             let cpc = PCtx { index: i, count: ls.len(), delay: delays[i], ..pc };
+            at.push(None);
             if let Some(n) = self.layer(l, &p, cpc) {
+                at[i] = Some(out.len());
                 out.push(n);
             }
         }
+        if ls.iter().any(|l| l.matte.is_some()) {
+            self.resolve_mattes(ls, path, &at, &mut out);
+        }
         out
+    }
+
+    /// Track mattes: move each matte layer (by `id`, a sibling) into the layer it mattes.
+    fn resolve_mattes(&mut self, ls: &[Layer], path: &str, at: &[Option<usize>], out: &mut Vec<Node>) {
+        let mut pairs: Vec<(usize, usize, u8)> = Vec::new();
+        for (i, l) in ls.iter().enumerate() {
+            let Some(m) = &l.matte else { continue };
+            let m = &m.0;
+            let p = format!("{path}[{i}].matte");
+            let mode = match m.mode.as_deref().unwrap_or("alpha") {
+                "alpha" => 0,
+                "alphaInverted" => 1,
+                "luma" => 2,
+                "lumaInverted" => 3,
+                x => {
+                    let names = ["alpha", "alphaInverted", "luma", "lumaInverted"];
+                    self.d.push(Diagnostic::error(format!("{p}.mode"), format!("unknown matte mode '{x}'")).suggest(suggest(x, &names)));
+                    0
+                }
+            };
+            let Some(j) = ls.iter().position(|o| o.id.as_deref() == Some(m.layer.as_str())) else {
+                let ids: Vec<&str> = ls.iter().filter_map(|o| o.id.as_deref()).collect();
+                self.d.push(Diagnostic::error(format!("{p}.layer"), format!("no sibling layer with id '{}'", m.layer)).suggest(suggest(&m.layer, &ids)));
+                continue;
+            };
+            if j == i {
+                self.d.push(Diagnostic::error(format!("{p}.layer"), "a layer can't be its own matte"));
+                continue;
+            }
+            if let (Some(a), Some(b)) = (at[i], at[j]) {
+                pairs.push((a, b, mode));
+            }
+        }
+        // Take the matte nodes out (highest index first so indices stay valid).
+        let mut mattes: Vec<usize> = pairs.iter().map(|p| p.1).collect();
+        mattes.sort_unstable();
+        mattes.dedup();
+        let mut taken: Vec<(usize, Node)> = Vec::new();
+        for &k in mattes.iter().rev() {
+            if pairs.iter().any(|p| p.0 == k) {
+                continue; // a matted layer used as a matte: keep it simple, leave it drawn
+            }
+            taken.push((k, out.remove(k)));
+        }
+        let removed: Vec<usize> = taken.iter().map(|t| t.0).collect();
+        let shift = |k: usize| k - removed.iter().filter(|&&m| m < k).count();
+        for (a, b, mode) in pairs {
+            let Some(pos) = taken.iter().position(|t| t.0 == b) else {
+                self.d.push(Diagnostic::warning(format!("{path}[{a}].matte"), "each matte layer can matte one layer (and not be matted itself); ignored"));
+                continue;
+            };
+            let node = taken.remove(pos).1;
+            out[shift(a)].matte = Some(Box::new((node, mode)));
+        }
     }
 
     // ---------- layers ----------
@@ -1608,9 +1669,6 @@ impl C<'_> {
                 }
             }
         }
-        if l.matte.is_some() {
-            self.d.push(Diagnostic::warning(format!("{path}.matte"), "track mattes are not rendered yet; use 'mask' (shape) for now"));
-        }
         if !f.is_empty() {
             n.fx = Some(Box::new(f));
         }
@@ -1708,7 +1766,9 @@ impl C<'_> {
         };
         let (plain, spans) = self.markup(&raw, path);
         let run_colors = !spans.is_empty();
-        let mut tspec = text::TextSpec { text: plain.clone(), spans, style, width: given_w, align, max_lines: l.max_lines, ..Default::default() };
+        // Text on a path never wraps: one line rides the path.
+        let wrap_w = if l.text_path.is_some() { None } else { given_w };
+        let mut tspec = text::TextSpec { text: plain.clone(), spans, style, width: wrap_w, align, max_lines: l.max_lines, ..Default::default() };
         // `fit: true`: shrink (never grow) so the widest line fits `width`
         // (default 85% of the parent), keeping the author's line breaks.
         match l.fit.as_deref() {
@@ -1826,7 +1886,7 @@ impl C<'_> {
         };
         let chars = layout.chars.len();
         let wrap = if counter.is_some() { None } else { tspec.width };
-        let nat = [wrap.unwrap_or(layout.width), layout.height];
+        let nat = [wrap.or(given_w).unwrap_or(layout.width), layout.height];
         if split.is_some() && (counter.is_some() || kinetic.is_some()) {
             self.d.push(Diagnostic::warning(format!("{path}.split"), "split is ignored on counters and kinetic text"));
         }

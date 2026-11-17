@@ -85,6 +85,17 @@ pub enum Blend {
     Lighten,
     SoftLight,
     Difference,
+    /// Porter-Duff destination-in: keep what is below only where this layer has alpha (track mattes).
+    DestIn,
+    /// Porter-Duff destination-out: keep what is below only where this layer has no alpha.
+    DestOut,
+}
+
+impl Blend {
+    /// Compositing (not colour-mixing) modes that change pixels outside their own coverage.
+    pub fn is_compose(self) -> bool {
+        matches!(self, Blend::DestIn | Blend::DestOut)
+    }
 }
 
 /// Per-layer filters, applied to the layer's pixels before compositing.

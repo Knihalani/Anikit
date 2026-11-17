@@ -1,0 +1,425 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "background": "#0e1116",
+ "theme": {
+  "colors": {
+   "night": "#0e1116",
+   "grid": "#1b2129",
+   "bone": "#eef0f2",
+   "amber": "#ffb000",
+   "teal": "#19c3b4"
+  }
+ },
+ "transition": "cut",
+ "scenes": [
+  {
+   "id": "map",
+   "duration": 1.5,
+   "notes": "street grid fades up, both lines draw on, stations pop in sequence",
+   "layers": [
+    {
+     "shape": "rect",
+     "x": 960,
+     "y": -10,
+     "width": 1920,
+     "height": 2,
+     "fill": "$grid",
+     "repeat": {
+      "count": 28,
+      "offset": {
+       "y": 40
+      },
+      "stagger": 0.01
+     },
+     "enter": "fadeIn"
+    },
+    {
+     "shape": "rect",
+     "x": -10,
+     "y": 540,
+     "width": 2,
+     "height": 1080,
+     "fill": "$grid",
+     "repeat": {
+      "count": 50,
+      "offset": {
+       "x": 40
+      },
+      "stagger": 0.006
+     },
+     "enter": "fadeIn"
+    },
+    {
+     "enter": {
+      "preset": "draw",
+      "duration": 1.0
+     },
+     "draw": [
+      {
+       "d": "M120 760 L520 760 Q600 760 640 690 L820 380 Q860 310 940 310 L1800 310",
+       "stroke": "$amber",
+       "width": 12,
+       "cap": "round",
+       "join": "round"
+      },
+      {
+       "d": "M300 140 L300 520 Q300 600 380 600 L1240 600 Q1320 600 1360 670 L1560 1000",
+       "stroke": "$teal",
+       "width": 12,
+       "cap": "round",
+       "join": "round"
+      }
+     ]
+    },
+    {
+     "type": "group",
+     "stagger": 0.08,
+     "layers": [
+      {
+       "shape": "circle",
+       "x": 320,
+       "y": 760,
+       "width": 30,
+       "height": 30,
+       "fill": "$night",
+       "stroke": "$bone",
+       "strokeWidth": 6,
+       "enter": "popIn"
+      },
+      {
+       "shape": "circle",
+       "x": 300,
+       "y": 300,
+       "width": 30,
+       "height": 30,
+       "fill": "$night",
+       "stroke": "$bone",
+       "strokeWidth": 6,
+       "enter": "popIn"
+      },
+      {
+       "shape": "circle",
+       "x": 692,
+       "y": 600,
+       "width": 44,
+       "height": 44,
+       "fill": "$night",
+       "stroke": "$bone",
+       "strokeWidth": 8,
+       "enter": "popIn"
+      },
+      {
+       "shape": "circle",
+       "x": 1060,
+       "y": 600,
+       "width": 30,
+       "height": 30,
+       "fill": "$night",
+       "stroke": "$bone",
+       "strokeWidth": 6,
+       "enter": "popIn"
+      },
+      {
+       "shape": "circle",
+       "x": 1100,
+       "y": 310,
+       "width": 30,
+       "height": 30,
+       "fill": "$night",
+       "stroke": "$bone",
+       "strokeWidth": 6,
+       "enter": "popIn"
+      },
+      {
+       "shape": "circle",
+       "x": 1500,
+       "y": 310,
+       "width": 30,
+       "height": 30,
+       "fill": "$night",
+       "stroke": "$bone",
+       "strokeWidth": 6,
+       "enter": "popIn"
+      },
+      {
+       "shape": "circle",
+       "x": 1460,
+       "y": 840,
+       "width": 30,
+       "height": 30,
+       "fill": "$night",
+       "stroke": "$bone",
+       "strokeWidth": 6,
+       "enter": "popIn"
+      }
+     ]
+    },
+    {
+     "text": "NIGHT NETWORK / 01:40",
+     "font": "JetBrains Mono",
+     "size": 24,
+     "letterSpacing": 5,
+     "color": "$bone",
+     "x": 1800,
+     "y": 1000,
+     "anchor": "right",
+     "animator": {
+      "opacity": 0,
+      "order": "random",
+      "seed": 2,
+      "delay": 0.5,
+      "duration": 0.6,
+      "smooth": 0.05
+     }
+    }
+   ]
+  },
+  {
+   "id": "run",
+   "duration": 1.5,
+   "notes": "trains ride the same paths with trails; each line's name rides its own track",
+   "layers": [
+    {
+     "draw": [
+      {
+       "d": "M120 760 L520 760 Q600 760 640 690 L820 380 Q860 310 940 310 L1800 310",
+       "stroke": "$amber",
+       "width": 12,
+       "cap": "round",
+       "join": "round",
+       "opacity": 0.35
+      },
+      {
+       "d": "M300 140 L300 520 Q300 600 380 600 L1240 600 Q1320 600 1360 670 L1560 1000",
+       "stroke": "$teal",
+       "width": 12,
+       "cap": "round",
+       "join": "round",
+       "opacity": 0.35
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": 46,
+     "height": 18,
+     "radius": 9,
+     "fill": "$amber",
+     "path": "M120 760 L520 760 Q600 760 640 690 L820 380 Q860 310 940 310 L1800 310",
+     "orient": true,
+     "progress": "=fract(t*0.42 + $i*0.5)",
+     "repeat": 2,
+     "echo": {
+      "count": 24,
+      "delay": 0.012,
+      "decay": 0.86
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 46,
+     "height": 18,
+     "radius": 9,
+     "fill": "$teal",
+     "path": "M300 140 L300 520 Q300 600 380 600 L1240 600 Q1320 600 1360 670 L1560 1000",
+     "orient": true,
+     "progress": "=fract(t*0.5 + 0.25 + $i*0.5)",
+     "repeat": 2,
+     "echo": {
+      "count": 24,
+      "delay": 0.012,
+      "decay": 0.86
+     }
+    },
+    {
+     "text": "AMBER LINE \u00b7 HARBOUR \u2192 HILL \u00b7 AMBER LINE \u00b7 HARBOUR \u2192 HILL",
+     "font": "JetBrains Mono",
+     "size": 24,
+     "weight": 700,
+     "letterSpacing": 4,
+     "color": "$amber",
+     "x": 960,
+     "y": 540,
+     "width": 1920,
+     "height": 1080,
+     "textPath": "M120 736 L520 736 Q586 736 620 678 L800 368 Q846 286 940 286 L1800 286",
+     "pathOffset": "=t*-120"
+    },
+    {
+     "text": "TEAL LINE \u00b7 MARKET \u2192 DOCKS \u00b7 TEAL LINE \u00b7 MARKET \u2192 DOCKS",
+     "font": "JetBrains Mono",
+     "size": 24,
+     "weight": 700,
+     "letterSpacing": 4,
+     "color": "$teal",
+     "x": 960,
+     "y": 540,
+     "width": 1920,
+     "height": 1080,
+     "textPath": "M380 576 L1240 576 Q1334 576 1380 656 L1580 990",
+     "pathOffset": "=t*-120"
+    }
+   ]
+  },
+  {
+   "id": "station",
+   "duration": 1.3,
+   "notes": "close on the interchange: rings pulse out of it, the name sweeps in, the wait counts down",
+   "layers": [
+    {
+     "shape": "circle",
+     "x": 760,
+     "y": 540,
+     "width": 160,
+     "height": 160,
+     "fill": "none",
+     "stroke": "$amber",
+     "strokeWidth": 4,
+     "repeat": {
+      "count": 7,
+      "offset": {
+       "scale": 1.42,
+       "opacity": -0.14
+      },
+      "stagger": 0.06
+     },
+     "animate": {
+      "from": {
+       "scale": 0.2,
+       "opacity": 0
+      },
+      "duration": 0.7,
+      "ease": "outExpo"
+     }
+    },
+    {
+     "shape": "circle",
+     "x": 760,
+     "y": 540,
+     "width": 110,
+     "height": 110,
+     "fill": "$bone",
+     "enter": "popIn"
+    },
+    {
+     "text": "CANAL ST.",
+     "size": 150,
+     "weight": 800,
+     "letterSpacing": -4,
+     "color": "$bone",
+     "x": 960,
+     "y": 470,
+     "anchor": "left",
+     "animator": {
+      "by": "char",
+      "x": -60,
+      "opacity": 0,
+      "blur": 8,
+      "duration": 0.55,
+      "smooth": 0.35,
+      "ease": "outExpo"
+     }
+    },
+    {
+     "text": "NEXT TRAIN  {value:00}s",
+     "value": "=max(0, 59 - floor(t*9))",
+     "font": "JetBrains Mono",
+     "size": 40,
+     "letterSpacing": 4,
+     "color": "$amber",
+     "x": 965,
+     "y": 600,
+     "anchor": "left",
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.3
+     }
+    }
+   ]
+  },
+  {
+   "id": "end",
+   "duration": 1.7,
+   "notes": "button: the loop that never stops: a marching dashed loop and the service promise",
+   "layers": [
+    {
+     "shape": "rect",
+     "x": 960,
+     "y": 540,
+     "width": 1560,
+     "height": 700,
+     "radius": 350,
+     "fill": "none",
+     "stroke": {
+      "color": "$teal",
+      "dash": [
+       2,
+       22
+      ],
+      "cap": "round"
+     },
+     "strokeWidth": 10,
+     "dashOffset": "=t*-90",
+     "animate": {
+      "from": {
+       "trimEnd": 0
+      },
+      "duration": 0.8,
+      "ease": "inOutCubic"
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 46,
+     "height": 18,
+     "radius": 9,
+     "fill": "$amber",
+     "orient": true,
+     "path": "M530 190 L1390 190 A350 350 0 0 1 1390 890 L530 890 A350 350 0 0 1 530 190 Z",
+     "progress": "=t*0.35",
+     "echo": {
+      "count": 30,
+      "delay": 0.01,
+      "decay": 0.88
+     }
+    },
+    {
+     "text": "NIGHT LINE",
+     "size": 210,
+     "weight": 900,
+     "letterSpacing": -8,
+     "color": "$bone",
+     "x": 960,
+     "y": 510,
+     "animator": {
+      "by": "char",
+      "y": 120,
+      "opacity": 0,
+      "duration": 0.6,
+      "delay": 0.2,
+      "smooth": 0.3,
+      "ease": "outExpo"
+     }
+    },
+    {
+     "text": "EVERY 6 MINUTES. ALL NIGHT.",
+     "font": "JetBrains Mono",
+     "size": 34,
+     "letterSpacing": 6,
+     "color": "$amber",
+     "x": 960,
+     "y": 660,
+     "animator": {
+      "opacity": 0,
+      "order": "random",
+      "seed": 6,
+      "delay": 0.55,
+      "duration": 0.6,
+      "smooth": 0.05
+     }
+    }
+   ]
+  }
+ ]
+}
