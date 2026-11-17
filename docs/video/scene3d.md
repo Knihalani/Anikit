@@ -44,6 +44,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
 | `cyc.json` | White cyc, chrome type, textured glass panes, aluminium, emissive, reflector cards. |
 | `panes.json` | 3,600 glass panes, each showing frame `i` of a composition. |
 | `glass.json` | Thin and thick glass, a glass sphere, aluminium type. |
+| `wave.json` | A heightfield and a tube animated by `t` (rebuilt per frame). |
 | `geometry.json` | Open geometry: extrude, lathe, tube, surface, heightfield, mesh. |
 | `chrome.json` | The dark-studio lookdev: `{ "text": "ANIKIT" }` with no `objects`. |
 
@@ -94,7 +95,7 @@ You are not limited to the preset shapes. These types build a mesh from your des
 - **`mesh`:** raw `vertices` `[[x, y, z], ...]` and `faces` (triangles, polygons or a flat index list). Normals are smoothed unless `"flat": true`.
   `{ "type": "mesh", "vertices": [[0, 0.8, 0], [-0.25, 0.1, -0.25], [0.25, 0.1, -0.25], [0, 0.1, 0.25]], "faces": [[0, 2, 1], [0, 3, 2], [0, 1, 3], [1, 2, 3]], "flat": true }`
 
-Shapes are built once when the spec loads, so their expressions use `u`/`v`/`s`/`x`/`z` (not `t`). To animate them, animate the object (`keys`, `"rot": "=[0, t*40, 0]"`), or deform with `scale`. To generate many objects, put `{ "script": "..." }` in `objects`; it expands to the items it returns. Cost: tracing a mesh costs about the same as the preset shapes of similar screen size. A 160×32 surface or a 128² heightfield adds under 5 ms to scene build, and render time is set by pixels covered, not by triangle count.
+Shapes whose expressions use `t` (seconds) are rebuilt every frame: waves, growing tubes, morphing surfaces (`examples/video/lookdev/wave.json`). This costs about 44 ms per frame for a 160² heightfield plus a 300-segment tube, and turns off the baked floor. Shapes without `t` are built once. Motion blur follows object motion, not deformation. To generate many objects, put `{ "script": "..." }` in `objects`; it expands to the items it returns. Cost: tracing a mesh costs about the same as the preset shapes of similar screen size. A 160×32 surface or a 128² heightfield adds under 5 ms to scene build, and render time is set by pixels covered, not by triangle count.
 
 ## Rules that keep it looking expensive
 
@@ -107,6 +108,7 @@ Shapes are built once when the spec loads, so their expressions use `u`/`v`/`s`/
 ## Cost and debugging
 
 - 1080p on 4 cores runs at about 0.6–1.2 s per frame at `standard` (lookdev shots; glass-heavy shots are the slowest). Use `"quality": "draft"` for previews.
+- Static layouts bake a noise-free floor once per spec (1.5–2.5 s). The bake is cached in `$ANIKIT_CACHE/sim` (`ANIKIT_CACHE=off` disables it), so re-renders and parallel chunks of the same spec skip it.
 - `ANIKIT_SCENE3D_PROFILE=1` prints per-stage ms and ray counts; `=2` adds micro-benchmarks of the building blocks.
 - `ANIKIT_SCENE3D_DEBUG=refl|col|diffuse` shows one buffer.
 - Errors name the exact field with a "did you mean" suggestion: ``objects[2].material: unknown material `crome`; did you mean `chrome`?``.

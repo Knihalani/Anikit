@@ -128,6 +128,24 @@ impl Assets for Host {
         *self.by_key.write().unwrap().entry(key).or_insert(id)
     }
 
+    fn image_premul(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> ImageId {
+        if let Some(id) = self.by_key.read().unwrap().get(&key) {
+            return *id;
+        }
+        let px = make();
+        let mut pm = Pixmap::new(w.clamp(1, 65535) as u16, h.clamp(1, 65535) as u16);
+        if pm.data_as_u8_slice().len() == px.len() {
+            pm.data_as_u8_slice_mut().copy_from_slice(&px);
+        }
+        pm.set_may_have_transparency(true);
+        let id = {
+            let mut v = self.pixmaps.write().unwrap();
+            v.push(Arc::new(pm));
+            ImageId(DYNAMIC_BASE + v.len() as u32 - 1)
+        };
+        *self.by_key.write().unwrap().entry(key).or_insert(id)
+    }
+
     fn media(&self, src: &str, _t: f32) -> Option<(ImageId, u32, u32)> {
         self.media.read().unwrap().get(src).copied()
     }

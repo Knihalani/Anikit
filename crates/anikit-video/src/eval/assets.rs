@@ -207,6 +207,33 @@ impl components::Assets for SharedAssets {
         ImageId(VOLATILE_BASE + seq)
     }
 
+    fn image_premul(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> ImageId {
+        // Premultiplied pixels are per-frame renders (rays, particle text): keep them
+        // in the volatile ring like `frame_image`, so long renders don't accumulate them.
+        {
+            let v = self.volatile.read().unwrap();
+            if let Some((_, seq, _)) = v.slots.iter().flatten().find(|s| s.0 == key) {
+                return ImageId(VOLATILE_BASE + seq);
+            }
+        }
+        let px = make();
+        if w == 0 || h == 0 || w > u16::MAX as u32 || h > u16::MAX as u32 || px.len() != (w * h * 4) as usize {
+            return ImageId(u32::MAX);
+        }
+        let mut pm = Pixmap::new(w as u16, h as u16);
+        pm.data_as_u8_slice_mut().copy_from_slice(&px);
+        pm.set_may_have_transparency(true);
+        let pm = Arc::new(pm);
+        let mut v = self.volatile.write().unwrap();
+        if v.slots.len() < VOLATILE_SLOTS {
+            v.slots.resize(VOLATILE_SLOTS, None);
+        }
+        let seq = v.next;
+        v.next = (v.next + 1) % (super::shader::SHADER_BASE - VOLATILE_BASE);
+        v.slots[seq as usize % VOLATILE_SLOTS] = Some((key, seq, pm));
+        ImageId(VOLATILE_BASE + seq)
+    }
+
     fn media(&self, src: &str, _t: f32) -> Option<(ImageId, u32, u32)> {
         let id = *self.media.read().unwrap().get(src)?;
         let (w, h) = self.image_size(id)?;
