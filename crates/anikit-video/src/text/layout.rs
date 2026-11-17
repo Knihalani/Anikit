@@ -528,7 +528,7 @@ impl TextLayout {
         if let Some((paths, stroke, color, hollow)) = &self.outline {
             for (r, p) in self.runs.iter().zip(paths) {
                 if !hollow {
-                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: r.glyphs.clone(), paint: self.paint(r, 1.0), transform });
+                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: super::pool::copy(&r.glyphs), paint: self.paint(r, 1.0), transform });
                 }
                 let paint = color.map_or_else(|| self.paint(r, 1.0), Paint::Solid);
                 out.push(Op::Stroke { path: p.clone(), paint, stroke: stroke.clone(), transform });
@@ -539,7 +539,7 @@ impl TextLayout {
             out.push(Op::Glyphs {
                 font: r.font,
                 size: r.size,
-                glyphs: r.glyphs.clone(),
+                glyphs: super::pool::copy(&r.glyphs),
                 paint: self.paint(r, 1.0),
                 transform,
             });
@@ -573,7 +573,12 @@ impl FontStore {
         let mut l = self.layout_uncached(spec);
         l.key = key;
         let l = Arc::new(l);
-        self.cache.write().unwrap().insert(key, l.clone());
+        let mut c = self.cache.write().unwrap();
+        // Bounded: per-frame text (e.g. counters laid out per value) must not grow it forever.
+        if c.len() >= 8192 {
+            c.clear();
+        }
+        c.insert(key, l.clone());
         l
     }
 
@@ -846,6 +851,9 @@ impl FontStore {
         let mut out = TextLayout { text: text.to_string(), ..Default::default() };
         // Interned face per parley run, memoised by (blob, index, coords ptr).
         let mut last_face: Option<(u64, u32, usize, FontId)> = None;
+        // One run per (face, size, colour) across the whole block: syntax-highlighted
+        // code alternates colours, and merging cuts its ops ~20x.
+        let mut run_of: std::collections::HashMap<(u32, u32, [u32; 4]), usize> = std::collections::HashMap::new();
         for (li, line) in layout.lines().enumerate() {
             let m = *line.metrics();
             let li = li as u32;
@@ -893,12 +901,13 @@ impl FontStore {
                         let g0 = out.glyphs.len() as u32;
                         let mut gx = pen;
                         for g in cl.glyphs() {
+                            let key = (fid.0, size.to_bits(), color.0.map(f32::to_bits));
                             let run_i = match out.runs.last() {
                                 Some(r) if r.font == fid && r.size == size && r.color == color => out.runs.len() - 1,
-                                _ => {
+                                _ => *run_of.entry(key).or_insert_with(|| {
                                     out.runs.push(GlyphRun { font: fid, size, color, glyphs: Vec::new() });
                                     out.runs.len() - 1
-                                }
+                                }),
                             };
                             let r = &mut out.runs[run_i];
                             r.glyphs.push(dl::Glyph { id: g.id as u16, x: gx + g.x, y: m.baseline + g.y });
