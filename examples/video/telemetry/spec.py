@@ -385,7 +385,7 @@ def scene_map():
         text("P3", px + 172, py - 64, 26, TEXT, HEAD, 800, "left"),
     ], start=r(tp - 0.1), end=r(tp + 2.6), enter={"preset": "fadeIn", "duration": 0.2}, exit="fadeOut"))
     return {"id": "map", "duration": dur, "background": BG,
-            "transition": {"type": "push", "direction": "left", "duration": 0.5, "ease": "inOutQuart"},
+            "transition": {"type": "slide", "direction": "left", "duration": 0.5, "ease": "inOutQuart"},
             "layers": layers}
 
 
@@ -809,7 +809,7 @@ def scene_analysis():
             layers.append(rect(x0 + 124, yy + 6, r(bw), 36, col, scaleX=1,
                                anchor="topLeft", animate=[{"from": {"width": 0}, "at": 0.3 + 0.3 * k + 0.1 * j, "duration": 0.7, "ease": "outExpo"}]))
             layers.append(text("{value:0.000}", x0 + pw - 32, yy + 24, 30, TEXT, MONO, 800, "right", value=r(tv, 3),
-                               enter={"preset": "countUp", "delay": 0.3 + 0.3 * k + 0.1 * j, "duration": 0.7}))
+                               start=r(0.3 + 0.3 * k + 0.1 * j), enter={"preset": "countUp", "duration": 0.7}))
         dlt = ta - tb
         layers.append(text(f"{dlt:+.3f}", x0 + pw - 32, yk, 20, GREEN if dlt < 0 else RED, MONO, 800, "right",
                            enter={"preset": "fadeIn", "delay": 0.9 + 0.3 * k}))
