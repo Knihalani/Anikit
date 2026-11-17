@@ -172,9 +172,97 @@ fn resolve_time(ev: &Evaluator, s: &str) -> Result<f32, String> {
     s.strip_suffix('s').unwrap_or(s).parse::<f32>().map_err(|_| format!("bad time '{s}'"))
 }
 
+/// `set spec.json <path> <value>`: patch one value in place, so agents edit specs in a
+/// few tokens instead of rewriting them. Path segments are keys, array indices, or the
+/// `id` of an item (`scenes.intro.layers.title.text`). The value is JSON, or else a
+/// string. A missing final key is added; `--delete` removes it instead.
+fn set_cmd(args: &[String]) -> Result<(), String> {
+    let delete = args.iter().any(|a| a == "--delete");
+    let pos: Vec<&String> = args.iter().filter(|a| *a != "--delete").collect();
+    let (file, path) = match pos.as_slice() {
+        [f, p, ..] => (f.as_str(), p.as_str()),
+        _ => return Err("usage: anikit-video set spec.json scenes.intro.layers.title.text \"New title\"  (or --delete)".into()),
+    };
+    let value = if delete {
+        None
+    } else {
+        let raw = pos.get(2).ok_or("missing the value")?;
+        Some(serde_json::from_str::<serde_json::Value>(raw).unwrap_or_else(|_| serde_json::Value::String(raw.to_string())))
+    };
+    let src = std::fs::read_to_string(file).map_err(|e| format!("cannot read {file}: {e}"))?;
+    let mut doc: serde_json::Value = serde_json::from_str(&src).map_err(|e| format!("{file} is not JSON: {e}"))?;
+    let segs: Vec<&str> = path.split('.').collect();
+    let mut cur = &mut doc;
+    let mut walked = String::new();
+    for (k, seg) in segs.iter().enumerate() {
+        let last = k + 1 == segs.len();
+        if last {
+            match cur {
+                serde_json::Value::Object(m) => match &value {
+                    Some(v) => {
+                        m.insert(seg.to_string(), v.clone());
+                    }
+                    None => {
+                        m.remove(*seg).ok_or_else(|| format!("{walked}: no key '{seg}'"))?;
+                    }
+                },
+                serde_json::Value::Array(a) => {
+                    let i = index_of(a, seg).ok_or_else(|| format!("{walked}: no item '{seg}' (index or id)"))?;
+                    match &value {
+                        Some(v) => a[i] = v.clone(),
+                        None => {
+                            a.remove(i);
+                        }
+                    }
+                }
+                _ => return Err(format!("{walked} is not an object or a list")),
+            }
+            break;
+        }
+        cur = match cur {
+            serde_json::Value::Object(m) => {
+                let keys: Vec<String> = m.keys().cloned().collect();
+                m.get_mut(*seg).ok_or_else(|| {
+                    let hint = anikit_video::spec::validate::suggest(seg, &keys).map(|s| format!(", did you mean '{s}'?")).unwrap_or_default();
+                    format!("{}: no key '{seg}'{hint}", if walked.is_empty() { "spec" } else { &walked })
+                })?
+            }
+            serde_json::Value::Array(a) => {
+                let i = index_of(a, seg).ok_or_else(|| {
+                    let ids: Vec<String> = a.iter().filter_map(|x| x.get("id").and_then(|i| i.as_str()).map(str::to_string)).collect();
+                    format!("{walked}: no item '{seg}' (indices 0..{}, ids: {})", a.len(), ids.join(", "))
+                })?;
+                &mut a[i]
+            }
+            _ => return Err(format!("{walked} is not an object or a list")),
+        };
+        if !walked.is_empty() {
+            walked.push('.');
+        }
+        walked.push_str(seg);
+    }
+    std::fs::write(file, serde_json::to_string_pretty(&doc).unwrap_or_default() + "\n").map_err(|e| format!("cannot write {file}: {e}"))?;
+    eprintln!("set {path} in {file}");
+    Ok(())
+}
+
+/// An array item by index or by its `id`.
+fn index_of(a: &[serde_json::Value], seg: &str) -> Option<usize> {
+    seg.parse::<usize>().ok().filter(|i| *i < a.len()).or_else(|| a.iter().position(|x| x.get("id").and_then(|i| i.as_str()) == Some(seg)))
+}
+
 fn main() -> ExitCode {
     // Agent commands (new, templates, prompt, critique, preview, mcp) live in the library.
     let raw: Vec<String> = std::env::args().skip(1).collect();
+    if raw.first().map(String::as_str) == Some("set") {
+        return match set_cmd(&raw[1..]) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("anikit-video set: {e}");
+                ExitCode::from(2)
+            }
+        };
+    }
     if matches!(raw.first().map(String::as_str), Some("--version" | "-V" | "version")) {
         println!("anikit-video {}", env!("CARGO_PKG_VERSION"));
         return ExitCode::SUCCESS;
@@ -307,7 +395,15 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                             println!("{}", serde_json::json!({ "ok": true, "output": out, "at": t, "width": w, "height": h, "ms": ms, "shaders": shaders, "warnings": d }));
                         } else {
                             eprintln!("wrote {} ({w}×{h}, t = {t:.2} s) in {ms:.0} ms", out.display());
-                            for s in ev.shader_stats() {
+                            let stats = ev.shader_stats();
+                            let per_frame: f32 = stats.iter().map(|s| s.ms * full).sum();
+                            if per_frame > 0.0 {
+                                let frames = (ev.duration * ev.fps).round().max(1.0);
+                                let total = frames * per_frame / 1000.0;
+                                let fix = if per_frame > 120.0 { "  ← to cut it: \"supersample\": false on the heaviest layer, fewer march steps / octaves, or a smaller layer" } else { "" };
+                                eprintln!("  estimated render time: up to {total:.0} s of shader work for {frames:.0} frames (≈ {per_frame:.0} ms/frame if every shader is on screen){fix}");
+                            }
+                            for s in stats {
                                 let f = s.ms * full;
                                 let note = if f > 400.0 {
                                     "  ← heavy: cut march steps / noise octaves, bound the scene, or drop supersample (docs/video/shader.md#performance)"

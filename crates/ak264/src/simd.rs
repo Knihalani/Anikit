@@ -732,6 +732,66 @@ pub fn second_diff16(p: &[u8; 256]) -> u32 {
     s
 }
 
+/// SSIM statistics of two 8×8 blocks starting at `a[0]` and `b[0]` (row
+/// strides `sa`, `sb`): Σa, Σb, Σa², Σb², Σab.
+#[inline]
+pub fn ssim_stats8(a: &[u8], sa: usize, b: &[u8], sb: usize) -> [u32; 5] {
+    assert!(a.len() >= 7 * sa + 8 && b.len() >= 7 * sb + 8);
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: SSE2 is baseline on x86_64; every 8-byte load is inside `a`/`b` (asserted).
+    unsafe {
+        use std::arch::x86_64::*;
+        let z = _mm_setzero_si128();
+        let (mut s, mut aa, mut bb, mut ab) = (z, z, z, z);
+        for y in 0..8 {
+            let va = _mm_unpacklo_epi8(_mm_loadl_epi64(a.as_ptr().add(y * sa) as *const __m128i), z);
+            let vb = _mm_unpacklo_epi8(_mm_loadl_epi64(b.as_ptr().add(y * sb) as *const __m128i), z);
+            // Σa in the low 4 lanes' pairs, Σb in the high: pack both as i16 sums
+            s = _mm_add_epi16(s, _mm_unpacklo_epi64(_mm_hadd_epi16_sse2(va), _mm_hadd_epi16_sse2(vb)));
+            aa = _mm_add_epi32(aa, _mm_madd_epi16(va, va));
+            bb = _mm_add_epi32(bb, _mm_madd_epi16(vb, vb));
+            ab = _mm_add_epi32(ab, _mm_madd_epi16(va, vb));
+        }
+        let hsum = |v: __m128i| {
+            let v = _mm_add_epi32(v, _mm_shuffle_epi32::<0b01_00_11_10>(v));
+            let v = _mm_add_epi32(v, _mm_shuffle_epi32::<0b10_11_00_01>(v));
+            _mm_cvtsi128_si32(v) as u32
+        };
+        // s: lanes 0..3 hold Σa partials, 4..7 Σb partials (i16, ≤ 8·2·255)
+        let one = _mm_set1_epi16(1);
+        let s32 = _mm_madd_epi16(s, one); // [a01, a23, b01, b23]
+        let lo = _mm_add_epi32(s32, _mm_shuffle_epi32::<0b10_11_00_01>(s32));
+        let (sum_a, sum_b) = (_mm_cvtsi128_si32(lo) as u32, _mm_cvtsi128_si32(_mm_unpackhi_epi64(lo, lo)) as u32);
+        [sum_a, sum_b, hsum(aa), hsum(bb), hsum(ab)]
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        let mut r = [0u32; 5];
+        for y in 0..8 {
+            for x in 0..8 {
+                let (p, q) = (a[y * sa + x] as u32, b[y * sb + x] as u32);
+                r[0] += p;
+                r[1] += q;
+                r[2] += p * p;
+                r[3] += q * q;
+                r[4] += p * q;
+            }
+        }
+        r
+    }
+}
+
+/// Pairwise sums of eight i16 lanes into four (SSE2 only; `_mm_hadd_epi16`
+/// needs SSSE3).
+#[cfg(target_arch = "x86_64")]
+#[inline(always)]
+unsafe fn _mm_hadd_epi16_sse2(v: std::arch::x86_64::__m128i) -> std::arch::x86_64::__m128i {
+    use std::arch::x86_64::*;
+    // madd with 1s gives four i32 pair sums; pack back to i16 (values ≤ 510)
+    let p = _mm_madd_epi16(v, _mm_set1_epi16(1));
+    _mm_packs_epi32(p, p)
+}
+
 /// Sum and sum of squares of a block whose length is a multiple of 16.
 #[inline]
 pub fn sum_sq(p: &[u8]) -> (u32, u32) {
@@ -992,5 +1052,26 @@ mod maxsad_test {
             }
             assert_eq!(super::max_sad4(&a[..64], &b[..64], 8, 8), mc);
         }
+    }
+}
+
+#[cfg(test)]
+mod ssim_tests {
+    #[test]
+    fn ssim_stats8_matches_scalar() {
+        let a: Vec<u8> = (0..24 * 8).map(|i| (i * 37 % 256) as u8).collect();
+        let b: Vec<u8> = (0..20 * 8).map(|i| (255 - i * 11 % 256) as u8).collect();
+        let mut r = [0u32; 5];
+        for y in 0..8 {
+            for x in 0..8 {
+                let (p, q) = (a[y * 24 + x] as u32, b[y * 20 + x] as u32);
+                r[0] += p;
+                r[1] += q;
+                r[2] += p * p;
+                r[3] += q * q;
+                r[4] += p * q;
+            }
+        }
+        assert_eq!(super::ssim_stats8(&a, 24, &b, 20), r);
     }
 }

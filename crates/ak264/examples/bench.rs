@@ -80,8 +80,13 @@ fn main() {
             ("ak264 chunks", 1, 1),
             ("ak264 chunks + renderer hints", 1, 2),
         ] {
+            // MODES=0,3: run only these configurations (by index)
+            let idx = [(1usize, 0usize), (4, 0), (1, 1), (1, 2)].iter().position(|&m| m == (threads, chunked)).unwrap();
+            if std::env::var("MODES").is_ok_and(|m| !m.split(',').any(|k| k.parse::<usize>().ok() == Some(idx))) {
+                continue;
+            }
             let subpel = std::env::var("SUBPEL").map(|v| v != "0").unwrap_or(true);
-            let cfg = EncoderConfig { width: w, height: h, qp, gop: 60, fps: 30.0, threads, subpel, skip_threshold: std::env::var("SKIPT").ok().and_then(|v| v.parse().ok()).unwrap_or(0), aq_strength: std::env::var("AQ").ok().and_then(|v| v.parse().ok()).unwrap_or(EncoderConfig::default().aq_strength), ssim_floor: std::env::var("SSIM").ok().and_then(|v| v.parse().ok()).unwrap_or(EncoderConfig::default().ssim_floor), ssim_max_drop: std::env::var("DROP").ok().and_then(|v| v.parse().ok()).unwrap_or(EncoderConfig::default().ssim_max_drop), ..Default::default() };
+            let cfg = EncoderConfig { width: w, height: h, qp, gop: std::env::var("GOP").ok().and_then(|v| v.parse().ok()).unwrap_or(60), fps: 30.0, threads, subpel, skip_threshold: std::env::var("SKIPT").ok().and_then(|v| v.parse().ok()).unwrap_or(0), aq_strength: std::env::var("AQ").ok().and_then(|v| v.parse().ok()).unwrap_or(EncoderConfig::default().aq_strength), ssim_floor: std::env::var("SSIM").ok().and_then(|v| v.parse().ok()).unwrap_or(EncoderConfig::default().ssim_floor), ssim_max_drop: std::env::var("DROP").ok().and_then(|v| v.parse().ok()).unwrap_or(EncoderConfig::default().ssim_max_drop), ..Default::default() };
             // warm-up
             let _ = encode_chunks(&cfg, &frames[..2.min(frames.len())], &[]);
             let reps: usize = std::env::var("REPS").ok().and_then(|v| v.parse().ok()).unwrap_or(3);

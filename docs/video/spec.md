@@ -33,7 +33,7 @@ Theme colours (used as `$name`): `primary secondary accent bg surface text muted
 
 ## Scenes
 
-`id` · `duration` (default 3, or `"auto"`) · `background` · `transition` (into this scene) · `camera` · `markers` · `layers` · `audio`.
+`id` · `duration` (default 3, `"auto"`, or musical: `"2 beats"`, `"1 bar"`, `"4b"`; top-level `"cut": "bar"` sets the default for every scene) · `stack` (`true`: free text layers as one centred column, no x/y needed) · `background` · `transition` (into this scene) · `camera` · `markers` · `layers` · `audio`.
 
 Transitions: `cut crossfade fadeBlack fadeWhite slide push zoom wipe iris blur glitch morphCut`, shader transitions `burn ripple pixelate swirl ink-bleed warp-wipe luma-melt zoom-blur`, or your own `{ "type": "shader", "shader": "vec4 transition(vec2 uv) {…}" }` (gl-transitions API). Write one as a string or as `{ "type": "slide", "direction": "left", "duration": 0.6 }`.
 
@@ -53,9 +53,10 @@ Every layer: `x y` (default centre) · `anchor` (`center`, `topLeft`, …) · `w
 | box | flexbox: `style { direction gap padding align justify wrap background radius border columns }` · `children` |
 | group | `layers` |
 | draw | `draw: [ { "d": "M0 0 C…", "stroke": "$accent", "width": 4 }, { "points": [[x, y], …], "smooth": true, "colors": [...] }, { "circle": [x, y, r], "fill": "#fff" }, { "rect": [x, y, w, h] }, { "line": [x1, y1, x2, y2] } ]` in frame px |
+| dots | `dots: { "data": [[x, y], …] or "points.csv" (`x,y[,colour]`), "size": 4, "color": "$accent", "appear": "=clamp(t * 2000 - i, 0, 1)" }`, thousands of points in frame px (maps, scatter plots) |
 | composition | `composition` (a name from top-level `"compositions": { "ui": { "size": [800, 500], "duration": 4, "background": "#111", "layers": [...] } }`, or `scenes`) · `fit` · `trimStart speed` · `loop: true`. It has its own clock and is clipped to its box; 3D layers use it as a texture |
 | component | `component` (`bar-chart line-chart donut-chart counter stat code terminal phone laptop browser card button toast cursor lower-third title-card mesh-gradient aurora grid confetti model lottie …`; `anikit-video info --components`) · `props` |
-| shader | `shader` (Shadertoy GLSL `mainImage`, WGSL, or a built-in: `hero mesh-gradient ocean light-shafts particles liquid-chrome sdf-scene aurora caustics flow-ink turing film-burn glitch lake-mirror`, see `info --shaders`) or `src: "fx.glsl"` · `uniforms` (animatable by name) · `channels` (`below noise` · image/video · `#composition` · `{layers}` · buffers `A`–`D`) · `buffers` (multi-pass, feedback) · `filter` · `supersample` · `alpha` |
+| shader | `shader` (Shadertoy GLSL `mainImage`, WGSL, or a built-in: `hero mesh-gradient ocean light-shafts particles liquid-chrome sdf-scene aurora caustics flow-ink turing film-burn glitch lake-mirror`; style filters `halftone risograph linocut watercolour crosshatch film dither screenprint print-offset`; see `info --shaders`) or `src: "fx.glsl"` · `uniforms` (animatable by name) · `channels` (`below noise` · image/video · `#composition` · `{layers}` · buffers `A`–`D`) · `buffers` (multi-pass, feedback) · `filter` · `supersample` · `alpha` |
 
 **Shaders** run JIT-compiled on the CPU at full resolution: `{ "shader": "aurora", "uniforms": { "intensity": 1.4 } }`. `"filter": true` reads the composited layers below as `iChannel0` and replaces them. `iAudio`/`iBeat` follow the music; `still` prints each shader's ms/frame. Guide, built-ins, costs and limits: [`shader.md`](shader.md).
 
@@ -89,6 +90,8 @@ Animatable: `x y width height scale scaleX scaleY rotation skewX skewY opacity b
 SFX: `click tick pop whoosh swoosh rise riser drop impact ding chime typing success`.
 
 ## CLI
+
+Edit in place instead of rewriting: `anikit-video set spec.json scenes.intro.layers.title.text "New title"` (path by key, index or `id`; `--delete` removes).
 
 ```
 anikit-video check  spec.json [--json]          errors and warnings with paths and "did you mean"

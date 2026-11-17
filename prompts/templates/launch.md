@@ -39,3 +39,9 @@ A 20–35 s launch film with a broadcast-style HUD (beat counter, section label,
 ```
 
 Create: MCP `create_from_template {template: "launch", params, brand, format}`, or `anikit-video templates expand launch params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.
+
+## Tips
+
+- A template gives every product the same structure, so used as-is it tends to look like every other video made from it. It works well as a fast draft that you then make this product's own: a palette from its assets, a typeface chosen for it, its real UI or object as the hero, a score whose instruments fit it. For an original film, see the `director` prompt or skills/anikit-launch-video, and `anikit-video docs taste`.
+- Lines read comfortably when held for max(0.83 s, chars/15, words × 0.3) after they settle, sharp, with no blur or glow while read. If a line doesn't fit, cutting words usually works better than shrinking type.
+- Swap test: if a competitor's name fits the tagline, rewrite it around this product's own noun, number or verb.

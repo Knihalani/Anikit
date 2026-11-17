@@ -235,6 +235,14 @@ impl Evaluator {
             c.d.push(Diagnostic::error("scenes", "a video needs at least one scene"));
             return (None, c.d);
         }
+        // `"cut": "bar"` / `"2 beats"` / seconds: the length of scenes that don't set one.
+        let default_dur = match &spec.cut {
+            Some(cut) => {
+                let d = c.time_raw(cut, "cut");
+                if d > 0.0 { d } else { 3.0 }
+            }
+            None => 3.0,
+        };
         let mut scenes = Vec::new();
         let mut t = 0.0f32;
         let mut prev_dur = f32::INFINITY;
@@ -255,7 +263,7 @@ impl Evaluator {
             // Explicit durations first (needed for global markers inside the scene).
             let auto = matches!(&s.duration, Some(Num::Str(x)) if x == "auto");
             let mut dur = match &s.duration {
-                None => 3.0,
+                None => default_dur,
                 Some(_) if auto => 1e6,
                 Some(d) => c.time_raw(d, &format!("{path}.duration")),
             };
@@ -333,7 +341,7 @@ impl Evaluator {
         }
         audio.append(&mut c.audio_extra);
         let music = match &spec.music {
-            Some(v) => match crate::music::parse(v, &opts.base_dir) {
+            Some(v) => match crate::music::parse_with_cuts(v, &opts.base_dir, &scenes.iter().skip(1).map(|s| (s.start + 0.5 * s.trans.dur) as f64).collect::<Vec<_>>()) {
                 Ok(m) => Some(Arc::new(m)),
                 Err(e) => {
                     c.d.push(Diagnostic::error("music", e));
@@ -444,6 +452,19 @@ impl C<'_> {
     // ---------- units ----------
 
     /// Seconds from a time value (no marker origin adjustment).
+    /// `"2 beats"`, `"1 bar"`, `"4b"` → seconds at the music's tempo (`None` if not musical).
+    fn musical(&mut self, s: &str, path: &str) -> Option<f32> {
+        let low = s.to_ascii_lowercase();
+        let (num, unit) = ["beats", "beat", "bars", "bar", "b"].iter().find_map(|u| low.strip_suffix(u).map(|n| (n.trim().to_string(), *u)))?;
+        let k: f32 = if num.is_empty() { 1.0 } else { num.parse().ok()? };
+        if self.groove.is_none() {
+            self.load_groove(false, path);
+        }
+        let m = self.groove.as_ref()?.as_ref().ok()?;
+        let (beat, bar) = m.lengths();
+        Some(k * if unit.starts_with("bar") { bar } else { beat } as f32)
+    }
+
     fn time_raw(&mut self, n: &Num, path: &str) -> f32 {
         match self.time_m(n, path) {
             (t, Some(_)) => t,
@@ -457,6 +478,10 @@ impl C<'_> {
             Num::Num(v) => (*v as f32, None),
             Num::Str(s) => {
                 let s = s.trim();
+                // Musical lengths: "2 beats", "1 bar", "4b", "0.5bar" (from the music's tempo).
+                if let Some(t) = self.musical(s, path) {
+                    return (t, None);
+                }
                 if let Some(m) = s.strip_prefix('@') {
                     let (name, off) = match m.find(['+', '-']) {
                         Some(i) => (&m[..i], m[i..].parse::<f32>().ok()),
@@ -991,6 +1016,8 @@ impl C<'_> {
             "composition"
         } else if l.draw.is_some() {
             "draw"
+        } else if l.dots.is_some() {
+            "dots"
         } else if l.shader.is_some() || l.src.as_deref().is_some_and(|s| s.ends_with(".glsl") || s.ends_with(".wgsl") || s.ends_with(".frag")) {
             "shader"
         } else if l.children.is_some() {
@@ -1149,6 +1176,7 @@ impl C<'_> {
             "shader" => self.shader_layer(l, path, given_w, given_h, start, end, &mut n)?,
             "composition" => self.comp_layer(l, path)?,
             "draw" => (self.draw_layer(l, path), [given_w.unwrap_or(pw), given_h.unwrap_or(ph)]),
+            "dots" => (self.dots_layer(l, path), [given_w.unwrap_or(pw), given_h.unwrap_or(ph)]),
             _ => self.component_layer(l, path, given_w, given_h)?,
         };
         n.kind = kind_v;
@@ -2191,12 +2219,79 @@ impl C<'_> {
             self.d.push(x);
         }
         if let Some(ev) = ev {
+            if (ev.width, ev.height) != (self.w as u32, self.h as u32) && ev.layer_info.iter().any(|(_, k)| k == "shader") {
+                self.d.push(Diagnostic::warning(&path, format!("shader layers inside a composition render at the composition's size: iResolution is {}×{}, not the video's", ev.width, ev.height)));
+            }
             let ev = Arc::new(ev);
             self.assets.register_composition(name, &ev, cdef.loop_.unwrap_or(false));
             self.comps.push((name.to_string(), ev.clone(), cdef.loop_.unwrap_or(false)));
             return Some(ev);
         }
         None
+    }
+
+    fn dots_layer(&mut self, l: &Layer, path: &str) -> Kind {
+        let d = l.dots.clone().unwrap_or_default();
+        let base = d.color.as_deref().and_then(|c| self.color(c, &format!("{path}.dots.color"))).or_else(|| self.theme.color("$text")).unwrap_or(Rgba([1.0; 4]));
+        // Rows: [x, y] or [x, y, colour].
+        let rows: Vec<(f64, f64, Option<String>)> = match &d.data {
+            serde_json::Value::Array(a) => a
+                .iter()
+                .filter_map(|r| {
+                    let r = r.as_array()?;
+                    Some((r.first()?.as_f64()?, r.get(1)?.as_f64()?, r.get(2).and_then(|c| c.as_str()).map(str::to_string)))
+                })
+                .collect(),
+            serde_json::Value::String(file) => match std::fs::read_to_string(self.o.base_dir.join(file)) {
+                Ok(src) => src
+                    .lines()
+                    .filter_map(|line| {
+                        let mut f = line.split(',').map(str::trim);
+                        let x = f.next()?.parse().ok()?;
+                        let y = f.next()?.parse().ok()?;
+                        Some((x, y, f.next().filter(|c| !c.is_empty()).map(str::to_string)))
+                    })
+                    .collect(),
+                Err(e) => {
+                    self.d.push(Diagnostic::error(format!("{path}.dots.data"), format!("cannot read {file}: {e}")));
+                    Vec::new()
+                }
+            },
+            _ => {
+                self.d.push(Diagnostic::error(format!("{path}.dots.data"), "'data' is a list of [x, y] (or [x, y, colour]) or a CSV file path"));
+                Vec::new()
+            }
+        };
+        let mut groups: Vec<(Rgba, Vec<[f32; 2]>)> = Vec::new();
+        let mut cache: HashMap<String, Rgba> = HashMap::new();
+        for (x, y, c) in rows {
+            let col = match c {
+                Some(c) => match cache.get(&c) {
+                    Some(v) => *v,
+                    None => {
+                        let v = self.color(&c, &format!("{path}.dots.data")).unwrap_or(base);
+                        cache.insert(c, v);
+                        v
+                    }
+                },
+                None => base,
+            };
+            match groups.iter_mut().find(|g| g.0 == col) {
+                Some(g) => g.1.push([x as f32, y as f32]),
+                None => groups.push((col, vec![[x as f32, y as f32]])),
+            }
+        }
+        let appear = d.appear.as_deref().and_then(|a| {
+            let src = a.trim().strip_prefix('=').unwrap_or(a);
+            match Expr::compile(src, 1.0, self.w as f64, self.h as f64) {
+                Ok(e) => Some(e),
+                Err(m) => {
+                    self.d.push(Diagnostic::error(format!("{path}.dots.appear"), format!("expression: {m}")));
+                    None
+                }
+            }
+        });
+        Kind::Dots { groups, size: d.size.unwrap_or(4.0).max(0.1) as f32, appear, square: d.shape.as_deref() == Some("square") }
     }
 
     fn draw_layer(&mut self, l: &Layer, path: &str) -> Kind {

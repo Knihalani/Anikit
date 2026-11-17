@@ -22,6 +22,9 @@ use serde_json::{Map, Value};
 
 use crate::templates::{color, expr, Format};
 
+#[path = "critique_taste.rs"]
+mod taste;
+
 /// One finding.
 #[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct Note {
@@ -55,8 +58,8 @@ pub struct Report {
 pub fn category(check: &str) -> &'static str {
     match check {
         "pace" | "dead-air" | "rhythm" | "arc" | "ending" | "beat" | "pacing" | "length" => "time",
-        "reading-time" | "legibility" | "contrast" | "render-contrast" | "typography" | "density" | "render-overlap" => "text",
-        "hook" | "structure" | "placeholder" | "copy" => "story",
+        "reading-time" | "legibility" | "contrast" | "render-contrast" | "typography" | "density" | "render-overlap" | "type-scale" | "text-crisp" => "text",
+        "hook" | "structure" | "placeholder" | "copy" | "music" => "story",
         "frame-fill" | "layout" => "composition",
         "flicker" | "judder" | "banding" | "audio" | "render-frame" => "technical",
         _ => "composition",
@@ -514,6 +517,7 @@ pub fn critique(raw: &Value) -> Report {
     recipe_copy(raw, &mut cx);
     medium(raw, &mut cx);
     bar(spec, &mut cx);
+    taste::run(raw, spec, &mut cx);
     if applied.is_some() {
         let off = crate::looks::layer_offsets(raw);
         for n in &mut cx.notes {
@@ -724,7 +728,7 @@ fn bar(spec: &Value, cx: &mut Ctx) {
         walk(v)
     };
     if scenes.len() >= 2 && !dims(spec) {
-        cx.note("warning", "bar", "scenes", "flat 2D only: no 3D, light, lens or real imagery anywhere (BAR #5)".into(), "give the film a world with depth: a shader or text-3d/model/scene3d subject, camera depth + aperture, or real photos");
+        cx.note("tip", "bar", "scenes", "flat 2D only: no light, lens, texture or real imagery anywhere (BAR #5)".into(), "flat 2D is a valid choice when it is designed (strict grid, scale contrast, value structure, real UI or photos); if the concept is spatial, add depth (camera depth + aperture, a shader or scene3d world). Don't force 3D (TASTE.md §3, §8)");
     }
 }
 

@@ -394,7 +394,7 @@ pub fn tools() -> Vec<Value> {
         json!({ "name": "render_still", "description": "One frame → PNG path.", "inputSchema": obj(img(json!({ "at": { "type": "number", "description": "seconds" } })), &[]) }),
         json!({ "name": "render_contact_sheet", "description": "One frame per scene in one PNG → path. Cheapest full review.", "inputSchema": obj(img(json!({ "frames": { "type": "integer" } })), &[]) }),
         json!({ "name": "render_video", "description": "Final render → path.", "inputSchema": obj(with(spec(), json!({ "out": { "type": "string", "description": "e.g. out.mp4" }, "quality": { "type": "string", "description": "draft|standard|high" } })), &[]) }),
-        json!({ "name": "docs", "description": "Start here. Compact page per primitive (no topic: the index): primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything expressions script draw components.", "inputSchema": obj(json!({ "topic": { "type": "string" } }), &[]) }),
+        json!({ "name": "docs", "description": "Start here. Compact page per primitive (no topic: the index): taste (read before designing) primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything expressions script draw components.", "inputSchema": obj(json!({ "topic": { "type": "string" } }), &[]) }),
         json!({ "name": "recipes", "description": "Drop-in high-end shots (kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, ...) and the shader library. name → a ready spec or snippet.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &[]) }),
         json!({ "name": "list_looks", "description": "Art-direction looks (palette, type, motion, world layers). name → its direction; full:true → JSON to override.", "inputSchema": obj(json!({ "name": { "type": "string" }, "full": { "type": "boolean" } }), &[]) }),
         json!({ "name": "get_prompt", "description": "Prompt library: director, launch-video-generator, script-writer, storyboarder, critic, copy-guard, brand-kit, motion-rules, template:<name>.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &["name"]) }),
@@ -527,8 +527,8 @@ mod tests {
         let out = s.workdir.join("t.json");
         let r = call(&mut s, "tools/call", json!({ "name": "create_from_template", "arguments": { "template": "launch", "params": schema["example"], "format": "9:16", "out": out, "brand": { "name": "Acme", "colors": { "primary": "#FF5500" } } } }));
         assert_eq!(r["result"]["isError"], false, "{r}");
-        // 94: the quality bar flags templates as flat 2D (BAR #5), and nothing else.
-        assert!(t(&r).contains("valid · critique 94/100") && t(&r).contains("BAR #5"), "{}", t(&r));
+        // 97: templates get tips only (flat 2D, BAR #5, and taste heuristics), no warnings.
+        assert!(t(&r).contains("valid · critique 97/100"), "{}", t(&r));
         let spec: Value = serde_json::from_str(&std::fs::read_to_string(&out).unwrap()).unwrap();
         assert_eq!(spec["size"], json!([1080, 1920]));
         assert_eq!(spec["theme"]["colors"]["primary"], "#FF5500");

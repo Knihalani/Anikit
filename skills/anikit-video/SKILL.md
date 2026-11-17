@@ -5,7 +5,7 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 
 **Setup:** if `anikit-video` isn't on PATH, install the prebuilt binary (seconds; compiling takes minutes): from a checkout of this repo run `sh install.sh`, otherwise `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh`; then `export PATH="$HOME/.local/bin:$PATH"`.
 
-**Taste first:** before designing, read `anikit-video docs taste` (the 15-line taste pass; canon in `docs/video/taste/TASTE.md`). Every choice made for this subject; no house style, no forced 3D, no repeated look.
+**Taste first:** before designing, read `anikit-video docs taste` (one page: routes to a striking frame and the tools for each, what tends to land and what tends to fail; depth in `docs/video/taste/TASTE.md`).
 
 **The loop:** write `s.json` → `anikit-video preview s.json` (repeat; ~1 s for 2D: validates, writes `s-sheet.png` with one frame per second, prints the top notes, pace and a final-render estimate; look at the sheet) → the ship gate below → ONE final `anikit-video render s.json -o out.mp4` (background it when the estimate is minutes) → `render --from A --to B` only to check or fix a shot. Zoom in with `preview s.json --at 2.4 -o f.png`. Hand-built contact sheets aren't needed: `preview` writes one.
 

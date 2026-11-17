@@ -83,11 +83,25 @@ pub fn encode_ranges<F>(cfg: &EncoderConfig, ranges: Vec<(usize, usize)>, render
 where
     F: Fn(usize, &mut YuvBuffer, &mut FrameHints) + Sync,
 {
+    let skip = vec![false; ranges.len()];
+    encode_ranges_select(cfg, ranges, &skip, render).into_iter().flatten().flatten().collect()
+}
+
+/// As [`encode_ranges`], but chunks with `skip[i]` are not rendered or encoded
+/// (`None`); every other chunk is encoded exactly as [`encode_ranges`] would
+/// (same IDR numbering by chunk index), so cached chunks can be spliced back in.
+pub fn encode_ranges_select<F>(cfg: &EncoderConfig, ranges: Vec<(usize, usize)>, skip: &[bool], render: F) -> Vec<Option<Vec<u8>>>
+where
+    F: Fn(usize, &mut YuvBuffer, &mut FrameHints) + Sync,
+{
     use rayon::prelude::*;
-    let parts: Vec<Vec<u8>> = ranges
+    ranges
         .into_par_iter()
         .enumerate()
         .map(|(ci, (a, b))| {
+            if skip.get(ci).copied().unwrap_or(false) {
+                return None;
+            }
             let mut c = cfg.clone();
             c.threads = 1;
             let mut e = Encoder::with_idr_base(c, ci as u32);
@@ -103,10 +117,9 @@ where
                 }
                 out.extend_from_slice(e.encode(&buf.frame(), &hints));
             }
-            out
+            Some(out)
         })
-        .collect();
-    parts.concat()
+        .collect()
 }
 
 /// Frame ranges of the independently encoded chunks: at most `gop` frames each,

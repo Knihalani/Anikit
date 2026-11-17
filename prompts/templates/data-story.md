@@ -37,3 +37,9 @@ A 15–30 s data narrative on a living brand mesh: a kinetic headline over a ris
 ```
 
 Create: MCP `create_from_template {template: "data-story", params, brand, format}`, or `anikit-video templates expand data-story params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.
+
+## Tips
+
+- A template gives every product the same structure, so used as-is it tends to look like every other video made from it. It works well as a fast draft that you then make this product's own: a palette from its assets, a typeface chosen for it, its real UI or object as the hero, a score whose instruments fit it. For an original film, see the `director` prompt or skills/anikit-launch-video, and `anikit-video docs taste`.
+- Lines read comfortably when held for max(0.83 s, chars/15, words × 0.3) after they settle, sharp, with no blur or glow while read. If a line doesn't fit, cutting words usually works better than shrinking type.
+- Use real numbers only. Put the accent on the one bar that carries the conclusion and keep the rest neutral.
