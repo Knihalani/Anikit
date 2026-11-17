@@ -233,8 +233,8 @@ fn deblock_impl(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, q: &Q
             {
                 continue;
             }
-            let (l, t) = deblock_mb(view, info, mbw, mbx, mby, &lp, &cpar);
-            touched[i] = true;
+            let (any, l, t) = deblock_mb(view, info, mbw, mbx, mby, &lp, &cpar);
+            touched[i] |= any;
             if l {
                 touched[i - 1] = true;
             }
@@ -247,7 +247,7 @@ fn deblock_impl(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, q: &Q
 
 /// Returns whether the left / top macroblock edges were filtered.
 #[inline(always)]
-fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize, lp: &Params, cp: &Params) -> (bool, bool) {
+fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize, lp: &Params, cp: &Params) -> (bool, bool, bool) {
     let cur = &info[mby * mbw + mbx];
     // bS[dir][edge][segment]
     let mut b = [[[0u8; 4]; 4]; 2];
@@ -279,7 +279,7 @@ fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize,
         }
     }
     if !any {
-        return (false, false);
+        return (false, false, false);
     }
     let (s, base) = (p.ys, mby * 16 * p.ys + p.yp + mbx * 16);
     for e in 0..4 {
@@ -308,6 +308,6 @@ fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize,
             }
         }
     }
-    (b[0][0].iter().any(|&v| v != 0), b[1][0].iter().any(|&v| v != 0))
+    (true, b[0][0].iter().any(|&v| v != 0), b[1][0].iter().any(|&v| v != 0))
 }
 
