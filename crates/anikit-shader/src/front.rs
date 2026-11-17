@@ -110,11 +110,11 @@ pub struct Parsed {
 }
 
 /// Shadertoy inputs every shader gets (private globals filled per quad).
-pub const BUILTIN_GLSL: &str = "float iTime; float iTimeDelta; float iFrameRate; int iFrame; vec3 iResolution; vec4 iMouse; vec4 iDate; float iSampleRate; vec3 iChannelResolution[4]; float iChannelTime[4]; float progress; float ratio;";
-const BUILTIN_WGSL: &str = "var<private> iTime: f32; var<private> iTimeDelta: f32; var<private> iFrameRate: f32; var<private> iFrame: i32; var<private> iResolution: vec3f; var<private> iMouse: vec4f; var<private> iDate: vec4f; var<private> iSampleRate: f32; var<private> iChannelResolution: array<vec3f, 4>; var<private> iChannelTime: array<f32, 4>; var<private> progress: f32; var<private> ratio: f32;";
+pub const BUILTIN_GLSL: &str = "float iTime; float iTimeDelta; float iFrameRate; int iFrame; vec3 iResolution; vec4 iMouse; vec4 iDate; float iSampleRate; vec3 iChannelResolution[4]; float iChannelTime[4]; float progress; float ratio; vec4 iAudio; vec4 iBeat;";
+const BUILTIN_WGSL: &str = "var<private> iTime: f32; var<private> iTimeDelta: f32; var<private> iFrameRate: f32; var<private> iFrame: i32; var<private> iResolution: vec3f; var<private> iMouse: vec4f; var<private> iDate: vec4f; var<private> iSampleRate: f32; var<private> iChannelResolution: array<vec3f, 4>; var<private> iChannelTime: array<f32, 4>; var<private> progress: f32; var<private> ratio: f32; var<private> iAudio: vec4f; var<private> iBeat: vec4f;";
 
 pub const BUILTIN_NAMES: &[&str] =
-    &["iTime", "iTimeDelta", "iFrameRate", "iFrame", "iResolution", "iMouse", "iDate", "iSampleRate", "iChannelResolution", "iChannelTime", "progress", "ratio"];
+    &["iTime", "iTimeDelta", "iFrameRate", "iFrame", "iResolution", "iMouse", "iDate", "iSampleRate", "iChannelResolution", "iChannelTime", "progress", "ratio", "iAudio", "iBeat"];
 
 /// GLSL built-in functions, for "did you mean" suggestions.
 const GLSL_FUNCS: &[&str] = &[

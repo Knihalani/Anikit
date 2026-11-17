@@ -170,3 +170,30 @@ fn is_static_never_lies_for_shaders() {
         assert!(frames.windows(2).any(|w| w[0] != w[1]), "nothing changed: {src}");
     }
 }
+
+#[test]
+fn audio_and_beat_uniforms_follow_the_music() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/video/pulse");
+    let src = r#"{ "size": [16, 8], "audio": [ { "src": "pulse.flac" } ], "scenes": [ { "duration": 6, "layers": [
+        { "shader": "void mainImage(out vec4 c, in vec2 p) { c = vec4(iAudio.x, iAudio.y, iBeat.x, 1.0) * (p.x < 8.0 ? 1.0 : 0.0) + vec4(iBeat.z / 255.0, iBeat.y, iBeat.w, 1.0) * (p.x < 8.0 ? 0.0 : 1.0); }" } ] } ] }"#;
+    let p = parse_json(src).unwrap();
+    let opts = Options { base_dir: root, ..Options::default() };
+    let ev = Evaluator::new(&p.spec, opts).unwrap_or_else(|e| panic!("{e}"));
+    let mut levels = Vec::new();
+    let mut beats = Vec::new();
+    for i in 0..60 {
+        let t = i as f32 * 0.1;
+        levels.push(px(&ev, t, 0, 0)[0]);
+        beats.push(px(&ev, t, 12, 0)[0]);
+    }
+    assert!(levels.iter().max().unwrap() - levels.iter().min().unwrap() > 60, "level should move with the music: {levels:?}");
+    assert!(beats.windows(2).all(|w| w[1] >= w[0]) && beats[59] >= 4, "beat number counts up: {beats:?}");
+    // Same input, same output.
+    assert_eq!(px(&ev, 2.3, 0, 0), px(&ev, 2.3, 0, 0));
+}
+
+#[test]
+fn audio_uniforms_without_music_warn() {
+    let d = diags(r#"{ "size": [16, 8], "scenes": [ { "duration": 1, "layers": [ { "shader": "void mainImage(out vec4 c, in vec2 p) { c = vec4(iBeat.x); }" } ] } ] }"#);
+    assert!(d.iter().any(|m| m.contains("need music")), "{d:?}");
+}

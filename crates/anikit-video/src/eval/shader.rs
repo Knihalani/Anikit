@@ -66,6 +66,8 @@ pub(crate) struct ShaderC {
     pub id: u64,
     /// Spec path and shader name, for cost reports (`still` prints them).
     pub label: Arc<str>,
+    /// Music features when the source reads `iAudio`/`iBeat`.
+    pub audio: Option<Arc<super::audio_react::AudioFeatures>>,
 }
 
 /// Shared handle for transitions (`TransC` is `Clone + PartialEq + Debug`).
@@ -94,7 +96,7 @@ pub(crate) fn label(path: &str, src: Option<&str>) -> Arc<str> {
 
 /// True when the source animates by itself.
 pub(crate) fn uses_time(src: &str) -> bool {
-    ["iTime", "iFrame", "iDate", "iTimeDelta"].iter().any(|w| src.contains(w))
+    ["iTime", "iFrame", "iDate", "iTimeDelta", "iAudio", "iBeat"].iter().any(|w| src.contains(w))
 }
 
 /// Built-in name → source, or the source itself.
@@ -163,6 +165,9 @@ pub(crate) struct Job {
     supersample: bool,
     alpha: bool,
     label: Arc<str>,
+    /// `iAudio`, `iBeat`.
+    audio: [f32; 4],
+    beat: [f32; 4],
 }
 
 /// Measured cost of one shader layer (or transition) over the renders so far.
@@ -389,6 +394,8 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> (Pixmap, f64) {
     f.fps = job.fps;
     f.progress = job.progress;
     f.uniforms = &unis;
+    f.audio = job.audio;
+    f.beat = job.beat;
     f.channels = chans;
     f.supersample = job.supersample;
     f.alpha = job.alpha;
@@ -423,6 +430,8 @@ impl Evaluator {
             let base = prop::U0 + off;
             uniforms.push((name.clone(), v[base..base + n].to_vec()));
         }
+        // Music at the global time (the audio track is on the global timeline).
+        let (audio, beat) = sc.audio.as_ref().map_or(([0.0; 4], [0.0; 4]), |a| a.at(cx.gt));
         // Content key: generators without composited inputs render once per distinct input.
         let key = if chans.iter().all(|(c, _)| !matches!(c, ChanData::List(_))) {
             let mut h = std::collections::hash_map::DefaultHasher::new();
@@ -442,6 +451,8 @@ impl Evaluator {
                 hash_f32s(&mut h, &[time, (cx.gt * self.fps).round()]);
             }
             hash_f32s(&mut h, &[progress]);
+            hash_f32s(&mut h, &audio);
+            hash_f32s(&mut h, &beat);
             Some(h.finish())
         } else {
             None
@@ -459,6 +470,8 @@ impl Evaluator {
             supersample: sc.supersample,
             alpha: sc.alpha,
             label: sc.label.clone(),
+            audio,
+            beat,
         };
         self.assets.shaders.submit(job, key)
     }

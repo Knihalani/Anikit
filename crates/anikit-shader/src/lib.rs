@@ -43,6 +43,11 @@ pub struct Frame<'a> {
     pub progress: f32,
     /// `iMouse` (pixels; Shadertoy semantics).
     pub mouse: [f32; 4],
+    /// `iAudio`: music loudness now, 0..1 — (level, bass, mid, treble).
+    pub audio: [f32; 4],
+    /// `iBeat`: (pulse 1 → 0 after each beat, phase 0..1 through the beat,
+    /// beat number from 1, bar pulse 1 → 0 after each downbeat).
+    pub beat: [f32; 4],
     /// User uniforms by name (1–4 floats each).
     pub uniforms: &'a [(&'a str, &'a [f32])],
     /// Bound textures (`iChannel0..3`, `getFromColor` = 0, `getToColor` = 1).
@@ -72,6 +77,8 @@ impl<'a> Frame<'a> {
             fps: 30.0,
             progress: 0.0,
             mouse: [0.0; 4],
+            audio: [0.0; 4],
+            beat: [0.0; 4],
             uniforms: &[],
             channels: [None; 4],
             supersample: false,
@@ -234,6 +241,8 @@ impl Shader {
         set("iSampleRate", &[48000.0]);
         set("progress", &[f.progress]);
         set("ratio", &[w / h.max(1.0)]);
+        set("iAudio", &f.audio);
+        set("iBeat", &f.beat);
         let mut cres = [0.0f32; 12];
         for (i, c) in f.channels.iter().enumerate() {
             if let Some(t) = c {

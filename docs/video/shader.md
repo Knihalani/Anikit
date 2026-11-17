@@ -12,6 +12,67 @@ Write a fragment shader the way you would on Shadertoy, and Anikit Video runs it
 
 `anikit-video info --shaders` lists the built-ins. Showcase spec: [`examples/shaders.json`](examples/shaders.json).
 
+## Write your own
+
+The built-ins are starting points. Anything a fragment shader can draw, you can write. Shadertoy code usually runs unchanged; see Limits for what doesn't.
+
+**Loop:** keep the code in a file and watch it. Each save re-renders the still and reports the shader's cost; only the edited shader recompiles.
+
+```json
+{ "size": [1920, 1080], "scenes": [ { "duration": 8, "layers": [ { "src": "fx.glsl", "uniforms": { "hue": 0.6 } } ] } ] }
+```
+
+```sh
+anikit-video still spec.json --at 2 --scale 0.5 --watch   # prints e.g. "shader scenes[0].layers[0] (fx.glsl): ≈ 85 ms/frame at full size"
+```
+
+**A fast raymarch skeleton.** Bound the scene, cap the steps, and stop rays early. These three habits keep a hero shot under 100 ms/frame at 1080p:
+
+```glsl
+uniform float hue;   // = 0.6 base hue 0..1
+
+float map(vec3 p) {                         // the scene as a signed distance
+    p.xz *= mat2(cos(iTime), -sin(iTime), sin(iTime), cos(iTime));
+    vec3 q = abs(p) - 0.7;
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - 0.15;
+}
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = (2.0 * fragCoord - iResolution.xy) / iResolution.y;   // y up, −1..1 vertically
+    vec3 ro = vec3(0.0, 0.4, 4.0), rd = normalize(vec3(uv, -2.2));
+    vec3 col = vec3(0.04, 0.045, 0.06) * (1.2 - 0.4 * length(uv));  // backdrop
+    // 1. Bound: rays that miss a sphere around the scene skip the march entirely.
+    float b = dot(ro, rd), h = b * b - dot(ro, ro) + 1.6 * 1.6;
+    if (h > 0.0) {
+        float t = max(-b - sqrt(h), 0.0), tEnd = -b + sqrt(h);
+        for (int i = 0; i < 96; i++) {                               // 2. cap the steps
+            float d = map(ro + rd * t);
+            if (d < 0.0005 * t) {
+                vec3 p = ro + rd * t;
+                vec2 e = vec2(0.001, 0.0);
+                vec3 n = normalize(vec3(map(p + e.xyy), map(p + e.yxy), map(p + e.yyx)) - d);
+                vec3 base = 0.5 + 0.5 * cos(6.2832 * (hue + vec3(0.0, 0.33, 0.67)));
+                col = base * (0.15 + 0.85 * max(dot(n, normalize(vec3(-0.5, 0.8, 0.4))), 0.0))
+                    + pow(1.0 - max(dot(n, -rd), 0.0), 4.0) * 0.6;   // rim
+                break;
+            }
+            t += d;
+            if (t > tEnd) break;                                     // 3. stop at the far side
+        }
+    }
+    fragColor = vec4(pow(col, vec3(0.4545)), 1.0);
+}
+```
+
+Habits that make shaders look finished:
+
+- **Tone-map and gamma at the end.** Light in linear values that may exceed 1, then `col = 1.0 - exp(-col)` (or an ACES fit) and `pow(col, vec3(0.4545))`. Clamping straight to 8 bits looks flat.
+- **Animate slowly and continuously.** Use `iTime` inside `sin`/noise, at rates of 0.05–0.5. Expose a `speed` uniform so the spec can pace it, and animate uniforms on the timeline for the beats (`"animate": [{"to": {"glow": 1}, "at": "@beat9"}]`).
+- **React to music** with `iAudio` and `iBeat`, for example `float kick = iBeat.x * iAudio.y;` for a bass-weighted pulse on every beat.
+- **Cut out and composite.** Set `"alpha": true` and write coverage to `fragColor.a` to put a shader object over video, text or other shaders. Use `"filter": true` to post-process everything below.
+- **Edges.** `"supersample": true` costs about 1.5–2× and cleans up thin geometry and specular sparkle. Turn it on for the final render if `still` shows aliasing.
+- **Cost.** It scales with pixels × steps × noise octaves. `still` prints it per layer. Keep each layer under about 200 ms/frame at 1080p and a 10 s, 30 fps shot renders in about a minute.
+
 ## How it works
 
 1. **Front end.** The source is wrapped in a small prelude (the Shadertoy inputs, four channel textures), parsed and validated by [naga](https://github.com/gfx-rs/wgpu/tree/trunk/naga) (GLSL 450 or WGSL). Errors point at your line and column, with a "did you mean" for misspelt builtins (`smoothStep` → `smoothstep`, `lerp` → `mix`, `iGlobalTime` → `iTime`).
@@ -37,6 +98,10 @@ The JIT was built directly; there is no interpreter step. The masking optimisati
 | `iChannelResolution[4]` | `vec3[4]` | channel sizes |
 | `iMouse`, `iDate` | `vec4` | zero / fixed (deterministic) |
 | `progress`, `ratio` | `float` | transitions: 0 → 1, and width / height |
+| `iAudio` | `vec4` | the music now, 0..1: (level, bass, mid, treble), fast attack, 150 ms release |
+| `iBeat` | `vec4` | (pulse: 1 on each beat decaying to 0, phase 0..1 through the beat, beat number from 1, bar pulse) |
+
+`iAudio` and `iBeat` follow the spec's music: the first top-level `audio` cue with a `src` that isn't a voice-over, the same track `"@beat12"` markers use. It is analysed once, and only if a shader reads them. Without music they are 0 and a warning says so.
 
 ### Uniforms
 

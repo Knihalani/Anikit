@@ -11,6 +11,7 @@ pub mod beat_markers;
 mod compile;
 /// Shader layers and transitions (anikit-shader).
 pub(crate) mod shader;
+mod audio_react;
 pub mod expr;
 pub mod theme;
 

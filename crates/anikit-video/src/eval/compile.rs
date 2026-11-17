@@ -86,6 +86,8 @@ struct C<'a> {
     audio_extra: Vec<crate::audio::Track>,
     layer_info: Vec<(String, String)>,
     beat_marks: super::beat_markers::BeatMarkers,
+    /// Music analysed for `iAudio`/`iBeat` (once, on first use).
+    music: Option<Result<Arc<super::audio_react::AudioFeatures>, String>>,
     /// Uniform name → (slot after `prop::U0`, components) of the shader layer being compiled.
     uniform_slots: Vec<(String, usize, usize)>,
     /// Compiled sub-compositions by name, with their own `loop` default.
@@ -147,6 +149,7 @@ impl Evaluator {
             audio_extra: Vec::new(),
             layer_info: Vec::new(),
             beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
+            music: None,
             assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
             comps,
             spec_theme: spec.theme.clone(),
@@ -2534,8 +2537,30 @@ impl C<'_> {
             supersample: l.supersample.unwrap_or(false),
             alpha: l.alpha.unwrap_or(false),
             label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
+            audio: self.shader_audio(&text, path),
         };
         Some((Kind::Shader(Box::new(sc)), size))
+    }
+
+    /// Music features for a shader that reads `iAudio`/`iBeat` (analysed once per spec).
+    fn shader_audio(&mut self, text: &str, path: &str) -> Option<Arc<super::audio_react::AudioFeatures>> {
+        if !text.contains("iAudio") && !text.contains("iBeat") {
+            return None;
+        }
+        if self.music.is_none() {
+            let r = match self.beat_marks.music() {
+                None => Err("iAudio/iBeat need music: add a top-level `audio` track with a `src` (they stay 0)".to_string()),
+                Some((p, at, trim)) => super::audio_react::AudioFeatures::load(p, *at, *trim).map(Arc::new).map_err(|e| format!("iAudio/iBeat: {e}")),
+            };
+            self.music = Some(r);
+        }
+        match self.music.as_ref()? {
+            Ok(a) => Some(a.clone()),
+            Err(e) => {
+                self.d.push(Diagnostic::warning(format!("{path}.shader"), e.clone()));
+                None
+            }
+        }
     }
 
     fn shader_transition(&mut self, src: &str, unis: Option<&BTreeMap<String, serde_json::Value>>, path: &str) -> Option<super::shader::ShaderRef> {
@@ -2568,6 +2593,7 @@ impl C<'_> {
             supersample: false,
             alpha: false,
             label: super::shader::label(path, Some(src)),
+            audio: self.shader_audio(&text, path),
         })))
     }
 
