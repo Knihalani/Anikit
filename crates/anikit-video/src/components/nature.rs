@@ -2113,14 +2113,9 @@ fn paint_prims(ps: &[Prim], w: usize, h: usize, org: [f32; 2], light: [f32; 2]) 
                 cv.disc(cx, cy, rr, *col, &|u, v| {
                     let glob = ((cx + u * rr - mx) * light[0] + (cy + v * rr - my) * light[1]) / mr;
                     let loc = u * light[0] + v * light[1];
+                    // Continuous light across the mass; cel styles quantise it into 3 tones.
                     let val = 0.55 * glob + 0.5 * loc;
-                    if val > 0.32 {
-                        -0.4
-                    } else if val > -0.2 {
-                        0.12
-                    } else {
-                        0.62
-                    }
+                    (0.12 - 1.1 * val).clamp(-0.45, 0.65)
                 });
             }
             Prim::Limb { a, b, ra, rb, col, lit, dark } => {
@@ -2133,7 +2128,8 @@ fn paint_prims(ps: &[Prim], w: usize, h: usize, org: [f32; 2], light: [f32; 2]) 
                 cv.poly(&q, *col, &|px, py| {
                     let side = (px - ax) * lx;
                     let under = smoothstep(bt - (bt - t) * 0.22, bt, py);
-                    let base = if side > 0.0 { -0.25 } else { 0.5 };
+                    let k = smoothstep(-0.12, 0.12, side / (bt - t).abs().max(1.0));
+                    let base = 0.5 - 0.75 * k;
                     base + under * 0.35
                 });
             }
