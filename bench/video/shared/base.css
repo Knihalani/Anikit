@@ -1,0 +1,8 @@
+@font-face { font-family: "Inter"; src: url("InterVariable.ttf") format("truetype"); font-weight: 100 900; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0b0b12; }
+body { font-family: "Inter"; color: #f5f5fa; font-optical-sizing: none; line-height: 1.2; }
+.scene { position: absolute; inset: 0; background: #0b0b12; transform-origin: 50% 50%; }
+.abs { position: absolute; white-space: pre; }
+.d { font-variation-settings: "opsz" 32; }
+.ch { display: inline-block; white-space: pre; }

@@ -105,6 +105,7 @@ fn wedge(x: f32, y: f32, ang: f32, half: f32, len: f32) -> Path {
 
 impl Component for GodRays {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let t = step(t, AMBIENT_RATE);
         let (w, h) = (ctx.width, ctx.height);
         let k = h / 1080.0;
         let c = self.color.map(|c| c.0).unwrap_or(Rgba([1.0, 0.84, 0.6, 1.0]));
@@ -115,12 +116,16 @@ impl Component for GodRays {
         push_layer(&mut out, 1.0, Blend::Screen, Vec::new());
         // Ambient bloom around the source.
         let br = diag * 0.45;
-        out.push(rect(0.0, 0.0, w, h, 0.0, radial(sx, sy, br, vec![(0.0, alpha(c, 0.45 * self.intensity)), (0.3, alpha(c, 0.14 * self.intensity)), (1.0, alpha(c, 0.0))])));
+        let (x0, y0, x1, y1) = ((sx - br).max(0.0), (sy - br).max(0.0), (sx + br).min(w), (sy + br).min(h));
+        if x1 > x0 && y1 > y0 {
+            out.push(rect(x0, y0, x1 - x0, y1 - y0, 0.0, radial(sx, sy, br, vec![(0.0, alpha(c, 0.45 * self.intensity)), (0.3, alpha(c, 0.14 * self.intensity)), (1.0, alpha(c, 0.0))])));
+        }
         for &(a, half, al, len) in &beams {
             let (dx, dy) = (a.cos(), a.sin());
             let paint = |al: f32| Paint::Linear { p0: [sx, sy], p1: [sx + dx * len, sy + dy * len], stops: vec![(0.0, alpha(c, al)), (0.25, alpha(c, al * 0.6)), (0.7, alpha(c, al * 0.18)), (1.0, alpha(c, 0.0))] };
             // Nested wedges approximate a soft, gaussian-ish beam profile.
-            for (wk, ak) in [(1.0, 0.09), (0.72, 0.11), (0.48, 0.13), (0.26, 0.15), (0.1, 0.12)] {
+            // Three nested wedges approximate a soft beam profile (overdraw is the cost).
+            for (wk, ak) in [(1.0, 0.12), (0.55, 0.2), (0.22, 0.28)] {
                 out.push(fill(wedge(sx, sy, a, half * wk, len), paint(al * ak)));
             }
         }
@@ -250,7 +255,9 @@ impl Component for LensFlare {
         let c = self.color.map(|c| c.0).unwrap_or(Rgba([1.0, 0.86, 0.66, 1.0]));
         let sc = self.streak_color.map(|c| c.0).unwrap_or(Rgba([0.45, 0.7, 1.0, 1.0]));
         // Gentle flicker, like a real light through glass.
-        let fl = 0.94 + 0.06 * ((t * 7.3).sin() * 0.6 + (t * 12.1 + 1.0).sin() * 0.4);
+        // Stepped 15×/s: a still flare repeats frames (cheap downstream).
+        let tf = step(t, AMBIENT_RATE);
+        let fl = 0.94 + 0.06 * ((tf * 7.3).sin() * 0.6 + (tf * 12.1 + 1.0).sin() * 0.4);
         let k = self.intensity * fl;
         let u = h;
         let mut out = Vec::new();

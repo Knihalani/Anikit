@@ -13,9 +13,9 @@ use super::color;
 pub struct Colors {
     /// Main brand colour (buttons, highlights, gradients).
     pub primary: Option<String>,
-    /// Second brand colour (gradient partner, charts). Default: primary shifted 40° in hue.
+    /// Second brand colour (gradient partner, charts). Default: primary shifted −20° in hue (an analogous, on-brand partner).
     pub secondary: Option<String>,
-    /// Sparing highlight colour (underlines, a single number). Default: secondary.
+    /// Sparing highlight colour (underlines, a single number). Default: the primary, lightened or darkened for 4.5:1 contrast.
     pub accent: Option<String>,
     /// Canvas colour. Default: near-black (dark theme) or near-white (light theme).
     pub background: Option<String>,
@@ -139,8 +139,17 @@ impl Brand {
             // Pure white/black is harsh on screen; soften a touch.
             color::mix(t, bg, 0.04)
         });
-        let secondary = p(&self.colors.secondary).unwrap_or_else(|| color::hue_shift(primary, 40.0));
-        let accent = p(&self.colors.accent).unwrap_or(secondary);
+        let secondary = p(&self.colors.secondary).unwrap_or_else(|| color::hue_shift(primary, -20.0));
+        let accent = p(&self.colors.accent).unwrap_or_else(|| {
+            // The primary, lifted toward the text colour until small labels read (≥ 4.5:1).
+            let mut c = primary;
+            let mut k = 0.0;
+            while color::contrast(c, bg) < 4.6 && k < 1.0 {
+                k += 0.05;
+                c = color::mix(primary, text, k);
+            }
+            c
+        });
         let surface = p(&self.colors.surface).unwrap_or_else(|| color::mix(bg, text, if light { 0.04 } else { 0.07 }));
         let muted = p(&self.colors.muted).unwrap_or_else(|| color::mix(text, bg, 0.38));
         let h = color::to_hex;

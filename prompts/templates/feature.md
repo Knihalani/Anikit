@@ -26,7 +26,7 @@ A 12–20 s spotlight on one new feature: a 'New' badge and kinetic headline bes
 ## Example
 
 ```json
-{"product":"Anikit Video","kicker":"New in 2.0","headline":"Render stills in 40 ms","subhead":"Preview any frame instantly, straight from your agent.","screenshot":"screenshot.png","url":"anikit.dev","points":["Any frame, any time","PNG or base64 for agents","Contact sheets in one call"],"cta":"Try it now"}
+{"product":"Anikit Video","kicker":"New in 2.0","headline":"Stills from any frame","subhead":"Preview any frame instantly, straight from your agent.","screenshot":"screenshot.png","url":"anikit.dev","points":["Any frame, any time","PNG or base64 for agents","Contact sheets in one call"],"cta":"Try it now"}
 ```
 
 Create: MCP `create_from_template {template: "feature", params, brand, format}`, or `anikit-video templates expand feature params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.

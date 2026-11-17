@@ -355,7 +355,7 @@ fn incremental_matches_full_render() {
         let l = if i == 7 { scene(6) } else { l };
         kinds.push(inc.render_yuv_incremental(&l, &mut yi, &mut changed));
         let mut yf = YuvFrame::default();
-        full.render_yuv(&l, &mut yf);
+        anikit_video::render::rgba_to_yuv420(full.render(&l), &mut yf);
         // Same pixels up to float rounding (sub-region tiles see shifted coordinates).
         for (pa, pb) in [(&yi.y, &yf.y), (&yi.u, &yf.u), (&yi.v, &yf.v)] {
             let bad = pa.iter().zip(pb.iter()).filter(|(a, b)| a.abs_diff(**b) > 0).count();
@@ -522,4 +522,112 @@ fn dynamic_image_source_and_tiling() {
     assert_eq!(at(72, 72), at(0, 0));
     assert_eq!(at(74, 72), at(2, 0));
     assert_eq!(at(72, 74), at(0, 2));
+}
+
+#[test]
+fn backdrop_fast_path_matches_vello() {
+    use anikit_video::render::{MbMap, YuvFrame};
+    let mut assets = Assets::default();
+    let field: Vec<u8> = (0..16 * 9).flat_map(|i| [(i * 37 % 256) as u8, (i * 11 % 256) as u8, (255 - i % 256) as u8, 255]).collect();
+    assets.images.insert_rgba8(ImageId(5), 16, 9, field).unwrap();
+    let assets = Arc::new(assets);
+    let (w, h) = (160u32, 90u32);
+    let scene = |x: f32, wrap: bool| {
+        let bg = Op::Image { image: ImageId(5), dst: [0.0, 0.0, w as f32, h as f32], opacity: 1.0, transform: IDENTITY };
+        let mut ops = vec![card(0.0, 0.0, 30.0, 30.0, solid(1.0, 0.0, 0.0))]; // hidden under the backdrop
+        if wrap {
+            ops.extend([layer(1.0, Blend::Normal, vec![], None, None), bg, Op::PopLayer]);
+        } else {
+            ops.push(bg);
+        }
+        ops.push(card(x, 30.0, 40.0, 30.0, Paint::Solid(rgba(1.0, 1.0, 1.0, 0.7))));
+        DisplayList { width: w, height: h, background: rgba(0.0, 0.0, 0.0, 1.0), ops }
+    };
+    let mut fast = Renderer::new(assets.clone());
+    let mut slow = Renderer::new(assets.clone());
+    let (mut yuv, mut changed) = (YuvFrame::default(), MbMap::default());
+    for i in 0..4 {
+        let x = 20.0 + i as f32 * 9.0;
+        fast.render_yuv_incremental(&scene(x, false), &mut yuv, &mut changed);
+        let a = fast.frame().data_as_u8_slice().to_vec();
+        let b = slow.render(&scene(x, true)).data_as_u8_slice().to_vec();
+        let max = a.iter().zip(&b).map(|(p, q)| p.abs_diff(*q)).max().unwrap();
+        let mean = a.iter().zip(&b).map(|(p, q)| p.abs_diff(*q) as u64).sum::<u64>() as f64 / a.len() as f64;
+        assert!(max <= 3 && mean < 0.5, "frame {i}: max {max} mean {mean}");
+    }
+}
+
+#[test]
+fn smooth_backdrop_matches_full_res() {
+    use anikit_video::render::{MbMap, YuvFrame};
+    let (w, h) = (320u32, 180u32);
+    let glow = |cx: f64, cy: f64, s: f32, a: f32| {
+        let r = 200.0f32;
+        Op::Fill {
+            path: kurbo::Circle::new((cx, cy), (r * 0.71) as f64).to_path(0.1),
+            paint: Paint::Radial { c: [cx as f32, cy as f32], r, stops: vec![(0.0, rgba(0.4, 0.3, 1.0, a)), (0.35, rgba(0.4, 0.3, 1.0, a * 0.3)), (0.7, rgba(0.4, 0.3, 1.0, 0.0))] },
+            rule: FillRule::NonZero,
+            transform: [s, 0.0, 0.0, s, 10.0, -5.0],
+        }
+    };
+    let scene = |k: f32, wrap: bool| {
+        let mut ops = vec![
+            Op::RoundRect { x: 0.0, y: 0.0, w: w as f32, h: h as f32, radius: 0.0, paint: Paint::Radial { c: [160.0, 90.0], r: 190.0, stops: vec![(0.0, rgba(0.6, 0.5, 0.7, 1.0)), (1.0, rgba(0.4, 0.45, 0.5, 1.0))] }, transform: IDENTITY },
+            glow(100.0 + k as f64 * 10.0, 80.0, 1.03, 0.4),
+            glow(250.0, 120.0 - k as f64 * 5.0, 0.9, 0.3),
+        ];
+        if wrap {
+            // A no-op layer stops the smooth prefix: reference full-res rendering.
+            ops.insert(0, layer(1.0, Blend::Normal, vec![], None, None));
+            ops.insert(1, Op::PopLayer);
+        }
+        ops.push(card(40.0 + k * 7.0, 60.0, 60.0, 40.0, solid(1.0, 1.0, 1.0)));
+        DisplayList { width: w, height: h, background: rgba(0.0, 0.0, 0.0, 1.0), ops }
+    };
+    let assets = Arc::new(Assets::default());
+    let (mut fast, mut slow) = (Renderer::new(assets.clone()), Renderer::new(assets));
+    let (mut yuv, mut changed) = (YuvFrame::default(), MbMap::default());
+    for k in 0..4 {
+        let k = k as f32;
+        fast.render_yuv_incremental(&scene(k, false), &mut yuv, &mut changed);
+        let a = fast.frame().data_as_u8_slice().to_vec();
+        let full = fast.render(&scene(k, false)).data_as_u8_slice().to_vec();
+        assert_eq!(a, full, "incremental and full must agree");
+        let b = slow.render(&scene(k, true)).data_as_u8_slice().to_vec();
+        let max = a.iter().zip(&b).map(|(p, q)| p.abs_diff(*q)).max().unwrap();
+        let mean = a.iter().zip(&b).map(|(p, q)| p.abs_diff(*q) as u64).sum::<u64>() as f64 / a.len() as f64;
+        assert!(max <= 6 && mean < 0.6, "frame {k}: max {max} mean {mean}");
+    }
+}
+
+#[test]
+fn fused_backdrop_yuv_matches_rgba_path() {
+    use anikit_video::render::{rgba_to_yuv420, YuvFrame};
+    let mut assets = Assets::default();
+    let field: Vec<u8> = (0..20 * 12).flat_map(|i| [(i * 37 % 256) as u8, (i * 11 % 256) as u8, (255 - i % 256) as u8, 255]).collect();
+    assets.images.insert_rgba8(ImageId(5), 20, 12, field).unwrap();
+    let assets = Arc::new(assets);
+    for (w, h) in [(160u32, 96u32), (157, 91)] {
+        let image_bg = Op::Image { image: ImageId(5), dst: [0.0, 0.0, w as f32, h as f32], opacity: 1.0, transform: IDENTITY };
+        let grad_bg = Op::RoundRect { x: 0.0, y: 0.0, w: w as f32, h: h as f32, radius: 0.0, paint: Paint::Radial { c: [80.0, 48.0], r: 120.0, stops: vec![(0.0, rgba(0.2, 0.1, 0.4, 1.0)), (1.0, rgba(0.0, 0.05, 0.1, 1.0))] }, transform: IDENTITY };
+        for bg in [image_bg, grad_bg] {
+            for top in [vec![], vec![card(37.0, 21.0, 40.0, 30.0, Paint::Solid(rgba(1.0, 1.0, 1.0, 0.8)))], vec![card(-10.0, 0.0, 400.0, 20.0, solid(1.0, 0.0, 0.0))]] {
+                let mut ops = vec![bg.clone()];
+                ops.extend(top);
+                let l = DisplayList { width: w, height: h, background: rgba(0.0, 0.0, 0.0, 1.0), ops };
+                let mut r = Renderer::new(assets.clone());
+                let mut fused = YuvFrame::default();
+                r.render_yuv(&l, &mut fused);
+                let mut reference = YuvFrame::default();
+                rgba_to_yuv420(Renderer::new(assets.clone()).render(&l), &mut reference);
+                assert_eq!((fused.width, fused.padded_height), (reference.width, reference.padded_height));
+                for (pi, (a, b)) in [(&fused.y, &reference.y), (&fused.u, &reference.u), (&fused.v, &reference.v)].into_iter().enumerate() {
+                    let max = a.iter().zip(b.iter()).map(|(p, q)| p.abs_diff(*q)).max().unwrap();
+                    // Chroma interpolated from low-res 4:4:4 vs averaged 2×2 blocks.
+                    let tol = if pi == 0 { 2 } else { 4 };
+                    assert!(max <= tol, "{w}x{h}: fused plane {pi} differs by {max}");
+                }
+            }
+        }
+    }
 }

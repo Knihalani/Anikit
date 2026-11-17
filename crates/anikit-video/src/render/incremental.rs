@@ -416,10 +416,12 @@ impl Renderer {
                 inc.rects.clear();
                 inc.rects.extend(inc.cur.iter().map(|p| p.rect));
                 for (k, r) in rs.iter().enumerate() {
-                    self.render_region(list, Some(*r), k == 0, Some(&inc.rects));
+                    self.render_region(list, Some(*r), k == 0, Some(&inc.rects), None);
                 }
             }
-            None => self.render_region(list, None, true, None),
+            None => {
+                self.render_region(list, None, true, None, None);
+            }
         }
         if !had_yuv {
             yuv.resize(w, h);

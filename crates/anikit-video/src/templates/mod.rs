@@ -253,6 +253,29 @@ impl Template {
         format!("{} — {title}{dur}. needs: {}", self.name, if req.is_empty() { "nothing".into() } else { req.join(", ") })
     }
 
+    /// The stated length range in seconds (`"20–35 s"` → `(20, 35)`).
+    pub fn duration_range(&self) -> Option<(f64, f64)> {
+        let d = self.doc.get("duration")?.as_str()?;
+        let nums: Vec<f64> = d.split(|c: char| !c.is_ascii_digit() && c != '.').filter_map(|x| x.parse().ok()).collect();
+        match nums.as_slice() {
+            [a, b, ..] => Some((*a, *b)),
+            _ => None,
+        }
+    }
+
+    /// Notes about an expansion an agent should know (length out of range, placeholder UI).
+    pub fn expansion_notes(&self, params: &Value, spec: &Value, _duration: f64) -> Vec<String> {
+        let mut v = Vec::new();
+        let text = spec.to_string();
+        let has_screen = text.contains("\"screen\":");
+        let has_image = ["screenshot", "image", "images", "src"].iter().any(|k| params.to_string().contains(&format!("\"{k}\"")));
+        let takes_images = self.doc.get("params").map(|p| p.to_string()).is_some_and(|p| p.contains("\"type\":\"image\""));
+        if has_screen && !has_image && takes_images {
+            v.push("note: no screenshots given, so device frames show generated app screens built from your copy; pass `screenshot` / `image` params for real product screens".into());
+        }
+        v
+    }
+
     /// Parameters, one line each (`*` = required), plus a minified example.
     pub fn compact_params(&self) -> String {
         let mut out = vec![format!("{} params (* required):", self.name)];
@@ -378,7 +401,7 @@ fn param_line(k: &str, p: &Value) -> String {
             match items.get("properties").and_then(|x| x.as_object()) {
                 Some(props) => format!(
                     "[{{{}}}]",
-                    props.iter().map(|(sk, sp)| format!("{sk}{}{}", if sp.get("required") == Some(&Value::Bool(true)) { "*" } else { "" }, limit_suffix(sp))).collect::<Vec<_>>().join(", ")
+                    props.iter().map(|(sk, sp)| format!("{sk}{}{}", if sp.get("required") == Some(&Value::Bool(true)) { "*" } else { "" }, nested_suffix(sp))).collect::<Vec<_>>().join(", ")
                 ),
                 None => format!("[{}{}]", items.get("type").and_then(|x| x.as_str()).unwrap_or("string"), limit_suffix(&items)),
             }
@@ -386,7 +409,7 @@ fn param_line(k: &str, p: &Value) -> String {
         "object" => p
             .get("properties")
             .and_then(|x| x.as_object())
-            .map(|props| format!("{{{}}}", props.iter().map(|(sk, sp)| format!("{sk}{}{}", if sp.get("required") == Some(&Value::Bool(true)) { "*" } else { "" }, limit_suffix(sp))).collect::<Vec<_>>().join(", ")))
+            .map(|props| format!("{{{}}}", props.iter().map(|(sk, sp)| format!("{sk}{}{}", if sp.get("required") == Some(&Value::Bool(true)) { "*" } else { "" }, nested_suffix(sp))).collect::<Vec<_>>().join(", ")))
             .unwrap_or_else(|| "object".into()),
         t => format!("{t}{}", limit_suffix(p)),
     };
@@ -398,20 +421,47 @@ fn param_line(k: &str, p: &Value) -> String {
         s += &format!(" ={shown}");
     }
     if let Some(desc) = p.get("description").and_then(|x| x.as_str()) {
-        let first = desc.split(". ").next().unwrap_or(desc).trim_end_matches('.');
-        s += &format!(" — {first}");
+        // Free-form params need their whole description; others the first sentence.
+        let text = if ty == "any" { desc.trim_end_matches('.').to_string() } else { first_sentence(desc) };
+        s += &format!(" — {text}");
     }
     s
 }
 
-fn limit_suffix(p: &Value) -> String {
-    if let Some(n) = p.get("maxWords") {
-        format!(" ≤{n}w")
-    } else if let Some(n) = p.get("maxChars") {
-        format!(" ≤{n}c")
-    } else {
-        String::new()
+/// The first sentence, not fooled by "e.g." / "i.e.".
+fn first_sentence(d: &str) -> String {
+    let mut end = d.len();
+    let mut from = 0;
+    while let Some(i) = d[from..].find(". ") {
+        let at = from + i;
+        let before = &d[..at];
+        if before.ends_with("e.g") || before.ends_with("i.e") || before.ends_with("etc") || before.ends_with("vs") {
+            from = at + 2;
+            continue;
+        }
+        end = at;
+        break;
     }
+    d[..end].trim_end_matches('.').to_string()
+}
+
+/// Limits of a nested field, plus enum values: `type*:new|improved|fixed`, `text* ≤8w`.
+fn nested_suffix(p: &Value) -> String {
+    match p.get("values").and_then(|v| v.as_array()) {
+        Some(v) => format!(":{}", v.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join("|")),
+        None => limit_suffix(p),
+    }
+}
+
+fn limit_suffix(p: &Value) -> String {
+    let mut s = String::new();
+    if let Some(n) = p.get("maxWords") {
+        s += &format!(" ≤{n}w");
+    }
+    if let Some(n) = p.get("maxChars") {
+        s += &format!(" ≤{n}c");
+    }
+    s
 }
 
 fn param_to_schema(p: &Value) -> Value {
@@ -429,7 +479,10 @@ fn param_to_schema(p: &Value) -> Value {
         "object" => ("object", None),
         _ => ("string", None),
     };
-    s.insert("type".into(), json!(jt));
+    // `any`: several shapes are accepted (e.g. `true` or a list); the description says which.
+    if ty != "any" {
+        s.insert("type".into(), json!(jt));
+    }
     if let Some(f) = fmt {
         s.insert("format".into(), json!(f));
     }

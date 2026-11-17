@@ -51,6 +51,24 @@ let update = r.render_yuv_incremental(&list, &mut yuv, &mut changed); // dirty r
 
 `Renderer::set_image_source(Arc<dyn DynamicImages>)` supplies images that are created while rendering, for ids not found in `Assets::images` (for example component images at ids ≥ `0x4000_0000` through `Host::pixmap`). The trait is `fn get(&self, ImageId) -> Option<Arc<Pixmap>>`, and any `Fn(ImageId) -> Option<Arc<Pixmap>> + Send + Sync` implements it. Return the same `Arc` while the pixels are unchanged. `Renderer::set_frame_image(id, Arc<Pixmap>)` overrides `Assets::images` for the following renders. Use it for decoded video frames and other per-frame textures; `clear_frame_image(id)` removes the override. Incremental renders track the identity of each `Arc`, so only the macroblocks under the image are re-rendered when a new frame is set.
 
+### Full-frame backdrops
+
+When a top-level `Op::Image` is opaque, axis-aligned and covers the whole frame (mesh and aurora fields, full-bleed photos), everything before it is hidden, so it is skipped. The image is bilinearly upscaled straight into the frame by a separable kernel: each source row is interpolated horizontally once, then each output row is a vectorised vertical lerp. vello then draws only the ops above it, with `TargetInit::SrcOver`, so there is no clear pass and no vello image sampling. Incremental regions use the same kernel. The result is within 3 LSB of vello's own bilinear filter (tested).
+
+### Smooth backdrops
+
+A leading run of top-level ops with no visible edge inside the frame is rendered by vello at ¼ resolution, cached by content hash, and upscaled with the same kernel. The run may contain:
+- full-frame gradient or solid fills;
+- low-res images upscaled ≥ 4×;
+- radial "glows" whose gradient reaches zero alpha before their path edge (checked geometrically);
+- gradients whose stops are at least 24 px apart on screen.
+
+This applies once the run paints a frame's worth of pixels with a gradient or image. The launch template's background (a full-frame radial plus two moving glows) went from 118 to about 195 fps on one thread at 1080p (8-bit intermediate rows; the vertical lerp runs in 16-bit lanes). The result is within 6 LSB of a full-resolution render (tested).
+
+### Fused backdrop → YUV
+
+When `render_yuv` has a backdrop and the ops drawn over it fit in a macroblock-aligned box covering at most 60% of the frame, the low-res backdrop is converted to YUV 4:4:4 once and its planes are upscaled straight into the YUV frame: 1.5 bytes per pixel, with no full-frame RGBA. Odd frame sizes get edge-corrected chroma. Only the box goes through vello. When every top-level layer over the backdrop blends normally (the usual case), the box is drawn on a transparent canvas and composited source-over directly in YUV space (`Y = (Y_bg − 16)(1 − α) + 16 + luma(src)`, chroma per 2×2 block, fully transparent spans skipped), so no RGBA backdrop is made at all, however large the box. Otherwise the box is seeded with the upscaled backdrop in RGBA, but only while it covers at most 60% of the frame. The full RGBA frame is never written, so `frame()` is stale afterwards; call `render()` when you need RGBA. The output is within 2 LSB (luma) and 4 LSB (chroma) of `render()` followed by RGBA→YUV conversion (tested). On the launch template (restarted, slower VM) render + YUV goes from 6.4 ms unfused to 4.9 ms.
+
 ### Incremental frames
 
 `render_yuv_incremental` is the fastest path for real videos. Each worker keeps its previous frame and does the following:
@@ -130,3 +148,27 @@ Before → after, same benchmarks:
   - blur profile against a true Gaussian;
   - trim;
   - resampling.
+
+## End-to-end pipeline (spec → MP4), measured
+
+`anikit-video render` with ak264 (the MP4 default) runs **fused**: frames are split into GOP chunks (`gop = clamp(n / (3 × threads), 30, 300)`), and each worker evaluates, renders incrementally (`render_yuv_incremental`), copies only changed macroblocks into its chunk buffer and encodes, with the exact change map as the encoder hint. Spans that `Evaluator::is_static` proves identical are **held**: no eval, no render, all-skip P frames. `--profile` prints the per-stage breakdown.
+
+4-core container, 1080p, wall clock including spec compile and the MP4 mux (`render --json`, `render_fps`), 2026-11-17 02:35 UTC:
+
+| Content | Frames | ak264 (fused) | x264 veryfast (ffmpeg pipe) | Frames skipped |
+|---|---|---|---|---|
+| `new launch` template (benchmark of record: mesh backdrop, devices, chart, confetti) | 881 @ 30 | **125 fps** (7.0 s, 7.1 MB) | 75 fps (11.8 s, 6.3 MB) | 0 |
+| same, without the animated mesh backdrop | 881 @ 30 | **333 fps** (2.6 s) | 122 fps | 83 |
+| `docs/video/examples/showcase.json` | 222 @ 30 | **573 fps** (0.39 s) | 135 fps | 23 |
+| title + chart slides (mostly holds) | 570 @ 60 | **2197 fps** (0.26 s) | 214 fps | 392 |
+
+Before the fused path (render batches → separate encoder thread), the benchmark of record ran at 109 fps.
+
+**After the backdrop and settle fixes from RENDER, COMPONENTS and AGENTS (merged 02:40 UTC):** the current `new launch` template renders 901 frames in 2.55 s = **353 fps** with ak264. 404 frames are skipped as Unchanged (eval 0.5 / render 6.2 / encode 4.7 CPU ms per frame). The older launch spec above now runs at 268 fps.
+
+`--profile` on the benchmark of record (CPU ms per frame, summed over 4 threads): eval 0.5, render 17–18 (all 881 frames Full), copy 0.4, encode 10–12. Two things keep it from being incremental:
+
+1. The animated `mesh-gradient` backdrop changes every pixel of every frame (a keyframe blend), so no frame is Unchanged or Partial. Removing it gives 333 fps; `speed: 0` gives 230 fps.
+2. Without the mesh, 770 / 881 frames are still Full, because any changed `PushLayer` (mostly clip layers inside device and toast components) forces a full frame (`examples/dl_churn.rs` counts them).
+
+Correctness: fused outputs decode with ffmpeg and match the x264 path at 50–54 dB PSNR (`tests/pipeline_e2e.rs` checks pixels across held, partial and full frames and GOP boundaries).

@@ -82,6 +82,7 @@ struct C<'a> {
     assets: Arc<SharedAssets>,
     /// Audio from video clips.
     audio_extra: Vec<crate::audio::Track>,
+    beat_marks: super::beat_markers::BeatMarkers,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -131,6 +132,7 @@ impl Evaluator {
             scene_dur: 3.0,
             image_ids: HashMap::new(),
             audio_extra: Vec::new(),
+            beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
             assets: Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new())))),
         };
         c.ease_ids.insert("linear".into(), 0);
@@ -236,7 +238,10 @@ impl Evaluator {
                     }
                 }
             }
-            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers });
+            let depth = camera.base[prop::APERTURE] != 0.0
+                || camera.tracks.iter().any(|t| t.slot as usize == prop::APERTURE)
+                || layers.iter().any(|n| n.base[prop::DEPTH] != 0.0 || n.tracks.iter().any(|t| t.slot as usize == prop::DEPTH) || n.exprs.iter().any(|e| e.0 as usize == prop::DEPTH));
+            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth });
             t = start + dur;
             prev_dur = dur;
         }
@@ -255,10 +260,8 @@ impl Evaluator {
         c.smarkers.clear();
         c.scene_start = 0.0;
         c.scene_dur = duration;
-        let overlay = match &spec.captions {
-            Some(cap) => c.captions(cap, duration),
-            None => Vec::new(),
-        };
+        let overlay = Vec::new();
+        let captions = spec.captions.as_ref().and_then(|cap| c.captions(cap));
         let ev = Evaluator {
             width: c.w as u32,
             height: c.h as u32,
@@ -270,6 +273,7 @@ impl Evaluator {
             easings: c.easings,
             scenes,
             overlay,
+            captions,
             ctheme: components_theme(&c.theme),
             theme: c.theme,
         };
@@ -370,6 +374,14 @@ impl C<'_> {
                         *v
                     } else if let Some(v) = self.gmarkers.get(name) {
                         *v - self.scene_start
+                    } else if let Some(r) = self.beat_marks.resolve(name) {
+                        match r {
+                            Ok(v) => v - self.scene_start,
+                            Err(e) => {
+                                self.d.push(Diagnostic::error(path, e));
+                                return (0.0, None);
+                            }
+                        }
                     } else {
                         let names: Vec<&String> = self.smarkers.keys().chain(self.gmarkers.keys()).collect();
                         self.d.push(Diagnostic::error(path, format!("unknown marker '{name}'")).suggest(suggest(name, &names)));
@@ -763,6 +775,8 @@ impl C<'_> {
             self.set(&mut camera, prop::Y, cam.y.as_ref(), &format!("{cp}.y"), self.h);
             self.set(&mut camera, prop::ZOOM, cam.zoom.as_ref(), &format!("{cp}.zoom"), 1.0);
             self.set(&mut camera, prop::ROT, cam.rotation.as_ref(), &format!("{cp}.rotation"), 1.0);
+            self.set(&mut camera, prop::FOCUS, cam.focus.as_ref(), &format!("{cp}.focus"), 1.0);
+            self.set(&mut camera, prop::APERTURE, cam.aperture.as_ref(), &format!("{cp}.aperture"), 1.0);
             let mut tw = Vec::new();
             if let Some(a) = &cam.animate {
                 for (k, t) in a.iter().enumerate() {
@@ -1048,6 +1062,7 @@ impl C<'_> {
         self.set(&mut n, prop::OPACITY, l.opacity.as_ref(), &format!("{path}.opacity"), 1.0);
         self.set(&mut n, prop::BLUR, l.blur.as_ref(), &format!("{path}.blur"), ph);
         self.set(&mut n, prop::PROGRESS, l.progress.as_ref(), &format!("{path}.progress"), 1.0);
+        self.set(&mut n, prop::DEPTH, l.depth.as_ref(), &format!("{path}.depth"), 1.0);
         if let Some(b) = &l.blend {
             n.blend = match b.as_str() {
                 "normal" => Blend::Normal,
@@ -1256,10 +1271,20 @@ impl C<'_> {
         let (paint, c) = self.paint(&col, &format!("{path}.color")).unwrap_or((PaintC::Solid, Rgba([1.0; 4])));
         n.base[prop::FILL..prop::FILL + 4].copy_from_slice(&rgba_to_oklab(c));
         n.base[prop::SIZE] = size;
-        if l.stroke.is_some() {
-            self.d.push(Diagnostic::warning(format!("{path}.stroke"), "outlined text is not supported yet; ignored"));
-        }
+        // Outlined text: `stroke` (colour or object); `color: "none"` draws only the outline.
+        let hollow = matches!(&st.color, Some(spec::Paint::Css(c)) if c.trim() == "none" || c.trim() == "transparent");
+        let outline = match &l.stroke {
+            Some(sk) => self.stroke(&sk.0, l.stroke_width.as_ref(), &format!("{path}.stroke")).map(|(_, c, w)| {
+                n.base[prop::STROKE..prop::STROKE + 4].copy_from_slice(&rgba_to_oklab(c));
+                n.base[prop::SW] = w;
+                text::layout::Outline { width: w / size, color: Some(text::Color(c)), hollow }
+            }),
+            None => None,
+        };
+        let accent = self.theme.colors.get("accent").copied().unwrap_or(Rgba([1.0, 0.36, 0.66, 1.0]));
         let style = text::TextStyle {
+            outline,
+            accent: text::Color(accent),
             font: family,
             weight,
             italic: st.italic.unwrap_or(false),
@@ -1922,24 +1947,46 @@ impl C<'_> {
         (Kind::Video { frames, natural: nat, fit, rate, speed, looped }, nat)
     }
 
+    /// Load an image file referenced by a component and register it under its `src`.
+    fn load_media(&mut self, src: &str, path: &str) {
+        let full = self.o.base_dir.join(src);
+        if self.image_ids.contains_key(&full) || !self.o.load_assets {
+            if let Some(&(id, _)) = self.image_ids.get(&full) {
+                self.assets.add_media(src, ImageId(id));
+            }
+            return;
+        }
+        if !full.exists() {
+            self.d.push(Diagnostic::warning(path.to_string(), format!("image not found: {}", full.display())));
+            return;
+        }
+        match image::open(&full).map_err(|e| e.to_string()).and_then(|img| {
+            let rgba = img.to_rgba8();
+            let (w, h) = rgba.dimensions();
+            self.assets.add_rgba(w, h, rgba.into_raw()).map(|id| (id, [w as f32, h as f32]))
+        }) {
+            Ok((id, nat)) => {
+                self.assets.add_media(src, id);
+                self.image_ids.insert(full, (id.0, nat));
+            }
+            Err(e) => self.d.push(Diagnostic::warning(path.to_string(), format!("can't decode image {src}: {e}"))),
+        }
+    }
+
     fn component_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>) -> Option<(Kind, [f32; 2])> {
         let raw = l.component.clone().unwrap_or_default();
-        // Accept camelCase (`barChart`) as well as the catalogue's kebab-case (`bar-chart`).
-        let mut name = String::new();
-        for ch in raw.chars() {
-            if ch.is_ascii_uppercase() {
-                name.push('-');
-                name.push(ch.to_ascii_lowercase());
-            } else {
-                name.push(ch);
-            }
-        }
+        // camelCase (`barChart`), kebab-case and short aliases (`chart.bar`) all resolve.
+        let name = crate::components::canonical(&raw);
         let names: Vec<&str> = crate::components::KINDS.iter().map(|k| k.name).collect();
         if !names.contains(&name.as_str()) {
             self.d.push(Diagnostic::error(format!("{path}.component"), format!("unknown component '{raw}'")).suggest(suggest(&name, &names)));
             return None;
         }
         let props = l.props.clone().unwrap_or(serde_json::Value::Object(Default::default()));
+        // Load the images the component refers to, so `Assets::media` finds them.
+        for src in crate::components::media_srcs(&props) {
+            self.load_media(&src, &format!("{path}.props"));
+        }
         match crate::components::build(&name, &props) {
             Ok(p) => {
                 let size = [gw.or(p.w).unwrap_or(self.w), gh.or(p.h).unwrap_or(self.h)];
@@ -2403,71 +2450,77 @@ impl C<'_> {
         })
     }
 
-    fn captions(&mut self, cap: &spec::Captions, duration: f32) -> Vec<Node> {
-        let (cues, style, y, color, highlight): (Vec<spec::CaptionCue>, String, Option<Num>, Option<String>, Option<String>) = match cap {
-            spec::Captions::Cues(c) => (c.clone(), "caption".into(), None, None, None),
-            spec::Captions::File(f) => {
-                let mut cues = f.cues.clone().unwrap_or_default();
-                if let Some(src) = &f.src {
-                    let full = self.o.base_dir.join(src);
-                    match std::fs::read_to_string(&full) {
-                        Ok(s) => cues.extend(parse_srt(&s)),
-                        Err(e) => self.d.push(Diagnostic::error("captions.src", format!("can't read {}: {e}", full.display()))),
-                    }
-                }
-                (cues, f.style.clone().unwrap_or_else(|| "caption".into()), f.y.clone(), f.color.clone(), f.highlight.clone())
-            }
+    /// Captions → one TEXT `CaptionTrack` (paging, per-word pop and highlight).
+    fn captions(&mut self, cap: &spec::Captions) -> Option<(text::captions::CaptionTrack, [f32; 2])> {
+        use text::captions::{CaptionStyle, CaptionTrack, Cue, Upcoming, Word};
+        let empty = spec::CaptionFile::default();
+        let (list, f): (Vec<spec::CaptionCue>, &spec::CaptionFile) = match cap {
+            spec::Captions::Cues(c) => (c.clone(), &empty),
+            spec::Captions::File(f) => (f.cues.clone().unwrap_or_default(), f),
         };
-        let mut out = Vec::new();
-        let hl = highlight.unwrap_or_else(|| "$accent".into());
-        let hl_c = self.color(&hl, "captions.highlight").unwrap_or(Rgba([1.0, 0.8, 0.2, 1.0]));
-        for (i, c) in cues.iter().enumerate() {
-            let words = c.words.as_ref().filter(|w| !w.is_empty());
-            let text = match words {
-                Some(w) => w.iter().map(|x| x.0.as_str()).collect::<Vec<_>>().join(" "),
-                None => c.text.clone(),
-            };
-            let l = Layer {
-                text: Some(text),
-                split: words.map(|_| "words".to_string()),
-                style: Some(StyleRef::Name(style.clone())),
-                color: Some(spec::Paint::Css(color.clone().unwrap_or_else(|| "$text".into()))),
-                y: Some(y.clone().unwrap_or(Num::Str("88%".into()))),
-                width: Some(Num::Str("80%".into())),
-                start: Some(c.at.clone()),
-                end: Some(c.end.clone()),
-                shadow: Some(spec::Shadow(spec::ShadowObj { x: Some(0.0), y: Some(2.0), blur: Some(8.0), color: Some("#000000c0".into()) })),
-                enter: Some(spec::Preset(PresetObj { preset: Some("fadeIn".into()), duration: Some(Num::Num(0.15)), ..Default::default() })),
-                ..Default::default()
-            };
-            let pc = PCtx { size: [self.w, self.h], t0: 0.0, end: duration, delay: 0.0, index: i, count: cues.len(), in_box: false };
-            if let Some(mut n) = self.layer(&l, &format!("captions[{i}]"), pc) {
-                if let (Some(w), Kind::Text { split: Some(sp), .. }) = (words, &mut n.kind) {
-                    // Highlight each word while it's spoken (times relative to the cue).
-                    let base = rgba_to_oklab(oklab_to_rgba([n.base[prop::FILL], n.base[prop::FILL + 1], n.base[prop::FILL + 2], n.base[prop::FILL + 3]]));
-                    let on = rgba_to_oklab(hl_c);
-                    sp.unit_tracks = w
-                        .iter()
-                        .map(|(_, a, e)| {
-                            let (a, e) = ((*a as f32 - n.start).max(0.0), (*e as f32 - n.start).max(0.0));
-                            (0..4)
-                                .map(|k| Track {
-                                    slot: (prop::FILL + k) as u8,
-                                    segs: vec![
-                                        Seg { t0: 0.0, t1: 0.0, v0: base[k], v1: base[k], ease: 0, hold_before: true },
-                                        Seg { t0: a, t1: a + 0.06, v0: base[k], v1: on[k], ease: 0, hold_before: false },
-                                        Seg { t0: e, t1: e + 0.06, v0: on[k], v1: base[k], ease: 0, hold_before: false },
-                                    ],
-                                })
-                                .collect()
-                        })
-                        .collect();
-                    sp.delays = vec![0.0; w.len()];
-                }
-                out.push(n);
+        let mut cues: Vec<Cue> = Vec::new();
+        for (i, c) in list.iter().enumerate() {
+            let p = format!("captions[{i}]");
+            let (a, e) = (self.time_raw(&c.at, &format!("{p}.at")), self.time_raw(&c.end, &format!("{p}.end")));
+            let words: Vec<Word> = c.words.iter().flatten().map(|(t, s, e)| Word { text: t.clone(), start: *s as f32, end: *e as f32 }).collect();
+            let text = if c.text.trim().is_empty() { words.iter().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ") } else { c.text.clone() };
+            cues.push(Cue { text, start: a, end: e, words });
+        }
+        if let Some(src) = &f.src {
+            let full = self.o.base_dir.join(src);
+            match std::fs::read_to_string(&full) {
+                Ok(s) => cues.extend(text::captions::parse(&s)),
+                Err(e) => self.d.push(Diagnostic::error("captions.src", format!("can't read {}: {e}", full.display()))),
             }
         }
-        out
+        if cues.is_empty() {
+            return None;
+        }
+        let mut st = CaptionStyle::default();
+        let size = f.size.as_ref().map(|s| self.len_c(s, "captions.size", self.h, 16.0)).unwrap_or(self.h.min(self.w) * 0.06);
+        st.style.size = size;
+        st.width = self.w * 0.86;
+        let col = |me: &mut Self, c: &Option<String>, path: &str| c.as_ref().and_then(|c| me.color(c, path)).map(text::Color);
+        if let Some(c) = col(self, &f.color, "captions.color") {
+            st.style.color = c;
+        } else if let Some(c) = self.theme.colors.get("text") {
+            st.style.color = text::Color(*c);
+        }
+        st.highlight_box = col(self, &f.background, "captions.background");
+        // With a box behind the spoken word, keep its text colour by default (an accent on an accent box vanishes).
+        st.highlight = match col(self, &f.highlight, "captions.highlight") {
+            Some(c) => Some(c),
+            None if st.highlight_box.is_some() => Some(st.style.color),
+            None => self.theme.colors.get("accent").map(|c| text::Color(*c)),
+        };
+        if let Some(n) = f.max_words {
+            st.max_words = n.max(1);
+        }
+        st.uppercase = f.uppercase.unwrap_or(false);
+        st.upcoming = match f.upcoming.as_deref() {
+            None | Some("dim") => Upcoming::Dim,
+            Some("hidden") => Upcoming::Hidden,
+            Some("show") => Upcoming::Show,
+            Some(x) => {
+                self.d.push(Diagnostic::error("captions.upcoming", format!("unknown value '{x}'")).suggest(suggest(x, &["dim", "hidden", "show"])));
+                Upcoming::Dim
+            }
+        };
+        if let Some(sname) = &f.style {
+            if let Some(ts) = self.theme.styles.get(sname).cloned() {
+                if let Some(fnt) = &ts.font {
+                    st.style.font = self.theme.font(fnt).to_string();
+                }
+                if let Some(w) = ts.weight.as_ref().and_then(weight_value) {
+                    st.style.weight = w;
+                }
+            } else {
+                let names: Vec<&String> = self.theme.styles.keys().collect();
+                self.d.push(Diagnostic::error("captions.style", format!("unknown text style '{sname}'")).suggest(suggest(sname, &names)));
+            }
+        }
+        let y = f.y.as_ref().map(|y| self.len_c(y, "captions.y", self.h, 16.0)).unwrap_or(self.h * 0.9);
+        Some((CaptionTrack::new(&self.assets.fonts, &cues, &st), [self.w * 0.5, y]))
     }
 }
 
@@ -2500,6 +2553,7 @@ fn split_top(s: &str) -> Vec<&str> {
 }
 
 /// Minimal SRT parser.
+#[allow(dead_code)]
 pub(crate) fn parse_srt(s: &str) -> Vec<spec::CaptionCue> {
     let ts = |x: &str| -> Option<f64> {
         let x = x.trim().replace(',', ".");
