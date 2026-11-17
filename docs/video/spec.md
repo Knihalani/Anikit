@@ -95,7 +95,7 @@ That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the 
 | `theme` | object | dark theme | Colour tokens, fonts and text styles (see **Theme**). |
 | `scenes` | array | **required** | Played in order. |
 | `transition` | transition | `{ "type": "crossfade", "duration": 0.5 }` | Default transition between scenes. Use `"cut"` for none. |
-| `markers` | `{ name: time }` | `{}` | Named times on the global timeline, used as `"@name"`. |
+| `markers` | `{ name: time }` | `{}` | Named times on the global timeline, used as `"@name"`. Beat markers need no entry: `"@beat17"`, `"@bar5+0.25"` resolve to the beat grid detected in the first music `audio` track (counting from 1; `anikit-video beats music.wav` lists them). |
 | `audio` | array | `[]` | Music and sound effects (see **Audio**). |
 | `captions` | array or `{ "src": "subs.srt" }` | none | Burned-in captions (see **Captions**). |
 | `fonts` | `{ family: path }` | bundled | Extra font files. Bundled: `Inter`, `Inter Display`, `JetBrains Mono`. |
@@ -396,6 +396,7 @@ anikit-video render spec.json -o out.mp4 [--quality draft|good|best] [--from 2 -
                     default by extension: .mp4 → ak264 (our encoder; x264 with --quality best), .webm vp9, .gif, .mov prores, .mkv av1
 anikit-video info [--components]                              encoders and the component catalogue
 anikit-video schema [-o spec.schema.json]
+anikit-video beats  music.wav [--json]                       tempo, beat and bar times (the "@beatN" / "@barN" markers)
 ```
 
 `--json` prints one machine-readable object on stdout; progress goes to stderr. `render --json` ends with `{ "ok": true, "summary": { "frames", "deduped", "seconds", "render_fps", "bytes", … } }`.

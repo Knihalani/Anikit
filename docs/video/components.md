@@ -361,6 +361,8 @@ Thousands of glowing particles fly in from all around, form the text, hold with 
 | `exit` | `"blow"` | `blow` (wind), `explode`, `fade`, or `none` to stay. |
 | `exitTime` | `1.6` | |
 | `delay`, `glow`, `seed` | `0`, `true`, `1` | |
+| `blend` | `screen` | `normal` draws solid dots, so dark particles show on a light background. |
+| `stagger` | `1` | How much the exit sweeps left to right; `0` makes every particle leave at once (a burst on a beat). |
 
 ## Shapes and light
 

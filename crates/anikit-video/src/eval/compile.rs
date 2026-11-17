@@ -82,6 +82,7 @@ struct C<'a> {
     assets: Arc<SharedAssets>,
     /// Audio from video clips.
     audio_extra: Vec<crate::audio::Track>,
+    beat_marks: super::beat_markers::BeatMarkers,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -131,6 +132,7 @@ impl Evaluator {
             scene_dur: 3.0,
             image_ids: HashMap::new(),
             audio_extra: Vec::new(),
+            beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
             assets: Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new())))),
         };
         c.ease_ids.insert("linear".into(), 0);
@@ -370,6 +372,14 @@ impl C<'_> {
                         *v
                     } else if let Some(v) = self.gmarkers.get(name) {
                         *v - self.scene_start
+                    } else if let Some(r) = self.beat_marks.resolve(name) {
+                        match r {
+                            Ok(v) => v - self.scene_start,
+                            Err(e) => {
+                                self.d.push(Diagnostic::error(path, e));
+                                return (0.0, None);
+                            }
+                        }
                     } else {
                         let names: Vec<&String> = self.smarkers.keys().chain(self.gmarkers.keys()).collect();
                         self.d.push(Diagnostic::error(path, format!("unknown marker '{name}'")).suggest(suggest(name, &names)));
