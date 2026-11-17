@@ -6,10 +6,12 @@
 //! letters evenly. Points are stored relative to the text's bounds, so the
 //! same samples serve any box size. Motion is closed-form in `t`.
 
+use super::fxkit::{self, hot, kelvin};
 use super::style::*;
 use super::text::{Face, TextStyle};
 use super::{Component, Ctx, Error, Prepare};
-use crate::dl::{Blend, Op, Path, Rgba};
+use crate::dl::{Blend, Filter, Op, Path, Rgba};
+use anikit_core::noise::Noise;
 use crate::text::FontStore;
 use kurbo::Shape;
 use serde::Deserialize;
@@ -125,31 +127,6 @@ fn sample_inside(path: &Path, n: usize, seed: u64) -> Vec<[f32; 2]> {
     pts
 }
 
-/// A circle as four cubics (cheaper than a general arc conversion).
-#[inline]
-fn dot(p: &mut Path, x: f32, y: f32, r: f32) {
-    let (x, y, r) = (x as f64, y as f64, r as f64);
-    if r < 3.0 {
-        // Small dots: an octagon is indistinguishable and far cheaper to
-        // rasterise than four cubics (thousands of dots per frame).
-        const D: f64 = std::f64::consts::FRAC_1_SQRT_2;
-        const K: [(f64, f64); 8] = [(1.0, 0.0), (D, D), (0.0, 1.0), (-D, D), (-1.0, 0.0), (-D, -D), (0.0, -1.0), (D, -D)];
-        p.move_to((x + r, y));
-        for (cx, cy) in &K[1..] {
-            p.line_to((x + cx * r, y + cy * r));
-        }
-        p.close_path();
-        return;
-    }
-    let c = r * 0.552_284_75;
-    p.move_to((x + r, y));
-    p.curve_to((x + r, y + c), (x + c, y + r), (x, y + r));
-    p.curve_to((x - c, y + r), (x - r, y + c), (x - r, y));
-    p.curve_to((x - r, y - c), (x - c, y - r), (x, y - r));
-    p.curve_to((x + c, y - r), (x + r, y - c), (x + r, y));
-    p.close_path();
-}
-
 /// One word's samples, relative to its bounds' centre, plus its size.
 struct Word {
     pts: Vec<[f32; 2]>,
@@ -165,9 +142,13 @@ struct Particle {
     bow: f32,
     size: f32,
     phase: f32,
+    /// Depth while flying (-1 far .. 1 near); 0 once formed.
+    z: f32,
     /// Exit randoms.
     e: [f32; 3],
 }
+
+const FLOWS: &[&str] = &["curl", "direct", "spiral"];
 
 #[derive(Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -180,7 +161,7 @@ pub struct ParticleText {
     pub count: u32,
     /// Particle radius in px at 1080p.
     pub size: f32,
-    /// Gradient across the text (left → right). Defaults to the theme accent set.
+    /// Gradient across the text (left → right). Default: the theme's text colour.
     pub colors: Vec<Color>,
     /// Font size in px; default fits the box (~80% wide, ≤ 30% tall).
     pub font_size: Option<f32>,
@@ -195,7 +176,19 @@ pub struct ParticleText {
     /// Seconds the exit takes.
     pub exit_time: f32,
     pub delay: f32,
+    /// Soft bloom around the formed text.
     pub glow: bool,
+    /// Bloom strength (0..2).
+    pub bloom: f32,
+    /// How particles travel: `curl` (swirling noise flow), `direct` (gentle
+    /// arcs) or `spiral` (orbit into place).
+    pub flow: String,
+    /// Strength of the flow's swirl (0..3).
+    pub turbulence: f32,
+    /// Depth while flying: near particles grow and blur, far ones shrink (0 = flat).
+    pub depth: f32,
+    /// Share of particles that glint while the text holds (0..1).
+    pub sparkle: f32,
     pub seed: u32,
     /// `screen` (default: glowing light on dark) or `normal` (solid dots, for
     /// dark particles on a light background).
@@ -214,18 +207,23 @@ impl Default for ParticleText {
         ParticleText {
             text: String::new(),
             words: Vec::new(),
-            count: 4000,
-            size: 2.4,
+            count: 6000,
+            size: 1.9,
             colors: Vec::new(),
             font_size: None,
             weight: 800,
             face: Face::Display,
-            form: 1.6,
+            form: 1.8,
             hold: 1.4,
             exit: "none".into(),
             exit_time: 1.6,
             delay: 0.0,
             glow: true,
+            bloom: 0.7,
+            flow: "curl".into(),
+            turbulence: 1.0,
+            depth: 1.0,
+            sparkle: 0.5,
             seed: 1,
             blend: "screen".into(),
             stagger: 1.0,
@@ -251,7 +249,12 @@ impl Prepare for ParticleText {
         if !["screen", "normal"].contains(&self.blend.as_str()) {
             return Err(Error(format!("blend must be screen or normal, not {:?}", self.blend)));
         }
+        fxkit::choice("flow", &self.flow, FLOWS)?;
         self.stagger = self.stagger.clamp(0.0, 1.0);
+        self.bloom = self.bloom.clamp(0.0, 2.0);
+        self.turbulence = self.turbulence.clamp(0.0, 3.0);
+        self.depth = self.depth.clamp(0.0, 2.0);
+        self.sparkle = self.sparkle.clamp(0.0, 1.0);
         if self.count == 0 || self.count > 50_000 {
             return Err(Error("count must be 1..50000".into()));
         }
@@ -277,12 +280,14 @@ impl Prepare for ParticleText {
                 // Scatter: a wide ring around the frame, some from far outside.
                 let a = rng.f() * TAU;
                 let r = 0.35 + 0.75 * rng.f().sqrt();
+                let zr = rng.f();
                 Particle {
                     from: [0.5 + a.cos() * r * 0.9, 0.5 + a.sin() * r * 0.75],
                     delay: rng.f(),
                     bow: (rng.f() - 0.5) * 0.7,
-                    size: 0.55 + 0.75 * rng.f() * rng.f() + 0.2 * rng.f(),
+                    size: 0.6 + 0.7 * rng.f() * rng.f() + 0.25 * rng.f(),
                     phase: rng.f() * TAU,
+                    z: (zr * 2.0 - 1.0) * (0.4 + 0.6 * zr),
                     e: [rng.f(), rng.f(), rng.f()],
                 }
             })
@@ -291,25 +296,146 @@ impl Prepare for ParticleText {
     }
 }
 
+/// Where one particle is at one time.
+struct Place {
+    x: f32,
+    y: f32,
+    a: f32,
+    r: f32,
+    /// Depth (0 = in the text plane).
+    z: f32,
+    /// 0 flying .. 1 settled in the text.
+    settle: f32,
+}
+
 impl ParticleText {
     fn exit_start(&self) -> f32 {
         self.delay + self.words.len() as f32 * (self.form + self.hold)
     }
 
-    /// Scale from reference outline units to box pixels for word `i`.
-    fn scale(&self, i: usize, w: f32, h: f32) -> f32 {
-        let wd = &self.plan[i];
+    /// Scale from reference outline units to box pixels (one size for all
+    /// words, the widest decides, so re-forms don't jump).
+    fn scale(&self, w: f32, h: f32) -> f32 {
         match self.font_size {
             Some(fs) => fs / REF,
             None => {
-                // One size for all words (the widest decides), so re-forms don't jump.
                 let maxw = self.plan.iter().map(|p| p.w).fold(1.0f32, f32::max);
-                let _ = wd;
                 (w * 0.8 / maxw).min(h * 0.30 / (REF * 0.72))
             }
         }
     }
+
+    /// Particle `i` at time `t` (`None` when not yet visible).
+    fn place(&self, i: usize, t: f32, w: f32, h: f32, flow: &Noise) -> Option<Place> {
+        let lt = t - self.delay;
+        if lt < 0.0 {
+            return None;
+        }
+        let k = h / 1080.0;
+        let p = &self.parts[i];
+        let cyc = self.form + self.hold;
+        let nw = self.plan.len();
+        let wi = ((lt / cyc).floor() as usize).min(nw - 1);
+        let st = lt - wi as f32 * cyc;
+        let (cx, cy) = (w * 0.5, h * 0.5);
+        let s = self.scale(w, h);
+        let half_w = self.plan.iter().map(|p| p.w).fold(1.0f32, f32::max) * s * 0.5;
+        let tw = &self.plan[wi].pts;
+        let target = [cx + tw[i][0] * s, cy + tw[i][1] * s];
+        let src = match wi {
+            0 => [p.from[0] * w, p.from[1] * h],
+            _ => {
+                let f = &self.plan[wi - 1].pts;
+                [cx + f[i][0] * s, cy + f[i][1] * s]
+            }
+        };
+        let span = 0.45;
+        let xf = clamp01((target[0] - (cx - half_w)) / (2.0 * half_w).max(1.0));
+        let d = (0.55 * p.delay + 0.45 * xf) * span * self.form;
+        let q = clamp01((st - d) / (self.form * (1.0 - span)));
+        let e = if wi == 0 { ease_out(q) } else { ease_in_out(q) };
+        let (dx, dy) = (target[0] - src[0], target[1] - src[1]);
+        let left = 1.0 - e;
+        let mut x;
+        let mut y;
+        match self.flow.as_str() {
+            "spiral" => {
+                // Orbit into place: the offset from the target turns as it shrinks.
+                let ang = left * left * (2.4 + 1.6 * p.bow) * if i % 2 == 0 { 1.0 } else { -1.0 };
+                let (sn, cs) = ang.sin_cos();
+                let (ox, oy) = (-dx * left, -dy * left);
+                x = target[0] + ox * cs - oy * sn;
+                y = target[1] + ox * sn + oy * cs;
+            }
+            _ => {
+                let bow = (q * PI).sin() * p.bow;
+                x = src[0] + dx * e - dy * bow;
+                y = src[1] + dy * e + dx * bow;
+            }
+        }
+        if self.flow == "curl" && left > 0.0 && self.turbulence > 0.0 {
+            // Swirl through a divergence-free noise field, fading as particles land.
+            // Sampled along the particle's own path (from its target, as the
+            // flight progresses), so neighbours move together in ribbons.
+            let amp = 0.2 * h * self.turbulence * left.powf(1.3) * (0.7 + 0.6 * p.e[0]);
+            let sc = 1.0 / (0.45 * h);
+            let (fx, fy) = fxkit::curl(flow, target[0] * sc + left * 0.9, target[1] * sc - left * 0.6, t * 0.08 + wi as f32 * 3.0);
+            x += fx * amp;
+            y += fy * amp;
+        }
+        let mut a = if wi == 0 { clamp01(q * 2.5) } else { 1.0 };
+        let mut r = self.size * k * p.size * if wi == 0 { 0.5 + 0.5 * e } else { 1.0 };
+        let mut z = p.z * self.depth * left.powf(1.2) * if wi == 0 { 1.0 } else { 0.5 };
+        let settle = clamp01((q - 0.85) / 0.15);
+        // Settled: a slow breathing shimmer.
+        let tt = t * 1.4 + p.phase;
+        x += tt.sin() * 0.8 * k * settle;
+        y += (tt * 1.3).cos() * 0.8 * k * settle;
+        let exit_t = t - self.exit_start();
+        if self.exit != "none" && exit_t > 0.0 {
+            let xs = clamp01((x - (cx - half_w)) / (2.0 * half_w).max(1.0));
+            let qd = (0.5 * xs + 0.3 * p.e[0]) * self.exit_time * 0.55 * self.stagger;
+            let qq = clamp01((exit_t - qd) / (self.exit_time * 0.6));
+            if qq > 0.0 {
+                let q2 = qq * qq;
+                match self.exit.as_str() {
+                    "blow" => {
+                        x += q2 * (w * 0.35 + p.e[1] * w * 0.45);
+                        y += -q2 * h * (0.05 + 0.25 * p.e[2]);
+                        if self.turbulence > 0.0 {
+                            let sc = 1.0 / (0.3 * h);
+                            let (fx, fy) = fxkit::curl(flow, x * sc, y * sc, t * 0.3 + 7.0);
+                            x += fx * 0.12 * h * qq * self.turbulence;
+                            y += fy * 0.12 * h * qq * self.turbulence;
+                        }
+                    }
+                    "explode" => {
+                        let (ox, oy) = (x - cx, y - cy);
+                        let l = (ox * ox + oy * oy).sqrt().max(1.0);
+                        let sp = (0.4 + 0.8 * p.e[1]) * w * 0.5 * (1.0 - (1.0 - qq).powi(3));
+                        x += ox / l * sp + (p.e[2] - 0.5) * 60.0 * k * qq;
+                        y += oy / l * sp + q2 * 120.0 * k;
+                    }
+                    _ => {
+                        y -= q2 * 50.0 * k * (0.5 + p.e[1]);
+                        x += (qq * 6.0 + p.phase).sin() * 10.0 * k * qq;
+                    }
+                }
+                a *= 1.0 - qq;
+                r *= 1.0 - 0.5 * qq;
+                z += (p.e[2] - 0.3) * qq * self.depth;
+            }
+        }
+        // Depth: near grows, far shrinks and dims.
+        r *= (1.0 + 0.9 * z).max(0.35);
+        a *= 1.0 - 0.45 * z.abs().min(1.0);
+        Some(Place { x, y, a, r, z, settle })
+    }
 }
+
+/// Colour buckets across the text and brightness levels.
+const NB: usize = 8;
+const NA: usize = 4;
 
 impl Component for ParticleText {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
@@ -319,144 +445,112 @@ impl Component for ParticleText {
         if lt < 0.0 || self.plan.is_empty() {
             return Vec::new();
         }
-        let cols: Vec<Rgba> = if self.colors.is_empty() {
-            vec![shade(ctx.theme.accent, 0.25), ctx.theme.pal(1), shade(ctx.theme.pal(2), 0.1)]
-        } else {
-            self.colors.iter().map(|c| c.0).collect()
-        };
-        let cyc = self.form + self.hold;
-        let nw = self.plan.len();
-        // Which transition we are in: word `wi` is forming (from `wi - 1` or scatter).
-        let wi = ((lt / cyc).floor() as usize).min(nw - 1);
-        let st = lt - wi as f32 * cyc;
         let exit_t = t - self.exit_start();
         let exiting = self.exit != "none" && exit_t > 0.0;
         if exiting && exit_t > self.exit_time * 1.6 {
             return Vec::new();
         }
-        let (cx, cy) = (w * 0.5, h * 0.5);
-        let s_to = self.scale(wi, w, h);
-        let s_from = if wi > 0 { self.scale(wi - 1, w, h) } else { s_to };
-        let half_w = self.plan.iter().map(|p| p.w).fold(1.0f32, f32::max) * s_to * 0.5;
-        let tw = &self.plan[wi].pts;
-        let fw = if wi > 0 { Some(&self.plan[wi - 1].pts) } else { None };
-
-        const NB: usize = 10;
-        const NA: usize = 3;
-        let mut core: Vec<Vec<[f32; 3]>> = (0..NB * NA).map(|_| Vec::with_capacity(self.parts.len() / 8)).collect();
-        let rbase = self.size * k;
-        let span = 0.45; // fraction of `form` used for stagger
-        for (i, p) in self.parts.iter().enumerate() {
-            let target = [cx + tw[i][0] * s_to, cy + tw[i][1] * s_to];
-            let src = match fw {
-                Some(f) => [cx + f[i][0] * s_from, cy + f[i][1] * s_from],
-                None => [p.from[0] * w, p.from[1] * h],
-            };
-            // Stagger sweeps left → right, with noise.
-            let xf = clamp01((target[0] - (cx - half_w)) / (2.0 * half_w).max(1.0));
-            let d = (0.55 * p.delay + 0.45 * xf) * span * self.form;
-            let q = clamp01((st - d) / (self.form * (1.0 - span)));
-            let e = if wi == 0 { ease_out(q) } else { ease_in_out(q) };
-            let (dx, dy) = (target[0] - src[0], target[1] - src[1]);
-            let bow = (q * PI).sin() * p.bow;
-            let mut x = src[0] + dx * e - dy * bow;
-            let mut y = src[1] + dy * e + dx * bow;
-            let mut a = if wi == 0 { clamp01(q * 3.0) } else { 1.0 };
-            let mut r = rbase * p.size * if wi == 0 { 0.4 + 0.6 * e } else { 1.0 };
-            // Settled: a slow shimmer.
-            let settle = clamp01((q - 0.85) / 0.15);
-            let tt = t * 1.7 + p.phase;
-            x += tt.sin() * 0.9 * k * settle;
-            y += (tt * 1.3).cos() * 0.9 * k * settle;
-            // Twinkle steps 10×/s so held text repeats frames (cheap downstream).
-            let tw_t = step(t, 10.0);
-            let twinkle = 0.75 + 0.25 * (tw_t * 3.1 + p.phase * 3.0).sin();
+        let normal = self.blend == "normal";
+        let cols: Vec<Rgba> = fxkit::colors_or(&self.colors, || {
+            let base = ctx.theme.text;
+            vec![mix(base, kelvin(5200.0), if ctx.theme.dark { 0.25 } else { 0.0 })]
+        });
+        let flow = Noise::new(self.seed ^ 0xf10);
+        let s = self.scale(w, h);
+        let half_w = self.plan.iter().map(|p| p.w).fold(1.0f32, f32::max) * s * 0.5;
+        let cx = w * 0.5;
+        let shutter = 0.5 / ctx.fps.max(1.0);
+        // Buckets: depth band (0 sharp, 1 near/blurred) × colour × brightness.
+        let mut dots: Vec<Path> = vec![Path::new(); 2 * NB * NA];
+        let mut streaks: Vec<Path> = vec![Path::new(); 2 * NB];
+        let mut glow = Path::new();
+        let mut sparks = Vec::new();
+        let tw_t = step(t, 30.0);
+        for i in 0..self.parts.len() {
+            let Some(pl) = self.place(i, t, w, h, &flow) else { continue };
+            let p = &self.parts[i];
+            let twinkle = 0.8 + 0.2 * (tw_t * 2.3 + p.phase * 3.0).sin();
+            let a = pl.a * twinkle;
+            let m = 12.0 * k;
+            if a < 0.03 || pl.x < -m || pl.x > w + m || pl.y < -m || pl.y > h + m {
+                continue;
+            }
+            let band = (pl.z > 0.4) as usize;
+            let ci = (clamp01((pl.x - (cx - half_w)) / (2.0 * half_w).max(1.0)) * (NB - 1) as f32).round() as usize;
+            let ci = if cols.len() == 1 { 0 } else { ci };
+            // Motion: fast-leaving particles become short streaks.
             if exiting {
-                let xs = clamp01((x - (cx - half_w)) / (2.0 * half_w).max(1.0));
-                let qd = (0.5 * xs + 0.3 * p.e[0]) * self.exit_time * 0.55 * self.stagger;
-                let qq = clamp01((exit_t - qd) / (self.exit_time * 0.6));
-                if qq > 0.0 {
-                    let q2 = qq * qq;
-                    match self.exit.as_str() {
-                        "blow" => {
-                            x += q2 * (w * 0.35 + p.e[1] * w * 0.45) + (qq * 9.0 + p.phase).sin() * 30.0 * k * qq;
-                            y += -q2 * h * (0.05 + 0.25 * p.e[2]) + (qq * 7.0 + p.phase).cos() * 24.0 * k * qq;
-                        }
-                        "explode" => {
-                            let (ox, oy) = (x - cx, y - cy);
-                            let l = (ox * ox + oy * oy).sqrt().max(1.0);
-                            let sp = (0.4 + 0.8 * p.e[1]) * w * 0.5 * (1.0 - (1.0 - qq).powi(3));
-                            x += ox / l * sp + (p.e[2] - 0.5) * 60.0 * k * qq;
-                            y += oy / l * sp + q2 * 120.0 * k;
-                        }
-                        _ => {
-                            y -= q2 * 50.0 * k * (0.5 + p.e[1]);
-                            x += (qq * 6.0 + p.phase).sin() * 10.0 * k * qq;
-                        }
+                if let Some(pp) = self.place(i, t - shutter, w, h, &flow) {
+                    let mv = ((pl.x - pp.x).powi(2) + (pl.y - pp.y).powi(2)).sqrt();
+                    if mv > pl.r * 2.5 {
+                        fxkit::trail_path(&mut streaks[band * NB + ci], &[(pp.x, pp.y), (pl.x, pl.y)], pl.r * 0.5, pl.r * 1.8);
+                        continue;
                     }
-                    a *= 1.0 - qq;
-                    r *= 1.0 - 0.5 * qq;
                 }
             }
-            let a = a * twinkle;
-            if a < 0.04 || x < -10.0 || x > w + 10.0 || y < -10.0 || y > h + 10.0 {
-                continue;
-            }
-            let ci = (clamp01((x - (cx - half_w)) / (2.0 * half_w).max(1.0)) * (NB - 1) as f32).round() as usize;
             let ai = ((a * NA as f32) as usize).min(NA - 1);
-            core[ci * NA + ai].push([x, y, r.max(0.3)]);
-        }
-        let grad = |f: f32| -> Rgba {
-            let f = clamp01(f) * (cols.len() - 1) as f32;
-            let i = (f as usize).min(cols.len().saturating_sub(2));
-            if cols.len() == 1 {
-                return cols[0];
+            fxkit::dot(&mut dots[(band * NB + ci) * NA + ai], pl.x, pl.y, pl.r.max(0.3));
+            if self.glow && band == 0 && ai >= NA - 2 {
+                fxkit::dot(&mut glow, pl.x, pl.y, pl.r * 1.8);
             }
-            mix(cols[i], cols[i + 1], f - i as f32)
-        };
-        let mut dots = Vec::new();
-        let mut halos = Vec::new();
-        for (b, d) in core.into_iter().enumerate() {
-            if d.is_empty() {
-                continue;
-            }
-            let mut p = Path::from_vec(Vec::with_capacity(d.len() * 6));
-            let bright = b % NA == NA - 1;
-            let mut hp = Path::new();
-            for [x, y, r] in d {
-                dot(&mut p, x, y, r);
-                if bright && self.glow {
-                    dot(&mut hp, x, y, r * 2.6);
+            // Glints: a few settled particles flare briefly with a cross of light.
+            if pl.settle > 0.99 && !exiting && self.sparkle > 0.0 {
+                let rate = 0.35 + 0.3 * p.e[2];
+                let ph = (t * rate + p.e[0] * 7.0).fract();
+                if p.e[1] < self.sparkle * 0.06 && ph < 0.12 {
+                    let f = (ph / 0.12 * PI).sin();
+                    sparks.push((pl.x, pl.y, pl.r, f, ci));
                 }
             }
-            if !hp.is_empty() {
-                halos.push((b / NA, hp));
-            }
-            let (ci, ai) = (b / NA, b % NA);
-            let c = shade(grad(ci as f32 / (NB - 1) as f32), if ai == NA - 1 { 0.12 } else { 0.0 });
-            dots.push((ai == NA - 1, fill(p, solid(alpha(c, [0.45, 0.8, 1.0][ai])))));
         }
+        let grad = |ci: usize| -> Rgba {
+            if cols.len() == 1 {
+                cols[0]
+            } else {
+                fxkit::ramp(&cols, ci as f32 / (NB - 1) as f32)
+            }
+        };
+        let lvl_col = |ci: usize, ai: usize| -> Rgba {
+            let c = grad(ci);
+            let c = if !normal && ai == NA - 1 { hot(c, 0.25) } else { c };
+            alpha(c, [0.35, 0.6, 0.82, 1.0][ai])
+        };
         let mut out = Vec::new();
-        let blend = if self.blend == "normal" { Blend::Normal } else { Blend::Screen };
-        push_layer(&mut out, 1.0, blend, Vec::new());
-        // Bloom while the text is formed (blurring a frame-wide scatter costs
-        // far more and reads as haze anyway).
+        push_layer(&mut out, 1.0, if normal { Blend::Normal } else { Blend::Add }, Vec::new());
+        // Bloom: the bright dots again, blurred (only while the text is formed;
+        // blurring a frame-wide scatter costs far more and reads as haze).
+        let cyc = self.form + self.hold;
+        let st = lt % cyc;
+        let first = lt < cyc;
         let bloom = if exiting {
             1.0 - clamp01(exit_t / (self.exit_time * 0.4))
-        } else if wi == 0 {
-            clamp01((st - self.form * 0.55) / (self.form * 0.45))
+        } else if first {
+            clamp01((st - self.form * 0.5) / (self.form * 0.5))
         } else {
             1.0
-        };
-        if self.glow && bloom > 0.02 {
-            // Bloom without a blur pass: bright dots again, larger and faint, added.
-            push_layer(&mut out, bloom, Blend::Add, Vec::new());
-            for (ci, hp) in halos {
-                out.push(fill(hp, solid(alpha(grad(ci as f32 / (NB - 1) as f32), 0.16))));
-            }
+        } * self.bloom;
+        if self.glow && !normal && bloom > 0.02 && !glow.is_empty() {
+            push_layer(&mut out, 1.0, Blend::Normal, vec![Filter::Blur(7.0 * k)]);
+            out.push(fill(glow, solid(alpha(grad(NB / 2), 0.55 * bloom))));
             out.push(Op::PopLayer);
         }
-        out.extend(dots.into_iter().map(|d| d.1));
+        for band in [1usize, 0] {
+            let pushed = if band == 1 { fxkit::push_blur(&mut out, 3.5 * k, Blend::Normal) } else { false };
+            for ci in 0..NB {
+                fxkit::fill_solid(&mut out, std::mem::take(&mut streaks[band * NB + ci]), alpha(grad(ci), 0.45));
+                for ai in 0..NA {
+                    fxkit::fill_solid(&mut out, std::mem::take(&mut dots[(band * NB + ci) * NA + ai]), lvl_col(ci, ai));
+                }
+            }
+            fxkit::pop_if(&mut out, pushed);
+        }
+        for (x, y, r, f, ci) in sparks {
+            let c = hot(grad(ci), 0.6);
+            let l = r * (7.0 + 5.0 * f);
+            out.push(fxkit::light(x, y, r * 6.0, fxkit::gauss(c, 0.7 * f)));
+            out.push(fxkit::needle(x, y, 0.0, l, r * 0.9, c, f));
+            out.push(fxkit::needle(x, y, PI * 0.5, l * 0.8, r * 0.9, c, f));
+        }
         out.push(Op::PopLayer);
         out
     }
