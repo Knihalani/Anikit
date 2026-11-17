@@ -388,10 +388,12 @@ pub struct Avatar {
     /// "online", "away", "busy" or none.
     pub status: Option<String>,
     pub delay: f32,
+    /// Horizontal placement in the box: 0 left, 0.5 centre (default), 1 right. Vertically centred.
+    pub align: f32,
 }
 impl Default for Avatar {
     fn default() -> Self {
-        Avatar { name: "Ada Lovelace".into(), src: None, size: 96.0, status: None, delay: 0.0 }
+        Avatar { name: "Ada Lovelace".into(), src: None, size: 96.0, status: None, delay: 0.0, align: 0.5 }
     }
 }
 impl Prepare for Avatar {}
@@ -415,6 +417,7 @@ impl Component for Avatar {
             o.push(circle(cx, cy, s * 0.09, solid(c)));
         }
         transform_ops(&mut o, &scale_about(p, s * 0.5, s * 0.5));
+        transform_ops(&mut o, &translate((ctx.width - s) * self.align, (ctx.height - s).max(0.0) * 0.5));
         with_opacity(o, clamp01(p * 2.0))
     }
 }
@@ -431,10 +434,12 @@ pub struct AvatarStack {
     pub max: usize,
     pub delay: f32,
     pub stagger: f32,
+    /// Horizontal placement in the box: 0 left, 0.5 centre (default), 1 right. Vertically centred.
+    pub align: f32,
 }
 impl Default for AvatarStack {
     fn default() -> Self {
-        AvatarStack { names: Vec::new(), srcs: Vec::new(), size: 72.0, overlap: 0.3, max: 5, delay: 0.0, stagger: 0.08 }
+        AvatarStack { names: Vec::new(), srcs: Vec::new(), size: 72.0, overlap: 0.3, max: 5, delay: 0.0, stagger: 0.08, align: 0.5 }
     }
 }
 impl Prepare for AvatarStack {}
@@ -462,6 +467,8 @@ impl Component for AvatarStack {
             transform_ops(&mut a, &scale_about(p, x + s * 0.5, s * 0.5));
             o.extend(with_opacity(a, clamp01(p * 2.0)));
         }
+        let tw = total.saturating_sub(1) as f32 * step + s;
+        transform_ops(&mut o, &translate((ctx.width - tw) * self.align, (ctx.height - s).max(0.0) * 0.5));
         o
     }
 }
@@ -532,10 +539,14 @@ pub struct ProgressRing {
     pub color: Option<Color>,
     /// Centre text: percentage by default; set `label` for a caption below it.
     pub label: Option<String>,
+    /// Show the percentage in the centre (false: an empty ring, e.g. behind a countdown).
+    pub percent: bool,
+    /// Horizontal placement in the box: 0 left, 0.5 centre (default), 1 right. Vertically centred.
+    pub align: f32,
 }
 impl Default for ProgressRing {
     fn default() -> Self {
-        ProgressRing { from: 0.0, to: 1.0, duration: 1.6, delay: 0.0, size: 240.0, thickness: 18.0, color: None, label: None }
+        ProgressRing { from: 0.0, to: 1.0, duration: 1.6, delay: 0.0, size: 240.0, thickness: 18.0, color: None, label: None, percent: true, align: 0.5 }
     }
 }
 impl Prepare for ProgressRing {}
@@ -555,10 +566,13 @@ impl Component for ProgressRing {
         }
         let st = TextStyle::new(Face::Display, s * 0.22, 600, th.text).tabular().tracking(-0.02);
         let dy = if self.label.is_some() { -s * 0.02 } else { s * 0.08 };
-        draw(&mut o, ctx.assets, &format!("{}%", (v * 100.0).round()), &st, cx, cy + dy, 0.5);
+        if self.percent {
+            draw(&mut o, ctx.assets, &format!("{}%", (v * 100.0).round()), &st, cx, cy + dy, 0.5);
+        }
         if let Some(l) = &self.label {
             draw(&mut o, ctx.assets, l, &sans(s * 0.08, 500, th.muted), cx, cy + s * 0.13, 0.5);
         }
+        transform_ops(&mut o, &translate((ctx.width - s) * self.align, (ctx.height - s).max(0.0) * 0.5));
         o
     }
     fn duration(&self) -> Option<f32> {

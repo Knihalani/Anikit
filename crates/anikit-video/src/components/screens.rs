@@ -9,7 +9,15 @@ use super::Ctx;
 use crate::dl::{Op, Path, Rgba};
 
 /// Screen kinds, for validation and docs.
-pub const KINDS: &[&str] = &["dashboard", "chat", "feed", "editor", "settings"];
+pub const KINDS: &[&str] = &["app", "dashboard", "chat", "feed", "editor", "settings"];
+
+/// Product copy for generated screens.
+#[derive(Clone, Debug, Default, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Kpi {
+    pub label: String,
+    pub value: String,
+}
 
 struct S<'a> {
     ctx: &'a Ctx<'a>,
@@ -21,6 +29,19 @@ struct S<'a> {
     muted: Rgba,
     fs: f32,
     t: f32,
+    items: &'a [String],
+    kpis: &'a [Kpi],
+}
+
+impl S<'_> {
+    /// Item `i` of the product copy, or `fallback`.
+    fn it<'b>(&'b self, i: usize, fallback: &'b str) -> &'b str {
+        if self.items.is_empty() {
+            fallback
+        } else {
+            &self.items[i % self.items.len()]
+        }
+    }
 }
 
 impl S<'_> {
@@ -53,7 +74,7 @@ impl S<'_> {
 }
 
 /// Draw screen `kind` into `(x, y, w, h)`; `top` is a status-bar inset.
-pub fn draw_screen(o: &mut Vec<Op>, ctx: &Ctx, kind: &str, title: &str, accent: Option<Rgba>, t: f32, x: f32, y: f32, w: f32, h: f32, top: f32) {
+pub fn draw_screen(o: &mut Vec<Op>, ctx: &Ctx, kind: &str, title: &str, items: &[String], kpis: &[Kpi], accent: Option<Rgba>, t: f32, x: f32, y: f32, w: f32, h: f32, top: f32) {
     let th = ctx.theme;
     let s = S {
         ctx,
@@ -65,6 +86,8 @@ pub fn draw_screen(o: &mut Vec<Op>, ctx: &Ctx, kind: &str, title: &str, accent: 
         muted: th.muted,
         fs: (w.min(h * 0.8) / 24.0).clamp(6.0, 40.0),
         t,
+        items,
+        kpis,
     };
     let fs = s.fs;
     o.push(rect(x, y, w, h, 0.0, solid(s.bg)));
@@ -85,13 +108,18 @@ pub fn draw_screen(o: &mut Vec<Op>, ctx: &Ctx, kind: &str, title: &str, accent: 
     if wide {
         let sw = (w * 0.2).min(fs * 14.0);
         let mut side = vec![rect(x, hy + hh, sw, h - top - hh, 0.0, solid(shade(s.bg, if th.dark { 0.03 } else { -0.02 })))];
-        for i in 0..6 {
+        let nav = if s.items.is_empty() { 6 } else { s.items.len().min(8) };
+        for i in 0..nav {
             let yy = hy + hh + fs * (1.2 + i as f32 * 2.2);
             if i == 0 {
                 side.push(rect(x + fs * 0.6, yy - fs * 0.5, sw - fs * 1.2, fs * 1.9, fs * 0.5, solid(alpha(s.acc, 0.16))));
             }
             side.push(rect(x + fs * 1.2, yy + fs * 0.1, fs * 0.8, fs * 0.8, fs * 0.25, solid(if i == 0 { s.acc } else { alpha(s.muted, 0.6) })));
-            s.bar(&mut side, x + fs * 2.6, yy + fs * 0.22, sw * (0.35 + 0.25 * hash01(i as u32 + 3)), if i == 0 { s.text } else { alpha(s.muted, 0.55) });
+            if s.items.is_empty() {
+                s.bar(&mut side, x + fs * 2.6, yy + fs * 0.22, sw * (0.35 + 0.25 * hash01(i as u32 + 3)), if i == 0 { s.text } else { alpha(s.muted, 0.55) });
+            } else if i < s.items.len() {
+                s.txt(&mut side, &s.items[i], fs * 0.7, 500, if i == 0 { s.text } else { s.muted }, x + fs * 2.6, yy + fs * 0.65, 0.0);
+            }
         }
         side.push(rect(x + sw - 1.0, hy + hh, 1.0, h - top - hh, 0.0, solid(s.line)));
         s.item(o, 1, side);
@@ -103,6 +131,7 @@ pub fn draw_screen(o: &mut Vec<Op>, ctx: &Ctx, kind: &str, title: &str, accent: 
         "feed" | "list" => feed(o, &s, cx, cy, cw, ch, wide),
         "editor" => editor(o, &s, cx, cy, cw, ch),
         "settings" => settings(o, &s, cx, cy, cw, ch),
+        "app" => app(o, &s, cx, cy, cw, ch, wide),
         _ => dashboard(o, &s, cx, cy, cw, ch, wide),
     }
 }
@@ -118,13 +147,20 @@ fn dashboard(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32, wide: bool)
         let tx = x + i as f32 * (tw + gap);
         let mut e = Vec::new();
         s.card(&mut e, tx, y, tw, th);
-        s.txt(&mut e, label, fs * 0.75, 500, s.muted, tx + fs, y + fs * 1.6, 0.0);
         let k = ease_out(seg(s.t, 0.3 + i as f32 * 0.1, 1.2)) as f64;
-        let val = v * k;
-        let body = if *unit == "%" { format!("{:.1}%", val) } else { format!("{unit}{}", compact_number(val)) };
+        let (label, body) = match s.kpis.get(i) {
+            Some(kp) => (kp.label.as_str(), count_up(&kp.value, k)),
+            None => {
+                let val = v * k;
+                (*label, if *unit == "%" { format!("{:.1}%", val) } else { format!("{unit}{}", compact_number(val)) })
+            }
+        };
+        s.txt(&mut e, label, fs * 0.75, 500, s.muted, tx + fs, y + fs * 1.6, 0.0);
         draw(&mut e, s.ctx.assets, &body, &TextStyle::new(Face::Display, fs * 1.7, 700, s.text).tabular(), tx + fs, y + fs * 3.9, 0.0);
-        let up = format!("+{:.0}%", 8.0 + 5.0 * i as f32);
-        s.txt(&mut e, &up, fs * 0.7, 600, s.ctx.theme.positive, tx + tw - fs, y + fs * 1.6, 1.0);
+        if s.kpis.is_empty() {
+            let up = format!("+{:.0}%", 8.0 + 5.0 * i as f32);
+            s.txt(&mut e, &up, fs * 0.7, 600, s.ctx.theme.positive, tx + tw - fs, y + fs * 1.6, 1.0);
+        }
         s.item(o, 2 + i, e);
     }
     // Area chart card.
@@ -155,20 +191,90 @@ fn dashboard(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32, wide: bool)
         s.card(&mut e, lx, ly, lw, lh);
         s.txt(&mut e, "Recent", fs * 0.85, 600, s.text, lx + fs, ly + fs * 1.7, 0.0);
         let rows = ((lh - fs * 2.6) / (fs * 2.4)).floor().max(0.0) as usize;
-        for r in 0..rows.min(6) {
+        let rows = if s.items.is_empty() { rows.min(6) } else { rows.min(s.items.len()) };
+        for r in 0..rows {
             let ry = ly + fs * 2.8 + r as f32 * fs * 2.4;
             e.push(circle(lx + fs * 1.6, ry + fs * 0.8, fs * 0.7, solid(s.ctx.theme.pal(r + 1))));
-            s.bar(&mut e, lx + fs * 2.8, ry + fs * 0.2, lw * 0.35, alpha(s.text, 0.8));
-            s.bar(&mut e, lx + fs * 2.8, ry + fs * 1.0, lw * 0.22, alpha(s.muted, 0.5));
-            s.txt(&mut e, &format!("${}", 120 + r * 37), fs * 0.75, 600, s.text, lx + lw - fs, ry + fs * 1.0, 1.0);
+            if s.items.is_empty() {
+                s.bar(&mut e, lx + fs * 2.8, ry + fs * 0.2, lw * 0.35, alpha(s.text, 0.8));
+                s.bar(&mut e, lx + fs * 2.8, ry + fs * 1.0, lw * 0.22, alpha(s.muted, 0.5));
+                s.txt(&mut e, &format!("${}", 120 + r * 37), fs * 0.75, 600, s.text, lx + lw - fs, ry + fs * 1.0, 1.0);
+            } else {
+                s.txt(&mut e, s.it(r, ""), fs * 0.75, 500, s.text, lx + fs * 2.8, ry + fs * 1.05, 0.0);
+            }
         }
         s.item(o, 6, e);
     }
 }
 
+/// Count a value string up from zero when it holds a number ("$4.2K", "98%", "12,000+").
+fn count_up(v: &str, k: f64) -> String {
+    let start = v.find(|c: char| c.is_ascii_digit());
+    let Some(a) = start else { return v.to_string() };
+    let end = v[a..].find(|c: char| !(c.is_ascii_digit() || c == '.' || c == ',')).map_or(v.len(), |e| a + e);
+    let num: String = v[a..end].chars().filter(|c| *c != ',').collect();
+    let Ok(n) = num.parse::<f64>() else { return v.to_string() };
+    let dec = num.split_once('.').map_or(0, |(_, d)| d.len());
+    let body = format_number(n * k, dec, v[a..end].contains(','));
+    format!("{}{}{}", &v[..a], body, &v[end..])
+}
+
+/// Neutral screen: the product name and its own items, no invented data.
+fn app(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32, wide: bool) {
+    let fs = s.fs;
+    let title = s.it(0, "Welcome");
+    // Hero card with the first item as a headline.
+    let hh = fs * 6.0;
+    let mut e = Vec::new();
+    e.push(rect(x, y, w, hh, fs * 0.8, crate::dl::Paint::Linear { p0: [x, y], p1: [x + w, y + hh], stops: vec![(0.0, alpha(s.acc, 0.35)), (1.0, alpha(s.acc, 0.08))] }));
+    border(&mut e, x, y, w, hh, fs * 0.8, alpha(s.acc, 0.4));
+    s.txt(&mut e, title, fs * 1.3, 700, s.text, x + fs * 1.2, y + fs * 2.6, 0.0);
+    s.bar(&mut e, x + fs * 1.2, y + fs * 3.3, w * 0.45, alpha(s.text, 0.35));
+    e.push(rect(x + fs * 1.2, y + hh - fs * 1.8, fs * 5.5, fs * 1.3, fs * 0.65, solid(s.acc)));
+    s.item(o, 2, e);
+    // Item cards (grid on wide screens, list on phones).
+    let cols = if wide { 3 } else { 1 };
+    let gap = fs * 0.8;
+    let cw = (w - gap * (cols - 1) as f32) / cols as f32;
+    let ch = fs * if wide { 5.0 } else { 3.2 };
+    let n = if s.items.len() > 1 { s.items.len() - 1 } else { 4 };
+    let mut yy = y + hh + gap;
+    let mut i = 0;
+    while i < n && yy + ch <= y + h {
+        for c in 0..cols {
+            if i >= n {
+                break;
+            }
+            let cx = x + c as f32 * (cw + gap);
+            let mut e = Vec::new();
+            s.card(&mut e, cx, yy, cw, ch);
+            let ic = s.ctx.theme.pal(i + 1);
+            e.push(rect(cx + fs, yy + fs * 0.8, fs * 1.4, fs * 1.4, fs * 0.4, solid(alpha(ic, 0.85))));
+            if s.items.len() > 1 {
+                s.txt(&mut e, &s.items[i + 1], fs * 0.85, 600, s.text, cx + fs * 3.0, yy + fs * 1.8, 0.0);
+            } else {
+                s.bar(&mut e, cx + fs * 3.0, yy + fs * 1.25, cw * 0.4, alpha(s.text, 0.75));
+            }
+            if wide {
+                s.bar(&mut e, cx + fs, yy + fs * 3.2, cw * 0.7, alpha(s.muted, 0.4));
+            }
+            s.item(o, 3 + i, e);
+            i += 1;
+        }
+        yy += ch + gap;
+    }
+}
+
 fn chat(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32) {
     let fs = s.fs;
-    let msgs = [(false, "Hi! How can I help today?"), (true, "Summarise last week's sales"), (false, "Revenue grew 18% week over week, led by the new Pro plan."), (true, "Make it a chart")];
+    let custom;
+    let msgs: Vec<(bool, &str)> = if s.items.is_empty() {
+        vec![(false, "Hi! How can I help today?"), (true, "Summarise last week's sales"), (false, "Revenue grew 18% week over week, led by the new Pro plan."), (true, "Make it a chart")]
+    } else {
+        // The product's own features as a short exchange.
+        custom = ["What's new?".to_string(), s.items.iter().take(3).cloned().collect::<Vec<_>>().join(" · "), s.it(1, "").to_string(), "Love it!".to_string()];
+        vec![(true, custom[0].as_str()), (false, custom[1].as_str()), (true, custom[2].as_str()), (false, custom[3].as_str())]
+    };
     let mut yy = y + fs * 0.5;
     let maxw = w * 0.75;
     for (i, (mine, text)) in msgs.iter().enumerate() {
@@ -215,7 +321,7 @@ fn feed(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32, wide: bool) {
             let mut e = Vec::new();
             s.card(&mut e, cx, yy, cw, chh);
             e.push(circle(cx + fs * 1.6, yy + fs * 1.6, fs * 0.8, crate::dl::Paint::Linear { p0: [cx, yy], p1: [cx + fs * 3.0, yy + fs * 3.0], stops: vec![(0.0, s.ctx.theme.pal(i)), (1.0, s.ctx.theme.pal(i + 3))] }));
-            s.txt(&mut e, names[i % names.len()], fs * 0.8, 600, s.text, cx + fs * 2.8, yy + fs * 1.45, 0.0);
+            s.txt(&mut e, s.it(i, names[i % names.len()]), fs * 0.8, 600, s.text, cx + fs * 2.8, yy + fs * 1.45, 0.0);
             s.txt(&mut e, &format!("{}m", 3 + i * 7), fs * 0.65, 400, s.muted, cx + cw - fs, yy + fs * 1.45, 1.0);
             s.bar(&mut e, cx + fs, yy + fs * 3.0, cw * 0.8, alpha(s.text, 0.7));
             s.bar(&mut e, cx + fs, yy + fs * 3.9, cw * 0.55, alpha(s.muted, 0.5));
@@ -234,7 +340,7 @@ fn editor(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32) {
     s.card(&mut e, x, y, w, h);
     // Tabs.
     e.push(rect(x + fs * 0.6, y + fs * 0.5, fs * 7.0, fs * 1.8, fs * 0.45, solid(alpha(s.acc, 0.16))));
-    s.txt(&mut e, "main.ts", fs * 0.7, 500, s.text, x + fs * 1.2, y + fs * 1.65, 0.0);
+    s.txt(&mut e, s.it(0, "main.ts"), fs * 0.7, 500, s.text, x + fs * 1.2, y + fs * 1.65, 0.0);
     s.txt(&mut e, "README.md", fs * 0.7, 500, s.muted, x + fs * 8.4, y + fs * 1.65, 0.0);
     s.item(o, 2, e);
     // Code lines as coloured token bars (reads as code at any size).
@@ -274,6 +380,7 @@ fn settings(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32) {
     s.card(&mut e, x, y, w, rh * n as f32);
     s.item(o, 1, e);
     for (i, label) in rows.iter().enumerate().take(n) {
+        let label = &s.it(i, label);
         let ry = y + i as f32 * rh;
         let mut e = Vec::new();
         if i > 0 {
