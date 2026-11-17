@@ -101,8 +101,8 @@ planning would fit any product, it is wrong: design it from this product's own s
     only when the concept is electronic. Sift used `house` and the user heard "too much synthesizer";
   - `anikit-video music instruments` lists everything.
 - **The end logo owns the frame**, and every frame passes BAR (`docs/video/quality/BAR.md`), judged at 100% crop.
-- **Loop:** `anikit-video check s.json` → `still --at 0.3` (is frame 1 intriguing with no context?) → stills of every
-  word at 100% crop → `render --quality draft --scale 0.5` → `pace.py` for fast intents →
+- **Loop:** `anikit-video preview s.json` (validates, 1 frame/s sheet, critique and pace in one call; is frame 1
+  intriguing with no context?) → `preview s.json --at T` for every word at 100% crop →
   `critique s.json --render --pack rv/` (look at every image) → final `render` at full quality, then check frames
   from the MP4 itself at 100%.
 - Then ask: can you name the idea from the strip alone? Would this film fit a different product? (If yes, redesign
