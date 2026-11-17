@@ -36,7 +36,7 @@ impl Num {
     }
 }
 
-fn compile(src: &str) -> Res<Num> {
+pub fn compile(src: &str) -> Res<Num> {
     // `lane` is spelled as the evaluator's `T` variable.
     let mut s = String::with_capacity(src.len());
     let b = src.as_bytes();
@@ -74,7 +74,7 @@ fn compile(src: &str) -> Res<Num> {
     Ok(Num::E(Arc::new(e), dynamic))
 }
 
-fn num(v: &Value, path: &str) -> Res<Num> {
+pub fn num(v: &Value, path: &str) -> Res<Num> {
     match v {
         Value::Number(n) => Ok(Num::C(n.as_f64().unwrap_or(0.0) as f32)),
         Value::String(s) => compile(s.strip_prefix('=').unwrap_or(s)),
@@ -82,7 +82,7 @@ fn num(v: &Value, path: &str) -> Res<Num> {
     }
 }
 
-fn f(v: &Value, path: &str) -> Res<f32> {
+pub fn f(v: &Value, path: &str) -> Res<f32> {
     v.as_f64().map(|x| x as f32).filter(|x| x.is_finite()).ok_or_else(|| format!("{path}: expected a number"))
 }
 
@@ -164,7 +164,7 @@ pub fn srgb_lin(r: f32, g: f32, b: f32) -> V3 {
     v3(f(r), f(g), f(b))
 }
 
-fn check_keys(m: &Map<String, Value>, allowed: &[&str], path: &str) -> Res<()> {
+pub fn check_keys(m: &Map<String, Value>, allowed: &[&str], path: &str) -> Res<()> {
     for k in m.keys() {
         if !allowed.contains(&k.as_str()) {
             let hint = crate::components::style::closest(k, allowed).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
@@ -301,11 +301,28 @@ pub struct ObjDef {
     pub end: f32,
     /// Shape size folded into the scale (a sphere's radius).
     pub scale_mul: f32,
+    /// Collision shape (object space, before scale).
+    pub col: Col,
+    /// Takes part in `physics` as a fixed or kinematic collider.
+    pub collide: bool,
+    pub name: Option<String>,
+    /// Transforms come from a physics simulation: the sim and this object's first body.
+    pub phys: Option<(Arc<super::physics::Sim>, u32)>,
+}
+
+/// A collision shape in object space (scaled by the instance scale).
+#[derive(Clone, Debug)]
+pub enum Col {
+    Cuboid { c: V3, h: V3 },
+    /// The unit sphere.
+    Ball,
+    Cylinder { c: V3, hh: f32, r: f32 },
+    Hull(Arc<Vec<V3>>),
 }
 
 impl ObjDef {
     pub fn dynamic(&self) -> bool {
-        !self.keys.is_empty() || self.spin != v3(0.0, 0.0, 0.0) || self.pos.iter().chain(self.rot.iter()).chain(std::iter::once(&self.scale)).any(|n| n.dynamic()) || self.start > 0.0 || self.end.is_finite()
+        self.phys.is_some() || !self.keys.is_empty() || self.spin != v3(0.0, 0.0, 0.0) || self.pos.iter().chain(self.rot.iter()).chain(std::iter::once(&self.scale)).any(|n| n.dynamic()) || self.start > 0.0 || self.end.is_finite()
     }
 
     pub fn xf_at(&self, t: f32, i: u32, lane: u32) -> Xf {
@@ -350,8 +367,8 @@ impl ObjDef {
     }
 }
 
-const OBJ_KEYS: &[&str] = &[
-    "type", "src", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name",
+pub const OBJ_KEYS: &[&str] = &[
+    "type", "src", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name", "collide",
 ];
 const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model"];
 
@@ -572,7 +589,51 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
     let end = m.get("end").map(|x| f(x, &format!("{path}.end"))).transpose()?.unwrap_or(f32::INFINITY);
     let scale_mul = if ty == "sphere" { extent } else { 1.0 };
     let extent = if ty == "sphere" { 1.0 } else { extent };
-    Ok(ObjDef { parts, pos, rot, scale: scale_n, keys, spin, count, lanes, tex, thin, shadow, extent, start, end, scale_mul })
+    let col = collider_of(&ty, &parts.iter().map(|p| &shapes.list[p.0 as usize]).collect::<Vec<_>>(), path)?;
+    let collide = m.get("collide").map(|x| x.as_bool().ok_or_else(|| format!("{path}.collide: expected true or false"))).transpose()?.unwrap_or(false);
+    let name = m.get("name").and_then(|x| x.as_str()).map(|s| s.to_string());
+    Ok(ObjDef { parts, pos, rot, scale: scale_n, keys, spin, count, lanes, tex, thin, shadow, extent, start, end, scale_mul, col, collide, name, phys: None })
+}
+
+/// The collision shape for an object type: boxes from their bounds, spheres
+/// exactly, everything else (text, tori, models) as the convex hull of its meshes.
+fn collider_of(ty: &str, parts: &[&Shape], path: &str) -> Res<Col> {
+    let shape = parts[0];
+    let (lo, hi) = shape.bounds();
+    let c = scale(add(lo, hi), 0.5);
+    let h = scale(sub(hi, lo), 0.5);
+    Ok(match ty {
+        "sphere" => Col::Ball,
+        "box" | "slab" | "pane" | "phone" | "plane" => Col::Cuboid { c, h: vmax(h, v3(1e-3, 1e-3, 1e-3)) },
+        "cylinder" => Col::Cylinder { c, hh: h.y, r: h.x.max(h.z) },
+        _ => {
+            if parts.len() == 1 && matches!(shape, Shape::Sphere) {
+                return Ok(Col::Ball);
+            }
+            let mut pts = Vec::new();
+            for p in parts {
+                match p {
+                    Shape::Mesh(b) => {
+                        for t in &b.tris {
+                            pts.extend([t.v0, add(t.v0, t.e1), add(t.v0, t.e2)]);
+                        }
+                    }
+                    Shape::Sphere => {
+                        for k in 0..26 {
+                            let d = v3((k % 3) as f32 - 1.0, ((k / 3) % 3) as f32 - 1.0, (k / 9) as f32 - 1.0);
+                            if len(d) > 0.0 {
+                                pts.push(norm(d));
+                            }
+                        }
+                    }
+                }
+            }
+            if pts.is_empty() {
+                return Err(format!("{path}: empty mesh can't collide"));
+            }
+            Col::Hull(Arc::new(pts))
+        }
+    })
 }
 
 fn texture(v: &Value, path: &str) -> Res<TexSpec> {

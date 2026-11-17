@@ -28,6 +28,8 @@ pub mod env;
 pub mod geom;
 pub mod gltf;
 pub mod math;
+pub mod particles;
+pub mod physics;
 pub mod post;
 pub mod spec;
 pub mod trace;
@@ -45,7 +47,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 use trace::{Floor, FloorVis, Inst, Material, Quality, Scene, Shape, Tex};
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "vignette", "denoise",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "vignette", "denoise", "physics",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -87,6 +89,9 @@ struct Prepared {
     quality: Quality,
     denoise: u32,
     key: u64,
+    /// Particle systems, and their simulations (made on the first frame, which knows the fps).
+    parts: Vec<particles::Def>,
+    psims: OnceLock<Result<Vec<particles::Sim>, String>>,
     /// Composition textures (shared by every frame and thread).
     textures: OnceLock<CompTextures>,
     /// Average colour per (composition, frame), for far panes.
@@ -172,8 +177,25 @@ impl Prepare for Scene3d {
         let mut shapes = spec::Shapes::new();
         let mut mats = Vec::new();
         let mut objs = Vec::new();
+        let mut parts = Vec::new();
         for (i, o) in objs_v.iter().enumerate() {
+            if o.get("type").and_then(|t| t.as_str()) == Some("particles") {
+                parts.push(particles::parse(o, &mut shapes, &mut mats, &named, &objs_v, &format!("objects[{i}]")).map_err(Error)?);
+                continue;
+            }
             objs.push(spec::object(o, &mut shapes, &mut mats, &named, &format!("objects[{i}]")).map_err(Error)?);
+        }
+
+        // Physics: body groups become objects whose transforms come from the simulation.
+        if let Some(pv) = m.get("physics") {
+            let floor_y = match m.get("floor") {
+                Some(Value::Bool(false)) => None,
+                Some(Value::Object(fm)) => Some(num_or(fm, "y", 0.0).map_err(Error)?),
+                _ => Some(0.0),
+            };
+            let parsed = physics::parse(pv, &objs_v, &mut shapes, &mut mats, &named, &objs, floor_y).map_err(Error)?;
+            objs = objs.into_iter().enumerate().filter(|(i, _)| !parsed.templates.contains(i)).map(|(_, o)| o).collect();
+            objs.extend(parsed.objs);
         }
         let shapes = shapes.list;
 
@@ -276,6 +298,8 @@ impl Prepare for Scene3d {
             quality,
             denoise,
             key,
+            parts,
+            psims: OnceLock::new(),
             textures: OnceLock::new(),
             averages: Mutex::new(HashMap::new()),
         });
@@ -292,6 +316,20 @@ fn instances(objs: &[ObjDef], t: f32, dt: f32) -> Vec<Inst> {
     let mut out = Vec::new();
     for o in objs {
         if t < o.start || t >= o.end {
+            continue;
+        }
+        if let Some((sim, first)) = &o.phys {
+            let (a, b, u) = sim.at(t);
+            let (pa, pb, pu) = if dt > 0.0 { sim.at(t - dt) } else { (a.clone(), b.clone(), u) };
+            let first = *first as usize;
+            for i in 0..o.count as usize {
+                let s = sim.scale_of(first + i);
+                let xf = physics::xf_of(&physics::lerp_pose(&a[first + i], &b[first + i], u), s);
+                let prev = physics::xf_of(&physics::lerp_pose(&pa[first + i], &pb[first + i], pu), s);
+                for &(shape, mat) in &o.parts {
+                    out.push(Inst { shape, xf, prev, mat, tex: None, thin: o.thin, shadow: o.shadow });
+                }
+            }
             continue;
         }
         for lane in 0..o.lanes {
@@ -355,21 +393,75 @@ impl Scene3d {
             px.par_chunks_mut(band * w).enumerate().for_each(body);
         }
         let t_trace = clock.elapsed();
+        let layer = self.particles(t, dt, &cam, &prev, &mut px, w, h, root);
+        let t_parts = clock.elapsed();
         let pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
-        let out = post::process(&px, w, h, &pp);
+        let out = post::process(&px, w, h, &pp, layer.as_ref());
         if prof {
             let ms = |d: std::time::Duration| d.as_secs_f64() * 1e3;
             eprintln!(
-                "scene3d t={t:.3} {w}x{h}: setup {:.0} ms ({} instances, {n_tex} textured), trace {:.0} ms, post {:.0} ms",
+                "scene3d t={t:.3} {w}x{h}: setup {:.0} ms ({} instances, {n_tex} textured), trace {:.0} ms, particles {:.0} ms, post {:.0} ms",
                 ms(t_setup),
                 scene.insts.len(),
                 ms(t_trace - t_setup),
-                ms(clock.elapsed() - t_trace)
+                ms(t_parts - t_trace),
+                ms(clock.elapsed() - t_parts)
             );
             let r: Vec<u64> = trace::RAYS.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
             eprintln!("  rays: {:.2}M closest ({:.2}M radiance, {:.2}M floor reflections), {:.2}M shadow/AO, {:.2} primary samples per pixel", r[0] as f64 / 1e6, r[3] as f64 / 1e6, r[4] as f64 / 1e6, r[1] as f64 / 1e6, r[2] as f64 / (w * h) as f64);
         }
         out
+    }
+
+    /// Simulate and splat the particle systems live at `t`.
+    #[allow(clippy::too_many_arguments)]
+    fn particles(&self, t: f32, dt: f32, cam: &trace::Camera, prev: &trace::Camera, px: &mut [trace::Px], w: usize, h: usize, root: Option<&Evaluator>) -> Option<particles::Layer> {
+        let p = self.p();
+        if p.parts.is_empty() {
+            return None;
+        }
+        let sims = p.psims.get_or_init(|| {
+            let cache = p.textures.get_or_init(|| CompTextures::new(1 << 30));
+            let floor_y = p.floor.as_ref().map(|f| f.y);
+            p.parts.iter().map(|d| particles::Sim::new(d, 1.0 / dt.max(1e-4), floor_y, root, cache)).collect()
+        });
+        let sims = match sims {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("scene3d particles: {e}");
+                return None;
+            }
+        };
+        let live: Vec<(&particles::Sim, Arc<particles::Snap>)> = sims.iter().filter(|s| t >= s.def.start && t < s.def.end).map(|s| (s, s.at(t))).collect();
+        if live.is_empty() {
+            return None;
+        }
+        let depth: Vec<f32> = px.iter().map(|q| q.depth).collect();
+        let up = v3(0.0, 1.0, 0.0);
+        let key = p.env.key_box().map(|k| (k.c, scale(k.radiance, p.env.key_solid_angle))).unwrap_or((up, v3(0.0, 0.0, 0.0)));
+        // Particle shadows on the scene: dim the key light by the particles' transmittance.
+        let shadow = particles::ShadowMap::build(&live, key.0, t);
+        if let Some(sm) = &shadow {
+            let (fwd, _, _) = cam.basis();
+            let body = |(y, row): (usize, &mut [trace::Px])| {
+                for (x, q) in row.iter_mut().enumerate() {
+                    if q.depth > 1e5 || q.vk <= 0.0 {
+                        continue;
+                    }
+                    let d = Scene::cam_ray(cam, w, h, x as f32 + 0.5, y as f32 + 0.5);
+                    let wp = madd(cam.pos, d, q.depth / dot(d, fwd).max(1e-4));
+                    q.vk *= sm.trans(wp);
+                }
+            };
+            use rayon::prelude::*;
+            if rayon::current_thread_index().is_some() {
+                px.chunks_mut(w).enumerate().for_each(body);
+            } else {
+                px.par_chunks_mut(w).enumerate().for_each(body);
+            }
+        }
+        let view = particles::View { cam, prev, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key, amb: (p.env.diffuse(up), p.env.diffuse(scale(up, -1.0))), shadow: shadow.as_ref() };
+        Some(particles::render(&live, &view, t))
     }
 
     /// Give each textured instance its composition frame at a level of detail
