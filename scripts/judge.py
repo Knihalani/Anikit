@@ -356,12 +356,22 @@ def judge(name, frames, tags, args, exclude=(), video=None):
     meta = [t["meta"] for t in trials] + ([result["critic"]["meta"]] if "critic" in result else [])
     result["cost_usd"] = round(sum(m["cost_usd"] or 0 for m in meta), 3)
     result["judge_seconds"] = round(sum(m["seconds"] for m in meta), 1)
-    passed = cand.get("pro_rate", 0) >= 0.5 and result["delta"] is not None and result["delta"] >= -1.0
-    result["verdict"] = "PASS" if passed else "FAIL"
+    result["verdict"] = verdict(cand, result["delta"])
     (out / "result.json").write_text(json.dumps(result, indent=2))
     print(json.dumps({k: result[k] for k in ("name", "verdict", "ref_mean", "delta", "cost_usd")} |
                      {"cand_overall": cand.get("overall"), "judged_pro": cand.get("judged_professional")}, indent=None))
     return result
+
+
+def verdict(cand, delta):
+    """PASS: indistinguishable from the style-matched refs. PRO: passes as real studio work but below the refs.
+    FAIL: the jury can tell. Thresholds come from controls (held-out pro refs): every control is PRO or PASS."""
+    pro = cand.get("pro_rate", 0) >= 0.6
+    if pro and delta is not None and delta >= -1.0:
+        return "PASS"
+    if pro and (cand.get("overall") or 0) >= 5.0:
+        return "PRO"
+    return "FAIL"
 
 
 def cmd_run(args):

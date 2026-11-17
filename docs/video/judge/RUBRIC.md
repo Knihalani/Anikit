@@ -9,9 +9,17 @@ say no to that work before the user has to. It never sees names, branches or whi
 > Put our piece next to 2–3 pieces of real, style-matched studio work. Can a hard-to-impress jury tell
 > which one isn't professional? If it can, how far behind is it, and what are the three biggest gaps?
 
-A piece PASSES only if, over 3 shuffled trials, the jury calls it **professional in at least half** of them
-**and** its median score is within **1.0** of the references' mean (Δ ≥ −1.0). Anything else is FAIL,
-regardless of how good it looks to its author.
+Three verdicts, from 3 shuffled trials:
+
+| Verdict | Rule | Meaning |
+|---|---|---|
+| **PASS** | called professional in ≥ 2 of 3 trials **and** median score within 1.0 of the refs' mean (Δ ≥ −1.0) | indistinguishable from the style-matched studio work |
+| **PRO** | called professional in ≥ 2 of 3 **and** score ≥ 5.0 | passes as real studio work, but below the best of its style |
+| **FAIL** | anything else | the jury can tell |
+
+The thresholds were set from the controls (held-out professional refs in the candidate's seat), before the rejected work was
+scored: all 6 controls were called professional in 17 of 18 trials, 4 PASS, and the two below the refs scored 5.38 (Calm, Coinbase).
+The goal for the user's bar is PASS. Anything that FAILs never reaches the user.
 
 ## Procedure (`scripts/judge.py`)
 
