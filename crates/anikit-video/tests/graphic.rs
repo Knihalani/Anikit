@@ -134,3 +134,15 @@ fn pattern_fields() {
     let bad = parse_json(r#"{ "scenes": [ { "layers": [ { "shape": "rect", "x": "=u * 100" } ] } ] }"#).unwrap();
     assert!(Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string().contains("field"));
 }
+
+#[test]
+fn near_grid_warning() {
+    let p = parse_json(r#"{ "grid": { "columns": 12, "rows": 8, "margin": [54, 96], "gutter": 24 }, "scenes": [ { "layers": [
+        { "shape": "rect", "x": 100, "y": 54, "width": 300, "height": 100, "anchor": "topLeft" },
+        { "shape": "rect", "x": 96, "y": 54, "width": 300, "height": 100, "anchor": "topLeft" },
+        { "shape": "rect", "x": 101, "y": 300, "width": 300, "height": 100, "anchor": "topLeft", "blend": "multiply" } ] } ] }"#).unwrap();
+    let e = Evaluator::new(&p.spec, Options::default()).unwrap();
+    let w: Vec<String> = e.diagnostics.iter().map(|d| d.to_string()).filter(|d| d.contains("almost on the grid")).collect();
+    assert_eq!(w.len(), 1, "{w:?}");
+    assert!(w[0].contains("layers[0]") && w[0].contains("x = 96"), "{w:?}");
+}

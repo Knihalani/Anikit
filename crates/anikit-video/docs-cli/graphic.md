@@ -19,6 +19,7 @@
   `[col, row, cols, rows]`. Sets x, y, width, and height (not for text). `anchor` picks the point of the cell (default
   `topLeft`; `bottomLeft` sits a caption on the field's foot) and text alignment follows it. With `baseline`, a text's
   leading rounds to whole baseline units. Explicit `x`/`y`/`width`/`height` still win. Animation applies on top.
+  With a grid, a hand-placed edge 1.5–8 px off a grid line gets a warning with the exact snap value (overprint plates exempt).
 - **Shapes** `squircle` / `superellipse` (`exponent`: 2 ellipse, 4–5 squircle, 2.5 Piet Hein, < 1 pinched star),
   `blob` (`sides` lobes, `wobble` 0..1, `seed`; animate with `wigglePath`), `arc` (`startAngle`, `endAngle` deg, 0 = 12
   o'clock clockwise; `innerRadius` 0..1 makes a ring segment; 0 = pie wedge).

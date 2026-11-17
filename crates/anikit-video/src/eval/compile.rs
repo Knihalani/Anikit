@@ -1384,6 +1384,10 @@ impl C<'_> {
             },
         };
 
+        if l.cell.is_none() && !pc.in_box {
+            self.near_grid_check(l, path, &n, pc.size);
+        }
+
         // Transform & appearance.
         match &l.scale {
             Some(spec::Scale::One(s)) => {
@@ -2090,6 +2094,56 @@ impl C<'_> {
             }
         }
         out
+    }
+
+    /// A hand-placed layer whose edge sits a few px off a grid line reads as a mistake: say so, with the snap.
+    fn near_grid_check(&mut self, l: &Layer, path: &str, n: &Node, size: [f32; 2]) {
+        let Some(g) = self.grid.clone() else { return };
+        // Overprinted plates are offset on purpose; the grid overlay is the grid.
+        if path.contains(".grid[") || l.blend.as_deref().is_some_and(|b| b != "normal") || l.boil.is_some() {
+            return;
+        }
+        if !matches!((&l.x, &l.y), (Some(Num::Num(_)), _) | (_, Some(Num::Num(_)))) {
+            return;
+        }
+        let saved = self.d.len();
+        let gc = self.grid_c(&g, size, path);
+        self.d.truncate(saved);
+        let (w, h) = (n.base[prop::W], n.base[prop::H]);
+        let mut xs = Vec::new();
+        let mut ys = Vec::new();
+        for c in 1..=gc.cols {
+            let [x, _, cw, _] = gc.rect(c, c, 1, 1);
+            xs.extend([x, x + cw]);
+        }
+        for r in 1..=gc.rows {
+            let [_, y, _, rh] = gc.rect(1, 1, r, r);
+            ys.extend([y, y + rh]);
+        }
+        let near = |v: f32, lines: &[f32]| {
+            // On a line already (within rounding) means aligned: no advice.
+            if lines.iter().any(|l| (l - v).abs() <= 1.5) {
+                return None;
+            }
+            lines.iter().map(|l| (l - v, *l)).filter(|(d, _)| d.abs() < 8.0).min_by(|a, b| a.0.abs().total_cmp(&b.0.abs()))
+        };
+        let mut msgs = Vec::new();
+        // Only edges the author placed (left/right/top/bottom anchors), not centred layers.
+        if let (Some(Num::Num(x)), true) = (&l.x, n.anchor[0] < 0.01 || n.anchor[0] > 0.99) {
+            let left = *x as f32 - n.anchor[0] * w;
+            if let Some((d, line)) = near(left, &xs) {
+                msgs.push(format!("left edge {left:.0} px is {:.0} px off the grid line at {line:.0} (x = {:.0} snaps it)", d.abs(), *x as f32 + d));
+            }
+        }
+        if let (Some(Num::Num(y)), true) = (&l.y, n.anchor[1] < 0.01 || n.anchor[1] > 0.99) {
+            let top = *y as f32 - n.anchor[1] * h;
+            if let Some((d, line)) = near(top, &ys) {
+                msgs.push(format!("top edge {top:.0} px is {:.0} px off the grid line at {line:.0} (y = {:.0} snaps it)", d.abs(), *y as f32 + d));
+            }
+        }
+        if !msgs.is_empty() {
+            self.d.push(Diagnostic::warning(path, format!("almost on the grid: {}; or use \"cell\"", msgs.join("; "))));
+        }
     }
 
     /// A copy of `l` placed in its grid cell.
