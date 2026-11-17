@@ -26,6 +26,7 @@ pub const PAGES: &[(&str, &str)] = &[
     ("draw", include_str!("../docs-cli/draw.md")),
     ("launch", include_str!("../docs-cli/launch.md")),
     ("analyze", include_str!("../docs-cli/analyze.md")),
+    ("board", include_str!("../docs-cli/board.md")),
 ];
 
 /// Hand-built shots: `(name, {"about", "spec"})`.
@@ -45,7 +46,7 @@ const ALIASES: &[(&str, &str)] = &[
     ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"),
     ("review", "critique"), ("pace", "pacing"), ("index", "start"), ("anything", "make-anything"),
     ("launch-video", "launch"), ("product", "launch"), ("announcement", "launch"),
-    ("analyse", "analyze"), ("reverse", "analyze"), ("reference", "analyze"),
+    ("analyse", "analyze"), ("reverse", "analyze"), ("reference", "analyze"), ("moodboard", "board"), ("mood-board", "board"), ("references", "board"),
 ];
 
 /// A docs page: `None` (or `start`) is the index; `component <kind>` / `components` come from the registry.
