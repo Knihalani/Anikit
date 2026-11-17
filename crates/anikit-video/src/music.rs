@@ -89,9 +89,11 @@ Standalone:        anikit-video music '{"style":"house","length":"15s"}' -o bed.
                    anikit-video music --style trap --bpm 140 --key Cm --length 20s -o out.ogg   (ogg/mp3/flac via ffmpeg)
                    anikit-video music styles | instruments | sfx | fetch salamander|vsco2
 
-STYLES  lofi house synthwave trap cinematic-hybrid orchestral ambient rock pop corporate tech dnb piano acoustic jazz
-        (aliases: epic trailer edm chill 80s classical upbeat folk …)
-KEYS    bpm  key "Am" "F# dorian"  meter "6/8"  swing 0..1  mood "dark epic"  length "15s"|"8 bars"  seed N
+STYLES  real instruments: orchestral acoustic piano jazz rock corporate pop lofi cinematic-hybrid
+        synth-led (electronic): house synthwave trap tech dnb ambient   (aliases: epic trailer edm chill 80s classical upbeat folk …)
+ACOUSTIC SCORE in one line: "music": {"style":"house","instrumentation":"acoustic"}   (also orchestral band piano electronic hybrid;
+        swaps every part for real instruments, keeps the groove). Choose instrumentation from the concept: docs/video/taste/TASTE.md §7
+KEYS    instrumentation  bpm  key "Am" "F# dorian"  meter "6/8"  swing 0..1  mood "dark epic"  length "15s"|"8 bars"  seed N
         sections ["intro:4","build:4","drop:8","outro:2"] or [{"name":"drop","bars":8,"energy":1}]
         hits ["@2.0","@bar9"] → impact + section change there; tempo nudged (±8%) so hits land on beats (fit:false to keep bpm)
         chords "vi IV I V" | "Am F C G"   instruments {"lead":"violin","drums":"drums:909"}   mute ["lead"]
