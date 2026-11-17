@@ -14,12 +14,12 @@ use crate::dl::DisplayList;
 
 /// Most samples per frame.
 pub const MAX_SAMPLES: usize = 32;
-/// Longest streak (px at 1080p): faster motion gets a shorter effective
-/// shutter, as motion-graphics renderers clamp blur, so samples stay ≤ 1.25 px apart.
-pub const MAX_STREAK: f64 = 40.0;
 
 /// Most samples per frame at [`super::Quality::Reference`].
 pub const REFERENCE_SAMPLES: usize = 96;
+/// Longest streak (px at 1080p): faster motion gets a shorter effective
+/// shutter, as motion-graphics renderers clamp blur, so samples stay ≤ 1.25 px apart.
+pub const MAX_STREAK: f64 = 40.0;
 
 /// Largest on-screen displacement (px) between two lists, from ops matched by index and kind.
 fn displacement(a: &DisplayList, b: &DisplayList, ra: &mut Vec<Option<kurbo::Rect>>, rb: &mut Vec<Option<kurbo::Rect>>) -> f64 {
@@ -39,66 +39,26 @@ fn displacement(a: &DisplayList, b: &DisplayList, ra: &mut Vec<Option<kurbo::Rec
     d
 }
 
-/// Macroblock-aligned boxes (`[x0, y0, x1, y1)` pixels) outside which every
-/// sample is identical to `center`, or `None` when that can't be shown cheaply
-/// (layer structure or a layer's own parameters change, the background
-/// changes, or the moving area is most of the frame).
-fn motion_boxes(center: &DisplayList, samples: &[DisplayList], w: usize, h: usize) -> Option<Vec<[usize; 4]>> {
-    use crate::dl::Op;
-    let mut rc = Vec::new();
-    op_rects(&center.ops, &mut rc);
-    let hc: Vec<u64> = center.ops.iter().map(hash_op).collect();
-    let mut map = super::MbMap::new(w.div_ceil(16), h.div_ceil(16));
-    let mut rs = Vec::new();
-    for s in samples {
-        if s.ops.len() != center.ops.len() || s.width != center.width || s.height != center.height || s.background != center.background {
-            return None;
-        }
-        op_rects(&s.ops, &mut rs);
-        for (i, op) in s.ops.iter().enumerate() {
-            if hash_op(op) == hc[i] {
-                continue;
-            }
-            if matches!(op, Op::PushLayer { .. } | Op::PopLayer) {
-                return None;
-            }
-            match (rc[i], rs[i]) {
-                (Some(a), Some(b)) => {
-                    map.mark_rect(a);
-                    map.mark_rect(b);
-                }
-                (None, None) => {}
-                _ => return None,
-            }
-        }
-    }
-    let boxes: Vec<[usize; 4]> = super::incremental::cluster(&map, 6)
-        .into_iter()
-        .map(|b| [b[0] as usize * 16, b[1] as usize * 16, (b[2] as usize * 16).min(w), (b[3] as usize * 16).min(h)])
-        .filter(|b| b[2] > b[0] && b[3] > b[1])
-        .collect();
-    let area: usize = boxes.iter().map(|b| (b[2] - b[0]) * (b[3] - b[1])).sum();
-    (area as f64 <= 0.6 * (w * h) as f64).then_some(boxes)
-}
-
 impl Renderer {
     /// Render the frame at `t` with a shutter open for `shutter` seconds
     /// (centred on `t`; 180° at 30 fps = 1/60 s). `eval(t)` must return the
     /// display list at time `t`. Static frames render once.
-    ///
-    /// Only the parts of the frame that move during the shutter are rendered
-    /// per sample (clustered macroblock boxes around the ops that differ from
-    /// the centre); everything else is the centre frame, exactly. At
-    /// [`super::Quality::Reference`] every sample is a whole frame.
     pub fn render_motion_blur(&mut self, eval: &mut dyn FnMut(f32) -> DisplayList, t: f32, shutter: f32) -> &FrameRgba {
         let center = eval(t);
         if shutter <= 0.0 {
             return self.render(&center);
         }
         let (a, b) = (eval(t - shutter * 0.5), eval(t + shutter * 0.5));
-        let same = a.ops.len() == center.ops.len()
-            && b.ops.len() == center.ops.len()
-            && a.ops.iter().zip(&center.ops).zip(&b.ops).all(|((x, c), y)| {
+        // A smooth, edge-free backdrop (gradients, glows) looks the same blurred
+        // or not: judge motion on what's drawn over it only.
+        let (wf, hf) = (center.width as f64, center.height as f64);
+        let skip = |l: &DisplayList| super::smooth::prefix(&l.ops, wf, hf, &|_| None);
+        let k = skip(&center).min(skip(&a)).min(skip(&b));
+        let top = |l: &DisplayList| DisplayList { ops: l.ops[k.min(l.ops.len())..].to_vec(), ..l.clone() };
+        let (ta, tc, tb) = (top(&a), top(&center), top(&b));
+        let same = ta.ops.len() == tc.ops.len()
+            && tb.ops.len() == tc.ops.len()
+            && ta.ops.iter().zip(&tc.ops).zip(&tb.ops).all(|((x, c), y)| {
                 let hc = hash_op(c);
                 hash_op(x) == hc && hash_op(y) == hc
             });
@@ -106,77 +66,88 @@ impl Renderer {
             return self.render(&center);
         }
         let (mut ra, mut rb) = (Vec::new(), Vec::new());
-        let mut d = displacement(&a, &b, &mut ra, &mut rb);
+        let mut d = displacement(&ta, &tb, &mut ra, &mut rb);
+        if d < 0.5 {
+            return self.render(&center);
+        }
         let max_streak = (MAX_STREAK * center.height.max(1) as f64 / 1080.0).max(16.0);
         let mut shutter = shutter;
         if d > max_streak {
             shutter *= (max_streak / d) as f32;
             d = max_streak;
         }
+        // Reference quality (qbench): ~0.5 px steps and whole-frame samples.
         let reference = self.quality() == super::Quality::Reference;
-        let n = if reference {
-            // Ground truth: ~0.5 px steps, at least 8 samples.
-            ((d / 0.5).ceil() as usize).clamp(8, REFERENCE_SAMPLES)
-        } else {
-            ((d / 1.25).ceil() as usize).clamp(2, MAX_SAMPLES)
-        };
+        let n = if reference { ((d / 0.5).ceil() as usize).clamp(8, REFERENCE_SAMPLES) } else { ((d / 1.25).ceil() as usize).clamp(2, MAX_SAMPLES) };
         let (w, h) = (center.width.max(1) as usize, center.height.max(1) as usize);
-        // Sample times spread evenly over the open shutter (centres of n slots).
-        let samples: Vec<DisplayList> = (0..n).map(|i| eval(t - shutter * 0.5 + shutter * (i as f32 + 0.5) / n as f32)).collect();
-        let boxes = if reference { None } else { motion_boxes(&center, &samples, w, h) };
-        let boxes = boxes.unwrap_or_else(|| vec![[0, 0, w, h]]);
-        let whole = boxes.len() == 1 && boxes[0] == [0, 0, w, h];
+        // Only regions that change while the shutter is open need samples:
+        // cluster them into a few macroblock-aligned boxes.
+        let dirty = super::incremental::dirty_between(&ta, &tb);
+        let mut map = super::diff::MbMap::new(w.div_ceil(16), h.div_ceil(16));
+        for r in &dirty {
+            map.mark_rect(r.inflate(2.0, 2.0));
+        }
+        let boxes: Vec<[usize; 4]> = super::incremental::cluster(&map, 8)
+            .into_iter()
+            .map(|b| [b[0] as usize * 16, b[1] as usize * 16, (b[2] as usize * 16).min(w), (b[3] as usize * 16).min(h)])
+            .filter(|b| b[2] > b[0] && b[3] > b[1])
+            .collect();
+        let boxed_area: usize = boxes.iter().map(|b| (b[2] - b[0]) * (b[3] - b[1])).sum();
+        let partial = !reference && boxed_area * 10 < w * h * 6;
         // Post runs once on the average: switch it off for the samples.
         let post = self.post.take();
-        let lin = super::post::to_linear_lut();
+        let lin: Vec<f32> = (0..256).map(|i| super::post::srgb_to_linear(i as f32 / 255.0)).collect();
         let mut acc = std::mem::take(&mut self.motion_acc);
         acc.clear();
-        let len: usize = boxes.iter().map(|b| (b[2] - b[0]) * (b[3] - b[1]) * 3).sum();
-        acc.resize(len, 0.0);
-        if !whole {
-            // Outside the boxes the frame is the centre's.
+        acc.resize(w * h * 3, 0.0);
+        let full = [[0, 0, w, h]];
+        let regions: &[[usize; 4]] = if partial { &boxes } else { &full };
+        if partial {
+            // Everything outside the boxes is the centre frame.
             self.render(&center);
         }
-        for l in &samples {
-            if whole {
-                self.render(l);
-            } else {
-                for (k, bx) in boxes.iter().enumerate() {
-                    self.render_region(l, Some([bx[0] as u32, bx[1] as u32, bx[2] as u32, bx[3] as u32]), k == 0, None, None);
+        for i in 0..n {
+            // Sample times spread evenly over the open shutter (centres of n slots).
+            let ts = t - shutter * 0.5 + shutter * (i as f32 + 0.5) / n as f32;
+            let l = eval(ts);
+            if partial {
+                for (k, r) in regions.iter().enumerate() {
+                    self.render_region(&l, Some([r[0] as u32, r[1] as u32, r[2] as u32, r[3] as u32]), k == 0, None, None);
                 }
+            } else {
+                self.render(&l);
             }
             let px = self.frame.data_as_u8_slice();
-            let mut o = 0;
-            for bx in &boxes {
-                let bw = bx[2] - bx[0];
-                for y in bx[1]..bx[3] {
-                    let row = &px[(y * w + bx[0]) * 4..(y * w + bx[2]) * 4];
-                    for (a, p) in acc[o..o + bw * 3].chunks_exact_mut(3).zip(row.chunks_exact(4)) {
+            use rayon::prelude::*;
+            acc.par_chunks_mut(w * 3).zip(px.par_chunks(w * 4)).enumerate().for_each(|(y, (arow, prow))| {
+                for r in regions.iter().filter(|r| y >= r[1] && y < r[3]) {
+                    for (a, p) in arow[r[0] * 3..r[2] * 3].chunks_exact_mut(3).zip(prow[r[0] * 4..r[2] * 4].chunks_exact(4)) {
                         a[0] += lin[p[0] as usize];
                         a[1] += lin[p[1] as usize];
                         a[2] += lin[p[2] as usize];
                     }
-                    o += bw * 3;
                 }
-            }
+            });
         }
         // Back to sRGB with dither (averaging creates smooth ramps that would band).
         let inv = 1.0 / n as f32;
         let frame = self.frame.data_as_u8_slice_mut();
-        let mut o = 0;
-        for bx in &boxes {
-            for y in bx[1]..bx[3] {
-                for x in bx[0]..bx[2] {
-                    let (p, a) = (&mut frame[(y * w + x) * 4..(y * w + x) * 4 + 4], &acc[o..o + 3]);
-                    let d = super::post::tri_dither(x as u32, y as u32);
-                    for k in 0..3 {
-                        let v = super::post::encode_srgb((a[k] * inv).clamp(0.0, 1.0)) + d;
-                        p[k] = (v + 0.5).clamp(0.0, 255.0) as u8;
+        {
+            use rayon::prelude::*;
+            let acc = &acc;
+            frame.par_chunks_mut(w * 4).enumerate().for_each(|(y, frow)| {
+                for r in regions.iter().filter(|r| y >= r[1] && y < r[3]) {
+                    for x in r[0]..r[2] {
+                        let (i, j) = (y * w + x, x * 4);
+                        let d = super::post::tri_dither(x as u32, y as u32);
+                        for k in 0..3 {
+                            let v = super::post::encode_srgb255(acc[i * 3 + k] * inv) + d;
+                            frow[j + k] = (v + 0.5).clamp(0.0, 255.0) as u8;
+                        }
+                        frow[j + 3] = 255;
                     }
-                    p[3] = 255;
-                    o += 3;
                 }
-            }
+            });
         }
         self.motion_acc = acc;
         self.post = post;

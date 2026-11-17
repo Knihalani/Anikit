@@ -265,16 +265,9 @@ pub(crate) fn linear_to_srgb(v: f32) -> f32 {
     }
 }
 
-/// sRGB8 → linear, as a table.
-pub(crate) fn to_linear_lut() -> &'static [f32; 256] {
-    static T: std::sync::OnceLock<[f32; 256]> = std::sync::OnceLock::new();
-    T.get_or_init(|| std::array::from_fn(|i| srgb_to_linear(i as f32 / 255.0)))
-}
-
-/// Linear 0..1 → sRGB in 8-bit units (unrounded), by a sqrt-indexed table:
-/// within 0.002 of [`linear_to_srgb`] · 255, without a `powf` per channel.
-#[inline]
-pub(crate) fn encode_srgb(v: f32) -> f32 {
+/// Linear 0..1 → sRGB 0..255 through a shared table (sqrt-indexed for dark precision).
+#[inline(always)]
+pub(crate) fn encode_srgb255(v: f32) -> f32 {
     static T: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
     let lut = T.get_or_init(|| {
         (0..=SRGB_LUT)
