@@ -153,7 +153,8 @@ fn main() {
     let at: f32 = arg("--at").map(|s| s.parse().unwrap()).unwrap_or(1.0);
     let scale: f32 = arg("--scale").map(|s| s.parse().unwrap()).unwrap_or(1.0);
     let only: Option<Vec<String>> = arg("--only").map(|s| s.split(',').map(String::from).collect());
-    let names = ["cyc", "chrome", "glass", "panes"];
+    // The lookdev shots plus qbench's chrome studio (`studio`).
+    let names = ["cyc", "chrome", "glass", "panes", "studio"];
     std::fs::create_dir_all(&refdir).unwrap();
     std::fs::create_dir_all(&outdir).unwrap();
     if reference {
@@ -165,7 +166,8 @@ fn main() {
         if only.as_ref().is_some_and(|o| !o.iter().any(|x| x == name)) {
             continue;
         }
-        let ev = build(&root.join(format!("examples/video/lookdev/{name}.json")));
+        let spec = if name == "studio" { root.join("crates/anikit-video/qbench/scene3d.json") } else { root.join(format!("examples/video/lookdev/{name}.json")) };
+        let ev = build(&spec);
         let f0 = (at * ev.fps).round() as u32;
         let mut times = Vec::new();
         let mut cpus = Vec::new();

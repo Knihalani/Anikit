@@ -293,7 +293,7 @@ impl Cx {
             self.errors.push(Diagnostic::error(format!("{path}.use"), format!("defs refer to each other in a cycle: {}", chain.join(" -> "))));
             return Value::Object(obj);
         }
-        let with = match obj.remove("with") {
+        let mut with = match obj.remove("with") {
             None => Map::new(),
             Some(Value::Object(m)) => m,
             Some(_) => {
@@ -301,6 +301,15 @@ impl Cx {
                 Map::new()
             }
         };
+        // A def's `"params": { "size": 34, … }` declares its parameters with defaults; at
+        // the use site they can be given directly (`{ "use": "label", "size": 40 }`).
+        let mut def = def;
+        if let Some(Value::Object(params)) = def.as_object_mut().and_then(|d| d.remove("params")) {
+            for (k, default) in params {
+                let v = obj.remove(&k).or_else(|| with.remove(&k)).unwrap_or(default);
+                with.insert(k, v);
+            }
+        }
         self.stack.push(name.clone());
         // The def may itself `use` another def.
         let base = self.resolve(subst(def, &with), &format!("defs.{name}"));

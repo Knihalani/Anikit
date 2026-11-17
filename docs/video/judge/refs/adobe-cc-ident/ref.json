@@ -1,0 +1,25 @@
+{
+  "slug": "adobe-cc-ident",
+  "title": "Adobe Creative Cloud — ident",
+  "studio": "BUCK",
+  "year": 2020,
+  "url": "https://buck.co/work/adobe-creative-cloud-ident",
+  "frame_sources": [
+    "https://cdn.sanity.io/images/uk7b627p/production/e5fae5f632af4bf71c922b96109717a53c817cbb-3840x3840.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/6feae07c3775c9e9e0989663221692f3601c3044-1368x1368.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/3359116d4266e6ca4547a85725a5bd141faa694f-1362x1360.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/2a929ff396bdf8c18c7b2835bd85d5da23029095-1350x1350.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/c148e47f8d1105b29db0acc7821486038bcf0487-1710x1512.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/c05943f2d22aff2e16b9e719a74c860c28c74d04-1366x1366.png"
+  ],
+  "style_tags": [
+    "ident",
+    "motion-design",
+    "3d-cg"
+  ],
+  "format": "16:9",
+  "medium": "mixed",
+  "description": "The Creative Cloud infinity mark transforms through many styles: chrome liquid, collage, flowers, linework and gradients on black.",
+  "why_top_tier": "Many contributors' styles orchestrated into one fluid logo journey.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright Adobe"
+}

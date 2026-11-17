@@ -97,6 +97,51 @@ You are not limited to the preset shapes. These types build a mesh from your des
 
 Shapes whose expressions use `t` (seconds) are rebuilt every frame: waves, growing tubes, morphing surfaces (`examples/video/lookdev/wave.json`). This costs about 44 ms per frame for a 160² heightfield plus a 300-segment tube, and turns off the baked floor. Shapes without `t` are built once. Motion blur follows object motion, not deformation. To generate many objects, put `{ "script": "..." }` in `objects`; it expands to the items it returns. Cost: tracing a mesh costs about the same as the preset shapes of similar screen size. A 160×32 surface or a 128² heightfield adds under 5 ms to scene build, and render time is set by pixels covered, not by triangle count.
 
+## Camera language
+
+- **`lens`** on the camera: `wide24` (f/8), `normal35`, `normal50` (f/4), `portrait85` (f/2.8), `macro100` (f/5.6), `tele135` (f/4), `tele200`. It sets the focal length and working aperture for keys that set neither. On a preset it also moves the camera to keep the framing, so a `tele135` push compresses the background instead of cropping in.
+  Use 85–135 for hero product shots, 100 macro for details, and 24 only for scale.
+- **Rack focus:** a key's `focus` can name an object, e.g. `{ "t": 1.8, ..., "focus": "logo" }`. Focus pulls between the keys' objects, with the same easing as the move. Hold about 0.5 s either side of a 0.6–1.2 s pull.
+- **`shake`:** rotational camera noise, sized as a fraction of the frame so it reads the same at any lens. It is three bands of smooth noise plus roll. All presets are deterministic.
+  - `breath`: a locked-off camera that's alive, 0.15% of the frame at 0.3 Hz. Use it on every "static" shot.
+  - `handheld`: 0.6% at 0.8 Hz, 0.35° roll.
+  - `shoulder`: 0.4% at 0.55 Hz.
+  - `run`: 1.8% at 1.9 Hz with a vertical bob.
+  - Custom: `{ "frame": 0.004, "frequency": 0.7, "roll": 0.2, "bob": 0 }`. A plain number is still the old positional wobble, in metres.
+
+`{ "lens": "tele135", "shake": "breath", "keys": [ { "t": 0, "pos": [-0.2, 0.85, 10.5], "target": [-0.1, 0.4, 0], "focus": "bottle", "fstop": 2.8 }, { "t": 1.8, "pos": [-0.1, 0.85, 10.1], "target": [-0.05, 0.4, 0], "focus": "logo", "fstop": 2.8 } ] }`
+
+Proof: `docs/video/shots/3d-camera/rack-focus.mp4` (3 s, 1080p30, rendered in 51 s on 4 cores) and `.jpg`.
+
+## Lighting rigs
+
+Light like a gaffer, not with an HDRI default. `rig` places a named setup around the camera's view, at set illuminance ratios. It replaces the env's softboxes; the env's sky stays as dim ambient.
+
+| `rig` | Setup | Ratio |
+|---|---|---|
+| `rembrandt` | key 45° side, 40° up; soft fill opposite; cool rim behind | 4:1 |
+| `loop` | key 30° side; fill; soft back light | 3:1 |
+| `clamshell` (`beauty`) | big key above the lens, fill below, two edge strips | 2:1 |
+| `butterfly` | high frontal key, low fill | 3:1 |
+| `product` (`edge`) | big top key, two tall strips at ±115° for edge highlights on metal and glass, black flags at ±75°, front fill | 3:1 |
+| `high-key` | huge soft key and fill, back light | 1.5:1 |
+| `low-key` (`noir`) | hard side key, cool hard rim | 16:1 |
+| `split` | key at 90°, no fill | — |
+| `rim` (`silhouette`) | two kickers from behind, faint front fill | 12:1 |
+| `golden` | low warm sun through foliage (gobo), cool sky fill | 5:1 |
+| `window` | crisp daylight through window panes (gobo) | 6:1 |
+| `top` | one overhead source (pendant, skylight) | 10:1 |
+
+Tune it with an object: `{ "preset": "rembrandt", "ratio": 6, "rim": 1.5, "key": 1.2, "angle": 60, "height": 25, "warmth": 0.4, "gobo": "blinds", "goboScale": 0.4, "softness": 0.1, "beam": true }`.
+- `angle`/`height`: the key's azimuth from the camera (+ = camera left) and elevation, in degrees.
+- `ratio`: (key + fill) : fill. `rim` and `key` scale those lights.
+- `warmth`: -1 cool to +1 warm; individual lights keep their own warm/cool contrast.
+- `gobo`: `blinds`, `window` or `leaves` (a cookie in front of the key); `goboScale` is the pattern period in metres.
+- `beam`: haze plus volumetric shafts, so the key reads as a beam.
+
+Stills (one scene, six rigs): `docs/video/shots/3d-rigs/`. Rigs cost nothing extra: a rig is a few softboxes, the same as an env. Gobos add one pattern lookup per shaded point. Measured 1080p traces on 4 cores: 0.62–0.79 s.
+Why and how studios light: `docs/video/craft/3d-design.md`.
+
 ## Looks and worlds beyond the studio
 
 Not every shot should be a chrome product on a white cyc. One word changes the whole style:

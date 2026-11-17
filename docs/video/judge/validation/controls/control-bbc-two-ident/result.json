@@ -1,0 +1,466 @@
+{
+  "name": "control-bbc-two-ident",
+  "tags": [
+    "ident",
+    "3d-cg",
+    "motion-design"
+  ],
+  "refs": [
+    "adobe-cc-ident",
+    "game-of-thrones",
+    "bbc-two-ident-vertical"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 7,
+      "composition": 8,
+      "typography": 6,
+      "colour": 8,
+      "light_texture": 9,
+      "motion": 7,
+      "craft": 9,
+      "originality": 7
+    },
+    "overall": 7.62,
+    "judged_professional": "3/3",
+    "pro_rate": 1.0,
+    "mean_rank": 2,
+    "gaps": [
+      "The ident logo is a fixed bug with no integration into the world. Make the mark emerge from or interact with the objects",
+      "The dark pegboard ground gets slightly monotonous. Introduce a lighting event or a ground change at the climax, the way D uses its sunburst bookends",
+      "The emotional payoff is unclear. Give the ball's journey a sharper resolution or surprise that viewers would remember",
+      "The idea is 'satisfying object physics' rather than a specific story; it needs a concept as ownable as C's clockwork map",
+      "Typography is only the logo; no type idea is integrated into the set",
+      "The dark pegboard ground is the same throughout, so the world never changes scale or space the way C's does",
+      "There is no single surprising narrative beat comparable to A's mechanism. The idea is 'nice objects in motion', not a world with a point of view",
+      "The type is simply placed. Unlike A, the logo never takes part in the image (no occlusion, interaction or scale play)",
+      "Frames 3 and 6 repeat one layout with only the colour swapped. It works as a system demo but is a weak beat within a single film"
+    ],
+    "tells": [
+      "A physical-feeling world of soft, sewn, foil and rubber objects on a dark pegboard ground, with a single glowing ball acting as a protagonist",
+      "Clear choreography: a serpentine trail of objects, then a pile-up, then an ordered top-down 'knolling' grid that recurs in a second colourway, which implies sorting and chaos as the narrative",
+      "Recolouring the same grid (green to lilac/yellow) is a system idea, not lazy repetition, because the objects are identical and only the material changes",
+      "Very high material fidelity: quilting, stitching, perforations and reflections, all under soft, motivated top light with real contact shadows",
+      "Strong variation in camera height, scale and density from frame to frame",
+      "The same bespoke object family as A, seen in its full system: objects rolling along a pegboard, piling up, then knolled into an ordered grid",
+      "The two knolled grids are the same layout recoloured (green/blue vs purple/yellow), which is a deliberate idea about variation within a system, not a lazy repeat",
+      "Excellent material rendering: quilted foil, knit, foam, rubber and wireframe, with a single glowing ball implying a kinetic chain reaction",
+      "Varied framing (wide grid, tight pile, overhead) and a palette that changes per sequence suggest real choreography",
+      "Restrained channel logo; the type stays out of the way, as an ident system wants",
+      "A library of designed objects (quilted, foil-wrapped, knitted, wireframe and spring-coiled) built as a coherent brand toolkit, with materials rendered at a high standard",
+      "A deliberate palette system: the same layout is re-coloured green/blue and then violet/yellow, which shows the colourways are planned rather than chosen at random",
+      "Implied choreography: a single light orb leads a snaking stream of objects across a pegboard, they pile into colour masses and then resolve into a laid-out catalogue",
+      "The BBC Two wordmark is used as a fixed, unadorned lockup. That is correct for the brand but carries no typographic idea of its own"
+    ]
+  },
+  "refs_summary": {
+    "adobe-cc-ident": {
+      "overall": 6.75,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "game-of-thrones": {
+      "overall": 9.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "bbc-two-ident-vertical": {
+      "overall": 6.62,
+      "judged_professional": "3/3",
+      "mean_rank": 4
+    }
+  },
+  "ref_mean": 7.5,
+  "delta": 0.12,
+  "trials": [
+    {
+      "key": {
+        "A": "bbc-two-ident-vertical",
+        "B": "adobe-cc-ident",
+        "C": "candidate",
+        "D": "game-of-thrones"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, tactile CG still life: knitted, quilted, foil-wrapped and rubber-like objects with believable material shaders and soft contact shadows",
+              "Strong diagonal wipe splits each frame into two colour worlds (blue/pink, green/plum, red/teal), which implies a transition system rather than one static layout",
+              "Unusual, deliberate palette pairings, with texture doing the work instead of an accent colour on an empty ground",
+              "The broadcaster's own mark is placed with restraint, the way a real channel package would place it, not as a headline",
+              "This is a vertical cut-down of a larger system, and it only offers three nearly identical diagonal compositions, so there is little evidence of choreography"
+            ],
+            "gaps": [
+              "Only one compositional device (the diagonal split) repeats across every frame. Vary the scale, the camera and the reveal the way C does to show choreography",
+              "No sense of the objects' behaviour over time: no scatter, tumble or settling. Show the physics that makes the material world come alive",
+              "The vertical crop squeezes the logo against busy texture. Give the mark a moment of clearing or a structural relationship to the pile, as D gives its title card a climactic reveal"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "One brand mark is reinterpreted in radically different idioms: embossed neumorphic, iridescent chrome 3D, grungy collage, kinetic type fragments, folk-floral illustration and photo collage with butterflies",
+              "Each frame has a distinct authorial hand, which reads as a commissioned multi-artist programme, not an automated variation",
+              "Dense, layered detail (floral ornament, collage cut-outs, glyph debris) rather than an effect with no subject",
+              "The idea is still essentially 'logo remixed by many artists', a known brand-campaign format",
+              "The first frame's pink gradient and embossed look comes closest to generic UI styling"
+            ],
+            "gaps": [
+              "The idea stops at decorating the logo. Find a narrative or a world the mark lives in, as D builds an entire mechanical map",
+              "Little evidence of transitions between styles. Choreograph morphs and handoffs so it reads as one film, not a gallery of stills",
+              "Typography is almost absent, apart from fragmentary glyphs. Either commit to type as a voice or design its absence more deliberately, and drop the generic gradient opener"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A physical-feeling world of soft, sewn, foil and rubber objects on a dark pegboard ground, with a single glowing ball acting as a protagonist",
+              "Clear choreography: a serpentine trail of objects, then a pile-up, then an ordered top-down 'knolling' grid that recurs in a second colourway, which implies sorting and chaos as the narrative",
+              "Recolouring the same grid (green to lilac/yellow) is a system idea, not lazy repetition, because the objects are identical and only the material changes",
+              "Very high material fidelity: quilting, stitching, perforations and reflections, all under soft, motivated top light with real contact shadows",
+              "Strong variation in camera height, scale and density from frame to frame"
+            ],
+            "gaps": [
+              "The ident logo is a fixed bug with no integration into the world. Make the mark emerge from or interact with the objects",
+              "The dark pegboard ground gets slightly monotonous. Introduce a lighting event or a ground change at the climax, the way D uses its sunburst bookends",
+              "The emotional payoff is unclear. Give the ball's journey a sharper resolution or surprise that viewers would remember"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea only this piece could have: the fictional world as a clockwork map whose cities mechanically build themselves, framed by an astrolabe and sun",
+              "Typography with a strong point of view: engraved, tracked serif credits with heraldic sigils, integrated into the map space, and a title lockup set into an embossed metal band",
+              "A deliberate warm sepia/bronze palette against the cool blue-green map; the burning sunburst bookends the film",
+              "Real texture and light: engraved metal relief, carved wood and parchment, with volumetric glare and shallow depth of field",
+              "Every frame is a poster, and the sequence shows clear choreography: band, mechanical city, macro gears, astrolabe rings, map flyover, title"
+            ],
+            "gaps": [
+              "This is the benchmark entry; remaining gaps are marginal",
+              "Credit placement is occasionally competing with busy mechanical detail (frames 2\u20133) \u2014 could clear more negative space for names",
+              "The map frame is flatter in light than the rest \u2014 carry the bronze, raking light consistently into the cartographic shots"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "C",
+          "B",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 28.1,
+        "cost_usd": 0.15364080000000002,
+        "tokens": 71546,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "bbc-two-ident-vertical",
+        "B": "adobe-cc-ident",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 5,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Dense heap of bespoke soft-body objects with real material variety: quilted fabric, knit, foil, rubber, wireframe cubes. This is a considered asset library, not stock primitives",
+              "Diagonal split between two colour families (blue/pink, green/plum, red/teal) gives a strong graphic device and an unusual, deliberate palette",
+              "Physically plausible GI lighting, contact shadows and soft occlusion give the image real depth and tactility",
+              "The broadcast logo sits as a small, restrained mark. This is a network brand system, not slide typography",
+              "Weakness: the three frames share an almost identical composition, a vertical cutdown of a wider system with little visible choreography"
+            ],
+            "gaps": [
+              "Composition is the same diagonal split every time, so add a staged arc (empty \u2192 fill \u2192 reveal) the way C moves through scales and spaces",
+              "No narrative or world-building, just texture as spectacle; tie the objects to an idea viewers could retell",
+              "Type is only the channel mark; there is no typographic moment integrated into the image the way C integrates credits into the sets"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 5,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "A single brand mark reinterpreted in radically different idioms: embossed pink, chrome iridescent 3D, gritty collage, kinetic letterforms, folk floral, photo collage with butterflies. This reads as a commissioned multi-artist programme",
+              "Several treatments show real authorship (the floral symmetry, the torn-paper collage, the glyph-scaffold version)",
+              "Against it: every frame is the same centred logo on a black ground, so the structure is closer to a gallery of variants than one film with choreography",
+              "The chrome/iridescent blob frame flirts with generic 'effect with no subject' 3D"
+            ],
+            "gaps": [
+              "No continuity between frames, so it reads as a lookbook rather than a film; it needs transitions or a through-line the way C uses its camera flight over the map",
+              "Centred logo on black repeated six times; vary scale, framing and spatial depth",
+              "Uneven quality across treatments; the iridescent-blob frame is weaker and more generic than the collage and floral ones"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea that belongs to this piece alone: a clockwork map of the world, with cities mechanically unfolding inside an orrery-lit globe. It is memorable, has been endlessly referenced, and orients the viewer to the story",
+              "Every frame is a poster: an engraved astrolabe band, a miniature city with wood and brass detailing, a gear-driven tree tower, and the armillary sun",
+              "Warm sepia/bronze palette with blown-out sunlight and dust gives real light, material and atmosphere",
+              "Credits are set in a spaced serif with heraldic sigils beside each name, so the type is integrated into the world rather than placed on top of it",
+              "Clear choreography: macro detail \u2192 aerial flyover \u2192 mechanism rising \u2192 orrery \u2192 map \u2192 title lockup that bookends the opening band"
+            ],
+            "gaps": [
+              "The palette is close to monochrome bronze, so a more unexpected accent could push it further",
+              "The credit typeface is a fairly conventional Trajan-adjacent serif, which is appropriate but not a typographic invention",
+              "The final title lockup is more conventional and glossy than the inventive mechanical body"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The same bespoke object family as A, seen in its full system: objects rolling along a pegboard, piling up, then knolled into an ordered grid",
+              "The two knolled grids are the same layout recoloured (green/blue vs purple/yellow), which is a deliberate idea about variation within a system, not a lazy repeat",
+              "Excellent material rendering: quilted foil, knit, foam, rubber and wireframe, with a single glowing ball implying a kinetic chain reaction",
+              "Varied framing (wide grid, tight pile, overhead) and a palette that changes per sequence suggest real choreography",
+              "Restrained channel logo; the type stays out of the way, as an ident system wants"
+            ],
+            "gaps": [
+              "The idea is 'satisfying object physics' rather than a specific story; it needs a concept as ownable as C's clockwork map",
+              "Typography is only the logo; no type idea is integrated into the set",
+              "The dark pegboard ground is the same throughout, so the world never changes scale or space the way C's does"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "D",
+          "B",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 28.5,
+        "cost_usd": 0.1528046,
+        "tokens": 71505,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "adobe-cc-ident",
+        "C": "bbc-two-ident-vertical",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "The idea belongs to this piece alone: the world drawn as a clockwork tabletop map whose cities wind up out of the ground, so the setting itself becomes the opening titles",
+              "Real material and light: the brass, wood and carved bone have the look of practical models, with tilt-shift depth, lit by a burning sun at the centre of an armillary sphere",
+              "Every frame shows a different scale and setting (a carved band, a city on the map, the gear-towers, the astrolabe, a top-down map, the logo lockup), which points to planned camera moves across one continuous world",
+              "The credits are set in a small-caps serif with heraldic sigil icons. They sit inside the world as if engraved, and placement and tracking differ from frame to frame",
+              "Book-ended structure: the carved band and the sunburst open the piece and return around the title card, closing the loop"
+            ],
+            "gaps": [
+              "Benchmark entry. The weakest frame is the flat top-down map, which reads more like a plain map insert than a built model",
+              "The credit type, although well judged, stays at one scale throughout. A single bolder typographic moment would add contrast",
+              "The warm amber-sepia grade covers almost every shot. One cold or contrasting setting would give the palette more range"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A library of designed objects (quilted, foil-wrapped, knitted, wireframe and spring-coiled) built as a coherent brand toolkit, with materials rendered at a high standard",
+              "A deliberate palette system: the same layout is re-coloured green/blue and then violet/yellow, which shows the colourways are planned rather than chosen at random",
+              "Implied choreography: a single light orb leads a snaking stream of objects across a pegboard, they pile into colour masses and then resolve into a laid-out catalogue",
+              "The BBC Two wordmark is used as a fixed, unadorned lockup. That is correct for the brand but carries no typographic idea of its own"
+            ],
+            "gaps": [
+              "There is no single surprising narrative beat comparable to A's mechanism. The idea is 'nice objects in motion', not a world with a point of view",
+              "The type is simply placed. Unlike A, the logo never takes part in the image (no occlusion, interaction or scale play)",
+              "Frames 3 and 6 repeat one layout with only the colour swapped. It works as a system demo but is a weak beat within a single film"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 4,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "One brand mark is reinterpreted in six clearly different visual languages: embossed soft UI, chrome Y2K primitives, distressed risograph collage, typographic construction, flat floral vector and photographic botanical collage. That points to multiple commissioned artists",
+              "Each style is carried out with real specificity, for example the halftone and tape textures in frame 3 and the butterflies and leaf cut-outs in frame 6",
+              "The chrome primitives in frame 2 and the gradient ground in frame 1 come close to generic tells, but they sit inside a deliberate style-survey concept",
+              "The mark sits centred on black in every frame. The composition is a fixed showcase grid rather than a staged film"
+            ],
+            "gaps": [
+              "There is no through-line of motion. The frames read as separate stills about the mark, with nothing that carries over between them as A's world does",
+              "The repeated centred-mark-on-black layout flattens the sequence. Changes in camera, scale or framing would turn the survey into choreography",
+              "There is almost no typography and no designed light environment. The objects float in a void instead of living in a lit space"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 5,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "The same object library and material rendering as D (quilted, foil and knit surfaces with real occlusion), so the craft is clearly studio-level",
+              "A vertical cutdown: every frame uses one diagonal split between two colour masses, with the logo in a fixed lower position",
+              "Shows variety in colourway only. The layout repeats, which reads as a social-format adaptation rather than an authored film",
+              "Only three samples, with little change in composition between them, so little motion can be inferred"
+            ],
+            "gaps": [
+              "The identical diagonal-split layout repeats in every frame. It needs compositional progression and a resolve, as A builds to its title card",
+              "No hero moment or surprise: the objects never do anything beyond filling the frame",
+              "The logo is pasted over the busy material field and partly clashes with it. Integrating it, by clearing space or having objects frame it, would show craft"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.0,
+        "cost_usd": 0.1539596,
+        "tokens": 71550,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.46,
+  "judge_seconds": 86.6,
+  "verdict": "PASS"
+}

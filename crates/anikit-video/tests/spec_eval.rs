@@ -538,3 +538,29 @@ fn dots_from_data_with_appear() {
     let (_, _, p0) = anikit_video::pipeline::render_rgba(&ev, 0.0, 1.0);
     assert!(p0.chunks(4).all(|c| c[0] < 5), "nothing has appeared at t = 0");
 }
+
+#[test]
+fn def_params_with_defaults_and_random_scatter() {
+    // A def with parameters and defaults, used like a function; a 30-star scatter in one item.
+    let ev = build(r##"{ "size": [400, 200], "motionBlur": false, "defs": {
+        "lamp": { "params": { "x": 0, "y": 100, "lit": "#ffcc00" }, "shape": "circle", "width": 20, "x": "$x", "y": "$y", "fill": "$lit" } },
+      "scenes": [ { "background": "#000000", "layers": [
+        { "use": "lamp", "x": 50 },
+        { "use": "lamp", "x": 150, "lit": "#00ff00" },
+        { "repeat": 30, "shape": "circle", "width": "=pick(rand($i + 7) * 3, 2, 4, 6)",
+          "x": "=rand($i, 0, 400)", "y": "=rand($i + 100, 0, 60)", "fill": "=pick(rand($i + 9) * 2, #ffffff, #88ccff)" } ] } ] }"##);
+    let (w, _, p) = anikit_video::pipeline::render_rgba(&ev, 1.0, 1.0);
+    let px = |x: u32, y: u32| { let i = ((y * w + x) * 4) as usize; [p[i], p[i + 1], p[i + 2]] };
+    assert_eq!(px(50, 100), [255, 204, 0]);
+    assert_eq!(px(150, 100), [0, 255, 0]);
+    // The scatter lands in the top band only, deterministically.
+    let lit_top = (0..60).flat_map(|y| (0..400).map(move |x| (x, y))).filter(|&(x, y)| px(x, y)[2] > 100).count();
+    assert!(lit_top > 30, "{lit_top}");
+    assert_eq!(ev.eval(1.0), build(r##"{ "size": [400, 200], "motionBlur": false, "defs": {
+        "lamp": { "params": { "x": 0, "y": 100, "lit": "#ffcc00" }, "shape": "circle", "width": 20, "x": "$x", "y": "$y", "fill": "$lit" } },
+      "scenes": [ { "background": "#000000", "layers": [
+        { "use": "lamp", "x": 50 },
+        { "use": "lamp", "x": 150, "lit": "#00ff00" },
+        { "repeat": 30, "shape": "circle", "width": "=pick(rand($i + 7) * 3, 2, 4, 6)",
+          "x": "=rand($i, 0, 400)", "y": "=rand($i + 100, 0, 60)", "fill": "=pick(rand($i + 9) * 2, #ffffff, #88ccff)" } ] } ] }"##).eval(1.0));
+}

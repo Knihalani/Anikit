@@ -1,0 +1,24 @@
+{
+  "slug": "wealthsimple-trade",
+  "title": "Wealthsimple Trade — app launch",
+  "studio": "BUCK",
+  "year": 2019,
+  "url": "https://buck.co/work/wealth-simple-trade-app",
+  "frame_sources": [
+    "https://cdn.sanity.io/images/uk7b627p/production/e3a9bb6be81560b899d1a7bebbea1a915a708663-960x540.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/7da2b0ec5d011ed4f25943f3276a5bde133f2ce3-1368x1268.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/143389175baae6f97962d6c6519e5cf080c0f336-1600x900.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/58a179458daa4820fc2291301ff9650ec6d162b2-2048x1151.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/6557fffbaeed13ac84af68bbf543b191ec66256a-2048x1151.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/5a14509592f344ea40edaabcf59f865e7924d116-1440x1440.png"
+  ],
+  "style_tags": [
+    "product-launch",
+    "3d-cg"
+  ],
+  "format": "16:9",
+  "medium": "3D",
+  "description": "Soft-matte 3D icons in pastel circles: a steering wheel with UI arrows, a plug, a retro monitor, a portal of shares, on peach and grey grounds.",
+  "why_top_tier": "Clean modernist 3D iconography turns trading concepts into a coherent object system.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright Wealthsimple"
+}

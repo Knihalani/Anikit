@@ -104,7 +104,7 @@ pub static STYLES: &[StyleDef] = &[
             &[("kick", "x.....x...x..x.."), ("snare", "....x.......x..o"), ("hat", "x.oxx.o.x.oxx.o."), ("shaker", "..x...x...x...x.")],
         ],
         layers: &[
-            Layer { pan: 0.0, reverb: 0.18, humanize: 0.45, ..layer("keys", "rhodes|epiano", Gen::Chords("x.....x...x.....", 4, 62), 0.0, -5.0) },
+            Layer { pan: 0.0, reverb: 0.18, humanize: 0.45, ..layer("keys", "wurlitzer|rhodes|epiano", Gen::Chords("x.....x...x.....", 4, 62), 0.0, -5.0) },
             Layer { humanize: 0.3, ..layer("bass", "bass|bass-synth", Gen::Bass("synco", 2), 0.35, -3.0) },
             Layer { pan: 0.25, reverb: 0.3, delay: 0.2, humanize: 0.5, ..layer("lead", "vibraphone|kalimba|vibes", Gen::Melody(0.6, 74, None), 0.55, -7.0) },
             Layer { reverb: 0.4, ..layer("pad", "slow-strings|strings", Gen::Chords("pad", 3, 60), 0.0, -14.0) },
@@ -119,7 +119,7 @@ pub static STYLES: &[StyleDef] = &[
         name: "house",
         about: "four-on-the-floor, offbeat hats, pumping sidechain, piano/organ stabs, rolling bass",
         bpm: 124.0,
-        swing: 0.08,
+        swing: 0.2,
         minor: true,
         key_major: "A",
         key_minor: "Am",
@@ -187,8 +187,8 @@ pub static STYLES: &[StyleDef] = &[
         kit: "drums:trap|drums:808|drums",
         drums: [
             &[("hat", "x.x.x.x.x.x.x.x.")],
-            &[("kick", "x.........x....."), ("clap", "........x......."), ("hat", "x.x.x.x.x.x.x3x.")],
-            &[("kick", "x.....x...x...x."), ("clap", "........x......."), ("hat", "x.xxx.x.x3x.x.4."), ("ohh", "......x.........")],
+            &[("kick", "x.........x....."), ("clap", "........x......."), ("hat", "x.x.x.x.x.x.x.x.")],
+            &[("kick", "x.....x...x...x."), ("clap", "........x......."), ("hat", "x.xxx.x.x.xxx.x."), ("ohh", "......x.........")],
         ],
         layers: &[
             Layer { humanize: 0.0, ..layer("808", "bass-808|synth-bass", Gen::Bass("808", 1), 0.45, 0.0) },
@@ -319,7 +319,7 @@ pub static STYLES: &[StyleDef] = &[
         name: "pop",
         about: "modern pop: punchy drums, piano + synth chords, plucks, catchy top line",
         bpm: 112.0,
-        swing: 0.0,
+        swing: 0.12,
         minor: false,
         key_major: "G",
         key_minor: "Em",
@@ -487,7 +487,7 @@ pub static STYLES: &[StyleDef] = &[
         name: "jazz",
         about: "swung piano trio: walking bass, ride and brushes, comping 7th chords",
         bpm: 132.0,
-        swing: 0.6,
+        swing: 0.85,
         minor: false,
         key_major: "Bb",
         key_minor: "Cm",
@@ -703,7 +703,11 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
     let mut rng = Rng::new(seed ^ 0xA11CE);
 
     // Sections: explicit or from the style's form, with the first hit starting the peak.
-    let total_bars = (length / grid.bar()).floor().max(if length > 0.0 { 1.0 } else { 0.0 });
+    // A ringing ending gets room: the last downbeat (the "button") lands early
+    // enough for the final chord to ring out (15 % of the length, 1–3 s).
+    let ringing = style.is_some() && spec.end.as_deref().unwrap_or("ring") == "ring" && spec.sections.is_empty();
+    let ring_room = if ringing { (length * 0.15).clamp(1.0, 3.0) } else { 0.0 };
+    let total_bars = ((length - ring_room) / grid.bar()).floor().max(if length > 0.0 { 1.0 } else { 0.0 });
     let hit_bars: Vec<f64> = hits.iter().map(|&h| (h / grid.bar()).round()).collect();
     let mut sections = if !spec.sections.is_empty() {
         explicit_sections(&spec.sections, total_bars)?
@@ -762,7 +766,11 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
     let mut kicks: Vec<f64> = Vec::new();
     let mut sfx: Vec<SfxPlan> = Vec::new();
     if let Some(st) = style {
-        let muted = |r: &str| spec.mute.iter().any(|m| m.eq_ignore_ascii_case(r));
+        let underscore = spec.underscore == Some(true);
+        let muted = |r: &str| {
+            spec.mute.iter().any(|m| m.eq_ignore_ascii_case(r))
+                || (underscore && matches!(r, "lead" | "melody" | "right" | "pluck" | "bells" | "glock" | "counter"))
+        };
         // Drums first (the 808 bass follows the kicks).
         let mut drum_notes: Vec<Note> = Vec::new();
         let has_kit = match &instrumentation {
@@ -806,6 +814,15 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                     }
                     if last && into_bigger {
                         continue; // the roll below takes the last bar
+                    }
+                    if st.name == "trap" && tier > 0 && b % 2 == 1 {
+                        // Hat rolls at phrase ends: triplet 16ths, then 32nds over the last beat.
+                        drum_notes.retain(|n| !(n.key == 42.0 && n.t >= t0 + bpb - 1.0 - 1e-9 && n.t < t0 + bpb - 1e-9));
+                        let per = if b % 4 == 3 { 8 } else { 6 };
+                        for i in 0..per {
+                            let f = i as f32 / per as f32;
+                            drum_notes.push(Note { t: t0 + bpb - 1.0 + i as f64 / per as f64, len: 0.08, key: 42.0, vel: 0.45 + 0.4 * f });
+                        }
                     }
                     if tier > 0 && b % 8 == 7 {
                         // Tom/snare fill over the last beat.
@@ -989,6 +1006,12 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                     _ => 0.0,
                 };
             }
+            // Mono keys and beds get real stereo from a gentle ensemble/chorus (the classic
+            // Rhodes and pad treatment) in styles whose parts are otherwise centre-heavy.
+            if tr.fx.is_none() && !electronic && matches!(tr.role.as_str(), "keys" | "pad" | "comp" | "piano" | "strings" | "choir" | "picking") {
+                let mix = if tr.role == "keys" || tr.role == "comp" { 0.35 } else { 0.25 };
+                tr.fx = Some(serde_json::json!([{ "type": "chorus", "mode": "ensemble", "rate": 0.6, "depth": 2.5, "spread": 1.0, "mix": mix }]));
+            }
             tr.mix.width = match tr.role.as_str() {
                 "pad" | "glass" | "choir" | "strings" => 1.5,
                 "arp" | "ostinato" | "bells" | "harp" => 1.35,
@@ -1141,10 +1164,27 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
             let tail: Vec<Note> = match tr.role.as_str() {
                 "drums" => vec![Note { t, len: 2.0, key: 36.0, vel: 0.9 }, Note { t, len: 4.0, key: 49.0, vel: 0.8 }],
                 "bass" | "808" | "low" | "basses" | "sub" => vec![Note { t, len: 6.0, key: (36 + key.tonic - if key.tonic > 7 { 12 } else { 0 }) as f32, vel: 0.8 }],
-                "lead" | "melody" | "bells" | "glock" | "pluck" | "arp" | "right" | "ostinato" | "timpani" => continue,
+                "lead" | "melody" | "right" => vec![Note { t, len: 4.0, key: (72 + key.tonic - if key.tonic > 7 { 12 } else { 0 }) as f32, vel: 0.75 }],
+                "bells" | "glock" | "pluck" | "arp" | "ostinato" | "timpani" | "counter" => continue,
                 _ => arrange::play_chords(std::slice::from_ref(&tonic), &Play::Pad, 62, 4, 0.7, seed),
             };
             tr.notes.extend(tail);
+        }
+        if let Some(st) = style {
+            let button = grid.secs(t) - grid.offset;
+            // Short pieces end on a hit: an impact under the button and a breath before it.
+            if length <= 30.0 && !sfx.iter().any(|x| (x.at - button).abs() < 0.05) {
+                sfx.push(SfxPlan { name: st.impact.into(), at: button, gain: -9.0, params: serde_json::json!({ "seed": seed }) });
+            }
+            if length <= 20.0 && t >= 2.0 {
+                let w0 = t - 0.5;
+                for tr in tracks.iter_mut() {
+                    tr.notes.retain(|n| !(n.t >= w0 - 1e-9 && n.t < t - 1e-9));
+                    for n in tr.notes.iter_mut().filter(|n| n.t < w0 && n.t + n.len > w0) {
+                        n.len = (w0 - n.t).max(0.05);
+                    }
+                }
+            }
         }
     }
     Ok(Arrangement {
@@ -1255,9 +1295,27 @@ pub fn auto_sections(st: &StyleDef, bars: f64, hit_bars: &[f64]) -> Vec<Section>
     if bars <= 0.0 {
         return Vec::new();
     }
-    if bars <= 4.0 {
-        let peak = st.form.iter().map(|f| f.2).fold(0.0f32, f32::max);
-        return vec![Section { name: "main".into(), bar: 0.0, bars, energy: (peak * 0.85).max(0.6) }];
+    if bars < 8.0 {
+        // Short forms (idents, stings, 5–15 s spots): still an arc — set-up, lift, payoff.
+        let (pi, peak) = st.form.iter().enumerate().max_by(|a, b| a.1 .2.total_cmp(&b.1 .2)).map(|(i, f)| (i, f.2)).unwrap_or((0, 1.0));
+        let peak_name = st.form.get(pi).map(|f| f.0).unwrap_or("main");
+        let intro_e = st.form.first().map(|f| f.2).unwrap_or(0.35);
+        let plan: Vec<(&str, f64, f32)> = match bars as usize {
+            0 | 1 => vec![(peak_name, bars, peak)],
+            2 => vec![("build", 1.0, 0.7), (peak_name, 1.0, peak)],
+            3 => vec![("intro", 1.0, intro_e), ("build", 1.0, 0.7), (peak_name, 1.0, peak)],
+            4 => vec![("intro", 1.0, intro_e), ("build", 1.0, 0.7), (peak_name, 2.0, peak)],
+            n => vec![("intro", 1.0, intro_e), ("build", 2.0, 0.7), (peak_name, (n - 3) as f64, peak)],
+        };
+        let mut bar = 0.0;
+        return plan
+            .into_iter()
+            .map(|(n, b, e)| {
+                let s = Section { name: n.into(), bar, bars: b, energy: e };
+                bar += b;
+                s
+            })
+            .collect();
     }
     // Integer bars per section, at least 1, rounded to even counts when long enough.
     let mut sizes: Vec<f64> = st.form.iter().map(|f| (f.1 * bars).round().max(1.0)).collect();
@@ -1370,7 +1428,8 @@ mod tests {
             assert!(a.tracks.iter().all(|t| !t.notes.is_empty()), "{}", s.name);
             assert_eq!(a.length, 20.0);
             let bars: f64 = a.sections.iter().map(|x| x.bars).sum();
-            assert_eq!(bars, (20.0 / a.grid.bar()).floor(), "{}: {:?}", s.name, a.sections);
+            // The button lands early enough for a 3 s ring-out (15 % of 20 s).
+            assert_eq!(bars, ((20.0 - 3.0) / a.grid.bar()).floor(), "{}: {:?}", s.name, a.sections);
             // Everything stays in MIDI range.
             for t in &a.tracks {
                 assert!(t.notes.iter().all(|n| (0.0..=127.0).contains(&n.key)), "{} {}", s.name, t.name);
@@ -1403,7 +1462,7 @@ mod tests {
         let drop = s.iter().find(|x| x.name == "drop").unwrap();
         assert_eq!(drop.bar, 8.0);
         assert_eq!(s.iter().map(|x| x.bars).sum::<f64>(), 16.0);
-        for b in [1.0, 2.0, 3.0, 5.0, 7.0, 9.0, 33.0] {
+        for b in [1.0, 2.0, 3.0, 4.0, 5.0, 7.0, 9.0, 33.0] {
             let s = auto_sections(st, b, &[]);
             assert_eq!(s.iter().map(|x| x.bars).sum::<f64>(), b, "{b}: {s:?}");
         }
@@ -1467,5 +1526,19 @@ mod cut_tests {
         let off = MusicSpec::from_json(r#"{"style":"pop","bpm":120,"length":"40s","cuts":[13.9],"followCuts":false}"#).unwrap();
         let b = compose(&off, None).unwrap();
         assert!(!b.tracks.iter().find(|t| t.role == "drums").unwrap().notes.iter().any(|n| n.key == 57.0));
+    }
+}
+
+#[cfg(test)]
+mod underscore_tests {
+    use super::*;
+
+    #[test]
+    fn underscore_drops_the_melody_but_keeps_the_bed() {
+        let full = compose(&MusicSpec::from_json(r#"{"style":"pop","length":"30s"}"#).unwrap(), None).unwrap();
+        let under = compose(&MusicSpec::from_json(r#"{"style":"pop","length":"30s","underscore":true}"#).unwrap(), None).unwrap();
+        assert!(full.tracks.iter().any(|t| t.role == "pluck" || t.role == "counter"));
+        assert!(!under.tracks.iter().any(|t| matches!(t.role.as_str(), "pluck" | "lead" | "counter")));
+        assert!(under.tracks.iter().any(|t| t.role == "drums") && under.tracks.iter().any(|t| t.role == "piano"));
     }
 }

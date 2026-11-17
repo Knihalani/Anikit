@@ -1,0 +1,479 @@
+{
+  "name": "control-dissembargo-f1-2026-opening-titles",
+  "tags": [
+    "broadcast-sports",
+    "3d-cg",
+    "3d-type",
+    "beat-sync",
+    "brand-colour",
+    "camera-move",
+    "dark",
+    "depth-of-field",
+    "epic",
+    "fast",
+    "glow",
+    "high-contrast",
+    "light-sweep",
+    "live-action",
+    "mixed",
+    "music-led",
+    "premium",
+    "rhythmic-edit",
+    "technical",
+    "title-sequence",
+    "type-supporting",
+    "cg-3d",
+    "kinetic-type"
+  ],
+  "refs": [
+    "blender-studio-charge-2022",
+    "buck-github-what-is-github-2022",
+    "raycast-new-raycast-coming-2026-2025"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 7,
+      "composition": 8,
+      "typography": 8,
+      "colour": 8,
+      "light_texture": 8,
+      "motion": 7,
+      "craft": 8,
+      "originality": 6
+    },
+    "overall": 7.5,
+    "judged_professional": "3/3",
+    "pro_rate": 1.0,
+    "mean_rank": 2.33,
+    "gaps": [
+      "The sports-intro formula (moody portrait, giant name behind the head, red light) is the genre default; it needs an idea specific to this season or these drivers",
+      "Lighting is similar on every driver; vary the setups to reveal character",
+      "The type device repeats unchanged; evolve it through the piece with kinetic interaction, occlusion or material change",
+      "The core device (huge name behind an athlete portrait) is a well-worn sports-broadcast convention. It needs a twist only this series could own",
+      "The group key art is a crowded cut-out composite that undercuts the restraint of the portrait frames",
+      "Material and texture are limited to skin and light. Adding the world of the sport (heat haze, carbon, rubber, motion) would give it the tactile depth of B",
+      "The structure (portrait plus giant name) is standard sports-title grammar, so it needs a surprising device or transition that only this sequence could have.",
+      "The group composite frame is crowded and poster-generic, so it should match the restraint of the single portraits.",
+      "Add texture or environmental storytelling (heat, rubber, motion blur, track material) so the frames go beyond studio portraits."
+    ],
+    "tells": [
+      "Real talent shoot of actual drivers with controlled, moody red key and rim lighting, and tight hero portraiture",
+      "Giant cropped driver-name type set behind the subject ('BOT', 'VER') builds layered depth and works as a deliberate typographic device",
+      "Brand-exact red and black palette applied consistently across shots",
+      "Alternating group key art, close-ups and type plates shows edit rhythm, not a single repeated layout",
+      "A clear title-sequence system: a red-and-black world, low-key portraiture and giant cropped driver names ('BOTT\u2026', 'VER\u2026') running behind or through the heads, with type used as architecture rather than a caption",
+      "Hard, sculptural side-light on faces (rim-lit cheekbones, earring catchlight, red bounce), shot as real portraiture",
+      "The variation between frames (name behind the subject, name bleeding off the frame edge, an extreme close-up with no type) shows choreography, not one layout repeated",
+      "The opening group key-art frame is more conventional sports-marketing collage, which lowers the originality score",
+      "This is a broadcast-grade driver title sequence: hard-lit, shot portraits with deep shadow and a red rim key that matches the brand palette.",
+      "Typography with intent: massive cropped driver names (BOT\u2026, VER\u2026) sit behind the subjects, so the type works as set architecture and scale contrast, integrated with the image.",
+      "The palette is disciplined, near-monochrome red and black, held across the frames. The extreme close-up of an eye and earring shows a varied, considered shot language.",
+      "The opening group frame is more conventional key art and less designed than the portrait frames."
+    ]
+  },
+  "refs_summary": {
+    "blender-studio-charge-2022": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "buck-github-what-is-github-2022": {
+      "overall": 7,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "raycast-new-raycast-coming-2026-2025": {
+      "overall": 5.62,
+      "judged_professional": "2/3",
+      "mean_rank": 4
+    }
+  },
+  "ref_mean": 6.79,
+  "delta": 0.71,
+  "trials": [
+    {
+      "key": {
+        "A": "raycast-new-raycast-coming-2026-2025",
+        "B": "blender-studio-charge-2022",
+        "C": "candidate",
+        "D": "buck-github-what-is-github-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 6,
+              "colour": 5,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "Real product UI with specific content (Linear/GitHub issue fetching, a note-creating agent step, voice waveform input), not placeholder pills or grey bars",
+              "Liquid-chrome black backgrounds with believable specular highlights, and glass-edged search field with considered bevel and inner glow",
+              "Extreme scale change between frames (tiny pill to cropped macro 'Search' field) suggests choreographed camera push-ins rather than static slides",
+              "Emoji-grid frame with warm accent outline shows interaction states being animated, not just shown",
+              "Against it: it closely matches the generic dark-ground, single-accent, mostly-empty 'tasteful tech' look; default UI sans; idea is the literal product walk-through"
+            ],
+            "gaps": [
+              "No concept beyond 'here is the feature': find a visual metaphor or narrative that makes the product's speed or intelligence memorable",
+              "Palette is monochrome chrome plus one orange accent, the default dark-mode look; commit to a distinctive colour world",
+              "Typography is only the product's UI type; add an editorial typographic layer with scale contrast and voice"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Full CG narrative short with a consistent, specific character design (weathered old man, damaged pink-lit robot) and a world built around them",
+              "Motivated practical light: candle clusters, firelight, sparks and haze, with warm and cool lighting set against each other for story reasons",
+              "Rich material work (wool beanie, worn leather, scratched robot plating, gloved hands in close-up)",
+              "Cinematic coverage of wide, medium, action and insert shots implies real shot planning and action choreography",
+              "Key art with custom-styled 'CHARGE' wordmark integrated with the composition"
+            ],
+            "gaps": [
+              "Genre vocabulary (post-apocalyptic survivor versus killer robot) is familiar; a stranger premise or visual angle would push originality",
+              "Title typography is a stylised techno display face; it could carry more of the film's grit and handmade texture",
+              "The orange-and-teal grading leans on blockbuster convention; a more singular palette would make it more ownable"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Real talent shoot of actual drivers with controlled, moody red key and rim lighting, and tight hero portraiture",
+              "Giant cropped driver-name type set behind the subject ('BOT', 'VER') builds layered depth and works as a deliberate typographic device",
+              "Brand-exact red and black palette applied consistently across shots",
+              "Alternating group key art, close-ups and type plates shows edit rhythm, not a single repeated layout"
+            ],
+            "gaps": [
+              "The sports-intro formula (moody portrait, giant name behind the head, red light) is the genre default; it needs an idea specific to this season or these drivers",
+              "Lighting is similar on every driver; vary the setups to reveal character",
+              "The type device repeats unchanged; evolve it through the piece with kinetic interaction, occlusion or material change"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Structural idea: the same explainer jumps between media (live action, anime cel, stylised 3D, psychedelic illustration), and the style shifts carry the message about many kinds of developers",
+              "Character continuity across styles (glasses, blue jacket, red top) implies a planned design system, not random generation",
+              "Illustration frame layers real code (Octokit GraphQL) with fluid colour fields; dense and specific, not decorative",
+              "Bold, saturated palette that changes per segment while staying coherent",
+              "Against it: the title 'What is GitHub?' is a plain bold sans placed like a slide, and the 3D frame leans on generic Pixar-style character tropes"
+            ],
+            "gaps": [
+              "Typography is default bold sans with no idea; type should transform across styles the way the imagery does",
+              "The 3D segment's character design and lighting are the most generic part; push it toward a distinct studio look",
+              "Transitions between styles are where the idea lives; make those morphs the signature moments rather than cuts between vignettes"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "C",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 31.7,
+        "cost_usd": 0.14257180000000003,
+        "tokens": 69997,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "raycast-new-raycast-coming-2026-2025",
+        "B": "blender-studio-charge-2022",
+        "C": "buck-github-what-is-github-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "Real product UI (voice-input pill with waveform, Raycast-style search field, Linear/GitHub tool-call list) shown with consistent glass bevels and specular rim light; that is a deliberate product-film finish, not placeholder UI",
+              "Liquid chrome background has actual reflections and falloff, and the macro push-in on the 'Search' field gives the cut a sense of scale and camera",
+              "Emoji grid with the warm-orange selected tile shows choreographed interaction beats, not static slides",
+              "Still, it sits very close to the generic dark-SaaS-launch look: black ground, a single warm accent, mostly empty frames and stock system type. That is what keeps the confidence down"
+            ],
+            "gaps": [
+              "There's no idea beyond 'here are the features'. It needs a narrative or visual metaphor that only this product could carry, the way B builds a world",
+              "Typography is the UI default throughout. A typographic layer with scale contrast, a custom display face or type that interacts with the chrome would give it a point of view",
+              "The palette is the category default (black, chrome, one orange). A committed, unusual colour world would make it memorable, as the red-and-black system in D does"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A fully realised CG short with recurring characters (an old hunter and a scavenged robot) and a world with its own story",
+              "Motivated practical light: candle clusters, fire backlight and sparks give real warm/cool contrast and atmosphere",
+              "Strong material work on the leather, knit beanie, worn metal and the robot's emissive core",
+              "Shot variety (key art, medium, creature reveal, insert close-up on gloved hands) implies real cinematographic choreography and blocking"
+            ],
+            "gaps": [
+              "The title card typography (a sci-fi stencil lockup) is functional genre fare, not designed with the same ambition as the image",
+              "The key-art frame leans on familiar game-poster conventions (cyan/magenta rim light, collage of characters) and is less specific than the film's own interiors",
+              "The palette in the film stills is near-monochrome orange-brown. More deliberate colour beats between scenes would sharpen the storytelling"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "One recurring concept, a developer, carried across radically different media: live action, 2D anime-style cel, stylised 3D character and painterly neon illustration. That shows art direction with a thesis, not a template",
+              "Each style is executed at a high level: clean cel line and flat sky, appealing 3D character rig with expressive pose, iridescent illustrated portrait with integrated code type",
+              "Real code (octokit/GraphQL) layered into the illustration ties the image to the subject",
+              "The weak spot is the 'What is GitHub?' headline: a default bold grotesk dropped beside the subject, which reads like a slide"
+            ],
+            "gaps": [
+              "Headline typography is default and slide-like. It needs type that transforms with each style shift, the way image and type merge in D",
+              "The style-hopping risks reading as a reel of vendors. A stronger connective device (match cuts, a constant object or a colour key) would make it one film",
+              "Light in the live-action and 3D frames is generic commercial soft-box. It lacks the motivated, atmospheric light of B"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A clear title-sequence system: a red-and-black world, low-key portraiture and giant cropped driver names ('BOTT\u2026', 'VER\u2026') running behind or through the heads, with type used as architecture rather than a caption",
+              "Hard, sculptural side-light on faces (rim-lit cheekbones, earring catchlight, red bounce), shot as real portraiture",
+              "The variation between frames (name behind the subject, name bleeding off the frame edge, an extreme close-up with no type) shows choreography, not one layout repeated",
+              "The opening group key-art frame is more conventional sports-marketing collage, which lowers the originality score"
+            ],
+            "gaps": [
+              "The core device (huge name behind an athlete portrait) is a well-worn sports-broadcast convention. It needs a twist only this series could own",
+              "The group key art is a crowded cut-out composite that undercuts the restraint of the portrait frames",
+              "Material and texture are limited to skin and light. Adding the world of the sport (heat haze, carbon, rubber, motion) would give it the tactile depth of B"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "C",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 32.2,
+        "cost_usd": 0.1421234,
+        "tokens": 69969,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "buck-github-what-is-github-2022",
+        "B": "blender-studio-charge-2022",
+        "C": "raycast-new-raycast-coming-2026-2025",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 6,
+              "originality": 7
+            },
+            "tells": [
+              "The idea is a style relay: the same coder archetype is redrawn as live-action, 90s cel anime, Pixar-style 3D and a neon gradient illustration. It's a specific concept that tells a 'what is GitHub' story through many styles and many makers.",
+              "Each style is coherent inside its own frame. The anime frame has convincing cel shading and costume continuity (blue jacket, red shirt). The final frame layers code over the face with real intent.",
+              "Shifting the colour logic from warm practical light to sky blue to acid neon implies choreographed transitions, not one repeated layout.",
+              "Against that, the type is a default bold grotesk ('What is GitHub?') set like a slide over a photo, with no typographic idea. The photoreal opener and the 3D character also have a generic, near-stock finish."
+            ],
+            "gaps": [
+              "Give the typography a voice that changes with each style, the way the image does, instead of one default grotesk caption.",
+              "Push the 3D and live-action segments past stock-character polish with a specific art direction (material, lens, grade) so they match the anime segment's conviction.",
+              "Unify the relay with one designed light or colour motif that carries across the style cuts, so it reads as a single film rather than a sampler."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "This is a narrative CG short with real cinematography: candle-lit interiors, firelit hands in close-up, and haze and sparks around a damaged robot. The light is motivated and has a source in every frame.",
+              "Materials are rich: weathered skin, a knit beanie, worn leather, the robot's chipped enamel. The texture belongs to the subject.",
+              "Shot grammar varies (key art, medium shot, wide action, extreme close-up), which implies an edit with weight and pacing.",
+              "A committed palette of amber against cyan/magenta sci-fi accents. The title logotype is a custom geometric stencil, though it lives mostly on the key art."
+            ],
+            "gaps": [
+              "The story genre (gruff survivor against a killer robot) is familiar, so the idea needs a more distinctive narrative or visual conceit.",
+              "Typography lives only on the poster frame, so in-film title design could be integrated with the world.",
+              "The key art is busier and more generic-blockbuster than the restrained, painterly film frames. Align the poster with the film's best lighting."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 3,
+              "composition": 5,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 6,
+              "originality": 3
+            },
+            "tells": [
+              "It hits the generic 'tasteful dark' product look: black liquid-chrome ground, glassy pills, a single warm accent (the orange tile outline), and a mostly empty frame.",
+              "Placeholder-style UI is the whole subject: a voice-input pill, a giant 'Search' field, rounded emoji tiles, a checklist of 'Getting active Linear/GitHub issues'.",
+              "The type is default system sans at UI sizes, cropped big for drama, with no typographic idea beyond scale.",
+              "Every frame repeats the same structure: one UI element floating on a blurred chrome swirl. The effect has no subject, and the idea is a literal list of features. The chrome render is clean, which lifts the craft score somewhat."
+            ],
+            "gaps": [
+              "Find an idea beyond 'show each feature on black': a metaphor, a character or a scenario a viewer would remember.",
+              "Give it a point-of-view palette and real lighting or material that comes from the product's world, not a stock chrome-blob backdrop.",
+              "Choreograph frames with different scales, compositions and transitions instead of one centred-element-on-gradient layout repeated four times."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "This is a broadcast-grade driver title sequence: hard-lit, shot portraits with deep shadow and a red rim key that matches the brand palette.",
+              "Typography with intent: massive cropped driver names (BOT\u2026, VER\u2026) sit behind the subjects, so the type works as set architecture and scale contrast, integrated with the image.",
+              "The palette is disciplined, near-monochrome red and black, held across the frames. The extreme close-up of an eye and earring shows a varied, considered shot language.",
+              "The opening group frame is more conventional key art and less designed than the portrait frames."
+            ],
+            "gaps": [
+              "The structure (portrait plus giant name) is standard sports-title grammar, so it needs a surprising device or transition that only this sequence could have.",
+              "The group composite frame is crowded and poster-generic, so it should match the restraint of the single portraits.",
+              "Add texture or environmental storytelling (heat, rubber, motion blur, track material) so the frames go beyond studio portraits."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 34.4,
+        "cost_usd": 0.14541900000000002,
+        "tokens": 70133,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.43,
+  "judge_seconds": 98.3,
+  "verdict": "PASS"
+}

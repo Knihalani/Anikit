@@ -110,6 +110,10 @@ const FUNCS: &[(&str, u8)] = &[
     ("easeOut", 1),
     ("spring", 1),
     ("rand2", 2),
+    // rand(seed, lo, hi)
+    ("randr", 3),
+    // pick(k, a, b, …): the k-th value (wraps; k may be fractional, e.g. rand(i) * n)
+    ("pick", 255),
 ];
 
 struct P<'a> {
@@ -337,7 +341,11 @@ impl P<'_> {
                         return Err(format!("expected ',' or ')' in call to {name}"));
                     }
                 }
-                let name = if name == "noise" && argc == 2 { "noise2" } else { name };
+                let name = match (name, argc) {
+                    ("noise", 2) => "noise2",
+                    ("rand", 3) => "randr",
+                    _ => name,
+                };
                 let idx = FUNCS.iter().position(|(f, _)| *f == name).ok_or_else(|| {
                     let names: Vec<&str> = FUNCS.iter().map(|f| f.0).collect();
                     match crate::spec::validate::suggest(name, &names) {
@@ -346,7 +354,10 @@ impl P<'_> {
                     }
                 })?;
                 let want = FUNCS[idx].1;
-                if argc != want {
+                if want == 255 && argc < 2 {
+                    return Err(format!("{name}() takes an index and at least one value"));
+                }
+                if want != 255 && argc != want {
                     return Err(format!("{name}() takes {want} argument(s), got {argc}"));
                 }
                 self.out.push(Ins::Call(idx as u8, argc));
@@ -593,6 +604,11 @@ fn call(f: u8, a: &[f64]) -> f64 {
             1.0 - (-6.0 * x).exp() * (12.0 * x).cos()
         }
         "rand2" => hash(a[0] * 12.9898 + hash(a[1] * 78.233) * 4375.0),
+        "randr" => a[1] + hash(a[0]) * (a[2] - a[1]),
+        "pick" => {
+            let n = a.len() - 1;
+            a[1 + (a[0].floor().rem_euclid(n as f64) as usize)]
+        }
         _ => 0.0,
     }
 }
@@ -662,6 +678,8 @@ enum ColorKind {
     Mix([f32; 4], [f32; 4]),
     /// A fixed colour (a branch of a conditional).
     Const([f32; 4]),
+    /// `pick(k, colourA, colourB, …)`: the k-th colour (wraps).
+    Pick(Vec<[f32; 4]>),
     /// `condition ? a : b` (args[0] is the condition).
     Select(Box<ColorExpr>, Box<ColorExpr>),
 }
@@ -748,6 +766,13 @@ impl ColorExpr {
                 };
                 (kind, parts.iter().map(|p| ex(p)).collect::<Result<Vec<_>, _>>()?)
             }
+            "pick" => {
+                if parts.len() < 2 {
+                    return Err("pick() takes (index, colour, colour, …)".into());
+                }
+                let cols = parts[1..].iter().map(|p| color(p).ok_or_else(|| format!("pick(): '{p}' isn't a colour"))).collect::<Result<Vec<_>, _>>()?;
+                (ColorKind::Pick(cols), vec![ex(parts[0])?])
+            }
             "mix" => {
                 if parts.len() != 3 {
                     return Err("mix() takes (colour, colour, amount)".into());
@@ -757,7 +782,7 @@ impl ColorExpr {
                 (ColorKind::Mix(a, b), vec![ex(parts[2])?])
             }
             _ => {
-                let names = ["rgb", "hsl", "oklch", "mix"];
+                let names = ["rgb", "hsl", "oklch", "mix", "pick"];
                 return Err(match crate::spec::validate::suggest(&name, &names) {
                     Some(x) => format!("unknown colour function '{name}', did you mean '{x}'?"),
                     None => format!("unknown colour function '{name}' (use rgb, hsl, oklch or mix)"),
@@ -772,6 +797,7 @@ impl ColorExpr {
         let a = |i: usize| self.args.get(i).map(|e| e.eval(v)).unwrap_or(1.0);
         match &self.kind {
             ColorKind::Const(c) => return *c,
+            ColorKind::Pick(cs) => return cs[(a(0).floor().rem_euclid(cs.len() as f64)) as usize],
             ColorKind::Select(x, y) => return if a(0) != 0.0 { x.eval(v) } else { y.eval(v) },
             _ => {}
         }
@@ -805,7 +831,7 @@ impl ColorExpr {
                 let m = [0, 1, 2, 3].map(|i| p[i] + (q[i] - p[i]) * k);
                 return super::oklab_to_rgba(m).0;
             }
-            ColorKind::Const(_) | ColorKind::Select(..) => unreachable!(),
+            ColorKind::Const(_) | ColorKind::Select(..) | ColorKind::Pick(_) => unreachable!(),
         };
         [c[0].clamp(0.0, 1.0) as f32, c[1].clamp(0.0, 1.0) as f32, c[2].clamp(0.0, 1.0) as f32, alpha as f32]
     }

@@ -467,3 +467,25 @@ fn disk_cache_round_trip_renders_identically() {
     std::env::remove_var("ANIKIT_SHADER_CACHE");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn ak_library_is_included_on_use_and_correct() {
+    // Round trips and known values, written into the four channels.
+    let src = "void mainImage(out vec4 c, in vec2 p) {
+        vec3 x = vec3(0.02, 0.4, 0.9);
+        float a = length(ak_srgb(ak_linear(x)) - x);
+        float b = length(ak_oklab_inv(ak_oklab(x)) - x);
+        float m = ak_mix(vec3(1, 0, 0), vec3(0, 0, 1), 0.0).r;
+        vec3 v = ak_voronoi(vec2(3.3, 7.1));
+        float n = ak_fbm(vec2(1.7, 2.3), 5);
+        c = vec4(a + b, m, step(v.x, v.y) * step(0.0, n) * step(n, 1.0), ak_palette(0.25, vec3(0.5), vec3(0.5), vec3(1.0), vec3(0.0)).r);
+    }";
+    let s = Shader::compile(src).unwrap();
+    let px = s.render_f32(&Frame::new(2, 2, 0.0))[0];
+    assert!(px[0] < 2e-4, "round trips: {}", px[0]);
+    assert!((px[1] - 1.0).abs() < 1e-3, "oklab mix endpoint: {}", px[1]);
+    assert_eq!(px[2], 1.0, "voronoi ordering and fbm range");
+    assert!((px[3] - 0.5).abs() < 1e-5, "palette: {}", px[3]);
+    // A shader that doesn't mention ak_ doesn't get it (and an unknown ak_ name is an error).
+    assert!(Shader::compile("void mainImage(out vec4 c, in vec2 p) { c = vec4(ak_nonsense(p), 0, 1); }").is_err());
+}
