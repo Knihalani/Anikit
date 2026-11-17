@@ -2903,6 +2903,23 @@ impl C<'_> {
         if let Ok(m) = serde_json::to_value(&self.theme.material) {
             props = crate::components::with_material(&name, &props, &m);
         }
+        // Audio files a component reads itself (the visualizer's `src`) resolve
+        // against the spec's folder, like every other asset; otherwise a relative
+        // path only worked from that folder and the visualizer silently fell back
+        // to its synthetic groove.
+        if let Some(obj) = props.as_object_mut() {
+            if let Some(serde_json::Value::String(src)) = obj.get("src") {
+                let l = src.to_ascii_lowercase();
+                let audio = [".mp3", ".wav", ".flac", ".ogg", ".m4a", ".aac", ".mp4"].iter().any(|e| l.ends_with(e));
+                let p = std::path::Path::new(src);
+                if audio && p.is_relative() {
+                    let full = self.o.base_dir.join(p);
+                    if full.exists() {
+                        obj.insert("src".into(), serde_json::Value::String(full.to_string_lossy().into_owned()));
+                    }
+                }
+            }
+        }
         // Load the images the component refers to, so `Assets::media` finds them.
         for src in crate::components::media_srcs(&props) {
             self.load_media(&src, &format!("{path}.props"));
