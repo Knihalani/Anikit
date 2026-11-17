@@ -216,6 +216,22 @@ void mainImage(out vec4 c, in vec2 p) {
 - **Determinism.** Frame *n* is the same whether the render reaches it in order or a still jumps straight to it: a jump runs the buffers from the layer's first frame. Running from the start makes a still deep into a long feedback shot cost *n* buffer frames (about 6 ms each at 960×540). Float buffers and `texelFetch` are sampled inline, with no call per read. Renders step one frame at a time.
 - **Uniforms.** Buffers see the spec's uniform values (or the declared defaults), not animated ones. Otherwise a frame would depend on how it was reached. Animate the image pass, or drive buffers from `iTime`, `iAudio` and `iBeat`.
 
+### One file, several passes
+
+A `.glsl` file (or a built-in) can carry its own buffers, as on Shadertoy. Text before the first section is common code shared by every pass. Then add one section per pass:
+
+```glsl
+float step_(vec2 p) { … }          // common: every pass sees this
+
+//--- buffer A: A, noise            // buffer A reads itself (last frame) and noise
+void mainImage(out vec4 c, in vec2 p) { … }
+
+//--- image: A                      // the visible pass reads A
+void mainImage(out vec4 c, in vec2 p) { … }
+```
+
+The header after the colon lists the pass's channels. A spec's own `buffers` or `channels` override the file's. Errors report the line in the file. `growth` is built this way.
+
 ### WGSL
 
 Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) -> vec4f`). The same inputs are private globals. Channels are `iChannel0..3` (`texture_2d<f32>`) with samplers `iSampler0..3`.
@@ -230,6 +246,7 @@ Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) ->
 | `hero` | layer | product shot: one object on a glossy studio floor, turning under softboxes. `shape` (0 torus, 1 rounded cube, 2 pill, 3 gem, 4 sphere, 5 twisted bar), `color`, `metal`, `rough`, `speed`, `size`, `background`, `floor_` |
 | `mesh-gradient` | layer | soft animated mesh gradient: four colours drifting and folding into each other, film grain. The background for titles and product shots. `color1`…`color4` (hex strings work), `speed`, `warp`, `softness`, `grain` |
 | `ocean` | layer | open sea to the horizon under a low sun: peaked swell and chop, Fresnel sky reflection, the sun's glitter path, light through crests. `speed`, `sun` (0 high … 1 on the horizon), `swell`, `chop`, `color`, `sky` |
+| `growth` | layer | a living reaction–diffusion simulation (Gray–Scott, 4 steps per frame in buffers A–D): coral labyrinths by default, spots or mitosis by `feed`/`kill`, lit as a glossy relief ([still](shots/generative/growth.jpg)). A still at *t* runs every frame before it, so preview with `--scale 0.5`. `feed`, `kill`, `scale`, `color`, `color2`, `light`, `speed` |
 | `caustics` | layer | pool-floor caustics; ray density from the refraction map's derivatives. `speed`, `depth`, `tint` |
 | `flow-ink` | layer | two inks marbled by a curl-noise flow field. `speed`, `ink`, `ink2`, `paper` |
 | `light-shafts` | layer | sun through a window into a hazy room: pane-shaped beams, mullion shadows, leaves outside, drifting haze, dust glinting in the light. `angle`, `spread` (0 parallel … 1 fanning), `panes`, `color`, `intensity`, `haze`, `dust`, `speed` |
