@@ -313,6 +313,18 @@ impl Renderer {
         self.st.filters.set_exact(q == Quality::Reference);
     }
 
+    /// Speed-only backdrop shortcuts (¼-res smooth backdrops, bilinear
+    /// upscaling) on or off; off by default. `true` selects [`Quality::Draft`];
+    /// `false` returns a draft renderer to [`Quality::Standard`] and leaves
+    /// High/Reference alone.
+    pub fn set_fast_backdrops(&mut self, on: bool) {
+        if on {
+            self.set_quality(Quality::Draft);
+        } else if self.quality == Quality::Draft {
+            self.set_quality(Quality::Standard);
+        }
+    }
+
     /// Film look for the following frames (`None` = off). `frame_index` seeds
     /// the animated grain: pass the video frame number so output is
     /// deterministic whichever worker renders it.
