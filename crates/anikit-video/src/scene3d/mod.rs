@@ -26,6 +26,7 @@
 pub mod authoring;
 pub mod bvh;
 pub mod rig;
+pub mod sets;
 pub mod env;
 pub mod geom;
 pub mod gltf;
@@ -114,7 +115,7 @@ pub fn shorthand(mut v: Value) -> Value {
 }
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig", "set",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -150,6 +151,8 @@ struct Prepared {
     /// Underwater caustics strength (0 = off).
     caustics: f32,
     gobo: rig::Gobo,
+    /// An animated rig: (rig, the env it was applied to, camera view, key level).
+    rig_anim: Option<Arc<(rig::Rig, env::Env, V3, f32)>>,
     /// Ink outlines: (width in px at 1080p, colour sRGB).
     outline: Option<(f32, [u8; 3])>,
     /// Volumetric light shafts in the fog.
@@ -312,6 +315,12 @@ impl Prepare for Scene3d {
                 .collect(),
             None => objs_v,
         };
+        // `set`: a stage built around the subject (plinth, steps, field, ...).
+        let set = m.get("set").map(|v| sets::build(v, "set")).transpose().map_err(Error)?;
+        let objs_v: Vec<Value> = match &set {
+            Some(b) => objs_v.into_iter().chain(b.objects.iter().cloned()).collect(),
+            None => objs_v,
+        };
         let outline = match m.get("outline") {
             None if look_outline => Some((1.6, [22u8, 20, 24])),
             None | Some(Value::Bool(false)) => None,
@@ -353,6 +362,7 @@ impl Prepare for Scene3d {
         // Floor.
         let floor = match m.get("floor") {
             Some(Value::Bool(false)) => None,
+            None if set.as_ref().is_some_and(|b| b.no_floor) => None,
             v => {
                 let mut fp = if es.name == "hdri" {
                     // A ground that catches shadows, with the albedo that makes it
@@ -380,6 +390,9 @@ impl Prepare for Scene3d {
                 } else {
                     FloorParams { y: 0.0, color: v3(0.035, 0.035, 0.04), roughness: 0.09, mirror: 0.06, reflect: 1.0, pool: (0.0, 0.0, 5.0), fade: (7.0, 16.0), pbr: 0 }
                 };
+                if let Some(y) = set.as_ref().and_then(|b| b.floor_y) {
+                    fp.y = y;
+                }
                 if let Some(Value::Object(fm)) = v {
                     for k in fm.keys() {
                         if !["color", "roughness", "reflect", "mirror", "y", "texture", "scale", "texture_rotate"].contains(&k.as_str()) {
@@ -435,12 +448,16 @@ impl Prepare for Scene3d {
         // `rig`: a lighting setup placed around the camera's view at t = 0.
         let rig = m.get("rig").map(|r| rig::parse(r, "rig")).transpose().map_err(Error)?;
         let mut gobo = rig::Gobo::default();
+        let mut rig_anim_base: Option<(env::Env, V3, f32)> = None;
         if let Some(r) = &rig {
             let c0 = camera.at(0.0, 16.0 / 9.0, 0.0);
             let view = norm(sub(c0.target, c0.pos));
             // Keep the env's key level so exposure and the look stay calibrated.
             let level = es.env.key_box().map(|k| luma(k.radiance) * es.env.key_solid_angle * (1.0 - k.falloff / 3.0) / std::f32::consts::PI).unwrap_or(1.0).max(0.2);
             let (e, g) = r.apply(&es.env, view, level);
+            if r.anim != 0 {
+                rig_anim_base = Some((es.env.clone(), view, level));
+            }
             es.env = e;
             gobo = g;
         }
@@ -567,7 +584,7 @@ impl Prepare for Scene3d {
         // Static layouts get a baked, noise-free floor.
         let total: u64 = objs.iter().map(|o| o.count as u64 * o.lanes as u64).sum();
         let t_objs = clock.elapsed();
-        let floor_vis = if floor.is_some() && total <= 400 && objs.iter().all(|o| !o.dynamic()) {
+        let floor_vis = if floor.is_some() && total <= 400 && objs.iter().all(|o| !o.dynamic()) && rig_anim_base.is_none() {
             let fp = floor.clone().unwrap();
             // The bake is deterministic, so it is cached on disk by the scene's
             // description (plus model files' size and mtime).
@@ -622,6 +639,10 @@ impl Prepare for Scene3d {
             lights: local_lights,
             caustics,
             gobo,
+            rig_anim: match (rig, rig_anim_base) {
+                (Some(r), Some((e, v, l))) => Some(Arc::new((r, e, v, l))),
+                _ => None,
+            },
             outline,
             shafts,
             camera,
@@ -916,7 +937,13 @@ impl Scene3d {
                 }
             }
         }
-        let mut scene = Scene::new(shapes, p.mats.clone(), Vec::new(), p.env.clone(), p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
+        // An animated rig rebuilds the lights for this frame (before the scene,
+        // which derives its floor lighting from them).
+        let env_t = match &p.rig_anim {
+            Some(ra) => ra.0.apply_at(&ra.1, ra.2, ra.3, t).0,
+            None => p.env.clone(),
+        };
+        let mut scene = Scene::new(shapes, p.mats.clone(), Vec::new(), env_t, p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
         scene.backdrop = p.backdrop;
         scene.glow = p.glow;
         scene.haze = p.haze;
@@ -1285,6 +1312,14 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        let m = spec::material(&json!({ "extends": "chrome", "imperfections": 0.5, "dust": 0.2 }), &HashMap::new(), "m").unwrap();
+        assert_eq!(m.imperf, [0.5, 0.3, 0.25, 0.2]);
+        scene(json!({ "objects": [ { "type": "box", "material": { "extends": "lacquer", "smudges": 0.8, "scratches": 0.5 } } ] })).unwrap();
+        for set in ["plinth", "podium", "steps", "sweep", "field", "arches", "terrain"] {
+            scene(json!({ "set": set, "objects": [ { "type": "sphere", "radius": 0.3, "pos": [0, 0.3, 0] } ] })).unwrap();
+        }
+        let e = scene(json!({ "set": "plint", "objects": [] })).err().unwrap();
+        assert!(e.contains("did you mean `plinth`"), "{e}");
         for look in ["toon", "ink", "clay", "paper", "cardboard", "gouache"] {
             scene(json!({ "look": look, "objects": [ { "type": "sphere", "color": "#E4572E" } ] })).unwrap();
         }
