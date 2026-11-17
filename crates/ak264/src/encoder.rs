@@ -1465,29 +1465,34 @@ fn dc_flags(cd: &Coded, i16: bool) -> u8 {
     f
 }
 
-/// Adaptive-quantisation QP offset of a macroblock. One-sided: only flat
-/// macroblocks (where blocking and banding show) get a lower QP, more so when
-/// dark; busy ones keep the frame QP, so text and detail lose nothing.
+/// Adaptive-quantisation QP offset of a macroblock. One-sided: only flat, dark
+/// macroblocks (where blocking and banding show once shadows are lifted) get a
+/// lower QP; busy or bright ones keep the frame QP, so text and detail lose nothing.
 fn aq_offset(y: &[u8; 256], c: &[[u8; 64]; 2], strength: f32) -> i32 {
-    fn energy(p: &[u8], shift: u32) -> (u32, u32) {
-        let (mut s, mut ss) = (0u32, 0u32);
-        for &v in p {
-            s += v as u32;
-            ss += v as u32 * v as u32;
-        }
-        (ss - ((s * s) >> shift), s)
-    }
-    let (ey, sy) = energy(y, 8);
-    let e = ey + energy(&c[0], 6).0 + energy(&c[1], 6).0;
-    // flat: under about 4 levels² per luma sample
+    // flat: under about 4 levels² per luma sample; dark: mean luma under 80
     const FLAT: u32 = 1024;
+    const DARK: u32 = 80;
+    let (sy, qy) = crate::simd::sum_sq(y);
+    // Only dark macroblocks (bright ones mask a 1-level step).
+    if sy >= DARK << 8 {
+        return 0;
+    }
+    let ey = qy - ((sy * sy) >> 8);
+    if ey >= FLAT {
+        return 0;
+    }
+    let ec = |p: &[u8; 64]| {
+        let (s, q) = crate::simd::sum_sq(p);
+        q - ((s * s) >> 6)
+    };
+    let e = ey + ec(&c[0]) + ec(&c[1]);
     if e >= FLAT {
         return 0;
     }
     let flat = ((FLAT as f32).log2() - (e.max(1) as f32).log2()).min(4.0);
     // limited-range black is 16: up to 3 more for the darkest flat areas
     let mean = (sy >> 8) as f32;
-    let dark = ((80.0 - mean).max(0.0) / 16.0).min(3.0);
+    let dark = ((DARK as f32 - mean).max(0.0) / 16.0).min(3.0);
     -(strength * (flat + dark)).round() as i32
 }
 

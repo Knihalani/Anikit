@@ -611,6 +611,31 @@ pub fn avg16(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     core::array::from_fn(|i| ((a[i] as u16 + b[i] as u16 + 1) >> 1) as u8)
 }
 
+/// Sum and sum of squares of a block whose length is a multiple of 16.
+#[inline]
+pub fn sum_sq(p: &[u8]) -> (u32, u32) {
+    assert!(p.len().is_multiple_of(16));
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: SSE2 is baseline on x86_64; every load is inside `p`.
+    unsafe {
+        use std::arch::x86_64::*;
+        let z = _mm_setzero_si128();
+        let (mut s, mut q) = (z, z);
+        for k in (0..p.len()).step_by(16) {
+            let v = _mm_loadu_si128(p.as_ptr().add(k) as *const __m128i);
+            s = _mm_add_epi64(s, _mm_sad_epu8(v, z));
+            let (lo, hi) = (_mm_unpacklo_epi8(v, z), _mm_unpackhi_epi8(v, z));
+            q = _mm_add_epi32(q, _mm_add_epi32(_mm_madd_epi16(lo, lo), _mm_madd_epi16(hi, hi)));
+        }
+        let s = (_mm_cvtsi128_si64(s) + _mm_cvtsi128_si64(_mm_unpackhi_epi64(s, s))) as u32;
+        let q = _mm_add_epi32(q, _mm_shuffle_epi32::<0b01_00_11_10>(q));
+        let q = _mm_add_epi32(q, _mm_shuffle_epi32::<0b10_11_00_01>(q));
+        (s, _mm_cvtsi128_si32(q) as u32)
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    p.iter().fold((0, 0), |(s, q), &v| (s + v as u32, q + v as u32 * v as u32))
+}
+
 /// Saturating pack of 16 i16 lanes to u8.
 #[inline(always)]
 pub fn pack16(v: &[i16; 16]) -> [u8; 16] {
@@ -769,6 +794,14 @@ unsafe fn max_sad4_16_ssse3(a: *const u8, b: *const u8, h: usize) -> u32 {
 
 #[cfg(test)]
 mod maxsad_test {
+    #[test]
+    fn sum_sq_matches() {
+        let p: Vec<u8> = (0..256).map(|i| (i * 97 % 256) as u8).collect();
+        let r = p.iter().fold((0u32, 0u32), |(s, q), &v| (s + v as u32, q + v as u32 * v as u32));
+        assert_eq!(super::sum_sq(&p), r);
+        assert_eq!(super::sum_sq(&p[..64]), p[..64].iter().fold((0u32, 0u32), |(s, q), &v| (s + v as u32, q + v as u32 * v as u32)));
+    }
+
     #[test]
     fn max_sad4_matches() {
         for k in 0..20u32 {
