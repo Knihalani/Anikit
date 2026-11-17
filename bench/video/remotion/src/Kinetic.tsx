@@ -71,10 +71,15 @@ const S4 = () => {
   );
 };
 
-export const Kinetic: React.FC = () => (
-  <AbsoluteFill>
-    {[S1, S2, S3, S4].map((S, i) => (
-      <Sequence key={i} from={i * 150} durationInFrames={150}><S /></Sequence>
-    ))}
-  </AbsoluteFill>
-);
+/** The 20 s sequence, played `times` times back to back (the 60 s, 60 fps composition uses 3). */
+export const Kinetic: React.FC<{ times?: number }> = ({ times = 1 }) => {
+  const { fps } = useVideoConfig();
+  const scenes = Array.from({ length: 4 * times }, (_, i) => [S1, S2, S3, S4][i % 4]);
+  return (
+    <AbsoluteFill>
+      {scenes.map((S, i) => (
+        <Sequence key={i} from={i * 5 * fps} durationInFrames={5 * fps}><S /></Sequence>
+      ))}
+    </AbsoluteFill>
+  );
+};

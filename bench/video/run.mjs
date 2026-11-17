@@ -23,14 +23,18 @@ const BIN = path.join(HERE, "node_modules/.bin");
 // Pre-installed browsers (no download here). Remotion and HyperFrames both prefer chrome-headless-shell.
 const HEADLESS_SHELL = process.env.HEADLESS_SHELL ||
   "/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell";
-const FPS = 30, FRAMES = 600, W = 1920, H = 1080;
+const W = 1920, H = 1080;
+// Composition timing; FPS and FRAMES are set per composition in the main loop.
+const COMPDEF = { kinetic: [30, 600], product: [30, 600], explainer: [30, 600], long: [60, 3600] };
+let FPS = 30, FRAMES = 600;
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(`--${k}`); return i >= 0 ? argv[i + 1] : d; };
 const flag = (k) => argv.includes(`--${k}`);
 const RUNS = Number(opt("runs", 3));
 const TOOLS = opt("tools", "anikit,remotion,hyperframes").split(",");
-const COMPS = opt("comps", "kinetic,product,explainer").split(",");
+const COMPS = opt("comps", "kinetic,product,explainer,long").split(",");
+const EXPLORE = flag("explore");
 const ONLY = opt("configs", null)?.split(",");
 
 // ---------------------------------------------------------------- tools and their settings
@@ -60,6 +64,13 @@ const TOOLDEFS = {
       // Fastest reasonable: every core, x264 veryfast (JPEG frames are already the default).
       fast: ["--concurrency=4", "--x264-preset=veryfast"],
     },
+    // Settings tried that did not help (run with --explore; see BENCHMARKS.md).
+    explore: {
+      "c4": ["--concurrency=4"],
+      "c8-veryfast": ["--concurrency=8", "--x264-preset=veryfast"],
+      "c4-ultrafast": ["--concurrency=4", "--x264-preset=ultrafast"],
+      "c4-veryfast-jpeg50": ["--concurrency=4", "--x264-preset=veryfast", "--jpeg-quality=50"],
+    },
     render: (comp, out, extra) => [path.join(BIN, "remotion"), ["render", "remotion/src/index.ts", comp, out, "--codec=h264",
       "--public-dir=remotion/public", `--browser-executable=${HEADLESS_SHELL}`, "--log=error", ...extra], {}],
     reference: (comp, dir) => [path.join(BIN, "remotion"), ["render", "remotion/src/index.ts", comp, dir, "--sequence", "--image-format=png",
@@ -74,7 +85,15 @@ const TOOLDEFS = {
       // Fastest reasonable: one worker per core, draft quality.
       fast: ["--workers", "4", "--quality", "draft"],
     },
-    render: (comp, out, extra) => [path.join(BIN, "hyperframes"), ["render", `hyperframes/${comp}`, "-o", out, "--quiet", ...extra], hfEnv],
+    explore: {
+      "w2-draft": ["--workers", "2", "--quality", "draft"],
+      "w4": ["--workers", "4"],
+      "w8-draft": ["--workers", "8", "--quality", "draft"],
+      "w4-draft-crf30": ["--workers", "4", "--quality", "draft", "--crf", "30"],
+      "chromium-default": ["__env_chromium"],
+    },
+    render: (comp, out, extra) => [path.join(BIN, "hyperframes"), ["render", `hyperframes/${comp}`, "-o", out, "--quiet", ...extra.filter((a) => !a.startsWith("__"))],
+      extra.includes("__env_chromium") ? { ...hfEnv, HYPERFRAMES_BROWSER_PATH: "/opt/pw-browsers/chromium" } : hfEnv],
     reference: (comp, dir) => [path.join(BIN, "hyperframes"), ["render", `hyperframes/${comp}`, "--format", "png-sequence", "-o", dir, "--quiet", "--workers", "4"], hfEnv],
     still: (comp, out) => [path.join(BIN, "hyperframes"), ["snapshot", `hyperframes/${comp}`, "--at", "0"], hfEnv],
   },
@@ -110,8 +129,18 @@ function treeMemory(root) {
 }
 
 /** Run a command; returns wall seconds, peak tree RSS/PSS, exit code and output tail. */
+function cpuStat() {
+  const f = fs.readFileSync("/proc/stat", "utf8").split("\n")[0].trim().split(/\s+/).slice(1).map(Number);
+  // user nice system idle iowait irq softirq steal
+  return { busy: f[0] + f[1] + f[2] + f[5] + f[6], steal: f[7], total: f.slice(0, 8).reduce((a, b) => a + b, 0) };
+}
+function cpuMHz() {
+  const m = [...fs.readFileSync("/proc/cpuinfo", "utf8").matchAll(/cpu MHz\s*:\s*([\d.]+)/g)].map((x) => Number(x[1]));
+  return m.length ? m.reduce((a, b) => a + b, 0) / m.length : null;
+}
 function measure(cmd, args, env = {}) {
   return new Promise((resolve) => {
+    const c0 = cpuStat(), mhz0 = cpuMHz();
     const t0 = process.hrtime.bigint();
     const child = spawn(cmd, args, { cwd: HERE, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"] });
     let peakRss = 0, peakPss = 0, log = "";
@@ -122,7 +151,9 @@ function measure(cmd, args, env = {}) {
     const timer = setInterval(sample, 100);
     child.on("close", (code) => {
       clearInterval(timer);
-      resolve({ wall: Number(process.hrtime.bigint() - t0) / 1e9, peakRss, peakPss, code, log });
+      const wall = Number(process.hrtime.bigint() - t0) / 1e9, c1 = cpuStat(), hz = 100; // USER_HZ
+      const cores = (c1.busy - c0.busy) / hz / wall, steal = (c1.steal - c0.steal) / Math.max(1, c1.total - c0.total);
+      resolve({ wall, peakRss, peakPss, code, log, cores, steal, mhz: [mhz0, cpuMHz()] });
     });
   });
 }
@@ -195,12 +226,13 @@ const log = (...a) => console.error(`[${new Date().toISOString().slice(11, 19)}]
 for (const tool of TOOLS) {
   const def = TOOLDEFS[tool];
   for (const comp of COMPS) {
+    [FPS, FRAMES] = COMPDEF[comp];
     // Lossless reference (one render, not timed for the tables).
     let ref = null, refreshed = false;
-    if (!flag("no-quality")) {
+    if (!flag("no-quality") && !EXPLORE) {
       const dir = path.join(OUT, "ref", tool, comp);
       const pat = path.join(dir, "ref", "%05d.png");
-      if (fs.existsSync(path.join(dir, "ref", "00600.png")) && !flag("fresh-ref")) ref = { pattern: pat, count: FRAMES };
+      if (fs.existsSync(path.join(dir, "ref", `${String(FRAMES).padStart(5, "0")}.png`)) && !flag("fresh-ref")) ref = { pattern: pat, count: FRAMES };
       else {
         refreshed = true;
         fs.rmSync(dir, { recursive: true, force: true });
@@ -224,7 +256,7 @@ for (const tool of TOOLS) {
         save();
       }
     }
-    for (const [cfg, extra] of Object.entries(def.configs)) {
+    for (const [cfg, extra] of Object.entries(EXPLORE ? def.explore || {} : def.configs)) {
       if (ONLY && !ONLY.includes(cfg)) continue;
       const runs = [];
       let out;
@@ -235,17 +267,20 @@ for (const tool of TOOLS) {
         const [c, a, e] = def.render(comp, out, extra);
         const r = await measure(c, a, e);
         if (r.code !== 0 || !fs.existsSync(out)) { log(`${tool} ${cfg} ${comp} run ${i + 1} FAILED`, r.log); runs.push({ ...r, failed: true }); continue; }
-        log(`${tool} ${cfg} ${comp} run ${i + 1}: ${r.wall.toFixed(2)} s, peak RSS ${(r.peakRss / 2 ** 20).toFixed(0)} MiB`);
+        log(`${tool} ${cfg} ${comp} run ${i + 1}: ${r.wall.toFixed(2)} s, peak RSS ${(r.peakRss / 2 ** 20).toFixed(0)} MiB, ${r.cores.toFixed(2)} cores busy, steal ${(r.steal * 100).toFixed(1)}%, MHz ${r.mhz.map((m) => m?.toFixed(0)).join("→")}`);
         runs.push(r);
       }
       const ok = runs.filter((r) => !r.failed);
-      const row = { tool, config: cfg, comp, args: extra, runs: runs.map(({ wall, peakRss, peakPss, failed }) => ({ wall, peakRss, peakPss, failed })) };
+      const row = { tool, config: cfg, comp, explore: EXPLORE || undefined, fps: FPS, frames: FRAMES, args: extra,
+        runs: runs.map(({ wall, peakRss, peakPss, failed, cores, steal, mhz }) => ({ wall, peakRss, peakPss, failed, cores, steal, mhz })) };
       if (ok.length) {
         const info = probe(out);
         Object.assign(row, {
           wall: median(ok.map((r) => r.wall)),
           fps: FRAMES / median(ok.map((r) => r.wall)),
           peakRss: median(ok.map((r) => r.peakRss)),
+          cores: median(ok.map((r) => r.cores)),
+          steal: Math.max(...ok.map((r) => r.steal)),
           peakPss: median(ok.map((r) => r.peakPss)),
           bytes: fs.statSync(out).size,
           video: info,
@@ -258,7 +293,7 @@ for (const tool of TOOLS) {
       save();
     }
     // Cold start: one still frame from a fresh process.
-    if (!flag("no-cold")) {
+    if (!flag("no-cold") && !EXPLORE && comp !== "long") {
       const walls = [];
       for (let i = 0; i < RUNS; i++) {
         const png = path.join(OUT, "stills", `${tool}-${comp}-cold.png`);

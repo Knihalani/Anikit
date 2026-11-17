@@ -6,7 +6,7 @@ videos. Everything here was measured by `bench/video/run.mjs`; nothing is estima
 
 ## The three compositions
 
-Each is 1920×1080, 30 fps, 20 s (600 frames), dark theme, bundled Inter (variable; "Inter Display" is Inter
+(a)–(c) are 1920×1080, 30 fps, 20 s (600 frames); (d) is 60 fps, 60 s. All are, dark theme, bundled Inter (variable; "Inter Display" is Inter
 at optical size 32 in every tool), with the same layout, colours, eases and timings in every tool.
 
 | | Composition | What moves |
@@ -14,6 +14,7 @@ at optical size 32 in every tool), with the same layout, colours, eases and timi
 | (a) | **Kinetic type title sequence** (`kinetic`) | 4 hard-cut scenes; per-character staggered rises and pop-ins, sliding words, a line that grows, a rotating outline square; a slow camera push-in on every scene, so **every pixel changes on every frame**. |
 | (b) | **Product UI** (`product`) | A browser-window frame, 3 stat cards with two counters, a 7-bar chart that builds and later updates, a pulsing "Live" dot, a toast that slides in and out, a cursor that moves to a button that presses. Moves in bursts; long stretches are nearly static. |
 | (c) | **Held-heavy explainer** (`explainer`) | 4 slides with 0.5 s crossfades; title and three bullets fade up, then the slide holds while a small dot floats. **Mostly static frames.** |
+| (d) | **Long** (`long`): **60 fps, 60 s** (3,600 frames) | (a) played three times back to back at 60 fps, to show how the gap behaves at length. Remotion: the same component with `times: 3` at `fps={60}`; HyperFrames: three nested instances of the kinetic composition (`data-composition-src`) in a 60 fps root; Anikit Video: the kinetic scenes listed three times with `"fps": 60`. |
 
 Sources (each written idiomatically for its tool):
 
@@ -174,6 +175,9 @@ Bytes of the composition file, plus the shared files that tool needs (Remotion: 
   HyperFrames versions use loops and helpers (code), while the Anikit specs spell every layer out (data);
   the Anikit specs also avoid its high-level components (`bar-chart`, `browser`, `counter`) so that the
   picture matches the other tools exactly. Using them would make the product spec much shorter.
+- **Authoring cost of (d)** is not comparable to its picture: Remotion and HyperFrames reuse the kinetic
+  component or composition three times, while the Anikit spec has no way to repeat scenes, so its 12 scenes
+  are written out (3× the bytes of (a)).
 - **Motion Canvas / Revideo** were not benchmarked: there was no time to port the three compositions to them
   in this session. No numbers are given for them.
 
