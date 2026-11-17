@@ -350,6 +350,8 @@ pub(crate) struct Node {
     pub inertia: Option<Box<fx::InertiaC>>,
     /// Posterize time: frames per second of this subtree's motion (0 = off).
     pub posterize_time: f32,
+    /// Group drag: seconds of lag per child on the group's own transform.
+    pub drag: f32,
 }
 
 pub(crate) const PART_BG: u8 = 1;
@@ -1686,8 +1688,18 @@ impl Evaluator {
             }
             Kind::Group { children } => {
                 let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0, amul: 1.0 };
-                for c in children {
-                    self.emit_node(c, &ccx, &xf, [w, h], alpha, out);
+                for (i, c) in children.iter().enumerate() {
+                    if n.drag > 0.0 && i > 0 {
+                        // Drag: this child sees the group's transform from i × drag seconds ago.
+                        let d = n.drag * i as f32;
+                        let mut gv = [0.0f32; prop::N];
+                        let gcx = Cx { scene_t: cx.scene_t - d, gt: cx.gt - d, ..*cx };
+                        self.props(n, &gcx, (lt - d).max(0.0), &mut gv);
+                        let gxf = dl::mul(parent, &local_xf(&gv, n.anchor, gv[prop::W].max(0.0), gv[prop::H].max(0.0)));
+                        self.emit_node(c, &ccx, &gxf, [w, h], alpha, out);
+                    } else {
+                        self.emit_node(c, &ccx, &xf, [w, h], alpha, out);
+                    }
                 }
             }
             Kind::Box { children, bg, border } => {

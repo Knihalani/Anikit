@@ -441,6 +441,7 @@ Render-time, per layer (examples: `examples/video/mograph/`):
 | `roundCorners`, `offsetPath`, `puckerBloat`, `zigzag: {size, ridges, smooth}`, `twist`, `wigglePath: {amount, detail, speed, seed}` | Shape modifiers, applied in this order (rects and ellipses become paths). `wigglePath` animates, deterministically. |
 | `matte: "id"` or `{layer, mode}` | Track matte through a sibling layer (`alpha`, `alphaInverted`, `luma`, `lumaInverted`); the matte layer is not drawn itself. |
 | `inertia: true \| "soft" \| "bouncy" \| "tight" \| "heavy" \| {stiffness, damping, mass, props}` | Follow-through: a spring (simulated once at 240 Hz, deterministic) chases the layer's own `x`, `y`, `scaleX`, `scaleY`, `rotation` (or `props`), so every move overshoots and settles. |
+| `drag: 0.04` (group) | Overlapping action: child i follows the group's own motion i × drag seconds later, so parts trail and land one after another. |
 | `smear: true \| strength` | Stretch along the direction of travel in proportion to speed (volume kept); still frames are untouched. |
 | transitions `zoomThrough` (`layer`), `reveal` (`shape`, `amount` spin, `origin`), `blinds` (`count`, `direction`), `split` (`direction`), `whip` (`direction`, `amount`) | Idea transitions: fly into a layer of the outgoing scene (the next scene shows through its shape), shape reveals, staggered bars, the frame splitting apart, a whip pan blurred by its speed. |
 | `posterizeTime: 12` | Posterize time: this layer and its children step at that many poses per second (on twos); the video frame rate is unchanged. |

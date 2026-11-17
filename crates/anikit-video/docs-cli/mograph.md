@@ -29,6 +29,7 @@
   the sibling with that `id` (which is then not drawn itself). Gradient inside text: a gradient rect with `"matte": "word"`.
 - **Follow-through** `"inertia": true | "soft" | "bouncy" | "tight" | "heavy"` or `{"stiffness", "damping", "mass", "props": ["x", "y", "rotation", "scale"]}`:
   a spring chases the layer's own motion (tweens, presets, paths, expressions), so moves overshoot and settle. Stagger it across children for overlapping action.
+- **Drag** `"drag": 0.04` on a moving group: child i follows the group's motion i × 0.04 s later (overlapping action; add `inertia` for settle).
 - **Smear** `"smear": true` (or a strength): fast moves stretch along their travel, volume kept; still layers are untouched.
 - **Idea transitions** (on the incoming scene): `{"type": "zoomThrough", "layer": "logo"}` flies into a layer of the outgoing
   scene and the new scene shows through its shape (a letter, a window, a logo); `{"type": "reveal", "shape": "circle|diamond|square|star|blob",

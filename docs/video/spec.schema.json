@@ -1338,6 +1338,14 @@
           ],
           "format": "double"
         },
+        "drag": {
+          "description": "Group drag (overlapping action): child i follows the group's own motion i × drag seconds later,\nso a moving group trails and settles part by part. Pairs well with `inertia` on the group.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
         "smear": {
           "description": "Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default)."
         },

@@ -599,6 +599,9 @@ pub struct Layer {
     /// Posterize time (After Effects style): this layer and its children move at this many frames per second
     /// (`12` animates "on twos" at 24 fps: a handmade, stop-motion feel). The video's frame rate is unchanged.
     pub posterize_time: Option<f64>,
+    /// Group drag (overlapping action): child i follows the group's own motion i × drag seconds later,
+    /// so a moving group trails and settles part by part. Pairs well with `inertia` on the group.
+    pub drag: Option<f64>,
     /// Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default).
     #[schemars(with = "Option<serde_json::Value>")]
     pub smear: Option<serde_json::Value>,

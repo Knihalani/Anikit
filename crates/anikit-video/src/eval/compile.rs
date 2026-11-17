@@ -457,6 +457,7 @@ fn empty_node(kind: Kind) -> Node {
         matte: None,
         inertia: None,
         posterize_time: 0.0,
+        drag: 0.0,
     }
 }
 
@@ -1816,6 +1817,15 @@ impl C<'_> {
                 }
                 slots.dedup();
                 n.inertia = Some(Box::new(fx::InertiaC { slots, stiffness: k as f32, damping: c as f32, mass: m as f32, table: Default::default() }));
+            }
+        }
+        if let Some(d) = l.drag {
+            if !matches!(n.kind, Kind::Group { .. }) {
+                self.d.push(Diagnostic::warning(format!("{path}.drag"), "'drag' applies to group layers (children trail the group's motion)"));
+            } else if (0.0..=2.0).contains(&d) {
+                n.drag = d as f32;
+            } else {
+                self.d.push(Diagnostic::error(format!("{path}.drag"), "drag is seconds per child (e.g. 0.04)"));
             }
         }
         if let Some(p) = l.posterize_time {

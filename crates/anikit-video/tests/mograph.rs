@@ -128,3 +128,15 @@ fn posterize_holds_poses_and_named_curves_parse() {
         ev(&format!(r#"{{ "scenes": [ {{ "layers": [ {{ "text": "x", "animate": {{ "from": {{ "x": 0 }}, "ease": "{name}" }} }} ] }} ] }}"#));
     }
 }
+
+#[test]
+fn group_drag_trails_children() {
+    let e = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "type": "group", "x": 960, "y": 540, "width": 1920, "height": 1080, "drag": 0.1,
+        "animate": { "to": { "x": 1460 }, "duration": 0.5, "ease": "linear" },
+        "layers": [ { "shape": "rect", "x": 100, "y": 100, "width": 10, "height": 10 }, { "shape": "rect", "x": 100, "y": 300, "width": 10, "height": 10 } ] } ] } ] }"#);
+    let xs = |t: f32| -> Vec<f32> { e.eval(t).ops.iter().filter_map(|o| if let Op::RoundRect { transform, .. } = o { Some(transform[4]) } else { None }).collect() };
+    let mid = xs(0.25);
+    assert!(mid[1] < mid[0] - 50.0, "second child lags: {mid:?}");
+    let end = xs(1.5);
+    assert!((end[1] - end[0]).abs() < 1e-3, "and catches up: {end:?}");
+}
