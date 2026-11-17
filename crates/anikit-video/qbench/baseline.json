@@ -5,28 +5,32 @@
       47.57
     ],
     "backdrop": [
-      0.995,
-      52.1
+      0.9812,
+      46.95
     ],
     "explainer": [
       0.9988,
       52.67
     ],
     "launch": [
-      0.9932,
-      50.94
+      0.9821,
+      48.11
     ],
     "particles": [
-      0.9963,
-      49.73
+      0.9856,
+      42.35
     ],
     "post": [
-      0.9502,
+      0.9504,
       42.74
     ],
     "scene3d": [
-      0.9946,
-      50.48
+      0.9948,
+      50.72
+    ],
+    "shader": [
+      0.9318,
+      39.79
     ],
     "text": [
       0.9995,
@@ -36,5 +40,25 @@
       0.9992,
       53.12
     ]
+  },
+  "known": {
+    "backdrop": {
+      "ssim_min": 0.9892,
+      "de_p999_max": 3.29,
+      "flicker_p999_max": 2.7,
+      "owner": "COMPONENTS: fxkit/backgrounds fast paths (source-over light, sprite defocus, low-res mesh field); see docs/video/perf.md"
+    },
+    "launch": {
+      "ssim_min": 0.9934,
+      "de_p999_max": 2.51,
+      "flicker_p999_max": 1.9,
+      "owner": "COMPONENTS: fxkit/backgrounds fast paths (source-over light, sprite defocus, low-res mesh field); see docs/video/perf.md"
+    },
+    "particles": {
+      "ssim_min": 0.9884,
+      "de_p999_max": 35.32,
+      "flicker_p999_max": 65.0,
+      "owner": "COMPONENTS: fxkit/backgrounds fast paths (source-over light, sprite defocus, low-res mesh field); see docs/video/perf.md"
+    }
   }
 }
