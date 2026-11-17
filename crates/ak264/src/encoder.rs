@@ -164,8 +164,11 @@ pub(crate) struct FrameCtx<'a> {
     pub qs: QuantS,
     pub qcs: QuantS,
     /// SAD bounds (luma 16×16, chroma 8×8) under which inter residuals are all zero.
-    pub zero_sad: (u32, u32),
+    /// (luma, chroma, chroma DC limit on the 8x8 SAD), inter.
+    pub zero_sad: (u32, u32, u32),
     pub zero_sad_intra: (u32, u32),
+    /// Per-4×4-block SAD bounds (luma, chroma AC), inter.
+    pub zero_sad4: (u32, u32),
     pub lambda: i32,
     pub src: &'a Pic,
     pub refp: &'a Pic,
@@ -706,7 +709,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
         // Residuals that provably quantise to zero are not transformed.
         let mut recon = [0u8; 256];
-        let ry = if crate::simd::sad16(src_y, 16, pred, 16) > self.c.zero_sad.0 {
+        let sad = crate::simd::sad16(src_y, 16, pred, 16);
+        let ry = if sad > self.c.zero_sad.0 && crate::simd::max_sad4(src_y, pred, 16, 16) > self.c.zero_sad4.0 {
             luma_inter(src_y, pred, &self.c.qs, &mut cd, &mut recon);
             &recon
         } else {
@@ -714,7 +718,14 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         };
         let mut reconc = [[0u8; 64]; 2];
         let zc = self.c.zero_sad.1;
-        let rc = if crate::simd::sad64(&src_c[0], &predc[0]) > zc || crate::simd::sad64(&src_c[1], &predc[1]) > zc {
+        let (s0, s1) = (crate::simd::sad64(&src_c[0], &predc[0]), crate::simd::sad64(&src_c[1], &predc[1]));
+        // chroma: AC by block, DC (2x2 Hadamard of block sums) by the 8x8 SAD
+        let dc_ok = s0 <= self.c.zero_sad.2 && s1 <= self.c.zero_sad.2;
+        let rc = if (s0 > zc || s1 > zc)
+            && !(dc_ok
+                && crate::simd::max_sad4(&src_c[0], &predc[0], 8, 8) <= self.c.zero_sad4.1
+                && crate::simd::max_sad4(&src_c[1], &predc[1], 8, 8) <= self.c.zero_sad4.1)
+        {
             chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, false, &mut cd, &mut reconc);
             &reconc
         } else {
@@ -1964,7 +1975,11 @@ impl Encoder {
             qc: self.qc,
             qs: QuantS::new(&self.q),
             qcs: QuantS::new(&self.qc),
-            zero_sad: crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc), false),
+            zero_sad: {
+                let (l, c) = crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc), false);
+                (l, c, crate::soa::chroma_dc_limit(&self.qc, false))
+            },
+            zero_sad4: crate::soa::zero_sad4_bounds(&QuantS::new(&self.q), &QuantS::new(&self.qc), false),
             zero_sad_intra: crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc), true),
             lambda: self.lambda,
             src: &self.cur,

@@ -686,3 +686,22 @@ pub fn plane_row16(base: i32, b: i32) -> [u8; 16] {
     #[cfg(not(target_arch = "x86_64"))]
     core::array::from_fn(|x| ((base + b * x as i32) >> 5).clamp(0, 255) as u8)
 }
+
+/// Maximum SAD over the 4×4 blocks of a w×h block (w = 16 or 8, rows of `w`).
+#[inline(always)]
+pub fn max_sad4(a: &[u8], b: &[u8], w: usize, h: usize) -> u32 {
+    let mut m = 0u32;
+    for by in (0..h).step_by(4) {
+        for bx in (0..w).step_by(4) {
+            let mut s = 0u32;
+            for y in 0..4 {
+                let o = (by + y) * w + bx;
+                for x in 0..4 {
+                    s += (a[o + x] as i32 - b[o + x] as i32).unsigned_abs();
+                }
+            }
+            m = m.max(s);
+        }
+    }
+    m
+}
