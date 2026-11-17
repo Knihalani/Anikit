@@ -230,14 +230,15 @@ impl HpelPlanes {
         let xlast = hi - 16;
         let lo = xa.saturating_sub(3).max(2).min(xlast);
         for y in a..b {
-            let row = d.add(y * s);
+            let (row, ob1, obo) = (d.add(y * s), b1.add(y * s), bo.add(y * s));
+            // full blocks from `lo`, then the last block aligned to `xlast`
             let mut x = lo;
             loop {
-                let xx = x.min(xlast);
+                let xx = if x < xlast { x } else { xlast };
                 let p = row.add(xx);
                 let v = tap(ld(p.sub(2)), ld(p.sub(1)), ld(p), ld(p.add(1)), ld(p.add(2)), ld(p.add(3)), c5, c20);
-                _mm256_storeu_si256(b1.add(y * s + xx) as *mut __m256i, v);
-                st8(bo.add(y * s + xx), v, c16);
+                _mm256_storeu_si256(ob1.add(xx) as *mut __m256i, v);
+                st8(obo.add(xx), v, c16);
                 if xx == xlast {
                     break;
                 }
@@ -247,28 +248,31 @@ impl HpelPlanes {
         let hi = (xb + 2).min(s);
         let xlast = hi - 16;
         let lo = xa.saturating_sub(3).min(xlast);
+        let (c3, c32) = (_mm256_set1_epi16(3), _mm256_set1_epi16(32));
         for y in va.max(2)..vb.min(rows - 3) {
+            let (p0, q0) = (d.add((y - 2) * s), b1.add((y - 2) * s) as *const i16);
+            let (oh, oj) = (ho.add(y * s), jo.add(y * s));
             let mut x0 = lo;
             loop {
-                let x = x0.min(xlast);
-                let p = d.add((y - 2) * s + x);
+                let x = if x0 < xlast { x0 } else { xlast };
+                let p = p0.add(x);
                 let v = tap(ld(p), ld(p.add(s)), ld(p.add(2 * s)), ld(p.add(3 * s)), ld(p.add(4 * s)), ld(p.add(5 * s)), c5, c20);
-                st8(ho.add(y * s + x), v, c16);
+                st8(oh.add(x), v, c16);
                 // j = (a - 5b + 20c + 512) >> 10 in 16 bits, exactly (floor shifts compose):
                 // ((((a - b) >> 2) - b + c) >> 2) + c == (a - 5b + 20c) >> 4, and with the
                 // 6-tap row sums in [-2550, 10710] no step leaves the i16 range.
-                let q = b1.add((y - 2) * s + x) as *const i16;
+                let q = q0.add(x);
                 let l = |k: usize| _mm256_loadu_si256(q.add(k * s) as *const __m256i);
                 let (ta, tb, tc) = (_mm256_add_epi16(l(0), l(5)), _mm256_add_epi16(l(1), l(4)), _mm256_add_epi16(l(2), l(3)));
                 let t = _mm256_srai_epi16(_mm256_sub_epi16(ta, tb), 2);
                 // (x + c) >> 2 == ((x + (c & 3)) >> 2) + (c >> 2), which stays inside i16
-                let x3 = _mm256_add_epi16(_mm256_sub_epi16(t, tb), _mm256_and_si256(tc, _mm256_set1_epi16(3)));
+                let x3 = _mm256_add_epi16(_mm256_sub_epi16(t, tb), _mm256_and_si256(tc, c3));
                 let t = _mm256_add_epi16(_mm256_srai_epi16(x3, 2), _mm256_srai_epi16(tc, 2));
                 let t = _mm256_add_epi16(t, tc);
-                let t = _mm256_srai_epi16(_mm256_add_epi16(t, _mm256_set1_epi16(32)), 6);
+                let t = _mm256_srai_epi16(_mm256_add_epi16(t, c32), 6);
                 let pk = _mm256_packus_epi16(t, t);
                 let pk = _mm256_permute4x64_epi64(pk, 0b1000);
-                _mm_storeu_si128(jo.add(y * s + x) as *mut __m128i, _mm256_castsi256_si128(pk));
+                _mm_storeu_si128(oj.add(x) as *mut __m128i, _mm256_castsi256_si128(pk));
                 if x == xlast {
                     break;
                 }
