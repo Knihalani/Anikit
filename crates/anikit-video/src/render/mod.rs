@@ -866,6 +866,7 @@ fn draw_cached_run(
             let mut pm = st.pix_pool.pop().unwrap_or_else(|| Pixmap::new(w, h));
             pm.resize(w, h);
             sub.render_with(&mut pm, &mut st.res, RasterizerSettings::default());
+            text_gamma(&mut pm, c);
             sub.reset();
             st.pool.push(sub);
             st.run = run;
@@ -930,6 +931,36 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
     st.scaled.insert(key, CacheEntry { pix: p.clone(), x: 0, y: 0, last_used: now });
     blit(ctx, p, fx, fy, alpha);
     true
+}
+
+/// Gamma-aware text coverage. Blending in sRGB makes light-on-dark text look
+/// thin and dark-on-light text look heavy; re-shape edge coverage by a power
+/// chosen from the text's luminance (as Skia/FreeType "contrast" hinting does).
+fn text_gamma(pm: &mut Pixmap, c: Rgba) {
+    let lum = 0.2126 * c.0[0] + 0.7152 * c.0[1] + 0.0722 * c.0[2];
+    let e = 1.2 - 0.46 * lum.clamp(0.0, 1.0);
+    if (e - 1.0).abs() < 0.02 {
+        return;
+    }
+    let ca = (c.0[3].clamp(0.0, 1.0) * 255.0).round().max(1.0);
+    let lut: Vec<u8> = (0..=255u32)
+        .map(|a| {
+            let cov = (a as f32 / ca).min(1.0);
+            (cov.powf(e) * ca).round().min(255.0) as u8
+        })
+        .collect();
+    for p in pm.data_as_u8_slice_mut().chunks_exact_mut(4) {
+        let a = p[3];
+        if a == 0 || a as f32 >= ca {
+            continue;
+        }
+        let na = lut[a as usize];
+        let k = na as u32 * 256 / a as u32;
+        for v in &mut p[..3] {
+            *v = ((*v as u32 * k + 128) >> 8).min(na as u32) as u8;
+        }
+        p[3] = na;
+    }
 }
 
 struct Card {
