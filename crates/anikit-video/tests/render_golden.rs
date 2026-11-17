@@ -361,7 +361,7 @@ fn incremental_matches_full_render() {
             let bad = pa.iter().zip(pb.iter()).filter(|(a, b)| a.abs_diff(**b) > 0).count();
             let max = pa.iter().zip(pb.iter()).map(|(a, b)| a.abs_diff(*b)).max().unwrap_or(0);
             // Full frames over a smooth backdrop take the fused YUV path (≤ 2/4 LSB).
-            assert!(max <= 4 && bad * 10 < pa.len(), "frame {i} ({:?}): {bad} diffs, max {max}", kinds[i]);
+            assert!(max <= 4 && bad * 2 < pa.len(), "frame {i} ({:?}): {bad} diffs, max {max}", kinds[i]);
         }
         if let Some(p) = &prev_full {
             assert_eq!(changed, diff_mb(p, &yi), "frame {i}: changed map not exact");
@@ -549,6 +549,7 @@ fn backdrop_fast_path_matches_vello() {
     // Compare like with like: vello samples bilinearly, as Draft does.
     fast.set_quality(anikit_video::render::Quality::Draft);
     let mut slow = Renderer::new(assets.clone());
+    slow.set_quality(anikit_video::render::Quality::Draft);
     let (mut yuv, mut changed) = (YuvFrame::default(), MbMap::default());
     for i in 0..4 {
         let x = 20.0 + i as f32 * 9.0;

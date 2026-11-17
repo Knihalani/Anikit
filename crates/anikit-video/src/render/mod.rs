@@ -134,6 +134,9 @@ struct State {
     scaled: HashMap<u64, CacheEntry>,
     seen: HashMap<u64, u64>,
     resample_buf: Vec<u8>,
+    /// Smooth cubic upscaling for enlarged images (standard quality and up).
+    cubic: bool,
+    up: upscale::Upscaler,
     /// Frame-space position of the current context's pixel (0, 0).
     org: (i32, i32),
     frame_size: (u32, u32),
@@ -218,6 +221,8 @@ impl Renderer {
                 scaled: HashMap::new(),
                 seen: HashMap::new(),
                 resample_buf: Vec::new(),
+                cubic: true,
+                up: upscale::Upscaler::cubic(),
                 org: (0, 0),
                 frame_size: (1, 1),
                 frame_no: 0,
@@ -287,6 +292,8 @@ impl Renderer {
         self.quality = q;
         let cubic = q != Quality::Draft;
         self.upscaler.cubic = cubic;
+        self.st.cubic = cubic;
+        self.st.up.cubic = cubic;
     }
 
     /// Film look for the following frames (`None` = off). `frame_index` seeds
@@ -340,14 +347,20 @@ impl Renderer {
         let mut backdrop = backdrop(&list.ops, &assets, w as f64, h as f64);
         let mut from_smooth = false;
         // Or: a smooth leading run (gradients, glows, fields) rendered at ¼ resolution.
-        let n_smooth = if self.quality != Quality::Draft { 0 } else { smooth::prefix(&list.ops, w as f64, h as f64, &|id| assets.image(id).map(|p| (p.width() as u32, p.height() as u32))) };
+        let mut n_smooth = smooth::prefix(&list.ops, w as f64, h as f64, &|id| assets.image(id).map(|p| (p.width() as u32, p.height() as u32)));
+        // Standard quality: evaluate gradient backdrops exactly, in float, at full
+        // resolution (dithered: no banding); Draft: ¼ resolution through vello.
+        let field = self.quality != Quality::Draft;
+        if field && !smooth::field_ok(&list.ops[..n_smooth]) {
+            n_smooth = 0;
+        }
         if n_smooth > 0 && backdrop.as_ref().is_none_or(|(k, _, _)| *k < n_smooth) {
             let f = smooth::FACTOR;
             let (lw, lh) = ((w as u32).div_ceil(f).max(2), (h as u32).div_ceil(f).max(2));
             let key = {
                 let mut hs = incremental::Fx::default();
                 use std::hash::Hasher;
-                hs.write_u64(((w as u64) << 32) | h as u64);
+                hs.write_u64(((w as u64) << 32) | h as u64 | (field as u64) << 63);
                 hs.write_u64(list.background.0.iter().fold(0u64, |a, v| a.rotate_left(16) ^ v.to_bits() as u64));
                 for op in &list.ops[..n_smooth] {
                     hs.write_u64(incremental::hash_op(op));
@@ -360,7 +373,12 @@ impl Renderer {
                 }
                 hs.finish()
             };
-            if self.smooth_key != Some(key) {
+            if field && self.smooth_key != Some(key) {
+                self.smooth_lo.resize(w, h);
+                smooth::render_field(&list.ops[..n_smooth], w as usize, h as usize, list.background, self.smooth_lo.data_as_u8_slice_mut());
+                self.smooth_lo.recompute_may_have_transparency();
+                self.smooth_key = Some(key);
+            } else if self.smooth_key != Some(key) {
                 let lctx = self.lctx.get_or_insert_with(|| RenderContext::new(lw as u16, lh as u16));
                 lctx.reset_and_resize(lw as u16, lh as u16);
                 st.org = (0, 0);
@@ -428,6 +446,8 @@ impl Renderer {
             let (cw, ch) = (wu.div_ceil(2), hu.div_ceil(2));
             let cdev = Rect::new(dev.x0 / 2.0, dev.y0 / 2.0, dev.x1 / 2.0, dev.y1 / 2.0);
             let (ys, cs) = (yuv.y_stride, yuv.c_stride);
+            // One kernel for all three planes, chosen from the luma scale.
+            self.upscaler.bspline = Some(dev.width() >= 12.0 * pw as f64 && dev.height() >= 12.0 * ph as f64);
             self.upscaler.run_plane(&self.lo[0], pw, ph, *dev, &mut yuv.y, ys, wu, hu, 0, 0);
             self.upscaler.run_plane(&self.lo[1], pw, ph, cdev, &mut yuv.u, cs, cw, ch, 0, 0);
             self.upscaler.run_plane(&self.lo[2], pw, ph, cdev, &mut yuv.v, cs, cw, ch, 0, 0);
@@ -490,6 +510,7 @@ impl Renderer {
                     yuv::convert_into(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, [0, 0, rw as usize, rh as usize], yuv, (x0, y0));
                 }
             }
+            self.upscaler.bspline = None;
             yuv::pad(yuv);
         } else if full {
             st.org = (0, 0);
@@ -918,14 +939,43 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
         return true;
     }
     // Only pay for resampling once the same placement shows up in consecutive frames.
+    // Enlarged images (low-res fields, small textures) get the smooth cubic
+    // filter at standard quality, every time; others are resampled once they repeat.
+    let enlarge = st.cubic && (qw >= 2.0 * iw || qh >= 2.0 * ih);
     let seen_last = st.seen.insert(key, now).is_some_and(|f| f + 1 >= now);
-    if !seen_last {
+    if !seen_last && !enlarge {
         return false;
     }
     let (ow, oh) = ((px + qw).ceil() as usize, (py + qh).ceil() as usize);
-    resample::resample(pix.data_as_u8_slice(), iw as usize, ih as usize, px, py, qw, qh, ow, oh, &mut st.resample_buf);
+    if enlarge {
+        st.resample_buf.resize(ow * oh * 4, 0);
+        st.up.invalidate();
+        st.up.run(pix.data_as_u8_slice(), iw as usize, ih as usize, Rect::new(px, py, px + qw, py + qh), &mut st.resample_buf, ow, oh, 0, 0);
+        // Edge pixels the image only partly covers: scale by coverage.
+        let cov = |o: usize, a: f64, b: f64| ((o as f64 + 1.0).min(b) - (o as f64).max(a)).clamp(0.0, 1.0) as f32;
+        for y in [0, oh - 1] {
+            let cy = cov(y, py, py + qh);
+            if cy < 1.0 {
+                for p in st.resample_buf[y * ow * 4..(y + 1) * ow * 4].iter_mut() {
+                    *p = (*p as f32 * cy + 0.5) as u8;
+                }
+            }
+        }
+        for x in [0, ow - 1] {
+            let cx = cov(x, px, px + qw);
+            if cx < 1.0 {
+                for y in 0..oh {
+                    for p in st.resample_buf[(y * ow + x) * 4..(y * ow + x) * 4 + 4].iter_mut() {
+                        *p = (*p as f32 * cx + 0.5) as u8;
+                    }
+                }
+            }
+        }
+    } else {
+        resample::resample(pix.data_as_u8_slice(), iw as usize, ih as usize, px, py, qw, qh, ow, oh, &mut st.resample_buf);
+    }
     let mut pm = Pixmap::new(ow as u16, oh as u16);
-    pm.data_as_u8_slice_mut().copy_from_slice(&st.resample_buf);
+    pm.data_as_u8_slice_mut().copy_from_slice(&st.resample_buf[..ow * oh * 4]);
     pm.recompute_may_have_transparency();
     let p = Arc::new(pm);
     st.scaled.insert(key, CacheEntry { pix: p.clone(), x: 0, y: 0, last_used: now });
