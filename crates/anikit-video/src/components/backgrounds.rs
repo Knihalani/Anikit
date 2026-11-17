@@ -1021,15 +1021,33 @@ impl Grid {
         let xmax = (w * 0.5 / f) * zfar + cs;
         let n = (xmax / cs).ceil() as i32;
         let z_split = 3.0f32;
+        // Level of detail: line i (2^L | i) only starts where lines of its
+        // level are ≥ 4 px apart (the fog has them at a few % alpha there, so
+        // nothing pops), and every line is clipped to the frame. This keeps a
+        // few hundred short segments instead of ~1,800 that run to the horizon
+        // and far off screen, and removes the moiré at the vanishing point.
+        let zb = 0.35f32;
+        let x_at = |xw: f32, z: f32| cx + f * xw / z;
+        let seg = |p: &mut Path, xw: f32, z0: f32, z1: f32| {
+            p.move_to((x_at(xw, z0) as f64, y_of(z0) as f64));
+            p.line_to((x_at(xw, z1) as f64, y_of(z1) as f64));
+        };
         for i in -n..=n {
             let xw = i as f32 * cs;
-            let (x_far, x_mid) = (cx + f * xw / zfar, cx + f * xw / z_split);
-            let zb = 0.35f32;
-            let x_near = cx + f * xw / zb;
-            far.move_to((x_far as f64, y_of(zfar) as f64));
-            far.line_to((x_mid as f64, y_of(z_split) as f64));
-            near.move_to((x_mid as f64, y_of(z_split) as f64));
-            near.line_to((x_near as f64, y_of(zb) as f64));
+            let lod = if i == 0 { 30 } else { i.unsigned_abs().trailing_zeros().min(30) };
+            let z_hi = zfar.min(f * cs * (1u64 << lod) as f32 / 4.0);
+            // Depth at which the line leaves the frame (it widens towards the viewer).
+            let z_edge = f * xw.abs() / (w * 0.5 + lw);
+            let z_lo = zb.max(z_edge);
+            if z_lo >= z_hi {
+                continue;
+            }
+            if z_hi > z_split {
+                seg(&mut far, xw, z_hi, z_split.max(z_lo));
+            }
+            if z_lo < z_split {
+                seg(&mut near, xw, z_split.min(z_hi), z_lo);
+            }
         }
         // Cross lines at equal world spacing, scrolling towards the viewer.
         let scroll = (t * self.speed).rem_euclid(1.0) * cs;
