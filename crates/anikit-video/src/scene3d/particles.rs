@@ -1082,6 +1082,107 @@ struct Pyr {
     lv: Vec<(usize, usize, Vec<f32>)>,
     /// Levels anything was splatted into (empty ones skip the collapse).
     used: [bool; 8],
+    /// Defocus bins (see `BINS`), allocated when first used.
+    bins: Vec<Option<Vec<f32>>>,
+}
+
+/// Defocus bins: disc radius (px at full resolution) and the pyramid level it
+/// lives at, so the disc is 2–2.8 texels across there. Particles splat a
+/// point into the bins bracketing their blur; each used bin is convolved with
+/// its disc once, so out-of-focus particles get real lens bokeh (discs, not
+/// Gaussian blobs) at the cost of a point splat.
+const BINS: [(f32, usize); 17] = [
+    (4.0, 1), (4.757, 1), (5.657, 1), (6.727, 1),
+    (8.0, 2), (9.514, 2), (11.31, 2), (13.45, 2),
+    (16.0, 3), (19.03, 3), (22.63, 3), (26.91, 3),
+    (32.0, 4), (38.05, 4), (45.25, 4), (53.82, 4), (64.0, 4),
+];
+
+/// Stamps for small footprints: a disc of radius r (0..4 px in 1/16 steps)
+/// seen through the tent pixel filter, at 8×8 sub-pixel phases, as 11×11
+/// weights summing to 1. Exact small particles cost one table lookup.
+const ST_R: usize = 65;
+const ST_P: usize = 16;
+const ST_N: usize = 11;
+const ST_C: usize = ST_N / 2;
+
+fn stamps() -> &'static [f32] {
+    static T: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
+    T.get_or_init(|| {
+        let mut t = vec![0.0f32; ST_R * ST_P * ST_P * ST_N * ST_N];
+        for ri in 0..ST_R {
+            let r = ri as f32 / 16.0;
+            for py in 0..ST_P {
+                for px in 0..ST_P {
+                    // Particle centre inside the stamp's middle pixel, at this phase.
+                    let (cx, cy) = (ST_C as f32 + (px as f32 + 0.5) / ST_P as f32, ST_C as f32 + (py as f32 + 0.5) / ST_P as f32);
+                    let o = ((ri * ST_P + py) * ST_P + px) * ST_N * ST_N;
+                    let step = (r / 12.0).max(0.02);
+                    let m = (r / step).ceil() as i32;
+                    let mut tot = 0.0;
+                    for j in -m..=m {
+                        for i in -m..=m {
+                            let (dx, dy) = (i as f32 * step, j as f32 * step);
+                            if dx * dx + dy * dy > r * r && !(i == 0 && j == 0) {
+                                continue;
+                            }
+                            // Tent filter: the point's share of each pixel centre.
+                            let (qx, qy) = (cx + dx - 0.5, cy + dy - 0.5);
+                            let (ix, iy) = (qx.floor(), qy.floor());
+                            let (tx, ty) = (qx - ix, qy - iy);
+                            for (ox, oy, wt) in [(0, 0, (1.0 - tx) * (1.0 - ty)), (1, 0, tx * (1.0 - ty)), (0, 1, (1.0 - tx) * ty), (1, 1, tx * ty)] {
+                                let (x, y) = (ix as i32 + ox, iy as i32 + oy);
+                                if (0..ST_N as i32).contains(&x) && (0..ST_N as i32).contains(&y) {
+                                    t[o + y as usize * ST_N + x as usize] += wt;
+                                }
+                            }
+                            tot += 1.0;
+                        }
+                    }
+                    for v in &mut t[o..o + ST_N * ST_N] {
+                        *v /= tot;
+                    }
+                }
+            }
+        }
+        t
+    })
+}
+
+/// Disc radius (texels at its level) of bin `b`: smaller than nominal by the
+/// blur its level adds (the point splat and the upsampling tents), so the
+/// total matches a disc of the nominal radius through the pixel filter.
+fn bin_rho(b: usize) -> f32 {
+    let (r, l) = BINS[b];
+    let lv = (4f32.powi(l as i32) + (4f32.powi(l as i32 + 1) - 4.0) / 3.0) / 6.0;
+    let rd = (r * r - 4.0 * (lv - 1.0 / 6.0)).max(0.25).sqrt();
+    rd / (1u32 << l) as f32
+}
+
+/// Normalised disc kernel of radius `rho` texels (anti-aliased edge).
+fn disc_kernel(rho: f32) -> Vec<(i32, i32, f32)> {
+    let m = (rho + 1.0).ceil() as i32;
+    let mut k = Vec::new();
+    let mut sum = 0.0;
+    for dy in -m..=m {
+        for dx in -m..=m {
+            // Coverage of the texel by the disc, by 4×4 sampling.
+            let mut c = 0.0;
+            for sy in 0..4 {
+                for sx in 0..4 {
+                    let (x, y) = (dx as f32 + (sx as f32 + 0.5) / 4.0 - 0.5, dy as f32 + (sy as f32 + 0.5) / 4.0 - 0.5);
+                    if x * x + y * y <= rho * rho {
+                        c += 1.0 / 16.0;
+                    }
+                }
+            }
+            if c > 0.0 {
+                k.push((dx, dy, c));
+                sum += c;
+            }
+        }
+    }
+    k.iter().map(|&(x, y, c)| (x, y, c / sum)).collect()
 }
 
 impl Pyr {
@@ -1093,7 +1194,7 @@ impl Pyr {
             cw = cw.div_ceil(2).max(1);
             ch = ch.div_ceil(2).max(1);
         }
-        Pyr { c, lv, used: [false; 8] }
+        Pyr { c, lv, used: [false; 8], bins: vec![None; BINS.len()] }
     }
     /// Reference splat: a disc of radius `r` (px) at full resolution seen
     /// through the tent pixel filter (the fast path's reconstruction), by
@@ -1135,8 +1236,115 @@ impl Pyr {
         }
     }
 
+    /// An exact small disc (radius < 4 px) from the stamp table, full resolution.
+    #[inline(always)]
+    fn stamp(&mut self, x: f32, y: f32, r: f32, v: &[f32; 8]) {
+        let c = self.c;
+        self.used[0] = true;
+        let tab = stamps();
+        let (w, h, buf) = &mut self.lv[0];
+        let (w, h) = (*w as i32, *h as i32);
+        let (fx, fy) = (x.floor(), y.floor());
+        // Bilinear between the four nearest phases (16 per pixel axis), nearest radius (1/16 px).
+        let ph = |f: f32| {
+            let u = f * ST_P as f32 - 0.5;
+            let p0 = (u.floor() as i32).clamp(0, ST_P as i32 - 2) as usize;
+            (p0, u - p0 as f32)
+        };
+        let ((px, tx), (py, ty)) = (ph(x - fx), ph(y - fy));
+        let ri = ((r * 16.0).round() as usize).min(ST_R - 1);
+        let at = |py: usize, px: usize| ((ri * ST_P + py) * ST_P + px) * ST_N * ST_N;
+        let (o00, o01, o10, o11) = (at(py, px), at(py, px + 1), at(py + 1, px), at(py + 1, px + 1));
+        let (w00, w01, w10, w11) = ((1.0 - tx) * (1.0 - ty), tx * (1.0 - ty), (1.0 - tx) * ty, tx * ty);
+        let (bx, by) = (fx as i32 - ST_C as i32, fy as i32 - ST_C as i32);
+        // Only rows/columns the radius can reach.
+        let reach = (r + 1.5).ceil() as usize;
+        let (a, b) = (ST_C.saturating_sub(reach), (ST_C + reach + 1).min(ST_N));
+        for sy in a..b {
+            let yy = by + sy as i32;
+            if yy < 0 || yy >= h {
+                continue;
+            }
+            for sx in a..b {
+                let xx = bx + sx as i32;
+                if xx < 0 || xx >= w {
+                    continue;
+                }
+                let k = sy * ST_N + sx;
+                let wt = tab[o00 + k] * w00 + tab[o01 + k] * w01 + tab[o10 + k] * w10 + tab[o11 + k] * w11;
+                if wt == 0.0 {
+                    continue;
+                }
+                let o = &mut buf[(yy * w + xx) as usize * c..][..c];
+                for j in 0..c {
+                    o[j] += v[j] * wt;
+                }
+            }
+        }
+    }
+
+    /// Bilinear point splat into defocus bin `b`.
+    #[inline(always)]
+    fn splat_bin(&mut self, b: usize, x: f32, y: f32, v: &[f32; 8]) {
+        let c = self.c;
+        let l = BINS[b].1;
+        let (w, h) = (self.lv[l].0, self.lv[l].1);
+        let buf = self.bins[b].get_or_insert_with(|| vec![0.0; w * h * c]);
+        let f = 1.0 / (1u32 << l) as f32;
+        let (fx, fy) = (x * f - 0.5, y * f - 0.5);
+        let (ix, iy) = (fx.floor(), fy.floor());
+        let (tx, ty) = (fx - ix, fy - iy);
+        let (ix, iy) = (ix as i32, iy as i32);
+        let (w, h) = (w as i32, h as i32);
+        for (dx, dy, wt) in [(0, 0, (1.0 - tx) * (1.0 - ty)), (1, 0, tx * (1.0 - ty)), (0, 1, (1.0 - tx) * ty), (1, 1, tx * ty)] {
+            let (xx, yy) = (ix + dx, iy + dy);
+            if xx < 0 || yy < 0 || xx >= w || yy >= h {
+                continue;
+            }
+            let o = &mut buf[(yy * w + xx) as usize * c..][..c];
+            for k in 0..c {
+                o[k] += v[k] * wt;
+            }
+        }
+    }
+
+    /// Convolve every used bin with its disc and add it into its level.
+    fn resolve_bins(&mut self, par: bool) {
+        use rayon::prelude::*;
+        let c = self.c;
+        for b in 0..BINS.len() {
+            let Some(src) = self.bins[b].take() else { continue };
+            let l = BINS[b].1;
+            let ker = disc_kernel(bin_rho(b));
+            let (w, h, dst) = &mut self.lv[l];
+            let (w, h) = (*w as i32, *h as i32);
+            self.used[l] = true;
+            let row = |(y, out): (usize, &mut [f32])| {
+                for x in 0..w {
+                    let o = &mut out[x as usize * c..(x as usize + 1) * c];
+                    for &(dx, dy, k) in &ker {
+                        let (sx, sy) = (x + dx, y as i32 + dy);
+                        if sx < 0 || sy < 0 || sx >= w || sy >= h {
+                            continue;
+                        }
+                        let s = &src[(sy * w + sx) as usize * c..][..c];
+                        for j in 0..c {
+                            o[j] += s[j] * k;
+                        }
+                    }
+                }
+            };
+            if par {
+                dst.par_chunks_mut(w as usize * c).enumerate().for_each(row);
+            } else {
+                dst.chunks_mut(w as usize * c).enumerate().for_each(row);
+            }
+        }
+    }
+
     /// Bilinear splat at level `l`, pixel coordinates of level 0.
     #[inline(always)]
+    #[allow(dead_code)]
     fn splat(&mut self, l: usize, x: f32, y: f32, v: &[f32; 8]) {
         let c = self.c;
         self.used[l] = true;
@@ -1389,17 +1597,23 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
     let lvar: Vec<f32> = (0..=levels).map(|l| (4f32.powi(l as i32) + (4f32.powi(l as i32 + 1) - 4.0) / 3.0) / 6.0).collect();
     // A disc of radius r seen through the tent pixel filter has variance r²/4 + 1/6:
     // split the particle between the two levels whose variances bracket it.
-    let lvl_of = |r: f32| -> (usize, f32) {
+    // Kernels in order of blur: a point at full resolution, then the defocus
+    // bins (disc plus the splat/upsample blur of their level).
+    // Bins are sized so disc + level blur has the variance of a disc of
+    // their nominal radius through the tent filter (see `bin_rho`).
+    let kvar: Vec<f32> = std::iter::once(16.0 * 0.25 + 1.0 / 6.0).chain(BINS.iter().map(|&(r, _)| r * r * 0.25 + 1.0 / 6.0)).collect();
+    let kern_of = |r: f32| -> (usize, f32) {
         let v = r * r * 0.25 + 1.0 / 6.0;
-        let mut l = 0;
-        while l + 1 < levels && lvar[l + 1] <= v {
-            l += 1;
+        let mut k = 0;
+        while k + 1 < kvar.len() && kvar[k + 1] <= v {
+            k += 1;
         }
-        if l + 1 >= levels {
-            return (levels - 1, 0.0);
+        if k + 1 >= kvar.len() {
+            return (kvar.len() - 1, 0.0);
         }
-        (l, ((v - lvar[l]) / (lvar[l + 1] - lvar[l])).clamp(0.0, 1.0))
+        (k, ((v - kvar[k]) / (kvar[k + 1] - kvar[k])).clamp(0.0, 1.0))
     };
+    let _ = &lvar;
     // Channel layout: emission only for glowing systems, absorption only for `over` ones.
     let emits = systems.iter().any(|(s, _)| s.def.blend == Blend::Add || s.def.emissive > 0.0);
     let absorbs = systems.iter().any(|(s, _)| s.def.blend == Blend::Over);
@@ -1448,7 +1662,8 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let (bx, by) = (sx + (bx - sx) * if v.shutter > 0.0 { 1.0 } else { 0.0 }, sy + (by - sy) * if v.shutter > 0.0 { 1.0 } else { 0.0 });
                 let (mx, my) = (sx - bx, sy - by);
                 let ml = (mx * mx + my * my).sqrt();
-                let (l, lw) = lvl_of(foot);
+                let (kk, lw) = if foot < 4.0 { (usize::MAX, 0.0) } else { kern_of(foot) };
+                let l = if kk == 0 || kk == usize::MAX { 0 } else { BINS[kk - 1].1 };
                 let tex = (1u32 << l) as f32;
                 let ns = ((ml / tex).ceil() as usize).clamp(1, 24);
                 // Energy: projected disc area (world size) — in focus it's smaller than a pixel.
@@ -1518,11 +1733,20 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let (v0, v1) = (val.map(|x| x * inv * (1.0 - lw)), val.map(|x| x * inv * lw));
                 for k in 0..ns {
                     let u = if ns == 1 { 0.0 } else { (k as f32 + 0.5) * inv - 0.5 };
+                    let (x, y) = (sx + mx * u, sy + my * u);
+                    if kk == usize::MAX {
+                        py.stamp(x, y, foot, &v0);
+                        continue;
+                    }
                     if lw < 0.999 {
-                        py.splat(l, sx + mx * u, sy + my * u, &v0);
+                        if kk == 0 {
+                            py.stamp(x, y, 3.99, &v0);
+                        } else {
+                            py.splat_bin(kk - 1, x, y, &v0);
+                        }
                     }
                     if lw > 0.001 {
-                        py.splat(l + 1, sx + mx * u, sy + my * u, &v1);
+                        py.splat_bin(kk, x, y, &v1);
                     }
                 }
             }
@@ -1548,6 +1772,13 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
         for l in 0..levels {
             acc.used[l] |= p.used[l];
         }
+        for (a, b) in acc.bins.iter_mut().zip(p.bins) {
+            match (a.as_mut(), b) {
+                (Some(x), Some(y)) => x.iter_mut().zip(&y).for_each(|(x, y)| *x += y),
+                (None, Some(y)) => *a = Some(y),
+                _ => {}
+            }
+        }
         for (a, b) in acc.lv.iter_mut().zip(p.lv) {
             if par {
                 a.2.par_chunks_mut(1 << 16).zip(b.2.par_chunks(1 << 16)).for_each(|(x, y)| x.iter_mut().zip(y).for_each(|(x, y)| *x += y));
@@ -1556,6 +1787,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
             }
         }
     }
+    acc.resolve_bins(par);
     for l in (1..levels).rev() {
         if !acc.used[l] {
             continue;
