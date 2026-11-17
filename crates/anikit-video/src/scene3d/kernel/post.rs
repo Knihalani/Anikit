@@ -663,7 +663,7 @@ unsafe fn dof_gather_avx2(taps: &[[f32; 8]], hw: usize, hh: usize, x: usize, y: 
     use std::arch::x86_64::*;
     let (dc, cc, sc, ic) = (c0[3], c0[4], c0[5], c0[6]);
     let n = set[0].len();
-    debug_assert!(n % 8 == 0 && taps.len() >= hw * hh);
+    debug_assert!(n.is_multiple_of(8) && taps.len() >= hw * hh);
     let base = taps.as_ptr() as *const f32;
     // SAFETY: (caller) AVX2 is available; every gathered index is clamped into the image.
     unsafe {
