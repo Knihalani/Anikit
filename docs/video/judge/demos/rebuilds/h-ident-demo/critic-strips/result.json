@@ -1,0 +1,45 @@
+{
+  "answer": {
+    "scores": {
+      "motion": 5,
+      "sound": 4,
+      "craft": 5
+    },
+    "checks": {
+      "idea": true,
+      "invariant": true,
+      "arc": true,
+      "type_meaning": false,
+      "freeze_frame": false,
+      "ending": true,
+      "restraint": true,
+      "material": true,
+      "sync": true
+    },
+    "defects": [
+      "The wings are flat, rigid planes hinged at the shoulder with no feather articulation, bend or follow-through. The flap reads as a paddle or propeller, not a bird.",
+      "The motion blur on the wings is made of stacked, stepped echo copies, so you see discrete ghost slabs instead of a continuous smear.",
+      "The opening hover loops the same flap cycle about 16 times at a fixed rate, which you can see in the strip and in the evenly spaced spectrogram bursts. Nothing changes in the wing pose or in the timing of the beats.",
+      "The bird drops out of frame bottom-right in about two frames with no anticipation, arc or impact. The dive, which should be the hero moment, happens off-screen.",
+      "The wordmark builds as letters overlap and pile up ('ke', 'kst', 'kestd'), which looks like a broken tracking animation, not a designed reveal.",
+      "After the wordmark resolves, it is static for about 2 s with only grass drift.",
+      "The 100% crop shows heavy uniform luminance noise across the whole frame. It looks like a blanket grain filter, not grain tied to the light, and it muddies the dark wing edges.",
+      "The silhouette is simple, almost low-poly, and its eye is a flat outlined ring. It doesn't match the softer, painterly sky and grass.",
+      "Audio: the wingbeats are evenly spaced broadband noise bursts and the dive is a single filtered-noise sweep. The tail is a static low drone plus three identical sine-like chirps. The track is thin and synthetic, with almost no layering."
+    ],
+    "gaps": [
+      "Weight and anatomy: the flapping and the dive need real wing articulation, overlap and an arcing dive with anticipation and impact. Right now it's rigid planes and a dive that happens off-screen.",
+      "Transition craft and arc: the core idea (the kestrel's dive leaves the full stop) is good, but the dot appears with no beat. The letters then collide into place, and the final 2 s hold has no secondary life or settle.",
+      "Sound design: the noise-burst flaps, one sweep and three identical chirps should be produced layers. That means real feather and air foley, a designed dive whoosh, an impact on the dot, and a tonal sting that resolves with the mark."
+    ]
+  },
+  "meta": {
+    "seconds": 20.8,
+    "cost_usd": 0.156814,
+    "tokens": 73417,
+    "models": [
+      "claude-opus-5-5"
+    ]
+  },
+  "pace": "h-ident-demo.mp4: 6.0s, 6 shots, median 0.17s, longest 5.00s\nper-second change: [32.6, 32.5, 29.7, 48.1, 12.8]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s"
+}
