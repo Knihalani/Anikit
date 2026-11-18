@@ -14,4 +14,6 @@
 | **pass 2: every circuit its own poster, real arcs, concrete (final.mp4)** | **3.62** | 7.71 | 5/4/6 | best; "literal idea; default condensed sans + glow; ending held too long" |
 | pass 3: + full line-up poster ending | 3.00 | 7.88 | 4/4/5 | "the line-up card reads like a template"; reverted |
 
+**Paired decision run (JUDGE's pinned protocol: `judge.py brief c-event final.mp4 --trials 6`; refs kurzgesagt-short, xk-studio-offfmx-2025-main-titles, studio-river-motion-plus-design-tokyo-2024): 4.19, judged pro 1/6 (r1 3.75, r2 2.50); full score 4.36 (r1 4.11, r2 2.94).** Result: `judge/c-event/result.json`.
+
 Plateau: three passes within 3.0–3.6. The judge's stable asks are conceptual (a non-literal idea, custom lettering, photographic-grade material), not executional.
