@@ -41,6 +41,7 @@ pub mod code;
 pub mod devices;
 pub mod lottie;
 pub mod fluid;
+pub mod physarum;
 pub mod metaballs;
 pub mod morph;
 pub mod particle_text;
@@ -273,6 +274,7 @@ kinds! {
     // Shapes and light
     "morph" => morph::Morph, "Smooth gradient shape morphing between named shapes (circle, square, star, heart, blob, triangle) or SVG paths.", r##"{"shapes":["circle","star","heart"]}"##;
     "fluid" => fluid::Fluid, "Fluid simulation: ink blooming in water, smoke or fire, with real vortices; sources push and inject dye, and `text` writes a word the flow takes apart.", r##"{"look":"ink","text":{"text":"FLUID"}}"##;
+    "physarum" => physarum::Physarum, "Slime-mould network: agents sense a trail field, turn towards it, move and deposit; veins form, merge and re-route. Text can seed or attract them.", r##"{"agents":200000,"spawn":"disc"}"##;
     "metaballs" => metaballs::Metaballs, "Liquid gooey blobs that drift, merge and split, with a gradient fill and glow.", r##"{}"##;
     "god-rays" => rays::GodRays, "Volumetric light rays from a point, slowly turning, with dust motes in the beams.", r##"{}"##;
     "lens-flare" => rays::LensFlare, "Anamorphic lens flare: streak, halo and ghosts along the axis through the centre; `at` can travel a path.", r##"{"at":[0.3,0.3]}"##;
