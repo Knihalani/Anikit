@@ -1,0 +1,114 @@
+{
+ "size": "9:16",
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "../../src/teatable.glsl",
+     "uniforms": {
+      "cx": 0.02,
+      "cy": -0.08,
+      "zoom": 1.05,
+      "rot": 0.0,
+      "stir": 0.3
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "bergamot",
+         "font": "Bricolage Grotesque",
+         "size": 190,
+         "x": 520,
+         "y": 1330,
+         "color": "#fff",
+         "axes": {
+          "wght": 760,
+          "opsz": 96
+         }
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "../../src/teatable.glsl",
+     "uniforms": {
+      "cx": 0.02,
+      "cy": -0.08,
+      "zoom": 1.05,
+      "rot": 0.0,
+      "stir": 0.3
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "bergamot",
+         "font": "Libre Caslon Display",
+         "size": 230,
+         "x": 520,
+         "y": 1330,
+         "color": "#fff"
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "../../src/teatable.glsl",
+     "uniforms": {
+      "cx": 0.02,
+      "cy": -0.08,
+      "zoom": 1.05,
+      "rot": 0.0,
+      "stir": 0.3
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "BERGAMOT",
+         "font": "Bricolage Grotesque",
+         "size": 120,
+         "x": 520,
+         "y": 1330,
+         "color": "#fff",
+         "axes": {
+          "wght": 800,
+          "opsz": 96
+         },
+         "letterSpacing": "0.12em"
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

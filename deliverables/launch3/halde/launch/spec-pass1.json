@@ -1,0 +1,591 @@
+{
+ "size": "9:16",
+ "fps": 30,
+ "fonts": {},
+ "music": {
+  "style": "acoustic",
+  "bpm": 96,
+  "key": "D",
+  "mood": "warm bright morning",
+  "instruments": {
+   "lead": "kalimba"
+  },
+  "sections": [
+   {
+    "name": "intro",
+    "bars": 1,
+    "energy": 0.4
+   },
+   {
+    "name": "verse",
+    "bars": 3,
+    "energy": 0.6
+   },
+   {
+    "name": "chorus",
+    "bars": 2,
+    "energy": 0.85,
+    "stop": 2
+   }
+  ],
+  "hits": [
+   "@bar5"
+  ],
+  "end": "ring",
+  "followCuts": false
+ },
+ "sound": {
+  "palette": "organic",
+  "ambience": "room",
+  "density": 0.35,
+  "cues": [
+   {
+    "sfx": "glass",
+    "at": 0.0,
+    "gain": -2
+   },
+   {
+    "sfx": "droplet",
+    "at": 3.9,
+    "gain": -8
+   },
+   {
+    "sfx": "droplet",
+    "at": 5.75,
+    "gain": -9
+   },
+   {
+    "sfx": "droplet",
+    "at": 7.6,
+    "gain": -9
+   },
+   {
+    "sfx": "thump",
+    "at": 12.5,
+    "gain": -3
+   }
+  ]
+ },
+ "scenes": [
+  {
+   "duration": 3.75,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/counter.glsl",
+     "uniforms": {
+      "gx": 0.0,
+      "gy": 0.25,
+      "mat": 2,
+      "slen": 0.78,
+      "cscale": 0.85,
+      "bar": 0.55,
+      "cx": "=-0.1385+(0.0785)*smoothstep(0.85,2.75,t)",
+      "cy": "=-0.2103+(0.2303)*smoothstep(0.85,2.75,t)",
+      "zoom": "=exp(1.8871+(-0.2485-1.8871)*smoothstep(0.85,2.75,t))*(1-0.02*t)",
+      "rot": -0.1,
+      "morph": 0.0,
+      "slosh": 1.0,
+      "words": 0.0,
+      "barx": 0.42
+     },
+     "channels": [
+      {
+       "layers": []
+      },
+      {
+       "layers": []
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "slosh": 1.0
+       },
+       "to": {
+        "slosh": 0.15
+       },
+       "duration": 3.2,
+       "ease": "outQuad"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1.875,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/counter.glsl",
+     "uniforms": {
+      "gx": 0.0,
+      "gy": 0.25,
+      "mat": 2,
+      "slen": 0.78,
+      "cscale": 0.85,
+      "bar": 0.0,
+      "cx": -0.10567269841514128,
+      "cy": -0.08131305115317018,
+      "zoom": "=(1.45+(1.55-1.45)*t/1.875)",
+      "rot": 0.0,
+      "morph": 0.0,
+      "slosh": "=0.9*exp(-t*2.6)",
+      "words": 0.0
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "peach",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 720,
+          "opsz": 96
+         },
+         "size": 112,
+         "x": "=540.0+0.03285*(1.45+(1.55-1.45)*t/1.875)*1920",
+         "y": "=960.0-0.12902*(1.45+(1.55-1.45)*t/1.875)*1920",
+         "color": "#ffffff",
+         "rotation": -0.0,
+         "scale": "=(1.45+(1.55-1.45)*t/1.875)/1.45"
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "morph": 0.0
+       },
+       "to": {
+        "morph": 1.0
+       },
+       "at": 0.12,
+       "duration": 0.75,
+       "ease": "inOutCubic"
+      },
+      {
+       "from": {
+        "words": 0.0
+       },
+       "to": {
+        "words": 1.0
+       },
+       "at": 0.55,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1.875,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/counter.glsl",
+     "uniforms": {
+      "gx": 0.0,
+      "gy": 0.25,
+      "mat": 2,
+      "slen": 0.78,
+      "cscale": 0.85,
+      "bar": 0.0,
+      "cx": -0.1885207111516431,
+      "cy": -0.13033530875456412,
+      "zoom": "=(1.75+(1.85-1.75)*t/1.875)",
+      "rot": 0.24,
+      "morph": 1.0,
+      "slosh": "=0.9*exp(-t*2.6)",
+      "words": 0.0
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "bergamot",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 720,
+          "opsz": 96
+         },
+         "size": 120,
+         "x": "=540.0+0.06962*(1.75+(1.85-1.75)*t/1.875)*1920",
+         "y": "=960.0-0.19629*(1.75+(1.85-1.75)*t/1.875)*1920",
+         "color": "#ffffff",
+         "rotation": -13.750987083139757,
+         "scale": "=(1.75+(1.85-1.75)*t/1.875)/1.75"
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "morph": 1.0
+       },
+       "to": {
+        "morph": 2.0
+       },
+       "at": 0.12,
+       "duration": 0.75,
+       "ease": "inOutCubic"
+      },
+      {
+       "from": {
+        "words": 0.0
+       },
+       "to": {
+        "words": 1.0
+       },
+       "at": 0.55,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1.25,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/counter.glsl",
+     "uniforms": {
+      "gx": 0.0,
+      "gy": 0.25,
+      "mat": 2,
+      "slen": 0.78,
+      "cscale": 0.85,
+      "bar": 0.5,
+      "cx": -0.10852071115164309,
+      "cy": -0.12033530875456411,
+      "zoom": "=(1.85+(1.95-1.85)*t/1.25)",
+      "rot": 0.3,
+      "morph": 2.0,
+      "slosh": "=0.9*exp(-t*2.6)",
+      "words": 0.0,
+      "barx": 0.05
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "black tea",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 720,
+          "opsz": 96
+         },
+         "size": 104,
+         "x": "=540.0+-0.01527*(1.85+(1.95-1.85)*t/1.25)*1920",
+         "y": "=960.0-0.17743*(1.85+(1.95-1.85)*t/1.25)*1920",
+         "color": "#ffffff",
+         "rotation": -17.188733853924695,
+         "scale": "=(1.85+(1.95-1.85)*t/1.25)/1.85"
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "morph": 2.0
+       },
+       "to": {
+        "morph": 3.0
+       },
+       "at": 0.12,
+       "duration": 0.75,
+       "ease": "inOutCubic"
+      },
+      {
+       "from": {
+        "words": 0.0
+       },
+       "to": {
+        "words": 1.0
+       },
+       "at": 0.55,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1.25,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/counter.glsl",
+     "uniforms": {
+      "gx": 0.0,
+      "gy": 0.25,
+      "mat": 2,
+      "slen": 0.78,
+      "cscale": 0.85,
+      "bar": 0.0,
+      "cx": -0.1,
+      "cy": 0.04,
+      "zoom": 1.05,
+      "rot": 0.06,
+      "morph": 3.0,
+      "slosh": 0.0,
+      "words": 0.0,
+      "sun": 1.0
+     },
+     "channels": [
+      {
+       "layers": []
+      },
+      {
+       "layers": []
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "sun": 1.0
+       },
+       "to": {
+        "sun": 0.1
+       },
+       "at": 0.0,
+       "duration": 0.55,
+       "ease": "inOutSine"
+      },
+      {
+       "from": {
+        "zoom": 1.05
+       },
+       "to": {
+        "zoom": 1.0
+       },
+       "duration": 1.25,
+       "ease": "linear"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 5.0,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/counter.glsl",
+     "uniforms": {
+      "gx": 0.1,
+      "gy": 0.42,
+      "bx": -0.03,
+      "by": -0.13,
+      "bag": 1.0,
+      "mat": 2,
+      "cscale": 1.0,
+      "cx": 0.0,
+      "cy": 0.035,
+      "zoom": 0.95,
+      "rot": 0.0,
+      "morph": 4.0,
+      "slosh": "=0.5*exp(-t*1.5)",
+      "words": 0.0,
+      "sun": 0.1,
+      "slen": 1.25,
+      "bar": 0.0
+     },
+     "channels": [
+      {
+       "layers": []
+      },
+      {
+       "layers": [
+        {
+         "text": "HALDE & SONS",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 800,
+          "opsz": 96
+         },
+         "size": 64,
+         "x": 472,
+         "y": 887,
+         "color": "#F1ECE2",
+         "rotation": -2.0053522829578814,
+         "letterSpacing": "0.06em"
+        },
+        {
+         "text": "coffee roasters",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 400,
+          "opsz": 14
+         },
+         "size": 36,
+         "x": 475,
+         "y": 960,
+         "color": "#F1ECE2",
+         "rotation": -2.0053522829578814
+        },
+        {
+         "text": "Ethiopia",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 500,
+          "opsz": 96
+         },
+         "size": 112,
+         "x": 481,
+         "y": 1142,
+         "color": "#F1ECE2",
+         "rotation": -2.0053522829578814
+        },
+        {
+         "text": "Guji",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 800,
+          "opsz": 96
+         },
+         "size": 250,
+         "x": 488,
+         "y": 1343,
+         "color": "#F1ECE2",
+         "rotation": -2.0053522829578814
+        },
+        {
+         "text": "washed",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 500,
+          "opsz": 14
+         },
+         "size": 48,
+         "x": 495,
+         "y": 1534,
+         "color": "#F1ECE2",
+         "rotation": -2.0053522829578814
+        },
+        {
+         "text": "bergamot \u00b7 peach \u00b7 black tea",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 450,
+          "opsz": 14
+         },
+         "size": 38,
+         "x": 498,
+         "y": 1611,
+         "color": "#F1ECE2",
+         "rotation": -2.0053522829578814
+        },
+        {
+         "shape": "rect",
+         "width": 400,
+         "height": 108,
+         "x": 676,
+         "y": 1743,
+         "fill": "none",
+         "stroke": "#E0502C",
+         "strokeWidth": 7,
+         "radius": 10,
+         "rotation": -9,
+         "animate": [
+          {
+           "from": {
+            "scale": 1.35,
+            "opacity": 0
+           },
+           "to": {
+            "scale": 1.0,
+            "opacity": 1
+           },
+           "at": 2.5,
+           "duration": 0.12,
+           "ease": "outCubic"
+          }
+         ]
+        },
+        {
+         "text": "OUT FRIDAY",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 800,
+          "opsz": 96
+         },
+         "size": 60,
+         "letterSpacing": "0.03em",
+         "x": 676,
+         "y": 1743,
+         "color": "#E0502C",
+         "rotation": -9,
+         "animate": [
+          {
+           "from": {
+            "scale": 1.35,
+            "opacity": 0
+           },
+           "to": {
+            "scale": 1.0,
+            "opacity": 1
+           },
+           "at": 2.5,
+           "duration": 0.12,
+           "ease": "outCubic"
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "sun": 0.1
+       },
+       "to": {
+        "sun": 1.0
+       },
+       "at": 0.0,
+       "duration": 0.45,
+       "ease": "outCubic"
+      },
+      {
+       "from": {
+        "slen": 1.25
+       },
+       "to": {
+        "slen": 0.62
+       },
+       "at": 0.0,
+       "duration": 3.4,
+       "ease": "inOutSine"
+      },
+      {
+       "from": {
+        "zoom": 0.95
+       },
+       "to": {
+        "zoom": 0.95
+       },
+       "duration": 0.1
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

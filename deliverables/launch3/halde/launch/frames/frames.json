@@ -1,0 +1,135 @@
+{
+ "size": "9:16",
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "../../src/counter.glsl",
+     "uniforms": {
+      "cx": -0.1,
+      "cy": 0.0,
+      "zoom": 1.4,
+      "morph": 1.0,
+      "slosh": 0.0,
+      "mat": 0,
+      "gx": 0,
+      "gy": 0.25,
+      "bar": 0.6,
+      "barx": 0.35,
+      "cscale": 0.85
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "peach",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 700,
+          "opsz": 96
+         },
+         "size": 120,
+         "x": 618,
+         "y": 820,
+         "color": "#fff"
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "../../src/counter.glsl",
+     "uniforms": {
+      "cx": -0.1,
+      "cy": 0.0,
+      "zoom": 1.4,
+      "morph": 1.0,
+      "slosh": 0.0,
+      "mat": 1,
+      "gx": 0,
+      "gy": 0.25,
+      "bar": 0.6,
+      "barx": 0.35,
+      "cscale": 0.85
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "peach",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 700,
+          "opsz": 96
+         },
+         "size": 120,
+         "x": 618,
+         "y": 820,
+         "color": "#fff"
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "../../src/counter.glsl",
+     "uniforms": {
+      "cx": -0.1,
+      "cy": 0.0,
+      "zoom": 1.4,
+      "morph": 1.0,
+      "slosh": 0.0,
+      "mat": 2,
+      "gx": 0,
+      "gy": 0.25,
+      "bar": 0.6,
+      "barx": 0.35,
+      "cscale": 0.85
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "peach",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 700,
+          "opsz": 96
+         },
+         "size": 120,
+         "x": 618,
+         "y": 820,
+         "color": "#fff"
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,391 @@
+{
+  "name": "halde",
+  "tags": [
+    "product-launch",
+    "social-vertical"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "vertigo"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 5.5,
+      "composition": 4.5,
+      "typography": 3.5,
+      "colour": 5.0,
+      "light_texture": 5.0,
+      "motion": 4.5,
+      "craft": 4.0,
+      "originality": 4.5
+    },
+    "overall": 4.56,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 3,
+    "gaps": [
+      "The caustics need to be built physically, through real glass and liquid with refraction that actually follows the shadow band, so the idea earns its light",
+      "The typeface and layout of the bag need real character (a custom wordmark, scale contrast, integration with the caustic pattern) instead of default sans stacks",
+      "Each frame needs its own composition and real camera or material choreography; at the moment one layout repeats with the shape swapped",
+      "Make the light physical. A builds its look from a real eye and real optical tools. Here the caustics should actually come from the cup of coffee and fall on the surface with refraction, colour fringing and movement, not sit as a 2D texture overlay.",
+      "Typography needs an idea. Replace the default grotesk stack and stamp with type that comes out of the caustic system, or a characterful face set at expressive scale, the way A sets its title across the eye.",
+      "Break the repeated layout. Vary the camera, scale and framing between beats so the film has choreography, not one composition with swapped content."
+    ],
+    "tells": [
+      "There is a genuine idea: caustic light through a cup becomes the tasting-note shapes (an orange for bergamot, a leaf for black tea)",
+      "The execution falls back on defaults: a cream paper ground, a single diagonal shadow band repeated in every frame, and a teacup in the corner",
+      "The type is a generic grotesk/Inter-style setting on a flat bag mock-up (brand name in small caps, a large 'Guji', a pill-shaped 'OUT FRIDAY' sticker), with no typographic point of view",
+      "The caustic shapes are flat 2D masks laid over the scene with no physical relation to the light source, and the light and shadow do not line up",
+      "The bag mock-up looks like a template product shot with no material or print finish; the composition is mostly empty and centred",
+      "There is a seed of an idea: a caustic light pattern that becomes the flavour notes (a bergamot shape, a leaf) and then a light pattern on the coffee bag. That beats a pure template.",
+      "The type is default and slide-like: a generic grotesk in a centred 'Ethiopia / Guji / washed' stack, a small tracked brand label, and an 'OUT FRIDAY' rubber-stamp clich\u00e9. The label 'bergamot' is just dropped in at an angle.",
+      "The composition is close to identical across frames: a cream ground, one diagonal grey shadow band, a cup top-right and an object in the middle. The same layout is reused with the element swapped.",
+      "The flavour-note shapes are clip-art silhouettes filled with the caustic texture. It is the literal 'flavour = fruit icon' move.",
+      "The caustic texture is flat and procedural. It doesn't respond to the cup, the liquid or the paper surface, so it is an effect without physical motivation. The shadow band doesn't move or change between frames.",
+      "The sequence is literal: pattern, shape, notes, product, release date. That is the structure of an automated social-ad template."
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 3.06,
+      "judged_professional": "0/2",
+      "mean_rank": 4
+    },
+    "tiffany-holiday": {
+      "overall": 7.12,
+      "judged_professional": "2/2",
+      "mean_rank": 2
+    },
+    "vertigo": {
+      "overall": 9.56,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 6.58,
+  "delta": -2.02,
+  "trials": [
+    {
+      "key": {
+        "A": "vertigo",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "The idea belongs to this film alone: an extreme close-up of an eye, with spirals coming out of the pupil, turns the subject (vertigo, obsession) into the opening image",
+              "Red monochrome photography alternates with black fields of Lissajous/spirograph forms, so the sequence has a clear rhythm of contrast",
+              "The slab-serif display face is used with intent: outlined VERTIGO across the eye, small caps against large names for hierarchy, and right-aligned credit stacks set against the curve of the green ribbon",
+              "The palette is deliberate and unusual: blood red, then violet, then mint green on black",
+              "The choreography is plain from the frames: the spiral grows from the iris, the forms change in shape and colour, and the sequence closes on the eye again at the director credit",
+              "Every frame works as a poster; the mechanically drawn curves have real weight and precision"
+            ],
+            "gaps": [
+              "Benchmark entry; the only gap is that the spirograph frames sit on flat black, so there is no depth or texture between the photographic passages",
+              "The credit typesetting changes size from block to block in places (e.g. screenplay vs. based-upon lines), which leaves a few lines feeling crowded",
+              "The green ribbon frame lets the credits run close to the edge of the form, so the type and the image compete there"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A narrative device runs through the piece: a jewelled mechanical bird and its trail of sparkle travel through a city, a stage and a dinner table, which implies real choreography and camera travel",
+              "The camera language varies: a shallow-focus macro against a clock, a top-down overhead of a street corner with a taxi, a wide shot of a stage, and a dolly into a table setting",
+              "The light is motivated and has depth, with practical window glows, footlights, candle bokeh and caustic glints on the jewelled material",
+              "The film's own palette is consistent, warm amber against teal night",
+              "The painted desert frame breaks the style, which reads as an intentional switch to an illustrated world rather than a template"
+            ],
+            "gaps": [
+              "The device (a magical object flying through a festive city leaving sparkle dust) is familiar luxury-holiday language; it needs a sharper idea of its own on the level of A's eye and spiral",
+              "No typography is visible; its absence is acceptable for a brand film, but the piece gives up the chance to tie type into the image as A does",
+              "The painterly final frame does not connect visually to the CG world before it; the transition between the two styles has to feel designed rather than bolted on"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 5,
+              "craft": 4,
+              "originality": 5
+            },
+            "tells": [
+              "There is a genuine idea: caustic light through a cup becomes the tasting-note shapes (an orange for bergamot, a leaf for black tea)",
+              "The execution falls back on defaults: a cream paper ground, a single diagonal shadow band repeated in every frame, and a teacup in the corner",
+              "The type is a generic grotesk/Inter-style setting on a flat bag mock-up (brand name in small caps, a large 'Guji', a pill-shaped 'OUT FRIDAY' sticker), with no typographic point of view",
+              "The caustic shapes are flat 2D masks laid over the scene with no physical relation to the light source, and the light and shadow do not line up",
+              "The bag mock-up looks like a template product shot with no material or print finish; the composition is mostly empty and centred"
+            ],
+            "gaps": [
+              "The caustics need to be built physically, through real glass and liquid with refraction that actually follows the shadow band, so the idea earns its light",
+              "The typeface and layout of the bag need real character (a custom wordmark, scale contrast, integration with the caustic pattern) instead of default sans stacks",
+              "Each frame needs its own composition and real camera or material choreography; at the moment one layout repeats with the shape swapped"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 2,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The same composition repeats: one centred circular object on a pastel or cream seamless ground in every frame",
+              "The subjects are unconnected (earbuds, a steering wheel with sign icons, a cannabis bud, a socket, a chess-screen TV, a sci-fi portal), so there is no idea running through it, only a gallery of renders",
+              "The aspect ratios and formats are inconsistent (16:9, 4:3, square), which reads like collected generations, not a film",
+              "The look is generic 'tasteful 3D/AI': soft studio light, clay-like plastic, clip-art UI icons stuck onto the wheel",
+              "No typography, and its absence leaves the objects without context or meaning; nothing in the frames implies motion or choreography"
+            ],
+            "gaps": [
+              "It needs one specific concept that connects the objects and gives them a reason to move from one to the next, as A builds the eye-to-spiral transformation",
+              "It needs composition beyond a centred object on a seamless ground: scale, cropping, layering and an editorial point of view",
+              "It needs a deliberate palette and material language that stays the same throughout, plus typography or narrative that turns renders into a film"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 32.3,
+        "cost_usd": 0.1722688,
+        "tokens": 72031,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "vertigo",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 10,
+              "colour": 10,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "One idea the whole film is built on: an extreme close-up of an eye that turns into Lissajous/spirograph spirals. It is the film's theme of obsession and falling, shown as an image, and it belongs only to this film.",
+              "The type has a point of view. The outlined slab-serif title sits across the eye at a large scale, and the credit stack sets small caps against bold names with a ragged-right rhythm.",
+              "Palette is deliberate and unusual: a monochrome blood-red skin tone, then a hard cut to black with violet and then acid-green line forms.",
+              "Choreography reads across the frames: from the eye to the spiral emerging from the pupil, a growing and rotating spirograph, the spiral receding, and a return to the eye for the director's credit. The structure is a closed loop.",
+              "Real photographic texture (skin, lashes, a catchlight) set against pure mathematical line. Every frame works as a poster."
+            ],
+            "gaps": [
+              "This is the benchmark entry, so there is little to close. The only soft spot is that the green spiral frames get dense when type is laid over the linework.",
+              "The supporting credits rely on a single face. A second register could have given more contrast in the small text.",
+              "The middle section leans on repeating spiral forms. Even more variation in scale or camera between the spirograph frames would sharpen the build."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A clear narrative device: a jewelled bird-brooch flies through a story world (clock face, aerial street corner, ballet stage, brownstone facades, a dinner table) and links the scenes as a single journey.",
+              "The camera language varies with intent: a macro on the clock, a top-down aerial of the intersection, a wide stage shot, and a shallow-focus table scene. That variety points to real choreography and planned transitions.",
+              "Light is motivated and layered: practical window glow, candlelight, string lights, stage footlights, and a particle trail that carries the eye through each frame.",
+              "No type is visible. Its absence suits a branded holiday film that lets the object carry the brand. The likely end card isn't sampled, which lowers the typography score.",
+              "The last frame breaks style into a painted desert-butte look. It could be a deliberate change of world, but it is the least integrated frame. The holiday-luxury vocabulary (sparkle trails, NYC taxi, ballerina) is also familiar from the genre."
+            ],
+            "gaps": [
+              "The idea is a genre convention (a magical object flying through a festive city). A, by contrast, carries one image-idea that belongs only to that film. C needs a conceptual twist that only this brand or this story could have.",
+              "The frames lack a single graphic system. A's palette and type tie every frame together, while C's palette drifts between teal, warm interior, blue stage and painterly orange. A tighter colour script would make it read as one authored piece.",
+              "Typography is absent or unseen. Integrating title or brand type into the image, the way A sets its title across the eye, would make the piece a poster as well as a commercial."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "There is a seed of an idea: a caustic light pattern that becomes the flavour notes (a bergamot shape, a leaf) and then a light pattern on the coffee bag. That beats a pure template.",
+              "The type is default and slide-like: a generic grotesk in a centred 'Ethiopia / Guji / washed' stack, a small tracked brand label, and an 'OUT FRIDAY' rubber-stamp clich\u00e9. The label 'bergamot' is just dropped in at an angle.",
+              "The composition is close to identical across frames: a cream ground, one diagonal grey shadow band, a cup top-right and an object in the middle. The same layout is reused with the element swapped.",
+              "The flavour-note shapes are clip-art silhouettes filled with the caustic texture. It is the literal 'flavour = fruit icon' move.",
+              "The caustic texture is flat and procedural. It doesn't respond to the cup, the liquid or the paper surface, so it is an effect without physical motivation. The shadow band doesn't move or change between frames.",
+              "The sequence is literal: pattern, shape, notes, product, release date. That is the structure of an automated social-ad template."
+            ],
+            "gaps": [
+              "Make the light physical. A builds its look from a real eye and real optical tools. Here the caustics should actually come from the cup of coffee and fall on the surface with refraction, colour fringing and movement, not sit as a 2D texture overlay.",
+              "Typography needs an idea. Replace the default grotesk stack and stamp with type that comes out of the caustic system, or a characterful face set at expressive scale, the way A sets its title across the eye.",
+              "Break the repeated layout. Vary the camera, scale and framing between beats so the film has choreography, not one composition with swapped content."
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "There is no subject or through-line: earbuds, a steering wheel with road-sign icons, a ball of cannabis, a glowing plug socket, a ball-shaped retro CRT showing chess, and a stadium/chip icon. These are unrelated objects with no narrative.",
+              "Every frame repeats the same centred hero object on a pastel or putty seamless ground with soft studio light. It is the 'tasteful AI render' look, frame after frame.",
+              "The aspect ratios are inconsistent (16:9, square, near-square). The frames don't belong to one designed film.",
+              "There are telltale generation artefacts: chess pieces on the CRT that are ill-formed and wrongly placed, floating placeholder UI badges around the steering wheel, and a generic icon-in-a-ring final frame.",
+              "No type is present, and nothing replaces it. Its absence gives no clue to what the piece is about.",
+              "The light is uniformly soft and unmotivated. Materials look plasticky and default, with no direction or story in the light."
+            ],
+            "gaps": [
+              "Find one idea. A organises everything around a single image-concept (the eye and the spiral). B needs a reason why these objects appear together and in this order.",
+              "Design a sequence, not a gallery. A shows choreography: transformation, a build, a return. B's frames don't connect, so give it transitions, a rhythm and one consistent format and colour system.",
+              "Give it authorship. Commit to a deliberate palette, motivated light and type with a point of view in place of default centred renders on pastel seamless grounds."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 37.4,
+        "cost_usd": 0.17059639999999998,
+        "tokens": 72585,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "Opening full-frame caustic has small square block specks scattered across it (left and centre); they look like compression or render artifacts, not grain.",
+        "The caustic blob in its in-between morph state (frame 2, pairs row 1) is a formless lumpy shape with no clear silhouette; the move from abstract light to bergamot reads as a soft melt, not a designed transformation.",
+        "The 'bergamot' label is low-contrast peach on grey, slightly soft, and placed at an arbitrary tilt; it fades in with no relationship to the caustic it names.",
+        "The caustic patch over the bag cuts through 'Ethiopia / Guji' and the tasting notes, so it reads as a dirty stain and hurts legibility in the hero pack shot.",
+        "The cup and cast shadow change scale and position between shots with no motivated camera move; the continuity looks like a jump.",
+        "The tail (about 10\u201315 s) is nearly static (per-second change 2\u20137) and the final 5 s shot is dead air apart from the stamp landing.",
+        "In pairs row 2, the caustic edges stay hazy throughout the morph, while real caustics have sharp, bright focal lines; the light reads as a blurred texture rather than refracted light."
+      ],
+      "gaps": [
+        "Choreography: there is one move (the caustic morphs into a shape) repeated for bergamot and then leaf, with eased cross-dissolves and no camera motivation, no physical cause (a pour, a swirl, a ripple in the cup driving the caustic) and no build. The busiest moment is at about 8\u20139 s, then the energy collapses into a 5 s static end card instead of peaking and releasing.",
+        "Sound: the track is a steady grid of plucked transients over a mid-band bed with a single drop at about 9\u201310 s. It is dense but static, with no sound design tied to the image (liquid, light shimmer, a paper or pack foley hit, a stamp thud that is clearly its own event), and the cut and stamp hits don't clearly line up with the transients.",
+        "Finish: the hero pack lacks a clean light pass. The caustics need crisp focal lines and real spill or occlusion onto the bag surface, the label type should stay unobstructed or the light should be masked deliberately, and the tasting-note type needs a treatment that comes from the light (for example, the word forming out of caustic lines) instead of a plain fade-in label."
+      ]
+    },
+    "meta": {
+      "seconds": 26.3,
+      "cost_usd": 0.1884504,
+      "tokens": 75126,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass1.mp4: 15.0s, 6 shots, median 1.87s, longest 5.00s\nper-second change: [26.6, 48.6, 11.4, 41.4, 8.0, 34.6, 8.0, 41.3, 61.5, 75.6, 5.6, 7.5, 6.4, 2.4]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 5.5,
+    "composition": 4.5,
+    "typography": 3.5,
+    "colour": 5.0,
+    "light_texture": 5.0,
+    "motion": 4.75,
+    "craft": 5.0,
+    "originality": 4.5,
+    "sound": 5
+  },
+  "full_overall": 4.75,
+  "cost_usd": 0.531,
+  "judge_seconds": 96.0,
+  "verdict": "FAIL"
+}

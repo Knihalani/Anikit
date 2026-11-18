@@ -1,0 +1,631 @@
+{
+ "size": "9:16",
+ "fps": 30,
+ "music": {
+  "style": "acoustic",
+  "bpm": 96,
+  "key": "D",
+  "mood": "warm bright morning",
+  "instruments": {
+   "lead": "kalimba"
+  },
+  "sections": [
+   {
+    "name": "intro",
+    "bars": 1,
+    "energy": 0.4
+   },
+   {
+    "name": "verse",
+    "bars": 3,
+    "energy": 0.6
+   },
+   {
+    "name": "chorus",
+    "bars": 2,
+    "energy": 0.85,
+    "stop": 2
+   }
+  ],
+  "hits": [
+   "@bar5"
+  ],
+  "end": "ring",
+  "followCuts": false
+ },
+ "sound": {
+  "palette": "organic",
+  "ambience": "room",
+  "density": 0.35,
+  "cues": [
+   {
+    "sfx": "ceramic",
+    "at": 0.0,
+    "gain": -3
+   },
+   {
+    "sfx": "metal",
+    "at": 0.08,
+    "gain": -12,
+    "pitch": 7
+   },
+   {
+    "sfx": "paper",
+    "at": 10.0,
+    "gain": -6
+   },
+   {
+    "sfx": "thump",
+    "at": 12.85,
+    "gain": -4
+   }
+  ]
+ },
+ "scenes": [
+  {
+   "duration": 1.25,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/teatable.glsl",
+     "uniforms": {
+      "cx": 0.07,
+      "cy": 0.05,
+      "rot": 0.3,
+      "stir": "=1.0*exp(-t*0.8)",
+      "drift": 0.02,
+      "letters": 0,
+      "zoom": "=(3.6+(3.3-3.6)*t/1.25)"
+     },
+     "channels": [
+      {
+       "layers": []
+      },
+      {
+       "layers": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/teatable.glsl",
+     "uniforms": {
+      "cx": 0.0,
+      "cy": -0.1,
+      "rot": 0.0,
+      "stir": "=0.5*exp(-t*0.7)",
+      "drift": "=0.02-0.01*t",
+      "letters": 0,
+      "zoom": "=(0.95+(1.0-0.95)*t/2.5)"
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "bergamot",
+         "font": "Libre Caslon Text",
+         "axes": {
+          "wght": 700
+         },
+         "size": 150,
+         "color": "#ffffff",
+         "rotation": 0,
+         "x": "=540.0+(450-540.0)*(0.95+(1.0-0.95)*t/2.5)/0.95",
+         "y": "=960.0+(1350-960.0)*(0.95+(1.0-0.95)*t/2.5)/0.95",
+         "scale": "=(0.95+(1.0-0.95)*t/2.5)/0.95"
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "letters": 0.0
+       },
+       "to": {
+        "letters": 1.0
+       },
+       "at": 0.35,
+       "duration": 0.6,
+       "ease": "outCubic"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1.875,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/teatable.glsl",
+     "uniforms": {
+      "cx": 0.06,
+      "cy": -0.12,
+      "rot": -0.42,
+      "stir": 0.1,
+      "drift": 0.0,
+      "letters": 0,
+      "zoom": "=(1.55+(1.62-1.55)*t/1.875)"
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "peach",
+         "font": "Libre Caslon Text",
+         "axes": {
+          "wght": 700
+         },
+         "size": 210,
+         "color": "#ffffff",
+         "rotation": 0,
+         "x": "=540.0+(430-540.0)*(1.55+(1.62-1.55)*t/1.875)/1.55",
+         "y": "=960.0+(1270-960.0)*(1.55+(1.62-1.55)*t/1.875)/1.55",
+         "scale": "=(1.55+(1.62-1.55)*t/1.875)/1.55"
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "letters": 0.0
+       },
+       "to": {
+        "letters": 1.0
+       },
+       "at": 0.2,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 3.125,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/teatable.glsl",
+     "uniforms": {
+      "cx": -0.02,
+      "cy": 0.02,
+      "rot": 0.35,
+      "stir": 0.05,
+      "drift": "=0.12-0.01*t",
+      "letters": 0,
+      "zoom": "=(1.95+(2.1-1.95)*t/3.125)"
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "black tea",
+         "font": "Libre Caslon Text",
+         "axes": {
+          "wght": 700
+         },
+         "size": 190,
+         "color": "#ffffff",
+         "rotation": 0,
+         "x": "=540.0+(560-540.0)*(1.95+(2.1-1.95)*t/3.125)/1.95",
+         "y": "=960.0+(1560-960.0)*(1.95+(2.1-1.95)*t/3.125)/1.95",
+         "scale": "=(1.95+(2.1-1.95)*t/3.125)/1.95"
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "letters": 0.0
+       },
+       "to": {
+        "letters": 1.0
+       },
+       "at": 0.2,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1.25,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/teatable.glsl",
+     "uniforms": {
+      "cx": 0.0,
+      "cy": 0.0,
+      "rot": 0.12,
+      "stir": 0,
+      "drift": -0.03,
+      "letters": 1,
+      "sun": 1.0,
+      "zoom": "=(1.3+(1.28-1.3)*t/1.25)"
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "black tea",
+         "font": "Libre Caslon Text",
+         "axes": {
+          "wght": 700
+         },
+         "size": 117.61904761904762,
+         "color": "#ffffff",
+         "rotation": 0,
+         "x": "=540.0+(560-540.0)*(1.3+(1.28-1.3)*t/1.25)/1.3",
+         "y": "=960.0+(1560-960.0)*(1.3+(1.28-1.3)*t/1.25)/1.3",
+         "scale": "=(1.3+(1.28-1.3)*t/1.25)/1.3"
+        }
+       ]
+      },
+      {
+       "layers": []
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "sun": 1.0
+       },
+       "to": {
+        "sun": 0.08
+       },
+       "duration": 0.6,
+       "ease": "inOutSine"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/teatable.glsl",
+     "uniforms": {
+      "cx": 0.0,
+      "cy": -0.37,
+      "rot": 0.0,
+      "stir": 0.0,
+      "drift": "=0.14+0.01*t",
+      "letters": 0,
+      "sun": 0.08,
+      "bag": 1,
+      "bx": 0.04,
+      "by": -0.71,
+      "spoon": 1,
+      "zoom": "=(0.86+(0.9-0.86)*t/2.5)"
+     },
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "It's coffee.",
+         "font": "Libre Caslon Text",
+         "axes": {
+          "wght": 700
+         },
+         "size": 128,
+         "color": "#ffffff",
+         "rotation": 0,
+         "x": "=540.0+(540-540.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "y": "=960.0+(830-960.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "scale": "=(0.86+(0.9-0.86)*t/2.5)/0.86"
+        }
+       ]
+      },
+      {
+       "layers": [
+        {
+         "text": "HALDE & SONS",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 800,
+          "opsz": 96
+         },
+         "size": 61.92,
+         "color": "#F1ECE2",
+         "rotation": -3.437746770784939,
+         "x": "=540.0+(626.3-540.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "y": "=960.0+(1183.5-960.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "scale": "=(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "letterSpacing": "0.06em"
+        },
+        {
+         "text": "coffee roasters",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 400,
+          "opsz": 14
+         },
+         "size": 34.4,
+         "color": "#F1ECE2",
+         "rotation": -3.437746770784939,
+         "x": "=540.0+(622.7-540.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "y": "=960.0+(1244.5-960.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "scale": "=(0.86+(0.9-0.86)*t/2.5)/0.86"
+        },
+        {
+         "text": "Ethiopia",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 500,
+          "opsz": 96
+         },
+         "size": 107.5,
+         "color": "#F1ECE2",
+         "rotation": -3.437746770784939,
+         "x": "=540.0+(612.5-540.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "y": "=960.0+(1414.3-960.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "scale": "=(0.86+(0.9-0.86)*t/2.5)/0.86"
+        },
+        {
+         "text": "Guji",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 800,
+          "opsz": 96
+         },
+         "size": 249.4,
+         "color": "#F1ECE2",
+         "rotation": -3.437746770784939,
+         "x": "=540.0+(601.1-540.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "y": "=960.0+(1603.8-960.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "scale": "=(0.86+(0.9-0.86)*t/2.5)/0.86"
+        },
+        {
+         "text": "washed coffee",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 500,
+          "opsz": 14
+         },
+         "size": 48.16,
+         "color": "#F1ECE2",
+         "rotation": -3.437746770784939,
+         "x": "=540.0+(590.2-540.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "y": "=960.0+(1785.1-960.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "scale": "=(0.86+(0.9-0.86)*t/2.5)/0.86"
+        },
+        {
+         "text": "bergamot \u00b7 peach \u00b7 black tea",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 450,
+          "opsz": 14
+         },
+         "size": 37.839999999999996,
+         "color": "#F1ECE2",
+         "rotation": -3.437746770784939,
+         "x": "=540.0+(585.8-540.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "y": "=960.0+(1859.3-960.0)*(0.86+(0.9-0.86)*t/2.5)/0.86",
+         "scale": "=(0.86+(0.9-0.86)*t/2.5)/0.86"
+        }
+       ]
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "sun": 0.08
+       },
+       "to": {
+        "sun": 1.0
+       },
+       "duration": 0.35,
+       "ease": "outCubic"
+      },
+      {
+       "from": {
+        "letters": 0.0
+       },
+       "to": {
+        "letters": 1.0
+       },
+       "at": 0.25,
+       "duration": 0.3,
+       "ease": "outCubic"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/teatable.glsl",
+     "uniforms": {
+      "cx": 0.04,
+      "cy": -0.69,
+      "rot": 0.0,
+      "stir": 0.0,
+      "drift": "=0.27+0.012*t",
+      "letters": 0,
+      "sun": 1.0,
+      "bag": 1,
+      "bx": 0.04,
+      "by": -0.71,
+      "spoon": 1,
+      "zoom": "=(1.22+(1.26-1.22)*t/2.5)"
+     },
+     "channels": [
+      {
+       "layers": []
+      },
+      {
+       "layers": [
+        {
+         "text": "HALDE & SONS",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 800,
+          "opsz": 96
+         },
+         "size": 87.84,
+         "color": "#F1ECE2",
+         "rotation": -3.437746770784939,
+         "x": "=540.0+(568.8-540.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "y": "=960.0+(527.5-960.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "scale": "=(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "letterSpacing": "0.06em"
+        },
+        {
+         "text": "coffee roasters",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 400,
+          "opsz": 14
+         },
+         "size": 48.8,
+         "color": "#F1ECE2",
+         "rotation": -3.437746770784939,
+         "x": "=540.0+(563.6-540.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "y": "=960.0+(614.0-960.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "scale": "=(1.22+(1.26-1.22)*t/2.5)/1.22"
+        },
+        {
+         "text": "Ethiopia",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 500,
+          "opsz": 96
+         },
+         "size": 152.5,
+         "color": "#F1ECE2",
+         "rotation": -3.437746770784939,
+         "x": "=540.0+(549.1-540.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "y": "=960.0+(854.9-960.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "scale": "=(1.22+(1.26-1.22)*t/2.5)/1.22"
+        },
+        {
+         "text": "Guji",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 800,
+          "opsz": 96
+         },
+         "size": 353.8,
+         "color": "#F1ECE2",
+         "rotation": -3.437746770784939,
+         "x": "=540.0+(533.0-540.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "y": "=960.0+(1123.8-960.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "scale": "=(1.22+(1.26-1.22)*t/2.5)/1.22"
+        },
+        {
+         "text": "washed coffee",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 500,
+          "opsz": 96
+         },
+         "size": 68.32,
+         "color": "#F1ECE2",
+         "rotation": -3.437746770784939,
+         "x": "=540.0+(517.5-540.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "y": "=960.0+(1381.0-960.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "scale": "=(1.22+(1.26-1.22)*t/2.5)/1.22"
+        },
+        {
+         "text": "bergamot \u00b7 peach \u00b7 black tea",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 450,
+          "opsz": 96
+         },
+         "size": 53.68,
+         "color": "#F1ECE2",
+         "rotation": -3.437746770784939,
+         "x": "=540.0+(511.2-540.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "y": "=960.0+(1486.2-960.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "scale": "=(1.22+(1.26-1.22)*t/2.5)/1.22"
+        },
+        {
+         "shape": "rect",
+         "width": 380,
+         "height": 104,
+         "fill": "none",
+         "stroke": "#E0502C",
+         "strokeWidth": 7,
+         "radius": 10,
+         "rotation": -8,
+         "x": "=540.0+(701.9-540.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "y": "=960.0+(1631.4-960.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "animate": [
+          {
+           "from": {
+            "scale": 1.4,
+            "opacity": 0
+           },
+           "to": {
+            "scale": 1.0,
+            "opacity": 1
+           },
+           "at": 0.35,
+           "duration": 0.1,
+           "ease": "outCubic"
+          }
+         ]
+        },
+        {
+         "text": "OUT FRIDAY",
+         "font": "Bricolage Grotesque",
+         "axes": {
+          "wght": 800,
+          "opsz": 96
+         },
+         "size": 62,
+         "letterSpacing": "0.03em",
+         "color": "#E0502C",
+         "rotation": -8,
+         "x": "=540.0+(701.9-540.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "y": "=960.0+(1631.4-960.0)*(1.22+(1.26-1.22)*t/2.5)/1.22",
+         "animate": [
+          {
+           "from": {
+            "scale": 1.4,
+            "opacity": 0
+           },
+           "to": {
+            "scale": 1.0,
+            "opacity": 1
+           },
+           "at": 0.35,
+           "duration": 0.1,
+           "ease": "outCubic"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
