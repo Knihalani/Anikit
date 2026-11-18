@@ -1,0 +1,328 @@
+{
+ "bpm": 132,
+ "key": "Gm",
+ "length": "15s",
+ "seed": 9,
+ "end": "ring",
+ "define": {
+  "hum": {
+   "synth": {
+    "osc": [
+     {
+      "wave": "sine",
+      "level": 0.8
+     },
+     {
+      "wave": "saw",
+      "semis": 12,
+      "level": 0.25
+     }
+    ],
+    "sub": 0.4,
+    "filter": {
+     "type": "lp",
+     "cutoff": 260,
+     "res": 0.2
+    },
+    "lfo": {
+     "rate": 6,
+     "trem": 0.08
+    },
+    "amp": [
+     0.3,
+     0.2,
+     1.0,
+     0.8
+    ]
+   }
+  },
+  "arc": {
+   "synth": {
+    "osc": [
+     {
+      "wave": "square",
+      "pw": 0.2,
+      "level": 0.3
+     }
+    ],
+    "noise": 1.0,
+    "filter": {
+     "type": "bp",
+     "cutoff": 3200,
+     "res": 0.4
+    },
+    "amp": [
+     0.0005,
+     0.09,
+     0.0,
+     0.06
+    ]
+   }
+  },
+  "clunk": {
+   "synth": {
+    "osc": [
+     {
+      "wave": "sine",
+      "level": 1.0
+     }
+    ],
+    "noise": 0.5,
+    "filter": {
+     "type": "lp",
+     "cutoff": 900,
+     "res": 0.3
+    },
+    "pitch": [
+     24,
+     0.02
+    ],
+    "amp": [
+     0.0005,
+     0.05,
+     0.0,
+     0.03
+    ]
+   }
+  },
+  "acid": {
+   "synth": {
+    "osc": [
+     {
+      "wave": "saw"
+     }
+    ],
+    "filter": {
+     "type": "ladder",
+     "cutoff": 300,
+     "res": 0.7,
+     "drive": 2.5,
+     "env": 3.0
+    },
+    "fenv": [
+     0.001,
+     0.12,
+     0.0,
+     0.1
+    ],
+    "amp": [
+     0.001,
+     0.18,
+     0.6,
+     0.05
+    ],
+    "mono": true,
+    "glide": 0.03
+   }
+  }
+ },
+ "tracks": [
+  {
+   "name": "hum",
+   "inst": "hum",
+   "clips": [
+    {
+     "at": "@0",
+     "notes": "G1:33"
+    }
+   ],
+   "gain": -8,
+   "automate": {
+    "lp": [
+     [
+      0,
+      200
+     ],
+     [
+      24.0,
+      200
+     ],
+     [
+      26.2,
+      1600
+     ],
+     [
+      28.0,
+      500
+     ]
+    ]
+   }
+  },
+  {
+   "name": "kick",
+   "inst": "drums:techno",
+   "clips": [
+    {
+     "at": "@1.8181818181818181",
+     "bars": 5,
+     "drums": {
+      "kick": "X...x...x...x...",
+      "hat": "..x...x...x...x."
+     }
+    },
+    {
+     "at": "@10.909090909090908",
+     "bars": 1,
+     "drums": {
+      "kick": "X...............",
+      "crash": "X..............."
+     }
+    },
+    {
+     "at": "@12.727272727272727",
+     "bars": 2,
+     "drums": {
+      "kick": "X...x...x...x...",
+      "hat": "x.xxx.xxx.xxx.xx",
+      "clap": "....x.......x..."
+     }
+    }
+   ],
+   "fx": [
+    {
+     "type": "comp",
+     "threshold": -12,
+     "ratio": 4
+    },
+    {
+     "type": "saturate",
+     "drive": 0.5
+    }
+   ]
+  },
+  {
+   "name": "acid",
+   "inst": "acid",
+   "clips": [
+    {
+     "at": "@5.454545454545454",
+     "bars": 3,
+     "notes": "o2 l16 (G1 G1 G2 G1 r G1 Bb1 G1 C2 G1 r G1 F2 G1 D2 G1)x3"
+    },
+    {
+     "at": "@12.727272727272727",
+     "bars": 2,
+     "notes": "o2 l16 (G1 G1 G2 G1 r G1 Bb1 G1 C2 G1 r G1 F2 G1 D2 G1)x2"
+    }
+   ],
+   "gain": -9,
+   "automate": {
+    "synth.cutoff": [
+     [
+      0,
+      250
+     ],
+     [
+      24.0,
+      1800
+     ],
+     [
+      28.0,
+      600
+     ],
+     [
+      36.0,
+      2400
+     ]
+    ]
+   },
+   "duck": 5
+  },
+  {
+   "name": "arcs",
+   "inst": "arc",
+   "clips": [
+    {
+     "at": "@1.7982",
+     "notes": "C5/16 C5/32"
+    },
+    {
+     "at": "@3.1618",
+     "notes": "C5/16 C5/32"
+    },
+    {
+     "at": "@4.5255",
+     "notes": "C5/16 C5/32"
+    },
+    {
+     "at": "@5.8891",
+     "notes": "C5/16 C5/32"
+    },
+    {
+     "at": "@7.2527",
+     "notes": "C5/16 C5/32"
+    },
+    {
+     "at": "@8.1618",
+     "notes": "C5/16 C5/32"
+    },
+    {
+     "at": "@9.0709",
+     "notes": "C5/16 C5/32"
+    },
+    {
+     "at": "@9.9800",
+     "notes": "C5/16 C5/32"
+    }
+   ],
+   "gain": -6
+  },
+  {
+   "name": "clunks",
+   "inst": "clunk",
+   "clips": [
+    {
+     "at": "@1.8182",
+     "notes": "C3/16"
+    },
+    {
+     "at": "@3.1818",
+     "notes": "C3/16"
+    },
+    {
+     "at": "@4.5455",
+     "notes": "C3/16"
+    },
+    {
+     "at": "@5.9091",
+     "notes": "C3/16"
+    },
+    {
+     "at": "@7.2727",
+     "notes": "C3/16"
+    },
+    {
+     "at": "@8.1818",
+     "notes": "C3/16"
+    },
+    {
+     "at": "@9.0909",
+     "notes": "C3/16"
+    },
+    {
+     "at": "@10.0000",
+     "notes": "C3/16"
+    }
+   ],
+   "gain": -4
+  }
+ ],
+ "sfx": [
+  {
+   "sfx": "boom",
+   "at": "@10.9091"
+  },
+  {
+   "sfx": "riser",
+   "at": "@10.9091",
+   "gain": -6
+  },
+  {
+   "sfx": "impact",
+   "at": "@12.7273"
+  }
+ ],
+ "master": {
+  "reverb": "hall"
+ }
+}

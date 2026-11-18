@@ -1,0 +1,525 @@
+{
+  "name": "ev1",
+  "tags": [
+    "event-promo",
+    "music-video",
+    "kinetic-type",
+    "vertical"
+  ],
+  "refs": [
+    "kurzgesagt-short",
+    "blanc-festival-2015",
+    "game-of-thrones"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 3,
+      "typography": 4,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 2,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 3.38,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Needs a real visual world, like A's physical mechanism or D's illustrated universe, rather than a UI mock-up repeated per act",
+      "Typography needs a point of view: custom or modified letterforms, scale shifts and interplay with image, not one glowing condensed face centred per card",
+      "Needs choreography and variety between frames (camera, scale, transformation) so each frame is its own poster",
+      "Build a real visual idea from the venue (cables, sparking busbars, filmed or simulated light on concrete and steel) rather than a UI panel with labels, as A builds its world from mechanism and material",
+      "Break the template: vary the scale, framing and layout per act so each frame is a poster, and choreograph transitions between acts instead of swapping the text",
+      "Give the typography craft: custom or modified letterforms (filament lettering, wired neon tubes like C's finale) with real light falloff instead of a default condensed grotesk and a glow filter",
+      "No physical world: build the substation for real (cables, insulators, arcing current, a lit space), as C builds its mechanism with light and material",
+      "Break the single template: each artist card needs its own staging and scale, with motion that carries from one to the next instead of swapping text",
+      "Typography needs an idea, such as custom lettering made from conduit or tubes or type that is switched on electrically, not a default condensed sans with a glow filter and mono labels"
+    ],
+    "tells": [
+      "The textbook 'tasteful AI' formula: a dark green-black ground, small tracked mono-caps labels ('CIRCUIT 04', '11 kV'), a condensed bold-sans headline and a single orange accent",
+      "Three of four frames are the same layout with the words swapped (name, knob, dial, vertical bar): slide-deck structure",
+      "Placeholder-like UI furniture (an OFF/ON knob, a generic gauge, a gold label pill) is used as decoration with no real interaction or story",
+      "The 'neon glow' is a uniform outer-glow effect on default grotesk type, not light that exists in a space; there is no texture or depth",
+      "The idea is literal: a venue called Substation, so it gets electrical knobs and glow",
+      "The same composition repeats across frames: a dark green panel, a vertical orange bar, a centred glowing condensed headline and a dial pair, with only the artist name swapped (slide-deck structure)",
+      "The generic 'tasteful AI' kit: dark ground, a small tracked-caps label pill ('CIRCUIT 04', '11 kV'), a mono microtext info line, a single orange accent",
+      "Placeholder UI: the knob and gauge are flat skeuomorphic widgets that sit on the panel and do nothing for the image",
+      "The neon glow is a uniform outer-glow filter, not motivated light; there is no material, grime or texture for a piece set in an old power station",
+      "The idea is literal (power station = circuits, dials, kV labels), and the end card is a stock 'TICKETS FRIDAY' red button",
+      "Textbook 'tasteful AI' formula: dark green-black ground, a small tracked-caps monospace label ('CIRCUIT 04', '11 kV') above a bold condensed headline, one warm accent",
+      "Same composition repeated across three frames with only the words swapped (SUBSTATION / H\u00c9CTOR OAKS / PHASE FATALE) in a slide-deck structure",
+      "Placeholder UI used as decoration: a toggle knob and a VU-style dial, identical in every frame and doing nothing",
+      "The glow is a CSS-style outer glow on default condensed grotesk, so 'neon' is an effect with no material, tube or light falloff into the scene",
+      "The idea is literal (power station gives voltage labels, a switch and a meter), and the final frame is a generic lineup strip with a red 'TICKETS FRIDAY' button"
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-short": {
+      "overall": 6.88,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "blanc-festival-2015": {
+      "overall": 7.88,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "game-of-thrones": {
+      "overall": 9,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.92,
+  "delta": -4.54,
+  "trials": [
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "kurzgesagt-short",
+        "C": "candidate",
+        "D": "blanc-festival-2015"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific world-building idea: the map is a clockwork mechanism, and the astrolabe band is engraved with in-world history that tells the backstory",
+              "Real material work: etched metal relief, carved wood, brass gears, all lit with a strong motivated sun-core backlight and bloom",
+              "Credits sit inside the 3D space with a custom sigil and tracked Trajan-like caps, consistent across the frames",
+              "Shows choreography: the camera travels from a macro of the band, into the mechanism rising from the map, through the armillary rings, to a lockup where the logo lands on the band",
+              "Palette held to bronze, umber and white-gold, consistent from frame to frame"
+            ],
+            "gaps": [
+              "The palette and the bloom-heavy light are close to fantasy-genre convention, so there is less colour surprise than in D",
+              "The main title type is a familiar display-serif treatment with less typographic invention than the imagery",
+              "Credits are small and partly lost against busy backgrounds (the editor credit sits over the rings)"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A consistent, mature flat-vector house style with designed characters, considered silhouettes and a saturated palette that holds together",
+              "Each frame is a different staging (villain at a control desk, a parrot memory game, a mammoth in snow, a heat-map title card), which points to real scene-by-scene direction",
+              "The title card integrates the bold rounded type with a stylised climate map, and the gradients and rim shading add some depth",
+              "Visual metaphors explain the science, a step beyond a literal diagram"
+            ],
+            "gaps": [
+              "Burned-in social captions in a default face sit dead centre over the art and undercut composition and typography",
+              "The style is a well-known edu-explainer idiom; little here belongs only to this piece",
+              "Light is flat by design, with no texture or material variation to give the frames poster-level richness"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' formula: a dark green-black ground, small tracked mono-caps labels ('CIRCUIT 04', '11 kV'), a condensed bold-sans headline and a single orange accent",
+              "Three of four frames are the same layout with the words swapped (name, knob, dial, vertical bar): slide-deck structure",
+              "Placeholder-like UI furniture (an OFF/ON knob, a generic gauge, a gold label pill) is used as decoration with no real interaction or story",
+              "The 'neon glow' is a uniform outer-glow effect on default grotesk type, not light that exists in a space; there is no texture or depth",
+              "The idea is literal: a venue called Substation, so it gets electrical knobs and glow"
+            ],
+            "gaps": [
+              "Needs a real visual world, like A's physical mechanism or D's illustrated universe, rather than a UI mock-up repeated per act",
+              "Typography needs a point of view: custom or modified letterforms, scale shifts and interplay with image, not one glowing condensed face centred per card",
+              "Needs choreography and variety between frames (camera, scale, transformation) so each frame is its own poster"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 9
+            },
+            "tells": [
+              "A distinctive authored illustration voice: cut-paper Matisse-like foliage, cheeky voyeur figures peeking through a door and a 'Melones' sign gag, specific and memorable",
+              "A bold, unusual palette (mint, coral, cobalt, mustard) carried through every frame, then inverted into a neon-on-black finale",
+              "Typography is integrated with illustration: hand-lettered 'Melones' script with a drop shadow, and a neon-tube 'BLANC VOYEUR club' lockup built from the same foliage motifs",
+              "Grain texture over flat fills gives a printed tactility",
+              "The frames vary strongly (jungle, poster, figures, neon sign), suggesting transitions and a narrative build to the logo reveal"
+            ],
+            "gaps": [
+              "Lighting is mostly flat apart from the neon finale; more motivated light or depth would add weight",
+              "Implied motion leans on illustrative cuts; physical weight and camera language are less evident than in A",
+              "Finish is looser than A's: line weights and grain are uneven in places"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 28.8,
+        "cost_usd": 0.15271600000000002,
+        "tokens": 70051,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "kurzgesagt-short",
+        "C": "blanc-festival-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific world-building idea: a clockwork map and armillary sphere that assembles the story's geography, which no other piece could share",
+              "Real material rendering: engraved metal bands with relief illustration of dragons and figures, brass gears, carved wood, all with physically motivated backlight and bloom",
+              "Choreography between frames: macro detail on the band, mechanism rising from the map, the sphere orbiting, then a lock-up where the bands become the logo frame",
+              "Credits set in a carefully chosen small-caps serif with a heraldic sigil, placed inside the 3D space rather than pasted on top",
+              "Warm amber/sepia palette held consistently, with grain and lens artefacts that read as film"
+            ],
+            "gaps": [
+              "The title lock-up leans on a familiar epic-fantasy symmetric emblem; the end card is the least surprising frame",
+              "The credit typography is classic and safe; it supports the image but never becomes expressive itself",
+              "Heavy bloom and sunburst backlighting in the sphere and logo frames flatten some midtone detail; the light could be more selective"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent house illustration system: flat vector characters with consistent proportions, outlines and soft gradients, plus a strong saturated palette with deliberate shifts per scene (violet control room, cyan/orange game table, magenta mammoth)",
+              "Narrative variety between frames: a villain at a doomsday console, a memory-card game as a metaphor for a misconception, a mammoth for the ice age; each scene is staged for its own beat",
+              "The title card integrates heavy rounded type into a heat-map landscape rather than floating it on a blob",
+              "Burned-in subtitle captions are small default sans, set for social formats rather than designed"
+            ],
+            "gaps": [
+              "Typography is functional: the captions are default-looking and the title face is a generic rounded bold with no point of view to match A's integrated credits",
+              "The light is flat vector shading, with no real atmosphere, texture or depth; A's material light shows what that adds",
+              "The look is a well-known educational-explainer house style, so originality comes from the writing more than the image; push one visual idea that only this film could own"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A witty specific idea: a 'voyeur club' told through keyholes, peeking bodies and cheeky fruit, with tone carried by the image instead of explained",
+              "An authored illustration voice: Matisse-like cut-out foliage, grainy risograph texture, rubbery characters with confident line work",
+              "Typography with a point of view: a hand-lettered 'Melones' with an offset shadow on a striped awning, then a neon-sign finale where the foliage motifs return as neon tubes, tying the frames together",
+              "Bold, unusual palette (sea green, coral, cobalt, mustard) that flips to black and neon for the payoff, which suggests planned choreography"
+            ],
+            "gaps": [
+              "Frames are mostly flat, frontal planes; it needs more depth or camera movement to match A's spatial choreography",
+              "The opening foliage frame is pattern without a focal subject; it reads as wallpaper until the eye appears",
+              "Textures are applied as uniform grain and could be pushed into true material variation (paper, ink bleed, glass in the neon)"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The same composition repeats across frames: a dark green panel, a vertical orange bar, a centred glowing condensed headline and a dial pair, with only the artist name swapped (slide-deck structure)",
+              "The generic 'tasteful AI' kit: dark ground, a small tracked-caps label pill ('CIRCUIT 04', '11 kV'), a mono microtext info line, a single orange accent",
+              "Placeholder UI: the knob and gauge are flat skeuomorphic widgets that sit on the panel and do nothing for the image",
+              "The neon glow is a uniform outer-glow filter, not motivated light; there is no material, grime or texture for a piece set in an old power station",
+              "The idea is literal (power station = circuits, dials, kV labels), and the end card is a stock 'TICKETS FRIDAY' red button"
+            ],
+            "gaps": [
+              "Build a real visual idea from the venue (cables, sparking busbars, filmed or simulated light on concrete and steel) rather than a UI panel with labels, as A builds its world from mechanism and material",
+              "Break the template: vary the scale, framing and layout per act so each frame is a poster, and choreograph transitions between acts instead of swapping the text",
+              "Give the typography craft: custom or modified letterforms (filament lettering, wired neon tubes like C's finale) with real light falloff instead of a default condensed grotesk and a glow filter"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.8,
+        "cost_usd": 0.1417156,
+        "tokens": 70141,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "blanc-festival-2015",
+        "B": "kurzgesagt-short",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Distinct authored illustration voice: Matisse-cutout foliage, grainy riso-like texture fills, hand-drawn line on flat bodies",
+              "Cheeky specific idea: voyeurism told through a keyhole gag between blue and pink figures, 'Melones' sign-painting pun, neon club sign payoff",
+              "Bespoke lettering in every type moment: drop-shadowed script 'Melones', neon-tube 'BLANC VOYEUR club' that echoes the earlier foliage shapes as neon",
+              "Each frame changes world and format (jungle, shopfront, intimate two-shot, night neon), so the sequence clearly builds toward the reveal",
+              "Bold, deliberate palette (green/pink/cobalt/yellow) held across frames and then flipped to black for the neon ending"
+            ],
+            "gaps": [
+              "No real light or depth: the neon is only a graphic stand-in, while C is physically lit; one dimensional lighting pass would lift the finale",
+              "Frames read as separate vignettes, and the choreography linking jungle to keyhole to neon is implied rather than shown; build a continuous transformation like C's single moving mechanism",
+              "Holds a familiar 2010s flat-illustration idiom; it needs one move that breaks that style to reach C's level of singularity"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "A coherent character and world system (mad scientist, birds playing a memory game, purple mammoth) with consistent rim-lit vector rendering and soft gradients",
+              "Polished explainer house style with a saturated, controlled palette and a topographic heat-map title card",
+              "Varied staging across frames (interior, map, tabletop, landscape) suggests a real animated narrative rather than a template",
+              "Weaknesses: the burned-in captions are default-looking sans subtitles, the title is a generic bold rounded sans with a stroke, and the look is a well-known house style rather than a fresh idea"
+            ],
+            "gaps": [
+              "Typography is utilitarian: the captions and the stroked title have no point of view; integrate the type with the image the way C sets credits into its world",
+              "The idea illustrates the script literally (ice age gives a mammoth, misconception gives birds saying 'they're the same'); find one visual metaphor that carries the whole film",
+              "The style is house-formula and recognisable; push the lighting, material and composition beyond the safe vector rendering"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A singular idea only this piece could have: the world map as a clockwork mechanism that physically builds itself, with an astrolabe sun at its centre",
+              "Real material and light: embossed bronze bands etched with heraldic beasts, blown-out sunlight, aged wooden gears, a dusty atmosphere",
+              "Credits set in a carefully chosen Trajan-style inscriptional face with sigil icons, sitting inside the 3D space rather than on top of it",
+              "Choreography is evident: armillary bands rotate, cogs raise towers, and it resolves on a logo lockup made from the same mechanism",
+              "A restrained bronze, sepia and gold palette that is fully motivated by the subject"
+            ],
+            "gaps": [
+              "The palette is monochrome-warm and could find one controlled counter-colour beat for contrast",
+              "The bright flare-heavy lockup frame edges toward familiar epic-title tropes",
+              "The credit typography is safe for the genre; a bolder integration of type with the mechanism would push it further"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Textbook 'tasteful AI' formula: dark green-black ground, a small tracked-caps monospace label ('CIRCUIT 04', '11 kV') above a bold condensed headline, one warm accent",
+              "Same composition repeated across three frames with only the words swapped (SUBSTATION / H\u00c9CTOR OAKS / PHASE FATALE) in a slide-deck structure",
+              "Placeholder UI used as decoration: a toggle knob and a VU-style dial, identical in every frame and doing nothing",
+              "The glow is a CSS-style outer glow on default condensed grotesk, so 'neon' is an effect with no material, tube or light falloff into the scene",
+              "The idea is literal (power station gives voltage labels, a switch and a meter), and the final frame is a generic lineup strip with a red 'TICKETS FRIDAY' button"
+            ],
+            "gaps": [
+              "No physical world: build the substation for real (cables, insulators, arcing current, a lit space), as C builds its mechanism with light and material",
+              "Break the single template: each artist card needs its own staging and scale, with motion that carries from one to the next instead of swapping text",
+              "Typography needs an idea, such as custom lettering made from conduit or tubes or type that is switched on electrically, not a default condensed sans with a glow filter and mono labels"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.4,
+        "cost_usd": 0.1419486,
+        "tokens": 70163,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "The 'N' in SUBSTATION has a red diagonal sliver in its counter/stroke. It shows in the opening frame and in the 100% crop, and reads as a glow or mask artifact, not as design.",
+        "The panel shots are near-static holds. Across 1/6 s the only change is the gauge needle moving a few degrees, so the name, switch and plate are dead for most of each shot.",
+        "Every artist panel uses the same template: same layout, same glow, same switch and gauge. Only the name and circuit number change. That is one move repeated six or more times.",
+        "The vertical scroll transitions use a uniform directional blur and show no visible ease or overshoot. The panels slide as a rigid strip with no weight, no settle and no overlap between elements.",
+        "In the end stack the panel names are thumbnails a few pixels high and can't be read. The payoff frame is a thin sliver with large empty dark areas on both sides.",
+        "The 5.0 s final shot runs long. After the reveal it is mostly a static hold with no secondary motion.",
+        "The accent on H\u00c9CTOR crowds the cap height and the line spacing. Two-line names are set with very tight leading.",
+        "The glow halo is the same strength on every name, so it adds no hierarchy and slightly softens the edges of the letters.",
+        "Mid-transition frames (KIA/IDA ENGBERG) are motion-blurred to near-mush with mismatched panel offsets, so they don't work as freeze frames."
+      ],
+      "gaps": [
+        "Motion: the switchboard idea is never acted out. The switch is never thrown, the needle never swings, nothing surges along the copper bus to power each name. Top studio work would make each artist reveal a mechanical event with anticipation, impact and settle, timed to the kick, and vary that event from panel to panel instead of scrolling a fixed template.",
+        "Sound: the spectrogram shows a sparse four-on-the-floor kick with a hat tick, one linear white-noise riser, a hard cut and then a bare sub section. Generated-feeling, with no Foley-level sound design (relay clacks, switch throws, electrical hum or arcing, meter ticks) to sell the material world, and little variation in dynamics or texture beyond the single riser.",
+        "Finish and payoff: fix the glow artifact on the N. Let type properties carry meaning, for example glow intensity or needle position tracking billing or set time. Build the ending as a readable, composed lockup rather than a 5 s hold on an illegible thumbnail column."
+      ]
+    },
+    "meta": {
+      "seconds": 24.9,
+      "cost_usd": 0.18860319999999997,
+      "tokens": 75140,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 15.0s, 14 shots, median 0.89s, longest 5.00s\nper-second change: [61.6, 63.9, 16.2, 42.9, 39.4, 20.9, 22.5, 24.6, 16.4, 27.1, 51.5, 15.2, 16.4, 0.6]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 3,
+    "typography": 4,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 3.5,
+    "craft": 5.5,
+    "originality": 3,
+    "sound": 5
+  },
+  "full_overall": 3.89,
+  "cost_usd": 0.625,
+  "judge_seconds": 113.9,
+  "verdict": "FAIL"
+}
