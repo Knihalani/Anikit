@@ -136,6 +136,19 @@ struct CacheEntry {
     last_used: u64,
 }
 
+fn evict_to_pool(map: &mut HashMap<u64, CacheEntry>, pool: &mut Vec<Pixmap>, now: u64) {
+    let old: Vec<u64> = map.iter().filter(|(_, e)| e.last_used + 2 < now).map(|(k, _)| *k).collect();
+    for k in old {
+        if let Some(e) = map.remove(&k) {
+            if let Ok(p) = Arc::try_unwrap(e.pix) {
+                if pool.len() < 16 {
+                    pool.push(p);
+                }
+            }
+        }
+    }
+}
+
 /// Everything except the main context (so draw code can borrow both).
 struct State {
     res: Resources,
@@ -152,7 +165,6 @@ struct State {
     grad_built: i64,
     grad_frame: u64,
     seen: HashMap<u64, u64>,
-    resample_buf: Vec<u8>,
     /// Smooth cubic upscaling for enlarged images (standard quality and up).
     cubic: bool,
     /// [`Quality::Reference`]: no speed-only approximations.
@@ -262,7 +274,6 @@ impl Renderer {
                 grad_built: 0,
                 grad_frame: 0,
                 seen: HashMap::new(),
-                resample_buf: Vec::new(),
                 cubic: true,
                 reference: false,
                 up: upscale::Upscaler::cubic(),
@@ -769,21 +780,12 @@ impl Renderer {
             st.text.retain(|_, e| e.last_used + 2 >= now);
         }
         if full || st.scaled.len() > 64 {
-            st.scaled.retain(|_, e| e.last_used + 2 >= now);
+            let (scaled, pool) = (&mut st.scaled, &mut st.pix_pool);
+            evict_to_pool(scaled, pool, now);
         }
         if full || st.grads.len() > 64 {
-            // Evicted gradient bitmaps go back to the pool (no 8 MB allocations per frame).
             let (grads, pool) = (&mut st.grads, &mut st.pix_pool);
-            let old: Vec<u64> = grads.iter().filter(|(_, e)| e.last_used + 2 < now).map(|(k, _)| *k).collect();
-            for k in old {
-                if let Some(e) = grads.remove(&k) {
-                    if let Ok(p) = Arc::try_unwrap(e.pix) {
-                        if pool.len() < 16 {
-                            pool.push(p);
-                        }
-                    }
-                }
-            }
+            evict_to_pool(grads, pool, now);
         }
         st.seen.retain(|_, &mut f| f + 2 >= now);
         if st.sprites.len() > 256 {
@@ -1186,16 +1188,17 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
     // on cache history, or a static image pops on its second frame and output
     // depends on which frames a renderer happened to draw before.
     let (ow, oh) = ((px + qw).ceil() as usize, (py + qh).ceil() as usize);
+    let mut pm = st.pix_pool.pop().unwrap_or_else(|| Pixmap::new(ow as u16, oh as u16));
+    pm.resize(ow as u16, oh as u16);
     if enlarge {
-        st.resample_buf.resize(ow * oh * 4, 0);
         st.up.invalidate();
-        st.up.run(pix.data_as_u8_slice(), iw as usize, ih as usize, Rect::new(px, py, px + qw, py + qh), &mut st.resample_buf, ow, oh, 0, 0);
+        st.up.run(pix.data_as_u8_slice(), iw as usize, ih as usize, Rect::new(px, py, px + qw, py + qh), pm.data_as_u8_slice_mut(), ow, oh, 0, 0);
         // Edge pixels the image only partly covers: scale by coverage.
         let cov = |o: usize, a: f64, b: f64| ((o as f64 + 1.0).min(b) - (o as f64).max(a)).clamp(0.0, 1.0) as f32;
         for y in [0, oh - 1] {
             let cy = cov(y, py, py + qh);
             if cy < 1.0 {
-                for p in st.resample_buf[y * ow * 4..(y + 1) * ow * 4].iter_mut() {
+                for p in pm.data_as_u8_slice_mut()[y * ow * 4..(y + 1) * ow * 4].iter_mut() {
                     *p = (*p as f32 * cy + 0.5) as u8;
                 }
             }
@@ -1204,21 +1207,21 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
             let cx = cov(x, px, px + qw);
             if cx < 1.0 {
                 for y in 0..oh {
-                    for p in st.resample_buf[(y * ow + x) * 4..(y * ow + x) * 4 + 4].iter_mut() {
+                    for p in pm.data_as_u8_slice_mut()[(y * ow + x) * 4..(y * ow + x) * 4 + 4].iter_mut() {
                         *p = (*p as f32 * cx + 0.5) as u8;
                     }
                 }
             }
         }
     } else {
-        resample::resample(pix.data_as_u8_slice(), iw as usize, ih as usize, px, py, qw, qh, ow, oh, &mut st.resample_buf);
+        resample::resample(pix.data_as_u8_slice(), iw as usize, ih as usize, px, py, qw, qh, ow, oh, pm.data_as_u8_slice_mut());
     }
-    let mut pm = Pixmap::new(ow as u16, oh as u16);
-    pm.data_as_u8_slice_mut().copy_from_slice(&st.resample_buf[..ow * oh * 4]);
     pm.recompute_may_have_transparency();
     let p = Arc::new(pm);
     if !reference {
         st.scaled.insert(key, CacheEntry { pix: p.clone(), x: 0, y: 0, last_used: now });
+    } else {
+        st.in_flight.push(p.clone());
     }
     blit(ctx, p, fx, fy, alpha);
     true
