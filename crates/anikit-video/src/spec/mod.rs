@@ -222,6 +222,8 @@ pub struct InkSpec {
     /// Size of the blotches in px. Default 28.
     pub scale: Option<f64>,
     pub seed: Option<u32>,
+    /// Pin the wear to the frame (the paper is the screen) instead of the layer (default: it moves with the layer).
+    pub fixed: Option<bool>,
 }
 
 /// `brush`: on, or the full settings.
@@ -283,7 +285,8 @@ pub struct HalftoneSpec {
     pub angle: Option<Num>,
     /// `dot` (default), `line` or `square`.
     pub shape: Option<String>,
-    /// Ink colour. Default `"source"`: each dot keeps the layer's colour there.
+    /// Ink colour. Default `"source"`: each dot keeps the layer's colour there. `"cmyk"`: a four-colour
+    /// separation (C, M, Y, K screens at angle + 15/75/0/45°) multiplied on the paper (default white).
     pub ink: Option<String>,
     /// Paper colour under the dots, or `"none"` (default): only the dots remain.
     pub paper: Option<String>,
@@ -617,6 +620,9 @@ pub struct Camera {
     pub y: Option<Num>,
     pub zoom: Option<Num>,
     pub rotation: Option<Num>,
+    /// Dolly: move the camera through depth (a push-in with real parallax: near layers grow faster than far ones).
+    /// Layers at `depth` 0 sit 1 unit away, so `0.5` halves their distance; layers the camera passes disappear. Animatable.
+    pub dolly: Option<Num>,
     /// Depth in focus (layers at this `depth` are sharp). Default 0. Animatable (focus pulls).
     pub focus: Option<Num>,
     /// Depth-of-field strength: blur σ in px per unit of |depth − focus|. Default 0 (off).
@@ -744,6 +750,9 @@ pub struct Layer {
     /// Group drag (overlapping action): child i follows the group's own motion i × drag seconds later,
     /// so a moving group trails and settles part by part. Pairs well with `inertia` on the group.
     pub drag: Option<f64>,
+    /// Extrusion / long shadow: the layer's silhouette repeated along a direction, behind it, in one colour.
+    /// `{"angle": 45, "length": 120, "color": "#000", "fade": 0}` (angle in degrees, 0 = right, 90 = down).
+    pub extrude: Option<ExtrudeSpec>,
     /// Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default).
     #[schemars(with = "Option<serde_json::Value>")]
     pub smear: Option<serde_json::Value>,
@@ -790,8 +799,11 @@ pub struct Layer {
     pub tone_range: Option<[f64; 2]>,
     /// Print halftone screen: a cell size in px, or `{ "cell", "angle", "shape", "ink", "paper", "gain" }`.
     pub halftone: Option<HalftoneValue>,
+    /// A print treatment in one word, as starting values for the keys above (any key you give wins):
+    /// `photocopy`, `newsprint`, `engraving`, `riso`, `screenprint`.
+    pub print: Option<String>,
     /// Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ "amount", "scale": px, "seed" }`.
-    /// Fixed to the frame like the paper, so moving shapes travel through it.
+    /// The wear moves with the layer (material locked to the object); `fixed: true` pins it to the frame.
     pub ink_texture: Option<InkValue>,
     /// Collage cut-out: `"torn"`, `"scissor"` or `"clean"`, or `{ "edge", "amount": px, "rim": px, "rimColor", "shadow": bool, "seed" }`.
     /// Cuts the layer's box with that edge, backs it with a paper rim and a printed shadow. Needs a numeric `width`/`height` (or a `cell`).
@@ -851,6 +863,9 @@ pub struct Layer {
     /// Text: wrap at this width (px, `"40vw"`, `"60%"`) without fixing the box
     /// width (`width` wraps *and* sets the box).
     pub max_width: Option<Num>,
+    /// Balanced line breaks when the text wraps (default on for headlines,
+    /// 4% of the frame height and up): every line about the same length.
+    pub balance: Option<bool>,
     /// `chars`, `words`, `lines`.
     pub split: Option<String>,
     pub reveal: Option<Num>,
@@ -1054,6 +1069,20 @@ pub struct AnimatorSpec {
     pub duration: Option<f64>,
     pub delay: Option<f64>,
     pub ease: Option<String>,
+}
+
+/// `extrude`: a solid extrusion or long shadow.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExtrudeSpec {
+    /// Direction in degrees (0 = right, 90 = down). Default 45.
+    pub angle: Option<f64>,
+    /// Length in px. Default 60.
+    pub length: Option<f64>,
+    /// Colour (default 50% black).
+    pub color: Option<String>,
+    /// 0 = solid; 1 = fades out toward the far end (a long shadow).
+    pub fade: Option<f64>,
 }
 
 /// `zigzag` shape modifier.

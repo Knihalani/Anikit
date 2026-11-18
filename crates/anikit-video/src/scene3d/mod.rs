@@ -1193,7 +1193,7 @@ impl Scene3d {
                     (trace::tsc() - c) as f64 / t.elapsed().as_secs_f64() / 1e6
                 });
                 let cy: Vec<f64> = trace::CYCLES.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed) as f64 / hz / 1e3).collect();
-                eprintln!("  cpu (thread-sum): closest-hit traversal {:.0} ms, shadow/AO traversal {:.0} ms", cy[0], cy[1]);
+                eprintln!("  cpu (thread-sum): closest-hit traversal {:.0} ms (camera rays {:.0} ms), shadow/AO traversal {:.0} ms", cy[0] + cy[2], cy[2], cy[1]);
             }
             let r: Vec<u64> = trace::RAYS.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
             eprintln!("  rays: {:.2}M closest ({:.2}M radiance, {:.2}M floor reflections), {:.2}M shadow/AO, {:.2} primary samples per pixel", r[0] as f64 / 1e6, r[3] as f64 / 1e6, r[4] as f64 / 1e6, r[1] as f64 / 1e6, r[2] as f64 / (w * h) as f64);
@@ -1541,6 +1541,18 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        for pr in ["slide", "arc", "rise", "topdown"] {
+            let c = spec::camera(&json!(pr), (v3(0.0, 0.5, 0.0), 1.0), "camera").unwrap();
+            for k in 0..=10 {
+                let cam = c.at(k as f32 * 0.5, 16.0 / 9.0, 0.0);
+                assert!(cam.pos.x.is_finite() && cam.target.y.is_finite() && len(sub(cam.target, cam.pos)) > 0.5, "{pr}");
+            }
+        }
+        let d = spec::material(&json!("decal"), &HashMap::new(), "m").unwrap();
+        assert!(d.transmission == 1.0 && d.ior == 1.0);
+        let m = spec::material(&json!({ "extends": "aluminium", "pattern": "guilloche", "pattern_scale": 0.002 }), &HashMap::new(), "m").unwrap();
+        assert_eq!(m.pattern, (3, 0.002, 1.0));
+        assert!(spec::material(&json!({ "extends": "aluminium", "pattern": "guiloche" }), &HashMap::new(), "m").err().unwrap().contains("did you mean `guilloche`"));
         let e0 = env::Env::preset_tinted("studio", v3(1.0, 0.0, 0.0), v3(0.0, 0.0, 1.0), v3(1.0, 1.0, 1.0), v3(0.0, 1.0, 0.0)).unwrap();
         let (_, mut ls, an) = spec::lights(&json!([ { "pos": "=[cos(t), 2, sin(t)]", "target": [0, 0, 0], "intensity": "=10+5*sin(t*3)" } ]), &e0, "lights").unwrap();
         assert_eq!(an.len(), 1);
@@ -1549,7 +1561,7 @@ mod tests {
         let m = spec::material(&json!({ "extends": "chrome", "imperfections": 0.5, "dust": 0.2 }), &HashMap::new(), "m").unwrap();
         assert_eq!(m.imperf, [0.5, 0.3, 0.25, 0.2]);
         scene(json!({ "objects": [ { "type": "box", "material": { "extends": "lacquer", "smudges": 0.8, "scratches": 0.5 } } ] })).unwrap();
-        for set in ["plinth", "podium", "steps", "sweep", "field", "arches", "terrain"] {
+        for set in ["plinth", "podium", "steps", "sweep", "field", "arches", "terrain", "landscape"] {
             scene(json!({ "set": set, "objects": [ { "type": "sphere", "radius": 0.3, "pos": [0, 0.3, 0] } ] })).unwrap();
         }
         let e = scene(json!({ "set": "plint", "objects": [] })).err().unwrap();

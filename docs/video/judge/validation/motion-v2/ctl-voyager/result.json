@@ -1,0 +1,343 @@
+{
+  "refs": [
+    "blender-studio-charge-2022",
+    "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+    "calibration-simon-vpro-idents-2010"
+  ],
+  "candidate": {
+    "motion": 6,
+    "judged_professional": "3/3",
+    "gaps": [
+      "Second half is a near-hold with only slow linear orbits and a label fade; its energy is low",
+      "The flash transition hides the change instead of building it; there is no match or morph",
+      "Labels fade in with plain opacity changes, with no easing or overlap in the choreography",
+      "Orbits move at near-constant velocity, with no acceleration, overshoot or weight",
+      "Long low-energy stretches: one element drifts while the type and layout hold",
+      "The whiteout transition buries the morph instead of building a match between the two scenes",
+      "The second half is mostly slow, linear orbit drift with long near-holds",
+      "The labels pop or fade in place with no physical follow-through",
+      "The flash transition relies on an exposure effect rather than choreographed elements"
+    ]
+  },
+  "refs_summary": {
+    "calibration-simon-vpro-idents-2010": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Last 4 black frames are nearly a dead hold while the faded ray drifts slowly",
+        "Both scene changes (white to black, black to white) are hard cuts, not built transitions",
+        "Only one move (the starburst with a scale punch); it lacks secondary layers of motion",
+        "Several near-identical frames read as a hold or loop instead of evolving choreography",
+        "The logo and the burst move as a single block with little offset or follow-through between letters",
+        "The return to white is a hard cut, with no morph back to the brand mark",
+        "The black-background logo holds static for about 4 frames before the cut back to white",
+        "The letters move as one rigid block with no per-letter offset",
+        "The burst is a single rotational idea with little secondary motion"
+      ]
+    },
+    "calibration-simon-vpro-vrije-geluiden-program-leader-2015": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The black ring settles into a near-static hold at the end of strip 1",
+        "The type builds on letter by letter like a typewriter, which is less crafted than the blob",
+        "Little camera language; it is all flat 2D on a static frame",
+        "The type reveal is a near-linear, typewriter-style build that loses the elastic easing of the opening",
+        "The end frames settle into a mostly static lockup with only small dot jitter",
+        "There is no camera language; everything plays on a flat, locked frame",
+        "The type-on reads close to linear once the arc has gone",
+        "The final frames get near-static as the word completes",
+        "The scale of the tail whip is a bit uniform from one beat to the next"
+      ]
+    },
+    "blender-studio-charge-2022": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The close-up of the grinding face is mostly a sustained beat with sparks; the character barely moves",
+        "The robot shot at the end settles into a slow push with little follow-through",
+        "Cuts work on motion blur and impact rather than designed match cuts",
+        "The cut into the action strip relies on motion blur rather than a designed match",
+        "Some frames are dense enough to blur the read of the key pose",
+        "Leans on live-action-style coverage rather than graphic choreography",
+        "Strip 1 has little layered choreography; it is mostly one face with sparks over it",
+        "Strip 2 leans on motion blur and cutting rather than readable arcs and spacing",
+        "Ending on a near-locked framing of the robot and man reads as a soft hold rather than follow-through"
+      ]
+    }
+  },
+  "ref_mean": 8,
+  "trials": [
+    {
+      "key": {
+        "A": "calibration-simon-vpro-idents-2010",
+        "B": "candidate",
+        "C": "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+        "D": "blender-studio-charge-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 8,
+            "tells": [
+              "Logo cuts from white to black on a hard punch, then the starburst unfurls behind the wordmark with rotation and scale changing together",
+              "Wordmark scales past full size and drifts off-frame, then snaps back small; the scale-down has a clear ease",
+              "Light rays sweep and wipe out with an accelerating exit, and the star rays leave in sequence rather than all at once",
+              "Resolves into a brief hold before a hard cut back to the white end card. The ending is a little static but deliberate"
+            ],
+            "gaps": [
+              "Last 4 black frames are nearly a dead hold while the faded ray drifts slowly",
+              "Both scene changes (white to black, black to white) are hard cuts, not built transitions",
+              "Only one move (the starburst with a scale punch); it lacks secondary layers of motion"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "motion": 6,
+            "tells": [
+              "Light-flash whiteout carries the change from the title to the diagram, and the flare is graded across frames",
+              "Text builds on word by word ('IT' to 'IT TAKES')",
+              "The Earth\u2013Mars line collapses as the camera zooms out into the solar system, which is good scale storytelling",
+              "Orbits keep moving slowly through the second strip, so the scene stays alive, but the motion there is small"
+            ],
+            "gaps": [
+              "Second half is a near-hold with only slow linear orbits and a label fade; its energy is low",
+              "The flash transition hides the change instead of building it; there is no match or morph",
+              "Labels fade in with plain opacity changes, with no easing or overlap in the choreography"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "Liquid blob stretches, squashes and drips with strong squash-and-stretch and follow-through",
+              "The droplet morphs into the record or dot, a clean shape-to-shape handoff",
+              "The blue arc swings around the wordmark and its trail thins as it leaves (drag and overlap)",
+              "Type builds on in time with the swoosh, and the small dots keep jittering, so something moves in every frame"
+            ],
+            "gaps": [
+              "The black ring settles into a near-static hold at the end of strip 1",
+              "The type builds on letter by letter like a typewriter, which is less crafted than the blob",
+              "Little camera language; it is all flat 2D on a static frame"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Sparks spray with physically plausible paths, motion blur and fall-off",
+              "The camera tracks and racks focus with a handheld feel, and shallow depth of field is used with intent",
+              "The robot arm swings in with heavy mass and motion blur, then a smear-frame cut lands on the impact",
+              "The characters react with secondary motion, and the action fills every frame"
+            ],
+            "gaps": [
+              "The close-up of the grinding face is mostly a sustained beat with sparks; the character barely moves",
+              "The robot shot at the end settles into a slow push with little follow-through",
+              "Cuts work on motion blur and impact rather than designed match cuts"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "D",
+          "A",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 21.1,
+        "cost_usd": 0.1271778,
+        "tokens": 68372,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+        "B": "candidate",
+        "C": "calibration-simon-vpro-idents-2010",
+        "D": "blender-studio-charge-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "Liquid blob stretches and squashes in arcs, with clear acceleration and a tail that follows through",
+              "Morph builds the cut: the drop's tail turns into the stylus and the body collapses into a record, so the transition is a match morph",
+              "A sweeping swoosh hands off to the type build, and the two small dots keep bobbing, so no frame is fully dead",
+              "Weakness: the letters build in one at a time behind a cursor, which reads more linear than the blob"
+            ],
+            "gaps": [
+              "The type reveal is a near-linear, typewriter-style build that loses the elastic easing of the opening",
+              "The end frames settle into a mostly static lockup with only small dot jitter",
+              "There is no camera language; everything plays on a flat, locked frame"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "motion": 6,
+            "tells": [
+              "The flare-to-white transition is intentional and ramps up in luminance before resolving into the diagram",
+              "The scale-out from Earth-Mars to the solar system is a purposeful pull-back with eased zoom",
+              "The orbiting planets keep moving, but the second strip is mostly slow, uniform drift",
+              "Labels and text fade or type on with little easing character"
+            ],
+            "gaps": [
+              "Orbits move at near-constant velocity, with no acceleration, overshoot or weight",
+              "Long low-energy stretches: one element drifts while the type and layout hold",
+              "The whiteout transition buries the morph instead of building a match between the two scenes"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "motion": 7,
+            "tells": [
+              "The starburst rotates and scales in punchy pulses against the logotype, with snap zooms",
+              "Hard cuts between white and black states give it rhythm, ident-style",
+              "The logo scale punches seem to ease in and out, and the burst blades sweep with gradient trails",
+              "Weakness: the middle frames repeat, and the final settle is a cut rather than an animated resolve"
+            ],
+            "gaps": [
+              "Several near-identical frames read as a hold or loop instead of evolving choreography",
+              "The logo and the burst move as a single block with little offset or follow-through between letters",
+              "The return to white is a hard cut, with no morph back to the brand mark"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 9,
+            "tells": [
+              "The sparks have physically plausible trajectories and motion blur and decay naturally",
+              "The camera language is handheld, with focus pulls, foreground occlusion and whip-like movement in the action",
+              "Robot limbs have weight and impact, with fast swings that decelerate into contact",
+              "Every frame is alive: secondary motion runs in the sparks, the debris and the character's micro-expressions"
+            ],
+            "gaps": [
+              "The cut into the action strip relies on motion blur rather than a designed match",
+              "Some frames are dense enough to blur the read of the key pose",
+              "Leans on live-action-style coverage rather than graphic choreography"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 20.5,
+        "cost_usd": 0.1285994,
+        "tokens": 68463,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+        "C": "calibration-simon-vpro-idents-2010",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Spark particles change on every frame, with streaks whose length follows their speed",
+              "Handheld camera drift and changes in focus give the shots physical weight",
+              "Fast mechanical swings blur and whip into a reframe that settles over several frames",
+              "The cut lands on the action, so energy carries from the welding shot into the robot shot"
+            ],
+            "gaps": [
+              "Strip 1 has little layered choreography; it is mostly one face with sparks over it",
+              "Strip 2 leans on motion blur and cutting rather than readable arcs and spacing",
+              "Ending on a near-locked framing of the robot and man reads as a soft hold rather than follow-through"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "The liquid blob squashes and stretches with clear acceleration and a whipping tail",
+              "The blob morphs into a dot and then a ring, so the shape change is the transition",
+              "The blue arc sweeps off as each letter wipes on, so the handoff and overlap are clean",
+              "Small dots keep drifting after the type lands, so the end card stays alive"
+            ],
+            "gaps": [
+              "The type-on reads close to linear once the arc has gone",
+              "The final frames get near-static as the word completes",
+              "The scale of the tail whip is a bit uniform from one beat to the next"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "The logo scales up with a punchy overshoot, then eases back and settles",
+              "The rays of the star rotate and their gradients sweep, staying in phase with the push on the type",
+              "The white-to-black flash brackets the piece as a deliberate in and out",
+              "The rays collapse into the logo's accent flag, which acts as a morph-style resolve"
+            ],
+            "gaps": [
+              "The black-background logo holds static for about 4 frames before the cut back to white",
+              "The letters move as one rigid block with no per-letter offset",
+              "The burst is a single rotational idea with little secondary motion"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "motion": 6,
+            "tells": [
+              "A light-bloom whiteout serves as the transition between the title and the diagram, a cut built with intent",
+              "The text fades and tracks on word by word",
+              "The camera pulls out from the Earth\u2013Mars view to the solar system with eased scaling",
+              "The planets orbit continuously, so the frame is never fully dead"
+            ],
+            "gaps": [
+              "The second half is mostly slow, linear orbit drift with long near-holds",
+              "The labels pop or fade in place with no physical follow-through",
+              "The flash transition relies on an exposure effect rather than choreographed elements"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 18.2,
+        "cost_usd": 0.123971,
+        "tokens": 68226,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.38
+}

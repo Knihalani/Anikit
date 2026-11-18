@@ -59,7 +59,7 @@ pub fn category(check: &str) -> &'static str {
     match check {
         "pace" | "dead-air" | "rhythm" | "arc" | "ending" | "beat" | "pacing" | "length" => "time",
         "reading-time" | "legibility" | "contrast" | "render-contrast" | "typography" | "density" | "render-overlap" | "type-scale" | "text-crisp" => "text",
-        "hook" | "structure" | "placeholder" | "copy" | "music" => "story",
+        "hook" | "structure" | "placeholder" | "copy" | "music" | "sound" => "story",
         "motion" => "time",
         "frame-fill" | "layout" => "composition",
         "flicker" | "judder" | "banding" | "audio" | "render-frame" => "technical",

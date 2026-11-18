@@ -176,7 +176,7 @@ pub fn check_keys(m: &Map<String, Value>, allowed: &[&str], path: &str) -> Res<(
 
 // ------------------------------------------------------------ materials
 
-pub const MATERIALS: &[&str] = &["chrome", "mirror", "glass", "aluminium", "aluminum", "aluminium-bead", "titanium", "copper", "gold", "matte", "white", "black", "plastic", "ceramic", "rubber", "car-paint", "lacquer", "emissive", "toon", "clay", "paper", "cardboard", "gouache", "hatch"];
+pub const MATERIALS: &[&str] = &["chrome", "mirror", "glass", "aluminium", "aluminum", "aluminium-bead", "titanium", "copper", "gold", "matte", "white", "black", "plastic", "ceramic", "rubber", "car-paint", "lacquer", "emissive", "decal", "toon", "clay", "paper", "cardboard", "gouache", "hatch"];
 
 pub fn builtin_material(name: &str) -> Option<Material> {
     let c = Material::chrome();
@@ -208,6 +208,9 @@ pub fn builtin_material(name: &str) -> Option<Material> {
         // Glossy black piano lacquer.
         "lacquer" => Material { base: v3(0.012, 0.012, 0.014), metallic: 0.0, roughness: 0.3, clearcoat: 1.0, ..c },
         "emissive" => Material { base: v3(0.02, 0.02, 0.02), metallic: 0.0, roughness: 0.4, emissive: v3(4.0, 4.0, 4.0), ..c },
+        // A print on another surface: a clear, index-1 layer (no reflection, no
+        // refraction) that shows only its texture. Use it on a thin `plane`.
+        "decal" => Material { base: v3(1.0, 1.0, 1.0), metallic: 0.0, roughness: 0.0, transmission: 1.0, ior: 1.0, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.0, ..c },
         // Non-photoreal styles (see `Material::style`); `base` sets the colour.
         "toon" => Material { base: v3(0.85, 0.32, 0.22), metallic: 0.0, roughness: 0.3, style: 1, ..c },
         "clay" => Material { base: v3(0.72, 0.45, 0.33), metallic: 0.0, roughness: 0.7, style: 2, ..c },
@@ -219,7 +222,7 @@ pub fn builtin_material(name: &str) -> Option<Material> {
     })
 }
 
-const MAT_KEYS: &[&str] = &["base", "color", "metallic", "roughness", "specular", "emissive", "emissive_strength", "clearcoat", "transmission", "ior", "tint", "tint_distance", "glow", "extends", "texture", "scale", "mapping", "normal_strength", "texture_rotate", "imperfections", "roughness_variation", "smudges", "scratches", "dust"];
+const MAT_KEYS: &[&str] = &["base", "color", "metallic", "roughness", "specular", "emissive", "emissive_strength", "clearcoat", "transmission", "ior", "tint", "tint_distance", "glow", "extends", "texture", "scale", "mapping", "normal_strength", "texture_rotate", "imperfections", "roughness_variation", "smudges", "scratches", "dust", "pattern", "pattern_scale", "pattern_strength"];
 
 pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res<Material> {
     match v {
@@ -278,6 +281,26 @@ pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res
                 out.pbr = super::pbr::load(src, &o).map_err(|e| format!("{path}.texture: {e}"))?;
                 // The tint went into the set; the base multiplies it.
                 out.base = v3(1.0, 1.0, 1.0);
+            }
+            // Machined patterns (bump): brushed, sunburst, guilloche, clous-de-paris, knurl.
+            if let Some(pt) = m.get("pattern") {
+                let name = pt.as_str().ok_or_else(|| format!("{path}.pattern: expected a pattern name"))?;
+                let names = ["brushed", "sunburst", "guilloche", "clous-de-paris", "knurl"];
+                let k = crate::components::kebab(name);
+                let kind = match k.as_str() {
+                    "brushed" => 1,
+                    "sunburst" => 2,
+                    "guilloche" | "guilloché" => 3,
+                    "clous-de-paris" | "hobnail" => 4,
+                    "knurl" | "knurled" => 5,
+                    o => {
+                        let hint = crate::components::style::closest(o, &names).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+                        return Err(format!("{path}.pattern: unknown pattern `{o}`{hint}"));
+                    }
+                };
+                let sc = m.get("pattern_scale").map(|x| f(x, &format!("{path}.patternScale"))).transpose()?.unwrap_or(0.01).max(1e-5);
+                let st = m.get("pattern_strength").map(|x| f(x, &format!("{path}.patternStrength"))).transpose()?.unwrap_or(1.0).max(0.0);
+                out.pattern = (kind, sc, st);
             }
             // Imperfections: one amount (a believable mix), or each by name.
             if let Some(x) = m.get("imperfections") {
@@ -927,8 +950,25 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
             "push" => vec![key(0.0, at(-6.0, dist * 1.7, r * height * 1.2)), key(dur * 0.55, at(-2.0, dist * 0.85, r * height)), key(dur, at(0.0, dist * 0.72, r * height * 0.9))],
             "reveal" => vec![key(0.0, at(-25.0, dist * 0.55, r * 0.05)), key(dur, at(8.0, dist * 1.05, r * height * 1.8))],
             "flyby" => vec![key(0.0, at(-amount, dist * 0.8, r * height * 0.7)), key(dur, at(amount, dist * 0.8, r * height * 0.7))],
+            // Product-film moves: a lateral slide with parallax (camera and aim
+            // travel together), a slow 30° arc, a pedestal rise over the subject,
+            // and an overhead flat-lay that turns slowly.
+            "slide" => {
+                let side = v3(r * 0.9, 0.0, 0.0);
+                let p0 = at(-4.0, dist, r * height);
+                vec![CamKey { target: sub(tgt, side), ..key(0.0, sub(p0, side)) }, CamKey { target: add(tgt, side), ..key(dur, add(p0, side)) }]
+            }
+            "arc" => (0..=4).map(|k| k as f32 / 4.0).map(|u| key(u * dur, at(-15.0 + 30.0 * u, dist, r * height))).collect(),
+            "rise" => vec![key(0.0, at(-6.0, dist * 0.95, -r * 0.2)), key(dur, at(-2.0, dist, r * height * 2.4))],
+            "topdown" => (0..=4)
+                .map(|k| k as f32 / 4.0)
+                .map(|u| {
+                    let a = (u * 20.0 - 10.0).to_radians();
+                    CamKey { roll: u * 20.0 - 10.0, ..key(u * dur, v3(c.x + a.sin() * 0.01, c.y + dist * 1.1, c.z + a.cos() * 0.01)) }
+                })
+                .collect(),
             other => {
-                let hint = crate::components::style::closest(other, &["orbit", "dolly", "crane", "static", "push", "reveal", "flyby"]).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+                let hint = crate::components::style::closest(other, &["orbit", "dolly", "crane", "static", "push", "reveal", "flyby", "slide", "arc", "rise", "topdown"]).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
                 return Err(format!("{path}: unknown camera preset `{other}`{hint}"));
             }
         };

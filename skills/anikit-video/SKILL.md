@@ -11,11 +11,11 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 2. **Reference:** with web access, look at a few pieces of top work in this genre and name what makes them good. Local images: `anikit-video board refs/` turns them into palette, type and texture tokens.
 3. **Style frames:** write 2–3 contrasting first frames as one-scene specs in one file, `preview` it, and pick the strongest before building the rest.
 4. **Build, then loop:** `anikit-video preview s.json` (~1 s for 2D) validates, prints unknown keys first, writes `s-sheet.png` (one frame per second), the top notes, pace and a final-render estimate. Look at the sheet; fix; repeat. `--at 1,4.5,8` writes several moments in one image at full detail.
-5. **Ship gate** (below), then **ONE** `anikit-video render s.json -o out.mp4 --sheet contact.png`. Run it in the foreground with a long timeout (up to 10 min; it prints one line every 15 s), and don't end your turn until the file exists. Later fixes: `render --from A --to B`.
+5. **Second pair of eyes and ship gate** (below), then **ONE** `anikit-video render s.json -o out.mp4 --sheet contact.png`. Follow `preview`'s advice on how to run it: in the foreground with a 10-minute timeout, or, for a longer final, in the background while you wait for that process to exit in the same turn. Don't end your turn until the file exists. Later fixes: `render --from A --to B`.
 
 If you build from source instead of installing, run `cargo build --release -p anikit-video` once in the foreground with a 10-minute timeout; polling a background build costs many turns.
 
-Everything here is a starting point, never a ceiling: anything the spec keys don't cover, a GLSL `shader`, a `draw` layer of raw paths and points, or a `script` layer can build. Write the spec directly. For repetitive layers use `"repeat": 40` with `$i`, `defs`/`use` (`anikit-video docs reuse`), or a `{ "script": … }` layer, not a Python generator. Patch one value with `anikit-video set s.json <path> <value>` or an edit tool, rather than a script that rewrites the whole file.
+Everything here is a starting point, never a ceiling: anything the spec keys don't cover, a GLSL `shader`, a `draw` layer of raw paths and points, or a `script` layer can build. Write the spec directly. For repetitive layers use `"repeat": 40` with `$i`, `defs`/`use` (`anikit-video docs reuse`), or a `{ "script": … }` layer, not a Python generator. Patch values with `anikit-video set s.json scenes.2.duration=3 scenes.2.layers.title.text="Salt"` (list indexes or layer ids as path steps) or an edit tool, rather than a script that rewrites the whole file.
 
 ## The spec in one screen
 
@@ -25,7 +25,7 @@ Everything here is a starting point, never a ceiling: anything the spec keys don
 - **Shapes and paths:** `{ "shape": "path", "d": "M0 200 C 300 0, 600 400, 900 120", "stroke": "#FF5A1F", "strokeWidth": 6, "animate": [{ "from": {"trimEnd": 0}, "to": {"trimEnd": 1}, "duration": 1 }] }`; `"shape": "rect"|"circle"` with `width`, `height`, `fill`. A path sits at its bounding box: its `x`/`y` place the box's top-left, not the `d` coordinates.
 - **Motion:** `"animate": [{ "from": {"scale": 3, "blur": 20}, "duration": 0.25, "ease": "outExpo" }]`; expressions on any number or colour: `"x": "=960 + 300*sin(t*2)"`, `"rotation": "=t*90"` (`t` is layer time, `gt` global). A layer's own timing is `start`/`end`; an entrance delay goes inside it (`"enter": {"preset": "fadeUp", "delay": 0.2}`) and a tween's start is `"at"`. No transition is a hard cut; a transition plays in the last part of the outgoing scene, so the video is exactly the sum of the scene durations.
 - **Camera:** `"camera": { "animate": [{ "from": {"zoom": 1.3}, "to": {"zoom": 1}, "duration": 0.3, "ease": "outExpo" }], "shake": {"amount": 8, "at": 0} }`, plus `"motionBlur": true`. Layer `depth` gives parallax.
-- **Shaders:** `{ "shader": "void mainImage(out vec4 o, in vec2 f) { … iTime … }", "uniforms": {"speed": 1} }`, a file with `{ "type": "shader", "src": "x.glsl" }`, or a library name (`anikit-video recipes` lists them). `"filter": true` treats the layers below.
+- **Shaders:** `{ "shader": "void mainImage(out vec4 o, in vec2 f) { … iTime … }", "uniforms": {"speed": 1} }`, a file as its own layer `{ "type": "shader", "src": "x.glsl" }` (not inside the `shader` key), or a library name (`anikit-video recipes` lists them). `"filter": true` treats the layers below.
 - **3D, particles, physics:** `{ "component": "scene3d", "props": { "objects": [ … ], "rig": "rembrandt", "set": "sweep", "camera": { "lens": "portrait85", "shake": "breath", "keys": [ … ] } } }`. Light it with a `rig`, build a `set`, pick a `lens` and vary them every time; `check` flags the cheap-CG tells (`docs 3d`, `docs particles`, `docs physics`).
 - **Real light, surfaces, objects (CC0, fetched once):** `"env": {"hdri": "polyhaven:hdri/studio_small_09"}`, `"material": {"texture": "ambientcg:Wood049"}`, `{"type": "model", "src": "polyhaven:model/Camera_01"}`, image `src` refs, `"post": {"lut": "anikit:lut/teal-orange"}`. Find them with `anikit-video assets search <words> --type hdri|texture|model|lut` (`docs assets`).
 - **Compositions:** `"compositions": { "ui": {…} }` → `{ "composition": "ui", "loop": true }`.
@@ -37,25 +37,19 @@ Everything here is a starting point, never a ceiling: anything the spec keys don
 - **Real materials and light:** scene3d `"env": {"hdri": "polyhaven:hdri/…"}`, materials from `ambientcg:Wood049` (`anikit-video assets search oak`), `"rig": "rembrandt|window|product|…"`, `"set": {"preset": "plinth"}`, `"camera": {"lens": "portrait85", "preset": "orbit"}` (`docs 3d`, `docs assets`).
 - **Motion with weight:** `"inertia": "heavy"`, `"smear": true`, group `"drag": 0.06` (`docs key inertia`).
 - **Type as image:** `"matte": {"layer": "photo"}` (type as a window), text on a path, variable axes (`docs mograph`, `docs type`).
-- **Idea transitions:** `{"type": "zoomThrough", "layer": "logo"}` on the incoming scene (`docs mograph`).
+- **Idea transitions:** `{"type": "zoomThrough", "layer": "logo"}` on the incoming scene; `"carry": ["logo"]` on any transition moves a shared layer from the old layout to the new one (a match move, for continuity between layouts) (`docs mograph`).
 - **Sound from the picture:** `"onNotes": {"track": "drums", "keys": ["kick"], "layer": {…}}` makes a layer per hit; `beat`/`level` in expressions (`docs rhythm`, `docs music`).
 - **Illustration:** components `illo` (lit vector shapes, a consistent hand), `landscape`, `plants` (`docs component illo`).
 - **Print and hand:** `"brush": true` on strokes, `"halftone": {…}`, riso/screenprint filters, patterns and grids (`docs graphic`).
 - **Living systems:** components `fluid`, `physarum`, scene3d particles and physics; library shaders (`anikit-video recipes`) (`docs fluid`, `docs physarum`, `docs particles`).
 
-**Costs:** 2D renders at 100+ fps; shaders 50–400 ms a frame; ray-traced 3D and particles 0.5–1.5 s a frame (keep 3D shots to 2–4 s). `motionBlur` only where motion is fast. `--quality best` is several times slower; standard is the final.
+**Costs:** 2D renders at 100+ fps; shaders 50–400 ms a frame; ray-traced 3D and particles 0.5–1.5 s a frame (keep 3D shots to 2–4 s). Heavy layers (full-frame shaders, 3D, 10k+ shapes) need a time budget: check `preview`'s final-render estimate and keep the final under about 5 minutes. `motionBlur` only where motion is fast. `--quality best` is several times slower; standard is the final.
 
-## Self-review, then ship gate (one more iteration here is worth it)
+## Second pair of eyes (before the final render)
 
-Look at your contact sheet and answer, then fix and preview again. These are the questions the blind judge fails pieces on most:
-- **The device:** is it literal? Say the idea without the brand name and without the feature's mechanism; if nothing is left, it's the name drawn or the feature diagrammed. Does the one device *escalate* every beat, or does it play once?
-- **The poster test:** pause anywhere. Would that frame hold up as a poster (14 of 15 round-1 films failed this)? Does any layout repeat with the words swapped?
-- **The arc:** does energy build to a peak at about ⅔ and land (11 of 15 had a flat arc)? Is there one surprise?
-- **Material at 100%:** does a crop show material from the subject (grain, edge, light falloff), or flat vector and filter noise?
-- **Type and sound:** is the type a choice for this world, living in the scene rather than an eyebrow-plus-headline lockup? Do motion, camera and sound carry weight from the subject's own materials?
-`critique --render` flags the measurable ones (`layout`, `label`, `motion`, `arc`, `eye-trace`).
+Before the final render, get a second pair of eyes. Spawn a subagent as an independent art director. Give it only the brief, your contact sheet and the output of `anikit-video critique s.json --render`. Ask it for the 3 weakest things, with frame references, judged against professional work in this genre, and for the one change that would most lift the piece. Then make those changes (restructure if it says so) and preview again before rendering. With no subagent tool, `critique --render` is the fallback.
 
-### Ship gate (before the one final render)
+## Ship gate (before the one final render)
 
 Open the sheet and three full-size stills and answer in writing, a line each:
 

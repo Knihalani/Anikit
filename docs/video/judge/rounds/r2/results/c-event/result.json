@@ -1,0 +1,529 @@
+{
+  "name": "c-event",
+  "tags": [
+    "event-promo",
+    "music-video",
+    "kinetic-type",
+    "vertical"
+  ],
+  "refs": [
+    "kurzgesagt-short",
+    "xk-studio-offfmx-2025-main-titles",
+    "studio-river-motion-plus-design-tokyo-2024"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 3,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 2,
+      "motion": 2,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 2.5,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It has no image or world at all: build the substation (cables, transformers, voltage, concrete) and let the lineup live inside it",
+      "Replace the bulleted list with a typographic system: scale contrast, a custom or distorted face, and type driven by the electrical or sonic idea",
+      "Choreograph real motion (cuts, camera, rhythm synced to a kick drum) instead of a linear fade-in of list items",
+      "It needs an image or concept tied to the subject (the power station, electricity, the techno physicality) instead of a glowing list on black.",
+      "The typography should be designed rather than set by default: varied scale, layout and a lettering idea, with the headliners ranked and type integrated with the image.",
+      "It needs real choreography beyond a sequential opacity reveal: camera movement, rhythm synced to the music, transformation between states.",
+      "There is no image or concept; build a visual idea from the subject (industrial power-station architecture, electrical current, sound-wave matter) as A builds whole worlds",
+      "The typography needs a point of view: varied scale between headliners and support, custom or expressive letterforms, and type interacting with an image instead of a bulleted list",
+      "The motion needs actual choreography (camera, transformation, rhythm cut to the music) instead of a sequential opacity fade on a static layout"
+    ],
+    "tells": [
+      "The same composition repeats in every frame; the only change is a sequential opacity reveal of a bulleted list",
+      "Default condensed grotesk headline, a small tracked mono metadata line ('12\u201313 JUNE \u00b7 TWO NIGHTS \u00b7 THE OLD POWER STATION') and bullet points: text placed like a slide",
+      "Dark ground, generic white glow and a single red accent on the bullets and CTA: the textbook 'tasteful AI' formula",
+      "The idea is literal: a lineup poster that types itself in and ends on 'TICKETS FRIDAY', with no image, no subject and no technical-music world built",
+      "Even the frame width wobbles between samples, which suggests an unconsidered output",
+      "The same composition repeats in all four frames. The only change is that list items light up one by one, which is the slide-deck structure and the 'little happening' tell.",
+      "Default heavy condensed grotesk all-caps with an outer-glow effect, centred and stacked like a slide. There is no scale contrast or typographic idea beyond the glow.",
+      "The dark ground, small tracked mono info line, a single red accent on the bullets and on 'TICKETS FRIDAY', and a mostly empty frame match the generic AI-template look.",
+      "The bullet-point list of artist names is placeholder-UI thinking, not poster design.",
+      "There is no image, texture or light motivated by the subject (a techno festival in an old power station). The setting offers industrial material that goes unused.",
+      "The aspect ratio and framing drift between frames, which suggests careless or automated output.",
+      "It is one composition repeated in every frame: the 'SUBSTATION' header and a bulleted lineup list, where the only change is names going from dim to lit in sequence, a slide-deck reveal",
+      "The 'tasteful AI' formula: dark ground, a condensed bold-sans headline, a small tracked mono info line, and a single red accent for bullets and the CTA",
+      "The type is set as a default list with bullets and no scale hierarchy among the artists; it is a slide, not a poster",
+      "A generic outer glow stands in for light; there is no material, image, or texture tied to the techno or power-station subject",
+      "The idea is entirely literal (lineup + 'TICKETS FRIDAY'), with nothing memorable and no imagery",
+      "The aspect ratio and framing drift between frames, suggesting an automated render rather than a designed sequence"
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-short": {
+      "overall": 6.75,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 8.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "studio-river-motion-plus-design-tokyo-2024": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.54,
+  "delta": -5.04,
+  "trials": [
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "kurzgesagt-short",
+        "C": "candidate",
+        "D": "xk-studio-offfmx-2025-main-titles"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Title-sequence logic: a credit ('NAHUEL SALCEDO') is set small and tucked into a macro organic landscape instead of sitting centred on a slide",
+              "Strong material rendering: fleshy subsurface tissue, liquid splash with real refraction, vascular roots with depth of field, a granular surface with concentric ripples",
+              "A monochrome blood-red palette held across every frame gives it a coherent world",
+              "Each frame changes scale and subject (tissue, eye, veins, ripple), which implies a macro-to-micro journey through cuts"
+            ],
+            "gaps": [
+              "The bodily-macro look (eye, veins, liquid) is a familiar title-sequence vocabulary; it needs a stranger, more specific image of its own like D's hybrid creatures",
+              "The credit type is a near-default light sans with a two-colour name split; it should be integrated into the material (embossed, refracted, grown) rather than laid on top",
+              "The palette never breaks: one counter-colour or one change in light would add the surprise D gets from its shifts between scenes"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Polished house-style vector illustration with consistent character design, saturated considered palette and soft gradients/glows, typical of an established explainer studio",
+              "A different scene in every frame (villain control room, heat-map title card, birds playing a memory game, mammoth), so it is staged as a narrative, not one template",
+              "The title card 'Europe's Next Ice Age' is set in a rounded bold face with an outline and drop shadow, integrated over the map",
+              "Burned-in social captions ('completely due', 'misconception', 'ice age,') show it was cut for vertical shorts"
+            ],
+            "gaps": [
+              "The idea is an educational explainer told with familiar visual metaphors; it needs one conceptual image a viewer could not see anywhere else",
+              "Typography is house-style subtitles plus a single title treatment; the type should get expressive scale and play a part in the scenes",
+              "Flat-vector lighting and texture are competent but safe; it needs the material richness and depth of A and D"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeats in every frame; the only change is a sequential opacity reveal of a bulleted list",
+              "Default condensed grotesk headline, a small tracked mono metadata line ('12\u201313 JUNE \u00b7 TWO NIGHTS \u00b7 THE OLD POWER STATION') and bullet points: text placed like a slide",
+              "Dark ground, generic white glow and a single red accent on the bullets and CTA: the textbook 'tasteful AI' formula",
+              "The idea is literal: a lineup poster that types itself in and ends on 'TICKETS FRIDAY', with no image, no subject and no technical-music world built",
+              "Even the frame width wobbles between samples, which suggests an unconsidered output"
+            ],
+            "gaps": [
+              "It has no image or world at all: build the substation (cables, transformers, voltage, concrete) and let the lineup live inside it",
+              "Replace the bulleted list with a typographic system: scale contrast, a custom or distorted face, and type driven by the electrical or sonic idea",
+              "Choreograph real motion (cuts, camera, rhythm synced to a kick drum) instead of a linear fade-in of list items"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Strange, specific hybrid imagery: a translucent hand pierced by wires holding a glowing coral-like heart, a volcanic peak erupting pink light over a field of beads, a fibrous textile landscape, glassy torus forms knotted around red crystal clusters",
+              "Deliberate, unusual palettes that change per scene (mauve dusk, monochrome with a pink beam, sage and blush, bottle green with ice blue and garnet)",
+              "Rich, varied materials (subsurface skin, mesh fabric, hair-fine fibres, glass, metal) under motivated, directional light",
+              "Small credit names ('Boldtron', 'Medusa Lab') are placed asymmetrically, top left, as in a festival or conference opener; every frame works as a poster"
+            ],
+            "gaps": [
+              "The credit type is a plain bold sans in the same corner every time; it needs a typographic point of view that fits how strange the imagery is",
+              "The scenes read as a series of beautiful vignettes; a clearer connecting thread or transformation would turn the reel into a single idea",
+              "The tactile maximalist-3D lane (fibres, tubes, crystals) is crowded; a more personal, distinctive moment would set it apart from peers"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 28.1,
+        "cost_usd": 0.1415456,
+        "tokens": 70119,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "kurzgesagt-short",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Built entirely from macro organic CG: fibrous muscle tissue, a liquid-metal splash with satellite droplets, a branching vascular network, and a cellular surface with concentric ripples.",
+              "A strict monochrome blood-red palette holds across four very different subjects, which takes deliberate art direction.",
+              "The iris frame has real subsurface scattering and a reflection in the pupil. The light is motivated and has depth of field.",
+              "The name card ('NAHUEL SALCEDO') uses two colour weights and sits low-left inside the image, which is how film title sequences place credits.",
+              "The cuts change scale (tissue, eye, roots, surface), which implies a planned edit and continuity of material."
+            ],
+            "gaps": [
+              "The bodily/visceral red title sequence is a well-worn genre (Dexter, Hannibal, etc.). It needs an idea specific to its subject rather than generic 'inside the body' imagery.",
+              "The type is a plain tracked sans with a red/white split. It should take part in the image (react to the liquid, sit in depth) instead of being laid on top.",
+              "The palette never breaks. One planned contrast beat in a second hue would give the sequence a shape over its length."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Polished, consistent flat-vector character design with soft rim highlights. The house style is mature and controlled across characters, maps and props.",
+              "Every frame is a different staged scene (villain at a STOP console, two birds playing a memory-card game, a mammoth, a heat-map continent), so it is not one layout with the words swapped.",
+              "The visual metaphors (the 'They're the same!' card game standing in for a misconception, the doomsday-button villain) show writing and illustration working together.",
+              "The title lettering is chunky, outlined and on-brand, and it is laid onto the map.",
+              "Captions are plain default-style burned-in subtitles, which weakens the typographic score."
+            ],
+            "gaps": [
+              "The style is an established edu-explainer house look. Originality is low compared with the piece's own craft.",
+              "The subtitles are generic small white captions, centred low. They should be designed into the frame the way the title is.",
+              "The light and texture are flat by design. Grain, depth or material variation would lift it toward poster-level frames."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 5,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Dense, layered, tactile 3D: translucent jelly hands with stitching and hair filaments holding a coral-like heart, mesh fabric, ruffled cloth, glass tubes wrapped around clusters of red beads.",
+              "The palette is unusual and deliberate: sage green, pale cyan, coral and bone against a dusk-mauve sky. It has a clear point of view.",
+              "The material work is excellent: subsurface, sheen on fabric, fine hair strands, glassy refraction, and real atmospheric light on the volcanic landscape.",
+              "Studio credits ('Boldtron', 'Medusa Lab') appear as small labels, which is consistent with a curated festival or collective title piece.",
+              "Each frame is a distinct world but they share a material language, so they work as posters."
+            ],
+            "gaps": [
+              "The type is a small default bold sans dropped in the top-left like a caption. It needs a typographic idea equal to the imagery.",
+              "The frames read as separate showcase vignettes. The piece needs choreography or transitions that tie the worlds together.",
+              "Organic surreal 3D is a crowded aesthetic. One unifying conceptual thread would keep it from reading as a reel compilation."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeats in all four frames. The only change is that list items light up one by one, which is the slide-deck structure and the 'little happening' tell.",
+              "Default heavy condensed grotesk all-caps with an outer-glow effect, centred and stacked like a slide. There is no scale contrast or typographic idea beyond the glow.",
+              "The dark ground, small tracked mono info line, a single red accent on the bullets and on 'TICKETS FRIDAY', and a mostly empty frame match the generic AI-template look.",
+              "The bullet-point list of artist names is placeholder-UI thinking, not poster design.",
+              "There is no image, texture or light motivated by the subject (a techno festival in an old power station). The setting offers industrial material that goes unused.",
+              "The aspect ratio and framing drift between frames, which suggests careless or automated output."
+            ],
+            "gaps": [
+              "It needs an image or concept tied to the subject (the power station, electricity, the techno physicality) instead of a glowing list on black.",
+              "The typography should be designed rather than set by default: varied scale, layout and a lettering idea, with the headliners ranked and type integrated with the image.",
+              "It needs real choreography beyond a sequential opacity reveal: camera movement, rhythm synced to the music, transformation between states."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.9,
+        "cost_usd": 0.1421704,
+        "tokens": 70159,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "kurzgesagt-short",
+        "C": "studio-river-motion-plus-design-tokyo-2024",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Every frame shows a different world: a translucent sculpted hand cradling a coral-like heart over a lit ridge, a mountain erupting a pink plume over a field of bead-like particles, a dense textile and fibre biome, and glass-and-chrome tubes knotted around a red crystalline core",
+              "The materials are complex and varied: subsurface-scattering skin, frosted glass, woven mesh, hair-like fibres and anisotropic metal, all under motivated, filmic light",
+              "The palette is deliberate and unusual: pale celadon, coral, olive-chrome and bottle green, with dusky violet in the landscape",
+              "The frames are dense and layered, with real depth of field and foreground occlusion, and could each stand as a poster",
+              "The small bold-sans labels ('Boldtron', 'Medusa Lab') read as studio or chapter credits in a showcase reel; they are functional, not the point"
+            ],
+            "gaps": [
+              "The type is a plain grotesk dropped into a corner with no relationship to the image; it needs a typographic system that interacts with the forms, as C's red/white name split begins to",
+              "The vignettes feel like separate studio pieces, so the reel needs a through-line (a recurring motif or transformation) to read as one film rather than a compilation",
+              "Several frames compete for focus at the same density; quieter beats would give the maximal frames more impact"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The title-sequence logic is coherent: a journey through the body (muscle tissue with a liquid-silver splash, a macro iris with a reflection in the pupil, a vascular root system, a concentric ripple in red cellular matter)",
+              "A single-hue red world is held with discipline across every frame while still finding range from deep maroon to warm amber",
+              "The macro light and texture are convincing: wet specular highlights, translucency, shallow depth of field",
+              "Credit typography is considered: a spaced, light sans whose first name is in red and surname in white sits in negative space within the image",
+              "The motifs rhyme between frames (circle of the iris and the ripple, branching veins), which suggests choreographed match cuts"
+            ],
+            "gaps": [
+              "The anatomical-macro title sequence is a well-worn genre; it needs one surprising image or conceptual twist that only this film could own",
+              "The red monochrome risks monotony across the length; one controlled counterpoint colour or lighting shift would add rhythm",
+              "The typography is tasteful but timid; scale, or integration into the tissue and fluid, would make the credits part of the idea"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "This is a consistent, characterful vector illustration system for vertical explainer shorts: a villain at a control desk with a STOP button, birds playing a memory-card game to show a 'misconception', a woolly mammoth for the ice age",
+              "The scene layouts vary and every frame has a staged gag that does narrative work rather than being a repeated template",
+              "The palette is saturated and deliberate, with a stylised heat-map rendering of Europe for the title card",
+              "The title card uses heavy rounded type with a dimensional outline; burned-in captions sit consistently at the lower third",
+              "This is flat by design: mostly gradient shading and little texture, a house style executed cleanly"
+            ],
+            "gaps": [
+              "The style is a well-known edutainment idiom, so it needs a visual voice of its own rather than a familiar flat-vector house look",
+              "The plain burned-in captions undercut the design; integrating the subtitles typographically into each scene would lift the craft",
+              "Light and material are minimal; adding grain, texture or lighting depth to key beats would give the image the richness of A or C"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "It is one composition repeated in every frame: the 'SUBSTATION' header and a bulleted lineup list, where the only change is names going from dim to lit in sequence, a slide-deck reveal",
+              "The 'tasteful AI' formula: dark ground, a condensed bold-sans headline, a small tracked mono info line, and a single red accent for bullets and the CTA",
+              "The type is set as a default list with bullets and no scale hierarchy among the artists; it is a slide, not a poster",
+              "A generic outer glow stands in for light; there is no material, image, or texture tied to the techno or power-station subject",
+              "The idea is entirely literal (lineup + 'TICKETS FRIDAY'), with nothing memorable and no imagery",
+              "The aspect ratio and framing drift between frames, suggesting an automated render rather than a designed sequence"
+            ],
+            "gaps": [
+              "There is no image or concept; build a visual idea from the subject (industrial power-station architecture, electrical current, sound-wave matter) as A builds whole worlds",
+              "The typography needs a point of view: varied scale between headliners and support, custom or expressive letterforms, and type interacting with an image instead of a bulleted list",
+              "The motion needs actual choreography (camera, transformation, rhythm cut to the music) instead of a sequential opacity fade on a static layout"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.2,
+        "cost_usd": 0.1438106,
+        "tokens": 70245,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Dead air from about 0.6s to 3.7s: the outlined list just sits there with almost no change, and the audio is near silent too",
+        "Each name lights up the same way (a scan line wipes across, then the outline fills with glow), repeated 8 times with no change in spacing or scale",
+        "The whiteout at the peak is a full-frame flat blow-out that washes out every element. No shape, no light source, and the type looks like a dirty fade",
+        "After the whiteout, some names flicker back as dark ghosts (Ancient Methods, H\u00e9ctor Oaks, Rrose), so the recovered frame reads as half-broken",
+        "The camera never moves and there is no change of scale or depth. The whole piece is one locked vertical layout",
+        "Outlined names at about 10% contrast are barely readable in the early frames. That is too dim for a poster frame",
+        "'TICKETS FRIDAY' first shows up as a near-black heavy block before turning red, which reads as a rendering pop",
+        "Mild scanline and noise texture plus soft glow bloom at 100%. The mono subline is clean, but the stroke edge on the lit headline is soft"
+      ],
+      "gaps": [
+        "Timing and choreography: the line-up is revealed linearly, one name per beat, in a single static frame. Top work would vary the rhythm (accelerating reveals, headliner weighting, scale or camera pushes) and cut the 3s opening hold",
+        "Sound: the soundtrack is sparse, synthetic and plucky. It has a hit per name, a generic white-noise riser into a hard cut, then a stutter, with no bass bed, music or arrangement. It syncs to picture, but it is thin and has no produced sound design or low end",
+        "Finish and peak: the power-surge climax is a flat overexposure rather than designed light (a filament or electrical arc, bloom with falloff, a chromatic or voltage effect). Type properties don't encode meaning such as billing order or the night each artist plays"
+      ]
+    },
+    "meta": {
+      "seconds": 17.6,
+      "cost_usd": 0.17362719999999998,
+      "tokens": 74417,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 15.0s, 3 shots, median 3.40s, longest 11.27s\nper-second change: [15.2, 1.8, 2.0, 11.1, 9.3, 6.4, 10.1, 9.1, 9.7, 3.9, 41.6, 41.8, 1.7, 1.6]\nPACE: FAIL \u2014 longest shot 11.3s > 2.5s; median shot 3.4s > 1.5s; 5/14 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 2,
+    "composition": 3,
+    "typography": 3,
+    "colour": 3,
+    "light_texture": 2,
+    "motion": 3.0,
+    "craft": 4.5,
+    "originality": 2,
+    "sound": 4
+  },
+  "full_overall": 2.94,
+  "cost_usd": 0.601,
+  "judge_seconds": 104.8,
+  "verdict": "FAIL"
+}

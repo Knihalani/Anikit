@@ -844,6 +844,17 @@
             }
           ]
         },
+        "dolly": {
+          "description": "Dolly: move the camera through depth (a push-in with real parallax: near layers grow faster than far ones).\nLayers at `depth` 0 sit 1 unit away, so `0.5` halves their distance; layers the camera passes disappear. Animatable.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "focus": {
           "description": "Depth in focus (layers at this `depth` are sharp). Default 0. Animatable (focus pulls).",
           "anyOf": [
@@ -1369,6 +1380,17 @@
           ],
           "format": "double"
         },
+        "extrude": {
+          "description": "Extrusion / long shadow: the layer's silhouette repeated along a direction, behind it, in one colour.\n`{\"angle\": 45, \"length\": 120, \"color\": \"#000\", \"fade\": 0}` (angle in degrees, 0 = right, 90 = down).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtrudeSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "smear": {
           "description": "Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default)."
         },
@@ -1639,8 +1661,15 @@
             }
           ]
         },
+        "print": {
+          "description": "A print treatment in one word, as starting values for the keys above (any key you give wins):\n`photocopy`, `newsprint`, `engraving`, `riso`, `screenprint`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "inkTexture": {
-          "description": "Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ \"amount\", \"scale\": px, \"seed\" }`.\nFixed to the frame like the paper, so moving shapes travel through it.",
+          "description": "Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ \"amount\", \"scale\": px, \"seed\" }`.\nThe wear moves with the layer (material locked to the object); `fixed: true` pins it to the frame.",
           "anyOf": [
             {
               "$ref": "#/$defs/InkValue"
@@ -1927,6 +1956,13 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "balance": {
+          "description": "Balanced line breaks when the text wraps (default on for headlines,\n4% of the frame height and up): every line about the same length.",
+          "type": [
+            "boolean",
+            "null"
           ]
         },
         "split": {
@@ -2791,6 +2827,44 @@
       },
       "additionalProperties": false
     },
+    "ExtrudeSpec": {
+      "description": "`extrude`: a solid extrusion or long shadow.",
+      "type": "object",
+      "properties": {
+        "angle": {
+          "description": "Direction in degrees (0 = right, 90 = down). Default 45.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "length": {
+          "description": "Length in px. Default 60.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "color": {
+          "description": "Colour (default 50% black).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fade": {
+          "description": "0 = solid; 1 = fades out toward the far end (a long shadow).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      },
+      "additionalProperties": false
+    },
     "MatteSpec": {
       "anyOf": [
         {
@@ -2977,7 +3051,7 @@
           ]
         },
         "ink": {
-          "description": "Ink colour. Default `\"source\"`: each dot keeps the layer's colour there.",
+          "description": "Ink colour. Default `\"source\"`: each dot keeps the layer's colour there. `\"cmyk\"`: a four-colour\nseparation (C, M, Y, K screens at angle + 15/75/0/45°) multiplied on the paper (default white).",
           "type": [
             "string",
             "null"
@@ -3045,6 +3119,13 @@
           ],
           "format": "uint32",
           "minimum": 0
+        },
+        "fixed": {
+          "description": "Pin the wear to the frame (the paper is the screen) instead of the layer (default: it moves with the layer).",
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "additionalProperties": false

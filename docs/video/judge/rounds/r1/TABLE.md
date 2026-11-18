@@ -1,22 +1,22 @@
 ## Round r1
 
-| Brief | Category | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens (M) | Cost ($) | Final render (s) | Peak RSS render (MB) |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| a-social | 9:16 social ad | FAIL | 0/3 | 3.25 | 7.37 | -4.12 | 3.78 | 8.7 | 2.7 | 1.97 | 25.13 | 567.2 |
-| b-launch | product launch | FAIL | 0/3 | 3.75 | 7.34 | -3.59 | 4.28 | 11.3 | 7.1 | 3.081 | 38.77 | 918.6 |
-| hf-b-launch | product launch | FAIL | 0/3 | 2.88 | 7.33 | -4.45 | 3.28 | 10.2 | 5.4 | 2.899 | ? | ? |
-| c-event | event promo | FAIL | 0/3 | 3.75 | 7.25 | -3.5 | 4.11 | 11.6 | 2.3 | 1.768 | 105.69 | 1400.3 |
-| d-illustration | illustration-led | FAIL | 0/3 | 3.38 | 7.16 | -3.78 | 3.67 | 13.3 | 4.9 | 2.653 | 22.6 | 1750.9 |
-| e-data | data story | FAIL | 0/3 | 3.62 | 7.25 | -3.63 | 3.83 | 11.4 | 2.6 | 1.639 | 55.5 | 771.3 |
-| hf-e-data | data story | FAIL | 0/3 | 2.75 | 7.37 | -4.62 | 3.33 | 12.6 | 5.6 | 2.968 | ? | ? |
-| f-3d | 3D/CG | FAIL | 0/3 | 3.5 | 7.08 | -3.58 | 3.78 | 15.1 | 3.6 | 2.119 | 108.84 | 987.2 |
-| g-titles | kinetic type / titles | FAIL | 0/3 | 3.62 | 8.5 | -4.88 | 4.11 | 10.5 | 3.0 | 1.673 | 52.74 | 1727.8 |
-| hf-g-titles | kinetic type / titles | FAIL | 0/3 | 3.38 | 8.42 | -5.04 | 3.78 | 9.8 | 4.9 | 2.643 | ? | ? |
-| h-ident | brand ident | FAIL | 0/3 | 2.75 | 8.67 | -5.92 | 3.17 | 8.3 | 1.9 | 1.14 | 15.67 | 631.3 |
-| i-explainer | 2D explainer | FAIL | 0/3 | 2.75 | 7.5 | -4.75 | 3.11 | 16.5 | 4.2 | 2.314 | 291.11 | 1481.3 |
-| j-music | music / lyric video | FAIL | 0/3 | 3.12 | 6.87 | -3.75 | 3.56 | 13.7 | 6.9 | 3.147 | 236.94 | 1283.8 |
-| k-sports | sports / broadcast | FAIL | 0/3 | 4.5 | 8.25 | -3.75 | 4.67 | 10.2 | 2.7 | 1.553 | 76.76 | 1046.1 |
-| l-generative | generative / abstract | FAIL | 0/3 | 3.12 | 8.04 | -4.92 | 3.39 | 25.8 | 3.4 | 1.584 | 1056.08 | 1415.1 |
+| Brief | Category | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens (M) | Cost ($) | Motion blind (cand / refs, pro) | Final render (s) | Peak RSS render (MB) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| a-social | 9:16 social ad | FAIL | 0/3 | 3.25 | 7.37 | -4.12 | 3.78 | 8.7 | 2.7 | 1.97 | – | 25.13 | 567.2 |
+| b-launch | product launch | FAIL | 0/3 | 3.75 | 7.34 | -3.59 | 4.28 | 11.3 | 7.1 | 3.081 | – | 38.77 | 918.6 |
+| hf-b-launch | product launch | FAIL | 0/3 | 2.88 | 7.33 | -4.45 | 3.28 | 10.2 | 5.4 | 2.899 | – | ? | ? |
+| c-event | event promo | FAIL | 0/3 | 3.75 | 7.25 | -3.5 | 4.11 | 11.6 | 2.3 | 1.768 | – | 105.69 | 1400.3 |
+| d-illustration | illustration-led | FAIL | 0/3 | 3.38 | 7.16 | -3.78 | 3.67 | 13.3 | 4.9 | 2.653 | – | 22.6 | 1750.9 |
+| e-data | data story | FAIL | 0/3 | 3.62 | 7.25 | -3.63 | 3.83 | 11.4 | 2.6 | 1.639 | – | 55.5 | 771.3 |
+| hf-e-data | data story | FAIL | 0/3 | 2.75 | 7.37 | -4.62 | 3.33 | 12.6 | 5.6 | 2.968 | – | ? | ? |
+| f-3d | 3D/CG | FAIL | 0/3 | 3.5 | 7.08 | -3.58 | 3.78 | 15.1 | 3.6 | 2.119 | – | 108.84 | 987.2 |
+| g-titles | kinetic type / titles | FAIL | 0/3 | 3.62 | 8.5 | -4.88 | 4.11 | 10.5 | 3.0 | 1.673 | – | 52.74 | 1727.8 |
+| hf-g-titles | kinetic type / titles | FAIL | 0/3 | 3.38 | 8.42 | -5.04 | 3.78 | 9.8 | 4.9 | 2.643 | – | ? | ? |
+| h-ident | brand ident | FAIL | 0/3 | 2.75 | 8.67 | -5.92 | 3.17 | 8.3 | 1.9 | 1.14 | – | 15.67 | 631.3 |
+| i-explainer | 2D explainer | FAIL | 0/3 | 2.75 | 7.5 | -4.75 | 3.11 | 16.5 | 4.2 | 2.314 | – | 291.11 | 1481.3 |
+| j-music | music / lyric video | FAIL | 0/3 | 3.12 | 6.87 | -3.75 | 3.56 | 13.7 | 6.9 | 3.147 | – | 236.94 | 1283.8 |
+| k-sports | sports / broadcast | FAIL | 0/3 | 4.5 | 8.25 | -3.75 | 4.67 | 10.2 | 2.7 | 1.553 | – | 76.76 | 1046.1 |
+| l-generative | generative / abstract | FAIL | 0/3 | 3.12 | 8.04 | -4.92 | 3.39 | 25.8 | 3.4 | 1.584 | – | 1056.08 | 1415.1 |
 
 Mean blind score (Anikit rows) 3.43. hf-* rows are HyperFrames on the same brief, same refs and seed. Pass = judged professional in ≥ half the trials and Δ ≥ −1.0 (RUBRIC.md).
 

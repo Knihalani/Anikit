@@ -1,0 +1,516 @@
+{
+  "name": "graphic_brush",
+  "tags": [
+    "brand-idents",
+    "kinetic-type"
+  ],
+  "refs": [
+    "studio-dumbar-instagram-motion-identity-2024",
+    "dixonbaxi-the-cw-brand-2024",
+    "game-of-thrones"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 3,
+      "typography": 2,
+      "colour": 3,
+      "light_texture": 2,
+      "motion": 3,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 2.5,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find a real idea about the brush (gesture, ink and paper, the hand) instead of naming the tool beside clip-art strokes",
+      "Make the material real: ink bleed, paper grain, wet-to-dry change and real light, so the frame has the depth A gets from leather and brass",
+      "Replace the default sans and slide layout with type that comes from the stroke itself, using scale contrast and integration, and choreograph frames that change composition rather than adding items to one layout",
+      "It needs a real idea. The ink, the gesture or the act of making a mark should mean something or transform, instead of labelling itself",
+      "The type needs a point of view. Draw it or set it in a face that comes from the brush, at an expressive scale, integrated with the stroke rather than placed beside it",
+      "It needs material and motion: wet ink, paper grain, bleed, camera and timing variety across shots instead of one static layout building up",
+      "No concept beyond showing brushes; it needs a subject or story, as C has, that the strokes serve",
+      "Typography is a default sans with no relationship to the ink medium; the type needs character, scale contrast and integration with the strokes",
+      "Flat, empty frames with no material, paper or light; the brush marks need physical ink behaviour and the composition needs density and a poster-worthy layout"
+    ],
+    "tells": [
+      "The textbook 'tasteful AI' look: a cream ground, one red accent, and a mostly empty frame",
+      "The idea is literal: the word 'Brush' set beside brush strokes, with an ens\u014d circle as a stock clich\u00e9",
+      "The headline is a default bold grotesk (Inter-like) placed like a slide with no relationship to the strokes, and the straight and wavy lines underneath read as placeholder decoration",
+      "The motion is a sequential stroke-reveal, then elements appear; the last two frames are almost identical, so little happens",
+      "The strokes are flat vector brush presets with no ink pooling, paper texture or light, which defeats the one material the subject is about",
+      "Textbook \"tasteful AI\" look: a cream ground, black brush strokes, a single red accent and a mostly empty frame",
+      "The idea is literal: the word \"Brush\" set beside brush strokes. There is nothing to remember",
+      "The headline is set in a default bold grotesk (Inter-like) with no relation to the calligraphic ens\u014d, and the decorative rules beneath it read like a slide",
+      "Little happens across the frames: strokes draw on one by one and the last two frames are effectively identical, so there is no choreography",
+      "The ens\u014d is a stock brush asset with no texture or ink behaviour, and the light is flat",
+      "The textbook generic 'tasteful AI' look: cream ground, black enso, a single red accent stroke, mostly empty frame",
+      "The headline 'Brush' is set in a default bold grotesk (Inter-like) with no typographic idea, placed like a slide beside the circle",
+      "The idea is literal: the word 'brush' next to stock brush strokes, with clip-art underline and wave lines as decoration",
+      "The last two frames are near-identical and the motion is just a sequential stroke write-on, with no texture, light or depth"
+    ]
+  },
+  "refs_summary": {
+    "studio-dumbar-instagram-motion-identity-2024": {
+      "overall": 5.88,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "dixonbaxi-the-cw-brand-2024": {
+      "overall": 5.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "game-of-thrones": {
+      "overall": 9.38,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.0,
+  "delta": -4.5,
+  "trials": [
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "studio-dumbar-instagram-motion-identity-2024",
+        "C": "candidate",
+        "D": "dixonbaxi-the-cw-brand-2024"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea that belongs only to this piece: the world drawn as a clockwork map that builds itself, so the geography is the narrative",
+              "Real material and light: tooled leather and brass on an armillary band, a hot sun-flare key light, aged map paper, carved wood and bone mechanisms with depth of field",
+              "Typography with a point of view: a custom flared Roman wordmark that sits inside the heraldic emblem, plus small tracked serif credits each paired with a house sigil and placed in the 3D space",
+              "Real choreography: the camera moves from the macro astrolabe band to model cities rising from the board, down to the map and out to the emblem lockup, so every frame is a different scale and viewpoint",
+              "Palette kept to bronze, ochre, slate and parchment, which gives a tight, period-appropriate world",
+              "Every frame stands on its own as a poster, with dense layering of detail at several depths"
+            ],
+            "gaps": [
+              "Benchmark entry; the remaining gap is small. The credit type is sometimes small against busy textures, and legibility could improve with a bit more local contrast",
+              "The final logo lockup falls back on a symmetrical sun-flare, a more conventional ending than the mechanical sequences before it",
+              "The map frame has flatter lighting than the 3D sequences, which slightly breaks the material consistency"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 4,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "This is a real brand motion-system case study: it shows a typed-on cursor line, 'motion techniques', 'dynamic layouts', 'animated glyph' and 'physics' modules, and a location sticker component",
+              "A proprietary gradient and the actual glyph, with a system-level grid of usage specimens, which reads as the output of a design team rather than a template",
+              "But the frames lean on several tells of weaker work: a centred line on a gradient, a glyph on a blurred blob, placeholder grey bars in the physics panel, and long stretches of mostly empty white or black frame",
+              "The film is a system explainer rather than an expressive film, and its idea is the brand itself"
+            ],
+            "gaps": [
+              "No central metaphor: build one idea the film has to say (as A does with the clockwork map) instead of listing system components",
+              "The frames are flat with no light or material: give the gradient and glyph physicality, depth or texture instead of a blurred blob on white",
+              "The ending is the expected logo-on-white; choreograph the system modules into one continuous move that builds to a lockup the viewer didn't see coming"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 5,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "A real broadcast identity package: an orange bracket device that works as a framing system across ORIGINAL, the 9|8c time slot and show tune-ins, applied over live sports and reality footage",
+              "Lifestyle shots of the product in context (a TV in a lit room) and a real app UI, which point to a network rebrand reel",
+              "The work is competent and systematic, but the type is a generic grotesk with tracked caps, the white 'ORIGINAL' frame is nearly empty, and the TV-mockup shots are agency-deck convention",
+              "Most of the visual interest comes from licensed footage rather than designed image"
+            ],
+            "gaps": [
+              "The bracket device is the only idea: push it into choreography that cuts, frames or transforms the footage instead of sitting on top of it",
+              "Typography needs a point of view: the generic grotesk and tracked caps could belong to any network",
+              "Replace the device-mockup frames with designed images whose light, texture and composition are authored, not borrowed from footage"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook 'tasteful AI' look: a cream ground, one red accent, and a mostly empty frame",
+              "The idea is literal: the word 'Brush' set beside brush strokes, with an ens\u014d circle as a stock clich\u00e9",
+              "The headline is a default bold grotesk (Inter-like) placed like a slide with no relationship to the strokes, and the straight and wavy lines underneath read as placeholder decoration",
+              "The motion is a sequential stroke-reveal, then elements appear; the last two frames are almost identical, so little happens",
+              "The strokes are flat vector brush presets with no ink pooling, paper texture or light, which defeats the one material the subject is about"
+            ],
+            "gaps": [
+              "Find a real idea about the brush (gesture, ink and paper, the hand) instead of naming the tool beside clip-art strokes",
+              "Make the material real: ink bleed, paper grain, wet-to-dry change and real light, so the frame has the depth A gets from leather and brass",
+              "Replace the default sans and slide layout with type that comes from the stroke itself, using scale contrast and integration, and choreograph frames that change composition rather than adding items to one layout"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.3,
+        "cost_usd": 0.1579986,
+        "tokens": 71948,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "studio-dumbar-instagram-motion-identity-2024",
+        "C": "dixonbaxi-the-cw-brand-2024",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific, memorable idea: the world is a clockwork map that builds itself, so the geography and politics of the show become the title sequence itself",
+              "Real material and light: engraved metal and wood, a glowing armillary band, warm flare light, shallow depth of field and atmospheric haze",
+              "Frames change in scale and vantage, from a close-up of the engraved band to a low wide shot of the mechanical city to a top-down map, which points to a camera move that was choreographed",
+              "Credits are set in a carved Trajan-style serif with house sigils and placed inside the world rather than laid over it, and the final logo lockup sits on the sun-burst band",
+              "Unusual palette of amber, bronze and verdigris that is held across every frame"
+            ],
+            "gaps": [
+              "This is the benchmark entry. The main gap is that the credit typography is sometimes small against busy, detailed backgrounds",
+              "The wordmark lockup is more conventional than the world-building around it",
+              "The map frame is flatter in light and texture than the mechanical frames"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 4,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "This looks like a brand motion-system showcase. Its grid of labelled tiles (\"Motion Techniques\", \"Physics\", \"Animated Glyph\") is a documentation format, not a film",
+              "It uses a proprietary brand grotesk and the real brand gradient, consistent with a brand team's own case study",
+              "Several frames are thin: a centred line typed on a gradient, a lone sticker on black, a logo on a blurred blob. These are close to the generic tells",
+              "Light and texture are flat throughout, and the piece relies on the existing brand palette rather than a palette made for this film"
+            ],
+            "gaps": [
+              "It has no idea of its own beyond showing off the system. It needs a narrative or visual metaphor that only this brand could own",
+              "The frames are sparse and centred like slides. It needs layered compositions where type, image and UI interact",
+              "It needs material, light or depth. Right now the system is flat UI on flat grounds"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "A network rebrand case study using real live-action footage, a coherent bracket device that frames \"ORIGINAL\" and \"9|8C\", and one orange accent",
+              "The bracket graphic is integrated over sports footage and tied to the on-air schedule, which shows a working broadcast package",
+              "The in-situ TV mockups (a promo card and a streaming UI in a lamp-lit room) are standard agency case-study practice and are competently lit",
+              "The typography is a clean but generic sans with no strong point of view, and the system is a safe, familiar broadcast toolkit"
+            ],
+            "gaps": [
+              "The bracket device is functional but forgettable. It needs a graphic idea with more character and surprise",
+              "The type is default-feeling. It needs a face or typographic behaviour that carries the brand",
+              "The mockup frames are generic presentation shots. The case should be carried by the motion itself, not by TV renders"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Textbook \"tasteful AI\" look: a cream ground, black brush strokes, a single red accent and a mostly empty frame",
+              "The idea is literal: the word \"Brush\" set beside brush strokes. There is nothing to remember",
+              "The headline is set in a default bold grotesk (Inter-like) with no relation to the calligraphic ens\u014d, and the decorative rules beneath it read like a slide",
+              "Little happens across the frames: strokes draw on one by one and the last two frames are effectively identical, so there is no choreography",
+              "The ens\u014d is a stock brush asset with no texture or ink behaviour, and the light is flat"
+            ],
+            "gaps": [
+              "It needs a real idea. The ink, the gesture or the act of making a mark should mean something or transform, instead of labelling itself",
+              "The type needs a point of view. Draw it or set it in a face that comes from the brush, at an expressive scale, integrated with the stroke rather than placed beside it",
+              "It needs material and motion: wet ink, paper grain, bleed, camera and timing variety across shots instead of one static layout building up"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 27.6,
+        "cost_usd": 0.1518504,
+        "tokens": 71639,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "dixonbaxi-the-cw-brand-2024",
+        "B": "studio-dumbar-instagram-motion-identity-2024",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "A coherent network identity system: an orange bracket device that frames 'ORIGINAL', splits '9|8c' over live sports footage and comes back in the on-air promo card",
+              "The brand works across several contexts (live action, sport overlay, on-TV promo, streaming UI mockup in a lit room), which is how real broadcast rebrands are presented",
+              "The orange-red is a deliberate signature colour, and the type has a consistent hierarchy with tracked caps for metadata and bold grotesk for titles",
+              "Real footage and in-situ device renders with motivated lamp light point to production resources, not a template"
+            ],
+            "gaps": [
+              "No single memorable image idea: it is a system demo, not a film, while C builds a whole world as its metaphor",
+              "The bracket device is functional and not very surprising; the typography is a neat grotesk with no expressive scale or texture",
+              "The case-study framing (TV mockups, UI screen) reads as a pitch deck, with little choreography between frames"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 4,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "A brand motion-guidelines piece for a real identity: the glyph animation, the gradient bloom resolving into the logo, sections labelled 'motion techniques', 'dynamic layouts' and 'physics'",
+              "The type-on cursor in 'We showcase creativity' and the location sticker show product-specific motion vocabulary",
+              "Several things count against it: a centred headline on a gradient, a blurred blob behind the logo, dark cards with tracked-caps labels, and grey placeholder bars in the 'physics' panel. Generic as these are, they belong to the brand's own documented system",
+              "Polished, consistent finish across the frames"
+            ],
+            "gaps": [
+              "It is a guidelines reel, not an idea: there is no narrative or world comparable to C's clockwork map",
+              "No light, material or depth; the frames are flat UI and gradients, and the 'physics' panel uses placeholder-like grey primitives",
+              "Composition repeats the centred-object-on-plain-ground pattern; little visual surprise or poster-worthy framing"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea only this piece could have: the story's world is a clockwork map, with cities unfolding mechanically from the terrain",
+              "Rich materials: tooled leather or metal astrolabe bands, aged parchment map, brass gears, bone-like towers, with real depth of field and warm, motivated sun-flare light",
+              "Credits sit inside the world, set in a fitting engraved-style serif with heraldic sigil bullets; the title lockup is integrated into the astrolabe",
+              "Clear choreography: band to aerial city to mechanism detail to map travel to title reveal, with variety of scale and camera"
+            ],
+            "gaps": [
+              "Credit type is small and occasionally loses legibility against busy textures",
+              "The palette leans heavily on a sepia/gold grade, so some frames read as monotone",
+              "The final title card uses a conventional symmetrical lockup, less surprising than the body of the sequence"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook generic 'tasteful AI' look: cream ground, black enso, a single red accent stroke, mostly empty frame",
+              "The headline 'Brush' is set in a default bold grotesk (Inter-like) with no typographic idea, placed like a slide beside the circle",
+              "The idea is literal: the word 'brush' next to stock brush strokes, with clip-art underline and wave lines as decoration",
+              "The last two frames are near-identical and the motion is just a sequential stroke write-on, with no texture, light or depth"
+            ],
+            "gaps": [
+              "No concept beyond showing brushes; it needs a subject or story, as C has, that the strokes serve",
+              "Typography is a default sans with no relationship to the ink medium; the type needs character, scale contrast and integration with the strokes",
+              "Flat, empty frames with no material, paper or light; the brush marks need physical ink behaviour and the composition needs density and a poster-worthy layout"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 25.7,
+        "cost_usd": 0.14938220000000002,
+        "tokens": 71514,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 3,
+        "sound": null,
+        "craft": 5
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": null
+      },
+      "defects": [
+        "Faint vertical light streaks/banding columns under the ens\u014d and type in the later frames (visible in pairs rows 2\u20133), which look like a compositing or texture-tiling artifact",
+        "The ens\u014d write-on reads as a constant-speed trim path that sweeps around the circle with no pressure ramp, so the brush has no weight or hesitation where it lands or lifts",
+        "'Brush' pops in whole between samples (absent at the red-stroke frame, then fully there), with no build and no relationship to the strokes",
+        "The last ~1.5 s is static: per-second change drops to 1.7, and the only motion is the bottom squiggle drawing on",
+        "The brush texture is a flat vector fill with procedural dry-brush slits. It has no ink density variation, wet edge, bleed or paper interaction",
+        "The bold geometric sans 'Brush' clashes with the calligraphic strokes and has no typographic tie to the brush idea",
+        "The layout is a specimen sheet (circle left, stack of samples right) rather than a composition. Frames 1\u20133 are mostly empty and the final frames are cluttered with four unrelated marks"
+      ],
+      "gaps": [
+        "Motion: everything is a sequential linear write-on (circle, then red, then type, then line, then squiggle) with no overlap, easing, brush-speed variation or follow-through. Top studio work would vary stroke speed with pressure, overlap the reveals and choreograph a handoff between marks",
+        "Structure/idea: there is no arc and no payoff. It builds marks into a static brush-preset sheet, with dead air at the end and no ending that rhymes with the opening stroke, camera move or transformation",
+        "Finish: the vector brush has no material quality (ink pooling, paper grain, light falloff), the type pops in flat, and there are visible vertical streak artifacts. At award level the ink should feel physically wet and the frame should hold up as a poster"
+      ]
+    },
+    "meta": {
+      "seconds": 17.7,
+      "cost_usd": 0.141116,
+      "tokens": 70158,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "brush.mp4: 3.0s, 1 shots, median 3.00s, longest 3.00s\nper-second change: [13.1, 1.7]\nPACE: FAIL \u2014 longest shot 3.0s > 2.5s; median shot 3.0s > 1.5s; 1/2 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 2,
+    "composition": 3,
+    "typography": 2,
+    "colour": 3,
+    "light_texture": 2,
+    "motion": 3.0,
+    "craft": 4.0,
+    "originality": 2
+  },
+  "full_overall": 2.62,
+  "cost_usd": 0.6,
+  "judge_seconds": 101.3,
+  "verdict": "FAIL"
+}
