@@ -65,14 +65,121 @@ pub fn parse_json(src: &str) -> Result<Parsed, Vec<Diagnostic>> {
     let v: serde_json::Value = serde_json::from_str(src).map_err(|e| {
         vec![Diagnostic::error("", format!("invalid JSON at line {}, column {}: {}", e.line(), e.column(), strip_pos(&e.to_string())))]
     })?;
-    from_value(v)
+    let mut p = from_value(v)?;
+    size_warning(src.len(), &mut p);
+    Ok(p)
+}
+
+/// Specs past this size are almost always hand-unrolled loops; `defs`, `repeat` and `script` say it in a few lines.
+const BIG_SPEC: usize = 1_000_000;
+
+fn size_warning(len: usize, p: &mut Parsed) {
+    if len > BIG_SPEC {
+        p.warnings.push(Diagnostic::warning(
+            "",
+            format!(
+                "this spec is {:.1} MB; big specs are slow to load and can run out of memory. Generate repeated shapes instead of writing them out: `repeat` with `$i` (and `rand($i, …)` for scatter), `defs` + `use` with params, a `script` that returns layers, or a `draw` layer for thousands of points",
+                len as f64 / 1e6
+            ),
+        ));
+    }
+}
+
+/// Forms agents write naturally, rewritten to the canonical ones before typing:
+/// a `shader` map (`{"src": …, "uniforms": …}`), CSS `fontStyle`, and `transformOrigin`
+/// (alias of `anchor`, with CSS values like `"50% 0%"` or `"top left"`).
+fn natural_forms(v: &mut serde_json::Value) {
+    use serde_json::Value;
+    match v {
+        Value::Array(a) => a.iter_mut().for_each(natural_forms),
+        Value::Object(m) => {
+            if let Some(Value::Object(sh)) = m.get("shader").cloned() {
+                if sh.keys().any(|k| ["src", "code", "source", "glsl", "wgsl", "uniforms", "channels"].contains(&k.as_str())) {
+                    m.remove("shader");
+                    for (k, x) in sh {
+                        let k = match k.as_str() {
+                            "code" | "source" | "glsl" | "wgsl" => "shader".to_string(),
+                            _ => k,
+                        };
+                        m.entry(k).or_insert(x);
+                    }
+                }
+            }
+            if let Some(Value::String(fs)) = m.get("fontStyle").cloned() {
+                let it = matches!(fs.trim(), "italic" | "oblique");
+                if it || fs.trim() == "normal" {
+                    m.remove("fontStyle");
+                    m.entry("italic").or_insert(Value::Bool(it));
+                }
+            }
+            // `"fadeIn": 0.5` / `"fadeOut": 0.4`: an opacity entrance / exit of that many seconds.
+            // Only on layers: audio cues and the music's master have their own fadeIn/fadeOut.
+            let audio_src = m.get("src").and_then(|v| v.as_str()).is_some_and(|s| {
+                let s = s.to_ascii_lowercase();
+                [".mp3", ".wav", ".m4a", ".ogg", ".flac", ".aac", ".opus"].iter().any(|e| s.ends_with(e))
+            });
+            let layer_like = ["text", "shape", "component", "composition", "draw", "dots", "shader", "children", "layers", "src"].iter().any(|k| m.contains_key(*k))
+                && !audio_src
+                && !["sfx", "voice", "volume", "duck", "lufs", "ceiling", "say"].iter().any(|k| m.contains_key(*k));
+            for (k, preset, slot) in [("fadeIn", "fadeIn", "enter"), ("fadeOut", "fadeOut", "exit")].into_iter().filter(|_| layer_like) {
+                if let Some(d) = m.get(k).cloned() {
+                    let secs = match &d {
+                        Value::Number(_) => Some(d.clone()),
+                        Value::Bool(true) => Some(serde_json::json!(0.5)),
+                        _ => None,
+                    };
+                    if let (Some(secs), false) = (secs, m.contains_key(slot)) {
+                        m.remove(k);
+                        m.insert(slot.into(), serde_json::json!({ "preset": preset, "duration": secs }));
+                    }
+                }
+            }
+            if let Some(o) = m.remove("transformOrigin") {
+                m.entry("anchor").or_insert(o);
+            }
+            if let Some(Value::String(a)) = m.get("anchor").cloned() {
+                if let Some(x) = css_anchor(&a) {
+                    m.insert("anchor".into(), x);
+                }
+            }
+            m.values_mut().for_each(natural_forms);
+        }
+        _ => {}
+    }
+}
+
+/// `"50% 0%"`, `"top left"`, `"left top"`, `"center bottom"` → a canonical anchor (None if already canonical or unknown).
+fn css_anchor(s: &str) -> Option<serde_json::Value> {
+    let parts: Vec<&str> = s.split_whitespace().collect();
+    if parts.len() != 2 {
+        return None;
+    }
+    let pct = |p: &str| p.strip_suffix('%').and_then(|n| n.trim().parse::<f64>().ok()).map(|n| n / 100.0);
+    if let (Some(x), Some(y)) = (pct(parts[0]), pct(parts[1])) {
+        return Some(serde_json::json!([x, y]));
+    }
+    let (mut x, mut y) = (None, None);
+    for p in &parts {
+        match *p {
+            "left" => x = Some(0.0),
+            "right" => x = Some(1.0),
+            "top" => y = Some(0.0),
+            "bottom" => y = Some(1.0),
+            "center" | "centre" => {}
+            _ => return None,
+        }
+    }
+    let (x, y) = (x.unwrap_or(0.5), y.unwrap_or(0.5));
+    Some(serde_json::json!([x, y]))
 }
 
 /// Parse YAML.
 pub fn parse_yaml(src: &str) -> Result<Parsed, Vec<Diagnostic>> {
     let v: serde_json::Value =
         serde_norway::from_str(src).map_err(|e| vec![Diagnostic::error("", format!("invalid YAML: {e}"))])?;
-    from_value(v)
+    let mut p = from_value(v)?;
+    size_warning(src.len(), &mut p);
+    Ok(p)
 }
 
 /// Parse JSON or YAML (JSON if it starts with `{`).
@@ -95,7 +202,8 @@ fn strip_pos(s: &str) -> String {
 /// errors with their path.
 pub fn from_value(mut v: serde_json::Value) -> Result<Parsed, Vec<Diagnostic>> {
     bezier_eases(&mut v);
-    let v = super::reuse::expand(v)?;
+    let mut v = super::reuse::expand(v)?;
+    natural_forms(&mut v);
     // `{"scene3d": {...}}` on a layer or a scene is shorthand for the scene3d component.
     let v = crate::scene3d::shorthand(v);
     let v = crate::looks::apply(v)?;

@@ -60,7 +60,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - Texture prints (compositions on panes, planes and text) are lit by local lights too, like matte paper: a sodium lamp pools on a brick-textured wall and a sign spills its colour onto a textured facade. Each shadowed light costs one shadow ray per textured pixel (a street with 20 shadowed lamps and many textured panes roughly doubles the trace time); set `"shadow": false` on fill lights.
 - **`fog`:** a density per metre, or `{ "density", "color", "shafts": true, "height", "base" }`. `height` makes it height fog: dense at `base` (default 0, the floor) and thinning by e every `height` metres. That gives ground mist, a valley fog, or a set that dissolves into haze. It's integrated exactly along each camera ray (one `exp`), and the layer meets the sky softly. Proof: `docs/video/shots/3d-fog/ground-mist.jpg` (`{ "density": 0.9, "height": 0.25 }`). `shafts` adds volumetric light: spot cones and god rays from the key, with object shadows cut into them. Use density 0.02–0.08 with a dark fog colour at night.
 - **`camera`:**
-  - presets: `push`, `reveal`, `flyby`, `orbit` (all 5 s by default), `dolly`, `crane`, `static`; or `{ "preset", "duration", "degrees", "height", "shake" }`;
+  - presets: `push`, `reveal`, `flyby`, `orbit` (all 5 s by default), `dolly`, `crane`, `static`, plus product-film moves: `slide` (a lateral parallax pass), `arc` (a slow 30° arc), `rise` (a pedestal up from below the subject) and `topdown` (an overhead flat-lay turning 20°); or `{ "preset", "duration", "degrees", "height", "shake" }`;
   - keys: `{ "interp": "smooth"|"linear", "keys": [ { "t", "pos", "target", "focal": 35, "fstop": 2.8, "focus", "shutter": 0.5 } ] }`. A dense per-frame list with linear interpolation works too. `shutter: 0` turns motion blur off.
   - rigs: `"target": "machine"` aims at the object with that `name` (key `target`s become offsets from it); add `"follow": true` to move with it too (key `pos` become offsets).
 - **`objects`:**
@@ -101,6 +101,19 @@ You are not limited to the preset shapes. These types build a mesh from your des
 
 Proof of animated open geometry in an abstract piece: `docs/video/shots/3d-abstract/ribbon.mp4` (5 s, 1080p30, rendered in about 105 s on 4 cores; a flowing surface ribbon, a growing tube and a bouncing sphere on a yellow sweep). Shapes whose expressions use `t` (seconds) are rebuilt every frame: waves, growing tubes, morphing surfaces (`examples/video/lookdev/wave.json`). This costs about 44 ms per frame for a 160² heightfield plus a 300-segment tube, and turns off the baked floor. Shapes without `t` are built once. Motion blur follows object motion, not deformation. To generate many objects, put `{ "script": "..." }` in `objects`; it expands to the items it returns. Cost: tracing a mesh costs about the same as the preset shapes of similar screen size. A 160×32 surface or a 128² heightfield adds under 5 ms to scene build, and render time is set by pixels covered, not by triangle count.
 
+## Decals: print on any surface
+
+Dial numerals, a logo on a can, a label on a bottle: put a `plane` just above the surface with `"material": "decal"` and a composition `texture`. A decal is a clear, index-1 layer: no reflection, no refraction and no shadow. Only its print shows, lit like the surface under it.
+
+`{ "type": "plane", "size": [0.6, 0.6], "pos": [0, 0.0805, 0], "rot": [-90, 0, 0], "texture": "#dial", "material": "decal", "thin": true, "shadow": false }`
+
+- Leave the composition's `background` out, so it's transparent.
+- Lift the plane about 0.5 mm off the surface.
+- Print on a dielectric (enamel, ceramic, lacquer, paper). A metal surface mirrors the set, so the print sits on a reflection and reads poorly.
+- Open shapes (planes, surfaces, heightfields, and lathes whose profile doesn't close on the axis) are thin shells automatically. A watch crystal can be a glass `lathe` dome with no closing profile.
+
+Proof: `docs/video/shots/3d-decals/dial.jpg` (type and an index printed on a guilloché dial; spec beside it).
+
 ## Imperfections
 
 Perfect CG surfaces read as fake. Real products have fingerprints, wipes, fine scratches that show only in a highlight, uneven sheen and dust. Add them on any material:
@@ -126,7 +139,7 @@ Grooves need about six pixels per period to resolve. Below that they fade into e
 
 `{ "extends": "aluminium", "base": "#E4E6E9", "roughness": 0.15, "pattern": "guilloche", "patternScale": 0.012 }`
 
-Recipe: `anikit-video recipes precision-macro` (a knurled knob with a sunburst cap on a brushed plate, a strip sweep and a rack focus; still `docs/video/shots/3d-patterns/precision-macro.jpg`). Proof: `docs/video/shots/3d-patterns/dials.jpg` (a 100 mm macro on two dials, guilloché and clous de Paris; trace about 0.7 s at 1080p). Known limit: very fine guilloché can still moiré near the centre of the rings.
+Recipe: `anikit-video recipes precision-macro` (a knurled knob with a sunburst cap on a brushed plate, a strip sweep and a rack focus; still `docs/video/shots/3d-patterns/precision-macro.jpg`). Proof: `docs/video/shots/3d-patterns/dials.jpg` (a 100 mm macro on two dials, guilloché and clous de Paris; trace about 0.7 s at 1080p).
 
 ## Sets
 
@@ -308,6 +321,26 @@ changes an edge pixel's coverage and a clamp built from centre samples
 accepts any mix. Limiting reuse to whole-pixel motion removes the error but
 also the reuse: every lookdev shot has a moving camera. Speed gain at best
 ~3%.
+
+Also measured and rejected (scene3d_bench, 4 frames vs the 25-spp references):
+
+- Checkerboarding the reflection ray on glossy floors (roughness 0.03–0.2,
+  e.g. the default studio floor at 0.09): chrome ΔE p99.9 4.7 → 21–27, and
+  slower once sharp contact reflections are re-traced. Its reflections are
+  mostly too sharp for post's gap fill.
+- Edge sub-samples with one bounce less (max depth 3 → 2): cyc ΔE 14.8 →
+  24, panes flicker 10 → 36, no faster.
+- Bounding the next camera-ray traversal by a thin pane's exit face: no
+  gain (traversal from inside the pane still enters the nearby boxes).
+
+Where the time goes (`ANIKIT_SCENE3D_PROFILE=1`, 1080p, 4 cores): closest-hit
+traversal is 45–60% of trace CPU (camera rays 40–65% of that; glass panes
+re-trace per interface), shadow/AO rays are negligible, refinement covers
+3–6% of pixels but edge samples cost ~2.6× a centre sample, and post is
+140–175 ms (floor reflection, denoise, depth of field, motion blur, bloom
+~20–45 ms each). The cheapest quality lever is edge samples: standard's 6
+→ 9 costs ~6% CPU on cyc and takes ΔE p99.9 14.8 → 10.3, flicker 42 → 29
+(chrome flicker 10 → 5.3); 12 costs ~22% for ΔE 7.4, flicker 21.
 
 Measure every change:
 

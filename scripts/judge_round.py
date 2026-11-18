@@ -188,7 +188,7 @@ def cmd_paired(a):
     rd, bd = J / "rounds" / a.round, J / "rounds" / a.base
     L = [f"# {a.round} vs {a.base}: paired by brief", "",
          "Same tags, seed and reference set, so the same 3 refs per brief ('same refs' column checks it). "
-         "Judge test-retest noise is about ±0.4 per piece (r1 PAIRED.md), so only larger moves are real.", "",
+         "Judge test-retest spread is up to about 0.5 per piece, so treat |Δ| < 0.75 as a tie.", "",
          f"| Brief | {a.base} | {a.round} | Δ | Full {a.base} → {a.round} | Judged pro | Same refs |", "|---|---|---|---|---|---|---|"]
     ds = []
     for b in briefs():
@@ -216,7 +216,7 @@ def cmd_demos(a):
     cats = {}
     cat_of = {b["id"]: b["category"] for b in briefs()}
     cat_of_tag = {b["tags"][0]: b["category"] for b in briefs()}
-    for p in sorted(J.glob("rounds/*/results/*/result.json")) + sorted(J.glob("demos/results/*/result.json")):
+    for p in sorted(J.glob("rounds/*/results/*/result.json")) + sorted(J.glob("demos/*/*/result.json")):
         r = json.loads(p.read_text())
         rnd = p.parts[-4] if p.parts[-4] != "demos" else "demo"
         if rnd == "r0-div":

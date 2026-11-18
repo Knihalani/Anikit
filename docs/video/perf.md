@@ -237,3 +237,13 @@ The per-pixel loops did their table lookups, clamps, branches and bounds checks 
 - blends and the rest of the arithmetic in vector loops, under AVX2 when the CPU has it.
 
 The arithmetic is the same, in the same order. Rust never fuses multiply-adds, so the output is bit-identical: `render::post::tests::final_pass_matches_scalar` checks every preset, ACES and no-tone-map variants, with and without glow, at odd sizes, against the original per-pixel loops (kept as the path for grade LUTs, and forced in tests). The bloom's upsample and halation lookups compute their bilinear taps once per column and per row instead of per pixel.
+
+## Startup: time to the first still
+
+`examples/still_cost.rs spec.json [t]` splits a still's startup into parse, font store, evaluator build (assets, music, beat analysis, component preparation) and the first frame.
+
+| spec | build before | build after |
+|---|---:|---:|
+| `examples/video/pulse` (warm disk cache) | 165 ms | 33 ms |
+
+The cost was `particle-text` placing its target dots: it tests a jittered grid of candidate points (3 passes of about count points per word) for being inside the glyph outlines, and `kurbo`'s winding number re-splits every outline segment at its extrema for every point. A segment whose control points' y-range (padded for rounding) excludes the point contributes exactly 0, so the index (`particle_text::Winding`) tests only the segments that can matter, each as a one-segment path through the same kurbo code. The result is identical: `winding_index_matches_kurbo` checks 120k points, including points on segment ends, and qbench's audio MP4 (pulse) is byte-identical.

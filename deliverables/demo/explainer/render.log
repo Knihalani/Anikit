@@ -1,0 +1,21 @@
+estimate: ~202 s (815.0 ms/frame × 900 changing frames on 4 threads); heaviest: scenes[0].layers[0].channels[1].layers[0] (text) ~22% of a frame. Faster: --quality draft, or --from/--to for a range.
+render 63/900 frames  4 fps  15.1s  ETA 201s
+render 129/900 frames  4 fps  30.4s  ETA 181s
+render 203/900 frames  4 fps  45.4s  ETA 156s
+render 276/900 frames  5 fps  60.4s  ETA 137s
+render 348/900 frames  5 fps  75.6s  ETA 120s
+render 408/900 frames  4 fps  90.8s  ETA 109s
+render 462/900 frames  4 fps  106.1s  ETA 101s
+render 519/900 frames  4 fps  121.4s  ETA 89s
+render 578/900 frames  4 fps  136.6s  ETA 76s
+render 639/900 frames  4 fps  151.6s  ETA 62s
+render 683/900 frames  4 fps  166.9s  ETA 53s
+render 723/900 frames  4 fps  182.1s  ETA 45s
+render 766/900 frames  4 fps  197.4s  ETA 35s
+render 811/900 frames  4 fps  212.8s  ETA 23s
+render 853/900 frames  4 fps  228.2s  ETA 13s
+render 892/900 frames  4 fps  243.6s  ETA 2s
+
+wrote /tmp/claude-0/-home-user-Anikit/2241d0ac-49c3-5310-bfb2-5812e0282a7c/scratchpad/ex/final-master-v4.mp4 — 1920×1080 30 fps, 900 frames (0 deduped), 30.00 s video in 248.83 s (4 fps), 185610.4 KB
+sheet: /tmp/claude-0/-home-user-Anikit/2241d0ac-49c3-5310-bfb2-5812e0282a7c/scratchpad/ex/contact-v4.png (30 frames spread over the video)
+exit 0 wall 253s
