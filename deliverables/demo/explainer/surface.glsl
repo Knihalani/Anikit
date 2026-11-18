@@ -57,8 +57,9 @@ float inside(vec2 p) { return smoothstep(RR - 0.05, RR - 0.35, length(p - RC)); 
 
 // Studio environment: a dark room, a long softbox, a warm key; arc warm -> cool.
 vec3 env(vec3 r) {
-  vec3 hot = mix(vec3(0.75, 0.82, 0.95), vec3(1.0, 0.62, 0.28), warm);
-  vec3 col = vec3(0.012, 0.013, 0.016) + 0.03 * max(r.y, 0.0) * hot;
+  vec3 hot = mix(vec3(0.45, 0.75, 0.85), vec3(1.0, 0.5, 0.2), warm);
+  // after the collapse the room is lit: a pale, bright studio
+  vec3 col = mix(vec3(0.012, 0.013, 0.016) + 0.03 * max(r.y, 0.0) * hot, vec3(0.80, 0.79, 0.76) + 0.12 * max(r.y, 0.0), calm);
   // long horizontal softbox ahead and above
   float band = smoothstep(0.035, 0.012, abs(r.y - 0.30)) * smoothstep(0.9, 0.5, abs(r.x));
   col += band * hot * 3.0;
@@ -115,19 +116,23 @@ void mainImage(out vec4 o, in vec2 f) {
     float fres = 0.03 + 0.97 * pow(1.0 - max(dot(-rd, n), 0.0), 5.0);
     // the type below the surface, refracted by the slope
     vec2 tuv = vec2((p.x + 7.0) / 14.0, (p.y - 2.2) / 9.0);
-    tuv += n.xz * 0.9;
+    tuv += n.xz * 0.16;
     vec3 under = vec3(0.0);
     if (tuv.x > 0.0 && tuv.x < 1.0 && tuv.y > 0.0 && tuv.y < 1.0) {
       under = texture(iChannel0, tuv).rgb * textOn;
     }
     // the last word has its own, sharper channel mapped onto the earcup only
-    vec2 tuv2 = vec2((p.x - RC.x + 2.2) / 4.4, (p.y - RC.y) / 2.475 + 0.5) + n.xz * 0.35;
+    vec2 tuv2 = vec2((p.x - RC.x + 2.2) / 4.4, (p.y - RC.y) / 2.475 + 0.5) + n.xz * 0.12;
     if (tuv2.x > 0.0 && tuv2.x < 1.0 && tuv2.y > 0.0 && tuv2.y < 1.0) {
       under += texture(iChannel1, tuv2).rgb * textOn;
     }
     float slope = length(n.xz);
-    under *= mix(1.0, 0.25, smoothstep(0.02, 0.25, slope));
-    col = mix(vec3(0.006, 0.007, 0.009) + under * 0.85, env(r), fres);
+    under *= mix(1.0, 0.55, smoothstep(0.1, 0.5, slope));
+    // dark ink-black liquid becomes bone-white once still; the type flips from light to ink
+    float L = dot(under, vec3(0.333));
+    vec3 base = mix(vec3(0.006, 0.007, 0.009) + under * 0.85, vec3(0.83, 0.81, 0.77) * (1.0 - 0.97 * L), calm);
+    col = mix(base, env(r), fres);
+    col *= 1.0 - 0.85 * L * calm;  // the ink sits on top of the reflection once still
     // the anti-wave inside the cup: the noise's crests glow amber, the speaker's mirror crests (the troughs) cyan
     float inn = inside(p) * anti * (1.0 - cancel);
     float hn = N.x;
@@ -137,7 +142,7 @@ void mainImage(out vec4 o, in vec2 f) {
     col += stillIn * env(reflect(rd, vec3(0.0, 1.0, 0.0))) * 0.15;
     // distance falloff
     float fog = exp(-0.035 * tPlane);
-    col = mix(vec3(0.004, 0.005, 0.007), col, fog);
+    col = mix(mix(vec3(0.004, 0.005, 0.007), vec3(0.78, 0.77, 0.74), calm), col, fog);
   } else if (tRing < 1e8) {
     vec3 P = ro + rd * tRing;
     float e = 0.002;
@@ -156,7 +161,7 @@ void mainImage(out vec4 o, in vec2 f) {
     col += mic * vec3(0.3, 0.8, 1.0) * 0.6 * exp(-60.0 * dot(P - mp, P - mp));
   }
   // grain and gentle vignette
-  col *= 1.0 - 0.35 * dot(uv, uv);
+  col *= 1.0 - mix(0.35, 0.18, calm) * dot(uv, uv);
   col += (hash2(f + fract(t) * 91.0) - 0.5) * 0.006;
   o = vec4(pow(max(col, 0.0), vec3(1.0 / 2.2)), 1.0);
 }

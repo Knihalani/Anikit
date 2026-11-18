@@ -153,7 +153,7 @@
          "y": "56%",
          "letterSpacing": "-0.03em",
          "start": 17.0,
-         "end": 23.4,
+         "end": 21.0,
          "axes": {
           "wdth": 150
          },
@@ -172,7 +172,7 @@
              150
             ]
            },
-           "duration": 6.399999999999999,
+           "duration": 4.0,
            "ease": "inOutSine"
           }
          ],
@@ -188,13 +188,13 @@
         {
          "text": "SILENCE",
          "font": "Anybody",
-         "size": "19vh",
+         "size": "25vh",
          "weight": 800,
-         "color": "#f4efe6",
+         "color": "#ffffff",
          "x": "50%",
          "y": "80%",
          "letterSpacing": "-0.03em",
-         "start": 23.0,
+         "start": 21.2,
          "end": 30.0,
          "axes": {
           "wdth": 112
@@ -214,7 +214,7 @@
              112
             ]
            },
-           "duration": 7.0,
+           "duration": 8.8,
            "ease": "inOutSine"
           }
          ],
@@ -371,15 +371,19 @@
           1
          ],
          [
-          0.6333,
-          1
+          0.5667,
+          1.15
          ],
          [
-          0.7667,
-          1
+          0.6867,
+          1.6
          ],
          [
-          0.8667,
+          0.7,
+          1.6
+         ],
+         [
+          0.7833,
           0.0
          ],
          [
@@ -461,8 +465,16 @@
           1
          ],
          [
-          1.0,
+          0.7,
           1
+         ],
+         [
+          0.7133,
+          0
+         ],
+         [
+          1.0,
+          0
          ]
         ],
         "cancel": [
@@ -471,11 +483,15 @@
           0
          ],
          [
-          0.6333,
+          0.65,
           0
          ],
          [
-          0.7333,
+          0.6867,
+          0.55
+         ],
+         [
+          0.7,
           1
          ],
          [
@@ -489,11 +505,15 @@
           0
          ],
          [
-          0.7667,
+          0.7,
           0
          ],
          [
-          0.8667,
+          0.72,
+          0.75
+         ],
+         [
+          0.7833,
           1
          ],
          [
@@ -504,19 +524,23 @@
         "warm": [
          [
           0.0,
+          0.1
+         ],
+         [
+          0.1667,
+          0.15
+         ],
+         [
+          0.25,
           1
          ],
          [
-          0.5667,
+          0.6867,
           1
          ],
          [
-          0.7333,
-          0.45
-         ],
-         [
-          0.8667,
-          0.0
+          0.7,
+          0.3
          ],
          [
           1.0,
@@ -530,12 +554,12 @@
      ]
     },
     {
-     "text": "01  Sound is air, pushed into waves:\na pressure ring spreading out.",
+     "text": "Sound is air, pushed into waves:\na pressure ring spreading out.",
      "font": "Martian Mono",
-     "size": "2.3vh",
+     "size": "2.6vh",
      "color": "#efe9df",
      "x": "7vw",
-     "y": "14vh",
+     "y": "84vh",
      "anchor": "left",
      "align": "left",
      "letterSpacing": "0.06em",
@@ -557,14 +581,14 @@
      }
     },
     {
-     "text": "02  Noise is thousands of them,\narriving at once.",
+     "text": "Noise is thousands of them,\narriving at once.",
      "font": "Martian Mono",
-     "size": "2.3vh",
+     "size": "2.6vh",
      "color": "#efe9df",
-     "x": "93vw",
-     "y": "16vh",
-     "anchor": "right",
-     "align": "right",
+     "x": "7vw",
+     "y": "84vh",
+     "anchor": "left",
+     "align": "left",
      "letterSpacing": "0.06em",
      "lineHeight": 1.45,
      "maxWidth": "30vw",
@@ -584,12 +608,12 @@
      }
     },
     {
-     "text": "03  A microphone on the earcup\nhears each wave before your ear does.",
+     "text": "A microphone on the earcup\nhears each wave before your ear does.",
      "font": "Martian Mono",
-     "size": "2.3vh",
+     "size": "2.6vh",
      "color": "#efe9df",
      "x": "7vw",
-     "y": "16vh",
+     "y": "84vh",
      "anchor": "left",
      "align": "left",
      "letterSpacing": "0.06em",
@@ -611,14 +635,14 @@
      }
     },
     {
-     "text": "04  The speaker plays it back flipped.\nPeak meets trough. They cancel.",
+     "text": "The speaker plays it back flipped.\nPeak meets trough. They cancel.",
      "font": "Martian Mono",
-     "size": "2.3vh",
+     "size": "2.6vh",
      "color": "#efe9df",
-     "x": "93vw",
-     "y": "80vh",
-     "anchor": "right",
-     "align": "right",
+     "x": "7vw",
+     "y": "84vh",
+     "anchor": "left",
+     "align": "left",
      "letterSpacing": "0.06em",
      "lineHeight": 1.45,
      "maxWidth": "30vw",
@@ -626,8 +650,8 @@
       "wdth": 100,
       "wght": 380
      },
-     "start": 18.0,
-     "end": 23.0,
+     "start": 17.6,
+     "end": 20.8,
      "enter": {
       "preset": "fadeUp",
       "duration": 0.7
@@ -638,14 +662,14 @@
      }
     },
     {
-     "text": "05  Active noise cancellation:\nsilence, made from sound.",
+     "text": "Active noise cancellation:\nsilence, made from sound.",
      "font": "Martian Mono",
-     "size": "2.3vh",
-     "color": "#efe9df",
-     "x": "50vw",
-     "y": "94vh",
-     "anchor": "center",
-     "align": "center",
+     "size": "2.6vh",
+     "color": "#1b1a18",
+     "x": "7vw",
+     "y": "84vh",
+     "anchor": "left",
+     "align": "left",
      "letterSpacing": "0.06em",
      "lineHeight": 1.45,
      "maxWidth": "30vw",
@@ -653,7 +677,7 @@
       "wdth": 100,
       "wght": 380
      },
-     "start": 25.0,
+     "start": 23.5,
      "end": 30.0,
      "enter": {
       "preset": "fadeUp",
