@@ -166,4 +166,4 @@ This is better than v1: weak motion separates clearly, with 5 of 7 of our pieces
 - div-f and div-g read as professional motion. The user rejected them as boring and for "AI slop typography", not for their motion, so this may be a fair motion verdict. But it can't be validated against the user's words.
 - One false reject: the launch-reel excerpt. It is also rated 0–1/3 when used as a reference, so the excerpt itself may be weak.
 
-**Decision:** the blind motion compare runs on every MP4 from r1 on (`JUDGE_MOTION=1` by default) and is reported as its own column ("Motion blind: candidate / refs, judged pro"). It is **not** part of the PASS/PRO/FAIL verdict. r1 was backfilled so r2 has a baseline.
+**Decision:** off by default (`JUDGE_MOTION=1` enables it as an informational column, never part of the verdict). The parent will ask the user at 07:00 whether to download the real reference clips for evaluation. With those, this stage can be validated properly.

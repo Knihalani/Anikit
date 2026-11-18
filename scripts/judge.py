@@ -534,7 +534,7 @@ def judge(name, frames, tags, args, exclude=(), video=None):
             dims["sound"] = s["sound"]
         result["full_scores"] = dims
         result["full_overall"] = round(statistics.mean(dims.values()), 2)
-    if video and os.environ.get("JUDGE_MOTION", "1") == "1":  # informational: not part of the verdict (VALIDATION.md)
+    if video and os.environ.get("JUDGE_MOTION", "0") == "1":  # informational: not part of the verdict (VALIDATION.md)
         m = motion_compare(video, tags, args.trials, args.seed, out, exclude=exclude)
         if m:
             result["motion_blind"] = m
