@@ -32,9 +32,24 @@ Everything here is a starting point, never a ceiling: anything the spec keys don
 - **Music and grade:** `"music": "orchestral"` or `{"style": "acoustic", "bpm": 96, "key": "D", "hits": ["@bar5"]}`; cut on `"@beat9"`/`"@bar2"`. Hand-written parts: `{"inst": "strings", "notes": "o4 A4 C5 E5/2 | [A3 C4 E4]/1"}`; length after a slash (`/8`, `/8t`, `/4.`), then `!` accent or `?` ghost (`C4/8!`); `'` and `,` shift scale degrees only (`5'`). The mix, sfx and loudness are built in: `docs music`. `"post": {"preset": "cinematic", "bloom": 0.15}`.
 - **Look up one key:** `anikit-video docs key shadow` (its type, fields and examples, a few lines); a topic: `anikit-video docs <topic>` (1–3k characters each): `primitives animation expressions camera compositions shader 3d particles physics music post pacing draw script graphic` (`graphic`: modular grids and cells, squircles, patterns and custom tiles, duotone, halftone, riso inks, cutouts). `anikit-video snippets` has paste-able fragments.
 
+## What's possible (a menu to widen the options; each line is the minimal key, `docs <topic>` for more)
+
+- **Real materials and light:** scene3d `"env": {"hdri": "polyhaven:hdri/…"}`, materials from `ambientcg:Wood049` (`anikit-video assets search oak`), `"rig": "rembrandt|window|product|…"`, `"set": {"preset": "plinth"}`, `"camera": {"lens": "portrait85", "preset": "orbit"}` (`docs 3d`, `docs assets`).
+- **Motion with weight:** `"inertia": "heavy"`, `"smear": true`, group `"drag": 0.06` (`docs key inertia`).
+- **Type as image:** `"matte": {"layer": "photo"}` (type as a window), text on a path, variable axes (`docs mograph`, `docs type`).
+- **Idea transitions:** `{"type": "zoomThrough", "layer": "logo"}` on the incoming scene (`docs mograph`).
+- **Sound from the picture:** `"onNotes": {"track": "drums", "keys": ["kick"], "layer": {…}}` makes a layer per hit; `beat`/`level` in expressions (`docs rhythm`, `docs music`).
+- **Illustration:** components `illo` (lit vector shapes, a consistent hand), `landscape`, `plants` (`docs component illo`).
+- **Print and hand:** `"brush": true` on strokes, `"halftone": {…}`, riso/screenprint filters, patterns and grids (`docs graphic`).
+- **Living systems:** components `fluid`, `physarum`, scene3d particles and physics; library shaders (`anikit-video recipes`) (`docs fluid`, `docs physarum`, `docs particles`).
+
 **Costs:** 2D renders at 100+ fps; shaders 50–400 ms a frame; ray-traced 3D and particles 0.5–1.5 s a frame (keep 3D shots to 2–4 s). `motionBlur` only where motion is fast. `--quality best` is several times slower; standard is the final.
 
-## Ship gate (before the one final render)
+## Self-review, then ship gate (one more iteration here is worth it)
+
+Look at your contact sheet and answer, then fix and preview again: What is the one device, and does it escalate? Is the type a choice for this world, living in the scene? Does any layout repeat? Does motion have weight and a camera? Are the materials and the sound from the subject?
+
+### Ship gate (before the one final render)
 
 Open the sheet and three full-size stills and answer in writing, a line each:
 
