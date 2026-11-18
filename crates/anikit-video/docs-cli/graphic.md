@@ -32,7 +32,7 @@
   (px, centred on 0,0) at every lattice point; `turns` rotates each mark by a seeded multiple of 360/turns, `stagger` offsets
   alternate rows (also for `dots`), `tileStroke: 6` strokes an open motif (squiggles) instead of filling it. Patterns move with the layer: animate `x`, `rotation` or `scale` for drift.
   One path per layer: thousands of marks cost one fill. Keep `spacing` ≥ 6 px (finer turns to moiré after H.264).
-- **Treatments** on any layer (image, video, shader, text, group, composition), applied before blur/shadow:
+- **Treatments** on any layer, before blur/shadow (`"print": "photocopy|newsprint|engraving|riso|screenprint"` = starting values):
   `duotone: [shadows, highlights]`, `gradientMap: [c1, c2, c3…]` (or `[offset, colour]` pairs; interpolated in OKLab),
   `posterize: N` (luma steps with a map, RGB steps alone), `toneRange: [black, white]` (stretch a flat source first),
   `toneAmount` 0..1, `halftone: 10` or `{cell, angle, shape: dot|line|square, ink, paper, gain}` (ink `"source"` keeps

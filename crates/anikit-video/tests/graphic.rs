@@ -182,3 +182,15 @@ fn tween_between_cells() {
     assert!((x1 - (96.0 + 6.0 * 146.0)).abs() < 0.5 && (y1 - (54.0 + 4.0 * 124.5)).abs() < 0.5, "{x1} {y1}");
     assert!((w0 - w1).abs() < 0.5 && (h1 - (4.0 * 100.5 + 3.0 * 24.0)).abs() < 0.5);
 }
+
+#[test]
+fn print_presets_expand_and_yield_to_explicit_keys() {
+    let e = ev(r##"{ "scenes": [ { "layers": [ { "shape": "circle", "width": 200, "height": 200, "print": "newsprint", "halftone": { "cell": 12 } } ] } ] }"##);
+    let f = e.eval(0.5).ops.iter().find_map(|o| if let Op::PushLayer { filters, .. } = o { Some(filters.clone()) } else { None }).unwrap();
+    let cell = f.iter().find_map(|x| if let Filter::Halftone(h) = x { Some(h.cell) } else { None }).unwrap();
+    assert_eq!(cell, 12.0, "explicit halftone wins over the preset");
+    let r = ev(r##"{ "scenes": [ { "layers": [ { "shape": "circle", "width": 200, "height": 200, "print": "riso" } ] } ] }"##);
+    assert!(r.eval(0.5).ops.iter().any(|o| matches!(o, Op::PushLayer { blend: anikit_video::dl::Blend::Multiply, .. })));
+    let bad = parse_json(r#"{ "scenes": [ { "layers": [ { "shape": "circle", "print": "xerox" } ] } ] }"#).unwrap();
+    assert!(Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string().contains("print"));
+}

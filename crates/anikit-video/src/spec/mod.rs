@@ -776,6 +776,9 @@ pub struct Layer {
     pub tone_range: Option<[f64; 2]>,
     /// Print halftone screen: a cell size in px, or `{ "cell", "angle", "shape", "ink", "paper", "gain" }`.
     pub halftone: Option<HalftoneValue>,
+    /// A print treatment in one word, as starting values for the keys above (any key you give wins):
+    /// `photocopy`, `newsprint`, `engraving`, `riso`, `screenprint`.
+    pub print: Option<String>,
     /// Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ "amount", "scale": px, "seed" }`.
     /// Fixed to the frame like the paper, so moving shapes travel through it.
     pub ink_texture: Option<InkValue>,

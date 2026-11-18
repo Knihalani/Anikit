@@ -27,3 +27,4 @@ More feature proofs: `tiles-animated.jpg` (custom `tile` motifs, `turns`, `stagg
 `palettes.jpg`: `theme.palette` from five seeds and schemes (`anikit-video palette "<seed> <scheme>"`): value-structured ink, paper, mid, accent, accent2, tint, muted and surface.
 `grid-choreography.{jpg,mp4}`: layers tweening between grid fields (`"to": {"cell": …}`) over `show: "under"` guides, at 257 fps.
 `editorial-charts.jpg`: `line-chart` and `bar-chart` with `"look": "editorial"`: a highlight series against grey context, direct labels, the unit on the top gridline, a leader-line note, and before/after ticks on ranked bars.
+`print-presets.jpg`: the five `print` presets on one photo, with the original.

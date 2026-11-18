@@ -3039,6 +3039,23 @@ impl C<'_> {
 
     /// Image treatments (`duotone`, `gradientMap`, `posterize`, `halftone`) as layer filters.
     fn treatments(&mut self, l: &Layer, path: &str, n: &mut Node) {
+        let expanded;
+        let l = match l.print.as_deref() {
+            Some(p) => match print_preset(l, p) {
+                Some(x) => {
+                    if l.blend.is_none() && x.blend.as_deref() == Some("multiply") {
+                        n.blend = Blend::Multiply;
+                    }
+                    expanded = x;
+                    &expanded
+                }
+                None => {
+                    self.d.push(Diagnostic::error(format!("{path}.print"), format!("unknown print '{p}'")).suggest(suggest(p, PRINTS)));
+                    l
+                }
+            },
+            None => l,
+        };
         let mut ht_nums: Option<(Option<Num>, Option<Num>, Option<Num>)> = None;
         let mut ink_num: Option<Num> = None;
         let mut stops: Option<Vec<(f32, Rgba)>> = None;
@@ -5380,4 +5397,55 @@ fn grid_show(g: &spec::GridSpec) -> u8 {
         Some(serde_json::Value::String(s)) if s == "over" => 1,
         _ => 0,
     }
+}
+
+const PRINTS: &[&str] = &["photocopy", "newsprint", "engraving", "riso", "screenprint"];
+
+/// `print` presets: starting values for the treatment keys the layer doesn't set itself.
+fn print_preset(l: &Layer, p: &str) -> Option<Layer> {
+    let mut o = l.clone();
+    let hs = |cell: f64, angle: f64, shape: &str, ink: &str, paper: &str| {
+        spec::HalftoneValue::Full(spec::HalftoneSpec {
+            cell: Some(Num::Num(cell)),
+            angle: Some(Num::Num(angle)),
+            shape: Some(shape.into()),
+            ink: Some(ink.into()),
+            paper: Some(paper.into()),
+            gain: None,
+        })
+    };
+    let ink = |a: f64, scale: f64| spec::InkValue::Full(spec::InkSpec { amount: Some(Num::Num(a)), scale: Some(scale), seed: None });
+    match p {
+        "photocopy" => {
+            o.duotone.get_or_insert_with(|| vec!["#161616".into(), "#efeee9".into()]);
+            o.posterize.get_or_insert(2);
+            o.tone_range.get_or_insert([0.28, 0.68]);
+            o.ink_texture.get_or_insert_with(|| ink(0.3, 10.0));
+        }
+        "newsprint" => {
+            o.tone_range.get_or_insert([0.05, 0.95]);
+            o.halftone.get_or_insert_with(|| hs(6.0, 45.0, "dot", "#1c1c1c", "#e8e4da"));
+        }
+        "engraving" => {
+            o.tone_range.get_or_insert([0.1, 1.0]);
+            o.halftone.get_or_insert_with(|| hs(5.0, 30.0, "line", "#151515", "#f2ede2"));
+        }
+        "riso" => {
+            o.duotone.get_or_insert_with(|| vec!["riso:medium-blue".into(), "#ffffff".into()]);
+            o.tone_range.get_or_insert([0.15, 0.75]);
+            o.blend.get_or_insert_with(|| "multiply".into());
+            o.ink_texture.get_or_insert_with(|| ink(0.25, 28.0));
+        }
+        "screenprint" => {
+            // Three flat inks on paper: dark, a red and a yellow (override with gradientMap).
+            if o.duotone.is_none() {
+                o.gradient_map.get_or_insert_with(|| ["#1b1a19", "#d7301f", "#f2c230", "#f4efe6"].iter().map(|c| serde_json::Value::String(c.to_string())).collect());
+            }
+            o.posterize.get_or_insert(4);
+            o.tone_range.get_or_insert([0.12, 0.85]);
+            o.ink_texture.get_or_insert_with(|| ink(0.15, 40.0));
+        }
+        _ => return None,
+    }
+    Some(o)
 }
