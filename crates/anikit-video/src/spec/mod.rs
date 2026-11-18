@@ -125,6 +125,12 @@ pub struct Spec {
     /// Fills the video's length; `@beatN`/`@barN` markers follow its exact grid.
     #[schemars(with = "Option<serde_json::Map<String, serde_json::Value>>")]
     pub music: Option<serde_json::Value>,
+    /// Sound design (`anikit-video docs sound`): `"auto"` derives whooshes, landings, ticks and
+    /// transition sounds from the picture, pans them to their place on screen, puts them in one
+    /// shared space, ducks the music under hits and masters to −14 LUFS / −1 dBTP.
+    /// `{ "palette": "organic", "density": 0.5, "ambience": "city", "space": "room", "cues": [...] }`.
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub sound: Option<serde_json::Value>,
     /// Burned-in captions.
     pub captions: Option<Captions>,
     /// Extra fonts: family name → file path.
@@ -215,6 +221,26 @@ pub struct InkSpec {
     pub amount: Option<Num>,
     /// Size of the blotches in px. Default 28.
     pub scale: Option<f64>,
+    pub seed: Option<u32>,
+}
+
+/// `brush`: on, or the full settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum BrushValue {
+    On(bool),
+    Full(BrushSpec),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BrushSpec {
+    /// Taper lengths at the start and end, as fractions of the stroke. Default `[0.12, 0.25]`.
+    pub taper: Option<[f64; 2]>,
+    /// Width wobble (0..1). Default 0.35.
+    pub pressure: Option<f64>,
+    /// Dry brush (0..1): bristles that skip, more towards the end. Default 0.
+    pub dry: Option<f64>,
     pub seed: Option<u32>,
 }
 
@@ -421,7 +447,12 @@ pub struct Composition {
 #[serde(rename_all = "camelCase")]
 pub struct Theme {
     /// Colour tokens: `primary`, `secondary`, `accent`, `bg`, `surface`, `text`, `muted`, or your own.
+    /// Any colour may be a riso ink: `"riso:fluorescent-pink"` (`anikit-video palette --riso` lists them).
     pub colors: Option<BTreeMap<String, String>>,
+    /// A value-structured palette from a seed: `"#e4572e split"` (schemes `mono analogous complement split triad`,
+    /// add `dark` for ink grounds). Sets `ink paper mid accent accent2 tint` and the roles `bg text primary secondary
+    /// muted surface`; `colors` still override. `anikit-video palette "#e4572e split"` previews it.
+    pub palette: Option<String>,
     /// Font roles: `heading`, `body`, `mono`.
     pub fonts: Option<BTreeMap<String, String>>,
     /// Default corner radius for boxes.
@@ -571,6 +602,9 @@ pub struct TransitionObj {
     pub shape: Option<String>,
     /// `blinds`: number of bars (default 8).
     pub count: Option<u32>,
+    /// Shared elements (any transition): ids of layers present in both scenes. Each travels from its place and size
+    /// in the old scene to its place and size in the new one during the transition (a match move), cross-fading between the two.
+    pub carry: Option<Vec<String>>,
     /// Uniforms for a shader transition.
     pub uniforms: Option<BTreeMap<String, serde_json::Value>>,
 }
@@ -656,6 +690,11 @@ pub struct Layer {
     #[serde(rename = "type")]
     pub kind: Option<String>,
     pub id: Option<String>,
+    /// Sound for this layer (`docs sound`): `"auto"`, `false` (silent), a sound name, or
+    /// `{ "in": "swish", "land": "wood", "out": "air", "gain": -3 }`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub sfx: Option<serde_json::Value>,
     /// Reuse: the name of an entry in top-level `defs`; other keys here override it
     /// (expanded before typing, see `spec/reuse.rs`).
     #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]
@@ -853,6 +892,9 @@ pub struct Layer {
     pub pattern: Option<PatternValue>,
     pub trim_start: Option<Num>,
     pub trim_end: Option<Num>,
+    /// Paint the stroke as a brush: `true`, or `{ "taper": [start, end], "pressure": 0..1, "dry": 0..1, "seed" }`.
+    /// Width from `strokeWidth`; tapered ends, pressure wobble, dry-brush bristles; `trimEnd` paints it on.
+    pub brush: Option<BrushValue>,
 
     // ---- image / video
     pub src: Option<String>,
@@ -1346,7 +1388,8 @@ pub struct Tween {
 pub struct AudioCue {
     /// Audio file (mp3, wav, ogg, flac, aac/m4a).
     pub src: Option<String>,
-    /// Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`.
+    /// Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`;
+    /// any other `docs sound` name (`glass`, `passby`, `impact+glass`, `kenney-interface/click`) lands its hit on `at`.
     pub sfx: Option<String>,
     pub at: Option<Num>,
     /// 0..1 or `"-6dB"`.

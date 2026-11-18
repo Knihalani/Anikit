@@ -21,7 +21,7 @@
 
 mod board;
 mod draft;
-mod image_ops;
+pub(crate) mod image_ops;
 mod sheet;
 
 pub use board::{board, board_sheet, collect as collect_images, Board};

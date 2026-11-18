@@ -634,47 +634,40 @@ pub fn write_pack(dir: &std::path::Path, p: &crate::preview::Preview, tl: &Timel
     Ok(files)
 }
 
-/// Audio levels of the final mix: approximate loudness (gated RMS, ≈ LUFS), peak and clipping.
+/// Audio of the final mix (music, voice, cues and sound design, exactly as the
+/// render mixes it): BS.1770 integrated loudness, true peak, clipping, and
+/// whether a moving film with music has any sound design.
 pub fn audio(ev: &Evaluator, base: &std::path::Path) -> (Option<String>, Vec<Note>) {
-    if ev.audio.is_empty() && ev.music.is_none() {
+    let _ = base;
+    if ev.audio.is_empty() && ev.music.is_none() && ev.sound.is_none() {
         return (None, Vec::new());
     }
-    // Generated music is rendered to a temporary file and measured with the rest.
-    let mut tracks = ev.audio.clone();
-    let tmp = std::env::temp_dir().join(format!("anikit-review-{}.music.wav", std::process::id()));
-    if let Some(m) = &ev.music {
-        if let Ok(t) = crate::music::render_track(m, ev.duration as f64, &tmp, !ev.audio.is_empty()) {
-            tracks.push(t);
-        }
-    }
-    let mixed = crate::audio::mix(&tracks, ev.duration as f64, 24_000, Some(base));
-    let _ = std::fs::remove_file(&tmp);
-    let Ok(pcm) = mixed else { return (None, Vec::new()) };
-    let mono: Vec<f32> = pcm.samples.chunks(2).map(|c| (c[0] + c.get(1).copied().unwrap_or(c[0])) * 0.5).collect();
-    let peak = pcm.samples.iter().fold(0.0f32, |m, x| m.max(x.abs()));
+    let wav = std::env::temp_dir().join(format!("anikit-review-{}-{:p}.wav", std::process::id(), ev));
+    let pcm = match crate::pipeline::mix_audio(ev, 0.0, ev.duration, &wav) {
+        Ok(Some(p)) => crate::audio::decode_file(&p).ok(),
+        _ => None,
+    };
+    let _ = std::fs::remove_file(&wav);
+    let Some(pcm) = pcm else { return (None, Vec::new()) };
+    let (l, r): (Vec<f32>, Vec<f32>) = pcm.samples.chunks_exact(2).map(|c| (c[0], c[1])).unzip();
+    let m = anikit_music::dsp::loudness::measure(&l, &r, pcm.rate as f32);
+    let (lufs, tp) = (m.integrated, m.true_peak);
     let clipped = pcm.samples.iter().filter(|x| x.abs() >= 0.999).count();
-    // 400 ms blocks, gated at −70 dB absolute and −10 dB relative (BS.1770-style, unweighted).
-    let blk = (pcm.rate as usize * 2) / 5;
-    let ms: Vec<f64> = mono.chunks(blk).filter(|c| c.len() == blk).map(|c| c.iter().map(|x| (*x as f64).powi(2)).sum::<f64>() / c.len() as f64).collect();
-    let db = |m: f64| -0.691 + 10.0 * m.max(1e-12).log10();
-    let abs: Vec<f64> = ms.iter().copied().filter(|m| db(*m) > -70.0).collect();
-    let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len().max(1) as f64;
-    let rel = db(mean(&abs)) - 10.0;
-    let gated: Vec<f64> = abs.iter().copied().filter(|m| db(*m) > rel).collect();
-    let lufs = if gated.is_empty() { -70.0 } else { db(mean(&gated)) };
-    let peak_db = 20.0 * (peak.max(1e-9) as f64).log10();
     let mut notes = Vec::new();
     if clipped > 0 {
-        notes.push(Note { severity: "error", check: "audio", path: "audio".into(), message: format!("{clipped} clipped samples (peak {peak_db:.1} dBFS)"), fix: "lower the loudest cue's volume, or let the music engine master it (\"music\")".into() });
-    } else if peak_db > -1.0 {
-        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("peak {peak_db:.1} dBFS leaves no headroom (true peak may clip after encoding)"), fix: "keep peaks under −1 dBFS".into() });
+        notes.push(Note { severity: "error", check: "audio", path: "audio".into(), message: format!("{clipped} clipped samples (true peak {tp:.1} dBTP)"), fix: "lower the loudest cue's volume, or add \"sound\": \"auto\" (it masters to −14 LUFS / −1 dBTP)".into() });
+    } else if tp > -1.0 {
+        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("true peak {tp:.1} dBTP leaves no headroom (it may clip after AAC encoding)"), fix: "keep true peaks under −1 dBTP (\"sound\" masters to that)".into() });
     }
     if lufs < -20.0 && lufs > -69.0 {
-        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("quiet: ≈{lufs:.0} LUFS (web and social normalise to about −14)"), fix: "raise the music/voice volume towards −14 LUFS".into() });
+        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("quiet: {lufs:.1} LUFS (web and social normalise to about −14)"), fix: "raise the music/voice volume towards −14 LUFS, or add \"sound\" (loudness −14)".into() });
     } else if lufs > -9.0 {
-        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("very loud: ≈{lufs:.0} LUFS (platforms will turn it down and it may sound crushed)"), fix: "lower the volume towards −14 LUFS".into() });
+        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("very loud: {lufs:.1} LUFS (platforms will turn it down and it may sound crushed)"), fix: "lower the volume towards −14 LUFS".into() });
     }
-    (Some(format!("audio: ≈{lufs:.1} LUFS, peak {peak_db:.1} dBFS")), notes)
+    if ev.music.is_some() && ev.sound.is_none() && ev.audio.iter().all(|t| matches!(t.src, crate::audio::Source::File(_))) {
+        notes.push(Note { severity: "tip", check: "sound", path: "sound".into(), message: "music but no sound design: moves, landings and reveals are silent".into(), fix: "add \"sound\": \"auto\" (or a palette like \"luxury\"); `anikit-video sound plan` lists what it would add".into() });
+    }
+    (Some(format!("audio: {lufs:.1} LUFS, true peak {tp:.1} dBTP, LRA {:.1} LU", m.lra)), notes)
 }
 
 /// One line on intent versus what was measured.
@@ -764,6 +757,10 @@ mod tests {
         let loud = ev(json!({ "size": [320, 180], "audio": [ { "sfx": "impact", "at": 0.5, "volume": 12 } ], "scenes": [ { "duration": 2, "layers": [] } ] }));
         let (line, n) = audio(&loud, std::path::Path::new("."));
         assert!(line.is_some() && n.iter().any(|x| x.check == "audio"), "{line:?} {n:?}");
+        // Sound design masters: no level warnings, and the line reports real LUFS.
+        let ok = ev(json!({ "size": [320, 180], "sound": { "design": "off", "cues": [ { "sfx": "impact", "at": 0.5 } ] }, "scenes": [ { "duration": 2, "layers": [] } ] }));
+        let (line, n) = audio(&ok, std::path::Path::new("."));
+        assert!(line.as_deref().is_some_and(|l| l.contains("LUFS")) && !n.iter().any(|x| x.check == "audio"), "{line:?} {n:?}");
     }
 
     #[test]

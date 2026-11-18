@@ -1,0 +1,41 @@
+{
+  "answer": {
+    "scores": {
+      "motion": 8,
+      "sound": null,
+      "craft": 8
+    },
+    "checks": {
+      "idea": true,
+      "invariant": false,
+      "arc": true,
+      "type_meaning": false,
+      "freeze_frame": false,
+      "ending": false,
+      "restraint": false,
+      "material": true,
+      "sync": null
+    },
+    "defects": [
+      "Compression blocking and smeared gradients in the dark blue-green shadows of the 100% crop; fine scratches on the plastic get mushed into the noise",
+      "The handwritten 'JAY' cassette label is a bit soft at 1:1, with slight ringing on the glowing edge lines",
+      "The night grade crushes the darks: the wide forest shot and the flashlight POV read as murky, and the silhouettes of the mushroom folk get lost",
+      "Heavy motion blur on the whip-pan run (strip1) smears faces for several frames, so the character beats are unreadable for about 0.3 s",
+      "The final wide frame is underlit and the subject sits tiny in the frame, so the shot has almost no presence"
+    ],
+    "gaps": [
+      "Pacing and staging are uneven: the girl's flashlight walk-in holds about 1 s of near-static acting in a medium shot, then the piece cuts quickly to inserts. The energy jumps between levels instead of building through each shot, and the run sequence relies on blur instead of clear silhouettes and strong arcs",
+      "Lighting design is inconsistent across shots: green bioluminescence alternates with flat blue moonlight and warm flashlight without a clear rule. Most frames lack a single strong value focal point, so they do not hold up as posters the way top-tier frames do",
+      "The ending does not resolve. It drops to a dim wide shot with a tiny figure, which neither pays off the thorn-cut insert nor rhymes with the opening close-up of the mushroom leader. Finish at 1:1 is also weakened by shadow banding and compression artifacts"
+    ]
+  },
+  "meta": {
+    "seconds": 22.8,
+    "cost_usd": 0.1530734,
+    "tokens": 71376,
+    "models": [
+      "claude-opus-5-5"
+    ]
+  },
+  "pace": "calibration-blender-sprite-fright-2021.mp4: 20.0s, 8 shots, median 1.83s, longest 5.08s\nper-second change: [7.9, 4.5, 6.8, 9.0, 22.6, 21.3, 22.0, 31.9, 27.4, 20.2, 17.9, 13.5, 20.3, 25.7, 32.3, 26.7, 10.3, 11.6, 7.3]\nPACE: FAIL \u2014 longest shot 5.1s > 2.5s; median shot 1.8s > 1.5s"
+}

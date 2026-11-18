@@ -66,11 +66,16 @@ pub struct EncoderConfig {
     /// CABAC and `threads == 1` (chunk-parallel encoding); otherwise ignored.
     /// Output is delayed: call [`Encoder::flush`] at the end of the stream.
     pub bframes: u8,
+    /// Try 16×8, 8×16 and 8×8 partitions for P macroblocks (CABAC only). About
+    /// 1.5% smaller at equal SSIM on motion graphics, at ~1.5× the encode time.
+    pub partitions: bool,
+    /// 8×8 transform for inter macroblocks (High profile; CABAC only).
+    pub transform8: bool,
 }
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: -0.5, ssim_floor: 0.985, ssim_max_drop: 8, bframes: 0 }
+        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: -0.5, ssim_floor: 0.985, ssim_max_drop: 8, bframes: 0, partitions: false, transform8: true }
     }
 }
 
@@ -177,6 +182,13 @@ pub(crate) struct MbInfo {
     pub mv1: (i16, i16),
     pub mvd1: (i16, i16),
     pub direct: bool,
+    /// P partitioning (0 16×16, 1 16×8, 2 8×16, 3 8×8) and, when partitioned,
+    /// the L0 vector and vector difference of each 8×8 quadrant (raster).
+    pub part: u8,
+    pub mv8: [(i16, i16); 4],
+    pub mvd8: [(i16, i16); 4],
+    /// transform_size_8x8_flag.
+    pub t8: bool,
 }
 
 const BLK_X: [usize; 16] = [0, 1, 0, 1, 2, 3, 2, 3, 0, 1, 0, 1, 2, 3, 2, 3];
@@ -205,6 +217,9 @@ struct Coded {
     nz: [u8; 16],
     nzc: [[u8; 4]; 2],
     cbp: u8,
+    /// 8×8 transform: luma levels per 8×8 block (raster) instead of `luma`.
+    t8: bool,
+    l8: [[i16; 64]; 4],
 }
 
 impl Coded {
@@ -217,6 +232,8 @@ impl Coded {
             nz: [0; 16],
             nzc: [[0; 4]; 2],
             cbp: 0,
+            t8: false,
+            l8: [[0; 64]; 4],
         }
     }
 }
@@ -234,6 +251,7 @@ pub(crate) struct QpSet {
     pub qc: Quant,
     pub qs: QuantS,
     pub qcs: QuantS,
+    pub q8: crate::transform::Quant8,
     /// SAD bounds (luma 16×16, chroma 8×8) under which inter residuals are all zero.
     /// (luma, chroma, chroma DC limit on the 8x8 SAD), inter.
     pub zero_sad: (u32, u32, u32),
@@ -244,6 +262,8 @@ pub(crate) struct QpSet {
     pub zero_dc_intra: (u32, u32),
     /// Per-4×4-block SAD bounds (luma, chroma AC), inter.
     pub zero_sad4: (u32, u32),
+    /// Built with the wide AC dead zone (AQ smooth macroblocks).
+    pub smooth: bool,
     pub lambda: i32,
 }
 
@@ -277,6 +297,8 @@ impl QpSet {
             zero_dc_intra: (crate::soa::chroma_dc_limit(&q, true), crate::soa::chroma_dc_limit(&qc, true)),
             zero_sad_intra: crate::soa::zero_sad_bounds(&q, &qs, &qc, &qcs, true),
             lambda: (0.85f64 * 2f64.powf((qp as f64 - 12.0) / 6.0)).round().max(1.0) as i32,
+            q8: crate::transform::Quant8::new(qp),
+            smooth,
             q,
             qc,
             qs,
@@ -305,6 +327,8 @@ pub(crate) struct FrameCtx<'a> {
     /// identical in the B frame and both references' sources.
     pub bslice: bool,
     pub col: &'a [MbInfo],
+    /// B slice: (distance to the L0 reference, distance between the references).
+    pub bdist: (i32, i32),
     pub changed: &'a [bool],
     pub stale: &'a [bool],
     pub hint: &'a [(i16, i16)],
@@ -316,6 +340,10 @@ pub(crate) struct FrameCtx<'a> {
     pub hpel: Option<&'a crate::mc::HpelPlanes>,
     pub hpel1: Option<&'a crate::mc::HpelPlanes>,
     pub cabac: bool,
+    /// P partitions (see [`EncoderConfig::partitions`]).
+    pub partitions: bool,
+    /// 8×8 transform allowed (transform_8x8_mode_flag).
+    pub t8: bool,
     pub hdr_frame_num: u32,
     /// pic_order_cnt_lsb (POC type 0 streams).
     pub poc: Option<u32>,
@@ -328,17 +356,18 @@ pub(crate) struct FrameCtx<'a> {
 pub(crate) const NO_HINT: (i16, i16) = (i16::MIN, i16::MIN);
 
 /// A frame held for a B picture: pixels, display index in the GOP, input
-/// index, change map since the previous input frame, quarter-resolution luma.
+/// index, change map since the previous input frame, grain hint.
 struct Held {
     buf: crate::frame::YuvBuffer,
     disp: u64,
     gidx: u64,
     changed: Option<Vec<bool>>,
-    lr: crate::lookahead::Lowres,
+    grain: f32,
 }
 
-/// B pictures' estimated cost relative to P pictures' (they use a higher QP).
-const B_WEIGHT: u64 = 80;
+/// A B picture whose SSIM estimate is this far below the following P
+/// picture's is coded again at the P QP.
+const B_SSIM_SLACK: f64 = 0.001;
 
 /// QP of B pictures above the P pictures'.
 const B_QP_OFFSET: i32 = 2;
@@ -357,6 +386,8 @@ fn mb_equal(a: &Pic, b: &Pic, mx: usize, my: usize) -> bool {
 }
 
 mod bframe;
+mod part;
+mod t8;
 
 const SKIP_INFO: MbInfo = MbInfo {
     kind: 0,
@@ -375,6 +406,10 @@ const SKIP_INFO: MbInfo = MbInfo {
     mv1: (0, 0),
     mvd1: (0, 0),
     direct: false,
+    part: 0,
+    mv8: [(0, 0); 4],
+    mvd8: [(0, 0); 4],
+    t8: false,
 };
 
 /// Mutable band of the reconstructed picture owned by one slice.
@@ -430,6 +465,14 @@ struct SliceEnc<'a, 'b> {
     dqp_prev_nz: bool,
     /// Reference list that prediction helpers and motion search use (B slices).
     rsel: usize,
+    /// Motion search: integer positions already evaluated in this search
+    /// (direct-mapped; entries hold the search's generation and the vector).
+    seen: Vec<std::cell::Cell<(u32, (i32, i32))>>,
+    seen_gen: std::cell::Cell<u32>,
+    /// B slices: an extra search candidate (the co-located vector, scaled) and
+    /// no long-range rings (the P picture already found the motion).
+    extra_cand: Option<(i32, i32)>,
+    no_rings: bool,
 }
 
 #[inline(always)]
@@ -460,19 +503,20 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         if self.rsel == 0 { self.c.hpel } else { self.c.hpel1 }
     }
 
-    fn nb(&self, mbx: isize, mby: isize) -> Nb {
-        self.nbl(mbx, mby, self.rsel)
+    fn nb(&self, mbx: isize, mby: isize, q: usize) -> Nb {
+        self.nbl(mbx, mby, self.rsel, q)
     }
 
     /// Neighbour for motion vector prediction in list `l` (B slices: only
-    /// macroblocks predicting from that list count as inter).
-    fn nbl(&self, mbx: isize, mby: isize, l: usize) -> Nb {
+    /// macroblocks predicting from that list count as inter), at its 8×8
+    /// quadrant `q` (the one touching this macroblock).
+    fn nbl(&self, mbx: isize, mby: isize, l: usize, q: usize) -> Nb {
         if mbx < 0 || mby < self.b.mby0 as isize || mbx >= self.c.mbw as isize {
             return Nb { avail: false, inter: false, mv: (0, 0) };
         }
         let i = self.info(mbx as usize, mby as usize);
         if i.kind == 0 && (!self.c.bslice || (i.refs >> l) & 1 != 0) {
-            let mv = if l == 0 { i.mv } else { i.mv1 };
+            let mv = if l == 0 { i.qmv(q) } else { i.mv1 };
             Nb { avail: true, inter: true, mv: (mv.0 as i32, mv.1 as i32) }
         } else {
             Nb { avail: true, inter: false, mv: (0, 0) }
@@ -482,11 +526,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
     /// (mvp for P16x16, P_Skip mv) in quarter pels.
     fn mv_pred(&self, mbx: usize, mby: usize) -> ((i32, i32), (i32, i32)) {
         let (x, y) = (mbx as isize, mby as isize);
-        let a = self.nb(x - 1, y);
-        let mut b = self.nb(x, y - 1);
-        let mut c = self.nb(x + 1, y - 1);
+        let a = self.nb(x - 1, y, 1);
+        let mut b = self.nb(x, y - 1, 2);
+        let mut c = self.nb(x + 1, y - 1, 2);
         if !c.avail {
-            c = self.nb(x - 1, y - 1);
+            c = self.nb(x - 1, y - 1, 3);
         }
         let skip_zero = !a.avail || !b.avail || (a.inter && a.mv == (0, 0)) || (b.inter && b.mv == (0, 0));
         if !b.avail && !c.avail && a.avail {
@@ -718,6 +762,12 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         match kind {
             Kind::P16 => {
                 let it = inter.as_ref().unwrap();
+                if c.partitions && it.cost > lambda as u32 * 8 {
+                    if let Some(pc) = self.try_partitions(mbx, mby, src_y, it) {
+                        self.code_part(mbx, mby, src_y, src_c, &pc);
+                        return;
+                    }
+                }
                 self.code_inter(mbx, mby, src_y, src_c, it);
             }
             Kind::I16(_) | Kind::I4 => {
@@ -750,15 +800,23 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let yr = ((-16 - by).max(-c.max_mvy), (h16 - by).min(c.max_mvy - 1));
         let clamp = |mv: (i32, i32)| (mv.0.clamp(xr.0, xr.1), mv.1.clamp(yr.0, yr.1));
         let mvcost = |q: (i32, i32)| -> u32 { lambda * (se_len(q.0 - mvp.0) + se_len(q.1 - mvp.1)) };
+        // Candidates are clamped to the window above, whose blocks all lie in
+        // the padded reference: one bounds check here, raw reads per candidate.
+        let rpl = &self.rp().y;
+        let (o0, st) = (rpl.off(bx as isize, by as isize) as isize, rpl.stride as isize);
+        assert!(o0 + (yr.0 as isize) * st + xr.0 as isize >= 0 && o0 + (yr.1 as isize + 15) * st + xr.1 as isize + 16 <= rpl.data.len() as isize);
+        let rbase = rpl.data.as_ptr();
         let eval = |mv: (i32, i32)| -> u32 {
-            let (r, rs) = self.luma_ref_int(mbx, mby, mv);
-            dsp::sad16(src_y, 16, r, rs) + mvcost((mv.0 * 4, mv.1 * 4))
+            debug_assert!(mv.0 >= xr.0 && mv.0 <= xr.1 && mv.1 >= yr.0 && mv.1 <= yr.1);
+            // SAFETY: mv is inside the window checked above.
+            let s = unsafe { crate::simd::sad16_ptr(src_y.as_ptr(), 16, rbase.offset(o0 + mv.1 as isize * st + mv.0 as isize), st as usize) };
+            s + mvcost((mv.0 * 4, mv.1 * 4))
         };
         let round = |q: (i32, i32)| ((q.0 + 2) >> 2, (q.1 + 2) >> 2);
         let mut best = (u32::MAX, (0, 0));
-        let mut cands = [(0i32, 0i32); 7];
+        let mut cands = [(0i32, 0i32); 9];
         let mut n = 0;
-        fn push_c(cands: &mut [(i32, i32); 7], n: &mut usize, mv: (i32, i32)) {
+        fn push_c(cands: &mut [(i32, i32); 9], n: &mut usize, mv: (i32, i32)) {
             if !cands[..*n].contains(&mv) {
                 cands[*n] = mv;
                 *n += 1;
@@ -776,6 +834,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         if h != NO_HINT {
             push!(round((h.0 as i32, h.1 as i32)));
         }
+        if let Some(e) = self.extra_cand {
+            push!(round(e));
+        }
         let (x, y) = (mbx as isize, mby as isize);
         // A quick search already evaluated the candidates above.
         let known = if let Some(q) = seed {
@@ -786,7 +847,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             0
         };
         if !quick {
-            for nb in [self.nb(x - 1, y), self.nb(x, y - 1), self.nb(x + 1, y - 1)] {
+            for nb in [self.nb(x - 1, y, 1), self.nb(x, y - 1, 2), self.nb(x + 1, y - 1, 2)] {
                 if nb.inter {
                     push!(round(nb.mv));
                 }
@@ -804,7 +865,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             // 8 neighbours.
             const RING: [(i32, i32); 8] = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)];
             let c0 = best.1;
-            for r in [4, 8, 12, 16] {
+            let rings: &[i32] = if self.no_rings { &[] } else { &[4, 8, 12, 16] };
+            for &r in rings {
                 for d in RING {
                     let mv = clamp((c0.0 + d.0 * r, c0.1 + d.1 * r));
                     let s = eval(mv);
@@ -813,11 +875,26 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                     }
                 }
             }
+            // Positions already evaluated in this search can't improve on `best`.
+            let g = self.seen_gen.get().wrapping_add(1);
+            self.seen_gen.set(g);
+            let fresh = |mv: (i32, i32)| {
+                let e = &self.seen[((mv.0 & 31) | ((mv.1 & 31) << 5)) as usize];
+                if e.get() == (g, mv) {
+                    return false;
+                }
+                e.set((g, mv));
+                true
+            };
+            fresh(best.1);
             const HEX: [(i32, i32); 6] = [(-2, 0), (-1, -2), (1, -2), (2, 0), (1, 2), (-1, 2)];
             for _ in 0..16 {
                 let cur = best;
                 for d in HEX {
                     let mv = clamp((cur.1 .0 + d.0, cur.1 .1 + d.1));
+                    if !fresh(mv) {
+                        continue;
+                    }
                     let s = eval(mv);
                     if s < best.0 {
                         best = (s, mv);
@@ -831,6 +908,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 let cur = best;
                 for d in RING {
                     let mv = clamp((cur.1 .0 + d.0, cur.1 .1 + d.1));
+                    if !fresh(mv) {
+                        continue;
+                    }
                     let s = eval(mv);
                     if s < best.0 {
                         best = (s, mv);
@@ -1025,7 +1105,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mut recon = [0u8; 256];
         let sad = crate::simd::sad16(src_y, 16, pred, 16);
         let ry = if sad > self.p.zero_sad.0 && crate::simd::max_sad4(src_y, pred, 16, 16) > self.p.zero_sad4.0 {
-            luma_inter(src_y, pred, &self.p.qs, &mut cd, &mut recon);
+            self.luma_resid(src_y, pred, &mut cd, &mut recon);
             &recon
         } else {
             pred
@@ -1066,6 +1146,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             mv1: (0, 0),
             mvd1: (0, 0),
             direct: false,
+            part: 0,
+            mv8: [(0, 0); 4],
+            mvd8: [(0, 0); 4],
+            t8: cd.t8 && cd.cbp & 15 != 0,
         };
         if skip {
             self.emit_skip(mbx, mby);
@@ -1075,6 +1159,18 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             self.emit_p16(mbx, mby, mvd, &cd);
         }
         self.emit_end(mbx, mby);
+    }
+
+    /// Inter luma residual with the 4×4 or (when it suits the residual) the
+    /// 8×8 transform.
+    fn luma_resid(&self, src: &[u8; 256], pred: &[u8; 256], cd: &mut Coded, recon: &mut [u8; 256]) {
+        // (smooth AQ macroblocks keep the 4×4 transform: its wide dead zone is
+        // what stops them coding low-amplitude noise)
+        if self.c.t8 && !self.p.smooth && t8::prefer_t8(src, pred) {
+            t8::luma_inter8(src, pred, &self.p.q8, cd, recon);
+        } else {
+            luma_inter(src, pred, &self.p.qs, cd, recon);
+        }
     }
 
     fn store_recon(&mut self, mbx: usize, mby: usize, y16: &[u8; 256], c8: &[[u8; 64]; 2]) {
@@ -1316,6 +1412,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             mv1: (0, 0),
             mvd1: (0, 0),
             direct: false,
+            part: 0,
+            mv8: [(0, 0); 4],
+            mvd8: [(0, 0); 4],
+            t8: false,
         };
         if is16 {
             self.stats.intra16 += 1;
@@ -1394,11 +1494,14 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         cb.decision(w, 14, 0);
         cb.decision(w, 15, 0);
         cb.decision(w, 16, 0);
-        let sx = a.map_or(0, |m| m.mvd.0.unsigned_abs() as u32) + b.map_or(0, |m| m.mvd.0.unsigned_abs() as u32);
-        let sy = a.map_or(0, |m| m.mvd.1.unsigned_abs() as u32) + b.map_or(0, |m| m.mvd.1.unsigned_abs() as u32);
+        let sx = a.map_or(0, |m| m.qmvd(1).0.unsigned_abs() as u32) + b.map_or(0, |m| m.qmvd(2).0.unsigned_abs() as u32);
+        let sy = a.map_or(0, |m| m.qmvd(1).1.unsigned_abs() as u32) + b.map_or(0, |m| m.qmvd(2).1.unsigned_abs() as u32);
         cb.mvd(w, 40, mvd.0, sx);
         cb.mvd(w, 47, mvd.1, sy);
         cabac_cbp(cb, w, &a, &b, cd.cbp);
+        if self.c.t8 && cd.cbp & 15 != 0 {
+            cb.decision(w, 399 + t8::t8_ctx(&a, &b), cd.t8 as u32);
+        }
         if cd.cbp != 0 {
             let d = self.mb_qp as i32 - self.qp_pred as i32;
             cabac_dqp(cb, w, d, self.dqp_prev_nz);
@@ -1494,6 +1597,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
             _ => {
                 cb.decision(w, bin0_ctx, 0);
+                if self.c.t8 {
+                    cb.decision(w, 399 + t8::t8_ctx(&a, &b), 0); // transform_size_8x8_flag: I4x4
+                }
                 for &(f, r) in m4sig {
                     cb.decision(w, 68, f as u32);
                     if !f {
@@ -1826,6 +1932,10 @@ fn cabac_residual(
                 scan[j] = blk[ZIGZAG[j + 1]] as i32;
             }
             cb.residual(w, &scan[..15], Cat::LumaAc, luma_inc(bx, by));
+        } else if cd.t8 {
+            if k % 4 == 0 && cd.cbp & (1 << (k / 4)) != 0 {
+                t8::cabac_block8(cb, w, &cd.l8[k / 4]);
+            }
         } else {
             if cd.cbp & (1 << (k / 4)) == 0 {
                 continue;
@@ -2099,6 +2209,10 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
         dqp_nz: false,
         dqp_prev_nz: false,
         rsel: 0,
+        seen: vec![std::cell::Cell::new((0, (0, 0))); 1024],
+        seen_gen: std::cell::Cell::new(0),
+        extra_cand: None,
+        no_rings: false,
     };
     if c.cabac {
         while !s.w.byte_aligned() {
@@ -2123,8 +2237,8 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
             if !c.idr && !c.changed[mby * c.mbw + mbx] {
                 // Cheap P_Skip test: the skip MV is zero when A or B is missing or
                 // an inter neighbour with MV 0.
-                let zero = |i: &MbInfo| i.kind == 0 && i.mv == (0, 0);
-                if mbx == 0 || mby == mby0 || zero(s.info(mbx - 1, mby)) || zero(s.info(mbx, mby - 1)) {
+                let zero = |i: &MbInfo, q: usize| i.kind == 0 && i.qmv(q) == (0, 0);
+                if mbx == 0 || mby == mby0 || zero(s.info(mbx - 1, mby), 1) || zero(s.info(mbx, mby - 1), 2) {
                     let i = (mby - mby0) * c.mbw + mbx;
                     if !c.stale[mby * c.mbw + mbx] {
                         // Fast path: P_Skip, recon already equal to the reference.
@@ -2223,9 +2337,10 @@ pub struct Encoder {
     /// (buffer, display index in the GOP, input index), spare buffers, the
     /// change map since the last reference, and the B picture's state.
     bf: usize,
+    /// 8×8 transform on (High profile).
+    t8: bool,
     pend: Vec<Held>,
-    /// Quarter-resolution luma of the last reference picture (B decision).
-    lr_ref: crate::lookahead::Lowres,
+
     pend_pool: Vec<crate::frame::YuvBuffer>,
     acc: Option<Vec<bool>>,
     src_prev: Pic,
@@ -2236,10 +2351,18 @@ pub struct Encoder {
     bchanged: Vec<bool>,
     bhint: Vec<(i16, i16)>,
     hpel1: Option<crate::mc::HpelPlanes>,
+    hpel1_dirty: Vec<bool>,
     /// The last P picture was coded (false: all-skip, the reference is unchanged).
     last_p_swapped: bool,
     /// frame_num of the next reference picture; POC of the picture being coded.
     ref_num: u32,
+    /// Display indices of the previous and the latest reference picture.
+    ref_disp: u64,
+    /// SSIM estimate of the latest P picture (B pictures' quality guard), and
+    /// the QP offset the next B picture starts at.
+    p_ssim: f64,
+    b_off: i32,
+    p_disp: u64,
     cur_poc: Option<u32>,
     frames_in: u64,
     keep_recons: bool,
@@ -2289,8 +2412,9 @@ impl Encoder {
             last: FrameStats::default(),
             skip_cache: Vec::new(),
             bf: if cfg.cabac && threads == 1 { cfg.bframes as usize } else { 0 },
+            t8: cfg.cabac && cfg.transform8,
             pend: Vec::new(),
-            lr_ref: Default::default(),
+
             pend_pool: Vec::new(),
             acc: None,
             src_prev: Pic::new(mbw, mbh, 0),
@@ -2301,8 +2425,13 @@ impl Encoder {
             bchanged: vec![true; mbw * mbh],
             bhint: vec![NO_HINT; mbw * mbh],
             hpel1: None,
+            hpel1_dirty: vec![true; mbw * mbh],
             last_p_swapped: true,
             ref_num: 0,
+            ref_disp: 0,
+            p_disp: 0,
+            p_ssim: 0.0,
+            b_off: B_QP_OFFSET,
             cur_poc: None,
             frames_in: 0,
             keep_recons: false,
@@ -2388,12 +2517,10 @@ impl Encoder {
             self.frame_in_gop += 1;
             return &self.out;
         }
-        let lr = crate::lookahead::Lowres::from_luma(f.y, f.y_stride, f.width as usize, f.height as usize);
         if idr {
             self.flush_pending();
             self.frame_in_gop = 0;
             self.code_frame(f, hints, true, 0, gidx);
-            self.lr_ref = lr;
             self.acc_reset();
             self.frame_in_gop += 1;
             return &self.out;
@@ -2406,59 +2533,38 @@ impl Encoder {
             b.copy_from(f);
             let n = self.mbw * self.mbh;
             let changed = hints.changed.clone().filter(|c| c.len() == n);
-            self.pend.push(Held { buf: b, disp, gidx, changed, lr });
+            self.pend.push(Held { buf: b, disp, gidx, changed, grain: hints.grain });
             return &self.out;
         }
-        if self.b_pays(Some(&lr)) {
+        if self.b_pays(Some(hints.grain)) {
             self.acc_merge(hints);
             let h = FrameHints { changed: self.acc.clone(), motions: Vec::new(), grain: hints.grain };
             self.src_prev.clone_from(&self.cur);
             self.code_frame(f, &h, false, disp, gidx);
-            self.lr_ref = lr;
             self.acc_reset();
             self.code_pending_b(hints.grain);
         } else {
             self.code_pending_p();
             self.code_frame(f, hints, false, disp, gidx);
-            self.lr_ref = lr;
             self.acc_reset();
         }
         &self.out
     }
 
-    /// Are the held frames (and `next`, the frame after them) cheaper as B
-    /// pictures before a P picture than as a chain of P pictures?
-    fn b_pays(&self, next: Option<&crate::lookahead::Lowres>) -> bool {
-        use crate::lookahead::{cost_b, cost_p};
-
-        let mut g: Vec<&crate::lookahead::Lowres> = self.pend.iter().map(|h| &h.lr).collect();
-        if let Some(n) = next {
-            g.push(n);
-        }
-        if g.len() < 2 {
-            return false;
-        }
-        let r = &self.lr_ref;
-        let (mut chain, mut prev) = (0u64, r);
-        for &x in &g {
-            chain += cost_p(x, prev);
-            prev = x;
-        }
-        let last = g[g.len() - 1];
-        let mut bs = cost_p(last, r) * 100;
-        for &x in &g[..g.len() - 1] {
-            bs += cost_b(x, r, last) * B_WEIGHT;
-        }
-        bs < chain * 100
+    /// Code the held frames (and the next frame, with grain hint `next`) as B
+    /// pictures before a P picture, or as a chain of P pictures? B pictures
+    /// unless the frames carry film grain: re-drawn grain is unpredictable, and
+    /// a B picture's higher QP smooths it away.
+    fn b_pays(&self, next: Option<f32>) -> bool {
+        self.pend.len() + next.is_some() as usize >= 2 && self.pend.iter().all(|h| h.grain <= 0.0) && next.is_none_or(|g| g <= 0.0)
     }
 
     /// Code the held frames as a chain of P pictures.
     fn code_pending_p(&mut self) {
         let pend = std::mem::take(&mut self.pend);
         for h in pend {
-            let hints = FrameHints { changed: h.changed, ..Default::default() };
+            let hints = FrameHints { changed: h.changed, grain: h.grain, ..Default::default() };
             self.code_frame(&h.buf.frame(), &hints, false, h.disp, h.gidx);
-            self.lr_ref = h.lr;
             self.pend_pool.push(h.buf);
         }
         self.acc_reset();
@@ -2481,7 +2587,6 @@ impl Encoder {
         let h = FrameHints { changed: self.acc.clone(), ..Default::default() };
         self.src_prev.clone_from(&self.cur);
         self.code_frame(&last.buf.frame(), &h, false, last.disp, last.gidx);
-        self.lr_ref = last.lr;
         self.pend_pool.push(last.buf);
         self.acc_reset();
         self.code_pending_b(0.0);
@@ -2518,22 +2623,15 @@ impl Encoder {
         if self.cfg.subpel {
             let r = &self.refp.y;
             if swapped {
-                // L0 planes (`hpel`) are the previous reference's; L1's are
-                // those plus the macroblocks the P picture changed.
-                let mut h1 = match self.hpel1.take() {
-                    Some(mut h) => {
-                        if let Some(h0) = &self.hpel {
-                            h.clone_from(h0);
-                        }
-                        h
-                    }
-                    None => self.hpel.clone().unwrap_or_else(|| crate::mc::HpelPlanes::new(r)),
-                };
-                if self.hpel.is_none() {
-                    self.hpel_dirty.fill(true);
+                // L0 planes (`hpel`) are the previous reference's; `hpel1` (an
+                // older picture's, or new) is brought up to the P picture with
+                // its own change map.
+                if self.hpel1.is_none() {
+                    self.hpel1 = Some(crate::mc::HpelPlanes::new(r));
+                    self.hpel1_dirty.fill(true);
                 }
-                update_hpel(&mut h1, r, &self.hpel_dirty, self.mbw, self.mbh);
-                self.hpel1 = Some(h1);
+                update_hpel(self.hpel1.as_mut().unwrap(), r, &self.hpel1_dirty, self.mbw, self.mbh);
+                self.hpel1_dirty.fill(false);
             } else {
                 let hp = self.hpel.get_or_insert_with(|| crate::mc::HpelPlanes::new(r));
                 update_hpel(hp, r, &self.hpel_dirty, self.mbw, self.mbh);
@@ -2547,7 +2645,7 @@ impl Encoder {
         }
         if self.cfg.subpel && swapped {
             std::mem::swap(&mut self.hpel, &mut self.hpel1);
-            self.hpel_dirty.fill(false);
+            std::mem::swap(&mut self.hpel_dirty, &mut self.hpel1_dirty);
         }
     }
 
@@ -2568,54 +2666,76 @@ impl Encoder {
             }
         }
         let mut stats = FrameStats::default();
-        let ctx = FrameCtx {
-            mbw: self.mbw,
-            qp: (self.cfg.qp as i32 + self.qp_adj + B_QP_OFFSET).clamp(0, 51) as u8,
-            base_qp: self.cfg.qp,
-            qsets: &self.qsets,
-            qsets_smooth: &self.qsets_smooth,
-            aq: self.aq_for_frame(),
-            src: &self.bsrc,
-            refp: if swapped { &self.recon } else { &self.refp },
-            refp1: &self.refp,
-            bslice: true,
-            col: &self.info,
-            changed: &self.bchanged,
-            stale: &self.stale,
-            hint: &self.bhint,
-            idr: false,
-            max_mvy: max_mv_y(self.level),
-            subpel: self.cfg.subpel,
-            skip_t: 0,
-            hpel: if self.cfg.subpel { self.hpel.as_ref() } else { None },
-            hpel1: if self.cfg.subpel { if swapped { self.hpel1.as_ref() } else { self.hpel.as_ref() } } else { None },
-            cabac: true,
-            hdr_frame_num: self.ref_num,
-            poc: Some((2 * disp) as u32),
-            idr_id: 0,
-            deblock: self.cfg.deblock,
-            slice_deblock: false,
+        // B pictures use a higher QP, unless that leaves this one visibly worse
+        // than the P picture after it: then it is coded again at the P QP.
+        let mut off = self.b_off;
+        let res = loop {
+            let ctx = FrameCtx {
+                mbw: self.mbw,
+                qp: (self.cfg.qp as i32 + self.qp_adj + off).clamp(0, 51) as u8,
+                base_qp: self.cfg.qp,
+                qsets: &self.qsets,
+                qsets_smooth: &self.qsets_smooth,
+                aq: self.aq_for_frame(),
+                src: &self.bsrc,
+                refp: if swapped { &self.recon } else { &self.refp },
+                refp1: &self.refp,
+                bslice: true,
+                col: &self.info,
+                bdist: ((disp - self.ref_disp) as i32, (self.p_disp - self.ref_disp) as i32),
+                changed: &self.bchanged,
+                stale: &self.stale,
+                hint: &self.bhint,
+                idr: false,
+                max_mvy: max_mv_y(self.level),
+                subpel: self.cfg.subpel,
+                skip_t: 0,
+                hpel: if self.cfg.subpel { self.hpel.as_ref() } else { None },
+                hpel1: if self.cfg.subpel { if swapped { self.hpel1.as_ref() } else { self.hpel.as_ref() } } else { None },
+                cabac: true,
+                partitions: false,
+                t8: self.t8,
+                hdr_frame_num: self.ref_num,
+                poc: Some((2 * disp) as u32),
+                idr_id: 0,
+                deblock: self.cfg.deblock,
+                slice_deblock: false,
+            };
+            let r = &mut self.brecon;
+            let (ys, yp) = (r.y.stride, r.y.pad);
+            let (cs, cp) = (r.u.stride, r.u.pad);
+            let band = Band {
+                y: &mut r.y.data[yp * ys..],
+                u: &mut r.u.data[cp * cs..],
+                v: &mut r.v.data[cp * cs..],
+                info: &mut self.binfo,
+                touched: &mut self.btouched,
+                mby0: 0,
+                mby1: self.mbh,
+            };
+            let res = encode_slice(&ctx, band, &mut self.writers[0]);
+            if off > 0 && self.p_ssim > 0.0 {
+                let (sb, _) = ssim_luma(&self.bsrc.y, &self.brecon.y, w, h, grain);
+                if sb < self.p_ssim - B_SSIM_SLACK {
+                    // next B pictures start lower; this one goes to the P QP
+                    self.b_off = (off - 1).max(0);
+                    off = 0;
+                    continue;
+                }
+                if sb >= self.p_ssim {
+                    self.b_off = (self.b_off + 1).min(B_QP_OFFSET);
+                }
+            }
+            break res;
         };
-        let r = &mut self.brecon;
-        let (ys, yp) = (r.y.stride, r.y.pad);
-        let (cs, cp) = (r.u.stride, r.u.pad);
-        let band = Band {
-            y: &mut r.y.data[yp * ys..],
-            u: &mut r.u.data[cp * cs..],
-            v: &mut r.v.data[cp * cs..],
-            info: &mut self.binfo,
-            touched: &mut self.btouched,
-            mby0: 0,
-            mby1: self.mbh,
-        };
-        let res = encode_slice(&ctx, band, &mut self.writers[0]);
+        let out0 = self.out.len();
         write_nal(&mut self.out, 0, 1, &self.writers[0].buf);
         stats.skip = res.skip;
         stats.inter = res.inter;
         stats.intra16 = res.intra16;
         stats.intra4 = res.intra4;
         stats.changed = res.changed;
-        stats.bytes = self.out.len();
+        stats.bytes = self.out.len() - out0;
         self.last = stats;
         if self.keep_recons {
             let b = pic_to_yuv(&self.brecon, w, h);
@@ -2631,6 +2751,9 @@ impl Encoder {
             self.ref_num = 0;
         }
         self.cur_poc = if self.bf > 0 { Some((2 * disp) as u32) } else { None };
+        self.ref_disp = if idr { disp } else { self.p_disp };
+        self.p_disp = disp;
+        let out0 = self.out.len();
         self.grain = hints.grain.max(0.0);
         let mut stats = FrameStats { idr, ..Default::default() };
         let nmb = self.mbw * self.mbh;
@@ -2723,12 +2846,13 @@ impl Encoder {
                     full_range: self.cfg.full_range,
                     cabac: self.cfg.cabac,
                     bframes: self.bf > 0,
+                    high: self.t8,
                 },
                 self.level,
             );
             write_nal(&mut self.out, 3, 7, &self.hdr.buf);
             self.hdr.clear();
-            write_pps(&mut self.hdr, self.cfg.qp, self.cfg.cabac);
+            write_pps(&mut self.hdr, self.cfg.qp, self.cfg.cabac, self.t8);
             write_nal(&mut self.out, 3, 8, &self.hdr.buf);
         }
         let frame_num = self.ref_num;
@@ -2800,21 +2924,31 @@ impl Encoder {
             }
             self.recon.extend();
             std::mem::swap(&mut self.recon, &mut self.refp);
-            if self.cfg.ssim_floor > 0.0 {
+            if self.cfg.ssim_floor > 0.0 || self.bf > 0 {
                 let s = ssim_luma(&self.cur.y, &self.refp.y, w, h, self.grain);
-                self.floor_update(s, 400.0, 4);
+                self.p_ssim = s.0;
+                if self.cfg.ssim_floor > 0.0 {
+                    self.floor_update(s, 400.0, 4);
+                }
             }
             if self.cfg.subpel {
                 // only where the reconstruction differs from the old reference
-                for ((d, inf), &t) in self.hpel_dirty.iter_mut().zip(&self.info).zip(&self.touched) {
-                    *d |= t || (inf.coded && (inf.kind != 0 || inf.mv != (0, 0) || inf.cbp != 0));
+                for (((d, d1), inf), &t) in self.hpel_dirty.iter_mut().zip(self.hpel1_dirty.iter_mut()).zip(&self.info).zip(&self.touched) {
+                    let c = t || (inf.coded && (inf.kind != 0 || inf.mv != (0, 0) || inf.part != 0 || inf.cbp != 0));
+                    *d |= c;
+                    *d1 |= c;
                 }
             }
         }
         if idr {
             self.idr_count = self.idr_count.wrapping_add(1);
         }
-        stats.bytes = self.out.len();
+        let bytes = self.out.len() - out0;
+        if self.bf > 0 && !any_changed {
+            // all-skip P picture: the reference is the previous one
+            self.p_ssim = ssim_luma(&self.cur.y, &self.refp.y, w, h, self.grain).0;
+        }
+        stats.bytes = bytes;
         self.last = stats;
         if self.keep_recons {
             let b = pic_to_yuv(&self.refp, w, h);
@@ -2917,6 +3051,7 @@ impl Encoder {
             refp1: &self.refp,
             bslice: false,
             col: &[],
+            bdist: (1, 1),
             changed: &self.changed,
             stale: &self.stale,
             hint: &self.hint,
@@ -2927,6 +3062,8 @@ impl Encoder {
             hpel: if self.cfg.subpel && !idr { self.hpel.as_ref() } else { None },
             hpel1: None,
             cabac: self.cfg.cabac,
+            partitions: self.cfg.partitions && self.cfg.cabac,
+            t8: self.t8,
             hdr_frame_num: frame_num,
             poc: self.cur_poc,
             idr_id: self.idr_count & 0xffff,

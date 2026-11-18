@@ -3,6 +3,7 @@
 //! 16×16. CABAC only.
 
 use super::*;
+use super::t8;
 
 /// Prediction of a B macroblock.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -24,11 +25,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
     /// 16×16 motion vector predictor in list `l` (8.4.1.3, refIdx 0).
     pub(super) fn mvp_l(&self, mbx: usize, mby: usize, l: usize) -> (i32, i32) {
         let (x, y) = (mbx as isize, mby as isize);
-        let a = self.nbl(x - 1, y, l);
-        let mut b = self.nbl(x, y - 1, l);
-        let mut c = self.nbl(x + 1, y - 1, l);
+        let a = self.nbl(x - 1, y, l, 1);
+        let mut b = self.nbl(x, y - 1, l, 2);
+        let mut c = self.nbl(x + 1, y - 1, l, 2);
         if !c.avail {
-            c = self.nbl(x - 1, y - 1, l);
+            c = self.nbl(x - 1, y - 1, l, 3);
         }
         if !b.avail && !c.avail && a.avail {
             b = a;
@@ -56,11 +57,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let (x, y) = (mbx as isize, mby as isize);
         let mut refs = 0u8;
         for l in 0..2 {
-            let a = self.nbl(x - 1, y, l);
-            let b = self.nbl(x, y - 1, l);
-            let mut c = self.nbl(x + 1, y - 1, l);
+            let a = self.nbl(x - 1, y, l, 1);
+            let b = self.nbl(x, y - 1, l, 2);
+            let mut c = self.nbl(x + 1, y - 1, l, 2);
             if !c.avail {
-                c = self.nbl(x - 1, y - 1, l);
+                c = self.nbl(x - 1, y - 1, l, 3);
             }
             if a.inter || b.inter || c.inter {
                 refs |= 1 << l;
@@ -129,7 +130,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         self.mb_qp = self.c.qp;
         self.p = &self.c.qsets[self.mb_qp as usize];
         let (refs, mv0, mv1) = self.direct_spatial(mbx, mby);
-        let zero = (refs & 1 == 0 || mv0 == (0, 0)) && (refs & 2 == 0 || mv1 == (0, 0));
+        // (a partitioned co-located macroblock would make direct prediction
+        // per 8×8 block: not used)
+        let zero = (refs & 1 == 0 || mv0 == (0, 0)) && (refs & 2 == 0 || mv1 == (0, 0)) && self.c.col[mby * self.c.mbw + mbx].part == 0;
         let mut py = [0u8; 256];
         let mut pc = [[0u8; 64]; 2];
         let cd = Coded::new();
@@ -157,24 +160,36 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
         // Direct (and B_Skip when nothing is left to code).
         let (drefs, dmv0, dmv1) = self.direct_spatial(mbx, mby);
-        let direct_ok = (drefs & 1 == 0 || self.mv_in_range(mbx, mby, dmv0)) && (drefs & 2 == 0 || self.mv_in_range(mbx, mby, dmv1));
+        let direct_ok = c.col[mbi].part == 0
+            && (drefs & 1 == 0 || self.mv_in_range(mbx, mby, dmv0))
+            && (drefs & 2 == 0 || self.mv_in_range(mbx, mby, dmv1));
         let mut dpy = [0u8; 256];
         let mut dpc = [[0u8; 64]; 2];
         let mut best = (u32::MAX, BMode::Direct);
         if direct_ok {
             self.pred_b(drefs, mbx, mby, dmv0, dmv1, &mut dpy, &mut dpc);
             let sad = crate::simd::sad16(src_y, 16, &dpy, 16);
-            if sad <= lambda * 16 {
+            // direct is good enough: no searches (cheaper, and searching here
+            // rarely finds a better prediction for its extra MV bits)
+            if sad <= lambda * 64 {
                 self.code_b(mbx, mby, src_y, src_c, BMode::Direct, drefs, dmv0, dmv1, &dpy, &dpc);
                 return;
             }
             best = (dsp::satd(src_y, &dpy, 16, 16) + lambda, BMode::Direct);
         }
 
-        // One search per list, seeded with the direct vectors.
+        // One search per list, seeded with the direct vectors and the
+        // co-located P vector scaled to this picture's distance from each
+        // reference; no long-range rings (the P picture searched those).
+        let col = &c.col[mbi];
+        let (tb, td) = c.bdist;
+        let colmv = if col.kind == 0 { (col.mv.0 as i32, col.mv.1 as i32) } else { (0, 0) };
+        let scaled = [(colmv.0 * tb / td, colmv.1 * tb / td), (colmv.0 * (tb - td) / td, colmv.1 * (tb - td) / td)];
+        self.no_rings = true;
         let mut its: [Option<Inter>; 2] = [None, None];
         for (l, dmv) in [(0usize, dmv0), (1, dmv1)] {
             self.rsel = l;
+            self.extra_cand = Some(scaled[l]);
             let mvp = self.mvp_l(mbx, mby, l);
             let mut it = self.motion_search(mbx, mby, src_y, mvp, dmv, mbi, false, None);
             if c.subpel && it.cost > lambda * 8 {
@@ -187,6 +202,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             its[l] = Some(it);
         }
         self.rsel = 0;
+        self.extra_cand = None;
+        self.no_rings = false;
         let (i0, i1) = (its[0].take().unwrap(), its[1].take().unwrap());
         let mvc = |it: &Inter| lambda * (se_len(it.mv.0 - it.mvp.0) + se_len(it.mv.1 - it.mvp.1));
         let mut bpy = i0.pred;
@@ -255,7 +272,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mut recon = [0u8; 256];
         let sad = crate::simd::sad16(src_y, 16, py, 16);
         let ry = if sad > self.p.zero_sad.0 && crate::simd::max_sad4(src_y, py, 16, 16) > self.p.zero_sad4.0 {
-            luma_inter(src_y, py, &self.p.qs, &mut cd, &mut recon);
+            self.luma_resid(src_y, py, &mut cd, &mut recon);
             recon
         } else {
             *py
@@ -323,6 +340,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             mv1: if refs & 2 != 0 { (mv1.0 as i16, mv1.1 as i16) } else { (0, 0) },
             mvd1: (mvd1.0 as i16, mvd1.1 as i16),
             direct: mode == BMode::Direct,
+            part: 0,
+            mv8: [(0, 0); 4],
+            mvd8: [(0, 0); 4],
+            t8: cd.t8 && cd.cbp & 15 != 0,
         };
         if skip {
             self.stats.skip += 1;
@@ -375,6 +396,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         }
         cabac_cbp(cb, w, &a, &b, cd.cbp);
+        if self.c.t8 && cd.cbp & 15 != 0 {
+            cb.decision(w, 399 + t8::t8_ctx(&a, &b), cd.t8 as u32);
+        }
         if cd.cbp != 0 {
             let d = self.mb_qp as i32 - self.qp_pred as i32;
             cabac_dqp(cb, w, d, self.dqp_prev_nz);

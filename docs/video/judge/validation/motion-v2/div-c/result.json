@@ -1,0 +1,347 @@
+{
+  "refs": [
+    "calibration-simon-vpro-idents-2010",
+    "calibration-blender-hero-grease-pencil-showcase",
+    "blender-studio-charge-2022"
+  ],
+  "candidate": {
+    "motion": 3,
+    "judged_professional": "0/3",
+    "gaps": [
+      "The main typography has no choreography: the names never animate, react to the lightning or hand off to the next card",
+      "Cuts between the yellow and black cards are unmotivated hard swaps with no match, morph or wipe",
+      "The build is mechanically uniform: identical row reveals at fixed intervals with no weight or settle",
+      "No choreography: one element moves while everything else holds, with no handoffs or overlap",
+      "No easing character or weight: linear, evenly timed reveals and cuts with no anticipation",
+      "No camera language and no designed transitions, compared with C's physical camera and A's match dissolves",
+      "No easing personality or overshoot: elements appear on uniform linear timing and then hold dead",
+      "No choreography: one element moves per beat while everything else freezes, and there are no handoffs between cards",
+      "No camera, weight or motivated transitions; the cuts are blunt pops and the background loop is unrelated to the type"
+    ]
+  },
+  "refs_summary": {
+    "blender-studio-charge-2022": {
+      "motion": 9,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The welding strip has very little character performance; the face holds a single expression",
+        "Smear and blur do the work in the action beat, so the reverse shot loses clarity at the impact",
+        "The settle after the hit is short; there is not much follow-through on the robot body",
+        "The second strip gets busy, and the robot's arm silhouette is hard to read briefly during the whip",
+        "Few compositional transitions; it relies on cutting on impact rather than designed morphs or match cuts",
+        "Small dip in clarity around the blurred impact frame",
+        "The impact cut in the second strip leans on blur, which makes the action hard to read for one or two frames",
+        "The first strip is a fairly locked composition where the sparks do most of the work",
+        "Composition handoffs are less designed than A's graphic choreography"
+      ]
+    },
+    "calibration-blender-hero-grease-pencil-showcase": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The dissolve in the first strip is slow and soft, so the transition itself barely has any movement",
+        "Some background crowd members hold almost still across several frames",
+        "The animation is on twos or threes, so arcs step more than A's continuous motion does",
+        "Background crowd mostly holds or barely moves while the hero acts, so the shot has less overlapping action than C",
+        "Lower frame count in the dissolve section, giving soft, mushy spacing instead of the crisp impacts in C",
+        "Less sense of weight and contact: no impacts, debris or camera shake to sell physical force",
+        "The dissolve section lingers, and there are stretches of near-hold in the first strip",
+        "There is less physical impact and environmental simulation than C's sparks and mechanical weight",
+        "The camera is mostly static or slowly drifting; the energy comes from the characters rather than the camera"
+      ]
+    },
+    "calibration-simon-vpro-idents-2010": {
+      "motion": 7,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Only one gesture (burst, then collapse), with no secondary choreography or handoffs",
+        "There is a long near-static hold in the resolved state before the final frame, which is a dead stretch",
+        "The letterforms scale as one rigid block; individual letters get no follow-through or delay",
+        "Long dead holds: the last strip sits nearly static for about 5 frames before the snap back to white",
+        "A single motif with little secondary or overlapping motion; only the blades move while the type holds",
+        "No weight or physicality: purely graphic, and its timing lacks the texture and variation of C",
+        "It is one graphic idea with no secondary layers adding life; the bed stays flat black",
+        "The settle at the end is a long static logo hold over several frames, so the motion goes dead before the end card",
+        "There is no camera language or sense of depth or weight compared with C's physical, shot-driven action"
+      ]
+    }
+  },
+  "ref_mean": 8,
+  "trials": [
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "candidate",
+        "C": "calibration-blender-hero-grease-pencil-showcase",
+        "D": "calibration-simon-vpro-idents-2010"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Sparks follow real ballistic arcs with streak blur, and there is motion in every frame",
+              "The handheld-style camera drifts and refocuses on the face, and the rack focus feels motivated",
+              "The robot strike reads as having weight: the arm swings through with motion blur, and the camera whip-pans into the reverse angle",
+              "The cut on action into the over-the-shoulder shot keeps the action continuous, and the secondary elements (fire, debris) keep moving"
+            ],
+            "gaps": [
+              "The welding strip has very little character performance; the face holds a single expression",
+              "Smear and blur do the work in the action beat, so the reverse shot loses clarity at the impact",
+              "The settle after the hit is short; there is not much follow-through on the robot body"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "The old woman's run has anticipation (she rears back, her head turns), then a strong forward lunge with drag on her scarf and hair",
+              "The character moves straight past camera and wipes the frame, which motivates the cut to the wide shot",
+              "The crowd behind her has staggered secondary reactions, so the frame is not one mover against a frozen background",
+              "The scene transition is a long, lighting-driven dissolve that blends the face into the walking shot as a thematic match, not a stock fade"
+            ],
+            "gaps": [
+              "The dissolve in the first strip is slow and soft, so the transition itself barely has any movement",
+              "Some background crowd members hold almost still across several frames",
+              "The animation is on twos or threes, so arcs step more than A's continuous motion does"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "The burst rays spin out and resolve back into the logo's blue accent shape, which reads as a designed morph from the wordmark",
+              "The scale punches in and then eases back to rest with a clear overshoot and settle",
+              "The rays rotate while the wordmark scales, so two motions overlap",
+              "It returns from black to white on the logo resolve, so the loop is bookended"
+            ],
+            "gaps": [
+              "Only one gesture (burst, then collapse), with no secondary choreography or handoffs",
+              "There is a long near-static hold in the resolved state before the final frame, which is a dead stretch",
+              "The letterforms scale as one rigid block; individual letters get no follow-through or delay"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "motion": 3,
+            "tells": [
+              "Name cards hard-cut in and then sit frozen; only the kV counter ticks up",
+              "The lightning bolt is a looping overlay behind static type, so the background moves while the type holds still",
+              "List rows appear one at a time with an identical fade-and-slide on uniform timing, which is the classic template stagger",
+              "There is no easing personality or overshoot, the camera never moves, and there are no transitions beyond cuts and a jittery header slide"
+            ],
+            "gaps": [
+              "The main typography has no choreography: the names never animate, react to the lightning or hand off to the next card",
+              "Cuts between the yellow and black cards are unmotivated hard swaps with no match, morph or wipe",
+              "The build is mechanically uniform: identical row reveals at fixed intervals with no weight or settle"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 22.1,
+        "cost_usd": 0.1422228,
+        "tokens": 70094,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-blender-hero-grease-pencil-showcase",
+        "B": "candidate",
+        "C": "blender-studio-charge-2022",
+        "D": "calibration-simon-vpro-idents-2010"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Lap-dissolve cut with intent: the close-up dissolves into the wide desert shot of the same running character, which works as a match on subject and screen position",
+              "Character acting has anticipation: the white-haired woman turns her head, her expression shifts, then she lunges forward with her arm leading",
+              "Foreground wipe: her body sweeps past the camera to carry the cut into the next shot, so the transition is part of the action",
+              "Crowd and background characters keep small secondary moves, so the shots don't freeze",
+              "The camera pushes in during the lunge, which reads as deliberate camera language"
+            ],
+            "gaps": [
+              "Background crowd mostly holds or barely moves while the hero acts, so the shot has less overlapping action than C",
+              "Lower frame count in the dissolve section, giving soft, mushy spacing instead of the crisp impacts in C",
+              "Less sense of weight and contact: no impacts, debris or camera shake to sell physical force"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 3,
+            "tells": [
+              "Name cards pop on and then sit in dead holds across 5+ frames; only a looping lightning stock element moves behind them",
+              "Hard cuts between cards (yellow card, black, lightning) with no transition design",
+              "List build is a mechanical stagger: each row fades or slides in one at a time at the same interval with identical easing",
+              "The kV counter changes number with no motion behind it, a data-driven or template look",
+              "Text never overshoots, follows through or interacts with the lightning; the element and the type live on separate layers"
+            ],
+            "gaps": [
+              "No choreography: one element moves while everything else holds, with no handoffs or overlap",
+              "No easing character or weight: linear, evenly timed reveals and cuts with no anticipation",
+              "No camera language and no designed transitions, compared with C's physical camera and A's match dissolves"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Sparks follow physical paths with motion blur and per-particle variation, alive in every frame",
+              "Handheld-feeling camera with reactive shake and focus shifts that sell the impact",
+              "Weight and follow-through in the robot strike: the arm whips through, there is a blurred impact frame, and the mechanical parts settle with recoil",
+              "The cut is built on action: the impact smear bridges into the reverse angle of the robot and the man",
+              "Foreground, mid-ground and background all move at once (debris, limbs, character), so actions overlap"
+            ],
+            "gaps": [
+              "The second strip gets busy, and the robot's arm silhouette is hard to read briefly during the whip",
+              "Few compositional transitions; it relies on cutting on impact rather than designed morphs or match cuts",
+              "Small dip in clarity around the blurred impact frame"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "Logo-driven burst: blades fan out from the brand mark's accent shape, rotate and scale with clear eased spacing",
+              "Scale overshoot: the wordmark punches past full frame and then settles back down",
+              "The burst retracts into the accent mark, so the ending reads as a deliberate graphic morph back to the logo",
+              "The white to black to white bookend is a designed transition, not a simple cut"
+            ],
+            "gaps": [
+              "Long dead holds: the last strip sits nearly static for about 5 frames before the snap back to white",
+              "A single motif with little secondary or overlapping motion; only the blades move while the type holds",
+              "No weight or physicality: purely graphic, and its timing lacks the texture and variation of C"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 24.9,
+        "cost_usd": 0.14463900000000002,
+        "tokens": 70214,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-simon-vpro-idents-2010",
+        "B": "calibration-blender-hero-grease-pencil-showcase",
+        "C": "blender-studio-charge-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "The starburst rotates and scales in step with the wordmark punching in and out, so the two move together",
+              "The wordmark scales up hard and overshoots past the frame edge, then snaps back and settles",
+              "The shard rays break apart and sweep out of frame on exit, so the burst has follow-through",
+              "The hard cuts between white and black frames land on the beat"
+            ],
+            "gaps": [
+              "It is one graphic idea with no secondary layers adding life; the bed stays flat black",
+              "The settle at the end is a long static logo hold over several frames, so the motion goes dead before the end card",
+              "There is no camera language or sense of depth or weight compared with C's physical, shot-driven action"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "A slow cross-dissolve match moves from the close-up face to the wide desert shot, and the figure is kept in the same screen position across the dissolve",
+              "Hand-drawn acting with anticipation: the woman's head turns and her expression shifts before she breaks into a run",
+              "A foreground body wipes past the lens and is used as a motivated transition into the next shot",
+              "The crowd behind her stays alive with small secondary movements instead of freezing"
+            ],
+            "gaps": [
+              "The dissolve section lingers, and there are stretches of near-hold in the first strip",
+              "There is less physical impact and environmental simulation than C's sparks and mechanical weight",
+              "The camera is mostly static or slowly drifting; the energy comes from the characters rather than the camera"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "The sparks follow believable physics: streaks and motion blur, fast near the source and decaying as they spread, every frame alive",
+              "A rack focus and push-in move from the grinder to the face, and the character's eyes react",
+              "The robot arm swings with mass, with motion blur and a smeared impact frame, then a whip into the next shot",
+              "There is handheld camera shake on impact, and it settles on the robot's raised fists with micro-sway"
+            ],
+            "gaps": [
+              "The impact cut in the second strip leans on blur, which makes the action hard to read for one or two frames",
+              "The first strip is a fairly locked composition where the sparks do most of the work",
+              "Composition handoffs are less designed than A's graphic choreography"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 3,
+            "tells": [
+              "The yellow card holds frozen across frames, and only the kV counter ticks (30\u219231)",
+              "Hard pop cuts between cards with no transition design",
+              "The large text sits static while only a looping lightning stock element wiggles behind it",
+              "List items fade or slide in one at a time with identical linear timing, a typical template stagger",
+              "The header slides down with the same generic ease, and nothing overlaps or follows through"
+            ],
+            "gaps": [
+              "No easing personality or overshoot: elements appear on uniform linear timing and then hold dead",
+              "No choreography: one element moves per beat while everything else freezes, and there are no handoffs between cards",
+              "No camera, weight or motivated transitions; the cuts are blunt pops and the background loop is unrelated to the type"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 19.7,
+        "cost_usd": 0.1405978,
+        "tokens": 70000,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.427
+}

@@ -108,6 +108,8 @@ Charts build on with springs.
 | `dashed` | `false` | Dashed gridlines instead of hairlines. |
 | `notes` | `[]` | Pinned value pills: `[{ "index": 5, "text": "+38%" }]`. |
 | `motion` | `smooth` | Bar growth: `smooth`, `snappy`, `soft`, `bouncy`. |
+| `look` | default | `"editorial"`: ranked rows with flat bars. The `highlight` (default the first) is in the accent and the rest are grey. Category labels sit on the left, values at the bar ends in tabular figures, and a baseline replaces the grid. |
+| `compare`, `compareLabels` | | Editorial: earlier values as ticks on each row (`[61, 19, 16, 4]`), and the two state names shown once (`["2016", "2026"]`). |
 | `delay`, `duration`, `stagger` | | |
 
 ### `lineChart` and `areaChart`
@@ -128,6 +130,8 @@ Charts build on with springs.
 | `dashed` | `false` | Dashed gridlines. |
 | `notes` | `[]` | `[{ "index": 4, "text": "Launch", "series": 0 }]`: a ring and a pill appear when the line reaches the point. |
 | `crosshair` | `false` | A vertical guide follows the drawing head. |
+| `look` | default | `"editorial"` (FT/Bloomberg style): one `highlight` series in the accent and the rest as grey context drawn first. Direct labels sit at the line ends, with name and value for the story line and no legend or pills. The grid is hairlines with the unit only on the top line, and `notes` become leader lines. |
+| `highlight` | `0` | Editorial: the series that tells the story. |
 | `motion` | `soft` | Draw-on curve. |
 | `format`, `fontSize`, `delay`, `duration`, `stagger` | | |
 
@@ -784,6 +788,107 @@ Computed once per size and cached as one dithered image: free after the first fr
 
 Examples: `examples/video/illustration/{hatch,paper,cutout}.json`; stills in `docs/video/shots/illustration/`.
 
+## Illustrated environments
+
+Whole illustrated worlds from a few props: `landscape` (sky, sun or moon and layered ranges), `plants`, `clouds` and `water`. All four draw in the same **hand**, so pieces from different components belong to one picture. Shapes are painted with a shading value and then finished by the style. Texture is computed in each object's own coordinates, so grain, halftone and fibres move with the layer instead of sitting on the screen. Finished layers are cached images, so after the first frame each frame costs a few blits.
+
+**Shared props** (all four kinds):
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `style` | `"flat"` | `"flat"` gives cel-shaded vector shapes with grain. `"risograph"` splits colours into 3 spot-ink plates, each with its own halftone angle, misregistration and patchy ink. `"painterly"` gives broken soft edges, domain-warped brush strokes and wet blooms. `"ink"` gives watercolour washes, brush outlines and hatching that follows the shading. `"papercut"` gives torn edges with a white fibrous rim and a soft lifted shadow. |
+| `palette` | from `time` | `dawn day golden dusk night forest desert riso`, or colours `[skyTop, skyHorizon, far, near, sun?, foliage?, accent?]`. |
+| `time` | `dusk`/`day` | `dawn day golden dusk night`. Sets the default palette and, for `landscape`, the sun's position. |
+| `grain`, `light`, `seed` | `0.5`, varies, `1` | Texture amount; light direction in degrees (0 = from above, negative = from the left); seed. |
+| `boil` | `0` | Edge re-draws per second (edges are re-seeded; 3 variants cycle). |
+| `onTwos` / `stepFps` | off | Step the component's own animation (sway, glints, drift, boil) at 12 fps or at any rate. Camera parallax and push stay smooth. |
+| `hand` | `{}` | Every knob behind the preset, so a spec can go past it: `shade` (shadow multiply tint), `highlight`, `paper`, `ink`, `inks` (3), `halftone` (cell px), `angles` (3 degrees), `misregister` (3 `[dx, dy]`), `tints` (riso tint steps, 0 = continuous), `solid` (snap thin plates to paper and dense ones to solid ink), `edge`, `edgeScale`, `soften`, `cel`, `contrast`, `brush`, `hatch` (spacing, 0 = off), `hatchAngle`, `outline` (0 = off), `rim`, `lift`, `liftBlur`, `liftOffset`. |
+
+Shadows multiply towards a cool or complementary tint, and lit faces lift towards the light colour; neither is plain darkening. `flat`, `risograph` and `papercut` quantise shading into cel steps (`hand.cel` toggles this).
+
+### `landscape`
+| Prop | Default | Meaning |
+|---|---|---|
+| `terrain` | `"mixed"` | `mountains hills dunes mesas forest woods`, or a list cycled from far to near. `mixed` gives far mountains, hills and a forest. |
+| `layers` | `5` | Number of ranges. Each nearer range is darker and more saturated, and farther ranges take on the haze (atmospheric perspective). |
+| `horizon`, `depth`, `relief` | `0.62`, `0.75`, `1` | Horizon height (fraction of the box), how far down the frame the nearest range reaches (0 = all ranges at the horizon, as for a lake), and a height multiplier. |
+| `mist` | `0.4` | Haze pooled at the foot of each range, plus drifting fog bands between ranges. |
+| `parallax`, `push` | `18`, `0` | Pan speed of the nearest range in px/s (farther ranges move less, and the ranges tile seamlessly), and a multiplane push-in per second. |
+| `sun`, `sunSize`, `sky` | by `time`, `1`, `true` | Sun or moon centre `[x, y]` as fractions; size; `sky: false` draws the ranges over your own background. |
+| `ranges` | `[]` | Per-range overrides, far to near: `terrain`, `color`, `amp` and `base` (fractions of the box), `d` (an SVG path in box px whose top edge becomes the ridgeline), `jag`, `density`, `speed`, `stepFps`, `mist`, `seed`. |
+
+### `plants`
+| Prop | Default | Meaning |
+|---|---|---|
+| `species` | `"mixed"` | `pine broadleaf birch cypress bush grass flowers`, or a list to pick from. |
+| `count`, `spread`, `ground` | `9`, `[0.02, 0.98]`, `0.94` | How many plants, the span they cover (fractions of the box) and the ground line. |
+| `size`, `depth` | `380`, `0.4` | Tallest plant in px at 1080p; depth spread (farther plants are smaller, higher and hazier). |
+| `wind`, `swayFreq`, `gust` | `0.4`, `1`, `1` | Sway amplitude (bending from the root), its frequency and the strength of gusts that roll across the frame. |
+| `fill`, `color`, `colors` | `false` | A ground mound under the plants; one foliage colour; or exact `{foliage: [dark, mid, light], trunk, bark, accent}`. |
+
+### `clouds`
+`look` is `cumulus` (lobed with a flat bottom, a lit shape set towards the light and a rim), `stratus` (long lenses) or `puffs`. The other props are `count`, `band` (`[top, bottom]` fractions), `size` (px), `speed` (px/s; farther clouds are slower), `depth` and `colors` (`[lit, shadow, rim]`).
+
+### `water`
+This kind draws a banded depth gradient (`bands`, 0 = smooth), a shore reflection broken by ripples (`reflect` colour or `"none"`, `reflectHeight`), a sun path at `sun` (x fraction) and drifting wave dashes and glints (`waves`, `speed`, `glints`, `dash`). `colors` sets them exactly: `{top, deep, wave, glint}`.
+
+```json
+{ "layers": [
+  { "component": "landscape", "props": { "style": "risograph", "time": "dusk", "terrain": "mountains", "layers": 4, "horizon": 0.6, "depth": 0.06, "mist": 0.55, "sun": [0.42, 0.36] } },
+  { "component": "water", "props": { "style": "risograph", "time": "dusk", "sun": 0.42, "onTwos": true }, "x": 960, "y": 864, "width": 1920, "height": 432 },
+  { "component": "plants", "props": { "style": "risograph", "time": "dusk", "species": ["pine", "bush"], "count": 6, "spread": [0, 0.8], "fill": true, "wind": 0.35, "onTwos": true }, "x": 320, "y": 540, "width": 640, "height": 1080 }
+] }
+```
+
+Examples: `examples/video/illustration/nature-{riso-lake,painterly-forest,papercut-dunes}.json`. Stills and 100 % crops are in `docs/video/shots/illustration/nature-*.png`. Rust code can reuse the hand through `components::nature::{Hand, HandOpts, Canvas, finish}`, and `components::step_time` is the shared stepping helper.
+## Illustration toolkit (`illo`)
+
+A whole illustration in one layer: a list of shapes drawn in order, lit by one light, drawn by one hand and printed with one set of textures, so the result looks like a single studio piece rather than assembled clip-art. Coordinates are in box pixels, or in a design space set with `view: [w, h]` (fitted, centred).
+
+```json
+{ "component": "illo", "props": {
+  "view": [1920, 1080],
+  "palette": { "skin": "#f2a487", "hair": "#161b3d", "sun": "#ffd9a0" },
+  "light": { "angle": 330, "rim": 195, "color": "$sun", "shadow": "#3a2470" },
+  "hand": { "weight": [1, 4], "wobble": 0.8, "rough": 0.5, "boil": 6 },
+  "grain": 0.06, "misregister": [1.5, 1], "onTwos": true,
+  "groups": [ { "name": "head", "pivot": [1030, 860], "cycle": "idle" } ],
+  "shapes": [
+    { "shape": "path", "name": "face", "d": "M1040 190 C…Z", "fill": "$skin", "group": "head", "shade": { "amount": 0.85, "offset": 0.12 } },
+    { "shape": "ellipse", "cx": 1182, "cy": 522, "rx": 40, "ry": 24, "fill": "#e2513a", "opacity": 0.3, "clipTo": "face", "group": "head" },
+    { "shape": "path", "d": "M1030 150 C…Z", "fill": "$hair", "group": "head", "shadow": { "dist": 0, "dx": 22, "dy": 16, "clipTo": "face" } }
+  ] } }
+```
+
+**Shapes** (`shapes[]`, drawn in order):
+
+| Key | Meaning |
+|---|---|
+| `shape` | `"path"` (`d`, or `points` with `smooth`/`closed`), `"circle"` (`cx cy r`), `"ellipse"` (`cx cy rx ry`), `"rect"` (`x y w h` or `cx cy w h`, `radius`), `"polygon"` (`points`, or regular `cx cy r n`), `"star"` (`cx cy r n inner`), `"blob"` (`cx cy r`/`rx ry`, `lumpy`, `n`, `seed`). Open paths draw as tapered brush lines. |
+| `name`, `group`, `visible` | Name for references; the group (bone) it belongs to; `false` keeps it only as a clip/cut mask. |
+| `fill` | `"#hex"`, `"$swatch"`, `"none"`, a gradient `{ "stops": [...], "gradient": "linear"/"radial", "angle", "center", "radius", "dither" (0.12), "steps" }` (OKLab, dithered with grain, default direction lit → shadow), or an image `{ "image": "photo.jpg", "fit": "cover"/"contain"/"stretch"/"tile", "scale", "focus", "base" }`. |
+| `shade` | `true`, an amount, or `{ amount 0.6, offset 0.2, soft 0, rim 0.035, rimAmount 0.9, color, rimColor }`: the silhouette offset towards the light leaves a hue-shifted form shadow; offset away from the rim light leaves a crisp rim. Sizes are fractions of the shape. |
+| `shadow` | A hard cast shadow: a distance, or `{ dist, dx, dy, flatten, color, opacity 0.7, blur 0, clipTo }`. `flatten` lays it on the ground (0.2–0.5 falls back, negative falls forward); `clipTo` paints it on that shape only, right above it. |
+| `grain`, `texture` | Grain amount (or `{ amount, scale }`), locked to the shape. Texture `"paper"`, `"halftone"`, `"riso"`, `"contour"` (lines that follow the outline inwards, more and heavier towards the shadow), `"hatch"`, `"crosshatch"`, `"stipple"`, `"scribble"`, or `{ style, amount, scale, angle, color }`: dots and lines grow towards the shadow side. |
+| `outline`, `weight`, `lineColor`/`stroke`, `taper`, `gaps` | Hand-drawn line: heavy on the shadow side, thin (and broken by `gaps`) where the light hits; colour defaults to the fill darkened. |
+| `wobble`, `rough`, `corners`, `boil` | Per-shape overrides of the hand (edge wobble, edge breakup in px, corner radius, redraws per second). |
+| `clipTo`, `cut` | Draw only inside another shape (highlights, shadows, patterns), or subtract shapes (holes, crescents). |
+| `opacity`, `blend`, `misregister` | Layer opacity, blend (`multiply`, `screen`, `overlay`, …), fill offset from the line plate. |
+| `rotate`, `scale`, `origin` | Static transform about `origin` (default: the shape's centre). |
+| `animate`, `sway`, `lag` | Keyframes `[{ t, x, y, rotate, scale, sx, sy, squash, opacity, d, ease }]` (or `{ keys, loop, ease }`; `d` morphs by arc length, mismatched paths cross-fade); a sine `sway { rotate, x, y, scale, period, phase }`; a delay in seconds for follow-through. |
+| `light`, `inks` | Per-shape light (`angle`, `rim`, `color`, `shadow`, `strength`) and inks (`[]` = no snapping). |
+| `blink` | Squash shut about `origin` now and then (eyes): `true` or `{ every 3.2, close, hold, open, min 0.08, seed }`. |
+
+**Global keys:** `palette` (array → `"$1"`… or object → `"$name"`), `inks` (every colour snaps to the nearest), `overprint` (all shapes multiply), `light { angle 225, rim, color, shadow, strength }`, `hand { weight [0.8, 4], wobble 1.5, rough 0.6, boil 0, boilAmount 0.8, boilEdges false, color, darken 0.5, outline false, gaps 0.15 }` (boil redraws the line work; `boilEdges` re-seeds fill edges too), `corners` (`"sharp"`, `"soft"`, `"round"` or px), defaults `shade`/`grain`/`texture`/`misregister` for every shape, `onTwos`/`stepFps`, `seed`, `svg` (paste SVG markup: its paths, circles, ellipses, rects, polygons and lines become the first shapes, named by `id`), `paintOver` (outline plus hatching, no flat fills).
+
+**Groups (bones):** `groups: [{ name, parent, pivot, x, y, rotate, scale, animate, sway, lag, cycle, spring, blink }]`. A `cycle` is `"idle"`, `"breathe"`, `"walk"`, `"bob"`, `"wave"` or `"nod"`, or `{ style, speed, amount, phase, rotate, x, y, sx, sy }` with every amplitude editable. Children inherit their parent's motion; `lag` (seconds, cumulative down the chain: 0.08–0.16 s is 2–4 frames) breaks the joints in succession; `spring { stiffness 90, damping 9, drag 0.15 }` makes hair, tails and earrings chase the parent and overshoot.
+
+**Lighting.** Pick one `light.angle` for the piece (0 = from the right, 90 = from below, 225 = top-left) and a `light.shadow` ambient colour: form and cast shadows rotate their hue towards it instead of going grey. Put `rim` on the opposite side for back-lit edges. Use `shade` on masses, `shadow` with `flatten` for objects on a surface, and `shadow.clipTo` for shadows that fall on a wall or a face.
+
+**Texture.** Keep grain at 0.04–0.08, halftone for print-style shading (8–12 px cells at 45°), `riso` specks on large flat areas, and `paper` on light grounds. Gradients use `steps` 2–6 with `dither` for screen-print value bands. Everything is locked to its shape, so it moves with it.
+
+Cost: ops are cached per shape state, every shape is a render-cached layer and runs of still shapes merge into one cached layer. At 1080p the two examples (60–80 shapes, everything breathing, swaying or boiling) take 2–7 ms to evaluate and 15–21 ms per frame on the pipeline's incremental path (24–37 ms full redraw); the minimal example 0.6 ms and 0.3 ms. See `cargo run --release -p anikit-video --example component_cost illo`. Examples: `examples/video/illustration/illo-*.json`; stills in `docs/video/shots/illustration/illo-*.png`.
+
 ## Lottie
 
 ### `lottie`
@@ -923,5 +1028,9 @@ Motion is evaluated at the exact frame time; nothing steps outside `--quality dr
 | `product-shot` | 1242.126 | 0.84 | 11.96 | 0/29 |
 | `now-playing` | 0.111 | 11.37 | 1.65 | 0/29 |
 | `lottie` | 0.000 | 0.78 | 0.00 | 29/29 |
+| `landscape` | 0.001 | 7.71 | 5.89 | 2/29 |
+| `plants` | 0.003 | 4.48 | 3.91 | 0/29 |
+| `clouds` | 0.001 | 1.49 | 0.56 | 0/29 |
+| `water` | 0.698 | 6.35 | 8.56 | 0/29 |
 
 Totals: eval 56.01 ms, full render 178.56 ms, incremental 157.14 ms

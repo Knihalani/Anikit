@@ -1,0 +1,43 @@
+{
+  "answer": {
+    "scores": {
+      "motion": 4,
+      "sound": null,
+      "craft": 5
+    },
+    "checks": {
+      "idea": true,
+      "invariant": true,
+      "arc": false,
+      "type_meaning": false,
+      "freeze_frame": false,
+      "ending": false,
+      "restraint": false,
+      "material": true,
+      "sync": null
+    },
+    "defects": [
+      "Single locked-off equirectangular shot for 20s: no camera move, no cut, no reframing. All motion is simulation advection at a constant rate.",
+      "Rainbow/jet colormap for CO2 makes false bands (cyan\u2013yellow\u2013red steps) that read as fronts. The perceptual ordering is non-monotonic and fights the CO gray layer.",
+      "Date counter ticks in hard steps with no easing. It is the only typographic motion, and it is purely informational.",
+      "Lower-third bar is a dense data-sheet strip: tiny unreadable legend labels and two full colormaps. The NASA logo and office credit compete for attention, and the scale text is soft and illegible at delivery size.",
+      "At 100%, compression is soft and smeary, with mushy detail in the high-frequency red filaments and slight blocking in the dark-red regions. Saturated reds clip toward a flat maroon.",
+      "The gray carbon-monoxide overlay on the continents is muddy and low-contrast. It reads as a dirty wash, not a distinct layer.",
+      "The film starts and ends mid-stream on an arbitrary date, with no opening hold, build or resolve."
+    ],
+    "gaps": [
+      "There's no directed choreography or arc. A top studio would art-direct the data: push in on Asian and North American emission plumes, follow a single plume across the Pacific, and build to a hemispheric-scale reveal at around 70%. Here the 20s is one uniform, flat rate of change.",
+      "Color and finish: they need a perceptually uniform, restrained palette with a single accent for sources, plus lit 3D globe treatment with atmospheric falloff and clean high-bitrate rendering. This piece has a jet colormap with clipped reds and compression smear.",
+      "Type and information design: the legend bar should be replaced with sparse, meaningful annotation that is timed to events (a sources label, a seasonal drawdown callout, a counter whose cadence or weight responds to ppm). The current footer is a static scientific template."
+    ]
+  },
+  "meta": {
+    "seconds": 20.2,
+    "cost_usd": 0.1598182,
+    "tokens": 72658,
+    "models": [
+      "claude-opus-5-5"
+    ]
+  },
+  "pace": "nasa-year-in-the-life-of-co2-2014.mp4: 20.0s, 1 shots, median 20.00s, longest 20.00s\nper-second change: [11.7, 11.6, 12.1, 12.4, 12.7, 12.3, 11.8, 11.9, 12.2, 12.1, 12.4, 12.7, 12.1, 11.3, 11.3, 11.5, 13.3, 13.5, 15.4]\nPACE: FAIL \u2014 longest shot 20.0s > 2.5s; median shot 20.0s > 1.5s"
+}
