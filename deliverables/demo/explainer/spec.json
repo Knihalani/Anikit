@@ -1,0 +1,670 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "background": "#020203",
+ "intent": {
+  "pace": "medium"
+ },
+ "encode": {
+  "crf": 24
+ },
+ "sound": {
+  "design": "off",
+  "loudness": -14,
+  "space": "dry"
+ },
+ "audio": [
+  {
+   "src": "soundtrack.wav",
+   "at": 0
+  }
+ ],
+ "scenes": [
+  {
+   "duration": 30.0,
+   "layers": [
+    {
+     "src": "surface.glsl",
+     "uniforms": {},
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "SOUND",
+         "font": "Anybody",
+         "size": "26vh",
+         "weight": 800,
+         "color": "#f4efe6",
+         "x": "50%",
+         "y": "56%",
+         "letterSpacing": "-0.03em",
+         "start": 0,
+         "end": 5.4,
+         "axes": {
+          "wdth": 150
+         },
+         "animate": [
+          {
+           "from": {
+            "opacity": 0
+           },
+           "duration": 0.6
+          },
+          {
+           "keyframes": {
+            "axes.wdth": [
+             150,
+             60,
+             150
+            ]
+           },
+           "duration": 5.4,
+           "ease": "inOutSine"
+          }
+         ],
+         "exit": {
+          "preset": "fade",
+          "duration": 0.6
+         }
+        },
+        {
+         "text": "NOISE",
+         "font": "Anybody",
+         "size": "30vh",
+         "weight": 800,
+         "color": "#f4efe6",
+         "x": "50%",
+         "y": "56%",
+         "letterSpacing": "-0.03em",
+         "start": 5.0,
+         "end": 11.4,
+         "axes": {
+          "wdth": 60
+         },
+         "animate": [
+          {
+           "from": {
+            "opacity": 0
+           },
+           "duration": 0.6
+          },
+          {
+           "keyframes": {
+            "axes.wdth": [
+             60,
+             150,
+             60
+            ]
+           },
+           "duration": 6.4,
+           "ease": "inOutSine"
+          }
+         ],
+         "exit": {
+          "preset": "fade",
+          "duration": 0.6
+         }
+        },
+        {
+         "text": "LISTEN",
+         "font": "Anybody",
+         "size": "20vh",
+         "weight": 800,
+         "color": "#f4efe6",
+         "x": "50%",
+         "y": "56%",
+         "letterSpacing": "-0.03em",
+         "start": 11.0,
+         "end": 17.4,
+         "axes": {
+          "wdth": 150
+         },
+         "animate": [
+          {
+           "from": {
+            "opacity": 0
+           },
+           "duration": 0.6
+          },
+          {
+           "keyframes": {
+            "axes.wdth": [
+             150,
+             60,
+             150
+            ]
+           },
+           "duration": 6.399999999999999,
+           "ease": "inOutSine"
+          }
+         ],
+         "exit": {
+          "preset": "fade",
+          "duration": 0.6
+         }
+        },
+        {
+         "text": "FLIP",
+         "font": "Anybody",
+         "size": "22vh",
+         "weight": 800,
+         "color": "#f4efe6",
+         "x": "50%",
+         "y": "56%",
+         "letterSpacing": "-0.03em",
+         "start": 17.0,
+         "end": 23.4,
+         "axes": {
+          "wdth": 150
+         },
+         "animate": [
+          {
+           "from": {
+            "opacity": 0
+           },
+           "duration": 0.6
+          },
+          {
+           "keyframes": {
+            "axes.wdth": [
+             150,
+             50,
+             150
+            ]
+           },
+           "duration": 6.399999999999999,
+           "ease": "inOutSine"
+          }
+         ],
+         "exit": {
+          "preset": "fade",
+          "duration": 0.6
+         }
+        }
+       ]
+      },
+      {
+       "layers": [
+        {
+         "text": "SILENCE",
+         "font": "Anybody",
+         "size": "19vh",
+         "weight": 800,
+         "color": "#f4efe6",
+         "x": "50%",
+         "y": "80%",
+         "letterSpacing": "-0.03em",
+         "start": 23.0,
+         "end": 30.0,
+         "axes": {
+          "wdth": 112
+         },
+         "animate": [
+          {
+           "from": {
+            "opacity": 0
+           },
+           "duration": 0.6
+          },
+          {
+           "keyframes": {
+            "axes.wdth": [
+             112,
+             112,
+             112
+            ]
+           },
+           "duration": 7.0,
+           "ease": "inOutSine"
+          }
+         ],
+         "exit": {
+          "preset": "fade",
+          "duration": 0.6
+         }
+        }
+       ]
+      }
+     ],
+     "animate": [
+      {
+       "keyframes": {
+        "camH": [
+         [
+          0.0,
+          0.32
+         ],
+         [
+          0.15,
+          0.55
+         ],
+         [
+          0.2667,
+          1.9
+         ],
+         [
+          0.3667,
+          2.6
+         ],
+         [
+          0.5667,
+          3.3
+         ],
+         [
+          0.7333,
+          3.6
+         ],
+         [
+          0.85,
+          3.4
+         ],
+         [
+          1.0,
+          2.3
+         ]
+        ],
+        "camZ": [
+         [
+          0.0,
+          3.4
+         ],
+         [
+          0.15,
+          3.0
+         ],
+         [
+          0.2667,
+          -1.2
+         ],
+         [
+          0.3667,
+          -1.6
+         ],
+         [
+          0.5667,
+          0.6
+         ],
+         [
+          0.7333,
+          1.2
+         ],
+         [
+          0.85,
+          3.2
+         ],
+         [
+          1.0,
+          5.75
+         ]
+        ],
+        "pitch": [
+         [
+          0.0,
+          0.1
+         ],
+         [
+          0.15,
+          0.16
+         ],
+         [
+          0.2667,
+          0.3
+         ],
+         [
+          0.3667,
+          0.38
+         ],
+         [
+          0.5667,
+          0.62
+         ],
+         [
+          0.7333,
+          0.74
+         ],
+         [
+          0.85,
+          1.0
+         ],
+         [
+          1.0,
+          1.47
+         ]
+        ],
+        "camX": [
+         [
+          0.0,
+          -1.5
+         ],
+         [
+          0.15,
+          -1.1
+         ],
+         [
+          0.2667,
+          0.3
+         ],
+         [
+          0.3667,
+          0.4
+         ],
+         [
+          0.5667,
+          0.0
+         ],
+         [
+          1.0,
+          0.0
+         ]
+        ],
+        "chaos": [
+         [
+          0.0,
+          0
+         ],
+         [
+          0.1733,
+          0
+         ],
+         [
+          0.2333,
+          1
+         ],
+         [
+          0.6333,
+          1
+         ],
+         [
+          0.7667,
+          1
+         ],
+         [
+          0.8667,
+          0.0
+         ],
+         [
+          1.0,
+          0
+         ]
+        ],
+        "ring": [
+         [
+          0.0,
+          0
+         ],
+         [
+          0.3667,
+          0
+         ],
+         [
+          0.42,
+          1
+         ],
+         [
+          1.0,
+          1
+         ]
+        ],
+        "mic": [
+         [
+          0.0,
+          0
+         ],
+         [
+          0.4267,
+          0
+         ],
+         [
+          0.4467,
+          1
+         ],
+         [
+          0.4667,
+          0.3
+         ],
+         [
+          0.4867,
+          1
+         ],
+         [
+          0.5067,
+          0.3
+         ],
+         [
+          0.5267,
+          1
+         ],
+         [
+          0.5833,
+          1
+         ],
+         [
+          0.6333,
+          0.2
+         ],
+         [
+          1.0,
+          0
+         ]
+        ],
+        "anti": [
+         [
+          0.0,
+          0
+         ],
+         [
+          0.5733,
+          0
+         ],
+         [
+          0.6133,
+          1
+         ],
+         [
+          1.0,
+          1
+         ]
+        ],
+        "cancel": [
+         [
+          0.0,
+          0
+         ],
+         [
+          0.6333,
+          0
+         ],
+         [
+          0.7333,
+          1
+         ],
+         [
+          1.0,
+          1
+         ]
+        ],
+        "calm": [
+         [
+          0.0,
+          0
+         ],
+         [
+          0.7667,
+          0
+         ],
+         [
+          0.8667,
+          1
+         ],
+         [
+          1.0,
+          1
+         ]
+        ],
+        "warm": [
+         [
+          0.0,
+          1
+         ],
+         [
+          0.5667,
+          1
+         ],
+         [
+          0.7333,
+          0.45
+         ],
+         [
+          0.8667,
+          0.0
+         ],
+         [
+          1.0,
+          0.0
+         ]
+        ]
+       },
+       "duration": 30.0,
+       "ease": "inOutSine"
+      }
+     ]
+    },
+    {
+     "text": "01  Sound is air, pushed into waves:\na pressure ring spreading out.",
+     "font": "Martian Mono",
+     "size": "2.3vh",
+     "color": "#efe9df",
+     "x": "7vw",
+     "y": "14vh",
+     "anchor": "left",
+     "align": "left",
+     "letterSpacing": "0.06em",
+     "lineHeight": 1.45,
+     "maxWidth": "30vw",
+     "axes": {
+      "wdth": 100,
+      "wght": 380
+     },
+     "start": 1.2,
+     "end": 5.2,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.7
+     },
+     "exit": {
+      "preset": "fade",
+      "duration": 0.5
+     }
+    },
+    {
+     "text": "02  Noise is thousands of them,\narriving at once.",
+     "font": "Martian Mono",
+     "size": "2.3vh",
+     "color": "#efe9df",
+     "x": "93vw",
+     "y": "16vh",
+     "anchor": "right",
+     "align": "right",
+     "letterSpacing": "0.06em",
+     "lineHeight": 1.45,
+     "maxWidth": "30vw",
+     "axes": {
+      "wdth": 100,
+      "wght": 380
+     },
+     "start": 6.0,
+     "end": 11.0,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.7
+     },
+     "exit": {
+      "preset": "fade",
+      "duration": 0.5
+     }
+    },
+    {
+     "text": "03  A microphone on the earcup\nhears each wave before your ear does.",
+     "font": "Martian Mono",
+     "size": "2.3vh",
+     "color": "#efe9df",
+     "x": "7vw",
+     "y": "16vh",
+     "anchor": "left",
+     "align": "left",
+     "letterSpacing": "0.06em",
+     "lineHeight": 1.45,
+     "maxWidth": "30vw",
+     "axes": {
+      "wdth": 100,
+      "wght": 380
+     },
+     "start": 12.6,
+     "end": 17.0,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.7
+     },
+     "exit": {
+      "preset": "fade",
+      "duration": 0.5
+     }
+    },
+    {
+     "text": "04  The speaker plays it back flipped.\nPeak meets trough. They cancel.",
+     "font": "Martian Mono",
+     "size": "2.3vh",
+     "color": "#efe9df",
+     "x": "93vw",
+     "y": "80vh",
+     "anchor": "right",
+     "align": "right",
+     "letterSpacing": "0.06em",
+     "lineHeight": 1.45,
+     "maxWidth": "30vw",
+     "axes": {
+      "wdth": 100,
+      "wght": 380
+     },
+     "start": 18.0,
+     "end": 23.0,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.7
+     },
+     "exit": {
+      "preset": "fade",
+      "duration": 0.5
+     }
+    },
+    {
+     "text": "05  Active noise cancellation:\nsilence, made from sound.",
+     "font": "Martian Mono",
+     "size": "2.3vh",
+     "color": "#efe9df",
+     "x": "50vw",
+     "y": "94vh",
+     "anchor": "center",
+     "align": "center",
+     "letterSpacing": "0.06em",
+     "lineHeight": 1.45,
+     "maxWidth": "30vw",
+     "axes": {
+      "wdth": 100,
+      "wght": 380
+     },
+     "start": 25.0,
+     "end": 30.0,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.7
+     },
+     "exit": {
+      "preset": "fade",
+      "duration": 0.5
+     }
+    }
+   ]
+  }
+ ]
+}
