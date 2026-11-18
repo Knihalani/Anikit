@@ -166,6 +166,20 @@ fn srgb(c: f32) -> f32 {
     }
 }
 
+const ENCODE_N: usize = 4096;
+
+fn encode_lut() -> &'static [f32; ENCODE_N] {
+    static L: OnceLock<[f32; ENCODE_N]> = OnceLock::new();
+    L.get_or_init(|| std::array::from_fn(|i| srgb(i as f32 / (ENCODE_N - 1) as f32)))
+}
+
+#[inline]
+fn encode(lut: &[f32; ENCODE_N], c: f32) -> f32 {
+    let t = c.clamp(0.0, 1.0) * (ENCODE_N - 1) as f32;
+    let j = (t as usize).min(ENCODE_N - 2);
+    lut[j] + (lut[j + 1] - lut[j]) * (t - j as f32)
+}
+
 impl Physarum {
     fn sim(&self, aspect: f32) -> &Sim {
         self.sim.get_or_init(|| {
@@ -349,6 +363,7 @@ impl Physarum {
         let (kx, ky) = (fw as f32 / w as f32, fh as f32 / h as f32);
         let exposure = self.exposure;
         let mut out = vec![0u8; w * h * 4];
+        let lut = encode_lut();
         out.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
             for x in 0..w {
                 // Bilinear from the field.
@@ -366,7 +381,7 @@ impl Physarum {
                 let dith = ((hs >> 8) & 0xff) as f32 / 255.0 - 0.5;
                 for c in 0..3 {
                     let lv = grad[k][c] + (grad[k + 1][c] - grad[k][c]) * t;
-                    row[x * 4 + c] = (srgb(lv) * 255.0 + 0.5 + dith).clamp(0.0, 255.0) as u8;
+                    row[x * 4 + c] = (encode(lut, lv) * 255.0 + 0.5 + dith).clamp(0.0, 255.0) as u8;
                 }
                 row[x * 4 + 3] = 255;
             }
@@ -470,5 +485,23 @@ mod tests {
         let early = cv(&p.frame(s, 1, 30.0));
         let late = cv(&p.frame(s, 150, 30.0));
         assert!(late > early * 1.5 && late > 1.0, "contrast {early} → {late}");
+    }
+
+    #[test]
+    fn encode_lut_matches_srgb() {
+        let lut = encode_lut();
+        let max_error = (0..=1_000_000)
+            .map(|i| {
+                let c = i as f32 / 1_000_000.0;
+                (encode(lut, c) - srgb(c)).abs()
+            })
+            .chain(
+                [-0.1, 1.5]
+                    .into_iter()
+                    .map(|c| (encode(lut, c) - srgb(c)).abs()),
+            )
+            .fold(0.0f32, f32::max);
+        println!("max sRGB LUT error: {max_error:.9}");
+        assert!(max_error < 0.25 / 255.0, "max error {max_error}");
     }
 }
