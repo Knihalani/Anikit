@@ -133,6 +133,8 @@ pub struct Pat {
     pub field: Option<super::expr::Expr>,
     /// Time for `field` (seconds since the layer started).
     pub t: f64,
+    /// Cover at least this box too (when the layer's size animates, marks must reach its largest box).
+    pub cover: Option<[f64; 2]>,
 }
 
 fn default_mark(kind: &str) -> f64 {
@@ -161,7 +163,11 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
     let mark = pt.mark.unwrap_or_else(|| default_mark(&pt.kind)).max(0.0);
     let (cx, cy) = (w * 0.5, h * 0.5);
     // Work in a rotated frame covering the box's circumscribed square.
-    let half = (w * w + h * h).sqrt() * 0.5 + s;
+    let (cw, ch) = match pt.cover {
+        Some([a, b]) => (w.max(a), h.max(b)),
+        None => (w, h),
+    };
+    let half = (cw * cw + ch * ch).sqrt() * 0.5 + s;
     let n = (half / s).ceil() as i64 + 1;
     let rot = kurbo::Affine::translate((cx, cy)) * kurbo::Affine::rotate(pt.angle.to_radians());
     // Ramp factor along the rotated x axis.
@@ -443,7 +449,7 @@ mod tests {
     fn patterns_are_deterministic_and_cover() {
         for k in PATTERNS {
             let tile = (*k == "tile").then(|| BezPath::from_svg("M-10 -10 L10 -10 L0 12 Z").unwrap());
-            let pt = Pat { kind: k.to_string(), spacing: 40.0, mark: None, angle: 15.0, seed: 2, jitter: 0.0, ramp: None, tile, turns: 4, stagger: true, tile_stroke: 0.0, field: None, t: 0.0 };
+            let pt = Pat { kind: k.to_string(), spacing: 40.0, mark: None, angle: 15.0, seed: 2, jitter: 0.0, ramp: None, tile, turns: 4, stagger: true, tile_stroke: 0.0, field: None, t: 0.0, cover: None };
             let a = pattern(400.0, 300.0, &pt);
             let b = pattern(400.0, 300.0, &pt);
             assert_eq!(a, b, "{k}");

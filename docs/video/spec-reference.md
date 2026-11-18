@@ -128,6 +128,8 @@ That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the 
 | `label` | `$body` | `1.8vh` | 600 | `$muted` (uppercase, letterSpacing 0.08em) |
 | `code` | `$mono` | `2.6vh` | 400 | `$text` |
 
+
+`"palette": "#e4572e split"` (schemes `mono analogous complement split triad`, plus `dark`) generates `ink paper mid accent accent2 tint` and the roles `bg text primary secondary muted surface` from one seed in OKLCH. Explicit `colors` win. Preview it with `anikit-video palette "<seed> <scheme>"`. Any colour can be a riso ink: `"riso:fluorescent-pink"` (`anikit-video palette riso` lists 19).
 ## Grid
 
 `"grid": { "columns": 12, "rows": 8, "margin": 96, "gutter": 24, "baseline": 12, "areas": { "head": "1-8/1-3" }, "show": false }` on the video, a scene (replaces it) or a group (for its children). Layers snap to it with `cell`. `margin` takes 1, 2 (`[v, h]`) or 4 lengths (default 5% of the short side); `gutter` 1 or 2 (default 2%). With `baseline`, text in a cell gets leading in whole baseline units. `show: true` tints the fields and baselines over the scene; `show: "under"` draws the field edges as hairlines beneath the layers (`color` sets them). Guide: `anikit-video docs graphic`.

@@ -286,7 +286,7 @@
       "type": "object",
       "properties": {
         "colors": {
-          "description": "Colour tokens: `primary`, `secondary`, `accent`, `bg`, `surface`, `text`, `muted`, or your own.",
+          "description": "Colour tokens: `primary`, `secondary`, `accent`, `bg`, `surface`, `text`, `muted`, or your own.\nAny colour may be a riso ink: `\"riso:fluorescent-pink\"` (`anikit-video palette --riso` lists them).",
           "type": [
             "object",
             "null"
@@ -294,6 +294,13 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "palette": {
+          "description": "A value-structured palette from a seed: `\"#e4572e split\"` (schemes `mono analogous complement split triad`,\nadd `dark` for ink grounds). Sets `ink paper mid accent accent2 tint` and the roles `bg text primary secondary\nmuted surface`; `colors` still override. `anikit-video palette \"#e4572e split\"` previews it.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "fonts": {
           "description": "Font roles: `heading`, `body`, `mono`.",

@@ -108,6 +108,9 @@ struct C<'a> {
     /// The video's grid, and the grid in force for the layers being compiled.
     video_grid: Option<spec::GridSpec>,
     grid: Option<spec::GridSpec>,
+    /// The layer being compiled: its anchor and whether it is text (for `cell` tweens).
+    cur_anchor: [f32; 2],
+    cur_text: bool,
     /// Resting boxes `[left, top, right, bottom]` of the earlier siblings with an `id`, for `"=title.bottom + 24"`.
     sib: Vec<(String, [f32; 4])>,
     /// The generated music's notes (video seconds) and beats per bar, for `onNotes`.
@@ -299,6 +302,8 @@ impl Evaluator {
             uniform_slots: Vec::new(),
             video_grid: spec.grid.clone(),
             grid: None,
+            cur_anchor: [0.5, 0.5],
+            cur_text: false,
             sib: Vec::new(),
             score: None,
             pinned_music: None,
@@ -330,7 +335,11 @@ impl Evaluator {
         let (theme, bad) = Theme::resolve(spec.theme.as_ref());
         c.theme = theme;
         for (k, v) in bad {
-            c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}' ({COLOUR_FORMS})")));
+            if k == "palette" {
+                c.d.push(Diagnostic::error("theme.palette", v));
+            } else {
+                c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}' ({COLOUR_FORMS})")));
+            }
         }
         c.load_fonts(spec);
         if let Some(m) = &spec.markers {
@@ -2010,6 +2019,8 @@ impl C<'_> {
         }
 
         // Animation.
+        self.cur_anchor = n.anchor;
+        self.cur_text = matches!(n.kind, Kind::Text { .. });
         let refs = [pw, ph];
         let mut tw: Vec<TweenC> = Vec::new();
         let life_end = if end.is_finite() { end - start } else { self.scene_dur - start };
@@ -2843,6 +2854,38 @@ impl C<'_> {
         }
     }
 
+    /// The rect of a cell value in the current grid (for tweens).
+    fn cell_rect(&mut self, c: &serde_json::Value, path: &str, size: [f32; 2]) -> Option<[f32; 4]> {
+        let Some(g) = self.grid.clone() else {
+            self.d.push(Diagnostic::error(path, "'cell' needs a grid on the video, the scene or a parent group"));
+            return None;
+        };
+        let gc = self.grid_c(&g, size, path);
+        let r = match c {
+            serde_json::Value::String(s) => match g.areas.as_ref().and_then(|a| a.get(s.as_str())) {
+                Some(r) => super::graphic::parse_cell(r, gc.cols, gc.rows),
+                None => super::graphic::parse_cell(s, gc.cols, gc.rows),
+            },
+            serde_json::Value::Array(a) if (2..=4).contains(&a.len()) => {
+                let v: Vec<u32> = a.iter().map(|x| x.as_f64().unwrap_or(1.0).max(1.0) as u32).collect();
+                let (nc, nr) = (v.get(2).copied().unwrap_or(1), v.get(3).copied().unwrap_or(1));
+                if v[0] + nc - 1 > gc.cols || v[1] + nr - 1 > gc.rows {
+                    Err("runs past the grid".into())
+                } else {
+                    Ok((v[0], v[0] + nc - 1, v[1], v[1] + nr - 1))
+                }
+            }
+            _ => Err("expected an area name, a range like \"1-6/2-4\" or [col, row, cols, rows]".into()),
+        };
+        match r {
+            Ok((c0, c1, r0, r1)) => Some(gc.rect(c0, c1, r0, r1)),
+            Err(e) => {
+                self.d.push(Diagnostic::error(path, e));
+                None
+            }
+        }
+    }
+
     /// A copy of `l` placed in its grid cell.
     fn place_in_cell(&mut self, l: &Layer, c: &serde_json::Value, path: &str, size: [f32; 2]) -> Layer {
         let cp = format!("{path}.cell");
@@ -3248,7 +3291,7 @@ impl C<'_> {
                         let mut it = s.split_whitespace();
                         let kind = it.next().unwrap_or("dots").to_string();
                         let spacing = it.next().and_then(|x| x.trim_end_matches("px").parse::<f64>().ok()).unwrap_or(40.0);
-                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None, tile: None, turns: 0, stagger: false, tile_stroke: 0.0, field: None, t: 0.0 })
+                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None, tile: None, turns: 0, stagger: false, tile_stroke: 0.0, field: None, t: 0.0, cover: None })
                     }
                     Some(spec::PatternValue::Full(f)) => Some(super::graphic::Pat {
                         kind: if f.kind.is_empty() && f.tile.is_some() { "tile".into() } else { f.kind.clone() },
@@ -3265,6 +3308,7 @@ impl C<'_> {
                         turns: f.turns.unwrap_or(0).min(360),
                         stagger: f.stagger.unwrap_or(false),
                         tile_stroke: f.tile_stroke.unwrap_or(0.0).max(0.0),
+                        cover: None,
                         field: match &f.field {
                             Some(src) => match super::expr::Expr::compile_field(src.trim().trim_start_matches('='), self.w as f64, self.h as f64) {
                                 Ok(e) => Some(e),
@@ -3295,6 +3339,11 @@ impl C<'_> {
                         }
                         if pt.spacing < 4.0 {
                             self.d.push(Diagnostic::warning(&pp, "spacing under 4 px turns to moiré after encoding"));
+                        }
+                        // If the size animates (cell tweens, width/height, scale), cover the whole frame: marks are clipped anyway.
+                        let anim = format!("{:?} {:?}", l.animate, l.update);
+                        if ["\"cell\"", "\"width\"", "\"height\"", "\"scale", "\"zoom", "width:", "height:", "scale"].iter().any(|k| anim.contains(k)) || matches!(&l.width, Some(Num::Str(_))) || matches!(&l.height, Some(Num::Str(_))) {
+                            pt.cover = Some([self.w as f64 * 1.2, self.h as f64 * 1.2]);
                         }
                         if pt.field.as_ref().is_some_and(|e| e.dynamic) {
                             n.live_pattern = Some(Arc::new((pt.clone(), [w as f64, h as f64])));
@@ -4723,6 +4772,19 @@ impl C<'_> {
         let mut out = Vec::new();
         for (k, v) in m {
             let p = format!("{path}.{k}");
+            if k == "cell" {
+                // Tween to (or from) a grid field: x, y, width (and height, except text).
+                if let Some([x, y, w, h]) = self.cell_rect(v, &p, refs) {
+                    let a = self.cur_anchor;
+                    out.push((prop::X, 1, ValS::Abs(x + a[0] * w)));
+                    out.push((prop::Y, 1, ValS::Abs(y + a[1] * h)));
+                    out.push((prop::W, 1, ValS::Abs(w)));
+                    if !self.cur_text {
+                        out.push((prop::H, 1, ValS::Abs(h)));
+                    }
+                }
+                continue;
+            }
             if let (Some((slot, n)), Some(arr)) = (self.uniform_lookup(k), v.as_array()) {
                 // A vector uniform: one track per component.
                 for (i, x) in arr.iter().take(n).enumerate() {
