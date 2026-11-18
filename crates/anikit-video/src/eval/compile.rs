@@ -4512,7 +4512,10 @@ impl C<'_> {
                     fixed.push((u.name.clone(), v));
                 }
                 if animated(&u.name) {
-                    self.d.push(Diagnostic::warning(format!("{path}.uniforms.{}", u.name), format!("more than {UNIFORM_SLOTS} animated uniform floats: '{}' can't be animated (it keeps its first value)", u.name)));
+                    self.d.push(Diagnostic::error(
+                        format!("{path}.uniforms.{}", u.name),
+                        format!("a shader layer can animate at most {UNIFORM_SLOTS} uniform floats; '{}' would keep its first value. Animate fewer (static numbers don't count), or drive several from one animated uniform, e.g. `uniform float phase;` and derive the rest in the shader", u.name),
+                    ));
                 }
                 continue;
             }
