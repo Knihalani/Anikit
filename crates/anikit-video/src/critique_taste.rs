@@ -19,6 +19,8 @@ struct TextInfo {
     scene: usize,
     size: f64,
     centred: bool,
+    /// A tiny tracked-caps label (an "eyebrow").
+    eyebrow: bool,
 }
 
 /// Run every taste check on the look-applied `spec` (`raw` is what the author wrote).
@@ -42,7 +44,15 @@ pub(super) fn run(raw: &Value, spec: &Value, cx: &mut Ctx) {
                 let side = l.get("anchor").and_then(|a| a.as_str()).is_some_and(|a| a.contains("left") || a.contains("right"))
                     || l.get("align").and_then(|a| a.as_str()).is_some_and(|a| a == "left" || a == "right");
                 let centred = !side && x.is_none_or(|x| (x - cx.w / 2.0).abs() < cx.w * 0.04);
-                texts.push(TextInfo { scene: si, size, centred });
+                let caps = l.get("uppercase") == Some(&Value::Bool(true)) || st.as_ref().and_then(|x| x.get("uppercase")) == Some(&Value::Bool(true))
+                    || (t.chars().any(|c| c.is_alphabetic()) && !t.chars().any(|c| c.is_lowercase()));
+                let track = l.get("letterSpacing").or_else(|| st.as_ref().and_then(|x| x.get("letterSpacing"))).and_then(|v| match v {
+                    Value::String(x) => x.trim().strip_suffix("em").and_then(|n| n.trim().parse::<f64>().ok()),
+                    Value::Number(n) => n.as_f64().map(|px| px / size.max(1.0)),
+                    _ => None,
+                });
+                let eyebrow = caps && track.is_some_and(|e| e >= 0.06) && size < cx.h * 0.035;
+                texts.push(TextInfo { scene: si, size, centred, eyebrow });
                 if blurred.is_none() && words_blurred(l) {
                     blurred = Some(p.to_string());
                 }
@@ -54,6 +64,7 @@ pub(super) fn run(raw: &Value, spec: &Value, cx: &mut Ctx) {
             "consider animating blur to 0 by the end of the entrance so the words are sharp while read (TASTE.md §1)");
     }
     type_scale(&texts, cx);
+    eyebrows(&texts, cx);
     centred(&texts, scenes.len(), cx);
     palette(spec, cx);
     rhythm(&scenes, cx);
@@ -75,6 +86,18 @@ fn words_blurred(l: &serde_json::Map<String, Value>) -> bool {
     match last_to {
         Some(b) => num(Some(b)) > 0.5,
         None => num(l.get("blur")) > 0.5 && !anims.iter().any(|a| a.get("from").and_then(|f| f.get("blur")).is_some()),
+    }
+}
+
+/// The small tracked-caps label over or under a headline, repeated scene after scene:
+/// the blind judge named it in 9 of 11 eval pieces as a signature generic tell.
+fn eyebrows(texts: &[TextInfo], cx: &mut Ctx) {
+    let scenes: std::collections::BTreeSet<usize> = texts.iter().map(|t| t.scene).collect();
+    let with: std::collections::BTreeSet<usize> = texts.iter().filter(|t| t.eyebrow).map(|t| t.scene).collect();
+    // Most text scenes, or a short piece (1–2 scenes) built around one held label.
+    if !with.is_empty() && with.len() * 2 >= scenes.len() && (with.len() >= 3 || scenes.len() <= 2) {
+        cx.note("tip", "label", "scenes", format!("{} of {} text scenes carry a tiny tracked-caps label; this eyebrow-plus-headline kit tends to read as a template", with.len(), scenes.len()),
+            "give labels a role from the world (a timetable, a map legend, a lab notebook) or drop them; type in support works best set into the image's own grid (docs/video/craft/typography.md §3.6, craft/judge-r1-review.md)");
     }
 }
 
@@ -395,5 +418,16 @@ mod tests {
         assert!(c.contains(&("world", "tip")), "{c:?}");
         let ok = checks(json!({ "world": { "palette": ["#0e1712", "#f2b92e", "#2b6cff"], "fonts": ["jetbrains mono"] }, "scenes": sc }));
         assert!(!ok.iter().any(|c| c.0 == "world"), "{ok:?}");
+    }
+
+    #[test]
+    fn eyebrow_labels_recurring() {
+        let ds = [0.7, 1.6, 0.9, 2.4];
+        let scenes: Vec<_> = (0..4).map(|i| json!({ "duration": ds[i], "layers": [
+            { "text": "SEPTEMBER SEA-ICE EXTENT", "size": 26, "letterSpacing": "0.14em", "x": "8%", "anchor": "left", "y": "20%" },
+            { "text": format!("Headline {i}"), "size": 140, "x": "8%", "anchor": "left" } ] })).collect();
+        assert!(checks(json!({ "scenes": scenes })).contains(&("label", "tip")));
+        let plain: Vec<_> = (0..4).map(|i| json!({ "duration": ds[i], "layers": [ { "text": format!("Headline {i}"), "size": 140, "x": "8%", "anchor": "left" } ] })).collect();
+        assert!(!checks(json!({ "scenes": plain })).iter().any(|c| c.0 == "label"));
     }
 }
