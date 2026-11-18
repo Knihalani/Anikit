@@ -631,22 +631,26 @@ quarter-pel; AQ and the SSIM floor off so that QP alone sets quality).
   picture bytes against 25 Mbit/s at 1920×1080. It scales with frame area
   (never below a 640×360 frame's share) and with `fps`.
   - Above the ceiling, the floor stops lowering the QP and gives back what it
-    took. It then raises the QP up to 4 above `qp` until the average falls
-    under 80% of the ceiling.
-  - The raise only applies when `qp` is 20 or more. An explicit high quality
-    is not throttled.
-  - Without the ceiling, texture whose SSIM rises slowly with bits (re-drawn
-    film grain, paper, halftone) could take the floor's full 8-QP drop.
+    took. Texture whose SSIM rises slowly with bits (re-drawn film grain,
+    paper, halftone) could otherwise take the floor's full 8-QP drop.
+  - With `ceiling_raise` (and `qp` ≥ 20), it then raises the QP up to that
+    much above `qp` until the average falls under 80% of the ceiling.
+    anikit-video sets 4 for films of 10 s or more.
+  - Short clips keep their bursts. A chunk of 20–60 frames can't tell a burst
+    from a film over budget, and raising always throttled the one-second
+    35 Mbit/s burst in `particles`, failing qbench's delivered-PSNR gate.
 
   | clip (pipeline settings) | before tonight | now | x264 |
   |---|---|---|---|
   | octava, 13.5 s @ 24 fps | 31.1 MB / SSIM 0.988 | 23.8 MB / 0.982 | 8.4 MB / 0.986 (CRF 20) |
   | hill, 11.9 s @ 24 fps | 33.7 MB / 0.983 | 32.4 MB / 0.982 | 20.3 MB / 0.980 (CRF 21) |
   | e-data, 30 s @ 30 fps with `post.grain` | 149.3 MB | 97.6 MB | |
+  | demo/data, 30 s (pack-ice shader) | 88.5 MB (main's `final.mp4`) | 80.5 MB | |
 
   Octava and hill run at 14–19 Mbit/s, under the ceiling, so their gains come
   from the IDR lookahead and the B offset. The ceiling only acts on films like
-  e-data, where QP 23 alone costs ~26 Mbit/s of re-drawn grain. On octava, the
+  e-data, where QP 23 alone costs ~26 Mbit/s of re-drawn grain; demo/data
+  (21 Mbit/s) is under it. On octava, the
   static paper texture is unchanged: the IDR lookahead codes it once at the
   lower QP, and it keeps about 90% of the source's horizontal-gradient energy
   (x264: 100%).

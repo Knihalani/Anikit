@@ -71,11 +71,17 @@ pub struct EncoderConfig {
     pub partitions: bool,
     /// 8×8 transform for inter macroblocks (High profile; CABAC only).
     pub transform8: bool,
+    /// With the SSIM floor on and `qp` ≥ 20: how far above `qp` the bitrate
+    /// ceiling (25 Mbit/s at 1080p30, scaled) may raise the QP while P and B
+    /// pictures average above it (0 = it only stops the floor). For long
+    /// films, where file size matters; a short clip's burst should keep its
+    /// quality. anikit-video sets 4 for films of 10 s or more.
+    pub ceiling_raise: u8,
 }
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: -0.5, ssim_floor: 0.985, ssim_max_drop: 8, bframes: 0, partitions: false, transform8: true }
+        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: -0.5, ssim_floor: 0.985, ssim_max_drop: 8, bframes: 0, partitions: false, transform8: true, ceiling_raise: 0 }
     }
 }
 
@@ -1770,8 +1776,6 @@ const FLOOR_PSNR_CAP: f64 = 45.0;
 /// stops lowering the QP.
 const FLOOR_MAX_MBPS: f64 = 25.0;
 
-/// How far above the configured QP the bitrate ceiling may go.
-const FLOOR_MAX_RAISE: i32 = 4;
 
 /// Bring the half-sample planes `hp` of reference luma `r` up to date in the
 /// macroblocks flagged in `dirty` (and the filter support around them).
@@ -3071,19 +3075,19 @@ impl Encoder {
         // reads on fine texture: don't spend bits there (e.g. --crf 18).
         // Bitrate ceiling: the floor doesn't lower the QP while P and B pictures
         // average more than FLOOR_MAX_MBPS (scaled to the frame size and rate),
-        // gives back what it took, and then raises the QP by up to
-        // FLOOR_MAX_RAISE until they are back under (with hysteresis), so
-        // texture such as re-drawn film grain can't balloon the file.
+        // and gives back what it took; with `ceiling_raise` it then raises the QP
+        // above `qp` (long films: a chunk can't tell a burst from a film over
+        // budget, so short clips keep theirs).
         // (frames smaller than 640×360 get that budget: headers dominate them)
         let area = (self.cfg.width as f64 * self.cfg.height as f64).max(640.0 * 360.0);
         let budget = FLOOR_MAX_MBPS * 1e6 / 8.0 / self.cfg.fps.max(1.0) * area / (1920.0 * 1080.0);
         if self.ref_bytes > budget {
-            // an explicit high quality (QP under 20) is never raised
-            let max = if self.cfg.qp >= 20 { FLOOR_MAX_RAISE } else { 0 };
+            let max = if self.cfg.qp >= 20 { self.cfg.ceiling_raise as i32 } else { 0 };
             self.qp_adj = (self.qp_adj + 1).min(max);
             return;
         }
         if self.qp_adj > 0 {
+            // raised: come back down once well under the ceiling
             if self.ref_bytes < 0.8 * budget {
                 self.qp_adj -= 1;
             }
