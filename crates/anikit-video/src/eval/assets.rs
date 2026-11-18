@@ -54,7 +54,7 @@ struct VSlot {
 
 impl Volatile {
     fn touch(&self, idx: usize) {
-        self.slots[idx].last.store(self.clock.fetch_add(1, Ordering::Relaxed) + 1, Ordering::Relaxed);
+        self.slots[idx].last.fetch_max(self.clock.fetch_add(1, Ordering::Relaxed) + 1, Ordering::Relaxed);
     }
 }
 
