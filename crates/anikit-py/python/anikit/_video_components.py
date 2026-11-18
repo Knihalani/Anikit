@@ -45,6 +45,7 @@ COMPONENT_KINDS = {
     "particle-text": "Thousands of glowing particles fly in, form a word, hold, re-form into the next word and blow away.",
     "morph": "Smooth gradient shape morphing between named shapes (circle, square, star, heart, blob, triangle) or SVG paths.",
     "fluid": "Fluid simulation: ink blooming in water, smoke or fire, with real vortices; sources push and inject dye, and `text` writes a word the flow takes apart.",
+    "physarum": "Slime-mould network: agents sense a trail field, turn towards it, move and deposit; veins form, merge and re-route. Text can seed or attract them.",
     "metaballs": "Liquid gooey blobs that drift, merge and split, with a gradient fill and glow.",
     "god-rays": "Volumetric light rays from a point, slowly turning, with dust motes in the beams.",
     "lens-flare": "Anamorphic lens flare: streak, halo and ghosts along the axis through the centre; `at` can travel a path.",
