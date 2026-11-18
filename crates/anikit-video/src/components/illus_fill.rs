@@ -660,6 +660,8 @@ impl Component for Paper {
 
 // ------------------------------------------------------------------ cutout
 
+type CachedEdges = ((u32, u32), Arc<(Path, Path, Path)>);
+
 #[derive(Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Cutout {
@@ -688,6 +690,8 @@ pub struct Cutout {
     pub seed: u32,
     #[serde(skip)]
     path: Option<Path>,
+    #[serde(skip)]
+    edges: Mutex<Option<CachedEdges>>,
 }
 impl Default for Cutout {
     fn default() -> Self {
@@ -705,6 +709,7 @@ impl Default for Cutout {
             delay: 0.0,
             seed: 1,
             path: None,
+            edges: Mutex::new(None),
         }
     }
 }
@@ -716,13 +721,28 @@ impl Prepare for Cutout {
             check_one("cutout texture", t, &["paper", "kraft", "newsprint"])?;
         }
         self.path = parse_d(&self.d)?;
+        *self.edges.get_mut().unwrap_or_else(|e| e.into_inner()) = None;
         Ok(())
     }
 }
 
 impl Cutout {
     /// Outer torn edge, inner (coloured) edge and rim fibres, in box pixels.
-    fn edges(&self, w: f32, h: f32) -> (Path, Path, Path) {
+    fn edges(&self, w: f32, h: f32) -> Arc<(Path, Path, Path)> {
+        let key = (w.to_bits(), h.to_bits());
+        if let Ok(g) = self.edges.lock() {
+            if let Some((_, edges)) = g.as_ref().filter(|(cached_key, _)| *cached_key == key) {
+                return edges.clone();
+            }
+        }
+        let edges = Arc::new(self.make_edges(w, h));
+        if let Ok(mut g) = self.edges.lock() {
+            *g = Some((key, edges.clone()));
+        }
+        edges
+    }
+
+    fn make_edges(&self, w: f32, h: f32) -> (Path, Path, Path) {
         let shape = shape_path(&self.shape, self.path.as_ref(), w, h, self.seed);
         if self.torn <= 0.001 {
             return (shape.clone(), shape, Path::new());
@@ -775,7 +795,8 @@ impl Component for Cutout {
         if te < 0.0 && self.enter != "none" {
             return Vec::new();
         }
-        let (outer, inner, fib) = self.edges(w, h);
+        let edges = self.edges(w, h);
+        let (outer, inner, fib) = &*edges;
         // Entrance.
         let (mut dx, mut dy, mut sc, mut op, mut lift) = (0.0, 0.0, 1.0, 1.0, 0.0);
         match self.enter.as_str() {
@@ -823,11 +844,11 @@ impl Component for Cutout {
         if self.torn > 0.001 {
             let rim = mix(base, Rgba([0.98, 0.965, 0.93, 1.0]), 0.88);
             out.push(fill_op(outer.clone(), rim, m));
-            out.push(Op::Stroke { path: fib, paint: dl::Paint::Solid(alpha(rim, 0.9)), stroke: super::style::line(0.7, [0.0, 1.0]), transform: m });
+            out.push(Op::Stroke { path: fib.clone(), paint: dl::Paint::Solid(alpha(rim, 0.9)), stroke: super::style::line(0.7, [0.0, 1.0]), transform: m });
         }
         // The face of the paper.
         push_clip(&mut out, inner.clone(), m);
-        let (x0, y0, x1, y1) = bbox(&outer);
+        let (x0, y0, x1, y1) = bbox(outer);
         let (bw, bh) = ((x1 - x0).ceil().max(4.0) as usize + 2, (y1 - y0).ceil().max(4.0) as usize + 2);
         let (kind, col) = match self.texture.as_deref() {
             Some(k) => (k, base),
@@ -845,6 +866,49 @@ impl Component for Cutout {
     }
     fn duration(&self) -> Option<f32> {
         (self.enter != "none").then_some(self.delay + 0.8)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::{preview, Component, Ctx, Theme};
+    use super::*;
+
+    fn torn_cutout() -> Cutout {
+        let mut cutout = Cutout { torn: 0.8, ..Cutout::default() };
+        cutout.prepare().unwrap();
+        cutout
+    }
+
+    #[test]
+    fn torn_edges_match_fresh_cutout_across_times_and_sizes() {
+        let theme = Theme::default();
+        let assets = preview::host();
+        let ctx = Ctx { width: 600.0, height: 400.0, fps: 30.0, theme: &theme, assets };
+        let resized_ctx = Ctx { width: 800.0, height: 500.0, ..ctx };
+        let cutout = torn_cutout();
+
+        for t in [0.2, 1.0, 2.5] {
+            assert_eq!(cutout.eval(t, &ctx), torn_cutout().eval(t, &ctx));
+        }
+        assert_eq!(cutout.eval(1.0, &resized_ctx), torn_cutout().eval(1.0, &resized_ctx));
+    }
+
+    #[test]
+    fn edges_refresh_after_reprepare() {
+        let theme = Theme::default();
+        let assets = preview::host();
+        let ctx = Ctx { width: 600.0, height: 400.0, fps: 30.0, theme: &theme, assets };
+        let mut cutout = torn_cutout();
+        cutout.eval(1.0, &ctx);
+
+        cutout.shape = "circle".into();
+        cutout.seed = 7;
+        cutout.prepare().unwrap();
+
+        let mut fresh = Cutout { torn: 0.8, shape: "circle".into(), seed: 7, ..Cutout::default() };
+        fresh.prepare().unwrap();
+        assert_eq!(cutout.eval(1.0, &ctx), fresh.eval(1.0, &ctx));
     }
 }
 

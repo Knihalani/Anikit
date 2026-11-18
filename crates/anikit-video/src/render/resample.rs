@@ -59,7 +59,8 @@ fn taps(n_src: usize, n_out: usize, off: f64, extent: f64) -> Taps {
 /// Resample `src` (`sw × sh` premultiplied RGBA8) so that it covers device
 /// `[ox, ox + ew) × [oy, oy + eh)` within an output of `ow × oh` pixels.
 #[allow(clippy::too_many_arguments)]
-pub fn resample(src: &[u8], sw: usize, sh: usize, ox: f64, oy: f64, ew: f64, eh: f64, ow: usize, oh: usize, out: &mut Vec<u8>) {
+pub fn resample(src: &[u8], sw: usize, sh: usize, ox: f64, oy: f64, ew: f64, eh: f64, ow: usize, oh: usize, out: &mut [u8]) {
+    debug_assert_eq!(out.len(), ow * oh * 4);
     let tx = taps(sw, ow, ox, ew);
     let ty = taps(sh, oh, oy, eh);
     // Horizontal pass on the source rows the vertical taps need.
@@ -85,8 +86,6 @@ pub fn resample(src: &[u8], sw: usize, sh: usize, ox: f64, oy: f64, ew: f64, eh:
             }
         }
     }
-    out.clear();
-    out.resize(ow * oh * 4, 0);
     let mut acc = vec![0i32; ow * 4];
     for j in 0..oh {
         let (s, l, o) = (ty.start[j] as usize, ty.len[j] as usize, ty.offs[j] as usize);
@@ -112,10 +111,11 @@ mod tests {
     fn identity_and_flat_colour() {
         let (w, h) = (5, 4);
         let src: Vec<u8> = (0..w * h * 4).map(|i| (i * 13 % 256) as u8).collect();
-        let mut out = Vec::new();
+        let mut out = vec![0u8; w * h * 4];
         resample(&src, w, h, 0.0, 0.0, w as f64, h as f64, w, h, &mut out);
         assert_eq!(out, src);
         let flat = vec![200u8; 16 * 16 * 4];
+        let mut out = vec![0u8; 8 * 7 * 4];
         resample(&flat, 16, 16, 0.25, 0.5, 6.5, 6.0, 8, 7, &mut out);
         assert_eq!(out[(3 * 8 + 3) * 4], 200); // interior
         assert_eq!(out[3 * 4], 100); // top row: half covered

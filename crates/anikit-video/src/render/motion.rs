@@ -400,7 +400,7 @@ fn layer_end(ops: &[Op], p: usize) -> Option<usize> {
 
 /// Box-filter a `bw × bh` RGB accumulator along `slot` (its length is the
 /// filter width), into `out`. Taps every ½ px, bilinear, clamped to the box.
-fn smear_box(acc: &[f32], bw: usize, bh: usize, slot: Vec2, out: &mut Vec<f32>) {
+fn smear_box(acc: &[f32], bw: usize, bh: usize, slot: Vec2, out: &mut Vec<f32>, cols: &mut Vec<f32>) {
     out.clear();
     out.resize(acc.len(), 0.0);
     // Axis-aligned (nearly every slide): an exact box over pixel cells by prefix sums.
@@ -410,9 +410,10 @@ fn smear_box(acc: &[f32], bw: usize, bh: usize, slot: Vec2, out: &mut Vec<f32>) 
         let n = if horizontal { bw } else { bh };
         // Element k of line l.
         let at = move |l: usize, k: usize| if horizontal { (l * bw + k) * 3 } else { (k * bw + l) * 3 };
-        let line = |l: usize, dst: &mut [f32], stride: usize, base: usize| {
+        let line = |pre: &mut Vec<[f64; 3]>, l: usize, dst: &mut [f32], stride: usize, base: usize| {
             // Cumulative integral, cells [k - ½, k + ½], edges extended.
-            let mut pre = vec![[0f64; 3]; n + 1];
+            pre.clear();
+            pre.resize(n + 1, [0.0; 3]);
             for k in 0..n {
                 let p = at(l, k);
                 for c in 0..3 {
@@ -439,10 +440,11 @@ fn smear_box(acc: &[f32], bw: usize, bh: usize, slot: Vec2, out: &mut Vec<f32>) 
         };
         use rayon::prelude::*;
         if horizontal {
-            out.par_chunks_mut(bw * 3).enumerate().for_each(|(l, row)| line(l, row, 3, 0));
+            out.par_chunks_mut(bw * 3).enumerate().for_each_init(|| Vec::with_capacity(n + 1), |pre, (l, row)| line(pre, l, row, 3, 0));
         } else {
-            let mut cols = vec![0f32; bw * bh * 3];
-            cols.par_chunks_mut(bh * 3).enumerate().for_each(|(l, col)| line(l, col, 3, 0));
+            cols.clear();
+            cols.resize(bw * bh * 3, 0.0);
+            cols.par_chunks_mut(bh * 3).enumerate().for_each_init(|| Vec::with_capacity(n + 1), |pre, (l, col)| line(pre, l, col, 3, 0));
             for x in 0..bw {
                 for y in 0..bh {
                     out[(y * bw + x) * 3..(y * bw + x) * 3 + 3].copy_from_slice(&cols[(x * bh + y) * 3..(x * bh + y) * 3 + 3]);
@@ -515,14 +517,14 @@ impl Renderer {
         let (wf, hf) = (center.width as f64, center.height as f64);
         let skip = |l: &DisplayList| super::smooth::prefix(&l.ops, wf, hf, &|_| None);
         let k = skip(&center).min(skip(&a)).min(skip(&b));
-        let top = |l: &DisplayList| DisplayList {
-            ops: l.ops[k.min(l.ops.len())..].to_vec(),
-            ..l.clone()
-        };
-        let (ta, tc, tb) = (top(&a), top(&center), top(&b));
-        let same = ta.ops.len() == tc.ops.len()
-            && tb.ops.len() == tc.ops.len()
-            && ta.ops.iter().zip(&tc.ops).zip(&tb.ops).all(|((x, c), y)| {
+        let (ta, tc, tb) = (
+            &a.ops[k.min(a.ops.len())..],
+            &center.ops[k.min(center.ops.len())..],
+            &b.ops[k.min(b.ops.len())..],
+        );
+        let same = ta.len() == tc.len()
+            && tb.len() == tc.len()
+            && ta.iter().zip(tc).zip(tb).all(|((x, c), y)| {
                 let hc = hash_op(c);
                 hash_op(x) == hc && hash_op(y) == hc
             });
@@ -534,12 +536,12 @@ impl Renderer {
         // that turns back mid-shutter still counts).
         let cut = 0.5 * w.max(h) as f64;
         let mut rects = [Vec::new(), Vec::new(), Vec::new()];
-        for (r, l) in rects.iter_mut().zip([&ta, &tc, &tb]) {
-            op_rects(&l.ops, r);
+        for (r, l) in rects.iter_mut().zip([ta, tc, tb]) {
+            op_rects(l, r);
         }
         let mut items = Vec::new();
-        changes(&ta.ops, &tc.ops, &rects[0], &rects[1], cut, &mut items);
-        changes(&tc.ops, &tb.ops, &rects[1], &rects[2], cut, &mut items);
+        changes(ta, tc, &rects[0], &rects[1], cut, &mut items);
+        changes(tc, tb, &rects[1], &rects[2], cut, &mut items);
         // Each half's motion is half the streak.
         let d = items.iter().map(|i| 2.0 * i.moved).fold(0.0, f64::max);
         if d < 0.5 && !items.iter().any(|i| i.event) {
@@ -574,12 +576,12 @@ impl Renderer {
             }
         }
         // Ops that don't change at all over the shutter.
-        let aligned = ta.ops.len() == tc.ops.len() && tb.ops.len() == tc.ops.len();
+        let aligned = ta.len() == tc.len() && tb.len() == tc.len();
         let still: Vec<bool> = if aligned {
-            (0..tc.ops.len())
+            (0..tc.len())
                 .map(|j| {
-                    let hc = hash_op(&tc.ops[j]);
-                    hash_op(&ta.ops[j]) == hc && hash_op(&tb.ops[j]) == hc
+                    let hc = hash_op(&tc[j]);
+                    hash_op(&ta[j]) == hc && hash_op(&tb[j]) == hc
                 })
                 .collect()
         } else {
@@ -605,7 +607,7 @@ impl Renderer {
             if rel > 0.2 || inside.iter().any(|i| i.event || i.vel.is_none()) {
                 return (n, None);
             }
-            let smooth_still = (0..tc.ops.len()).filter(|&j| still[j]).all(|j| match &tc.ops[j] {
+            let smooth_still = (0..tc.len()).filter(|&j| still[j]).all(|j| match &tc[j] {
                 Op::PushLayer { clip: None, .. } | Op::PopLayer => true,
                 op => match rects[1][j] {
                     None => true,
@@ -683,12 +685,12 @@ impl Renderer {
                 if inside.iter().any(|i| i.event || i.clip_of != Some(p)) {
                     return None;
                 }
-                let q = layer_end(&tc.ops, p)?;
-                let calm = (0..tc.ops.len()).all(|j| {
+                let q = layer_end(tc, p)?;
+                let calm = (0..tc.len()).all(|j| {
                     j == p
                         || j == q
                         || still[j]
-                        || (!matches!(tc.ops[j], Op::PushLayer { .. } | Op::PopLayer)
+                        || (!matches!(tc[j], Op::PushLayer { .. } | Op::PopLayer)
                             && [&rects[0], &rects[1], &rects[2]].iter().all(|r| r[j].is_none_or(|r| !r.overlaps(br))))
                 });
                 calm.then_some((p, q))
@@ -716,14 +718,14 @@ impl Renderer {
         }
         // Sub-frame samples per blurred layer: spaced ≥ σ/2 apart (a box streak
         // that short widens the blur by well under a pixel).
-        let soft: Vec<(usize, usize, usize)> = if reference || ta.ops.len() != tc.ops.len() || tb.ops.len() != tc.ops.len() {
+        let soft: Vec<(usize, usize, usize)> = if reference || ta.len() != tc.len() || tb.len() != tc.len() {
             Vec::new()
         } else {
-            soft_layers(&tc.ops)
+            soft_layers(tc)
                 .into_iter()
                 .map(|(s0, s1, sigma)| {
                     let moved = (s0..s1)
-                        .filter_map(|j| Some(op_motion(&ta.ops[j], &tb.ops[j], rects[0][j]?, rects[2][j]?)))
+                        .filter_map(|j| Some(op_motion(&ta[j], &tb[j], rects[0][j]?, rects[2][j]?)))
                         .filter(|m| *m < cut)
                         .fold(0.0, f64::max);
                     let m = (moved * scale / (0.5 * sigma as f64).max(1.25)).ceil() as usize;
@@ -839,11 +841,12 @@ impl Renderer {
         }
         let frame = self.frame.data_as_u8_slice_mut();
         let mut smeared = std::mem::take(&mut self.motion_tmp);
+        let mut cols = std::mem::take(&mut self.motion_cols);
         for ((r, n, smear), &o) in boxes.iter().zip(&offs) {
             let (bw, inv) = (r[2] - r[0], 1.0 / *n as f32);
             let mut acc = &acc[o..o + bw * (r[3] - r[1]) * 3];
             if let Some(slot) = smear {
-                smear_box(acc, bw, r[3] - r[1], *slot, &mut smeared);
+                smear_box(acc, bw, r[3] - r[1], *slot, &mut smeared, &mut cols);
                 acc = &smeared;
             }
             let put = |(y, frow): (usize, &mut [u8])| {
@@ -870,6 +873,7 @@ impl Renderer {
         }
         self.motion_acc = acc;
         self.motion_tmp = smeared;
+        self.motion_cols = cols;
         self.post = post;
         if let Some(p) = &self.post {
             self.pp.apply(self.frame.data_as_u8_slice_mut(), w, h, p, self.post_frame);
@@ -882,5 +886,126 @@ impl Renderer {
     pub fn render_yuv_motion_blur(&mut self, eval: &mut dyn FnMut(f32) -> DisplayList, t: f32, shutter: f32, out: &mut YuvFrame) {
         self.render_motion_blur(eval, t, shutter);
         rgba_to_yuv420(&self.frame, out);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn smear_box_ref(acc: &[f32], bw: usize, bh: usize, slot: Vec2, out: &mut Vec<f32>) {
+        out.clear();
+        out.resize(acc.len(), 0.0);
+        // Axis-aligned (nearly every slide): an exact box over pixel cells by prefix sums.
+        if slot.y.abs() * 64.0 < slot.x.abs() || slot.x.abs() * 64.0 < slot.y.abs() {
+            let horizontal = slot.y.abs() < slot.x.abs();
+            let len = slot.hypot().max(1e-3);
+            let n = if horizontal { bw } else { bh };
+            // Element k of line l.
+            let at = move |l: usize, k: usize| if horizontal { (l * bw + k) * 3 } else { (k * bw + l) * 3 };
+            let line = |l: usize, dst: &mut [f32], stride: usize, base: usize| {
+                // Cumulative integral, cells [k - ½, k + ½], edges extended.
+                let mut pre = vec![[0f64; 3]; n + 1];
+                for k in 0..n {
+                    let p = at(l, k);
+                    for c in 0..3 {
+                        pre[k + 1][c] = pre[k][c] + acc[p + c] as f64;
+                    }
+                }
+                let integral = |u: f64, c: usize| -> f64 {
+                    // ∫ from -½ to u.
+                    if u <= -0.5 {
+                        return (u + 0.5) * acc[at(l, 0) + c] as f64;
+                    }
+                    if u >= n as f64 - 0.5 {
+                        return pre[n][c] + (u - (n as f64 - 0.5)) * acc[at(l, n - 1) + c] as f64;
+                    }
+                    let k = (u + 0.5).floor() as usize;
+                    pre[k][c] + (u + 0.5 - k as f64) * acc[at(l, k) + c] as f64
+                };
+                for k in 0..n {
+                    let (lo, hi) = (k as f64 - 0.5 * len, k as f64 + 0.5 * len);
+                    for c in 0..3 {
+                        dst[base + k * stride + c] = ((integral(hi, c) - integral(lo, c)) / len) as f32;
+                    }
+                }
+            };
+            use rayon::prelude::*;
+            if horizontal {
+                out.par_chunks_mut(bw * 3).enumerate().for_each(|(l, row)| line(l, row, 3, 0));
+            } else {
+                let mut cols = vec![0f32; bw * bh * 3];
+                cols.par_chunks_mut(bh * 3).enumerate().for_each(|(l, col)| line(l, col, 3, 0));
+                for x in 0..bw {
+                    for y in 0..bh {
+                        out[(y * bw + x) * 3..(y * bw + x) * 3 + 3].copy_from_slice(&cols[(x * bh + y) * 3..(x * bh + y) * 3 + 3]);
+                    }
+                }
+            }
+            return;
+        }
+        let m = ((slot.hypot() * 2.0).ceil() as usize).max(2);
+        let taps: Vec<(f32, f32)> = (0..m)
+            .map(|j| {
+                let s = (j as f64 + 0.5) / m as f64 - 0.5;
+                ((slot.x * s) as f32, (slot.y * s) as f32)
+            })
+            .collect();
+        let inv = 1.0 / m as f32;
+        let (xmax, ymax) = ((bw - 1) as f32, (bh - 1) as f32);
+        let row = |(y, orow): (usize, &mut [f32])| {
+            for x in 0..bw {
+                let mut c = [0f32; 3];
+                for &(dx, dy) in &taps {
+                    let (sx, sy) = ((x as f32 + dx).clamp(0.0, xmax), (y as f32 + dy).clamp(0.0, ymax));
+                    let (x0, y0) = (sx as usize, sy as usize);
+                    let (x1, y1) = ((x0 + 1).min(bw - 1), (y0 + 1).min(bh - 1));
+                    let (fx, fy) = (sx - x0 as f32, sy - y0 as f32);
+                    let (p00, p10, p01, p11) = ((y0 * bw + x0) * 3, (y0 * bw + x1) * 3, (y1 * bw + x0) * 3, (y1 * bw + x1) * 3);
+                    for k in 0..3 {
+                        let top = acc[p00 + k] + (acc[p10 + k] - acc[p00 + k]) * fx;
+                        let bot = acc[p01 + k] + (acc[p11 + k] - acc[p01 + k]) * fx;
+                        c[k] += top + (bot - top) * fy;
+                    }
+                }
+                orow[x * 3..x * 3 + 3].copy_from_slice(&[c[0] * inv, c[1] * inv, c[2] * inv]);
+            }
+        };
+        use rayon::prelude::*;
+        out.par_chunks_mut(bw * 3).enumerate().for_each(row);
+    }
+
+    #[test]
+    fn smear_box_matches_reference_and_reuses_buffers() {
+        let mut state = 0x1234_5678u32;
+        let sizes = [(64, 200), (37, 23), (64, 200), (37, 23)];
+        let slots = [
+            Vec2::new(7.3, 0.01),
+            Vec2::new(0.02, -5.6),
+            Vec2::new(0.3, 0.2),
+            Vec2::new(4.7, -3.1),
+        ];
+        let mut out = Vec::new();
+        let mut cols = Vec::new();
+
+        for (bw, bh) in sizes {
+            let mut acc = vec![0.0; bw * bh * 3];
+            for value in &mut acc {
+                state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+                *value = (state >> 8) as f32 / (1 << 24) as f32;
+            }
+
+            for slot in slots {
+                let mut expected = Vec::new();
+                smear_box_ref(&acc, bw, bh, slot, &mut expected);
+                smear_box(&acc, bw, bh, slot, &mut out, &mut cols);
+                assert_eq!(out, expected, "size {bw}x{bh}, slot {slot:?}");
+                assert_eq!(
+                    out.iter().map(|value| value.to_bits()).collect::<Vec<_>>(),
+                    expected.iter().map(|value| value.to_bits()).collect::<Vec<_>>(),
+                    "bitwise mismatch at size {bw}x{bh}, slot {slot:?}"
+                );
+            }
+        }
     }
 }
