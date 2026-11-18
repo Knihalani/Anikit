@@ -550,7 +550,11 @@ impl Scene {
                         dv = dv.min(depth[sy * w + sx]);
                     }
                     let tmax = (dv / dot(d, f).max(1e-3)).min(60.0);
-                    let jit = u01(hash2(x as u32 * 7 + 3, y as u32 * 13 + 1));
+                    // March offset from the R2 sequence over pixels: every
+                    // 5×5 neighbourhood covers [0, 1) evenly, so the blur
+                    // below cancels the banding instead of leaving the clumps
+                    // of white noise (sandy grain in bright beams).
+                    let jit = (0.5 + x as f32 * 0.754_877_7 + y as f32 * 0.569_840_3).fract();
                     let mut acc = v3(0.0, 0.0, 0.0);
                     // The key (directional) lights the whole ray.
                     if let Some((kd, kl)) = key {
@@ -587,7 +591,9 @@ impl Scene {
                             let d2 = dot(to, to).max(1e-3);
                             let dist = d2.sqrt();
                             let ld = scale(to, 1.0 / dist);
-                            let mut k = 1.0 / d2;
+                            // Fade to zero at the edge of the light's reach (no
+                            // visible sphere where the march stops).
+                            let mut k = (1.0 - smoothstep(0.6 * reach, reach, dist)) / d2;
                             if l.cos_outer > -1.0 {
                                 k *= smoothstep(l.cos_outer, l.cos_inner.max(l.cos_outer + 1e-4), dot(scale(ld, -1.0), l.dir));
                             }
@@ -607,32 +613,45 @@ impl Scene {
         use rayon::prelude::*;
         let rows: Vec<Vec<[f32; 3]>> = if !super::kernel::par::parallel() { (0..hh).map(row).collect() } else { (0..hh).into_par_iter().map(row).collect() };
         let raw: Vec<[f32; 3]> = rows.into_iter().flatten().collect();
-        // Two 5×5 binomial passes remove the jitter (shafts are smooth).
-        let mut out = raw.clone();
-        let mut raw = raw;
+        // Two 5×5 binomial passes remove the jitter (shafts are smooth);
+        // separable and row-parallel (borders renormalise over the taps inside).
+        const B: [f32; 5] = [1.0, 4.0, 6.0, 4.0, 1.0];
+        let mut out = raw;
         for _pass in 0..2 {
-        for y in 0..hh {
-            for x in 0..hw {
-                let mut a = [0.0f32; 3];
-                let mut ws = 0.0;
-                for dy in -2i32..=2 {
-                    for dx in -2i32..=2 {
-                        let (sx, sy) = (x as i32 + dx, y as i32 + dy);
-                        if sx < 0 || sy < 0 || sx >= hw as i32 || sy >= hh as i32 {
-                            continue;
+            let src = out;
+            let horiz = super::kernel::par::image(hw, hh, |y, row: &mut [[f32; 3]]| {
+                for (x, o) in row.iter_mut().enumerate() {
+                    let (mut a, mut ws) = ([0.0f32; 3], 0.0);
+                    for (j, wt) in B.iter().enumerate() {
+                        let sx = x as i32 + j as i32 - 2;
+                        if sx >= 0 && sx < hw as i32 {
+                            let v = src[y * hw + sx as usize];
+                            for k in 0..3 {
+                                a[k] += v[k] * wt;
+                            }
+                            ws += wt;
                         }
-                        let wt = [1.0, 4.0, 6.0, 4.0, 1.0][(dx + 2) as usize] * [1.0, 4.0, 6.0, 4.0, 1.0][(dy + 2) as usize];
-                        let v = raw[sy as usize * hw + sx as usize];
-                        for k in 0..3 {
-                            a[k] += v[k] * wt;
-                        }
-                        ws += wt;
                     }
+                    *o = a.map(|v| v / ws);
                 }
-                out[y * hw + x] = a.map(|v| v / ws);
-            }
-        }
-        raw.clone_from(&out);
+            });
+            let vert = super::kernel::par::image(hw, hh, |y, row: &mut [[f32; 3]]| {
+                for (x, o) in row.iter_mut().enumerate() {
+                    let (mut a, mut ws) = ([0.0f32; 3], 0.0);
+                    for (j, wt) in B.iter().enumerate() {
+                        let sy = y as i32 + j as i32 - 2;
+                        if sy >= 0 && sy < hh as i32 {
+                            let v = horiz[sy as usize * hw + x];
+                            for k in 0..3 {
+                                a[k] += v[k] * wt;
+                            }
+                            ws += wt;
+                        }
+                    }
+                    *o = a.map(|v| v / ws);
+                }
+            });
+            out = vert.to_vec();
         }
         out
     }
