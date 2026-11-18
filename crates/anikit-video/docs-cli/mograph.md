@@ -16,7 +16,7 @@
 
 - **Repeater** `"repeat": {"count", "offset": {x, y, rotate, scale, opacity}, "stagger", "center": [x, y]}` on any layer or group:
   copy *i* is moved by i×(x, y), then rotated i×rotate and scaled scale^i about `center` (default: the layer's position);
-  opacity changes by `opacity` per copy (−0.1 fades), and copy *i* plays i×stagger s later. Radial burst: `anchor` off-centre +
+  opacity changes by `opacity` per copy (−0.1 fades), and copy *i* plays i×stagger s later (`"order": "center|reverse|random"`, `seed`). Radial burst: `anchor` off-centre +
   `rotate: 360/count`. Grid: repeat a repeated group. Tunnel: `scale: 0.85` + `opacity: -0.08`. Spiral: `x` + `rotate`.
   (`"repeat": 3`, a plain number, is still the spec-level copy with `$i`.)
 - **Echo / trails** `"echo": {"count": 5, "delay": 0.05, "decay": 0.6, "blend": "add"}`: earlier-time copies under the layer.
@@ -27,6 +27,17 @@
   (±), `puckerBloat` −1..1, `zigzag {size, ridges, smooth}`, `twist` deg, `wigglePath {amount, detail, speed, seed}` (animated, deterministic).
 - **Track matte** `"matte": "logo"` or `{"layer": "logo", "mode": "alpha|alphaInverted|luma|lumaInverted"}`: the layer shows only through
   the sibling with that `id` (which is then not drawn itself). Gradient inside text: a gradient rect with `"matte": "word"`.
+- **Follow-through** `"inertia": true | "soft" | "bouncy" | "tight" | "heavy"` or `{"stiffness", "damping", "mass", "props": ["x", "y", "rotation", "scale"]}`:
+  a spring chases the layer's own motion (tweens, presets, paths, expressions), so moves overshoot and settle. Stagger it across children for overlapping action.
+- **Drag** `"drag": 0.04` on a moving group: child i follows the group's motion i × 0.04 s later (overlapping action; add `inertia` for settle).
+- **Smear** `"smear": true` (or a strength): fast moves stretch along their travel, volume kept; still layers are untouched.
+- **Idea transitions** (on the incoming scene): `{"type": "zoomThrough", "layer": "logo"}` flies into a layer of the outgoing
+  scene and the new scene shows through its shape (a letter, a window, a logo); `{"type": "reveal", "shape": "circle|diamond|square|star|blob",
+  "amount": 90 (spin°), "origin": [x, y]}`; `{"type": "blinds", "count": 8, "direction"}`; `{"type": "split", "direction": "up"}`; `"whip"` (speed-blurred pan).
+- **Posterize time** `"posterizeTime": 12` on a layer or group: its motion steps at 12 poses/s (on twos; with `wigglePath` → boiling, handmade lines).
+- **Named curves**: `glide` (expo out 0.16,1,0.3,1), `snap` (0.87,0,0.13,1), `land` (long settle), `launch` (expo in, exits), `material`,
+  `emphasizedDecelerate`/`emphasizedAccelerate`, `productive`, `expressive`, `expressiveEntrance`/`expressiveExit`. Why and when: docs/video/craft/motion-design.md.
+- **Gradient along a stroke** `"stroke": {"width": 12, "along": ["#f36", "#fb0", "#1cb"]}`: colours flow start → end along the path (write-ons included).
 - **Dashes**: `stroke.dash` + `dashOffset` (animatable: `"=t*-60"` marches) — combine with `trimEnd` for write-ons.
 - **Easing**: any name (`outExpo`, `inOutBack`, `elastic.out(1, 0.3)`, `steps(4)`), `"ease": [x1, y1, x2, y2]` (cubic-bezier),
   `"spring": {"stiffness": 300, "damping": 18}`; per keyframe: `"keyframes": {"x": [[0, 200], [0.5, 960, "outBack"], [1, 1700, [0.9, 0, 0.1, 1]]]}` (the ease *into* that key).

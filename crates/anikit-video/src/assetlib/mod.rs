@@ -25,7 +25,7 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 /// Sources `src` strings may name.
-pub const PROVIDERS: &[&str] = &["polyhaven", "ambientcg", "khronos", "anikit"];
+pub const PROVIDERS: &[&str] = &["polyhaven", "ambientcg", "khronos", "kenney", "anikit"];
 /// Asset types (`assets search --type`).
 pub const TYPES: &[&str] = &["hdri", "texture", "model", "lut", "image"];
 
@@ -109,6 +109,30 @@ pub fn index() -> &'static [Entry] {
     })
 }
 
+/// Curated HDRI moods: `"env": {"hdri": "sunset"}`. `(mood, ref, why)`.
+pub const HDRI_MOODS: &[(&str, &str, &str)] = &[
+    ("studio", "polyhaven:hdri/studio_small_09", "bright product studio, soft overhead panels, clean reflections"),
+    ("studio-warm", "polyhaven:hdri/brown_photostudio_02", "daylight photo studio with warm wood and big windows"),
+    ("studio-dark", "polyhaven:hdri/studio_small_08", "darker studio with a few strong lamps: contrasty chrome"),
+    ("sunrise", "polyhaven:hdri/spruit_sunrise", "low golden sun, mist, long shadows"),
+    ("golden-hour", "polyhaven:hdri/lilienstein", "warm late sun over a meadow, partly cloudy"),
+    ("sunset", "polyhaven:hdri/venice_sunset", "golden horizon over water, soft warm light"),
+    ("dramatic-sky", "polyhaven:hdri/the_sky_is_on_fire", "fiery twilight clouds over the sea"),
+    ("noon", "polyhaven:hdri/noon_grass", "hard overhead sun, blue sky, open field"),
+    ("park", "polyhaven:hdri/je_gray_park", "contrasty morning sun through trees"),
+    ("overcast", "polyhaven:hdri/canary_wharf", "soft grey sky, gentle shadows, urban reflections"),
+    ("sky", "polyhaven:hdri/kloofendal_48d_partly_cloudy_puresky", "clean partly cloudy sky with no ground"),
+    ("interior", "polyhaven:hdri/artist_workshop", "soft window light in a cluttered studio room"),
+    ("night", "polyhaven:hdri/satara_night", "starry sky, warm village lamps"),
+    ("night-city", "polyhaven:hdri/hansaplatz", "night plaza with warm streetlights and shop windows"),
+];
+
+/// The library ref for a curated mood name, if `s` is one.
+pub fn hdri_mood(s: &str) -> Option<&'static str> {
+    let k = s.trim().to_lowercase().replace([' ', '_'], "-");
+    HDRI_MOODS.iter().find(|m| m.0 == k).map(|m| m.1)
+}
+
 /// Whether `src` names a library asset (`provider:…`) rather than a file.
 pub fn is_ref(src: &str) -> bool {
     src.split_once(':').is_some_and(|(p, rest)| PROVIDERS.contains(&p) && !rest.is_empty() && !rest.starts_with("//"))
@@ -117,6 +141,8 @@ pub fn is_ref(src: &str) -> bool {
 /// `provider:rest@res` → (provider, rest, res).
 fn split_ref(src: &str) -> Result<(&str, &str, Option<&str>), String> {
     let (p, rest) = src.split_once(':').ok_or_else(|| format!("`{src}` is not an asset ref (provider:name)"))?;
+    // `?yaw=…` view parameters belong to `photo_view`.
+    let rest = rest.split_once('?').map(|x| x.0).unwrap_or(rest);
     let (rest, res) = match rest.rsplit_once('@') {
         Some((a, b)) => (a, Some(b)),
         None => (rest, None),
@@ -149,9 +175,9 @@ pub struct Fetched {
 }
 
 impl Fetched {
-    /// The file to open: the `main` role, else the albedo map, else the first file.
+    /// The file to open: the `main` role, else the albedo map (or panorama), else the first file.
     pub fn main(&self) -> PathBuf {
-        self.map("main").or_else(|| self.map("albedo")).map(Path::to_path_buf).or_else(|| self.files.first().map(|f| f.1.clone())).unwrap_or_else(|| self.dir.clone())
+        self.map("main").or_else(|| self.map("albedo")).or_else(|| self.map("photo")).map(Path::to_path_buf).or_else(|| self.files.first().map(|f| f.1.clone())).unwrap_or_else(|| self.dir.clone())
     }
 
     /// A PBR map (`albedo normal roughness ao displacement metalness opacity`).
@@ -219,6 +245,78 @@ pub fn get(src: &str) -> Result<Fetched, String> {
     global().get(src)
 }
 
+/// A photo backplate from an HDRI: a rectilinear view of its 8k tonemapped
+/// panorama, `polyhaven:hdri/venice_sunset?yaw=90&pitch=5&fov=55&w=1920&h=1080`
+/// (degrees; yaw 0 looks at the panorama's centre, positive turns right; fov
+/// is horizontal). Cached as a JPEG next to the panorama.
+pub fn photo_view(lib: &Library, src: &str) -> Result<PathBuf, String> {
+    let (base, q) = src.split_once('?').unwrap_or((src, ""));
+    let (base, _) = base.rsplit_once('@').unwrap_or((base, ""));
+    let mut v = [0.0f32, 0.0, 60.0, 1920.0, 1080.0];
+    for kv in q.split('&').filter(|x| !x.is_empty()) {
+        let (k, val) = kv.split_once('=').ok_or_else(|| format!("`{src}`: view parameter `{kv}` needs a value"))?;
+        let x: f32 = val.parse().map_err(|_| format!("`{src}`: `{k}` must be a number"))?;
+        let i = match k {
+            "yaw" => 0,
+            "pitch" => 1,
+            "fov" => 2,
+            "w" | "width" => 3,
+            "h" | "height" => 4,
+            _ => return Err(format!("`{src}`: unknown view parameter `{k}` (yaw, pitch, fov, w, h)")),
+        };
+        v[i] = x;
+    }
+    let [yaw, pitch, fov, w, h] = v;
+    let (w, h) = (w.clamp(16.0, 8192.0) as u32, h.clamp(16.0, 8192.0) as u32);
+    let f = lib.get(&format!("{base}@photo"))?;
+    let out = f.dir.join(format!("view-{}.jpg", hash_str(&format!("{yaw}|{pitch}|{fov}|{w}|{h}"))));
+    if out.exists() {
+        return Ok(out);
+    }
+    let pano = image::open(f.main()).map_err(|e| format!("{}: {e}", f.main().display()))?.to_rgb8();
+    let (pw, ph) = (pano.width() as usize, pano.height() as usize);
+    let raw = pano.as_raw();
+    let tan = (fov.clamp(1.0, 170.0).to_radians() * 0.5).tan();
+    let (sy, cy) = yaw.to_radians().sin_cos();
+    let (sp, cp) = pitch.to_radians().sin_cos();
+    let mut px = vec![0u8; (w * h * 3) as usize];
+    use rayon::prelude::*;
+    px.par_chunks_mut((w * 3) as usize).enumerate().for_each(|(y, row)| {
+        for x in 0..w as usize {
+            // Camera looks down −z; x right, y up.
+            let cx = ((x as f32 + 0.5) / w as f32 * 2.0 - 1.0) * tan;
+            let cyv = (1.0 - (y as f32 + 0.5) / h as f32 * 2.0) * tan * h as f32 / w as f32;
+            let (dx, dy, dz) = (cx, cyv, -1.0f32);
+            // Pitch about x, then yaw about y.
+            let (dy, dz) = (dy * cp - dz * sp, dy * sp + dz * cp);
+            let (dx, dz) = (dx * cy - dz * sy, dx * sy + dz * cy);
+            let l = (dx * dx + dy * dy + dz * dz).sqrt();
+            let (dx, dy, dz) = (dx / l, dy / l, dz / l);
+            let u = dx.atan2(-dz) / std::f32::consts::TAU + 0.5;
+            let vv = dy.clamp(-1.0, 1.0).acos() / std::f32::consts::PI;
+            let fx = u * pw as f32 - 0.5;
+            let fy = (vv * ph as f32 - 0.5).clamp(0.0, (ph - 1) as f32);
+            let x0 = fx.floor();
+            let tx = fx - x0;
+            let xi = (x0 as i64).rem_euclid(pw as i64) as usize;
+            let x1 = (xi + 1) % pw;
+            let y0 = fy as usize;
+            let y1 = (y0 + 1).min(ph - 1);
+            let ty = fy - y0 as f32;
+            for k in 0..3 {
+                let p = |xx: usize, yy: usize| raw[(yy * pw + xx) * 3 + k] as f32;
+                let a = p(xi, y0) + (p(x1, y0) - p(xi, y0)) * tx;
+                let b = p(xi, y1) + (p(x1, y1) - p(xi, y1)) * tx;
+                row[x * 3 + k] = (a + (b - a) * ty + 0.5) as u8;
+            }
+        }
+    });
+    let img = image::RgbImage::from_raw(w, h, px).ok_or("view buffer")?;
+    let file = std::fs::File::create(&out).map_err(|e| format!("{}: {e}", out.display()))?;
+    image::codecs::jpeg::JpegEncoder::new_with_quality(std::io::BufWriter::new(file), 93).encode_image(&img).map_err(|e| e.to_string())?;
+    Ok(out)
+}
+
 /// The local file for `src`: library refs are fetched, anything else is joined to `base`.
 pub fn resolve_path(base: &Path, src: &str) -> Result<PathBuf, String> {
     if is_ref(src) {
@@ -251,7 +349,8 @@ impl Library {
 
     /// An entry for `src`: from the index, or looked up live (Poly Haven / ambientCG).
     pub fn entry(&self, src: &str) -> Result<Entry, String> {
-        let bare = src.rsplit_once('@').map(|x| x.0).unwrap_or(src);
+        let bare = src.split_once('?').map(|x| x.0).unwrap_or(src);
+        let bare = bare.rsplit_once('@').map(|x| x.0).unwrap_or(bare);
         if let Some(e) = self.extra.iter().find(|e| e.id == bare) {
             return Ok(e.clone());
         }
@@ -304,6 +403,10 @@ impl Library {
                         res.insert(r.to_string(), vec![fr(format!("{slug}_{r}.hdr"), h, Some("main"))]);
                     }
                 }
+                let t = &files["tonemapped"];
+                if t.is_object() {
+                    res.insert("photo".to_string(), vec![fr(format!("{slug}_tonemapped.jpg"), t, Some("photo"))]);
+                }
                 ("hdri", "1k")
             }
             Some(1) => {
@@ -332,6 +435,15 @@ impl Library {
                     if let Some(inc) = g["include"].as_object() {
                         for (p, h) in inc {
                             v.push(fr(p.clone(), h, None));
+                        }
+                    }
+                    // Cutout maps the glTF doesn't reference (see gltf.rs `sibling_alpha`).
+                    if let Some(all) = files.as_object() {
+                        for (key, m) in all.iter().filter(|(k, _)| k.to_lowercase().ends_with("alpha")) {
+                            let h = if m[r]["png"].is_object() { &m[r]["png"] } else { &m[r]["jpg"] };
+                            if let Some(ext) = h["url"].as_str().and_then(|u| u.rsplit_once('.')).map(|x| x.1) {
+                                v.push(fr(format!("textures/{slug}_{key}_{r}.{ext}"), h, None));
+                            }
                         }
                     }
                     res.insert(r.to_string(), v);
@@ -413,7 +525,10 @@ impl Library {
         let dir = self.dir_for(&e, &res);
         let marker = dir.join(OK);
         if let Ok(m) = std::fs::read_to_string(&marker) {
-            if let Ok(f) = self.cached_files(&e, &res, &dir, &m) {
+            // Same version, and every pinned plain file still there (an index
+            // update can add a file without a new upstream version).
+            let complete = files.iter().all(|f| f.unzip || dir.join(&f.path).exists());
+            if let (true, Ok(f)) = (complete, self.cached_files(&e, &res, &dir, &m)) {
                 return Ok(f);
             }
         }
@@ -710,6 +825,20 @@ fn cmd(args: &[String]) -> Result<(), String> {
             }
             Ok(())
         }
+        Some("sheet" | "look") => {
+            let q = pos[1..].join(" ");
+            let hits: Vec<&Entry> = if q.is_empty() { index().iter().filter(|e| kind.as_deref().is_none_or(|k| e.kind == k)).take(limit).collect() } else { search(&q, kind.as_deref(), limit) };
+            if hits.is_empty() {
+                return Err(format!("no matches for `{q}`"));
+            }
+            let o = PathBuf::from(out.unwrap_or_else(|| "assets-sheet.jpg".into()));
+            sheet(global(), &hits, &o)?;
+            for (i, e) in hits.iter().enumerate() {
+                println!("{:>2}  {}", i + 1, e.id);
+            }
+            eprintln!("wrote {} ({} previews)", o.display(), hits.len());
+            Ok(())
+        }
         Some("lut") => {
             let r = pos.get(1).ok_or("usage: assets lut <name> [-o look.cube]")?;
             let name = r.strip_prefix("anikit:lut/").unwrap_or(r);
@@ -739,12 +868,100 @@ fn cmd(args: &[String]) -> Result<(), String> {
             println!("{}", global().root.display());
             Ok(())
         }
-        Some(x) => Err(format!("unknown subcommand `{x}`. Use: search, list, info, get, lut, credits, path (`anikit-video docs assets`)")),
+        Some(x) => Err(format!("unknown subcommand `{x}`. Use: search, sheet, list, info, get, lut, credits, path (`anikit-video docs assets`)")),
         None => {
             print!("{DOCS}");
             Ok(())
         }
     }
+}
+
+/// A preview image URL (not pinned: previews are only for choosing).
+fn thumb_url(e: &Entry) -> Option<String> {
+    let (p, rest) = e.id.split_once(':')?;
+    let name = rest.rsplit('/').next()?;
+    match p {
+        "polyhaven" => Some(format!("https://cdn.polyhaven.com/asset_img/thumbs/{name}.png?width=320&height=320&format=webp")),
+        "ambientcg" => Some(format!("https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/256-JPG-242424/{name}.jpg")),
+        "khronos" => Some(format!("https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/{name}/screenshot/screenshot.jpg")),
+        _ => None,
+    }
+}
+
+/// A LUT preview: a hue × lightness ramp graded by the look (PNG, cached).
+fn lut_thumb(lib: &Library, e: &Entry) -> Result<PathBuf, String> {
+    let name = e.id.rsplit('/').next().unwrap_or(&e.id);
+    let path = lib.root.join("thumbs").join(format!("lut-{name}.png"));
+    if !path.exists() {
+        let l = lut::generated(name).ok_or("unknown LUT")?;
+        let (w, h) = (320u32, 180u32);
+        let img = image::RgbImage::from_fn(w, h, |x, y| {
+            // Top: a soft hue sweep; bottom: a grey ramp.
+            let u = x as f32 / (w - 1) as f32;
+            let c = if y < h * 3 / 4 {
+                let v = 1.0 - y as f32 / (h as f32 * 0.75) * 0.8;
+                let hue = u * 6.0;
+                let f = |k: f32| (((hue + k) % 6.0 - 3.0).abs() - 1.0).clamp(0.0, 1.0);
+                [v * (0.35 + 0.65 * f(0.0)), v * (0.35 + 0.65 * f(4.0)), v * (0.35 + 0.65 * f(2.0))]
+            } else {
+                [u, u, u]
+            };
+            let g = l.sample(c);
+            image::Rgb(g.map(|v| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8))
+        });
+        std::fs::create_dir_all(path.parent().unwrap()).map_err(|e| e.to_string())?;
+        img.save(&path).map_err(|e| e.to_string())?;
+    }
+    Ok(path)
+}
+
+/// Download (once) and normalise an entry's preview to PNG.
+fn thumb(lib: &Library, e: &Entry) -> Result<PathBuf, String> {
+    if e.kind == "lut" {
+        return lut_thumb(lib, e);
+    }
+    let url = thumb_url(e).ok_or("no preview")?;
+    let safe: String = e.id.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
+    let png = lib.root.join("thumbs").join(format!("{safe}.png"));
+    if png.exists() {
+        return Ok(png);
+    }
+    if lib.offline {
+        return Err("offline".into());
+    }
+    std::fs::create_dir_all(png.parent().unwrap()).map_err(|e| e.to_string())?;
+    let tmp = png.with_extension("dl");
+    (lib.fetch)(&url, &tmp)?;
+    let img = image::open(&tmp).or_else(|_| image::load_from_memory(&std::fs::read(&tmp).unwrap_or_default())).map_err(|err| format!("preview of {}: {err}", e.id));
+    let _ = std::fs::remove_file(&tmp);
+    let img = img?;
+    img.thumbnail(320, 320).to_rgb8().save(&png).map_err(|e| e.to_string())?;
+    Ok(png)
+}
+
+/// A labelled contact sheet of previews, rendered by anikit's own 2D renderer.
+pub fn sheet(lib: &Library, hits: &[&Entry], out: &Path) -> Result<(), String> {
+    use serde_json::json;
+    let cols = 4usize;
+    let (cw, ch, lab) = (400.0f32, 225.0f32, 58.0f32);
+    let rows = hits.len().div_ceil(cols).max(1);
+    let (w, h) = (cols as f32 * cw + 40.0, rows as f32 * (ch + lab) + 40.0);
+    let mut layers = vec![];
+    for (i, e) in hits.iter().enumerate() {
+        let (x, y) = (20.0 + (i % cols) as f32 * cw + 10.0, 20.0 + (i / cols) as f32 * (ch + lab));
+        match thumb(lib, e) {
+            Ok(p) => layers.push(json!({ "src": p.to_string_lossy(), "fit": "cover", "width": cw - 20.0, "height": ch - 10.0, "x": x, "y": y, "anchor": "topLeft", "radius": 6 })),
+            Err(_) => layers.push(json!({ "shape": "rect", "width": cw - 20.0, "height": ch - 10.0, "x": x, "y": y, "anchor": "topLeft", "fill": "#2A2A2E", "radius": 6 })),
+        }
+        layers.push(json!({ "text": format!("{}  {}", i + 1, e.id), "font": "JetBrains Mono", "size": 15, "color": "#EDEDED", "x": x, "y": y + ch + 2.0, "anchor": "topLeft", "maxLines": 1 }));
+        let d: String = e.desc.chars().take(52).collect();
+        layers.push(json!({ "text": d, "font": "Inter", "size": 13, "color": "#9A9AA2", "x": x, "y": y + ch + 24.0, "anchor": "topLeft", "maxLines": 1 }));
+    }
+    let spec = json!({ "size": [w.round() as u32 / 2 * 2, h.round() as u32 / 2 * 2], "fps": 1, "background": "#141416", "scenes": [ { "duration": 1, "layers": layers } ] });
+    let p = crate::spec::parse::from_value(spec).map_err(|e| format!("sheet spec: {e:?}"))?;
+    let ev = crate::eval::Evaluator::new(&p.spec, crate::eval::Options::default()).map_err(|e| format!("sheet: {e}"))?;
+    let (w, h, px) = crate::pipeline::render_rgba(&ev, 0.0, 1.0);
+    crate::pipeline::save_png(out, w, h, px)
 }
 
 /// Every `provider:…` string in a spec's text (for credits).

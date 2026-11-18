@@ -1,0 +1,113 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "background": "#000000",
+ "scenes": [
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "hdri": "polyhaven:hdri/studio_small_09",
+       "rotate": 40,
+       "exposure": 0
+      },
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.45,
+          0.8,
+          5.3
+         ],
+         "target": [
+          0,
+          0.55,
+          0
+         ],
+         "focal": 50,
+         "fstop": 2.8
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "cylinder",
+        "radius": 0.42,
+        "height": 0.5,
+        "pos": [
+         0,
+         0.25,
+         0
+        ],
+        "material": {
+         "texture": "ambientcg:Terrazzo018",
+         "scale": 1.5
+        }
+       },
+       {
+        "type": "model",
+        "src": "polyhaven:model/marble_bust_01",
+        "height": 0.85,
+        "pos": [
+         0,
+         0.5,
+         0
+        ],
+        "rot": [
+         0,
+         -20,
+         0
+        ]
+       },
+       {
+        "type": "sphere",
+        "radius": 0.3,
+        "pos": [
+         -1.0,
+         0.3,
+         0.35
+        ],
+        "material": "chrome"
+       },
+       {
+        "type": "sphere",
+        "radius": 0.3,
+        "pos": [
+         1.0,
+         0.3,
+         0.3
+        ],
+        "material": {
+         "base": "#E8E4DC",
+         "roughness": 0.6
+        }
+       }
+      ],
+      "floor": {
+       "texture": "ambientcg:WoodFloor051",
+       "scale": 1
+      }
+     }
+    },
+    {
+     "text": "floor.texture  ambientcg:WoodFloor051",
+     "font": "JetBrains Mono",
+     "size": "1.5vh",
+     "letterSpacing": "0.12em",
+     "uppercase": true,
+     "color": "#FFFFFFB3",
+     "x": "4%",
+     "y": "93%",
+     "anchor": "left"
+    }
+   ]
+  }
+ ]
+}

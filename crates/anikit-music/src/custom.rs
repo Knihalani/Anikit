@@ -619,10 +619,12 @@ pub enum Fx {
     Proc(Box<dyn Processor>),
     /// Reverb as a wet/dry insert (cached IR convolution).
     Reverb(dsp::ReverbParams, f32, f32),
+    /// Gated reverb (the 80s snare): the tail is cut `hold` seconds after each hit.
+    Gated { p: dsp::ReverbParams, wet: f32, hold: f32, release: f32 },
 }
 
 /// Effect types for `fx`.
-pub const FX_TYPES: &[&str] = &["eq", "comp", "delay", "reverb", "chorus", "saturate", "widener", "transient", "filter", "gain"];
+pub const FX_TYPES: &[&str] = &["eq", "comp", "delay", "reverb", "chorus", "saturate", "widener", "transient", "filter", "gain", "autopan", "gated-reverb"];
 
 /// Parse a track's `fx` list (each `{"type": …, …params}`).
 pub fn fx_chain(list: &Value, rate: u32, bpm: f64, at: &str) -> Result<Vec<Fx>, String> {
@@ -659,6 +661,19 @@ pub fn fx_chain(list: &Value, rate: u32, bpm: f64, at: &str) -> Result<Vec<Fx>, 
                 p.dry = Some(0.0);
                 Fx::Reverb(p, wet, dry)
             }
+            "gated-reverb" | "gated" => {
+                let fo = v.as_object().unwrap();
+                check_keys(fo, &["preset", "wet", "hold", "release"], &ap)?;
+                let preset = fo.get("preset").and_then(Value::as_str).unwrap_or("plate");
+                if !dsp::REVERB_PRESETS.contains(&preset) {
+                    return Err(format!("{ap}: reverb preset '{preset}' ({})", dsp::REVERB_PRESETS.join(" ")));
+                }
+                let p: dsp::ReverbParams = serde_json::from_value(serde_json::json!({ "preset": preset, "wet": 1.0, "dry": 0.0 })).map_err(de)?;
+                let wet = fo.get("wet").map(|c| num(c, &ap)).unwrap_or(Ok(0.5))?;
+                let hold = fo.get("hold").map(|c| num(c, &ap)).unwrap_or(Ok(0.25))?.clamp(0.02, 2.0);
+                let release = fo.get("release").map(|c| num(c, &ap)).unwrap_or(Ok(0.03))?.clamp(0.002, 1.0);
+                Fx::Gated { p, wet, hold, release }
+            }
             "filter" => {
                 let fo = v.as_object().unwrap();
                 check_keys(fo, &["mode", "cutoff", "q"], &ap)?;
@@ -672,6 +687,22 @@ pub fn fx_chain(list: &Value, rate: u32, bpm: f64, at: &str) -> Result<Vec<Fx>, 
                 let cut = fo.get("cutoff").map(|c| num(c, &ap)).unwrap_or(Ok(1000.0))?;
                 let q = fo.get("q").map(|c| num(c, &ap)).unwrap_or(Ok(0.707))?;
                 Fx::Proc(Box::new(SvfFx(dsp::Svf::new(fs, mode, cut, q))))
+            }
+            "autopan" | "tremolo" => {
+                // Stereo tremolo (the suitcase electric-piano vibrato): an equal-power
+                // pan swinging at `rate` Hz or a note value (`"note":"1/8"`), `depth` 0–1.
+                let fo = v.as_object().unwrap();
+                check_keys(fo, &["rate", "note", "depth"], &ap)?;
+                let hz = match (fo.get("note").and_then(Value::as_str), fo.get("rate")) {
+                    (Some(n), _) => 1.0 / dsp::note_seconds(n, bpm as f32).map_err(|e| format!("{ap}.note: {e}"))?,
+                    (None, Some(r)) => num(r, &ap)?,
+                    (None, None) => 1.0 / dsp::note_seconds("1/8", bpm as f32)?,
+                };
+                let depth = fo.get("depth").map(|c| num(c, &ap)).unwrap_or(Ok(0.5))?.clamp(0.0, 1.0);
+                if !(0.01..=40.0).contains(&hz) {
+                    return Err(format!("{ap}: rate {hz:.2} Hz is out of range (0.01–40)"));
+                }
+                Fx::Proc(Box::new(AutoPan { step: std::f64::consts::TAU * hz as f64 / rate as f64, phase: 0.0, depth }))
             }
             "gain" => {
                 let db = v.get("db").map(|c| num(c, &ap)).unwrap_or(Ok(0.0))?;
@@ -697,6 +728,29 @@ impl Processor for SvfFx {
     fn reset(&mut self) {}
 }
 
+struct AutoPan {
+    step: f64,
+    phase: f64,
+    depth: f32,
+}
+impl Processor for AutoPan {
+    fn process(&mut self, l: &mut [f32], r: &mut [f32]) {
+        for (a, b) in l.iter_mut().zip(r.iter_mut()) {
+            // θ = π/4 · (1 + depth·sin φ): centre at φ = 0, √2 so the centre is unity.
+            let th = std::f32::consts::FRAC_PI_4 * (1.0 + self.depth * (self.phase as f32).sin());
+            *a *= std::f32::consts::SQRT_2 * th.cos();
+            *b *= std::f32::consts::SQRT_2 * th.sin();
+            self.phase += self.step;
+            if self.phase > std::f64::consts::TAU {
+                self.phase -= std::f64::consts::TAU;
+            }
+        }
+    }
+    fn reset(&mut self) {
+        self.phase = 0.0;
+    }
+}
+
 struct GainFx(f32);
 impl Processor for GainFx {
     fn process(&mut self, l: &mut [f32], r: &mut [f32]) {
@@ -717,6 +771,31 @@ pub fn apply_chain(chain: &mut [Fx], l: &mut [f32], r: &mut [f32], rate: u32) {
                 for i in 0..n {
                     l[i] = l[i] * *dry + *wet * (a[i] + c[i]);
                     r[i] = r[i] * *dry + *wet * (b[i] + d[i]);
+                }
+            }
+            Fx::Gated { p, wet, hold, release } => {
+                let ir = crate::mix::reverb_ir(rate, p);
+                let n = l.len();
+                let ((a, b), (c, d)) = rayon::join(|| dsp::convolve(l, l, &ir.0), || dsp::convolve(r, r, &ir.1));
+                // The gate opens on every hit (dry above a third of the track's peak),
+                // stays open for `hold`, then closes in `release`.
+                let peak = l.iter().chain(r.iter()).fold(0f32, |m, x| m.max(x.abs()));
+                let thr = peak / 3.0;
+                let hold_n = (*hold * rate as f32) as usize;
+                let k = (-1.0 / (*release * rate as f32)).exp();
+                let (mut left, mut g) = (0usize, 0f32);
+                for i in 0..n {
+                    if l[i].abs().max(r[i].abs()) > thr && thr > 0.0 {
+                        left = hold_n;
+                    }
+                    if left > 0 {
+                        left -= 1;
+                        g = 1.0;
+                    } else {
+                        g *= k;
+                    }
+                    l[i] += *wet * g * (a[i] + c[i]);
+                    r[i] += *wet * g * (b[i] + d[i]);
                 }
             }
         }
@@ -805,6 +884,46 @@ impl TrackAuto {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn gated_reverb_cuts_the_tail_after_hold() {
+        let n = 48_000;
+        let hit = |x: &mut Vec<f32>| {
+            for (i, v) in x.iter_mut().enumerate().take(480) {
+                *v = (i as f32 * 0.37).sin() * (1.0 - i as f32 / 480.0);
+            }
+        };
+        let (mut l, mut r) = (vec![0f32; n], vec![0f32; n]);
+        hit(&mut l);
+        hit(&mut r);
+        let (l0, r0) = (l.clone(), r.clone());
+        let mut plain = fx_chain(&serde_json::json!([{ "type": "reverb", "preset": "plate", "wet": 0.7, "dry": 1.0 }]), 48_000, 120.0, "fx").unwrap();
+        let mut gated = fx_chain(&serde_json::json!([{ "type": "gated-reverb", "preset": "plate", "wet": 0.7, "hold": 0.2, "release": 0.02 }]), 48_000, 120.0, "fx").unwrap();
+        let (mut pl, mut pr) = (l0.clone(), r0.clone());
+        apply_chain(&mut plain, &mut pl, &mut pr, 48_000);
+        apply_chain(&mut gated, &mut l, &mut r, 48_000);
+        let rms = |x: &[f32]| (x.iter().map(|v| v * v).sum::<f32>() / x.len() as f32).sqrt();
+        // Inside the hold the tail is the plate's; 150 ms after the hold it is gone.
+        let (a, b) = (rms(&l[4_800..9_000]), rms(&pl[4_800..9_000]));
+        assert!(a > 0.01 && (a / b - 1.0).abs() < 0.05, "{a} vs {b}");
+        let (c, d) = (rms(&l[16_800..24_000]), rms(&pl[16_800..24_000]));
+        assert!(c < d * 0.01 && d > 0.002, "gated {c} vs plain {d}");
+    }
+
+    #[test]
+    fn autopan_swings_a_mono_source_at_the_note_rate() {
+        let mut chain = fx_chain(&serde_json::json!([{ "type": "autopan", "note": "1/4", "depth": 0.5 }]), 48_000, 120.0, "fx").unwrap();
+        let (mut l, mut r) = (vec![0.5f32; 48_000], vec![0.5f32; 48_000]);
+        apply_chain(&mut chain, &mut l, &mut r, 48_000);
+        // 1/4 at 120 bpm = 2 Hz: right-heavy at 1/8 cycle, left-heavy at 3/8, centred at 1/4.
+        assert!(r[6_000] > l[6_000] * 1.5 && l[18_000] > r[18_000] * 1.5, "{} {} / {} {}", l[6_000], r[6_000], l[18_000], r[18_000]);
+        assert!((l[12_000] - r[12_000]).abs() < 1e-3);
+        // Equal power: L² + R² stays at the input's.
+        for i in (0..48_000).step_by(997) {
+            assert!(((l[i] * l[i] + r[i] * r[i]) - 0.5).abs() < 1e-4);
+        }
+        assert!(fx_chain(&serde_json::json!([{ "type": "autopan", "rate": 100 }]), 48_000, 120.0, "fx").is_err());
+    }
 
     #[test]
     fn expressions() {

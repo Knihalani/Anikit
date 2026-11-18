@@ -1,0 +1,65 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 3,
+   "scene3d": {
+    "env": "studio",
+    "rig": {
+     "preset": "product",
+     "animate": "sweep",
+     "duration": 3
+    },
+    "camera": {
+     "lens": "portrait85",
+     "shake": "breath",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        -0.3,
+        0.55,
+        8.8
+       ],
+       "target": [
+        0,
+        0.32,
+        0
+       ]
+      },
+      {
+       "t": 3,
+       "pos": [
+        0.25,
+        0.5,
+        8.4
+       ],
+       "target": [
+        0,
+        0.32,
+        0
+       ]
+      }
+     ]
+    },
+    "objects": [
+     {
+      "text": "ANIKIT",
+      "height": 0.62,
+      "material": "chrome"
+     }
+    ],
+    "floor": {
+     "color": "#1A1A1C",
+     "roughness": 0.12,
+     "reflect": 0.9
+    }
+   },
+   "layers": []
+  }
+ ]
+}

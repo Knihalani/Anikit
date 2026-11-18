@@ -6,7 +6,7 @@ You describe a video as one JSON (or YAML) document; `anikit-video render spec.j
 
 **Design rules you can rely on**
 
-- **Everything is optional except `scenes`.** Each scene needs `layers`. Defaults look good: a dark theme, Inter, centred layers, and a 0.5 s crossfade between scenes.
+- **Everything is optional except `scenes`.** Each scene needs `layers`. Defaults look good: a dark theme, Inter, centred layers, and hard cuts between scenes (transitions are opt-in and never shorten a scene).
 - **Times are seconds.** Write numbers (`1.5`) or strings: `"1.5s"`, `"500ms"`, `"12f"` (frames), or a marker `"@drop"` / `"@drop+0.25"`.
 - **Lengths are pixels.** Write numbers (`120`) or strings: `"50%"` (of the parent: width for x/width, height for y/height), `"10vw"`, `"8vh"`, `"5vmin"`, `"5vmax"`.
 - **Colours are CSS strings**: `"#6d5dfc"`, `"#fff8"`, `"rgb(20 20 30)"`, `"oklch(70% 0.15 250)"`, `"tomato"`, or a theme token `"$primary"`. Gradients: `"linear-gradient(135deg, #6d5dfc, #ff6ab0)"`, `"radial-gradient(#fff, #000)"`.
@@ -96,7 +96,7 @@ That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the 
 | `background` | colour or gradient | `"$bg"` | Default background of every scene. |
 | `theme` | object | dark theme | Colour tokens, fonts and text styles (see **Theme**). |
 | `scenes` | array | **required** | Played in order. |
-| `transition` | transition | `{ "type": "crossfade", "duration": 0.5 }` | Default transition between scenes. Use `"cut"` for none. |
+| `transition` | transition | `"cut"` | Default transition between scenes (e.g. `"crossfade"`, default length 0.5 s). It plays in the last part of the outgoing scene, so the total length stays the sum of scene durations. |
 | `markers` | `{ name: time }` | `{}` | Named times on the global timeline, used as `"@name"`. |
 | `audio` | array | `[]` | Music and sound effects (see **Audio**). |
 | `captions` | array or `{ "src": "subs.srt" }` | none | Burned-in captions (see **Captions**). |
@@ -162,8 +162,13 @@ That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the 
 | `blur` | Blur out, blur in | `amount` (px, default 40) |
 | `glitch` | Sliced offsets and RGB split, then cut | `intensity` 0..1 |
 | `morphCut` | Short soft blend with a slight scale, to hide a jump | |
+| `zoomThrough` | Fly into a layer of the outgoing scene; the new scene shows through its shape, then fills the frame | `layer` (an `id` in the previous scene; required). 0.8 s, `inQuad` |
+| `reveal` | The new scene grows out of a shape | `shape`: `circle` `diamond` `square` `star` `blob`; `amount` (spin °); `origin` |
+| `blinds` | Staggered bars open onto the new scene | `count` (8), `direction` |
+| `split` | The old frame splits in two and the halves part | `direction`: `left`/`right` part sideways, `up`/`down` vertically |
+| `whip` | Whip pan: both scenes travel a frame, blurred and stretched by speed | `direction`, `amount` (extra blur). 0.35 s |
 
-Defaults: duration 0.5 s (glitch 0.3 s), ease `inOutCubic`.
+Defaults: duration 0.5 s (glitch 0.3 s), ease `inOutCubic` (`reveal`, `blinds`, `split`, `whip`: `inOutExpo`).
 
 ### Camera
 
@@ -205,6 +210,10 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `cell` | area name, `"1-6/2-4"`, `[col, row, cols, rows]` | none | Place the layer in a field of the scene's `grid` (sets x, y, width; height except for text). `anchor` picks the cell point (default `topLeft`). See `anikit-video docs graphic`. |
 | `duotone`, `gradientMap` | `[dark, light]`, `[c1, c2, …]` | none | Map the layer's luma to inks (OKLab). `toneRange: [black, white]` pre-stretches, `posterize: N` steps, `toneAmount` mixes. |
 | `halftone` | px or `{cell, angle, shape, ink, paper, gain}` | none | Print screen over the layer (dot/line/square; ink `"source"` keeps colours; fixed to the frame). |
+| `cutout` | `"torn"`, `"scissor"`, `"clean"` or `{edge, amount, rim, rimColor, shadow, seed}` | none | Collage piece: cut edge, paper rim, printed shadow (needs numeric width/height or a cell). |
+| `inkTexture` | 0..1 or `{amount, scale, seed}` | none | Uneven ink coverage fixed to the frame (riso, screenprint). |
+| `step` | fps, `"twos"`, `"threes"`, `"fours"` | none | Stepped time for this layer and its children (stop-motion / print looks). |
+| `boil` | px or `{amount, rotate, fps, seed}` | none | Seeded jitter re-drawn `fps` (12) times a second: hand-drawn boil, drifting ink plates. |
 | `glow` | glow | none | `{ "radius": 24, "intensity": 1, "color": "$primary" }` or a colour string. |
 | `clip` | bool or shape | `false` | `true` clips to the layer's box (with its `radius`); or a static shape `{ "shape": "circle", "width": 300, "height": 300 }` positioned in the layer's box (centred by default). |
 | `mask` | shape layer | none | A shape whose outline cuts this layer (hard-edged; same as a `clip` shape). |
@@ -232,6 +241,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `letterSpacing` | length or `"0.05em"` | `0` | |
 | `uppercase` | bool | `false` | |
 | `maxLines` | integer | none | Truncates with an ellipsis. |
+| `textBoxTrim` | bool | `false` (`true` in a grid `cell`) | Align by cap height and last baseline instead of the line box (CSS `text-box: cap alphabetic`). |
 | `fit` | bool | `false` | `true` shrinks the size (never grows it) so the widest line fits `width` (default 85% of the parent), keeping your line breaks. Use it for big kinetic words on 9:16. |
 | `stroke` | colour or stroke | none | Outlined text: `"#000"` or `{ "color": "$accent", "width": 3 }` (px). Drawn under the fill; with `"color": "none"` only the outline shows. |
 | `split` | `chars` / `words` / `lines` | none | Splits the text into units so `enter`/`exit` presets stagger across them (kinetic type). |
@@ -435,6 +445,13 @@ Render-time, per layer (examples: `examples/video/mograph/`):
 | `textPath`, `pathOffset` | Text on a path (layer-local px; never wraps); `pathOffset` slides it (px, animatable). |
 | `roundCorners`, `offsetPath`, `puckerBloat`, `zigzag: {size, ridges, smooth}`, `twist`, `wigglePath: {amount, detail, speed, seed}` | Shape modifiers, applied in this order (rects and ellipses become paths). `wigglePath` animates, deterministically. |
 | `matte: "id"` or `{layer, mode}` | Track matte through a sibling layer (`alpha`, `alphaInverted`, `luma`, `lumaInverted`); the matte layer is not drawn itself. |
+| `inertia: true \| "soft" \| "bouncy" \| "tight" \| "heavy" \| {stiffness, damping, mass, props}` | Follow-through: a spring (simulated once at 240 Hz, deterministic) chases the layer's own `x`, `y`, `scaleX`, `scaleY`, `rotation` (or `props`), so every move overshoots and settles. |
+| `drag: 0.04` (group) | Overlapping action: child i follows the group's own motion i × drag seconds later, so parts trail and land one after another. |
+| `smear: true \| strength` | Stretch along the direction of travel in proportion to speed (volume kept); still frames are untouched. |
+| transitions `zoomThrough` (`layer`), `reveal` (`shape`, `amount` spin, `origin`), `blinds` (`count`, `direction`), `split` (`direction`), `whip` (`direction`, `amount`) | Idea transitions: fly into a layer of the outgoing scene (the next scene shows through its shape), shape reveals, staggered bars, the frame splitting apart, a whip pan blurred by its speed. |
+| `posterizeTime: 12` | Posterize time: this layer and its children step at that many poses per second (on twos); the video frame rate is unchanged. |
+| `ease: "glide" \| "snap" \| "land" \| "launch" \| "material" \| "emphasizedDecelerate" \| "emphasizedAccelerate" \| "productive" \| "expressive" \| "expressiveEntrance" \| "expressiveExit"` | Named curves: expo out (0.16, 1, 0.3, 1), expo in-out (0.87, 0, 0.13, 1), a long landing (0.25, 0.1, 0.1, 1), expo in (0.7, 0, 0.84, 0), Material 3 and IBM Carbon tokens. |
+| `stroke.along: [colours]` | A stroke gradient that follows the path from start to end (in ~96 chunks), trim-aware. |
 | `dashOffset` | Added to `stroke.dashOffset`; animatable (`"=t*-60"` marches ants). |
 | `animator: {by, x, y, rotation, scale, opacity, blur, color, start, end, offset, smooth, order, seed, duration, delay, ease}` | Text animator with a range selector (plain text). Units in `[start, end] + offset` take the props (soft edges `smooth`); with no `offset` the range sweeps away over `duration` (a reveal). `order`: `forward`, `reverse`, `center`, `random` (+`seed`). |
 

@@ -59,7 +59,9 @@ pub(super) fn run(raw: &Value, spec: &Value, cx: &mut Ctx) {
     rhythm(&scenes, cx);
     music(raw, spec, cx);
     easing(spec, cx);
+    motion_tells(spec, cx);
     copy(spec, cx);
+    world(raw, spec, cx);
 }
 
 /// A static `blur`, or keyframes that end blurred, on a text layer.
@@ -240,6 +242,80 @@ fn easing(spec: &Value, cx: &mut Ctx) {
     }
 }
 
+/// Motion tells from docs/video/craft/motion-design.md: linear moves, everything entering on one frame,
+/// and no follow-through anywhere.
+fn motion_tells(spec: &Value, cx: &mut Ctx) {
+    fn tweens(l: &Value) -> Vec<&Value> {
+        match l.get("animate") {
+            Some(Value::Array(a)) => a.iter().collect(),
+            Some(o @ Value::Object(_)) => vec![o],
+            _ => Vec::new(),
+        }
+    }
+    let moves = |t: &Value| ["from", "to", "keyframes"].iter().any(|k| t.get(*k).and_then(|m| m.as_object()).is_some_and(|m| m.keys().any(|p| matches!(p.as_str(), "x" | "y" | "scale" | "rotation"))));
+    let mut linear: Option<String> = None;
+    let mut follow = false;
+    let mut n_tweens = 0usize;
+    fn walk<'a>(v: &'a Value, p: String, f: &mut dyn FnMut(&'a Value, &str)) {
+        if let Some(m) = v.as_object() {
+            if m.contains_key("text") || m.contains_key("shape") || m.contains_key("layers") || m.contains_key("animate") {
+                f(v, &p);
+            }
+            if let Some(ls) = m.get("layers").and_then(|l| l.as_array()) {
+                for (i, l) in ls.iter().enumerate() {
+                    walk(l, format!("{p}.layers[{i}]"), f);
+                }
+            }
+        }
+    }
+    let scenes = spec.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
+    let mut crowded: Option<(String, usize)> = None;
+    for (si, scene) in scenes.iter().enumerate() {
+        let mut at_zero = 0usize;
+        for (li, layer) in scene.get("layers").and_then(|l| l.as_array()).into_iter().flatten().enumerate() {
+            let top = layer.get("animator").is_some()
+                || layer.get("stagger").is_some()
+                || layer.get("drag").is_some()
+                || layer.get("repeat").and_then(|r| r.get("stagger")).is_some();
+            let starts = layer.get("start").is_some() || layer.get("enter").and_then(|e| e.get("delay")).is_some();
+            let first_at = tweens(layer).first().and_then(|t| t.get("at")).is_some();
+            if !top && !starts && !first_at && (layer.get("enter").is_some() || !tweens(layer).is_empty()) {
+                at_zero += 1;
+            }
+            walk(layer, format!("scenes[{si}].layers[{li}]"), &mut |l, p| {
+                if l.get("inertia").is_some() || l.get("drag").is_some() || l.get("spring").is_some() {
+                    follow = true;
+                }
+                for t in tweens(l) {
+                    n_tweens += 1;
+                    let e = t.get("ease").and_then(|e| e.as_str()).unwrap_or("");
+                    if t.get("spring").is_some() || e.contains("Back") || e.contains("back") || e.contains("Elastic") || e.contains("elastic") {
+                        follow = true;
+                    }
+                    if e == "linear" && moves(t) && linear.is_none() {
+                        linear = Some(p.to_string());
+                    }
+                }
+            });
+        }
+        if at_zero >= 4 && crowded.is_none() {
+            crowded = Some((format!("scenes[{si}]"), at_zero));
+        }
+    }
+    if let Some(p) = linear {
+        cx.note("tip", "motion", &p, "a move (x, y, scale or rotation) with a linear ease: constant speed with hard starts and stops tends to read as mechanical or unfinished".into(),
+            "consider a curve with intent: \"glide\" (expo out) for arrivals, \"launch\" for exits, \"snap\" for transitions; keep linear for constant drifts and loops (docs/video/craft/motion-design.md)");
+    }
+    if let Some((p, n)) = crowded {
+        cx.note("tip", "motion", &p, format!("{n} layers start animating on the same frame; when everything moves at once nothing leads"),
+            "consider one lead move, then the rest following 2–4 frames apart (a group `stagger`, `drag`, or a text `animator`; docs/video/craft/motion-design.md §2.3)");
+    }
+    if n_tweens >= 8 && !follow {
+        cx.note("tip", "motion", "scenes", format!("{n_tweens} tweens and none with follow-through (no inertia, spring, back/elastic ease or drag): every move stops dead"),
+            "consider `\"inertia\": \"tight\"` on hero elements or `\"drag\": 0.04` on a moving group so parts overshoot and settle (docs mograph)");
+    }
+}
+
 /// Weightless copy: the vocabulary and constructions readers now associate with generated text.
 const WEIGHTLESS: &[&str] = &["unlock", "elevate", "seamless", "seamlessly", "empower", "reimagine", "reimagined", "delve", "tapestry", "testament", "supercharge", "effortless", "effortlessly", "game-changer", "revolutionary", "next-level"];
 
@@ -272,6 +348,52 @@ fn copy(spec: &Value, cx: &mut Ctx) {
     if !hits.is_empty() {
         cx.note("tip", "copy", "scenes", format!("on-screen copy uses {} — phrasing readers now associate with generated text", hits.join(", ")),
             "consider the product's own nouns, numbers and verbs instead; a specific fact tends to land harder than an adjective (TASTE.md §8)");
+    }
+}
+
+/// The spec's declared world rules (`"world": {"palette": [...], "fonts": [...]}`): colours and
+/// faces used in the scenes that the art direction didn't declare. Drift from a declared world is
+/// how a designed piece slides back into defaults.
+fn world(raw: &Value, spec: &Value, cx: &mut Ctx) {
+    let Some(w) = raw.get("world") else { return };
+    let list = |k: &str| w.get(k).and_then(|x| x.as_array()).map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect::<Vec<_>>());
+    if let Some(pal) = list("palette") {
+        let declared: Vec<color::C> = pal.iter().filter_map(|h| cx.color(&Value::String(h.clone()))).collect();
+        let mut used = Vec::new();
+        colours(spec.get("scenes").unwrap_or(&Value::Null), cx, &mut used);
+        let mut off: Vec<String> = used
+            .iter()
+            .filter(|c| c[3] > 0.05)
+            .filter(|c| declared.iter().all(|d| (0..3).map(|i| (c[i] - d[i]).powi(2)).sum::<f64>().sqrt() > 0.12))
+            .map(|c| color::to_hex(*c))
+            .collect();
+        off.sort();
+        off.dedup();
+        if !off.is_empty() && !declared.is_empty() {
+            cx.note("tip", "world", "world.palette", format!("{} colour{} outside the declared world palette: {}", off.len(), if off.len() == 1 { "" } else { "s" }, off.iter().take(6).cloned().collect::<Vec<_>>().join(", ")),
+                "either add them to `world.palette` on purpose, or bring them back to the world's colours (docs/video/craft/art-direction.md §2.6)");
+        }
+    }
+    if let Some(fonts) = list("fonts") {
+        let mut used = std::collections::BTreeSet::new();
+        fn walk(v: &Value, out: &mut std::collections::BTreeSet<String>) {
+            match v {
+                Value::Object(m) => {
+                    if let Some(Value::String(f)) = m.get("font") {
+                        out.insert(f.clone());
+                    }
+                    m.values().for_each(|x| walk(x, out));
+                }
+                Value::Array(a) => a.iter().for_each(|x| walk(x, out)),
+                _ => {}
+            }
+        }
+        walk(spec.get("scenes").unwrap_or(&Value::Null), &mut used);
+        let off: Vec<String> = used.into_iter().filter(|f| !fonts.iter().any(|d| d.eq_ignore_ascii_case(f))).collect();
+        if !off.is_empty() {
+            cx.note("tip", "world", "world.fonts", format!("faces outside the declared world: {}", off.join(", ")),
+                "either declare them in `world.fonts`, or set the type in the world's faces (docs/video/craft/art-direction.md §2.6)");
+        }
     }
 }
 
@@ -339,5 +461,14 @@ mod tests {
         assert!(checks(json!({ "scenes": sc })).contains(&("copy", "tip")));
         let plain = json!([ { "duration": 3, "layers": [ { "text": "Renders 4K in 9 seconds" } ] } ]);
         assert!(!checks(json!({ "scenes": plain })).iter().any(|c| c.0 == "copy" || c.0 == "motion"));
+    }
+
+    #[test]
+    fn world_rules_flag_drift() {
+        let sc = json!([ { "duration": 3, "layers": [ { "text": "Hi", "font": "JetBrains Mono", "color": "#f2b92e" }, { "shape": "rect", "fill": "#2b6cff", "width": 10, "height": 10 } ] } ]);
+        let c = checks(json!({ "world": { "palette": ["#0e1712", "#f2b92e"], "fonts": ["JetBrains Mono"] }, "scenes": sc.clone() }));
+        assert!(c.contains(&("world", "tip")), "{c:?}");
+        let ok = checks(json!({ "world": { "palette": ["#0e1712", "#f2b92e", "#2b6cff"], "fonts": ["jetbrains mono"] }, "scenes": sc }));
+        assert!(!ok.iter().any(|c| c.0 == "world"), "{ok:?}");
     }
 }

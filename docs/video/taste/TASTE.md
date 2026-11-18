@@ -16,8 +16,10 @@ TASTE.md is the index and the short pass (§10). Each craft doc in `docs/video/c
 | [`grading.md`](../craft/grading.md) | grading: the invisible grade, the tone curve as the film look, halation and grain physics, no grade for design-led work | §2, §4 |
 | [`award-level.md`](../craft/award-level.md) | 17 winning short-form pieces: one idea, one material pushed to the limit, systems, type that carries meaning | §11 |
 | [`ai-tells.md`](../craft/ai-tells.md) | what reads as generated in 2024–26, and automatable checks | §9 |
+| [`finish-and-life.md`](../craft/finish-and-life.md) | hand-made texture (object-locked, form-following, boiled on twos), secondary and overlapping motion (Williams' numbers, blinks, springs), depth-layered particles, frame density | §5, §11 |
+| [`ab-craft-process.md`](../craft/ab-craft-process.md) | A/B: the idea process lifted idea 3→5 on one brief, but execution (type, material, layout repetition) caps scores at ~4 | §8, §11 |
 | [`review-div.md`](../craft/review-div.md) | why the div-a…g films read as boring: seven structural failures | §9, §11 |
-| `typography.md`, `graphic-design.md` (grids at 1080p, spot colour, halftone, shape language), `motion-design.md`, `3d-design.md` (light ratios, look-dev, lenses), `illustration.md` (10 reference hands, clip-art→studio), `sound-design.md`, `music.md` (scoring to picture, per-style numbers), `generative.md` (authored, not demo-scene) | domain depth from the TYPE, GRAPHIC, MOGRAPH, 3D, COMPONENTS, SOUND, MUSIC and SHADER sessions (as they land) | §1–§7, §11 |
+| `typography.md` (title canon, kinetic numbers, scale, tracking, opsz, pairing reasoning, craft details), `sound-design.md` (sfx taxonomy, foley by material, sync tolerances, when not to sound, short-form mix), `graphic-design.md` (grids at 1080p, spot colour, halftone, shape language), `motion-design.md` (studio curves as AE influences, durations by move class, push vs zoom, transitions as ideas, rigs), `3d-design.md` (light ratios, look-dev, lenses), `illustration.md` (10 reference hands, clip-art→studio), `music.md` (scoring to picture, per-style numbers), `generative.md` (authored, not demo-scene) | domain depth from the TYPE, GRAPHIC, MOGRAPH, 3D, COMPONENTS, SOUND, MUSIC and SHADER sessions (as they land) | §1–§7, §11 |
 
 Each section runs **principles → rules (numbers from practice) → tells → checks**. Numbers marked *(heuristic)* are our proposals built on sources; tune them by eye. `anikit-video critique` implements the checks marked ⚙.
 
@@ -30,6 +32,8 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 - Contrast of scale is the main tool, with few sizes. Vignelli: "one or two type sizes at the most", the large "usually twice as big". Bringhurst: "don't compose without a scale".
 - Louder is not better. Making everything bigger and bolder is Vignelli's "intellectual vulgarity"; "in a world where everybody screams, silence is noticeable. White space provides the silence."
 - Type as the image works best when the concept calls for it. Bass: titles carry "the prime underlying core of the film's story… in some metaphorical way". Cooper's scratched *Se7en* type was "from the mind of the killer". Elastic's *True Detective* double exposures mean "internally divided". It is never a default effect.
+
+**Type's role in world-class work (REFS benchmark).** In 61 of 79 pieces type is absent or supporting; it leads in 18 and is the whole piece in 3. Where it leads, it is one face set with restraint, or made of the film's own material (Se7en's scratched emulsion, Catch Me If You Can's rubber stamps). A headline-led film is one valid choice among many, and usually not the strongest. An image-led story with type in support tends to read as more crafted.
 
 **Rules.**
 - **Scale: pick one ratio per piece and reuse 2–4 sizes.**
@@ -91,6 +95,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
     - a complementary pair at unequal saturation;
     - flat primaries as signifiers;
     - earth tones from a material.
+- **What the benchmark shows:** 43 of 87 are tagged limited (2–4 colours plus one accent, held across the film), 39 are dark, and only 11 are light-ground. That describes what tends to work, not a default to copy: a light, saturated piece can be just as strong when the subject calls for it.
 - **Source the palette** from the subject: a photograph, a material, an era, a painting, or the brand's real colours. Colour-wheel generators and tool defaults tend to give the generic look.
 - **Saturation budget.** Keep most of the area low to mid chroma. Spend full saturation on the accent and the climax beat *(heuristic: flag > ~25% of the area at high chroma)*.
 - **Levels (EBU R103).** 8-bit video runs 16–235 nominal, 5–246 preferred. Out-of-range pixels matter beyond 1% of the image. Lift the deepest blacks slightly unless the piece is deliberately graphic, and keep large areas off clip; clipped white is for speculars and small type.
@@ -266,6 +271,13 @@ Each section runs **principles → rules (numbers from practice) → tells → c
   - TV ads: < 2 s.
   - Music video: ~2 s.
   - Cinematic social ads: ~1.2 s, with a range of 0.5–7.5 s.
+- **The REFS benchmark** (87 world-class short-form pieces; `docs/video/judge/benchmark/WHAT-WORLD-CLASS-LOOKS-LIKE.md`) puts the median shot at **2.5 s** overall:
+  - 1.0 s for sport and broadcast;
+  - 1.5 s for idents and UI launches;
+  - 2.0 s for product launches;
+  - 3.5 s for explainers, illustration and titles;
+  - 8 s or more for data stories.
+  Pace in most of the set comes from change *inside* the shot. The camera moves in 50 of 79 pieces, and morphs, sims settling and secondary motion do the rest. So dead air is a better thing to judge than cut count, except for sport and social.
 - **Spread matters as much as the mean.** Shot-length CV (sd/mean) of 0.6–1.2 is healthy; < 0.4 is metronomic ⚙; > 1.5 means one shot dominates *(heuristic on lognormal)*. Aim for max/median ≥ 3.
 - **Fast showcase** (20–60 s):
   - median shot 1–2 s;
@@ -482,6 +494,7 @@ Correct is not enough. The fourth rejection (Margin) met every guideline above a
   - compositions used as textures.
 - Gradients standing in for imagery tend to read as placeholder.
 - **Texture at the edges:** grain, halation, slight jitter or misregistration chosen for the world, kept off words while they are read.
+- **The idea's material at full fidelity.** In the A/B (`craft/ab-craft-process.md`), a strong idea (a split-flap board for instant settlement) scored only 4/10 because the board was flat grey tiles. The mechanism, hinge shadow, clatter and light were where a studio would have spent the time.
 - **Choreography:**
   - one element's exit is the next one's entrance;
   - a camera move continues through a cut;
