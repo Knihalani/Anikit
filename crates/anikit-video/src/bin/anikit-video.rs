@@ -498,7 +498,7 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                         let shaders: Vec<_> = ev
                             .shader_stats()
                             .into_iter()
-                            .map(|s| serde_json::json!({ "layer": s.label, "ms": s.ms, "ms_full_size": s.ms * full, "width": s.width, "height": s.height, "supersample": s.supersample }))
+                            .map(|s| serde_json::json!({ "layer": s.label, "ms": s.ms, "ms_full_size": s.ms * full, "width": s.width, "height": s.height, "supersample": s.supersample, "nan_at": s.nonfinite.map(|(x, y)| [x, y]) }))
                             .collect();
                         if json {
                             println!("{}", serde_json::json!({ "ok": true, "output": out, "at": t, "width": w, "height": h, "ms": ms, "shaders": shaders, "warnings": d }));
@@ -522,6 +522,9 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                                     ""
                                 };
                                 eprintln!("  shader {}: ≈ {f:.0} ms/frame at full size{}{note}", s.label, if s.supersample { ", supersampled" } else { "" });
+                                if let Some((x, y)) = s.nonfinite {
+                                    eprintln!("  warning: shader {} produced NaN/Inf (drawn black), first at fragCoord ({x}, {y}) of its {}×{} render: look for a division by zero, sqrt/log/pow of a negative, or normalize(vec3(0))", s.label, s.width, s.height);
+                                }
                             }
                         }
                     }
@@ -744,6 +747,11 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                     s.render_fps,
                     s.bytes as f32 / 1024.0
                 );
+                for st in ev.shader_stats() {
+                    if let Some((x, y)) = st.nonfinite {
+                        eprintln!("  warning: shader {} produced NaN/Inf (drawn black), first at fragCoord ({x}, {y}): look for a division by zero, sqrt/log/pow of a negative, or normalize(vec3(0))", st.label);
+                    }
+                }
             }
             // `--sheet f.png`: a contact sheet of the final (one cell per second,
             // 480 px), so nobody tiles frames out of the MP4 by hand.

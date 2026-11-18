@@ -4451,14 +4451,31 @@ impl C<'_> {
         let mut slots = Vec::new();
         let mut fixed = Vec::new();
         let mut off = 0;
-        for u in &shader.uniforms {
+        // Animation slots go first to uniforms that need them: given as an
+        // expression, or named by the layer's keyframes/animations; the rest
+        // follow in declaration order. Static values past the slots are fixed.
+        let anim_keys = {
+            let mut v = serde_json::to_value(l).unwrap_or_default();
+            if let Some(o) = v.as_object_mut() {
+                for k in ["uniforms", "shader", "src", "buffers"] {
+                    o.remove(k);
+                }
+            }
+            v.to_string()
+        };
+        let animated = |name: &str| vals.iter().any(|(k, v)| k == name && v.is_err()) || anim_keys.contains(&format!("\"{name}\":"));
+        let mut order: Vec<&anikit_shader::DeclaredUniform> = shader.uniforms.iter().collect();
+        order.sort_by_key(|u| !animated(&u.name));
+        for u in order {
             let len = u.ty.components();
             let given = vals.iter().find(|(k, _)| *k == u.name).map(|(_, v)| v.clone());
             if off + len > UNIFORM_SLOTS {
                 if let Some(Ok(v)) = given.clone().or(u.default.clone().map(Ok)) {
                     fixed.push((u.name.clone(), v));
                 }
-                self.d.push(Diagnostic::warning(format!("{path}.uniforms.{}", u.name), format!("more than {UNIFORM_SLOTS} uniform floats: '{}' can't be animated", u.name)));
+                if animated(&u.name) {
+                    self.d.push(Diagnostic::warning(format!("{path}.uniforms.{}", u.name), format!("more than {UNIFORM_SLOTS} animated uniform floats: '{}' can't be animated (it keeps its first value)", u.name)));
+                }
                 continue;
             }
             if let Some(d) = &u.default {
@@ -4572,6 +4589,7 @@ impl C<'_> {
             alpha: l.alpha.unwrap_or(false),
             label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
             audio: self.shader_audio(&text, path),
+            faithful: passes.is_none() && !text.contains("texelFetch"),
             passes,
         };
         Some((Kind::Shader(Box::new(sc)), size))
@@ -4643,9 +4661,12 @@ impl C<'_> {
             return None;
         }
         if self.music.is_none() {
-            let r = match self.beat_marks.music() {
-                None => Err("iAudio/iBeat need music: add a top-level `audio` track with a `src` (they stay 0)".to_string()),
-                Some((p, at, trim)) => super::audio_react::AudioFeatures::load(p, *at, *trim).map(Arc::new).map_err(|e| format!("iAudio/iBeat: {e}")),
+            // Generated `music` first (its exact grid, the same one expressions use),
+            // then the first music `audio` track.
+            let r = match (self.beat_marks.generated(), self.beat_marks.music()) {
+                (Some(g), _) => g.map(|(mono, rate, beats, bars, at)| Arc::new(super::audio_react::AudioFeatures::from_mono(&mono, rate, beats, bars, at))).map_err(|e| format!("iAudio/iBeat: {e}")),
+                (None, None) => Err("iAudio/iBeat need music: add generated `music` or a top-level `audio` track with a `src` (they stay 0)".to_string()),
+                (None, Some((p, at, trim))) => super::audio_react::AudioFeatures::load(p, *at, *trim).map(Arc::new).map_err(|e| format!("iAudio/iBeat: {e}")),
             };
             self.music = Some(r);
         }
@@ -4690,6 +4711,7 @@ impl C<'_> {
             label: super::shader::label(path, Some(src)),
             audio: self.shader_audio(&text, path),
             passes: None,
+            faithful: !text.contains("texelFetch"),
         })))
     }
 
