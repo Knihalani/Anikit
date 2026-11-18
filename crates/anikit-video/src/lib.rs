@@ -36,4 +36,5 @@ pub mod scene3d;
 pub mod pipeline;
 pub mod qmetrics;
 pub mod diskcache;
+pub mod memstat;
 pub mod assetlib;

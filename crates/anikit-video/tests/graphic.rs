@@ -146,3 +146,17 @@ fn near_grid_warning() {
     assert_eq!(w.len(), 1, "{w:?}");
     assert!(w[0].contains("layers[0]") && w[0].contains("x = 96"), "{w:?}");
 }
+
+#[test]
+fn brush_strokes_fill_and_paint_on() {
+    let e = ev(r##"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "path", "d": "M0 0 C100 -50 200 50 300 0", "fill": "none", "stroke": "#111", "strokeWidth": 20,
+        "brush": { "dry": 0.5, "seed": 2 }, "animate": [ { "from": { "trimEnd": 0 }, "duration": 1 } ] } ] } ] }"##);
+    let fills = |t: f32| e.eval(t).ops.iter().filter(|o| matches!(o, Op::Fill { .. })).count();
+    let strokes = e.eval(1.5).ops.iter().filter(|o| matches!(o, Op::Stroke { .. })).count();
+    assert_eq!(strokes, 0);
+    assert_eq!(fills(0.0), 0, "nothing painted yet");
+    assert_eq!(fills(1.5), 1);
+    let w = parse_json(r#"{ "scenes": [ { "layers": [ { "shape": "circle", "brush": true } ] } ] }"#).unwrap();
+    let ev2 = Evaluator::new(&w.spec, Options::default()).unwrap();
+    assert!(ev2.diagnostics.iter().any(|d| d.to_string().contains("brush")));
+}

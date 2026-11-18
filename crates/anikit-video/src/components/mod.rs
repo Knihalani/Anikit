@@ -41,6 +41,7 @@ pub mod code;
 pub mod devices;
 pub mod lottie;
 pub mod fluid;
+pub mod physarum;
 pub mod metaballs;
 pub mod morph;
 pub mod particle_text;
@@ -62,6 +63,8 @@ pub mod card_stack;
 pub mod now_playing;
 pub mod product_shot;
 pub mod illus_fill;
+pub mod nature;
+pub mod illo;
 
 #[cfg(test)]
 pub(crate) mod preview;
@@ -273,6 +276,7 @@ kinds! {
     // Shapes and light
     "morph" => morph::Morph, "Smooth gradient shape morphing between named shapes (circle, square, star, heart, blob, triangle) or SVG paths.", r##"{"shapes":["circle","star","heart"]}"##;
     "fluid" => fluid::Fluid, "Fluid simulation: ink blooming in water, smoke or fire, with real vortices; sources push and inject dye, and `text` writes a word the flow takes apart.", r##"{"look":"ink","text":{"text":"FLUID"}}"##;
+    "physarum" => physarum::Physarum, "Slime-mould network: agents sense a trail field, turn towards it, move and deposit; veins form, merge and re-route. Text can seed or attract them.", r##"{"agents":200000,"spawn":"disc"}"##;
     "metaballs" => metaballs::Metaballs, "Liquid gooey blobs that drift, merge and split, with a gradient fill and glow.", r##"{}"##;
     "god-rays" => rays::GodRays, "Volumetric light rays from a point, slowly turning, with dust motes in the beams.", r##"{}"##;
     "lens-flare" => rays::LensFlare, "Anamorphic lens flare: streak, halo and ghosts along the axis through the centre; `at` can travel a path.", r##"{"at":[0.3,0.3]}"##;
@@ -311,6 +315,12 @@ kinds! {
     "hatch" => illus_fill::Hatch, "Hand-drawn hatched, cross-hatched, stippled or scribbled fill of a shape, with a tone gradient from a light direction, wobble, boil and a line-by-line draw-on.", r##"{"shape":"circle","style":"crosshatch","toneFrom":0.2,"toneTo":0.9,"draw":1.5}"##;
     "paper" => illus_fill::Paper, "Full-frame paper stock with real tooth: paper, cotton, kraft, canvas weave, cold-press watercolor or newsprint; computed once and dithered.", r##"{"stock":"watercolor"}"##;
     "cutout" => illus_fill::Cutout, "Cut or torn paper shape (flat colour or paper/kraft/newsprint stock) with a fibrous rim, lifted drop shadow, hand-placed wobble and a drop or slide entrance.", r##"{"shape":"blob","texture":"kraft","torn":0.7}"##;
+    // Illustrated environments
+    "landscape" => nature::Landscape, "Illustrated landscape: layered parallax ranges (mountains, hills, dunes, mesas, forest, woods) under a sky with sun or moon, atmospheric perspective and mist, in a flat, risograph, painterly, ink or papercut hand.", r##"{"style":"risograph","time":"dusk","terrain":"mountains","layers":4,"mist":0.5}"##;
+    "plants" => nature::Plants, "Procedural trees (pine, broadleaf, birch, cypress), bushes, grass and flowers along a ground line, lit as forms and swaying in gusting wind, in the same hands as `landscape`.", r##"{"species":"mixed","count":7,"wind":0.5,"style":"painterly"}"##;
+    "clouds" => nature::Clouds, "Designed, palette-aware clouds (lobed cumulus with a lit shape and rim, stratus bands or puffs) drifting at depth-scaled speeds.", r##"{"look":"cumulus","count":4,"speed":20,"style":"flat"}"##;
+    "water" => nature::Water, "Illustrated water: banded depth gradient, a ripple-broken shore reflection, a sun path and drifting wave dashes and glints.", r##"{"sun":0.6,"style":"risograph","time":"dusk"}"##;
+    "illo" => illo::Illo, "Illustration toolkit: a scene graph of layered vector shapes (paths, circles, rects, blobs, polygons, stars, groups) lit by one global light into hue-shifted form shadows, rims and hard cast shadows, with dithered OKLab gradients, object-locked grain, halftone, riso, paper or hatch, a consistent hand (weighted, broken outlines; wobble; boil), palette and ink snapping, clip and cut, keyframes, morphs, sway and stepped timing.", r##"{"palette":["#e2603f","#2f4858","#f3e6cf"],"light":{"angle":225},"hand":{"outline":true},"grain":0.06,"shapes":[{"shape":"rect","x":0,"y":470,"w":1280,"h":250,"fill":"$2"},{"shape":"blob","name":"pot","cx":640,"cy":380,"r":150,"fill":"$1","shade":true,"shadow":{"flatten":0.3},"texture":"halftone"},{"shape":"ellipse","cx":590,"cy":320,"rx":40,"ry":22,"fill":"$3","clipTo":"pot","opacity":0.8},{"shape":"path","points":[[640,240],[660,150],[700,110]],"smooth":true}]}"##;
     // Lottie
     "lottie" => lottie::Lottie, "Minimal Lottie player (shape layers, transforms, trim paths).", r##"{"src":"anim.json"}"##;
 }
@@ -658,6 +668,16 @@ pub fn with_opacity(ops: Vec<Op>, opacity: f32) -> Vec<Op> {
     out.extend(ops);
     out.push(Op::PopLayer);
     out
+}
+
+/// Frame-by-frame stepping for a component's own animation ("on twos/threes"):
+/// `stepFps` samples local time at `floor(t·fps)/fps`; `onTwos` means 12 fps.
+/// Camera moves should use the unstepped time so they stay smooth.
+pub fn step_time(t: f32, on_twos: bool, step_fps: Option<f32>) -> f32 {
+    match step_fps.filter(|f| *f > 0.0).or(if on_twos { Some(12.0) } else { None }) {
+        Some(f) => ((t * f) + 1e-3).floor() / f,
+        None => t,
+    }
 }
 
 /// Straight-alpha colour helper.

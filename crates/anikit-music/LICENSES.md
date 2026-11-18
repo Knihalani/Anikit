@@ -80,6 +80,14 @@
 - **Licence:** CC0 1.0 Universal for all three, verified from each repository's `LICENSE`. No
   attribution required.
 
+### Virtuosity Drums (`virtuosity`)
+
+- **Source:** <https://github.com/sfzinstruments/virtuosity_drums> (tag `v0.925`), by Versilian
+  Studios. Only the programs and the mid-mic samples are checked out (≈250 MB). After download, a copy of
+  `06-mid-mic.sfz` is written as `anikit-mid-kit.sfz` that includes the default keymap (open hi-hat on
+  GM key 46).
+- **Licence:** CC0 1.0 Universal, verified from the repository's `LICENSE`. No attribution required.
+
 <!-- end of sampler sections -->
 
 ## Everything else: original work (MIT, like the rest of Anikit)
