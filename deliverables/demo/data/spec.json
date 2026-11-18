@@ -113,7 +113,7 @@
      "alpha": true
     },
     {
-     "text": "September 1979: 7.05 million km² of ice.\nWhite is ice; the frame holds 9 million km² of ocean.",
+     "text": "September 1979: 7.05 million km² of ice.",
      "x": 104,
      "y": 100,
      "size": 47,
@@ -1664,7 +1664,7 @@
     "animate": [
      {
       "from": {
-       "zoom": 1.08
+       "zoom": 1.03
       },
       "to": {
        "zoom": 1.0
@@ -1691,8 +1691,8 @@
     {
      "text": "3.57",
      "x": 900,
-     "y": 270,
-     "size": 560,
+     "y": 275,
+     "size": 500,
      "color": "#ff5a1f",
      "font": "Big Shoulders Stencil",
      "anchor": "center",
@@ -1741,7 +1741,7 @@
      }
     },
     {
-     "text": "million km² in September 2012, the smallest on record:\nabout half the ice of 1979.",
+     "text": "September 2012: 3.57 million km² of ice,\nthe record low, about half of 1979.",
      "x": 1836,
      "y": 1030,
      "size": 42,
@@ -1984,7 +1984,7 @@
       "cover": 0.4109,
       "edge": -90,
       "sun": 0.75,
-      "scale": "=15 - t * 0.3",
+      "scale": "=9 + 6 * smoothstep(0, 1.2, t) - t * 0.3",
       "dusk": "=0.35 + t * 0.06"
      },
      "supersample": false
@@ -1992,10 +1992,10 @@
     {
      "shader": "ice.glsl",
      "uniforms": {
-      "cover": "=clamp(1 - (t - 1.4) / 2.4, 0, 1)",
+      "cover": "=clamp(1 - (t - 1.9) / 2.4, 0, 1)",
       "edge": 0,
       "sun": 0.75,
-      "scale": "=15 - t * 0.3",
+      "scale": "=9 + 6 * smoothstep(0, 1.2, t) - t * 0.3",
       "dusk": "=0.35 + t * 0.06"
      },
      "supersample": false,
@@ -2007,6 +2007,11 @@
       "width": 489.9605263693746,
       "height": 899.7640504801071,
       "fill": "#f2f6f8"
+     },
+     "start": 1.2,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.4
      }
     },
     {
@@ -2021,7 +2026,7 @@
       "color": "#ff5a1f",
       "width": 3
      },
-     "start": 1.2,
+     "start": 1.6,
      "enter": {
       "preset": "fadeIn",
       "duration": 0.5
@@ -2065,7 +2070,7 @@
      }
     },
     {
-     "text": "Frame: 18 million km² of ocean; white: the September 2026 ice.\nSource: NSIDC Sea Ice Index v4 (G02135), September extent 1979–2026.\nCoastline: Natural Earth.",
+     "text": "Data: NSIDC Sea Ice Index v4. Coastline: Natural Earth.",
      "x": 1840,
      "y": 1040,
      "size": 27,

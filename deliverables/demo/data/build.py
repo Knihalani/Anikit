@@ -61,7 +61,7 @@ scenes.append({"id": "1979", "duration": 4.5, "camera": {"animate": [{"from": {"
     sh1,
     text("1979", 110, 330, 600, PAINT, axes=WIDE, anchor="topLeft", **PAINTED, enter={"preset": "fadeIn", "duration": 0.5, "delay": 0.3}),
     water(sh1),
-    mono("September 1979: 7.05 million km² of ice.\nWhite is ice; the frame holds 9 million km² of ocean.", 104, 100, ICE_INK, 38, weight=700, anchor="topLeft", shadow={"x": 0, "y": 0, "blur": 5, "color": "#f4f8fa"},
+    mono("September 1979: 7.05 million km² of ice.", 104, 100, ICE_INK, 38, weight=700, anchor="topLeft", shadow={"x": 0, "y": 0, "blur": 5, "color": "#f4f8fa"},
          enter={"preset": "fadeIn", "duration": 0.5, "delay": 1.1}),
 ]})
 
@@ -86,12 +86,12 @@ scenes.append({"id": "melt", "duration": 8.5, "layers": L2})
 # 3 — 2012: hard cut, close and cracked; the record number fills the water.
 c12 = cover(EXT[2012])
 sh3 = shader(cover=c12, sun=0.45, scale="=3.0 + t * 0.12", pany=0.25, panx=2.0, edge=0, crack="=clamp(t * 0.4, 0, 0.25)")
-scenes.append({"id": "2012", "duration": 4.5, "transition": "cut", "camera": {"shake": {"amount": 12, "duration": 0.45, "at": 0}, "animate": [{"from": {"zoom": 1.08}, "to": {"zoom": 1.0}, "duration": 4.5, "ease": "outCubic"}]}, "layers": [
+scenes.append({"id": "2012", "duration": 4.5, "transition": "cut", "camera": {"shake": {"amount": 12, "duration": 0.45, "at": 0}, "animate": [{"from": {"zoom": 1.03}, "to": {"zoom": 1.0}, "duration": 4.5, "ease": "outCubic"}]}, "layers": [
     sh3,
-    text("3.57", 900, 270, 560, PAINT, axes=WIDE, anchor="center", **PAINTED),
+    text("3.57", 900, 275, 500, PAINT, axes=WIDE, anchor="center", **PAINTED),
     water(sh3),
     text("2012", 1830, 860, 150, WHITE, axes=WIDE, anchor="bottomRight", enter={"preset": "fadeIn", "duration": 0.3, "delay": 0.25}),
-    mono("million km² in September 2012, the smallest on record:\nabout half the ice of 1979.", 1836, 1030, WHITE, 34, anchor="bottomRight", align="right",
+    mono("September 2012: 3.57 million km² of ice,\nthe record low, about half of 1979.", 1836, 1030, WHITE, 34, anchor="bottomRight", align="right",
          enter={"preset": "fadeIn", "duration": 0.4, "delay": 0.7}),
 ]})
 
@@ -119,17 +119,17 @@ scenes.append({"id": "chart", "duration": 7.0, "transition": "cut", "camera": {"
 # Greenland (Natural Earth 1:50m, Lambert equal-area, to scale) that melts away, leaving its outline.
 GL = json.load(open(HERE / "greenland.json"))
 c26w = round(cover(EXT[2026], 18.0) * 0.94, 4)  # measured: 0.27 of the frame white at dusk-free light
-sky5 = dict(sun=0.75, scale="=15 - t * 0.3", dusk="=0.35 + t * 0.06")
+sky5 = dict(sun=0.75, scale="=9 + 6 * smoothstep(0, 1.2, t) - t * 0.3", dusk="=0.35 + t * 0.06")
 gl_shape = {"shape": "path", "d": GL["d"], "x": GL["cx"], "y": GL["cy"], "width": GL["w"], "height": GL["h"]}
 scenes.append({"id": "now", "duration": 5.5, "transition": {"type": "fade", "duration": 0.6}, "layers": [
     shader(cover=c26w, edge=-90, **sky5),
-    dict(shader(cover="=clamp(1 - (t - 1.4) / 2.4, 0, 1)", edge=0, **sky5), mask=dict(gl_shape, fill=WHITE)),
-    dict(gl_shape, fill="none", stroke={"color": PAINT, "width": 3}, start=1.2, enter={"preset": "fadeIn", "duration": 0.5}),
+    dict(shader(cover="=clamp(1 - (t - 1.9) / 2.4, 0, 1)", edge=0, **sky5), mask=dict(gl_shape, fill=WHITE), start=1.2, enter={"preset": "fadeIn", "duration": 0.4}),
+    dict(gl_shape, fill="none", stroke={"color": PAINT, "width": 3}, start=1.6, enter={"preset": "fadeIn", "duration": 0.5}),
     text("Missing\nsince 1979:\na Greenland.", 1840, 100, 104, WHITE, axes=WIDE, anchor="topRight", align="right", lineHeight=0.92,
          kinetic="mask by line up 0.6s 80ms outExpo", start=0.3),
     mono("Greenland, to scale: 2.17 million km².\nSeptember ice lost since 1979: 2.24.", 1840, 470, WHITE, 32, anchor="topRight", align="right", start=1.0,
          enter={"preset": "fadeIn", "duration": 0.4}),
-    mono("Frame: 18 million km² of ocean; white: the September 2026 ice.\nSource: NSIDC Sea Ice Index v4 (G02135), September extent 1979–2026.\nCoastline: Natural Earth.", 1840, 1040, WHITE, 22, anchor="bottomRight", align="right",
+    mono("Data: NSIDC Sea Ice Index v4. Coastline: Natural Earth.", 1840, 1040, WHITE, 22, anchor="bottomRight", align="right",
          opacity=0.8, start=1.6, enter={"preset": "fadeIn", "duration": 0.4}),
 ]})
 
