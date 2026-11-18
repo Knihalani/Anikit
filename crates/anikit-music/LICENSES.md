@@ -41,6 +41,13 @@
 - **Contents:** ≈3,200 WAV samples with SFZ mappings (strings sections and solo violin,
   woodwinds, brass, harp, timpani, mallets, organ, upright piano, GM-style percussion).
 
+### VSCO-2 CE subsets (`vsco-strings`, `vsco-winds`)
+
+- The same repository, licence and authors as `vsco2-ce` above, as a sparse checkout of only the
+  string sections (violins, violas, cellos, contrabass) and the SFZ files (≈410 MB download).
+- `vsco-winds` likewise checks out only horn, trumpet, tenor trombone, tuba, the woodwinds, harp and
+  timpani (≈520 MB download).
+
 ### Salamander Grand Piano V3 (`salamander`)
 
 - **Source:** <https://github.com/sfzinstruments/SalamanderGrandPiano> — Yamaha C5,
@@ -79,6 +86,14 @@
     set is checked out, ≈6 MB).
 - **Licence:** CC0 1.0 Universal for all three, verified from each repository's `LICENSE`. No
   attribution required.
+
+### Virtuosity Drums (`virtuosity`)
+
+- **Source:** <https://github.com/sfzinstruments/virtuosity_drums> (tag `v0.925`), by Versilian
+  Studios. Only the programs and the mid-mic samples are checked out (≈250 MB). After download, a copy of
+  `06-mid-mic.sfz` is written as `anikit-mid-kit.sfz` that includes the default keymap (open hi-hat on
+  GM key 46).
+- **Licence:** CC0 1.0 Universal, verified from the repository's `LICENSE`. No attribution required.
 
 <!-- end of sampler sections -->
 

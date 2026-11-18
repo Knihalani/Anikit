@@ -10,6 +10,9 @@ use crate::dl::{Filter, Halftone, Rgba, ToneLut};
 pub struct FilterScratch {
     a: Vec<u8>,
     blur: BlurScratch,
+    /// Ink texture thin-map for the last region: (seed, scale bits, ox, oy, w, h) → coverage multipliers' inputs.
+    ink_key: Option<(u32, u32, i32, i32, usize, usize)>,
+    ink_map: Vec<u8>,
 }
 
 impl FilterScratch {
@@ -158,8 +161,28 @@ fn apply_inner(f: &Filter, buf: &mut [u8], w: usize, h: usize, s: &mut FilterScr
         }
         Filter::Tone(t) => tone(&t, buf),
         Filter::Halftone(ht) => halftone(&ht, buf, w),
-        Filter::Ink { amount, scale, seed, ox, oy } => ink(buf, w, amount, scale, seed, ox, oy),
+        Filter::Ink { amount, scale, seed, ox, oy } => ink(buf, w, amount, scale, seed, ox, oy, s),
     }
+}
+
+/// 255 / a for a in 0..=255 (0 → 0), for unpremultiplying without divides.
+#[allow(dead_code)]
+fn recip255() -> &'static [f32; 256] {
+    static T: std::sync::OnceLock<[f32; 256]> = std::sync::OnceLock::new();
+    T.get_or_init(|| std::array::from_fn(|a| if a == 0 { 0.0 } else { 255.0 / a as f32 }))
+}
+
+/// round(255 × 65536 / a): `(v × R[a]) >> 16` ≈ v × 255 / a.
+fn recip255_q16() -> &'static [u32; 256] {
+    static T: std::sync::OnceLock<[u32; 256]> = std::sync::OnceLock::new();
+    T.get_or_init(|| std::array::from_fn(|a| if a == 0 { 0 } else { ((255u64 * 65536 + a as u64 / 2) / a as u64) as u32 }))
+}
+
+/// round(v × a / 255) for v, a in 0..=255, exact, without a divide.
+#[inline(always)]
+fn mul255(v: u32, a: u32) -> u32 {
+    let t = v * a + 128;
+    (t + (t >> 8)) >> 8
 }
 
 /// Gradient map / posterise through a 256-entry luma table.
@@ -167,27 +190,45 @@ fn apply_inner(f: &Filter, buf: &mut [u8], w: usize, h: usize, s: &mut FilterScr
 fn tone(t: &ToneLut, buf: &mut [u8]) {
     let lv = t.levels as u32;
     let q = |v: u32| if lv >= 2 { ((v * (lv - 1) + 127) / 255) * 255 / (lv - 1) } else { v };
+    // Per-channel posterise as a table (no divides per pixel).
+    let qt: [u8; 256] = std::array::from_fn(|v| q(v as u32) as u8);
     let amt = (t.amount.clamp(0.0, 1.0) * 256.0) as u32;
+    if let (Some(m), 256) = (&t.map, amt) {
+        // Full-strength gradient map: integer luma straight from premultiplied pixels.
+        let rq = recip255_q16();
+        let lut: [[u8; 3]; 256] = std::array::from_fn(|y| m[qt[y] as usize]);
+        for p in buf.chunks_exact_mut(4) {
+            let a = p[3] as u32;
+            let y = (54 * p[0] as u32 + 183 * p[1] as u32 + 19 * p[2] as u32 + 128) >> 8;
+            let yu = ((y * rq[a as usize] + 32768) >> 16).min(255);
+            let c = lut[yu as usize];
+            p[0] = mul255(c[0] as u32, a) as u8;
+            p[1] = mul255(c[1] as u32, a) as u8;
+            p[2] = mul255(c[2] as u32, a) as u8;
+        }
+        return;
+    }
+    let rc = recip255();
     for p in buf.chunks_exact_mut(4) {
         let a = p[3] as u32;
         if a == 0 {
             continue;
         }
-        // Unpremultiply (rounded).
-        let un = |v: u8| ((v as u32 * 255 + a / 2) / a).min(255);
+        let ia = rc[a as usize];
+        let un = |v: u8| ((v as f32 * ia + 0.5) as u32).min(255);
         let (r, g, b) = (un(p[0]), un(p[1]), un(p[2]));
         let o = match &t.map {
             Some(m) => {
                 let y = (54 * r + 183 * g + 19 * b + 128) >> 8;
-                let c = m[q(y.min(255)) as usize];
+                let c = m[qt[y.min(255) as usize] as usize];
                 [c[0] as u32, c[1] as u32, c[2] as u32]
             }
-            None => [q(r), q(g), q(b)],
+            None => [qt[r as usize] as u32, qt[g as usize] as u32, qt[b as usize] as u32],
         };
         let src = [r, g, b];
         for c in 0..3 {
             let v = (src[c] * (256 - amt) + o[c] * amt) >> 8;
-            p[c] = ((v * a + 127) / 255) as u8;
+            p[c] = mul255(v, a) as u8;
         }
     }
 }
@@ -229,53 +270,96 @@ fn spot_radius(shape: u8, k: f32) -> f32 {
 /// image and the screen stays fixed to the frame.
 #[inline(always)]
 fn halftone(h: &Halftone, buf: &mut [u8], w: usize) {
-    let mut rt = [0f32; 257];
-    for (i, r) in rt.iter_mut().enumerate() {
-        *r = spot_radius(h.shape, (i.min(256) as f32 / 256.0 * h.gain).min(1.0));
+    match h.shape {
+        1 => halftone_s::<1>(h, buf, w),
+        2 => halftone_s::<2>(h, buf, w),
+        _ => halftone_s::<0>(h, buf, w),
     }
+}
+
+#[inline(always)]
+fn halftone_s<const SHAPE: u8>(h: &Halftone, buf: &mut [u8], w: usize) {
+    // Spot radius by unpremultiplied luma (0..255).
+    let rt: [f32; 256] = std::array::from_fn(|y| spot_radius(h.shape, ((255 - y) as f32 / 255.0 * h.gain).min(1.0)));
     let (sn, cs) = h.angle.to_radians().sin_cos();
     let inv = 1.0 / h.cell;
     let src_ink = h.ink.0[3] <= 0.0;
     let paper_a = h.paper.0[3].clamp(0.0, 1.0);
     let ink = h.ink.0.map(|v| v.clamp(0.0, 1.0) * 255.0);
     let paper = h.paper.0.map(|v| v.clamp(0.0, 1.0) * 255.0);
+    // Fixed inks: the output (before the layer's own alpha) as a table of coverage.
+    let lut: [[u8; 4]; 256] = std::array::from_fn(|i| {
+        let cov = i as f32 / 255.0;
+        let q = |v: f32| (v + 0.5).clamp(0.0, 255.0) as u8;
+        if paper_a > 0.0 {
+            let oa = paper_a + (1.0 - paper_a) * cov;
+            [0, 1, 2].map(|c| q(paper[c] * paper_a * (1.0 - cov) + ink[c] * cov)).into_iter().chain([q(oa * 255.0)]).collect::<Vec<u8>>().try_into().unwrap()
+        } else {
+            [q(ink[0] * cov), q(ink[1] * cov), q(ink[2] * cov), q(cov * 255.0)]
+        }
+    });
+    let rq = recip255_q16();
+    let cell = h.cell;
+    let mut covs = vec![0u8; w];
+    let mut rads = vec![0f32; w];
     for (y, row) in buf.chunks_exact_mut(w * 4).enumerate() {
         let fy = y as f32 + 0.5 + h.oy;
-        for (x, p) in row.chunks_exact_mut(4).enumerate() {
+        let fx0 = 0.5 + h.ox;
+        // Positive offset so truncation is floor; positions as base + i × step (no drift).
+        let u0 = (fx0 * cs + fy * sn) * inv + 1024.0;
+        let v0 = (-fx0 * sn + fy * cs) * inv + 1024.0;
+        let (du_dx, dv_dx) = (cs * inv, -sn * inv);
+        // Pass 1: spot radius from unpremultiplied luma.
+        for (r, p) in rads.iter_mut().zip(row.chunks_exact(4)) {
             let a = p[3] as u32;
-            if a == 0 {
-                continue;
-            }
-            let un = |v: u8| ((v as u32 * 255 + a / 2) / a).min(255) as f32;
-            let (r, g, b) = (un(p[0]), un(p[1]), un(p[2]));
-            let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-            let k = (255.0 - lum).max(0.0) * (256.0 / 255.0);
-            let rad = rt[(k as usize).min(256)];
-            let fx = x as f32 + 0.5 + h.ox;
-            let u = (fx * cs + fy * sn) * inv;
-            let v = (-fx * sn + fy * cs) * inv;
-            let du = u - u.floor() - 0.5;
-            let dv = v - v.floor() - 0.5;
-            let d = match h.shape {
+            let yl = (54 * p[0] as u32 + 183 * p[1] as u32 + 19 * p[2] as u32 + 128) >> 8;
+            let yu = ((yl * rq[a as usize] + 32768) >> 16).min(255) as usize;
+            *r = rt[yu];
+        }
+        // Pass 2: coverage, branch-free (vectorises).
+        for (i, (c, &rad)) in covs.iter_mut().zip(&rads).enumerate() {
+            let uu = u0 + i as f32 * du_dx;
+            let vv = v0 + i as f32 * dv_dx;
+            let du = uu - uu.floor() - 0.5;
+            let dv = vv - vv.floor() - 0.5;
+            let d = match SHAPE {
                 1 => dv.abs(),
                 2 => du.abs().max(dv.abs()),
                 _ => (du * du + dv * dv).sqrt(),
             };
-            let cov = ((rad - d) * h.cell + 0.5).clamp(0.0, 1.0);
-            let inkc = if src_ink { [r, g, b] } else { [ink[0], ink[1], ink[2]] };
+            let cov = ((rad - d) * cell + 0.5).clamp(0.0, 1.0);
+            *c = (cov * 255.0 + 0.5) as u8;
+        }
+        // Pass 3: colour.
+        for (p, &c8) in row.chunks_exact_mut(4).zip(&covs) {
+            let a = p[3] as u32;
+            if !src_ink {
+                let o = lut[c8 as usize];
+                p[0] = mul255(o[0] as u32, a) as u8;
+                p[1] = mul255(o[1] as u32, a) as u8;
+                p[2] = mul255(o[2] as u32, a) as u8;
+                p[3] = mul255(o[3] as u32, a) as u8;
+                continue;
+            }
+            if a == 0 {
+                continue;
+            }
+            // Each dot in the layer's own colour there.
+            let cov = c8 as f32 / 255.0;
             let sa = a as f32 / 255.0;
+            let ia = 1.0 / sa;
+            let inkc = [p[0] as f32 * ia, p[1] as f32 * ia, p[2] as f32 * ia];
             if paper_a > 0.0 {
-                // Opaque print: paper under ink, keeping the layer's coverage.
                 let oa = sa * (paper_a + (1.0 - paper_a) * cov);
                 for c in 0..3 {
-                    let col = paper[c] * paper_a * (1.0 - cov) + inkc[c] * cov;
+                    let col = paper[c] * paper_a * (1.0 - cov) + inkc[c].min(255.0) * cov;
                     p[c] = (col * sa + 0.5).min(255.0) as u8;
                 }
                 p[3] = (oa * 255.0 + 0.5) as u8;
             } else {
                 let oa = sa * cov;
                 for c in 0..3 {
-                    p[c] = (inkc[c] * oa + 0.5) as u8;
+                    p[c] = (inkc[c].min(255.0) * oa + 0.5) as u8;
                 }
                 p[3] = (oa * 255.0 + 0.5) as u8;
             }
@@ -292,9 +376,9 @@ fn hash2(x: i32, y: i32, seed: u32) -> f32 {
     (h & 0xffff) as f32 / 65535.0
 }
 
-/// Uneven ink coverage: smooth value noise (`scale` px cells, two octaves) plus a
-/// fine speckle, multiplied into the layer's premultiplied pixels.
-fn ink(buf: &mut [u8], w: usize, amount: f32, scale: f32, seed: u32, ox: f32, oy: f32) {
+/// The ink thin-map of a region: 0 (full ink) … 255 (thinnest), frame-anchored. The smooth part
+/// is evaluated on a 2 px lattice and interpolated; speckle and pinholes per pixel.
+fn ink_map(map: &mut Vec<u8>, w: usize, h: usize, scale: f32, seed: u32, ox: f32, oy: f32) {
     let inv = 1.0 / scale;
     let vn = |x: f32, y: f32, s: u32| {
         let (fx, fy) = (x.floor(), y.floor());
@@ -307,29 +391,55 @@ fn ink(buf: &mut [u8], w: usize, amount: f32, scale: f32, seed: u32, ox: f32, oy
         let d = hash2(ix + 1, iy + 1, s);
         a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy
     };
-    for (y, row) in buf.chunks_exact_mut(w * 4).enumerate() {
-        let gy = y as f32 + oy;
-        for (x, p) in row.chunks_exact_mut(4).enumerate() {
-            if p[3] == 0 {
-                continue;
-            }
-            let gx = x as f32 + ox;
-            // Three octaves on rotated lattices (no visible grid), thresholded so most of the
-            // area is solid and the thin spots are irregular patches, plus speckle and pinholes.
+    // Smooth field on a 2 px lattice aligned to the frame (so regions agree).
+    let (gx0, gy0) = (((ox / 2.0).floor()) as i32, ((oy / 2.0).floor()) as i32);
+    let gw = (w as f32 / 2.0).ceil() as usize + 2;
+    let gh = (h as f32 / 2.0).ceil() as usize + 2;
+    let mut grid = vec![0f32; gw * gh];
+    for j in 0..gh {
+        for i in 0..gw {
+            let (gx, gy) = (((gx0 + i as i32) * 2) as f32, ((gy0 + j as i32) * 2) as f32);
             let (u, v) = (gx * inv, gy * inv);
-            let n = 0.5 * vn(u, v, seed)
-                + 0.3 * vn(0.8 * u - 0.6 * v + 17.3, 0.6 * u + 0.8 * v, seed ^ 0x9e37) * 1.0
-                + 0.2 * vn(2.9 * (0.28 * u + 0.96 * v), 2.9 * (-0.96 * u + 0.28 * v) + 5.1, seed ^ 0x7f4a);
+            let n = 0.5 * vn(u, v, seed) + 0.3 * vn(0.8 * u - 0.6 * v + 17.3, 0.6 * u + 0.8 * v, seed ^ 0x9e37) + 0.2 * vn(2.9 * (0.28 * u + 0.96 * v), 2.9 * (-0.96 * u + 0.28 * v) + 5.1, seed ^ 0x7f4a);
             let n2 = vn(u * 6.3 + 3.7, v * 6.3, seed ^ 0x2c1b);
-            let speck = hash2(gx as i32, gy as i32, seed ^ 0x51ed);
             let t = ((n - 0.47) / 0.28).clamp(0.0, 1.0);
-            let patch = t * t * (3.0 - 2.0 * t);
-            let thin = (patch * (0.55 + 0.45 * n2) + 0.25 * (speck - 0.5).max(0.0) + if speck > 0.992 { 0.7 } else { 0.0 }).min(1.0);
-            let k = (1.0 - amount * thin).clamp(0.0, 1.0);
-            let m = (k * 256.0) as u32;
-            for c in p.iter_mut() {
-                *c = ((*c as u32 * m) >> 8) as u8;
-            }
+            grid[j * gw + i] = t * t * (3.0 - 2.0 * t) * (0.55 + 0.45 * n2);
+        }
+    }
+    map.clear();
+    map.resize(w * h, 0);
+    for y in 0..h {
+        let fy = y as f32 + oy;
+        let gy = fy / 2.0 - gy0 as f32;
+        let (j, ty) = ((gy.floor() as usize).min(gh - 2), gy - gy.floor());
+        for x in 0..w {
+            let fx = x as f32 + ox;
+            let gx = fx / 2.0 - gx0 as f32;
+            let (i, tx) = ((gx.floor() as usize).min(gw - 2), gx - gx.floor());
+            let g = |i: usize, j: usize| grid[j * gw + i];
+            let patch = (g(i, j) * (1.0 - tx) + g(i + 1, j) * tx) * (1.0 - ty) + (g(i, j + 1) * (1.0 - tx) + g(i + 1, j + 1) * tx) * ty;
+            let speck = hash2(fx as i32, fy as i32, seed ^ 0x51ed);
+            let thin = (patch + 0.25 * (speck - 0.5).max(0.0) + if speck > 0.992 { 0.7 } else { 0.0 }).min(1.0);
+            map[y * w + x] = (thin * 255.0 + 0.5) as u8;
+        }
+    }
+}
+
+/// Uneven ink coverage: multiply the layer by (1 − amount × thin-map). The map of the
+/// last region is cached, so a static ink layer costs one multiply per pixel per frame.
+#[allow(clippy::too_many_arguments)]
+fn ink(buf: &mut [u8], w: usize, amount: f32, scale: f32, seed: u32, ox: f32, oy: f32, s: &mut FilterScratch) {
+    let h = buf.len() / (4 * w.max(1));
+    let key = (seed, scale.to_bits(), ox.round() as i32, oy.round() as i32, w, h);
+    if s.ink_key != Some(key) {
+        ink_map(&mut s.ink_map, w, h, scale, seed, ox.round(), oy.round());
+        s.ink_key = Some(key);
+    }
+    let am = (amount.clamp(0.0, 1.0) * 256.0) as u32;
+    for (p, &t) in buf.chunks_exact_mut(4).zip(&s.ink_map) {
+        let m = 256 - ((t as u32 * am) >> 8);
+        for c in p.iter_mut() {
+            *c = ((*c as u32 * m) >> 8) as u8;
         }
     }
 }
@@ -445,5 +555,24 @@ mod ink_tests {
         let mut c = src[w * 4 * 8..].to_vec();
         apply(&Filter::Ink { amount: 0.5, scale: 16.0, seed: 3, ox: 0.0, oy: 8.0 }, &mut c, w, h - 8, &mut FilterScratch::default());
         assert_eq!(&c[..], &a[w * 4 * 8..]);
+    }
+}
+
+#[cfg(test)]
+mod graphic_perf {
+    use super::*;
+    #[test]
+    #[ignore]
+    fn treatment_timing() {
+        let (w, h) = (1920usize, 1080usize);
+        let src: Vec<u8> = (0..w * h).flat_map(|i| { let v = ((i % w) * 255 / w) as u8; [v, v / 2, 255 - v, 255] }).collect();
+        let mut s = FilterScratch::default();
+        let ht = Halftone { cell: 10.0, angle: 15.0, shape: std::env::var("HS").ok().and_then(|v| v.parse().ok()).unwrap_or(0), ink: Rgba([0.0, 0.0, 0.0, 1.0]), paper: Rgba([1.0, 1.0, 1.0, 1.0]), gain: 1.0, ox: 0.0, oy: 0.0 };
+        for _ in 0..3 {
+            let mut b = src.clone();
+            let t = std::time::Instant::now();
+            apply(&Filter::Halftone(ht), &mut b, w, h, &mut s);
+            eprintln!("halftone 1080p: {:?}", t.elapsed());
+        }
     }
 }

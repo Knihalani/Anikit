@@ -211,6 +211,26 @@ pub fn build(ty: &str, m: &Map<String, Value>, path: &str, t: f32) -> Res<Option
                 return Err(format!("{path}.points: at least 2 points"));
             }
             let seg = res("segments", 96)?;
+            // Smooth profiles (default): a centripetal-free Catmull-Rom through the
+            // points, 10 steps per span, so a few points make a turned shape, not
+            // a faceted one. `"smooth": false` keeps hard corners.
+            let prof = if m.get("smooth").and_then(|x| x.as_bool()).unwrap_or(true) && prof.len() >= 3 {
+                let n = prof.len();
+                let at = |i: isize| prof[i.clamp(0, n as isize - 1) as usize];
+                let mut out = Vec::with_capacity((n - 1) * 10 + 1);
+                for i in 0..n - 1 {
+                    let (p0, p1, p2, p3) = (at(i as isize - 1), at(i as isize), at(i as isize + 1), at(i as isize + 2));
+                    for k in 0..10 {
+                        let t = k as f32 / 10.0;
+                        let c = |a: f32, b: f32, c: f32, d: f32| 0.5 * (2.0 * b + (-a + c) * t + (2.0 * a - 5.0 * b + 4.0 * c - d) * t * t + (-a + 3.0 * b - 3.0 * c + d) * t * t * t);
+                        out.push([c(p0[0], p1[0], p2[0], p3[0]).max(0.0), c(p0[1], p1[1], p2[1], p3[1])]);
+                    }
+                }
+                out.push(prof[n - 1]);
+                out
+            } else {
+                prof
+            };
             let mut pts = Vec::new();
             for p in &prof {
                 for i in 0..=seg {
@@ -318,6 +338,7 @@ pub fn build(ty: &str, m: &Map<String, Value>, path: &str, t: f32) -> Res<Option
             }
             grid(pts, nu, nvb, false)
         }
+        "cloth" => super::cloth::mesh_at(m, path, t as f32)?,
         "heightfield" => {
             let xz = [("x", "p"), ("z", "gt")];
             let e = num_as(m.get("expr").or(m.get("y")).ok_or_else(|| format!("{path}: a heightfield needs `expr` (y as an expression of x and z)"))?, &xz, &format!("{path}.expr"))?;
@@ -394,7 +415,7 @@ mod tests {
         let e = mesh("extrude", json!({ "d": "M0 0 L10 0 L10 10 L0 10 Z M3 3 L7 3 L7 7 L3 7 Z", "height": 0.5, "depth": 0.1 }));
         let ys: Vec<f32> = e.pos.chunks_exact(3).map(|p| p[1]).collect();
         assert!(ys.iter().cloned().fold(f32::MAX, f32::min).abs() < 1e-4 && (ys.iter().cloned().fold(f32::MIN, f32::max) - 0.5).abs() < 1e-3);
-        let l = mesh("lathe", json!({ "points": [[0.0, 0.0], [0.3, 0.1], [0.2, 0.6], [0.0, 0.7]], "segments": 32 }));
+        let l = mesh("lathe", json!({ "points": [[0.0, 0.0], [0.3, 0.1], [0.2, 0.6], [0.0, 0.7]], "segments": 32, "smooth": false }));
         assert_eq!(l.pos.len() / 3, 33 * 4);
         let t = mesh("tube", json!({ "path": "=[cos(s*6.283), s, sin(s*6.283)]", "radius": "=0.05*(1-s)+0.01", "segments": 64 }));
         assert!(t.idx.len() > 64 * 6);
