@@ -1,0 +1,779 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "background": "#ffffff",
+ "scenes": [
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "x": 80,
+     "y": 150,
+     "anchor": "left",
+     "text": "#e4572e split",
+     "font": "JetBrains Mono",
+     "size": 28,
+     "color": "#111"
+    },
+    {
+     "shape": "rect",
+     "x": 520,
+     "y": 80,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#200E09"
+    },
+    {
+     "x": 528,
+     "y": 230,
+     "anchor": "topLeft",
+     "text": "ink #200E09",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 690,
+     "y": 80,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#F8F4F1"
+    },
+    {
+     "x": 698,
+     "y": 230,
+     "anchor": "topLeft",
+     "text": "paper #F8F4F1",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 860,
+     "y": 80,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#A9796B"
+    },
+    {
+     "x": 868,
+     "y": 230,
+     "anchor": "topLeft",
+     "text": "mid #A9796B",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1030,
+     "y": 80,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#E4572E"
+    },
+    {
+     "x": 1038,
+     "y": 230,
+     "anchor": "topLeft",
+     "text": "accent #E4572E",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1200,
+     "y": 80,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#00A196"
+    },
+    {
+     "x": 1208,
+     "y": 230,
+     "anchor": "topLeft",
+     "text": "accent2 #00A196",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1370,
+     "y": 80,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#FBD4C9"
+    },
+    {
+     "x": 1378,
+     "y": 230,
+     "anchor": "topLeft",
+     "text": "tint #FBD4C9",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1540,
+     "y": 80,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#61514D"
+    },
+    {
+     "x": 1548,
+     "y": 230,
+     "anchor": "topLeft",
+     "text": "muted #61514D",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1710,
+     "y": 80,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#ECE7E3"
+    },
+    {
+     "x": 1718,
+     "y": 230,
+     "anchor": "topLeft",
+     "text": "surface #ECE7E3",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "x": 80,
+     "y": 340,
+     "anchor": "left",
+     "text": "#3255a4 analogous",
+     "font": "JetBrains Mono",
+     "size": 28,
+     "color": "#111"
+    },
+    {
+     "shape": "rect",
+     "x": 520,
+     "y": 270,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#0E141F"
+    },
+    {
+     "x": 528,
+     "y": 420,
+     "anchor": "topLeft",
+     "text": "ink #0E141F",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 690,
+     "y": 270,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#F4F5F9"
+    },
+    {
+     "x": 698,
+     "y": 420,
+     "anchor": "topLeft",
+     "text": "paper #F4F5F9",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 860,
+     "y": 270,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#7886A3"
+    },
+    {
+     "x": 868,
+     "y": 420,
+     "anchor": "topLeft",
+     "text": "mid #7886A3",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1030,
+     "y": 270,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#3255A4"
+    },
+    {
+     "x": 1038,
+     "y": 420,
+     "anchor": "topLeft",
+     "text": "accent #3255A4",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1200,
+     "y": 270,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#674791"
+    },
+    {
+     "x": 1208,
+     "y": 420,
+     "anchor": "topLeft",
+     "text": "accent2 #674791",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1370,
+     "y": 270,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#D3DEF5"
+    },
+    {
+     "x": 1378,
+     "y": 420,
+     "anchor": "topLeft",
+     "text": "tint #D3DEF5",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1540,
+     "y": 270,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#51555F"
+    },
+    {
+     "x": 1548,
+     "y": 420,
+     "anchor": "topLeft",
+     "text": "muted #51555F",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1710,
+     "y": 270,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#E7E7EB"
+    },
+    {
+     "x": 1718,
+     "y": 420,
+     "anchor": "topLeft",
+     "text": "surface #E7E7EB",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "x": 80,
+     "y": 530,
+     "anchor": "left",
+     "text": "#0f7b5f complement dark",
+     "font": "JetBrains Mono",
+     "size": 28,
+     "color": "#111"
+    },
+    {
+     "shape": "rect",
+     "x": 520,
+     "y": 460,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#0B1612"
+    },
+    {
+     "x": 528,
+     "y": 610,
+     "anchor": "topLeft",
+     "text": "ink #0B1612",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 690,
+     "y": 460,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#F2F6F6"
+    },
+    {
+     "x": 698,
+     "y": 610,
+     "anchor": "topLeft",
+     "text": "paper #F2F6F6",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 860,
+     "y": 460,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#728D83"
+    },
+    {
+     "x": 868,
+     "y": 610,
+     "anchor": "topLeft",
+     "text": "mid #728D83",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1030,
+     "y": 460,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#0F7B5F"
+    },
+    {
+     "x": 1038,
+     "y": 610,
+     "anchor": "topLeft",
+     "text": "accent #0F7B5F",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1200,
+     "y": 460,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#8F5271"
+    },
+    {
+     "x": 1208,
+     "y": 610,
+     "anchor": "topLeft",
+     "text": "accent2 #8F5271",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1370,
+     "y": 460,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#CFE4DB"
+    },
+    {
+     "x": 1378,
+     "y": 610,
+     "anchor": "topLeft",
+     "text": "tint #CFE4DB",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1540,
+     "y": 460,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#9EA7A3"
+    },
+    {
+     "x": 1548,
+     "y": 610,
+     "anchor": "topLeft",
+     "text": "muted #9EA7A3",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1710,
+     "y": 460,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#192520"
+    },
+    {
+     "x": 1718,
+     "y": 610,
+     "anchor": "topLeft",
+     "text": "surface #192520",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "x": 80,
+     "y": 720,
+     "anchor": "left",
+     "text": "#ffb511 triad",
+     "font": "JetBrains Mono",
+     "size": 28,
+     "color": "#111"
+    },
+    {
+     "shape": "rect",
+     "x": 520,
+     "y": 650,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#1B1204"
+    },
+    {
+     "x": 528,
+     "y": 800,
+     "anchor": "topLeft",
+     "text": "ink #1B1204",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 690,
+     "y": 650,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#F6F5F1"
+    },
+    {
+     "x": 698,
+     "y": 800,
+     "anchor": "topLeft",
+     "text": "paper #F6F5F1",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 860,
+     "y": 650,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#9A825D"
+    },
+    {
+     "x": 868,
+     "y": 800,
+     "anchor": "topLeft",
+     "text": "mid #9A825D",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1030,
+     "y": 650,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#FFB511"
+    },
+    {
+     "x": 1038,
+     "y": 800,
+     "anchor": "topLeft",
+     "text": "accent #FFB511",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1200,
+     "y": 650,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#00D8DE"
+    },
+    {
+     "x": 1208,
+     "y": 800,
+     "anchor": "topLeft",
+     "text": "accent2 #00D8DE",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1370,
+     "y": 650,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#EEDBBF"
+    },
+    {
+     "x": 1378,
+     "y": 800,
+     "anchor": "topLeft",
+     "text": "tint #EEDBBF",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1540,
+     "y": 650,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#5B5449"
+    },
+    {
+     "x": 1548,
+     "y": 800,
+     "anchor": "topLeft",
+     "text": "muted #5B5449",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1710,
+     "y": 650,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#E9E8E3"
+    },
+    {
+     "x": 1718,
+     "y": 800,
+     "anchor": "topLeft",
+     "text": "surface #E9E8E3",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "x": 80,
+     "y": 910,
+     "anchor": "left",
+     "text": "#765ba7 mono",
+     "font": "JetBrains Mono",
+     "size": 28,
+     "color": "#111"
+    },
+    {
+     "shape": "rect",
+     "x": 520,
+     "y": 840,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#15121C"
+    },
+    {
+     "x": 528,
+     "y": 990,
+     "anchor": "topLeft",
+     "text": "ink #15121C",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 690,
+     "y": 840,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#F6F4F7"
+    },
+    {
+     "x": 698,
+     "y": 990,
+     "anchor": "topLeft",
+     "text": "paper #F6F4F7",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 860,
+     "y": 840,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#89819C"
+    },
+    {
+     "x": 868,
+     "y": 990,
+     "anchor": "topLeft",
+     "text": "mid #89819C",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1030,
+     "y": 840,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#765BA7"
+    },
+    {
+     "x": 1038,
+     "y": 990,
+     "anchor": "topLeft",
+     "text": "accent #765BA7",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1200,
+     "y": 840,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#D4C5F7"
+    },
+    {
+     "x": 1208,
+     "y": 990,
+     "anchor": "topLeft",
+     "text": "accent2 #D4C5F7",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1370,
+     "y": 840,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#E0DAF0"
+    },
+    {
+     "x": 1378,
+     "y": 990,
+     "anchor": "topLeft",
+     "text": "tint #E0DAF0",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1540,
+     "y": 840,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#56545C"
+    },
+    {
+     "x": 1548,
+     "y": 990,
+     "anchor": "topLeft",
+     "text": "muted #56545C",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    },
+    {
+     "shape": "rect",
+     "x": 1710,
+     "y": 840,
+     "anchor": "topLeft",
+     "width": 160,
+     "height": 140,
+     "fill": "#E9E7EA"
+    },
+    {
+     "x": 1718,
+     "y": 990,
+     "anchor": "topLeft",
+     "text": "surface #E9E7EA",
+     "font": "JetBrains Mono",
+     "size": 16,
+     "color": "#333"
+    }
+   ]
+  }
+ ]
+}

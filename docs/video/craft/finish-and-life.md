@@ -223,7 +223,11 @@ These come from the CEILING-2 judge critiques (`deliverables/ceiling2/*/GAPS.md`
   - hatch direction from a flow or gradient field, with density driven by value;
   - at least 3 grain scales rather than one isotropic fBm.
   - Today screen-locked `post.grain` and uniform shader noise are the defaults, and both read as procedural.
-- **Secondary and overlapping motion** (COMPONENTS):
+- **Landed in COMPONENTS' `illo` toolkit** (docs/video/components.md, "Illustration toolkit"):
+  - **texture locked to the shape, following form:** `grain` and `texture` (`"contour"` lines follow the outline inwards, more and heavier towards the shadow; `"hatch"`, `"crosshatch"`, `"stipple"`, `"scribble"`, `"riso"`, `"halftone"`, `"paper"`);
+  - **a hand-drawn line:** `outline`/`weight`/`taper`/`gaps` (heavy on the shadow side, broken where light hits) and `wobble`/`rough`/`boil` (redraws per second);
+  - **a rig with overlap:** `groups` as bones with `lag` (seconds, cumulative down the chain; 0.08–0.16 s is 2–4 frames), `spring { stiffness, damping, drag }` for hair, tails and earrings, `blink { every, close, hold, open }`, and `cycle`: idle, breathe, walk, bob, wave, nod.
+- *(the original ask)* **Secondary and overlapping motion** (COMPONENTS):
   - chains with 1–3 frames of lag per link;
   - settles that shrink 50–70% per overshoot;
   - a blink that closes in ~2 frames, holds 1–2 and opens in 3–4, with the lid wrapping the eye.
@@ -233,7 +237,7 @@ These come from the CEILING-2 judge critiques (`deliverables/ceiling2/*/GAPS.md`
   - power-law sizes: `"size_dist": { "min": 0.002, "max": 0.03, "power": 2.5 }`;
   - particles lit by the key: `"scatter": 0.6` (forward scatter, so particles between the camera and the key glow) and `"glint": 1.5` (facets flashing the key);
   - big foreground particles now keep their full brightness;
-  - still to come: a deposit/read-back field (physarum, ink trails).
+  - a deposit and read-back field: the `physarum` component (Jones slime mould; spawns from or is attracted to `text`; `anikit-video docs physarum`, `examples/video/sim/physarum.json`).
 - *(the original ask)* **Depth-layered particles** (SIM):
   - one emitter split into ≥ 3 depth layers, with size and speed scaling by 1/depth;
   - a skewed size distribution (1–3% hero particles);

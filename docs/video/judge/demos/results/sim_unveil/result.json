@@ -1,0 +1,530 @@
+{
+  "name": "sim_unveil",
+  "tags": [
+    "cg-3d",
+    "product-launch"
+  ],
+  "refs": [
+    "morph-studio-xreal-1s-2025",
+    "found-devialet-opera-de-paris-2022",
+    "osko-launch"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 3,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 4,
+      "motion": 3,
+      "craft": 4,
+      "originality": 1
+    },
+    "overall": 3,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Replace the cloth-on-sphere default with a reveal whose form hints at the actual product or brand",
+      "Design the typography: a chosen face, expressive scale, and type that interacts with the drape instead of floating above it like a caption",
+      "Build a world with material, environment and motivated light, and add more than one beat of motion after the cloth lands",
+      "Replace the tutorial primitive with a real, specific subject and a world built around it, as C does with its set and its clockwork reveal.",
+      "Develop shot variety and choreography (macro, reveal, scale change) instead of holding one static angle for the whole piece.",
+      "Give the typography a point of view, with custom or deliberately chosen faces integrated into the image, and an idea beyond 'something new is coming'.",
+      "It needs an idea specific to the brand or product instead of a generic veil reveal; give the hidden object a story or a twist",
+      "Typography needs a real typographic idea (scale, integration with the cloth, a custom or characterful face) rather than a default serif caption",
+      "Build a world: designed set, motivated light, material layering and camera movement across varied shots, as in A"
+    ],
+    "tells": [
+      "A red cloth dropping over a black sphere is the default cloth-simulation tutorial setup (a stock 3D primitive) presented as an idea",
+      "The headline 'Something new is coming.' is set in a generic editorial serif with a tiny tracked '11 \u00b7 18' date in the single accent colour, which is the exact 'tasteful AI teaser' formula",
+      "Dark empty ground, one accent colour, and the subject sitting in a void",
+      "The last frames are almost identical compositions, so little happens after the drape settles",
+      "The light is a generic studio setup with a soft floor reflection, and there is no environment, texture or reason for the scene",
+      "The type sits in the top-left corner like a slide caption, with no relationship to the image",
+      "A stock 3D primitive: a red cloth plane drops onto a black sphere. This is the textbook cloth-simulation tutorial scene, and it is an effect with no subject.",
+      "A literal, obvious idea: a covered object plus 'Something new is coming.', the most generic teaser line there is.",
+      "Generic 'tasteful AI' type: an editorial serif headline, a tiny tracked date '11 \u00b7 18' in a single red accent, and a dark, mostly empty ground.",
+      "The same composition repeats across frames: three near-identical draped-sphere shots, then the same frame with text added. Little happens.",
+      "Flat studio light on a black void, with no environment, set or narrative.",
+      "The stock 'cloth drops onto a sphere' simulation is a default Blender/C4D tutorial setup; it's a primitive with an effect and no subject",
+      "The idea is the most literal teaser possible: something under a sheet plus 'Something new is coming.'",
+      "Typography is a generic editorial serif headline with a tiny tracked red date beneath, the textbook 'tasteful AI' label pattern placed like a slide in a corner",
+      "Dark ground with a single red accent and a mostly empty frame",
+      "The frames barely change; the same composition is held for the last three frames, so there is little choreography",
+      "Generic studio lighting on a black void, with no environment or texture beyond the satin shader"
+    ]
+  },
+  "refs_summary": {
+    "morph-studio-xreal-1s-2025": {
+      "overall": 7.12,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "found-devialet-opera-de-paris-2022": {
+      "overall": 8,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "osko-launch": {
+      "overall": 6.38,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 7.17,
+  "delta": -4.17,
+  "trials": [
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "candidate",
+        "D": "found-devialet-opera-de-paris-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A recurring 'I.O.U.' sticky-note gag runs from the fridge-shelf close-up to the wide shot of the open fridge, which points to a written idea rather than generated filler",
+              "The film moves between several styles on purpose (moonlit 3D van, flat character animation, emoji-like icon grid, glossy fridge render), the way a studio anthology spot does",
+              "The golf swing reads as three character poses ending in a facepalm, which means real key-pose animation with comedic timing",
+              "The retro fridge has a floor reflection and warm interior light spilling out of the door, so the lighting is motivated",
+              "The only type is the hand-lettered 'I.O.U.', and it serves the joke well",
+              "Weaker points: the icon grid of coffee, beer, money, heart and gift is close to stock emoji and is centred like a slide, and the style shifts make the piece feel fragmented"
+            ],
+            "gaps": [
+              "Pick one visual language, or build a clear system for the style shifts, so the film reads as one authored world instead of a collage of vignettes",
+              "Swap the generic emoji-style icon grid for custom, art-directed objects that share the material richness of the fridge render",
+              "Give the film a deliberate signature palette. Right now it is teal, purple, black and grey with no through-line, where D commits to cream, gold and lacquer red"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The glasses are rebuilt as liquid with fine caustics, bubbles, splash fragments and refraction. That is high-end fluid-simulation and look-dev work",
+              "The frames vary a lot: an exploding cylinder of fluid, a hero product shot, the liquid glasses at full scale, a macro of gel material, and a cellular 'EVOLUTION' field. Together they show deliberate choreography from chaos to form",
+              "The 'XREAL' and '1S' lockup is split wide across the product so the type frames the object",
+              "The near-monochrome ultramarine palette is committed, though it is a familiar tech-launch blue",
+              "Weaker points: the widely tracked 'E V O L U T I O N' in a thin grotesk is a stock launch-film move, and the idea that liquid equals evolution is generic for the category"
+            ],
+            "gaps": [
+              "Push the concept past 'product made of liquid' to something only XREAL could own, such as a story about seeing or projected display",
+              "Develop the typography beyond a default grotesk and wide tracking, for example with a custom lockup that interacts with the fluid",
+              "Break the all-blue palette with a second, ownable accent or a temperature shift, so the frames stop reading as a category clich\u00e9"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "A red cloth dropping over a black sphere is the default cloth-simulation tutorial setup (a stock 3D primitive) presented as an idea",
+              "The headline 'Something new is coming.' is set in a generic editorial serif with a tiny tracked '11 \u00b7 18' date in the single accent colour, which is the exact 'tasteful AI teaser' formula",
+              "Dark empty ground, one accent colour, and the subject sitting in a void",
+              "The last frames are almost identical compositions, so little happens after the drape settles",
+              "The light is a generic studio setup with a soft floor reflection, and there is no environment, texture or reason for the scene",
+              "The type sits in the top-left corner like a slide caption, with no relationship to the image"
+            ],
+            "gaps": [
+              "Replace the cloth-on-sphere default with a reveal whose form hints at the actual product or brand",
+              "Design the typography: a chosen face, expressive scale, and type that interacts with the drape instead of floating above it like a caption",
+              "Build a world with material, environment and motivated light, and add more than one beat of motion after the cloth lands"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific art-directed world for Devialet's Phantom range. The lacquer-red slatted walls, cream stone plinths, gold inlays and moon-arch motifs read as a Lunar New Year edition",
+              "The plinth opens to reveal a watch-like gear movement with the speaker riding on top, a surprising metaphor for precision engineering that only this brand could use",
+              "Every frame works as a poster, with layered depth: foreground ribbons, middle-ground plinths, background arches and fluted glass",
+              "The materials are rich and believable, including veined stone, brushed gold, fluted glass and matte white shells, under soft, warm, directional light",
+              "The camera moves are varied (wide family shot, ribbon close-up, top-down into the mechanism, frontal hero, closing tableau), so the film is choreographed rather than repeated",
+              "Type is limited to the product logo, and its absence suits a luxury mood piece"
+            ],
+            "gaps": [
+              "Add a typographic moment such as a bespoke end card or a seasonal lockup in the same gold-inlay language to finish the brand story",
+              "The bookend tableaux of three speakers on plinths are close to each other; a stronger final reveal would land harder",
+              "Push one surreal or kinetic beat further (the unspooling ribbons, the gear movement) so the film has a single memorable hook beyond its beauty"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.8,
+        "cost_usd": 0.158655,
+        "tokens": 71984,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "Narrative wit: the 'I.O.U.' sticky note on a container in the fridge pays off in a wide shot of two retro fridges, one door opening to reveal the note again. That is a setup and payoff, which a template does not have.",
+              "The piece moves between very different styles (a moonlit night scene with a VW bus, a 3D fridge interior, flat vector golfers, glossy emoji-style icons) and they read as planned vignettes, not as random generation.",
+              "The golfer sequence is a three-pose comic beat (address, swing, facepalm), which shows real character-animation timing.",
+              "Lighting is motivated: the fridge's interior glow spills onto a reflective floor, and the moon lights the night scene.",
+              "Weaknesses: the icon grid (coffee, beer, money with wings, heart, gift) is close to stock emoji and centred like a slide, and the flat golfer illustration is fairly generic vector work."
+            ],
+            "gaps": [
+              "Commit to one visual language, or make the switches between styles the idea itself. Right now the mix of vector, 3D and emoji feels like a compilation rather than an authored world.",
+              "Replace the emoji-like icon grid with a bespoke illustration that has a composed layout; at the moment it is the weakest, most template-like frame.",
+              "Give the type the same personality as the gags. The hand-lettered 'I.O.U.' is the only typographic moment, and there is no typographic system across the piece."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "High-end fluid and glass simulation: the XREAL 1S glasses are rebuilt from water and gel, with caustics, internal bubbles and refractive depth that a template or AI tool could not keep consistent across shots.",
+              "The shot list has real variety: an extreme macro of a stretched, ribbed form, a hero product shot in a splash, a frontal view of the glasses as liquid, a macro of the gel surface, and a closing field of cells.",
+              "There is a conceptual through-line, matter becoming product ('EVOLUTION'), and choreography is implied in how the form emerges from the splash and then dissolves.",
+              "Weaknesses: the monochrome electric-blue palette is a tech-launch clich\u00e9. The 'XREAL ... 1S' lockup is a plain grotesk sitting flatly on the image, and the tracked-out 'EVOLUTION' is the standard launch-film move."
+            ],
+            "gaps": [
+              "Typography is the weak link: the brand lockup and the tracked caps are set as defaults on top of the image. Integrate them into the liquid, or give them a custom treatment with the same material ambition.",
+              "Break the all-blue palette with a second temperature or an unexpected accent so the frames stop reading as generic 'tech blue'.",
+              "Push the idea past 'product made of liquid', which is a familiar CGI trope, toward something specific to what AR glasses do: seeing, layering, or a world through the lens."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A strongly art-directed set world for Devialet: lacquer-red pleated walls, cream stone plinths with inset gold trim, arched gold-wire screens and sweeping ribbon forms. The palette is deliberate and unusual for audio, with a Chinese New Year or luxury-maison feel.",
+              "A specific idea with surprise: the camera pulls back to reveal the speaker sitting on a plinth above an exposed clockwork movement, linking the product's engineering to watchmaking.",
+              "Real materials and light: honed stone texture, brushed gold, matte white shells and soft directional daylight. Every frame works as a poster.",
+              "The choreography is clear: a family hero shot, a macro through orbiting ribbons, a top-down mechanism reveal, a single-product hero shot, then a recomposed family shot. Scale and angle vary with intent.",
+              "The only type visible is the small DEVIALET mark on the product. Its absence serves the luxury restraint, but we see no titling craft."
+            ],
+            "gaps": [
+              "There is no visible typographic layer. An end card or title system with the same craft as the set would complete the piece.",
+              "Opening and closing on near-identical plinth-family compositions risks feeling static. A more surprising final frame would land harder.",
+              "The ribbons and arches drift toward familiar 'luxury CGI set' vocabulary. More of the clockwork-reveal kind of idea would make it unmistakably this brand's film."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 1
+            },
+            "tells": [
+              "A stock 3D primitive: a red cloth plane drops onto a black sphere. This is the textbook cloth-simulation tutorial scene, and it is an effect with no subject.",
+              "A literal, obvious idea: a covered object plus 'Something new is coming.', the most generic teaser line there is.",
+              "Generic 'tasteful AI' type: an editorial serif headline, a tiny tracked date '11 \u00b7 18' in a single red accent, and a dark, mostly empty ground.",
+              "The same composition repeats across frames: three near-identical draped-sphere shots, then the same frame with text added. Little happens.",
+              "Flat studio light on a black void, with no environment, set or narrative."
+            ],
+            "gaps": [
+              "Replace the tutorial primitive with a real, specific subject and a world built around it, as C does with its set and its clockwork reveal.",
+              "Develop shot variety and choreography (macro, reveal, scale change) instead of holding one static angle for the whole piece.",
+              "Give the typography a point of view, with custom or deliberately chosen faces integrated into the image, and an idea beyond 'something new is coming'."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.6,
+        "cost_usd": 0.1640114,
+        "tokens": 72255,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "found-devialet-opera-de-paris-2022",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "osko-launch",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A complete set designed around the product: travertine-like plinths with gold inlay, ribbon-arc sculptures, slatted glass screens and red lacquer drapes that echo the speakers' own forms",
+              "Strong concept beat: the plinth opens onto a clockwork mechanism under the speaker, which reads as 'precision engineering' as an image rather than a caption",
+              "Material work is high-end: soft-touch white shells, brushed gold, stone grain and glass, all under soft, motivated light",
+              "Real variety of shots (wide hero, macro through the arcs, top-down into the mechanism, frontal, three-quarter group) shows camera choreography, not one layout repeated",
+              "Restrained red, cream and gold palette fits a luxury or Lunar New Year special edition",
+              "Type is minimal, only the engraved logo on the product, which suits a product-as-jewel piece"
+            ],
+            "gaps": [
+              "The luxury-plinth product stage is a well-worn genre; it needs one stranger idea beyond the gear reveal to be memorable",
+              "No typographic layer with a point of view; the film depends entirely on the CG product",
+              "Compositions sit close to centred and symmetrical; more daring framing or scale shifts would give it more tension"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A clear transformation concept: the glasses dissolve into liquid, glass and organic tendril forms to dramatise 'Evolution'",
+              "Complex fluid and particle simulation with refraction, caustics and chromatic fringing; the materials are convincingly glassy and wet",
+              "Frames vary in scale, from a macro of the liquid temple arm to a frontal hero to a cellular macro world, which implies energetic, varied choreography",
+              "Type is clean and deliberate (wide XREAL / 1S lockup split across the frame, widely tracked EVOLUTION) and stays out of the image's way"
+            ],
+            "gaps": [
+              "Mono-blue liquid tech is a very familiar launch-film language; the palette and look don't set it apart",
+              "The typography is generic grotesk and tracked caps; it isn't woven into the simulation the way the best title work is",
+              "Several frames are visually busy, with no clear hierarchy or hold, so fewer 'poster' moments than A"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "It has a narrative thread: the I.O.U. sticky note left in the fridge and the food tub is a specific, human, witty idea about owing someone",
+              "Mixed media (stylised 3D van, Pixar-ish fridge shelf, flat-vector golfer sequence, glossy 3D emoji icons) suggests a brand film by a studio, not one template",
+              "The retro fridge shot has motivated interior light spilling onto a reflective floor, a considered beat",
+              "Weak points: the golfer is generic corporate vector, the emoji grid is static, centred and icon-pack-like, and the styles don't feel unified"
+            ],
+            "gaps": [
+              "No unified visual system; the switches between 3D, flat vector and icon grid read as patchwork rather than a deliberate collage",
+              "The icon grid and flat golfer are close to stock or clip-art and need bespoke illustration with a point of view",
+              "Composition and light lack the density and material richness of A; most frames are single centred subjects on plain grounds"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 1
+            },
+            "tells": [
+              "The stock 'cloth drops onto a sphere' simulation is a default Blender/C4D tutorial setup; it's a primitive with an effect and no subject",
+              "The idea is the most literal teaser possible: something under a sheet plus 'Something new is coming.'",
+              "Typography is a generic editorial serif headline with a tiny tracked red date beneath, the textbook 'tasteful AI' label pattern placed like a slide in a corner",
+              "Dark ground with a single red accent and a mostly empty frame",
+              "The frames barely change; the same composition is held for the last three frames, so there is little choreography",
+              "Generic studio lighting on a black void, with no environment or texture beyond the satin shader"
+            ],
+            "gaps": [
+              "It needs an idea specific to the brand or product instead of a generic veil reveal; give the hidden object a story or a twist",
+              "Typography needs a real typographic idea (scale, integration with the cloth, a custom or characterful face) rather than a default serif caption",
+              "Build a world: designed set, motivated light, material layering and camera movement across varied shots, as in A"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.4,
+        "cost_usd": 0.154747,
+        "tokens": 71791,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 3,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "The cloth drape uses up all the motion energy in the first ~1s (change/sec 18.4). The remaining ~5s barely move (3.3\u20134.5), which is dead air with no reason for it.",
+        "After the drop the cloth sim settles into a near-frozen drape. There is no secondary motion like a breeze, slow ripple or tension change to keep it alive.",
+        "The camera is locked off with no drift, push or parallax, so the shot reads as a default sim playblast.",
+        "The headline appears with a plain bottom-edge mask wipe (letters seen half-cut mid-reveal) and the tiny '11 \u00b7 18' date fades in after it. It is generic launch-teaser typography with no relation to the cloth.",
+        "The date line is very small and low-contrast red on near-black, so at 100% it is marginal for legibility.",
+        "The environment is a generic infinite dark floor with a soft reflection. Shading is basic: a glossy black sphere with a stock softbox highlight and no rim or motivated key on the cloth folds.",
+        "The audio is mostly broadband noise swells with a low drone. The transients at ~0.75s, ~0.98s, ~2.25s and ~3.0s don't line up with any visible picture event. The cloth landing happens before or between them, and the text reveal sits on no clear hit.",
+        "The audio's long fade from ~3s to 7s is static and thin, with no tonal content or arrangement development, just a decaying noise bed."
+      ],
+      "gaps": [
+        "Choreography and arc. One physics drop, then 5+ seconds of static hold. Top studio teasers build tension: a slow camera push, the cloth breathing or slipping, a held beat, then a payoff such as a partial lift or a light sweep landing at 60\u201380% before settling.",
+        "Sound-to-picture design. The swells and ticks need to be authored to the cloth contact, the settle and the type reveal, with real foley (fabric whoosh, soft impact) and a tonal or musical layer that builds and resolves. Right now it is a generic riser/noise bed that ignores the picture.",
+        "Finish and art direction. The look is the stock 'cloth over sphere on black' preset with a default serif headline. It needs motivated lighting with falloff across the folds, a designed environment or atmosphere, and type whose reveal or placement grows out of the cloth (for example, revealed by the fabric's motion) rather than a separate mask wipe."
+      ]
+    },
+    "meta": {
+      "seconds": 21.0,
+      "cost_usd": 0.15851900000000002,
+      "tokens": 71904,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "unveil.mp4: 7.0s, 1 shots, median 7.00s, longest 7.00s\nper-second change: [18.4, 4.5, 3.5, 4.4, 3.6, 3.3]\nPACE: FAIL \u2014 longest shot 7.0s > 2.5s; median shot 7.0s > 1.5s; 5/6 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 2,
+    "composition": 3,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 4,
+    "motion": 3.0,
+    "craft": 5.0,
+    "originality": 1,
+    "sound": 4
+  },
+  "full_overall": 3.22,
+  "cost_usd": 0.636,
+  "judge_seconds": 114.8,
+  "verdict": "FAIL"
+}

@@ -27,13 +27,14 @@
   (±), `puckerBloat` −1..1, `zigzag {size, ridges, smooth}`, `twist` deg, `wigglePath {amount, detail, speed, seed}` (animated, deterministic).
 - **Track matte** `"matte": "logo"` or `{"layer": "logo", "mode": "alpha|alphaInverted|luma|lumaInverted"}`: the layer shows only through
   the sibling with that `id` (which is then not drawn itself). Gradient inside text: a gradient rect with `"matte": "word"`.
-- **Follow-through** `"inertia": true | "soft" | "bouncy" | "tight" | "heavy"` or `{"stiffness", "damping", "mass", "props": ["x", "y", "rotation", "scale"]}`:
-  a spring chases the layer's own motion (tweens, presets, paths, expressions), so moves overshoot and settle. Stagger it across children for overlapping action.
+- **Follow-through** `"inertia": true | "soft" | "bouncy" | "tight" | "heavy" | "springy" | "wobbly"` or `{"stiffness", "damping", "mass", "props": ["x", "y", "rotation", "scale"]}`:
+  a spring chases the layer's own motion (tweens, presets, paths, expressions), so moves overshoot and settle (soft 5%, bouncy 7%, tight 3%, heavy 2%; springy 37%, wobbly 18%). Stagger it across children for overlapping action.
 - **Drag** `"drag": 0.04` on a moving group: child i follows the group's motion i × 0.04 s later (overlapping action; add `inertia` for settle).
+- **Extrude / long shadow** `"extrude": {"angle": 45, "length": 70, "color": "#7a1d00", "fade": 0}` on any layer (`fade: 1` = long shadow). Cost grows with length (≈ length/1.5 copies).
 - **Smear** `"smear": true` (or a strength): fast moves stretch along their travel, volume kept; still layers are untouched.
 - **Idea transitions** (on the incoming scene): `{"type": "zoomThrough", "layer": "logo"}` flies into a layer of the outgoing
   scene and the new scene shows through its shape (a letter, a window, a logo); `{"type": "reveal", "shape": "circle|diamond|square|star|blob",
-  "amount": 90 (spin°), "origin": [x, y]}`; `{"type": "blinds", "count": 8, "direction"}`; `{"type": "split", "direction": "up"}`; `"whip"` (speed-blurred pan).
+  "amount": 90 (spin°), "origin": [x, y]}`; `"carry": ["logo"]` on any transition moves layers with the same id from the old layout to the new one (a match move); `{"type": "blinds", "count": 8, "direction"}`; `{"type": "split", "direction": "up"}`; `"whip"` (speed-blurred pan).
 - **Posterize time** `"posterizeTime": 12` on a layer or group: its motion steps at 12 poses/s (on twos; with `wigglePath` → boiling, handmade lines).
 - **Named curves**: `glide` (expo out 0.16,1,0.3,1), `snap` (0.87,0,0.13,1), `land` (long settle), `launch` (expo in, exits), `material`,
   `emphasizedDecelerate`/`emphasizedAccelerate`, `productive`, `expressive`, `expressiveEntrance`/`expressiveExit`. Why and when: docs/video/craft/motion-design.md.
@@ -47,3 +48,7 @@
   (0..1, or animate `rangeStart`/`rangeEnd`/`rangeOffset`): `"offset": "=sin(t*2)"` makes a travelling wave.
 
 Full pieces: `examples/video/mograph/` (pulse-ident, kinetic-poster, night-line).
+
+Craft (blind-judge evidence, docs/video/craft/motion-design.md): effects alone don't read as studio work. What raised scores: a structure where every shot is
+a different composition joined by a transition that carries something (zoomThrough, carry, a match move), a colour arc across shots, and one idea
+built from the subject. What held them down: the same centred lockup repeated, tracked mono-caps labels as decoration, near-black + one accent throughout.

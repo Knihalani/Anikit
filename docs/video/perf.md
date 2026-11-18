@@ -25,6 +25,8 @@ cargo run --release -p anikit-video --example qbench -- --only ui,post --runs 1 
 3. **Render fidelity.** The default pipeline's frames are tapped exactly as they go into the encoder (`pipeline::render_ak264_tap`) and compared with the reference. This isolates what the renderer's fast paths cost.
 4. **Delivered fidelity.** The decoded MP4 is compared with the reference, encoder loss included, against `qbench/baseline.json`.
 5. **Determinism.** A second default render of the clip must produce the same frames.
+6. **Render cache.** Timed runs always render everything: qbench sets `ANIKIT_RENDER_CACHE=0` itself. Then, for every entry without a `runs` override, it renders the clip twice more with the cache on, into a scratch cache directory: once cold (filling it) and once warm (splicing cached chunks). Both MP4s must equal the uncached MP4 byte for byte, or the entry FAILs ("render cache … differs"). `--no-cache-check` skips this.
+7. **Memory.** The `RSS MiB: start · peak` column is the process's resident memory when the timed render started and its peak while frames rendered and encoded (`StageProfile.mem_*`, from `memstat`). qbench holds earlier entries' results, so for a clean number per spec use `examples/mem_probe.rs` (below).
 
 ## Metrics and thresholds
 
@@ -176,7 +178,9 @@ Open items, with their owners (all messaged with numbers):
 ## Tools
 
 - `examples/post_cost.rs`: one frame's cost by stage (render, post, motion blur). `OPS=1` gives the cost of each top-level op (or layer subtree) by cumulative prefixes. `FIELD=1` gives the share of the gradient field.
-- `anikit-video render … --profile`: stage profile of a real render.
+- `anikit-video render … --profile`: stage profile of a real render, with a memory line: resident MiB at start, peak while rendering and encoding, the encoded stream's size, and peak while muxing.
+- `cargo run --release -p anikit-shader --example file_cost -- shader.glsl [time] [frames] [name=value …]`: one GLSL file at 1080p with one sample, adaptive AA (the default) and full 2×2. Uniforms default to their `// = v` comment.
+- `examples/mem_probe.rs spec.json [runs] [from] [to]`: renders a spec repeatedly in one process and prints resident memory after build, after render and after dropping the evaluator, plus the process peak. Use it to catch memory that a long-lived process (MCP server, preview) keeps between renders.
 - `cargo test -p anikit-video --lib upscale_timing -- --ignored --nocapture` and `blur_timing`: kernel timings.
 
 ## Incremental re-render (render cache)
@@ -198,3 +202,48 @@ Measured on the Tern launch spec (20 s, 1080p30, 4 vCPU):
 | unchanged spec again | **1.7 s** (16/16 chunks reused) | 15becf74… |
 | one font size changed in the last scene | **32.8 s** (13/16 reused) | 2b3ea57d… |
 | the same edit, full render, cache off | 148.2 s | 2b3ea57d… |
+
+## Memory
+
+Measured with `mem_probe` (2 s of each spec, 4 renders in one process, 4 vCPU, 1080p). The peak while rendering is about the same before and after; what changed is what a process keeps afterwards.
+
+| spec | peak rendering | kept after render 4, before | kept after render 4, after |
+|---|---:|---:|---:|
+| particles | 211–215 MiB | 157 MiB (growing) | 45 MiB |
+| post | 270 MiB | 347 MiB (growing) | 23 MiB |
+| backdrop | 438–450 MiB | 621 MiB (526 after dropping the evaluator) | 69 MiB |
+
+Two causes:
+- **glibc arenas.** Each rayon thread frees its frame buffers into its own malloc arena, and glibc keeps them. The pipeline now calls `memstat::trim()` (`malloc_trim(0)`) once, when the frames are done. That took a few milliseconds, too little to show in timing. mimalloc was tried as the global allocator: it was ~3% faster but kept more (peak +15–20%), so it was not adopted.
+- **The per-frame image ring.** Component fields, rays and particle text live in a 96-slot ring of full-frame pixmaps (`SharedAssets` volatile ring), which stayed alive with the evaluator: about 250 MiB for backdrop. `SharedAssets::release_frame_images()` drops it when a render finishes. It resets the sequence too, so a later render uses the same ids as a fresh evaluator. Output is byte-identical: every qbench MP4 matched main's.
+- **The CLI's pre-render estimate.** Before a heavy render, `anikit-video render` samples frames to predict the time, through thread-local workers (renderer, frame buffers, layer caches) on every rayon thread. The video pipeline renders with fresh per-chunk workers, so those stayed alive, unused, for the whole render. `pipeline::release_workers()` (a `rayon::broadcast`) plus a heap trim now runs after the estimate and when a render finishes. On offset2027 (div-g, 15 s, shader-heavy), resident memory before the first frame went from 534 to 309 MiB and the peak from 1247 to 945 MiB, with byte-identical output.
+- **scene3d's frame-buffer pool** (`scene3d::kernel::pool`) keeps up to 2 GiB of frame planes warm between frames, to avoid first-touch page faults. Nothing emptied it, so a process that had rendered a scene3d or particle scene kept it all. `pool::release()` now runs when a render's frames are done. On the swell deliverable's 80k-particle scene (7.8–8.3 s), memory kept after the render went from 1481 MiB to 277 MiB, with the same time (7.5 s vs 7.8 s) and byte-identical output.
+
+## Post: planar, vectorised passes (bit-exact)
+
+`examples/post_stages.rs [threads] [preset]` times the post look on a 1080p test card, then with one stage off at a time (the difference is that stage's cost). `cinematic`, one thread:
+
+| stage | before | after |
+|---|---:|---:|
+| whole look | 290 ms | 80 ms |
+| decode + final pass (grade, tone map, vignette, grain, dither, encode) | 167 ms | 28 ms |
+| lens (distortion + chromatic aberration) | ~85 ms | ~30 ms |
+| bloom + halation | ~53 ms | ~25 ms |
+| whole look, 4 threads | – | 23 ms |
+
+The per-pixel loops did their table lookups, clamps, branches and bounds checks inline, so nothing vectorised. Each row now runs in chunks of 64 pixels, one stage at a time, over planar arrays:
+- coordinates, table indices and weights in vector loops;
+- table lookups and bilinear taps gathered in a scalar loop;
+- blends and the rest of the arithmetic in vector loops, under AVX2 when the CPU has it.
+
+The arithmetic is the same, in the same order. Rust never fuses multiply-adds, so the output is bit-identical: `render::post::tests::final_pass_matches_scalar` checks every preset, ACES and no-tone-map variants, with and without glow, at odd sizes, against the original per-pixel loops (kept as the path for grade LUTs, and forced in tests). The bloom's upsample and halation lookups compute their bilinear taps once per column and per row instead of per pixel.
+
+## Startup: time to the first still
+
+`examples/still_cost.rs spec.json [t]` splits a still's startup into parse, font store, evaluator build (assets, music, beat analysis, component preparation) and the first frame.
+
+| spec | build before | build after |
+|---|---:|---:|
+| `examples/video/pulse` (warm disk cache) | 165 ms | 33 ms |
+
+The cost was `particle-text` placing its target dots: it tests a jittered grid of candidate points (3 passes of about count points per word) for being inside the glyph outlines, and `kurbo`'s winding number re-splits every outline segment at its extrema for every point. A segment whose control points' y-range (padded for rounding) excludes the point contributes exactly 0, so the index (`particle_text::Winding`) tests only the segments that can matter, each as a one-segment path through the same kurbo code. The result is identical: `winding_index_matches_kurbo` checks 120k points, including points on segment ends, and qbench's audio MP4 (pulse) is byte-identical.

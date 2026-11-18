@@ -1,0 +1,85 @@
+[
+ {
+  "name": "div-a-social",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-div-a:deliverables/div-a/halde-guji.mp4",
+  "tags": [
+   "social-vertical",
+   "vertical",
+   "motion-design",
+   "illustration"
+  ],
+  "format": "9:16",
+  "pair": "a-social",
+  "orig": "div-a-halde"
+ },
+ {
+  "name": "div-b-launch",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-div-b:deliverables/div-b/railyard.mp4",
+  "tags": [
+   "product-launch",
+   "motion-design"
+  ],
+  "format": "16:9",
+  "pair": "b-launch",
+  "orig": "div-b-railyard"
+ },
+ {
+  "name": "div-c-event",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-div-c:deliverables/div-c/substation.mp4",
+  "tags": [
+   "event-promo",
+   "music-video",
+   "kinetic-type",
+   "vertical"
+  ],
+  "format": "9:16",
+  "pair": "c-event",
+  "orig": "div-c-substation"
+ },
+ {
+  "name": "div-d-illustration",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-div-d:deliverables/div-d/burrow.mp4",
+  "tags": [
+   "illustration",
+   "product-launch"
+  ],
+  "format": "16:9",
+  "pair": "d-illustration",
+  "orig": "div-d-burrow"
+ },
+ {
+  "name": "div-e-data",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-div-e:deliverables/div-e/arctic-sea-ice.mp4",
+  "tags": [
+   "data-story",
+   "editorial-data"
+  ],
+  "format": "16:9",
+  "pair": "e-data",
+  "orig": "div-e-arctic"
+ },
+ {
+  "name": "div-f-3d",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-div-f:deliverables/div-f/calibre9.mp4",
+  "tags": [
+   "cg-3d",
+   "3d-cg",
+   "luxury",
+   "product-launch"
+  ],
+  "format": "16:9",
+  "pair": "f-3d",
+  "orig": "div-f-calibre9"
+ },
+ {
+  "name": "div-g-titles",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-div-g:deliverables/div-g/offset2027.mp4",
+  "tags": [
+   "kinetic-type",
+   "title-sequence"
+  ],
+  "format": "16:9",
+  "pair": "g-titles",
+  "orig": "div-g-offset"
+ }
+]

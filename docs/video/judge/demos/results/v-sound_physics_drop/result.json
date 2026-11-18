@@ -1,0 +1,525 @@
+{
+  "name": "v-sound_physics_drop",
+  "tags": [
+    "cg-3d"
+  ],
+  "refs": [
+    "morph-studio-xreal-1s-2025",
+    "game-of-thrones",
+    "andreas-wannerstedt-eternal-installations-2020"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 3,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 3,
+      "motion": 3,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 2.75,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Needs an idea: a subject, message or world that the objects serve, instead of a physics test",
+      "Needs designed light and materials (motivated key, an environment for the chrome to reflect, real glass dispersion) and an art-directed palette beyond cream + mint",
+      "Needs choreography and composition: authored timing, camera moves, scale changes and an ending beat rather than objects settling in the centre",
+      "There is no concept: it needs a subject and a reason for these objects to exist, as C builds a world from its map",
+      "Light and materials need real art direction (motivated key light, believable glass and chrome, grounded contact shadows) instead of a default cream cyc",
+      "Motion needs authored timing and a resolve, plus camera movement and composition that change across shots instead of one locked frame of a physics sim",
+      "It has no concept at all; it needs a subject and a reason for the objects to exist, the way A's mechanisms stand for its world",
+      "It needs real material and lighting design (motivated key light, surface texture, a palette with intent) instead of a default HDRI on cream",
+      "The motion needs authored choreography, with changing camera, scale and timing, instead of a single physics simulation left to settle"
+    ],
+    "tells": [
+      "Stock 3D primitives (chrome spheres, tinted glass cubes) dropped onto an empty cream ground: an effect with no subject",
+      "Default rigid-body physics drop with no choreography; the last two frames are nearly identical and little is happening",
+      "Flat, unmotivated light; the glass cubes lack proper refraction and caustics, and the chrome reflects nothing of interest",
+      "Particle 'dust' puff on impact is a preset look; the composition is centred and empty with no hierarchy",
+      "No type, no idea, no brand, nothing a viewer would remember",
+      "Stock 3D primitives (chrome spheres, pale-green glass cubes) dropped onto an empty cream ground: an effect with no subject",
+      "Default rigid-body physics drop and scatter, with nothing choreographed or authored after the impact",
+      "Flat, unmotivated studio light, a mushy particle 'dust' layer, and weak shadows and contact",
+      "The same centred composition holds across frames while the action dies off; the last two frames are almost identical",
+      "No type, brand or idea; this reads as a software demo or template test",
+      "Stock 3D primitives (chrome spheres and pale green glass cubes) dropped onto an infinite cream ground: an effect with no subject",
+      "A default rigid-body physics drop that settles into a static pile; after frame 3 almost nothing changes",
+      "Flat, unmotivated studio light; the shadows are mushy and the 'dust' particles look like a default emitter",
+      "The same centred composition is held across every frame, with heavy depth of field used to fake sophistication",
+      "No type, brand or idea, and nothing about the absence of type serves the piece"
+    ]
+  },
+  "refs_summary": {
+    "morph-studio-xreal-1s-2025": {
+      "overall": 7.12,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "game-of-thrones": {
+      "overall": 9.5,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "andreas-wannerstedt-eternal-installations-2020": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    }
+  },
+  "ref_mean": 7.71,
+  "delta": -4.96,
+  "trials": [
+    {
+      "key": {
+        "A": "andreas-wannerstedt-eternal-installations-2020",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "candidate",
+        "D": "game-of-thrones"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Physically convincing light: golden-hour backlight with a correct warm reflection on the water at sunset, soft overcast sky light in the forest scenes",
+              "Material work: cast-concrete plinths with bevels and subtle ambient occlusion, matte-plastic spheres with proper falloff, real vegetation and terrain",
+              "Consistent world-building across scenes (sphere-on-sculpture motif, a Newton's-cradle gag over a lake), which reads like a brand or wallpaper system, not a single generated image",
+              "Cuts vary in scale, from a wide landscape to a tight hero low-angle to a framed shot through trees, so there was a shot list",
+              "Weakness: the hero object is a stock sphere primitive, and the 'calm object in a serene landscape' look is very well-worn; no type visible, and its absence is acceptable but adds nothing"
+            ],
+            "gaps": [
+              "The idea is a mood, not a concept: give the sphere a narrative or rule (as D's clockwork map does) so each shot shows something new instead of a new backdrop",
+              "Swap the default primitive for a designed hero form or material behaviour that belongs only to this piece",
+              "Push the palette and grade further than the standard 'pastel sky + one saturated accent' to get an authored, memorable look"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Complex fluid and soft-body simulation: the glasses dissolve into and re-form from liquid, with tendrils, droplets and caustics, which takes real FX/sim pipeline work",
+              "Clear product transformation arc (liquid, then form, then a fully liquid-sculpted product, then a macro 'evolution' world), a concept tied to the product's 'evolution' message",
+              "Varied framing: macro, chromatic-aberration motion blur, a hero product reveal, abstract cellular macro",
+              "Typography is weaker: the bold grotesk wordmark plus a light '1S' are product-standard, and the widely tracked 'EVOLUTION' is a fairly generic tech-launch trope",
+              "Monochrome electric blue is on-brief for consumer tech but is also the most common palette in that category"
+            ],
+            "gaps": [
+              "Typography needs integration and a point of view: make the type part of the liquid world rather than overlaid in tracked caps",
+              "Break the all-blue tech palette with a second colour or temperature contrast so the frames are memorable outside the category",
+              "Push the idea past 'product made of liquid', a familiar launch-film trope, toward something only XREAL's AR proposition could justify"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Stock 3D primitives (chrome spheres, tinted glass cubes) dropped onto an empty cream ground: an effect with no subject",
+              "Default rigid-body physics drop with no choreography; the last two frames are nearly identical and little is happening",
+              "Flat, unmotivated light; the glass cubes lack proper refraction and caustics, and the chrome reflects nothing of interest",
+              "Particle 'dust' puff on impact is a preset look; the composition is centred and empty with no hierarchy",
+              "No type, no idea, no brand, nothing a viewer would remember"
+            ],
+            "gaps": [
+              "Needs an idea: a subject, message or world that the objects serve, instead of a physics test",
+              "Needs designed light and materials (motivated key, an environment for the chrome to reflect, real glass dispersion) and an art-directed palette beyond cream + mint",
+              "Needs choreography and composition: authored timing, camera moves, scale changes and an ending beat rather than objects settling in the centre"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A singular, specific idea: the world is a clockwork map seen from inside an astrolabe sun, with cities that mechanically build themselves, an idea that belongs only to this show",
+              "Dense, layered frames: engraved metal armillary band with heraldic dragons, wooden and brass mechanisms, parchment map with hand-drawn rivers and forests",
+              "Real light: a blazing central sun that motivates the warm rim light and bloom, plus moody overcast tones on the maps, with tactile materials (wood, brass, bone, leather)",
+              "Typography with a point of view: a bespoke Trajan-like inscriptional serif, credits paired with house sigils and placed into the 3D space, a lockup logotype with the small 'of' set inside the band",
+              "Choreography: camera flights between locations, mechanisms unfolding, ending on a symmetrical emblematic title card; every frame works as a poster"
+            ],
+            "gaps": [
+              "Benchmark entry; the only gaps are marginal: the sepia grade sits close to the period-fantasy convention",
+              "The credit type occasionally sits small and low-contrast against busy mechanisms",
+              "The closing logo lockup is more conventional than the inventive sequence before it"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.4,
+        "cost_usd": 0.1556266,
+        "tokens": 71827,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "andreas-wannerstedt-eternal-installations-2020",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Coherent world-building: a sphere placed in varied photoreal landscapes (sunset lake, alpine meadow, conifer forest), with consistent art direction across shots",
+              "Physically convincing light: sunset rim on the orange sphere, matched reflections in the water, atmospheric haze, soft daylight falloff on concrete",
+              "Considered material contrast between soft matte spheres, poured-concrete sculptural forms, rock and foliage",
+              "Varied framing (wide establishing, low-angle hero close-up, Newton's-cradle trio) suggests real shot planning and choreography",
+              "Against it: the sphere is a stock primitive and the 'calm surreal object in nature' look is a well-worn brand-wallpaper aesthetic; no visible type"
+            ],
+            "gaps": [
+              "Give the sphere a narrative or a transformation so it is more than a recurring prop; C turns every object into storytelling",
+              "Add a typographic or graphic layer that carries the brand idea, or make the case for leaving it out",
+              "Push the palette and staging past the familiar 'serene 3D wallpaper' genre toward something only this brand could own"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Strong simulation work: fluid and liquid-glass caustics, and a product rendered as translucent organic matter with internal bubbles and fibres",
+              "Real variety between frames (macro abstraction, product hero, transmuted glasses, cellular 'evolution' world) implies a choreographed arc",
+              "Dense, layered frames with depth of field and refraction",
+              "Against it: a monochrome blue sci-fi-tech palette that is category default; the type ('XREAL 1S' split around the product, tracked-caps 'EVOLUTION') is generic grotesk and pinned on rather than integrated"
+            ],
+            "gaps": [
+              "Typography has no point of view; letter-spaced 'E V O L U T I O N' over an effect reads as template, whereas C's type is built into its world",
+              "The all-blue tech palette is interchangeable with every hardware launch; it needs a distinctive colour idea",
+              "The 'evolution' metaphor is literal; it needs a more specific concept connecting liquid and organic form to what the product does"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A singular concept only this piece could have: a mechanical clockwork map that builds the world's cities, giving orientation and exposition as title design",
+              "Rich material language (engraved metal astrolabe band with heraldic dragons, wood, brass gears, parchment map) lit with warm, motivated sun-flare light",
+              "Credits typeset in a carefully chosen inscriptional serif, placed within the world's geography with sigil bullets, so the type is part of the image",
+              "Clear choreography: the camera flies over the map as structures unfold, and the piece bookends on the logo inside the armillary sphere",
+              "Every frame works as a poster and the palette is consistent and deliberate"
+            ],
+            "gaps": [
+              "The sepia/amber grade gets close to monochrome in places, and a little more colour separation would make the regions read better",
+              "Map-view credit frames are flatter and less dense than the mechanical shots",
+              "The light-burst logo resolve is the most conventional moment in an otherwise inventive piece"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Stock 3D primitives (chrome spheres, pale-green glass cubes) dropped onto an empty cream ground: an effect with no subject",
+              "Default rigid-body physics drop and scatter, with nothing choreographed or authored after the impact",
+              "Flat, unmotivated studio light, a mushy particle 'dust' layer, and weak shadows and contact",
+              "The same centred composition holds across frames while the action dies off; the last two frames are almost identical",
+              "No type, brand or idea; this reads as a software demo or template test"
+            ],
+            "gaps": [
+              "There is no concept: it needs a subject and a reason for these objects to exist, as C builds a world from its map",
+              "Light and materials need real art direction (motivated key light, believable glass and chrome, grounded contact shadows) instead of a default cream cyc",
+              "Motion needs authored timing and a resolve, plus camera movement and composition that change across shots instead of one locked frame of a physics sim"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 27.0,
+        "cost_usd": 0.1516868,
+        "tokens": 71634,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "andreas-wannerstedt-eternal-installations-2020",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "Specific, ownable idea: the world drawn as a clockwork map that builds itself, so the opening also teaches the viewer the setting",
+              "Real material and texture throughout: engraved metal astrolabe band, worn wood, brass gears, parchment map with ink rivers",
+              "Motivated light: the sun-core flare at the centre of the astrolabe lights the opening and the title card, which ties the piece together",
+              "Credits are set in a carefully chosen display serif with small sigil icons and placed inside the 3D world at mid-depth, not stuck on top like a slide",
+              "Choreography across frames: tight on the band, then sweeping flyovers of the city as it builds, then a top-down map view, then the band again for the title. The camera height and frame size change every time"
+            ],
+            "gaps": [
+              "Benchmark entry; the gaps are small: the palette leans warm sepia overall and could use more contrast between regions",
+              "The credit type is quite small and low-contrast over busy mechanisms in some frames",
+              "The title lockup itself is more conventional than the world-building before it"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "High-end liquid simulation: the glasses form out of water, and the splashes, caustics and refraction inside the gel look physically correct",
+              "Clear progression across frames: an explosive splash, the product reveal, the glasses rebuilt as a translucent organic form, a macro of the fluid, then bubble-like cells for 'EVOLUTION'. Scale and pace change a lot",
+              "Strong backlighting and rim light give real depth, and the material is the subject",
+              "Typography is the weak part: a default-feeling bold grotesk 'XREAL' set against a thin '1S', plus a widely tracked caps 'EVOLUTION' centred over the image"
+            ],
+            "gaps": [
+              "The monochrome electric-blue palette is the tech-launch clich\u00e9; A uses a palette that belongs to its story",
+              "The type has no point of view and floats on top of the image; it needs a custom or integrated typographic system like A's credits set inside the world",
+              "The idea (liquid becomes the product) is a familiar launch-film trope; it needs a concept specific to AR glasses rather than a generic material showcase"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Polished photoreal environments: the water reflections, the grass and conifers, sunset atmospheric haze, and concrete-like sculptural plinths",
+              "Deliberate, considered palette that shifts from peach dusk to cobalt to magenta to violet across the vignettes",
+              "Compositions are careful and calm, with low horizons and strong negative space; it works as a set of wallpapers",
+              "Its subject is a stock primitive (a coloured sphere) repeated in every frame, which leans toward the 'effect with no subject' tell; the expensive environment work is what keeps it out of template territory",
+              "No type visible; the piece gets by on mood alone, which suits an ambient brand loop but gives no identity"
+            ],
+            "gaps": [
+              "Give the sphere a story, a behaviour or a reason. A builds a world with meaning; C just places a ball in nice landscapes",
+              "The motion implied is gentle rolling and a pendulum; it needs choreography and some surprise between vignettes",
+              "It needs one ownable element (type, mark or narrative) so that it could not be mistaken for a 3D-render stock reel"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Stock 3D primitives (chrome spheres and pale green glass cubes) dropped onto an infinite cream ground: an effect with no subject",
+              "A default rigid-body physics drop that settles into a static pile; after frame 3 almost nothing changes",
+              "Flat, unmotivated studio light; the shadows are mushy and the 'dust' particles look like a default emitter",
+              "The same centred composition is held across every frame, with heavy depth of field used to fake sophistication",
+              "No type, brand or idea, and nothing about the absence of type serves the piece"
+            ],
+            "gaps": [
+              "It has no concept at all; it needs a subject and a reason for the objects to exist, the way A's mechanisms stand for its world",
+              "It needs real material and lighting design (motivated key light, surface texture, a palette with intent) instead of a default HDRI on cream",
+              "The motion needs authored choreography, with changing camera, scale and timing, instead of a single physics simulation left to settle"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.6,
+        "cost_usd": 0.152482,
+        "tokens": 71665,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 3,
+        "sound": 3,
+        "craft": 3
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "The 100% crop shows jagged, aliased edges on the chrome spheres and cube silhouettes. The render looks low-resolution and upscaled, with stair-stepping all along the curves.",
+        "The chrome reflections are blotchy, with hard black splotches and no smooth environment falloff, so they read as a low-sample or low-res environment map.",
+        "The glass cubes look flat and paper-like: no refraction depth, no caustics, and the edge highlights are thin and broken.",
+        "The dust or debris is speckled screen-space noise with no volume or lighting. It reads as a dithered smear rather than particles.",
+        "The cubes appear to intersect or float near the ground: in the last frames the stacked cubes show soft, ghosted doubling and there is no proper contact shadow.",
+        "The depth of field is inconsistent. The background spheres are heavily blurred while the midground objects stay sharp in some areas and smeared in others, and the falloff looks like a cheap post-process blur.",
+        "Dead air: from about 2.0s to 4.0s nothing meaningful moves. It is a static settle with a slow camera drift, which is half the runtime.",
+        "In the opening frame the objects are spawned clumped together in mid-air, a default rigid-body sim drop with no designed entrance.",
+        "The audio is a stack of pure sine-like modal partials (horizontal lines with no noise body). It reads as procedurally synthesized impact tones, not recorded or designed Foley, and there is no music bed.",
+        "The audio is completely silent after about 2.5s, so the second half has no sound at all."
+      ],
+      "gaps": [
+        "There is no authored choreography: this is a single default rigid-body drop with no staging, no hero moment, no build-and-release arc, and half the film is spent on a static settle. Top studios would art-direct the sim (timing offsets, a hero object, a camera move that answers the impact) and cut or transform before it dies.",
+        "The render finish is far below award level: aliased edges, blotchy low-res chrome reflections, glass with no refraction, and noise-dither dust. It needs proper anti-aliasing, an HDRI with falloff, real glass shading, contact shadows and volumetric particulate.",
+        "The sound is thin synthesized modal tones that stop at 2.5s. It needs layered, recorded impacts (metal vs glass with distinct transient and body), room tone, a musical or tonal bed carried through the settle, and a designed tail or final hit to close the piece."
+      ]
+    },
+    "meta": {
+      "seconds": 19.1,
+      "cost_usd": 0.15656979999999998,
+      "tokens": 71791,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "drop.mp4: 4.0s, 1 shots, median 4.00s, longest 4.00s\nper-second change: [5.0, 4.0, 2.7]\nPACE: FAIL \u2014 longest shot 4.0s > 2.5s; median shot 4.0s > 1.5s; 3/3 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 2,
+    "composition": 3,
+    "typography": 3,
+    "colour": 3,
+    "light_texture": 3,
+    "motion": 3.0,
+    "craft": 3.0,
+    "originality": 2,
+    "sound": 3
+  },
+  "full_overall": 2.78,
+  "cost_usd": 0.616,
+  "judge_seconds": 105.1,
+  "verdict": "FAIL"
+}

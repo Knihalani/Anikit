@@ -1,0 +1,12 @@
+{
+ "start_utc": "2026-11-17T23:57:24Z",
+ "end_utc": "2026-11-18T00:07:38Z",
+ "renders": [
+  {
+   "cmd": "anikit-video render deliverables/eval/k-sports/spec.json -o deliverables/eval/k-sports/final.mp4 --sheet deliverables/eval/k-sports/contact.png",
+   "exit": 0,
+   "wall_s": 76.76,
+   "peak_rss_mb": 1046.1
+  }
+ ]
+}

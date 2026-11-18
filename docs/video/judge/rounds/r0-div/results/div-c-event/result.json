@@ -1,0 +1,525 @@
+{
+  "name": "div-c-event",
+  "tags": [
+    "event-promo",
+    "music-video",
+    "kinetic-type",
+    "vertical"
+  ],
+  "refs": [
+    "kurzgesagt-short",
+    "xk-studio-offfmx-2025-main-titles",
+    "studio-river-motion-plus-design-tokyo-2024"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 4,
+      "typography": 4,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 3,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 3.25,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It has no image: build a real visual world (photographed or simulated industrial space, real electrical light hitting surfaces) as A and D do",
+      "The typography needs a point of view: a custom or distorted face reacting to voltage, scale broken across frames, type integrated with light rather than centred like a poster template",
+      "Break the repeated template: vary composition, framing and pacing between frames so there is choreography and surprise rather than eight identical cards",
+      "It needs a real idea tied to the venue: shoot or build the decommissioned power station (concrete, rust, transformers, real light) instead of stock lightning and hazard stripes.",
+      "Typography needs authorship: deliberate line breaks, scale and layout that change between frames, type that interacts with image, and no 'VEDA / K' wrap.",
+      "Break the repeated template. Choreograph distinct compositions and transitions with a palette and texture that go beyond black + yellow + blue glow.",
+      "It has no image or world. Build a real visual subject with light and texture (the decommissioned station itself) instead of a glow line on black",
+      "It needs typography with a point of view: varied scale, cropping, interaction with the image, and line breaks that are deliberate instead of overflow",
+      "The composition and motion repeat. Each frame needs a different layout and choreography instead of a word-swap template"
+    ],
+    "tells": [
+      "A textbook 'tasteful AI' system: dark ground, small tracked mono labels ('CIRCUIT 05/08', '\u25cf LIVE', '27 kV'), a large condensed grotesk headline and a single yellow accent",
+      "The same layout repeats in every frame: label top-left, red dot top-right, centred headline, a value bottom-left with a rule. It reads as a slide deck with the words swapped",
+      "The concept is literal: a 'power station' techno event gets lightning bolts, hazard stripes and kV readouts, the first things anyone would reach for",
+      "The lightning and waveform are thin overlay effects with no light interaction with the type or the scene; there is no material, texture or depth",
+      "The hyphenated 'RE- ENERG- ISED.' and 'VEDA K' break at mechanical points, which looks like auto-fit rather than designed setting",
+      "Slide-deck structure: a centred condensed headline, a small tracked mono label top-left ('CIRCUIT 05/08'), a red '\u25cf LIVE' dot top-right, a kV readout and a rule bottom-left. It is the same layout with the words swapped across frames.",
+      "The generic 'tasteful AI' look: a dark ground, one yellow accent and a stock blue lightning or waveform glow used as an effect with no subject.",
+      "Typesetting failures: 'VEDA K' breaks the artist name across lines with an orphaned K, and 'RE-ENERG-ISED.' is hyphenated awkwardly. The breaks are mechanical rather than designed.",
+      "A literal, obvious idea: power station = lightning + hazard tape + voltage numbers. It is a clich\u00e9 kit with no material, location or photography of the actual decommissioned station.",
+      "Flat, unmotivated light, apart from a ghosted '08' numeral behind the yellow card. There is almost no texture or depth.",
+      "It is the same layout four times: centred condensed grotesk headline, tiny tracked mono metadata label top-left ('CIRCUIT 05/08', '\u25cf LIVE'), a thin accent rule, and a small kV readout. The words change, the composition doesn't",
+      "The 'tasteful AI' kit is all here: near-black ground, a single yellow accent, small caps label, generic condensed sans, hazard-stripe clich\u00e9 for 'power station'",
+      "The type is set to default: the forced hyphenation breaks ('RE- / ENERG- / ISED.', 'VEDA / K') look like auto-wrap, not intention",
+      "The lightning/waveform is a stock glow effect laid behind the type with no material or lighting relationship",
+      "The idea is literal (power station = electricity + hazard tape + voltage numbers). Nothing a viewer would remember"
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-short": {
+      "overall": 6.88,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 8.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "studio-river-motion-plus-design-tokyo-2024": {
+      "overall": 7,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    }
+  },
+  "ref_mean": 7.33,
+  "delta": -4.08,
+  "trials": [
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "kurzgesagt-short",
+        "C": "candidate",
+        "D": "xk-studio-offfmx-2025-main-titles"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent title-sequence idea: a macro journey through the body (tissue, fluid splash, iris, branching vessels, cellular ripple) that holds together as one world",
+              "Simulated fluid, subsurface-lit flesh and fibrous vein geometry with real depth of field and directional light; these are deliberate material choices, not stock primitives",
+              "The credit ('NAHUEL SALCEDO', two-tone red/white) is placed small and off-axis inside the image the way a credit is in a real title sequence",
+              "The scale changes between frames (wide tissue landscape, extreme close-up eye, root-like canopy, flat top-down ripple) suggest edited choreography rather than one repeated layout"
+            ],
+            "gaps": [
+              "The monochrome red palette is the obvious choice for 'body/blood'; it needs a counter-colour or tonal surprise like D's mint, flesh and moss collisions",
+              "The anatomical macro language (eye close-up, veins, cells) is a well-worn title-sequence trope; it needs a stranger or more personal conceptual twist to be memorable",
+              "The type is a neutral sans set small; integrate it with the material (embossed in tissue, carried by the fluid) instead of laying it over the top"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A mature, consistent house illustration system: bespoke characters (villain at a control desk, birds playing a memory game, a mammoth) with deliberate silhouettes, rim lighting and saturated but controlled palettes",
+              "Every frame stages a different visual metaphor for a science explainer, so the frames are not a repeated template",
+              "The heat-map Europe title card shows real colour craft: a banded thermal palette with chunky dimensional type",
+              "Background gradients and glows give depth beyond flat clip-art vector"
+            ],
+            "gaps": [
+              "The captions are default burned-in subtitles in small white sans, a utility layer with no typographic idea; fold the words into the illustration",
+              "This is a recognisable established house style applied to a format rather than a piece-specific visual idea; it needs one image only this film could have",
+              "The vector rendering keeps the texture shallow; add the material richness and lighting complexity of A or D to step beyond social-explainer polish"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "A textbook 'tasteful AI' system: dark ground, small tracked mono labels ('CIRCUIT 05/08', '\u25cf LIVE', '27 kV'), a large condensed grotesk headline and a single yellow accent",
+              "The same layout repeats in every frame: label top-left, red dot top-right, centred headline, a value bottom-left with a rule. It reads as a slide deck with the words swapped",
+              "The concept is literal: a 'power station' techno event gets lightning bolts, hazard stripes and kV readouts, the first things anyone would reach for",
+              "The lightning and waveform are thin overlay effects with no light interaction with the type or the scene; there is no material, texture or depth",
+              "The hyphenated 'RE- ENERG- ISED.' and 'VEDA K' break at mechanical points, which looks like auto-fit rather than designed setting"
+            ],
+            "gaps": [
+              "It has no image: build a real visual world (photographed or simulated industrial space, real electrical light hitting surfaces) as A and D do",
+              "The typography needs a point of view: a custom or distorted face reacting to voltage, scale broken across frames, type integrated with light rather than centred like a poster template",
+              "Break the repeated template: vary composition, framing and pacing between frames so there is choreography and surprise rather than eight identical cards"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Dense, layered, strange 3D worlds: a translucent hand on a scorched ridge holding a glowing coral heart, a moonlit particle mountain with a pink plume, a mesh-and-fibre ruffled organism, glass-and-moss torus knots around a red bead cluster",
+              "A deliberately unusual palette (pale mint, flesh coral, moss green, mauve dusk) that keeps shifting yet stays coherent",
+              "Sophisticated materials (subsurface, translucency, woven mesh, hair, wet metal) with motivated light and atmospheric depth",
+              "Each frame works as a poster and the scale and register vary wildly, suggesting a festival-opener or anthology structure with real choreography",
+              "The studio/artist name cards ('Boldtron', 'Medusa Lab') sit small and confident, letting the image lead"
+            ],
+            "gaps": [
+              "The name labels are a plain bold sans in a corner; a typographic system that responds to each world would push it from strong to exceptional",
+              "The frames risk reading as a gallery of separate showpieces; a stronger connective visual thread or transition logic would make it one film",
+              "Some forms (torus knots, ruffled cloth sims) border on familiar 3D-art-scene vocabulary; push a couple of moments further into the unrepeatable"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 33.7,
+        "cost_usd": 0.1454272,
+        "tokens": 70333,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "kurzgesagt-short",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.86,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Reads as a main-title sequence: credit 'NAHUEL SALCEDO' sits in a small two-tone sans in the negative space beside a liquid splash, so type and image were composed together.",
+              "A single blood-red palette holds across macro tissue, an iris, branching vessels and concentric ripples. That is a committed colour world, not a default accent.",
+              "Real material work: subsurface scattering on the flesh, wet specular highlights on the liquid, fibrous detail in the iris and a shallow-focus feel on the vessels.",
+              "The shots change scale and subject (fluid, organ, eye, vascular tree, top-down ripple), which implies cut choreography rather than one layout repeated.",
+              "The weak point is the idea: 'inside the body, everything red' is a well-worn trope for title sequences (thriller and medical-drama openers)."
+            ],
+            "gaps": [
+              "The visual metaphor is generic anatomy. It needs one idea tied to this film's story, as C has with its hybrid creatures, so the sequence couldn't belong to any other thriller.",
+              "The credit typography is a plain, competent sans. Give the type a point of view: a custom cut, or type that interacts with the fluid or tissue instead of sitting beside it.",
+              "Every frame lives in the same red. One planned departure in colour or temperature would give the sequence an arc and a surprise."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent house illustration system: consistent character construction, a saturated custom palette, rim highlights and layered environments (control room, card table, tundra). This is an established studio pipeline, not clip art.",
+              "The title card 'Europe's Next Ice Age' is rounded bold type with an extrusion and shadow, laid over a heat-map Europe. Type and image are integrated, and the map becomes the graphic.",
+              "Visual metaphors carry the explainer: a villain at a STOP button for climate tipping, birds playing a matching game for 'misconception', a mammoth for 'ice age'. Each scene is a new staging, not swapped words.",
+              "Burned-in social captions in a default style weaken the typography, and the vertical short-form format limits composition.",
+              "The look is strongly recognisable as an existing house style, so originality within the piece is limited."
+            ],
+            "gaps": [
+              "The metaphors are fairly literal (mammoth = ice age). It needs one image that reframes the topic rather than illustrating the keyword.",
+              "Flat vector shading. Adding atmosphere, texture or lighting depth in the key moments would raise light and texture toward A and C.",
+              "The default caption subtitles fight the art. Designing captions into the system would bring the typography up to the level of the title card."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Studio and artist credits ('Boldtron', 'Medusa Lab') in a bold grotesk, consistent with a festival or collective title where each artist gets a world.",
+              "Uncanny, specific imagery that no template produces: a translucent jelly hand cradling a coral-like heart over a red mountain range, cable-like hairs, and a mesh-and-fabric organic landscape.",
+              "An unusual, deliberate palette: mint, olive, salmon, chrome-bronze and bottle green, with a desaturated volcanic night frame for contrast.",
+              "Strong material vocabulary: subsurface on the hand, woven mesh, frayed fibres, glossy metal tubes, a glassy ribbon around beaded red clusters. The lighting is physically motivated in each world.",
+              "The frames change world, scale and mood completely while staying in one surreal-biological language, so they are curated rather than repeated."
+            ],
+            "gaps": [
+              "The typography is a plain bold sans dropped top-left like a caption. It needs a typographic idea that lives in these materials.",
+              "The four worlds risk reading as a reel of separate renders. Make the connective choreography (transitions, a shared motif) visible so it plays as one film.",
+              "Composition sometimes clutters (the Medusa Lab frame). A clearer focal hierarchy would make every frame a poster."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "Slide-deck structure: a centred condensed headline, a small tracked mono label top-left ('CIRCUIT 05/08'), a red '\u25cf LIVE' dot top-right, a kV readout and a rule bottom-left. It is the same layout with the words swapped across frames.",
+              "The generic 'tasteful AI' look: a dark ground, one yellow accent and a stock blue lightning or waveform glow used as an effect with no subject.",
+              "Typesetting failures: 'VEDA K' breaks the artist name across lines with an orphaned K, and 'RE-ENERG-ISED.' is hyphenated awkwardly. The breaks are mechanical rather than designed.",
+              "A literal, obvious idea: power station = lightning + hazard tape + voltage numbers. It is a clich\u00e9 kit with no material, location or photography of the actual decommissioned station.",
+              "Flat, unmotivated light, apart from a ghosted '08' numeral behind the yellow card. There is almost no texture or depth."
+            ],
+            "gaps": [
+              "It needs a real idea tied to the venue: shoot or build the decommissioned power station (concrete, rust, transformers, real light) instead of stock lightning and hazard stripes.",
+              "Typography needs authorship: deliberate line breaks, scale and layout that change between frames, type that interacts with image, and no 'VEDA / K' wrap.",
+              "Break the repeated template. Choreograph distinct compositions and transitions with a palette and texture that go beyond black + yellow + blue glow."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 36.4,
+        "cost_usd": 0.1486384,
+        "tokens": 70480,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "kurzgesagt-short",
+        "C": "studio-river-motion-plus-design-tokyo-2024",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Each frame is a different surreal world: a translucent hand holding a coral-like heart over a rust-coloured ridge, a monochrome mountain with a magenta plume, a wall of textile and fibre, glassy tubes knotted around a red bead cluster",
+              "The materials are specific and expensive to make: subsurface scattering on the hand, woven mesh and frayed threads, olive chrome against pale mint glass, fine fibres catching rim light",
+              "The palette is unusual on purpose (salmon/bone, black/magenta, sage/blush, bottle-green/ice-blue) and still reads as one family",
+              "The frames are dense and layered, with real depth of field and atmosphere. No frame repeats another's composition",
+              "The type is just small bold-sans name labels (Boldtron, Medusa Lab). That fits a credit-style reel, but the type does no work in the image"
+            ],
+            "gaps": [
+              "The type is a plain default sans dropped in top-left. It needs a typographic idea that sits inside the 3D world, the way the image does",
+              "It reads as a strong anthology of separate pieces rather than one through-idea. A connecting thread or transformation between worlds would give it an argument",
+              "The frames show no transitions, so the motion is unproven. A match-cut or morph logic between scenes would show choreography"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "It is a confident, consistent flat-vector house style: saturated palette, bold rim colours, character acting and scene variety (a villain at a control desk, birds at a memory game, a stylised heat map, a mammoth)",
+              "Each scene is a fresh illustration that serves the narration, not one repeated layout. The visual metaphors (a STOP button, matching cards for 'they're the same') show editorial thinking",
+              "The title lockup has dimensional, chunky custom-feeling type with a bevel/shadow, sitting on the map",
+              "The house style is very close to a well-known explainer studio's look. Its originality is in the execution, not the language",
+              "The burned-in captions are default small sans, centred and functional"
+            ],
+            "gaps": [
+              "The visual language is borrowed from an established explainer idiom. It needs a look that belongs to this piece alone",
+              "The lighting is flat graphic shading with almost no texture. It lacks the material depth and atmosphere of A",
+              "The caption type is a utility layer with no craft, and the title is the only typographic moment. Type should carry more of the storytelling"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "It is a coherent monochrome-red organic macro world: tissue, a liquid splash, an iris, root/vein networks, a pitted surface with concentric rings. This looks like a real title sequence or ident",
+              "The lighting and texture are convincing (wet speculars on the fluid, iris fibre detail, depth of field in the veins)",
+              "The name credit in two-tone small tracked sans (NAHUEL SALCEDO) shows title-sequence convention",
+              "The vocabulary is very familiar: bloodstream, eye, veins and liquid splashes are stock tropes of horror and medical title openings",
+              "The palette commits but is predictable (red on red)"
+            ],
+            "gaps": [
+              "The idea is a familiar body-macro trope. It needs a conceptual twist that only this story could carry",
+              "Typography is a conventional tracked-sans credit with no relationship to the image. Integrate type into the material, the way the best title sequences do",
+              "The single-hue grade flattens the variety between frames. Introduce a counter-colour or a shift in light to add surprise and rhythm"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "It is the same layout four times: centred condensed grotesk headline, tiny tracked mono metadata label top-left ('CIRCUIT 05/08', '\u25cf LIVE'), a thin accent rule, and a small kV readout. The words change, the composition doesn't",
+              "The 'tasteful AI' kit is all here: near-black ground, a single yellow accent, small caps label, generic condensed sans, hazard-stripe clich\u00e9 for 'power station'",
+              "The type is set to default: the forced hyphenation breaks ('RE- / ENERG- / ISED.', 'VEDA / K') look like auto-wrap, not intention",
+              "The lightning/waveform is a stock glow effect laid behind the type with no material or lighting relationship",
+              "The idea is literal (power station = electricity + hazard tape + voltage numbers). Nothing a viewer would remember"
+            ],
+            "gaps": [
+              "It has no image or world. Build a real visual subject with light and texture (the decommissioned station itself) instead of a glow line on black",
+              "It needs typography with a point of view: varied scale, cropping, interaction with the image, and line breaks that are deliberate instead of overflow",
+              "The composition and motion repeat. Each frame needs a different layout and choreography instead of a word-swap template"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.3,
+        "cost_usd": 0.1441752,
+        "tokens": 70268,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 6,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "The same directional-blur push is used as the transition into almost every shot, so the intros become predictable by the third act.",
+        "Transition frames are mush. 'PETRA' and 'SUB' are smeared ghosts and 'IRCUIT 03/08' is clipped at the frame edge mid-move.",
+        "The 0 kV shot is near-empty: just the bolt, a LIVE tag and a counter. It reads as a gap, not a breath.",
+        "The last ~2 s are almost static (change/s \u224822). With a 2.77 s longest shot, pace fails the 2.5 s limit.",
+        "The lightning bolt is a generic glow-line effect with similar shapes shot to shot. The waveform variant in NULLFORM is the only real departure.",
+        "In 'RE-ENERG-ISED.' the line spacing is so tight that the letters overlap, and the pile-up looks accidental rather than designed.",
+        "The giant '08' ghost numeral behind VEDA K is low-contrast and fights the headline instead of framing it."
+      ],
+      "gaps": [
+        "Motion has little physical weight. The type arrives with a blur reveal and then sits still. Letters don't overshoot, there's no stagger, and the voltage isn't turned into motion that pushes the type around. The rise from 2 kV to 39 kV should visibly increase speed, shake and density across the circuits, and it barely does.",
+        "Transitions are a single device repeated. Top work would build cut-specific handoffs: the bolt drawing the next name, the counter bar wiping into the hazard stripes, the yellow flood triggered by an arc discharge. Here every shot simply blurs out and in.",
+        "Sound is a competent but stock structure: a four-on-floor tick, one white-noise riser from 7.5 to 9.4 s, and two downward sweep impacts. The thin layering between hits, the lack of electrical sound design (hum, crackle, relay clunks tied to the kV readout) and the dead tail leave the audio generic rather than authored."
+      ]
+    },
+    "meta": {
+      "seconds": 25.9,
+      "cost_usd": 0.18476579999999998,
+      "tokens": 74943,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "substation.mp4: 15.0s, 14 shots, median 0.90s, longest 2.77s\nper-second change: [53.0, 47.8, 121.4, 121.1, 120.8, 118.4, 115.1, 46.7, 114.7, 46.0, 116.7, 127.1, 22.6, 22.8]\nPACE: FAIL \u2014 longest shot 2.8s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 4,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 4.5,
+    "craft": 5.0,
+    "originality": 2,
+    "sound": 6
+  },
+  "full_overall": 3.94,
+  "cost_usd": 0.623,
+  "judge_seconds": 128.3,
+  "verdict": "FAIL"
+}

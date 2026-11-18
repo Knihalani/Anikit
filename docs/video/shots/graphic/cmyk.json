@@ -1,0 +1,5 @@
+{ "size": [1920, 1080], "background": "#ffffff", "scenes": [ { "duration": 1, "layers": [
+  { "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=960&h=1080", "fit": "cover", "x": 0, "y": 0, "anchor": "topLeft", "width": 960, "height": 1080 },
+  { "src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58&w=960&h=1080", "fit": "cover", "x": 960, "y": 0, "anchor": "topLeft", "width": 960, "height": 1080,
+    "halftone": { "cell": 9, "angle": 0, "ink": "cmyk", "paper": "#fbf8f2" } }
+] } ] }

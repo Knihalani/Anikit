@@ -1,0 +1,932 @@
+{
+  "name": "octava-v4",
+  "tags": [
+    "event-promo",
+    "kinetic-type"
+  ],
+  "refs": [
+    "xk-studio-offfmx-2025-main-titles",
+    "studio-river-motion-plus-design-tokyo-2024",
+    "game-of-thrones"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 6.0,
+      "composition": 5.0,
+      "typography": 5.0,
+      "colour": 5.0,
+      "light_texture": 3.0,
+      "motion": 4.5,
+      "craft": 4.0,
+      "originality": 4.0
+    },
+    "overall": 4.56,
+    "judged_professional": "0/6",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a real material or light world; the only depth is a flat vector over a noise filter. A's physical materials show what it lacks",
+      "The squares-to-letters build needs choreography with rhythm tied to actual sound. Three near-identical frames show little happening",
+      "The typography needs a point of view beyond a modular pixel wordmark plus default grotesk metadata: scale contrast, interplay with the staff, surprise",
+      "It has no real light, material or depth. The grain is applied to everything evenly, and nothing is lit or physical, unlike A's engraved brass and miniatures",
+      "The motion is squares moving on one fixed grid. It needs camera, scale changes and varied scenes choreographed into a build",
+      "The idea needs a second layer beyond 'notes become letters': the wordmark should sound or perform music, or show something specific to this festival",
+      "Find an idea beyond 'notes = pixels = logo'. C builds a world and a story; D only arranges blocks. Make the sound itself shape the image (rhythm, resonance, instruments, space)",
+      "Add real material and light: printed, physical or rendered surfaces, depth and shadow, instead of flat squares with a grain overlay",
+      "Choreograph a progression with scale and variety: avoid repeating one blue grid layout and give the typography its own expressive behaviour and contrast, not a template end-card",
+      "No real light, texture or material. Even a graphic piece at A's level would need printed, physical or tactile qualities rather than a noise overlay on flat fills",
+      "The typography needs real craft: the modular wordmark is a grid exercise, and the supporting type is default grotesk with no scale or layout idea",
+      "The motion needs choreography that surprises, such as notes that play, collide or perform the music, instead of squares rearranging on one repeated layout and then cutting to a template end card",
+      "Replace the flat squares with real light, material or physical sound behaviour so the notes have weight; right now it is vector default plus grain",
+      "Give the typography a point of view beyond a modular pixel font and a default grotesk; the date and info line need scale and placement ideas",
+      "Add surprise and choreographic variety; the frames are one grid layout repeated, unlike the transformations of space in A",
+      "Give the notes physical weight and timing that comes from the music itself, with sync, rhythm and impact, instead of squares toggling on a grid. Right now there is none of the choreographed material storytelling that D has.",
+      "Replace the slide-like end card (headline, date line, caps metadata row) with a typographic system that grows out of the staff idea, with real scale contrast and integration between type and image.",
+      "Add real light and material: a print, ink or physical-object treatment, or lit 3D, so that each frame works as a poster rather than flat vectors under a noise filter."
+    ],
+    "tells": [
+      "The structure repeats like a slide deck: three nearly identical blue frames of scattered squares with one accent colour added",
+      "Formulaic 'tasteful generated' look: a saturated single ground, one orange accent, small tracked-caps labels ('BASEL \u00b7 8 STAGES \u00b7 41 PREMIERES'), a generic grotesk and a bold sans date line",
+      "The texture is an applied noise overlay, not material. The light is flat and unmotivated",
+      "The end card is a template poster lockup: a pixel-block wordmark, a rule, a date, a footer of metadata",
+      "The concept (notes on a staff turning into a block letterform) is literal. It is a diagram of 'music becomes type'",
+      "Odd framing: the fourth frame is inset on a cream border, which breaks the system's consistency",
+      "The concept is literal: notes on a piano-roll or stave grid snap together into a modular pixel 'OCTAVA' wordmark. That is the obvious first idea for a music festival",
+      "Frames 1 to 3 repeat one layout (blue field, white squares, small vertical label at right) with only the squares moved. It reads as slide-deck structure",
+      "Frame 4 is almost empty: black with tiny corner fragments and a cream border, so little is happening",
+      "The palette is the stock 'Swiss-revival' formula: International Klein-ish blue, off-white and one orange-red accent, with a uniform noise overlay standing in for texture",
+      "The end card stacks a default bold grotesk date over a small tracked-caps info row, a template poster lock-up; the fictional '2027' festival fits generated spec work",
+      "Idea is literal and obvious: a music festival rendered as squares on a staff (note letters D\u2013C\u2013B\u2013A\u2013G down the side) that assemble into the name. It is the first thought, executed as a diagram",
+      "Flat vector squares on a uniform blue ground with overlay grain. No light, no depth, no material. The grain is a filter, not texture",
+      "Same layout across the first three frames with squares just repositioned; frame 4 is an almost empty black field with a few fragments. Little is happening",
+      "End card is a template festival lockup: pixel-grid display wordmark, bold-grotesk date, single accent orange on '2027', small tracked-caps info line ('BASEL \u00b7 8 STAGES \u00b7 41 PREMIERES'). Generic, with one accent colour",
+      "Faint outlined 'OCTAVA' behind the squares and a vertical rotated caption are stock 'Swiss-poster' moves with no specific typographic idea",
+      "The core conceit (piano-roll note blocks on a staff assembling into modular letterforms) is reasonable but literal: music festival \u2192 notes \u2192 logo",
+      "Flat vector squares on a flat electric-blue ground with only a grain overlay for texture. No light, material or depth",
+      "Generic templated system: a single orange accent, a generic grotesk, a bold-sans date line, and tracked-caps micro-labels ('BASEL \u00b7 8 STAGES \u00b7 41 PREMIERES') that read like generated filler copy",
+      "Frame 4 is almost empty, with stray glyph fragments on a framed black field. It looks like an unresolved or broken state, not a designed beat",
+      "The end card is a standard poster-template lockup: big wordmark, rule, date, small caps footer",
+      "A reasonable conceit (a piano-roll grid of notes assembling into pixel letterforms) but it is the literal, expected reading of 'music festival'",
+      "Klein blue, cream squares, a single orange accent and an applied grain overlay make a by-the-numbers Swiss-revival palette with filter texture and no real material",
+      "Supporting type is a default grotesk: tracked small caps 'FESTIVAL FOR NEW MUSIC \u00b7 BASEL \u00b7 8 STAGES \u00b7 41 PREMIERES' set like a template lock-up",
+      "Frame 4 is almost empty (six dim corner fragments on black), and the end card is a standard poster layout of logo, date and accent year",
+      "The ghosted outline wordmark behind the grid is a stock motion-template device; the fictional 2027 event details read as generated filler",
+      "The idea is sound but literal. Notes sit on a staff labelled D\u2013C\u2013B\u2013A\u2013G\u2013F\u2013E\u2013D and then group into a modular 'OCTAVA' wordmark. That reads as a direct diagram of 'music festival = notes', not something a viewer would remember.",
+      "The end card is the generic tasteful-AI layout: dark ground, a big modular headline, a bold-sans date line, one orange accent, and small tracked-caps labels in a row along the bottom ('FESTIVAL FOR NEW MUSIC', 'BASEL \u00b7 8 STAGES \u00b7 41 PREMIERES').",
+      "Frame 4 is almost empty: a black field with six grey corner fragments inside an unexplained cream border that appears nowhere else. It looks like a rendering artefact, not a designed transition.",
+      "The 'texture' is a uniform noise overlay on flat vector squares. There is no real light, material or depth.",
+      "Every square is identical and placed like a programmatic grid. The motion implied between frames is squares appearing and recolouring, with little weight or choreography.",
+      "The ghosted outline 'OCTAVA' behind the staff and the rotated sidebar credit are stock 'Swiss identity' moves, set in a default-looking grotesk."
+    ]
+  },
+  "refs_summary": {
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.5,
+      "judged_professional": "6/6",
+      "mean_rank": 2
+    },
+    "studio-river-motion-plus-design-tokyo-2024": {
+      "overall": 6.62,
+      "judged_professional": "6/6",
+      "mean_rank": 3
+    },
+    "game-of-thrones": {
+      "overall": 9.25,
+      "judged_professional": "6/6",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.79,
+  "delta": -3.23,
+  "trials": [
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "candidate",
+        "D": "studio-river-motion-plus-design-tokyo-2024"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "The idea belongs only to this piece: the whole world is a clockwork map that builds itself, so the geography is the story",
+              "Physical materials throughout: engraved metal bands, brass gears, carved wood. Warm practical light and a real tilt-shift depth of field",
+              "The credits sit inside the world as small Trajan-style caps with heraldic sigils. They are placed on the map and don't float over it",
+              "Strong choreography: the astrolabe opens on blown-out sunlight, cuts down to city mechanisms rising, then to the cartographic map, then the band closes into the logo lockup",
+              "The opening and closing images mirror each other: the burst of light and the engraved band frame the whole sequence"
+            ],
+            "gaps": [
+              "The colour is mostly sepia and gold. A sharper accent would help it stand out from the house look of the fantasy genre",
+              "The credit type is conventional Trajan-like caps and is very small against busy texture, so it reads poorly in places",
+              "The flare-heavy logo resolve leans on a familiar light-burst clich\u00e9, more than the inventive body of the sequence does"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Each section carries a studio name (Boldtron, Medusa Lab) and there is an OFFF MX lockup: a festival-titles structure where each studio delivers its own world",
+              "Rich, specific materials: mesh, felt, fibres, glass, translucent resin, crystalline clusters. The light is studio-grade and has believable subsurface scattering",
+              "The palettes are deliberate and unusual: dusty rose over black rock, sage and peach, olive and ice-blue",
+              "The frames are dense and layered, with organic forms built up from many materials, not stock primitives"
+            ],
+            "gaps": [
+              "No single unifying idea: it reads as a set of separate studio vignettes with no through-line or narrative build",
+              "The type is a plain bold grotesk label in the corner with no integration into the image. The OFFF lockup is the only typographic moment",
+              "The motion is implied only by changes of scene. There is no visible transition logic or choreography linking the worlds, unlike A's continuous mechanism"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent blood-red palette carries it from organic tissue to liquid to an iris to a neon alley to a crater-like ripple. That reads as a deliberate visual thread",
+              "Credits name real motion designers (Nahuel Salcedo, Masanobu Hiraoka), which fits a festival-titles collaboration",
+              "Good material work: viscous chrome liquid, a macro iris, wet tissue, a rain-lit street with volumetric haze",
+              "Two-colour treatment of the names (red and white) shows some typographic intent"
+            ],
+            "gaps": [
+              "The cyberpunk neon alley and the giant-eye close-up are genre clich\u00e9s. It needs a specific concept in place of a mood board of 'red and visceral'",
+              "The type is a generic DIN-like sans placed in the centre. It never interacts with the matter around it, unlike A's credits",
+              "The frames feel uneven in craft and aspect ratio. The jump from abstract fluid to a game-engine street breaks consistency"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 5,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "The structure repeats like a slide deck: three nearly identical blue frames of scattered squares with one accent colour added",
+              "Formulaic 'tasteful generated' look: a saturated single ground, one orange accent, small tracked-caps labels ('BASEL \u00b7 8 STAGES \u00b7 41 PREMIERES'), a generic grotesk and a bold sans date line",
+              "The texture is an applied noise overlay, not material. The light is flat and unmotivated",
+              "The end card is a template poster lockup: a pixel-block wordmark, a rule, a date, a footer of metadata",
+              "The concept (notes on a staff turning into a block letterform) is literal. It is a diagram of 'music becomes type'",
+              "Odd framing: the fourth frame is inset on a cream border, which breaks the system's consistency"
+            ],
+            "gaps": [
+              "It needs a real material or light world; the only depth is a flat vector over a noise filter. A's physical materials show what it lacks",
+              "The squares-to-letters build needs choreography with rhythm tied to actual sound. Three near-identical frames show little happening",
+              "The typography needs a point of view beyond a modular pixel wordmark plus default grotesk metadata: scale contrast, interplay with the staff, surprise"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.0,
+        "cost_usd": 0.15804200000000002,
+        "tokens": 71943,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "studio-river-motion-plus-design-tokyo-2024",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A single idea that belongs only to this piece: the world drawn as a clockwork map that builds itself, so the credits work as an atlas and set up the story",
+              "Real material and light throughout: engraved brass and leather on the astrolabe band, carved wood, dusty miniature towers, a rich sunburst flare behind the title",
+              "The camera moves in a choreographed way: it flies over the map, cogs rise out of it, and it ends on the armillary title lock-up, which bookends the opening frame",
+              "Credits use a small-caps Trajan-style serif with house sigils, placed inside the scene in perspective rather than laid on top",
+              "Every frame differs in scale and subject (macro band, aerial city, mechanism close-up, parchment map, emblem), yet the world stays the same"
+            ],
+            "gaps": [
+              "The credit type is rather small and conventional next to the image. It could gain from more scale contrast",
+              "The parchment-map frame is flatter and lit more evenly than the miniature frames",
+              "The title lock-up uses familiar epic-fantasy flare. It is the least surprising frame"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Strong material work: translucent subsurface hands, glass and liquid forms with embedded parts, woven mesh and fabric, chrome and frosted tubes knotted around red beads",
+              "The palette changes boldly but on purpose from frame to frame: dusty pink, violet night, sky blue, sage green and bottle green",
+              "Small bold-sans credits name each contributing studio (Boldtron, Medusa Lab) next to an OFFF MX mark. This matches a festival-titles format with a shared brief",
+              "Every frame has a distinct sculptural subject with depth and real lighting. It is not a repeated layout"
+            ],
+            "gaps": [
+              "The shared theme is loose. It reads as a showcase of studio segments, not one idea that builds",
+              "The typography is a small default-weight label in the corner and does not interact with the image",
+              "Organic-surreal 3D (hands, tubes, fibres) is a well-worn festival-reel idiom, so it surprises less than A"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "The red-flesh palette holds together across very different scenes: viscous terrain with liquid-metal droplets, a glassy shattered mass with teeth, a macro iris, a neon alley, and a rippling granular surface",
+              "A credible macro render of the iris, with a reflection in the pupil; the alley has volumetric haze and lit signage",
+              "Credits in a condensed tech-sans with a red first-letter accent. They are competent but generic",
+              "The jump between the surreal macro scenes and the cyberpunk alley suggests segments by different artists, which fits a collaborative festival title"
+            ],
+            "gaps": [
+              "No single governing idea: the scenes link through colour only, not through a concept like A's mechanical map",
+              "The cyberpunk alley and the eye close-up are stock genre images. Replace them with images only this piece could have",
+              "The type is a generic centred or lower-left grotesk with no part in the image. Give it a point of view or work it into the scene"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.62,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 5,
+              "craft": 5,
+              "originality": 4
+            },
+            "tells": [
+              "The concept is literal: notes on a piano-roll or stave grid snap together into a modular pixel 'OCTAVA' wordmark. That is the obvious first idea for a music festival",
+              "Frames 1 to 3 repeat one layout (blue field, white squares, small vertical label at right) with only the squares moved. It reads as slide-deck structure",
+              "Frame 4 is almost empty: black with tiny corner fragments and a cream border, so little is happening",
+              "The palette is the stock 'Swiss-revival' formula: International Klein-ish blue, off-white and one orange-red accent, with a uniform noise overlay standing in for texture",
+              "The end card stacks a default bold grotesk date over a small tracked-caps info row, a template poster lock-up; the fictional '2027' festival fits generated spec work"
+            ],
+            "gaps": [
+              "It has no real light, material or depth. The grain is applied to everything evenly, and nothing is lit or physical, unlike A's engraved brass and miniatures",
+              "The motion is squares moving on one fixed grid. It needs camera, scale changes and varied scenes choreographed into a build",
+              "The idea needs a second layer beyond 'notes become letters': the wordmark should sound or perform music, or show something specific to this festival"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.6,
+        "cost_usd": 0.1572984,
+        "tokens": 71909,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Single deliberate monochrome red world carried across very different scenes: fleshy terrain with liquid-metal splash, glass shard explosion around a fanged mouth, macro iris, rain-soaked neon alley, a crater-like ripple field",
+              "Material work is real: subsurface on the flesh, refraction and caustics in the liquid and glass, wet reflections in the alley, granular surface in the last frame",
+              "Implied choreography: the eye to pupil to world to ripple-portal progression suggests match-cuts and dives in scale rather than a slide deck",
+              "Credits are set as small names in a clean sans with a red/white two-tone first name. Functional, but the type has little ambition and sits on top of the image instead of living in it",
+              "Reads as a collaborative festival/conference title sequence with multiple contributing artists. The variety is the point, and that costs it some overall coherence"
+            ],
+            "gaps": [
+              "Typography is an afterthought next to C. Give the credits a face and an integration with the world (embossed, cast, reflected) rather than an overlay",
+              "The segments feel like a chain of separate artists' vignettes. A single physical through-line (one object or transition logic) would turn it from showcase to film",
+              "The cyberpunk alley is the most generic image in the set. Replace stock genre imagery with something only this piece's red-flesh universe could produce"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Unusual, confident palette that shifts per scene: dusty pink over rust terrain, violet night, clean sky blue, pistachio green with mesh and fibre, deep green with frosted glass",
+              "Dense, layered materials: translucent hands with internal growth, tangled glass/organic sculptures, knit mesh, hair-like strands, chrome and frosted acrylic tubes with beaded clusters. These are tactile, not stock primitives",
+              "Bespoke OFFF MX wordmark plus artist-name credits in heavy grotesk. Consistent with a real festival title sequence featuring contributing studios",
+              "Every frame stands up as a poster, and the variety between frames implies a multi-artist sequence with real 3D choreography (the volcanic eruption, the growing forms)"
+            ],
+            "gaps": [
+              "Credit type (bold sans in the top-left) is placed like a label and never interacts with the forms. C's credits are set into the world",
+              "The 'organic sculpture on a landscape' language is familiar from the 2018\u20132022 3D festival scene. It needs a stranger central idea to stand out",
+              "Segments read as individual contributions rather than one directed film. Transitions and a shared narrative device would give it C's cumulative build"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A singular, ownable idea: the world as a clockwork map that builds itself, with an astrolabe sun whose bands tell the backstory. Only this show could have it",
+              "Typography with a point of view: a custom Trajan-like engraved title cast into metal, and credits set in small spaced caps with house sigils, tucked into the miniature world",
+              "Real light and material: brass, wood and parchment with a strong backlit glow, shallow depth of field and tilt-shift scale that make the miniatures read as physical",
+              "Clear choreography: macro on the astrolabe band, flyover of the rising mechanical cities, map travel to King's Landing, pull back to the title lockup. A structured arc with a payoff"
+            ],
+            "gaps": [
+              "Benchmark entry. Remaining gap: the palette is a fairly conventional warm-sepia fantasy grade",
+              "The map frames are flatter and less textured than the clockwork scenes",
+              "The end-title lockup with radiating light is the most expected moment in an otherwise inventive piece"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "Idea is literal and obvious: a music festival rendered as squares on a staff (note letters D\u2013C\u2013B\u2013A\u2013G down the side) that assemble into the name. It is the first thought, executed as a diagram",
+              "Flat vector squares on a uniform blue ground with overlay grain. No light, no depth, no material. The grain is a filter, not texture",
+              "Same layout across the first three frames with squares just repositioned; frame 4 is an almost empty black field with a few fragments. Little is happening",
+              "End card is a template festival lockup: pixel-grid display wordmark, bold-grotesk date, single accent orange on '2027', small tracked-caps info line ('BASEL \u00b7 8 STAGES \u00b7 41 PREMIERES'). Generic, with one accent colour",
+              "Faint outlined 'OCTAVA' behind the squares and a vertical rotated caption are stock 'Swiss-poster' moves with no specific typographic idea"
+            ],
+            "gaps": [
+              "Find an idea beyond 'notes = pixels = logo'. C builds a world and a story; D only arranges blocks. Make the sound itself shape the image (rhythm, resonance, instruments, space)",
+              "Add real material and light: printed, physical or rendered surfaces, depth and shadow, instead of flat squares with a grain overlay",
+              "Choreograph a progression with scale and variety: avoid repeating one blue grid layout and give the typography its own expressive behaviour and contrast, not a template end-card"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.4,
+        "cost_usd": 0.161347,
+        "tokens": 72121,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "studio-river-motion-plus-design-tokyo-2024",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea that only this piece could have: the world is a clockwork map that builds itself, so the geography and politics of the story become the title device",
+              "Real material and light: tooled leather and metal on the astrolabe band, wood and brass on the mechanisms, burnt-sun backlight with flare and bloom",
+              "Choreography from frame to frame: it opens on an extreme close-up of the band, flies over the map, mechanisms rise up, pulls back to a map overview, then resolves on the logo lockup with the sigil band repeated, so the opening and closing frames rhyme",
+              "Credits are set in a classical engraved serif with a small sigil glyph and placed in the scene with its perspective, not laid on top as a slide",
+              "Each frame is different in scale and depth: macro, aerial and low-angle mechanism shots"
+            ],
+            "gaps": [
+              "This is the reference entry. The only clear weakness is that the credit type is small and conventional, and could be part of the world's construction rather than sitting in it",
+              "The final logo frame leans on a familiar bloom-and-rays lockup that is less inventive than the map sequence before it",
+              "The palette stays in safe sepia and bronze, and a sharper colour signature for each location could push it further"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, tactile material work: translucent silicone hands, mesh fabric, frayed fibres, glass and chrome tubing, beaded clusters. Every frame has layered surfaces with a real sense of how they were simulated",
+              "An unusual and deliberate palette for each scene (dusty rose on black rock, sky blue, sage, bottle green), yet it holds together as one world",
+              "Studio name cards (Boldtron, Medusa Lab, OFFF MX) suggest a festival-titles format with several contributors, which matches professional practice",
+              "The scenes vary in scale and composition: macro tangle, horizon landscape, central totem"
+            ],
+            "gaps": [
+              "The idea is a showcase of studio segments rather than one through-line, and nothing ties the frames together the way A's clockwork map does",
+              "The type is functional, with bold sans name labels placed top-left like captions and no integration with the image",
+              "Little evidence of choreography between scenes: they read as separate vignettes, not a sequence that builds to a resolution"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "A committed single-hue red world carried across very different subjects (fleshy terrain, fluid splash, glass shards, iris macro, neon alley, ripple texture), which shows art direction",
+              "Credits are placed in the scene with a red/white split on names, which is a small typographic decision",
+              "The subject matter leans on genre stock imagery: iris macro with a reflection, cyberpunk alley with katakana signage, liquid splash. These are familiar festival-title tropes",
+              "Frame-to-frame logic is loose; the transitions from organic matter to eye to city to ripple suggest a mood montage rather than a constructed idea"
+            ],
+            "gaps": [
+              "It needs one governing concept, as A has, rather than a montage of red-tinted moods (flesh, eye, city)",
+              "The typography is a default condensed sans at small size and is never part of the image. It needs a typographic point of view",
+              "The cyberpunk alley and iris close-up are clich\u00e9s and should be replaced with imagery specific to this piece's subject"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 5,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "The core conceit (piano-roll note blocks on a staff assembling into modular letterforms) is reasonable but literal: music festival \u2192 notes \u2192 logo",
+              "Flat vector squares on a flat electric-blue ground with only a grain overlay for texture. No light, material or depth",
+              "Generic templated system: a single orange accent, a generic grotesk, a bold-sans date line, and tracked-caps micro-labels ('BASEL \u00b7 8 STAGES \u00b7 41 PREMIERES') that read like generated filler copy",
+              "Frame 4 is almost empty, with stray glyph fragments on a framed black field. It looks like an unresolved or broken state, not a designed beat",
+              "The end card is a standard poster-template lockup: big wordmark, rule, date, small caps footer"
+            ],
+            "gaps": [
+              "No real light, texture or material. Even a graphic piece at A's level would need printed, physical or tactile qualities rather than a noise overlay on flat fills",
+              "The typography needs real craft: the modular wordmark is a grid exercise, and the supporting type is default grotesk with no scale or layout idea",
+              "The motion needs choreography that surprises, such as notes that play, collide or perform the music, instead of squares rearranging on one repeated layout and then cutting to a template end card"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.6,
+        "cost_usd": 0.16037859999999998,
+        "tokens": 72067,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "candidate",
+        "C": "studio-river-motion-plus-design-tokyo-2024",
+        "D": "xk-studio-offfmx-2025-main-titles"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "The idea belongs to this piece alone: the world map is a clockwork model that builds itself, so the credits work as a guide to the story's geography",
+              "Real material and light: engraved metal bands, worn brass gears, parchment map, and a warm sun-core glow lighting each piece",
+              "Credits sit inside the camera move and come with heraldic sigils. Small tracked serif caps are justified here because they carry the period voice",
+              "The armillary band at the open returns as the logo lock-up at the end, a deliberate bookend; frames move from macro to aerial to map to emblem",
+              "Dense, layered miniatures with readable depth of field; every frame works as a still"
+            ],
+            "gaps": [
+              "The title lock-up uses a fairly conventional trailer-style serif with bevel glow, which is less inventive than the world it sits in",
+              "The palette stays in a safe bronze-and-sepia range; one disruptive accent could sharpen some beats",
+              "The map frame is flatter and less dimensional than the clockwork shots around it"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Rich, specific materials: subsurface flesh-like hands, fabric mesh, fibres, glass tubes, coral-like growths. These are layered and art-directed, not stock primitives",
+              "Each shot has its own unusual palette (blush and black, violet volcano, sky blue, lime and textile, bottle green) while the whole stays coherent",
+              "The bespoke OFFF MX wordmark and artist name cards fit festival-titles conventions; it reads as a multi-artist collaboration",
+              "The volcano eruption and the mutating forms suggest varied choreography and scale changes between shots"
+            ],
+            "gaps": [
+              "Name cards are default bold sans dropped top-left on every shot, with no interaction with the image",
+              "The images form an anthology of 3D studies but no single idea links them the way A's map does",
+              "The organic-3D-surrealism style is familiar from the festival circuit, so it is strong but less surprising"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A committed blood-red monochrome over several kinds of image (organic landscape, fluid sim, eye macro, neon Tokyo alley, cratered surface) suggests a deliberate visual grammar",
+              "Real simulation and render work: liquid droplets, a glassy splash form, detailed iris texture, volumetric haze in the alley",
+              "Credits are set in a condensed sans with a red-and-white split on the name, which is a small but considered touch",
+              "Cuts between macro and environment imply rhythm and changes of scale"
+            ],
+            "gaps": [
+              "Typography is a generic tech sans centred or dropped in; it needs a typographic system that responds to the liquid and organic imagery",
+              "The imagery is drawn from stock genre language (eye close-up, cyberpunk alley, splash) rather than one specific idea",
+              "Shots feel like separate showcase renders; there is little visible connection between frames compared with A's continuous world"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 5,
+              "craft": 5,
+              "originality": 4
+            },
+            "tells": [
+              "A reasonable conceit (a piano-roll grid of notes assembling into pixel letterforms) but it is the literal, expected reading of 'music festival'",
+              "Klein blue, cream squares, a single orange accent and an applied grain overlay make a by-the-numbers Swiss-revival palette with filter texture and no real material",
+              "Supporting type is a default grotesk: tracked small caps 'FESTIVAL FOR NEW MUSIC \u00b7 BASEL \u00b7 8 STAGES \u00b7 41 PREMIERES' set like a template lock-up",
+              "Frame 4 is almost empty (six dim corner fragments on black), and the end card is a standard poster layout of logo, date and accent year",
+              "The ghosted outline wordmark behind the grid is a stock motion-template device; the fictional 2027 event details read as generated filler"
+            ],
+            "gaps": [
+              "Replace the flat squares with real light, material or physical sound behaviour so the notes have weight; right now it is vector default plus grain",
+              "Give the typography a point of view beyond a modular pixel font and a default grotesk; the date and info line need scale and placement ideas",
+              "Add surprise and choreographic variety; the frames are one grid layout repeated, unlike the transformations of space in A"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 30.1,
+        "cost_usd": 0.154576,
+        "tokens": 71788,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "candidate",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "studio-river-motion-plus-design-tokyo-2024",
+        "D": "game-of-thrones"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "The idea is sound but literal. Notes sit on a staff labelled D\u2013C\u2013B\u2013A\u2013G\u2013F\u2013E\u2013D and then group into a modular 'OCTAVA' wordmark. That reads as a direct diagram of 'music festival = notes', not something a viewer would remember.",
+              "The end card is the generic tasteful-AI layout: dark ground, a big modular headline, a bold-sans date line, one orange accent, and small tracked-caps labels in a row along the bottom ('FESTIVAL FOR NEW MUSIC', 'BASEL \u00b7 8 STAGES \u00b7 41 PREMIERES').",
+              "Frame 4 is almost empty: a black field with six grey corner fragments inside an unexplained cream border that appears nowhere else. It looks like a rendering artefact, not a designed transition.",
+              "The 'texture' is a uniform noise overlay on flat vector squares. There is no real light, material or depth.",
+              "Every square is identical and placed like a programmatic grid. The motion implied between frames is squares appearing and recolouring, with little weight or choreography.",
+              "The ghosted outline 'OCTAVA' behind the staff and the rotated sidebar credit are stock 'Swiss identity' moves, set in a default-looking grotesk."
+            ],
+            "gaps": [
+              "Give the notes physical weight and timing that comes from the music itself, with sync, rhythm and impact, instead of squares toggling on a grid. Right now there is none of the choreographed material storytelling that D has.",
+              "Replace the slide-like end card (headline, date line, caps metadata row) with a typographic system that grows out of the staff idea, with real scale contrast and integration between type and image.",
+              "Add real light and material: a print, ink or physical-object treatment, or lit 3D, so that each frame works as a poster rather than flat vectors under a noise filter."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The frames are dense, organic and sculptural: a translucent hand holding a coral-like heart, a glass-and-amber figure growing upward, tangled fabric, mesh, fibre and pampas forms. Every shot has a different material vocabulary, which shows real look development.",
+              "The palette is deliberate and unusual: dusty pink against oxblood terrain, a hard cyan sky, sage and moss green with mint glass.",
+              "The lighting is motivated and varied, from a backlit volcanic peak to rim-lit glass and soft subsurface on the translucent hand.",
+              "Per-studio credits ('Boldtron', 'Medusa Lab') and a custom OFFF MX lockup suggest a festival title or collaborative opening. That is studio-level production.",
+              "The weak point is the typography: small bold-sans credits laid over the image with little integration."
+            ],
+            "gaps": [
+              "Tie the segments together with one unifying idea. It currently reads as a gallery of beautiful renders rather than a single narrative device like D's clockwork map.",
+              "Make the credits part of the world: lit, occluded or carved into the forms, instead of sans labels pasted on top.",
+              "Build a clearer choreographic arc from frame to frame so the motion has escalation and payoff, not just a sequence of vignettes."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "A committed monochrome-red world runs across very different subjects: flesh-like terrain with liquid metal droplets, a visceral glassy mass, an extreme iris close-up, a neon alley, and a rippling granular surface. It reads as one designed palette, not a filter.",
+              "There is real material work: subsurface flesh, refractive liquid, and wet reflections in the alley.",
+              "The credits name motion artists (Nahuel Salcedo, Masanobu Hiraoka), which points to a collaborative title or festival opener.",
+              "The visual motifs pay off across frames: circles repeat from the pupil to the concentric ripple, suggesting choreographed match-cuts.",
+              "Weaknesses: the typeface is a fairly default condensed sans placed centre or lower-left, and the cyberpunk alley shot is the most generic image in the set."
+            ],
+            "gaps": [
+              "Typography with a point of view. The credits are a default sans laid on top, while D's credits carry sigils and fit the world.",
+              "Swap the stock cyberpunk alley for an image only this piece could have, to keep the strangeness of the flesh and liquid frames.",
+              "Sharpen the narrative device. The circle motif hints at choreography, but the piece needs one clear idea that links every scene, as D's mechanical map does."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "The idea belongs to this piece alone: a clockwork, pop-up map of the world that builds itself, with cities rising from gears. It became iconic and widely imitated.",
+              "The engraved armillary band at the start and the sun-burst behind the final title lockup bracket the piece, so the frames clearly show a structured arc.",
+              "The credit typography is carefully chosen: a classical spaced serif with a heraldic sigil beside each name, placed into the miniature landscape and the map labels.",
+              "The materials are real: aged brass, carved wood and bone-like towers, a parchment map, and warm, motivated light with lens bloom.",
+              "The frames vary in scale and camera (macro on the band, a sweep over the city, an aerial map) while staying in one consistent world."
+            ],
+            "gaps": [
+              "This is the benchmark entry.",
+              "The palette is largely warm sepia and brass. More colour contrast between regions could add variety.",
+              "The final lockup's sun-burst glow is slightly conventional next to the inventiveness of the mechanical sequence."
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "C",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 36.6,
+        "cost_usd": 0.16899019999999998,
+        "tokens": 72492,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 5,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": false
+      },
+      "defects": [
+        "Black interstitial shot is mostly empty: six grey corner fragments in the top band, nothing else. It reads as dead air or a loading state, not a composed frame.",
+        "During the wordmark assembly, semi-transparent ghost tiles and a stray triangular shard sit off the grid. The letters 'A' and 'V' break up raggedly ('OCTAVI'/'OCTAR!'), which looks like a glitch, not a designed build.",
+        "Thin yellow-green vertical rule and the rotated caption column split the blue frames. Tiles crop hard against that rule.",
+        "Red horizontal scanline band under the title is low-contrast and close to moir\u00e9 at 100%. It reads as a compression artefact rather than an intended texture.",
+        "Grain is a uniform overlay with no light or falloff, so the surfaces stay flat.",
+        "Tile motion in the pairs is mostly cuts between positions and fades; little visible ease, overshoot or settle."
+      ],
+      "gaps": [
+        "Motion: the piano-roll-to-wordmark idea is strong, but the hand-off is a dissolve-and-scatter, not choreography. Each tile should travel along its pitch row with eased arrivals, overlap and a weighted lock into the letterform. The peak (~5s) arrives at mid-point and is followed by an empty black beat instead of a build to 70% and a release.",
+        "Sound: sparse plucked synth notes with few partials and short static decays, then a few broadband hits from ~6.2s. It is thin and reads as generated. Note onsets are not clearly tied to individual tiles landing, which is the obvious payoff for a music-festival note grid.",
+        "Finish: flat vector fills under a global grain filter, with no light, depth or material response. The assembly frames have messy transitional states (ghost alphas, shards). The black mid-section breaks the otherwise consistent blue/orange system without earning it."
+      ]
+    },
+    "meta": {
+      "seconds": 26.0,
+      "cost_usd": 0.16561019999999999,
+      "tokens": 72284,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "octava-v4.mp4: 11.0s, 5 shots, median 2.27s, longest 4.00s\nper-second change: [16.8, 25.0, 24.9, 27.1, 15.4, 129.4, 25.6, 83.6, 37.4, 12.4]\nPACE: FAIL \u2014 longest shot 4.0s > 2.5s; median shot 2.3s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 6.0,
+    "composition": 5.0,
+    "typography": 5.0,
+    "colour": 5.0,
+    "light_texture": 3.0,
+    "motion": 5.25,
+    "craft": 5.5,
+    "originality": 4.0,
+    "sound": 5
+  },
+  "full_overall": 4.86,
+  "cost_usd": 1.126,
+  "judge_seconds": 222.3,
+  "verdict": "FAIL"
+}

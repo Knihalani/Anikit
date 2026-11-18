@@ -1,0 +1,270 @@
+[
+ {
+  "name": "3d-showcase_showcase",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-3d:docs/video/shots/3d-showcase/showcase.mp4",
+  "tags": [
+   "cg-3d",
+   "product-launch"
+  ]
+ },
+ {
+  "name": "ceiling1_lastlight_lastlight",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-ceiling1:deliverables/ceiling1/lastlight/lastlight.mp4",
+  "tags": [
+   "cg-3d",
+   "title-sequence",
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "ceiling1_nightchorus_nightchorus",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-ceiling1:deliverables/ceiling1/nightchorus/nightchorus.mp4",
+  "tags": [
+   "kinetic-type",
+   "title-sequence"
+  ]
+ },
+ {
+  "name": "ceiling1_nightchorus_v2_street",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-ceiling1:deliverables/ceiling1/nightchorus/v2/street.mp4",
+  "tags": [
+   "kinetic-type",
+   "cg-3d",
+   "title-sequence"
+  ]
+ },
+ {
+  "name": "ceiling1_octava_octava",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-ceiling1:deliverables/ceiling1/octava/octava.mp4",
+  "tags": [
+   "event-promo",
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "ceiling2_bloom_bloom",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-ceiling2:deliverables/ceiling2/bloom/bloom.mp4",
+  "tags": [
+   "generative",
+   "motion-design"
+  ]
+ },
+ {
+  "name": "ceiling2_breath_breath",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-ceiling2:deliverables/ceiling2/breath/breath.mp4",
+  "tags": [
+   "data-story",
+   "editorial-data"
+  ]
+ },
+ {
+  "name": "ceiling2_hill_hill",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-ceiling2:deliverables/ceiling2/hill/hill.mp4",
+  "tags": [
+   "illustration"
+  ]
+ },
+ {
+  "name": "graphic_brush",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-graphic:docs/video/shots/graphic/brush.mp4",
+  "tags": [
+   "brand-idents",
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "graphic_grid-choreography",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-graphic:docs/video/shots/graphic/grid-choreography.mp4",
+  "tags": [
+   "kinetic-type",
+   "motion-design"
+  ]
+ },
+ {
+  "name": "graphic_op-art",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-graphic:docs/video/shots/graphic/op-art.mp4",
+  "tags": [
+   "generative"
+  ]
+ },
+ {
+  "name": "graphic_pieces_fold-identity",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-assets:docs/video/shots/graphic/pieces/fold-identity.mp4",
+  "tags": [
+   "brand-idents",
+   "motion-design"
+  ]
+ },
+ {
+  "name": "graphic_pieces_konkrete",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-assets:docs/video/shots/graphic/pieces/konkrete.mp4",
+  "tags": [
+   "event-promo",
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "graphic_pieces_paper-weekend",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-graphic:docs/video/shots/graphic/pieces/paper-weekend.mp4",
+  "tags": [
+   "event-promo",
+   "illustration"
+  ]
+ },
+ {
+  "name": "graphic_pieces_street-ledger",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-assets:docs/video/shots/graphic/pieces/street-ledger.mp4",
+  "tags": [
+   "data-story",
+   "editorial-data"
+  ]
+ },
+ {
+  "name": "graphic_pieces_tempest-collage",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-graphic:docs/video/shots/graphic/pieces/tempest-collage.mp4",
+  "tags": [
+   "illustration",
+   "event-promo"
+  ]
+ },
+ {
+  "name": "illustration_illo-portrait",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-graphic:docs/video/shots/illustration/illo-portrait.mp4",
+  "tags": [
+   "illustration"
+  ]
+ },
+ {
+  "name": "type_1-swiss",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-type:deliverables/type/1-swiss.mp4",
+  "tags": [
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "type_2-editorial",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-type:deliverables/type/2-editorial.mp4",
+  "tags": [
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "type_3-sport",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-type:deliverables/type/3-sport.mp4",
+  "tags": [
+   "broadcast-sports",
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "type_4-terminal",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-type:deliverables/type/4-terminal.mp4",
+  "tags": [
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "type_5-weight-wave",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-type:deliverables/type/5-weight-wave.mp4",
+  "tags": [
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "type_6-seventies",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-type:deliverables/type/6-seventies.mp4",
+  "tags": [
+   "brand-idents",
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "v-sound_calibre9-after",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-sound:deliverables/v-sound/calibre9-after.mp4",
+  "tags": [
+   "cg-3d",
+   "luxury",
+   "product-launch"
+  ]
+ },
+ {
+  "name": "v-sound_offset2027-after",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-sound:deliverables/v-sound/offset2027-after.mp4",
+  "tags": [
+   "kinetic-type",
+   "title-sequence"
+  ]
+ },
+ {
+  "name": "v-sound_physics_drop",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-sound:deliverables/v-sound/physics/drop.mp4",
+  "tags": [
+   "cg-3d"
+  ]
+ },
+ {
+  "name": "v-sound_railyard-after",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-sound:deliverables/v-sound/railyard-after.mp4",
+  "tags": [
+   "product-launch",
+   "motion-design"
+  ]
+ },
+ {
+  "name": "sim_snow",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-sim:deliverables/sim/snow/snow.mp4",
+  "tags": [
+   "cg-3d",
+   "generative"
+  ]
+ },
+ {
+  "name": "sim_unveil",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-sim:deliverables/sim/unveil/unveil.mp4",
+  "tags": [
+   "cg-3d",
+   "product-launch"
+  ]
+ },
+ {
+  "name": "sim_ink",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-sim:deliverables/sim/ink/ink.mp4",
+  "tags": [
+   "generative",
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "mograph_lumen-light",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-mograph:deliverables/mograph/lumen-light.mp4",
+  "tags": [
+   "event-promo",
+   "kinetic-type",
+   "title-sequence"
+  ]
+ },
+ {
+  "name": "mograph_velo-snap",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-mograph:deliverables/mograph/velo-snap.mp4",
+  "tags": [
+   "product-launch",
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "mograph_atlas-precision",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-mograph:deliverables/mograph/atlas-precision.mp4",
+  "tags": [
+   "product-launch",
+   "motion-design"
+  ]
+ },
+ {
+  "name": "mograph_rainwell-fluid",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-mograph:deliverables/mograph/rainwell-fluid.mp4",
+  "tags": [
+   "brand-idents",
+   "motion-design"
+  ]
+ }
+]

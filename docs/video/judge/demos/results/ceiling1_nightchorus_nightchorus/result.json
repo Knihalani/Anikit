@@ -1,0 +1,527 @@
+{
+  "name": "ceiling1_nightchorus_nightchorus",
+  "tags": [
+    "kinetic-type",
+    "title-sequence"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "thank-you-for-smoking",
+    "xk-studio-offfmx-2025-main-titles"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 3,
+      "typography": 4,
+      "colour": 5,
+      "light_texture": 3,
+      "motion": 4,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 3.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a concept tied to the film's subject (as B maps the world and D turns cast names into cigarette packs) rather than a menu of type textures",
+      "Replace the default faces and centred placement with a typographic system that has scale contrast, cropping and integration with the image or space",
+      "Add material, light and depth (real print, neon or physical sources) so the patterns live in a world instead of on a flat colour field",
+      "It has no concept rooted in the film; B and C build a world (a mechanical map, cigarette packaging) that comments on the story, while D only decorates names",
+      "The visual system is inconsistent: one frame drops into generic dark-gradient serif; it needs a single disciplined typographic language with intentional scale and layout variation",
+      "There is no material, light or depth; give the patterns a physical source (neon, print, projection) and choreograph transitions instead of centred name cards",
+      "Find a specific idea tied to the film ('Night Chorus': sound, voices, night). A random rotation of fill textures is not a concept, while A gives each credit a reason to look the way it does",
+      "Break the centred-word-on-flat-field template with real layout, scale contrast and type integrated with image or space, and drop the default condensed sans and the generic label-over-serif card",
+      "Add physical light, material and camera choreography between frames (for example, neon actually glowing in a space, or letters built from real objects) instead of stacked 2D effects and chromatic aberration"
+    ],
+    "tells": [
+      "Slide-deck structure: every frame is a centred name filling the frame on a flat field, with one layout and the words swapped",
+      "The 'Lev Ansari' frame is the textbook AI tell: dark green vignette, a tiny tracked-caps 'CINEMATOGRAPHY' label above a generic editorial italic serif, a single gold accent, an empty frame",
+      "Default condensed grotesk (Bebas/League-Gothic class) with a texture-fill gimmick (moir\u00e9 lines, halftone dots, stripes), plus chromatic-aberration offsets that act as effects with no subject",
+      "The 'Night Chorus' build-up and knock-out of letters is the only motion idea, and it is a stock kinetic-type template move",
+      "Invented-sounding names and a style that switches between frames without any reason in the concept",
+      "The 'Lev Ansari' frame is the textbook generic look: small tracked-caps label ('CINEMATOGRAPHY') above a centred serif italic name on a dark green vignette gradient, which breaks whatever system the other frames had",
+      "The names appear to be fabricated in the style of generated output (Mira Oyelaran, Isak Lindqvist, Lev Ansari, 'Night Chorus')",
+      "Every credit is a centred name filling the frame in a default condensed grotesk; the same layout with the words swapped, slide-deck structure",
+      "Effect with no subject: op-art line fills, halftone dots, RGB chromatic offset, all stacked as surface treatments with no idea of what the film is about",
+      "The fill patterns per letter in 'NIGHT CHORUS' read as a showcase of style presets, not a typographic concept; the dropout frame is just letters toggled off",
+      "No image, world or light; pastiche of a Saul Bass / Kyle Cooper kinetic-type look without the rigour",
+      "The same composition repeats: one name, centred, filling the frame, on a flat field. The structure is a slide deck with the words swapped",
+      "Frame 3 is the textbook 'tasteful AI' card: a small tracked-caps label ('CINEMATOGRAPHY') over a gold italic editorial serif, centred on a dark green radial vignette",
+      "Generic condensed grotesk (a Bebas/Oswald-like face) with stock fills (moir\u00e9 rings, halftone dots, stripes, LED bulbs) and RGB-split chromatic aberration used as an effect with no subject",
+      "The pattern fills and the 'title assembling letter by letter' end card are preset-style treatments; the background patterns don't interact with the type",
+      "The credits use invented names and there's no light, material or depth; everything is flat graphic fills"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "thank-you-for-smoking": {
+      "overall": 8.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.38,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 8.42,
+  "delta": -4.8,
+  "trials": [
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "thank-you-for-smoking"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, tactile 3D with real material complexity: translucent rubbery hand, coral-like growth, knitted mesh, ruffled fabric, hair-thin filaments, glassy chrome tubes",
+              "Unusual palettes vary from shot to shot (dusty pink over rust, violet dusk, sky blue with amber glass, sage and blush, bottle green with mint) but stay tied together by the organic-surreal language",
+              "Composition changes from shot to shot (macro tangle, wide landscape, centred sculptural hero, full-frame texture field), which implies cut-driven choreography rather than one template",
+              "Physically plausible light: subsurface scattering, rim light, a volumetric beam on the peak",
+              "The type is only a small studio/brand label (Boldtron, Medusa Lab, OFFF MX logo) and does no real work; it reads as event-sponsor credits"
+            ],
+            "gaps": [
+              "No unifying idea beyond 'beautiful organic render reel'. It shares a genre look with many OFFF and studio-showcase pieces instead of having a concept only this film could have",
+              "The typography is a token bold-sans tag dropped top-left; it should be integrated into the image the way B and D build their type into their worlds",
+              "The frames feel like separate vignettes, with no evidence of a through-line or narrative build that pays off in a final frame"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, unforgettable idea: the world map as a clockwork mechanism that builds itself, so the title becomes a guide to the story's geography",
+              "Real material and light: engraved bronze astrolabe band, wood and brass, a hot sunburst core, tilt-shift depth of field, painted parchment map",
+              "Choreography is evident: a sweep around the armillary band, flights between cities, a pull-down to the map, a return to the band for the title lock-up",
+              "Credits set in small-caps Trajan-style serif with house sigils, placed within the miniature world rather than over it",
+              "The final logo frame bookends the opening frame, which shows a structure built with intent"
+            ],
+            "gaps": [
+              "It is the benchmark here; the remaining gap is that the credit type is somewhat conventional epic serif, not as expressive as the image",
+              "The palette leans on a familiar warm, bloom-heavy sepia; a cooler or more unexpected accent could sharpen it",
+              "The credits are small and sometimes compete with busy mechanics for legibility"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Slide-deck structure: every frame is a centred name filling the frame on a flat field, with one layout and the words swapped",
+              "The 'Lev Ansari' frame is the textbook AI tell: dark green vignette, a tiny tracked-caps 'CINEMATOGRAPHY' label above a generic editorial italic serif, a single gold accent, an empty frame",
+              "Default condensed grotesk (Bebas/League-Gothic class) with a texture-fill gimmick (moir\u00e9 lines, halftone dots, stripes), plus chromatic-aberration offsets that act as effects with no subject",
+              "The 'Night Chorus' build-up and knock-out of letters is the only motion idea, and it is a stock kinetic-type template move",
+              "Invented-sounding names and a style that switches between frames without any reason in the concept"
+            ],
+            "gaps": [
+              "It needs a concept tied to the film's subject (as B maps the world and D turns cast names into cigarette packs) rather than a menu of type textures",
+              "Replace the default faces and centred placement with a typographic system that has scale contrast, cropping and integration with the image or space",
+              "Add material, light and depth (real print, neon or physical sources) so the patterns live in a world instead of on a flat colour field"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A witty, specific idea only this film could have: every credit is a fictional vintage cigarette pack, so the satire is carried by the packaging itself",
+              "Typography with a strong point of view: each pack has its own period-correct lettering (ribbon banner serif, brush script, Lights wordmark, deco caps, italic script over bold sans), all with an authentic mid-century feel",
+              "Deliberate, varied palettes from real tobacco branding (royal blue and gold, orange and cream, Americana red-white-blue, menthol green, Marlboro-ish red), with print grain and paper texture",
+              "Details reward close viewing: tax stamps, 'underage sale prohibited' side text, crests, the bloodhound, the airplane, rows of filters",
+              "Tight crops imply camera moves across the pack surfaces; each card is designed as a poster in its own right"
+            ],
+            "gaps": [
+              "The motion appears mostly as pans and cuts across flat art; it has less spatial choreography than B's camera flights",
+              "The light is flat scanned-print, which suits the concept but could gain from occasional real-world lighting or dimensional packs",
+              "The repeated pack-crop structure risks feeling like a sequence of cards if it is never broken by a larger reveal"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.2,
+        "cost_usd": 0.1577504,
+        "tokens": 71934,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "thank-you-for-smoking",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered 3D: translucent hands, coral-like growths, glass and organic forms, mesh, fibres and hair, with materials that react differently to light",
+              "Each frame has its own palette (salmon dusk, violet night, cyan sky, pistachio and bone, bottle green), yet they hold together as one world",
+              "Real art direction in lighting: rim light on the volcano plume, backlit glass figure against a gradient sky, subsurface scattering on the hands",
+              "The titles (Boldtron, OFFF MX, Medusa Lab) read like a festival opener with a lineup of studios, which is an industry context",
+              "The forms are asymmetric and intricate, not stock primitives; it looks hand-sculpted and simulated"
+            ],
+            "gaps": [
+              "The type is small and laid on top of the images, so it does nothing structural; the strongest entries make the type the image (fold the names into the materials or the landscape)",
+              "The idea is 'beautiful strange organisms', which is generic for festival openers; it needs one specific conceptual thread tying the frames together, the way B's clockwork map does",
+              "There is little visible choreography between frames: they read as separate vignettes, not one continuous camera move or transformation"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A single, specific idea that only this piece could have: the world as a clockwork map that builds itself, so the title sequence works as orientation for the narrative",
+              "Tactile materials: engraved brass astrolabe bands, wood, leather, parchment map, all under warm, motivated light that blooms from the central sun",
+              "Credits sit inside the world beside heraldic sigils in a carved, Trajan-like serif; the type is integrated with the image, not just laid over it",
+              "Clear choreography: the camera goes from macro astrolabe to aerial descent to cities rising mechanically to the map pull-back to the title lockup, with no repeated layouts",
+              "An iconic, oft-copied sequence; every frame works as a poster"
+            ],
+            "gaps": [
+              "The credit type is small and conventional next to the scale of the world; it could be more expressive",
+              "The palette is mostly sepia and brass; a little more colour contrast between regions would sharpen the narrative",
+              "The grading is heavily bloomed, which slightly softens detail in the brightest frames"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A sharp, witty concept tied to the subject: every credit is a fictional vintage cigarette pack, which turns a film about tobacco lobbying into packaging satire",
+              "Every frame uses a different, period-accurate face: banner serif, brush script, transitional serif, Art Deco caps, italic script with bold condensed sans; the type has a strong point of view",
+              "Specific packaging details: tax stamps, 'Underage sale prohibited', 'Honey-toasted tobacco lights', the pointer dog, the eagle crest, menthol palm fronds",
+              "A deliberate palette that changes per brand (royal blue and gold, orange and cream, Americana stripes, mint green, Marlboro red), with paper grain and print texture",
+              "The final frame reveals the cigarette filters for the director credit, which pays the concept off"
+            ],
+            "gaps": [
+              "The frames are mostly flat, frontal crops of packs, so there is less spatial depth and light than in B",
+              "The motion is likely a sequence of pans and crops across artwork; it needs more camera or physical choreography",
+              "The structure is one idea repeated with variations; it lacks the escalating build that B has"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The 'Lev Ansari' frame is the textbook generic look: small tracked-caps label ('CINEMATOGRAPHY') above a centred serif italic name on a dark green vignette gradient, which breaks whatever system the other frames had",
+              "The names appear to be fabricated in the style of generated output (Mira Oyelaran, Isak Lindqvist, Lev Ansari, 'Night Chorus')",
+              "Every credit is a centred name filling the frame in a default condensed grotesk; the same layout with the words swapped, slide-deck structure",
+              "Effect with no subject: op-art line fills, halftone dots, RGB chromatic offset, all stacked as surface treatments with no idea of what the film is about",
+              "The fill patterns per letter in 'NIGHT CHORUS' read as a showcase of style presets, not a typographic concept; the dropout frame is just letters toggled off",
+              "No image, world or light; pastiche of a Saul Bass / Kyle Cooper kinetic-type look without the rigour"
+            ],
+            "gaps": [
+              "It has no concept rooted in the film; B and C build a world (a mechanical map, cigarette packaging) that comments on the story, while D only decorates names",
+              "The visual system is inconsistent: one frame drops into generic dark-gradient serif; it needs a single disciplined typographic language with intentional scale and layout variation",
+              "There is no material, light or depth; give the patterns a physical source (neon, print, projection) and choreograph transitions instead of centred name cards"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.9,
+        "cost_usd": 0.1598986,
+        "tokens": 72043,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "game-of-thrones",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "One specific idea carries the whole piece: every credit is set as a different vintage cigarette pack, which turns the film's satire into the design system",
+              "Typography varies by period and brand logic: arched slab on a ribbon, script, condensed caps, Deco display. Each face is chosen to match its invented pack, not a default",
+              "Unusual, period-accurate palettes (royal blue and gold, orange and cream, red over a row of filters) with printed-paper texture, foil and engraved spot illustrations (crest, hound, eagle, plane)",
+              "Tight crops into the packaging suggest a camera tracking across physical print, and each frame recomposes the layout",
+              "The finale lines up the director's credit with a row of cigarettes, so the last frame resolves the concept"
+            ],
+            "gaps": [
+              "The frames suggest lateral pans and crops, but the motion is mostly flat 2D camera moves with little depth or physical choreography compared with B",
+              "Little light or dimensionality: the packs read as scans more than lit objects, so the material illusion stops at the surface",
+              "Frame structure is a bit uniform (crop, credit, next pack), and no single moment escalates or surprises the way B's mechanical reveals do"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea only this piece could have: the world map is a clockwork model that builds itself, so it works as orientation, exposition and theme together",
+              "Real light and material: a blazing astrolabe sun, engraved bronze bands, weathered wood and pewter, shallow depth of field, atmospheric haze",
+              "Strong choreography between frames: from the astrolabe close-up, down into the cities as they assemble, across the map, and out to the emblem lockup",
+              "Credits sit small and serif inside the world, each with a house sigil, and are anchored to locations rather than pasted over them",
+              "The palette is restrained and motivated (sepia, bronze, a cool map) and comes from the light, not added on top"
+            ],
+            "gaps": [
+              "The credit type is a fairly conventional Trajan-style classical serif and is often small and low in contrast against busy geometry",
+              "The map frame is flatter and less lit than the 3D city frames, which slightly breaks material consistency",
+              "The final logo lockup with burst-of-light rays is a familiar epic-title trope next to the originality of the mechanism"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered 3D: mesh fabric, hair fibres, glass, coral and translucent resin, with considered subsurface and specular work",
+              "Deliberate, unusual palettes that change per scene (dusty pink, violet dusk, sky blue, pistachio and coral, bottle green)",
+              "A recurring surreal language (hand, tendrils, peaks, entangled tubes) suggests a coherent festival-titles world with variety and escalation",
+              "Branded lockups (OFFF MX wordmark) point to a real conference title sequence"
+            ],
+            "gaps": [
+              "Typography is a small, default-weight bold grotesk dropped into a corner like a lower-third, with no scale contrast or integration with the 3D, far from B's in-world credits",
+              "There's no single unifying idea or narrative; frames read as separate artist showcases rather than one choreographed journey",
+              "Some imagery (abstract organic blobs, glossy tubes) is close to the over-familiar 'Cinema4D festival' look; it needs a more specific concept tied to the place or event"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.78,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The same composition repeats: one name, centred, filling the frame, on a flat field. The structure is a slide deck with the words swapped",
+              "Frame 3 is the textbook 'tasteful AI' card: a small tracked-caps label ('CINEMATOGRAPHY') over a gold italic editorial serif, centred on a dark green radial vignette",
+              "Generic condensed grotesk (a Bebas/Oswald-like face) with stock fills (moir\u00e9 rings, halftone dots, stripes, LED bulbs) and RGB-split chromatic aberration used as an effect with no subject",
+              "The pattern fills and the 'title assembling letter by letter' end card are preset-style treatments; the background patterns don't interact with the type",
+              "The credits use invented names and there's no light, material or depth; everything is flat graphic fills"
+            ],
+            "gaps": [
+              "Find a specific idea tied to the film ('Night Chorus': sound, voices, night). A random rotation of fill textures is not a concept, while A gives each credit a reason to look the way it does",
+              "Break the centred-word-on-flat-field template with real layout, scale contrast and type integrated with image or space, and drop the default condensed sans and the generic label-over-serif card",
+              "Add physical light, material and camera choreography between frames (for example, neon actually glowing in a space, or letters built from real objects) instead of stacked 2D effects and chromatic aberration"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.7,
+        "cost_usd": 0.1559666,
+        "tokens": 71844,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": false,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": false,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "No strip files were supplied, so in-shot motion was judged only from frames.jpg and pairs.jpg. Most credit cards look like static holds that are cut away on the beat.",
+        "In the 'WRITTEN & DIRECTED BY' pair, the two frames 1/6 s apart are identical: a dead hold with no in-shot motion.",
+        "The title-card pair also barely moves. The only changes are a chromatic flicker and the 'A FILM BY' line popping in, with no eased build.",
+        "The ending breaks the title apart by deleting letters ('NIG CH US'). Letters vanish rather than move off with follow-through, and the last frame reads as an unfinished state.",
+        "The 6-8.5 s riser is flat broadband white noise with no tonal shape. It cuts off abruptly at about 8.6 s, which reads as a stock build-and-drop.",
+        "The RGB-split fringing on 'ISAK LINDQVIST' and on the title letters softens edges and costs legibility. It is applied as a filter, not built into the design.",
+        "The dot-matrix and LED-grid letterforms (the H in CHORUS, the dotted HT and US) risk moir\u00e9 and shimmer when compressed. The blue grid cells at the crop are already uneven.",
+        "Each card uses a different type family and palette (condensed pattern, RGB-split grotesk, gilt Didone italic, blackletter on paper, LED grid). That variety is deliberate, but no single frame is restrained."
+      ],
+      "gaps": [
+        "Motion is cut-driven, not choreographed. Each name is a static style card swapped on the beat, with no transitions built into the material, no eased entrances, overlap or follow-through, and nothing travelling from a credit card into its letter in the title. The payoff idea (each credit's treatment becomes one letter of NIGHT CHORUS) is told by cuts instead of shown through movement.",
+        "The sound is a click track of transients plus a generic noise riser and drop. There is little arrangement development, and the sound design doesn't match each card's material (gilt, paper, LED, op-art). It syncs to the cuts but has no musical voice or dynamic shaping beyond one swell.",
+        "The structure has a flat 0.47 s cadence, then a 4.2 s title hold that ends by letters simply disappearing. A top studio would vary the rhythm across the credits, land the title with weight (settle and overshoot), and end on a clean, composed lockup that rhymes with the op-art opening rather than a half-erased frame."
+      ]
+    },
+    "meta": {
+      "seconds": 29.7,
+      "cost_usd": 0.17171740000000002,
+      "tokens": 72583,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "nightchorus.mp4: 12.7s, 19 shots, median 0.47s, longest 4.22s\nper-second change: [87.4, 112.3, 90.0, 80.6, 120.6, 50.3, 55.3, 68.0, 23.4, 19.1, 30.3, 41.1]\nPACE: FAIL \u2014 longest shot 4.2s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 4,
+    "colour": 5,
+    "light_texture": 3,
+    "motion": 4.5,
+    "craft": 5.5,
+    "originality": 3,
+    "sound": 5
+  },
+  "full_overall": 4.0,
+  "cost_usd": 0.645,
+  "judge_seconds": 124.5,
+  "verdict": "FAIL"
+}
