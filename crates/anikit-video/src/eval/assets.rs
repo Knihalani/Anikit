@@ -12,7 +12,7 @@ use crate::render;
 use crate::text::FontStore;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use vello_cpu::Pixmap;
 
 /// Fonts and images shared by evaluation and rendering.
@@ -30,18 +30,35 @@ pub struct SharedAssets {
     /// Per-frame images ([`components::Assets::frame_image`]): a small ring,
     /// so full-frame renders don't pile up. Ids are not reused for a long time.
     volatile: RwLock<Volatile>,
+    held: Mutex<Option<Held>>,
 }
 
 /// First id of per-frame images.
 pub(crate) const VOLATILE_BASE: u32 = 0x6000_0000;
-/// Per-frame images kept: a frame is drawn right after it is evaluated on the
-/// same worker, so a few per core is plenty.
+/// Per-frame images kept for paths that evaluate and draw frames immediately.
 const VOLATILE_SLOTS: usize = 96;
 
 #[derive(Default)]
 struct Volatile {
     next: u32,
     slots: Vec<Option<(u64, u32, Arc<Pixmap>)>>,
+}
+
+#[derive(Default)]
+struct Held {
+    by_key: HashMap<u64, u32>,
+    by_seq: HashMap<u32, (u64, Arc<Pixmap>)>,
+}
+
+/// Keeps per-frame images resolvable while a batch is evaluated before drawing.
+pub struct HeldFrameImages<'a> {
+    held: &'a Mutex<Option<Held>>,
+}
+
+impl Drop for HeldFrameImages<'_> {
+    fn drop(&mut self) {
+        *self.held.lock().unwrap() = None;
+    }
 }
 
 impl Default for SharedAssets {
@@ -59,6 +76,10 @@ impl SharedAssets {
         let mut v = self.volatile.write().unwrap();
         v.slots.clear();
         v.next = 0;
+        if let Some(held) = self.held.lock().unwrap().as_mut() {
+            held.by_key.clear();
+            held.by_seq.clear();
+        }
     }
 
     pub fn new(fonts: Arc<FontStore>) -> Self {
@@ -72,7 +93,17 @@ impl SharedAssets {
             comps: RwLock::new(Vec::new()),
             textures: std::sync::OnceLock::new(),
             volatile: RwLock::default(),
+            held: Mutex::new(None),
         }
+    }
+
+    /// Keep images made during a batch resolvable until the returned guard drops.
+    pub fn hold_frame_images(&self) -> HeldFrameImages<'_> {
+        let mut held = self.held.lock().unwrap();
+        if held.is_none() {
+            *held = Some(Held::default());
+        }
+        HeldFrameImages { held: &self.held }
     }
 
     /// Make a compiled sub-composition reachable from components by name.
@@ -132,8 +163,11 @@ impl SharedAssets {
         }
         if (VOLATILE_BASE..super::shader::SHADER_BASE).contains(&id.0) {
             let seq = id.0 - VOLATILE_BASE;
-            let v = self.volatile.read().unwrap();
-            return v.slots.get(seq as usize % VOLATILE_SLOTS)?.as_ref().filter(|s| s.1 == seq).map(|s| s.2.clone());
+            let ring = {
+                let v = self.volatile.read().unwrap();
+                v.slots.get(seq as usize % VOLATILE_SLOTS).and_then(Option::as_ref).filter(|s| s.1 == seq).map(|s| s.2.clone())
+            };
+            return ring.or_else(|| self.held.lock().unwrap().as_ref()?.by_seq.get(&seq).map(|(_, pm)| pm.clone()));
         }
         self.images.read().unwrap().get(id.0 as usize).cloned()
     }
@@ -149,8 +183,11 @@ impl SharedAssets {
         }
         if (VOLATILE_BASE..super::shader::SHADER_BASE).contains(&id.0) {
             let seq = id.0 - VOLATILE_BASE;
-            let v = self.volatile.read().unwrap();
-            return v.slots.get(seq as usize % VOLATILE_SLOTS)?.as_ref().filter(|s| s.1 == seq).map(|s| s.0 ^ 0x564f_4c41);
+            let ring = {
+                let v = self.volatile.read().unwrap();
+                v.slots.get(seq as usize % VOLATILE_SLOTS).and_then(Option::as_ref).filter(|s| s.1 == seq).map(|s| s.0 ^ 0x564f_4c41)
+            };
+            return ring.or_else(|| self.held.lock().unwrap().as_ref()?.by_seq.get(&seq).map(|(key, _)| *key ^ 0x564f_4c41));
         }
         let pm = self.images.read().unwrap().get(id.0 as usize).cloned()?;
         let mut h = std::collections::hash_map::DefaultHasher::new();
@@ -221,6 +258,9 @@ impl components::Assets for SharedAssets {
             if let Some((_, seq, _)) = v.slots.iter().flatten().find(|s| s.0 == key) {
                 return ImageId(VOLATILE_BASE + seq);
             }
+            if let Some(seq) = self.held.lock().unwrap().as_ref().and_then(|held| held.by_key.get(&key)).copied() {
+                return ImageId(VOLATILE_BASE + seq);
+            }
         }
         let px = make();
         let mut scratch = render::ImageStore::new();
@@ -235,11 +275,19 @@ impl components::Assets for SharedAssets {
         if let Some((_, seq, _)) = v.slots.iter().flatten().find(|s| s.0 == key) {
             return ImageId(VOLATILE_BASE + seq);
         }
+        let mut held = self.held.lock().unwrap();
+        if let Some(seq) = held.as_ref().and_then(|held| held.by_key.get(&key)).copied() {
+            return ImageId(VOLATILE_BASE + seq);
+        }
         if v.slots.len() < VOLATILE_SLOTS {
             v.slots.resize(VOLATILE_SLOTS, None);
         }
         let seq = v.next;
         v.next = (v.next + 1) % (super::shader::SHADER_BASE - VOLATILE_BASE);
+        if let Some(held) = held.as_mut() {
+            held.by_key.insert(key, seq);
+            held.by_seq.insert(seq, (key, pm.clone()));
+        }
         v.slots[seq as usize % VOLATILE_SLOTS] = Some((key, seq, pm));
         ImageId(VOLATILE_BASE + seq)
     }
@@ -250,6 +298,9 @@ impl components::Assets for SharedAssets {
         {
             let v = self.volatile.read().unwrap();
             if let Some((_, seq, _)) = v.slots.iter().flatten().find(|s| s.0 == key) {
+                return ImageId(VOLATILE_BASE + seq);
+            }
+            if let Some(seq) = self.held.lock().unwrap().as_ref().and_then(|held| held.by_key.get(&key)).copied() {
                 return ImageId(VOLATILE_BASE + seq);
             }
         }
@@ -268,11 +319,19 @@ impl components::Assets for SharedAssets {
         if let Some((_, seq, _)) = v.slots.iter().flatten().find(|s| s.0 == key) {
             return ImageId(VOLATILE_BASE + seq);
         }
+        let mut held = self.held.lock().unwrap();
+        if let Some(seq) = held.as_ref().and_then(|held| held.by_key.get(&key)).copied() {
+            return ImageId(VOLATILE_BASE + seq);
+        }
         if v.slots.len() < VOLATILE_SLOTS {
             v.slots.resize(VOLATILE_SLOTS, None);
         }
         let seq = v.next;
         v.next = (v.next + 1) % (super::shader::SHADER_BASE - VOLATILE_BASE);
+        if let Some(held) = held.as_mut() {
+            held.by_key.insert(key, seq);
+            held.by_seq.insert(seq, (key, pm.clone()));
+        }
         v.slots[seq as usize % VOLATILE_SLOTS] = Some((key, seq, pm));
         ImageId(VOLATILE_BASE + seq)
     }
@@ -323,5 +382,20 @@ mod tests {
         a.release_frame_images();
         assert!(a.pixmap(first).is_none());
         assert_eq!(a.frame_image(8, 2, 2, &mut || vec![3; 16]), first);
+    }
+
+    #[test]
+    fn held_frame_images_survive_ring_eviction() {
+        let a = SharedAssets::new(Arc::new(FontStore::new()));
+        let held = a.hold_frame_images();
+        let first = a.frame_image(0, 2, 2, &mut || vec![0; 16]);
+        for key in 1..200 {
+            a.frame_image(key, 2, 2, &mut || vec![key as u8; 16]);
+        }
+        assert!(a.pixmap(first).is_some());
+        assert!(a.content_key(first).is_some());
+        assert_eq!(a.frame_image(0, 2, 2, &mut || unreachable!()), first);
+        drop(held);
+        assert!(a.pixmap(first).is_none());
     }
 }
