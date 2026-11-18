@@ -497,6 +497,24 @@ impl Evaluator {
             t = start + dur;
             prev_dur = if auto { dur - in_dur } else { own };
         }
+        // Transitions that name layers: warn when the ids aren't top-level layers of the right scenes.
+        for k in 1..scenes.len() {
+            let ids = |sc: &SceneC| sc.layers.iter().filter_map(|n| n.id.as_deref().map(str::to_string)).collect::<Vec<_>>();
+            let (pa, pb) = (ids(&scenes[k - 1]), ids(&scenes[k]));
+            let tr = &scenes[k].trans;
+            if let Some(l) = &tr.layer {
+                if !pa.contains(l) {
+                    c.d.push(Diagnostic::warning(format!("scenes[{k}].transition.layer"), format!("zoomThrough: no top-level layer with id '{l}' in the previous scene; it falls back to a cut"))
+                        .suggest(suggest(l, &pa)));
+                }
+            }
+            for id in &tr.carry {
+                if !pa.contains(id) || !pb.contains(id) {
+                    let which = if !pa.contains(id) { "the previous scene" } else { "this scene" };
+                    c.d.push(Diagnostic::warning(format!("scenes[{k}].transition.carry"), format!("carry: no top-level layer with id '{id}' in {which}; it isn't carried")));
+                }
+            }
+        }
         let mut duration = t;
         if let Some(d) = &spec.duration {
             duration = c.time_raw(d, "duration").max(1.0 / c.fps);
