@@ -16,7 +16,7 @@
 
 - **Repeater** `"repeat": {"count", "offset": {x, y, rotate, scale, opacity}, "stagger", "center": [x, y]}` on any layer or group:
   copy *i* is moved by i×(x, y), then rotated i×rotate and scaled scale^i about `center` (default: the layer's position);
-  opacity changes by `opacity` per copy (−0.1 fades), and copy *i* plays i×stagger s later. Radial burst: `anchor` off-centre +
+  opacity changes by `opacity` per copy (−0.1 fades), and copy *i* plays i×stagger s later (`"order": "center|reverse|random"`, `seed`). Radial burst: `anchor` off-centre +
   `rotate: 360/count`. Grid: repeat a repeated group. Tunnel: `scale: 0.85` + `opacity: -0.08`. Spiral: `x` + `rotate`.
   (`"repeat": 3`, a plain number, is still the spec-level copy with `$i`.)
 - **Echo / trails** `"echo": {"count": 5, "delay": 0.05, "decay": 0.6, "blend": "add"}`: earlier-time copies under the layer.

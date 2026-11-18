@@ -202,3 +202,38 @@ fn generated_luts_need_no_network() {
     assert_eq!(mock.calls.load(Ordering::SeqCst), 0);
     let _ = std::fs::remove_dir_all(&l.root);
 }
+
+#[test]
+fn hdri_moods_point_into_the_index() {
+    for (mood, r, why) in HDRI_MOODS {
+        assert!(find(r).is_some_and(|e| e.kind == "hdri"), "{mood} → {r} is not an indexed HDRI");
+        assert!(!why.is_empty());
+    }
+    assert_eq!(hdri_mood("Night City"), Some("polyhaven:hdri/hansaplatz"));
+    assert_eq!(hdri_mood("nope"), None);
+}
+
+#[test]
+fn hdri_photo_views_reproject_the_panorama() {
+    // A 64×32 panorama: +x half (u > 0.5) red, the other half blue.
+    let img = image::RgbImage::from_fn(64, 32, |x, _| if x >= 32 { image::Rgb([220, 20, 20]) } else { image::Rgb([20, 20, 220]) });
+    let mut jpg = Vec::new();
+    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpg, 95).encode_image(&img).unwrap();
+    let mock = Arc::new(Mock { files: Mutex::new(HashMap::new()), calls: AtomicUsize::new(0) });
+    mock.files.lock().unwrap().insert("https://example.test/p.jpg".into(), jpg.clone());
+    let mut l = lib("photo", mock.clone());
+    let mut e = entry("polyhaven:hdri/pano", "hdri", vec![]);
+    e.res.insert("photo".into(), vec![FileRef { path: "pano_tonemapped.jpg".into(), url: "https://example.test/p.jpg".into(), size: Some(jpg.len() as u64), md5: Some(md5(&jpg)), sha256: None, role: Some("photo".into()), unzip: false }]);
+    l.extra.push(e);
+    let right = photo_view(&l, "polyhaven:hdri/pano?yaw=90&fov=40&w=32&h=18").unwrap();
+    let left = photo_view(&l, "polyhaven:hdri/pano?yaw=-90&fov=40&w=32&h=18").unwrap();
+    let px = |p: &Path| image::open(p).unwrap().to_rgb8().get_pixel(16, 9).0;
+    assert!(px(&right)[0] > 150 && px(&right)[2] < 100, "{:?}", px(&right));
+    assert!(px(&left)[2] > 150 && px(&left)[0] < 100, "{:?}", px(&left));
+    assert_eq!(image::image_dimensions(&right).unwrap(), (32, 18));
+    // Cached: same view, no new download or render.
+    assert_eq!(photo_view(&l, "polyhaven:hdri/pano?yaw=90&fov=40&w=32&h=18").unwrap(), right);
+    assert_eq!(mock.calls.load(Ordering::SeqCst), 1);
+    assert!(photo_view(&l, "polyhaven:hdri/pano?zoom=2").unwrap_err().contains("yaw, pitch, fov"));
+    let _ = std::fs::remove_dir_all(&l.root);
+}

@@ -34,7 +34,7 @@ defines its own instruments, gives each track its own effect chain, and automate
 - **`define`** names custom instruments:
   - `{"synth": {…}}`: up to three oscillators (saw, square, tri, sine, supersaw; unison voices and detune), sub, noise, filter, amp and filter envelopes, LFO, pitch envelope and glide. A definition can start from any synth preset via `base`.
   - `{"sampler": {"zones": […]}}`: your own audio files with key range, root note, velocity layers, loop points, tuning and round robin.
-- **`fx`** is a per-track effect chain. Available types: eq, comp, delay (tempo-synced `note`), reverb (wet/dry insert), chorus, saturate, widener, transient, filter, gain and autopan (a stereo tremolo: `rate` in Hz or `note` such as "1/8", `depth` 0–1).
+- **`fx`** is a per-track effect chain. Available types: eq, comp, delay (tempo-synced `note`), reverb (wet/dry insert), chorus, saturate, widener, transient, filter, gain, autopan (a stereo tremolo: `rate` in Hz or `note` such as "1/8", `depth` 0–1) and gated-reverb (the 80s snare: `preset`, `wet`, `hold` and `release` in seconds; the tail is cut `hold` after each hit).
 - **`automate`** changes values over time, as keyframes in beats or `@bar`/`@beat` times, or as `"=expr"` written in `beat`, `bar` and `t`. It can drive two kinds of target:
   - track parameters (volume, pan, swept low-pass and high-pass filters, reverb and delay sends), applied continuously;
   - patch parameters of a custom synth (`synth.cutoff`, `synth.res`, `synth.drive`, `synth.env`, `synth.vib`, …), applied at each note-on.
@@ -131,3 +131,4 @@ Per-component speed (single thread, × real time):
   - Reverb and delay buses; SFX are placed by their hit point.
   - Master: low cut and tilt, glue compressor, gain, then the true-peak limiter, iterated until it reaches target.
   - Stems: drums, bass, music and fx. They carry the master gain and sum to the mix.
+  - Alternate mixes for editors (`--alts DIR`): `<name>-underscore` (no melody, for voice-over), `<name>-no-drums`, and 30 s and 15 s cutdowns that are recomposed with their own endings rather than truncated.
