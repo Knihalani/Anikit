@@ -136,6 +136,27 @@ struct CacheEntry {
     last_used: u64,
 }
 
+#[derive(Clone, Copy)]
+struct Scene<'a> {
+    width: u32,
+    height: u32,
+    background: Rgba,
+    ops: &'a [Op],
+}
+
+fn evict_to_pool(map: &mut HashMap<u64, CacheEntry>, pool: &mut Vec<Pixmap>, now: u64) {
+    let old: Vec<u64> = map.iter().filter(|(_, e)| e.last_used + 2 < now).map(|(k, _)| *k).collect();
+    for k in old {
+        if let Some(e) = map.remove(&k) {
+            if let Ok(p) = Arc::try_unwrap(e.pix) {
+                if pool.len() < 16 {
+                    pool.push(p);
+                }
+            }
+        }
+    }
+}
+
 /// Everything except the main context (so draw code can borrow both).
 struct State {
     res: Resources,
@@ -152,7 +173,6 @@ struct State {
     grad_built: i64,
     grad_frame: u64,
     seen: HashMap<u64, u64>,
-    resample_buf: Vec<u8>,
     /// Smooth cubic upscaling for enlarged images (standard quality and up).
     cubic: bool,
     /// [`Quality::Reference`]: no speed-only approximations.
@@ -192,10 +212,12 @@ pub struct Renderer {
     /// Motion-blur accumulator (linear RGB).
     motion_acc: Vec<f32>,
     motion_tmp: Vec<f32>,
+    motion_cols: Vec<f32>,
     /// Clip coverage masks for motion-blurred wipes.
     mask_ctx: Option<RenderContext>,
     mask_pix: Pixmap,
     grain: Vec<grain::Grain>,
+    grain_cache: grain::Cache,
     /// The background colour as a 2×2 backdrop (RGBA8), reused while it stays.
     bg_pix: Option<([u8; 4], Arc<Pixmap>)>,
     motion_brute: bool,
@@ -235,9 +257,11 @@ impl Renderer {
             pp: Default::default(),
             motion_acc: Vec::new(),
             motion_tmp: Vec::new(),
+            motion_cols: Vec::new(),
             mask_ctx: None,
             mask_pix: Pixmap::new(1, 1),
             grain: Vec::new(),
+            grain_cache: Default::default(),
             bg_pix: None,
             motion_brute: false,
             quality: Quality::Standard,
@@ -260,7 +284,6 @@ impl Renderer {
                 grad_built: 0,
                 grad_frame: 0,
                 seen: HashMap::new(),
-                resample_buf: Vec::new(),
                 cubic: true,
                 reference: false,
                 up: upscale::Upscaler::cubic(),
@@ -410,14 +433,25 @@ impl Renderer {
             None
         } else {
             let view = View { assets: &self.assets, frame: &self.frame_images, dynamic: self.dynamic.as_deref() };
-            grain::tail(&list.ops, w as f64, h as f64, list.background, &view, &mut layers)
+            grain::tail(&list.ops, w as f64, h as f64, list.background, &view, &mut self.grain_cache, &mut layers)
         };
         let Some(k) = at else {
             self.grain = layers;
-            return self.render_region_inner(list, region, new_frame, rects, yuv);
+            return self.render_region_inner(
+                Scene { width: list.width, height: list.height, background: list.background, ops: &list.ops },
+                region,
+                new_frame,
+                rects,
+                yuv,
+            );
         };
-        let head = DisplayList { width: list.width, height: list.height, background: list.background, ops: list.ops[..k].to_vec() };
-        self.render_region_inner(&head, region, new_frame, rects.map(|r| &r[..k.min(r.len())]), None);
+        self.render_region_inner(
+            Scene { width: list.width, height: list.height, background: list.background, ops: &list.ops[..k] },
+            region,
+            new_frame,
+            rects.map(|r| &r[..k.min(r.len())]),
+            None,
+        );
         let [x0, y0, x1, y1] = region.unwrap_or([0, 0, w, h]).map(|v| v as usize);
         grain::apply(&layers, self.frame.data_as_u8_slice_mut(), w as usize, [x0, y0, x1.min(w as usize), y1.min(h as usize)]);
         self.grain = layers;
@@ -426,13 +460,13 @@ impl Renderer {
 
     fn render_region_inner(
         &mut self,
-        list: &DisplayList,
+        scene: Scene<'_>,
         region: Option<[u32; 4]>,
         new_frame: bool,
         rects: Option<&[Option<Rect>]>,
         yuv: Option<&mut YuvFrame>,
     ) -> bool {
-        let (w, h) = (list.width.clamp(1, u16::MAX as u32) as u16, list.height.clamp(1, u16::MAX as u32) as u16);
+        let (w, h) = (scene.width.clamp(1, u16::MAX as u32) as u16, scene.height.clamp(1, u16::MAX as u32) as u16);
         if self.ctx.width() != w || self.ctx.height() != h {
             self.ctx = RenderContext::new(w, h);
             self.frame = Pixmap::new(w, h);
@@ -453,37 +487,28 @@ impl Renderer {
         let frame_images = self.frame_images.clone();
         let dynamic = self.dynamic.clone();
         let assets = View { assets: &shared, frame: &frame_images, dynamic: dynamic.as_deref() };
-        let settings = RasterizerSettings { target_init: TargetInit::Clear(color(list.background)), ..Default::default() };
+        let settings = RasterizerSettings { target_init: TargetInit::Clear(color(scene.background)), ..Default::default() };
         // A full-frame opaque image hides everything before it: upscale it
         // straight into the target and draw only the ops above it.
-        let mut backdrop = backdrop(&list.ops, &assets, w as f64, h as f64);
+        let mut backdrop = backdrop(scene.ops, &assets, w as f64, h as f64);
         let mut from_smooth = false;
         // Or: a smooth leading run (gradients, glows, fields) rendered at ¼ resolution.
-        let mut n_smooth = smooth::prefix(&list.ops, w as f64, h as f64, &|id| assets.image(id).map(|p| (p.width() as u32, p.height() as u32)));
+        let mut n_smooth = smooth::prefix(scene.ops, w as f64, h as f64, &|id| assets.image(id).map(|p| (p.width() as u32, p.height() as u32)));
         // Standard quality: evaluate gradient backdrops exactly, in float, at full
         // resolution (dithered: no banding); Draft: ¼ resolution through vello.
         let field = self.quality != Quality::Draft;
-        if field && !smooth::field_ok(&list.ops[..n_smooth]) {
+        if field && !smooth::field_ok(&scene.ops[..n_smooth]) {
             n_smooth = 0;
         }
         // vello treats the clear colour and pixels already in the target as an
         // isolated backdrop, so a non-Normal blend (Overlay grain, Screen glow…)
         // would blend against transparency. With such a layer, draw the background
         // inside the scene and skip the pre-filled backdrop paths.
-        let blends = list.ops.iter().any(|o| matches!(o, Op::PushLayer { blend, .. } if *blend != Blend::Normal));
+        let blends = scene.ops.iter().any(|o| matches!(o, Op::PushLayer { blend, .. } if *blend != Blend::Normal));
         if blends {
             backdrop = None;
             n_smooth = 0;
         }
-        let with_bg: Vec<Op>;
-        let list_ops: &[Op] = if blends {
-            with_bg = std::iter::once(Op::RoundRect { x: 0.0, y: 0.0, w: w as f32, h: h as f32, radius: 0.0, paint: Paint::Solid(list.background), transform: dl::IDENTITY })
-                .chain(list.ops.iter().cloned())
-                .collect();
-            &with_bg
-        } else {
-            &list.ops
-        };
         let rects = if blends { None } else { rects };
         if n_smooth > 0 && backdrop.as_ref().is_none_or(|(k, _, _)| *k < n_smooth) {
             let f = smooth::FACTOR;
@@ -492,12 +517,12 @@ impl Renderer {
                 let mut hs = incremental::Fx::default();
                 use std::hash::Hasher;
                 hs.write_u64(((w as u64) << 32) | h as u64 | (field as u64) << 63);
-                hs.write_u64(list.background.0.iter().fold(0u64, |a, v| a.rotate_left(16) ^ v.to_bits() as u64));
-                for op in &list.ops[..n_smooth] {
+                hs.write_u64(scene.background.0.iter().fold(0u64, |a, v| a.rotate_left(16) ^ v.to_bits() as u64));
+                for op in &scene.ops[..n_smooth] {
                     hs.write_u64(incremental::hash_op(op));
                 }
                 // Images can change pixels under the same id.
-                for op in &list.ops[..n_smooth] {
+                for op in &scene.ops[..n_smooth] {
                     if let Op::Image { image, .. } = op {
                         hs.write_u64(assets.image(*image).map_or(0, |p| Arc::as_ptr(&p) as u64));
                     }
@@ -506,14 +531,14 @@ impl Renderer {
             };
             if field && self.smooth_key != Some(key) {
                 self.smooth_lo.resize(w, h);
-                smooth::render_field(&list.ops[..n_smooth], w as usize, h as usize, list.background, self.smooth_lo.data_as_u8_slice_mut());
+                smooth::render_field(&scene.ops[..n_smooth], w as usize, h as usize, scene.background, self.smooth_lo.data_as_u8_slice_mut());
                 self.smooth_lo.recompute_may_have_transparency();
                 self.smooth_key = Some(key);
             } else if self.smooth_key != Some(key) {
                 let lctx = self.lctx.get_or_insert_with(|| RenderContext::new(lw as u16, lh as u16));
                 lctx.reset_and_resize(lw as u16, lh as u16);
                 st.org = (0, 0);
-                draw_ops(st, &assets, lctx, &list.ops[..n_smooth], Affine::scale_non_uniform(lw as f64 / w as f64, lh as f64 / h as f64));
+                draw_ops(st, &assets, lctx, &scene.ops[..n_smooth], Affine::scale_non_uniform(lw as f64 / w as f64, lh as f64 / h as f64));
                 lctx.flush();
                 self.smooth_lo.resize(lw as u16, lh as u16);
                 lctx.render_with(&mut self.smooth_lo, &mut st.res, settings);
@@ -527,8 +552,8 @@ impl Renderer {
         }
         // An opaque background colour is a backdrop too: YUV planes and RGBA
         // boxes start from it directly instead of a full-frame clear and convert.
-        if backdrop.is_none() && !blends && list.background.0[3] >= 1.0 && !st.reference {
-            let c = color(list.background).to_rgba8().to_u8_array();
+        if backdrop.is_none() && !blends && scene.background.0[3] >= 1.0 && !st.reference {
+            let c = color(scene.background).to_rgba8().to_u8_array();
             let pix = match &self.bg_pix {
                 Some((k, p)) if *k == c => p.clone(),
                 _ => {
@@ -545,9 +570,18 @@ impl Renderer {
             // `usize::MAX`: no op is hidden (k + 1 wraps to 0).
             backdrop = Some((usize::MAX, pix, Rect::new(0.0, 0.0, w as f64, h as f64)));
         }
+        let bg_op = blends.then_some(Op::RoundRect {
+            x: 0.0,
+            y: 0.0,
+            w: w as f32,
+            h: h as f32,
+            radius: 0.0,
+            paint: Paint::Solid(scene.background),
+            transform: dl::IDENTITY,
+        });
         let (ops, skip) = match &backdrop {
-            Some((k, _, _)) => (&list.ops[k.wrapping_add(1)..], k.wrapping_add(1)),
-            None => (list_ops, 0),
+            Some((k, _, _)) => (&scene.ops[k.wrapping_add(1)..], k.wrapping_add(1)),
+            None => (scene.ops, 0),
         };
         let settings = if backdrop.is_some() { RasterizerSettings { target_init: TargetInit::SrcOver, ..Default::default() } } else { settings };
         if backdrop.is_some() {
@@ -710,6 +744,9 @@ impl Renderer {
                 }
                 _ => {
                     self.ctx.reset();
+                    if let Some(bg_op) = &bg_op {
+                        draw_op(st, &assets, &mut self.ctx, bg_op, Affine::IDENTITY);
+                    }
                     draw_ops(st, &assets, &mut self.ctx, ops, Affine::IDENTITY);
                     self.ctx.flush();
                     self.ctx.render_with(&mut self.frame, &mut st.res, settings);
@@ -727,6 +764,9 @@ impl Renderer {
             rctx.reset_and_resize(rw, rh);
             st.org = (x0 as i32, y0 as i32);
             let cull = rects.map(|rects| Cull { region: Rect::new(0.0, 0.0, rw as f64, rh as f64), rects: &rects[skip.min(rects.len())..], org: (x0 as f64, y0 as f64) });
+            if let Some(bg_op) = &bg_op {
+                draw_op(st, &assets, rctx, bg_op, Affine::translate((-(x0 as f64), -(y0 as f64))));
+            }
             draw_ops_culled(st, &assets, rctx, ops, Affine::translate((-(x0 as f64), -(y0 as f64))), cull);
             rctx.flush();
             self.rpix.resize(rw, rh);
@@ -767,21 +807,12 @@ impl Renderer {
             st.text.retain(|_, e| e.last_used + 2 >= now);
         }
         if full || st.scaled.len() > 64 {
-            st.scaled.retain(|_, e| e.last_used + 2 >= now);
+            let (scaled, pool) = (&mut st.scaled, &mut st.pix_pool);
+            evict_to_pool(scaled, pool, now);
         }
         if full || st.grads.len() > 64 {
-            // Evicted gradient bitmaps go back to the pool (no 8 MB allocations per frame).
             let (grads, pool) = (&mut st.grads, &mut st.pix_pool);
-            let old: Vec<u64> = grads.iter().filter(|(_, e)| e.last_used + 2 < now).map(|(k, _)| *k).collect();
-            for k in old {
-                if let Some(e) = grads.remove(&k) {
-                    if let Ok(p) = Arc::try_unwrap(e.pix) {
-                        if pool.len() < 16 {
-                            pool.push(p);
-                        }
-                    }
-                }
-            }
+            evict_to_pool(grads, pool, now);
         }
         st.seen.retain(|_, &mut f| f + 2 >= now);
         if st.sprites.len() > 256 {
@@ -1184,16 +1215,17 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
     // on cache history, or a static image pops on its second frame and output
     // depends on which frames a renderer happened to draw before.
     let (ow, oh) = ((px + qw).ceil() as usize, (py + qh).ceil() as usize);
+    let mut pm = st.pix_pool.pop().unwrap_or_else(|| Pixmap::new(ow as u16, oh as u16));
+    pm.resize(ow as u16, oh as u16);
     if enlarge {
-        st.resample_buf.resize(ow * oh * 4, 0);
         st.up.invalidate();
-        st.up.run(pix.data_as_u8_slice(), iw as usize, ih as usize, Rect::new(px, py, px + qw, py + qh), &mut st.resample_buf, ow, oh, 0, 0);
+        st.up.run(pix.data_as_u8_slice(), iw as usize, ih as usize, Rect::new(px, py, px + qw, py + qh), pm.data_as_u8_slice_mut(), ow, oh, 0, 0);
         // Edge pixels the image only partly covers: scale by coverage.
         let cov = |o: usize, a: f64, b: f64| ((o as f64 + 1.0).min(b) - (o as f64).max(a)).clamp(0.0, 1.0) as f32;
         for y in [0, oh - 1] {
             let cy = cov(y, py, py + qh);
             if cy < 1.0 {
-                for p in st.resample_buf[y * ow * 4..(y + 1) * ow * 4].iter_mut() {
+                for p in pm.data_as_u8_slice_mut()[y * ow * 4..(y + 1) * ow * 4].iter_mut() {
                     *p = (*p as f32 * cy + 0.5) as u8;
                 }
             }
@@ -1202,21 +1234,21 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
             let cx = cov(x, px, px + qw);
             if cx < 1.0 {
                 for y in 0..oh {
-                    for p in st.resample_buf[(y * ow + x) * 4..(y * ow + x) * 4 + 4].iter_mut() {
+                    for p in pm.data_as_u8_slice_mut()[(y * ow + x) * 4..(y * ow + x) * 4 + 4].iter_mut() {
                         *p = (*p as f32 * cx + 0.5) as u8;
                     }
                 }
             }
         }
     } else {
-        resample::resample(pix.data_as_u8_slice(), iw as usize, ih as usize, px, py, qw, qh, ow, oh, &mut st.resample_buf);
+        resample::resample(pix.data_as_u8_slice(), iw as usize, ih as usize, px, py, qw, qh, ow, oh, pm.data_as_u8_slice_mut());
     }
-    let mut pm = Pixmap::new(ow as u16, oh as u16);
-    pm.data_as_u8_slice_mut().copy_from_slice(&st.resample_buf[..ow * oh * 4]);
     pm.recompute_may_have_transparency();
     let p = Arc::new(pm);
     if !reference {
         st.scaled.insert(key, CacheEntry { pix: p.clone(), x: 0, y: 0, last_used: now });
+    } else {
+        st.in_flight.push(p.clone());
     }
     blit(ctx, p, fx, fy, alpha);
     true

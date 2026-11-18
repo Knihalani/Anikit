@@ -121,10 +121,29 @@ struct State {
     field: Vec<f32>,
 }
 
+/// Per-step buffers, reused across steps and frames.
+#[derive(Default)]
+struct Scratch {
+    dep: Vec<AtomicU32>,
+    src: Vec<f32>,
+    back: Vec<f32>,
+}
+
+impl Scratch {
+    fn fit(&mut self, n: usize) {
+        if self.dep.len() != n {
+            self.dep = (0..n).map(|_| AtomicU32::new(0)).collect();
+            self.src = vec![0.0; n];
+            self.back = vec![0.0; n];
+        }
+    }
+}
+
 struct SimState {
     lives: Vec<State>,
     frames: HashMap<u64, Arc<Vec<f32>>>,
     checkpoints: Vec<State>,
+    scratch: Scratch,
 }
 
 struct Sim {
@@ -172,7 +191,7 @@ impl Physarum {
             let long = self.resolution as f32;
             let (w, h) = if aspect >= 1.0 { (long as usize, (long / aspect).round().max(8.0) as usize) } else { ((long * aspect).round().max(8.0) as usize, long as usize) };
             let mask = self.text.as_ref().map(|t| word_mask(t, w, h, aspect));
-            Sim { w, h, mask, state: Mutex::new(SimState { lives: Vec::new(), frames: HashMap::new(), checkpoints: Vec::new() }) }
+            Sim { w, h, mask, state: Mutex::new(SimState { lives: Vec::new(), frames: HashMap::new(), checkpoints: Vec::new(), scratch: Scratch::default() }) }
         })
     }
 
@@ -220,8 +239,9 @@ impl Physarum {
     }
 
     /// One step: sense, turn, move and deposit (from the previous field), then diffuse and decay.
-    fn advance(&self, s: &Sim, st: &mut State) {
+    fn advance(&self, s: &Sim, st: &mut State, sc: &mut Scratch) {
         let (w, h) = (s.w, s.h);
+        sc.fit(w * h);
         let (wf, hf) = (w as f32, h as f32);
         let field = &st.field;
         let sa = self.sensor_angle.to_radians();
@@ -234,7 +254,6 @@ impl Physarum {
             let (xi, yi) = if wrap { ((x.rem_euclid(wf)) as usize % w, (y.rem_euclid(hf)) as usize % h) } else { (x.clamp(0.0, wf - 1.0) as usize, y.clamp(0.0, hf - 1.0) as usize) };
             field[yi * w + xi]
         };
-        let dep: Vec<AtomicU32> = (0..w * h).map(|_| AtomicU32::new(0)).collect();
         let q = (self.deposit.max(0.0) * FIX).round() as u32;
         let seed = self.seed;
         st.agents.par_chunks_mut(4096).enumerate().for_each(|(c, chunk)| {
@@ -267,21 +286,25 @@ impl Physarum {
                     a = unit(rnd >> 1) * std::f32::consts::TAU;
                 }
                 let ci = ((ny as usize).min(h - 1)) * w + (nx as usize).min(w - 1);
-                dep[ci].fetch_add(q, Ordering::Relaxed);
+                sc.dep[ci].fetch_add(q, Ordering::Relaxed);
                 *ag = [nx, ny, a];
             }
         });
         // Field: add deposits (and the word's attraction), blur, decay.
         let attract = self.attract;
         let mask = s.mask.as_deref();
-        let src: Vec<f32> = (0..w * h)
-            .into_par_iter()
+        sc.src
+            .par_iter_mut()
             .with_min_len(4096)
-            .map(|i| field[i] + dep[i].load(Ordering::Relaxed) as f32 / FIX + mask.map(|m| m[i] * attract).unwrap_or(0.0))
-            .collect();
+            .enumerate()
+            .for_each(|(i, value)| {
+                let d = sc.dep[i].load(Ordering::Relaxed);
+                sc.dep[i].store(0, Ordering::Relaxed);
+                *value = field[i] + d as f32 / FIX + mask.map(|m| m[i] * attract).unwrap_or(0.0);
+            });
+        let src = &sc.src;
         let (dif, keep) = (self.diffuse, self.decay);
-        let mut out = vec![0.0f32; w * h];
-        out.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+        sc.back.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
             let (yu, yd) = if wrap { ((y + h - 1) % h, (y + 1) % h) } else { (y.saturating_sub(1), (y + 1).min(h - 1)) };
             for x in 0..w {
                 let (xl, xr) = if wrap { ((x + w - 1) % w, (x + 1) % w) } else { (x.saturating_sub(1), (x + 1).min(w - 1)) };
@@ -293,7 +316,7 @@ impl Physarum {
                 row[x] = (c + (sum / 9.0 - c) * dif) * keep;
             }
         });
-        st.field = out;
+        std::mem::swap(&mut st.field, &mut sc.back);
         st.step += 1;
     }
 
@@ -312,17 +335,19 @@ impl Physarum {
         };
         let bytes = start.agents.len() * 12 + start.field.len() * 4;
         let max_cp = ((1usize << 29) / bytes.max(1)).clamp(1, 64);
+        let mut scratch = std::mem::take(&mut st.scratch);
         let st_ref = &mut *st;
         let out = crate::scene3d::sim_blocking(|| {
             let mut f = start;
             while f.step < target {
-                self.advance(s, &mut f);
+                self.advance(s, &mut f, &mut scratch);
                 if f.step % 60 == 0 && !st_ref.checkpoints.iter().any(|c| c.step == f.step) && st_ref.checkpoints.len() < max_cp {
                     st_ref.checkpoints.push(f.clone());
                 }
             }
             f
         });
+        st.scratch = scratch;
         let fr = Arc::new(out.field.clone());
         st.frames.insert(target, fr.clone());
         if st.frames.len() > 48 {
@@ -414,7 +439,7 @@ impl Component for Physarum {
         let frame = (t * fps).round().max(0.0) as u64;
         let s = self.sim(aspect);
         let key = fnv(&[&self.key().to_le_bytes(), &frame.to_le_bytes(), &fps.to_bits().to_le_bytes(), &(w as u32).to_le_bytes(), &(h as u32).to_le_bytes()]);
-        let image = ctx.assets.image(key, w as u32, h as u32, &mut || {
+        let image = ctx.assets.frame_image(key, w as u32, h as u32, &mut || {
             let fr = self.frame(s, frame, fps);
             self.render(s, &fr, w, h)
         });
