@@ -331,7 +331,7 @@ A fragment shader, run JIT-compiled on the CPU at full resolution. Full guide: [
 | Key | Meaning |
 |---|---|
 | `shader` | GLSL with `void mainImage(out vec4 fragColor, in vec2 fragCoord)`, WGSL with `fn mainImage(fragCoord: vec2f) -> vec4f`, or a built-in name (`anikit-video info --shaders`). `src: "fx.glsl"` loads a file. |
-| `uniforms` | name → number, `[x, y(, z, w)]`, colour or `"=expr"`. Declared with `uniform float name; // = default` in the source, or declared for you. They animate by name in `animate` (up to 12 floats per layer). |
+| `uniforms` | name → number, `[x, y(, z, w)]`, colour or `"=expr"`. Declared with `uniform float name; // = default` in the source, or declared for you. They animate by name in `animate` (up to 12 animated floats per layer; static values don't count; more is an error). |
 | `channels` | `iChannel0..3`: `"below"` (everything drawn so far), `"noise"`, an image/video path, `"#name"` or `{"composition": "name", "trimStart", "speed", "loop"}`, or inline `{"layers": [...]}`. Options: `wrap` (`clamp` `repeat` `mirror`), `filter` (`linear` `nearest`), `mipmaps`. |
 | `filter` | `true`: `iChannel0` defaults to `"below"` and the output replaces the whole frame. |
 | `supersample` | anti-aliasing: adaptive 2×2 where neighbouring pixels differ. On by default (off for filters and for sources with `// anikit:aa off`); `false` is up to 2× faster. |

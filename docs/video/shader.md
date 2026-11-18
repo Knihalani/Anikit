@@ -155,7 +155,7 @@ uniform vec3  tint;   // = vec3(1.0, 0.5, 0.2)
 
 - **Values:** numbers, `[x, y(, z, w)]`, colours (`vec3`, or `vec4` when the alpha is below 1), or `"=expr"` expressions (`"=sin(t)"`).
 - **Undeclared uniforms:** a uniform the source doesn't declare is declared for it, as `float` or `vecN`.
-- **Animation:** uniforms animate by name in `animate` (`to`, `from`, `keyframes`) like any property. A vector animates per component: `{"to": {"tint": [1, 0, 0]}}`. Each shader layer has 12 animatable floats; any uniforms past that are fixed and produce a warning.
+- **Animation:** uniforms animate by name in `animate` (`to`, `from`, `keyframes`) like any property. A vector animates per component: `{"to": {"tint": [1, 0, 0]}}`. A shader layer can animate up to 12 uniform floats. Static values don't count, however many there are. Animating more is an error: drive several values from one animated uniform instead (e.g. a `phase` the shader derives the rest from).
 
 ### Channels
 
