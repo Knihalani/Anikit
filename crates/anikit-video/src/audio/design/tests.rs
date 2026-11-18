@@ -418,3 +418,25 @@ fn audio_cue_design_names_land_their_hit() {
     assert!((t - 1.5).abs() < 0.08, "peak at {t:.3}");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn physics_collisions_are_heard() {
+    // A metal ball dropped from 2 m lands at ≈ √(2·2/9.81) ≈ 0.64 s after the sim starts.
+    let spec = serde_json::json!({
+        "size": [320, 180], "fps": 30, "sound": { "density": 0.6 },
+        "scenes": [{ "duration": 2, "layers": [{ "component": "scene3d", "props": {
+            "env": "cyc", "quality": "draft",
+            "camera": { "keys": [{ "t": 0, "pos": [0, 1.5, 6], "target": [0, 0.5, 0], "focal": 35 }] },
+            "physics": { "bodies": [{ "type": "sphere", "radius": 0.2, "pos": [1.2, 2.2, 0], "material": "chrome" }] }
+        } }] }]
+    });
+    let ev = evaluator(spec);
+    let cues = auto::plan_cues(&ev, ev.sound.as_ref().unwrap());
+    let hits: Vec<_> = cues.iter().filter(|c| c.why.contains("collides")).collect();
+    assert!(!hits.is_empty(), "{cues:?}");
+    let first = hits[0];
+    assert_eq!(first.name, "metal", "{hits:?}");
+    assert!(first.at > 0.45 && first.at < 0.85, "{hits:?}");
+    // Right of centre on screen → panned right.
+    assert!(first.params.pan > 0.05, "{hits:?}");
+}

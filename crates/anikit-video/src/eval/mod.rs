@@ -677,6 +677,32 @@ impl Evaluator {
         }
     }
 
+    /// Collisions reported by component layers (physics in `scene3d`), as
+    /// `(layer tag, video seconds, impact)`; `aspect(tag)` is the layer box's
+    /// width / height on screen.
+    pub(crate) fn component_impacts(&self, aspect: &dyn Fn(u32) -> f32) -> Vec<(u32, f32, crate::components::Impact)> {
+        fn walk(nodes: &[Node], t0: f32, until: f32, aspect: &dyn Fn(u32) -> f32, out: &mut Vec<(u32, f32, crate::components::Impact)>) {
+            for n in nodes {
+                let start = t0 + n.start;
+                match &n.kind {
+                    Kind::Component(c, _) => {
+                        let local = (until.min(t0 + n.end) - start).max(0.0);
+                        for i in c.impacts(local, aspect(n.tag)) {
+                            out.push((n.tag, start + i.t, i));
+                        }
+                    }
+                    Kind::Group { children } | Kind::Box { children, .. } => walk(children, start, until, aspect, out),
+                    _ => {}
+                }
+            }
+        }
+        let mut out = Vec::new();
+        for s in &self.scenes {
+            walk(&s.layers, s.start, s.start + s.dur, aspect, &mut out);
+        }
+        out
+    }
+
     /// The display list at time `t` (seconds).
     pub fn eval(&self, t: f32) -> DisplayList {
         let mut dl = DisplayList::default();

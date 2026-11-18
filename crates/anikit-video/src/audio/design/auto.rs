@@ -31,6 +31,8 @@ pub enum Kind {
     Transition,
     /// A layer appears in place (wipe, mask, fade).
     Reveal,
+    /// A collision inside a component's simulation (physics).
+    Impact,
 }
 
 /// One candidate event.
@@ -57,12 +59,17 @@ pub(crate) struct Event {
     pub trans: Option<TransKind>,
     /// The move ends with the layer leaving the frame / disappearing.
     pub exits: bool,
+    /// Material of a physics impact.
+    pub mat: Option<&'static str>,
 }
 
 #[derive(Clone, Copy, Default)]
 struct Sample {
     cx: f32,
     cy: f32,
+    /// Box width and height as fractions of the frame.
+    w: f32,
+    h: f32,
     size: f32,
     alpha: f32,
     text: u64,
@@ -84,6 +91,16 @@ fn track(ev: &Evaluator, plan: &SoundPlan) -> (HashMap<u32, Vec<Option<Sample>>>
     let diag = (w * w + h * h).sqrt();
     let overrides: HashMap<u32, &LayerSfx> = plan.layers.iter().map(|(t, l)| (*t, l)).collect();
     let mut tracks: HashMap<u32, Vec<Option<Sample>>> = HashMap::new();
+    // Boxes don't depend on pixels: shaders and 3D render at a few pixels
+    // here (thread-local scale), so analysis costs display lists, not ray tracing.
+    struct Restore;
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            crate::eval::shader::set_preview_scale(1.0);
+        }
+    }
+    crate::eval::shader::set_preview_scale(0.01);
+    let _restore = Restore;
     for k in 0..n {
         let t = (k as f32 * dt).min(ev.duration - 1e-3);
         let (dl, tags) = ev.eval_tagged(t);
@@ -135,6 +152,8 @@ fn track(ev: &Evaluator, plan: &SoundPlan) -> (HashMap<u32, Vec<Option<Sample>>>
             }
             let tr = tracks.entry(layer).or_insert_with(|| vec![None; n]);
             tr[k] = Some(Sample {
+                w: r.width() as f32 / w,
+                h: r.height() as f32 / h,
                 cx: r.center().x as f32 / w,
                 cy: r.center().y as f32 / h,
                 size: ((r.width() * r.height()).sqrt() as f32 / diag).min(1.0),
@@ -211,6 +230,8 @@ pub(crate) fn events(ev: &Evaluator, plan: &SoundPlan) -> Vec<Event> {
             Some(Sample {
                 cx: 0.5,
                 cy: 0.5,
+                w: 1.0,
+                h: 1.0,
                 size: 1.0,
                 alpha: 1.0,
                 text: 0,
@@ -291,6 +312,7 @@ pub(crate) fn events(ev: &Evaluator, plan: &SoundPlan) -> Vec<Event> {
                 path: path.clone(),
                 trans: None,
                 exits,
+                mat: None,
             };
             if len > 2.5 {
                 // Steady, ongoing motion (drifts, loops, conveyor belts) is ambience, not an event.
@@ -363,6 +385,7 @@ pub(crate) fn events(ev: &Evaluator, plan: &SoundPlan) -> Vec<Event> {
                         path: path.clone(),
                         trans: None,
                         exits: false,
+                        mat: None,
                     });
                 }
             }
@@ -398,6 +421,7 @@ pub(crate) fn events(ev: &Evaluator, plan: &SoundPlan) -> Vec<Event> {
                 path: path.clone(),
                 trans: None,
                 exits: false,
+                mat: None,
             };
             if count >= 3 {
                 out.push(Event {
@@ -417,6 +441,42 @@ pub(crate) fn events(ev: &Evaluator, plan: &SoundPlan) -> Vec<Event> {
             }
             i = j + 1;
         }
+    }
+    // Collisions inside simulations (physics in scene3d layers).
+    let by_tag: HashMap<u32, &Vec<Option<Sample>>> = layers.iter().map(|(l, t)| (*l, t)).collect();
+    let overrides: HashMap<u32, &LayerSfx> = plan.layers.iter().map(|(t, l)| (*t, l)).collect();
+    let box_at = |tag: u32, t: f32| -> Sample {
+        let k = ((t / dt).round() as usize).min(n.saturating_sub(1));
+        by_tag.get(&tag).and_then(|tr| tr.get(k).copied().flatten()).unwrap_or(Sample { cx: 0.5, cy: 0.5, w: 1.0, h: 1.0, size: 1.0, alpha: 1.0, text: 0 })
+    };
+    let frame_aspect = aspect;
+    let impacts = ev.component_impacts(&|tag| {
+        let s = box_at(tag, 0.0);
+        frame_aspect * s.w / s.h.max(1e-3)
+    });
+    for (tag, t, im) in impacts {
+        let o = overrides.get(&tag);
+        if o.is_some_and(|o| o.off) || (!plan.auto && !o.is_some_and(|o| o.auto)) {
+            continue;
+        }
+        let s = box_at(tag, t);
+        let x = s.cx + (im.x - 0.5) * s.w;
+        out.push(Event {
+            kind: Kind::Impact,
+            t: t as f64,
+            salience: 0.2 + im.strength,
+            x,
+            travel: 0.0,
+            speed: im.strength,
+            size: im.strength * 0.5,
+            span: 0.0,
+            count: 1,
+            layer: tag,
+            path: ev.layer_info(tag).0.to_string(),
+            trans: None,
+            exits: false,
+            mat: Some(im.material),
+        });
     }
     if plan.spec.transitions {
         for s in ev.scenes.iter().skip(1) {
@@ -443,6 +503,7 @@ pub(crate) fn events(ev: &Evaluator, plan: &SoundPlan) -> Vec<Event> {
                 path: format!("scenes[{}].transition", s.id),
                 trans: Some(k),
                 exits: false,
+                mat: None,
             });
         }
     }
@@ -468,6 +529,7 @@ fn placeholder() -> Event {
         path: String::new(),
         trans: None,
         exits: false,
+        mat: None,
     }
 }
 
@@ -492,8 +554,25 @@ pub(crate) fn select(mut evs: Vec<Event>, plan: &SoundPlan, duration: f32) -> Ve
             .then(evs[a].t.total_cmp(&evs[b].t))
     });
     let mut keep: Vec<usize> = Vec::new();
+    // Physics collisions have their own budget (a domino run should clatter):
+    // the strongest, up to (4 + 12·density) per second, 40 ms apart.
+    let imp_budget = ((duration * (4.0 + 12.0 * density)).ceil() as usize).max(1);
+    let mut imp_kept = 0;
+    for &i in &order {
+        let e = &evs[i];
+        if e.kind != Kind::Impact || imp_kept >= imp_budget || e.salience < 0.25 {
+            continue;
+        }
+        if !keep.iter().any(|&j| (evs[j].t - e.t).abs() < 0.04) {
+            keep.push(i);
+            imp_kept += 1;
+        }
+    }
     for i in order {
         let e = &evs[i];
+        if e.kind == Kind::Impact {
+            continue;
+        }
         let f = forced.contains(&e.layer);
         if !f && (keep.len() >= budget || e.salience < floor) {
             continue;
@@ -609,6 +688,14 @@ fn sound_for(e: &Event, plan: &SoundPlan, hero: bool) -> Option<&'static str> {
         },
         Kind::Text => "ticker",
         Kind::Count => "ticker",
+        Kind::Impact => match e.mat.unwrap_or("wood") {
+            "metal" => "metal",
+            "glass" => "glass",
+            "plastic" => "plastic",
+            "ceramic" => "ceramic",
+            "stone" => "stone",
+            _ => "wood",
+        },
         Kind::Reveal => match pal {
             "digital" => "blip",
             "playful" => "pop",
@@ -669,7 +756,7 @@ pub(crate) fn cues(evs: &[Event], plan: &SoundPlan) -> Vec<Cue> {
                 // doesn't sound like one sample on repeat.
                 Some(n) if e.kind == Kind::Move && e.layer != CAMERA => {
                     moves += 1;
-                    if moves % 2 == 0 {
+                    if moves.is_multiple_of(2) {
                         match n {
                             "swish" => "air",
                             "air" if plan.palette == "luxury" => "whoosh-air",
@@ -742,6 +829,7 @@ pub(crate) fn cues(evs: &[Event], plan: &SoundPlan) -> Vec<Cue> {
                 // Smaller things sound smaller.
                 Kind::Move | Kind::Land => 6.0 * (e.size.sqrt() - 0.5).clamp(-0.6, 0.4),
                 Kind::Text => -4.0,
+                Kind::Impact => 9.0 * (e.speed - 0.6),
                 Kind::Reveal => -5.0 + 4.0 * e.size.sqrt(),
                 _ => 0.0,
             };
@@ -770,6 +858,7 @@ pub(crate) fn cues(evs: &[Event], plan: &SoundPlan) -> Vec<Cue> {
                     Kind::Count => "counts",
                     Kind::Transition => "transition",
                     Kind::Reveal => "appears",
+                    Kind::Impact => "collides",
                 }
             ),
         });

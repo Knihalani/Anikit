@@ -150,6 +150,24 @@ pub trait Component: Send + Sync {
     fn duration(&self) -> Option<f32> {
         None
     }
+    /// Collisions in the component's own simulation up to local time `until`
+    /// (sound design: physics hits are heard where they happen). Default none.
+    fn impacts(&self, _until: f32, _aspect: f32) -> Vec<Impact> {
+        Vec::new()
+    }
+}
+
+/// One collision a component reports for sound design.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Impact {
+    /// Local time (seconds).
+    pub t: f32,
+    /// 0..1 (speed change, scaled by body size).
+    pub strength: f32,
+    /// Horizontal position in the component's box, 0..1.
+    pub x: f32,
+    /// What the body is made of, for the sound: `metal`, `glass`, `wood`, `stone`, `ceramic`, `plastic`.
+    pub material: &'static str,
 }
 
 /// A built component plus its box.
