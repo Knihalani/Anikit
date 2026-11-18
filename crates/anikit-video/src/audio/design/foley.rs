@@ -621,3 +621,70 @@ pub(super) fn shepard(c: &mut Ctx) -> (St, f32) {
     st.fade_end(frames(0.01, sr));
     (st, dur)
 }
+
+/// One footstep. `tone` < 0.5: a crunch on snow or gravel (a burst of tiny
+/// grains over 80–140 ms); ≥ 0.5: heel and toe on a hard floor.
+pub(super) fn step(c: &mut Ctx, crunch: bool) -> (St, f32) {
+    let sr = c.sr;
+    let i = c.i();
+    if crunch {
+        let len = frames(0.14 + 0.06 * i, sr);
+        let mut st = St::new(len + frames(0.02, sr));
+        let grains = (60.0 + 80.0 * i) as usize;
+        for _ in 0..grains {
+            let at = (c.n.f().powf(1.6) * len as f32) as usize;
+            let gl = frames(c.n.range(0.0005, 0.003), sr).max(3);
+            let mut g: Vec<f32> = (0..gl).map(|j| c.n.white() * env_ad(j, 1, gl as f32 * 0.3)).collect();
+            bandpass(&mut g, c.n.range(900.0, 5000.0) * c.pf(), 1.3, sr);
+            let a = (1.0 - at as f32 / len as f32).max(0.0) * c.n.range(0.2, 1.0);
+            st.add_mono(at, &g, c.n.range(-0.15, 0.15), a);
+        }
+        let thud = sine_glide(frames(0.08, sr), sr, 110.0, 70.0, frames(0.05, sr), |k| env_ad(k, 30, 0.02 * sr));
+        st.add_mono(0, &thud, 0.0, 0.35);
+        (st, 0.01)
+    } else {
+        let len = frames(0.25, sr);
+        let mut st = St::new(len);
+        for (at, f, a) in [(0usize, 180.0f32, 1.0f32), (frames(0.07 + 0.03 * c.n.f(), sr), 260.0, 0.6)] {
+            let exc = strike(&mut c.n, 1.5, 3500.0, sr);
+            let f = f * c.pf();
+            let x = modal(&exc, &[(f, 1.0, 0.04), (f * 2.3, 0.5, 0.025), (f * 4.1, 0.3, 0.015)], sr, frames(0.08, sr));
+            st.add_mono(at, &x, 0.0, a);
+        }
+        reverb(&mut st, "room", 0.5, 0.3 * c.p.size, 0.3, sr);
+        (st, 0.0)
+    }
+}
+
+/// A walk: `count` steps (default 6) at `duration`/count spacing with human
+/// timing jitter and alternating feet (slight pan and level differences).
+pub(super) fn footsteps(c: &mut Ctx) -> (St, f32) {
+    let sr = c.sr;
+    let count = c.p.count.unwrap_or(6).clamp(1, 64) as usize;
+    let dur = c.dur(count as f32 * 0.55);
+    let crunch = c.p.tone < 0.5;
+    let mut st = St::new(frames(dur + 0.3, sr));
+    for k in 0..count {
+        let at = (k as f32 + 0.04 * c.n.white()) * dur / count as f32;
+        let (s, _) = step(c, crunch);
+        let foot = if k % 2 == 0 { -0.12 } else { 0.12 };
+        let mut s2 = St::new(0);
+        s2.add_mono(0, &s.l, foot, 1.0);
+        st.add(frames(at.max(0.0), sr), &s2, if k % 2 == 0 { 1.0 } else { 0.85 });
+    }
+    (st, 0.0)
+}
+
+/// A breath: an inhale (rising, airy) then a longer exhale (falling, warmer).
+pub(super) fn breath(c: &mut Ctx) -> (St, f32) {
+    let sr = c.sr;
+    let dur = c.dur(2.2);
+    let (li, le) = (frames(dur * 0.4, sr), frames(dur * 0.6, sr));
+    let inh = swept_noise(&mut c.n, li, sr, 1.2, true, |k| 1400.0 + 900.0 * k as f32 / li as f32, |k| bell(k, li, 0.7, 1.2) * 0.5);
+    let exh = swept_noise(&mut c.n, le, sr, 0.9, true, |k| 1100.0 - 500.0 * k as f32 / le as f32, |k| bell(k, le, 0.25, 1.3) * 0.6);
+    let mut st = St::new(li + le);
+    st.add_mono(0, &inh, 0.0, 1.0);
+    st.add_mono(li, &exh, 0.0, 1.0);
+    highpass_st(&mut st, 200.0, sr);
+    (st, dur * 0.4)
+}
