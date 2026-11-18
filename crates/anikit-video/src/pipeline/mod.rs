@@ -1410,7 +1410,11 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
             // A layer's cost: its share of the render plus its eval work (shader / 3D images are
             // made while evaluating, so re-time those by forcing a fresh evaluation of the frame).
             for tag in &tags {
-                let sub = DisplayList { width: dl.width, height: dl.height, background: dl.background, ops: dl.ops[tag.ops.clone()].to_vec() };
+                // Tags of layers drawn inside another (e.g. a shader channel's layer list) can
+                // point past this frame's ops; time only what is here.
+                let n = dl.ops.len();
+                let range = tag.ops.start.min(n)..tag.ops.end.min(n);
+                let sub = DisplayList { width: dl.width, height: dl.height, background: dl.background, ops: dl.ops[range].to_vec() };
                 let t = Instant::now();
                 with_renderer(ev, |r, _| {
                     r.invalidate();
