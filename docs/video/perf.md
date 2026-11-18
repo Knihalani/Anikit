@@ -81,6 +81,23 @@ Add an entry when you add a feature with its own fast paths. If a component has 
 
 ## Results
 
+### Overnight, 17–18 Nov: before/after (each pair measured on the same host, output byte-identical)
+
+The VM changed several times overnight; the last host was about 35% slower (`post_stages` 109 ms vs 80 ms). So absolute fps from different runs don't compare; these pairs do.
+
+| change | before | after |
+|---|---:|---:|
+| qbench `post` (post stack + motion blur) | 12 fps | 31 fps |
+| `cinematic` post look, 1080p, one thread | 290 ms | 80 ms |
+| `pulse` spec build (particle-text prepare) | 165 ms | 33 ms |
+| memory kept after 4 renders in one process: backdrop / post / particles | 621 / 347 / 157 MiB | 69 / 23 / 45 MiB |
+| memory kept after swell's 80k-particle scene | 1481 MiB | 277 MiB |
+| offset2027 render: resident at start / peak | 534 / 1247 MiB | 309 / 945 MiB |
+| j-music 5–11 s peak | 971 MiB | 899 MiB |
+| launch unchanged re-render, chunks reused | 6–8 / 16 | 16 / 16 |
+
+Gate on main c884b3a: all 12 specs pass (launch and aurora KNOWN, as before). Every eligible entry passes the cold/warm cache, 1-thread vs N-thread, and held-frame checks.
+
 Same VM throughout: 4 vCPU (Intel Xeon @ 2.1 GHz), 16 GB, Linux 6.18. Wall time is the median of 3 runs. In the fps column, entries marked "(timed)" time the whole spec; the others time the clip.
 
 ### Phase 2, 16:30 (main 8cf24ac merged; `--runs 3` for the content-heavy rows, `--runs 1` for the rest)
