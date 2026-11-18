@@ -40,7 +40,8 @@ struct Entry {
 #[derive(Default)]
 struct State {
     /// (composition, frame, lod) → display-list hash (cheap to keep: no pixels).
-    keys: HashMap<(usize, u32, u8), u64>,
+    /// (composition, frame, lod, sampled mid-frame) → display-list hash.
+    keys: HashMap<(usize, u32, u8, bool), u64>,
     /// (display-list hash, lod) → texture.
     tex: HashMap<(u64, u8), Entry>,
     clock: u64,
@@ -85,13 +86,27 @@ impl CompTextures {
     /// `comp`'s frame at composition time `t` (map a layer's clock with
     /// [`crate::eval::CompTime::map`]), downscaled by `2^lod`; premultiplied RGBA8.
     pub fn get(&self, comp: &Evaluator, t: f32, lod: u8) -> Arc<Pixmap> {
+        self.get_at(comp, t, lod, false)
+    }
+
+    /// Like [`Self::get`], but frame `k` is evaluated at its middle,
+    /// `(k + 0.5) / fps`: everything visible at any point of the frame's
+    /// interval shows. Glyph atlases and per-instance 3D textures index frames
+    /// (`"frame": "=i"`) whose layers are often timed `[f/fps + ε, (f+1)/fps − ε]`;
+    /// sampled at the frame's start those layers were silently missing.
+    pub fn get_mid(&self, comp: &Evaluator, t: f32, lod: u8) -> Arc<Pixmap> {
+        self.get_at(comp, t, lod, true)
+    }
+
+    fn get_at(&self, comp: &Evaluator, t: f32, lod: u8, mid: bool) -> Arc<Pixmap> {
         let k = Self::frame_index(comp, t);
+        let at = (k as f32 + if mid { 0.5 } else { 0.0 }) / comp.fps;
         let id = comp as *const Evaluator as usize;
-        let known = self.state.lock().unwrap().keys.get(&(id, k, lod)).copied();
+        let known = self.state.lock().unwrap().keys.get(&(id, k, lod, mid)).copied();
         // Evaluate outside the lock; the list is needed to hash and maybe to render.
         let mut dl = None;
         let hash = known.unwrap_or_else(|| {
-            let mut l = crate::eval::outside_scale_pass(|| comp.eval(k as f32 / comp.fps));
+            let mut l = crate::eval::outside_scale_pass(|| comp.eval(at));
             super::scale_list(&mut l, 0.5f32.powi(lod as i32));
             let h = super::hash_list(&l);
             dl = Some(l);
@@ -99,7 +114,7 @@ impl CompTextures {
         });
         let cell = {
             let mut st = self.state.lock().unwrap();
-            st.keys.insert((id, k, lod), hash);
+            st.keys.insert((id, k, lod, mid), hash);
             st.clock += 1;
             let now = st.clock;
             let e = st.tex.entry((hash, lod)).or_insert_with(|| Entry { cell: Cell::default(), bytes: 0, used: now });
@@ -109,7 +124,7 @@ impl CompTextures {
         let pix = cell
             .get_or_init(|| {
                 let l = dl.take().unwrap_or_else(|| {
-                    let mut l = crate::eval::outside_scale_pass(|| comp.eval(k as f32 / comp.fps));
+                    let mut l = crate::eval::outside_scale_pass(|| comp.eval(at));
                     super::scale_list(&mut l, 0.5f32.powi(lod as i32));
                     l
                 });

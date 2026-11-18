@@ -134,7 +134,18 @@ Watches, cameras, audio gear and tools are defined by their machined surfaces. `
 - `sunburst`: radial lines from the object's Y axis (dials);
 - `guilloche`: engine-turned waves (rings whose radius ripples with angle);
 - `clous-de-paris`: a hobnail grid of small pyramids;
-- `knurl`: crossed helical grooves (grips and crowns, on the sides of cylinders).
+- `knurl`: crossed helical grooves (grips and crowns, on the sides of cylinders);
+- `spun`: concentric fine grooves around Y (speaker caps, dial centres, lens rings).
+
+**Engraving that cuts itself.** `patternReveal` is an expression of `t`. The pattern exists only where it has been "cut" so far, and a bright cutting edge marks the tool.
+- `revealMode: "sweep"` (default): 0–1 around the object's Y axis, like a hand.
+- `radial`: a radius in metres, growing from the centre.
+
+`{ "extends": "aluminium", "pattern": "guilloche", "patternScale": 0.012, "patternReveal": "=clamp(t/3,0,1)" }`
+
+Let the cut drive the film (the reveal, a transition, the type). Proof: `docs/video/shots/3d-patterns/engrave.jpg` (two moments).
+
+**Anisotropy.** Brushed, sunburst and spun metal stretch their highlights across the grain: brushed gives a broad sheen, spun the turned-metal bowtie, and sunburst a bar through the centre. This is on by default (`anisotropy` 0.6; 0–1 sets it, 0 turns it off). Without it, flat machined metal often reflects nothing toward the camera and reads black. Proof: `docs/video/shots/3d-patterns/anisotropy.jpg` (top row 0, bottom row 0.85).
 
 Grooves need about six pixels per period to resolve. Below that they fade into extra roughness (sheen) instead of aliasing, so frame them close: a 100 mm `macro` at f/8–11.
 
@@ -194,6 +205,8 @@ Light like a gaffer, not with an HDRI default. `rig` places a named setup around
 | `golden` | low warm sun through foliage (gobo), cool sky fill | 5:1 |
 | `window` | crisp daylight through window panes (gobo) | 6:1 |
 | `top` | one overhead source (pendant, skylight) | 10:1 |
+| `pinspot` | a museum vitrine: one narrow real spot straight down, a pool of light on the set, a faint warm rim | ~30:1 |
+| `stage` | a follow spot from front-high (a real spot with a pool) and a strong cool backlight; add `beam` | 10:1 |
 
 Tune it with an object: `{ "preset": "rembrandt", "ratio": 6, "rim": 1.5, "key": 1.2, "angle": 60, "height": 25, "warmth": 0.4, "gobo": "blinds", "goboScale": 0.4, "softness": 0.1, "beam": true }`.
 - `angle`/`height`: the key's azimuth from the camera (+ = camera left) and elevation, in degrees.
@@ -210,10 +223,10 @@ Tune it with an object: `{ "preset": "rembrandt", "ratio": 6, "rim": 1.5, "key":
 
   Animated rigs rebuild the lights each frame (about 2 ms) and skip the baked floor.
 
-Stills (one scene, six rigs) and `sweep.mp4` (3 s, 1080p30, rendered in 43 s on 4 cores): `docs/video/shots/3d-rigs/`. Rigs cost nothing extra: a rig is a few softboxes, the same as an env. Gobos add one pattern lookup per shaded point. Measured 1080p traces on 4 cores: 0.62–0.79 s.
+`pinspot` and `stage` place a real local spot around the subject, so light falls off and pools; the others are softboxes at infinity. Stills (one scene, six rigs, plus `pinspot.jpg` and `stage.jpg`) and `sweep.mp4` (3 s, 1080p30, rendered in 43 s on 4 cores): `docs/video/shots/3d-rigs/`. Rigs cost nothing extra: a rig is a few softboxes, the same as an env. Gobos add one pattern lookup per shaded point. Measured 1080p traces on 4 cores: 0.62–0.79 s.
 Why and how studios light: `docs/video/craft/3d-design.md`.
 
-All of it together: `docs/video/shots/3d-showcase/showcase.mp4` (15.5 s, five shots: a macro reveal, an abstract field, a clay sweep, window light and the hero logo; `contact.jpg`; spec beside it).
+All of it together: `docs/video/shots/3d-showcase/showcase.mp4` (15.5 s, five shots: a macro reveal, an abstract field, a clay sweep, window light, and a guilloché dial engraving itself; rendered in 237 s on 4 cores; `contact.jpg`; spec beside it).
 
 ## Looks and worlds beyond the studio
 
@@ -346,9 +359,14 @@ traversal is 45–60% of trace CPU (camera rays 40–65% of that; glass panes
 re-trace per interface), shadow/AO rays are negligible, refinement covers
 3–6% of pixels but edge samples cost ~2.6× a centre sample, and post is
 140–175 ms (floor reflection, denoise, depth of field, motion blur, bloom
-~20–45 ms each). The cheapest quality lever is edge samples: standard's 6
-→ 9 costs ~6% CPU on cyc and takes ΔE p99.9 14.8 → 10.3, flicker 42 → 29
-(chrome flicker 10 → 5.3); 12 costs ~22% for ΔE 7.4, flicker 21.
+~20–45 ms each).
+
+Standard quality takes 9 edge samples (was 6): +7–17% CPU for ΔE p99.9
+cyc 14.8 → 10.2, chrome 4.4 → 2.5, and flicker cyc 43 → 29, chrome 9 → 5.6,
+studio 10 → 6.1 (4 frames vs the 25-spp references). Variance-driven
+stopping (checkpoints after 3 and 6 samples, stopping where they agree, also
+at id edges) kept the 6-sample cost but only reached flicker 38 on cyc:
+most of the gain comes from pixels that need every sample.
 
 Measure every change:
 

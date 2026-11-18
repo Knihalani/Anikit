@@ -50,13 +50,15 @@ Every judged output, best first within each category. Score = median blind score
 
 | # | Score | Verdict | Judged pro | Refs | Full | Engine | Source | Piece | Result |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 4.88 | FAIL | 0/6 | 7.31 | 5.25 | Anikit | demo | e-data-demo | `docs/video/judge/demos/rebuilds/e-data-demo` |
-| 2 | 4.31 | FAIL | 0/6 | 7.25 | 4.53 | Anikit | r3 | e-data | `docs/video/judge/rounds/r3/results/e-data` |
-| 3 | 4 | FAIL | 0/3 | 7.67 | 4.28 | Anikit | demo | ceiling2_breath_breath | `docs/video/judge/demos/results/ceiling2_breath_breath` |
-| 4 | 3.62 | FAIL | 0/3 | 7.25 | 3.83 | Anikit | r1 | e-data | `docs/video/judge/rounds/r1/results/e-data` |
-| 5 | 3.38 | FAIL | 0/3 | 7.25 | 3.67 | Anikit | r2 | e-data | `docs/video/judge/rounds/r2/results/e-data` |
-| 6 | 2.75 | FAIL | 0/3 | 7.37 | 3.33 | HyperFrames | r1 | hf-e-data | `docs/video/judge/rounds/r1/results/hf-e-data` |
-| 7 | 2.62 | FAIL | 0/3 | 7.75 | 2.94 | Anikit | demo | graphic_pieces_street-ledger | `docs/video/judge/demos/results/graphic_pieces_street-ledger` |
+| 1 | 5.44 | FAIL | 1/6 | 7.19 | 5.53 | Anikit | demo | e-data-demo-v9 (superseded by v11: contained 9 vs 18 million km² contradiction) | `docs/video/judge/demos/rebuilds/e-data-demo-final` |
+| 2 | 5.06 | FAIL | 1/6 | 7.35 | 5.17 | Anikit | demo | e-data-demo-v11 | `docs/video/judge/demos/rebuilds/e-data-demo-v11` |
+| 3 | 4.88 | FAIL | 0/6 | 7.31 | 5.25 | Anikit | demo | e-data-demo | `docs/video/judge/demos/rebuilds/e-data-demo` |
+| 4 | 4.31 | FAIL | 0/6 | 7.25 | 4.53 | Anikit | r3 | e-data | `docs/video/judge/rounds/r3/results/e-data` |
+| 5 | 4 | FAIL | 0/3 | 7.67 | 4.28 | Anikit | demo | ceiling2_breath_breath | `docs/video/judge/demos/results/ceiling2_breath_breath` |
+| 6 | 3.62 | FAIL | 0/3 | 7.25 | 3.83 | Anikit | r1 | e-data | `docs/video/judge/rounds/r1/results/e-data` |
+| 7 | 3.38 | FAIL | 0/3 | 7.25 | 3.67 | Anikit | r2 | e-data | `docs/video/judge/rounds/r2/results/e-data` |
+| 8 | 2.75 | FAIL | 0/3 | 7.37 | 3.33 | HyperFrames | r1 | hf-e-data | `docs/video/judge/rounds/r1/results/hf-e-data` |
+| 9 | 2.62 | FAIL | 0/3 | 7.75 | 2.94 | Anikit | demo | graphic_pieces_street-ledger | `docs/video/judge/demos/results/graphic_pieces_street-ledger` |
 
 ## event promo
 
@@ -90,9 +92,10 @@ Every judged output, best first within each category. Score = median blind score
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 5.25 | FAIL | 3/3 | 6.29 | 5.31 | Anikit | demo | illustration_illo-portrait | `docs/video/judge/demos/results/illustration_illo-portrait` |
 | 2 | 4.75 | FAIL | 0/3 | 6.41 | 4.5 | Anikit | demo | ceiling2_hill_hill | `docs/video/judge/demos/results/ceiling2_hill_hill` |
-| 3 | 4.38 | FAIL | 0/3 | 7.33 | 4.72 | Anikit | r2 | d-illustration | `docs/video/judge/rounds/r2/results/d-illustration` |
-| 4 | 3.62 | FAIL | 0/3 | 7.83 | 4.06 | Anikit | demo | graphic_pieces_tempest-collage | `docs/video/judge/demos/results/graphic_pieces_tempest-collage` |
-| 5 | 3.38 | FAIL | 0/3 | 7.16 | 3.67 | Anikit | r1 | d-illustration | `docs/video/judge/rounds/r1/results/d-illustration` |
+| 3 | 4.62 | FAIL | 1/6 | 6.94 | 4.89 | Anikit | demo | d-illustration-demo | `docs/video/judge/demos/rebuilds/d-illustration-demo` |
+| 4 | 4.38 | FAIL | 0/3 | 7.33 | 4.72 | Anikit | r2 | d-illustration | `docs/video/judge/rounds/r2/results/d-illustration` |
+| 5 | 3.62 | FAIL | 0/3 | 7.83 | 4.06 | Anikit | demo | graphic_pieces_tempest-collage | `docs/video/judge/demos/results/graphic_pieces_tempest-collage` |
+| 6 | 3.38 | FAIL | 0/3 | 7.16 | 3.67 | Anikit | r1 | d-illustration | `docs/video/judge/rounds/r1/results/d-illustration` |
 
 ## kinetic type / titles
 
@@ -116,8 +119,9 @@ Every judged output, best first within each category. Score = median blind score
 | # | Score | Verdict | Judged pro | Refs | Full | Engine | Source | Piece | Result |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 4.25 | FAIL | 1/6 | 7.15 | 4.61 | Anikit | demo | j-music-demo | `docs/video/judge/demos/rebuilds/j-music-demo` |
-| 2 | 3.75 | FAIL | 0/3 | 7.21 | 4.11 | Anikit | r2 | j-music | `docs/video/judge/rounds/r2/results/j-music` |
-| 3 | 3.12 | FAIL | 0/3 | 6.87 | 3.56 | Anikit | r1 | j-music | `docs/video/judge/rounds/r1/results/j-music` |
+| 2 | 4.19 | FAIL | 1/6 | 7.23 | 4.58 | Anikit | demo | j-music-demo-p7 | `docs/video/judge/demos/rebuilds/j-music-demo-p7` |
+| 3 | 3.75 | FAIL | 0/3 | 7.21 | 4.11 | Anikit | r2 | j-music | `docs/video/judge/rounds/r2/results/j-music` |
+| 4 | 3.12 | FAIL | 0/3 | 6.87 | 3.56 | Anikit | r1 | j-music | `docs/video/judge/rounds/r1/results/j-music` |
 
 ## product launch
 

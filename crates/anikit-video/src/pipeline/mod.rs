@@ -1097,6 +1097,9 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         aq_strength: ev.encode_aq.unwrap_or(ak264::EncoderConfig::default().aq_strength),
         // One B picture between references (CABAC qualities; the chunk encoder flushes, the muxer reorders).
         bframes: if opts.quality != Quality::Draft { 1 } else { 0 },
+        // Films of 10 s or more never balloon: above 25 Mbit/s (1080p30) the
+        // encoder may raise the QP by up to 4 (e.g. re-drawn grain on a 30 s film).
+        ceiling_raise: if n as f64 >= 10.0 * ev.fps as f64 { 4 } else { 0 },
         ..Default::default()
     };
     let prof = Profile::default();

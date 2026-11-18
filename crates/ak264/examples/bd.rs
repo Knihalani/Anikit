@@ -50,6 +50,7 @@ fn main() {
                 transform8: env("T8", 1.0) > 0.0,
                 partitions: env("PART", 0.0) > 0.0,
                 subpel: env("SUBPEL", 1.0) > 0.0,
+                fps: env("FPS", 30.0) as f64,
                 ..Default::default()
             };
             let t = Instant::now();

@@ -33,6 +33,7 @@
 - **Extrude / long shadow** `"extrude": {"angle": 45, "length": 70, "color": "#7a1d00", "fade": 0}` on any layer (`fade: 1` = long shadow). Cost grows with length (≈ length/1.5 copies).
 - **Per-layer motion blur** `"motionBlur": true` (or `{"shutter": 270}`) on a layer: it streaks only while it moves; text being read stays sharp.
 - **Oscillators with envelopes** `"loop": {"preset": "float", "amount": 14, "period": 2.4, "ramp": 0.5}`: the swing grows in and dies away instead of running at a constant amplitude.
+- **Speed ramp / time remap** on a scene: `"timeRemap": "=t < 0.6 ? t : 0.6 + (t - 0.6) * 0.2"` (slow-mo on the hit), `"=min(t, 1.2)"` (freeze); transitions keep real time.
 - **Smear** `"smear": true` (or a strength): fast moves stretch along their travel, volume kept; still layers are untouched.
 - **Idea transitions** (on the incoming scene): `{"type": "zoomThrough", "layer": "logo"}` flies into a layer of the outgoing
   scene and the new scene shows through its shape (a letter, a window, a logo); `{"type": "reveal", "shape": "circle|diamond|square|star|blob",

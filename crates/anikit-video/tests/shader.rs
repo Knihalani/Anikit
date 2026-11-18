@@ -314,12 +314,30 @@ fn many_static_uniforms_leave_slots_for_animated_ones() {
     )
     .replace('\n', "\\n");
     let d = diags(&src);
-    assert!(d.iter().all(|m| !m.contains("can't be animated")), "{d:?}");
+    assert!(d.iter().all(|m| !m.contains("at most 12")), "{d:?}");
     let ev = build(&src);
     let a = px(&ev, 0.0, 4, 4);
     let b = px(&ev, 1.5, 4, 4);
     assert!((a[0] as i32 - 41).abs() <= 1, "16 × 0.01 = 0.16 → 41: {a:?}");
     assert!(b[1] > a[1] + 100, "k animates: {a:?} → {b:?}");
+}
+
+#[test]
+fn too_many_animated_uniform_floats_is_an_error() {
+    // 13 animated floats: the 13th can't animate, which must stop the render, not pass as a warning.
+    let mut decl = String::new();
+    let mut anim = Vec::new();
+    for i in 0..13 {
+        decl += &format!("uniform float a{i};\n");
+        anim.push(format!("\"a{i}\": 1.0"));
+    }
+    let src = format!(
+        r#"{{ "size": [8, 8], "scenes": [ {{ "duration": 2, "layers": [ {{ "shader": "{decl}void mainImage(out vec4 c, in vec2 p) {{ c = vec4(a0 + a12); }}", "animate": [ {{ "to": {{ {} }}, "duration": 2 }} ] }} ] }} ] }}"#,
+        anim.join(", ")
+    )
+    .replace('\n', "\\n");
+    let d = diags(&src);
+    assert!(d.iter().any(|m| m.starts_with("error") && m.contains("at most 12")), "{d:?}");
 }
 
 /// A shader with a `{layers: […]}` channel: the channel's layers are emitted

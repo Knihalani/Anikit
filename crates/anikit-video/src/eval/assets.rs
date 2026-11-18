@@ -195,7 +195,7 @@ impl components::Assets for SharedAssets {
 
     fn composition_frame(&self, name: &str, t: f32, lod: u8) -> Option<Arc<Pixmap>> {
         let (ev, _) = self.comp(name)?;
-        Some(self.textures().get(&ev, t, lod))
+        Some(self.textures().get_mid(&ev, t, lod))
     }
 
     fn image(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> ImageId {

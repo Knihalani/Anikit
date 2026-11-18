@@ -15,7 +15,7 @@ use super::math::*;
 use super::spec::{check_keys, f, Res};
 use serde_json::{Map, Value};
 
-pub const RIGS: &[&str] = &["rembrandt", "clamshell", "product", "high-key", "low-key", "split", "rim", "golden", "window", "top", "butterfly", "loop"];
+pub const RIGS: &[&str] = &["rembrandt", "clamshell", "product", "high-key", "low-key", "split", "rim", "golden", "window", "top", "butterfly", "loop", "pinspot", "stage"];
 
 /// A gobo (cookie) in front of the key: the shadow pattern of a window,
 /// blinds or foliage, projected along the key direction.
@@ -339,6 +339,26 @@ fn preset(name: &str) -> Option<Preset> {
         "window" => Preset { key: L { az: 70.0, el: 30.0, w: 6.0, h: 6.0, roll: 0.0, e: 1.0, warm: 0.15, soft: 0.01 }, fill: Some(l(-50.0, 20.0, 100.0, 60.0, 1.0, -0.3)), rim: vec![], extra: vec![], ratio: 6.0, gobo: 2 },
         // Top: a single overhead source, like a pendant or a skylight.
         "top" => Preset { key: L { az: 0.0, el: 85.0, w: 25.0, h: 25.0, roll: 0.0, e: 1.0, warm: 0.1, soft: 0.02 }, fill: Some(l(0.0, 10.0, 90.0, 40.0, 1.0, 0.0)), rim: vec![], extra: vec![], ratio: 10.0, gobo: 0 },
+        // Pinspot: a museum vitrine. One narrow source straight down, a faint
+        // warm rim, everything else falls to black. ~30:1.
+        "pinspot" | "vitrine" => Preset {
+            key: L { az: 10.0, el: 82.0, w: 5.0, h: 5.0, roll: 0.0, e: 1.0, warm: 0.25, soft: 0.005 },
+            fill: Some(l(0.0, 10.0, 80.0, 40.0, 1.0, -0.2)),
+            rim: vec![L { az: 165.0, el: 30.0, w: 6.0, h: 30.0, roll: 0.0, e: 0.35, warm: 0.3, soft: 0.01 }],
+            extra: vec![],
+            ratio: 30.0,
+            gobo: 0,
+        },
+        // Stage: a hard frontal key from high (a follow spot), a strong cool
+        // backlight that draws a halo, little fill. Pair with `beam`.
+        "stage" | "theatre" => Preset {
+            key: L { az: 15.0, el: 38.0, w: 6.0, h: 6.0, roll: 0.0, e: 1.0, warm: 0.2, soft: 0.005 },
+            fill: Some(l(-40.0, 5.0, 70.0, 40.0, 1.0, -0.3)),
+            rim: vec![L { az: 180.0, el: 45.0, w: 10.0, h: 10.0, roll: 0.0, e: 1.6, warm: -0.5, soft: 0.01 }],
+            extra: vec![],
+            ratio: 10.0,
+            gobo: 0,
+        },
         _ => return None,
     })
 }
@@ -346,6 +366,9 @@ fn preset(name: &str) -> Option<Preset> {
 /// A parsed rig, ready to apply once the camera direction is known.
 pub struct Rig {
     p: Preset,
+    /// A local spot (pinspot, follow spot) for this preset: azimuth, elevation,
+    /// distance in subject radii, cone angle, penumbra.
+    spot: Option<(f32, f32, f32, f32, f32)>,
     ratio: f32,
     rim: f32,
     key: f32,
@@ -392,7 +415,13 @@ pub fn parse(v: &Value, path: &str) -> Res<Rig> {
         Some(_) => return Err(format!("{path}.gobo: expected blinds, window, leaves or false")),
     };
     let ratio = g("ratio", p.ratio)?.max(1.0);
+    let spot = match name.as_str() {
+        "pinspot" | "vitrine" => Some((10.0, 84.0, 4.5, 24.0, 0.45)),
+        "stage" | "theatre" => Some((15.0, 38.0, 6.0, 20.0, 0.25)),
+        _ => None,
+    };
     Ok(Rig {
+        spot,
         ratio,
         rim: g("rim", 1.0)?.max(0.0),
         key: g("key", 1.0)?.max(0.0),
@@ -458,7 +487,9 @@ impl Rig {
         };
         let key_el = self.height.unwrap_or(self.p.key.el);
         // (A switched-off key keeps a tiny level: it still carries the traced shadows.)
-        let mut boxes = vec![make(&self.p.key, (self.key * k_on).max(1e-4), self.angle, key_el)];
+        // Rigs with a local spot keep the softbox key only as a faint sky.
+        let key_e = if self.spot.is_some() { 0.04 } else { self.key };
+        let mut boxes = vec![make(&self.p.key, (key_e * k_on).max(1e-4), self.angle, key_el)];
         if let Some(fl) = &self.p.fill {
             // Fill so that (key + fill) : fill = ratio on the key side vs the shadow side.
             let e = self.key / (self.ratio - 1.0).max(1e-3) * f_on;
@@ -486,6 +517,24 @@ impl Rig {
         let u = norm(cross(up, kd));
         let v = cross(kd, u);
         (out, Gobo { kind: self.gobo, text: 0, t: 0.0, scale: self.gobo_scale, soft: self.gobo_soft, dir: kd, u, v })
+    }
+}
+
+impl Rig {
+    /// Local spot lights the rig places around the subject (`centre`, `radius`),
+    /// sized so the pool on the subject matches the key `level`.
+    pub fn spots(&self, centre: V3, radius: f32, view: V3, level: f32) -> Vec<super::trace::Light> {
+        let Some((az, el, dist, angle, pen)) = self.spot else { return Vec::new() };
+        let cam_az = (-view.x).atan2(-view.z);
+        let a = cam_az + (az + self.angle - self.p.key.az).to_radians();
+        let e = self.height.unwrap_or(el).to_radians();
+        let d = dist * radius.max(0.3);
+        let pos = add(centre, scale(v3(a.sin() * e.cos(), e.sin(), a.cos() * e.cos()), d));
+        let outer = (angle * 0.5).to_radians();
+        let col = temp((self.p.key.warm + self.warmth * 0.6).clamp(-1.0, 1.0));
+        // Irradiance factor at the subject ≈ power / d² (π folded in like the softboxes).
+        let power = scale(col, level * self.key * d * d * std::f32::consts::PI * 1.4);
+        vec![super::trace::Light { pos, power, dir: norm(sub(centre, pos)), cos_outer: outer.cos(), cos_inner: (outer * (1.0 - pen)).cos(), shadow: true }]
     }
 }
 

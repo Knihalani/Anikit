@@ -261,23 +261,24 @@ Why "daily" renders read as cliché:
 
 **Status (overnight, 3D DESIGN):**
 - **Built:**
-  - lighting rigs with ratios and gobos (1, 2);
-  - animated light, as rig `animate: sweep|reveal` (3, partly);
+  - lighting rigs with ratios and gobos (1, 2), including `pinspot` and `stage` with real local spots;
+  - animated light: rig `animate: sweep|reveal` and local lights whose pos, target and intensity take expressions (3);
   - the handheld/breath noise model (5);
   - focus pulls onto named objects (6);
   - lens presets (7);
-  - set builders: plinth, podium, steps, sweep, field, arches, terrain (9);
-  - surface imperfections (10);
-  - height fog (14, partly);
-  - the look linter in `check`, spec-level (15, partly).
+  - set builders: plinth, podium, steps, sweep, field, arches, terrain, landscape (9);
+  - surface imperfections, plus machined patterns with anisotropy and live engraving (10);
+  - height fog and drifting fog (14);
+  - the look linter in `check`, spec-level (15, partly);
+  - per-key camera easing, including `settle` (16);
+  - practicals as one object (17);
+  - decals for type on surfaces.
 - **Open:**
   - light linking;
-  - keys on individual `lights[]`;
   - strip gradient profiles (4);
   - anamorphic, blades and cat-eye bokeh (7, 8);
   - a round-edge shader for meshes (12);
   - LUTs (13);
-  - noise-modulated fog (14);
   - render-based linting: a value study and a ratio meter (15).
 
 See `docs/video/scene3d.md` and the proofs in `docs/video/shots/3d-*`.

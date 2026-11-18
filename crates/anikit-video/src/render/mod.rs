@@ -1458,6 +1458,20 @@ fn draw_offscreen(
             for c in frame_base.as_coeffs() {
                 h = (h ^ c.to_bits()).wrapping_mul(0x0000_0100_0000_01b3).rotate_left(29);
             }
+            // So are the ops' own transforms: a camera or parent move is folded into
+            // each op's transform (not `base`), and the cached bitmap must follow it.
+            for op in inner {
+                let t = match op {
+                    Op::Fill { transform, .. } | Op::Stroke { transform, .. } | Op::RoundRect { transform, .. } | Op::Image { transform, .. } | Op::Glyphs { transform, .. } => Some(transform),
+                    Op::PushLayer { clip: Some((_, t)), .. } => Some(t),
+                    _ => None,
+                };
+                if let Some(t) = t {
+                    for c in t {
+                        h = (h ^ c.to_bits() as u64).wrapping_mul(0x0000_0100_0000_01b3).rotate_left(29);
+                    }
+                }
+            }
             Some(h)
         }
         None => incremental::auto_layer_key(inner, filters, &frame_base),

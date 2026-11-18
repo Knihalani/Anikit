@@ -222,7 +222,7 @@ pub fn builtin_material(name: &str) -> Option<Material> {
     })
 }
 
-const MAT_KEYS: &[&str] = &["base", "color", "metallic", "roughness", "specular", "emissive", "emissive_strength", "clearcoat", "transmission", "ior", "tint", "tint_distance", "glow", "extends", "texture", "scale", "mapping", "normal_strength", "texture_rotate", "imperfections", "roughness_variation", "smudges", "scratches", "dust", "pattern", "pattern_scale", "pattern_strength"];
+const MAT_KEYS: &[&str] = &["base", "color", "metallic", "roughness", "specular", "emissive", "emissive_strength", "clearcoat", "transmission", "ior", "tint", "tint_distance", "glow", "extends", "texture", "scale", "mapping", "normal_strength", "texture_rotate", "imperfections", "roughness_variation", "smudges", "scratches", "dust", "pattern", "pattern_scale", "pattern_strength", "anisotropy", "pattern_reveal", "reveal_mode"];
 
 pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res<Material> {
     match v {
@@ -285,7 +285,7 @@ pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res
             // Machined patterns (bump): brushed, sunburst, guilloche, clous-de-paris, knurl.
             if let Some(pt) = m.get("pattern") {
                 let name = pt.as_str().ok_or_else(|| format!("{path}.pattern: expected a pattern name"))?;
-                let names = ["brushed", "sunburst", "guilloche", "clous-de-paris", "knurl"];
+                let names = ["brushed", "sunburst", "guilloche", "clous-de-paris", "knurl", "spun"];
                 let k = crate::components::kebab(name);
                 let kind = match k.as_str() {
                     "brushed" => 1,
@@ -293,6 +293,7 @@ pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res
                     "guilloche" | "guilloché" => 3,
                     "clous-de-paris" | "hobnail" => 4,
                     "knurl" | "knurled" => 5,
+                    "spun" | "circular" => 6,
                     o => {
                         let hint = crate::components::style::closest(o, &names).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
                         return Err(format!("{path}.pattern: unknown pattern `{o}`{hint}"));
@@ -301,6 +302,25 @@ pub fn material(v: &Value, named: &HashMap<String, Material>, path: &str) -> Res
                 let sc = m.get("pattern_scale").map(|x| f(x, &format!("{path}.patternScale"))).transpose()?.unwrap_or(0.01).max(1e-5);
                 let st = m.get("pattern_strength").map(|x| f(x, &format!("{path}.patternStrength"))).transpose()?.unwrap_or(1.0).max(0.0);
                 out.pattern = (kind, sc, st);
+                // Brushed, sunburst and spun metal stretch their highlights by default.
+                if matches!(kind, 1 | 2 | 6) {
+                    out.aniso = 0.6;
+                }
+            }
+            // `patternReveal`: an expression of `t` engraving the pattern progressively,
+            // as a sweep around the axis (0..1) or a growing radius (m).
+            if let Some(rv) = m.get("pattern_reveal") {
+                let n = num(rv, &format!("{path}.patternReveal"))?;
+                let mode = match m.get("reveal_mode").and_then(|x| x.as_str()).unwrap_or("sweep") {
+                    "sweep" => 1,
+                    "radial" => 2,
+                    o => return Err(format!("{path}.revealMode: unknown `{o}` (sweep, radial)")),
+                };
+                out.reveal = (n.at(&Vars::default()), mode);
+                out.reveal_expr = Some(n);
+            }
+            if let Some(a) = m.get("anisotropy") {
+                out.aniso = f(a, &format!("{path}.anisotropy"))?.clamp(0.0, 1.0);
             }
             // Imperfections: one amount (a believable mix), or each by name.
             if let Some(x) = m.get("imperfections") {

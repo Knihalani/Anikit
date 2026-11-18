@@ -89,10 +89,11 @@ void mainImage(out vec4 o, in vec2 fc){
     headU = min(headU, mix(1e3, ant, step(0.01, wake)));
     dh = min(dh, headU);
     float shape = min(dh, tD);
-    shape += 0.0007*(vn(sp*420.0 + boilT()*3.0) - 0.5) + 0.0012*(vn(sp*90.0) - 0.5);
+    shape = brushEdge(shape, sp, vec2(1.0, 0.0), 0.0022);
+    shape += 0.0003*(vn(sp*420.0 + boilT()*3.0) - 0.5) + 0.0012*(vn(sp*90.0) - 0.5);
     float c1 = cov(shape, px);
     // body: near-black, bounce light from the snow rising from the bottom, fur strokes
-    vec3 body = mix(hex(10.,11.,34.), hex(30.,34.,84.), smoothstep(-0.18, -0.34, y1)*0.8);
+    vec3 body = mix(hex(6.,7.,22.), hex(26.,30.,76.), smoothstep(-0.20, -0.34, y1)*0.7);
     // fur: short tangential strokes, a little lighter, densest near the lit top
     vec2 fp = vec2(x1, y1)*vec2(60.0, 90.0);
     vec2 fcl = floor(fp);
@@ -100,6 +101,7 @@ void mainImage(out vec4 o, in vec2 fc){
     float ang = 0.35*(h21(fcl) - 0.5) - 0.6*(x1 - 0.04);
     vec2 fr = vec2(cos(ang)*ff.x + sin(ang)*ff.y, -sin(ang)*ff.x + cos(ang)*ff.y);
     float stroke = smoothstep(0.09, 0.02, abs(fr.y + 0.25*fr.x*fr.x))*smoothstep(0.42, 0.2, abs(fr.x))*step(0.45, h21(fcl + 7.0));
+    stroke = furTex(vec2(x1, y1), -0.6*(x1 - 0.04));
     float nearTop = smoothstep(-0.12, 0.0, y1 - top);
     body += hex(60.,66.,140.)*stroke*(0.10 + 0.35*nearTop)*step(dh, 0.0);
     col = mix(col, body, c1);
@@ -179,20 +181,8 @@ void mainImage(out vec4 o, in vec2 fc){
     col = mix(col, hex(190.,196.,246.), pg*band*pour*0.7);
     col = mix(col, hex(120.,128.,210.), band*pour*0.25*fbm(vec2(sp.x*8.0, sp.y*3.0 + iTime*1.5)));
 
-    // ---- light snow: sparse fine flakes + rare large soft ones
-    for(int l=0;l<2;l++){
-        float fl = float(l);
-        float sc = l == 0 ? 6.0 : 30.0;
-        vec2 q = sp*sc + vec2(camx*(l == 0 ? 2.5 : 0.8)*sc + iTime*0.3, iTime*(l == 0 ? 0.9 : 1.2));
-        q.x += 0.35*sin(q.y*0.6 + fl*2.0 + iTime*0.4);
-        vec2 gi = floor(q);
-        vec2 fq = fract(q) - 0.5 - (h22(gi + fl*17.0) - 0.5)*0.6;
-        float on = step(l == 0 ? 0.9 : 0.80, h21(gi*1.3 + fl));
-        float r = l == 0 ? 0.10 : 0.08;
-        float soft = l == 0 ? 0.8 : 0.4;
-        float flake = (1.0 - smoothstep(r*(1.0 - soft), r, length(fq)))*on;
-        col = mix(col, hex(214.,218.,250.), flake*(l == 0 ? 0.3 : 0.6));
-    }
+    // ---- snow: four depths, near flakes smeared and soft, warm near the lantern
+    col = snowfall(col, sp, camx, lanW, lamp, hex(214.,218.,250.), hex(255.,214.,150.), 0.6);
 
     col = finish(col, fc, res);
     o = vec4(col, 1.0);

@@ -624,25 +624,36 @@ quarter-pel; AQ and the SSIM floor off so that QP alone sets quality).
   | −0.2% | −2.3% | −7.7% | −0.6% | −3.5% | −20.2% | +0.1% | −4.9% |
 
   At the pipeline's settings (QP 23, SSIM floor, 20-frame chunks), octava
-  goes from 31.1 MB / SSIM 0.988 to 24.4 MB / 0.982 (18.2 MB / 0.972 with
-  the bitrate ceiling below). x264 CRF 20 is
+  goes from 31.1 MB / SSIM 0.988 to 24.4 MB / 0.982. x264 CRF 20 is
   8.4 MB / 0.986: it puts I frames at QP 14 and B frames at QP 26 (macroblock
   tree), and gains 14% from partitions and 10% from extra references.
-- **SSIM floor bitrate ceiling.** The floor does not lower the QP while
-  reference pictures average more than 25 Mbit/s (at 1920×1080, scaled by
-  frame area and `fps`); above it, it gives back one QP step per frame. Texture
-  whose SSIM rises slowly with bits (grain, paper, halftone) used to take the
-  floor's full 8-QP drop. With 20-frame chunks:
+- **SSIM floor bitrate ceiling.** The ceiling is a running average of P and B
+  picture bytes against 25 Mbit/s at 1920×1080. It scales with frame area
+  (never below a 640×360 frame's share) and with `fps`.
+  - Above the ceiling, the floor stops lowering the QP and gives back what it
+    took. Texture whose SSIM rises slowly with bits (re-drawn film grain,
+    paper, halftone) could otherwise take the floor's full 8-QP drop.
+  - With `ceiling_raise` (and `qp` ≥ 20), it then raises the QP up to that
+    much above `qp` until the average falls under 80% of the ceiling.
+    anikit-video sets 4 for films of 10 s or more.
+  - Short clips keep their bursts. A chunk of 20–60 frames can't tell a burst
+    from a film over budget, and raising always throttled the one-second
+    35 Mbit/s burst in `particles`, failing qbench's delivered-PSNR gate.
 
-  | clip | before | with the ceiling | x264 |
+  | clip (pipeline settings) | before tonight | now | x264 |
   |---|---|---|---|
-  | octava | 24.4 MB / SSIM 0.982 | 18.2 MB / 0.972 | 8.4 MB / 0.986 (CRF 20) |
-  | hill | 35.0 MB / 0.983 | 26.7 MB / 0.978 | 20.3 MB / 0.980 (CRF 21) |
+  | octava, 13.5 s @ 24 fps | 31.1 MB / SSIM 0.988 | 23.8 MB / 0.982 | 8.4 MB / 0.986 (CRF 20) |
+  | hill, 11.9 s @ 24 fps | 33.7 MB / 0.983 | 32.4 MB / 0.982 | 20.3 MB / 0.980 (CRF 21) |
+  | e-data, 30 s @ 30 fps with `post.grain` | 149.3 MB | 97.6 MB | |
+  | demo/data, 30 s (pack-ice shader) | 88.5 MB (main's `final.mp4`) | 80.5 MB | |
 
-  On octava, the static paper texture is unchanged: the IDR lookahead codes it
-  once at the lower QP, and it keeps about 90% of the source's
-  horizontal-gradient energy (x264: 100%). The ceiling only touches the
-  moving parts.
+  Octava and hill run at 14–19 Mbit/s, under the ceiling, so their gains come
+  from the IDR lookahead and the B offset. The ceiling only acts on films like
+  e-data, where QP 23 alone costs ~26 Mbit/s of re-drawn grain; demo/data
+  (21 Mbit/s) is under it. On octava, the
+  static paper texture is unchanged: the IDR lookahead codes it once at the
+  lower QP, and it keeps about 90% of the source's horizontal-gradient energy
+  (x264: 100%).
 - **8×8 transform.** For inter macroblocks, used when the residual's 8×8
   Hadamard cost is below its 4×4 SATD (x264's rule, SSE2). It includes CABAC
   category-5 residuals, `transform_size_8x8_flag` (coded as 0 for I4×4

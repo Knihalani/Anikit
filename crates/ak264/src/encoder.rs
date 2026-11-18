@@ -71,11 +71,17 @@ pub struct EncoderConfig {
     pub partitions: bool,
     /// 8×8 transform for inter macroblocks (High profile; CABAC only).
     pub transform8: bool,
+    /// With the SSIM floor on and `qp` ≥ 20: how far above `qp` the bitrate
+    /// ceiling (25 Mbit/s at 1080p30, scaled) may raise the QP while P and B
+    /// pictures average above it (0 = it only stops the floor). For long
+    /// films, where file size matters; a short clip's burst should keep its
+    /// quality. anikit-video sets 4 for films of 10 s or more.
+    pub ceiling_raise: u8,
 }
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: -0.5, ssim_floor: 0.985, ssim_max_drop: 8, bframes: 0, partitions: false, transform8: true }
+        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: -0.5, ssim_floor: 0.985, ssim_max_drop: 8, bframes: 0, partitions: false, transform8: true, ceiling_raise: 0 }
     }
 }
 
@@ -1770,6 +1776,7 @@ const FLOOR_PSNR_CAP: f64 = 45.0;
 /// stops lowering the QP.
 const FLOOR_MAX_MBPS: f64 = 25.0;
 
+
 /// Bring the half-sample planes `hp` of reference luma `r` up to date in the
 /// macroblocks flagged in `dirty` (and the filter support around them).
 fn update_hpel(hp: &mut crate::mc::HpelPlanes, r: &crate::frame::Plane, dirty: &[bool], mbw: usize, mbh: usize) {
@@ -2324,7 +2331,7 @@ pub struct Encoder {
     qsets_smooth: Vec<QpSet>,
     /// Frame QP offset from the SSIM floor (≤ 0).
     qp_adj: i32,
-    /// Running average of reference-picture bytes (the SSIM floor's bitrate ceiling).
+    /// Running average of P and B picture bytes (the SSIM floor's bitrate ceiling).
     ref_bytes: f64,
     /// Grain hint of the frame being coded.
     grain: f32,
@@ -2809,6 +2816,9 @@ impl Encoder {
         stats.intra4 = res.intra4;
         stats.changed = res.changed;
         stats.bytes = self.out.len() - out0;
+        if self.cfg.ssim_floor > 0.0 {
+            self.avg_bytes(stats.bytes as f64);
+        }
         self.last = stats;
         if self.keep_recons {
             let b = pic_to_yuv(&self.brecon, w, h);
@@ -3016,8 +3026,9 @@ impl Encoder {
                 let s = ssim_luma(&self.cur.y, &self.refp.y, w, h, self.grain);
                 self.p_ssim = s.0;
                 if self.cfg.ssim_floor > 0.0 {
-                    let b = (self.out.len() - out0) as f64;
-                    self.ref_bytes = if self.ref_bytes == 0.0 { b } else { 0.75 * self.ref_bytes + 0.25 * b };
+                    if !idr {
+                        self.avg_bytes((self.out.len() - out0) as f64);
+                    }
                     self.floor_update(s, 400.0, 4);
                 }
             }
@@ -3051,18 +3062,35 @@ impl Encoder {
     /// `s`: down by the shortfall × `gain` (1..=`max_step`), up by one when
     /// there is margin; never above the configured QP or below it by more than
     /// `ssim_max_drop`.
+    /// Running average of P/B picture bytes for the bitrate ceiling.
+    fn avg_bytes(&mut self, b: f64) {
+        self.ref_bytes = if self.ref_bytes == 0.0 { b } else { 0.8 * self.ref_bytes + 0.2 * b };
+    }
+
     fn floor_update(&mut self, (s, psnr): (f64, f64), gain: f64, max_step: i32) {
         // + 0.002: this estimate (8×8 blocks, every other one) reads about that
         // much higher than the usual overlapping-window SSIM
         let f = self.cfg.ssim_floor as f64 + 0.002;
         // Above ~45 dB the remaining error is not visible, however low SSIM
         // reads on fine texture: don't spend bits there (e.g. --crf 18).
-        // Bitrate ceiling: the floor doesn't lower the QP while reference pictures
+        // Bitrate ceiling: the floor doesn't lower the QP while P and B pictures
         // average more than FLOOR_MAX_MBPS (scaled to the frame size and rate),
-        // and gives back what it took. Texture that needs more is left at `qp`.
-        let budget = FLOOR_MAX_MBPS * 1e6 / 8.0 / self.cfg.fps.max(1.0) * (self.cfg.width as f64 * self.cfg.height as f64) / (1920.0 * 1080.0);
+        // and gives back what it took; with `ceiling_raise` it then raises the QP
+        // above `qp` (long films: a chunk can't tell a burst from a film over
+        // budget, so short clips keep theirs).
+        // (frames smaller than 640×360 get that budget: headers dominate them)
+        let area = (self.cfg.width as f64 * self.cfg.height as f64).max(640.0 * 360.0);
+        let budget = FLOOR_MAX_MBPS * 1e6 / 8.0 / self.cfg.fps.max(1.0) * area / (1920.0 * 1080.0);
         if self.ref_bytes > budget {
-            self.qp_adj = (self.qp_adj + 1).min(0);
+            let max = if self.cfg.qp >= 20 { self.cfg.ceiling_raise as i32 } else { 0 };
+            self.qp_adj = (self.qp_adj + 1).min(max);
+            return;
+        }
+        if self.qp_adj > 0 {
+            // raised: come back down once well under the ceiling
+            if self.ref_bytes < 0.8 * budget {
+                self.qp_adj -= 1;
+            }
             return;
         }
         if s < f && psnr < FLOOR_PSNR_CAP {

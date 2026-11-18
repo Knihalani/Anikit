@@ -219,3 +219,14 @@ fn loop_ramp_eases_the_oscillation_in() {
     // Mid-life both swing the same.
     assert!((y(&a, 2.25) - y(&b, 2.25)).abs() < 1e-3);
 }
+
+#[test]
+fn time_remap_ramps_scene_time() {
+    let e = ev(r#"{ "scenes": [ { "duration": 3, "timeRemap": "=t < 1 ? t : 1 + (t - 1) * 0.25", "layers": [
+        { "shape": "rect", "x": 0, "width": 10, "height": 10, "animate": { "to": { "x": 1000 }, "duration": 2, "ease": "linear" } } ] } ] }"#);
+    // Content time: 0.5 → 0.5 (x 250); 2.0 → 1.25 (x 625).
+    assert!((rect_x(&e, 0.5) - 245.0).abs() < 1.0, "{}", rect_x(&e, 0.5));
+    assert!((rect_x(&e, 2.0) - 620.0).abs() < 1.0, "{}", rect_x(&e, 2.0));
+    let bad = parse_json(r#"{ "scenes": [ { "timeRemap": "=t +", "layers": ["x"] } ] }"#).unwrap();
+    assert!(Evaluator::new(&bad.spec, Options::default()).is_err());
+}
