@@ -95,9 +95,19 @@ const PROBE_EXCLUDED = new Set([
 ]);
 type StyleCache = WeakMap<Element, { vals: string[]; text: string }>;
 type StylePathCache = WeakMap<Element, boolean>;
+type ProbeAttribute = { name: string; namespace: string | null; value: string };
+type ProbeInfo = { key: string; namespace: string; localName: string; attributes: ProbeAttribute[] };
+type DeferredStyle = {
+  clone: Element;
+  src: Element;
+  names: string[];
+  vals: string[];
+  parentVals?: string[];
+  key: string;
+  cache?: StyleCache;
+  pathCache?: StylePathCache;
+};
 
-let probeFrame: HTMLIFrameElement | null = null;
-let probeContainers: [HTMLElement, HTMLElement] | null = null;
 const defaultStyles = new Map<string, (string | null)[]>();
 
 function styleText(names: string[], vals: string[], include?: boolean[]): string {
@@ -106,42 +116,7 @@ function styleText(names: string[], vals: string[], include?: boolean[]): string
   return s;
 }
 
-function ensureProbe(): [HTMLElement, HTMLElement] | null {
-  if (probeFrame?.isConnected && probeFrame.parentElement === document.body && probeContainers) return probeContainers;
-  if (probeFrame?.parentNode) probeFrame.parentNode.removeChild(probeFrame);
-  probeFrame = null;
-  probeContainers = null;
-  if (!document.body) return null;
-  const frame = document.createElement('iframe');
-  frame.style.cssText =
-    'position:fixed;left:-10000px;top:0;width:400px;height:400px;visibility:hidden;border:0;pointer-events:none';
-  frame.setAttribute('aria-hidden', 'true');
-  try {
-    document.body.appendChild(frame);
-    const doc = frame.contentDocument;
-    if (!doc) throw new Error('probe iframe has no document');
-    doc.open();
-    doc.write('<!DOCTYPE html><html><head></head><body></body></html>');
-    doc.close();
-    const a = doc.createElement('div');
-    a.style.cssText =
-      'direction:ltr;writing-mode:horizontal-tb;color:rgb(0,0,0);font-size:16px;font-weight:400;line-height:normal;width:300px;height:200px';
-    const b = doc.createElement('div');
-    b.style.cssText =
-      'direction:rtl;writing-mode:vertical-rl;color:rgb(1,2,3);font-size:17px;font-weight:300;line-height:1.7;width:357px;height:211px';
-    doc.body.append(a, b);
-    probeFrame = frame;
-    probeContainers = [a, b];
-    return probeContainers;
-  } catch {
-    frame.remove();
-    return null;
-  }
-}
-
-function stableDefaults(src: Element, names: string[]): (string | null)[] {
-  const contexts = ensureProbe();
-  if (!contexts) return names.map(() => null);
+function probeInfo(src: Element): ProbeInfo {
   const attributes = Array.from(src.attributes)
     .filter((attr) => {
       const name = attr.name.toLowerCase();
@@ -155,35 +130,59 @@ function stableDefaults(src: Element, names: string[]): (string | null)[] {
   const keyAttributes = attributes
     .map(({ name, value }) => (name.toLowerCase() === 'href' ? name : `${name}=${value}`))
     .sort();
-  const ns = src.namespaceURI ?? '';
-  const key = `${ns} ${src.localName} ${keyAttributes.join(' ')}`;
-  const cached = defaultStyles.get(key);
-  if (cached) return cached;
-  const values: string[][] = [];
-  const probes: Element[] = [];
+  const namespace = src.namespaceURI ?? '';
+  return { key: `${namespace} ${src.localName} ${keyAttributes.join(' ')}`, namespace, localName: src.localName, attributes };
+}
+
+function probeDefaults(misses: Map<string, ProbeInfo>, names: string[]): { available: boolean; results: Map<string, (string | null)[]> } {
+  const results = new Map<string, (string | null)[]>();
+  if (!misses.size) return { available: true, results };
+  let frame: HTMLIFrameElement | null = null;
   try {
-    for (const context of contexts) {
-      const probe = context.ownerDocument!.createElementNS(ns || HTML_NS, src.localName);
-      for (const attr of attributes) {
-        if (attr.name.toLowerCase() === 'href') probe.setAttributeNS(attr.namespace, attr.name, '');
-        else probe.setAttributeNS(attr.namespace, attr.name, attr.value);
+    if (!document.documentElement) throw new Error('probe iframe has no document element');
+    frame = document.createElement('iframe');
+    frame.style.cssText =
+      'position:fixed;left:-10000px;top:0;width:400px;height:400px;visibility:hidden;border:0;pointer-events:none';
+    frame.setAttribute('aria-hidden', 'true');
+    document.documentElement.appendChild(frame);
+    const doc = frame.contentDocument;
+    if (!doc) throw new Error('probe iframe has no document');
+    doc.open();
+    doc.write('<!DOCTYPE html><html><head></head><body></body></html>');
+    doc.close();
+    const a = doc.createElement('div');
+    a.style.cssText =
+      'direction:ltr;writing-mode:horizontal-tb;color:rgb(0,0,0);font-size:16px;font-weight:400;line-height:normal;width:300px;height:200px';
+    const b = doc.createElement('div');
+    b.style.cssText =
+      'direction:rtl;writing-mode:vertical-rl;color:rgb(1,2,3);font-size:17px;font-weight:300;line-height:1.7;width:357px;height:211px';
+    if (!doc.body) throw new Error('probe iframe has no body');
+    doc.body.append(a, b);
+    for (const [key, info] of misses) {
+      const values: string[][] = [];
+      for (const context of [a, b]) {
+        const probe = doc.createElementNS(info.namespace || HTML_NS, info.localName);
+        for (const attr of info.attributes) {
+          if (attr.name.toLowerCase() === 'href') probe.setAttributeNS(attr.namespace, attr.name, '');
+          else probe.setAttributeNS(attr.namespace, attr.name, attr.value);
+        }
+        context.appendChild(probe);
+        const cs = doc.defaultView!.getComputedStyle(probe);
+        const vals = new Array<string>(names.length);
+        for (let i = 0; i < names.length; i++) vals[i] = cs.getPropertyValue(names[i]);
+        values.push(vals);
       }
-      context.appendChild(probe);
-      probes.push(probe);
-      const cs = context.ownerDocument!.defaultView!.getComputedStyle(probe);
-      const vals = new Array<string>(names.length);
-      for (let i = 0; i < names.length; i++) vals[i] = cs.getPropertyValue(names[i]);
-      values.push(vals);
+      const defaults = names.map((_, i) => (values[0][i] === values[1][i] ? values[0][i] : null));
+      results.set(key, defaults);
+      defaultStyles.set(key, defaults);
+      if (defaultStyles.size > 512) defaultStyles.clear();
     }
+    return { available: true, results };
   } catch {
-    return names.map(() => null);
+    return { available: false, results };
   } finally {
-    for (const probe of probes) probe.remove();
+    frame?.remove();
   }
-  const result = names.map((_, i) => (values[0][i] === values[1][i] ? values[0][i] : null));
-  defaultStyles.set(key, result);
-  if (defaultStyles.size > 512) defaultStyles.clear();
-  return result;
 }
 
 function sameValues(a: string[], b: string[] | undefined): boolean {
@@ -192,10 +191,24 @@ function sameValues(a: string[], b: string[] | undefined): boolean {
   return true;
 }
 
+function textWithDefaults(names: string[], vals: string[], parentVals: string[] | undefined, defaults: (string | null)[]): string {
+  const include = new Array<boolean>(names.length);
+  for (let i = 0; i < names.length; i++) {
+    include[i] =
+      ALWAYS.has(names[i]) ||
+      vals[i] !== parentVals?.[i] ||
+      defaults[i] === null ||
+      vals[i] !== defaults[i];
+  }
+  return styleText(names, vals, include);
+}
+
 /** Inline computed styles into a deep clone so it renders standalone. */
 function cloneWithStyles(
   src: Element,
   names: string[],
+  deferred: DeferredStyle[],
+  misses: Map<string, ProbeInfo>,
   parentVals?: string[],
   parentChanged = false,
   isRoot = false,
@@ -233,25 +246,24 @@ function cloneWithStyles(
     return img;
   }
 
-  let text: string;
+  let text: string | undefined;
   if (previous && same && !parentChanged && pathCache?.get(src) === full && (!cssText || previous.text === cssText)) text = previous.text;
   else if (cssText) text = cssText;
   else if (full) text = styleText(names, vals);
   else {
-    const defaults = stableDefaults(src, names);
-    const include = new Array<boolean>(names.length);
-    for (let i = 0; i < names.length; i++) {
-      include[i] =
-        ALWAYS.has(names[i]) ||
-        vals[i] !== parentVals?.[i] ||
-        defaults[i] === null ||
-        vals[i] !== defaults[i];
+    const info = probeInfo(src);
+    const defaults = defaultStyles.get(info.key);
+    if (defaults) text = textWithDefaults(names, vals, parentVals, defaults);
+    else {
+      misses.set(info.key, info);
+      deferred.push({ clone, src, names, vals, parentVals, key: info.key, cache, pathCache });
     }
-    text = styleText(names, vals, include);
   }
-  clone.setAttribute('style', text);
-  cache?.set(src, { vals, text });
-  pathCache?.set(src, full);
+  if (text !== undefined) {
+    clone.setAttribute('style', text);
+    cache?.set(src, { vals, text });
+    pathCache?.set(src, full);
+  }
 
   for (const child of Array.from(src.childNodes)) {
     if (child.nodeType === 1) {
@@ -259,6 +271,8 @@ function cloneWithStyles(
         cloneWithStyles(
           child as Element,
           names,
+          deferred,
+          misses,
           vals,
           changed,
           false,
@@ -273,6 +287,16 @@ function cloneWithStyles(
   return clone;
 }
 
+function finishDeferred(deferred: DeferredStyle[], results: Map<string, (string | null)[]>, forceFull: boolean): void {
+  for (const item of deferred) {
+    const defaults = results.get(item.key) ?? defaultStyles.get(item.key) ?? item.names.map(() => null);
+    const text = forceFull ? styleText(item.names, item.vals) : textWithDefaults(item.names, item.vals, item.parentVals, defaults);
+    item.clone.setAttribute('style', text);
+    item.cache?.set(item.src, { vals: item.vals, text });
+    item.pathCache?.set(item.src, forceFull);
+  }
+}
+
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((res, rej) => {
     const img = new Image();
@@ -282,7 +306,6 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Render a canvas or DOM element (via SVG foreignObject) into a new canvas. */
 interface RasterizeInternalOptions {
   names?: string[];
   cache?: StyleCache;
@@ -319,8 +342,25 @@ async function rasterizeInternal(
     return out;
   }
   const hasStyles = el.matches('style, link') || !!el.querySelector('style, link');
-  const forceFull = hasStyles || !ensureProbe();
-  const clone = cloneWithStyles(el, names, undefined, false, true, false, forceFull, internal.cache, internal.pathCache) as HTMLElement;
+  const deferred: DeferredStyle[] = [];
+  const misses = new Map<string, ProbeInfo>();
+  const clone = cloneWithStyles(
+    el,
+    names,
+    deferred,
+    misses,
+    undefined,
+    false,
+    true,
+    false,
+    hasStyles,
+    internal.cache,
+    internal.pathCache,
+  ) as HTMLElement;
+  if (misses.size) {
+    const probe = probeDefaults(misses, names);
+    finishDeferred(deferred, probe.results, !probe.available);
+  }
   clone.style.margin = '0';
   clone.style.position = 'relative';
   clone.style.left = clone.style.top = '0';
@@ -336,6 +376,7 @@ async function rasterizeInternal(
   return out;
 }
 
+/** Render a canvas or DOM element (via SVG foreignObject) into a new canvas. */
 export async function rasterize(target?: CaptureTarget, o: RasterOptions = {}): Promise<HTMLCanvasElement> {
   return rasterizeInternal(target, o);
 }
