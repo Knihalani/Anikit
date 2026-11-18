@@ -50,13 +50,14 @@ Every judged output, best first within each category. Score = median blind score
 
 | # | Score | Verdict | Judged pro | Refs | Full | Engine | Source | Piece | Result |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 4.88 | FAIL | 0/6 | 7.31 | 5.25 | Anikit | demo | e-data-demo | `docs/video/judge/demos/rebuilds/e-data-demo` |
-| 2 | 4.31 | FAIL | 0/6 | 7.25 | 4.53 | Anikit | r3 | e-data | `docs/video/judge/rounds/r3/results/e-data` |
-| 3 | 4 | FAIL | 0/3 | 7.67 | 4.28 | Anikit | demo | ceiling2_breath_breath | `docs/video/judge/demos/results/ceiling2_breath_breath` |
-| 4 | 3.62 | FAIL | 0/3 | 7.25 | 3.83 | Anikit | r1 | e-data | `docs/video/judge/rounds/r1/results/e-data` |
-| 5 | 3.38 | FAIL | 0/3 | 7.25 | 3.67 | Anikit | r2 | e-data | `docs/video/judge/rounds/r2/results/e-data` |
-| 6 | 2.75 | FAIL | 0/3 | 7.37 | 3.33 | HyperFrames | r1 | hf-e-data | `docs/video/judge/rounds/r1/results/hf-e-data` |
-| 7 | 2.62 | FAIL | 0/3 | 7.75 | 2.94 | Anikit | demo | graphic_pieces_street-ledger | `docs/video/judge/demos/results/graphic_pieces_street-ledger` |
+| 1 | 5.44 | FAIL | 1/6 | 7.19 | 5.53 | Anikit | demo | e-data-demo-final | `docs/video/judge/demos/rebuilds/e-data-demo-final` |
+| 2 | 4.88 | FAIL | 0/6 | 7.31 | 5.25 | Anikit | demo | e-data-demo | `docs/video/judge/demos/rebuilds/e-data-demo` |
+| 3 | 4.31 | FAIL | 0/6 | 7.25 | 4.53 | Anikit | r3 | e-data | `docs/video/judge/rounds/r3/results/e-data` |
+| 4 | 4 | FAIL | 0/3 | 7.67 | 4.28 | Anikit | demo | ceiling2_breath_breath | `docs/video/judge/demos/results/ceiling2_breath_breath` |
+| 5 | 3.62 | FAIL | 0/3 | 7.25 | 3.83 | Anikit | r1 | e-data | `docs/video/judge/rounds/r1/results/e-data` |
+| 6 | 3.38 | FAIL | 0/3 | 7.25 | 3.67 | Anikit | r2 | e-data | `docs/video/judge/rounds/r2/results/e-data` |
+| 7 | 2.75 | FAIL | 0/3 | 7.37 | 3.33 | HyperFrames | r1 | hf-e-data | `docs/video/judge/rounds/r1/results/hf-e-data` |
+| 8 | 2.62 | FAIL | 0/3 | 7.75 | 2.94 | Anikit | demo | graphic_pieces_street-ledger | `docs/video/judge/demos/results/graphic_pieces_street-ledger` |
 
 ## event promo
 
