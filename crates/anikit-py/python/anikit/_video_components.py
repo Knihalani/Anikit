@@ -44,6 +44,7 @@ COMPONENT_KINDS = {
     "dust": "Floating glowing dust motes.",
     "particle-text": "Thousands of glowing particles fly in, form a word, hold, re-form into the next word and blow away.",
     "morph": "Smooth gradient shape morphing between named shapes (circle, square, star, heart, blob, triangle) or SVG paths.",
+    "fluid": "Fluid simulation: ink blooming in water, smoke or fire, with real vortices; sources push and inject dye, and `text` writes a word the flow takes apart.",
     "metaballs": "Liquid gooey blobs that drift, merge and split, with a gradient fill and glow.",
     "god-rays": "Volumetric light rays from a point, slowly turning, with dust motes in the beams.",
     "lens-flare": "Anamorphic lens flare: streak, halo and ghosts along the axis through the centre; `at` can travel a path.",
@@ -80,5 +81,6 @@ COMPONENT_KINDS = {
     "plants": "Procedural trees (pine, broadleaf, birch, cypress), bushes, grass and flowers along a ground line, lit as forms and swaying in gusting wind, in the same hands as `landscape`.",
     "clouds": "Designed, palette-aware clouds (lobed cumulus with a lit shape and rim, stratus bands or puffs) drifting at depth-scaled speeds.",
     "water": "Illustrated water: banded depth gradient, a ripple-broken shore reflection, a sun path and drifting wave dashes and glints.",
+    "illo": "Illustration toolkit: a scene graph of layered vector shapes (paths, circles, rects, blobs, polygons, stars, groups) lit by one global light into hue-shifted form shadows, rims and hard cast shadows, with dithered OKLab gradients, object-locked grain, halftone, riso, paper or hatch, a consistent hand (weighted, broken outlines; wobble; boil), palette and ink snapping, clip and cut, keyframes, morphs, sway and stepped timing.",
     "lottie": "Minimal Lottie player (shape layers, transforms, trim paths).",
 }

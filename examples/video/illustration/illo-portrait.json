@@ -1,0 +1,2000 @@
+{
+ "size": "16:9",
+ "fps": 24,
+ "scenes": [
+  {
+   "duration": 6,
+   "background": "#141a38",
+   "layers": [
+    {
+     "component": "illo",
+     "props": {
+      "view": [
+       1920,
+       1080
+      ],
+      "palette": {
+       "night": "#141a38",
+       "dusk": "#2b3f74",
+       "haze": "#8a6f9e",
+       "glow": "#f0a06a",
+       "sun": "#ffd9a0",
+       "far": "#6b5f95",
+       "mid": "#463f7a",
+       "near": "#272552",
+       "ink": "#151633",
+       "skin": "#f2a487",
+       "skinShadow": "#b25c6b",
+       "coral": "#e2513a",
+       "coralDark": "#a8303a",
+       "lip": "#c42f43",
+       "lipDark": "#7a1c34",
+       "hair": "#161b3d",
+       "hairSheen": "#36447a",
+       "cloud": "#5a4d8c"
+      },
+      "light": {
+       "angle": 330,
+       "rim": 195,
+       "color": "#ffd9a0",
+       "shadow": "#3a2470"
+      },
+      "hand": {
+       "weight": [
+        1,
+        4
+       ],
+       "wobble": 0.8,
+       "rough": 0.5,
+       "boil": 6,
+       "boilAmount": 0.5,
+       "gaps": 0.1
+      },
+      "misregister": [
+       1.5,
+       1
+      ],
+      "onTwos": true,
+      "shapes": [
+       {
+        "shape": "rect",
+        "x": -10,
+        "y": -10,
+        "w": 1940,
+        "h": 1100,
+        "corners": "sharp",
+        "wobble": 0,
+        "rough": 0,
+        "fill": {
+         "stops": [
+          [
+           0,
+           "$night"
+          ],
+          [
+           0.45,
+           "$dusk"
+          ],
+          [
+           0.78,
+           "$haze"
+          ],
+          [
+           1,
+           "$glow"
+          ]
+         ],
+         "angle": 90,
+         "steps": 6,
+         "dither": 0.22
+        },
+        "grain": 0.08
+       },
+       {
+        "shape": "circle",
+        "cx": 474.3284851168795,
+        "cy": 60.94981026921474,
+        "r": 2.2,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.6394391974619489
+       },
+       {
+        "shape": "circle",
+        "cx": 205.78444929709855,
+        "cy": 35.9451529419221,
+        "r": 3.0,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.8589775215438595
+       },
+       {
+        "shape": "circle",
+        "cx": 1512.8323267522876,
+        "cy": 259.5487807516315,
+        "r": 1.6,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.6601696347321571
+       },
+       {
+        "shape": "circle",
+        "cx": 702.8506334803703,
+        "cy": 263.92366507499935,
+        "r": 1.6,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.530859789305927
+       },
+       {
+        "shape": "circle",
+        "cx": 1775.045222837889,
+        "cy": 37.691904520064675,
+        "r": 3.0,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.8033261733511617
+       },
+       {
+        "shape": "circle",
+        "cx": 1512.8240229190578,
+        "cy": 88.030685405772,
+        "r": 2.2,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.5448203460386977
+       },
+       {
+        "shape": "circle",
+        "cx": 1635.871841808306,
+        "cy": 318.2768888502904,
+        "r": 2.2,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.44335912631746094
+       },
+       {
+        "shape": "circle",
+        "cx": 1154.767466044579,
+        "cy": 231.51043695494198,
+        "r": 3.0,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.5244367702968052
+       },
+       {
+        "shape": "circle",
+        "cx": 495.07288509161555,
+        "cy": 113.99927859607234,
+        "r": 3.0,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.8202313397088861
+       },
+       {
+        "shape": "circle",
+        "cx": 53.268855156908295,
+        "cy": 117.58250081323115,
+        "r": 3.0,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.841158619939395
+       },
+       {
+        "shape": "circle",
+        "cx": 1600.4011223314878,
+        "cy": 182.51171259982547,
+        "r": 2.2,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.611865539099695
+       },
+       {
+        "shape": "circle",
+        "cx": 570.2945696794923,
+        "cy": 165.41171810326114,
+        "r": 1.6,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.5525557982163696
+       },
+       {
+        "shape": "circle",
+        "cx": 1535.169866287702,
+        "cy": 42.97154072167454,
+        "r": 1.6,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.6313348711518598
+       },
+       {
+        "shape": "circle",
+        "cx": 1875.3484484255098,
+        "cy": 185.6616258650015,
+        "r": 3.0,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.6356200430574965
+       },
+       {
+        "shape": "circle",
+        "cx": 670.8316083767671,
+        "cy": 329.18366225163373,
+        "r": 1.6,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.4332192346930305
+       },
+       {
+        "shape": "circle",
+        "cx": 1720.8985469707393,
+        "cy": 220.5057317748628,
+        "r": 2.2,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.5381524174798415
+       },
+       {
+        "shape": "circle",
+        "cx": 694.7285884775278,
+        "cy": 254.08280429713878,
+        "r": 2.2,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.7172160929386653
+       },
+       {
+        "shape": "circle",
+        "cx": 405.6304465527816,
+        "cy": 127.06026412765554,
+        "r": 1.6,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.7540812441292012
+       },
+       {
+        "shape": "circle",
+        "cx": 550.5609736435003,
+        "cy": 204.66013941637888,
+        "r": 1.6,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.46107270095894853
+       },
+       {
+        "shape": "circle",
+        "cx": 1759.6285838385897,
+        "cy": 117.27727634985466,
+        "r": 1.6,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.42140559389100984
+       },
+       {
+        "shape": "circle",
+        "cx": 1323.0170618891939,
+        "cy": 298.7783337335468,
+        "r": 2.2,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.7674389782369629
+       },
+       {
+        "shape": "circle",
+        "cx": 1806.15636856783,
+        "cy": 35.45625758799224,
+        "r": 2.2,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.5608380599543704
+       },
+       {
+        "shape": "circle",
+        "cx": 321.3537143650691,
+        "cy": 225.57678046173083,
+        "r": 3.0,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.740021859176188
+       },
+       {
+        "shape": "circle",
+        "cx": 183.0715696504328,
+        "cy": 215.31889287698684,
+        "r": 2.2,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.5459976663307757
+       },
+       {
+        "shape": "circle",
+        "cx": 500.08716748809593,
+        "cy": 209.64289999413552,
+        "r": 1.6,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.5656536145995932
+       },
+       {
+        "shape": "circle",
+        "cx": 57.28949806479885,
+        "cy": 43.43915787663757,
+        "r": 1.6,
+        "fill": "$sun",
+        "wobble": 0,
+        "rough": 0,
+        "opacity": 0.5825954123725954
+       },
+       {
+        "shape": "circle",
+        "name": "sun",
+        "cx": 640,
+        "cy": 660,
+        "r": 190,
+        "fill": "$sun",
+        "wobble": 0.5,
+        "texture": {
+         "style": "halftone",
+         "amount": 0.55,
+         "scale": 9,
+         "color": "$glow"
+        },
+        "grain": 0.05
+       },
+       {
+        "shape": "polygon",
+        "name": "far",
+        "points": [
+         [
+          -40,
+          1120
+         ],
+         [
+          -40.0,
+          681.1
+         ],
+         [
+          102.9,
+          701.0
+         ],
+         [
+          245.7,
+          690.8
+         ],
+         [
+          388.6,
+          711.3
+         ],
+         [
+          531.4,
+          706.3
+         ],
+         [
+          674.3,
+          688.1
+         ],
+         [
+          817.1,
+          655.2
+         ],
+         [
+          960.0,
+          733.0
+         ],
+         [
+          1102.9,
+          692.4
+         ],
+         [
+          1245.7,
+          688.6
+         ],
+         [
+          1388.6,
+          752.6
+         ],
+         [
+          1531.4,
+          697.7
+         ],
+         [
+          1674.3,
+          707.6
+         ],
+         [
+          1817.1,
+          698.5
+         ],
+         [
+          1960.0,
+          715.3
+         ],
+         [
+          1960,
+          1120
+         ]
+        ],
+        "fill": "$far",
+        "smooth": false,
+        "corners": 3,
+        "grain": 0.06
+       },
+       {
+        "shape": "polygon",
+        "name": "mid",
+        "points": [
+         [
+          -40,
+          1120
+         ],
+         [
+          -40.0,
+          767.3
+         ],
+         [
+          141.8,
+          827.3
+         ],
+         [
+          323.6,
+          789.6
+         ],
+         [
+          505.5,
+          819.7
+         ],
+         [
+          687.3,
+          754.4
+         ],
+         [
+          869.1,
+          790.4
+         ],
+         [
+          1050.9,
+          821.4
+         ],
+         [
+          1232.7,
+          767.0
+         ],
+         [
+          1414.5,
+          812.8
+         ],
+         [
+          1596.4,
+          799.0
+         ],
+         [
+          1778.2,
+          796.9
+         ],
+         [
+          1960.0,
+          799.4
+         ],
+         [
+          1960,
+          1120
+         ]
+        ],
+        "fill": "$mid",
+        "corners": 4,
+        "grain": 0.06,
+        "shade": {
+         "amount": 0.5,
+         "offset": 0.05,
+         "rim": 0.01
+        }
+       },
+       {
+        "shape": "polygon",
+        "name": "near",
+        "points": [
+         [
+          -40,
+          1120
+         ],
+         [
+          -40.0,
+          890.2
+         ],
+         [
+          210.0,
+          918.9
+         ],
+         [
+          460.0,
+          910.1
+         ],
+         [
+          710.0,
+          914.2
+         ],
+         [
+          960.0,
+          881.7
+         ],
+         [
+          1210.0,
+          888.0
+         ],
+         [
+          1460.0,
+          898.6
+         ],
+         [
+          1710.0,
+          893.8
+         ],
+         [
+          1960.0,
+          923.7
+         ],
+         [
+          1960,
+          1120
+         ]
+        ],
+        "fill": "$near",
+        "corners": 6,
+        "grain": 0.07
+       },
+       {
+        "shape": "polygon",
+        "name": "lake",
+        "points": [
+         [
+          -20,
+          960
+         ],
+         [
+          520,
+          930
+         ],
+         [
+          760,
+          950
+         ],
+         [
+          700,
+          1000
+         ],
+         [
+          -20,
+          1010
+         ]
+        ],
+        "fill": "$haze",
+        "smooth": true,
+        "clipTo": "near",
+        "texture": {
+         "style": "riso",
+         "amount": 0.25
+        }
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          80,
+          958
+         ],
+         [
+          200,
+          958
+         ]
+        ],
+        "stroke": "$sun",
+        "weight": [
+         1.5,
+         3.5
+        ],
+        "clipTo": "lake",
+        "sway": {
+         "x": 10,
+         "period": 2.2,
+         "phase": 0.0
+        },
+        "origin": [
+         80,
+         958
+        ]
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          260,
+          970
+         ],
+         [
+          330,
+          970
+         ]
+        ],
+        "stroke": "$sun",
+        "weight": [
+         1.5,
+         3.5
+        ],
+        "clipTo": "lake",
+        "sway": {
+         "x": 10,
+         "period": 2.2,
+         "phase": 0.17
+        },
+        "origin": [
+         260,
+         970
+        ]
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          420,
+          950
+         ],
+         [
+          510,
+          950
+         ]
+        ],
+        "stroke": "$sun",
+        "weight": [
+         1.5,
+         3.5
+        ],
+        "clipTo": "lake",
+        "sway": {
+         "x": 10,
+         "period": 2.2,
+         "phase": 0.34
+        },
+        "origin": [
+         420,
+         950
+        ]
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          150,
+          985
+         ],
+         [
+          210,
+          985
+         ]
+        ],
+        "stroke": "$sun",
+        "weight": [
+         1.5,
+         3.5
+        ],
+        "clipTo": "lake",
+        "sway": {
+         "x": 10,
+         "period": 2.2,
+         "phase": 0.51
+        },
+        "origin": [
+         150,
+         985
+        ]
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          560,
+          962
+         ],
+         [
+          610,
+          962
+         ]
+        ],
+        "stroke": "$sun",
+        "weight": [
+         1.5,
+         3.5
+        ],
+        "clipTo": "lake",
+        "sway": {
+         "x": 10,
+         "period": 2.2,
+         "phase": 0.68
+        },
+        "origin": [
+         560,
+         962
+        ]
+       },
+       {
+        "shape": "polygon",
+        "points": [
+         [
+          1360,
+          470
+         ],
+         [
+          1360.0,
+          426.07321419596985
+         ],
+         [
+          1430.0,
+          395.4353804373289
+         ],
+         [
+          1500.0,
+          404.86057167737823
+         ],
+         [
+          1570.0,
+          399.826532152494
+         ],
+         [
+          1640.0,
+          381.79064388688977
+         ],
+         [
+          1710.0,
+          400.5465695849619
+         ],
+         [
+          1780.0,
+          430.1315715595758
+         ],
+         [
+          1780,
+          470
+         ]
+        ],
+        "smooth": true,
+        "fill": "$cloud",
+        "shade": {
+         "amount": 0.5,
+         "offset": 0.3,
+         "rim": 0.06,
+         "rimAmount": 1.0
+        },
+        "grain": 0.06,
+        "sway": {
+         "x": 25,
+         "period": 9
+        }
+       },
+       {
+        "shape": "polygon",
+        "points": [
+         [
+          1500,
+          560
+         ],
+         [
+          1500.0,
+          533.8635789832923
+         ],
+         [
+          1550.0,
+          513.6041539786883
+         ],
+         [
+          1600.0,
+          501.9895720118785
+         ],
+         [
+          1650.0,
+          495.20854404068194
+         ],
+         [
+          1700.0,
+          503.08134557256153
+         ],
+         [
+          1750.0,
+          510.70042887121974
+         ],
+         [
+          1800.0,
+          539.4759005927151
+         ],
+         [
+          1800,
+          560
+         ]
+        ],
+        "smooth": true,
+        "fill": "$far",
+        "shade": {
+         "amount": 0.4,
+         "offset": 0.3,
+         "rim": 0.08,
+         "rimAmount": 1.0
+        },
+        "grain": 0.06,
+        "sway": {
+         "x": 40,
+         "period": 9,
+         "phase": 0.3
+        }
+       },
+       {
+        "shape": "polygon",
+        "points": [
+         [
+          120,
+          520
+         ],
+         [
+          120.0,
+          499.4788170572067
+         ],
+         [
+          163.33333333333331,
+          486.27550702216604
+         ],
+         [
+          206.66666666666666,
+          482.46241592304585
+         ],
+         [
+          250.0,
+          467.335167625239
+         ],
+         [
+          293.3333333333333,
+          484.6360312245801
+         ],
+         [
+          336.6666666666667,
+          484.54020427009425
+         ],
+         [
+          380.0,
+          496.05090348599305
+         ],
+         [
+          380,
+          520
+         ]
+        ],
+        "smooth": true,
+        "fill": "$far",
+        "shade": {
+         "amount": 0.4,
+         "offset": 0.3,
+         "rim": 0.08,
+         "rimAmount": 1.0
+        },
+        "grain": 0.06,
+        "sway": {
+         "x": 30,
+         "period": 9,
+         "phase": 0.6
+        }
+       },
+       {
+        "shape": "circle",
+        "name": "moon",
+        "cx": 1650,
+        "cy": 210,
+        "r": 44,
+        "fill": "$sun",
+        "wobble": 0.3,
+        "rough": 0.3,
+        "cut": "moonBite"
+       },
+       {
+        "shape": "circle",
+        "name": "moonBite",
+        "cx": 1672,
+        "cy": 198,
+        "r": 40,
+        "visible": false
+       },
+       {
+        "shape": "rect",
+        "x": 310,
+        "y": 722,
+        "w": 7,
+        "h": 20,
+        "fill": "$ink",
+        "radius": 3,
+        "wobble": 0,
+        "rough": 0,
+        "group": "walker"
+       },
+       {
+        "shape": "circle",
+        "cx": 313.5,
+        "cy": 717,
+        "r": 4.5,
+        "fill": "$ink",
+        "wobble": 0,
+        "rough": 0,
+        "group": "walker"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          286.0,
+          314.0
+         ],
+         [
+          294.0,
+          318.0
+         ],
+         [
+          300,
+          323.0
+         ],
+         [
+          306.0,
+          318.0
+         ],
+         [
+          314.0,
+          313.0
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$ink",
+        "weight": [
+         1.5,
+         3.2
+        ],
+        "group": "birds",
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "sy": 1
+          },
+          {
+           "t": 0.25,
+           "sy": -0.6
+          },
+          {
+           "t": 0.5,
+           "sy": 1
+          }
+         ],
+         "loop": true,
+         "ease": "inOut"
+        },
+        "origin": [
+         300,
+         320
+        ],
+        "lag": 0.0
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          348.8,
+          285.2
+         ],
+         [
+          355.2,
+          288.4
+         ],
+         [
+          360,
+          292.4
+         ],
+         [
+          364.8,
+          288.4
+         ],
+         [
+          371.2,
+          284.4
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$ink",
+        "weight": [
+         1.5,
+         3.2
+        ],
+        "group": "birds",
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "sy": 1
+          },
+          {
+           "t": 0.25,
+           "sy": -0.6
+          },
+          {
+           "t": 0.5,
+           "sy": 1
+          }
+         ],
+         "loop": true,
+         "ease": "inOut"
+        },
+        "origin": [
+         360,
+         290
+        ],
+        "lag": 0.07
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          400.2,
+          330.8
+         ],
+         [
+          405.8,
+          333.6
+         ],
+         [
+          410,
+          337.1
+         ],
+         [
+          414.2,
+          333.6
+         ],
+         [
+          419.8,
+          330.1
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$ink",
+        "weight": [
+         1.5,
+         3.2
+        ],
+        "group": "birds",
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "sy": 1
+          },
+          {
+           "t": 0.25,
+           "sy": -0.6
+          },
+          {
+           "t": 0.5,
+           "sy": 1
+          }
+         ],
+         "loop": true,
+         "ease": "inOut"
+        },
+        "origin": [
+         410,
+         335
+        ],
+        "lag": 0.14
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          241.6,
+          356.4
+         ],
+         [
+          246.4,
+          358.8
+         ],
+         [
+          250,
+          361.8
+         ],
+         [
+          253.6,
+          358.8
+         ],
+         [
+          258.4,
+          355.8
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$ink",
+        "weight": [
+         1.5,
+         3.2
+        ],
+        "group": "birds",
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "sy": 1
+          },
+          {
+           "t": 0.25,
+           "sy": -0.6
+          },
+          {
+           "t": 0.5,
+           "sy": 1
+          }
+         ],
+         "loop": true,
+         "ease": "inOut"
+        },
+        "origin": [
+         250,
+         360
+        ],
+        "lag": 0.21000000000000002
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          462.3,
+          296.7
+         ],
+         [
+          466.7,
+          298.9
+         ],
+         [
+          470,
+          301.65
+         ],
+         [
+          473.3,
+          298.9
+         ],
+         [
+          477.7,
+          296.15
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$ink",
+        "weight": [
+         1.5,
+         3.2
+        ],
+        "group": "birds",
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "sy": 1
+          },
+          {
+           "t": 0.25,
+           "sy": -0.6
+          },
+          {
+           "t": 0.5,
+           "sy": 1
+          }
+         ],
+         "loop": true,
+         "ease": "inOut"
+        },
+        "origin": [
+         470,
+         300
+        ],
+        "lag": 0.28
+       },
+       {
+        "shape": "path",
+        "name": "sweater",
+        "d": "M 950 822 C 1010 812, 1100 812, 1160 822 L 1178 862 C 1330 885, 1450 960, 1520 1100 L 560 1100 C 610 965, 740 880, 885 858 Z",
+        "fill": "$coral",
+        "group": "body",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.16,
+         "rim": 0.012
+        },
+        "grain": 0.07,
+        "texture": {
+         "style": "riso",
+         "amount": 0.18
+        }
+       },
+       {
+        "shape": "path",
+        "name": "face",
+        "d": "M 1040 190 C 1150 185, 1215 260, 1222 350 C 1224 372, 1218 385, 1216 392 C 1228 420, 1258 460, 1272 487 C 1278 497, 1268 505, 1250 506 C 1240 507, 1236 512, 1240 520 C 1246 530, 1250 538, 1242 545 C 1236 548, 1236 552, 1242 556 C 1248 566, 1240 578, 1228 582 C 1220 586, 1222 596, 1228 610 C 1234 630, 1222 655, 1195 662 C 1160 670, 1125 672, 1110 685 C 1112 730, 1125 780, 1145 830 L 975 850 C 965 790, 960 740, 950 690 C 880 640, 850 560, 850 450 C 850 300, 930 195, 1040 190 Z",
+        "fill": "$skin",
+        "group": "head",
+        "shade": {
+         "amount": 0.85,
+         "offset": 0.12,
+         "rim": 0.014,
+         "rimAmount": 1.0
+        },
+        "grain": 0.05,
+        "misregister": [
+         2,
+         1
+        ]
+       },
+       {
+        "shape": "path",
+        "d": "M 1090 668 C 1150 690, 1210 670, 1240 640 L 1250 720 C 1200 760, 1150 790, 1080 800 Z",
+        "fill": "$skinShadow",
+        "clipTo": "face",
+        "group": "head",
+        "wobble": 1
+       },
+       {
+        "shape": "ellipse",
+        "cx": 1182,
+        "cy": 522,
+        "rx": 40,
+        "ry": 24,
+        "fill": "$coral",
+        "opacity": 0.28,
+        "clipTo": "face",
+        "group": "head",
+        "wobble": 0.5
+       },
+       {
+        "shape": "path",
+        "name": "lips",
+        "d": "M 1222 516 C 1240 516, 1256 530, 1252 545 C 1258 560, 1252 580, 1228 590 C 1215 575, 1214 535, 1222 516 Z",
+        "fill": "$lip",
+        "clipTo": "face",
+        "group": "head"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1222,
+          550
+         ],
+         [
+          1236,
+          551
+         ],
+         [
+          1244,
+          551
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$lipDark",
+        "weight": [
+         1.2,
+         3
+        ],
+        "group": "head",
+        "clipTo": "face"
+       },
+       {
+        "shape": "path",
+        "name": "eyeWhite",
+        "d": "M 1176 414 C 1188 402, 1204 400, 1214 410 C 1206 424, 1190 426, 1176 414 Z",
+        "fill": "#f6e7da",
+        "group": "eye",
+        "wobble": 0.3,
+        "rough": 0.2
+       },
+       {
+        "shape": "circle",
+        "cx": 1203,
+        "cy": 413,
+        "r": 8,
+        "fill": "$ink",
+        "clipTo": "eyeWhite",
+        "group": "eye",
+        "wobble": 0,
+        "rough": 0
+       },
+       {
+        "shape": "circle",
+        "cx": 1206,
+        "cy": 410,
+        "r": 2.2,
+        "fill": "#ffffff",
+        "clipTo": "eyeWhite",
+        "group": "eye",
+        "wobble": 0,
+        "rough": 0
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1172,
+          413
+         ],
+         [
+          1190,
+          401
+         ],
+         [
+          1216,
+          408
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$ink",
+        "weight": [
+         2,
+         5.5
+        ],
+        "taper": 0.25,
+        "group": "eye"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1212,
+          406
+         ],
+         [
+          1222,
+          400
+         ]
+        ],
+        "stroke": "$ink",
+        "weight": [
+         1,
+         2.5
+        ],
+        "taper": 0.4,
+        "group": "eye"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1160,
+          372
+         ],
+         [
+          1188,
+          358
+         ],
+         [
+          1218,
+          366
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$hair",
+        "weight": [
+         3,
+         8
+        ],
+        "taper": 0.35,
+        "group": "head"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1243,
+          494
+         ],
+         [
+          1252,
+          498
+         ],
+         [
+          1258,
+          496
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$skinShadow",
+        "weight": [
+         1.5,
+         3.5
+        ],
+        "group": "head"
+       },
+       {
+        "shape": "path",
+        "name": "hairShape",
+        "d": "M 1030 150 C 1150 145, 1240 220, 1240 330 L 1237 348 C 1205 352, 1172 354, 1150 350 C 1122 400, 1108 520, 1112 688 L 1104 702 C 1040 694, 950 684, 828 674 C 798 600, 788 450, 808 330 C 838 222, 920 155, 1030 150 Z",
+        "fill": "$hair",
+        "group": "hair",
+        "shade": {
+         "amount": 0.5,
+         "offset": 0.08,
+         "rim": 0.016,
+         "rimAmount": 1.0
+        },
+        "grain": 0.06,
+        "shadow": {
+         "dist": 0,
+         "dx": 22,
+         "dy": 16,
+         "clipTo": "face",
+         "opacity": 0.55
+        }
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          900,
+          300
+         ],
+         [
+          990,
+          220
+         ],
+         [
+          1110,
+          205
+         ],
+         [
+          1190,
+          250
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$hairSheen",
+        "weight": [
+         2,
+         7
+        ],
+        "taper": 0.4,
+        "clipTo": "hairShape",
+        "group": "hair"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          870,
+          420
+         ],
+         [
+          930,
+          300
+         ],
+         [
+          1030,
+          250
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$hairSheen",
+        "weight": [
+         2,
+         7
+        ],
+        "taper": 0.4,
+        "clipTo": "hairShape",
+        "group": "hair"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          880,
+          560
+         ],
+         [
+          900,
+          450
+         ],
+         [
+          960,
+          360
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$hairSheen",
+        "weight": [
+         2,
+         7
+        ],
+        "taper": 0.4,
+        "clipTo": "hairShape",
+        "group": "hair"
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1130,
+          330
+         ],
+         [
+          1180,
+          290
+         ],
+         [
+          1220,
+          300
+         ]
+        ],
+        "smooth": true,
+        "stroke": "$hairSheen",
+        "weight": [
+         2,
+         7
+        ],
+        "taper": 0.4,
+        "clipTo": "hairShape",
+        "group": "hair"
+       },
+       {
+        "shape": "path",
+        "name": "collar",
+        "d": "M 935 788 C 1000 762, 1110 762, 1170 784 C 1182 815, 1189 845, 1192 872 C 1100 892, 1000 892, 906 876 C 913 842, 922 812, 935 788 Z",
+        "fill": "$coral",
+        "group": "body",
+        "shade": {
+         "amount": 0.75,
+         "offset": 0.22,
+         "rim": 0.03
+        },
+        "grain": 0.07,
+        "shadow": {
+         "dist": 0,
+         "dx": 10,
+         "dy": 22,
+         "clipTo": "sweater",
+         "opacity": 0.6
+        }
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          930,
+          760
+         ],
+         [
+          940,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          950,
+          760
+         ],
+         [
+          960,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          970,
+          760
+         ],
+         [
+          980,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          990,
+          760
+         ],
+         [
+          1000,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1010,
+          760
+         ],
+         [
+          1020,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1030,
+          760
+         ],
+         [
+          1040,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1050,
+          760
+         ],
+         [
+          1060,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1070,
+          760
+         ],
+         [
+          1080,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1090,
+          760
+         ],
+         [
+          1100,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1110,
+          760
+         ],
+         [
+          1120,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1130,
+          760
+         ],
+         [
+          1140,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1150,
+          760
+         ],
+         [
+          1160,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1170,
+          760
+         ],
+         [
+          1180,
+          880
+         ]
+        ],
+        "stroke": "$coralDark",
+        "weight": [
+         2,
+         4.5
+        ],
+        "clipTo": "collar",
+        "group": "body",
+        "opacity": 0.8
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1092,
+          692
+         ],
+         [
+          1092,
+          706
+         ]
+        ],
+        "stroke": "$sun",
+        "weight": [
+         2,
+         3
+        ],
+        "group": "earring"
+       },
+       {
+        "shape": "circle",
+        "cx": 1092,
+        "cy": 719,
+        "r": 13,
+        "fill": "$sun",
+        "group": "earring",
+        "shade": {
+         "amount": 0.6,
+         "offset": 0.3,
+         "rim": 0.1
+        }
+       }
+      ],
+      "groups": [
+       {
+        "name": "walker",
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "x": 0
+          },
+          {
+           "t": 6,
+           "x": 60
+          }
+         ],
+         "ease": "linear"
+        },
+        "cycle": {
+         "style": "bob",
+         "amount": 0.25,
+         "speed": 1.4
+        }
+       },
+       {
+        "name": "birds",
+        "animate": {
+         "keys": [
+          {
+           "t": 0,
+           "x": 0,
+           "y": 0
+          },
+          {
+           "t": 6,
+           "x": 180,
+           "y": -40
+          }
+         ],
+         "ease": "linear"
+        }
+       },
+       {
+        "name": "body",
+        "pivot": [
+         1040,
+         1080
+        ],
+        "cycle": {
+         "style": "breathe",
+         "amount": 0.8
+        }
+       },
+       {
+        "name": "head",
+        "parent": "body",
+        "pivot": [
+         1030,
+         860
+        ],
+        "cycle": {
+         "style": "idle",
+         "amount": 1.2
+        }
+       },
+       {
+        "name": "hair",
+        "parent": "head",
+        "pivot": [
+         1040,
+         300
+        ],
+        "lag": 0.08,
+        "spring": {
+         "stiffness": 70,
+         "damping": 6,
+         "drag": 0.1
+        }
+       },
+       {
+        "name": "earring",
+        "parent": "head",
+        "pivot": [
+         1092,
+         692
+        ],
+        "spring": {
+         "stiffness": 40,
+         "damping": 3,
+         "drag": 0.4
+        }
+       },
+       {
+        "name": "eye",
+        "parent": "head",
+        "pivot": [
+         1196,
+         414
+        ],
+        "blink": {
+         "every": 2.6,
+         "seed": 3
+        }
+       }
+      ],
+      "seed": 11
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -63,6 +63,7 @@ pub mod now_playing;
 pub mod product_shot;
 pub mod illus_fill;
 pub mod nature;
+pub mod illo;
 
 #[cfg(test)]
 pub(crate) mod preview;
@@ -317,6 +318,7 @@ kinds! {
     "plants" => nature::Plants, "Procedural trees (pine, broadleaf, birch, cypress), bushes, grass and flowers along a ground line, lit as forms and swaying in gusting wind, in the same hands as `landscape`.", r##"{"species":"mixed","count":7,"wind":0.5,"style":"painterly"}"##;
     "clouds" => nature::Clouds, "Designed, palette-aware clouds (lobed cumulus with a lit shape and rim, stratus bands or puffs) drifting at depth-scaled speeds.", r##"{"look":"cumulus","count":4,"speed":20,"style":"flat"}"##;
     "water" => nature::Water, "Illustrated water: banded depth gradient, a ripple-broken shore reflection, a sun path and drifting wave dashes and glints.", r##"{"sun":0.6,"style":"risograph","time":"dusk"}"##;
+    "illo" => illo::Illo, "Illustration toolkit: a scene graph of layered vector shapes (paths, circles, rects, blobs, polygons, stars, groups) lit by one global light into hue-shifted form shadows, rims and hard cast shadows, with dithered OKLab gradients, object-locked grain, halftone, riso, paper or hatch, a consistent hand (weighted, broken outlines; wobble; boil), palette and ink snapping, clip and cut, keyframes, morphs, sway and stepped timing.", r##"{"palette":["#e2603f","#2f4858","#f3e6cf"],"light":{"angle":225},"hand":{"outline":true},"grain":0.06,"shapes":[{"shape":"rect","x":0,"y":470,"w":1280,"h":250,"fill":"$2"},{"shape":"blob","name":"pot","cx":640,"cy":380,"r":150,"fill":"$1","shade":true,"shadow":{"flatten":0.3},"texture":"halftone"},{"shape":"ellipse","cx":590,"cy":320,"rx":40,"ry":22,"fill":"$3","clipTo":"pot","opacity":0.8},{"shape":"path","points":[[640,240],[660,150],[700,110]],"smooth":true}]}"##;
     // Lottie
     "lottie" => lottie::Lottie, "Minimal Lottie player (shape layers, transforms, trim paths).", r##"{"src":"anim.json"}"##;
 }
