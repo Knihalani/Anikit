@@ -355,15 +355,24 @@ pub fn is_cached(name: &str) -> bool {
 /// electric guitars. `fetch("essentials")` gets them all.
 pub const ESSENTIALS: &[&str] = &["splendid", "epianos", "freepats-bass", "freepats-nylon", "freepats-eguitar"];
 
-/// Download a pack into the cache (`git clone --depth 1`); returns its
+/// Real orchestral sections (≈930 MB): `fetch("orchestra")`.
+pub const ORCHESTRA: &[&str] = &["vsco-strings", "vsco-winds"];
+
+/// Download a pack (or a group: `essentials`, `orchestra`, `all`) into the cache (`git clone --depth 1`); returns its
 /// directory. Does nothing if it is already there.
 pub fn fetch(name: &str) -> Result<PathBuf, String> {
-    if name == "essentials" {
-        let mut last = cache_dir();
-        for p in ESSENTIALS {
-            last = fetch(p)?;
+    let group: Option<Vec<&str>> = match name {
+        "essentials" => Some(ESSENTIALS.to_vec()),
+        "orchestra" => Some(ORCHESTRA.to_vec()),
+        // Everything except the full VSCO repository (its subsets cover it).
+        "all" => Some(PACKS.iter().map(|p| p.name).filter(|n| *n != "vsco2-ce").collect()),
+        _ => None,
+    };
+    if let Some(g) = group {
+        for p in g {
+            fetch(p)?;
         }
-        return Ok(last.parent().map(PathBuf::from).unwrap_or(last));
+        return Ok(cache_dir());
     }
     let pack = PACKS
         .iter()
@@ -518,6 +527,9 @@ mod tests {
             assert!(f.ends_with(".sfz"));
         }
         assert!(fetch("no-such-pack").is_err());
+        for g in [ESSENTIALS, ORCHESTRA] {
+            assert!(g.iter().all(|p| PACKS.iter().any(|k| k.name == *p)));
+        }
         assert!(pack_instrument("not-an-instrument").is_none());
     }
 
