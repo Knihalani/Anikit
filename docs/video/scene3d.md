@@ -109,6 +109,8 @@ Dial numerals, a logo on a can, a label on a bottle: put a `plane` just above th
 
 - Leave the composition's `background` out, so it's transparent.
 - Lift the plane about 0.5 mm off the surface.
+- Print on a dielectric (enamel, ceramic, lacquer, paper). A metal surface mirrors the set, so the print sits on a reflection and reads poorly.
+- Open shapes (planes, surfaces, heightfields, and lathes whose profile doesn't close on the axis) are thin shells automatically. A watch crystal can be a glass `lathe` dome with no closing profile.
 
 Proof: `docs/video/shots/3d-decals/dial.jpg` (type and an index printed on a guilloché dial; spec beside it).
 
