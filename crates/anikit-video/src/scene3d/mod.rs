@@ -149,6 +149,8 @@ struct Prepared {
     haze: (f32, V3),
     haze_height: (f32, f32),
     lights: Vec<trace::Light>,
+    /// Local lights animated by expressions of `t`.
+    light_anims: Vec<spec::LightAnim>,
     /// Underwater caustics strength (0 = off).
     caustics: f32,
     gobo: rig::Gobo,
@@ -243,10 +245,12 @@ impl Prepare for Scene3d {
         let env_v = m.get("env").cloned().unwrap_or(if lookdev { Value::from("studio") } else { Value::Null });
         let mut es = spec::env(&env_v, "env").map_err(Error)?;
         let mut local_lights = Vec::new();
+        let mut light_anims: Vec<spec::LightAnim> = Vec::new();
         if let Some(l) = m.get("lights") {
-            let (e, loc) = spec::lights(l, &es.env, "lights").map_err(Error)?;
+            let (e, loc, an) = spec::lights(l, &es.env, "lights").map_err(Error)?;
             es.env = e;
             local_lights = loc;
+            light_anims = an;
         }
         let bright = matches!(es.name.as_str(), "cyc" | "sunset" | "overcast" | "interior" | "underwater");
 
@@ -658,6 +662,7 @@ impl Prepare for Scene3d {
             haze,
             haze_height,
             lights: local_lights,
+            light_anims,
             caustics,
             gobo,
             rig_anim: match (rig, rig_anim_base) {
@@ -1046,6 +1051,9 @@ impl Scene3d {
         scene.haze = p.haze;
         scene.haze_height = p.haze_height;
         scene.lights = p.lights.clone();
+        for a in &p.light_anims {
+            a.apply(&mut scene.lights[a.idx], t);
+        }
         scene.caustics = p.caustics;
         scene.gobo = p.gobo;
         scene.time = t;
@@ -1494,6 +1502,11 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        let e0 = env::Env::preset_tinted("studio", v3(1.0, 0.0, 0.0), v3(0.0, 0.0, 1.0), v3(1.0, 1.0, 1.0), v3(0.0, 1.0, 0.0)).unwrap();
+        let (_, mut ls, an) = spec::lights(&json!([ { "pos": "=[cos(t), 2, sin(t)]", "target": [0, 0, 0], "intensity": "=10+5*sin(t*3)" } ]), &e0, "lights").unwrap();
+        assert_eq!(an.len(), 1);
+        an[0].apply(&mut ls[0], 1.0);
+        assert!((ls[0].pos.x - 1f32.cos()).abs() < 1e-5 && (luma(ls[0].power) - (10.0 + 5.0 * 3f32.sin())).abs() < 1e-3);
         let m = spec::material(&json!({ "extends": "chrome", "imperfections": 0.5, "dust": 0.2 }), &HashMap::new(), "m").unwrap();
         assert_eq!(m.imperf, [0.5, 0.3, 0.25, 0.2]);
         scene(json!({ "objects": [ { "type": "box", "material": { "extends": "lacquer", "smudges": 0.8, "scratches": 0.5 } } ] })).unwrap();
