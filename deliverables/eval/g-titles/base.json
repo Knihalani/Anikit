@@ -1,0 +1,304 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "motionBlur": true,
+ "music": {
+  "bpm": 96,
+  "key": "Am",
+  "length": "6 bars",
+  "end": "ring",
+  "master": {
+   "lufs": -14,
+   "ceiling": -1,
+   "reverb": "hall"
+  },
+  "tracks": [
+   {
+    "inst": "nylon-guitar",
+    "notes": "o3 l8 A2/4 E3 A3 C4 E4 C4 A3 | F2/4 C3 F3 A3 C4 A3 F3 | D3/4 A3 D4 F4 A4 F4 D4 | E2/4 B2 E3 G#3 B3 E4 G#3 | [A2 E3 A3 C4 E4]/1! | r1",
+    "gain": -2,
+    "reverb": 0.35,
+    "pan": -0.15
+   },
+   {
+    "inst": "cello",
+    "notes": "o2 r1 | F2/1 | D2/1 | E2/2 E2/2 | A1/1! | A1/1",
+    "gain": -5,
+    "reverb": 0.4
+   },
+   {
+    "inst": "strings",
+    "notes": "o4 r1 | r1 | [D4 F4 A4]/1 | [E4 G#4 B4 D5]/1 | [A3 C4 E4 A4]/1! | [A3 C4 E4 A4]/1",
+    "gain": -9,
+    "reverb": 0.5
+   },
+   {
+    "inst": "drums",
+    "drums": {
+     "shaker": "................|................|..x...x...x...x.|x.x.x.x.x.x.xxxx|................|................",
+     "rim": "................|................|....x.......x...|....x.......x.x.|................|................"
+    },
+    "gain": -10
+   },
+   {
+    "inst": "timpani",
+    "notes": "o2 r1 | r1 | r1 | r2 E2/16 E2/16 E2/16 E2/16 E2/8 E2/8 E2/8 E2/8 | A1/1! | r1",
+    "gain": -6,
+    "reverb": 0.4
+   },
+   {
+    "inst": "church-bell",
+    "notes": "o4 r1 | r1 | r1 | r1 | A3/1! | r2 E4/2?",
+    "gain": -8,
+    "reverb": 0.7
+   }
+  ]
+ },
+ "sound": {
+  "design": "off",
+  "ambience": {
+   "type": "city",
+   "level": -22
+  },
+  "space": "room",
+  "cues": [
+   {
+    "sfx": "ceramic",
+    "at": 2.52,
+    "x": 0.0,
+    "gain": -6,
+    "pitch": 0
+   },
+   {
+    "sfx": "ceramic",
+    "at": 2.75,
+    "x": -0.2,
+    "gain": -8,
+    "pitch": 2
+   },
+   {
+    "sfx": "ceramic",
+    "at": 2.92,
+    "x": 0.25,
+    "gain": -9,
+    "pitch": -2
+   },
+   {
+    "sfx": "ceramic",
+    "at": 3.08,
+    "x": -0.35,
+    "gain": -10,
+    "pitch": 3
+   },
+   {
+    "sfx": "ceramic",
+    "at": 3.25,
+    "x": 0.4,
+    "gain": -11,
+    "pitch": 1
+   },
+   {
+    "sfx": "ceramic",
+    "at": 3.4,
+    "x": -0.5,
+    "gain": -12,
+    "pitch": 5
+   },
+   {
+    "sfx": "ceramic",
+    "at": 3.6,
+    "x": 0.5,
+    "gain": -13,
+    "pitch": -1
+   },
+   {
+    "sfx": "click",
+    "at": 5.05,
+    "x": -0.5,
+    "gain": -10
+   },
+   {
+    "sfx": "click",
+    "at": 5.2,
+    "x": -0.2,
+    "gain": -10
+   },
+   {
+    "sfx": "click",
+    "at": 5.35,
+    "x": 0.1,
+    "gain": -10
+   },
+   {
+    "sfx": "click",
+    "at": 5.5,
+    "x": 0.4,
+    "gain": -10
+   },
+   {
+    "sfx": "click",
+    "at": 5.65,
+    "x": 0.6,
+    "gain": -11
+   },
+   {
+    "sfx": "whoosh-air",
+    "at": 7.85,
+    "gain": -10
+   },
+   {
+    "sfx": "stone",
+    "at": 8.2,
+    "gain": -9
+   },
+   {
+    "sfx": "ceramic+stone",
+    "at": 10.15,
+    "x": -0.2,
+    "gain": -4
+   },
+   {
+    "sfx": "shatter",
+    "at": 10.85,
+    "x": 0.1,
+    "gain": -8
+   },
+   {
+    "sfx": "ceramic",
+    "at": 11.0,
+    "x": 0.4,
+    "gain": -12,
+    "pitch": 4
+   }
+  ]
+ },
+ "scenes": [
+  {
+   "duration": 15,
+   "background": "#E9E2D2",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 4.7,
+       "x": -60,
+       "y": 25,
+       "rotation": -1.5
+      },
+      "to": {
+       "zoom": 4.2,
+       "x": 0,
+       "y": 0,
+       "rotation": 0
+      },
+      "duration": 2.3,
+      "ease": "linear"
+     },
+     {
+      "to": {
+       "zoom": 1.12
+      },
+      "at": 2.3,
+      "duration": 3.0,
+      "ease": "inOutCubic"
+     },
+     {
+      "to": {
+       "zoom": 1.0
+      },
+      "at": 5.3,
+      "duration": 4.7,
+      "ease": "outSine"
+     },
+     {
+      "to": {
+       "zoom": 1.06
+      },
+      "at": 10.0,
+      "duration": 5.0,
+      "ease": "outSine"
+     }
+    ],
+    "shake": {
+     "amount": 5,
+     "at": 10.1,
+     "duration": 0.35
+    }
+   },
+   "layers": [
+    {
+     "type": "shader",
+     "src": "plaster.glsl"
+    },
+    {
+     "script": "__TILES__"
+    },
+    {
+     "shape": "rect",
+     "width": 3000,
+     "height": 900,
+     "x": "=-900 + t*160",
+     "y": 300,
+     "rotation": -28,
+     "blend": "screen",
+     "opacity": "=0.22*(1-smoothstep(9.6,10.2,t))",
+     "fill": "linear-gradient(90deg, #00000000, #FFFFFF55 45%, #FFFFFFAA 50%, #FFFFFF55 55%, #00000000)",
+     "blur": 40
+    },
+    {
+     "text": "Offset",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": 260,
+     "letterSpacing": "-0.035em",
+     "color": "#E3A82B",
+     "blend": "multiply",
+     "x": 967,
+     "y": 505,
+     "start": 10.35,
+     "enter": {
+      "preset": "mask by char up",
+      "duration": 0.7,
+      "delay": 0.06
+     },
+     "animate": [
+      {
+       "from": {
+        "x": "+34",
+        "y": "+18"
+       },
+       "duration": 1.5,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "text": "Offset",
+     "font": "Bricolage Grotesque",
+     "weight": 800,
+     "size": 260,
+     "letterSpacing": "-0.035em",
+     "color": "#1B3C8F",
+     "x": 960,
+     "y": 498,
+     "start": 10.35,
+     "enter": {
+      "preset": "mask by char up",
+      "duration": 0.7
+     }
+    },
+    {
+     "text": "Design Systems Conference  ·  Lisboa  ·  14–15 May 2027",
+     "font": "Bricolage Grotesque",
+     "weight": 600,
+     "size": 42,
+     "color": "#1E2433",
+     "x": 960,
+     "y": 655,
+     "start": 10.95,
+     "enter": "fadeUp"
+    }
+   ]
+  }
+ ]
+}

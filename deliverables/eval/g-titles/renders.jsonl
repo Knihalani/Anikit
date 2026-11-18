@@ -1,0 +1,1 @@
+{"cmd": "anikit-video render deliverables/eval/g-titles/spec.json -o deliverables/eval/g-titles/final.mp4 --sheet deliverables/eval/g-titles/contact.png", "exit": 0, "wall_s": 1156.63, "peak_rss_mb": 5036.6}
