@@ -86,6 +86,10 @@ struct C<'a> {
     /// Audio from video clips.
     audio_extra: Vec<crate::audio::Track>,
     layer_info: Vec<(String, String)>,
+    /// Layers with an `sfx` key: (tag, value, path).
+    layer_sfx: Vec<(u32, serde_json::Value, String)>,
+    /// `audio[].sfx` cues naming sound-design effects (placed by their hit point).
+    design_cues: Vec<crate::audio::design::Cue>,
     beat_marks: super::beat_markers::BeatMarkers,
     /// Music analysed for `iAudio`/`iBeat` (once, on first use).
     music: Option<Result<Arc<super::audio_react::AudioFeatures>, String>>,
@@ -285,6 +289,8 @@ impl Evaluator {
             image_ids: HashMap::new(),
             audio_extra: Vec::new(),
             layer_info: Vec::new(),
+            layer_sfx: Vec::new(),
+            design_cues: Vec::new(),
             beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
             music: None,
             assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
@@ -332,7 +338,7 @@ impl Evaluator {
             if k == "palette" {
                 c.d.push(Diagnostic::error("theme.palette", v));
             } else {
-                c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}'")));
+                c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}' ({COLOUR_FORMS})")));
             }
         }
         c.load_fonts(spec);
@@ -397,7 +403,7 @@ impl Evaluator {
             let path = format!("scenes[{i}]");
             let id = s.id.clone().unwrap_or_else(|| format!("scene{}", i + 1));
             let trans = if i == 0 {
-                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None, layer: None, shape: 0, count: 0 }
+                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None, layer: None, shape: 0, count: 0, carry: Vec::new() }
             } else {
                 let (tr, tp) = match (&s.transition, &default_trans) {
                     (Some(t), _) => (Some(t), format!("{path}.transition")),
@@ -504,6 +510,7 @@ impl Evaluator {
             },
             (None, None) => None,
         };
+        let sound = c.sound_plan(spec, duration);
         c.smarkers.clear();
         c.scene_start = 0.0;
         c.scene_dur = duration;
@@ -517,6 +524,7 @@ impl Evaluator {
             diagnostics: Vec::new(),
             audio,
             music,
+            sound,
             assets: c.assets,
             easings: c.easings,
             scenes,
@@ -535,6 +543,8 @@ impl Evaluator {
         (Some(ev), c.d)
     }
 }
+
+const COLOUR_FORMS: &str = "use \"#ff5a1f\", \"#f51\", \"#ff5a1f80\" (with alpha), a name like \"white\", a theme token like \"$accent\", \"rgb(255, 90, 31)\", \"hsl(20, 100, 56)\", \"oklch(0.7, 0.19, 40)\", or a per-frame expression \"=mix($primary, $accent, p)\"";
 
 fn any_on_notes(ls: &[Layer]) -> bool {
     ls.iter().any(|l| l.on_notes.is_some() || l.layers.as_deref().is_some_and(any_on_notes) || l.children.as_deref().is_some_and(any_on_notes))
@@ -652,6 +662,27 @@ impl C<'_> {
                 if let Some(t) = self.musical(s, path) {
                     return (t, None);
                 }
+                // `"=1.2 + 0.1 * 3"`: an expression, worked out once (a time can't change per frame).
+                if let Some(e) = s.strip_prefix('=') {
+                    return match Expr::compile(e, 1.0, self.w as f64, self.h as f64) {
+                        Ok(x) if !x.dynamic => (x.eval(&super::expr::Vars { w: self.w as f64, h: self.h as f64, fps: self.fps as f64, ..Default::default() }) as f32, None),
+                        Ok(x) => match x.constant() {
+                            Some(v) => (v as f32, None),
+                            None if x.music => {
+                                self.d.push(Diagnostic::error(path, format!("'{s}': a time is fixed when the spec loads, so it can't read beat/bar/level; use a marker (\"@beat17\", \"@bar5+0.25\") or a musical length (\"2 beats\")")));
+                                (0.0, None)
+                            }
+                            None => {
+                                self.d.push(Diagnostic::error(path, format!("'{s}': a time is fixed when the spec loads, so it can't use t/gt/p/frame (w, h, fps and maths are fine, e.g. \"=12 / fps\")")));
+                                (0.0, None)
+                            }
+                        },
+                        Err(m) => {
+                            self.d.push(Diagnostic::error(path, format!("time expression '{s}': {m}")));
+                            (0.0, None)
+                        }
+                    };
+                }
                 if let Some(m) = s.strip_prefix('@') {
                     let (name, off) = match m.find(['+', '-']) {
                         Some(i) => (&m[..i], m[i..].parse::<f32>().ok()),
@@ -692,7 +723,7 @@ impl C<'_> {
                 match num.trim().parse::<f32>() {
                     Ok(v) => (v * mul, None),
                     Err(_) => {
-                        self.d.push(Diagnostic::error(path, format!("invalid time '{s}' (use 1.5, \"1.5s\", \"500ms\", \"12f\" or \"@marker\")")));
+                        self.d.push(Diagnostic::error(path, format!("invalid time '{s}' (use seconds 1.5, \"1.5s\", \"500ms\", frames \"12f\", a marker \"@intro\" / \"@beat17\" / \"@bar5+0.25\", music \"2 beats\", or arithmetic \"=12 / fps\")")));
                         (0.0, None)
                     }
                 }
@@ -759,7 +790,7 @@ impl C<'_> {
                         None => {
                             self.d.push(Diagnostic::error(
                                 path,
-                                format!("invalid value '{s}' (use a number, \"50%\", \"10vw\", \"8vh\" or an expression \"=…\")"),
+                                format!("invalid value '{s}' (use a number like 960, \"50%\" of the parent, \"10vw\" / \"8vh\" / \"5vmin\", \"24px\", \"1.5em\", or an expression like \"=w / 2 + 100 * sin(t)\")"),
                             ));
                             V::C(0.0)
                         }
@@ -1052,6 +1083,26 @@ impl C<'_> {
 
     // ---------- paint ----------
 
+    /// A colour function written without `=`: `oklch(0.7, 0.15, 30)`, CSS's `oklch(70% 0.15 30 / 0.5)`, `hsl(…)`, `mix(…)`.
+    fn color_fn(&self, s: &str) -> Option<Rgba> {
+        let s = s.trim();
+        let open = s.find('(')?;
+        if !s.ends_with(')') {
+            return None;
+        }
+        let inner = &s[open + 1..s.len() - 1];
+        let args = if inner.contains(',') {
+            inner.to_string()
+        } else {
+            // CSS level 4: spaces between channels, `/ alpha`, percentages.
+            inner.replace('/', " ").split_whitespace().map(|a| a.trim_end_matches('%').to_string()).collect::<Vec<_>>().join(", ")
+        };
+        let src = format!("{}({args})", &s[..open]);
+        let theme = &self.theme;
+        let e = super::expr::ColorExpr::compile(&src, &mut |x: &str| theme.color(x).map(|c| c.0)).ok()?;
+        Some(Rgba(e.eval(&super::expr::Vars::default())))
+    }
+
     fn color(&mut self, s: &str, path: &str) -> Option<Rgba> {
         match self.theme.color(s) {
             Some(c) => Some(c),
@@ -1059,8 +1110,10 @@ impl C<'_> {
                 if let Some(t) = s.trim().strip_prefix('$') {
                     let names: Vec<&String> = self.theme.colors.keys().collect();
                     self.d.push(Diagnostic::error(path, format!("unknown colour token '${t}'")).suggest(suggest(t, &names).map(|x| format!("${x}"))));
+                } else if let Some(c) = self.color_fn(s) {
+                    return Some(c);
                 } else {
-                    self.d.push(Diagnostic::error(path, format!("invalid colour '{s}'")));
+                    self.d.push(Diagnostic::error(path, format!("invalid colour '{s}' ({COLOUR_FORMS})")));
                 }
                 None
             }
@@ -1320,7 +1373,11 @@ impl C<'_> {
         if kind == TransKind::ZoomThrough && o.layer.is_none() {
             self.d.push(Diagnostic::error(format!("{path}.layer"), "zoomThrough needs 'layer': the id of a layer in the previous scene to fly into"));
         }
-        TransC { kind, dur, ease, dir, color, origin, amount, shader, layer: o.layer.clone(), shape, count: o.count.unwrap_or(8).clamp(1, 64) }
+        let carry = o.carry.clone().unwrap_or_default();
+        if !carry.is_empty() && kind == TransKind::Cut {
+            self.d.push(Diagnostic::warning(format!("{path}.carry"), "a cut has no duration to carry layers across; give the transition a type and duration"));
+        }
+        TransC { kind, dur, ease, dir, color, origin, amount, shader, layer: o.layer.clone(), shape, count: o.count.unwrap_or(8).clamp(1, 64), carry }
     }
 
     fn scene(&mut self, s: &spec::Scene, path: &str, dur: f32, default_bg: &spec::Paint) -> Built {
@@ -1653,6 +1710,9 @@ impl C<'_> {
         };
         let tag = self.layer_info.len() as u32;
         self.layer_info.push((path.to_string(), label));
+        if let Some(v) = &l.sfx {
+            self.layer_sfx.push((tag, v.clone(), path.to_string()));
+        }
         if l.visible == Some(false) {
             return None;
         }
@@ -2134,7 +2194,7 @@ impl C<'_> {
                     m
                 }
                 Err(e) => {
-                    me.d.push(Diagnostic::error(format!("{path}.{key}"), format!("invalid SVG path: {e}")));
+                    me.d.push(Diagnostic::error(format!("{path}.{key}"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                     None
                 }
             }
@@ -3256,7 +3316,7 @@ impl C<'_> {
                             Some(d) => match Path::from_svg(d) {
                                 Ok(p) => Some(p),
                                 Err(e) => {
-                                    self.d.push(Diagnostic::error(format!("{pp}.tile"), format!("invalid SVG path: {e}")));
+                                    self.d.push(Diagnostic::error(format!("{pp}.tile"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                                     None
                                 }
                             },
@@ -3352,7 +3412,7 @@ impl C<'_> {
                 let bp = match Path::from_svg(d) {
                     Ok(p) => p,
                     Err(e) => {
-                        self.d.push(Diagnostic::error(format!("{path}.d"), format!("invalid SVG path: {e}")));
+                        self.d.push(Diagnostic::error(format!("{path}.d"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                         Path::new()
                     }
                 };
@@ -3871,7 +3931,7 @@ impl C<'_> {
                 match Path::from_svg(d) {
                     Ok(b) => bp = b,
                     Err(e) => {
-                        self.d.push(Diagnostic::error(format!("{p}.d"), format!("invalid SVG path: {e}")));
+                        self.d.push(Diagnostic::error(format!("{p}.d"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                         continue;
                     }
                 }
@@ -4721,7 +4781,7 @@ impl C<'_> {
     }
 
     fn bad_val(&mut self, path: &str, s: &str) -> Option<ValS> {
-        self.d.push(Diagnostic::error(path, format!("invalid value {s} (use a number, a unit string, \"+40\", \"-40\" or \"*1.5\")")));
+        self.d.push(Diagnostic::error(path, format!("invalid value {s} (use a number like 120, a unit string like \"50%\" or \"10vw\", a relative change \"+40\" / \"-40\" / \"*1.5\", or a colour for fill/stroke)")));
         None
     }
 
@@ -5141,6 +5201,49 @@ impl C<'_> {
 
     // ---------- audio & captions ----------
 
+    /// The spec's `sound` and layers' `sfx`, compiled (`None` when neither is used).
+    fn sound_plan(&mut self, spec: &Spec, duration: f32) -> Option<Arc<crate::audio::design::spec::SoundPlan>> {
+        use crate::audio::design::spec::{LayerSfx, SoundPlan};
+        if spec.sound.is_none() && self.layer_sfx.is_empty() && self.design_cues.is_empty() {
+            return None;
+        }
+        let mut plan = match SoundPlan::new(spec.sound.as_ref(), spec.music.as_ref()) {
+            Ok(p) => p,
+            Err(e) => {
+                self.d.push(Diagnostic::error("sound", e));
+                return None;
+            }
+        };
+        if spec.sound.is_none() {
+            // Only `audio[].sfx` / layer `sfx` asked for sound design: keep the
+            // mix as it was (no loudness change, no shared space).
+            plan.target_lufs = None;
+            plan.space = None;
+        }
+        plan.extra = std::mem::take(&mut self.design_cues);
+        for (tag, v, path) in std::mem::take(&mut self.layer_sfx) {
+            match LayerSfx::parse(&v) {
+                Ok(l) => plan.layers.push((tag, l)),
+                Err(e) => self.d.push(Diagnostic::error(format!("{path}.sfx"), e)),
+            }
+        }
+        for (i, c) in plan.spec.cues.clone().into_iter().enumerate() {
+            let path = format!("sound.cues[{i}].at");
+            let at = match serde_json::from_value::<Num>(c.at.clone()) {
+                Ok(n) => self.time_raw(&n, &path),
+                Err(_) => {
+                    self.d.push(Diagnostic::error(path, "seconds or a marker like \"@beat9\""));
+                    continue;
+                }
+            };
+            if at > duration + 0.5 {
+                self.d.push(Diagnostic::warning(format!("sound.cues[{i}].at"), format!("{at:.2}s is after the end of the video ({duration:.2}s)")));
+            }
+            plan.cues.push((c, at as f64));
+        }
+        Some(Arc::new(plan))
+    }
+
     fn audio(&mut self, a: &spec::AudioCue, path: &str, scene_start: f32) -> Option<crate::audio::Track> {
         use crate::audio::{Duck, Role, SfxParams, Source, SFX_NAMES};
         let src = match (&a.src, &a.sfx) {
@@ -5153,7 +5256,24 @@ impl C<'_> {
             }
             (None, Some(n)) => {
                 if !SFX_NAMES.contains(&n.as_str()) {
-                    self.d.push(Diagnostic::error(format!("{path}.sfx"), format!("unknown sound effect '{n}'")).suggest(suggest(n, SFX_NAMES)));
+                    // Sound-design names (foley, cinematic, packs, layers): the hit lands on `at`.
+                    if crate::audio::design::is_known(n) {
+                        let at = scene_start + a.at.as_ref().map(|x| self.time_rel(x, &format!("{path}.at"), 0.0)).unwrap_or(0.0);
+                        let mut c = crate::audio::design::Cue::new(n, at as f64);
+                        c.params.duration = a.duration.as_ref().map(|x| self.time_raw(x, &format!("{path}.duration")));
+                        c.params.pitch = 12.0 * (a.pitch.unwrap_or(1.0).max(0.01) as f32).log2();
+                        c.params.seed = 1 + self.design_cues.len() as u64;
+                        c.gain_db = match &a.volume {
+                            Some(Num::Num(v)) => 20.0 * (v.max(1e-4) as f32).log10(),
+                            Some(Num::Str(s)) => s.trim().trim_end_matches("dB").trim_end_matches("db").trim().parse().unwrap_or(0.0),
+                            None => 0.0,
+                        };
+                        c.why = path.to_string();
+                        self.design_cues.push(c);
+                        return None;
+                    }
+                    let names = crate::audio::design::all_names();
+                    self.d.push(Diagnostic::error(format!("{path}.sfx"), format!("unknown sound effect '{n}'")).suggest(suggest(n, &names)));
                     return None;
                 }
                 let duration = a.duration.as_ref().map(|x| self.time_raw(x, &format!("{path}.duration")) as f64);

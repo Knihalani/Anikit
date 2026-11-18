@@ -153,7 +153,7 @@ In a video spec:   "music": {"style":"lofi","bpm":84,"key":"Dm","mood":"warm","h
   or just          "music": "synthwave"         (fills the video; @beatN/@barN follow its exact grid)
 Standalone:        anikit-video music '{"style":"house","length":"15s"}' -o bed.wav [--stems DIR] [--midi out.mid] [--alts DIR: underscore, no-drums, 30s, 15s]
                    anikit-video music --style trap --bpm 140 --key Cm --length 20s -o out.ogg   (ogg/mp3/flac via ffmpeg)
-                   anikit-video music styles | instruments | sfx | fetch essentials|salamander|vsco2-ce|virtuosity
+                   anikit-video music styles | instruments | packs | sfx | fetch essentials|orchestra|all|<pack>
 
 STYLES  played instruments: orchestral acoustic piano jazz rock corporate pop lofi · hybrid: cinematic-hybrid
         synth-led: house synthwave trap tech dnb ambient   (aliases: epic trailer edm chill 80s classical upbeat folk …)
@@ -196,8 +196,8 @@ INSTRUMENTS (sampled GM bank bundled; `music instruments` lists all) piano epian
         · synths: pad-warm pad-glass lead-saw pluck bell-fm epiano-fm supersaw bass-808 bass-reese bass-acid keys-lofi
         · kits: drums:808 909 trap lofi house techno cinematic, drums (GM) drums:jazz brush orchestra
         · files: "my.sfz", "font.sf2#0"   · fallbacks: "salamander-piano|piano"
-        · deeper samples: `anikit-video music fetch essentials` (≈210 MB: Splendid Grand, Wurlitzer/CP80/Pianet, real bass,
-          nylon + clean guitars); then piano/bass/guitar names use them automatically (credit "E-Pianos by Greg Sullivan, CC BY 3.0" when used)
+        · deeper samples: `music fetch essentials` (≈210 MB: grand, e-pianos, bass, guitars), `fetch orchestra` (≈930 MB: string, brass, wind
+          sections), `fetch virtuosity` (real kit); `music packs` lists all. Common names then use them (credit Greg Sullivan, CC BY 3.0, for e-pianos)
 EXAMPLES
   {"music":{"style":"cinematic-hybrid","key":"Dm","hits":["@bar5"],"sfx":[{"sfx":"braam","at":"@bar5"}]}}
   {"music":{"style":"lofi","mood":"chill","chords":"ii7 V7 Imaj7 vi7","instruments":{"lead":"kalimba"}}}
@@ -289,12 +289,20 @@ fn cmd_music(args: &[String]) -> Result<(), String> {
             }
             return Ok(());
         }
+        Some("packs") => {
+            for p in anikit_music::sf2::packs::PACKS {
+                let have = if anikit_music::sf2::packs::is_cached(p.name) { "cached" } else { "-" };
+                println!("{:<17} {:<7} {:<36} {}  [{}]", p.name, have, p.size, p.description, p.license);
+            }
+            println!("groups: essentials ({}), orchestra ({}), all", anikit_music::sf2::packs::ESSENTIALS.join(" "), anikit_music::sf2::packs::ORCHESTRA.join(" "));
+            return Ok(());
+        }
         Some("sfx") => {
             println!("{}", anikit_music::sfx::SFX.join(" "));
             return Ok(());
         }
         Some("fetch") => {
-            let pack = flags.get("pack").cloned().ok_or("fetch which pack? (essentials, salamander, vsco2-ce, …)")?;
+            let pack = flags.get("pack").cloned().ok_or("fetch which pack? (essentials, orchestra, all, or a name from `anikit-video music packs`)")?;
             let p = anikit_music::sf2::packs::fetch(&pack)?;
             println!("{}", p.display());
             return Ok(());

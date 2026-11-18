@@ -100,6 +100,9 @@
       ],
       "additionalProperties": true
     },
+    "sound": {
+      "description": "Sound design (`anikit-video docs sound`): `\"auto\"` derives whooshes, landings, ticks and\ntransition sounds from the picture, pans them to their place on screen, puts them in one\nshared space, ducks the music under hits and masters to −14 LUFS / −1 dBTP.\n`{ \"palette\": \"organic\", \"density\": 0.5, \"ambience\": \"city\", \"space\": \"room\", \"cues\": [...] }`."
+    },
     "captions": {
       "description": "Burned-in captions.",
       "anyOf": [
@@ -777,6 +780,16 @@
           "format": "uint32",
           "minimum": 0
         },
+        "carry": {
+          "description": "Shared elements (any transition): ids of layers present in both scenes. Each travels from its place and size\nin the old scene to its place and size in the new one during the transition (a match move), cross-fading between the two.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
         "uniforms": {
           "description": "Uniforms for a shader transition.",
           "type": [
@@ -1192,6 +1205,9 @@
             "string",
             "null"
           ]
+        },
+        "sfx": {
+          "description": "Sound for this layer (`docs sound`): `\"auto\"`, `false` (silent), a sound name, or\n`{ \"in\": \"swish\", \"land\": \"wood\", \"out\": \"air\", \"gain\": -3 }`."
         },
         "use": {
           "description": "Reuse: the name of an entry in top-level `defs`; other keys here override it\n(expanded before typing, see `spec/reuse.rs`).",
@@ -4049,7 +4065,7 @@
           ]
         },
         "sfx": {
-          "description": "Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`. One of: click, tick, pop, whoosh, swoosh, rise, riser, drop, impact, ding, chime, typing, success.",
+          "description": "Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`;\nany other `docs sound` name (`glass`, `passby`, `impact+glass`, `kenney-interface/click`) lands its hit on `at`. One of: click, tick, pop, whoosh, swoosh, rise, riser, drop, impact, ding, chime, typing, success.",
           "type": [
             "string",
             "null"

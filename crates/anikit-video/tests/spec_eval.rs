@@ -652,3 +652,18 @@ fn later_from_that_overrides_an_earlier_move_warns() {
         { "shape": "rect", "animate": [ { "from": { "opacity": 0 } }, { "to": { "opacity": 0.5 }, "at": 2 } ] } ] } ] }"##);
     assert!(!ok.iter().any(|m| m.contains("holds its start value")), "{ok:?}");
 }
+
+#[test]
+fn friction_forms_from_agent_runs() {
+    // Times may be arithmetic (fixed at load); colours may be functions without '='; scripts have rgb/hsl/oklch.
+    let ev = build(r##"{ "fps": 30, "scenes": [ { "duration": 3, "layers": [
+        { "shape": "rect", "start": "=0.5 + 0.25 * 2", "end": "=45 / fps", "fill": "oklch(70% 0.15 30)" },
+        { "shape": "rect", "fill": "hsl(200 80% 50% / 0.5)" },
+        { "script": "[#{ shape: \"rect\", fill: rgb(255, 0, 0, 0.5) }, #{ shape: \"rect\", fill: oklch(0.7, 0.15, 30) }]" } ] } ] }"##);
+    let rects = |t: f32| ev.eval(t).ops.iter().filter(|o| matches!(o, Op::RoundRect { .. })).count();
+    assert_eq!((rects(0.9), rects(1.2), rects(1.6)), (3, 4, 3), "first rect lives [1.0, 1.5)");
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "start": "=t + 1" }, { "shape": "rect", "fill": "blurple" }, { "shape": "rect", "x": "lots" } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("fixed when the spec loads")), "{e:?}");
+    assert!(e.iter().any(|m| m.contains("invalid colour 'blurple'") && m.contains("oklch(")), "{e:?}");
+    assert!(e.iter().any(|m| m.contains("invalid value 'lots'") && m.contains("like 960")), "{e:?}");
+}

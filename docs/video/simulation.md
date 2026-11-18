@@ -116,6 +116,28 @@ moved, exact `f32`. A later `still` or render of the same physics reads the
 frames instead of simulating: a cold 1080p still of the 10k cascade at 5 s
 goes from 9.9 s to 3.0 s, with identical pixels.
 
+## Cloth: `{ "type": "cloth" }` in `objects`
+
+A grid of particles held by distance constraints (Verlet with position-based
+constraints): stretch along the grid, shear across diagonals, bend across two
+cells. It's solved serially in a fixed order, so it's deterministic, and cached
+with checkpoints, so frames render in any order. The mesh is rebuilt for every
+frame and renders two-sided.
+
+| Key | Default | |
+|---|---|---|
+| `hang` | `vertical` | `vertical`: a curtain or flag in the XY plane at `center`. `horizontal`: a sheet lying flat (drop it onto things). |
+| `size`, `res` | `[2, 1.5]`, `48` | Metres; grid cells along the width (2–160; height follows the aspect). |
+| `center` | `[0, 1.5, 0]` | World position of the cloth's centre (cloth lives in world space; leave `pos` unset). |
+| `pin` | `top` for vertical, `none` for horizontal | `top`, `corners`, `left`, `none`. |
+| `colliders` | none | Spheres `[{ "pos", "radius" }]` it drapes over (match them to your scene objects). `floor`: `true` (y = 0), a height, or `false`. |
+| `wind`, `gust` | `[0,0,0]`, `0.5` | Wind (m/s) and noise gusts as a fraction of it; wind pushes along the surface normal, so the cloth billows. |
+| `stiffness`, `bend`, `damping` | `1`, `0.15`, `0.01` | Stretch resistance; folding resistance (0.03 silk, 0.3 canvas); velocity loss per step. |
+| `friction`, `thickness` | `0.5`, `0.01` | Contact friction; collision offset (m). |
+| `iterations`, `seed` | `8`, `1` | Constraint passes per step (more: less stretch); gust noise seed. |
+
+Cost: 240 steps per second, serial; about 3.7 ms per step at `res` 64 (4,225 points), so a 4 s drape simulates in 3.6 s once and is cached after. `res` 32 is 4× cheaper.
+
 ## Particles: `{ "type": "particles" }` in `objects`
 
 ```json
