@@ -1,0 +1,519 @@
+{
+  "name": "ceiling2_bloom_bloom",
+  "tags": [
+    "generative",
+    "motion-design"
+  ],
+  "refs": [
+    "fitc-tokyo-2015",
+    "halt-and-catch-fire",
+    "coinbase-system-update"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 3,
+      "typography": 2,
+      "colour": 4,
+      "light_texture": 5,
+      "motion": 3,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 3.5,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find an idea beyond 'simulation grows in a dish'. Tie the growth to a subject, a story or the music in a way the frames actually show",
+      "Vary the composition and camera across the sequence (scale jumps, cropping, layering), not one centred dish with swapped colourways",
+      "Give the type and light a point of view: real material and optical depth like D's macro shots, and typography with presence instead of a small mono caption",
+      "It needs an actual idea or narrative that the simulation serves, instead of the simulation being the whole piece",
+      "It needs real material and light (glass, agar, macro optics, caustics, like the chip shot in C) instead of a uniform emboss on flat grounds",
+      "It needs typography with a point of view and compositions that change across frames, instead of one locked-off layout with palette swaps",
+      "It needs a real idea or subject beyond 'simulation grows'. Tie the growth to something a viewer would care about, as A ties its imagery to the computer-era drama",
+      "It needs composition and camera choreography (scale shifts, macro passes, cuts to other worlds) instead of one locked dish with palette swaps",
+      "It needs type with a point of view, integrated with the image, replacing the corner mono caption"
+    ],
+    "tells": [
+      "The end card is the 'tasteful AI' formula: dark ground, a small mono label ('SPECIMEN 07 / grown live, on the beat'), a small caption ('1,103 generations') and a mostly empty frame",
+      "Stock reaction-diffusion / Gray-Scott simulation in a circle. It is an effect without a subject, and it looks the same as countless generative-code sketches",
+      "The same composition repeats in every frame: one petri dish, centred, with only the background swapped between black, cream and brown",
+      "The bevelled embossed blobs come from a default shader, and the light is flat, generic vignette lighting",
+      "The vertical, social-first format and small default mono type point to a creative-coding demo, not a designed film",
+      "The same composition repeats across frames: the same reaction-diffusion blobs in the same circle, with only background colour and ground (dark, cream, brown) swapped",
+      "The end card is the textbook 'tasteful AI' tell: a dark ground, a small tracked-caps label 'SPECIMEN 07', a lowercase monospace subtitle 'grown live, on the beat', a tiny counter '1,183 generations', and a mostly empty frame",
+      "This is an effect with no subject: a generative simulation shader presented as the piece, with a stock bevel on the blobs and a thin circle standing in for a petri dish",
+      "The narrow vertical format floats in large empty margins, and there is no art direction of the frame",
+      "The same composition repeats in every frame: one petri dish of reaction-diffusion blobs, with only an inversion or a tint swap and one crop",
+      "It is a generative sim with no authored subject. The effect is the whole piece",
+      "The end card is the stock 'tasteful AI' formula: small tracked mono label 'SPECIMEN 07', a grey subline 'grown live, on the beat', and a counter '1,103 generations' in a corner of an otherwise empty dark frame",
+      "The type is default monospace placed like a caption, with no typographic idea",
+      "The bevel and emboss shading on the blobs reads as a filter rather than real light"
+    ]
+  },
+  "refs_summary": {
+    "fitc-tokyo-2015": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "halt-and-catch-fire": {
+      "overall": 8.88,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "coinbase-system-update": {
+      "overall": 5.62,
+      "judged_professional": "2/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 7.42,
+  "delta": -3.92,
+  "trials": [
+    {
+      "key": {
+        "A": "coinbase-system-update",
+        "B": "fitc-tokyo-2015",
+        "C": "candidate",
+        "D": "halt-and-catch-fire"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 5,
+              "originality": 4
+            },
+            "tells": [
+              "The terminal copy reads like leaked prompt or LLM output: markdown asterisks ('**Direct Payment**', '**Secure **Secure') and lines that describe the edit itself ('Matching Cut Transition(\"circular\") \u2013 CenterLocked: TRUE')",
+              "The ASCII-shader-over-3D treatment is a stock filter look. Walking figure, coin, planet, padlocks and a coin grid are generic crypto icons put through one effect",
+              "The idea is literal ('Crypto is... Faster', dollar signs, locks for security, Bitcoin coins). It is the product claim plus icons, with nothing memorable",
+              "Typography is default monospace in highlight boxes. There is no scale contrast or typographic idea beyond the terminal clich\u00e9",
+              "On the plus side: the frames have real density and variety, the coin grid has some rhythm, and the one-colour Klein-blue palette is committed"
+            ],
+            "gaps": [
+              "Replace the generic crypto icons (coins, padlocks, $ signs) with one specific visual metaphor that only this brand could own",
+              "Write the on-screen code and copy deliberately. Cut the markdown artefacts and the self-describing 'transition' lines, and give the type a real hierarchy and scale",
+              "Give the ASCII treatment depth and light, for example characters responding to a lit 3D form or varying glyph density as material, as D does with its glitch and macro light"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Custom modular display type that breaks apart into katakana-like fragments, mixing Latin and Japanese forms ('TOKYO' resolving through glyph shards). The typography is the idea",
+              "A deliberate, unusual palette of hot pink, mint, acid lime, violet and mustard on near-black, kept consistent across very different frames",
+              "Every frame is a different composition: a centred bold 'D' with a target, a horizontal band with tracked letters, a framed glyph field, a diagonal sweep, a pixel matrix, and a dense layered collage. Together they show real choreography",
+              "Layered texture (scanlines, dot grids, paper noise, print misregistration) gives the flat graphics a material quality",
+              "Builds towards a dense finale, so the sequence clearly has structure"
+            ],
+            "gaps": [
+              "Light is entirely graphic. One moment of real depth or optical light would add the emotional weight that D gets from its macro photography",
+              "The mid-sequence pixel-matrix frame is weaker and less legible than the rest and could be tightened into a stronger poster",
+              "Push the conceptual hook beyond 'Tokyo as type and glitch' so the piece says something specific about its subject, not just its aesthetic"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The end card is the 'tasteful AI' formula: dark ground, a small mono label ('SPECIMEN 07 / grown live, on the beat'), a small caption ('1,103 generations') and a mostly empty frame",
+              "Stock reaction-diffusion / Gray-Scott simulation in a circle. It is an effect without a subject, and it looks the same as countless generative-code sketches",
+              "The same composition repeats in every frame: one petri dish, centred, with only the background swapped between black, cream and brown",
+              "The bevelled embossed blobs come from a default shader, and the light is flat, generic vignette lighting",
+              "The vertical, social-first format and small default mono type point to a creative-coding demo, not a designed film"
+            ],
+            "gaps": [
+              "Find an idea beyond 'simulation grows in a dish'. Tie the growth to a subject, a story or the music in a way the frames actually show",
+              "Vary the composition and camera across the sequence (scale jumps, cropping, layering), not one centred dish with swapped colourways",
+              "Give the type and light a point of view: real material and optical depth like D's macro shots, and typography with presence instead of a small mono caption"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific idea: early-PC hardware (a glowing silicon die, memory-cell grid, CRT scan lines) merged with human silhouettes, so the circuit and the characters become one image. Only this subject could produce it",
+              "Real light and texture: a macro-photographed die with caustics, light bleeding through red film, analogue glitch smear, burned-in grain",
+              "A committed monochrome red palette, from hot magenta to ember to a dark blood red, used as narrative heat that ends on the 'fire' sphere",
+              "The typography is restrained and correct: a classic serif for the credits sitting on the image, and a wide tracked heavy sans with a square bullet for the title card, which echoes the chip motif",
+              "Strong choreography across frames: abstract glitch, human silhouette, macro grid, light streak, physical object, title. Each frame works as a poster"
+            ],
+            "gaps": [
+              "Credit placement stays in the lower-middle area across several frames. A bolder relationship between type and image in one or two cards would help",
+              "The title card is close to a convention. A final reveal that pays off the chip motif more surprisingly would raise it further",
+              "The glitch vocabulary is partly genre-standard. Pushing it further into a language owned by the show would increase originality"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 36.8,
+        "cost_usd": 0.16889500000000002,
+        "tokens": 72496,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "coinbase-system-update",
+        "B": "fitc-tokyo-2015",
+        "C": "halt-and-catch-fire",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A single saturated red-to-magenta world that commits completely, ending in the glowing red disc behind the title, which reads as a CRT tube or overheating silicon",
+              "Real optical light and material: a macro-lit chip in a glass dish with caustics, light-streak flares and scanline smears that look photographed or physically simulated, not filtered",
+              "The idea is specific to this title: hardware failure, glitch corruption and silhouettes of people breaking up into data, resolving into a chip, then 'fire'",
+              "Typography is restrained and deliberate. A classical serif for the credits sits against the digital noise, and the title is a wide-tracked heavy sans with a square bullet like a terminal cursor",
+              "The frames are varied: abstract glitch, figure, macro chip grid, horizon streak, product shot, title disc. This shows a real arc and escalation, not one repeated layout"
+            ],
+            "gaps": [
+              "The credit serif is close to a default editorial serif. A more bespoke credit treatment would lift the type score",
+              "A few glitch frames (1 and 4) rely on familiar datamosh and streak vocabulary from the period",
+              "Credit placement is fairly conventional in the lower third and off-centre, with little interplay between type and image"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Custom, modular, fragmented letterforms that mix Latin and katakana-like glyphs, so the type is the subject, not a label",
+              "An unusual palette (hot pink, mint cyan, acid lime, violet on near-black) used with discipline from frame to frame",
+              "Every frame uses a different structure: a cropped giant D with a target, a banded 'S G.' strip, a framed glyph matrix, a diagonal rotated system, LED dot-matrix, a dense layered collage. This is evidence of choreography and building density",
+              "Subtle print and grain texture and misregistration inside the flat graphic language"
+            ],
+            "gaps": [
+              "Light and texture are mostly flat graphics; there is no real depth or material moment like C's chip in the dish",
+              "The core idea, a cyber-Tokyo glyph collage, is less specific and narrative than C's concept and leans on a familiar genre",
+              "No single climactic image the size of C's title disc. It needs an iconic poster frame that resolves the system"
+            ]
+          },
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent ASCII-render system on a single IKB-like electric blue, used as a world rather than a filter, with 3D forms (a walking figure, coins, a planet, padlocks) rendered as character density",
+              "Varied set-pieces with match-cut logic hinted in the code text ('MatchCut Transition(\"circular\")'), and the coin grid in the last frame implies choreographed rotation",
+              "The idea is fairly literal: crypto, payments, security, speed. The code-dump frame is filler-ish, and the inverted labels ('Crypto is...', 'Faster') feel like pitch-deck captions"
+            ],
+            "gaps": [
+              "The ASCII-shader aesthetic is now a widely used preset. It needs an idea beyond 'crypto is fast and secure' to earn it",
+              "Typography is default monospace with highlight boxes; there is no scale contrast or typographic moment comparable to B or C",
+              "Monochrome blue is flat: there are no light, depth or texture shifts to give weight or a climax"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The same composition repeats across frames: the same reaction-diffusion blobs in the same circle, with only background colour and ground (dark, cream, brown) swapped",
+              "The end card is the textbook 'tasteful AI' tell: a dark ground, a small tracked-caps label 'SPECIMEN 07', a lowercase monospace subtitle 'grown live, on the beat', a tiny counter '1,183 generations', and a mostly empty frame",
+              "This is an effect with no subject: a generative simulation shader presented as the piece, with a stock bevel on the blobs and a thin circle standing in for a petri dish",
+              "The narrow vertical format floats in large empty margins, and there is no art direction of the frame"
+            ],
+            "gaps": [
+              "It needs an actual idea or narrative that the simulation serves, instead of the simulation being the whole piece",
+              "It needs real material and light (glass, agar, macro optics, caustics, like the chip shot in C) instead of a uniform emboss on flat grounds",
+              "It needs typography with a point of view and compositions that change across frames, instead of one locked-off layout with palette swaps"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.1,
+        "cost_usd": 0.1548152,
+        "tokens": 71796,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "halt-and-catch-fire",
+        "B": "fitc-tokyo-2015",
+        "C": "coinbase-system-update",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "The idea is specific to the piece: a red, overheating machine that corrupts its signal, with a silhouetted figure dissolving into scanlines, a chip die, a glowing wafer in a dish, and a final sun-like burn-out that acts out 'halt and catch fire'",
+              "The light is physical: practical glows, lens bloom, a lit glass dish and a wafer with real material, so it does not read as a flat graphic",
+              "The palette is almost entirely red and magenta, used on purpose and carried all the way through",
+              "Each frame is built differently: glitch abstraction, a portrait, a macro of the chip, a horizon of light streaks, a product-style still life and a title card. That shows choreography and a build to a climax",
+              "The type has two voices: a quiet old-style serif for the credits and wide tracked caps with a block glyph for the title, which reads like a cursor or chip"
+            ],
+            "gaps": [
+              "It is already the benchmark. The credit serif could be pushed further so it plays against the image more",
+              "Some of the glitch frames rely on a familiar datamosh look that other pieces in the genre share",
+              "The title lockup is small inside the final orb, so the payoff could be held at a bigger scale"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The custom modular letterforms are broken into stencil segments and katakana fragments, so the type itself is the subject",
+              "The palette is unusual and controlled: hot pink, mint, chartreuse and violet on near-black",
+              "The grid is different in every frame (bands, framed matrices, a diagonal scatter, a dot-matrix display, a dense collage), so the motion design clearly varies",
+              "The type is integrated with graphic marks such as targets, bars and pixel blocks, which builds layered frames"
+            ],
+            "gaps": [
+              "Light and material are flat compared with A's glow and physical objects. There is no depth or atmosphere",
+              "The idea of Tokyo as a glitching signage system is close to a familiar cyber-Japan trope. It needs the kind of conceptual specificity A gets from its chip-and-fire metaphor",
+              "There is no emotional or human anchor such as a figure or a real object to give the type a stake"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 4,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "The ASCII rendering is carried out consistently: a walking figure, a globe with orbit, padlocks and a coin grid, and the frames vary in layout",
+              "The single blue and white palette is committed but is the default for the ASCII and terminal look",
+              "The idea is literal ('Crypto is... Faster', dollar signs, padlocks, coins), which illustrates the brief rather than reinterpreting it",
+              "The filler code includes lines like 'Matching Cut Transition(\"circular\") - CenterLocked: TRUE'. That reads like a production note or prompt leaking into the frame, which lowers confidence in its authorship",
+              "The look is all effect: the ASCII shader does the work, and there is little hierarchy or layered depth"
+            ],
+            "gaps": [
+              "It needs a non-obvious idea about money or speed rather than the crypto clich\u00e9s of dollars, locks and coins",
+              "It needs to bring in depth, light or a second material so the ASCII treatment is not the whole piece",
+              "It should edit the filler code text and give the type a real hierarchy and scale contrast instead of terminal dumps"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The same composition repeats in every frame: one petri dish of reaction-diffusion blobs, with only an inversion or a tint swap and one crop",
+              "It is a generative sim with no authored subject. The effect is the whole piece",
+              "The end card is the stock 'tasteful AI' formula: small tracked mono label 'SPECIMEN 07', a grey subline 'grown live, on the beat', and a counter '1,103 generations' in a corner of an otherwise empty dark frame",
+              "The type is default monospace placed like a caption, with no typographic idea",
+              "The bevel and emboss shading on the blobs reads as a filter rather than real light"
+            ],
+            "gaps": [
+              "It needs a real idea or subject beyond 'simulation grows'. Tie the growth to something a viewer would care about, as A ties its imagery to the computer-era drama",
+              "It needs composition and camera choreography (scale shifts, macro passes, cuts to other worlds) instead of one locked dish with palette swaps",
+              "It needs type with a point of view, integrated with the image, replacing the corner mono caption"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.3,
+        "cost_usd": 0.15918680000000002,
+        "tokens": 72009,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Most of the 13 cuts swap the colour grade (dark, bone, amber, bone, dark) on what looks like a continuous simulation. They read as palette flashes, not new shots, so the cut count overstates how much really changes.",
+        "In the end frame a glossy sphere sits over the lower-centre blob. Its contour lines run the wrong way, and it reads as a render or compositing artifact, not part of the simulation.",
+        "Contour isolines inside the blobs look stepped at 100%. They read as banding in the height map, not smooth shading.",
+        "The dish is cropped at the frame edges in several shots (frames 1\u20134). Blobs collide with the rim and get cut off, which weakens the composition.",
+        "The pairs barely move at 1/6 s. Growth is slow and uniform, with no easing, anticipation or settle, and the zoom shot reads as a linear push.",
+        "The audio uses gated white-noise blocks with hard on/off edges at about 3.9 s and about 7.9 s, plus a linear filter riser. It reads as procedural synth, not mixed sound design.",
+        "The end card type is small, low-contrast mono. 'grown live, on the beat' tells us the concept instead of the picture proving it."
+      ],
+      "gaps": [
+        "Motion: the only on-screen move is the simulation growing at a constant rate, and transitions are hard palette swaps. Top studio work would let audio hits drive visible events in the medium (splits, pulses, fronts racing outward). It would also add camera moves with weight and eased settles, and a real build in growth speed toward the 6\u20138 s peak.",
+        "Sound: the track is a noise riser, a broadband noise wall, sparse clicks and sine plucks. It has few partials, a static spectrum and no low-end design. It needs produced music or wet, organic Foley-style sound for the material (squelch, membrane, bubble), with mix dynamics instead of gated noise blocks.",
+        "Finish: the stepped isolines, the stray sphere artifact and the edge-cropped dish keep it from looking like premium specimen photography. It needs smoother height shading, real optical depth of field and a refraction/caustic pass on the glass, and clean framing in every shot."
+      ]
+    },
+    "meta": {
+      "seconds": 22.8,
+      "cost_usd": 0.18501059999999997,
+      "tokens": 74892,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "bloom.mp4: 10.0s, 13 shots, median 0.50s, longest 2.23s\nper-second change: [39.7, 110.6, 113.5, 104.5, 100.4, 59.8, 89.5, 95.0, 34.9]\nPACE: PASS"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 3,
+    "typography": 2,
+    "colour": 4,
+    "light_texture": 5,
+    "motion": 4.0,
+    "craft": 5.0,
+    "originality": 3,
+    "sound": 4
+  },
+  "full_overall": 3.78,
+  "cost_usd": 0.668,
+  "judge_seconds": 121.0,
+  "verdict": "FAIL"
+}

@@ -1,0 +1,520 @@
+{
+  "name": "graphic_pieces_street-ledger",
+  "tags": [
+    "data-story",
+    "editorial-data"
+  ],
+  "refs": [
+    "kurzgesagt-short",
+    "cosmos-spacetime-odyssey",
+    "kurzgesagt-climate"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 3,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 1,
+      "motion": 2,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 2.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Needs a visual idea of the street itself (place, people, bikes, lanes), not text and charts on black",
+      "Typography needs a point of view: scale contrast, a type-and-image integration, and motion of the letterforms rather than a default serif set like a slide",
+      "Build real choreography (the line drawing into a street plan, dots becoming riders) and add texture and light so each frame is a poster rather than a slide",
+      "No visual idea: find an image or metaphor for a street being given back to people, instead of setting a headline next to a chart, as C uses the nautilus and the iris",
+      "Typography is default serif plus mono with no scale play or integration with image; it needs a typographic point of view and layouts that change from frame to frame",
+      "Needs material, light and choreography (the street itself, photography or illustration, transitions that carry meaning) instead of static slides on a dark background",
+      "It has no image or world at all. It needs real photography, illustration or a material treatment of the street, the way A and C build a place",
+      "The type is set at default sizes with no typographic idea. It needs real scale contrast, a chosen face and type that moves with or through the image",
+      "The motion is slide-to-slide. It needs choreographed transitions, for example a street that physically turns into the chart, so the data has a visual idea behind it"
+    ],
+    "tells": [
+      "Textbook 'tasteful AI' look: near-black ground, small tracked mono caps label ('THE STREET LEDGER \u00b7 NO. 14') above a generic editorial serif headline, single amber accent, mostly empty frame",
+      "Slide-deck structure: headline slide, line chart, dot-grid unit chart, centred pull quote. Each frame is one static layout with no choreography implied between them",
+      "Default chart vocabulary (one highlighted line among grey lines, a 10x10 dot grid) with no visual idea beyond the data itself",
+      "Footer admits 'Data: illustrative, for a fictional city'. The content is placeholder, not a real subject",
+      "No light, texture, material or depth anywhere",
+      "Textbook 'tasteful AI' look: near-black ground, a small tracked monospace caps label ('THE STREET LEDGER \u00b7 NO. 14') above a generic editorial serif headline, one amber accent",
+      "Slide-deck structure: headline slide, line chart, dot-grid stat, centred pull quote. One template with the content swapped, and little happening between frames",
+      "Default chart treatment (a highlighted line against grey others, an annotation callout) and a 10\u00d710 dot grid. Both are the most literal possible visualisation of '38%'",
+      "The footnote reads 'Data: illustrative, for a fictional city', so this is generated filler content, not a real commission",
+      "No light, texture, material, image or depth. Most of each frame is empty",
+      "The textbook generic 'tasteful AI' look: a near-black ground, a small tracked monospace caps label in the accent colour ('THE STREET LEADER \u00b7 NO. 14'), a generic editorial serif headline, and a single amber accent",
+      "It works like a slide deck: a headline slide, then a default line chart, then a 10\u00d710 dot grid with copy beside it, then a centred pull quote. Each frame is a layout with the words swapped, and there's little choreography to infer",
+      "It says itself that the data is made up: 'Data: illustrative, for a fictional city'",
+      "A literal idea (bike share rises, shown as a line chart and dot grid) with nothing a viewer would remember; mostly empty frames; no light, texture or image"
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-short": {
+      "overall": 6.75,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "cosmos-spacetime-odyssey": {
+      "overall": 8.88,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "kurzgesagt-climate": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.75,
+  "delta": -5.13,
+  "trials": [
+    {
+      "key": {
+        "A": "kurzgesagt-climate",
+        "B": "kurzgesagt-short",
+        "C": "candidate",
+        "D": "cosmos-spacetime-odyssey"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Highly saturated, deliberate palette (violet/cyan/lime/magenta) held consistently across very different scenes",
+              "Dense isometric world-building: a traffic jam with soot clouds, a node map linking steak, plane, solar, wind and bulb tiles; each frame reads as a poster",
+              "Recurring bird characters with distinct personalities (headphones, sunglasses, glasses) carry continuity across a split-screen grid, a hero car shot and UI sliders",
+              "Each frame uses a different structure (wide street, isometric diorama, four-panel grid, product-plus-interface), which points to planned choreography rather than a repeated template",
+              "Soft rim light, cast shadows and gradient shading on the vehicles give volume within a flat-vector house style"
+            ],
+            "gaps": [
+              "No typographic idea visible. The best entry fuses its title with the image (the 'O' as a pupil), while A relies purely on illustration",
+              "The house style is very recognisable and close to an established studio language, so it is less singular than a one-off concept",
+              "Light is stylised rather than physical. The interface frame (sliders, checkmark) slides toward generic explainer-UI territory"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Coherent character-driven illustration system: a mad-scientist figure at a STOP button, birds playing a memory-card game, a mammoth for the ice-age payoff",
+              "Topographic heat-map title card ('Europe's Next Ice Age') gives the topic a visual metaphor rather than a plain background",
+              "Narrative escalation across frames: setup, title, misconception gag, payoff, which is the structure of a scripted explainer",
+              "Strong saturated gradients with consistent rim lighting and shapes"
+            ],
+            "gaps": [
+              "Typography is utilitarian. Burned-in word-by-word captions in a default rounded sans sit on top of the art instead of being designed into it",
+              "Vertical social-cut framing leaves compositions cramped and centre-weighted. Several frames crop characters awkwardly",
+              "Treats the subject as illustration only. Nothing has the material or photographic depth and surprise of the best entry"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 1,
+              "motion": 2,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Textbook 'tasteful AI' look: near-black ground, small tracked mono caps label ('THE STREET LEDGER \u00b7 NO. 14') above a generic editorial serif headline, single amber accent, mostly empty frame",
+              "Slide-deck structure: headline slide, line chart, dot-grid unit chart, centred pull quote. Each frame is one static layout with no choreography implied between them",
+              "Default chart vocabulary (one highlighted line among grey lines, a 10x10 dot grid) with no visual idea beyond the data itself",
+              "Footer admits 'Data: illustrative, for a fictional city'. The content is placeholder, not a real subject",
+              "No light, texture, material or depth anywhere"
+            ],
+            "gaps": [
+              "Needs a visual idea of the street itself (place, people, bikes, lanes), not text and charts on black",
+              "Typography needs a point of view: scale contrast, a type-and-image integration, and motion of the letterforms rather than a default serif set like a slide",
+              "Build real choreography (the line drawing into a street plan, dots becoming riders) and add texture and light so each frame is a poster rather than a slide"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific idea carried by scale and matching shapes: a crater pooled with a nebula, a nautilus spiral, a protoplanetary disc, and a nebula that becomes a human eye. The cosmos is found in the familiar",
+              "Wide-spaced title type where the pupil of the eye stands in for the 'O', so type and image are integrated as one",
+              "Real photographic light and material: wet rock, sand grain, translucent shell lit from behind, volumetric dust",
+              "Credits are set small and quietly placed in negative space so they never compete with the image, which shows a disciplined hierarchy",
+              "Frame-to-frame progression of circular forms implies match-cut choreography across scales"
+            ],
+            "gaps": [
+              "The eye-nebula image leans on a well-known Helix Nebula photo, which reduces its surprise",
+              "The credit typeface is a fairly safe wide sans. A more ownable face could push it further",
+              "Palette at the climax is a fairly expected orange/teal space look"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 27.9,
+        "cost_usd": 0.13919520000000002,
+        "tokens": 70019,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "kurzgesagt-climate",
+        "B": "kurzgesagt-short",
+        "C": "cosmos-spacetime-odyssey",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Coherent house illustration system: chunky bird characters, isometric dioramas and soft volumetric shading, all consistent across very different scenes",
+              "Bold, deliberate saturated palette (violet highway, cyan grid, magenta/lime split) that changes per scene but stays in one family",
+              "Every frame works as a poster on its own: the congested highway, the isometric energy map with smog blobs, the four-panel character grid",
+              "Implied choreography: pollution blobs move between scenes, the camera goes from a wide traffic shot to the systemic map to a product UI, which builds an argument",
+              "Its typography is done with icons (UI sliders, check mark, chart badge). That suits the piece but shows little typographic ambition"
+            ],
+            "gaps": [
+              "The idea illustrates the topic (emissions, energy, an EV) rather than finding one unforgettable visual metaphor the way C's eye-nebula does",
+              "Lighting is stylised flat-plus-gradient, with none of the physical depth, atmosphere or material texture C has",
+              "The visual language is close to a well-known explainer-studio house style, so it is less singular and less of a surprise"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Same polished explainer-studio vocabulary: consistent characters, a confident saturated palette, rim lighting and gradient shading on the mammoth and villain",
+              "Varied staging: a villain at a world-map console, a contour-map title card, a two-character dialogue gag, a mammoth hero shot",
+              "The title card integrates its type into a topographic map with a stacked, outlined display face",
+              "Burned-in social captions (small default-looking sans in the lower third) and a vertical short-form crop make it feel like a cut-down rather than a designed film",
+              "Characters are more generic and pastiche-like (a mustachioed villain trope), so the jokes carry the piece more than the image does"
+            ],
+            "gaps": [
+              "Default caption typography sits on top of the image instead of being designed into it, which C's credits avoid",
+              "Format-driven composition (vertical, cropped, centred subjects) leaves less room for layered, cinematic framing",
+              "No single conceptual through-line or visual surprise; it reads as a well-made social adaptation of an existing style"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific, memorable idea of scale rhymes: a crater that holds a nebula, a nautilus as a cosmic spiral, a protoplanetary disc, and an eye/iris that becomes the Helix nebula",
+              "Real light and material: the wet sand, translucent shell, rock texture and volumetric dust are photographic and cinematic",
+              "Credits are small, widely tracked caps placed in negative space beside the subject, then the title is set huge across the iris with the pupil acting as the 'O', so the type is integrated with the image",
+              "Implied choreography is a graphic match from micro to macro, with every transition motivated by form (circle \u2192 spiral \u2192 disc \u2192 eye)",
+              "The palette moves from cold slate to warm sand to deep space to fiery orange-cyan complementaries"
+            ],
+            "gaps": [
+              "The tracked-caps title treatment is conventional for the genre and is the weakest typographic moment",
+              "The spiral/eye-as-universe metaphor is well worn in science titling, which costs some surprise",
+              "Some frames (the protoplanetary disc) lean on familiar space-art compositions with a centred subject"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 1,
+              "motion": 2,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Textbook 'tasteful AI' look: near-black ground, a small tracked monospace caps label ('THE STREET LEDGER \u00b7 NO. 14') above a generic editorial serif headline, one amber accent",
+              "Slide-deck structure: headline slide, line chart, dot-grid stat, centred pull quote. One template with the content swapped, and little happening between frames",
+              "Default chart treatment (a highlighted line against grey others, an annotation callout) and a 10\u00d710 dot grid. Both are the most literal possible visualisation of '38%'",
+              "The footnote reads 'Data: illustrative, for a fictional city', so this is generated filler content, not a real commission",
+              "No light, texture, material, image or depth. Most of each frame is empty"
+            ],
+            "gaps": [
+              "No visual idea: find an image or metaphor for a street being given back to people, instead of setting a headline next to a chart, as C uses the nautilus and the iris",
+              "Typography is default serif plus mono with no scale play or integration with image; it needs a typographic point of view and layouts that change from frame to frame",
+              "Needs material, light and choreography (the street itself, photography or illustration, transitions that carry meaning) instead of static slides on a dark background"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.4,
+        "cost_usd": 0.1408236,
+        "tokens": 70106,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "kurzgesagt-short",
+        "C": "kurzgesagt-climate",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Photoreal VFX across very different scales: a crater with a nebula pooled in it like water, a nautilus shell lit by a low sun on sand with footprints, a protoplanetary disc with comets, and an eye set into the Helix nebula",
+              "Rich, motivated light and material: the shell glows from inside, the sand has grain, the disc has volumetric light",
+              "The structure has a clear idea. It links the cosmic and the earthly by scale and shape (the spiral shell, the spiral disc, the round eye in a round nebula), and the end title lands on that rhyme",
+              "Credits are small, widely tracked caps set into the shot, the way broadcast main titles are usually done",
+              "The palette shifts deliberately from cold slate to warm sand to the hot orange of the nebula"
+            ],
+            "gaps": [
+              "The eye-in-the-nebula title card is a well-known visual clich\u00e9. Something stranger would make the ending more memorable",
+              "The credit type is a generic tracked sans and isn't integrated with the image beyond its placement",
+              "Some shots, like the protoplanetary disc, lean on familiar science-documentary imagery rather than a new way of seeing it"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A dense, authored flat-vector world: a traffic jam with blobs of exhaust, an isometric diorama of emissions sources joined by power lines, a split-screen four-up of bird characters, and a car next to UI sliders",
+              "Each frame uses a different layout (street-level perspective, isometric, a grid, a product-style shot), so the piece has real visual variety and choreography between scenes",
+              "An unusual saturated palette that is held consistently: violet, cyan, magenta and lime, with dark indigo pollution as a recurring motif",
+              "A consistent character system, with rim-lighting, soft shadows and fine detail (headlights, bus windows) that shows a high level of finish"
+            ],
+            "gaps": [
+              "Almost no typography is visible. The style relies entirely on illustration, and the type never becomes part of the design",
+              "Light is still the stylised flat-vector house look, without the atmosphere and texture of A",
+              "The idea illustrates the explanation (cars plus a diagram of emission sources) rather than giving it a surprising visual metaphor"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The same authored studio illustration system as C, here adapted to vertical short-form: a villain at a world-map control desk, a heat-map title card, birds playing a memory game, a mammoth on ice",
+              "A bespoke, heavily bold rounded title, 'Europe's Next Ice Age', set over a stylised contour map, which is a deliberate typographic choice",
+              "The scenes are witty and specific (the STOP button, the 'They're the same!' memory-card gag) rather than generic",
+              "Characters have rim light and a consistent palette with strong hue shifts from one scene to the next"
+            ],
+            "gaps": [
+              "Burned-in caption subtitles sit dead centre in the lower area and fight the illustration. Readability for social has been put ahead of composition",
+              "The vertical crop leaves the frames less layered than C, and some scenes (the mammoth) are a single character on an empty background",
+              "There is no light or texture beyond flat shading, while A gets real atmosphere"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 1,
+              "motion": 2,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook generic 'tasteful AI' look: a near-black ground, a small tracked monospace caps label in the accent colour ('THE STREET LEADER \u00b7 NO. 14'), a generic editorial serif headline, and a single amber accent",
+              "It works like a slide deck: a headline slide, then a default line chart, then a 10\u00d710 dot grid with copy beside it, then a centred pull quote. Each frame is a layout with the words swapped, and there's little choreography to infer",
+              "It says itself that the data is made up: 'Data: illustrative, for a fictional city'",
+              "A literal idea (bike share rises, shown as a line chart and dot grid) with nothing a viewer would remember; mostly empty frames; no light, texture or image"
+            ],
+            "gaps": [
+              "It has no image or world at all. It needs real photography, illustration or a material treatment of the street, the way A and C build a place",
+              "The type is set at default sizes with no typographic idea. It needs real scale contrast, a chosen face and type that moves with or through the image",
+              "The motion is slide-to-slide. It needs choreographed transitions, for example a street that physically turns into the chart, so the data has a visual idea behind it"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 27.1,
+        "cost_usd": 0.1408022,
+        "tokens": 70089,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 3,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": false
+      },
+      "defects": [
+        "The piece moves like a slide deck. Per-second change is near zero for 8 of 14 seconds, and one shot holds for 11.2 s with only an annotation fade and a few dots filling in.",
+        "Element builds are plain reveals: the line draws on, labels fade in and the waffle dots pop in one by one. Nothing travels, overshoots or hands off between the chart, the waffle and the bars.",
+        "The waffle grid fills up during the second paired frame (the bottom-row dots appear incrementally, one undersized). It reads as a staggered opacity build, not as choreography.",
+        "The annotation text '2021: lanes become protected; parking removed' collides with the yellow line, which strikes through 'removed'.",
+        "The cuts to the waffle, bar and quote cards are hard swaps between static layouts, with no transition built from shared geometry, even though the yellow 38 appears in all three.",
+        "The soundtrack is plucked or keyed notes with short, uniform decays, followed by a broadband white-noise riser (about 8.5 to 11 s) that cuts off abruptly with no impact. It reads as a stock or generated bed, not scored sound design.",
+        "The frames are flat vector with no texture, grain or light. At 100% the type is clean but sterile."
+      ],
+      "gaps": [
+        "Motion: there is no connective device. The yellow 38 should physically carry through the piece: the line's endpoint becomes the 38th dot, then the Bike bar, then the accent in the quote. That would give it continuity, an arc and a peak instead of four static cards with an 11 s dead hold.",
+        "Sound: the noise riser never resolves on a hit tied to a visual payoff. There are no foley-like UI ticks for the dots or bars, and the arrangement does not dip or pick up at the cuts. It needs designed transients synced to each data beat and a real release.",
+        "Finish and arc: the piece has competent editorial layouts but no peak or ending rhyme. The quote card does not echo the opening headline or the line chart. It also needs eased, weighted motion with follow-through, and some texture or depth so the frames carry beyond dashboard flatness."
+      ]
+    },
+    "meta": {
+      "seconds": 21.6,
+      "cost_usd": 0.1598444,
+      "tokens": 72033,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "street-ledger.mp4: 15.0s, 3 shots, median 2.17s, longest 11.23s\nper-second change: [1.8, 122.9, 8.3, 119.5, 0.4, 0.2, 11.7, 0.9, 13.1, 4.8, 0.0, 14.6, 0.3, 0.0]\nPACE: FAIL \u2014 longest shot 11.2s > 2.5s; median shot 2.2s > 1.5s; 8/14 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 3,
+    "colour": 3,
+    "light_texture": 1,
+    "motion": 2.5,
+    "craft": 5.0,
+    "originality": 2,
+    "sound": 4
+  },
+  "full_overall": 2.94,
+  "cost_usd": 0.581,
+  "judge_seconds": 105.0,
+  "verdict": "FAIL"
+}

@@ -1,0 +1,522 @@
+{
+  "name": "ceiling1_nightchorus_v2_street",
+  "tags": [
+    "kinetic-type",
+    "cg-3d",
+    "title-sequence"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "xk-studio-offfmx-2025-main-titles",
+    "the-crown"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 3,
+      "typography": 4,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 3,
+      "craft": 3,
+      "originality": 4
+    },
+    "overall": 3.5,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Commit to one idea, such as a city that sings through its signage, and make each name card a different, designed moment instead of the same billboard shot",
+      "Light the street: haze, wet ground and reflections, light spill from the signs onto brick, and motivated practicals to give depth and atmosphere",
+      "Develop the typography: the signs should differ in material and construction (neon, flip-dot, painted, LED) and interact with the camera and the architecture, not sit as flat rectangles",
+      "Needs one specific concept for the neon or chorus idea: for example signs that light in musical sequence, or type built from real lighting fixtures. At present it is a literal 'names on billboards in a street'",
+      "Real lighting and material work is needed: wet ground, haze, signage that casts coloured light on brick, worn surfaces. All of it is missing",
+      "The credit cards need a single typographic system and varied, choreographed camera work instead of the same alley angle repeated with font swaps",
+      "A specific concept is needed: the alley and signage do nothing to say what 'Night Chorus' is about, whereas B's map is the show's world",
+      "Build a real environment with art direction, through atmosphere, wet surfaces, motivated practical light, set dressing and a choreographed camera move, rather than a repeated static three-quarter view",
+      "Develop one typographic system (a single neon or sign-painting language) that evolves across credits and pays off in the title, rather than random styles per card"
+    ],
+    "tells": [
+      "The same composition repeats across the first three frames: a dark alley in two-point perspective with one rectangular billboard on the right and the name swapped. That is slide-deck structure",
+      "The billboards are generic type placements: condensed grotesk caps, then a default didone in title case, each on a flat colour rectangle. There is no scale contrast and no relationship to the space",
+      "The environment reads as an untextured game-engine kit: black brick, scattered emissive window cards and point lights with no motivation, crushed blacks and empty ground",
+      "The title's LED-dot and stripe-fill letters with letters dropping out is the one idea in the piece. It is executed with uneven fills, mismatched letter textures and a plain dark wall behind",
+      "The final two frames are nearly identical, so little is happening",
+      "The same composition repeats: a three-quarter view down a dark alley with one billboard on the right-hand wall, three times with only the name and the default font preset changed",
+      "Untextured game-engine geometry: muddy brick walls, flat black sky, blown-out bloom point lights and blank emissive window rectangles with no material detail or atmosphere",
+      "Each sign uses a different stock typeface (condensed grotesk on red, condensed sans on blue, generic Didone on green) without any system, so it reads as a sampler of font presets",
+      "The 'NIGHT CHORUS' title uses rainbow-randomised fill patterns (halftone, stripes, dots) and RGB-split glitch per letter, an effect applied with no logic. The last two frames are near-duplicates with letters dropping out",
+      "Inconsistent frame aspect ratios and crops between shots suggest unmanaged output rather than a designed sequence",
+      "The same composition repeats: one generic alley with a billboard on the right wall and the name swapped (Mira / Isak / Lev), which is slide-deck structure",
+      "The environment is flat and empty: low-detail brick, random lit window rectangles, blob streetlights, no atmosphere or story detail, like a stock real-time engine scene",
+      "Each sign is in a different default style (condensed sans on red, condensed sans on blue, editorial serif on green), so the typography has no unifying idea",
+      "The 'NIGHT CHORUS' title is a mix-and-match of halftone, LED dot and stripe letter textures; the letter-dropout 'glitch' is an effect with no subject",
+      "Inconsistent framing and aspect between the last two frames and muddy, unmotivated lighting point to a template or automated output"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "the-crown": {
+      "overall": 7.5,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    }
+  },
+  "ref_mean": 8.12,
+  "delta": -4.62,
+  "trials": [
+    {
+      "key": {
+        "A": "the-crown",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "xk-studio-offfmx-2025-main-titles"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Molten gold forming into a crown's metalwork is a specific idea: the institution is shown being forged, cooling and setting into a jewelled frame",
+              "Real macro lens language: shallow depth of field, specular highlights on cast metal, smoke, bokeh from the gem settings",
+              "The credits are small tracked Trajan-style capitals placed in the negative space of each shot, so each card is composed around the object",
+              "The camera position, scale and object change from frame to frame, and the sequence builds from raw metal to a set jewel before resolving on the title",
+              "Risk: the dark ground with small tracked serif caps and a single gold accent sits close to the generic 'prestige' look, but the material simulation and the build of the sequence carry it"
+            ],
+            "gaps": [
+              "The end card is a centred serif on a dark haze, the least designed frame in the piece. It should be built from the forged material rather than set after it",
+              "The typography is a safe default for royalty. It needs a typographic idea that interacts with the metal, for example engraved, cast or catching the light",
+              "The palette is gold on black only and gets monotonous. A second material or colour beat, such as velvet or ermine, would add contrast"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A single specific idea: a clockwork map that builds itself, telling the story's geography and politics through mechanism. The idea only works for this show",
+              "Dense, layered frames: carved brass, wood, cogwork cities, an engraved astrolabe band with dragon reliefs",
+              "Each frame is a different scale and viewpoint: a macro of the band, an aerial cityscape, a mechanical close-up, a flat map, the title. That shows strong choreography",
+              "Credits with house sigils sit in the map's own cartographic language, so the type is part of the world",
+              "Warm, motivated sun-flare light and real material texture throughout"
+            ],
+            "gaps": [
+              "It is the benchmark here. The weakest spot is the gold bevelled title lockup, which is closer to the key art than to the mechanism",
+              "The flat map frame is visually thinner than the 3D cogwork shots around it",
+              "The credit typography is serviceable rather than distinctive"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "The same composition repeats across the first three frames: a dark alley in two-point perspective with one rectangular billboard on the right and the name swapped. That is slide-deck structure",
+              "The billboards are generic type placements: condensed grotesk caps, then a default didone in title case, each on a flat colour rectangle. There is no scale contrast and no relationship to the space",
+              "The environment reads as an untextured game-engine kit: black brick, scattered emissive window cards and point lights with no motivation, crushed blacks and empty ground",
+              "The title's LED-dot and stripe-fill letters with letters dropping out is the one idea in the piece. It is executed with uneven fills, mismatched letter textures and a plain dark wall behind",
+              "The final two frames are nearly identical, so little is happening"
+            ],
+            "gaps": [
+              "Commit to one idea, such as a city that sings through its signage, and make each name card a different, designed moment instead of the same billboard shot",
+              "Light the street: haze, wet ground and reflections, light spill from the signs onto brick, and motivated practicals to give depth and atmosphere",
+              "Develop the typography: the signs should differ in material and construction (neon, flip-dot, painted, LED) and interact with the camera and the architecture, not sit as flat rectangles"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The palette is deliberate and unusual: dusty pink, mineral blue, olive and sea-glass green, coral, and a mauve dusk",
+              "Strong materials: translucent wax-skinned hands, glass-and-amber organic sculpture, knitted textiles, mesh, chrome tubing, beaded growths. These are complex simulations with real subsurface scattering",
+              "Every frame is a different world (landscape, volcano, sculpture, textile field, knot), yet they share one grammar, the organic grown against the synthetic",
+              "The festival-ident format justifies the small bold-sans credit tags. The OFFF MX mark is placed with intent"
+            ],
+            "gaps": [
+              "The typography is a plain bold sans tag dropped into the corner. It does not interact with the image, so it should be integrated, scaled or materialised into the scene",
+              "The frames feel like separate contributor pieces rather than one choreographed sequence. Transitions or a recurring motif would give it the narrative drive B has",
+              "The volcano frame drops to a monochrome terrain render that is the least specific image in the piece. It needs the same material richness as the others"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.1,
+        "cost_usd": 0.156155,
+        "tokens": 71859,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "the-crown",
+        "B": "game-of-thrones",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The molten gold forming into regalia is a specific idea: the crown is shown being made before the title appears, which fits a show about the monarchy",
+              "Macro photography of real-looking material: oxidised bronze, gold leaf, smoke and faceted gems, with shallow depth of field and motivated low-key light",
+              "Each frame has a different scale and angle: wide smoke, a horizontal sliver, a diagonal close-up, an overhead jewel V-shape. This suggests a slow camera moving around a growing object",
+              "Small tracked Trajan-style capitals carry the credits and are placed off-axis, with the empty space around them clearly intended. The 'WITH' and the role labels follow a real credit hierarchy",
+              "On paper it fits the 'dark ground, tracked caps, serif, one accent' warning sign, but the material work and the build-to-reveal structure clearly beat that pattern"
+            ],
+            "gaps": [
+              "The title card returns to a centred serif on a near-empty dark ground. It is the weakest and most generic frame, and it drops the material language built up before it",
+              "The palette (black and gold) is the expected one for prestige drama, so it misses the surprise B gets from its warm parchment light and map tones",
+              "Little shifts in scale or rhythm between shots. The choreography reads as one slow tempo with no structural turn like B's mechanism-to-map moves"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One defining idea: the world as a clockwork map whose cities wind up out of the ground. It works as titles, as story orientation and as a symbol of the power struggle all at once",
+              "A sun-astrolabe band carved with dragon reliefs, worn wood and brass cogs, a bone-and-iron throne-tower in tilt-shift miniature. These are layered, designed props, not stock primitives",
+              "Frames move from extreme close-up on the engraved band, to a low pass over the city, to the tower rising, to an overhead parchment map, to the emblem title. The camera language and scale change deliberately",
+              "Credits sit in the world with a house-sigil glyph and engraved serif small caps. The custom title lockup is part of the emblem device",
+              "Burned-out warm sunlight against desaturated parchment and slate gives a distinctive palette that holds across all frames"
+            ],
+            "gaps": [
+              "The title lockup's bevelled gold treatment leans slightly towards fantasy-game convention compared with the restraint of the frames before it",
+              "The map frame flattens the lighting compared with the miniature shots, so the material richness dips for a moment",
+              "Credits are small and sometimes compete with busy detail (the Michelle Fairley card over the city), which hurts legibility in a few frames"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A festival-style piece in which each studio's segment is its own hybrid organism: a translucent hand holding a coral heart over a scorched ridge, glass-and-amber growths, mesh-and-fibre textile thickets, knotted tubes of jade and frosted glass",
+              "An unusual, deliberate palette that changes from section to section (blush and rust, violet dusk, cerulean, sage and peach, bottle green) yet still hangs together",
+              "Strong material simulation: subsurface scattering, frosted glass, woven mesh and fibre groom, with specular light motivated by the backgrounds",
+              "Variety between frames points to authored segments and transitions, not one template layout with the words swapped"
+            ],
+            "gaps": [
+              "The typography is a generic bold grotesk name tag pinned to the top-left corner, set like a lower third, with no scale contrast or connection to the image. Only the OFFF wordmark has a real point of view",
+              "No single unifying idea runs across the whole film. It reads as a showcase anthology of beautiful objects rather than one concept like B's clockwork world",
+              "Some compositions are centred-object hero renders (the mountain spire, the knot) that come close to 'effect without subject'. Each needs a narrative reason to exist in sequence"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 5,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "The same composition repeats: a three-quarter view down a dark alley with one billboard on the right-hand wall, three times with only the name and the default font preset changed",
+              "Untextured game-engine geometry: muddy brick walls, flat black sky, blown-out bloom point lights and blank emissive window rectangles with no material detail or atmosphere",
+              "Each sign uses a different stock typeface (condensed grotesk on red, condensed sans on blue, generic Didone on green) without any system, so it reads as a sampler of font presets",
+              "The 'NIGHT CHORUS' title uses rainbow-randomised fill patterns (halftone, stripes, dots) and RGB-split glitch per letter, an effect applied with no logic. The last two frames are near-duplicates with letters dropping out",
+              "Inconsistent frame aspect ratios and crops between shots suggest unmanaged output rather than a designed sequence"
+            ],
+            "gaps": [
+              "Needs one specific concept for the neon or chorus idea: for example signs that light in musical sequence, or type built from real lighting fixtures. At present it is a literal 'names on billboards in a street'",
+              "Real lighting and material work is needed: wet ground, haze, signage that casts coloured light on brick, worn surfaces. All of it is missing",
+              "The credit cards need a single typographic system and varied, choreographed camera work instead of the same alley angle repeated with font swaps"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.2,
+        "cost_usd": 0.15957380000000002,
+        "tokens": 72018,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "the-crown",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Dense, layered 3D still lifes: translucent sculpted hands, coral-like growths, fringed fabric, mesh, glass tubing, with physically plausible subsurface and refraction",
+              "Unusual palette that changes from shot to shot: dusty rose over rust terrain, violet dusk volcano, cyan sky behind amber glass, sage green and pink fibre, bottle green with milky jade",
+              "Each frame is built differently (macro, landscape, totem, macro tangle), so it is not one layout with the words swapped",
+              "Reads as a festival title sequence with a collaborative studio credit structure (studio names as captions plus a festival wordmark lockup)",
+              "Weakness: the credit type is a plain bold grotesk dropped top-left with no integration into the image"
+            ],
+            "gaps": [
+              "The studio-credit typography is slide-like (small bold sans in a corner); give it a scale, placement or material relationship to the 3D worlds as B does with its engraved type",
+              "The sampled frames read as separate vignettes; it needs a visible connecting device (a transition, recurring object or camera logic) so it plays as one choreographed film and not an anthology",
+              "Show narrative or structural build toward a payoff, the way B's mechanism resolves into its title card"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea only this piece could have: the world map as a clockwork mechanism that builds itself, which states the show's politics and geography at once",
+              "Real material: tooled brass, aged parchment, an engraved astrolabe band with dragon relief, and warm sun-flare light motivated by the central sun",
+              "Strong choreography: the camera flies between cities, mechanisms unfold, and the sequence bookends on the astrolabe band that resolves into the title",
+              "Period serif credits with house sigils are set unobtrusively into the terrain, and the title lockup sits inside the astrolabe ring",
+              "Every frame works as a poster, and the dense miniature detail rewards repeat viewing"
+            ],
+            "gaps": [
+              "The credit type is small and sometimes illegible against busy terrain; a little more contrast control would help",
+              "The palette is mostly warm sepia and brass, and a colder accent region could add range",
+              "The final title lockup is slightly conventional (glowing trajan-like serif) next to the invention of the mechanism"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Macro photography of molten or cast gold forming into crown elements, with gemstone facets and pearls: a clear and fitting metaphor of the crown being forged",
+              "Excellent material rendering: specular gold, shallow focus, smoky black void, chiaroscuro light",
+              "Restrained, well-spaced classical serif credits with small-caps role labels, placed off-centre to balance the macro forms",
+              "Weakness: the dark ground, tracked serif caps and centred title on a dark ground sit close to the generic 'luxury' look, so the craft carries more than the idea does"
+            ],
+            "gaps": [
+              "The 'gold forming in darkness' concept is the expected answer for a royal drama; it needs a twist as specific as B's map-machine",
+              "The palette is near-monochrome gold on black, so introduce a deliberate secondary colour or tonal shift across the sequence",
+              "The final title card is a centred serif on an empty dark ground; integrate the title with the object (for example, revealed in the metal) for a memorable end beat"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The same composition repeats: one generic alley with a billboard on the right wall and the name swapped (Mira / Isak / Lev), which is slide-deck structure",
+              "The environment is flat and empty: low-detail brick, random lit window rectangles, blob streetlights, no atmosphere or story detail, like a stock real-time engine scene",
+              "Each sign is in a different default style (condensed sans on red, condensed sans on blue, editorial serif on green), so the typography has no unifying idea",
+              "The 'NIGHT CHORUS' title is a mix-and-match of halftone, LED dot and stripe letter textures; the letter-dropout 'glitch' is an effect with no subject",
+              "Inconsistent framing and aspect between the last two frames and muddy, unmotivated lighting point to a template or automated output"
+            ],
+            "gaps": [
+              "A specific concept is needed: the alley and signage do nothing to say what 'Night Chorus' is about, whereas B's map is the show's world",
+              "Build a real environment with art direction, through atmosphere, wet surfaces, motivated practical light, set dressing and a choreographed camera move, rather than a repeated static three-quarter view",
+              "Develop one typographic system (a single neon or sign-painting language) that evolves across credits and pays off in the title, rather than random styles per card"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.8,
+        "cost_usd": 0.1550032,
+        "tokens": 71803,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 6,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": false,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Motion blur on the opening credit is so heavy that the name (MIRA ...) never reads cleanly in the sampled frames; the whip lands before the sign has time to read",
+        "The environment looks like a blockout: windows are flat emissive cards with no frames or depth, and the building masses are untextured boxes with murky, crushed brick",
+        "The title shot holds about 4.2s from a nearly locked camera, and the only change inside it is letters switching off",
+        "The letter dropout at the end (NIGHT HO S) reads as a random glitch, not a designed resolve",
+        "The street goes almost black between signs. Low-contrast midtones make the frames muddy rather than graphic",
+        "Chromatic fringing on the title letters is applied evenly everywhere as a filter, not motivated by light"
+      ],
+      "gaps": [
+        "Camera language is one repeated move: a whip-pan from sign to sign. The camera does not vary its speed, there are no reveals through depth or foreground, and nothing in the street reacts as the camera passes (no flicker-on, reflections or neighbouring signs waking up), so the walk never feels like a choreographed journey",
+        "The world is at blockout level next to top studio work. The street needs proper set dressing, wet-ground reflections, atmospheric haze, and light spilling from each sign onto the street. Right now each sign sits in a void, and that is why no single frame works as a poster",
+        "The sound is strong percussive transients plus a noise wash, with little tonal or harmonic development and no sign-specific sound design (neon hum, buzz, relay clicks). The pre-title dropout and the hit at about 8.5s are the only real dynamic moves, and the tail fades out without a sonic button that rhymes with the opening"
+      ]
+    },
+    "meta": {
+      "seconds": 24.4,
+      "cost_usd": 0.1633892,
+      "tokens": 72171,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "street.mp4: 12.7s, 12 shots, median 0.90s, longest 4.23s\nper-second change: [24.4, 18.1, 21.3, 14.7, 16.8, 11.8, 23.8, 27.2, 14.9, 9.7, 12.4, 18.0]\nPACE: FAIL \u2014 longest shot 4.2s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 3,
+    "typography": 4,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 4.5,
+    "craft": 4.5,
+    "originality": 4,
+    "sound": 6
+  },
+  "full_overall": 4.11,
+  "cost_usd": 0.634,
+  "judge_seconds": 119.5,
+  "verdict": "FAIL"
+}

@@ -209,5 +209,29 @@
    "product-launch",
    "motion-design"
   ]
+ },
+ {
+  "name": "sim_snow",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-sim:deliverables/sim/snow/snow.mp4",
+  "tags": [
+   "cg-3d",
+   "generative"
+  ]
+ },
+ {
+  "name": "sim_unveil",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-sim:deliverables/sim/unveil/unveil.mp4",
+  "tags": [
+   "cg-3d",
+   "product-launch"
+  ]
+ },
+ {
+  "name": "sim_ink",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-sim:deliverables/sim/ink/ink.mp4",
+  "tags": [
+   "generative",
+   "kinetic-type"
+  ]
  }
 ]
