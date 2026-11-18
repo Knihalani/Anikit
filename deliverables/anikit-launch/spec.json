@@ -1,0 +1,1192 @@
+{
+  "size": "16:9",
+  "fps": 30,
+  "intent": {
+    "pace": "medium"
+  },
+  "music": {
+    "style": "orchestral",
+    "bpm": 96,
+    "key": "D",
+    "hits": [
+      "@bar6",
+      "@bar7"
+    ],
+    "instruments": {
+      "melody": "piano"
+    },
+    "tracks": [
+      {
+        "inst": "piano",
+        "notes": "o4 D4/8 F#4/8 A4/8 D5/8! A4/8 F#4/8 A4/8 D5/8 | B3/8 D4/8 G4/8 B4/8! G4/8 D4/8 G4/8 B4/8",
+        "at": 0,
+        "gain": -2
+      }
+    ]
+  },
+  "sound": "auto",
+  "scenes": [
+    {
+      "id": "roll",
+      "duration": 2.5,
+      "background": "#0A0705",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 2.6
+            },
+            "to": {
+              "zoom": 1
+            },
+            "duration": 2.4,
+            "ease": "inOutCubic"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "shape": "rect",
+          "x": 1120,
+          "y": 540,
+          "width": 2600,
+          "height": 2000,
+          "fill": "radial-gradient(#FFF7E6, #FFC468, #C1611A, #3A1206, #0A0705)"
+        },
+        {
+          "id": "holes",
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080,
+          "rotation": -7,
+          "layers": [
+            {
+              "shape": "rect",
+              "x": 960,
+              "y": 540,
+              "width": 3600,
+              "height": 440,
+              "fill": "#FFFFFF"
+            },
+            {
+              "text": "{\"music\": \"piano\", \"shader\": \"sky\",",
+              "typeset": false,
+              "maxWidth": 9000,
+              "font": "Big Shoulders Stencil",
+              "weight": 800,
+              "size": 300,
+              "letterSpacing": "0.02em",
+              "color": "#000000",
+              "anchor": "left",
+              "x": "=1000 - t*330",
+              "y": 548
+            }
+          ]
+        },
+        {
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080,
+          "rotation": -7,
+          "layers": [
+            {
+              "component": "paper",
+              "props": {
+                "stock": "cotton",
+                "color": "#D69A58",
+                "tooth": 0.9,
+                "fibers": 0.9,
+                "vignette": 0
+              },
+              "scale": 2
+            },
+            {
+              "shape": "rect",
+              "x": 1120,
+              "y": 540,
+              "width": 3600,
+              "height": 440,
+              "blend": "multiply",
+              "fill": "linear-gradient(90deg, #2A0E04, #9C4A16, #E9A25A, #9C4A16, #2A0E04)"
+            },
+            {
+              "shape": "rect",
+              "x": 960,
+              "y": 328,
+              "width": 3600,
+              "height": 16,
+              "fill": "#1A0802",
+              "opacity": 0.6,
+              "blur": 6
+            },
+            {
+              "shape": "rect",
+              "x": 960,
+              "y": 752,
+              "width": 3600,
+              "height": 16,
+              "fill": "#1A0802",
+              "opacity": 0.6,
+              "blur": 6
+            }
+          ],
+          "matte": {
+            "layer": "holes",
+            "mode": "luma"
+          }
+        },
+        {
+          "id": "glyphs",
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080,
+          "rotation": -7,
+          "layers": [
+            {
+              "text": "{\"music\": \"piano\", \"shader\": \"sky\",",
+              "typeset": false,
+              "maxWidth": 9000,
+              "font": "Big Shoulders Stencil",
+              "weight": 800,
+              "size": 300,
+              "letterSpacing": "0.02em",
+              "color": "#FFB35C",
+              "anchor": "left",
+              "x": "=1000 - t*330",
+              "y": 548,
+              "blur": 34,
+              "blend": "add",
+              "opacity": 0.5
+            }
+          ]
+        },
+        {
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080,
+          "rotation": -7,
+          "layers": [
+            {
+              "shape": "rect",
+              "x": 1120,
+              "y": 540,
+              "width": 20,
+              "height": 760,
+              "fill": "linear-gradient(90deg, #2B1808, #F2CF8A, #7A5222, #1A0E04)",
+              "shadow": {
+                "x": 18,
+                "y": 0,
+                "blur": 24,
+                "color": "#000000B0"
+              }
+            },
+            {
+              "shape": "rect",
+              "x": 1120,
+              "y": 540,
+              "width": 60,
+              "height": 420,
+              "fill": "#FFE2A8",
+              "blend": "add",
+              "blur": 26,
+              "opacity": 0.22
+            }
+          ]
+        },
+        {
+          "onNotes": {
+            "track": "piano",
+            "layer": {
+              "shape": "rect",
+              "x": 1120,
+              "y": 540,
+              "rotation": -7,
+              "width": 80,
+              "height": 460,
+              "fill": "#FFE6B0",
+              "blend": "add",
+              "blur": 24,
+              "duration": 0.35,
+              "animate": [
+                {
+                  "from": {
+                    "opacity": 0.95,
+                    "scaleX": 1.6
+                  },
+                  "to": {
+                    "opacity": 0,
+                    "scaleX": 1
+                  },
+                  "duration": 0.35,
+                  "ease": "outCubic"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "component": "grain",
+          "props": {}
+        }
+      ]
+    },
+    {
+      "id": "dusk",
+      "duration": 2.5,
+      "background": "#120A16",
+      "transition": {
+        "type": "zoomThrough",
+        "layer": "glyphs",
+        "duration": 0.6
+      },
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "y": 40
+            },
+            "to": {
+              "y": -30
+            },
+            "duration": 2.5,
+            "ease": "linear"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "shader": "sky",
+          "uniforms": {
+            "sun": "=0.95 + t*0.02",
+            "coverage": 0.4,
+            "speed": 1.4,
+            "warmth": 1.0,
+            "cirrus": 0.9,
+            "horizon": -0.45
+          }
+        },
+        {
+          "id": "wall",
+          "layers": [
+            {
+              "shape": "rect",
+              "x": 960,
+              "y": 540,
+              "width": 2200,
+              "height": 1300,
+              "fill": "#FFFFFF"
+            },
+            {
+              "text": "\"shader\":",
+              "typeset": false,
+              "maxWidth": 9000,
+              "font": "Big Shoulders Stencil",
+              "weight": 800,
+              "size": 200,
+              "color": "#000000",
+              "anchor": "left",
+              "x": "=150 - t*60",
+              "y": 210
+            },
+            {
+              "text": "\"sky\",",
+              "typeset": false,
+              "maxWidth": 9000,
+              "font": "Big Shoulders Stencil",
+              "weight": 900,
+              "size": 640,
+              "color": "#000000",
+              "anchor": "left",
+              "x": "=330 - t*120",
+              "y": 600
+            }
+          ]
+        },
+        {
+          "matte": {
+            "layer": "wall",
+            "mode": "luma"
+          },
+          "layers": [
+            {
+              "component": "paper",
+              "props": {
+                "stock": "cotton",
+                "color": "#4A3550",
+                "tooth": 0.8,
+                "fibers": 0.9,
+                "vignette": 0.4
+              }
+            },
+            {
+              "shape": "rect",
+              "width": 1920,
+              "height": 1080,
+              "blend": "multiply",
+              "fill": "linear-gradient(180deg, #1E1428, #5A3446, #22121E)"
+            }
+          ]
+        },
+        {
+          "shape": "rect",
+          "x": 90,
+          "y": 540,
+          "width": 18,
+          "height": 1200,
+          "fill": "linear-gradient(90deg, #2B1808, #F2CF8A, #7A5222, #1A0E04)",
+          "shadow": {
+            "x": 18,
+            "y": 0,
+            "blur": 24,
+            "color": "#000000B0"
+          }
+        },
+        {
+          "component": "grain",
+          "props": {}
+        }
+      ]
+    },
+    {
+      "id": "ink",
+      "duration": 3.75,
+      "background": "#E4E9EC",
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1.08
+            },
+            "to": {
+              "zoom": 1
+            },
+            "duration": 3.75,
+            "ease": "outCubic"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "component": "fluid",
+          "props": {
+            "look": "ink",
+            "background": "#E4E9EC",
+            "text": {
+              "text": "ink",
+              "font": "Big Shoulders Stencil",
+              "size": 0.5,
+              "pos": [
+                0.68,
+                0.5
+              ],
+              "color": "#14205A",
+              "amount": 0.6,
+              "weight": 900
+            },
+            "sources": [
+              {
+                "pos": [
+                  0.42,
+                  0.18
+                ],
+                "to": [
+                  0.5,
+                  0.7
+                ],
+                "speed": 0.7,
+                "radius": 0.03,
+                "color": "#D2381C",
+                "amount": 0.9,
+                "start": 0.3,
+                "end": 2.2
+              },
+              {
+                "pos": [
+                  0.86,
+                  0.18
+                ],
+                "to": [
+                  0.8,
+                  0.8
+                ],
+                "speed": 0.6,
+                "radius": 0.025,
+                "color": "#14205A",
+                "amount": 0.8,
+                "start": 0.9,
+                "end": 2.8
+              }
+            ],
+            "vorticity": 0.5,
+            "stir": 0.06,
+            "thin_color": "#5A7AB0",
+            "chroma": 0.5
+          }
+        },
+        {
+          "id": "strip",
+          "layers": [
+            {
+              "shape": "rect",
+              "x": 960,
+              "y": 95,
+              "width": 2200,
+              "height": 190,
+              "fill": "#FFFFFF"
+            },
+            {
+              "text": "\"look\": \"ink\", \"sound\": \"auto\", \"music\":",
+              "typeset": false,
+              "maxWidth": 9000,
+              "font": "Big Shoulders Stencil",
+              "weight": 800,
+              "size": 130,
+              "color": "#000000",
+              "anchor": "left",
+              "x": "=420 - t*150",
+              "y": 100
+            }
+          ]
+        },
+        {
+          "matte": {
+            "layer": "strip",
+            "mode": "luma"
+          },
+          "layers": [
+            {
+              "component": "paper",
+              "props": {
+                "stock": "cotton",
+                "color": "#5E584E",
+                "tooth": 0.8,
+                "fibers": 0.8,
+                "vignette": 0
+              }
+            }
+          ]
+        },
+        {
+          "shape": "rect",
+          "x": 960,
+          "y": 195,
+          "width": 2200,
+          "height": 14,
+          "fill": "#22201C",
+          "opacity": 0.35,
+          "blur": 8
+        },
+        {
+          "text": "fluid, cloth, particles: simulated",
+          "font": "Martian Mono",
+          "weight": 500,
+          "axes": {
+            "wdth": 85
+          },
+          "size": 38,
+          "color": "#1A1D24",
+          "anchor": "left",
+          "x": 150,
+          "y": 960,
+          "enter": {
+            "preset": "fadeUp",
+            "delay": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "sound",
+      "duration": 3.75,
+      "background": "#03100F",
+      "transition": {
+        "type": "ink-bleed",
+        "duration": 0.6
+      },
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1.0,
+              "rotation": 0
+            },
+            "to": {
+              "zoom": 1.12,
+              "rotation": -2
+            },
+            "duration": 3.75,
+            "ease": "inOutSine"
+          }
+        ]
+      },
+      "layers": [
+        {
+          "shape": "rect",
+          "x": 1250,
+          "y": 420,
+          "width": 2600,
+          "height": 2200,
+          "fill": "radial-gradient(#FFF3D2, #F0B04E, #2D5A4E, #082220, #03100F)"
+        },
+        {
+          "id": "vholes",
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080,
+          "rotation": 90,
+          "layers": [
+            {
+              "shape": "rect",
+              "x": 960,
+              "y": 250,
+              "width": 3600,
+              "height": 700,
+              "fill": "#FFFFFF"
+            },
+            {
+              "text": "\"sound\": \"auto\", \"music\": \"orchestral\",",
+              "typeset": false,
+              "maxWidth": 20000,
+              "font": "Big Shoulders Stencil",
+              "weight": 800,
+              "size": 500,
+              "color": "#000000",
+              "anchor": "left",
+              "x": "=800 - 820*t",
+              "y": 262
+            }
+          ]
+        },
+        {
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080,
+          "rotation": 90,
+          "matte": {
+            "layer": "vholes",
+            "mode": "luma"
+          },
+          "layers": [
+            {
+              "component": "paper",
+              "props": {
+                "stock": "cotton",
+                "color": "#4E7A6E",
+                "tooth": 0.8,
+                "fibers": 0.9,
+                "vignette": 0
+              },
+              "scale": 2
+            },
+            {
+              "shape": "rect",
+              "x": 960,
+              "y": 250,
+              "width": 3600,
+              "height": 700,
+              "blend": "multiply",
+              "fill": "linear-gradient(0deg, #061A18, #3E6A5C, #9CB89A, #3E6A5C, #061A18)"
+            }
+          ]
+        },
+        {
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080,
+          "rotation": 90,
+          "layers": [
+            {
+              "text": "\"sound\": \"auto\", \"music\": \"orchestral\",",
+              "typeset": false,
+              "maxWidth": 20000,
+              "font": "Big Shoulders Stencil",
+              "weight": 800,
+              "size": 500,
+              "color": "#FFC870",
+              "anchor": "left",
+              "x": "=800 - 820*t",
+              "y": 262,
+              "blur": 36,
+              "blend": "add",
+              "opacity": 0.45
+            }
+          ]
+        },
+        {
+          "shape": "rect",
+          "x": 1250,
+          "y": 300,
+          "width": 900,
+          "height": 20,
+          "fill": "linear-gradient(180deg, #2B1808, #F2CF8A, #7A5222, #1A0E04)",
+          "shadow": {
+            "x": 0,
+            "y": 18,
+            "blur": 24,
+            "color": "#000000B0"
+          }
+        },
+        {
+          "onNotes": {
+            "track": "melody",
+            "layer": {
+              "shape": "circle",
+              "x": "=990 + $pitch*500",
+              "y": 300,
+              "width": 80,
+              "height": 80,
+              "fill": "none",
+              "stroke": "#FFD99A",
+              "strokeWidth": "=5 + 7*$vel",
+              "glow": "#FFB54A",
+              "blend": "add",
+              "duration": 0.9,
+              "animate": [
+                {
+                  "from": {
+                    "scale": 0.3,
+                    "opacity": 1
+                  },
+                  "to": {
+                    "scale": 5,
+                    "opacity": 0
+                  },
+                  "duration": 0.9,
+                  "ease": "outCubic"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "text": "Real instruments.\nSound from the picture.",
+          "font": "Martian Mono",
+          "weight": 600,
+          "axes": {
+            "wdth": 85
+          },
+          "size": 44,
+          "lineHeight": 1.35,
+          "color": "#E9F0E6",
+          "anchor": "left",
+          "x": 150,
+          "y": 900,
+          "enter": {
+            "preset": "fadeUp",
+            "delay": 0.5
+          }
+        },
+        {
+          "component": "grain",
+          "props": {}
+        }
+      ]
+    },
+    {
+      "id": "speed",
+      "duration": 2.5,
+      "background": "#060608",
+      "transition": {
+        "type": "whip",
+        "duration": 0.3
+      },
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1.25
+            },
+            "to": {
+              "zoom": 1.0
+            },
+            "duration": 1.5,
+            "ease": "outExpo"
+          }
+        ],
+        "shake": {
+          "amount": 14,
+          "at": 0,
+          "duration": 0.5
+        }
+      },
+      "layers": [
+        {
+          "shader": "mesh-gradient",
+          "uniforms": {
+            "color1": [
+              1.0,
+              0.72,
+              0.32
+            ],
+            "color2": [
+              0.82,
+              0.4,
+              0.58
+            ],
+            "color3": [
+              0.18,
+              0.3,
+              0.8
+            ],
+            "color4": [
+              0.92,
+              0.28,
+              0.14
+            ],
+            "speed": "=max(0.6, 9*(1-t/1.5))",
+            "warp": 1.6,
+            "softness": 0.7,
+            "grain": 0.5
+          }
+        },
+        {
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080,
+          "rotation": -6,
+          "id": "rows",
+          "layers": [
+            {
+              "shape": "rect",
+              "width": 2600,
+              "height": 1700,
+              "fill": "#FFFFFF"
+            },
+            {
+              "text": "\"music\": \"piano\", \"shader\": \"sky\", \"look\": \"ink\", \"sound\": \"auto\", \"music\": \"piano\",",
+              "typeset": false,
+              "maxWidth": 40000,
+              "font": "Big Shoulders Stencil",
+              "weight": 800,
+              "size": 150,
+              "color": "#000000",
+              "anchor": "left",
+              "x": "=200 - 2600*(1-pow(1-min(t/1.5,1),3))",
+              "y": 170
+            },
+            {
+              "text": "\"sound\": \"auto\", \"look\": \"ink\", \"shader\": \"sky\", \"sound\": \"auto\", \"shader\": \"sky\",",
+              "typeset": false,
+              "maxWidth": 40000,
+              "font": "Big Shoulders Stencil",
+              "weight": 800,
+              "size": 300,
+              "color": "#000000",
+              "anchor": "left",
+              "x": "=200 - 3700*(1-pow(1-min(t/1.5,1),3))",
+              "y": 430
+            },
+            {
+              "text": "\"look\": \"ink\", \"sound\": \"auto\", \"music\": \"piano\", \"shader\": \"sky\", \"look\": \"ink\",",
+              "typeset": false,
+              "maxWidth": 40000,
+              "font": "Big Shoulders Stencil",
+              "weight": 800,
+              "size": 220,
+              "color": "#000000",
+              "anchor": "left",
+              "x": "=200 - 3100*(1-pow(1-min(t/1.5,1),3))",
+              "y": 930
+            }
+          ]
+        },
+        {
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080,
+          "rotation": -6,
+          "matte": {
+            "layer": "rows",
+            "mode": "luma"
+          },
+          "layers": [
+            {
+              "component": "paper",
+              "props": {
+                "stock": "cotton",
+                "color": "#2C2A30",
+                "tooth": 0.8,
+                "fibers": 0.9,
+                "vignette": 0.4
+              },
+              "scale": 1.6
+            }
+          ]
+        },
+        {
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080,
+          "rotation": -6,
+          "layers": [
+            {
+              "text": "\"music\": \"piano\", \"shader\": \"sky\", \"look\": \"ink\", \"sound\": \"auto\", \"music\": \"piano\",",
+              "typeset": false,
+              "maxWidth": 40000,
+              "font": "Big Shoulders Stencil",
+              "weight": 800,
+              "size": 150,
+              "color": "#FFE0B0",
+              "anchor": "left",
+              "x": "=200 - 2600*(1-pow(1-min(t/1.5,1),3))",
+              "y": 170,
+              "blur": 30,
+              "blend": "add",
+              "opacity": 0.4
+            },
+            {
+              "text": "\"sound\": \"auto\", \"look\": \"ink\", \"shader\": \"sky\", \"sound\": \"auto\", \"shader\": \"sky\",",
+              "typeset": false,
+              "maxWidth": 40000,
+              "font": "Big Shoulders Stencil",
+              "weight": 800,
+              "size": 300,
+              "color": "#FFE0B0",
+              "anchor": "left",
+              "x": "=200 - 3700*(1-pow(1-min(t/1.5,1),3))",
+              "y": 430,
+              "blur": 30,
+              "blend": "add",
+              "opacity": 0.4
+            },
+            {
+              "text": "\"look\": \"ink\", \"sound\": \"auto\", \"music\": \"piano\", \"shader\": \"sky\", \"look\": \"ink\",",
+              "typeset": false,
+              "maxWidth": 40000,
+              "font": "Big Shoulders Stencil",
+              "weight": 800,
+              "size": 220,
+              "color": "#FFE0B0",
+              "anchor": "left",
+              "x": "=200 - 3100*(1-pow(1-min(t/1.5,1),3))",
+              "y": 930,
+              "blur": 30,
+              "blend": "add",
+              "opacity": 0.4
+            }
+          ]
+        },
+        {
+          "x": 960,
+          "y": 540,
+          "width": 1920,
+          "height": 1080,
+          "rotation": -6,
+          "layers": [
+            {
+              "text": "100–400 fps",
+              "font": "Big Shoulders",
+              "weight": 900,
+              "size": 210,
+              "color": "#F6EFE3",
+              "anchor": "left",
+              "x": 150,
+              "y": 700,
+              "shadow": {
+                "x": 0,
+                "y": 10,
+                "blur": 40,
+                "color": "#000000C0"
+              },
+              "animate": [
+                {
+                  "from": {
+                    "scale": 1.6,
+                    "opacity": 0,
+                    "blur": 16
+                  },
+                  "to": {
+                    "scale": 1,
+                    "opacity": 1,
+                    "blur": 0
+                  },
+                  "at": 1.15,
+                  "duration": 0.25,
+                  "ease": "outExpo"
+                }
+              ]
+            },
+            {
+              "text": "2D at 1080p",
+              "font": "Martian Mono",
+              "weight": 600,
+              "axes": {
+                "wdth": 85
+              },
+              "size": 64,
+              "color": "#F6EFE3",
+              "anchor": "left",
+              "x": 1250,
+              "y": 735,
+              "shadow": {
+                "x": 0,
+                "y": 4,
+                "blur": 18,
+                "color": "#000000D0"
+              },
+              "enter": {
+                "preset": "fadeUp",
+                "delay": 1.2
+              },
+              "lineHeight": 1.3
+            }
+          ]
+        },
+        {
+          "component": "grain",
+          "props": {}
+        }
+      ]
+    },
+    {
+      "id": "name",
+      "duration": 5.0,
+      "background": "#070A12",
+      "layers": [
+        {
+          "shader": "mesh-gradient",
+          "uniforms": {
+            "color1": [
+              0.98,
+              0.66,
+              0.3
+            ],
+            "color2": [
+              0.78,
+              0.42,
+              0.55
+            ],
+            "color3": [
+              0.16,
+              0.25,
+              0.62
+            ],
+            "color4": [
+              0.85,
+              0.24,
+              0.12
+            ],
+            "speed": 0.6,
+            "warp": 1.2,
+            "softness": 1.0,
+            "grain": 0.6
+          }
+        },
+        {
+          "shape": "rect",
+          "x": "=60 + 1900*clamp((t-0.2)/1.6,0,1)",
+          "y": 540,
+          "width": 3200,
+          "height": 1400,
+          "fill": "#05060A",
+          "anchor": "left"
+        },
+        {
+          "id": "namecut",
+          "layers": [
+            {
+              "shape": "rect",
+              "width": 2400,
+              "height": 1400,
+              "fill": "#FFFFFF"
+            },
+            {
+              "text": "ANIKIT",
+              "font": "Big Shoulders Stencil",
+              "weight": 900,
+              "size": 470,
+              "letterSpacing": "-0.01em",
+              "color": "#000000",
+              "anchor": "left",
+              "x": "=90 - t*14",
+              "y": 290
+            },
+            {
+              "text": "VIDEO",
+              "font": "Big Shoulders Stencil",
+              "weight": 900,
+              "size": 470,
+              "letterSpacing": "-0.01em",
+              "color": "#000000",
+              "anchor": "left",
+              "x": "=640 - t*22",
+              "y": 680
+            },
+            {
+              "text": "}",
+              "typeset": false,
+              "font": "Big Shoulders Stencil",
+              "weight": 900,
+              "size": 470,
+              "color": "#000000",
+              "anchor": "left",
+              "x": "=1560 - t*14",
+              "y": 290,
+              "animate": [
+                {
+                  "from": {
+                    "opacity": 0,
+                    "y": 200
+                  },
+                  "to": {
+                    "opacity": 1,
+                    "y": 290
+                  },
+                  "at": 2.5,
+                  "duration": 0.35,
+                  "ease": "outBack"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "matte": {
+            "layer": "namecut",
+            "mode": "luma"
+          },
+          "layers": [
+            {
+              "component": "paper",
+              "props": {
+                "stock": "cotton",
+                "color": "#2A2630",
+                "tooth": 0.8,
+                "fibers": 0.8,
+                "vignette": 0.5
+              }
+            }
+          ]
+        },
+        {
+          "layers": [
+            {
+              "text": "ANIKIT",
+              "font": "Big Shoulders Stencil",
+              "weight": 900,
+              "size": 470,
+              "letterSpacing": "-0.01em",
+              "color": "#FFE2B0",
+              "anchor": "left",
+              "x": "=90 - t*14",
+              "y": 290
+            },
+            {
+              "text": "VIDEO",
+              "font": "Big Shoulders Stencil",
+              "weight": 900,
+              "size": 470,
+              "letterSpacing": "-0.01em",
+              "color": "#FFE2B0",
+              "anchor": "left",
+              "x": "=640 - t*22",
+              "y": 680
+            },
+            {
+              "text": "}",
+              "typeset": false,
+              "font": "Big Shoulders Stencil",
+              "weight": 900,
+              "size": 470,
+              "color": "#FFE2B0",
+              "anchor": "left",
+              "x": "=1560 - t*14",
+              "y": 290,
+              "animate": [
+                {
+                  "from": {
+                    "opacity": 0,
+                    "y": 200
+                  },
+                  "to": {
+                    "opacity": 1,
+                    "y": 290
+                  },
+                  "at": 2.5,
+                  "duration": 0.35,
+                  "ease": "outBack"
+                }
+              ]
+            }
+          ],
+          "blur": 40,
+          "blend": "add",
+          "opacity": "=0.4*clamp((t-0.4)/1.4,0,1) + (t > 2.5 ? 0.3*level : 0)"
+        },
+        {
+          "shape": "rect",
+          "x": "=60 + 1900*clamp((t-0.2)/1.6,0,1)",
+          "y": 540,
+          "width": 20,
+          "height": 1200,
+          "fill": "linear-gradient(90deg, #2B1808, #F2CF8A, #7A5222, #1A0E04)",
+          "shadow": {
+            "x": 18,
+            "y": 0,
+            "blur": 24,
+            "color": "#000000B0"
+          },
+          "opacity": "=t < 1.9 ? 1 : max(0, 1-(t-1.9)*3)"
+        },
+        {
+          "text": "One spec in. One film out.",
+          "font": "Martian Mono",
+          "weight": 600,
+          "axes": {
+            "wdth": 85
+          },
+          "size": 46,
+          "color": "#EDE6DA",
+          "anchor": "left",
+          "x": 150,
+          "y": 905,
+          "enter": {
+            "preset": "fadeUp",
+            "delay": 1.2
+          }
+        },
+        {
+          "text": "Same spec, same film, byte for byte.",
+          "font": "Martian Mono",
+          "weight": 400,
+          "axes": {
+            "wdth": 85
+          },
+          "size": 36,
+          "color": "#A69E92",
+          "anchor": "left",
+          "x": 150,
+          "y": 962,
+          "enter": {
+            "preset": "fadeUp",
+            "delay": 1.5
+          }
+        }
+      ],
+      "camera": {
+        "animate": [
+          {
+            "from": {
+              "zoom": 1.0
+            },
+            "to": {
+              "zoom": 1.03
+            },
+            "duration": 5,
+            "ease": "inOutSine"
+          }
+        ]
+      }
+    }
+  ]
+}

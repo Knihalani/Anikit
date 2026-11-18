@@ -1,0 +1,522 @@
+{
+  "name": "b-launch",
+  "tags": [
+    "product-launch",
+    "motion-design"
+  ],
+  "refs": [
+    "coinbase-system-update",
+    "jpmorgan-payments",
+    "morph-studio-xreal-1s-2025"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 3,
+      "typography": 4,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 4,
+      "craft": 3,
+      "originality": 4
+    },
+    "overall": 3.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find one visual idea and hold it across the film instead of cycling through unrelated effect demos",
+      "Compose every frame: kill the empty grey frame and give each shot a focal subject, density and depth",
+      "Develop the typography beyond a stencil font with a gradient glow and JSON text as decoration; integrate the type with image and light the way A and D integrate the product with material",
+      "Frames are mostly empty and slide-like. Every frame needs a composed image, not a text crawl on a blank ground",
+      "Pick one palette and one material world. The orange glow, flat grey and pastel gradient make it look like three templates stitched together",
+      "Replace 'show the JSON' with a real visual metaphor, and make type, image and motion work together the way B builds a world from its glyphs",
+      "No central visual idea: it lists features (JSON keys, simulation) instead of building a world like A's single art-directed material system",
+      "Composition is sparse and slide-like, with empty frames and cropped strings; every frame needs to work as a poster with layered density",
+      "Light, texture and palette change arbitrarily from frame to frame; commit to one deliberate palette and real lighting"
+    ],
+    "tells": [
+      "Self-promo for an automated 'spec in, film out' video tool ('One spec in. One film out. Same spec, same film, byte for byte.'), so the film is likely the tool's own output",
+      "Frame 2 is almost entirely an empty grey field with a JSON string cropped along the top edge: dead frame, no subject",
+      "The look jumps from frame to frame (orange stage-light bevel, flat grey, ink-fluid sim, dark stencil end card) with no unified art direction",
+      "The end card uses the stock pattern: a stencil-display wordmark with a gradient glow over a small monospace tagline on a dark ground",
+      "The fluid sim is labelled 'fluid, cloth, particles: simulated', which is an effect with no subject, a feature list shown as a demo",
+      "Two of the five frames are mostly empty: a flat grey frame with one line of JSON crawling along the top banner",
+      "The palette changes from frame to frame (orange gradient, then grey, then dark with a pastel gradient fill), so the piece has no consistent colour world",
+      "A generic fluid-sim swirl is labelled with a plain monospace caption 'fluid, cloth, particles: simulated'. The effect has no subject",
+      "The end card is a stencil display face with a soft pastel gradient glow, plus a slide-style tagline and sub-tagline in small mono: 'One spec in. One film out.'",
+      "The visual idea is literal: a spec-to-video tool shows its own JSON spec as the picture. The glowing orange '{\"music\":' bar with a rod has amateur bevel-and-glow lighting",
+      "Frame 2 is almost entirely empty grey ground with a cropped JSON string in a band: little happening",
+      "Text-as-slide structure: the JSON key strings are just scrolled across frames, a literal 'spec in, film out' explanation of the product",
+      "Ending is a stencil-face logo with a generic gradient fill and glow over a dark ground, plus a small monospace tagline: a stock end card",
+      "The fluid-sim frame is an effect with no subject, captioned 'fluid, cloth, particles: simulated', so it demonstrates a feature rather than an idea",
+      "Light is a flat orange gradient and a bevelled band; the frames use unrelated looks (orange bevel, grey void, white sim, dark gradient) with no unifying system"
+    ]
+  },
+  "refs_summary": {
+    "coinbase-system-update": {
+      "overall": 7,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "jpmorgan-payments": {
+      "overall": 7.5,
+      "judged_professional": "3/3",
+      "mean_rank": 1.33
+    },
+    "morph-studio-xreal-1s-2025": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    }
+  },
+  "ref_mean": 7.0,
+  "delta": -3.38,
+  "trials": [
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "coinbase-system-update",
+        "C": "candidate",
+        "D": "jpmorgan-payments"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "High-end fluid and glass simulation: the XREAL glasses are rebuilt as a translucent, organic water-shell with believable refraction, caustics and inner bubbles",
+              "Real variety between frames: an exploding spiral, a product hero on a liquid surface, a macro of the material and a cellular/neural tableau, which suggests choreographed transformation rather than one repeated layout",
+              "The product is turned into a material metaphor (liquid as 'evolution'), carried consistently across shots",
+              "Weaknesses: the monochrome electric-blue palette is the default 'tech launch' look, and the type is a plain bold grotesk wordmark plus a widely tracked 'EVOLUTION' set like a slide"
+            ],
+            "gaps": [
+              "Break the one-note blue: add a counter-colour or temperature shift so the palette isn't the stock tech-launch look",
+              "Give the type an idea of its own (for example letterforms that refract or form from the liquid) instead of a flat tracked-caps overlay",
+              "Push the concept past 'product made of water' toward a more specific, surprising metaphor that D-level art direction would commit to"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "One strict system: every image is made of monospaced ASCII glyphs on a saturated International Klein-style blue, which fits a crypto/payments subject well",
+              "Frame variety with clear choreography: a running figure, a coin trailing $ particles, a glyph planet with orbit rings, padlock arrays beside code, and a grid of spinning coins",
+              "Type is the image itself, with small UI tags ('Crypto is...', 'Faster') as punctuation, a deliberate typographic point of view",
+              "Weaknesses: ASCII-art rendering is now a widely available effect, the depth is flat by design, and some frames (the coin grid) read as a texture fill rather than a composed poster"
+            ],
+            "gaps": [
+              "Add depth or tonal layering within the ASCII system (density gradients, focus, scale shifts) so frames don't all sit on one flat plane",
+              "Make the ASCII technique more than a filter: let the glyph choice carry meaning frame to frame and build a narrative payoff",
+              "Tighten composition on the busier frames (coin grid, padlock array) so each has one clear focal hierarchy as D's frames do"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 5,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "Self-promo for an automated 'spec in, film out' video tool ('One spec in. One film out. Same spec, same film, byte for byte.'), so the film is likely the tool's own output",
+              "Frame 2 is almost entirely an empty grey field with a JSON string cropped along the top edge: dead frame, no subject",
+              "The look jumps from frame to frame (orange stage-light bevel, flat grey, ink-fluid sim, dark stencil end card) with no unified art direction",
+              "The end card uses the stock pattern: a stencil-display wordmark with a gradient glow over a small monospace tagline on a dark ground",
+              "The fluid sim is labelled 'fluid, cloth, particles: simulated', which is an effect with no subject, a feature list shown as a demo"
+            ],
+            "gaps": [
+              "Find one visual idea and hold it across the film instead of cycling through unrelated effect demos",
+              "Compose every frame: kill the empty grey frame and give each shot a focal subject, density and depth",
+              "Develop the typography beyond a stencil font with a gradient glow and JSON text as decoration; integrate the type with image and light the way A and D integrate the product with material"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Strong art direction: a warm sand-and-gold palette with real raking window light and long, consistent soft shadows across every shot",
+              "Material craft: glass-edged gold coins, translucent tablet layers, brushed wood-and-gold tile inlays with emissive seams, and convincing caustics and reflections",
+              "Every frame works as a poster, and the payment abstractions are made physical and premium (stacked coins as a security motif, a chart turned into sculpted ribbons)",
+              "The UI typography is restrained and on brand (J.P. Morgan serif, small-caps labels) and is integrated into the objects rather than overlaid",
+              "Minor: the 'glassy icon on a glowing disc' motif is close to current fintech house style"
+            ],
+            "gaps": [
+              "Add one moment of real surprise or narrative escalation; the frames are beautiful but stay in the same register",
+              "Develop the icon language (padlock, clock, cart) beyond generic UI glyphs so it carries some of the idea",
+              "Vary scale and camera more aggressively (extreme macro or a wide establishing shot) to break the consistent three-quarter tabletop view"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 29.2,
+        "cost_usd": 0.3650504,
+        "tokens": 74628,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "coinbase-system-update",
+        "C": "jpmorgan-payments",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Real simulation work: the glasses dissolve into liquid and reform as a translucent fluid cast, with believable caustics, refraction and spray",
+              "Frames vary a lot: an extreme macro of a cylindrical form, a hero product shot, a full liquid-cast glasses frame, a close-up of material and an abstract bubble field. That points to a planned shot list, not one looping effect",
+              "The lighting has a key light and rim highlights on the glass and water, and it reads as one consistent material world",
+              "The weak spot is the type: a bold grotesk 'XREAL' plus a thin '1S', and a tracked-caps 'EVOLUTION' floating in the middle of the frame. Both are close to default-tasteful",
+              "The all-blue palette is the standard tech-launch look; 'liquid = fluidity / evolution' is a familiar metaphor in product films"
+            ],
+            "gaps": [
+              "The typography has no idea of its own. The tracked 'EVOLUTION' could appear in any launch film. Build the type into the liquid, for example letterforms that form, refract or break apart in the sim, the way B's type is made of the image itself",
+              "The monochrome blue is the category default. Add a second, unexpected colour or temperature, such as warm light through the water, to make it distinctive",
+              "Tie the liquid metaphor to something specific about the product (display, optics, weight) instead of general 'fluid evolution' spectacle"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 9
+            },
+            "tells": [
+              "One strong, specific concept: the whole world is built from ASCII and code glyphs ($, <, #, 0/1), so the type is the image. That fits a payments/crypto subject exactly",
+              "The palette is bold and deliberate: International Klein-style blue with white glyphs, kept consistent and unusual",
+              "Every frame is a different structure: a running figure, a coin trailing a stream of glyphs, a planet with orbital rings of digits, a padlock grid beside source code, a field of rotating coins. Choreography is clear: things transform and multiply",
+              "Small UI captions ('<<Crypto is...', 'Faster') are used as wit, not as slide copy",
+              "There is texture in the glyph density: tone is built from character weight, which reads as halftone depth on a flat ground"
+            ],
+            "gaps": [
+              "The flat blue ground, with no shift in light or depth between scenes, gets monotonous over a longer cut. Add moments of value or scale change to give it rhythm",
+              "Some icons (padlocks, coin-grid frame) fall back on literal crypto iconography. Push for one more surprising visual metaphor",
+              "The orbit-planet and coin-grid frames are less dense and less composed than the running-figure opener. Hold every frame to that standard"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "The art direction is excellent: warm cream and gold, hard window light with long cast shadows, glass and brushed-metal materials, and a paper-grain ground. It reads as a deliberate luxury world",
+              "The objects are precisely modelled (layered glass waveforms, a coin stack with motion echoes, a parquet grid with gold seams), with consistent physical light across the series",
+              "Camera angles and objects change from shot to shot, and the echo trails imply clear motion beats",
+              "The idea is fairly literal: a payments brand shown through coins, phones, padlocks and dashboards, with generic iconography (clock, lock, cart) on the glass",
+              "The UI type ('$2.45M', 'MONTHLY SUMMARY') is set like interface, not as an expressive typographic idea"
+            ],
+            "gaps": [
+              "The concept stays at 'premium objects stand in for features' (lock = security, coin = payment). It needs one idea a viewer would remember, the way B builds a whole world from its subject",
+              "The icons (clock, lock, cart) are stock glyphs and cheapen very refined materials. Design custom marks or drop them",
+              "The typography is functional UI. Give the type a role in the film (scale, material, light) so it matches the quality of the 3D work"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "Two of the five frames are mostly empty: a flat grey frame with one line of JSON crawling along the top banner",
+              "The palette changes from frame to frame (orange gradient, then grey, then dark with a pastel gradient fill), so the piece has no consistent colour world",
+              "A generic fluid-sim swirl is labelled with a plain monospace caption 'fluid, cloth, particles: simulated'. The effect has no subject",
+              "The end card is a stencil display face with a soft pastel gradient glow, plus a slide-style tagline and sub-tagline in small mono: 'One spec in. One film out.'",
+              "The visual idea is literal: a spec-to-video tool shows its own JSON spec as the picture. The glowing orange '{\"music\":' bar with a rod has amateur bevel-and-glow lighting"
+            ],
+            "gaps": [
+              "Frames are mostly empty and slide-like. Every frame needs a composed image, not a text crawl on a blank ground",
+              "Pick one palette and one material world. The orange glow, flat grey and pastel gradient make it look like three templates stitched together",
+              "Replace 'show the JSON' with a real visual metaphor, and make type, image and motion work together the way B builds a world from its glyphs"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.7,
+        "cost_usd": 0.1706878,
+        "tokens": 74752,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "jpmorgan-payments",
+        "B": "coinbase-system-update",
+        "C": "morph-studio-xreal-1s-2025",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Controlled raking window light with soft gobo shadows that stays consistent across every frame: deliberate art direction, not default HDRI",
+              "Materials are physically convincing: brushed gold bevels, frosted glass, wood-grain tiles with inlaid gold seams, paper-textured ground",
+              "Each frame is a different object and composition (chart ribbons, coin on phone, floor tile, glass tablet, coin stack), and they share one visual system, which implies a choreographed sequence of reveals",
+              "Brand typography (J.P. Morgan wordmark, $2.45M UI) sits inside the objects rather than on top of the frame",
+              "Weaknesses: the gold-and-glass 'premium fintech' language is a well-worn genre, and the icons (lock, clock, cart) are literal feature metaphors"
+            ],
+            "gaps": [
+              "The visual metaphors are literal (lock = security, chart = growth); find one central idea that only this brand could own",
+              "Typography is limited to brand UI on screens, with no expressive type moment, scale contrast or title design",
+              "The palette and material language are close to many Apple-style fintech spots; push one unexpected material or colour break to make it memorable"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 8,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "A committed single-system aesthetic: everything (figure, coin, planet, padlocks, coin grid) is built from ASCII/monospace glyphs, so the type is the image",
+              "Bold, deliberate International Klein-style blue with white, held all the way through as a constraint, not used as a default accent",
+              "Frames vary widely (running figure, flow field with $ streams, orbiting glyph planet, code-plus-padlock layout, grid of rotating coins), which shows choreography and a range of scale",
+              "Small label callouts ('<<Crypto is...', 'Faster') read as intentional typographic punctuation",
+              "Weaknesses: ASCII rendering is now a common plugin/shader look, the crypto iconography (B, $, padlocks) is literal, and the frames are flat with no depth or light"
+            ],
+            "gaps": [
+              "The ASCII shader risks reading as an effect rather than an idea; let the glyph content itself carry meaning or narrative",
+              "Light and depth are flat; layering, depth of field or density shifts would give the frames A's sense of space and material",
+              "The crypto imagery (coins, locks, dollar signs) is the obvious vocabulary; a more surprising subject would raise memorability"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "High-end liquid/organic simulation (glasses formed from fluid, membrane, tendrils, bubbles), with refraction and caustics that need real CG work",
+              "Varied camera distances and framings across frames (extreme macro, hero product, abstract cellular wide), implying a built-up, choreographed reveal",
+              "A consistent narrative of the product 'evolving' out of organic matter",
+              "Weaknesses: monochrome electric-blue-on-black is the default tech-launch palette; 'E V O L U T I O N' in widely tracked thin caps centred over the image is a generic tell; the XREAL / 1S lockup is placed like a slide"
+            ],
+            "gaps": [
+              "The typography is generic (centred tracked thin caps, a plain bold-sans lockup) and has no relationship to the fluid imagery; it needs type that is built into the material",
+              "The all-blue palette is the stock tech-launch look; a deliberate secondary colour or temperature shift would give it identity",
+              "The 'liquid evolution' idea is familiar from countless product launches; it needs a specific conceptual hook about what AR glasses do"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "Frame 2 is almost entirely empty grey ground with a cropped JSON string in a band: little happening",
+              "Text-as-slide structure: the JSON key strings are just scrolled across frames, a literal 'spec in, film out' explanation of the product",
+              "Ending is a stencil-face logo with a generic gradient fill and glow over a dark ground, plus a small monospace tagline: a stock end card",
+              "The fluid-sim frame is an effect with no subject, captioned 'fluid, cloth, particles: simulated', so it demonstrates a feature rather than an idea",
+              "Light is a flat orange gradient and a bevelled band; the frames use unrelated looks (orange bevel, grey void, white sim, dark gradient) with no unifying system"
+            ],
+            "gaps": [
+              "No central visual idea: it lists features (JSON keys, simulation) instead of building a world like A's single art-directed material system",
+              "Composition is sparse and slide-like, with empty frames and cropped strings; every frame needs to work as a poster with layered density",
+              "Light, texture and palette change arbitrarily from frame to frame; commit to one deliberate palette and real lighting"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.9,
+        "cost_usd": 0.16753980000000002,
+        "tokens": 74597,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "The 'ink' shot opens on a nearly empty grey field under the tape banner. Roughly a second of dead frame before the word appears.",
+        "The end card sits static in the dark for a long hold before it lights. Per-second change falls to 16\u201320 over the last 4 s, and the 6.6 s shot is not filled.",
+        "The JSON banner in the ink shot is cropped hard at the top edge, and its strings clip off-frame mid-word ('ook':, 'auto'). It reads as an accident rather than a framing choice.",
+        "The caption 'fluid, cloth, particles: simulated' overlaps the fluid sim, and the 'simulated' line runs over the ink.",
+        "In the teal shot, the stencil type moves on the tape at a constant rate as it passes the rod. There is no ease or weight. The ring flash on contact is a stock UI pulse.",
+        "The palette swaps completely every shot (orange, grey/navy, teal, dark gradient). The film only holds together through the type and the rod.",
+        "Sound: the transitions are generic white-noise risers/sweeps that cut off with a brick-wall edge at about 19.5 kHz. The bed is a static low drone with sparse harmonics. The click train at 5\u20137.5 s sounds procedural, not designed foley."
+      ],
+      "gaps": [
+        "Pacing and arc: energy peaks early (about 5 s and 8 s) and the back half sags into long holds. Nothing builds to a climax at 60\u201380% before the logo release. The cuts need to be tightened to about 2 s, and the dead openings on the ink and end shots need to go.",
+        "Motion quality: tape travel and reveals are mostly linear translates and fades. There is no overlap, follow-through or physical weight when the rod 'reads' the stencil. Transitions between shots are cuts rather than built handoffs, so the playhead or tape idea is never carried into the next shot.",
+        "Sound design: noise sweeps and a drone with few partials, with little layering or dynamic contour. Each picture beat needs its own designed sound (the stencil tick, the ink bloom, the light-up). There should also be a musical build instead of a repeated riser template."
+      ]
+    },
+    "meta": {
+      "seconds": 24.3,
+      "cost_usd": 0.17549019999999999,
+      "tokens": 75010,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 20.0s, 5 shots, median 3.43s, longest 6.57s\nper-second change: [55.9, 58.5, 104.5, 23.9, 153.9, 28.3, 28.9, 106.5, 28.5, 27.2, 29.8, 59.2, 42.0, 21.3, 51.1, 41.8, 17.0, 20.4, 16.2]\nPACE: FAIL \u2014 longest shot 6.6s > 2.5s; median shot 3.4s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 3,
+    "typography": 4,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 4.5,
+    "craft": 4.5,
+    "originality": 4,
+    "sound": 5
+  },
+  "full_overall": 4.0,
+  "cost_usd": 0.879,
+  "judge_seconds": 115.1,
+  "verdict": "FAIL"
+}

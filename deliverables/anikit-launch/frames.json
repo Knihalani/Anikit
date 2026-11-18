@@ -1,0 +1,72 @@
+{
+  "size": "16:9",
+  "fps": 30,
+  "scenes": [
+    {
+      "duration": 2.5,
+      "background": "#0A0705",
+      "layers": [
+        { "shape": "circle", "x": 1060, "y": 520, "width": 1700, "height": 1300,
+          "fill": "radial-gradient(#FFF0CC, #F7A646, #6B2A0A, #0A0705)" },
+        { "id": "roll", "rotation": -9, "x": 960, "y": 560, "width": 1920, "height": 1080,
+          "layers": [
+            { "id": "holes", "layers": [
+              { "shape": "rect", "x": 960, "y": 540, "width": 3200, "height": 430, "fill": "#FFFFFF" },
+              { "text": "{\"music\": \"piano\", \"sky\": \"dusk\", \"fluid\": \"ink\",", "font": "Big Shoulders Stencil", "weight": 800,
+                "size": 300, "color": "#000000", "anchor": "left", "x": "=1180 - t*420", "y": 548 }
+            ] },
+            { "matte": { "layer": "holes", "mode": "luma" }, "layers": [
+              { "component": "paper", "props": { "stock": "cotton", "color": "#E9C99A", "tooth": 0.8, "fibers": 0.8, "vignette": 0 }, "scale": 1.8 },
+              { "shape": "rect", "x": 1060, "y": 540, "width": 3200, "height": 430, "blend": "multiply",
+                "fill": "linear-gradient(90deg, #4A1E08, #E39B52, #FFE3B5, #E39B52, #4A1E08)" },
+              { "shape": "rect", "x": 960, "y": 330, "width": 3200, "height": 12, "fill": "#2A1206", "opacity": 0.55, "blur": 4 },
+              { "shape": "rect", "x": 960, "y": 750, "width": 3200, "height": 12, "fill": "#2A1206", "opacity": 0.55, "blur": 4 }
+            ] },
+            { "text": "{\"music\": \"piano\", \"sky\": \"dusk\", \"fluid\": \"ink\",", "font": "Big Shoulders Stencil", "weight": 800,
+              "size": 300, "color": "#FFC77A", "anchor": "left", "x": "=1180 - t*420", "y": 548, "blur": 22, "blend": "add", "opacity": 0.55 },
+            { "shape": "rect", "x": 1150, "y": 540, "width": 18, "height": 700, "fill": "linear-gradient(90deg, #3B2410, #E8C27A, #6E4A1E)", "shadow": { "x": 14, "y": 0, "blur": 20, "color": "#000000AA" } }
+          ] },
+        { "component": "grain", "props": {} }
+      ]
+    },
+    {
+      "duration": 2.5,
+      "background": "#07090C",
+      "layers": [
+        { "shape": "rect", "x": 960, "y": 860, "width": 1920, "height": 300,
+          "fill": "linear-gradient(90deg, #120804, #F3A54A, #FFF2D6, #F3A54A, #120804)" },
+        { "id": "holes2", "layers": [
+          { "shape": "rect", "x": 960, "y": 860, "width": 1920, "height": 260, "fill": "#FFFFFF" },
+          { "text": "\"sound\": \"auto\",  \"music\": \"strings\",", "font": "Martian Mono", "weight": 800, "axes": { "wdth": 75 },
+            "size": 170, "color": "#000000", "anchor": "left", "x": "=600 - t*300", "y": 865 }
+        ] },
+        { "matte": { "layer": "holes2", "mode": "luma" }, "layers": [
+          { "component": "paper", "props": { "stock": "paper", "color": "#D9D2C4", "tooth": 0.7, "fibers": 0.6, "vignette": 0 } },
+          { "shape": "rect", "x": 960, "y": 860, "width": 1920, "height": 260, "blend": "multiply",
+            "fill": "linear-gradient(90deg, #22140C, #B98B5A, #F7E9D0, #B98B5A, #22140C)" }
+        ] },
+        { "shape": "rect", "x": 760, "y": 860, "width": 10, "height": 330, "fill": "#C9A35E" },
+        { "text": "The roll plays itself.", "font": "Big Shoulders", "weight": 800, "size": 150, "color": "#EDE6DA", "anchor": "left", "x": 120, "y": 360 },
+        { "component": "grain", "props": {} }
+      ]
+    },
+    {
+      "duration": 2.5,
+      "background": "#050403",
+      "layers": [
+        { "shape": "circle", "x": 1300, "y": 380, "width": 1900, "height": 1500,
+          "fill": "radial-gradient(#FFF6DE, #FFB55C, #7A300C, #050403)" },
+        { "id": "holes3", "layers": [
+          { "shape": "rect", "x": 960, "y": 540, "width": 2400, "height": 1300, "fill": "#FFFFFF", "rotation": 4 },
+          { "text": "\"pia", "font": "Big Shoulders Stencil", "weight": 900, "size": 980, "color": "#000000", "anchor": "left", "x": "=-80 - t*120", "y": 600, "rotation": 4 }
+        ] },
+        { "matte": { "layer": "holes3", "mode": "luma" }, "layers": [
+          { "component": "paper", "props": { "stock": "cotton", "color": "#E2BE8C", "tooth": 0.9, "fibers": 0.9, "vignette": 0.5 } },
+          { "shape": "rect", "x": 960, "y": 540, "width": 1920, "height": 1080, "blend": "multiply",
+            "fill": "radial-gradient(#FFE6BC, #C27A3A, #2A1004)" }
+        ] },
+        { "component": "grain", "props": {} }
+      ]
+    }
+  ]
+}

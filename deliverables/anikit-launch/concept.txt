@@ -1,0 +1,26 @@
+ANIKIT VIDEO - launch film, 20 s, 16:9, 96 bpm (8 bars x 2.5 s)
+
+Noun: a spec (text an agent writes).  Verb: performs it - picture and sound, the same way every time.
+Physical cousin: the player-piano roll. Text punched into paper; a machine reads it at a brass bar and plays it,
+identically on every play (= deterministic: same spec, byte-identical film).
+
+Device: LIGHT THROUGH THE PUNCHED SPEC. Real spec lines ("music": "piano", "shader": "sky", "look": "ink",
+"sound": "auto", "music": "orchestral") are cut out of a paper roll in a stencil face (Big Shoulders Stencil, so
+the counters hold, as a real roll would need). Whatever is behind the holes is what the line performs, and it
+grows every beat:
+  0.0  roll   - lamplight through {"music": "piano", ; a hand-written piano part plays bars 1-2 and each note
+                flares the reading bar (the roll plays itself). Macro pull-back. Amber on black.
+  2.5  sky    - zoom through the letters: "shader": "sky" - a dusk sky shader seen only through the holes. Violet.
+  5.0  ink    - the roll above pale water; the word "ink" dissolves in a real fluid simulation. High-key, indigo
+                + vermilion. Caption: fluid, cloth, particles: simulated.
+  8.75 sound  - ink-bleed into a vertical roll: "sound": "auto", "music": "orchestral" crosses the bar; every
+                melody note fires a ring of light (onNotes). Teal + gold. "Real instruments. Sound from the picture."
+ 12.5 speed  - whip; the whole roll races (every line of the film at once, the film's colours strobing behind),
+                hit on bar 6, slams to a stop: 100-400 fps / 2D at 1080p.
+ 15.0 name   - hit on bar 7; the bar sweeps the last line, ANIKIT VIDEO, lighting it with every colour of the
+                film; the closing } lands on bar 8. "One spec in. One film out. Same spec, same film, byte for byte."
+Colour arc: amber -> dusk violet -> pale water/indigo/vermilion -> teal/gold -> full spectrum -> spectrum in the name.
+Sound: orchestral score (piano melody), hand-written piano bars 1-2, hits @bar6 @bar7, "sound": "auto".
+Rejected families avoided: chrome type on a cyc, dominoes/tiles, fog terrain, cream-paper editorial,
+a literal JSON -> arrow -> MP4 diagram. A ray-traced "light" beat (gobo words on a table) was tried and cut:
+the gobo text would not render legibly in the time available.
