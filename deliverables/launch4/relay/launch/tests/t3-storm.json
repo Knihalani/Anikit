@@ -1,0 +1,436 @@
+{
+ "size": "16:9",
+ "defs": {
+  "row": {
+   "x": "$x",
+   "y": "$y",
+   "anchor": "topLeft",
+   "width": 1920,
+   "height": 1080,
+   "layers": [
+    {
+     "shape": "rect",
+     "x": 0,
+     "y": 0,
+     "anchor": "topLeft",
+     "width": 1200,
+     "height": 168,
+     "radius": 28,
+     "fill": "#17253B",
+     "stroke": "#FFFFFF14",
+     "strokeWidth": 2
+    },
+    {
+     "shape": "rect",
+     "x": 0,
+     "y": 0,
+     "anchor": "topLeft",
+     "width": 8,
+     "height": 168,
+     "radius": 4,
+     "fill": "#FFB23E",
+     "start": "$read",
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.25
+     }
+    },
+    {
+     "text": "$from",
+     "font": "Host Grotesk",
+     "weight": 650,
+     "size": 38,
+     "color": "#EEF2F8",
+     "x": 44,
+     "y": 30,
+     "anchor": "topLeft"
+    },
+    {
+     "text": "$time",
+     "font": "Host Grotesk",
+     "weight": 500,
+     "size": 30,
+     "features": "tnum",
+     "color": "#8B9BB3",
+     "x": 1160,
+     "y": 34,
+     "anchor": "topRight"
+    },
+    {
+     "text": "$subject",
+     "font": "Host Grotesk",
+     "weight": 550,
+     "size": 32,
+     "color": "#DCE3EE",
+     "x": 44,
+     "y": 80,
+     "anchor": "topLeft"
+    },
+    {
+     "text": "$snip",
+     "font": "Host Grotesk",
+     "weight": 400,
+     "size": 28,
+     "color": "#7F8FA8",
+     "x": 44,
+     "y": 122,
+     "anchor": "topLeft"
+    }
+   ]
+  }
+ },
+ "scenes": [
+  {
+   "duration": 3,
+   "background": "#0E1A2E",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.6,
+       "y": 300
+      },
+      "to": {
+       "zoom": 0.9,
+       "y": -150
+      },
+      "duration": 3,
+      "ease": "inOutCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "shader": "uniform float hour; // = 0.0\nvoid mainImage(out vec4 o, in vec2 f){ vec2 uv=f/iResolution.xy; float k=clamp(hour,0.0,1.0); vec3 top=mix(vec3(0.055,0.10,0.18),vec3(0.80,0.85,0.90),k); vec3 bot=mix(vec3(0.09,0.15,0.25),vec3(1.0,0.86,0.66),k); float g=smoothstep(0.0,1.0,1.0-uv.y); vec3 c=mix(top,bot,pow(1.0-uv.y,1.6)); c+= (k*0.25)*vec3(1.0,0.6,0.3)*exp(-6.0*uv.y)*(1.0-k*0.6); o=vec4(c,1.0);}",
+     "uniforms": {
+      "hour": 0.0
+     }
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 280,
+      "y": 860,
+      "from": "Marco Ruiz, +20",
+      "time": "3:12 AM",
+      "subject": "Re: Offsite logistics",
+      "snip": "Please remove me from this list.",
+      "read": 0.3
+     },
+     "start": 0.0,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 360,
+      "y": 790,
+      "from": "Priya Shah",
+      "time": "3:13 AM",
+      "subject": "Re: Offsite logistics",
+      "snip": "Same \u2014 please remove me.",
+      "read": 0.42
+     },
+     "start": 0.12,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 440,
+      "y": 720,
+      "from": "Tom Becker",
+      "time": "3:14 AM",
+      "subject": "Re: Offsite logistics",
+      "snip": "Why am I on this?",
+      "read": 0.54
+     },
+     "start": 0.24,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 320,
+      "y": 650,
+      "from": "Aiko Mori, +23",
+      "time": "3:15 AM",
+      "subject": "Re: Offsite logistics",
+      "snip": "Stop replying all.",
+      "read": 0.6599999999999999
+     },
+     "start": 0.36,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 400,
+      "y": 580,
+      "from": "Sam Ortiz",
+      "time": "3:16 AM",
+      "subject": "Re: Re: Offsite logistics",
+      "snip": "+1 remove me",
+      "read": 0.78
+     },
+     "start": 0.48,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 280,
+      "y": 510,
+      "from": "Lena Fischer",
+      "time": "3:17 AM",
+      "subject": "Re: Re: Offsite logistics",
+      "snip": "Who added this list?",
+      "read": 0.8999999999999999
+     },
+     "start": 0.6,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 360,
+      "y": 440,
+      "from": "Raj Patel, +26",
+      "time": "3:18 AM",
+      "subject": "Re: Re: Offsite logistics",
+      "snip": "Please take me off.",
+      "read": 1.02
+     },
+     "start": 0.72,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 440,
+      "y": 370,
+      "from": "Chloe Martin",
+      "time": "3:19 AM",
+      "subject": "Re: Re: Offsite logistics",
+      "snip": "Unsubscribe",
+      "read": 1.14
+     },
+     "start": 0.84,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 320,
+      "y": 300,
+      "from": "Ben Adler",
+      "time": "3:20 AM",
+      "subject": "Re: Re: Re: Fwd: Offsite logistics",
+      "snip": "Please remove me from this list.",
+      "read": 1.26
+     },
+     "start": 0.96,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 400,
+      "y": 230,
+      "from": "Nora Kim, +29",
+      "time": "3:21 AM",
+      "subject": "Re: Re: Re: Fwd: Offsite logistics",
+      "snip": "Same \u2014 please remove me.",
+      "read": 1.3800000000000001
+     },
+     "start": 1.08,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 280,
+      "y": 160,
+      "from": "Marco Ruiz",
+      "time": "3:22 AM",
+      "subject": "Re: Re: Re: Fwd: Offsite logistics",
+      "snip": "Why am I on this?",
+      "read": 1.5
+     },
+     "start": 1.2,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 360,
+      "y": 90,
+      "from": "Priya Shah",
+      "time": "3:23 AM",
+      "subject": "Re: Re: Re: Fwd: Offsite logistics",
+      "snip": "Stop replying all.",
+      "read": 1.6199999999999999
+     },
+     "start": 1.3199999999999998,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 440,
+      "y": 20,
+      "from": "Tom Becker, +32",
+      "time": "3:24 AM",
+      "subject": "Re: Re: Re: Re: Fwd: Offsite logistics",
+      "snip": "+1 remove me",
+      "read": 1.74
+     },
+     "start": 1.44,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 320,
+      "y": -50,
+      "from": "Aiko Mori",
+      "time": "3:25 AM",
+      "subject": "Re: Re: Re: Re: Fwd: Offsite logistics",
+      "snip": "Who added this list?",
+      "read": 1.86
+     },
+     "start": 1.56,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 400,
+      "y": -120,
+      "from": "Sam Ortiz",
+      "time": "3:26 AM",
+      "subject": "Re: Re: Re: Re: Fwd: Offsite logistics",
+      "snip": "Please take me off.",
+      "read": 1.98
+     },
+     "start": 1.68,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 280,
+      "y": -190,
+      "from": "Lena Fischer, +35",
+      "time": "3:27 AM",
+      "subject": "Re: Re: Re: Re: Fwd: Offsite logistics",
+      "snip": "Unsubscribe",
+      "read": 2.0999999999999996
+     },
+     "start": 1.7999999999999998,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 360,
+      "y": -260,
+      "from": "Raj Patel",
+      "time": "3:28 AM",
+      "subject": "Re: Re: Re: Re: Fwd: Offsite logistics",
+      "snip": "Please remove me from this list.",
+      "read": 2.2199999999999998
+     },
+     "start": 1.92,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    },
+    {
+     "use": "row",
+     "with": {
+      "x": 440,
+      "y": -330,
+      "from": "Chloe Martin",
+      "time": "3:29 AM",
+      "subject": "Re: Re: Re: Re: Fwd: Offsite logistics",
+      "snip": "Same \u2014 please remove me.",
+      "read": 2.34
+     },
+     "start": 2.04,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.3
+     },
+     "depth": 0
+    }
+   ]
+  }
+ ]
+}

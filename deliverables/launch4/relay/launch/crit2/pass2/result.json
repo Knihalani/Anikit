@@ -1,0 +1,383 @@
+{
+  "name": "pass2",
+  "tags": [
+    "product-launch",
+    "ui-product"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "vertigo"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 5.5,
+      "composition": 5.0,
+      "typography": 4.0,
+      "colour": 4.0,
+      "light_texture": 3.0,
+      "motion": 5.0,
+      "craft": 5.0,
+      "originality": 4.0
+    },
+    "overall": 4.44,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 3,
+    "gaps": [
+      "The idea stops after the first act. The clock or time device should carry the whole film instead of giving way to UI slides",
+      "The type is generic (default grotesk, slide placement); it needs a chosen face, real scale contrast and integration with the image, as in A",
+      "The gradient and pills look is generic; it needs a deliberate palette and real light or texture so each frame works as a poster",
+      "Push the clock-mask idea through the whole film instead of dropping back to a standard UI walkthrough and slide-style headline",
+      "Make typography a voice: a chosen or custom face, scale contrast, and type integrated with the image, rather than a default grotesk and pills",
+      "Give it a deliberate palette and some material or light (night into dawn as actual light, not a gradient wash) so every frame holds as a poster"
+    ],
+    "tells": [
+      "One real idea: oversized clock numerals act as a knockout window onto an inbox, so time passing overnight carries the 'reads overnight' promise",
+      "After the opening three frames the piece falls back on templated slides: a centred UI card, 'Approve. Send.' in a generic heavy grotesk, and a stack of pills with Sent badges",
+      "Placeholder-style UI with generic sans defaults, on a soft blurred sky gradient with an orange accent. This is the 'tasteful AI' product-promo look",
+      "The ending is literal: the product name plus a feature diagram plus a tagline ('Reads overnight. Ready by morning.'). The logo knockout repeats the device from the opening",
+      "Flat, unmotivated light, with no material or texture",
+      "One idea is clever: huge clock numerals (23:58 \u2192 03:28 \u2192 06:59) work as masks over the inbox, so time passing overnight carries the story",
+      "Otherwise it falls into the usual templates: a soft blue-to-peach gradient ground, placeholder UI cards and pills, and a single orange accent on the Send button",
+      "The type is a default heavy grotesk ('Approve. Send.' set like a slide, left-aligned beside a list of cards), and the end card is a centred wordmark with a small tagline",
+      "The light is flat and generic with no material or texture. The last three frames read as slide-deck product-demo structure; the only small human touch is the 'Mom \u00b7 Sunday lunch' beat"
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 2.81,
+      "judged_professional": "0/2",
+      "mean_rank": 4
+    },
+    "tiffany-holiday": {
+      "overall": 6.56,
+      "judged_professional": "2/2",
+      "mean_rank": 2
+    },
+    "vertigo": {
+      "overall": 9.38,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 6.25,
+  "delta": -1.81,
+  "trials": [
+    {
+      "key": {
+        "A": "vertigo",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 10,
+              "colour": 10,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "The idea belongs to this film alone: an extreme close-up of an eye turns into Lissajous spirals, a direct picture of the film's theme of vertigo and obsession",
+              "Slab-serif display type with an inline treatment, set right-aligned and stacked with tight hierarchy. The type has a point of view and works with the image instead of being placed like a slide",
+              "A deliberate, unusual palette: a monochrome red skin wash and black grounds, then violet spirals, then mint green. The colour shift marks the structure of the sequence",
+              "Choreographed across frames: the eye opens, the spiral grows out of the pupil and goes abstract, then the sequence comes back to the eye for the director credit. The film ends where it began",
+              "Real photographic texture in the skin and lashes, set against precise geometry; the two are in tension"
+            ],
+            "gaps": [
+              "This is the benchmark entry; nothing in the field closes on it",
+              "Some credit blocks are dense and crowd the spiral, as in the art-direction frame",
+              "The type stays in one register throughout; a little more scale play inside the abstract section was possible"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A narrative device: a jewelled bird and a trail of sparkle lead the viewer through a city at night, a stage, a dining room. There is clear continuity of subject from frame to frame",
+              "Varied, cinematic framing: a top-down aerial of a street corner with a yellow taxi, a shallow-focus foreground bird against a station clock, a backlit stage silhouette",
+              "Motivated light: practical candles, string lights and stage floor lights, with depth of field used to direct attention",
+              "Weak spots: the last frame (a painted mesa with a figure) breaks the visual language entirely, and some of the sparkle-trail VFX looks stock. Holiday-luxury tropes keep originality down",
+              "There is no type to judge. Its absence suits a mood-led brand film, but no end card or typographic signature was shown"
+            ],
+            "gaps": [
+              "The idea is a familiar holiday-magic trope; it needs a premise the viewer would remember, as Bass's eye-to-spiral is",
+              "The last frame breaks the film's visual consistency; it should be unified or the transition justified",
+              "There is no typographic or graphic system; a titling idea would give the piece an authorial signature"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.62,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 5,
+              "craft": 5,
+              "originality": 4
+            },
+            "tells": [
+              "One real idea: oversized clock numerals act as a knockout window onto an inbox, so time passing overnight carries the 'reads overnight' promise",
+              "After the opening three frames the piece falls back on templated slides: a centred UI card, 'Approve. Send.' in a generic heavy grotesk, and a stack of pills with Sent badges",
+              "Placeholder-style UI with generic sans defaults, on a soft blurred sky gradient with an orange accent. This is the 'tasteful AI' product-promo look",
+              "The ending is literal: the product name plus a feature diagram plus a tagline ('Reads overnight. Ready by morning.'). The logo knockout repeats the device from the opening",
+              "Flat, unmotivated light, with no material or texture"
+            ],
+            "gaps": [
+              "The idea stops after the first act. The clock or time device should carry the whole film instead of giving way to UI slides",
+              "The type is generic (default grotesk, slide placement); it needs a chosen face, real scale contrast and integration with the image, as in A",
+              "The gradient and pills look is generic; it needs a deliberate palette and real light or texture so each frame works as a poster"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeats in every frame: one centred, rounded object on an empty cream or pastel ground. It is effect with no subject",
+              "The subjects have no link between them: earbuds, a steering wheel with clip-art traffic icons, a cannabis bud, a plug in a porthole, a chess monitor, a glowing sci-fi ring. There is no narrative or brand thread",
+              "Smooth, generic AI-render surfaces and soft default studio light. Clip-art icon badges float around the steering wheel",
+              "The frames change aspect ratio (wide, square, near-square), which points to assembled generations rather than a designed film",
+              "There is no type, and nothing replaces what type would have done to carry the meaning"
+            ],
+            "gaps": [
+              "It needs an idea: a single subject or premise connecting the frames, rather than a gallery of unrelated renders",
+              "It needs choreography: transitions, scale changes and camera movement between frames instead of a static centred object repeated",
+              "It needs considered light, material and composition. Asymmetry, depth and a specific palette would replace the default cream-studio AI look"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 30.5,
+        "cost_usd": 0.159727,
+        "tokens": 72040,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "vertigo",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "The idea is specific to this film: an extreme close-up of an eye that turns into Lissajous/spirograph spirals, so the title's vertigo is shown as an image rather than stated",
+              "Red monochrome on the face cuts hard to black with violet, then green, line figures. The palette is deliberate and unusual, and it moves the mood from one frame to the next",
+              "Outlined, wide slab-serif display type next to small caps for the roles. It has a point of view, and the credits are laid out asymmetrically (right-aligned stack against the spiral on the left)",
+              "The motion is choreographed: the spirals grow, rotate and change form across frames, and the piece ends back on the eye, which bookends it",
+              "Real photographed skin, lashes and specular light under the graphics"
+            ],
+            "gaps": [
+              "This is the reference entry. Its only weak spots are a few frames where centred credits sit plainly on black",
+              "Some credit cards follow a conventional credit-list layout",
+              "The spiral cards feel a bit sparse next to the eye frames"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Each frame is a different unrelated object (earbuds, a steering wheel with icon badges, a cannabis bud, a wall socket, a ball TV showing a garbled chessboard, a glowing ring) centred on a flat pastel seamless. It's one layout with the subject swapped",
+              "The frames have inconsistent aspect ratios and backgrounds, which points to separately generated stills rather than one designed film",
+              "Generic soft studio light with no motivated source. The 'tasteful AI render' finish has plasticky surfaces and nonsense details: the chess pieces are malformed, the plug sits oddly in a porthole socket, and the icons are clip-art traffic glyphs",
+              "There's no type, no narrative and no connecting idea. Nothing in the frames suggests transitions or choreography"
+            ],
+            "gaps": [
+              "It needs a single idea that connects the objects, such as a transformation logic or a story, rather than a carousel of centred renders",
+              "Compose each frame as a poster with scale, cropping, layering and motivated light, instead of a centred object on a seamless backdrop",
+              "Physically coherent details and a consistent world (one format, one palette system), plus designed transitions between objects"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "A narrative device runs through it: a jewelled bird and its sparkle trail lead through a clock, a city corner, a stage, brownstone windows and a dinner table. That points to a storyboard and a real holiday-campaign structure",
+              "Some frames are strongly cinematographic: the top-down shot of the taxi on the street corner and the backlit ballerina on a stage of footlights",
+              "The warm interior practical light and shallow depth of field are well handled",
+              "Against it: the sparkle trails are generic, the final painterly Monument Valley frame breaks the established style, and figures like the dancer in the orange dress have a soft, ambiguous, AI-like rendering. That's why my confidence is moderate"
+            ],
+            "gaps": [
+              "It needs stylistic consistency, or a deliberate and motivated switch, between the photoreal city and the painterly desert",
+              "Replace the stock particle and sparkle trail with a signature graphic or motion device as specific as A's spirals",
+              "No typography is visible. A title or end card with real typographic character would give the piece an identity"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 5,
+              "composition": 5,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 5,
+              "craft": 5,
+              "originality": 4
+            },
+            "tells": [
+              "One idea is clever: huge clock numerals (23:58 \u2192 03:28 \u2192 06:59) work as masks over the inbox, so time passing overnight carries the story",
+              "Otherwise it falls into the usual templates: a soft blue-to-peach gradient ground, placeholder UI cards and pills, and a single orange accent on the Send button",
+              "The type is a default heavy grotesk ('Approve. Send.' set like a slide, left-aligned beside a list of cards), and the end card is a centred wordmark with a small tagline",
+              "The light is flat and generic with no material or texture. The last three frames read as slide-deck product-demo structure; the only small human touch is the 'Mom \u00b7 Sunday lunch' beat"
+            ],
+            "gaps": [
+              "Push the clock-mask idea through the whole film instead of dropping back to a standard UI walkthrough and slide-style headline",
+              "Make typography a voice: a chosen or custom face, scale contrast, and type integrated with the image, rather than a default grotesk and pills",
+              "Give it a deliberate palette and some material or light (night into dawn as actual light, not a gradient wash) so every frame holds as a poster"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 32.6,
+        "cost_usd": 0.1620622,
+        "tokens": 72148,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 6,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": false,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "The last ~3 s are nearly frozen (change per second 3.7 \u2192 2.2 \u2192 2.0). The end card holds well past the time needed to read it.",
+        "The pairs show almost no movement within shots. In the 03:28 shot the digits stay locked while only the inbox rows scroll behind them, and the 'Approve. Send.' list doesn't move at all over 1/6 s. Motion is carried by content swaps, not by animation.",
+        "Where the clock digits mask the emails, the text is clipped into unreadable fragments ('Pri a Shah', 'R vi Menon'). The mask cuts the copy without considering legibility, which reads as clutter rather than design.",
+        "The 'Relay' end lockup has message text fragments inside the letterforms that are too small and too low in contrast to read. The rhyme with the opening is there, but its texture turns to noise at viewing size.",
+        "The blue glow around the night clock digits is a flat outer glow with no real falloff into the scene. The day-side digits are flat grey shapes over a plain gradient.",
+        "The UI cards (draft reply, brief, sent list) are stock product-UI renders with generic soft drop shadows. They have no material or lighting that connects them to the clock world.",
+        "The cursor click on 'Send' is a literal UI demo beat, with no transition design built around it."
+      ],
+      "gaps": [
+        "Choreography: the strongest device, clock digits as windows into the overnight inbox, is dropped once the piece moves to the UI cards and the 'Approve. Send.' section. There is no single transition system linking night \u2192 brief \u2192 send \u2192 logo. Top work would have the digits morph, wipe or carry the UI through every cut, and would give elements eased, overlapping motion with follow-through instead of static holds and swaps.",
+        "Pace and arc: the median shot is 2.2 s and the longest 5.0 s, and the second half runs on cycling list states plus a ~3 s static tail. The 6\u201314 s riser and drop build energy, but the picture doesn't escalate to match it, so the peak is felt in the audio more than the motion.",
+        "Finish and sound: there is no texture, depth of field or lit material, and the text is clipped in the masks. The track has real structure (sparse intro, 6 s entry, long riser into a 14 s drop, regular tonal hits), but after the drop it is a uniform grid of hits with static dynamics. There is little bespoke sound design for UI actions (send, check, digit flips) beyond the beat grid."
+      ]
+    },
+    "meta": {
+      "seconds": 22.3,
+      "cost_usd": 0.16139379999999998,
+      "tokens": 72223,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass2.mp4: 32.0s, 12 shots, median 2.20s, longest 5.00s\nper-second change: [14.6, 72.9, 73.0, 28.3, 50.9, 69.9, 20.4, 70.0, 16.4, 65.6, 73.3, 37.8, 23.9, 47.1, 43.7, 49.7, 17.5, 27.2, 30.0, 33.5, 25.7, 9.4, 32.1, 8.6, 66.3, 34.2, 35.9, 51.4, 3.7, 2.2, 2.0]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s; median shot 2.2s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 5.5,
+    "composition": 5.0,
+    "typography": 4.0,
+    "colour": 4.0,
+    "light_texture": 3.0,
+    "motion": 5.0,
+    "craft": 5.5,
+    "originality": 4.0,
+    "sound": 6
+  },
+  "full_overall": 4.67,
+  "cost_usd": 0.483,
+  "judge_seconds": 85.4,
+  "verdict": "FAIL"
+}
