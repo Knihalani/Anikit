@@ -43,6 +43,10 @@
     "ui": [
       0.9992,
       53.12
+    ],
+    "comps": [
+      0.9443,
+      42.36
     ]
   },
   "known": {
@@ -58,5 +62,19 @@
       "flicker_p999_max": 1.6,
       "owner": "SHADER: point-sampled vs 2x2-supersampled reference (aliasing in fine detail, aurora); AA is SHADER's call"
     }
+  },
+  "skipped": {
+    "ui": 1,
+    "text": 0,
+    "explainer": 0,
+    "backdrop": 0,
+    "particles": 0,
+    "launch": 244,
+    "scene3d": 0,
+    "shader-hero": 0,
+    "shader": 0,
+    "post": 0,
+    "comps": 0,
+    "audio": 31
   }
 }

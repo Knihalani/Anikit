@@ -616,9 +616,15 @@ pub struct TransitionObj {
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Camera {
+    /// Pan in frame pixels from rest (0 = no pan; `"10%"` of the frame width). Positive x
+    /// looks right, so the content moves left. Animatable.
     pub x: Option<Num>,
+    /// Pan in frame pixels from rest (0 = no pan; `"10%"` of the frame height). Positive y
+    /// looks down, so the content moves up. Animatable.
     pub y: Option<Num>,
+    /// Scale about the frame centre after the pan (1 = none, 1.2 = push in). Animatable.
     pub zoom: Option<Num>,
+    /// Degrees about the frame centre. Animatable.
     pub rotation: Option<Num>,
     /// Dolly: move the camera through depth (a push-in with real parallax: near layers grow faster than far ones).
     /// Layers at `depth` 0 sit 1 unit away, so `0.5` halves their distance; layers the camera passes disappear. Animatable.
@@ -753,6 +759,9 @@ pub struct Layer {
     /// Extrusion / long shadow: the layer's silhouette repeated along a direction, behind it, in one colour.
     /// `{"angle": 45, "length": 120, "color": "#000", "fade": 0}` (angle in degrees, 0 = right, 90 = down).
     pub extrude: Option<ExtrudeSpec>,
+    /// Per-layer motion blur: `true` (180° shutter, 8 samples) or `{"shutter": 270}`. Only this layer
+    /// blurs, and only on frames where it moves, so text being read stays sharp while fast shapes streak.
+    pub motion_blur: Option<MotionBlur>,
     /// Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default).
     #[schemars(with = "Option<serde_json::Value>")]
     pub smear: Option<serde_json::Value>,
@@ -817,7 +826,10 @@ pub struct Layer {
     pub boil: Option<BoilValue>,
     /// `true` clips children to the layer box, or a clip shape.
     pub clip: Option<Clip>,
-    /// A layer whose alpha masks this one.
+    /// A shape that clips this layer (hard-edged, static). Its coordinates are the layer's own
+    /// box: (0, 0) is the layer's top-left, `"50%"` is half its size, and the default position
+    /// is its centre. For an animated or soft mask use `matte` (a sibling layer by id, in the
+    /// parent's coordinates).
     pub mask: Option<Box<Layer>>,
     pub visible: Option<bool>,
 
@@ -1312,6 +1324,9 @@ pub struct PresetObj {
     pub amount: Option<f64>,
     /// Loop period in seconds.
     pub period: Option<f64>,
+    /// Loops: seconds the amplitude takes to grow in after the layer starts and to die away before it ends
+    /// (an envelope, so the oscillation never starts or stops dead).
+    pub ramp: Option<f64>,
     /// Typewriter characters per second.
     pub cps: Option<f64>,
 }

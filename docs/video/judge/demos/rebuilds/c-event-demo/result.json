@@ -1,0 +1,937 @@
+{
+  "name": "c-event-demo",
+  "tags": [
+    "event-promo",
+    "music-video",
+    "kinetic-type",
+    "vertical"
+  ],
+  "refs": [
+    "kurzgesagt-short",
+    "xk-studio-offfmx-2025-main-titles",
+    "studio-river-motion-plus-design-tokyo-2024"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4.0,
+      "composition": 4.0,
+      "typography": 4.0,
+      "colour": 4.5,
+      "light_texture": 3.0,
+      "motion": 3.0,
+      "craft": 4.0,
+      "originality": 3.0
+    },
+    "overall": 3.69,
+    "judged_professional": "1/6",
+    "pro_rate": 0.16666666666666666,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a real idea about electricity or the venue: current as choreography, type that is physically wired, sparked or tripped, rather than a glow filter",
+      "Build depth and real light: a photographed or rendered substation, actual neon or sodium light, grime and material, so it stops looking like a dark-mode template",
+      "Break the repeated layout with scale contrast, crops, type colliding with image, and transitions that carry energy from one frame to the next",
+      "Build the substation concept physically: real filament, sodium or arc light, concrete and steel texture, the way C builds its materials",
+      "Swap the single repeated layout for frames with real scale contrast and compositional variety, with type integrated into the image",
+      "Replace the obvious electrical puns with a specific, memorable visual idea and choreograph transitions between frames instead of cutting between slides",
+      "Build a real visual world around the power-station idea (transformers, hum, arcing, industrial light and material) instead of type on black with a glow filter",
+      "Give the typography an idea: scale and placement that change from frame to frame, interaction with the image, a face chosen for the venue rather than a default condensed grotesk",
+      "Choreograph the frames so each one is a different poster and the motion carries the energy, instead of one template repeated with lineup names swapped",
+      "No specific idea beyond the literal electricity theme. Find an image only this festival could own, as C does with its creature-material worlds",
+      "Typography is a single stock condensed face with outer glow and identical layout on every card. Build real scale contrast, type-image integration and a system that evolves between frames",
+      "Light and texture are flat and effect-driven. Shoot or render actual industrial material, such as concrete, cable or sodium light, and choreograph transitions instead of swapping cards",
+      "The electricity concept stays at the level of an effect (glow, spark). Make the type itself behave electrically: arcing, shorting, tripping the frame",
+      "Light and texture are thin, with flat black or grey grounds. Real industrial material (concrete, rust, transformer hardware) would give the frames depth",
+      "Break the repeated layout. Each act card needs its own composition and scale contrast, not the same stack with a new name",
+      "Build a real material world for the electrical idea: shoot or render actual neon or sodium lamps, transformers or arcing, with real light falling on surfaces. Drop the CSS-style glow.",
+      "Give the type a point of view. Custom or modified letterforms that behave electrically (flicker, short out, carry current between artists), not one grotesk at a single weight.",
+      "Replace the card-swap structure with continuous choreography, e.g. the current travels from the title to each artist name, so each frame is a different composition and not the same centred layout."
+    ],
+    "tells": [
+      "One layout repeated across frames: condensed grotesk stacked on a dark ground, small tracked-caps info line, a single orange accent rule on the left edge. This is slide-deck structure",
+      "The 'glow' on the type is an outer-glow effect, not light that exists in the scene. Flat and unmotivated",
+      "The idea is literal: Substation/power station leads to electricity, a spark on a cable and a DANGER sign. It is the obvious pun executed obviously",
+      "The final frame shrinks the previous frames into a thin vertical strip with tiny unreadable thumbnails. That is a weak, template-like recap transition",
+      "A generic condensed sans used at default spacing; the SUB/STAT/ION break is the only typographic decision",
+      "It matches the generic 'tasteful automated' formula: dark ground, glowing condensed grotesk headline, small tracked-caps date line, one orange accent",
+      "The layout repeats like slides: big name, small info line and the same orange vertical rule on every frame, with only the words swapped",
+      "The glow is a default outer-glow filter; the light does not come from anything, and the 'power station' theme never becomes real light or material",
+      "The 'DANGER' sign is a literal, obvious pun on the electrical theme; the cable spark frame is a near clip-art prop",
+      "The end frame collapses the earlier frames into a tiny centred thumbnail strip that looks like a template outro rather than a designed reveal",
+      "Dark ground with a single orange accent and glowing condensed sans headline, a stock 'tasteful generated' event-promo look",
+      "The same layout repeats: a vertical orange rule at left, a big stacked word with an outer glow, and small caps details below, so frames read like slides with the words swapped",
+      "The glow is a default outer-glow effect, not light: nothing in the scene emits or receives it",
+      "'DANGER' hazard-sign card for 'Phase Fatale' is a literal pun on the act name",
+      "The final frame shrinks everything to a thin strip of thumbnails in a mostly empty frame, followed by a generic 'TICKETS FRIDAY' button-like pill",
+      "The cable-and-spark shot is the only image idea, and it is small and isolated",
+      "Dark ground, a single orange accent rule down the left edge, and glowing condensed grotesk caps: the generic 'tasteful automated poster' kit",
+      "Same layout repeated: a big stacked condensed headline plus a small tracked caps info line, with the words swapped (SUBSTATION, then H\u00c9CTOR OAKS, then PHASE FATALE)",
+      "The literal concept: power station equals glowing neon type, a sparking cable and a DANGER sign. Every visual is the first association with the theme",
+      "End frame shrinks the previous frames into a thin vertical filmstrip with a yellow 'TICKETS FRIDAY' bar. This is a template-like recap with awkward scale",
+      "Glow is a uniform outer-glow effect, not motivated light. Backgrounds are near-empty, with little texture or material",
+      "There is a real campaign idea: a festival called SUBSTATION, with neon-glow condensed type, an arcing cable spark, a DANGER sign reused as the act card (PHASE FATALE) and a final frame that compresses the whole film into a vertical strip",
+      "Condensed display grotesk set at poster scale with stacked line breaks (SUB/STAT/ION) is competent but common in event-promo templates",
+      "The persistent orange left rule and the repeated 'big type plus small info line' layout make it read close to a slide structure with words swapped",
+      "Large empty dark fields and a generic outer-glow effect on the type pull it towards the 'tasteful dark ground plus one accent' look",
+      "Idea is literal: a festival called SUBSTATION at a power station gets glowing type, a sparking cable and a DANGER sign. It's the obvious pun and nothing beyond it.",
+      "Dark ground, one orange accent and the same thin orange rule down the left edge of every frame. That is the stock 'tasteful generated' kit.",
+      "Generic condensed grotesk with an outer-glow effect standing in for neon. There's no real light source, no tube, no reflection or spill on any surface.",
+      "Frames work like a slide deck: one big centred headline per card, words swapped (festival name, artist, artist, then a call to action).",
+      "The last frame stacks thumbnails of the earlier cards in a thin vertical strip. That reads as a template recap, not a choreographed finale.",
+      "Cable and spark asset look like a clip-art element dropped on a flat grey-blue gradient. No material and no depth."
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-short": {
+      "overall": 6.56,
+      "judged_professional": "6/6",
+      "mean_rank": 3
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 8.19,
+      "judged_professional": "6/6",
+      "mean_rank": 1
+    },
+    "studio-river-motion-plus-design-tokyo-2024": {
+      "overall": 7.31,
+      "judged_professional": "6/6",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.35,
+  "delta": -3.66,
+  "trials": [
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "kurzgesagt-short",
+        "C": "candidate",
+        "D": "xk-studio-offfmx-2025-main-titles"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Macro-anatomical world (muscle, droplets, iris, vascular roots, cellular rings) held in one committed blood-red monochrome across every frame",
+              "Real subsurface scattering, wet specular highlights and depth of field: rendered material, not a filter",
+              "Credit type is small and restrained, with a two-tone first/last name. That is a classic title-sequence convention, sitting in negative space the frame left for it",
+              "Scale shifts from body tissue to eye to vessels to a cellular ripple suggest a planned journey with match-cut potential (the iris circle rhymes with the ring frame)"
+            ],
+            "gaps": [
+              "The 'inside the body' title sequence is a well-worn genre; it needs one twist (narrative, typographic or structural) that only this show could own",
+              "Typography is a polite lower-third credit. Integrating names into the tissue, lit and refracted by the scene, would match D's and C's type ambition",
+              "The palette is all red, so frames read alike; one counterpoint hue or a value change across the sequence would give it an arc"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "A consistent house illustration system: rounded bird characters, saturated flat palette with soft gradients, clean shape language. This is a mature studio style, not clip-art",
+              "Each frame is a different staged scene (control room, map title, card game, mammoth), so there is real variety and storytelling, not a repeated layout",
+              "The map title card is integrated with the illustrated weather/heat map instead of floating on a blank ground",
+              "The burned-in captions are default and functional, which is typical of a social cut-down of a larger explainer"
+            ],
+            "gaps": [
+              "The house style is so established that it reads as a formula; nothing here would surprise someone who knows the channel",
+              "Typography is caption-default (small centred subtitles plus a stock bold title with outline). It has no typographic idea",
+              "The light is flat and graphic, with no texture or atmosphere; D and A show what material depth adds"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "One layout repeated across frames: condensed grotesk stacked on a dark ground, small tracked-caps info line, a single orange accent rule on the left edge. This is slide-deck structure",
+              "The 'glow' on the type is an outer-glow effect, not light that exists in the scene. Flat and unmotivated",
+              "The idea is literal: Substation/power station leads to electricity, a spark on a cable and a DANGER sign. It is the obvious pun executed obviously",
+              "The final frame shrinks the previous frames into a thin vertical strip with tiny unreadable thumbnails. That is a weak, template-like recap transition",
+              "A generic condensed sans used at default spacing; the SUB/STAT/ION break is the only typographic decision"
+            ],
+            "gaps": [
+              "It needs a real idea about electricity or the venue: current as choreography, type that is physically wired, sparked or tripped, rather than a glow filter",
+              "Build depth and real light: a photographed or rendered substation, actual neon or sodium light, grime and material, so it stops looking like a dark-mode template",
+              "Break the repeated layout with scale contrast, crops, type colliding with image, and transitions that carry energy from one frame to the next"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Dense, surreal material collisions: a translucent jelly hand holding coral, mesh fabric, hair-fine fibres, glassy tubes around a cluster of red beads. These are specific, strange images",
+              "An unusual, deliberate palette: sage green, icy cyan, flesh coral and dusty mauve, with each frame its own world while still feeling like one family",
+              "A sophisticated lighting range, from soft daylight to dramatic backlit dusk to a volcanic beam, with believable translucency and subsurface",
+              "Each frame works as a poster; the variety of scale (landscape to macro tangle) implies strong choreography",
+              "Small bold sans studio/speaker names, typical of a festival or conference opener crediting contributors"
+            ],
+            "gaps": [
+              "The type is a small default bold sans dropped in the top-left; it has none of the imagery's invention and should be built into the world",
+              "Some frames lean on 'weird 3D material showcase' tropes now common in reels; a stronger through-line would turn a collection into a film",
+              "The compositional anchor varies a lot; a recurring motif or transition device would make the cuts feel authored rather than compiled"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.3,
+        "cost_usd": 0.1411752,
+        "tokens": 70118,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "kurzgesagt-short",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The title sequence sticks to one blood-red palette from start to finish, and that restraint looks deliberate rather than accidental",
+              "The CG surfaces have real material quality: subsurface tissue, wet liquid splash, fibrous vascular roots, granular cellular texture",
+              "The macro iris shot has a reflection in the pupil, with believable specular light and shallow depth of field",
+              "Scale and subject vary from frame to frame (liquid, eye, veins, concentric pulse), which implies a choreographed journey through the body",
+              "The credit is set small in two colours, red first name and white surname, the way title credits are; it is restrained but has no typographic idea of its own"
+            ],
+            "gaps": [
+              "The anatomical-macro look is a well-worn title-sequence idiom; it needs one image that could only belong to this story",
+              "The type is a polite credit overlay; it should interact with the material (the fluid, the tissue) the way the best title sequences do",
+              "The concentric-ring frame reads as a generic texture pass; every shot needs the compositional tension of the eye frame"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Character design is consistent and confident: a villain at a control desk, birds playing a memory game, a stylised mammoth",
+              "The palette is saturated and controlled, with each scene keyed to its own hue (violet, cyan/orange, magenta/ice) inside one system",
+              "Metaphor-driven editorial storytelling: a climate topic told through a villain's 'STOP' button and a pair-matching game",
+              "Captions are functional burned-in subtitles; the only real typographic moment is the outlined title over the heat-map",
+              "It follows an established house style of flat explainer illustration very closely, so it is skilled but not a new voice"
+            ],
+            "gaps": [
+              "The look is a recognisable house style; it needs a visual invention that belongs to this piece alone",
+              "Type is mostly subtitle utility; the headline treatment should carry through the film rather than appear once",
+              "Lighting is flat by design; adding depth, grain or atmospheric light would lift frames from illustration to poster"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 5,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "The palettes are unusual and confident: chalky blue-white flesh against a rust ridge, olive-chrome tubing on bottle green with ruby beads, a pale celadon textile mass",
+              "Materials are rich and specific: woven mesh, fibrous hair, translucent rubbery fingers, an iridescent metallic torus, porous coral",
+              "Each frame works as a poster with layered depth, foreground clutter and a clear focal point",
+              "The frames range from a surreal hand clutching an organ to a volcanic lightning-strike landscape to an abstract knot, which shows authorial range",
+              "Studio labels such as 'Boldtron' and 'Medusa Lab' sit as small default-bold sans; this is a reel or anthology convention, not typographic craft"
+            ],
+            "gaps": [
+              "The type is an afterthought; it needs a typographic system with the same material ambition as the image",
+              "As an anthology the pieces lack one through-idea; a connecting conceit or transitions between worlds would make it read as one film",
+              "The volcano frame drifts towards stock-terrain CG; it needs the same tactile oddness as the textile and hand frames"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "It matches the generic 'tasteful automated' formula: dark ground, glowing condensed grotesk headline, small tracked-caps date line, one orange accent",
+              "The layout repeats like slides: big name, small info line and the same orange vertical rule on every frame, with only the words swapped",
+              "The glow is a default outer-glow filter; the light does not come from anything, and the 'power station' theme never becomes real light or material",
+              "The 'DANGER' sign is a literal, obvious pun on the electrical theme; the cable spark frame is a near clip-art prop",
+              "The end frame collapses the earlier frames into a tiny centred thumbnail strip that looks like a template outro rather than a designed reveal"
+            ],
+            "gaps": [
+              "Build the substation concept physically: real filament, sodium or arc light, concrete and steel texture, the way C builds its materials",
+              "Swap the single repeated layout for frames with real scale contrast and compositional variety, with type integrated into the image",
+              "Replace the obvious electrical puns with a specific, memorable visual idea and choreograph transitions between frames instead of cutting between slides"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.9,
+        "cost_usd": 0.1420188,
+        "tokens": 70157,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "kurzgesagt-short",
+        "C": "studio-river-motion-plus-design-tokyo-2024",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Dense, layered organic-synthetic 3D worlds: translucent sculpted hands holding a coral-like heart, wire tendrils, a volcanic terrain with an energy plume",
+              "Unusual, deliberate palette that changes per scene (dusty pink/oxblood, violet dusk, acid green/pale celadon, ice blue/garnet) while staying one family",
+              "Real material work: subsurface scattering, mesh fabric, hair/fibre sims, glossy tubing, beaded clusters; motivated light and depth of field",
+              "Each frame is a different world and scale (macro tangle, landscape, extreme close-up), which suggests choreographed transitions, not one repeated layout",
+              "Credit type ('Boldtron', 'Medusa Lab') is small and modest, a conventional title-credit treatment"
+            ],
+            "gaps": [
+              "Typography is a plain bold sans dropped on top of the image; it has no relationship to the material worlds and no scale idea",
+              "The 'surreal biomorphic 3D' language is close to a well-worn festival-opener idiom; one more distinct conceptual thread would make it unmistakably its own",
+              "Frames 3 and 4 are busy enough that a clear focal hierarchy weakens; a stronger sense of the subject would help"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "A coherent, polished flat-vector house style with consistent character design (villain at the control desk, birds, mammoth) and readable staging",
+              "Saturated, deliberate palette with scene-specific colour keys (indigo control room, cyan/orange game table, violet ice age)",
+              "Varied scenes and characters across frames show real narrative choreography rather than a template",
+              "Captions are default subtitle-style words placed bottom-centre; the title card is a bubbly stroked display face over a map, competent but conventional",
+              "This is the established explainer-channel idiom, executed well but not reinvented"
+            ],
+            "gaps": [
+              "No light or texture: flat vector fills with minimal grain or depth, where A builds material worlds",
+              "The burned-in captions are generic social-video defaults that sit over the illustration instead of being designed with it",
+              "The idea is an informational explainer in a familiar house style; it has nothing like A's singular image-world that a viewer would remember"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A cohesive title-sequence concept: a monochrome red bodily world (flesh, liquid splash, iris macro, vascular roots, cellular ripple)",
+              "Strong macro lighting and material detail: wet fluid sims, iris fibres with a reflection in the pupil, translucent vessels with depth of field",
+              "Credit set in a tracked, small sans with a two-tone first/last name, a typical title-sequence convention",
+              "Scale progression (tissue, eye, vessels, surface ripple) implies a deliberate journey through the body"
+            ],
+            "gaps": [
+              "The all-red 'inside the body' title sequence is a familiar trope; it needs a twist only this film could have",
+              "Typography is a small tracked credit with no integration into the organic imagery",
+              "One unbroken red keeps the palette from building the contrast and range of A's scene-by-scene colour shifts"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Dark ground with a single orange accent and glowing condensed sans headline, a stock 'tasteful generated' event-promo look",
+              "The same layout repeats: a vertical orange rule at left, a big stacked word with an outer glow, and small caps details below, so frames read like slides with the words swapped",
+              "The glow is a default outer-glow effect, not light: nothing in the scene emits or receives it",
+              "'DANGER' hazard-sign card for 'Phase Fatale' is a literal pun on the act name",
+              "The final frame shrinks everything to a thin strip of thumbnails in a mostly empty frame, followed by a generic 'TICKETS FRIDAY' button-like pill",
+              "The cable-and-spark shot is the only image idea, and it is small and isolated"
+            ],
+            "gaps": [
+              "Build a real visual world around the power-station idea (transformers, hum, arcing, industrial light and material) instead of type on black with a glow filter",
+              "Give the typography an idea: scale and placement that change from frame to frame, interaction with the image, a face chosen for the venue rather than a default condensed grotesk",
+              "Choreograph the frames so each one is a different poster and the motion carries the energy, instead of one template repeated with lineup names swapped"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.1,
+        "cost_usd": 0.1419338,
+        "tokens": 70140,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "kurzgesagt-short",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Title-sequence logic: credit ('NAHUEL SALCEDO') sits in negative space beside the main action, with a two-tone red/white treatment on the name",
+              "Monochrome blood-red palette held across four very different subjects (tissue and liquid splash, iris macro, vascular branching, ripple membrane), so the piece reads as one system",
+              "Strong material work: subsurface fleshy textures, specular liquid droplets, a reflection in the pupil, a shallow-depth macro feel",
+              "Scale jumps from macro surface to eye to root network to ripple, which suggests a thematic progression with matched transitions"
+            ],
+            "gaps": [
+              "The organic/anatomical red title sequence is a well-worn genre (veins, eyes, fluids). It needs one image that is specific to this film rather than to the genre",
+              "Typography is a small, stock-looking sans with no integration into the imagery. Let the type live in the material: cast into the tissue or carried by the fluid",
+              "The frames read as separate beauty shots. Build a clearer choreographic thread, such as one continuous form or matched-cut geometry, so the sequence becomes a single idea"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Polished, house-style flat illustration with consistent character design, gradient lighting and saturated but controlled palettes that shift per scene",
+              "Every frame is a different staged set (a control room with a villain at a STOP button, a heat-map Europe title, birds playing a memory card game as a metaphor for 'misconception', a mammoth), which is evidence of real storyboarding and visual metaphor",
+              "Title card integrates the type with the map: bold rounded headline with a dimensional shadow over thermal contours",
+              "Burned-in single-word captions are a social-format convention, not a lack of craft"
+            ],
+            "gaps": [
+              "The style is a highly recognisable established house look. Originality is capped because there is no surprise beyond executing the formula",
+              "Subtitles are generic, small and centred, and fight the illustration. Design captions that belong to the world",
+              "Light and texture stay flat-vector. Add grain, material or lighting depth to move it from explainer polish toward award-level image-making"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 5,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A dense, layered, non-obvious 3D world: a translucent pale hand holding a glowing coral heart, a mesh-and-ribbon textile jungle with hairs and fibres, glossy tubes knotting around red crystalline clusters",
+              "Deliberate, unusual palette: sage green, ice blue, coral and bruised metallic olive on a dusk-pink sky. None of it is a default",
+              "Material vocabulary is rich and specific (woven mesh, fuzz, translucency, iridescent tubing, particulate terrain), lit with real atmosphere",
+              "Each frame is a poster. The variety in scale and subject (monochrome mountain with a red beam against tactile close-ups) implies authored pacing",
+              "Studio/artist-credit labels mark it as a collaborative showcase or festival ident"
+            ],
+            "gaps": [
+              "Typography is a default bold sans dropped top-left like a caption, far below the image-making. Commission a typographic idea equal to the imagery",
+              "As a collaborative anthology it risks reading as a sequence of disconnected showcases. Find a stronger connecting device or narrative between segments",
+              "Some frames (the tube knot) lean on familiar 'weird soft 3D' trends. Push the most singular motifs (the hand and heart, the beam) further"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Dark ground, a single orange accent rule down the left edge, and glowing condensed grotesk caps: the generic 'tasteful automated poster' kit",
+              "Same layout repeated: a big stacked condensed headline plus a small tracked caps info line, with the words swapped (SUBSTATION, then H\u00c9CTOR OAKS, then PHASE FATALE)",
+              "The literal concept: power station equals glowing neon type, a sparking cable and a DANGER sign. Every visual is the first association with the theme",
+              "End frame shrinks the previous frames into a thin vertical filmstrip with a yellow 'TICKETS FRIDAY' bar. This is a template-like recap with awkward scale",
+              "Glow is a uniform outer-glow effect, not motivated light. Backgrounds are near-empty, with little texture or material"
+            ],
+            "gaps": [
+              "No specific idea beyond the literal electricity theme. Find an image only this festival could own, as C does with its creature-material worlds",
+              "Typography is a single stock condensed face with outer glow and identical layout on every card. Build real scale contrast, type-image integration and a system that evolves between frames",
+              "Light and texture are flat and effect-driven. Shoot or render actual industrial material, such as concrete, cable or sodium light, and choreograph transitions instead of swapping cards"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.2,
+        "cost_usd": 0.14409899999999998,
+        "tokens": 70265,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "candidate",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "kurzgesagt-short"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Committed single-hue world: everything is pushed into blood-red, from tissue and vascular roots to the iris and a pitted cellular surface, so the palette carries the idea instead of decorating it",
+              "Real material rendering: wet subsurface flesh, liquid-chrome droplets with correct refraction, fibrous iris with a reflection in the pupil",
+              "Scale travels from macro tissue to eye to vascular network to a circular cell or wound, which implies choreographed match cuts on circular forms (iris to concentric rings)",
+              "Credit type (two-tone NAHUEL SALCEDO) is sat into the frame like a title-sequence credit; it's restrained and correct but has no strong idea of its own"
+            ],
+            "gaps": [
+              "Typography is a polite small grotesk credit. It should be integrated into the anatomy, for example grown, etched or refracted through the liquid, the way C's world absorbs its labels",
+              "The 'body interior in macro' title sequence is a well-worn genre; it needs one conceptual twist that only this film could have",
+              "The frames are all close to the same red. Bring in a counter-tone or a shift in light temperature at one beat so the choreography has a climax"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "There is a real campaign idea: a festival called SUBSTATION, with neon-glow condensed type, an arcing cable spark, a DANGER sign reused as the act card (PHASE FATALE) and a final frame that compresses the whole film into a vertical strip",
+              "Condensed display grotesk set at poster scale with stacked line breaks (SUB/STAT/ION) is competent but common in event-promo templates",
+              "The persistent orange left rule and the repeated 'big type plus small info line' layout make it read close to a slide structure with words swapped",
+              "Large empty dark fields and a generic outer-glow effect on the type pull it towards the 'tasteful dark ground plus one accent' look"
+            ],
+            "gaps": [
+              "The electricity concept stays at the level of an effect (glow, spark). Make the type itself behave electrically: arcing, shorting, tripping the frame",
+              "Light and texture are thin, with flat black or grey grounds. Real industrial material (concrete, rust, transformer hardware) would give the frames depth",
+              "Break the repeated layout. Each act card needs its own composition and scale contrast, not the same stack with a new name"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Strange, specific material language: translucent sculpted hands cradling a coral-like heart, ruffled mesh-and-fibre textile organisms, glassy celadon tubes knotted around ruby beads",
+              "Deliberate, unusual palette that shifts per scene (dusty peach, volcanic monochrome, pistachio and sky, bottle-green with ice-blue) while staying one world",
+              "Dense, layered frames with hair-fine filaments and tactile surfaces; each frame works as a poster",
+              "The small bold-sans names (Boldtron, Medusa Lab) read as chapter or brand labels. They are understated, functional and slightly default"
+            ],
+            "gaps": [
+              "Typography is the weak link: default-feeling bold sans labels dropped top-left. Give the names a typographic voice that matches the material invention",
+              "The volcano frame drifts into more generic terrain CG. Hold the bespoke material vocabulary across every scene",
+              "Make the transitions between worlds explicit (shared forms or materials morphing) so the piece reads as one choreographed film rather than a sequence of strong vignettes"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Highly consistent, polished flat-vector house style with careful shape language, saturated but controlled palette and clean character acting (villain at a STOP button, birds playing a matching game, mammoth)",
+              "Each beat gets a fresh staged composition and visual metaphor, which suggests real storyboarding and editorial animation craft",
+              "Burned-in caption subtitles and the bubbly shadowed title ('Europe's Next Ice Age') are platform-functional, not typographically ambitious",
+              "The style closely follows a very established explainer-channel look, and the villain character is derivative, so originality is limited"
+            ],
+            "gaps": [
+              "The illustration language is borrowed from an established explainer idiom. It needs a visual signature of its own to compete for originality",
+              "Metaphors are literal (mammoth for ice age, map for Europe). Push for one image a viewer would remember and share",
+              "Flat light with no texture: add grain, lighting passes or material treatment to give depth that matches the craft of the animation"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 32.5,
+        "cost_usd": 0.14481899999999998,
+        "tokens": 70301,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "candidate",
+        "B": "kurzgesagt-short",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "studio-river-motion-plus-design-tokyo-2024"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Idea is literal: a festival called SUBSTATION at a power station gets glowing type, a sparking cable and a DANGER sign. It's the obvious pun and nothing beyond it.",
+              "Dark ground, one orange accent and the same thin orange rule down the left edge of every frame. That is the stock 'tasteful generated' kit.",
+              "Generic condensed grotesk with an outer-glow effect standing in for neon. There's no real light source, no tube, no reflection or spill on any surface.",
+              "Frames work like a slide deck: one big centred headline per card, words swapped (festival name, artist, artist, then a call to action).",
+              "The last frame stacks thumbnails of the earlier cards in a thin vertical strip. That reads as a template recap, not a choreographed finale.",
+              "Cable and spark asset look like a clip-art element dropped on a flat grey-blue gradient. No material and no depth."
+            ],
+            "gaps": [
+              "Build a real material world for the electrical idea: shoot or render actual neon or sodium lamps, transformers or arcing, with real light falling on surfaces. Drop the CSS-style glow.",
+              "Give the type a point of view. Custom or modified letterforms that behave electrically (flicker, short out, carry current between artists), not one grotesk at a single weight.",
+              "Replace the card-swap structure with continuous choreography, e.g. the current travels from the title to each artist name, so each frame is a different composition and not the same centred layout."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "A coherent, house-built character-illustration system: consistent rounded characters (mad-scientist figure, birds, mammoth) and shared shape language across the frames.",
+              "Every frame is a different staged scene: control room, isothermal map, card-game metaphor, mammoth on ice. That shows real storyboarding.",
+              "Visual metaphors explain the science: a STOP button for climate tipping, a matching game for 'misconception'. That's editorial thinking, not a feature diagram.",
+              "Polished vector finish with subtle gradients, rim colour and consistent outlines. Studio-level production craft.",
+              "Weak spots: subtitle captions are default-looking burned-in text, and the saturated palette is the studio's recognisable house look rather than a choice made for this piece."
+            ],
+            "gaps": [
+              "Typography is functional: a rounded bold title with a stroke and small default captions. It needs type integrated into the image the way C and D let image carry meaning.",
+              "The look is a well-known house style. The piece needs a visual idea specific to 'ice age' (palette shift, cold light, a material change) rather than the standard saturated system.",
+              "Light and texture are flat vector shading. Add atmosphere, grain or lighting that changes as the climate story turns cold."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A dense, layered surreal 3D world: a translucent hand with fibres and a coral-like heart, a fractal mountain erupting a pink beam, a fabric-and-fibre landscape, glass loops wrapping a cluster of red beads.",
+              "Highly specific materials: subsurface scattering, mesh fabric, hair strands, frosted glass, oily metallic tubes. Every surface has been art-directed.",
+              "Unusual, deliberate palette: salmon against pale blue-grey, olive green against icy cyan, a pink beam on near-black.",
+              "Each frame is a distinct poster with a different scale and camera: macro, landscape, wide, extreme close-up. That's choreographed variety.",
+              "Typography (Boldtron, Medusa Lab) is small and quiet, deliberately leaving the image to dominate. It's adequate, not expressive."
+            ],
+            "gaps": [
+              "Typography is a small default-weight bold sans dropped top left. Integrating the names into the materials (embossed, woven, cast) would match the image craft.",
+              "The frames read as a collection of strong vignettes. A clearer through-line or transformation connecting them would raise the idea from showcase to narrative.",
+              "Composition sometimes centres the hero object with similar framing. More daring negative space or cropping in one or two beats would add surprise."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A disciplined monochrome red system that commits to blood and flesh as its subject: tissue terrain, a macro iris, a vein network, a cellular ripple.",
+              "Real light and texture: fluid simulation with specular droplets, iris fibres with a reflection in the pupil, depth of field on the veins, granular surface on the final frame.",
+              "Title-sequence craft: a credit set small in a tracked sans with a two-tone red/white name split, placed in negative space beside the action.",
+              "Thematic progression from macro organ to eye to vessel to cell reads as an intentional journey inward.",
+              "Some motifs (macro eye, branching veins, liquid splash) are familiar title-sequence vocabulary, which caps originality."
+            ],
+            "gaps": [
+              "The idea leans on stock-familiar body-horror motifs (iris close-up, veins). It needs one image only this film could have, as C manages with its hybrid objects.",
+              "Typography is a tasteful but generic tracked sans. A face or treatment born from the subject (cellular, fluid) would give the credits a point of view.",
+              "The single red palette is strong but unvarying. A controlled counter-colour or tonal break at a key beat would add surprise and rhythm."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "D",
+          "B",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 34.7,
+        "cost_usd": 0.1488904,
+        "tokens": 70495,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "PAULA TEMPLE: the copper coil stack sits right on top of the name and covers most of 'PAULA'. The artist's name can't be read, and the type and the prop fight instead of interlocking.",
+        "The coil and the cable props look like flat, cheap 3D: uniform gradient shading, no contact shadows, no light falling from them onto the type or the background. They look pasted in, not part of the scene.",
+        "The paired frames for PAULA TEMPLE and RROSE are almost identical 1/6 s apart. The motion is idle loops (arc flicker, texture crawl) with no camera or type movement, and the shots play as dead holds.",
+        "The final lockup holds for about 5.9 s, which is static dead air (the pace check fails: the cap is 2.5 s). The miniature poster stack inside it is too small to read at that scale.",
+        "The KIA \u2192 IDA ENGBERG transition is a hard vertical wipe/slide with no easing or overlap visible, and IDA ENGBERG is cropped off the bottom of the frame mid-move.",
+        "The RROSE shot drops the orange rail and the warm glow, which breaks the device that holds the rest of the shots together.",
+        "The audio opens with about 1.8 s of near-silence (only low hum) before the first hit, so the opening is soft on both picture and sound.",
+        "There is a full-width hard cutoff in the spectrogram at about 11 s: the noise riser stops abruptly instead of resolving into a designed impact or a tail.",
+        "There are faint horizontal seams/lines visible across the SUBSTATION and H\u00c9CTOR OAKS frames (around one third and two thirds of the height), which look like compositing tile edges."
+      ],
+      "gaps": [
+        "Motion is mostly a cut between still posters, each with a small loop running on it. There is no camera language, no type that carries its momentum across a cut, and no weight or overshoot in the moves. The electrical idea is never animated as energy flowing from one artist to the next, which is what a top studio would build the choreography on.",
+        "The sound is a sparse four-on-the-floor kick with high transient clicks, plus one generic white-noise riser. There is little midrange, no musical or tonal bed, and no designed sound for the arcs, coils or sign. The drop at 11 s goes to near silence instead of hitting, and the energy never lands on a real payoff.",
+        "Finish is uneven. The type and grain are clean at 100%, but the 3D props are under-lit and lack integrated light and shadow. The type isn't composed around the objects, which causes the illegible PAULA TEMPLE frame, and the long static ending wastes the payoff of zooming out to the full poster column."
+      ]
+    },
+    "meta": {
+      "seconds": 26.5,
+      "cost_usd": 0.1904304,
+      "tokens": 75231,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "c-event-demo.mp4: 15.0s, 15 shots, median 0.53s, longest 5.90s\nper-second change: [72.9, 64.7, 55.7, 92.4, 26.7, 76.8, 80.2, 110.7, 66.4, 38.4, 60.4, 17.6, 20.4, 1.1]\nPACE: FAIL \u2014 longest shot 5.9s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 4.0,
+    "composition": 4.0,
+    "typography": 4.0,
+    "colour": 4.5,
+    "light_texture": 3.0,
+    "motion": 4.0,
+    "craft": 5.0,
+    "originality": 3.0,
+    "sound": 4
+  },
+  "full_overall": 3.94,
+  "cost_usd": 1.053,
+  "judge_seconds": 213.2,
+  "verdict": "FAIL"
+}

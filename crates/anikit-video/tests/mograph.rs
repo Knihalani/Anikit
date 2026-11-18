@@ -187,3 +187,35 @@ fn extrude_draws_a_tinted_stack_behind_the_layer() {
     // 20 steps of 1.5 px, then the layer itself on top.
     assert_eq!(count(&ops, |o| matches!(o, Op::RoundRect { .. })), 21);
 }
+
+#[test]
+fn layer_motion_blur_only_when_moving() {
+    let e = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "x": 100, "width": 50, "height": 50, "motionBlur": true,
+        "animate": { "to": { "x": 1500 }, "duration": 0.5, "ease": "linear" } } ] } ] }"#);
+    let rects = |t: f32| count(&e.eval(t).ops, |o| matches!(o, Op::RoundRect { .. }));
+    assert!(rects(0.25) >= 8, "{}", rects(0.25));
+    assert_eq!(rects(1.5), 1, "still frames draw once");
+}
+
+#[test]
+fn expressions_see_the_layers_velocity() {
+    let e = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "x": 0, "width": 10, "height": 10, "rotation": "=vx/100",
+        "animate": { "to": { "x": 1000 }, "duration": 1, "ease": "linear" } } ] } ] }"#);
+    let rot = |t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::RoundRect { transform, .. } = o { Some(transform[1].atan2(transform[0]).to_degrees()) } else { None }).unwrap();
+    // 1000 px/s → 10°; at rest → 0°.
+    assert!((rot(0.5) - 10.0).abs() < 0.2, "{}", rot(0.5));
+    assert!(rot(1.5).abs() < 1e-3);
+}
+
+#[test]
+fn loop_ramp_eases_the_oscillation_in() {
+    let src = |ramp: &str| format!(r#"{{ "scenes": [ {{ "duration": 4, "layers": [ {{ "shape": "rect", "y": 500, "width": 10, "height": 10,
+        "loop": {{ "preset": "float", "amount": 40, "period": 1 {ramp} }} }} ] }} ] }}"#);
+    let y = |e: &Evaluator, t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::RoundRect { transform, .. } = o { Some(transform[5]) } else { None }).unwrap();
+    let (a, b) = (ev(&src("")), ev(&src(r#", "ramp": 1"#)));
+    // At t = 0.25 s the plain float is at full swing; the ramped one has barely started.
+    assert!((y(&a, 0.25) - y(&a, 0.0)).abs() > 35.0);
+    assert!((y(&b, 0.25) - y(&b, 0.0)).abs() < 8.0);
+    // Mid-life both swing the same.
+    assert!((y(&a, 2.25) - y(&b, 2.25)).abs() < 1e-3);
+}

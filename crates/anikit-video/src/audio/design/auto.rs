@@ -85,8 +85,7 @@ fn step(ev: &Evaluator) -> f32 {
 
 /// Sample every eligible layer's box over the whole video.
 fn track(ev: &Evaluator, plan: &SoundPlan) -> (HashMap<u32, Vec<Option<Sample>>>, f32) {
-    let dt = step(ev);
-    let n = (ev.duration / dt).ceil() as usize + 1;
+    let mut dt = step(ev);
     let (w, h) = (ev.width as f32, ev.height as f32);
     let diag = (w * w + h * h).sqrt();
     let overrides: HashMap<u32, &LayerSfx> = plan.layers.iter().map(|(t, l)| (*t, l)).collect();
@@ -101,6 +100,15 @@ fn track(ev: &Evaluator, plan: &SoundPlan) -> (HashMap<u32, Vec<Option<Sample>>>
     }
     crate::eval::shader::set_preview_scale(0.01);
     let _restore = Restore;
+    // A time budget (~3 s): heavy films are sampled more sparsely (down to 8 per second).
+    let _ = ev.eval_tagged(ev.duration * 0.5); // warm (decodes, caches)
+    let probe = std::time::Instant::now();
+    let _ = ev.eval_tagged(ev.duration * 0.5 + 0.01);
+    let cost = probe.elapsed().as_secs_f32();
+    if cost * ev.duration / dt > 3.0 {
+        dt = (cost * ev.duration / 3.0).clamp(dt, 0.125);
+    }
+    let n = (ev.duration / dt).ceil() as usize + 1;
     for k in 0..n {
         let t = (k as f32 * dt).min(ev.duration - 1e-3);
         let (dl, tags) = ev.eval_tagged(t);
@@ -898,11 +906,21 @@ pub fn explicit(plan: &SoundPlan) -> Vec<Cue> {
 
 /// All cues for a video: picture-derived (when enabled) plus explicit.
 pub fn plan_cues(ev: &Evaluator, plan: &SoundPlan) -> Vec<Cue> {
-    let mut all = Vec::new();
-    if plan.auto || plan.layers.iter().any(|(_, l)| l.auto) {
-        let evs = select(events(ev, plan), plan, ev.duration);
-        all.extend(cues(&evs, plan));
-    }
+    // Sound design must never take down a render: if the picture analysis
+    // fails, keep the explicit cues and say so.
+    let auto = if plan.auto || plan.layers.iter().any(|(_, l)| l.auto) {
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| cues(&select(events(ev, plan), plan, ev.duration), plan))) {
+            Ok(c) => c,
+            Err(e) => {
+                let msg = e.downcast_ref::<String>().cloned().or_else(|| e.downcast_ref::<&str>().map(|s| s.to_string())).unwrap_or_default();
+                eprintln!("anikit: sound: picture analysis failed ({msg}); continuing without auto cues");
+                Vec::new()
+            }
+        }
+    } else {
+        Vec::new()
+    };
+    let mut all = auto;
     all.extend(explicit(plan));
     all.extend(plan.extra.iter().cloned());
     all.sort_by(|a, b| a.at.total_cmp(&b.at));

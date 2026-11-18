@@ -32,7 +32,7 @@ condensed, wide, blackletter, script, hand, stencil, mono, pixel, display). Each
   Advances are compensated so heavier letters push their neighbours, and the line stays aligned.
   Combine it with the animator's `x`/`y`/`scale`/`color` for a wave that rises as it thickens.
 - **Optical size is automatic.** On faces with an `opsz` axis (Fraunces, Bodoni Moda, Playfair, Newsreader, Literata, Source
-  Serif 4, Big Shoulders, Bricolage Grotesque, DM Sans, Roboto Flex, Texturina…), `opsz` follows the font size in px. A
+  Serif 4, Big Shoulders, Bricolage Grotesque, DM Sans, Roboto Flex, Texturina…), `opsz` follows the font size in points (px × 0.75). A
   200 px headline gets the hairline display cut and a 24 px caption gets the sturdy text cut. Set `axes.opsz` to override it.
 - **`features`** turns on OpenType features: `"tnum"` (tabular figures for counters and tables), `"onum"` (old-style figures in
   serif text), `"smcp"` / `"c2sc"` (small caps), `"case"` (punctuation for all-caps), `"ss01"`–`"ss20"` (stylistic sets),

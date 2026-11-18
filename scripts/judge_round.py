@@ -151,6 +151,8 @@ def cmd_table(a):
         p = rd / "results" / name / "result.json"
         wall, rss, render_s = _stats(rd, name)
         u = usage.get(name, {})
+        if not p.exists() and name not in usage:
+            continue  # brief not in this round
         if not p.exists():
             lines.append(f"| {name} | {b.get('category','')} | no output | | | | | | {wall or ''} | {fmt_tok(u)} | {u.get('cost_usd', '')} | | {render_s or ''} | {rss or ''} |")
             continue
@@ -188,7 +190,7 @@ def cmd_paired(a):
     rd, bd = J / "rounds" / a.round, J / "rounds" / a.base
     L = [f"# {a.round} vs {a.base}: paired by brief", "",
          "Same tags, seed and reference set, so the same 3 refs per brief ('same refs' column checks it). "
-         "Judge test-retest noise is about ±0.4 per piece (r1 PAIRED.md), so only larger moves are real.", "",
+         "Judge test-retest spread is up to about 0.5 per piece, so treat |Δ| < 0.75 as a tie.", "",
          f"| Brief | {a.base} | {a.round} | Δ | Full {a.base} → {a.round} | Judged pro | Same refs |", "|---|---|---|---|---|---|---|"]
     ds = []
     for b in briefs():
@@ -205,8 +207,8 @@ def cmd_paired(a):
             L.append(f"| {n} | {s0} | {s1} | {d:+} | {r0.get('full_overall')} → {r1.get('full_overall')} | "
                      f"{r0['candidate']['judged_professional']} → {r1['candidate']['judged_professional']} | {'yes' if r0['refs'] == r1['refs'] else 'NO'} |")
     if ds:
-        L += ["", f"Mean Δ (Anikit rows): {statistics.mean(ds):+.2f} over {len(ds)} briefs; {sum(1 for d in ds if d > 0.4)} up beyond noise, "
-                  f"{sum(1 for d in ds if d < -0.4)} down beyond noise."]
+        L += ["", f"Mean Δ (Anikit rows): {statistics.mean(ds):+.2f} over {len(ds)} briefs; {sum(1 for d in ds if d >= 0.75)} up beyond noise, "
+                  f"{sum(1 for d in ds if d <= -0.75)} down beyond noise."]
     (rd / "PAIRED.md").write_text("\n".join(L) + "\n")
     print("\n".join(L))
 

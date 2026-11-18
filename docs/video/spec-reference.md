@@ -226,7 +226,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `enter` | preset | none | Entrance animation, at `start`. |
 | `exit` | preset | none | Exit animation, finishing at `end`. |
 | `animate` | array of tweens | `[]` | Explicit animation (see **Animation**). |
-| `loop` | preset | none | A repeating motion while visible: `float`, `pulse`, `spin`, `wiggle`, `breathe`, `blink`. |
+| `loop` | preset | none | A repeating motion while visible: `float`, `pulse`, `spin`, `wiggle`, `breathe`, `blink`. Object form `{"preset": "wiggle", "amount", "period", "ramp": 0.4}`: `ramp` fades the amplitude in after the start and out before the end, so the oscillation never starts or stops dead. |
 | `visible` | bool | `true` | `false` skips the layer. |
 
 ### `text`
@@ -432,7 +432,7 @@ Any numeric property (static or inside `to`/`from`) can be an expression string 
 { "shape": "circle", "x": "=960 + 300 * sin(t * 2)", "y": "=540 + 300 * cos(t * 2)", "rotation": "=t * 90" }
 ```
 
-Variables: `t` (seconds since the layer's start), `T` (seconds since the scene's start), `gt` (global time), `p` (layer progress 0..1), `i` (index within the parent), `n` (sibling count), `w`, `h` (frame size), `fps`, `frame`. Functions: `sin cos tan asin acos atan atan2 abs min max floor ceil round sqrt pow exp log clamp(x, a, b) mix(a, b, f) smoothstep(a, b, x) noise(x) noise(x, y) rand(i) pi`. Expressions are compiled once and are cheap.
+Variables: `vx`, `vy` (the layer's own velocity in px/s from its tweens and motion path; for secondary motion such as `"rotation": "=vx*0.01"`), `t` (seconds since the layer's start), `T` (seconds since the scene's start), `gt` (global time), `p` (layer progress 0..1), `i` (index within the parent), `n` (sibling count), `w`, `h` (frame size), `fps`, `frame`. Functions: `sin cos tan asin acos atan atan2 abs min max floor ceil round sqrt pow exp log clamp(x, a, b) mix(a, b, f) smoothstep(a, b, x) noise(x) noise(x, y) rand(i) pi`. Expressions are compiled once and are cheap.
 
 ### Stagger
 
@@ -453,6 +453,7 @@ Render-time, per layer (examples: `examples/video/mograph/`):
 | `inertia: true \| "soft" \| "bouncy" \| "tight" \| "heavy" \| {stiffness, damping, mass, props}` | Follow-through: a spring (simulated once at 240 Hz, deterministic) chases the layer's own `x`, `y`, `scaleX`, `scaleY`, `rotation` (or `props`), so every move overshoots and settles. |
 | `drag: 0.04` (group) | Overlapping action: child i follows the group's own motion i × drag seconds later, so parts trail and land one after another. |
 | `extrude: {angle, length, color, fade}` | Solid extrusion or long shadow: the silhouette stepped back along `angle` (0 = right, 90 = down) for `length` px in one colour, behind the layer; `fade: 1` fades it out. About length/1.5 copies, in one tinted layer. |
+| `motionBlur: true \| {shutter}` (layer) | Motion blur on this layer only (sub-frame copies averaged additively, ~4 px apart, up to 64), only on frames where it moves. |
 | `smear: true \| strength` | Stretch along the direction of travel in proportion to speed (volume kept); still frames are untouched. |
 | transitions `zoomThrough` (`layer`), `reveal` (`shape`, `amount` spin, `origin`), `blinds` (`count`, `direction`), `split` (`direction`), `whip` (`direction`, `amount`) | Idea transitions: fly into a layer of the outgoing scene (the next scene shows through its shape), shape reveals, staggered bars, the frame splitting apart, a whip pan blurred by its speed. |
 | `posterizeTime: 12` | Posterize time: this layer and its children step at that many poses per second (on twos); the video frame rate is unchanged. |

@@ -14,6 +14,7 @@ pub(crate) mod shader;
 pub(crate) mod fx;
 pub(crate) mod graphic;
 mod audio_react;
+mod inputs;
 pub mod expr;
 pub mod theme;
 
@@ -401,6 +402,8 @@ pub(crate) struct Node {
     pub posterize_time: f32,
     /// Group drag: seconds of lag per child on the group's own transform.
     pub drag: f32,
+    /// Loop envelope: seconds of fade-in after the start and fade-out before the end (0 = constant).
+    pub loop_ramp: f32,
 }
 
 pub(crate) const PART_BG: u8 = 1;
@@ -507,6 +510,15 @@ thread_local! {
     static TAGS: std::cell::RefCell<Option<Vec<OpTag>>> = const { std::cell::RefCell::new(None) };
 }
 
+/// Run `f` with layer tagging off: for ops emitted into a side list (shader
+/// channels, transition scenes), whose ranges don't index the frame's list.
+pub(crate) fn untagged<R>(f: impl FnOnce() -> R) -> R {
+    let saved = TAGS.with(|tg| tg.borrow_mut().take());
+    let r = f();
+    TAGS.with(|tg| *tg.borrow_mut() = saved);
+    r
+}
+
 /// Timing summary of one scene.
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct SceneInfo {
@@ -552,6 +564,9 @@ pub struct Evaluator {
     pub shutter_explicit: bool,
     /// Named sub-compositions (top-level `compositions`), in dependency order.
     pub(crate) comps: Vec<(String, Arc<Evaluator>)>,
+    /// Key over the contents of every file the spec names (fonts, LUTs, images,
+    /// shader sources, models, nested specs): part of every render-cache key.
+    pub inputs_key: u64,
 }
 
 /// A gradient stroke segment: path, start and end points, start and end colours.
@@ -749,7 +764,12 @@ impl Evaluator {
         let saved_tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), tags));
         let saved_shader = shader::begin_frame();
         self.eval_frame(t, out);
-        let tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), saved_tags));
+        let mut tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), saved_tags));
+        // A parent can drop ops after its children were tagged (an empty matte):
+        // only ranges that still fit the list are kept.
+        if let Some(v) = &mut tags {
+            v.retain(|t| t.ops.start < t.ops.end && t.ops.end <= out.ops.len());
+        }
         COMP_SCALE.with(|c| *c.borrow_mut() = saved_comp);
         shader::end_frame(saved_shader);
         tags
@@ -1014,8 +1034,10 @@ impl Evaluator {
             TransKind::Cut => self.emit_scene(b, t, &id, false, out),
             TransKind::Shader => {
                 let (mut fa, mut fb) = (Vec::new(), Vec::new());
-                self.emit_scene(a, t, &id, false, &mut fa);
-                self.emit_scene(b, t, &id, false, &mut fb);
+                untagged(|| {
+                    self.emit_scene(a, t, &id, false, &mut fa);
+                    self.emit_scene(b, t, &id, false, &mut fb);
+                });
                 match &tr.shader {
                     Some(sc) => self.emit_shader_transition(&sc.0, (fa, a.bg_color), (fb, b.bg_color), t, e, out),
                     None => out.extend(fb),
@@ -1285,6 +1307,14 @@ impl Evaluator {
                 fps: self.fps as f64,
                 ..Default::default()
             };
+            let vars = if n.exprs.iter().any(|(_, e)| e.vel) {
+                // The layer's own velocity from its tracks (and motion path), central difference over 1/120 s.
+                let h = 1.0 / 240.0;
+                let (a, b) = (self.track_xy(n, lt - h), self.track_xy(n, lt + h));
+                Vars { vx: ((b[0] - a[0]) / (2.0 * h)) as f64, vy: ((b[1] - a[1]) / (2.0 * h)) as f64, ..vars }
+            } else {
+                vars
+            };
             let vars = match &self.groove {
                 Some(m) if n.exprs.iter().any(|(_, e)| e.music) || n.cexprs.iter().any(|(_, e)| e.music) => {
                     let (beat, bar, level, bpm) = m.at(cx.gt as f64);
@@ -1304,18 +1334,29 @@ impl Evaluator {
             let s = tr.slot as usize;
             v[s] = tr.sample(lt, v[s], &self.easings);
         }
+        let env = if n.loop_ramp > 0.0 && !n.loops.is_empty() {
+            let s = |x: f32| {
+                let x = x.clamp(0.0, 1.0);
+                x * x * (3.0 - 2.0 * x)
+            };
+            let tail = if n.end.is_finite() { s((n.end - n.start - lt) / n.loop_ramp) } else { 1.0 };
+            s(lt / n.loop_ramp) * tail
+        } else {
+            1.0
+        };
         for l in &n.loops {
             let tau = std::f32::consts::TAU;
             match *l {
-                LoopC::Float { amount, period } => v[prop::Y] += amount * (tau * lt / period).sin(),
+                LoopC::Float { amount, period } => v[prop::Y] += env * amount * (tau * lt / period).sin(),
                 LoopC::Pulse { amount, period } => {
+                    let amount = amount * env;
                     let k = 1.0 + amount * 0.5 * (1.0 - (tau * lt / period).cos());
                     v[prop::SX] *= k;
                     v[prop::SY] *= k;
                 }
                 LoopC::Spin { period } => v[prop::ROT] += 360.0 * lt / period,
-                LoopC::Wiggle { amount, period } => v[prop::ROT] += amount * noise1((lt / period) as f64 * 2.0) as f32,
-                LoopC::Breathe { amount, period } => v[prop::OPACITY] *= 1.0 - amount * 0.5 * (1.0 - (tau * lt / period).cos()),
+                LoopC::Wiggle { amount, period } => v[prop::ROT] += env * amount * noise1((lt / period) as f64 * 2.0) as f32,
+                LoopC::Breathe { amount, period } => v[prop::OPACITY] *= 1.0 - env * amount * 0.5 * (1.0 - (tau * lt / period).cos()),
                 LoopC::Blink { period } => {
                     if (lt / period).fract() >= 0.5 {
                         v[prop::OPACITY] = 0.0
@@ -1327,6 +1368,19 @@ impl Evaluator {
             self.run_update(ast, n, cx, lt, v);
         }
         apply_path(n, v);
+    }
+
+    /// x, y from the layer's base and tracks only (plus its motion path), for `vx`/`vy`.
+    fn track_xy(&self, n: &Node, lt: f32) -> [f32; 2] {
+        let mut v = n.base;
+        for tr in &n.tracks {
+            let s = tr.slot as usize;
+            if s == prop::X || s == prop::Y || s == prop::PROGRESS {
+                v[s] = tr.sample(lt, v[s], &self.easings);
+            }
+        }
+        apply_path(n, &mut v);
+        [v[prop::X], v[prop::Y]]
     }
 
     /// Apply a layer's `update` script: its returned props win for this frame.
@@ -1399,6 +1453,7 @@ impl Evaluator {
         let body = out.len();
         match n.fx.as_deref() {
             Some(fx) if fx.repeat.is_some() || fx.echo.is_some() => self.emit_fx(n, fx, cx, parent, psize, po, out),
+            Some(fx) if fx.mblur.is_some() => self.emit_mblur(n, fx.mblur.unwrap(), cx, parent, psize, po, out),
             _ => self.emit_node_inner(n, cx, parent, psize, po, out),
         }
         if let Some(m) = n.matte.as_deref() {
@@ -1436,6 +1491,36 @@ impl Evaluator {
                 }
             });
         }
+    }
+
+    /// Per-layer motion blur: sub-frame copies across the shutter, each added at 1/N inside an isolated
+    /// layer (an exact average, also where copies don't overlap). Frames where the layer is still draw once.
+    #[allow(clippy::too_many_arguments)]
+    fn emit_mblur(&self, n: &Node, (shutter, samples): (f32, u32), cx: &Cx, parent: &Affine, psize: [f32; 2], po: f32, out: &mut Vec<Op>) {
+        let span = shutter / self.fps.max(1.0);
+        let lt = cx.scene_t - n.start;
+        let (mut a, mut b) = ([0.0f32; prop::N], [0.0f32; prop::N]);
+        self.props(n, cx, lt, &mut a);
+        let pc = Cx { scene_t: cx.scene_t - span, gt: cx.gt - span, ..*cx };
+        self.props(n, &pc, lt - span, &mut b);
+        let moved = [prop::X, prop::Y, prop::SX, prop::SY, prop::ROT].iter().any(|&s| (a[s] - b[s]).abs() > 0.25 * if s == prop::SX || s == prop::SY { 0.002 } else { 1.0 });
+        if !moved || samples < 2 {
+            return self.emit_node_inner(n, cx, parent, psize, po, out);
+        }
+        // Enough samples that consecutive copies overlap (~4 px apart), so the streak doesn't strobe.
+        let travel = ((a[prop::X] - b[prop::X]).powi(2) + (a[prop::Y] - b[prop::Y]).powi(2)).sqrt()
+            + (a[prop::ROT] - b[prop::ROT]).abs() * 2.0
+            + ((a[prop::SX] - b[prop::SX]).abs() + (a[prop::SY] - b[prop::SY]).abs()) * (a[prop::W] + a[prop::H]) * 0.5;
+        let samples = ((travel / 4.0).ceil() as u32).clamp(samples, 64);
+        out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
+        for i in 0..samples {
+            let dt = span * (1.0 - i as f32 / (samples - 1) as f32);
+            let c = Cx { scene_t: cx.scene_t - dt, gt: cx.gt - dt, amul: cx.amul / samples as f32, ..*cx };
+            out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Add, filters: Vec::new(), clip: None, cache_key: None });
+            self.emit_node_inner(n, &c, parent, psize, po, out);
+            out.push(Op::PopLayer);
+        }
+        out.push(Op::PopLayer);
     }
 
     /// Repeater and echo: the same node re-emitted at other times and transforms.
