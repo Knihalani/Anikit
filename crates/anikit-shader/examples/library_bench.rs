@@ -46,6 +46,7 @@ fn main() {
         let time = |ss: bool, n: usize, px: &mut Vec<u8>| {
             let mut f = Frame::new(w, h, 2.0);
             f.supersample = ss;
+            f.dither = std::env::var_os("DITHER").is_some(); // as anikit-video renders
             f.channels = [Some(&ta), Some(&tb), None, None];
             f.progress = 0.5;
             let amount = [0.5f32];
