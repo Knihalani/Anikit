@@ -1,0 +1,522 @@
+{
+  "name": "sim_ink",
+  "tags": [
+    "generative",
+    "kinetic-type"
+  ],
+  "refs": [
+    "fitc-tokyo-2015",
+    "halt-and-catch-fire",
+    "coinbase-system-update"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 3,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 4,
+      "motion": 4,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 3.38,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a subject beyond the effect: what is the ink doing, and why? D turns its glitch into a theme about people and machines",
+      "The palette and type need a point of view, with a custom or expressive face integrated into the fluid instead of a caption",
+      "It needs structure across frames, with cuts, scale shifts and new compositions, instead of one sim playing out to entropy",
+      "Find an idea beyond 'the word becomes its material': give the dissolving ink a destination or transformation (it reforms into an image, a second word or a narrative) as C turns glitch into chip into fire",
+      "Replace the simulation preset with art-directed or practically shot ink (real pigment, paper fibre, light, macro lens), with depth and texture",
+      "Build a typographic system with scale, placement and a face chosen for the idea, not a small default serif tagline, and vary composition and scale across shots",
+      "It needs a specific idea beyond 'the word dissolves into fluid'. A's chip-as-sun or B's broken bilingual type systems show the gap",
+      "Typography has no point of view. The tagline is a default serif dropped into the corner, and the hero word is centred with no scale or composition play",
+      "No light, material or depth. Real ink in water or on paper, physical lighting, or a camera move would give the fluid weight and texture"
+    ],
+    "tells": [
+      "The archetypal 'tasteful AI' setup: cream ground, a single slate ink with a pink and blue accent, and a mostly empty frame",
+      "Literal idea: the word 'INK' dissolves into ink, which is the effect describing itself",
+      "The tagline 'Ideas don't stay put.' is a generic editorial serif with an italic flourish, small at lower left like a slide caption",
+      "The motion is a stock fluid-simulation advection with no art direction: frames 3 to 6 are the same composition getting progressively muddier",
+      "No choreography, no second idea, no surprise after the first frame",
+      "Textbook 'tasteful AI' setup: cream ground, one dark slate colour plus small pink and blue accents, a mostly empty frame",
+      "The idea is literal: the word 'INK' turns into ink; the subject names the effect",
+      "Looks like an off-the-shelf WebGL/Navier-Stokes fluid sim run on a text mask, an effect with no subject; the swirls are generic curl-noise vortices with no art-directed shapes",
+      "Slogan 'Ideas don't stay put.' set in a generic editorial serif with one italic word, small and bottom-left: default AI-slop typographic gesture",
+      "Five of six frames are the same composition gradually diffusing; little choreography, no cuts, no change of scale or camera",
+      "No paper texture, no pigment granulation, no light; real ink on paper would have both",
+      "A textbook 'tasteful AI' setup: cream ground, a mostly empty frame, one muted ink colour plus small accent tints, and a generic editorial serif tagline with one italic word ('Ideas don't stay *put*.')",
+      "An effect with no subject: a stock fluid-simulation advection applied to the word 'INK'. That is a literal, obvious idea (the word ink becomes ink)",
+      "No choreography. The six frames are one continuous sim dissipating, the camera never changes, and the tagline is placed like a slide caption in the lower left",
+      "The 'INK' wordmark is a default distressed display face, centred, with no layout idea"
+    ]
+  },
+  "refs_summary": {
+    "fitc-tokyo-2015": {
+      "overall": 8,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "halt-and-catch-fire": {
+      "overall": 8.5,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "coinbase-system-update": {
+      "overall": 6.88,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 7.79,
+  "delta": -4.41,
+  "trials": [
+    {
+      "key": {
+        "A": "coinbase-system-update",
+        "B": "fitc-tokyo-2015",
+        "C": "candidate",
+        "D": "halt-and-catch-fire"
+      },
+      "answer": {
+        "entries": {
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A single, committed red monochrome: the silicon-wafer heat and the CRT glow say 'early PC era' without spelling it out",
+              "The silhouette of a person dissolving into scanline glitch is tied to the show's human-versus-machine theme, so the effect has a subject",
+              "Real light and material: the chip sitting in what looks like a dish catches specular highlights, and the final frame is a glowing, burning-out circle with grain and vignetting",
+              "Restrained classical serif credits sit against the hard black-square tracked title mark, a deliberate two-voice type system",
+              "Frames move from abstract glitch to figure, to the four-square chip grid, to the macro object, to the title: a clear build"
+            ],
+            "gaps": [
+              "The serif credits are placed fairly conventionally, low-centre and lower-left, and could be more integrated with the image",
+              "Some glitch textures (frames 1 and 4) look like familiar datamosh vocabulary",
+              "The 4-square chip graphic is a bit literal next to the more evocative macro shots"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Custom modular letterforms that move between Latin and katakana ('TOKYO' / \u30c8\u30fc\u30ad\u30e7\u30fc fragments), a real typographic idea about transliteration",
+              "Unusual palette of coral, mint, acid lime, violet and blood red on near-black and a dusty grey, varied per frame but coherent",
+              "Dense, layered frames: grids, dot-matrix glyphs, scan bars and printed-grain texture",
+              "Each frame has a different structure (centred monogram, horizontal band, framed field, diagonal scatter, dot-matrix, collage), which implies real choreography"
+            ],
+            "gaps": [
+              "Less depth and physical light than D: the texture is mostly a flat-graphic overlay",
+              "Some frames (the dot-matrix one) lean on busy noise where the hierarchy gets muddy",
+              "The glitch-Tokyo theme is well trodden, and an emotional or narrative anchor would lift it"
+            ]
+          },
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "The ASCII rendering is built per scene with real variety: a walking figure, a coin flowing through a field of characters, a planet with rings, padlocks, a grid of spinning coins",
+              "Pseudo-code in-jokes ('Matching Cut Transition(\"circular\")', 'Broadcasting Visual Layer') show an authored, self-aware script",
+              "Frames are well choreographed: a match cut from the coin to the planet, and an escalation into the coin grid",
+              "Against that: an electric-blue plus white monochrome and ASCII-for-crypto is a very obvious pairing, and the copy ('Crypto is... Faster', 'Direct') is literal"
+            ],
+            "gaps": [
+              "The idea maps tech directly onto 'code', and it needs a twist only this piece could have, as D gives its era",
+              "The palette is a single flat blue with no light, depth or material, while D has real glow and grain",
+              "Typography is default monospace with highlighted labels, with no scale contrast or typographic point of view"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The archetypal 'tasteful AI' setup: cream ground, a single slate ink with a pink and blue accent, and a mostly empty frame",
+              "Literal idea: the word 'INK' dissolves into ink, which is the effect describing itself",
+              "The tagline 'Ideas don't stay put.' is a generic editorial serif with an italic flourish, small at lower left like a slide caption",
+              "The motion is a stock fluid-simulation advection with no art direction: frames 3 to 6 are the same composition getting progressively muddier",
+              "No choreography, no second idea, no surprise after the first frame"
+            ],
+            "gaps": [
+              "It needs a subject beyond the effect: what is the ink doing, and why? D turns its glitch into a theme about people and machines",
+              "The palette and type need a point of view, with a custom or expressive face integrated into the fluid instead of a caption",
+              "It needs structure across frames, with cuts, scale shifts and new compositions, instead of one sim playing out to entropy"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 27.4,
+        "cost_usd": 0.1523432,
+        "tokens": 71670,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "coinbase-system-update",
+        "B": "fitc-tokyo-2015",
+        "C": "halt-and-catch-fire",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "A committed ASCII/terminal language in a single saturated International-Klein-style blue: crypto treated as code-made-image, not as a stock coin render",
+              "Every frame has a different structure: walking figure, flowing particle stream with $ glyph clusters, orbiting planet built of characters, full-screen code wall, padlock triptych, a grid of coin icons. That reads as authored choreography rather than one layout repeated",
+              "Glyph density follows the form (shading on the figure, perspective in the stream, spherical wrap on the planet), which shows real control of the ASCII renderer",
+              "Code text with highlighted words ('Direct', 'Filters') works as a narrative device; the brief references to 'matchcut_engine' suggest planned transitions",
+              "Caveats: the monospace type is functional rather than expressive, the code-dump frame is visually weaker, and ASCII rendering is a popular preset look"
+            ],
+            "gaps": [
+              "Push beyond the now-common ASCII filter look: add a second material or a break in the system (a moment of real image or light) so the piece has a climax like C's chip-in-light reveal",
+              "Give the typography a point of view; the monospace labels ('Crypto is...', 'Faster') are UI tags, not designed type with scale contrast",
+              "Remove the literal coin, padlock and $ iconography and build the idea around one sharper metaphor for 'direct payment'"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Deliberate, unusual palette (hot coral, aqua, acid lime, violet on aubergine-black) that stays consistent while every frame changes key",
+              "Typography is the subject: a custom-feeling modular stencil face, Latin glyphs broken into katakana-like fragments ('TOKYO' resolving through \u30c8/\u30ad shapes), letters scattered on diagonals; a real typographic idea about bilingual signage",
+              "Layered frames with pixel grids, dot-matrix LED letterforms, subtle print/grain texture and scan bars, so each frame reads as a poster",
+              "Strong variety of compositions (macro letter crop, letterboxed band, framed type field, diagonal, LED matrix, collage) implies fast, rhythmic edit choreography",
+              "A small risk: the glitch-collage idiom is familiar from the 2010s title-design scene"
+            ],
+            "gaps": [
+              "Anchor the graphic system to a more specific emotional or narrative idea; it reads as a brilliant style system more than a story, where C reads as a story",
+              "Introduce real light and depth at one key moment; it is entirely flat graphics, while C contrasts flat glitch with a physically lit hero object",
+              "Give the piece a moment of restraint and stillness so the density lands harder, as C does with its single title card"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific idea only this piece could have: the show's subject (early PC hardware, a halt instruction that 'catches fire') rendered as red-hot signal corruption, silhouettes dissolving into scanlines, a die glowing like an ember, ending on a burning circular field",
+              "Monochromatic red palette committed across every frame, with values from near-black to blown-out pink; colour is the concept",
+              "Real light and material: the lit glass chip on a reflective surface, a halation glow, horizontal light streaks, a filmic texture, and a vignetted 'fire' disc",
+              "Typographic contrast is a conscious choice: a classical small serif for credits played against a bold, widely tracked grotesque title with a square bullet, echoing the pixel/chip motif",
+              "Clear arc from abstract glitch through human figure and pixel quad to physical object and title, which implies choreographed escalation"
+            ],
+            "gaps": [
+              "The credit serif is close to a default editorial book face; a more particular choice would match the rigor of the image",
+              "Credits are placed conventionally (lower-centre or left); more integration of type with the glitch system would raise it further",
+              "The four-square pixel frame is the most diagram-like moment; it could carry more texture or ambiguity"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Textbook 'tasteful AI' setup: cream ground, one dark slate colour plus small pink and blue accents, a mostly empty frame",
+              "The idea is literal: the word 'INK' turns into ink; the subject names the effect",
+              "Looks like an off-the-shelf WebGL/Navier-Stokes fluid sim run on a text mask, an effect with no subject; the swirls are generic curl-noise vortices with no art-directed shapes",
+              "Slogan 'Ideas don't stay put.' set in a generic editorial serif with one italic word, small and bottom-left: default AI-slop typographic gesture",
+              "Five of six frames are the same composition gradually diffusing; little choreography, no cuts, no change of scale or camera",
+              "No paper texture, no pigment granulation, no light; real ink on paper would have both"
+            ],
+            "gaps": [
+              "Find an idea beyond 'the word becomes its material': give the dissolving ink a destination or transformation (it reforms into an image, a second word or a narrative) as C turns glitch into chip into fire",
+              "Replace the simulation preset with art-directed or practically shot ink (real pigment, paper fibre, light, macro lens), with depth and texture",
+              "Build a typographic system with scale, placement and a face chosen for the idea, not a small default serif tagline, and vary composition and scale across shots"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.5,
+        "cost_usd": 0.16128340000000002,
+        "tokens": 72121,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "halt-and-catch-fire",
+        "B": "fitc-tokyo-2015",
+        "C": "coinbase-system-update",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A single, fully committed red monochrome that also carries meaning: heat, warning and CRT phosphor all at once",
+              "Real texture throughout: scan-line tearing, signal degradation, and a lit glass chip on what looks like a wet, reflective surface with physical depth",
+              "The images move from digital noise to a silhouette of a person, then to abstract pixel blocks, a lit microchip and finally a glowing circle with the logo. That is varied choreography with a clear arc toward the title",
+              "Credits are set in a restrained serif and placed with care inside each frame. The title card uses spaced, wide caps with a solid square glyph that echoes the pixel motif",
+              "The pixel-quad frame and the chip frame tie the subject (early PC hardware) to the visual language"
+            ],
+            "gaps": [
+              "The credit typography is conservative. A small serif lower-left is safe and does not play off the image the way the title card does",
+              "Some glitch frames (1 and 4) lean on a familiar datamosh vocabulary that other title sequences have used a lot",
+              "Type and image rarely interact. The credits sit on top of the image instead of being pulled into the glitch system"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 9,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Typography is the subject. Custom modular letterforms break apart into Latin and katakana fragments (TOKYO / \u30c8\u30fc\u30ad\u30e7\u30fc), with real scale contrast from a huge cropped 'D' down to scattered glyph confetti",
+              "A deliberate, unusual palette: hot pink, mint cyan, acid lime, violet and yellow on near-black, with cream used as a counter-ground in one frame",
+              "Each frame uses a different grid system (huge crop, horizontal band, framed matrix, a diagonal slash, a dot-matrix LED field, layered collage), which points to real choreography",
+              "Dense, layered frames with a print-like grain and halftone texture"
+            ],
+            "gaps": [
+              "Light is almost absent. It is all flat graphic space, with no depth or material to set the dense frames apart",
+              "The cyberpunk/glitch Tokyo idea is a familiar territory, so the surprise comes from execution more than concept",
+              "The density sometimes fights legibility. The final frame verges on visual noise without a clear focal hierarchy"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "One committed system: everything (figure, dollar-sign streams, planet, padlocks, coins) is built from monospace ASCII on electric blue, a fitting translation of 'payments as code'",
+              "Real variety from frame to frame: a walking figure, a flowing particle stream, an orbiting sphere, a full terminal dump, a row of padlocks and a coin grid. These are not the same layout with swapped words",
+              "Inverted text highlights ('Crypto is...', 'Faster', '--Direct--') work as a UI-native kinetic copy device",
+              "Weaker: the terminal frame is very literal (fake code that names the feature), and the blue-and-white ASCII look is now a widely available plugin aesthetic"
+            ],
+            "gaps": [
+              "The idea stays literal: crypto equals dollar signs, coins and padlocks. There is no unexpected metaphor of the kind A's chip-as-sun has",
+              "Only one hue and a flat ground. There is no light or depth hierarchy, so the frames read at similar visual weight",
+              "The copy-as-code frame is a slide of text. It needs typographic staging and scale contrast to earn its place"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "A textbook 'tasteful AI' setup: cream ground, a mostly empty frame, one muted ink colour plus small accent tints, and a generic editorial serif tagline with one italic word ('Ideas don't stay *put*.')",
+              "An effect with no subject: a stock fluid-simulation advection applied to the word 'INK'. That is a literal, obvious idea (the word ink becomes ink)",
+              "No choreography. The six frames are one continuous sim dissipating, the camera never changes, and the tagline is placed like a slide caption in the lower left",
+              "The 'INK' wordmark is a default distressed display face, centred, with no layout idea"
+            ],
+            "gaps": [
+              "It needs a specific idea beyond 'the word dissolves into fluid'. A's chip-as-sun or B's broken bilingual type systems show the gap",
+              "Typography has no point of view. The tagline is a default serif dropped into the corner, and the hero word is centred with no scale or composition play",
+              "No light, material or depth. Real ink in water or on paper, physical lighting, or a camera move would give the fluid weight and texture"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.0,
+        "cost_usd": 0.1551632,
+        "tokens": 71811,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": false,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": false
+      },
+      "defects": [
+        "The whole piece is one fluid simulation running for 7 s. Change per second only goes from 13 to 18, so the motion just keeps diffusing at one even pace, with no accents, holds or changes of speed.",
+        "The 1/6 s pairs show near-uniform drift everywhere. There is no lead element, no anticipation and no moment where the motion clearly takes over the word. The INK letterforms simply melt.",
+        "The blue blob in the top right is a separate emitter with no clear source. It reads as noise in the sim, not a planned element.",
+        "By frames 5 and 6 the whole frame is grey-violet mush with low contrast. The three-colour palette turns muddy, and the image loses its focal point and its graphic quality.",
+        "The tagline appears over a busy, still-moving field with no clearing or settle. It sits there without composition: small, bottom-left, and fighting the texture.",
+        "At 100% the field is soft and smeared, with faint compression blocking in the pale gradients. There is no fine filament detail, grain or pigment texture, so it reads as a cheap dye-advection sim rather than real ink.",
+        "Audio: a broadband noise riser builds to about 3.4 s and then cuts hard. There is no matching visual event at 3.4 s, so the biggest sound moment lands on nothing.",
+        "The tonal content is a few static, stacked partials (a pad or pluck plus a sustained bass) with very little development. It reads as thin, generated-sounding synth plus a white-noise sweep, not produced sound design. There are no wet or ink foley textures."
+      ],
+      "gaps": [
+        "There is no choreography or arc. The piece needs a designed sequence: hold the word, a clear trigger (a drop, a stroke, an impact), a fast break-up peaking at 60\u201380%, then the fluid settling or re-forming into the tagline so the ending rhymes with INK. Right now it is one even dissolve.",
+        "Sound is not tied to picture. The riser cut at 3.4 s has nothing visual to land on, and the score is a static synth bed. Top work would score the ink itself: liquid foley, transients synced to the break-up, a bass drop on the peak, and space at the end.",
+        "The finish and material are below studio level. The sim is soft and low-detail, and the colours muddy to grey. It needs a higher-resolution sim with pigment granulation, paper texture, light and absorption falloff, and controlled colour separation so every frame holds as a poster."
+      ]
+    },
+    "meta": {
+      "seconds": 24.9,
+      "cost_usd": 0.163737,
+      "tokens": 72149,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "ink.mp4: 7.0s, 1 shots, median 6.97s, longest 6.97s\nper-second change: [13.4, 16.6, 18.1, 18.4, 18.0, 16.0]\nPACE: FAIL \u2014 longest shot 7.0s > 2.5s; median shot 7.0s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 4,
+    "motion": 4.5,
+    "craft": 5.0,
+    "originality": 2,
+    "sound": 4
+  },
+  "full_overall": 3.61,
+  "cost_usd": 0.633,
+  "judge_seconds": 114.8,
+  "verdict": "FAIL"
+}

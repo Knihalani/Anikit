@@ -1,0 +1,1291 @@
+{
+ "size": [
+  1080,
+  1920
+ ],
+ "fps": 30,
+ "background": "#1A120C",
+ "post": {
+  "preset": "clean",
+  "lut": {
+   "base": "warm-negative",
+   "fade": 0.02,
+   "contrast": 0.25
+  },
+  "lutMix": 0.45,
+  "grain": 0.018,
+  "vignette": 0.18
+ },
+ "sound": {
+  "palette": "organic",
+  "ambience": "cafe",
+  "design": "off",
+  "cues": [
+   {
+    "sfx": "ceramic",
+    "at": 0.1
+   },
+   {
+    "sfx": "air",
+    "at": 0.7
+   },
+   {
+    "sfx": "ceramic",
+    "at": 2.5,
+    "pitch": 2
+   },
+   {
+    "sfx": "air",
+    "at": 3.2
+   },
+   {
+    "sfx": "wood",
+    "at": 5.0
+   },
+   {
+    "sfx": "air",
+    "at": 5.7
+   },
+   {
+    "sfx": "cc0-foley/splash",
+    "at": 7.5,
+    "gain": -6
+   },
+   {
+    "sfx": "air",
+    "at": 8.2
+   },
+   {
+    "sfx": "ceramic",
+    "at": 10.0,
+    "pitch": -2
+   },
+   {
+    "sfx": "air",
+    "at": 10.7
+   },
+   {
+    "sfx": "clink",
+    "at": 12.5
+   },
+   {
+    "sfx": "swell",
+    "at": 13.4,
+    "gain": -6
+   }
+  ]
+ },
+ "music": {
+  "style": "acoustic",
+  "bpm": 72,
+  "key": "D"
+ },
+ "scenes": [
+  {
+   "duration": 2.5,
+   "transition": "cut",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "hdri": "polyhaven:hdri/brown_photostudio_02",
+       "rotate": 40,
+       "exposure": -2.2,
+       "background": "blur",
+       "key": false
+      },
+      "lights": [
+       {
+        "dir": [
+         0.7198463103929542,
+         0.6427876096865393,
+         0.2620026302293849
+        ],
+        "size": 1.0,
+        "color": "#F4EBA0",
+        "intensity": 20000,
+        "key": true
+       }
+      ],
+      "gobo": {
+       "text": "bergamot",
+       "font": "Fraunces",
+       "weight": 600,
+       "size": 0.04,
+       "at": [
+        0.0,
+        0.12
+       ],
+       "height": 0.3,
+       "invert": true,
+       "strength": 0.9,
+       "softness": 0.0016,
+       "from": [
+        -0.33,
+        0.0
+       ],
+       "start": 0.0,
+       "settle": 0.9
+      },
+      "floor": false,
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -0.04211377700806086,
+          0.34739696743209014,
+          0.22890913386311074
+         ],
+         "target": [
+          0.0,
+          0.02,
+          0.06
+         ],
+         "focal": 50,
+         "fstop": 4.0
+        },
+        {
+         "t": 2.5,
+         "pos": [
+          -0.01766633076211423,
+          0.3378611334292137,
+          0.2280839094395986
+         ],
+         "target": [
+          0.0,
+          0.02,
+          0.06
+         ],
+         "focal": 50,
+         "fstop": 4.0
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "size": [
+         3.0,
+         0.04,
+         2.0
+        ],
+        "pos": [
+         0,
+         -0.02,
+         0
+        ],
+        "material": {
+         "texture": "polyhaven:texture/oak_veneer_01",
+         "scale": 1
+        }
+       },
+       {
+        "type": "lathe",
+        "points": [
+         [
+          0.0,
+          0.0065
+         ],
+         [
+          0.03,
+          0.0065
+         ],
+         [
+          0.036,
+          0.012
+         ],
+         [
+          0.05,
+          0.03
+         ],
+         [
+          0.058,
+          0.056
+         ],
+         [
+          0.06,
+          0.062
+         ],
+         [
+          0.057,
+          0.063
+         ],
+         [
+          0.055,
+          0.056
+         ],
+         [
+          0.046,
+          0.03
+         ],
+         [
+          0.032,
+          0.016
+         ],
+         [
+          0.0,
+          0.016
+         ]
+        ],
+        "segments": 128,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "material": {
+         "base": "#E9E2D6",
+         "roughness": 0.35,
+         "clearcoat": 0.4
+        }
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.0545,
+        "height": 0.001,
+        "pos": [
+         0,
+         0.053,
+         0
+        ],
+        "material": {
+         "base": "#1E0E06",
+         "roughness": 0.38,
+         "clearcoat": 0.25,
+         "specular": 0.6
+        }
+       },
+       {
+        "type": "model",
+        "src": "polyhaven:model/wooden_spoon",
+        "height": 0.012,
+        "scale": 1,
+        "pos": [
+         0.02,
+         0.009,
+         0.085
+        ],
+        "rot": [
+         0,
+         70,
+         0
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "transition": "cut",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "hdri": "polyhaven:hdri/brown_photostudio_02",
+       "rotate": 40,
+       "exposure": -2.2,
+       "background": "blur",
+       "key": false
+      },
+      "lights": [
+       {
+        "dir": [
+         0.7082593737614414,
+         0.6156614753256583,
+         0.3454411777407038
+        ],
+        "size": 1.0,
+        "color": "#FFB89A",
+        "intensity": 20000,
+        "key": true
+       }
+      ],
+      "gobo": {
+       "text": "peach",
+       "font": "Fraunces",
+       "weight": 600,
+       "size": 0.16,
+       "at": [
+        0.0,
+        0.03
+       ],
+       "height": 0.3,
+       "invert": true,
+       "strength": 0.9,
+       "softness": 0.0016,
+       "from": [
+        0.5700000000000001,
+        0.0
+       ],
+       "start": 0.0,
+       "settle": 0.9
+      },
+      "floor": false,
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.016595100780707084,
+          0.41584180966291673,
+          0.15808027763495772
+         ],
+         "target": [
+          0.0,
+          0.0,
+          0.04
+         ],
+         "focal": 50,
+         "fstop": 4.0
+        },
+        {
+         "t": 2.5,
+         "pos": [
+          0.028006738879277984,
+          0.40372991229409394,
+          0.1523288943075252
+         ],
+         "target": [
+          0.0,
+          0.0,
+          0.04
+         ],
+         "focal": 50,
+         "fstop": 4.0
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "size": [
+         3.0,
+         0.04,
+         2.0
+        ],
+        "pos": [
+         0,
+         -0.02,
+         0
+        ],
+        "material": {
+         "texture": "polyhaven:texture/oak_veneer_01",
+         "scale": 1
+        }
+       },
+       {
+        "type": "lathe",
+        "points": [
+         [
+          0.0,
+          0.0065
+         ],
+         [
+          0.03,
+          0.0065
+         ],
+         [
+          0.036,
+          0.012
+         ],
+         [
+          0.05,
+          0.03
+         ],
+         [
+          0.058,
+          0.056
+         ],
+         [
+          0.06,
+          0.062
+         ],
+         [
+          0.057,
+          0.063
+         ],
+         [
+          0.055,
+          0.056
+         ],
+         [
+          0.046,
+          0.03
+         ],
+         [
+          0.032,
+          0.016
+         ],
+         [
+          0.0,
+          0.016
+         ]
+        ],
+        "segments": 128,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "material": {
+         "base": "#E9E2D6",
+         "roughness": 0.35,
+         "clearcoat": 0.4
+        }
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.0545,
+        "height": 0.001,
+        "pos": [
+         0,
+         0.053,
+         0
+        ],
+        "material": {
+         "base": "#1E0E06",
+         "roughness": 0.38,
+         "clearcoat": 0.25,
+         "specular": 0.6
+        }
+       },
+       {
+        "type": "model",
+        "src": "polyhaven:model/wooden_spoon",
+        "height": 0.012,
+        "scale": 1,
+        "pos": [
+         0.02,
+         0.009,
+         0.085
+        ],
+        "rot": [
+         0,
+         70,
+         0
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "transition": "cut",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "hdri": "polyhaven:hdri/brown_photostudio_02",
+       "rotate": 40,
+       "exposure": -2.2,
+       "background": "blur",
+       "key": false
+      },
+      "lights": [
+       {
+        "dir": [
+         0.703063735047448,
+         0.5591929034707469,
+         0.4393229804700498
+        ],
+        "size": 1.0,
+        "color": "#F09048",
+        "intensity": 20000,
+        "key": true
+       }
+      ],
+      "gobo": {
+       "text": "black tea",
+       "font": "Fraunces",
+       "weight": 600,
+       "size": 0.05,
+       "at": [
+        0.07,
+        0.15
+       ],
+       "height": 0.3,
+       "invert": true,
+       "strength": 0.9,
+       "softness": 0.0016,
+       "from": [
+        -0.35,
+        0.0
+       ],
+       "start": 0.0,
+       "settle": 0.9
+      },
+      "floor": false,
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.04538815530880229,
+          0.5137454858838095,
+          0.12281874051100714
+         ],
+         "target": [
+          0.06,
+          0.0,
+          0.09
+         ],
+         "focal": 45,
+         "fstop": 4.0
+        },
+        {
+         "t": 2.5,
+         "pos": [
+          0.05156219082073638,
+          0.4987820251299121,
+          0.12384220417700423
+         ],
+         "target": [
+          0.06,
+          0.0,
+          0.09
+         ],
+         "focal": 45,
+         "fstop": 4.0
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "size": [
+         3.0,
+         0.04,
+         2.0
+        ],
+        "pos": [
+         0,
+         -0.02,
+         0
+        ],
+        "material": {
+         "texture": "polyhaven:texture/oak_veneer_01",
+         "scale": 1
+        }
+       },
+       {
+        "type": "lathe",
+        "points": [
+         [
+          0.0,
+          0.0065
+         ],
+         [
+          0.03,
+          0.0065
+         ],
+         [
+          0.036,
+          0.012
+         ],
+         [
+          0.05,
+          0.03
+         ],
+         [
+          0.058,
+          0.056
+         ],
+         [
+          0.06,
+          0.062
+         ],
+         [
+          0.057,
+          0.063
+         ],
+         [
+          0.055,
+          0.056
+         ],
+         [
+          0.046,
+          0.03
+         ],
+         [
+          0.032,
+          0.016
+         ],
+         [
+          0.0,
+          0.016
+         ]
+        ],
+        "segments": 128,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "material": {
+         "base": "#E9E2D6",
+         "roughness": 0.35,
+         "clearcoat": 0.4
+        }
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.0545,
+        "height": 0.001,
+        "pos": [
+         0,
+         0.053,
+         0
+        ],
+        "material": {
+         "base": "#1E0E06",
+         "roughness": 0.38,
+         "clearcoat": 0.25,
+         "specular": 0.6
+        }
+       },
+       {
+        "type": "model",
+        "src": "polyhaven:model/wooden_spoon",
+        "height": 0.012,
+        "scale": 1,
+        "pos": [
+         0.02,
+         0.009,
+         0.085
+        ],
+        "rot": [
+         0,
+         70,
+         0
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "transition": "cut",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "hdri": "polyhaven:hdri/brown_photostudio_02",
+       "rotate": 40,
+       "exposure": -2.2,
+       "background": "blur",
+       "key": false
+      },
+      "lights": [
+       {
+        "dir": [
+         0.6914737964294635,
+         0.6946583704589973,
+         0.1982769204992738
+        ],
+        "size": 1.0,
+        "color": "#E4ECF4",
+        "intensity": 20000,
+        "key": true
+       }
+      ],
+      "gobo": {
+       "text": "washed",
+       "font": "Fraunces",
+       "weight": 600,
+       "size": 0.11,
+       "at": [
+        0.0,
+        0.14
+       ],
+       "height": 0.3,
+       "invert": true,
+       "strength": 0.9,
+       "softness": 0.0016,
+       "from": [
+        0.47,
+        0.0
+       ],
+       "start": 0.0,
+       "settle": 0.9
+      },
+      "floor": false,
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.06133997636119903,
+          0.2620468617123356,
+          0.27182176908047007
+         ],
+         "target": [
+          0.0,
+          0.0,
+          0.12
+         ],
+         "focal": 50,
+         "fstop": 4.0
+        },
+        {
+         "t": 2.5,
+         "pos": [
+          0.07948788963498071,
+          0.2544144288469278,
+          0.25767706343421415
+         ],
+         "target": [
+          0.0,
+          0.0,
+          0.12
+         ],
+         "focal": 50,
+         "fstop": 4.0
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "size": [
+         3.0,
+         0.04,
+         2.0
+        ],
+        "pos": [
+         0,
+         -0.02,
+         0
+        ],
+        "material": {
+         "texture": "polyhaven:texture/oak_veneer_01",
+         "scale": 1
+        }
+       },
+       {
+        "type": "lathe",
+        "points": [
+         [
+          0.0,
+          0.0065
+         ],
+         [
+          0.03,
+          0.0065
+         ],
+         [
+          0.036,
+          0.012
+         ],
+         [
+          0.05,
+          0.03
+         ],
+         [
+          0.058,
+          0.056
+         ],
+         [
+          0.06,
+          0.062
+         ],
+         [
+          0.057,
+          0.063
+         ],
+         [
+          0.055,
+          0.056
+         ],
+         [
+          0.046,
+          0.03
+         ],
+         [
+          0.032,
+          0.016
+         ],
+         [
+          0.0,
+          0.016
+         ]
+        ],
+        "segments": 128,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "material": {
+         "base": "#E9E2D6",
+         "roughness": 0.35,
+         "clearcoat": 0.4
+        }
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.0545,
+        "height": 0.001,
+        "pos": [
+         0,
+         0.053,
+         0
+        ],
+        "material": {
+         "base": "#1E0E06",
+         "roughness": 0.38,
+         "clearcoat": 0.25,
+         "specular": 0.6
+        }
+       },
+       {
+        "type": "model",
+        "src": "polyhaven:model/wooden_spoon",
+        "height": 0.012,
+        "scale": 1,
+        "pos": [
+         0.02,
+         0.009,
+         0.085
+        ],
+        "rot": [
+         0,
+         70,
+         0
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "transition": "cut",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "hdri": "polyhaven:hdri/brown_photostudio_02",
+       "rotate": 40,
+       "exposure": -2.2,
+       "background": "blur",
+       "key": false
+      },
+      "lights": [
+       {
+        "dir": [
+         0.7390738003669028,
+         0.5877852522924731,
+         0.32905685648333965
+        ],
+        "size": 1.0,
+        "color": "#FFD69A",
+        "intensity": 20000,
+        "key": true
+       }
+      ],
+      "gobo": {
+       "text": "Ethiopia",
+       "font": "Fraunces",
+       "weight": 600,
+       "size": 0.03,
+       "at": [
+        0.0,
+        0.11
+       ],
+       "height": 0.3,
+       "invert": true,
+       "strength": 0.9,
+       "softness": 0.0016,
+       "from": [
+        -0.31,
+        0.0
+       ],
+       "start": 0.0,
+       "settle": 0.9
+      },
+      "floor": false,
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -0.009634025047464,
+          0.22700940070181333,
+          0.16166162546268154
+         ],
+         "target": [
+          0.0,
+          0.02,
+          0.07
+         ],
+         "focal": 60,
+         "fstop": 4.0
+        },
+        {
+         "t": 2.5,
+         "pos": [
+          0.0031228789094382447,
+          0.2209800006813722,
+          0.15942755142254886
+         ],
+         "target": [
+          0.0,
+          0.02,
+          0.07
+         ],
+         "focal": 60,
+         "fstop": 4.0
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "size": [
+         3.0,
+         0.04,
+         2.0
+        ],
+        "pos": [
+         0,
+         -0.02,
+         0
+        ],
+        "material": {
+         "texture": "polyhaven:texture/oak_veneer_01",
+         "scale": 1
+        }
+       },
+       {
+        "type": "lathe",
+        "points": [
+         [
+          0.0,
+          0.0065
+         ],
+         [
+          0.03,
+          0.0065
+         ],
+         [
+          0.036,
+          0.012
+         ],
+         [
+          0.05,
+          0.03
+         ],
+         [
+          0.058,
+          0.056
+         ],
+         [
+          0.06,
+          0.062
+         ],
+         [
+          0.057,
+          0.063
+         ],
+         [
+          0.055,
+          0.056
+         ],
+         [
+          0.046,
+          0.03
+         ],
+         [
+          0.032,
+          0.016
+         ],
+         [
+          0.0,
+          0.016
+         ]
+        ],
+        "segments": 128,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "material": {
+         "base": "#E9E2D6",
+         "roughness": 0.35,
+         "clearcoat": 0.4
+        }
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.0545,
+        "height": 0.001,
+        "pos": [
+         0,
+         0.053,
+         0
+        ],
+        "material": {
+         "base": "#1E0E06",
+         "roughness": 0.38,
+         "clearcoat": 0.25,
+         "specular": 0.6
+        }
+       },
+       {
+        "type": "model",
+        "src": "polyhaven:model/wooden_spoon",
+        "height": 0.012,
+        "scale": 1,
+        "pos": [
+         0.02,
+         0.009,
+         0.085
+        ],
+        "rot": [
+         0,
+         70,
+         0
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "transition": "cut",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "hdri": "polyhaven:hdri/brown_photostudio_02",
+       "rotate": 40,
+       "exposure": -2.2,
+       "background": "blur",
+       "key": false
+      },
+      "lights": [
+       {
+        "dir": [
+         0.7030637350474481,
+         0.5299192642332049,
+         0.4742224771725508
+        ],
+        "size": 1.0,
+        "color": "#FFBE74",
+        "intensity": 20000,
+        "key": true
+       }
+      ],
+      "gobo": {
+       "text": "Guji",
+       "font": "Fraunces",
+       "weight": 600,
+       "size": 0.2,
+       "at": [
+        0.0,
+        0.2
+       ],
+       "height": 0.3,
+       "invert": true,
+       "strength": 0.9,
+       "softness": 0.0016,
+       "from": [
+        0.65,
+        0.0
+       ],
+       "start": 0.0,
+       "settle": 0.9
+      },
+      "floor": false,
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.02903886942183852,
+          0.7075995465467296,
+          0.39628638701795155
+         ],
+         "target": [
+          0.0,
+          0.02,
+          0.12
+         ],
+         "focal": 45,
+         "fstop": 4.0
+        },
+        {
+         "t": 2.5,
+         "pos": [
+          0.046835821647856664,
+          0.6875723752880869,
+          0.38561914381834705
+         ],
+         "target": [
+          0.0,
+          0.02,
+          0.12
+         ],
+         "focal": 45,
+         "fstop": 4.0
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "box",
+        "size": [
+         3.0,
+         0.04,
+         2.0
+        ],
+        "pos": [
+         0,
+         -0.02,
+         0
+        ],
+        "material": {
+         "texture": "polyhaven:texture/oak_veneer_01",
+         "scale": 1
+        }
+       },
+       {
+        "type": "lathe",
+        "points": [
+         [
+          0.0,
+          0.0065
+         ],
+         [
+          0.03,
+          0.0065
+         ],
+         [
+          0.036,
+          0.012
+         ],
+         [
+          0.05,
+          0.03
+         ],
+         [
+          0.058,
+          0.056
+         ],
+         [
+          0.06,
+          0.062
+         ],
+         [
+          0.057,
+          0.063
+         ],
+         [
+          0.055,
+          0.056
+         ],
+         [
+          0.046,
+          0.03
+         ],
+         [
+          0.032,
+          0.016
+         ],
+         [
+          0.0,
+          0.016
+         ]
+        ],
+        "segments": 128,
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "material": {
+         "base": "#E9E2D6",
+         "roughness": 0.35,
+         "clearcoat": 0.4
+        }
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.0545,
+        "height": 0.001,
+        "pos": [
+         0,
+         0.053,
+         0
+        ],
+        "material": {
+         "base": "#1E0E06",
+         "roughness": 0.38,
+         "clearcoat": 0.25,
+         "specular": 0.6
+        }
+       },
+       {
+        "type": "model",
+        "src": "polyhaven:model/wooden_spoon",
+        "height": 0.012,
+        "scale": 1,
+        "pos": [
+         0.02,
+         0.009,
+         0.085
+        ],
+        "rot": [
+         0,
+         70,
+         0
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "text": "Ethiopia Guji, washed. Out Friday.",
+     "font": "Fraunces",
+     "size": "4.4vw",
+     "color": "#F3E7D3",
+     "x": "50%",
+     "y": "90%",
+     "anchor": "center",
+     "start": 0.9,
+     "enter": "fadeUp"
+    },
+    {
+     "text": "HALDE & SONS",
+     "font": "Inter",
+     "weight": 600,
+     "size": "2vw",
+     "letterSpacing": "0.3em",
+     "color": "#F3E7D3B3",
+     "x": "50%",
+     "y": "8%",
+     "anchor": "center",
+     "start": 1.1,
+     "enter": "fadeUp"
+    }
+   ]
+  }
+ ]
+}

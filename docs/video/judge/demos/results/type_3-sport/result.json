@@ -1,0 +1,514 @@
+{
+  "name": "type_3-sport",
+  "tags": [
+    "broadcast-sports",
+    "kinetic-type"
+  ],
+  "refs": [
+    "drive-studio-fox-world-cup-2026",
+    "game-of-thrones",
+    "thank-you-for-smoking"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 3,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 1,
+      "motion": 2,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 2.38,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "There is no visual idea or subject. It needs imagery and a concept, the way D builds a world",
+      "The single locked layout needs real choreography, with scale changes, cuts and type interacting with image",
+      "It needs material, light and depth, plus a palette and typeface choice with more intent than black + neon + default condensed sans",
+      "No visual concept or subject. It needs a world, an object or a metaphor the type lives in, the way C builds a mechanical map",
+      "Typography has no craft or integration. It needs deliberate scale relationships, a considered face and type that interacts with imagery and space instead of a static layout with words swapped",
+      "No light, material or choreography. It needs real camera movement, depth, texture and a shift in composition from frame to frame",
+      "Find a concept specific to the club or season (place, people, ritual) instead of a stock slogan on black. A's map-of-the-world idea is the benchmark.",
+      "Build real imagery, material and light into the frame: photography, texture, 3D or print. At the moment the frame is flat colour and type.",
+      "Choreograph the frames: change scale, cropping, camera and the relationship between type and image so each frame is a distinct poster rather than one layout with a label animating in."
+    ],
+    "tells": [
+      "The same composition in all five frames: the headline is locked top-left while only the small 'SEASON 26' outline text and a mono caption fade or slide in",
+      "Textbook generic look: near-black ground, a single acid-yellow accent, default condensed italic grotesk, outlined display type and a tiny tracked mono label",
+      "Mostly empty frame with no image, texture, light or subject; the 'NO DAYS OFF' slogan is placeholder-level",
+      "Captions like 'MATCHDAY 0' then 'MATCHDAY 01 \u2013 19:45 \u2013 ESTADIO NORTE' read like a typewriter effect on a template; 'SEASON 26' is clipped at the frame edge",
+      "The same composition repeats in all five frames: 'NO DAYS OFF' stays locked, and the only change is an outlined 'SEASON 26' scaling or sliding and a mono caption appearing. It plays like one slide animating in",
+      "Generic 'tasteful AI' formula: near-black ground, one acid-yellow accent, a heavy condensed-italic headline, an outline-stroke secondary line and a tiny tracked monospace label ('MATCHDAY 01 \u2014 19:45 \u2014 ESTADIO NORTE')",
+      "Type bleeds off the frame edges with no sign that the crop is intentional. 'SEASON 26' gets clipped on the right edge, and 'MATCHDAY 0' appears as a typewriter-reveal artifact",
+      "No image, subject, light, texture or material at all: an effect with nothing to show, and a slogan-only 'idea' anyone could have",
+      "The same composition is repeated across all five frames. Only a small outlined 'SEASON 26' and a mono caption slide in, so almost nothing happens.",
+      "A generic 'tasteful AI' formula: near-black ground, a single acid-yellow accent, a stock condensed italic grotesk headline, an outline-text secondary and a tiny tracked mono label.",
+      "The headline crops off the frame edges with no evident intent, and the right half is empty space with nothing designed in it.",
+      "No image, subject, light, texture or depth. Placeholder copy ('MATCHDAY 0', 'Estadio Norte') reads like a template.",
+      "The slogan is a clich\u00e9 ('No Days Off'), with no idea a viewer would remember."
+    ]
+  },
+  "refs_summary": {
+    "drive-studio-fox-world-cup-2026": {
+      "overall": 7.38,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "game-of-thrones": {
+      "overall": 9.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "thank-you-for-smoking": {
+      "overall": 8.5,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 8.38,
+  "delta": -6.0,
+  "trials": [
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "drive-studio-fox-world-cup-2026",
+        "C": "candidate",
+        "D": "game-of-thrones"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "One clear, witty idea: every credit is set as a different period cigarette pack, so the satire of the film is built into the titles themselves",
+              "Typography has real range and a point of view: a script on a ribbon, Clarendon-style serifs, deco caps, a slab and condensed type, each matched to a fictional brand with packaging details ('LIGHTS', 'HONEY-TOASTED', 'UNDERAGE SALE PROHIBITED')",
+              "Distinct mid-century palettes in each frame (royal blue and gold, orange and cream, red, white and blue, green menthol), with printed paper grain and engraved emblems",
+              "The frames are tight crops on pack surfaces, which points to camera moves over flat artwork rather than one repeated layout; the closing row of filters pays off the idea"
+            ],
+            "gaps": [
+              "The light is flat, scanned print. D builds a physical world lit with fire and depth",
+              "Inferred motion is mostly camera pans and slides across flat artwork, with no sculptural transformation like D's mechanisms",
+              "The world stays 2D with one material, where D has many layered materials and scale shifts from macro to map"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A modular system: the '26' mark is extruded into layered relief tunnels and recoloured for each nation, ending on the FIFA 26 / FOX lockup",
+              "Each country is treated differently: a Mexican flag relief, a German blackletter-baroque ornament field for 'DIE NATIONALELF', Argentine sun swirls, and a Vin\u00edcius player cut-out with condensed sans tags",
+              "Dense, layered frames with rendered depth and bevels; studio watermark (drivestudio)",
+              "It is still a recognisable broadcast-package genre: extruded logo tunnels, player cut-outs and stock sports chrome"
+            ],
+            "gaps": [
+              "The idea is the expected sports-package formula (flag + logo extrusion + player cut-out). It needs a concept only this tournament could own, the way D turns a map into a mechanism",
+              "The type mostly relies on stock bevelled sports sans (except the German frame). Commit to a custom typographic voice across all nations",
+              "Glossy CG lighting with little real material or atmosphere. Push toward tactile, physically believable surfaces"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 1,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition in all five frames: the headline is locked top-left while only the small 'SEASON 26' outline text and a mono caption fade or slide in",
+              "Textbook generic look: near-black ground, a single acid-yellow accent, default condensed italic grotesk, outlined display type and a tiny tracked mono label",
+              "Mostly empty frame with no image, texture, light or subject; the 'NO DAYS OFF' slogan is placeholder-level",
+              "Captions like 'MATCHDAY 0' then 'MATCHDAY 01 \u2013 19:45 \u2013 ESTADIO NORTE' read like a typewriter effect on a template; 'SEASON 26' is clipped at the frame edge"
+            ],
+            "gaps": [
+              "There is no visual idea or subject. It needs imagery and a concept, the way D builds a world",
+              "The single locked layout needs real choreography, with scale changes, cuts and type interacting with image",
+              "It needs material, light and depth, plus a palette and typeface choice with more intent than black + neon + default condensed sans"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea that defines the series: the world map is a clockwork model, with cities rising as mechanisms, which also orients the viewer",
+              "Rich, motivated light: an astrolabe sun flaring, warm firelight on brass, wood and stone, and atmospheric haze over the miniature terrain",
+              "Choreography across frames: an engraved band orbiting, a sun-sigil device, gears unfolding into the Winterfell tree, a map flyover with a plumb line, and a title lockup framed by the same bands",
+              "The credits are small Trajan-style caps with house sigils, integrated into the terrain"
+            ],
+            "gaps": [
+              "The credit type is restrained to near-invisibility and could carry more character",
+              "The palette is mostly sepia, brass and desaturated green; one more deliberate accent could sharpen it",
+              "The title card's lens flare and glow lean toward a familiar epic-fantasy clich\u00e9"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 27.2,
+        "cost_usd": 0.14974340000000003,
+        "tokens": 71544,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "drive-studio-fox-world-cup-2026",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Specific concept that belongs to this film only: every credit is set as a fake vintage cigarette pack, so the credits themselves carry the satire about tobacco marketing",
+              "Each card has its own typographic approach and none of them look like defaults: banner script for the title, brush script for Cameron Bright, a Clarendon-style face over spaced 'LIGHTS', Deco caps for Kim Dickens and Connie Ray, and a condensed bold for Reitman",
+              "Period print details are designed in: the scalloped wave edge, the tax stamp, the eagle crest, 'UNDERAGE SALE PROHIBITED', 'HONEY-TOASTED TOBACCO LIGHTS'",
+              "The palette changes from pack to pack (royal blue/gold, orange/cream, red-white-blue, menthol green, Marlboro-style red), and paper grain and halftone give it real print texture",
+              "Tight crops that pan across flat packaging imply macro camera moves. The final frame cuts to rows of filters, which pays off the idea"
+            ],
+            "gaps": [
+              "Mostly lateral pans across flat artwork. It has none of the depth and spatial choreography of C's mechanical camera moves",
+              "Light is flat print scans with no directional or practical lighting, while C uses dimensional, glowing light",
+              "The structure (one pack per credit) is repetitive. A structural surprise or an escalation across the sequence would lift it"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent broadcast system: an extruded, sliced '26' mark is reskinned for each nation (Mexico, Brazil, Germany, Argentina), then resolves to the FIFA/FOX lockup",
+              "Each nation gets its own graphic language: Germany has custom ornamental lettering with red and gold flourishes, and Argentina has wave-pattern tiles and 'VAMOS' supers",
+              "Dense, layered frames with real 3D depth, rim light, bevels and fabric simulation. The player cut-out composites into the environment rather than sitting on a card",
+              "Variety between frames implies energetic choreography: camera flythroughs through the number, flag cloth sweeping across frame"
+            ],
+            "gaps": [
+              "The idea is the expected sports-package formula (flag colours plus the event numeral). It lacks a single narrative concept like C's living map",
+              "The type leans on standard broadcast heavy italic sans for 'VINICIUS J\u00daNIOR' and 'ARGENTINA'. Only the German card has a real typographic point of view",
+              "Maximal saturation in every frame flattens the hierarchy. A more restrained, specific palette with real tonal control would bring it up to C's level"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A memorable, ownable concept: the world as a clockwork map that builds itself, with cities rising like mechanical models. It tells you about the story's geography, politics and scale",
+              "Engraved astrolabe band, brass and wood materials, carved Winterfell and Dragonstone-style models, aged parchment map: rich, specific texture throughout",
+              "Motivated, dramatic light: a burning sun core, warm practical glow on brass, atmospheric haze and shallow depth of field",
+              "Restrained small-caps serif credits with house sigil icons, placed in the scene rather than on top of it. The title lockup has custom ligatured letterforms held in the armillary",
+              "The frames imply complex choreography: camera flights between locations, mechanisms unfolding, and a return to the opening motif"
+            ],
+            "gaps": [
+              "Credit type is small and sometimes low-contrast against busy, dark mechanisms, which hurts legibility",
+              "The warm sepia grade is consistent but narrow. Regions could be differentiated more strongly by colour",
+              "Credits are mostly passive placements. A tighter, more expressive integration between type and mechanism would make it complete"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 1,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeats in all five frames: 'NO DAYS OFF' stays locked, and the only change is an outlined 'SEASON 26' scaling or sliding and a mono caption appearing. It plays like one slide animating in",
+              "Generic 'tasteful AI' formula: near-black ground, one acid-yellow accent, a heavy condensed-italic headline, an outline-stroke secondary line and a tiny tracked monospace label ('MATCHDAY 01 \u2014 19:45 \u2014 ESTADIO NORTE')",
+              "Type bleeds off the frame edges with no sign that the crop is intentional. 'SEASON 26' gets clipped on the right edge, and 'MATCHDAY 0' appears as a typewriter-reveal artifact",
+              "No image, subject, light, texture or material at all: an effect with nothing to show, and a slogan-only 'idea' anyone could have"
+            ],
+            "gaps": [
+              "No visual concept or subject. It needs a world, an object or a metaphor the type lives in, the way C builds a mechanical map",
+              "Typography has no craft or integration. It needs deliberate scale relationships, a considered face and type that interacts with imagery and space instead of a static layout with words swapped",
+              "No light, material or choreography. It needs real camera movement, depth, texture and a shift in composition from frame to frame"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.4,
+        "cost_usd": 0.1581704,
+        "tokens": 71955,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "drive-studio-fox-world-cup-2026",
+        "C": "thank-you-for-smoking",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A single, specific idea: the world is a clockwork map, with cities that build themselves out of gears and cogs. Only this world could carry that idea, and it doubles as an orientation device for the viewer.",
+              "Real material and light: engraved metal on the astrolabe band, hand-carved wood, weathered parchment, a golden flare blowing out the highlights, and shallow depth of field across the miniatures.",
+              "Clear choreography: it opens on the astrolabe band, travels down to the map, watches the city mechanisms unfold, and closes back on the band for the logo lockup. The structure is a loop that pays off.",
+              "Credits are set in a classical engraved small-caps serif with a heraldic sigil bullet. They sit inside the 3D space, placed in relation to each set piece, and don't read as overlays.",
+              "Every frame is dense and layered, with foreground, midground and atmospheric background."
+            ],
+            "gaps": [
+              "The credit type is quite small and low-contrast against busy detail in places (the Michelle Fairley card), so legibility could be pushed further.",
+              "The palette sits in a safe sepia/brass range. A sharper colour accent per region would strengthen the variety between locations.",
+              "The final logo lockup is more conventional than the body: a symmetrical flare-and-emblem reveal that could be more surprising."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent system built on extruded, layered '26' numerals that are re-skinned per nation with flags, crests and local ornament. It is a real broadcast toolkit, not a single layout.",
+              "Typographic variety with intent: heavy italic slab-sans for player and nation names, plus a Fraktur-adjacent condensed display for 'DIE NATIONALELF' wrapped in folk-ornament linework.",
+              "The frames change scale and camera (tunnel, player cutout with flag cloth, flat ornament plate, rotated 3D lettering), which suggests energetic, varied choreography.",
+              "Considered depth and lighting on the extrusions, with credible cloth simulation on the flag."
+            ],
+            "gaps": [
+              "The idea is the expected sports-package formula (flag + number + player cutout). It lacks a single memorable concept on the level of A's clockwork map.",
+              "The player composite (Vin\u00edcius frame) is crowded and generic broadcast in feel. The cutout is stuck on rather than integrated with the world's light.",
+              "The material language is clean CG plastic. Adding real texture, grain or tactile surfaces would lift it above high-end broadcast norm."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A witty, film-specific idea: every credit is a different fictional cigarette pack, so the subject's own packaging becomes the title sequence.",
+              "Typography with a strong point of view: each card uses a period-appropriate packaging face (script, Clarendon-ish serif, deco caps, condensed sans) that is pastiche done with expert specificity.",
+              "A deliberate mid-century print palette (cobalt, orange, cream, mint, signal red) with real paper and print texture, foil and misregistration-like warmth.",
+              "Tiny invented details reward attention: 'Underage sale prohibited', 'Honey-toasted tobacco lights', the tax stamp, the eagle crest."
+            ],
+            "gaps": [
+              "The motion is largely camera moves over flat artwork. There is less physical choreography and depth than in A.",
+              "The framing is structurally similar card to card (close crop on a pack face), which risks repetition across the full length.",
+              "There is little light play. Specular foil glints or shifting real lighting on the packs would add the tactile depth seen in A."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 1,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition is repeated across all five frames. Only a small outlined 'SEASON 26' and a mono caption slide in, so almost nothing happens.",
+              "A generic 'tasteful AI' formula: near-black ground, a single acid-yellow accent, a stock condensed italic grotesk headline, an outline-text secondary and a tiny tracked mono label.",
+              "The headline crops off the frame edges with no evident intent, and the right half is empty space with nothing designed in it.",
+              "No image, subject, light, texture or depth. Placeholder copy ('MATCHDAY 0', 'Estadio Norte') reads like a template.",
+              "The slogan is a clich\u00e9 ('No Days Off'), with no idea a viewer would remember."
+            ],
+            "gaps": [
+              "Find a concept specific to the club or season (place, people, ritual) instead of a stock slogan on black. A's map-of-the-world idea is the benchmark.",
+              "Build real imagery, material and light into the frame: photography, texture, 3D or print. At the moment the frame is flat colour and type.",
+              "Choreograph the frames: change scale, cropping, camera and the relationship between type and image so each frame is a distinct poster rather than one layout with a label animating in."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.8,
+        "cost_usd": 0.15654679999999999,
+        "tokens": 71877,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 3,
+        "sound": null,
+        "craft": 6
+      },
+      "checks": {
+        "idea": false,
+        "invariant": false,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": true,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": null
+      },
+      "defects": [
+        "About 3 of the 4 seconds are static: per-second change drops to 0.4 and then 0.1. After the opening build, the only motion is a monospace line typing in.",
+        "All the movement happens in the first ~0.7s. 'SEASON 26' widens from condensed to extended (width axis), and the hero stack shifts slightly. Nothing moves after that, so there is no arc and no peak.",
+        "The info line uses a basic character-by-character typewriter reveal ('MATCHDAY 0' \u2192 '\u202619:4' \u2192 '\u2026ES' \u2192 full). It has no cursor, rhythm or accent and reads as a template.",
+        "The hero 'NO DAYS OFF' is cropped hard against the left frame edge, and the 'O' of 'OFF' is cut off in the first frame. The crop reads as accidental, not as a deliberate full-bleed.",
+        "The hero type stays almost locked across the pairs. There is no overshoot, settle, follow-through or secondary motion on the main mark.",
+        "Outline 'SEASON 26' has a thin, slightly uneven stroke at 1:1. It sits on flat #0b0b0b with no grain, texture or light.",
+        "The small monospace line is very small and low-contrast at delivery size and is close to illegible."
+      ],
+      "gaps": [
+        "Time and choreography: one 4s locked shot with a 0.7s move up front, against roughly 1s beats in top work. Missing are staged hand-offs (hero hits, then SEASON snaps wide, then info lands), a mid-piece build and a final accent or lock-up that resolves the motion.",
+        "Idea and type meaning: 'No Days Off' is never made physical. The type could refuse to rest, for example with constant motion, a looping relay or day-cycling counters. Instead it does a generic width tween and a typewriter, and the variable-width move carries no meaning.",
+        "Finish and material: flat black and one acid yellow with no texture, light falloff, motion blur or depth. The edge cropping of the hero and the thin outline stroke look unresolved rather than designed."
+      ]
+    },
+    "meta": {
+      "seconds": 18.7,
+      "cost_usd": 0.1433452,
+      "tokens": 70279,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "3-sport.mp4: 4.0s, 1 shots, median 4.00s, longest 4.00s\nper-second change: [6.8, 0.4, 0.1]\nPACE: FAIL \u2014 longest shot 4.0s > 2.5s; median shot 4.0s > 1.5s; 2/3 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 2,
+    "composition": 3,
+    "typography": 3,
+    "colour": 3,
+    "light_texture": 1,
+    "motion": 2.5,
+    "craft": 4.5,
+    "originality": 2
+  },
+  "full_overall": 2.62,
+  "cost_usd": 0.608,
+  "judge_seconds": 108.1,
+  "verdict": "FAIL"
+}

@@ -199,6 +199,10 @@ pub(crate) struct Fx {
     pub animator: Option<AnimatorC>,
     /// Stroke gradient along the path: chunks of the outline, each with its own two colours.
     pub along: Option<AlongC>,
+    /// Extrusion: (dx, dy per step, steps, fade, colour matrix).
+    pub extrude: Option<(f32, f32, u32, f32, [f32; 20])>,
+    /// Per-layer motion blur: (shutter in frames, samples).
+    pub mblur: Option<(f32, u32)>,
     /// Smear strength (stretch along velocity).
     pub smear: Option<f32>,
     /// The outline resampled for `wiggle`.

@@ -23,7 +23,8 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|b
   still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
   sheet  spec.json -o sheet.png [--frames N | --cols 4 --rows 3] [--width 480]
   check  spec.json              validate; print errors, warnings and timing
-  set    spec.json <path> <value> [--delete]   patch one value in place (e.g. scenes.0.layers.1.text Hi)
+  set    spec.json <path> <value> [--delete]   patch one value in place (e.g. scenes.0.layers.1.text Hi);
+         spec.json a.b=1 c.d=x …     several at once (a list index or a layer id works as a path step)
   info   [--components] [--shaders]  version, encoders, component and shader catalogue
   schema [-o file]              print the JSON Schema of the spec
   beats  music.wav|spec.json    tempo, beats and bars (use them as \"@beat17\", \"@bar5\"); a spec gives its exact grid
@@ -175,6 +176,15 @@ fn resolve_time(ev: &Evaluator, s: &str) -> Result<f32, String> {
 /// `id` of an item (`scenes.intro.layers.title.text`). The value is JSON, or else a
 /// string. A missing final key is added; `--delete` removes it instead.
 fn set_cmd(args: &[String]) -> Result<(), String> {
+    // Several changes in one call: `set s.json a.b=1 scenes.2.duration=3`.
+    let is_pair = |a: &String| a.split_once('=').is_some_and(|(k, _)| !k.is_empty() && !k.contains(' ') && !k.starts_with('-'));
+    if args.len() >= 2 && args[1..].iter().all(is_pair) && !args.iter().any(|a| a == "--delete") {
+        for a in &args[1..] {
+            let (k, v) = a.split_once('=').unwrap();
+            set_cmd(&[args[0].clone(), k.to_string(), v.to_string()])?;
+        }
+        return Ok(());
+    }
     let delete = args.iter().any(|a| a == "--delete");
     let pos: Vec<&String> = args.iter().filter(|a| *a != "--delete").collect();
     let (file, path) = match pos.as_slice() {
@@ -498,7 +508,7 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                         let shaders: Vec<_> = ev
                             .shader_stats()
                             .into_iter()
-                            .map(|s| serde_json::json!({ "layer": s.label, "ms": s.ms, "ms_full_size": s.ms * full, "width": s.width, "height": s.height, "supersample": s.supersample }))
+                            .map(|s| serde_json::json!({ "layer": s.label, "ms": s.ms, "ms_full_size": s.ms * full, "width": s.width, "height": s.height, "supersample": s.supersample, "nan_at": s.nonfinite.map(|(x, y)| [x, y]) }))
                             .collect();
                         if json {
                             println!("{}", serde_json::json!({ "ok": true, "output": out, "at": t, "width": w, "height": h, "ms": ms, "shaders": shaders, "warnings": d }));
@@ -522,6 +532,9 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                                     ""
                                 };
                                 eprintln!("  shader {}: ≈ {f:.0} ms/frame at full size{}{note}", s.label, if s.supersample { ", supersampled" } else { "" });
+                                if let Some((x, y)) = s.nonfinite {
+                                    eprintln!("  warning: shader {} produced NaN/Inf (drawn black), first at fragCoord ({x}, {y}) of its {}×{} render: look for a division by zero, sqrt/log/pow of a negative, or normalize(vec3(0))", s.label, s.width, s.height);
+                                }
                             }
                         }
                     }
@@ -748,6 +761,11 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                     s.render_fps,
                     s.bytes as f32 / 1024.0
                 );
+                for st in ev.shader_stats() {
+                    if let Some((x, y)) = st.nonfinite {
+                        eprintln!("  warning: shader {} produced NaN/Inf (drawn black), first at fragCoord ({x}, {y}): look for a division by zero, sqrt/log/pow of a negative, or normalize(vec3(0))", st.label);
+                    }
+                }
             }
             // `--sheet f.png`: a contact sheet of the final (one cell per second,
             // 480 px), so nobody tiles frames out of the MP4 by hand.

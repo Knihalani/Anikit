@@ -91,7 +91,7 @@ impl CompTextures {
         // Evaluate outside the lock; the list is needed to hash and maybe to render.
         let mut dl = None;
         let hash = known.unwrap_or_else(|| {
-            let mut l = comp.eval(k as f32 / comp.fps);
+            let mut l = crate::eval::outside_scale_pass(|| comp.eval(k as f32 / comp.fps));
             super::scale_list(&mut l, 0.5f32.powi(lod as i32));
             let h = super::hash_list(&l);
             dl = Some(l);
@@ -109,11 +109,13 @@ impl CompTextures {
         let pix = cell
             .get_or_init(|| {
                 let l = dl.take().unwrap_or_else(|| {
-                    let mut l = comp.eval(k as f32 / comp.fps);
+                    let mut l = crate::eval::outside_scale_pass(|| comp.eval(k as f32 / comp.fps));
                     super::scale_list(&mut l, 0.5f32.powi(lod as i32));
                     l
                 });
-                Arc::new(self.render(comp, &l))
+                // Isolated: while this cell initialises, waiting on rayon must not
+                // run another frame on this thread (it could ask for this cell).
+                Arc::new(crate::scene3d::kernel::par::isolated(|| self.render(comp, &l)))
             })
             .clone();
         // Account for it and evict the least recently used beyond the cap.

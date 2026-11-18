@@ -1,0 +1,522 @@
+{
+  "name": "type_2-editorial",
+  "tags": [
+    "kinetic-type"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "thank-you-for-smoking",
+    "xk-studio-offfmx-2025-main-titles"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 4,
+      "typography": 4,
+      "colour": 2,
+      "light_texture": 1,
+      "motion": 3,
+      "craft": 5,
+      "originality": 2
+    },
+    "overall": 3,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Give it an idea tied to its subject: handmade craft wants physical material (letterpress, paper, ink spread, hands), not flat vector type on beige",
+      "Choreograph change between frames (new compositions, the type interacting with image, a cut or a reveal) instead of one layout with a weight tween",
+      "Bring in real light and texture plus a palette with intent; at the moment cream and black carry no meaning or surprise",
+      "It has no concept specific to its subject; the 'return of the handmade' could be expressed through hand-set, inked or physically printed type, the way C makes the medium the message",
+      "Every frame is one slide; it needs real choreography, with type that moves through space, changes layout and meets imagery as B's credits do",
+      "There is no texture, light or palette; it needs paper grain, print imperfection or photography, and a colour idea beyond black on cream",
+      "No concept or image: build an idea that only this piece could have (e.g. the handmade theme shown through real material, process or texture) instead of animating one word",
+      "No choreography: introduce multiple compositions, shifts of scale and rhythm, and type interacting with image across the sequence rather than one tween on one layout",
+      "Typography is a stock high-contrast Didone at default settings: commission or customise the letterforms, explore tension in layout and integrate type with the supporting copy instead of a slide-style corner label"
+    ],
+    "tells": [
+      "The textbook 'tasteful AI' formula: cream ground, small tracked-caps label ('THE AUTUMN ISSUE'), large high-contrast italic display serif, mostly empty frame",
+      "The same composition in all five frames; the only motion is a fade-in from grey to black and a weight or scale bump until the word crops off the right edge",
+      "A generic Didone italic used as a default, with a stock italic deck line and an underscore rule; layout like a slide, not a typographic idea",
+      "No image, light, texture or material, even though the subject is literally 'craft and the return of the handmade'",
+      "'Reverie' plus 'No 117' is placeholder magazine copy with nothing a viewer would remember",
+      "Textbook 'tasteful AI' editorial template: cream ground, a small tracked-caps label ('THE AUTUMN ISSUE') above a large high-contrast Didone italic headline, and a No. 117 folio",
+      "The same composition repeats across all five frames; the only change is the headline's weight and scale (a variable-font weight ramp) plus one caption fading in",
+      "No image, texture, light or material: just a flat monochrome ground with black type",
+      "The copy is generic placeholder sentiment ('Twelve designers on slowness, craft and the return of the handmade')",
+      "The one gesture, heavier type that crops off the right edge, is a stock kinetic-type effect and not an idea",
+      "Textbook 'tasteful AI' formula: cream ground, small tracked-caps label ('THE AUTUMN ISSUE'), a large editorial Didone italic headline, black as the single accent, and a mostly empty frame",
+      "The same composition repeats in all five frames. The only change is a fade from grey to black and a weight/scale ramp until the word crops off the right edge, so there is a single action and little happening",
+      "Generic magazine-cover filler: 'N\u00ba 117' and the italic subhead 'Twelve designers on slowness, craft and the return of the handmade' read as placeholder copy with no subject",
+      "No image, texture, light or material at all, and the cropped 'e' at the end looks like overflow rather than a deliberate bleed",
+      "The idea is literal: the word 'R\u00eaverie' gets bigger and bolder, with nothing a viewer would remember"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "thank-you-for-smoking": {
+      "overall": 8.38,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.5,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 8.33,
+  "delta": -5.33,
+  "trials": [
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "thank-you-for-smoking"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered 3D frames with specific, varied materials: translucent skin-like hand, coral sponge, mesh fabric, frosted glass, wet organic tubing, fibres",
+              "Each frame has a different world and palette (dusk pink, violet volcano, cyan sky, sage pastel, deep green), so this looks like a multi-artist festival-titles format, not one layout repeated",
+              "Real lighting: subsurface scattering, rim light, backlit glass, atmospheric depth over terrain",
+              "Custom OFFF MX wordmark plus artist credits placed in the corner as titles, which follows festival title conventions",
+              "Weakness: the credits are set small in a plain bold sans and sit over the image without being part of it; the surreal-organic 3D look is now a common trend in the genre"
+            ],
+            "gaps": [
+              "The type has no idea of its own: the artist names are plain bold sans labels in the corner. They should be built into the 3D worlds the way B builds its credits into its set",
+              "There is no single connecting idea or story across the segments. Something that ties them together (one material that changes, or a camera path) would turn a showcase into a film",
+              "Several segments land on the familiar 'surreal organic 3D' look (tubes, fibres, blobs). It needs one image that only this piece could have"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, memorable idea: the world is a clockwork map that builds itself, so the opening explains the story's geography and politics",
+              "Strong choreography across frames: the armillary sun band, a camera fly-through over mechanical cities, a close-up of gears, the map overview, and the sigil lockup that closes the loop",
+              "Credits are built into the scene in the world's own small-caps serif, with house sigils as bullets",
+              "Material storytelling: carved brass, wood, parchment, engraved relief; strong warm key light against cold, muted grounds",
+              "Every frame works as a poster, and the end card mirrors the opening frame"
+            ],
+            "gaps": [
+              "Benchmark entry. The palette stays close to familiar fantasy sepia-and-gold and could have taken a bolder risk",
+              "The engraved title lockup leans on genre convention (gold trajan-like caps) more than the rest of the piece does",
+              "The flat map frame is a little weaker in light and depth than the 3D set shots"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 4,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 5,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook 'tasteful AI' formula: cream ground, small tracked-caps label ('THE AUTUMN ISSUE'), large high-contrast italic display serif, mostly empty frame",
+              "The same composition in all five frames; the only motion is a fade-in from grey to black and a weight or scale bump until the word crops off the right edge",
+              "A generic Didone italic used as a default, with a stock italic deck line and an underscore rule; layout like a slide, not a typographic idea",
+              "No image, light, texture or material, even though the subject is literally 'craft and the return of the handmade'",
+              "'Reverie' plus 'No 117' is placeholder magazine copy with nothing a viewer would remember"
+            ],
+            "gaps": [
+              "Give it an idea tied to its subject: handmade craft wants physical material (letterpress, paper, ink spread, hands), not flat vector type on beige",
+              "Choreograph change between frames (new compositions, the type interacting with image, a cut or a reveal) instead of one layout with a weight tween",
+              "Bring in real light and texture plus a palette with intent; at the moment cream and black carry no meaning or surprise"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, witty concept: every credit is set as fake cigarette-pack branding, which fits the film's satire of tobacco PR exactly",
+              "A typographic point of view: each name gets its own period-appropriate brand style (script, slab serif plus 'LIGHTS', deco caps, signage sans) with tax stamps, crests and taglines ('Blended Mild', 'Honey-toasted tobacco lights')",
+              "Deliberate mid-century print palette (royal blue, orange, cream, red, green) with printed-paper texture and slight registration grit",
+              "Variety from frame to frame through different pack designs, with the run of cigarette filters as a punchline end card"
+            ],
+            "gaps": [
+              "The light is flat scanned print; a little real, physical light or camera depth on the packs would add weight",
+              "Motion is mostly pans across flat artwork, with less choreography and dimensional surprise than B",
+              "The format of the joke repeats; one or two shifts in structure (packs opening, a match strike) would vary the rhythm"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 29.3,
+        "cost_usd": 0.1541938,
+        "tokens": 71749,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "thank-you-for-smoking",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered organic 3D: translucent glass and resin hands, coral and fibre growths, knitted mesh, hair-like filaments, with real subsurface scattering, refraction and specular detail",
+              "Unusual palette that shifts from frame to frame (dusty pink and rust, violet night, cyan sky against amber glass, sage and peach, bottle green and oxblood) while staying coherent as a family",
+              "Each frame is a distinct world (hand over a ridge, an erupting peak, a glass figure, a textile wall, a knot of tubes), so the frames don't repeat a layout",
+              "Wordmarks (Boldtron, OFFF MX, Medusa Lab) suggest a festival title sequence built from contributor segments, which is a credible studio format",
+              "The idea is mostly an aesthetic of 'organic-synthetic growth' rather than one clear concept, which keeps it below the top tier"
+            ],
+            "gaps": [
+              "Type is placed as small corner labels and never interacts with the 3D world; it needs a typographic system that lives inside the image, the way B's credits sit on the model",
+              "No single unifying idea or arc ties the segments together; it needs a narrative or a structural device that turns a reel into a film",
+              "Some compositions (the tube knot, the textile wall) read as showcase renders; each frame should carry a reason to exist beyond its material study"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea only this piece could have: the world map as a clockwork model that builds itself, so the opening doubles as a guide to where the episode takes place",
+              "Fully realised material world: engraved bronze astrolabe band, wood, brass gears and bone-like spires, all lit by a warm sun with real depth of field",
+              "Credits set in a Trajan-like engraved roman with small heraldic sigils, sitting in perspective on the terrain so they belong to the world",
+              "Clear choreography: an orbital band, then a fly-over, then mechanisms rising, then the map, then the title lockup on the astrolabe, with the sunburst bookending the sequence",
+              "An iconic lockup; every frame works as a poster"
+            ],
+            "gaps": [
+              "The credit type is functional and small; there is room for a bolder typographic moment beyond the final lockup",
+              "The warm sepia grade is uniform; a few colour shifts between regions could add more variation",
+              "As the benchmark entry its gaps are marginal: the end lockup leans on a familiar epic-fantasy sunburst"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A precise idea that fits the film: every credit becomes a vintage cigarette pack, so the satire is carried by the packaging itself",
+              "Typography with a strong point of view: a different period-correct face and lettering per card (banner script, brush script, Didone 'LIGHTS', deco caps, italic script over a bold sans), each matched to a pack identity",
+              "Wit in the details: names presented as brands ('David Koechner LIGHTS', 'Honey-toasted tobacco lights', 'Underage sale prohibited'), and the director's credit over a row of filters",
+              "A deliberate mid-century palette of royal blue and gold, orange and cream, red, white and blue, and mint green",
+              "Tight crops and slides across print surfaces imply camera moves with real variety and pace"
+            ],
+            "gaps": [
+              "The frames are flat print scans; real material (foil, cellophane sheen, embossing, raking light) would push it from graphic to tactile",
+              "The structure is close to one move repeated (slide across a pack, reveal a name); it needs one or two choreographic surprises such as packs opening or cigarettes becoming type",
+              "The palette changes card to card but there is no build or climax across the sequence, which B's bookended arc has"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 5,
+              "colour": 2,
+              "light_texture": 1,
+              "motion": 3,
+              "craft": 5,
+              "originality": 2
+            },
+            "tells": [
+              "Textbook 'tasteful AI' editorial template: cream ground, a small tracked-caps label ('THE AUTUMN ISSUE') above a large high-contrast Didone italic headline, and a No. 117 folio",
+              "The same composition repeats across all five frames; the only change is the headline's weight and scale (a variable-font weight ramp) plus one caption fading in",
+              "No image, texture, light or material: just a flat monochrome ground with black type",
+              "The copy is generic placeholder sentiment ('Twelve designers on slowness, craft and the return of the handmade')",
+              "The one gesture, heavier type that crops off the right edge, is a stock kinetic-type effect and not an idea"
+            ],
+            "gaps": [
+              "It has no concept specific to its subject; the 'return of the handmade' could be expressed through hand-set, inked or physically printed type, the way C makes the medium the message",
+              "Every frame is one slide; it needs real choreography, with type that moves through space, changes layout and meets imagery as B's credits do",
+              "There is no texture, light or palette; it needs paper grain, print imperfection or photography, and a colour idea beyond black on cream"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.7,
+        "cost_usd": 0.15746680000000002,
+        "tokens": 71923,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "game-of-thrones",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Strong central idea: each credit is set as a different fake cigarette-pack design, so the credits themselves become the satire of the film's subject",
+              "Typography changes with each pack and fits each period: banner-ribboned slab caps, a brush script ('Cameron Bright'), an engraved serif with spaced caps ('LIGHTS'), deco caps, and a condensed bold sans with a script over it. Every face is chosen on purpose and none is a default",
+              "Varied palettes from different decades (royal blue/gold, orange/cream, red/white/blue stripe, mint/green, red/tobacco-yellow), each clearly built for its pack",
+              "Printed-matter texture (paper, slight misregistration, engraved heraldry, tax stamps, small print like 'UNDERAGE SALE PROHIBITED', 'HONEY-TOASTED TOBACCO LIGHTS') rewards a closer look",
+              "Tight crops in every frame suggest a camera tracking across physical packaging, and the closing row of filters makes a payoff"
+            ],
+            "gaps": [
+              "Frame-to-frame motion looks like a repeated tracking crop and pan, so the camera language varies less than B's continuous dimensional choreography",
+              "Light is flat scan/print light with no specular or dimensional play on foil or cellophane that could have added material richness",
+              "Composition repeats one device (a horizontal crop of a pack face), so some cuts land as variations rather than escalation"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.96,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "Specific, ownable concept: the world itself is a clockwork map that builds the story's locations mechanically, so the title doubles as geography and exposition",
+              "Real dimensional light: a blown-out sun in an armillary sphere, low raking light over the miniatures, and haze and depth of field across the map",
+              "Rich materials (tooled bronze with dragon reliefs, aged parchment, carved stone/bone towers, brass gears) that read as tactile and specific",
+              "Clear choreography across frames: a sweep around the astrolabe band, then dives down to unfolding cities, a cut back to the parchment map, and a return to the sphere for the logotype lock-up",
+              "Credits sit in the world in a restrained engraved Trajan-style cap face with house sigils, and the logotype is integrated into the metal band"
+            ],
+            "gaps": [
+              "Credit typography is conventional epic-fantasy Trajan caps, so it serves the film rather than adding its own point of view",
+              "Palette is a mostly expected warm bronze/sepia; one more unexpected colour note could sharpen it",
+              "Credit placement is small and repeats in the lower third, sometimes fighting busy mechanical detail for legibility"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered organic-synthetic 3D (translucent hands, coral-like growths, knitted mesh, fibres, glass tubing with beads) built and art-directed with real material variety rather than stock primitives",
+              "Real light: subsurface scattering in the hands, refraction in the glass forms, rim-lit terrain, and a volcanic plume against a dusky gradient",
+              "Palette chosen with intent (dusty rose, mint, sage, cobalt sky, oxblood beads) and changed per shot",
+              "Studio-name supers ('Boldtron', 'Medusa Lab') and a custom 'OFFF MX' logotype point to a festival title sequence of commissioned vignettes"
+            ],
+            "gaps": [
+              "Typography is a bold grotesk dropped into a corner like a slide label, with no relationship to the imagery; it needs a typographic system that interacts with the forms",
+              "Vignettes feel stitched together rather than built around one narrative idea, and lack the single strong concept of A or B",
+              "The 'surreal organic 3D' festival look is a well-trodden aesthetic; it needs a more surprising idea to rise above the genre"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 4,
+              "colour": 2,
+              "light_texture": 1,
+              "motion": 2,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Textbook 'tasteful AI' formula: cream ground, small tracked-caps label ('THE AUTUMN ISSUE'), a large editorial Didone italic headline, black as the single accent, and a mostly empty frame",
+              "The same composition repeats in all five frames. The only change is a fade from grey to black and a weight/scale ramp until the word crops off the right edge, so there is a single action and little happening",
+              "Generic magazine-cover filler: 'N\u00ba 117' and the italic subhead 'Twelve designers on slowness, craft and the return of the handmade' read as placeholder copy with no subject",
+              "No image, texture, light or material at all, and the cropped 'e' at the end looks like overflow rather than a deliberate bleed",
+              "The idea is literal: the word 'R\u00eaverie' gets bigger and bolder, with nothing a viewer would remember"
+            ],
+            "gaps": [
+              "No concept or image: build an idea that only this piece could have (e.g. the handmade theme shown through real material, process or texture) instead of animating one word",
+              "No choreography: introduce multiple compositions, shifts of scale and rhythm, and type interacting with image across the sequence rather than one tween on one layout",
+              "Typography is a stock high-contrast Didone at default settings: commission or customise the letterforms, explore tension in layout and integrate type with the supporting copy instead of a slide-style corner label"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.7,
+        "cost_usd": 0.1600114,
+        "tokens": 72055,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": null,
+        "craft": 6
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": true,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": null
+      },
+      "defects": [
+        "Only one move in the whole film: a weight axis ramp on the masthead, from light grey to heavy black. Nothing else moves except an opening fade-in on the deck copy.",
+        "As the word gets wider it runs past the right edge. The final 'e' is clipped in the last frames ('R\u00eaveri\u2026'), and nothing in the composition explains it, so it reads as an overflow, not a choice.",
+        "The masthead doesn't re-centre or re-track as it widens. Its left edge stays fixed and everything grows to the right, which drags the layout off balance.",
+        "The pairs show roughly even spacing between frames, so the weight ramp looks linear. There's no visible ease-in, overshoot or settle, and the film ends while the ramp is still moving.",
+        "The opening frame is a mid-grey semi-transparent fill on the wordmark. Opacity and weight are animated together, and the result looks muddy, not intentional.",
+        "Faint vertical ghost lines, likely grid or guide residue, are visible in the background at about x\u2248155 and x\u2248970.",
+        "The 'N\u00b0 117' issue number uses a stencilled/fragmented display cut. It sits outside the masthead and sans systems and isn't tied to them.",
+        "The background is flat cream with no grain or light, so at 100% the page looks digitally clean, not like printed paper."
+      ],
+      "gaps": [
+        "Choreography: one linear parameter ramp held for 5 s is a variable-font demo, not direction. Top studios would stagger the ramp per glyph, add secondary motion (kicker, rule, deck, folio) with overlap, and resolve it all in a deliberate hold.",
+        "Concept and arc: the weight change doesn't mean anything. The deck is about 'slowness, craft and the return of the handmade', so weight could have been tied to that, e.g. ink building up or hand-drawn strokes accumulating. Instead energy rises flat and then the word clips off-frame, with no peak and no release.",
+        "Finish: the overflow clipping, the guide-line artefacts and the sterile flat ground mean it's well short of studio polish. A top piece would control the frame edge, add paper texture or light falloff, and hold a clean final lock-up."
+      ]
+    },
+    "meta": {
+      "seconds": 18.1,
+      "cost_usd": 0.14428760000000002,
+      "tokens": 70308,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "2-editorial.mp4: 5.0s, 1 shots, median 5.00s, longest 5.00s\nper-second change: [22.4, 25.0, 30.8, 17.1]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s; median shot 5.0s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 4,
+    "colour": 2,
+    "light_texture": 1,
+    "motion": 3.5,
+    "craft": 5.5,
+    "originality": 2
+  },
+  "full_overall": 3.12,
+  "cost_usd": 0.616,
+  "judge_seconds": 111.8,
+  "verdict": "FAIL"
+}

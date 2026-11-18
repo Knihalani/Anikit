@@ -1,0 +1,41 @@
+{
+ "name": "i-explainer",
+ "judge": "python3 scripts/judge.py run final.mp4 --tags explainer-2d,editorial-data,illustration,motion-design --name i-explainer (3 trials, refs: kurzgesagt-short, kurzgesagt-climate, cosmos-spacetime-odyssey)",
+ "before": {
+  "r1": 2.75,
+  "r2": 2.88
+ },
+ "passes": {
+  "v2 (liquid surface device)": 4.0,
+  "v3 (colour arc, collapse at 70%, per-ring sound)": 3.62,
+  "v4 (legible refraction, one type system) = final": 4.25
+ },
+ "final": {
+  "overall": 4.25,
+  "scores": {
+   "idea": 4,
+   "composition": 5,
+   "typography": 4,
+   "colour": 4,
+   "light_texture": 5,
+   "motion": 4,
+   "craft": 5,
+   "originality": 3
+  },
+  "judged_professional": "0/3",
+  "critic": {
+   "motion": 6,
+   "sound": 6,
+   "craft": 7
+  },
+  "verdict": "FAIL",
+  "delta_vs_refs": -3.21
+ },
+ "render": {
+  "cmd": "ANIKIT_RENDER_CACHE=0 anikit-video render spec.json -o final.mp4 --sheet contact.png",
+  "wall_s": 253,
+  "note": "engine output re-encoded with x264 crf 20 (the grain makes the engine's file ~260 MB)"
+ },
+ "audio": "-14 LUFS integrated; noise cancelled by summing it with its own inverted copy (residual 0)",
+ "defects": "scripts/defects.py: clean"
+}

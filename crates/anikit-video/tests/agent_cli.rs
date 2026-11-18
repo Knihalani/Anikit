@@ -121,3 +121,14 @@ fn subcommand_help_succeeds() {
     let (ok, out, _) = run(&["render", "-h"], &d);
     assert!(ok && out.contains("render"), "{out}");
 }
+
+#[test]
+fn set_patches_several_values() {
+    let d = tmp("set-many");
+    std::fs::write(d.join("s.json"), r##"{"scenes":[{"duration":1,"layers":[{"id":"title","text":"a"}]}]}"##).unwrap();
+    let (ok, _, err) = run(&["set", "s.json", "scenes.0.duration=2.5", "scenes.0.layers.title.text=Salt, slowly"], &d);
+    assert!(ok, "{err}");
+    let v: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(d.join("s.json")).unwrap()).unwrap();
+    assert_eq!(v["scenes"][0]["duration"], 2.5);
+    assert_eq!(v["scenes"][0]["layers"][0]["text"], "Salt, slowly");
+}

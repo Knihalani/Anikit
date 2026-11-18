@@ -1,0 +1,532 @@
+{
+  "name": "graphic_pieces_fold-identity",
+  "tags": [
+    "brand-idents",
+    "motion-design"
+  ],
+  "refs": [
+    "bbc-two-ident",
+    "adobe-cc-ident",
+    "game-of-thrones"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 4,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 2,
+      "motion": 3,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 3.12,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "No concept beyond 'show the brand guidelines'. It needs a world or metaphor the way A builds its clockwork map, for example freight physically folding through space",
+      "No material, light or depth: give the mark physical stakes (cardboard, steel, real signage in situ) instead of flat vectors on cream",
+      "No choreography: the frames are static pages, and a top piece would transform one frame into the next (the mark folding into the pattern, the pattern into the sign) with scale shifts and surprise",
+      "It has no idea specific to the subject (freight or folding); the mark should come from a real concept and be shown in use, in a world with light and material as A does",
+      "It needs actual motion and choreography between frames: the mark folding, the pattern assembling, transitions in place of separate guideline slides",
+      "It needs a typographic point of view: a custom or carefully chosen face used at expressive scale and integrated with the image, rather than a default grotesk specimen",
+      "There is no idea. C turns its subject (a map of warring houses) into a physical mechanism; D should make 'fold' and 'freight' do something, such as marks that fold like cardboard, crates and routes, signage that unfolds in motion",
+      "It has no motion design. Replace the six static boards with choreographed transitions where the mark, pattern and signage transform into one another with weight and timing",
+      "It has no light, texture or typographic point of view. Put the identity on real materials (corrugate, painted steel, hi-vis) under real light, and give the type scale contrast and integration rather than a default specimen"
+    ],
+    "tells": [
+      "Textbook 'tasteful AI' brand deck: cream ground, small mono labels ('01 Mark', '02 Scale'), deep green plus a single orange accent, mostly empty frames",
+      "The type is Space Grotesk named as the specimen, set as a default 'Aa + alphabet' slide. It has no typographic idea",
+      "Slide-deck structure: each frame is a numbered page with the same layout logic and the content swapped (mark, scale, pattern, type, wayfinding, lockup)",
+      "Placeholder UI tells: a blank cream pill sitting in the middle of the pattern frame, and a generic 'Depot 4 North gate \u2192' sign",
+      "The mark is a generic C-with-dot in a squircle, there is fake-precision spec text ('squircle n = 4.5 \u00b7 arc 270\u00b0'), and the light, texture and depth are flat and unmotivated",
+      "The literal idea is product name plus specs, and the 'identity system, 2027' framing has nothing memorable in it",
+      "A textbook 'tasteful AI' brand-deck look: cream ground, tiny mono numbered labels ('01 Mark', '02 Scale'), one orange accent on forest green, mostly empty frames",
+      "The typeface is a default (Space Grotesk) shown as an 'Aa' plus alphabet specimen, with no typographic idea",
+      "Slide-deck structure: each frame is one guideline page (mark, scale, pattern, type, wayfinding, lockup), and nothing moves between them",
+      "A placeholder cream pill sits in the middle of the pattern frame for no reason",
+      "The generic 'C-with-dot' mark in a squircle, the hatched stripe and the 'Depot 4 North gate \u2192' sign are stock identity tropes",
+      "Fake-precise annotations ('squircle n = 4.5 \u00b7 arc 270\u00b0') imitate craft without showing it",
+      "The frames have no light, material or texture at all",
+      "The textbook 'tasteful AI' brand kit: cream ground, forest green plus a single orange accent, tiny monospace tracked labels ('01 Mark', '02 Scale') in the corners, and a mostly empty frame",
+      "Space Grotesk is set at defaults and shown as a specimen ('Aa' plus the alphabet). That labels a typeface; it is not a typographic idea",
+      "The structure is a slide deck: numbered sections (mark, scale, pattern, type, wayfinding, lockup), each a static board with no implied motion or choreography between frames",
+      "Placeholder UI: an empty cream pill floats in the pattern frame and the wayfinding sign is a flat card. There is no light, material or depth anywhere",
+      "The mark is a generic C-plus-dot in a squircle, and the quarter-circle pattern is a stock Bauhaus tile. The 'fold' idea never gets expressed (no folding, no freight)",
+      "The pseudo-technical spec copy ('squircle n = 4.5 \u00b7 arc 270\u00b0 \u00b7 r 0.5', 'identity system, 2027') mimics a case study without any substance behind it"
+    ]
+  },
+  "refs_summary": {
+    "bbc-two-ident": {
+      "overall": 8.25,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "adobe-cc-ident": {
+      "overall": 7,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "game-of-thrones": {
+      "overall": 9.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 8.12,
+  "delta": -5.0,
+  "trials": [
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "bbc-two-ident",
+        "C": "candidate",
+        "D": "adobe-cc-ident"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A single, specific conceit: the world as a mechanical clockwork map whose cities build themselves. It belongs to this one piece and nobody else",
+              "Real material and light: tooled leather and brass, the engraved dragon band, gears and a carved tower catching hard sunburst light with lens bloom",
+              "The frames are choreographed: an astrolabe band, a fly-over of a city as it builds, a camera dive to the parchment map, then the emblem resolves",
+              "Credits sit inside the world with small heraldic sigils, and each name is placed against the object it labels",
+              "Title card in a carved period serif framed by beast heraldry, so the type fits the world's lore instead of reading as a default"
+            ],
+            "gaps": [
+              "The credit type is small and quiet against the busy mechanics, so the integration could be bolder in a few frames",
+              "The palette rarely leaves warm sepia and teal, and a colour break could mark the moves between regions",
+              "The mid-sequence map frame is flatter than the 3D frames around it, so the material language dips there"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Tactile 'object' system: quilted, foiled, rubber and knitted primitives on a pegboard. The materials are specific and physically believable, not stock-3D defaults",
+              "The palette is deliberate per variant (rust, magenta, green, teal, violet with acid-yellow), and the same flat-lay is regraded per colourway to show a real system",
+              "The frames show physics and accumulation: objects pour, pile and spread, then settle into an ordered flat-lay, which is varied, weighted motion",
+              "The broadcaster's mark is held small and consistent, which is right for an ident"
+            ],
+            "gaps": [
+              "The type is just the corporate logo dropped in. It never interacts with the objects the way A's credits live inside the world",
+              "Primitives without narrative: the idea is 'nice materials falling' rather than a story, so it is less memorable than A's map conceit",
+              "Cropped square variants repeat the pile composition, and the camera grammar could vary more"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "One mark is reinterpreted by visibly different hands: embossed gradient, chrome Y2K 3D, risograph and collage grain, letterform construction, floral vector, and photo collage with butterflies",
+              "Real texture in the collage frames (halftone, torn paper, print noise) next to glossy renders: deliberate stylistic range",
+              "The 'together' letterforms woven through the ring show at least one typographic idea"
+            ],
+            "gaps": [
+              "It reads as a collection of commissioned stills, not one choreographed film, and nothing carries motion from frame to frame",
+              "Several variants (the gradient emboss, the floral) lean on generic trend aesthetics rather than a specific point of view",
+              "Centred logo in every frame: the composition never breaks the mark's symmetry or takes a risk with scale or crop"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Textbook 'tasteful AI' brand deck: cream ground, small mono labels ('01 Mark', '02 Scale'), deep green plus a single orange accent, mostly empty frames",
+              "The type is Space Grotesk named as the specimen, set as a default 'Aa + alphabet' slide. It has no typographic idea",
+              "Slide-deck structure: each frame is a numbered page with the same layout logic and the content swapped (mark, scale, pattern, type, wayfinding, lockup)",
+              "Placeholder UI tells: a blank cream pill sitting in the middle of the pattern frame, and a generic 'Depot 4 North gate \u2192' sign",
+              "The mark is a generic C-with-dot in a squircle, there is fake-precision spec text ('squircle n = 4.5 \u00b7 arc 270\u00b0'), and the light, texture and depth are flat and unmotivated",
+              "The literal idea is product name plus specs, and the 'identity system, 2027' framing has nothing memorable in it"
+            ],
+            "gaps": [
+              "No concept beyond 'show the brand guidelines'. It needs a world or metaphor the way A builds its clockwork map, for example freight physically folding through space",
+              "No material, light or depth: give the mark physical stakes (cardboard, steel, real signage in situ) instead of flat vectors on cream",
+              "No choreography: the frames are static pages, and a top piece would transform one frame into the next (the mark folding into the pattern, the pattern into the sign) with scale shifts and surprise"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 28.0,
+        "cost_usd": 0.1524984,
+        "tokens": 71669,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "bbc-two-ident",
+        "C": "adobe-cc-ident",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "One clear idea: the world is a clockwork map that builds itself, and the camera travels across it, which works as both an orientation device and a title sequence",
+              "The light has a source: a sun at the centre of an astrolabe throws flare and halation across engraved metal, carved wood and parchment",
+              "Dense, tactile model work: the cities and the weirwood tree are built from gears and bellows, and every frame has foreground, midground and atmosphere",
+              "The credits are set in a small-caps classical serif and placed inside the scene with house sigils, rather than laid over it like slide text",
+              "The film opens on an embossed band and closes on the same band carrying the title lockup, so the sequence is bookended",
+              "The frames show choreography: macro detail, a fly-over, a rise, a map tracking shot and a final resolve"
+            ],
+            "gaps": [
+              "The warm sepia palette is narrow in places; a cold contrasting register (the North) could sharpen the rhythm",
+              "The credit type is correct but conservative; it could react to the light or the surface more",
+              "The map frame is flatter and less lit than the mechanical frames, so tension dips there"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific idea: a peg-board world of tactile objects that flow, pile up and sort themselves, a system that can generate many idents",
+              "Rich material variety: quilted fabric, crinkled foil, foam, rubber, springs and wire primitives, with believable soft shadows and contact occlusion",
+              "A deliberate, unusual palette that changes per variant (rust/blue, pink/magenta, sage/green, lilac/acid yellow) while keeping one dark ground",
+              "Two flat-lay inventory frames repeat the same layout in different colourways, which is a knowing system reveal rather than laziness",
+              "Composition alternates between diagonal flowing streams, dense piles and an organised grid, which implies motion with physics and weight",
+              "The BBC Two mark is small and integrated, carried by the objects"
+            ],
+            "gaps": [
+              "The logo placement is utilitarian; the type never takes part in the physical play",
+              "The primitive vocabulary (cubes, cylinders, wireframes) risks reading as a 3D asset library without a stronger narrative beat",
+              "Every variant shares the same lighting setup, so there is less dramatic range than A"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A brand-system idea: one infinity mark reinterpreted by different artists' languages (emboss, chrome 3D, risograph collage, kinetic letterforms, floral vector, photo collage)",
+              "The collage frame has real texture: paper grain, halftone, torn edges, hand-cut type",
+              "The photo-collage frame layers butterflies, foliage, sun discs and figures with depth",
+              "Some frames are close to trend defaults (chrome blobs, gradient emboss), but they sit within a curated range"
+            ],
+            "gaps": [
+              "The mark is centred in every frame, so composition barely varies; it reads as a gallery of stills rather than choreographed motion",
+              "There is no through-line or transformation between styles; it needs a motion logic connecting them as A has",
+              "The pink-gradient emboss and chrome-primitive frames sit closest to generic trend output and dilute the set"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "A textbook 'tasteful AI' brand-deck look: cream ground, tiny mono numbered labels ('01 Mark', '02 Scale'), one orange accent on forest green, mostly empty frames",
+              "The typeface is a default (Space Grotesk) shown as an 'Aa' plus alphabet specimen, with no typographic idea",
+              "Slide-deck structure: each frame is one guideline page (mark, scale, pattern, type, wayfinding, lockup), and nothing moves between them",
+              "A placeholder cream pill sits in the middle of the pattern frame for no reason",
+              "The generic 'C-with-dot' mark in a squircle, the hatched stripe and the 'Depot 4 North gate \u2192' sign are stock identity tropes",
+              "Fake-precise annotations ('squircle n = 4.5 \u00b7 arc 270\u00b0') imitate craft without showing it",
+              "The frames have no light, material or texture at all"
+            ],
+            "gaps": [
+              "It has no idea specific to the subject (freight or folding); the mark should come from a real concept and be shown in use, in a world with light and material as A does",
+              "It needs actual motion and choreography between frames: the mark folding, the pattern assembling, transitions in place of separate guideline slides",
+              "It needs a typographic point of view: a custom or carefully chosen face used at expressive scale and integrated with the image, rather than a default grotesk specimen"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.4,
+        "cost_usd": 0.1547936,
+        "tokens": 71775,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "adobe-cc-ident",
+        "B": "bbc-two-ident",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "One fixed brand mark is redrawn in six distinct, authored visual languages: embossed pink plastic, iridescent chrome 3D with floating primitives, a risograph/xerox collage with 'BOOM' lettering, a ribbon of custom kinetic letterforms, flat floral illustration, and a photo collage with butterflies, foliage and a figure on a rock",
+              "Material work is specific and controlled: the debossed relief in frame 1, the holographic gradients on chrome, the paper grain and halftone in frame 3, the cut-paper photo edges in frame 6",
+              "Frame 4 builds lettering out of the mark's own tube geometry, which shows type and image designed together",
+              "The structure (many illustrators each take on one logo) reads as a curated artist-collaboration campaign, not a template",
+              "Weaknesses: the mark sits dead centre in every frame, and the floral frame tips into symmetrical vector decoration"
+            ],
+            "gaps": [
+              "Every frame centres the logo at the same scale, so the piece feels like a gallery of stills. C sends the camera through its world; A needs transitions or a camera path that carry one style into the next",
+              "There is no narrative or single conceptual spine beyond 'many artists, one logo'. Give it a through-line (one material, gesture or story) that builds to a resolution the way C builds to its title lockup",
+              "The styles vary in strength: the flat floral frame is generic next to the collage and chrome frames. Cut or push the weakest takes so every frame holds up as a poster"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A tactile, specific world: quilted, foil, flocked, ribbed and foam objects on a pegboard, with highly distinct material shading on each",
+              "Real light: a low key with soft occlusion between piled objects, specular highlights on the foil, and a small glowing ball that acts as a protagonist and implies a chain-reaction choreography",
+              "The overhead 'knolling' layout returns in a second colourway (green, then lilac/yellow), so this is a system of idents with recolourable palettes, not one layout with the words swapped",
+              "Shots alternate between tight, low-angle piles and the flat-lay inventory, which gives variety in camera and implied motion (things rolling, tumbling, settling)",
+              "The BBC TWO lockup is small, quiet and correctly placed; the type gets out of the way of the material story"
+            ],
+            "gaps": [
+              "Type is purely a broadcast lockup with no integration into the world. C builds its title into the physical object; B could let the objects form or frame the wordmark",
+              "The palettes, though deliberate, are swapped flat across the whole set. A more authored colour arc within a single ident would add drama",
+              "Mood and stakes are lighter than in C. A stronger emotional or narrative payoff (the ball triggering a bigger collapse or reveal) would give it a memorable final beat"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A singular idea only this show could own: the world map as a clockwork mechanism whose cities unfold out of the ground, framed by an astrolabe with an engraved band telling the backstory",
+              "Real, motivated light (a sun inside the armillary, warm flares, low raking light across miniature towers) and dense texture: tooled metal, gears, parchment, wood",
+              "Credits are set in a classical incised serif with small heraldic sigils, placed in the depth of the scene beside each mechanism rather than pasted on top",
+              "Choreography reads clearly across frames: macro on the engraved band, flight over a city, a mechanism rising, the armillary, a pull back to the map, a resolve to a title lockup that echoes the opening band",
+              "A restrained, deliberate palette of bronze, sepia and verdigris, with every frame a composed poster"
+            ],
+            "gaps": [
+              "Contrast is very low in the map and city frames, so some detail falls into murk at small sizes",
+              "The final lockup leans on a generic sunburst flare. The rest of the piece makes its light physical, and this ending is less specific than everything before it",
+              "Credit type is small and sometimes fights the busy texture behind it (e.g. 'Michele Clapton'); a little more separation would help legibility"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 5,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 5,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook 'tasteful AI' brand kit: cream ground, forest green plus a single orange accent, tiny monospace tracked labels ('01 Mark', '02 Scale') in the corners, and a mostly empty frame",
+              "Space Grotesk is set at defaults and shown as a specimen ('Aa' plus the alphabet). That labels a typeface; it is not a typographic idea",
+              "The structure is a slide deck: numbered sections (mark, scale, pattern, type, wayfinding, lockup), each a static board with no implied motion or choreography between frames",
+              "Placeholder UI: an empty cream pill floats in the pattern frame and the wayfinding sign is a flat card. There is no light, material or depth anywhere",
+              "The mark is a generic C-plus-dot in a squircle, and the quarter-circle pattern is a stock Bauhaus tile. The 'fold' idea never gets expressed (no folding, no freight)",
+              "The pseudo-technical spec copy ('squircle n = 4.5 \u00b7 arc 270\u00b0 \u00b7 r 0.5', 'identity system, 2027') mimics a case study without any substance behind it"
+            ],
+            "gaps": [
+              "There is no idea. C turns its subject (a map of warring houses) into a physical mechanism; D should make 'fold' and 'freight' do something, such as marks that fold like cardboard, crates and routes, signage that unfolds in motion",
+              "It has no motion design. Replace the six static boards with choreographed transitions where the mark, pattern and signage transform into one another with weight and timing",
+              "It has no light, texture or typographic point of view. Put the identity on real materials (corrugate, painted steel, hi-vis) under real light, and give the type scale contrast and integration rather than a default specimen"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 36.1,
+        "cost_usd": 0.16754220000000003,
+        "tokens": 72422,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 7
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": false
+      },
+      "defects": [
+        "The section labels skip from 02 Scale to 04 Pattern. A chapter (likely 'Colour') is missing or was cut, so the numbering is broken.",
+        "The pairs show identical positions 1/6 s apart on the Scale, Pattern and Wayfinding cards. These are held slides with no secondary motion: no drift, no settle, no breathing.",
+        "The Pattern frame catches the cream pill mid-build as an empty blank lozenge. The text pops in after the shape instead of being part of its reveal.",
+        "The last ~2 s are static (per-second change 0.1 and 0.0). This is dead air after the lockup, with no settle move or audio tail to justify it.",
+        "The 3.0 s longest shot is over the pace bar, and it shows the problem: one 'card' layout after another, not continuous choreography.",
+        "The mark sits off-centre within its scale row (24/96 px labels, but the large mark has no label). The specimen labelling is inconsistent.",
+        "The 1:1 crop is clean, but the cream ground is completely flat and the edges are plain vector. There is no grain, light or print feel to make it read as a physical identity.",
+        "The soundtrack is a uniform, dense, wideband tick grid at a constant level from 0 to 12 s. There is no drop, breakdown or hit marked for the lockup, and the 6.25 s brightening does not match a visible cut."
+      ],
+      "gaps": [
+        "Motion is a slideshow of brand-guideline pages joined by cuts, not one connected system. The film says 'the quarter turn is the pattern' but never shows the mark's 270\u00b0 arc turning into the tile pattern, the wayfinding stripe or the wordmark. That handoff should be the main move and is missing. Only the final diamond-to-squircle rotation uses it.",
+        "There is no energy curve. Each section gets the same in-hold-cut treatment, the peak is unclear, and the ending goes static instead of landing with an eased settle and a sound accent that rhymes with the opening squircle-on-grid.",
+        "The sound is a busy, even percussive bed that is loud throughout (-14 LUFS) with no dynamics and no sound design tied to the picture. The pattern build has no tile clicks or rotational whooshes, and the logo lands with no low-end hit. Top studios would score each quarter turn and leave silence before the lockup."
+      ]
+    },
+    "meta": {
+      "seconds": 24.5,
+      "cost_usd": 0.16365220000000003,
+      "tokens": 72208,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "fold-identity.mp4: 12.5s, 7 shots, median 1.50s, longest 3.00s\nper-second change: [10.8, 154.4, 1.6, 92.3, 85.5, 21.2, 108.4, 161.5, 7.1, 169.3, 0.1, 0.0]\nPACE: FAIL \u2014 longest shot 3.0s > 2.5s; 3/12 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 2,
+    "motion": 4.0,
+    "craft": 5.5,
+    "originality": 2,
+    "sound": 5
+  },
+  "full_overall": 3.61,
+  "cost_usd": 0.638,
+  "judge_seconds": 117.0,
+  "verdict": "FAIL"
+}

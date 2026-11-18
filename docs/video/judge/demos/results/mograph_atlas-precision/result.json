@@ -1,0 +1,516 @@
+{
+  "name": "mograph_atlas-precision",
+  "tags": [
+    "product-launch",
+    "motion-design"
+  ],
+  "refs": [
+    "coinbase-system-update",
+    "jpmorgan-payments",
+    "morph-studio-xreal-1s-2025"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 4,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 2,
+      "motion": 3,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 3,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a real image and material. Physical antennas, sky, signal noise or real orbital data rendered with light and texture would give the subject the weight it wants",
+      "The typography needs an idea. The centred tracked 'ATLAS' with a hairline underline is a default lockup; scale contrast, a custom wordmark or type that is part of the tracking imagery would fix that",
+      "The frames need composition variety and choreography. Five frames reuse two layouts; each shot should be a distinct poster, with transitions that carry meaning",
+      "There is no idea beyond 'radar dial plus logo'. Find a visual concept specific to ground stations (signal, weather, horizon, physical antennas), the way B builds a whole world from its subject's own material.",
+      "The type is default grotesk with tracked mono captions placed like a slide. It needs a real typographic system with scale contrast and integration with the image.",
+      "The frames are flat and empty. Add real light, texture and depth, plus varied compositions and choreography between shots instead of the same centred layout repeated.",
+      "No idea beyond 'satellite = dial + orbit'; find a specific visual metaphor (e.g. signal, handover, the ground station itself) the way B builds one out of ASCII",
+      "The type is set at defaults; it needs a chosen face, scale contrast and type working with the image instead of a centred wordmark",
+      "Every frame is the same centred layout on flat black; add material, light, texture and staging variety so each frame works as a poster"
+    ],
+    "tells": [
+      "This is the textbook 'tasteful AI' recipe: a near-black ground, a small tracked monospace label ('ATLAS / GROUND STATION 3'), a centred bold-sans wordmark and one orange accent",
+      "The idea is literal: a satellite ground-station product shown as a radar dial and an orbit diagram, i.e. the product name plus a diagram of the feature",
+      "The same centred dial appears in frames 1 and 2 with only the needle angle and the numbers changed, and frames 4 and 5 are the same lockup with a tagline added. The structure is a slide deck",
+      "Flat vector strokes, default grotesk and a generic 'X, as a service' tagline. There is no material, light or texture anywhere",
+      "Textbook generic 'tasteful AI' look: near-black ground, a single orange accent, tracked small-caps mono labels ('ATLAS / GROUND STATION 3', 'GROUND SEGMENT, AS A SERVICE'), and a mostly empty frame.",
+      "A centred bold-sans wordmark 'ATLAS' with default wide tracking and an orange rule under it. Frames 4 and 5 are the same composition with a tagline added, which is slide-deck structure.",
+      "The literal, obvious idea is a satellite ground station shown as a radar dial plus an orbit diagram, with placeholder HUD readouts (AZ/EL, SAT-11 ACQUIRED).",
+      "Frames 1 and 2 repeat the same dial with the needle rotated. There is no light, texture, material or depth anywhere.",
+      "The light-grey orbit frame looks like a default vector diagram: a symmetric atom-style ellipse and a flat orange dot.",
+      "A textbook 'tasteful AI' system: near-black ground, small tracked-caps monospace labels, a single orange accent and a mostly empty frame",
+      "A centred, widely tracked bold grotesk 'ATLAS' with a thin orange rule and the tagline 'GROUND SEGMENT, AS A SERVICE' laid out like a slide",
+      "The same centred-circle composition repeats in four of five frames (dial, dial, logo, logo), so little happens between them",
+      "Literal, obvious imagery: a radar dial with AZ/EL readouts and an atom-like orbit diagram for a satellite ground station",
+      "Flat vector strokes with no light, material or depth; the one light-ground frame is a default-looking diagram"
+    ]
+  },
+  "refs_summary": {
+    "coinbase-system-update": {
+      "overall": 8,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "jpmorgan-payments": {
+      "overall": 7.38,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "morph-studio-xreal-1s-2025": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 7.29,
+  "delta": -4.29,
+  "trials": [
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "coinbase-system-update",
+        "C": "candidate",
+        "D": "jpmorgan-payments"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Heavy, art-directed fluid and glass simulation: the XREAL glasses are rebuilt as liquid, with caustics, refraction and trapped bubbles. That is real studio CG work",
+              "The frames vary a lot: a macro shatter, a hero product shot, a full-frame object, a close-up of the material and a cellular macro. That shows a planned shot list",
+              "The product pass is lit properly, with rim light on the frames and lens reflections",
+              "Against it: the electric blue-on-black is the standard look for a tech launch, and the type is a plain bold sans plus a tracked-caps 'EVOLUTION' that adds nothing"
+            ],
+            "gaps": [
+              "The type has no point of view. 'XREAL 1S' and 'E V O L U T I O N' are default grotesk sitting on top of the image; it should be cut, set or refracted through the liquid itself",
+              "The palette is the category's default blue. A second material or temperature (warm light, skin, a colour from the real world) would give it its own identity",
+              "The 'evolution' idea is said in a word, not shown. The liquid-to-product metaphor needs a clear story across the frames, not a mood montage"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Everything is built from ASCII and monospace glyphs: the running figure, the coin, the planet, the padlocks and a grid of currency tokens. The type is the image, so the medium itself carries the idea (crypto as code)",
+              "Ink-blue monochrome with white glyphs is a bold, deliberate palette held across the whole piece",
+              "Each frame is a different composition: a figure in motion, a flow field with a vortex, an orbiting sphere, a code column beside the locks, then a 7x3 grid of rotating coins. That points to real choreography and match cuts",
+              "Small wit throughout: '<<Crypto is...' and 'Faster' labels, and readable code ('matchcut_engine.h', 'StartDirectPayment()')"
+            ],
+            "gaps": [
+              "The figure and icon library is literal: padlocks for security, coins for crypto, $ signs. The metaphors are expected even though the rendering is fresh",
+              "The ground is flat with no depth or texture. A CRT bloom, scanlines or density falloff could give the glyphs a physical surface",
+              "Some frames are close to wallpaper (the coin grid, the flow field) and lack a single focal point to hold the poster"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "This is the textbook 'tasteful AI' recipe: a near-black ground, a small tracked monospace label ('ATLAS / GROUND STATION 3'), a centred bold-sans wordmark and one orange accent",
+              "The idea is literal: a satellite ground-station product shown as a radar dial and an orbit diagram, i.e. the product name plus a diagram of the feature",
+              "The same centred dial appears in frames 1 and 2 with only the needle angle and the numbers changed, and frames 4 and 5 are the same lockup with a tagline added. The structure is a slide deck",
+              "Flat vector strokes, default grotesk and a generic 'X, as a service' tagline. There is no material, light or texture anywhere"
+            ],
+            "gaps": [
+              "It needs a real image and material. Physical antennas, sky, signal noise or real orbital data rendered with light and texture would give the subject the weight it wants",
+              "The typography needs an idea. The centred tracked 'ATLAS' with a hairline underline is a default lockup; scale contrast, a custom wordmark or type that is part of the tracking imagery would fix that",
+              "The frames need composition variety and choreography. Five frames reuse two layouts; each shot should be a distinct poster, with transitions that carry meaning"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 6,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Real, motivated light: hard, raking window light with long cast shadows across a textured warm plaster ground",
+              "A material system held throughout: gold rims, frosted glass and inlaid wood panels with gold seams. The palette is warm, restrained and premium, which suits J.P. Morgan Payments",
+              "The UI is credible branded interface work ($2.45M balance, J.P. Morgan wordmark, a 'Monthly Summary' button), not placeholder bars",
+              "Against it: the glass-icon-on-a-plinth idiom (coin, lock, phone) is very common in fintech, and the metaphors are literal"
+            ],
+            "gaps": [
+              "The icons are literal: a padlock for security, a coin for payment, a chart wave for growth. It needs one ownable metaphor instead of a run of iconography",
+              "Composition and framing repeat: one hero object, three-quarter view, the same warm ground and shadow direction. It needs scale shifts and a break from the tabletop",
+              "Typography plays a minor role, appearing only inside the UI. A typographic voice or headline system would push it past competent product rendering"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 29.0,
+        "cost_usd": 0.1555106,
+        "tokens": 71826,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "coinbase-system-update",
+        "C": "jpmorgan-payments",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Glasses rendered as cast liquid/glass with internal bubbles and tendrils, and caustic refraction through the lenses. This is serious simulation and look-dev work, not stock.",
+              "Frames vary a lot: a macro fluid explosion, a product hero shot, the glasses as a glass object, an abstract macro close-up, and a cellular 'evolution' world. That points to a real shot list and choreography.",
+              "Liquid-to-solid formation of the product is a credible launch-film structure with physical weight (splash, coalesce, reveal).",
+              "Weaknesses: an all-blue liquid palette is a well-worn tech-launch clich\u00e9, and the type is minimal and conventional. 'XREAL 1S' is a plain grotesk, and the widely tracked 'E V O L U T I O N' is the most generic move in the piece."
+            ],
+            "gaps": [
+              "The type has no point of view. Replace the tracked-caps 'EVOLUTION' and the stock wordmark lockup with typography that comes out of the liquid or is shaped by it.",
+              "The monochrome blue reads like every other AR/tech launch. Add a second, unexpected colour or a temperature shift so the frames feel ownable, the way B's flat ultramarine does.",
+              "The concept, 'product born from liquid', is generic. It needs a specific idea tied to what AR glasses do (seeing, layering reality) rather than a material flex."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The whole world is built from ASCII and monospace glyphs ($, <, #, 0/1) on a saturated International Klein\u2013style blue. Type is the image, not a label on top of it, and this system belongs to this piece.",
+              "The glyphs are used as material: a running figure, a coin comet with $ trails, a planet of tumbling numerals with a binary ring, padlocks next to scrolling pseudo-code, and a grid of spinning coins at varied phases. Each frame is a different scene within one strict system.",
+              "Small inverted UI tags ('<<Crypto is...', 'Faster') work as kinetic copy that is part of the composition. Density, rhythm and scale contrast change from frame to frame.",
+              "The coin grid shows staggered rotation phases, which is evidence of deliberate procedural choreography.",
+              "Minor issue: the iconography (padlock, coin, $) is a little literal for a crypto subject."
+            ],
+            "gaps": [
+              "The symbols (padlocks, Bitcoin coins, dollar signs) are on the nose. A less literal metaphor would raise the idea from strong to memorable.",
+              "There is little depth or light play. Glyph-level lighting, parallax or occlusion could add the dimensional richness C gets from real light.",
+              "The single blue-and-white palette risks monotony over the full runtime. One controlled accent or inversion beat would sharpen the climax."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Raking window-light shadows across warm paper and stone, layered frosted glass with gold rims, and accurate refraction and edge glow. The lighting is art-directed, not a default HDRI.",
+              "The restrained champagne, gold and sand palette suits a private-bank brand (J.P. Morgan Payments) and is applied consistently.",
+              "The UI is designed rather than placeholder: a real balance figure ($2.45M), a chart and a nav list set in a refined face, plus a stylus interaction.",
+              "Objects transform from frame to frame (wave graph, coin on phone with ripple, floor-tile node network, stacked coins with motion trails), which suggests continuous product-metaphor choreography.",
+              "Weakness: the metaphors (coin, lock, chart, phone) are expected fintech iconography, and the frames sit close to the premium 'glass and gold' 3D trend."
+            ],
+            "gaps": [
+              "The idea is a polished catalogue of fintech icons. It needs one surprising conceptual turn so the film is remembered for more than its finish.",
+              "Typography is almost absent outside the UI. A bold typographic moment woven into the light and shadow play would give it the point of view B has.",
+              "The compositions repeat a three-quarter object-on-surface setup. Push camera variety (extreme macro, top-down graphic, scale shifts) to break the product-render rhythm."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Textbook generic 'tasteful AI' look: near-black ground, a single orange accent, tracked small-caps mono labels ('ATLAS / GROUND STATION 3', 'GROUND SEGMENT, AS A SERVICE'), and a mostly empty frame.",
+              "A centred bold-sans wordmark 'ATLAS' with default wide tracking and an orange rule under it. Frames 4 and 5 are the same composition with a tagline added, which is slide-deck structure.",
+              "The literal, obvious idea is a satellite ground station shown as a radar dial plus an orbit diagram, with placeholder HUD readouts (AZ/EL, SAT-11 ACQUIRED).",
+              "Frames 1 and 2 repeat the same dial with the needle rotated. There is no light, texture, material or depth anywhere.",
+              "The light-grey orbit frame looks like a default vector diagram: a symmetric atom-style ellipse and a flat orange dot."
+            ],
+            "gaps": [
+              "There is no idea beyond 'radar dial plus logo'. Find a visual concept specific to ground stations (signal, weather, horizon, physical antennas), the way B builds a whole world from its subject's own material.",
+              "The type is default grotesk with tracked mono captions placed like a slide. It needs a real typographic system with scale contrast and integration with the image.",
+              "The frames are flat and empty. Add real light, texture and depth, plus varied compositions and choreography between shots instead of the same centred layout repeated."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.5,
+        "cost_usd": 0.1645634,
+        "tokens": 72285,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "jpmorgan-payments",
+        "B": "coinbase-system-update",
+        "C": "morph-studio-xreal-1s-2025",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Raking window-light with long, soft, motivated shadows that stay consistent across every shot; this is a lit set, not a default HDRI",
+              "Material system is well controlled: champagne-gold metal, frosted acrylic, a warm paper ground and inlaid wood-and-brass tiles all sit inside one restrained warm palette",
+              "Each banking idea (growth curve, tap-to-pay, network node, dashboard, security) gets its own sculptural object, so the frames differ in scale and angle instead of repeating one layout",
+              "Brand typography (the J.P. Morgan wordmark, a serif balance figure) is embedded in the objects rather than laid over them",
+              "Echo trails and ripple rings in frames 1, 2 and 5 show staged secondary motion with weight"
+            ],
+            "gaps": [
+              "The idea is a premium 'glass-and-gold fintech icon' language that many banks share; it needs one conceptual twist only J.P. Morgan could own",
+              "Typography is mostly UI-mock text (the $2.45M dashboard); there is no expressive typographic moment comparable to B's type-as-image system",
+              "The icons are literal (padlock = security, coin = payment); swap at least one for an unexpected metaphor to earn surprise"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, ownable idea: crypto rendered entirely as ASCII glyphs and currency symbols, so the medium (code, characters) is the message",
+              "Type is the image: a figure, a coin, a planet with a ring, padlocks and a grid of coins are all built from $, #, <, 0 and 1, layered over a monospace code readout",
+              "A bold, deliberate single-hue International-Klein-ish blue with white, committed to across the whole piece",
+              "Composition varies widely: a character run cycle, a flow-field vortex, an orbital sphere, a code split-screen, a rotating coin grid; this shows real choreography and a narrative ('Crypto is...', 'Faster', '**Secure')",
+              "Glyph density changes to model depth and form, which is crafted dithering rather than a filter preset"
+            ],
+            "gaps": [
+              "The ASCII/dither look is fashionable; pushing the glyph system further (custom glyphs, scale jumps) would set it apart from other code-art pieces",
+              "The flat blue field gives little depth or lighting variation; one shift in palette or value at a story beat would add drama",
+              "The pill tags ('Crypto is...', 'Faster') are small UI-ish labels; let the copy itself take over the frame in one hero moment"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Real fluid simulation and refractive caustics: the glasses are rebuilt in liquid and gel, with splashes that have weight and direction",
+              "Product-launch CGI language (XREAL 1S) with macro close-ups, chromatic aberration and depth of field, consistent with a studio pipeline",
+              "Variety of scale across the shots: a macro of the temple arm, a hero shot of the product, a full liquid replica, a gel close-up, a cellular 'evolution' field"
+            ],
+            "gaps": [
+              "The liquid-in-blue look is one of the most overused product-reveal tropes; it needs an idea tied to AR rather than generic 'fluid tech'",
+              "The typography is the weakest part: a default bold sans 'XREAL' and a widely tracked thin-caps 'EVOLUTION' centred on the image, with no integration with the image",
+              "Monochrome electric blue on black with no counterpoint colour; the frames blur together where A and B have a distinct palette idea"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "A textbook 'tasteful AI' system: near-black ground, small tracked-caps monospace labels, a single orange accent and a mostly empty frame",
+              "A centred, widely tracked bold grotesk 'ATLAS' with a thin orange rule and the tagline 'GROUND SEGMENT, AS A SERVICE' laid out like a slide",
+              "The same centred-circle composition repeats in four of five frames (dial, dial, logo, logo), so little happens between them",
+              "Literal, obvious imagery: a radar dial with AZ/EL readouts and an atom-like orbit diagram for a satellite ground station",
+              "Flat vector strokes with no light, material or depth; the one light-ground frame is a default-looking diagram"
+            ],
+            "gaps": [
+              "No idea beyond 'satellite = dial + orbit'; find a specific visual metaphor (e.g. signal, handover, the ground station itself) the way B builds one out of ASCII",
+              "The type is set at defaults; it needs a chosen face, scale contrast and type working with the image instead of a centred wordmark",
+              "Every frame is the same centred layout on flat black; add material, light, texture and staging variety so each frame works as a poster"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.6,
+        "cost_usd": 0.1559468,
+        "tokens": 71847,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": null,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": null
+      },
+      "defects": [
+        "Hard vertical white lines along the left edge of the dial shot (frame 2 / pair 1) look like a leftover wipe or a stray layer, not a designed element",
+        "Thin orange and dark slivers bleed along the bottom edge of the ATLAS end frames, left over from the previous shot's transition (a pop at the cut)",
+        "The ATLAS end card shows the outlined ring and the unfinished underline as almost the same frame twice; about 1.5 s with only a line growing reads as dead air",
+        "The tagline's random-letter reveal ('G O N  SE  NT') and the 'D WNL N' dropout read as a stock text-scramble preset",
+        "The orange field and bar chart are perfectly flat fills with no grain, light or falloff; at 100% the crop is just vector rectangles",
+        "The bar heights change by jumping between values with no easing or overshoot that can be seen in the 1/6 s pairs, so they feel weightless",
+        "The dial needle sweeps at a constant rate; there is no anticipation or settle when it locks on its target"
+      ],
+      "gaps": [
+        "Choreography: each beat (dial sweep, orbits, zoom into the orange disc, bars, logo) does one move with no overlap or follow-through. Top studios would layer secondary motion such as tick marks reacting, labels counting, or the rings punching, and add a settle when the needle locks on",
+        "Arc and pacing: in 5 s the energy peaks at the first cut (224 change/s), dips to almost nothing, then plateaus. There is no build to a climax at 60-80%, and the end card spends its time on a slow underline rather than earning its rest",
+        "Finish and material: flat vector fills, default HUD styling, and the hairline grid at almost zero contrast. There is no lighting, texture, depth or optical glow to lift the orange beyond template work, and the edge artefacts at the transitions show it lacked a final polish pass"
+      ]
+    },
+    "meta": {
+      "seconds": 19.6,
+      "cost_usd": 0.1443728,
+      "tokens": 70269,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "atlas-precision.mp4: 5.0s, 3 shots, median 1.37s, longest 2.30s\nper-second change: [224.3, 10.6, 120.4, 114.2]\nPACE: PASS"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 3,
+    "colour": 3,
+    "light_texture": 2,
+    "motion": 4.5,
+    "craft": 5.0,
+    "originality": 2
+  },
+  "full_overall": 3.31,
+  "cost_usd": 0.62,
+  "judge_seconds": 111.7,
+  "verdict": "FAIL"
+}
