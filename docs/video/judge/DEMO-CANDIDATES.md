@@ -59,9 +59,10 @@ Every judged output, best first within each category. Score = median blind score
 | 3 | 4.25 | FAIL | 0/3 | 7.83 | 4.39 | Anikit | demo | ceiling1_octava_octava | `docs/video/judge/demos/results/ceiling1_octava_octava` |
 | 4 | 4.12 | FAIL | 0/3 | 7.33 | 4.5 | Anikit | demo | graphic_pieces_paper-weekend | `docs/video/judge/demos/results/graphic_pieces_paper-weekend` |
 | 5 | 3.75 | FAIL | 0/3 | 7.25 | 4.11 | Anikit | r1 | c-event | `docs/video/judge/rounds/r1/results/c-event` |
-| 6 | 3.5 | FAIL | 0/3 | 8.13 | 3.81 | Anikit | demo | mograph_lumen-light | `docs/video/judge/demos/results/mograph_lumen-light` |
-| 7 | 3.38 | FAIL | 0/3 | 7.92 | 3.83 | Anikit | demo | graphic_pieces_konkrete | `docs/video/judge/demos/results/graphic_pieces_konkrete` |
-| 8 | 2.5 | FAIL | 0/3 | 7.54 | 2.94 | Anikit | r2 | c-event | `docs/video/judge/rounds/r2/results/c-event` |
+| 6 | 3.69 | FAIL | 1/6 | 7.35 | 3.94 | Anikit | demo | c-event-demo | `docs/video/judge/demos/rebuilds/c-event-demo` |
+| 7 | 3.5 | FAIL | 0/3 | 8.13 | 3.81 | Anikit | demo | mograph_lumen-light | `docs/video/judge/demos/results/mograph_lumen-light` |
+| 8 | 3.38 | FAIL | 0/3 | 7.92 | 3.83 | Anikit | demo | graphic_pieces_konkrete | `docs/video/judge/demos/results/graphic_pieces_konkrete` |
+| 9 | 2.5 | FAIL | 0/3 | 7.54 | 2.94 | Anikit | r2 | c-event | `docs/video/judge/rounds/r2/results/c-event` |
 
 ## generative / abstract
 
