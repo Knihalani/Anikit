@@ -469,6 +469,8 @@ pub(crate) struct SceneC {
     pub bg_layers: usize,
     /// Effective finishing look (the scene's or the video's).
     pub post: Option<crate::render::post::PostSettings>,
+    /// Time remap: content time from real scene time.
+    pub remap: Option<expr::Expr>,
 }
 
 /// One layer's ops in a tagged evaluation.
@@ -668,7 +670,8 @@ impl Evaluator {
         }
         let cur = self.scenes.iter().rposition(|s| s.start <= t0).unwrap_or(0);
         let s = &self.scenes[cur];
-        let (a, b) = (t0 - s.start, t1 - s.start);
+        let (a, b) = (self.slt(s, t0), self.slt(s, t1));
+        let (a, b) = (a.min(b), a.max(b));
         if s.shake.is_some_and(|(amount, _, at, dur, _)| amount != 0.0 && (dur <= 0.0 || (at < b && at + dur > a))) {
             return false;
         }
@@ -870,7 +873,7 @@ impl Evaluator {
             let paint = self.paint(&s.bg, &solid_slots(s.bg_color), prop::FILL, [w, h], 1.0);
             out.push(Op::RoundRect { x: 0.0, y: 0.0, w, h, radius: 0.0, paint, transform: *xf });
         }
-        let lt = t - s.start;
+        let lt = self.slt(s, t);
         let cx = Cx { ev: self, scene_t: lt, gt: t, dof: 0.0, amul: 1.0 };
         let (cam, v, panning) = self.scene_cam(s, t, xf);
         let (cxp, cyp, rot, zoom) = (v[0], v[1], v[2], v[3]);
@@ -918,7 +921,7 @@ impl Evaluator {
     /// `[x, y, rotation, zoom, focus, aperture]` and whether it pans.
     fn scene_cam(&self, s: &SceneC, t: f32, xf: &Affine) -> (Affine, [f32; 7], bool) {
         let (w, h) = (self.width as f32, self.height as f32);
-        let lt = t - s.start;
+        let lt = self.slt(s, t);
         let cx = Cx { ev: self, scene_t: lt, gt: t, dof: 0.0, amul: 1.0 };
         // Camera.
         let mut v = [0.0f32; prop::N];
@@ -965,12 +968,25 @@ impl Evaluator {
         }
     }
 
+    /// A scene's content time at global time `t` (its `timeRemap`, or plain scene time).
+    #[inline]
+    fn slt(&self, s: &SceneC, t: f32) -> f32 {
+        let lt = t - s.start;
+        match &s.remap {
+            None => lt,
+            Some(e) => {
+                let v = Vars { t: lt as f64, scene_t: lt as f64, gt: t as f64, p: (lt / s.dur.max(1e-6)).clamp(0.0, 1.0) as f64, w: self.width as f64, h: self.height as f64, fps: self.fps as f64, ..Default::default() };
+                e.eval(&v) as f32
+            }
+        }
+    }
+
     /// Frame-space centre and size of a top-level layer of `s` at time `t`.
     fn layer_frame(&self, s: &SceneC, n: &Node, t: f32) -> ([f32; 2], f32) {
         let (cam, _, _) = self.scene_cam(s, t, &dl::IDENTITY);
-        let cx = Cx { ev: self, scene_t: t - s.start, gt: t, dof: 0.0, amul: 1.0 };
+        let cx = Cx { ev: self, scene_t: self.slt(s, t), gt: t, dof: 0.0, amul: 1.0 };
         let mut v = [0.0f32; prop::N];
-        self.props(n, &cx, (t - s.start - n.start).max(0.0), &mut v);
+        self.props(n, &cx, (self.slt(s, t) - n.start).max(0.0), &mut v);
         let (w, h) = (v[prop::W].max(1.0), v[prop::H].max(1.0));
         let f = dl::mul(&cam, &local_xf(&v, n.anchor, w, h));
         let c = [f[0] * w * 0.5 + f[2] * h * 0.5 + f[4], f[1] * w * 0.5 + f[3] * h * 0.5 + f[5]];
@@ -1000,7 +1016,7 @@ impl Evaluator {
                 continue;
             }
             let (cam, _, _) = self.scene_cam(s, t, &to(c0, s0));
-            let cx = Cx { ev: self, scene_t: t - s.start, gt: t, dof: 0.0, amul: alpha };
+            let cx = Cx { ev: self, scene_t: self.slt(s, t), gt: t, dof: 0.0, amul: alpha };
             self.emit_node(n, &cx, &cam, [self.width as f32, self.height as f32], 1.0, out);
         }
     }
@@ -1115,9 +1131,9 @@ impl Evaluator {
                     return;
                 };
                 let (cam, _, _) = self.scene_cam(a, t, &id);
-                let acx = Cx { ev: self, scene_t: t - a.start, gt: t, dof: 0.0, amul: 1.0 };
+                let acx = Cx { ev: self, scene_t: self.slt(a, t), gt: t, dof: 0.0, amul: 1.0 };
                 let mut v = [0.0f32; prop::N];
-                self.props(ln, &acx, (t - a.start - ln.start).max(0.0), &mut v);
+                self.props(ln, &acx, (self.slt(a, t) - ln.start).max(0.0), &mut v);
                 let (lw, lh) = (v[prop::W].max(1.0), v[prop::H].max(1.0));
                 let f = dl::mul(&cam, &local_xf(&v, ln.anchor, lw, lh));
                 let c = [f[0] * lw * 0.5 + f[2] * lh * 0.5 + f[4], f[1] * lw * 0.5 + f[3] * lh * 0.5 + f[5]];

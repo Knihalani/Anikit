@@ -486,7 +486,14 @@ impl Evaluator {
                 Some(p) => c.post(p, &format!("{path}.post")),
                 None => gpost.clone(),
             };
-            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers, post });
+            let remap = s.time_remap.as_ref().and_then(|src| match super::expr::Expr::compile(src.trim().trim_start_matches('='), 1.0, c.w as f64, c.h as f64) {
+                Ok(e) => Some(e),
+                Err(e) => {
+                    c.d.push(Diagnostic::error(format!("{path}.timeRemap"), format!("expression: {e}")));
+                    None
+                }
+            });
+            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers, post, remap });
             t = start + dur;
             prev_dur = if auto { dur - in_dur } else { own };
         }

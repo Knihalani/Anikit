@@ -606,6 +606,13 @@
             "$ref": "#/$defs/Num"
           }
         },
+        "timeRemap": {
+          "description": "Speed ramp / time remap: an expression giving the scene's content time from real scene time `t`\n(and progress `p`): `\"=t < 0.6 ? t : 0.6 + (t - 0.6) * 0.2\"` slows to 20% after 0.6 s, `\"=min(t, 1.2)\"` freezes.\nTransitions and audio keep real time.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "stack": {
           "description": "Lay out the scene's free-floating layers (no `x`/`y`) as one centred column:\n`true`, a gap in px, or `{ \"gap\": 24, \"align\": \"start|center|end\" }`. Expanded at load."
         },
