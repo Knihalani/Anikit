@@ -564,8 +564,10 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> (Pixmap, f64) {
     f.channels = chans;
     // Reference mode (the quality harness) shades every pixel with the full 2×2
     // grid; draft mode skips anti-aliasing; otherwise adaptive at AA_THRESHOLD.
+    // `job.supersample` already includes reference mode, except for filters,
+    // which are never supersampled (it would soften the frame they read).
     let reference = crate::components::reference();
-    f.supersample = (job.supersample && !crate::components::style::draft()) || reference;
+    f.supersample = job.supersample && (reference || !crate::components::style::draft());
     f.adaptive = !reference;
     f.threshold = anikit_shader::AA_THRESHOLD;
     f.max_refine = anikit_shader::AA_MAX_REFINE;
@@ -638,7 +640,9 @@ impl Evaluator {
             progress,
             uniforms,
             channels: chans,
-            supersample: sc.supersample || crate::components::reference(),
+            // The reference supersamples every shader except filters: not
+            // supersampling a filter is the look, not a speed approximation.
+            supersample: sc.supersample || (crate::components::reference() && !sc.filter),
             alpha: sc.alpha,
             label: sc.label.clone(),
             audio,

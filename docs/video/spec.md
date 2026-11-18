@@ -97,7 +97,7 @@ Edit in place instead of rewriting: `anikit-video set spec.json scenes.intro.lay
 anikit-video check  spec.json [--json]          errors and warnings with paths and "did you mean"
 anikit-video still  spec.json --at 2.5 -o f.png [--width 640] [--watch]
 anikit-video sheet  spec.json -o sheet.png [--frames 12]
-anikit-video render spec.json -o out.mp4 [--quality draft|standard|high] [--from 2 --to 5] [--profile]
+anikit-video render spec.json -o out.mp4 [--quality draft|standard|high] [--from 2 --to 5] [--profile] [--no-cache]
 anikit-video beats  music.wav|spec.json [--json] tempo, beat and bar times ("@beatN" / "@barN"); a spec gives its score's exact grid
 ```
 

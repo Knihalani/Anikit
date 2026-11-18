@@ -14,6 +14,7 @@ pub(crate) mod shader;
 pub(crate) mod fx;
 pub(crate) mod graphic;
 mod audio_react;
+mod inputs;
 pub mod expr;
 pub mod theme;
 
@@ -536,6 +537,9 @@ pub struct Evaluator {
     pub shutter_explicit: bool,
     /// Named sub-compositions (top-level `compositions`), in dependency order.
     pub(crate) comps: Vec<(String, Arc<Evaluator>)>,
+    /// Key over the contents of every file the spec names (fonts, LUTs, images,
+    /// shader sources, models, nested specs): part of every render-cache key.
+    pub inputs_key: u64,
 }
 
 /// A gradient stroke segment: path, start and end points, start and end colours.
