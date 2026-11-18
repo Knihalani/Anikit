@@ -188,7 +188,7 @@ def cmd_paired(a):
     rd, bd = J / "rounds" / a.round, J / "rounds" / a.base
     L = [f"# {a.round} vs {a.base}: paired by brief", "",
          "Same tags, seed and reference set, so the same 3 refs per brief ('same refs' column checks it). "
-         "Judge test-retest noise is about ±0.4 per piece (r1 PAIRED.md), so only larger moves are real.", "",
+         "Judge test-retest spread is up to about 0.5 per piece, so treat |Δ| < 0.75 as a tie.", "",
          f"| Brief | {a.base} | {a.round} | Δ | Full {a.base} → {a.round} | Judged pro | Same refs |", "|---|---|---|---|---|---|---|"]
     ds = []
     for b in briefs():

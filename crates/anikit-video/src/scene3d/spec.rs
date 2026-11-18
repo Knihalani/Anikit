@@ -709,6 +709,19 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
         }
         None => builtin_material(if ty == "slab" || ty == "pane" { "glass" } else if ty == "cloth" { "matte" } else { "chrome" }).unwrap(),
     };
+    // Open shapes have no inside: as glass they are thin shells (a crystal, a
+    // dome, a sheet), or rays would enter and never leave.
+    let open = match ty.as_str() {
+        "plane" | "card" | "surface" | "heightfield" => true,
+        "lathe" => m.get("points").and_then(|p| p.as_array()).is_some_and(|a| {
+            let r = |v: Option<&Value>| v.and_then(|q| q.get(0)).and_then(|x| x.as_f64()).unwrap_or(0.0).abs();
+            r(a.first()) > 1e-4 || r(a.last()) > 1e-4
+        }),
+        _ => false,
+    };
+    if open {
+        thin = true;
+    }
     if let Some(t) = m.get("thin") {
         thin = t.as_bool().ok_or_else(|| format!("{path}.thin: expected true or false"))?;
     }

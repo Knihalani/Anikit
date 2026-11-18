@@ -116,7 +116,7 @@ pub fn shorthand(mut v: Value) -> Value {
 }
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig", "set",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig", "set", "gobo",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -480,6 +480,11 @@ impl Prepare for Scene3d {
             }
             es.env = e;
             gobo = g;
+        }
+        // `gobo`: a word cut out of a card in front of the key (see `rig::TextGobo`).
+        if let Some(gv) = m.get("gobo") {
+            let dir = es.env.key_box().map(|k| k.c).ok_or_else(|| Error("gobo: needs a key light (an HDRI with a sun, a rig, or a `lights` entry with `\"key\": true`)".into()))?;
+            gobo = rig::text_gobo(gv, dir, "gobo").map_err(Error)?;
         }
         if let Some(n) = &camera.target_obj {
             if !objs.iter().any(|o| o.name.as_deref() == Some(n)) {
@@ -1057,6 +1062,7 @@ impl Scene3d {
         }
         scene.caustics = p.caustics;
         scene.gobo = p.gobo;
+        scene.gobo.t = t;
         scene.time = t;
         // One pixel's angle: picks texture mips (vertical fov over output rows).
         scene.texel_angle = (2.0 * (cam.fov.to_radians() * 0.5).tan() / h.max(1) as f32).max(1e-5);
