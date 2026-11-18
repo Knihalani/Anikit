@@ -55,11 +55,15 @@ pub struct Material {
     /// Surface imperfections (0..1 each): roughness variation, smudges
     /// (fingerprints and wipes), micro-scratches, dust on up-facing surfaces.
     pub imperf: [f32; 4],
+    /// Machined surface pattern (bump only): kind (0 none, 1 brushed,
+    /// 2 sunburst, 3 guilloché, 4 clous de Paris, 5 knurl), period in metres,
+    /// strength.
+    pub pattern: (u8, f32, f32),
 }
 
 impl Material {
     pub fn chrome() -> Material {
-        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0, imperf: [0.0; 4] }
+        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0, imperf: [0.0; 4], pattern: (0, 0.01, 0.0) }
     }
 }
 
@@ -1339,11 +1343,16 @@ impl Scene {
             .map(|(t, _)| t.sample(s.uv[0], s.uv[1]))
     }
 
-    /// Radiance of a texture print: lit like paper plus its own glow.
+    /// Radiance of a texture print: lit like paper (environment, key and the
+    /// local point/spot lights at `p`) plus its own glow.
     #[inline]
-    fn print_light(&self, t: [f32; 4], n: V3, glow: f32) -> V3 {
+    fn print_light(&self, t: [f32; 4], p: V3, n: V3, glow: f32) -> V3 {
         let c = v3(t[0], t[1], t[2]);
-        let lit = add(self.env.diffuse(n), self.key_diffuse(n));
+        let mut lit = add(self.env.diffuse(n), self.key_diffuse(n));
+        if !self.lights.is_empty() && glow < 1.0 {
+            // Prints are matte: diffuse only (roughness 1, no specular).
+            lit = add(lit, self.local_lights(p, n, n, 1.0, v3(0.0, 0.0, 0.0)).0);
+        }
         add(scale(c, glow * 1.6), scale(mul(c, lit), 1.0 - glow))
     }
 
@@ -1369,6 +1378,13 @@ impl Scene {
         if dot(n, ng) < 0.0 {
             n = scale(n, -1.0);
         }
+        // Sub-pixel machining reads as sheen: the faded bump becomes roughness.
+        let mut pat_rough = 0.0;
+        if m.pattern.0 != 0 && m.pattern.2 > 0.0 {
+            let (pn, pr) = self.pattern_normal(m, ob, s.p, n, s.t);
+            n = pn;
+            pat_rough = pr;
+        }
         let v = scale(d, -1.0);
         let mut nv = dot(n, v);
         if nv < 0.02 {
@@ -1378,7 +1394,7 @@ impl Scene {
         let mut out = v3(0.0, 0.0, 0.0);
         let mut cover = 0.0;
         if let Some(t) = self.print(ob, s) {
-            out = self.print_light(t, n, m.tex_glow);
+            out = self.print_light(t, s.p, n, m.tex_glow);
             cover = t[3];
             if cover >= 0.999 {
                 return (add(out, m.emissive), Diffuse::default());
@@ -1422,7 +1438,7 @@ impl Scene {
             return self.shade_style(m, s, n, v, nv, keep, out);
         }
         let (dr, dust) = if m.imperf == [0.0; 4] { (0.0, 0.0) } else { self.imperfect(m, ob.xf.point_inv(s.p), n) };
-        let rough = (m.roughness + dr).clamp(0.02, 1.0);
+        let rough = (m.roughness + dr + pat_rough).clamp(0.02, 1.0);
         let f0 = lerp3(v3(0.04 * m.specular, 0.04 * m.specular, 0.04 * m.specular), m.base, m.metallic);
         let f0 = scale(f0, 1.0 - dust);
         let ab = env_brdf(rough, nv);
@@ -1500,6 +1516,62 @@ impl Scene {
             ss.ns = n;
         }
         Some((mm, ss))
+    }
+
+    /// Machined patterns as bump: the height field's gradient (object space,
+    /// finite differences) tilts the shading normal. Patterns finer than about
+    /// two pixels fade out instead of aliasing.
+    fn pattern_normal(&self, m: &Material, ob: &Inst, p: V3, n: V3, dist: f32) -> (V3, f32) {
+        let (kind, period, strength) = m.pattern;
+        let period = period.max(1e-5);
+        // Rough pixel footprint at this distance (1080p, ~40° field). Grooves
+        // need about 6 px per period to resolve; below that they fade into sheen.
+        let foot = dist * 0.0007;
+        let fade = smoothstep(4.0, 10.0, period / foot.max(1e-6));
+        let sheen = (1.0 - fade) * 0.12 * strength.min(1.5);
+        if fade <= 0.0 {
+            return (n, sheen);
+        }
+        let q = ob.xf.point_inv(p);
+        let tau = std::f32::consts::TAU;
+        let h = |q: V3| -> f32 {
+            match kind {
+                // Parallel grooves along X, with a little random depth.
+                1 => (q.z / period * tau).sin() * 0.5 + (vnoise(v3(q.z / period * 0.37, 0.0, q.x * 3.0)) - 0.5) * 0.6,
+                // Radial lines from the axis (Y), in the XZ plane: a sunburst dial.
+                2 => (q.z.atan2(q.x) * (std::f32::consts::TAU * 0.15 / period).round().max(24.0)).sin(),
+                // Engine-turned waves: rings whose radius ripples with angle.
+                3 => {
+                    let r = (q.x * q.x + q.z * q.z).sqrt();
+                    let a = q.z.atan2(q.x);
+                    // The ripple fades in from the centre, where it would be denser than the rings.
+                    (((r + period * 0.6 * smoothstep(0.0, 12.0 * period, r) * (a * 18.0).sin()) / period) * tau).sin()
+                }
+                // Clous de Paris: a grid of small pyramids (diagonal).
+                4 => {
+                    let (u, w) = ((q.x + q.z) / period, (q.x - q.z) / period);
+                    1.0 - 2.0 * (fract(u) - 0.5).abs().max((fract(w) - 0.5).abs())
+                }
+                // Knurl: crossed helical grooves around Y.
+                _ => {
+                    // Arc length around Y, so the diamonds keep their shape at any radius.
+                    let arc = q.z.atan2(q.x) * (q.x * q.x + q.z * q.z).sqrt();
+                    let (u, w) = ((arc + q.y) / period, (arc - q.y) / period);
+                    1.0 - 2.0 * (fract(u) - 0.5).abs().max((fract(w) - 0.5).abs())
+                }
+            }
+        };
+        let e = period * 0.08;
+        let h0 = h(q);
+        let g = v3((h(add(q, v3(e, 0.0, 0.0))) - h0) / e, (h(add(q, v3(0.0, e, 0.0))) - h0) / e, (h(add(q, v3(0.0, 0.0, e))) - h0) / e);
+        // Height amplitude ~ 4% of the period at strength 1.
+        let gl = len(g);
+        if gl < 1e-6 {
+            return (n, sheen);
+        }
+        let gw = scale(ob.xf.normal(g), gl * period * 0.04 * strength * fade);
+        let tangential = sub(gw, scale(n, dot(gw, n)));
+        (norm(sub(n, tangential)), sheen)
     }
 
     /// Surface imperfections at object-space point `p` (normal `n`, world):
@@ -1742,7 +1814,7 @@ impl Scene {
                     let fr = fresnel_dielectric(nv, 1.0 / m.ior);
                     let mut a = 0.0;
                     if let Some(t) = self.print(ob, &s) {
-                        col = add(col, scale(mul(self.print_light(t, n, m.tex_glow), thr), haze_f));
+                        col = add(col, scale(mul(self.print_light(t, s.p, n, m.tex_glow), thr), haze_f));
                         a = t[3];
                     }
                     let r = reflect(d, n);
@@ -1758,7 +1830,9 @@ impl Scene {
                     if entering {
                         inside_since = Some(dist);
                     } else {
-                        let inside = inside_since.map(|t0| dist - t0).unwrap_or(s.t);
+                        // An exit with no entry (an open shell seen from its back):
+                        // a nominal 2 mm wall, not the whole ray length.
+                        let inside = inside_since.map(|t0| dist - t0).unwrap_or(0.002);
                         tthr = mul(tthr, absorb(m.absorb, inside));
                         inside_since = None;
                     }

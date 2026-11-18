@@ -1,0 +1,523 @@
+{
+  "name": "type_4-terminal",
+  "tags": [
+    "kinetic-type"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "thank-you-for-smoking",
+    "xk-studio-offfmx-2025-main-titles"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 3,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 2,
+      "motion": 2,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 2.5,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "No idea beyond the genre clich\u00e9; it needs a specific concept that gives 'SIGNAL' meaning, as B turns its world into a mechanism",
+      "Composition is static and repeated; it needs scale changes, camera, and spatial choreography between beats",
+      "No material reality: a real CRT surface, phosphor persistence, interference or physical light would give it the tactility B and D have",
+      "No idea or subject beyond the effect. It needs a concept that gives the terminal meaning, the way C turns credits into cigarette packs",
+      "The composition is static and repeated. It needs camera, scale change, cuts and a real arc instead of one slide with text typed in",
+      "There is no material or light. It needs real CRT physicality (glass curvature, phosphor persistence, interference, environment) or a deliberate departure from the clich\u00e9",
+      "There is no world or image: build an actual subject, the way B builds a mechanical map or A builds period packaging, instead of text on black",
+      "Commit to material: real CRT curvature, phosphor bloom, interference, physical screens or hardware in light, rather than a flat CSS-style glow",
+      "Vary the composition and choreography across frames, and add scale changes, cuts and a payoff, rather than one static layout with text appended"
+    ],
+    "tells": [
+      "The same composition in every frame: one word top-left plus a typewriter console reveal, with little else happening",
+      "A literal, clich\u00e9d retro-terminal idea (phosphor green on black, 'boot sequence\u2026 carrier detected at 2400 baud\u2026 awaiting operator_')",
+      "Single accent colour on a near-black ground with a tiny tracked-caps label top-right ('CH.03 \u00b7 LOCAL 23:59'), the generic 'tasteful AI' template",
+      "The striped scanline wordmark is a stock effect; the only motion is the stripes filling in and text typing on",
+      "No texture, CRT curvature, bloom variation or depth; mostly empty frame with flat glow",
+      "A literal, overused trope: a CRT terminal 'SIGNAL' boot sequence with green phosphor on black, and nothing a viewer would remember",
+      "One composition across all five frames. Only the scanline-to-solid reveal on the word and a typewriter log line change",
+      "Generic tasteful-AI layout: tiny tracked-caps metadata top right ('CH.03 \u00b7 LOCAL 23:59'), one large headline, a single accent colour and a mostly empty frame",
+      "The copy is filler tech jargon ('boot sequence 0x7F3A \u2026 ok', 'carrier detected at 2400 baud', 'awaiting operator_') with no subject",
+      "The glow is an applied blur, with no real CRT curvature, phosphor texture, bloom falloff, or noise",
+      "Generic 'tasteful AI' look: a near-black ground, a small tracked-caps label in the corner ('CH.03 \u00b7 LOCAL 23:59'), a single green accent and a mostly empty frame",
+      "The same composition in every frame. The only changes are a scanline wipe that resolves 'SIGNAL' and a typewriter reveal of terminal lines",
+      "A literal, clich\u00e9 idea: hacker terminal, boot sequence, '2400 baud', 'awaiting operator_' with a blinking cursor",
+      "The type is a stock dot-matrix/CRT-style display face plus a default monospace, with a flat glow and no texture, curvature or phosphor behaviour",
+      "Nothing a viewer would remember. The effect has no subject"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "thank-you-for-smoking": {
+      "overall": 8.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 8.5,
+  "delta": -6.0,
+  "trials": [
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "thank-you-for-smoking"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Festival-ident format with each segment credited to a different studio (Boldtron, Medusa Lab), which matches a curated multi-studio title sequence",
+              "Dense, tactile 3D materials: subsurface flesh-like hands, ribbed fabric, mesh, glassy organic forms, wiry filaments",
+              "Unusual palette that shifts by segment: dusty rose, violet dusk, cold sky blue, sage and moss green",
+              "Lighting is motivated and varied, from rim-lit terrain under a volcanic plume to backlit glass against a horizon",
+              "Custom OFFF MX logotype placed against the image"
+            ],
+            "gaps": [
+              "No single connecting idea: it plays as a showcase of strong frames, not one authored thought like B's clockwork map or D's packaging conceit",
+              "Typography is mostly a small bold-sans studio credit pasted top-left; type never interacts with the 3D world",
+              "Segments share an 'organic surreal 3D' vocabulary common to festival idents, so it surprises less than the best entry"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea only this piece could have: the show's world as a clockwork map-model that builds itself, so the titles also work as orientation for the narrative",
+              "Real material and light: engraved bronze armillary band, aged wood and brass mechanisms, parchment map, warm sun flare at the bookends",
+              "Clear choreography: the sun-band opener, mechanical cities unfolding, a pull-out to the map, then the return to the band for the logo",
+              "Credits set in a considered small-caps serif with a heraldic sigil, sitting inside the model space rather than over it",
+              "Bookended structure with escalating scale; every frame works as a poster"
+            ],
+            "gaps": [
+              "Credit type is small and has low contrast against the busy model in places",
+              "The palette stays close to period-fantasy amber and sepia; it is consistent but not daring",
+              "The logo lock-up leans on a conventional trailer-style flare and Trajan-adjacent title type"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 2,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "The same composition in every frame: one word top-left plus a typewriter console reveal, with little else happening",
+              "A literal, clich\u00e9d retro-terminal idea (phosphor green on black, 'boot sequence\u2026 carrier detected at 2400 baud\u2026 awaiting operator_')",
+              "Single accent colour on a near-black ground with a tiny tracked-caps label top-right ('CH.03 \u00b7 LOCAL 23:59'), the generic 'tasteful AI' template",
+              "The striped scanline wordmark is a stock effect; the only motion is the stripes filling in and text typing on",
+              "No texture, CRT curvature, bloom variation or depth; mostly empty frame with flat glow"
+            ],
+            "gaps": [
+              "No idea beyond the genre clich\u00e9; it needs a specific concept that gives 'SIGNAL' meaning, as B turns its world into a mechanism",
+              "Composition is static and repeated; it needs scale changes, camera, and spatial choreography between beats",
+              "No material reality: a real CRT surface, phosphor persistence, interference or physical light would give it the tactility B and D have"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A precise, witty conceit tied to the film: every credit becomes a period cigarette pack, the satire carried by design",
+              "Typography with a strong point of view: each name in a different, period-authentic packaging style (banner caps, script, serif 'LIGHTS', deco caps, brush-script plus bold sans)",
+              "Deliberate palettes for each pack: royal blue and gold, mustard and orange, cream with a red-white-blue stripe, menthol green, Marlboro-adjacent red",
+              "Printed-paper texture, tight macro crops and engraved-style illustration (crest, hound, eagle, plane) that read as real ephemera",
+              "Variety across frames inside a consistent system, with jokes in the details ('UNDERAGE SALE PROHIBITED', 'HONEY-TOASTED')"
+            ],
+            "gaps": [
+              "Motion is implied mostly as macro pans across flat artwork; there is less spatial choreography and camera depth than in B",
+              "Light is largely flat print-scan; real lighting on foil, cellophane or embossing would add the tactility B has",
+              "Without a building structure or climax, the end card is one more pack rather than an escalation"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 28.2,
+        "cost_usd": 0.152687,
+        "tokens": 71688,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "thank-you-for-smoking",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered 3D sculptures with distinct materials: translucent silicone hands, coral-like growth, mesh fabric, fibres, glass and liquid-filled tubes. The material work is heavy and doesn't look like default shaders",
+              "Every frame has a different world (hand over a dune, black volcanic terrain, glass organism against a sky gradient, a textile thicket, chrome-green loops), but they share one organic and synthetic language",
+              "Unusual palette that still holds together: dusty rose, lime-olive green, icy cyan, coral red",
+              "Lit like photography, with rim light on the glass, subsurface scattering in the silicone and atmospheric haze behind the mountain",
+              "The OFFF MX wordmark and studio-name cards point to a festival-titles format, which is a real brief",
+              "Weakness: the studio-name labels are small default bold sans dropped in a corner, with no link to the image"
+            ],
+            "gaps": [
+              "The type has no point of view. The contributor names sit like captions, while B carves its type into the world and C makes the type the packaging",
+              "The frames read as a showcase of separate render vignettes rather than one choreographed journey. It needs a connecting camera move or transformation logic like B's mechanical unfolding",
+              "The idea is festival-generic, organic-synthetic abundance. It needs a single concept that only this event could own"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea that belongs to this piece: the map of the world is a clockwork model that builds itself, and it doubles as the show's geography lesson",
+              "Real material thinking: engraved brass astrolabe bands, cog-driven cities, aged map paper, and a central light source that motivates warm rim light",
+              "The frame sequence implies choreography, from macro to the engraved band, to a city rising mechanically, to a map flyover, and back to the astrolabe lockup. It is cyclical and has weight",
+              "Credits are set in a small-caps classical serif and anchored to the terrain with house sigils, so the type is placed in the world rather than over it",
+              "The main title lockup fuses wordmark and object, with type set into the engraved band and sunburst light behind it"
+            ],
+            "gaps": [
+              "The credit type is small and light, so it sometimes reads weakly against busy terrain, as in the map frame",
+              "The palette is mostly a monochrome sepia and bronze range, with less colour invention than C or A",
+              "Some establishing frames, like the map, are flatter and less textured than the hero clockwork shots"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A sharp, satirical idea: every credit becomes a fake vintage cigarette pack ('David Koechner LIGHTS', 'Honey-toasted tobacco lights', 'Menthol' for two names). The film's subject is built into the form",
+              "The typography is the piece. Each card has its own period-correct face, including a condensed arched slab on a banner, a brush script, a Didone-ish serif paired with spaced caps, an Art Deco display face and a casual script over a bold grotesk. Each matches its brand pastiche",
+              "A deliberate, varied palette (royal blue with gold, orange and cream, red, white and blue, mint green, tobacco red) drawn from real packaging",
+              "Real print texture: paper grain, foil gold, off-register flat inks, plus period illustrations like the crest, hound, eagle, plane and palm",
+              "The closing frame puts a row of filter tips under the director credit, a witty visual payoff"
+            ],
+            "gaps": [
+              "The implied motion is mostly close-up pans across flat packaging, with less spatial choreography and weight than B's mechanical camera work",
+              "The repeated structure (pack close-up, name) risks reading as a card sequence. It needs more transitions that unfold, flip or open the packs as physical objects",
+              "The light is flat print-scan light. Real dimensional lighting on cellophane and foil would add depth"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "A literal, overused trope: a CRT terminal 'SIGNAL' boot sequence with green phosphor on black, and nothing a viewer would remember",
+              "One composition across all five frames. Only the scanline-to-solid reveal on the word and a typewriter log line change",
+              "Generic tasteful-AI layout: tiny tracked-caps metadata top right ('CH.03 \u00b7 LOCAL 23:59'), one large headline, a single accent colour and a mostly empty frame",
+              "The copy is filler tech jargon ('boot sequence 0x7F3A \u2026 ok', 'carrier detected at 2400 baud', 'awaiting operator_') with no subject",
+              "The glow is an applied blur, with no real CRT curvature, phosphor texture, bloom falloff, or noise"
+            ],
+            "gaps": [
+              "No idea or subject beyond the effect. It needs a concept that gives the terminal meaning, the way C turns credits into cigarette packs",
+              "The composition is static and repeated. It needs camera, scale change, cuts and a real arc instead of one slide with text typed in",
+              "There is no material or light. It needs real CRT physicality (glass curvature, phosphor persistence, interference, environment) or a deliberate departure from the clich\u00e9"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.2,
+        "cost_usd": 0.1579182,
+        "tokens": 71936,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "game-of-thrones",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea that suits only this film: every credit is set as a vintage cigarette-pack label, so the subject of the film becomes the graphic system",
+              "The type has a clear point of view. Each card uses a different period face: a banner serif in a ribbon, a script name, an engraved serif with 'LIGHTS', deco caps, and a condensed bold sans with an italic line above it. Credits are worked into the parody copy ('Blended Mild', 'Honey-toasted tobacco lights', 'Premium blend')",
+              "The palette is deliberate and true to the period: royal blue with gold, orange and cream, red, white and blue stripes, menthol green, and red with cigarette-filter ochre",
+              "There is real print texture: paper grain, misregistered ink, engraved crests, a hound, an eagle and a plane drawn as packaging engravings rather than clip art",
+              "Each frame is a tight crop of a different pack, which suggests a camera moving across the packs. The final frame pays off on a row of cigarettes under the director credit"
+            ],
+            "gaps": [
+              "Depth and light are mostly flat print scans. The packs could gain physical presence from real lighting, foil sheen and cellophane glare, like B's dimensional world",
+              "The motion seems to be mainly pans and cuts between flat surfaces. Choreography that links one pack to the next would add drive",
+              "There is less scale and spectacle than in B: no sense of building to a single climactic reveal"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "An idea you remember: a clockwork map in which the world builds itself mechanically, so the title sequence works as orientation for a sprawling story",
+              "The frames are dense and layered: cities made of gears unfolding, a sun-disc mechanism, a carved bone-and-gear city, a parchment map with a tracking camera",
+              "Real light and material: brass, wood and bone with a warm sun-flare, shallow depth of field and atmospheric haze",
+              "Choreography is evident across the frames: the camera moves from the astrolabe band to cities rising up, back to the map, and ends on the logo in the astrolabe, so the opening and closing frames rhyme",
+              "The credit type is a tracked engraved serif paired with small heraldic sigils, built into the world rather than laid over it"
+            ],
+            "gaps": [
+              "The credit typography is a fairly conventional epic-fantasy Trajan-style serif. It could carry more of its own point of view",
+              "The warm amber grade is somewhat genre-expected. A more unusual palette accent could sharpen it",
+              "The logo lockup at the end is centred and symmetrical, a safe close compared with the inventive world before it"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Well-crafted 3D with specific materials: knit and mesh textiles, glass, translucent resin, hair-like fibres, a coral-like growth on a ghostly hand",
+              "Each frame has its own colour world (blush, violet dusk, sky blue, sage, bottle green), which suggests a festival compilation with several contributors, consistent with the OFFF MX brand",
+              "Varied compositions: a landscape with an erupting beam, a vertical sculptural figure, dense organic macro tangles",
+              "Weaker on type: the studio names ('Boldtron', 'Medusa Lab') are a default bold grotesk dropped top-left like captions, with no link to the image"
+            ],
+            "gaps": [
+              "The type does no work. The credits need a system that interacts with the forms, the way B's sigils and A's labels belong to their worlds",
+              "There is no unifying idea across the segments, so it reads as a showcase reel of 3D experiments rather than one authored film",
+              "The organic-abstract 3D look (tendrils, glass, fur, melting hands) is a widespread trend. It needs a concept specific to this piece to rise above trend work"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Generic 'tasteful AI' look: a near-black ground, a small tracked-caps label in the corner ('CH.03 \u00b7 LOCAL 23:59'), a single green accent and a mostly empty frame",
+              "The same composition in every frame. The only changes are a scanline wipe that resolves 'SIGNAL' and a typewriter reveal of terminal lines",
+              "A literal, clich\u00e9 idea: hacker terminal, boot sequence, '2400 baud', 'awaiting operator_' with a blinking cursor",
+              "The type is a stock dot-matrix/CRT-style display face plus a default monospace, with a flat glow and no texture, curvature or phosphor behaviour",
+              "Nothing a viewer would remember. The effect has no subject"
+            ],
+            "gaps": [
+              "There is no world or image: build an actual subject, the way B builds a mechanical map or A builds period packaging, instead of text on black",
+              "Commit to material: real CRT curvature, phosphor bloom, interference, physical screens or hardware in light, rather than a flat CSS-style glow",
+              "Vary the composition and choreography across frames, and add scale changes, cuts and a payoff, rather than one static layout with text appended"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.8,
+        "cost_usd": 0.1582594,
+        "tokens": 71965,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 3,
+        "sound": null,
+        "craft": 5
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": null
+      },
+      "defects": [
+        "The 'N' in the SIGNAL wordmark looks like an 'M', so the title reads as 'SIGMAL' in every frame",
+        "From about 2.5 s to 5.0 s nothing moves except typewriter characters and a blinking cursor. That is dead air across roughly half the film.",
+        "The logo resolve (thin scanlines thickening into bars) is one linear move with no ease, overshoot or settle. It completes inside the first second and is never touched again.",
+        "Characters type at an even rate with no human or machine rhythm: no pauses, bursts or line-feed beats. The handshake progress bar appears already full instead of filling.",
+        "The glow is a uniform Gaussian bloom on flat pure-black. There is no phosphor texture, scanline field, vignette, flicker or curvature, so the 'CRT' look reads as a CSS text-shadow.",
+        "The bottom two-thirds of the frame stays mostly empty. The composition never changes after the first second.",
+        "The header 'CH.03 \u00b7 LOCAL 23:59' is tiny and low contrast, close to illegible at delivery size"
+      ],
+      "gaps": [
+        "Choreography: there is one camera-less locked-off frame and a single move. Top work would push in on the terminal, let the signal glitch, drop out and re-acquire, and build to a peak beat (the handshake connecting) around 3\u20134 s before releasing.",
+        "Timing and weight: the scanline resolve and the typing are both linear. They need eased acquisition (lines jitter, overshoot in thickness, then lock), rhythmic typing with holds, and a payoff moment that lands rather than just stopping on a blinking cursor.",
+        "Material finish: no phosphor grain, scanline mask, bloom falloff variation, chromatic fringing or subtle flicker. As a result the CRT conceit has no tactility at 100%, and the wordmark glyph error undermines the hero type."
+      ]
+    },
+    "meta": {
+      "seconds": 17.7,
+      "cost_usd": 0.1387566,
+      "tokens": 69938,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "4-terminal.mp4: 5.0s, 1 shots, median 5.00s, longest 5.00s\nper-second change: [6.0, 3.2, 0.8, 0.2]\nPACE: FAIL \u2014 longest shot 5.0s > 2.5s; median shot 5.0s > 1.5s; 3/4 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 2,
+    "composition": 3,
+    "typography": 3,
+    "colour": 3,
+    "light_texture": 2,
+    "motion": 2.5,
+    "craft": 4.0,
+    "originality": 2
+  },
+  "full_overall": 2.69,
+  "cost_usd": 0.608,
+  "judge_seconds": 108.9,
+  "verdict": "FAIL"
+}

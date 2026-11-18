@@ -116,7 +116,7 @@ pub fn shorthand(mut v: Value) -> Value {
 }
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig", "set",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig", "set", "gobo",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -480,6 +480,11 @@ impl Prepare for Scene3d {
             }
             es.env = e;
             gobo = g;
+        }
+        // `gobo`: a word cut out of a card in front of the key (see `rig::TextGobo`).
+        if let Some(gv) = m.get("gobo") {
+            let dir = es.env.key_box().map(|k| k.c).ok_or_else(|| Error("gobo: needs a key light (an HDRI with a sun, a rig, or a `lights` entry with `\"key\": true`)".into()))?;
+            gobo = rig::text_gobo(gv, dir, "gobo").map_err(Error)?;
         }
         if let Some(n) = &camera.target_obj {
             if !objs.iter().any(|o| o.name.as_deref() == Some(n)) {
@@ -1057,6 +1062,7 @@ impl Scene3d {
         }
         scene.caustics = p.caustics;
         scene.gobo = p.gobo;
+        scene.gobo.t = t;
         scene.time = t;
         // One pixel's angle: picks texture mips (vertical fov over output rows).
         scene.texel_angle = (2.0 * (cam.fov.to_radians() * 0.5).tan() / h.max(1) as f32).max(1e-5);
@@ -1447,6 +1453,44 @@ mod tests {
         assert!(min < 0.45, "objects should show, min {min}");
     }
 
+    /// A composition stub for texture tests: every frame is flat mid-grey.
+    struct GreyComp(crate::components::text::StubAssets);
+    impl Assets for GreyComp {
+        fn image(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> crate::dl::ImageId { self.0.image(key, w, h, make) }
+        fn media(&self, src: &str, t: f32) -> Option<(crate::dl::ImageId, u32, u32)> { self.0.media(src, t) }
+        fn text(&self, s: &str, st: &crate::components::TextStyle, x: f32, y: f32) -> (Vec<Op>, f32) { self.0.text(s, st, x, y) }
+        fn measure(&self, s: &str, st: &crate::components::TextStyle) -> f32 { self.0.measure(s, st) }
+        fn composition_info(&self, _name: &str) -> Option<crate::components::CompInfo> {
+            Some(crate::components::CompInfo { width: 64, height: 64, fps: 30.0, duration: 1.0, looped: false })
+        }
+        fn composition_frame(&self, _name: &str, _t: f32, _lod: u8) -> Option<std::sync::Arc<vello_cpu::Pixmap>> {
+            let mut pm = vello_cpu::Pixmap::new(64, 64);
+            for px in pm.data_as_u8_slice_mut().chunks_exact_mut(4) {
+                px.copy_from_slice(&[128, 128, 128, 255]);
+            }
+            Some(std::sync::Arc::new(pm))
+        }
+    }
+
+    #[test]
+    fn textured_prints_are_lit_by_local_lights() {
+        // A grey textured wall with a spot pooled on its left half: the print must
+        // be brighter there (local lights reach prints, not only env + key).
+        let s = scene(json!({
+            "env": "night", "quality": "draft", "floor": false,
+            "camera": { "keys": [ { "t": 0, "pos": [0, 0, 6], "target": [0, 0, 0], "focal": 35 } ] },
+            "objects": [ { "type": "pane", "size": [6, 3.4], "pos": [0, 0, 0], "texture": "#wall", "material": { "base": "#ffffff", "roughness": 0.9 } } ],
+            "lights": [ { "pos": [-1.6, 0, 2.5], "target": [-1.6, 0, 0], "angle": 20, "penumbra": 0.2, "intensity": 20, "shadow": false } ]
+        }))
+        .unwrap();
+        let assets = GreyComp(Default::default());
+        let (w, h) = (96usize, 54usize);
+        let px = s.render(0.0, 1.0 / 30.0, w, h, Some(&assets));
+        let lum = |x: usize, y: usize| { let p = &px[(y * w + x) * 4..]; p[0] as f32 + p[1] as f32 + p[2] as f32 };
+        let (lit, dark) = (lum(w / 2 - 20, h / 2), lum(w / 2 + 20, h / 2));
+        assert!(lit > dark * 1.2, "spot pool on a textured print: lit {lit} vs unlit {dark}");
+    }
+
     #[test]
     fn lookdev_props_still_work() {
         let s = scene(json!({ "text": "ANIKIT", "quality": "draft", "primitives": false })).unwrap();
@@ -1503,6 +1547,18 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        for pr in ["slide", "arc", "rise", "topdown"] {
+            let c = spec::camera(&json!(pr), (v3(0.0, 0.5, 0.0), 1.0), "camera").unwrap();
+            for k in 0..=10 {
+                let cam = c.at(k as f32 * 0.5, 16.0 / 9.0, 0.0);
+                assert!(cam.pos.x.is_finite() && cam.target.y.is_finite() && len(sub(cam.target, cam.pos)) > 0.5, "{pr}");
+            }
+        }
+        let d = spec::material(&json!("decal"), &HashMap::new(), "m").unwrap();
+        assert!(d.transmission == 1.0 && d.ior == 1.0);
+        let m = spec::material(&json!({ "extends": "aluminium", "pattern": "guilloche", "pattern_scale": 0.002 }), &HashMap::new(), "m").unwrap();
+        assert_eq!(m.pattern, (3, 0.002, 1.0));
+        assert!(spec::material(&json!({ "extends": "aluminium", "pattern": "guiloche" }), &HashMap::new(), "m").err().unwrap().contains("did you mean `guilloche`"));
         let e0 = env::Env::preset_tinted("studio", v3(1.0, 0.0, 0.0), v3(0.0, 0.0, 1.0), v3(1.0, 1.0, 1.0), v3(0.0, 1.0, 0.0)).unwrap();
         let (_, mut ls, an) = spec::lights(&json!([ { "pos": "=[cos(t), 2, sin(t)]", "target": [0, 0, 0], "intensity": "=10+5*sin(t*3)" } ]), &e0, "lights").unwrap();
         assert_eq!(an.len(), 1);
@@ -1511,7 +1567,7 @@ mod tests {
         let m = spec::material(&json!({ "extends": "chrome", "imperfections": 0.5, "dust": 0.2 }), &HashMap::new(), "m").unwrap();
         assert_eq!(m.imperf, [0.5, 0.3, 0.25, 0.2]);
         scene(json!({ "objects": [ { "type": "box", "material": { "extends": "lacquer", "smudges": 0.8, "scratches": 0.5 } } ] })).unwrap();
-        for set in ["plinth", "podium", "steps", "sweep", "field", "arches", "terrain"] {
+        for set in ["plinth", "podium", "steps", "sweep", "field", "arches", "terrain", "landscape"] {
             scene(json!({ "set": set, "objects": [ { "type": "sphere", "radius": 0.3, "pos": [0, 0.3, 0] } ] })).unwrap();
         }
         let e = scene(json!({ "set": "plint", "objects": [] })).err().unwrap();

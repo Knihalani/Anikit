@@ -1,0 +1,520 @@
+{
+  "name": "illustration_illo-portrait",
+  "tags": [
+    "illustration"
+  ],
+  "refs": [
+    "tintin-titles",
+    "nexus-smith-foulkes-honda-grrr-2004",
+    "osko-launch"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 7,
+      "typography": 4,
+      "colour": 7,
+      "light_texture": 7,
+      "motion": 2,
+      "craft": 7,
+      "originality": 4
+    },
+    "overall": 5.25,
+    "judged_professional": "3/3",
+    "pro_rate": 1.0,
+    "mean_rank": 3.33,
+    "gaps": [
+      "Introduce real camera or narrative progression (cuts, scale changes, a reveal) instead of one held loop.",
+      "Develop the sun/moon duality into a specific, surprising idea that only this piece could have.",
+      "Add layered depth and choreographed secondary animation (light sweeping across the figure, the environment reacting) to reach B's frame-to-frame density.",
+      "Give the piece a narrative or temporal change (light moving from sunset to night, the camera moving, the character acting) so the motion carries meaning the way B's chase does.",
+      "Find a specific idea: what this moment is about, and why the sun and moon share the sky.",
+      "Vary the staging. One locked composition can't compete with B's shifting viewpoints and escalating set pieces.",
+      "Add choreography: camera moves, a change of light as the sun sets or the moon rises, and an emotional turn. Across four samples, almost nothing happens.",
+      "Find a specific idea. The sun-and-moon duality is hinted at but never played out the way B plays out its chase.",
+      "Add layered depth and variety (foreground elements, new shots) so it goes beyond a single poster held on screen."
+    ],
+    "tells": [
+      "The illustration has authored texture: grain, a halftone sun, dry-brush hair highlights, a lipstick accent. It is a consistent, considered editorial-illustration hand, not vector defaults.",
+      "The palette is deliberate: indigo and violet night against an orange sweater and a pale-yellow sun, with complementary contrast used well.",
+      "All four frames are essentially the same composition; only the sun, clouds and hair shift slightly. This is a looping ambient illustration with almost no choreography.",
+      "There is no type, and its absence is neutral. It doesn't damage the piece, but it doesn't earn anything either.",
+      "The idea (a woman watching sun and moon at once) is pleasant but slight and not memorable as a film.",
+      "The illustration is hand-crafted: grain texture, halftone dots on the sun, a considered indigo/violet palette with an orange sweater as the single warm accent, and a confident bob silhouette. This does not look like a template.",
+      "All four sampled frames are almost identical. Only the clouds drift slightly, so it is a looping illustration (a 'Dribbble loop') rather than a film. There is no choreography.",
+      "The idea is thin: a woman looking at the sun and moon. The double celestial body is a mood, not a concept.",
+      "No type is visible. Its absence suits a mood loop but adds nothing.",
+      "It is a good editorial illustration: a woman in profile seen from behind, with a sun and a crescent moon in the same sky. There is a nice day/night ambiguity, and the bob haircut is drawn with style.",
+      "The palette is considered (indigo and violet against a coral sweater and a butter-yellow sun), and there is real grain and halftone texture, so it isn't flat vector.",
+      "All four frames are essentially the same composition. Only the clouds drift and there may be a blink, so it is a looping illustration GIF, not a choreographed film.",
+      "There is no type. For a mood loop that is fine, but it adds nothing.",
+      "The idea is mood rather than concept. Nothing changes and nothing surprises."
+    ]
+  },
+  "refs_summary": {
+    "tintin-titles": {
+      "overall": 8.62,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "nexus-smith-foulkes-honda-grrr-2004": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "osko-launch": {
+      "overall": 3.75,
+      "judged_professional": "1/3",
+      "mean_rank": 3.67
+    }
+  },
+  "ref_mean": 6.29,
+  "delta": -1.04,
+  "trials": [
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "tintin-titles",
+        "C": "candidate",
+        "D": "nexus-smith-foulkes-honda-grrr-2004"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Four frames in four unrelated rendering styles: glossy 3D van on a black night ground, flat vector golfer, flat pink convertible on cream, semi-photoreal 3D fridges. There is no unifying design language, which reads as assembled or generated vignettes rather than one authored film.",
+              "The golfer is a stock-vector 'corporate flat' character: gradient shirt, default proportions, the same pose cycle laid out as a strip.",
+              "The convertible floats centred on an empty cream portrait frame with no environment, context or type.",
+              "The fridge 'I.O.U.' gag is the only real idea, and it is a familiar joke delivered literally. The mirror-floor reflection and rim glow are default render tropes.",
+              "Two frames use flat, unmotivated light on empty grounds, and there is little evidence of choreography that links one frame to the next."
+            ],
+            "gaps": [
+              "Commit to a single visual world (one renderer, one palette, one line treatment) so the film reads as one authored piece rather than a sampler.",
+              "Build a narrative or graphic thread (a match cut, a recurring object, a transition logic) that carries the viewer from van to golfer to car to fridge the way B links every credit to a chase beat.",
+              "Replace empty centred grounds with layered, staged environments and designed light, with integrated typography that gives each frame a reason to exist."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Each credit is physically integrated into the world: the director credit on a park gate arch, a name painted into a pool of streetlight on the cobbles, a title riding a vertigo spiral.",
+              "The palette is bold and changes scene by scene (dusty pink, aubergine night, acid chartreuse, teal dusk) yet stays one system.",
+              "Silhouette characters in a 1960s graphic-chase idiom, with dramatic high-angle and Dutch-tilt staging. Every frame works as a poster.",
+              "A clear chase choreography runs across frames: the pursuer, the dog and the stolen object recur, and the camera angle varies with real weight.",
+              "Paper and print texture plus cast-light cones give depth without abandoning the flat graphic language."
+            ],
+            "gaps": [
+              "The credit lettering is a fairly conventional condensed caps face; a more bespoke or hand-drawn credit typeface could match the illustration's character.",
+              "Some silhouette poses lean on homage to the 60s title idiom, so a few beats feel referential rather than wholly new.",
+              "Text weight and colour treatment vary slightly between scenes; tightening the credit hierarchy would make the system even more rigorous."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 4,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 3,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "The illustration has authored texture: grain, a halftone sun, dry-brush hair highlights, a lipstick accent. It is a consistent, considered editorial-illustration hand, not vector defaults.",
+              "The palette is deliberate: indigo and violet night against an orange sweater and a pale-yellow sun, with complementary contrast used well.",
+              "All four frames are essentially the same composition; only the sun, clouds and hair shift slightly. This is a looping ambient illustration with almost no choreography.",
+              "There is no type, and its absence is neutral. It doesn't damage the piece, but it doesn't earn anything either.",
+              "The idea (a woman watching sun and moon at once) is pleasant but slight and not memorable as a film."
+            ],
+            "gaps": [
+              "Introduce real camera or narrative progression (cuts, scale changes, a reveal) instead of one held loop.",
+              "Develop the sun/moon duality into a specific, surprising idea that only this piece could have.",
+              "Add layered depth and choreographed secondary animation (light sweeping across the figure, the environment reacting) to reach B's frame-to-frame density."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 9,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 9
+            },
+            "tells": [
+              "The idea is specific and subversive: a saccharine rainbow utopia where filthy diesel engines are hated and expelled. The ironic contrast is the whole point and is memorable.",
+              "The typography is part of the world rather than overlaid: topiary letters, letters on a peacock's tail, seals balancing balloon letters spelling 'CHANGE'.",
+              "Real 3D craft and material contrast: the gritty engine textures are intentionally at odds with candy-coloured nature, with smoke trails and weight on the flying engines.",
+              "There is variety and escalation across frames, from the establishing tableau through a flamingo batting the engine to a swarm of exploding engines, which shows real choreography.",
+              "The garish palette is deliberate pastiche, not default; the over-sweetness is the joke."
+            ],
+            "gaps": [
+              "The composition is busy and sometimes centred and flat; B's staging and angles are more graphic and poster-like.",
+              "The deliberately kitsch lighting and colour give it less tonal sophistication than B's controlled scene-by-scene palette.",
+              "Some CG elements (generic trees, clouds, water) feel library-level next to the hero props; giving the background assets the same level of finish would close the gap."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "C",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 33.2,
+        "cost_usd": 0.15046199999999998,
+        "tokens": 70568,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "tintin-titles",
+        "C": "nexus-smith-foulkes-honda-grrr-2004",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The four frames use four unrelated rendering languages: glossy 3D VW van at night, flat vector golfer with a gradient shirt, flat pink convertible on cream, and photoreal-ish 3D fridge with a reflection. Nothing ties them into one authored world.",
+              "The frames also change aspect ratio (wide, then vertical, then square-ish), which reads as a compilation of separate generations, not one choreographed film.",
+              "The golfer and convertible are default vector clip-art: symmetrical, centred on an empty cream ground, with no texture.",
+              "The fridge 'I.O.U.' gag is the only real idea, and it is a one-liner. The van scene is a generic dark-ground, single-moon vignette.",
+              "The only type is a hand-drawn 'I.O.U.' note. It has no typographic system."
+            ],
+            "gaps": [
+              "Commit to one graphic language (palette, line, texture) across the whole film, the way B carries silhouettes and flat paper colour through every shot.",
+              "Build transitions and a through-line so each frame hands off to the next, instead of isolated vignettes on blank grounds.",
+              "Replace the default vector figures and empty frames with layered, staged compositions that use depth, shadow and environment to tell the joke."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "The idea is specific to this film: a silhouette chase that is also a credits sequence, with each name staged inside the action (painted on the ground in a lamp's pool of light, set against a vortex).",
+              "The palette shifts deliberately from shot to shot: dusty pink park, then purple-green noir alley, then acid-yellow hypnotic spiral, then teal rooftop. It stays coherent through flat silhouettes and paper texture.",
+              "The camera language varies: eye-level gate, high overhead alley, graphic flat spiral, low horizon. That is evidence of real choreography and escalation.",
+              "The type has a voice: a period display face on the arch sign, credits integrated into the scenery and perspective, and tracked caps used with restraint for the editor card.",
+              "Light is motivated (streetlamp cones, a doorway glow) and every frame works as a poster."
+            ],
+            "gaps": [
+              "The credit typography outside the diegetic moments (e.g. the 'Toby Jones' card) is fairly plain and could be pushed as hard as the staged ones.",
+              "The silhouette-chase homage sits close to well-known 60s title precedents. A slightly more unexpected visual twist would raise its originality.",
+              "Some frames (rooftop) are a touch emptier and less layered than the alley and gate shots."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 6,
+              "originality": 7
+            },
+            "tells": [
+              "The kitsch is deliberate and well staged: an idyllic CG fairyland of rainbows, peacock and seals is invaded by greasy, photographic engine parts. That collision of material worlds is a clear concept, not an accident.",
+              "The letters are built from the world itself (topiary letters, peacock-tail letters, balloons balanced on seals spelling CHANGE), so the type is integrated into the gag.",
+              "There is narrative escalation across the frames: a calm scene, then an engine intrusion with a flamingo swinging a bat, then a swarm of exploding engines.",
+              "Against that, the render quality is mid-tier TV-commercial 3D, and the sky and grass ground is fairly default."
+            ],
+            "gaps": [
+              "Raise the finish of the idyll (lighting, shading, materials) so the parody lands as precisely as B's period pastiche.",
+              "The compositions are busy but not designed. Give each beat one clear focal hierarchy instead of scattering props across the frame.",
+              "Push the lettering beyond rounded balloon caps: a more distinctive face would sharpen the satire."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.5,
+            "scores": {
+              "idea": 4,
+              "composition": 7,
+              "typography": 4,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 2,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "The illustration is hand-crafted: grain texture, halftone dots on the sun, a considered indigo/violet palette with an orange sweater as the single warm accent, and a confident bob silhouette. This does not look like a template.",
+              "All four sampled frames are almost identical. Only the clouds drift slightly, so it is a looping illustration (a 'Dribbble loop') rather than a film. There is no choreography.",
+              "The idea is thin: a woman looking at the sun and moon. The double celestial body is a mood, not a concept.",
+              "No type is visible. Its absence suits a mood loop but adds nothing."
+            ],
+            "gaps": [
+              "Give the piece a narrative or temporal change (light moving from sunset to night, the camera moving, the character acting) so the motion carries meaning the way B's chase does.",
+              "Find a specific idea: what this moment is about, and why the sun and moon share the sky.",
+              "Vary the staging. One locked composition can't compete with B's shifting viewpoints and escalating set pieces."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "D",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 36.1,
+        "cost_usd": 0.1498352,
+        "tokens": 70551,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "nexus-smith-foulkes-honda-grrr-2004",
+        "B": "tintin-titles",
+        "C": "osko-launch",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 7,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 6,
+              "originality": 7
+            },
+            "tells": [
+              "The kitsch is clearly on purpose: rainbow, peacock and swan clich\u00e9s are set against rusted, mechanical car engines. That is an ironic, satirical idea, not a default.",
+              "The type is part of the world rather than laid over it. 'CREATE' is set into the peacock's tail feathers, a topiary letter stands in the lake, and seals on plinths balance balloons that spell 'CHANGE'.",
+              "The frames build a story: idyll, then an engine intrudes, then a flamingo swings a bat, then a dog watches a swarm of engines blow away on a rainbow trail. There is cause and effect and a payoff.",
+              "Many 3D assets fill each frame (animals, water reflections, smoke particles), with consistent world-building across shots.",
+              "Against it: the saturated, candy-bright render and flat sky lighting look dated. The look is there for the gag, and the gag carries it more than the image-making does."
+            ],
+            "gaps": [
+              "Push the parody into real cinematography. Use motivated light, depth of field and atmosphere so the satire hits harder against something beautiful, instead of a flat CG render.",
+              "Tighten the palette. Pastels are everywhere, so the rust and grime of the engines never get a strong opposing colour.",
+              "Build the type into a system with the craft B shows (credits that live inside the scene's geometry and light), rather than one-off novelty letterforms."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "The concept is specific: a silhouette chase in a Saul Bass / 1960s caper style, with credits written into the world. 'ANDY SERKIS' is painted onto the street inside a pool of streetlight, and 'STEVEN SPIELBERG' sits on the arch of a wrought-iron gate.",
+              "Each scene has its own unusual palette (dusty rose, aubergine and green, acid lime, petrol teal), and it still reads as one system.",
+              "The staging is cinematic and different every time: a steep top-down view of an alley, a hypnotic spiral vortex, a rooftop silhouette lineup with a rocket. Every frame works as a poster.",
+              "The light is motivated: streetlamp cones and a door spilling light. Paper-like texture and painterly backgrounds give it depth.",
+              "The characters stay consistent across scenes and the chase carries from frame to frame, so the choreography is clear."
+            ],
+            "gaps": [
+              "The credit type is a fairly safe condensed sans in places. It could be more fully integrated or custom-drawn in every shot, as it is in the street-painted credit.",
+              "The Bass/Catch Me If You Can lineage is visible. A little more formal invention would lift it from homage to something new.",
+              "Some flat-graphic scenes (the lime spiral) give up the material richness of the alley shot. Keep the texture and light consistent across all scenes."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "The frames look like separate vignettes from a studio or illustrator reel (camper van under a moon, golf swing, pink convertible, fridge with an I.O.U. note), not one designed film.",
+              "There are real gags: the three-pose golf swing ends in a dejected slump, and the empty fridge holds a sticky note saying 'I.O.U.'. These are small, legible jokes with timing.",
+              "The fridge shot has properly modelled chrome, interior glow and a reflection on the floor, and the night van shot has moody rim light. These show rendering skill.",
+              "Against it: the cream-ground vector characters (golfer, car) look like generic flat illustration in the corporate style, and the styles are inconsistent from one frame to the next.",
+              "Almost no typography. The only text is the hand-lettered I.O.U., which works, but there is no overall typographic idea."
+            ],
+            "gaps": [
+              "Pick one visual language and a through-line idea. Right now it reads as a sampler of styles, not a film.",
+              "Replace the stock flat-vector character style with a more personal or specific drawing hand, as B does with its silhouettes.",
+              "Compose for the whole frame. Several frames show one isolated object on an empty ground with no environment, layering or framing."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 4,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 2,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "It is a good editorial illustration: a woman in profile seen from behind, with a sun and a crescent moon in the same sky. There is a nice day/night ambiguity, and the bob haircut is drawn with style.",
+              "The palette is considered (indigo and violet against a coral sweater and a butter-yellow sun), and there is real grain and halftone texture, so it isn't flat vector.",
+              "All four frames are essentially the same composition. Only the clouds drift and there may be a blink, so it is a looping illustration GIF, not a choreographed film.",
+              "There is no type. For a mood loop that is fine, but it adds nothing.",
+              "The idea is mood rather than concept. Nothing changes and nothing surprises."
+            ],
+            "gaps": [
+              "Add choreography: camera moves, a change of light as the sun sets or the moon rises, and an emotional turn. Across four samples, almost nothing happens.",
+              "Find a specific idea. The sun-and-moon duality is hinted at but never played out the way B plays out its chase.",
+              "Add layered depth and variety (foreground elements, new shots) so it goes beyond a single poster held on screen."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.5,
+        "cost_usd": 0.15111420000000003,
+        "tokens": 70607,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 3,
+        "sound": null,
+        "craft": 7
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": true,
+        "ending": false,
+        "restraint": true,
+        "material": true,
+        "sync": null
+      },
+      "defects": [
+        "Effectively a still illustration: across 6 s the only motion is a few pixels of cloud drift, a slight head and hair bob and a little parallax. That is dead air for the whole runtime.",
+        "No change of state: the sun, moon, figure and lake are almost identical in every sampled frame, and the per-second change stays low throughout.",
+        "The cloud drift reads as linear, constant-speed translation, with no easing or variation in speed between layers.",
+        "The head and hair move as one rigid piece. The bob has no overlap or follow-through: the hair doesn't lag, the earring doesn't swing and the shoulders don't breathe.",
+        "The grain is a single uniform dither across the sky. In the gradient areas it reads as noise layered on top rather than texture that responds to the light.",
+        "There are no strip frames because no moment is busy enough. The piece has no moment of action at all.",
+        "The ending is just the loop point: it doesn't resolve or settle into anything new."
+      ],
+      "gaps": [
+        "Motion is decoration rather than choreography. Top studio work would give this portrait an event: the sun sinking or the moon rising, wind moving the hair and the sweater collar, the lake's highlights shimmering, a blink or a turn of the head. It should build to a beat at around 60\u201380% and then settle.",
+        "No secondary or overlapping action and no difference in timing between layers. Hair, earring, clouds, stars and water should each move with their own easing and weight, so the frame feels alive instead of looking like a slow parallax pan.",
+        "Finish is strong illustration but not motion-grade light. The halftone sun and rim lights are static. Light falloff that responds to the motion (the sun's glow wrapping the figure as it sinks, the grain shifting as the colours change) is missing, as are an idea and an arc that would make the 6 s matter."
+      ]
+    },
+    "meta": {
+      "seconds": 16.1,
+      "cost_usd": 0.1405008,
+      "tokens": 70160,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "illo-portrait.mp4: 6.0s, 1 shots, median 6.00s, longest 6.00s\nper-second change: [1.0, 2.5, 1.8, 2.1, 2.3]\nPACE: FAIL \u2014 longest shot 6.0s > 2.5s; median shot 6.0s > 1.5s; 5/5 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 7,
+    "typography": 4,
+    "colour": 7,
+    "light_texture": 7,
+    "motion": 2.5,
+    "craft": 7.0,
+    "originality": 4
+  },
+  "full_overall": 5.31,
+  "cost_usd": 0.592,
+  "judge_seconds": 119.9,
+  "verdict": "FAIL"
+}

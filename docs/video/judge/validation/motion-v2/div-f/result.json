@@ -1,0 +1,336 @@
+{
+  "refs": [
+    "calibration-simon-vpro-idents-2010",
+    "blender-studio-charge-2022",
+    "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained"
+  ],
+  "candidate": {
+    "motion": 7,
+    "judged_professional": "3/3",
+    "gaps": [
+      "The counter section loops one beat (number up, ring tick) with little change in choreography",
+      "Little physical weight or overshoot: smooth, but product-render tidy rather than surprising",
+      "Transitions are continuous camera moves only, with no designed match cut or handoff between ideas",
+      "The counter ticks at a near-linear rate with no acceleration or settle as the numbers rise",
+      "The rotation of the watch body in strip 2 is subtle and evenly paced, with no weight",
+      "Elements tend to move in parallel rather than handing off to each other in sequence",
+      "Linear counter and indicator fill with no ease or punctuation at 48 h",
+      "Strip 2 repeats one loop-like gesture while the type stays locked",
+      "Pull-back has no secondary action, such as glints, light sweeps or parallax layers settling"
+    ]
+  },
+  "refs_summary": {
+    "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained": {
+      "motion": 6,
+      "judged_professional": "3/3",
+      "gaps": [
+        "About 4 frames of near-total white-out with nothing readable moving: a dead stretch in the transition",
+        "Second half of the solar-system strip mostly holds: planets barely advance and only a label changes",
+        "Flat 2D elements with no overshoot, weight or secondary follow-through; the camera is a plain scale",
+        "The last 5 frames of strip 2 are almost frozen: planets barely move, so there is a dead hold",
+        "Text and labels fade or pop on with no spatial motion or easing character",
+        "The white-out lasts about 3 frames of pure flash, which hides the transition instead of building a match cut",
+        "Long near-static stretch at the end of strip 2: planets drift slightly but the frames read almost as a hold",
+        "Labels fade on and off with no easing character or overshoot",
+        "No weight or follow-through. The camera move is a single linear scale change"
+      ]
+    },
+    "blender-studio-charge-2022": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Benchmark entry; the action cut leans on a blur smear more than a designed transition",
+        "Some shots are hard to read during the fast action",
+        "The spark shot holds one framing for many frames with little camera progression",
+        "The face close-up drifts gently for about 6 frames with little change in performance",
+        "The cut between the robot head and the cockpit relies on blur rather than a designed match",
+        "Strip 2 ends with low camera energy: the last frames nearly hold",
+        "The whip-blur transition hides the choreography rather than showing it",
+        "Character performance under the sparks is fairly static in the close-up",
+        "Hard to read clear staging in the busy blur frames"
+      ]
+    },
+    "calibration-simon-vpro-idents-2010": {
+      "motion": 7,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Second strip ends on a 4\u20135 frame near-static hold of the small logo before the cut to white",
+        "Mostly 2D scale and rotate with no camera language",
+        "The burst-and-collapse repeats a single gesture, with limited choreographic development",
+        "About 4 near-identical frames of a static logo before the cut to white: a dead hold",
+        "The snap scale changes read as pops rather than eased transitions",
+        "Little physicality: the rays rotate rigidly with no follow-through",
+        "Short dead hold on the white logo at the start of strip 1",
+        "End settle steps between near-identical frames with little secondary life",
+        "Pure 2D graphic: no camera language and little sense of mass compared with B"
+      ]
+    }
+  },
+  "ref_mean": 7,
+  "trials": [
+    {
+      "key": {
+        "A": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+        "B": "candidate",
+        "C": "blender-studio-charge-2022",
+        "D": "calibration-simon-vpro-idents-2010"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "motion": 6,
+            "tells": [
+              "Light-burst transition carries the title into the white-out, then resolves into the Earth\u2013Moon diagram: a motivated bridge between scenes",
+              "Eased zoom-out from Earth\u2013Mars to the full solar system, with orbits and planets fading in staggered",
+              "Type builds word by word ('IT' \u2192 'IT TAKES') instead of popping on as a block"
+            ],
+            "gaps": [
+              "About 4 frames of near-total white-out with nothing readable moving: a dead stretch in the transition",
+              "Second half of the solar-system strip mostly holds: planets barely advance and only a label changes",
+              "Flat 2D elements with no overshoot, weight or secondary follow-through; the camera is a plain scale"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 7,
+            "tells": [
+              "Continuous eased pull-back from a macro of the guilloch\u00e9 dial to the full watch, with hands and pattern turning together as the camera travels",
+              "The moir\u00e9 dial pattern keeps evolving in every frame, so nothing is dead",
+              "Power-reserve counter is synced to a ticking outer ring and a subtle scale and rotation breathe on the watch"
+            ],
+            "gaps": [
+              "The counter section loops one beat (number up, ring tick) with little change in choreography",
+              "Little physical weight or overshoot: smooth, but product-render tidy rather than surprising",
+              "Transitions are continuous camera moves only, with no designed match cut or handoff between ideas"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Particle sparks with believable ballistic arcs, motion blur and depth of field; the frame is alive throughout",
+              "Strong weight in the robot action: impacts, a whip-pan blur cut and handheld camera shake",
+              "Performance-driven acting on the character, with secondary motion in the head and shoulders"
+            ],
+            "gaps": [
+              "Benchmark entry; the action cut leans on a blur smear more than a designed transition",
+              "Some shots are hard to read during the fast action",
+              "The spark shot holds one framing for many frames with little camera progression"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "Star-blade burst scales up with a punchy overshoot and rotation behind the wordmark, then collapses back",
+              "Snap cut from white to black on the beat, plus a scale-in and scale-out of the logo with a clear ease",
+              "The blades rotate and stagger out of phase, so this is overlapping action, not a single transform"
+            ],
+            "gaps": [
+              "Second strip ends on a 4\u20135 frame near-static hold of the small logo before the cut to white",
+              "Mostly 2D scale and rotate with no camera language",
+              "The burst-and-collapse repeats a single gesture, with limited choreographic development"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "D",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 22.0,
+        "cost_usd": 0.1279578,
+        "tokens": 68390,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "candidate",
+        "C": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+        "D": "calibration-simon-vpro-idents-2010"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Spark particles have real velocity variety, motion blur and falloff in every frame; nothing is static",
+              "Handheld-style camera drift and rack-focus as the shot moves from the grinder to the face",
+              "Fast action cut in strip 2: the mech arm swings through the frame with smear and blur, then settles into a weighty push-in on the robot and pilot",
+              "Secondary motion (sparks, debris, head recoil) overlaps the main action and follows through after it"
+            ],
+            "gaps": [
+              "The face close-up drifts gently for about 6 frames with little change in performance",
+              "The cut between the robot head and the cockpit relies on blur rather than a designed match",
+              "Strip 2 ends with low camera energy: the last frames nearly hold"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 7,
+            "tells": [
+              "Continuous pull-back with clear easing: macro on the guilloch\u00e9 texture becomes the full watch, and the scale change slows into the final framing",
+              "The dial pattern twists in sync with the camera move, so the transition reads as one gesture (a motivated morph)",
+              "Strip 2: the counter, the segmented ring fill and a slow rotation of the watch all run at once, so there are no dead frames"
+            ],
+            "gaps": [
+              "The counter ticks at a near-linear rate with no acceleration or settle as the numbers rise",
+              "The rotation of the watch body in strip 2 is subtle and evenly paced, with no weight",
+              "Elements tend to move in parallel rather than handing off to each other in sequence"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "motion": 6,
+            "tells": [
+              "The starburst rays rotate and flicker with staggered gradient blades, and the logo scale-punches in step with them",
+              "The hard cuts between white and black frames act as rhythmic beats, a deliberate ident language",
+              "Strip 2: scale-up overshoot on the wordmark, then a snap back to small with residual rays decaying"
+            ],
+            "gaps": [
+              "About 4 near-identical frames of a static logo before the cut to white: a dead hold",
+              "The snap scale changes read as pops rather than eased transitions",
+              "Little physicality: the rays rotate rigidly with no follow-through"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "motion": 6,
+            "tells": [
+              "The white-out flash transition from the title into the diagram is built as a light bloom, motivated by the subject (light)",
+              "Title text eases forward with a slight zoom before the burn-out",
+              "Strip 2: the camera zooms out from the Earth\u2013Mars line to the solar system, and the orbits reveal progressively"
+            ],
+            "gaps": [
+              "The last 5 frames of strip 2 are almost frozen: planets barely move, so there is a dead hold",
+              "Text and labels fade or pop on with no spatial motion or easing character",
+              "The white-out lasts about 3 frames of pure flash, which hides the transition instead of building a match cut"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 21.7,
+        "cost_usd": 0.12817,
+        "tokens": 68395,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-simon-vpro-idents-2010",
+        "B": "blender-studio-charge-2022",
+        "C": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 8,
+            "tells": [
+              "Wordmark scale punches past frame and recoils to rest: clear overshoot-and-settle",
+              "Gradient star blades rotate and fan out while the type scales, so the layers overlap and are offset in time",
+              "The star retracts into a wedge that becomes the logo's blue accent, a deliberate shape handoff",
+              "Cut from white to black on the beat, then back to the white end card, with a reason behind each cut"
+            ],
+            "gaps": [
+              "Short dead hold on the white logo at the start of strip 1",
+              "End settle steps between near-identical frames with little secondary life",
+              "Pure 2D graphic: no camera language and little sense of mass compared with B"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Spark particles change direction and speed from frame to frame, with motion blur and depth of field that read as physical",
+              "Handheld-style camera drift and rack focus push in on the character",
+              "Robot strike has anticipation, a smeared fast frame, and impact followed by recovery",
+              "Cut on action into a whip blur, then a reframed reverse angle"
+            ],
+            "gaps": [
+              "The whip-blur transition hides the choreography rather than showing it",
+              "Character performance under the sparks is fairly static in the close-up",
+              "Hard to read clear staging in the busy blur frames"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "motion": 6,
+            "tells": [
+              "Title glides slowly through a solar flare that blooms to white and resolves into the diagram, a motivated transition",
+              "Words of the caption build on one at a time",
+              "Zoom out from the Earth\u2013Mars line to the full solar system, with orbits easing in",
+              "Orbiting bodies move at different rates"
+            ],
+            "gaps": [
+              "Long near-static stretch at the end of strip 2: planets drift slightly but the frames read almost as a hold",
+              "Labels fade on and off with no easing character or overshoot",
+              "No weight or follow-through. The camera move is a single linear scale change"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "motion": 6,
+            "tells": [
+              "Guilloch\u00e9 pattern twists into a swirl while the camera pulls back from macro to the full watch, easing out to rest",
+              "Hands sweep and the pattern morph overlaps the camera move",
+              "Power-reserve counter rises at a near-constant rate (about 4\u20135 h per frame), a linear interpolation",
+              "Watch bobs in scale in strip 2 while the ring indicator fills, which is mechanical and repetitive"
+            ],
+            "gaps": [
+              "Linear counter and indicator fill with no ease or punctuation at 48 h",
+              "Strip 2 repeats one loop-like gesture while the type stays locked",
+              "Pull-back has no secondary action, such as glints, light sweeps or parallax layers settling"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 21.6,
+        "cost_usd": 0.1284784,
+        "tokens": 68416,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.385
+}

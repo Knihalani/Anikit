@@ -1,0 +1,534 @@
+{
+  "name": "nc_v4",
+  "tags": [
+    "title-sequence",
+    "kinetic-type"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "thank-you-for-smoking",
+    "tintin-titles"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 3,
+      "typography": 4,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 3,
+      "craft": 3,
+      "originality": 3
+    },
+    "overall": 3.38,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "There is no specific idea. It needs a concept that links the night street to the film (who lives there and why these signs exist) instead of generic billboards per name",
+      "Light and materials: the signs should actually illuminate wet ground, brick and fog, with practical sources, reflections and atmosphere; at present it is a black void with floating rectangles",
+      "The typography needs a system with a point of view: signage faces that belong to a real place, varied scale and integration into the architecture, and a title reveal that is choreographed rather than glitch effects",
+      "Build a real place with material, signage and wet asphalt, and use lighting that is motivated by the signs, instead of a black void with glowing rectangles",
+      "Give each credit its own staging and camera move inside the world (shop signs, marquees, reflections) rather than the same billboard dolly with the name swapped",
+      "Build one typographic system with a real lettering idea for the title, instead of a random fill per letter centred in an empty frame",
+      "Find an idea specific to the film (what is the 'chorus', and why night signage?) and let each sign belong to a distinct place, owner or era, the way A turns each credit into a different pack",
+      "Light the street properly: practical sources, wet-ground reflections, neon spill and haze, with real material on the walls, so the signs illuminate the world as B's sun does",
+      "Choreograph the camera and the type: vary shot scale and angle across credits, build a path through the street, and earn the title reveal instead of a stock glitch on a repeated layout"
+    ],
+    "tells": [
+      "The same composition repeats across frames: a dark alley with one billboard per name, so the structure is a slide deck in which only the words change",
+      "The scene looks like an untextured game-engine default: a black void, generic brick, random rectangular window lights, bokeh dots with no source",
+      "The billboards show default-feeling type (condensed sans caps, a generic editorial serif) with no relationship to the environment; the boards look pasted on rather than lit by or lighting the street",
+      "Effects without a subject: an RGB-split motion blur on 'MIRA', and an LED dot/stripe fill on the 'NIGHT CHORUS' letters, without an idea driving them",
+      "The 'KOV\u00c1\u010c' frame is a flat crop of pink caps on black, with no craft or integration",
+      "The title lockup is inconsistent: letters with mixed fills drop out between frames, which reads as accidental rather than choreographed",
+      "There is no character, narrative or texture; the frame is mostly empty darkness",
+      "One composition repeated: the same dark game-engine alley with one billboard on the wall, with only the name and card colour swapped (red, blue, green). This is slide-deck structure",
+      "The environment is stock and empty: a black void, emissive window rectangles, untextured walls and floor, generic point-light bokeh. Nothing about the place is designed",
+      "The names look like placeholders with no film or people behind them",
+      "The type mixes defaults (condensed grotesk, a generic editorial serif) with no system. The 'KOV\u00c1\u010c' frame is flat pink type on black and breaks the world",
+      "The final 'NIGHT CHORUS' logo uses a different halftone or LED fill on each letter. This reads as an effect preset, and the logo sits centred in an empty frame",
+      "Frame sizes and aspect ratios are inconsistent and some letterforms drop out, so finish and consistency are poor",
+      "The same composition repeats in every frame: one billboard on a dark generic alley wall, with the name swapped each time (slide-deck structure)",
+      "Default typefaces: condensed grotesk caps (Anton/Bebas-like) and a generic italic serif, with no idea linking type to subject; 'NIGHT CHORUS' changes treatment per letter (halftone, stripes, outline) like a filter sampler",
+      "Murky, flat engine-default lighting: emissive window cards and bokeh dots on a featureless brick shader, with no motivated light source and little texture",
+      "An effect with no subject: chromatic aberration and motion blur ('MIRA OVELARI' smeared) stand in for design",
+      "Inconsistent framing and aspect ratios between frames; the full-bleed 'KOV\u00c1\u010c' card is a type slam with no relation to the 3D space; the end title shows dropped letters as a glitch with no evident motivation",
+      "Placeholder-like cast names and no world, story or memorable image"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1.33
+    },
+    "thank-you-for-smoking": {
+      "overall": 8.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "tintin-titles": {
+      "overall": 8.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 8.83,
+  "delta": -5.45,
+  "trials": [
+    {
+      "key": {
+        "A": "tintin-titles",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "thank-you-for-smoking"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific narrative idea: a silhouetted detective chase in mid-century graphic style, with a hero, a dog and a pursuer, carried through every frame as a story rather than a backdrop",
+              "Each frame has a different, deliberate palette (dusty pink, teal and ochre, nocturnal purple, acid green spiral, apricot moon, slate blue), so the colour script reads as a sequence",
+              "Credits are built into the world: a name painted on a pool of lamplight on the ground, a wrought-iron archway sign, names placed in the negative space of the action",
+              "Strong staging and choreography: a high-angle alley shot, a vortex spiral, scale play with a giant pursuer, and a parallax running silhouette against the moon",
+              "Paper grain, cast shadows and pools of lamplight give real texture and motivated light",
+              "A visible graphic lineage (Saul Bass, 60s caper titles), but it is executed with full authorship"
+            ],
+            "gaps": [
+              "The credit type is a fairly uniform hand-drawn display caps; it could carry more typographic variation and scale contrast in the way D's does",
+              "The silhouette-caper idiom is familiar from the 60s-titles revival, so originality sits slightly below the craft",
+              "Several credit cards (e.g. the frame with the moon) fall back to plain stacked text over the action instead of integrating it"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A memorable world-specific idea: a clockwork map in which cities mechanically build themselves, so the title doubles as an orientation device for the story",
+              "Rich materials: tarnished brass, carved wood, an engraved astrolabe band with dragon reliefs, a parchment map",
+              "Motivated light: a sun at the centre of the astrolabe flares the frame, and low raking light falls across the miniatures",
+              "Implied choreography: camera fly-throughs, gears unfolding towers, the astrolabe rotating, and a map pull-back to a city label",
+              "Credits pair house sigils with small caps in a trajan-like serif, set into the 3D space"
+            ],
+            "gaps": [
+              "The credit typography is small and fairly conventional (an engraved-serif trope); it rarely takes part in the image the way the world does",
+              "The palette is a near-monochrome sepia and brass that becomes uniform across the length",
+              "The final logo lockup on the sunburst is a grand but standard fantasy treatment"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 10,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A sharp, film-specific idea: every credit is designed as a cigarette pack, which suits a satire about tobacco lobbying and gives a joke the viewer will remember",
+              "Typography with a strong point of view: each card uses a different period-appropriate face (bold condensed sans on a ribbon banner, brush script, engraved serif with 'LIGHTS', art-deco caps, wide grotesk), all mimicking real packaging",
+              "Pack details: tax stamps, 'premium blend', 'honey-toasted tobacco lights', a menthol palm leaf, a row of filters, and the edges of printed paper",
+              "Each frame is a distinct composition and a distinct poster",
+              "Tight close-up crops imply a moving camera across print surfaces"
+            ],
+            "gaps": [
+              "Light is flat print scans; there is little real lighting or depth compared with B's materials",
+              "The motion is likely mostly pans and cuts across flat art, with less choreography and spatial drama than A or B",
+              "The structure repeats (one pack per credit), so it relies on wit and type rather than escalation across the length"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The same composition repeats across frames: a dark alley with one billboard per name, so the structure is a slide deck in which only the words change",
+              "The scene looks like an untextured game-engine default: a black void, generic brick, random rectangular window lights, bokeh dots with no source",
+              "The billboards show default-feeling type (condensed sans caps, a generic editorial serif) with no relationship to the environment; the boards look pasted on rather than lit by or lighting the street",
+              "Effects without a subject: an RGB-split motion blur on 'MIRA', and an LED dot/stripe fill on the 'NIGHT CHORUS' letters, without an idea driving them",
+              "The 'KOV\u00c1\u010c' frame is a flat crop of pink caps on black, with no craft or integration",
+              "The title lockup is inconsistent: letters with mixed fills drop out between frames, which reads as accidental rather than choreographed",
+              "There is no character, narrative or texture; the frame is mostly empty darkness"
+            ],
+            "gaps": [
+              "There is no specific idea. It needs a concept that links the night street to the film (who lives there and why these signs exist) instead of generic billboards per name",
+              "Light and materials: the signs should actually illuminate wet ground, brick and fog, with practical sources, reflections and atmosphere; at present it is a black void with floating rectangles",
+              "The typography needs a system with a point of view: signage faces that belong to a real place, varied scale and integration into the architecture, and a title reveal that is choreographed rather than glitch effects"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 34.5,
+        "cost_usd": 0.1582904,
+        "tokens": 71751,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "tintin-titles",
+        "B": "game-of-thrones",
+        "C": "thank-you-for-smoking",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Silhouette chase in a 60s cut-paper style. It tells a real story, and the credit cards are placed inside the action: a name on a crate-lit dock, ANDY SERKIS printed on a light spill on the floor",
+              "Each frame uses its own palette (dusty rose, teal and amber, purple noir, acid-green spiral, peach moon, steel blue) yet they all hold together as one system",
+              "Camera angles vary hugely: overhead alley, flat silhouette, a spiral vortex, a skyline. That is clear evidence of choreography and pacing",
+              "Paper grain, cast shadows and lamp pools give the flat graphics real material and light",
+              "Small story details recur and pay off, like the white dog as a bright accent in every frame and the rocket in the last frame"
+            ],
+            "gaps": [
+              "The credit type is a fairly safe rounded display sans. It could carry more period character or react to the scenes more",
+              "Some secondary credit blocks (VFX supervisor) sit on top of the image as conventional overlays and aren't integrated",
+              "In a few frames the shadow-play style is close to well-known 60s caper titles. More of its own graphic language would raise originality"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "One specific idea: a clockwork map that builds itself, with cities rising out of gears. It also works as the show's world-building",
+              "Real material quality: engraved metal, wood, parchment, with blown-out light from the astrolabe sun and shallow depth of field",
+              "Framing changes constantly (macro relief, tilt-shift city, mechanical close-up, armillary sphere, overhead map, logo), which implies clear choreography",
+              "Credits use a carefully chosen Trajan-like engraved serif with heraldic sigil bullets, tracked and placed like inscriptions on the map",
+              "The title lockup is built into the astrolabe band, so type and object are one thing"
+            ],
+            "gaps": [
+              "Credit type is small and in low contrast against busy detail, so legibility suffers in places",
+              "The palette is almost all warm sepia and gold. A cold counter-colour (the North, the sea) would add range",
+              "Credit placement follows one formula in every frame (lower-left or corner, with a sigil). Little scale play in the type"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, satirical idea: every credit is a made-up cigarette brand ('David Koechner LIGHTS', menthol, 'honey-toasted'), which fits the film's subject exactly",
+              "The type is clearly researched. Each card uses period packaging lettering: a banner title, script, condensed sans, art-deco caps, an elegant serif",
+              "The palette comes straight from mid-century tobacco packaging (royal blue, gold, red, mint, orange), with print grain, foil and misregistration texture",
+              "Every frame has a different layout, with details like the sunburst, the bomber plane, crests and a row of cigarette filters. The type really does have a point of view"
+            ],
+            "gaps": [
+              "The motion implied by the frames is mostly crops and pans across flat packaging. It has less choreographic range than A or B",
+              "The camera stays tight and flat on every card. There is no dimensional or physical moment (a pack opening, foil tearing) to vary the rhythm",
+              "The light is mostly scanned print with no source. A few lit, physical shots would add depth"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "One composition repeated: the same dark game-engine alley with one billboard on the wall, with only the name and card colour swapped (red, blue, green). This is slide-deck structure",
+              "The environment is stock and empty: a black void, emissive window rectangles, untextured walls and floor, generic point-light bokeh. Nothing about the place is designed",
+              "The names look like placeholders with no film or people behind them",
+              "The type mixes defaults (condensed grotesk, a generic editorial serif) with no system. The 'KOV\u00c1\u010c' frame is flat pink type on black and breaks the world",
+              "The final 'NIGHT CHORUS' logo uses a different halftone or LED fill on each letter. This reads as an effect preset, and the logo sits centred in an empty frame",
+              "Frame sizes and aspect ratios are inconsistent and some letterforms drop out, so finish and consistency are poor"
+            ],
+            "gaps": [
+              "Build a real place with material, signage and wet asphalt, and use lighting that is motivated by the signs, instead of a black void with glowing rectangles",
+              "Give each credit its own staging and camera move inside the world (shop signs, marquees, reflections) rather than the same billboard dolly with the name swapped",
+              "Build one typographic system with a real lettering idea for the title, instead of a random fill per letter centred in an empty frame"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.4,
+        "cost_usd": 0.15488020000000002,
+        "tokens": 71602,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "game-of-thrones",
+        "C": "tintin-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "The concept belongs to this film alone: every credit is designed as a period cigarette pack, so the film's subject becomes the credit system",
+              "Typography has a real point of view and changes with each pack: a banner-set slab for the title, a script for 'Cameron Bright', a serif with spaced 'LIGHTS', condensed sans, deco caps for 'Kim Dickens' and a script-plus-bold-sans pairing for the director",
+              "Rich packaging detail: crest, eagle, pointer engraving, sunburst, a plane over a scalloped wave, the row of filters, 'UNDERAGE SALE PROHIBITED' and 'HONEY-TOASTED' microtype",
+              "Printed-paper texture, slightly misregistered vintage colour and gold foil give it a physical, scanned-ephemera feel",
+              "Tight crops past the edge of the pack suggest a camera tracking across real printed surfaces"
+            ],
+            "gaps": [
+              "The motion is mostly flat 2D pans across print, which has less spatial choreography and depth than B's mechanical camera moves",
+              "Little variation in light: the paper is evenly lit throughout, with no lighting event or climax comparable to B's sunburst framing",
+              "The structure repeats one pack per credit, which risks feeling sequential; one transition that breaks the pattern (packs stacking, a match from cellophane to flame) would raise the rhythm"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "The title explains the world: an astrolabe-lit clockwork map where cities rise mechanically, which serves as both orientation and mythology",
+              "Physical materials throughout: hammered metal, carved wood, verdigris and parchment, lit by a warm central sun with lens bloom",
+              "Clear choreography: the engraved band opens on the astrolabe, the camera pushes down to the clockwork city, gears and spires unfold, it pulls back to the map, and the band returns to frame the logo",
+              "Credits use small engraved trajan-style caps with sigil glyphs, sitting inside the world as cartographic labels",
+              "Bookended structure: the hero logo resolves inside the same glowing band seen in frame 1"
+            ],
+            "gaps": [
+              "The credit type is small and conventional, and sometimes collides with busy detail (the 'Oral Norrie Ottey' credit over the rings); it is less expressive than A's typographic invention",
+              "The palette sits in safe sepia-bronze; one deliberate colour accent per region would sharpen the read",
+              "The map frame is flatter and lower in detail than the mechanical close-ups, a dip in density mid-sequence"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.94,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A playful silhouette chase that recalls 1960s caper titles, with characters, a dog, a pickpocket and a rocket arranged into a narrative",
+              "The palette changes with every scene (dusty rose, teal and ochre, violet night, acid green spiral, peach moon, steel blue), each set deliberately",
+              "Varied staging: a gate establishing shot, a dock with a cast shadow, a high top-down alley with a light pool, a hypnotic spiral, profile running against the moon, a rooftop standoff",
+              "A hand-lettered display face that matches the art; names are placed inside the scene (painted on the alley ground, beside the action)",
+              "Grainy painted texture and long cast shadows give it a tactile, screen-printed finish"
+            ],
+            "gaps": [
+              "The later credit cards fall back to standard centred technical-credit lockups with less integration than the early ones",
+              "Lighting is graphic rather than physical; there is less material depth than B",
+              "The genre homage leans on established vocabulary, so originality is a notch below A's single-object conceit"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 2,
+              "originality": 3
+            },
+            "tells": [
+              "The same composition repeats in every frame: one billboard on a dark generic alley wall, with the name swapped each time (slide-deck structure)",
+              "Default typefaces: condensed grotesk caps (Anton/Bebas-like) and a generic italic serif, with no idea linking type to subject; 'NIGHT CHORUS' changes treatment per letter (halftone, stripes, outline) like a filter sampler",
+              "Murky, flat engine-default lighting: emissive window cards and bokeh dots on a featureless brick shader, with no motivated light source and little texture",
+              "An effect with no subject: chromatic aberration and motion blur ('MIRA OVELARI' smeared) stand in for design",
+              "Inconsistent framing and aspect ratios between frames; the full-bleed 'KOV\u00c1\u010c' card is a type slam with no relation to the 3D space; the end title shows dropped letters as a glitch with no evident motivation",
+              "Placeholder-like cast names and no world, story or memorable image"
+            ],
+            "gaps": [
+              "Find an idea specific to the film (what is the 'chorus', and why night signage?) and let each sign belong to a distinct place, owner or era, the way A turns each credit into a different pack",
+              "Light the street properly: practical sources, wet-ground reflections, neon spill and haze, with real material on the walls, so the signs illuminate the world as B's sun does",
+              "Choreograph the camera and the type: vary shot scale and angle across credits, build a path through the street, and earn the title reveal instead of a stock glitch on a repeated layout"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 36.2,
+        "cost_usd": 0.15918000000000002,
+        "tokens": 71813,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 6,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": false,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Environment is underexposed and murky: the brick walls, road and building masses crush to near-black with little falloff detail, so the street reads as a dark game-engine blockout rather than a lit set",
+        "The dark sky and wall gradients risk banding and macroblocking; the shadows look muddy, not graded",
+        "Whip transitions use one heavy directional smear (pairs row 1) that wipes out the sign typography for several frames, which reads as a stock blur rather than shaped camera motion",
+        "Chromatic-aberration and RGB-split fringes on the title letters (the T, N and S edges) are applied evenly as a filter instead of being motivated per material",
+        "The 'WRITTEN & DIRECTED BY' sign goes soft and scanline-ghosted mid-move, so the credit is unreadable for part of its screen time",
+        "Credit signs look flat-lit, with no light spill from the bright sign faces onto the wet ground or the walls, so the emitters don't sit in the scene",
+        "The final frames lose letters ('NIGHT HO S'); the flicker-out reads as missing glyphs rather than a designed resolve",
+        "Repeated camera grammar: nearly every credit is the same dolly-past-a-sign-on-the-left move at the same speed"
+      ],
+      "gaps": [
+        "Motion: the credits repeat one move, a forward street dolly plus whip to the next sign, roughly every 0.9 s. Top work would vary the camera (crane, lateral track, rack focus, reflections in puddles) and give the signs their own behaviour (ignition, buzz, failing tubes) so each credit has its own beat. The 4.2 s title hold needs in-shot life, not just a static flicker",
+        "Finish: the lighting and world-building don't match the type design. The halftone, LED, neon and stripe letter materials at 100% are good, but the street around them is underlit and has no volumetrics, wet-surface reflections, emitter bounce or atmospheric haze, so the 'night' is just darkness. Grade the blacks, add light falloff from every sign, and remove the generic chromatic-aberration overlay",
+        "Sound and ending: the score is a regular grid of transients with a filtered drop at about 7.6\u20138.4 s and a broadband slam at the title. It is effective but formulaic: there is little sign-specific sound design (neon hum, relay clicks, rain, traffic) tied to the individual credits, and the tail fades thinly. The end doesn't settle or rhyme with the opening street shot, and it closes on a glitch rather than a composed final lockup"
+      ]
+    },
+    "meta": {
+      "seconds": 27.6,
+      "cost_usd": 0.15639039999999998,
+      "tokens": 71194,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "street.mp4: 12.7s, 12 shots, median 0.90s, longest 4.23s\nper-second change: [24.4, 18.1, 21.3, 14.7, 16.8, 11.8, 23.8, 27.2, 14.9, 9.7, 12.4, 18.0]\nPACE: FAIL \u2014 longest shot 4.2s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 3,
+    "typography": 4,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 4.5,
+    "craft": 4.5,
+    "originality": 3,
+    "sound": 6
+  },
+  "full_overall": 4.0,
+  "cost_usd": 0.629,
+  "judge_seconds": 131.7,
+  "verdict": "FAIL"
+}

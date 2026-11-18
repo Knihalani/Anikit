@@ -39,6 +39,7 @@ PACE = ROOT / "docs/video/quality/pace.py"
 DIMS = ["idea", "composition", "typography", "colour", "light_texture", "motion", "craft", "originality"]
 CRITIC_DIMS = ["motion", "sound", "craft"]
 N_FRAMES = 6
+MOTION_FLOOR = 4  # PASS/PRO need the jury's median motion >= this (controls: 5-8)
 MIN_FRAMES = int(os.environ.get("JUDGE_MIN_FRAMES", 4))  # refs need this many real frames
 CELL = (480, 300)
 MODEL = os.environ.get("JUDGE_MODEL", "claude-opus-5-5")
@@ -368,7 +369,7 @@ def motion_strips(src, n_strips=3, n=10, fps=10, w=320):
     return strips
 
 
-CLIPS = Path(os.environ.get("JUDGE_CLIPS", ROOT / ".cache/judge-clips"))  # <slug>.mp4, lawfully obtained (clips.json)
+CLIPS = Path(os.environ.get("JUDGE_CLIPS", ROOT / ".cache/judge-clips-md"))  # <slug>.mp4, lawfully obtained (clips.json)
 
 MOTION_PROMPT = """You are on the final jury of an international motion-design award, judging MOTION only.
 
@@ -509,7 +510,15 @@ def judge(name, frames, tags, args, exclude=(), video=None):
     if args.trials < 1:
         sys.exit("--trials must be >= 1")
     rng = random.Random(args.seed)
-    refs = pick_refs(tags, args.refs, rng, exclude=exclude, fmt=args.format)
+    pin = getattr(args, "pin", None)
+    if pin:
+        have = {r["slug"]: r for r in load_refs()}
+        missing = [s_ for s_ in pin if s_ not in have]
+        if missing:
+            sys.exit(f"pinned refs not available locally: {missing}; run `python3 scripts/judge.py sync-bench` first")
+        refs = [have[s_] for s_ in pin]
+    else:
+        refs = pick_refs(tags, args.refs, rng, exclude=exclude, fmt=args.format)
     out = Path(args.out or ROOT / "docs/video/judge/results") / name
     out.mkdir(parents=True, exist_ok=True)
     print(f"judging {name} vs {[r['slug'] for r in refs]}", file=sys.stderr)
@@ -534,7 +543,7 @@ def judge(name, frames, tags, args, exclude=(), video=None):
             dims["sound"] = s["sound"]
         result["full_scores"] = dims
         result["full_overall"] = round(statistics.mean(dims.values()), 2)
-    if video and os.environ.get("JUDGE_MOTION", "0") == "1":
+    if video and os.environ.get("JUDGE_MOTION", "0") == "1":  # informational: not part of the verdict (VALIDATION.md)
         m = motion_compare(video, tags, args.trials, args.seed, out, exclude=exclude)
         if m:
             result["motion_blind"] = m
@@ -553,6 +562,8 @@ def verdict(cand, delta):
     """PASS: indistinguishable from the style-matched refs. PRO: passes as real studio work but below the refs.
     FAIL: the jury can tell. Thresholds come from controls (held-out pro refs): every control is PRO or PASS."""
     pro = cand.get("pro_rate", 0) >= 0.6
+    if pro and (cand.get("scores", {}).get("motion") or 0) < MOTION_FLOOR:
+        return "FAIL"  # a well-made still is not a film: every control scores motion >= 5
     if pro and delta is not None and delta >= -1.0:
         return "PASS"
     if pro and (cand.get("overall") or 0) >= 5.0:
@@ -565,6 +576,21 @@ def cmd_run(args):
     name = args.name or Path(args.candidate).stem
     video = args.candidate if Path(args.candidate).suffix.lower() in (".mp4", ".mov", ".webm", ".mkv") else None
     judge(name, frames, args.tags.split(","), args, video=video)
+
+
+def cmd_brief(args):
+    """Judge a rebuild of an eval brief against the SAME 3 refs as r1/r2 (pins.json), so scores pair with those rounds."""
+    b = {x["id"]: x for x in json.loads((ROOT / "docs/video/judge/briefs.json").read_text())}[args.brief]
+    pins = json.loads((ROOT / "docs/video/judge/pins.json").read_text())[args.brief]
+    if any(s_ not in {r["slug"] for r in load_refs()} for s_ in pins["refs"]):
+        cmd_sync_bench(args)  # REFS's stills are not in git: fetch them once per container
+        REFS_DIRS[:] = [p for p in (ROOT / "docs/video/judge/refs", BENCH / "export") if p.is_dir()]
+    args.format, args.grid, args.pin = b["format"], None, pins["refs"]
+    name = args.name or args.brief
+    r = judge(name, load_frames(args.candidate), b["tags"], args, video=args.candidate)
+    print(f"\n{args.brief}: {r['candidate'].get('overall')} (judged pro {r['candidate'].get('judged_professional')}, verdict {r['verdict']}) "
+          f"vs r1 {pins['r1']} / r2 {pins['r2']}; full {r.get('full_overall')} vs r1 {pins['r1_full']} / r2 {pins['r2_full']}. "
+          f"Result: {Path(args.out or ROOT / 'docs/video/judge/results') / name / 'result.json'}")
 
 
 def cmd_control(args):
@@ -613,6 +639,35 @@ def cmd_sync_bench(args):
     subprocess.run([sys.executable, "-I", str(tool), "fetch", "--refresh"], cwd=src, env=env)
     shutil.rmtree(BENCH / "export", ignore_errors=True)
     subprocess.run([sys.executable, "-I", str(tool), "export", "--no-thumbs", "--out", str(BENCH / "export")], cwd=src, env=env, check=True)
+    cj = src / "docs/video/judge/benchmark/clips.json"
+    if cj.exists():
+        sync_clips(cj)
+
+
+MOTION_CLIP_SET = ["calibration-simon-vpro-idents-2010", "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+                   "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+                   "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+                   "calibration-blender-hero-grease-pencil-showcase", "blender-studio-charge-2022"]
+
+
+def sync_clips(clips_json):
+    """Lawful (CC/PD) direct-file clips from REFS's clips.json: a 20 s excerpt from the middle of each, into .cache/judge-clips."""
+    import time
+    allc = ROOT / ".cache/judge-clips"; allc.mkdir(parents=True, exist_ok=True)
+    md = ROOT / ".cache/judge-clips-md"; md.mkdir(parents=True, exist_ok=True)
+    ua = "anikit-judge/1.0 (evaluation; CC/PD clips)"
+    for c in json.loads(Path(clips_json).read_text()):
+        out = allc / f"{c['slug']}.mp4"
+        if not out.exists():
+            d = subprocess.run(["ffprobe", "-v", "error", "-user_agent", ua, "-show_entries", "format=duration", "-of", "csv=p=0", c["url"]],
+                               capture_output=True, text=True).stdout.strip()
+            ss = max(0.0, float(d) / 2 - 10) if d else 0.0
+            time.sleep(5)  # Commons rate-limits
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-user_agent", ua, "-ss", f"{ss:.1f}", "-i", c["url"], "-t", "20", "-an",
+                            "-c:v", "libx264", "-crf", "18", "-preset", "fast", str(out)], check=False)
+            time.sleep(5)
+        if c["slug"] in MOTION_CLIP_SET and out.exists() and not (md / out.name).exists():
+            (md / out.name).symlink_to(out)
 
 
 def cmd_batch(args):
@@ -658,10 +713,19 @@ def main():
     b.add_argument("--out")
     b.add_argument("--no-critic", action="store_true")
     sub.add_parser("sync-bench")
+    bp = sub.add_parser("brief", help="judge a rebuild of an eval brief against its pinned r1/r2 refs")
+    bp.add_argument("brief")
+    bp.add_argument("candidate")
+    bp.add_argument("--name")
+    bp.add_argument("--trials", type=int, default=3)
+    bp.add_argument("--seed", type=int, default=7)
+    bp.add_argument("--refs", type=int, default=3)
+    bp.add_argument("--out")
+    bp.add_argument("--no-critic", action="store_true")
     t = sub.add_parser("table")
     t.add_argument("results", nargs="+")
     args = ap.parse_args()
-    {"run": cmd_run, "control": cmd_control, "table": cmd_table, "batch": cmd_batch, "sync-bench": cmd_sync_bench}[args.cmd](args)
+    {"run": cmd_run, "control": cmd_control, "table": cmd_table, "batch": cmd_batch, "sync-bench": cmd_sync_bench, "brief": cmd_brief}[args.cmd](args)
 
 
 if __name__ == "__main__":
