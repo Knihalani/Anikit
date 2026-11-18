@@ -293,7 +293,7 @@ class VideoWriter:
             raise ValueError(f"frame is {w}x{h}, the video is {self.width}x{self.height}")
         assert self._proc.stdin is not None
         try:
-            self._proc.stdin.write(rgba_to_i420(frame).tobytes())
+            self._proc.stdin.write(rgba_to_i420(frame))
         except BrokenPipeError:
             raise RuntimeError(f"ffmpeg stopped: {self._error()}") from None
         self.frames += 1
