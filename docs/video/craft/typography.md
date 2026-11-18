@@ -17,17 +17,18 @@ Axis ranges for Google Fonts families were checked against the Google Fonts meta
 
 1. **Choose a face for a reason you can say in one sentence** ("compressed grotesk because this is sport and the frame is wide"). If you can't, you are about to make slop.
 2. **One family, two weights, one accent** beats three families. Make contrast with *size* first, *weight* second and *face* third.
-3. **Push size contrast hard.** In motion, a headline at 30–60 vh beside a caption at 2.2–3 vh (a 10:1 to 25:1 ratio) reads as designed. 9 vh over 3 vh (3:1) reads as a slide deck.
+3. **When type leads, push size contrast hard.** In motion, a headline at 30–60 vh beside a caption at 2.2–3 vh (a 10:1 to 25:1 ratio) reads as designed. 9 vh over 3 vh (3:1) reads as a slide deck.
 4. **Set it flush left on a grid** unless the content is truly symmetrical (a single word, a logo, a date). Centred multi-line text is the #1 amateur tell.
 5. **Track against size.**
    - Large lowercase gets tighter: −0.01 to −0.05 em.
    - Caps and small text get looser: +0.05 to +0.12 em ([Butterick](https://practicaltypography.com/letterspacing.html)).
-   - Never track lowercase body text loose.
+   - Loose-tracked lowercase body text tends to fall apart into letters, because word shapes are what we read.
 6. **Lead against size.** Display: 0.85–1.0. Text: 1.25–1.45 ([Butterick](https://practicaltypography.com/line-spacing.html)).
 7. **Let type touch the frame.** Cropping, bleeding and filling 60–90% of the width are studio moves. A medium-sized word floating in the middle is not.
-8. **Hold long enough to read.** Allow 0.3–0.4 s per word plus 0.5 s, and never less than 5/6 s for anything meant to be read ([Netflix](https://backlothelp.netflix.com/hc/en-us/articles/215758617)).
+8. **Hold long enough to read.** Allow 0.3–0.4 s per word plus 0.5 s, and anything held for less than 5/6 s tends to go unread ([Netflix](https://backlothelp.netflix.com/hc/en-us/articles/215758617)).
 9. **Animate one property with intent** (position *or* tracking *or* weight), on an expo/quart ease-out, with staggers under 40 ms per character. Per-letter bounce on everything is a template tell.
-10. **Detail is what signals craft:** real quotes (“ ” ’), en/em dashes, tabular figures in counters, `case` forms in all-caps, no widows, optical kerning at display sizes.
+10. **Decide whether type leads or supports.** In the REFS benchmark (79 world-class pieces), type is absent or supporting in 61. When it supports, set it small, precise and consistent, on the image's own grid and out of the picture's way (see §3.6). Big type is a choice for when the words *are* the image.
+11. **Detail is what signals craft:** real quotes (“ ” ’), en/em dashes, tabular figures in counters, `case` forms in all-caps, no widows, optical kerning at display sizes.
 
 ---
 
@@ -107,7 +108,7 @@ Guidelines:
   - Exits: `inQuart` or `inExpo`, at 0.6–0.7× the entrance duration.
   - Position-locked things (credits roll, ticker, typewriter): linear.
   - Overshoot (`outBack`) at s ≤ 1.2, and only for playful or retro briefs. At s = 1.7 (the default in most libraries) type looks rubbery.
-- **Ease the stagger distribution as well.** Apply `inQuad` over the index so the first letters land fast and the tail settles. Use `from: center` for symmetric words (logos, single-word titles) and never for sentences.
+- **Ease the stagger distribution as well.** Apply `inQuad` over the index so the first letters land fast and the tail settles. Use `from: center` for symmetric words (logos, single-word titles); on sentences it tends to scramble the reading order.
 - **Travel distances:** rise and drop moves of 0.3–0.6 em (or 20–40% of line height). More than 1 em reads as a slide-in, not a type entrance. Blur-in: 8–20 px at 1080p, resolved fully before reading starts.
 - **Don't animate what you want read.** Blur, wobble or noise on text the viewer is reading is a tell. Animate in, *then hold still* (a 2–5% push-in is fine).
 
@@ -157,7 +158,7 @@ Guidelines:
   - 3:1 is "corporate deck".
   - 6–8:1 is "designed".
   - 12–25:1 is "poster or editorial", for one-idea frames, stat reveals and title cards. A 40 vh numeral over a 2.4 vh label is 17:1.
-- **Weight contrast compensates for small ratios.** If the headline must stay under 8 vh (dense content), contrast 300 against 800, not 500 against 600.
+- **Weight contrast compensates for small ratios.** If the headline has to stay under 8 vh (dense content), contrast 300 against 800, not 500 against 600.
 - **Avoid the "medium everything" trap.** The engine's old styles were 9/6/3.6/3 vh with weights 800/700/500/400: four levels that are almost the same. Collapse them to *huge / small / tiny*.
 
 ### 3.2 Legibility minimums at 1080p (scale ×2 for 4K, keep vh for other sizes)
@@ -214,7 +215,7 @@ Tight leading is the single fastest way to make display type look designed. 1.2 
 | Display lowercase 6–15 vh | −0.01 to −0.025 em. Inter's dynamic metrics give ≈ −0.022 em at ≥ 32 px ([rsms.me/inter/dynmetrics](https://rsms.me/inter/dynmetrics/)). |
 | Display lowercase > 15 vh | −0.025 to −0.05 em; check that letter pairs don't collide (rn → m) |
 | Compressed heavy caps (sports) | 0 to +0.02 em; they are designed tight |
-| Monospace | 0. Never track mono; it breaks the grid. |
+| Monospace | 0. Tracking mono tends to break its grid, because every cell is already the same width. |
 
 Kerning at display sizes:
 - Default font kerning is tuned for text sizes. At ≥ 20 vh, inspect pairs like *AV, To, Ty, LT, r., f'* and quotes against capitals, and adjust by −0.02 to −0.06 em.
@@ -232,6 +233,15 @@ Kerning at display sizes:
 
 ---
 
+### 3.6 Type in support (the common case)
+
+In the REFS benchmark, type is absent or supporting in 61 of 79 world-class pieces. Where it supports the picture, its job is to be precise and get out of the way:
+- **Small and consistent.** One face, one or two sizes (2–3.5 vh at 1080p), one weight, used the same way every time. Severance's credits use a small, left-aligned grotesque under a thin overline rule, always in the same place, so the image does the talking.
+- **On the image's grid.** Align to an edge or a line already in the picture (a horizon, a doorframe, the edge of a product), not to the frame centre. Hold 4–6% margins inside title-safe.
+- **Out of the subject's way.** Put text in negative space; over faces or the focal point it tends to fight the picture for attention. Move it between shots rather than covering the picture.
+- **Quiet motion.** A 200–400 ms fade or a 4–8 px rise, or a cut on the beat. Supporting type that animates harder than the picture competes with it.
+- **Detail still counts.** Tabular figures for data, real quotes, `case` punctuation in caps, +0.04 to +0.08 em tracking on small caps labels, a hairline rule (1–2 px) for structure instead of boxes or pills.
+
 ## 4. Type pairing
 
 ### 4.1 Principles
@@ -248,11 +258,18 @@ Kerning at display sizes:
    - Saira (+ Stencil)
    - Bungee (Regular, Inline, Outline, Shade, Hairline, Spice)
 3. **One-family systems** look the most professional in motion, because every card shares proportions. Get hierarchy from size, weight and case.
-4. **Give each face a job.** Display = voice; text = information; mono = data or system. Never use two faces for the same job.
+4. **Give each face a job.** Display = voice; text = information; mono = data or system. Two faces doing the same job tend to read as indecision rather than contrast.
 5. **Match x-height or cap height when two faces share a line.** Scale the second face 0.9–1.15× so cap heights align. Inline italic accents from another family are the classic "AI hero" tell.
 6. **At most two families on screen at once, three per film** (the third is usually mono for data).
 
-### 4.2 Fifteen working pairings (all OFL, on Google Fonts)
+### 4.2 Fifteen worked examples of pairings (all OFL, on Google Fonts)
+
+Read these as worked examples of the *reasoning*, not as a menu. If every film picks from the same fifteen, outputs converge again; the TASTE A/B found the same tracked generic caps in 4/4 pieces. To find a pairing beyond this list:
+- **Start from the brief's era, place and material.** A 1970s Italian rail timetable, a Lagos bus, a Victorian playbill or a lab instrument each implies a construction: grotesque or slab, condensed or wide, ink-trapped or stencilled. Search the library by genre and axis (`anikit-video fonts slab`, `fonts wdth`), or pull letterforms from `anikit-video board` references.
+- **Contrast structure, not just style.** Pair different skeletons (didone + grotesque, humanist + geometric mono), or one superfamily in two widths or optical sizes.
+- **Give each face one job** (voice, information, data), and say that job in one sentence.
+- **Vary across a project.** Consecutive films in the same pairing read as a template. Change at least the display face per brief.
+
 
 | # | Display (role) | Text / support | Why it works | Good for |
 |---|---|---|---|---|
@@ -351,7 +368,7 @@ Each entry gives the faces (OFL first), the layout signature, colour, and motion
 - **Faces:** **Cormorant Garamond** (300–500 at ≥ 12 vh), **Bodoni Moda**, **Italiana**, **Bellefair**, **Gilda Display**, **Marcellus**, **Tenor Sans**; **Ysabeau** for refined sans.
 - **Layout:** tiny type and enormous space (70–85% empty). Centring is acceptable here, because luxury is the genre where symmetry is native. Caps at 1.8–2.4 vh tracked +0.2–0.35 em. Monogram scale moves.
 - **Colour:** black, ivory, champagne (#C9B37E), deep green, oxblood; no gradients except real metallic film.
-- **Motion:** slow (1.2–2.5 s), `inOutSine`, crossfades, very slow push-ins (2–3% over 5 s), letter-by-letter fades at a 60–90 ms stagger. Never bounce.
+- **Motion:** slow (1.2–2.5 s), `inOutSine`, crossfades, very slow push-ins (2–3% over 5 s), letter-by-letter fades at a 60–90 ms stagger. Bounce tends to undercut the register, because luxury reads as unhurried.
 
 ### 5.7 Sports
 - **Faces:** compressed and italic: **Saira** (wdth 50, italic, 800–900), **Big Shoulders**, **Barlow Condensed**, **Sofia Sans Extra Condensed** (wght 1–1000), **Anton**, **League Gothic** (wdth 75–100), **Teko**, **Alumni Sans**, **Oswald** (overused; prefer the others), **Saira Stencil**.
@@ -376,7 +393,7 @@ Each entry gives the faces (OFL first), the layout signature, colour, and motion
 
 ### 5.10 Blackletter / metal
 - **Faces:** **UnifrakturMaguntia**, **UnifrakturCook**, **Pirata One**, **Grenze Gotisch**, **Jacquard 24**, **Jacquarda Bastarda 9**, **Texturina** (opsz, softened blackletter for longer text), **Montenegrin Gothic One**.
-- **Layout:** centred and symmetrical (it's heraldic); logo-like lockups; never long text. Pair with a neutral condensed sans for information.
+- **Layout:** centred and symmetrical (it's heraldic); logo-like lockups; long text tends to become unreadable, because blackletter word shapes are unfamiliar to most viewers. Pair with a neutral condensed sans for information.
 - **Colour:** black/white, blood red, gold; for metal, illegible white logos on black with mirrored symmetry.
 - **Motion:** slow burn-in through noise and grain, flicker 2–3 frames, fire or smoke displacement on the edges; or brutal slams for hardcore.
 
@@ -447,7 +464,7 @@ Each entry gives the faces (OFL first), the layout signature, colour, and motion
 5. **Restraint.** One face, two weights; one motion idea; one accent colour.
 6. **Typographic colour.** Even grey texture in text blocks: no loose lines, no rivers, no mixed tracking.
 7. **Rag.** Ragged-right edges alternate long/short without a staircase. No line under ~60% of the measure except the last. No hyphenation at display sizes.
-8. **No widows or orphans.** Never one word alone on the last line of a 2–4 line display block. Rebreak by sense or use a non-breaking space between the last two words.
+8. **No widows or orphans.** One word alone on the last line of a 2–4 line display block tends to look like a mistake, because the eye reads the block as a shape. Rebreak by sense or use a non-breaking space between the last two words.
 9. **Optical alignment.**
    - Round letters (O, C, S) overshoot the cap line and baseline by 1–3% by design.
    - At display size, align the *visual* edge: pull rounds and diagonals (A, V, W, T) 0.02–0.05 em into the margin.
@@ -464,7 +481,7 @@ Each entry gives the faces (OFL first), the layout signature, colour, and motion
     - `zero` (slashed zero) for codes.
     - `frac` for ½ ¾.
 13. **Case-sensitive forms:** `case` raises hyphens, parentheses and @ to cap height in all-caps settings.
-14. **Small caps, never fake caps:** `smcp`/`c2sc` for acronyms in running text (NASA → nasa set in small caps), tracked +0.05 em.
+14. **Real small caps rather than scaled-down capitals:** `smcp`/`c2sc` for acronyms in running text (NASA → nasa set in small caps), tracked +0.05 em.
 15. **Consistent motion grammar** (§2.4).
 
 ---

@@ -336,7 +336,7 @@ fn merge(base: Value, over: Value) -> Value {
 }
 
 /// Substitute bound `$params` (and evaluate `=` arithmetic) throughout `v`.
-fn subst(v: Value, params: &Map<String, Value>) -> Value {
+pub(crate) fn subst(v: Value, params: &Map<String, Value>) -> Value {
     if params.is_empty() {
         return v;
     }

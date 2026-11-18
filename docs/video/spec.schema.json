@@ -1857,6 +1857,13 @@
             "null"
           ]
         },
+        "textBoxTrim": {
+          "description": "Trim the text box to the first line's cap height and the last line's baseline (CSS `text-box: cap alphabetic`),\nso `anchor` and grid cells align the letters, not the line box. Default on for text in a grid `cell`.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "maxLines": {
           "type": [
             "integer",
@@ -2398,6 +2405,20 @@
           ],
           "format": "double"
         },
+        "order": {
+          "description": "Stagger order: `forward` (default), `reverse`, `center` (middle first), `random` (with `seed`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "seed": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
         "center": {
           "description": "Rotation/scale centre `[x, y]` in parent pixels (default: the layer's own position).",
           "type": [
@@ -2617,6 +2638,17 @@
             "string",
             "null"
           ]
+        },
+        "axes": {
+          "description": "Variable-font axis values at full selection, e.g. `{\"wght\": 900, \"wdth\": 125}`\n(a weight wave across the units). Spacing stays that of the base text.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          }
         },
         "start": {
           "description": "Range start / end as fractions of the units (0..1). Defaults 0 and 1. Animatable as `rangeStart` / `rangeEnd`.",
