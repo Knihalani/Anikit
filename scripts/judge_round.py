@@ -21,8 +21,9 @@ BASE = "claude/epic-ramanujan-qe7x4w"
 
 PROMPT = """You are making one video with Anikit Video, a JSON-spec -> MP4 engine. No human will answer questions: decide everything yourself.
 
-Setup (current main of this repo):
-  cargo build --release -p anikit-video && export PATH=$PWD/target/release:$PATH
+Setup (prebuilt release of current main, installs in seconds):
+  ANIKIT_INSTALL_DIR=$PWD/.bin sh install.sh && export PATH=$PWD/.bin:$PATH && anikit-video --version
+If that fails, run `cargo build --release -p anikit-video` once, in the foreground, and use target/release.
 Then read skills/anikit-video/SKILL.md and follow it (use `anikit-video docs <topic>` for detail).
 
 BRIEF
@@ -36,7 +37,8 @@ Deliver in deliverables/eval/{id}/ :
   started (run `date -u +%FT%TZ` first thing) and end_utc when final.mp4 is done; render the FINAL film with
   `python3 scripts/measure.py -o deliverables/eval/{id}/renders.jsonl -- anikit-video render ...`
   and copy those JSON lines into "renders".
-Commit only deliverables/eval/{id}/ and push to branch {branch}. Then reply with one line: the path of final.mp4."""
+Commit only deliverables/eval/{id}/ and push to branch {branch}. Your turn isn't over until final.mp4 exists and is
+pushed: never end it with a render still running in the background. Then reply with one line: the path of final.mp4."""
 
 
 def briefs():
