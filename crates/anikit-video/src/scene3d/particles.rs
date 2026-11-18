@@ -29,12 +29,16 @@
 //! tested against the traced scene.
 
 use super::math::*;
+use super::kernel::pool::Buf;
 use super::spec::{self, Num, ObjDef, Res};
 use super::trace::{Camera, Material, Shape};
 use crate::eval::expr::Vars;
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+
+// SAFETY: V3 contains only f32s, so every bit pattern is valid and its alignment is 4.
+unsafe impl super::kernel::pool::Pod for V3 {}
 
 const KEYS: &[&str] = &[
     "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch", "shadows", "force", "trail", "size_dist", "scatter", "glint", "sprite", "liquid",
@@ -1523,7 +1527,7 @@ pub struct Layer {
     pub ab: Option<usize>,
     pub buf: Vec<f32>,
     /// Liquid surfaces: per pixel, transmittance (rgb) and added light (rgb).
-    pub liquid: Option<Vec<[f32; 6]>>,
+    pub liquid: Option<Buf<[f32; 6]>>,
 }
 
 impl Layer {
@@ -2192,11 +2196,11 @@ fn streak_gap() -> f32 {
 /// the environment and key light, Beer–Lambert colour through its thickness,
 /// or a diffuse body for opaque liquids. Banded and per-pixel: identical at
 /// any thread count.
-fn render_liquid(systems: &[(&Sim, &Arc<Snap>)], v: &View, t: f32) -> Vec<[f32; 6]> {
+fn render_liquid(systems: &[(&Sim, &Arc<Snap>)], v: &View, t: f32) -> Buf<[f32; 6]> {
     use rayon::prelude::*;
     let (w, h) = (v.w, v.h);
     let pj = Proj::new(v.cam, w, h);
-    let mut out = vec![[1.0, 1.0, 1.0, 0.0, 0.0, 0.0]; w * h];
+    let mut out = Buf::filled(w * h, [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]);
     for (sim, snap) in systems {
         let d = &sim.def;
         let lq = d.liquid.unwrap();
@@ -2218,8 +2222,9 @@ fn render_liquid(systems: &[(&Sim, &Arc<Snap>)], v: &View, t: f32) -> Vec<[f32; 
             .collect();
         // 1. Depth (nearest sphere surface) and thickness, in 64-row bands.
         const BAND: usize = 64;
-        let mut depth = vec![f32::INFINITY; w * h];
-        let mut thick = vec![0.0f32; w * h];
+        let mut depth = Buf::<f32>::filled(w * h, f32::INFINITY);
+        let mut thick = Buf::<f32>::filled(w * h, 0.0);
+        let mut tmp: Buf<f32> = Buf::uninit(w * h);
         depth.par_chunks_mut(BAND * w).zip(thick.par_chunks_mut(BAND * w)).enumerate().for_each(|(b, (dr, tr))| {
             let (y0, y1) = ((b * BAND) as f32, ((b * BAND) + dr.len() / w) as f32);
             for &(sx, sy, z, rw, r) in &pts {
@@ -2271,9 +2276,9 @@ fn render_liquid(systems: &[(&Sim, &Arc<Snap>)], v: &View, t: f32) -> Vec<[f32; 
         // neighbours (so the iso-level, not the discs, sets the outline), and
         // a soft range weight keeps separate layers apart without the
         // streaks a hard cut leaves in a separable filter.
-        let pass = |src: &[f32], horiz: bool| -> Vec<f32> {
-            let mut o = vec![f32::INFINITY; w * h];
-            o.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+        let pass = |src: &[f32], dst: &mut [f32], horiz: bool| {
+            dst.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+                row.fill(f32::INFINITY);
                 for x in 0..w {
                     let c = src[y * w + x];
                     let (mut acc, mut ws) = (0.0f32, 0.0f32);
@@ -2317,39 +2322,37 @@ fn render_liquid(systems: &[(&Sim, &Arc<Snap>)], v: &View, t: f32) -> Vec<[f32; 
                     }
                 }
             });
-            o
         };
         for k in 0..w * h {
             thick[k] = if depth[k].is_finite() { (thick[k] - depth[k]).max(0.0) } else { 0.0 };
         }
         let mut zs = depth;
         for _ in 0..2 {
-            zs = pass(&pass(&zs, true), false);
+            pass(&zs, &mut tmp, true);
+            pass(&tmp, &mut zs, false);
         }
         // Thickness: back minus front, then a plain blur (it tints, and its iso-level is the edge).
-        let tb = {
-            let blur = |src: &[f32], horiz: bool| -> Vec<f32> {
-                let mut o = vec![0.0f32; w * h];
-                o.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
-                    for x in 0..w {
-                        let mut acc = 0.0;
-                        let mut ws = 0.0;
-                        for (k, g) in gw.iter().enumerate() {
-                            let o = k as i32 - rad;
-                            let (xx, yy) = if horiz { (x as i32 + o, y as i32) } else { (x as i32, y as i32 + o) };
-                            if xx < 0 || yy < 0 || xx >= w as i32 || yy >= h as i32 {
-                                continue;
-                            }
-                            acc += src[yy as usize * w + xx as usize] * g;
-                            ws += g;
+        let blur = |src: &[f32], dst: &mut [f32], horiz: bool| {
+            dst.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+                for x in 0..w {
+                    let mut acc = 0.0;
+                    let mut ws = 0.0;
+                    for (k, g) in gw.iter().enumerate() {
+                        let o = k as i32 - rad;
+                        let (xx, yy) = if horiz { (x as i32 + o, y as i32) } else { (x as i32, y as i32 + o) };
+                        if xx < 0 || yy < 0 || xx >= w as i32 || yy >= h as i32 {
+                            continue;
                         }
-                        row[x] = acc / ws;
+                        acc += src[yy as usize * w + xx as usize] * g;
+                        ws += g;
                     }
-                });
-                o
-            };
-            blur(&blur(&thick, true), false)
+                    row[x] = acc / ws;
+                }
+            });
         };
+        blur(&thick, &mut tmp, true);
+        blur(&tmp, &mut thick, false);
+        let tb = &thick;
         // 3. Shade.
         let wp = |x: f32, y: f32, z: f32| -> V3 {
             let d = add(add(pj.f, scale(pj.r, (x - pj.cx) / pj.k)), scale(pj.u, -(y - pj.cy) / pj.k));
@@ -2362,41 +2365,44 @@ fn render_liquid(systems: &[(&Sim, &Arc<Snap>)], v: &View, t: f32) -> Vec<[f32; 
         // Normals from the smoothed depth (zero where there's none), then a
         // few isotropic 3×3 passes: the separable depth filter leaves
         // axis-aligned seams the highlights would show.
-        let mut nb: Vec<V3> = (0..w * h)
-            .into_par_iter()
-            .with_min_len(4096)
-            .map(|k| {
-                let (x, y) = (k % w, k / w);
-                let z = zs[k];
-                if !z.is_finite() {
-                    return v3(0.0, 0.0, 0.0);
-                }
-                let at = |xx: usize, yy: usize| -> Option<V3> {
-                    let q = zs[yy * w + xx];
-                    // Across a layer boundary is not a neighbour.
-                    (q.is_finite() && (q - z).abs() < zgap * 0.25).then(|| wp(xx as f32 + 0.5, yy as f32 + 0.5, q))
-                };
-                let p = wp(x as f32 + 0.5, y as f32 + 0.5, z);
-                let pick = |a: Option<V3>, b: Option<V3>| -> Option<V3> {
-                    match (a.map(|q| sub(p, q)), b.map(|q| sub(q, p))) {
-                        (Some(x), Some(y)) => Some(scale(add(x, y), 0.5)),
-                        (x, y) => x.or(y),
+        let mut nb: Buf<V3> = Buf::uninit(w * h);
+        nb.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+            for x in 0..w {
+                let k = y * w + x;
+                row[x] = (|| {
+                    let (x, y) = (k % w, k / w);
+                    let z = zs[k];
+                    if !z.is_finite() {
+                        return v3(0.0, 0.0, 0.0);
                     }
-                };
-                let dx = pick(if x > 0 { at(x - 1, y) } else { None }, if x + 1 < w { at(x + 1, y) } else { None });
-                let dy = pick(if y > 0 { at(x, y - 1) } else { None }, if y + 1 < h { at(x, y + 1) } else { None });
-                let (Some(dx), Some(dy)) = (dx, dy) else { return v3(0.0, 0.0, 0.0) };
-                let n = norm(cross(dy, dx));
-                let vv = norm(sub(v.cam.pos, p));
-                if dot(n, vv) < 0.0 {
-                    scale(n, -1.0)
-                } else {
-                    n
-                }
-            })
-            .collect();
+                    let at = |xx: usize, yy: usize| -> Option<V3> {
+                        let q = zs[yy * w + xx];
+                        // Across a layer boundary is not a neighbour.
+                        (q.is_finite() && (q - z).abs() < zgap * 0.25).then(|| wp(xx as f32 + 0.5, yy as f32 + 0.5, q))
+                    };
+                    let p = wp(x as f32 + 0.5, y as f32 + 0.5, z);
+                    let pick = |a: Option<V3>, b: Option<V3>| -> Option<V3> {
+                        match (a.map(|q| sub(p, q)), b.map(|q| sub(q, p))) {
+                            (Some(x), Some(y)) => Some(scale(add(x, y), 0.5)),
+                            (x, y) => x.or(y),
+                        }
+                    };
+                    let dx = pick(if x > 0 { at(x - 1, y) } else { None }, if x + 1 < w { at(x + 1, y) } else { None });
+                    let dy = pick(if y > 0 { at(x, y - 1) } else { None }, if y + 1 < h { at(x, y + 1) } else { None });
+                    let (Some(dx), Some(dy)) = (dx, dy) else { return v3(0.0, 0.0, 0.0) };
+                    let n = norm(cross(dy, dx));
+                    let vv = norm(sub(v.cam.pos, p));
+                    if dot(n, vv) < 0.0 {
+                        scale(n, -1.0)
+                    } else {
+                        n
+                    }
+                })();
+            }
+        });
+        let mut src: Buf<V3> = Buf::uninit(w * h);
         for _ in 0..((rad / 2).clamp(2, 12)) {
-            let src = nb.clone();
+            src.copy_from_slice(&nb);
             nb.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
                 for x in 0..w {
                     let k = y * w + x;
@@ -3209,7 +3215,7 @@ mod tests {
         let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: 3.0, aperture: 0.0, shutter: 0.0, key: (v3(0.3, 0.9, 0.3), v3(3.0, 3.0, 3.0)), amb: (v3(0.2, 0.2, 0.2), v3(0.1, 0.1, 0.1)), shadow: None, draft: false };
         let one = rayon::ThreadPoolBuilder::new().num_threads(1).build().unwrap().install(|| render(&[(&s, snap.clone())], &v, 0.2).liquid.unwrap());
         let many = std::thread::scope(|sc| sc.spawn(|| render(&[(&s, snap.clone())], &v, 0.2).liquid.unwrap()).join().unwrap());
-        assert!(one.iter().zip(&many).all(|(a, b)| a.iter().zip(b).all(|(x, y)| x.to_bits() == y.to_bits())), "liquid differs between thread counts");
+        assert!(one.iter().zip(many.iter()).all(|(a, b)| a.iter().zip(b).all(|(x, y)| x.to_bits() == y.to_bits())), "liquid differs between thread counts");
         // The blob's centre is covered and opaque; a corner is untouched.
         let c = one[(h / 2) * w + w / 2];
         assert!(c[0] < 0.05, "centre transmits {}", c[0]);
