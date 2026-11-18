@@ -1,1 +1,61 @@
-[]
+[
+ {
+  "name": "a-social",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-a-social:deliverables/eval/a-social/final.mp4",
+  "tags": [
+   "social-vertical",
+   "vertical",
+   "motion-design",
+   "illustration"
+  ],
+  "format": "9:16"
+ },
+ {
+  "name": "g-titles",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-g-titles:deliverables/eval/g-titles/final.mp4",
+  "tags": [
+   "kinetic-type",
+   "title-sequence"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "h-ident",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-h-ident:deliverables/eval/h-ident/final.mp4",
+  "tags": [
+   "brand-idents",
+   "motion-design",
+   "kinetic-type"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "hf-b-launch",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-hf-b-launch:deliverables/eval-hf/b-launch/final.mp4",
+  "tags": [
+   "product-launch",
+   "motion-design"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "hf-g-titles",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-hf-g-titles:deliverables/eval-hf/g-titles/final.mp4",
+  "tags": [
+   "kinetic-type",
+   "title-sequence"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "k-sports",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-k-sports:deliverables/eval/k-sports/final.mp4",
+  "tags": [
+   "broadcast-sports",
+   "motion-design",
+   "3d-cg",
+   "kinetic-type"
+  ],
+  "format": "16:9"
+ }
+]
