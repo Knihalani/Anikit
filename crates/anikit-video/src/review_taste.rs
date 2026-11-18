@@ -35,6 +35,47 @@ fn salient_x(f: &[u8], w: usize) -> Option<f32> {
     (sw > 0.0).then(|| sx / sw)
 }
 
+/// Edge-energy layout of a frame on a 24×14 grid, normalised to sum 1: where
+/// the structure sits, independent of colour (a palette flip keeps the layout).
+fn layout_sig(f: &[u8], w: usize, h: usize) -> Vec<f32> {
+    let (gw, gh) = (24usize, 14usize);
+    let y = luma(f);
+    let mut g = vec![0f32; gw * gh];
+    let mut n = vec![0f32; gw * gh];
+    for py in 0..h {
+        for px in 0..w {
+            let c = (py * gh / h.max(1)) * gw + px * gw / w.max(1);
+            g[c] += y[py * w + px];
+            n[c] += 1.0;
+        }
+    }
+    for (v, k) in g.iter_mut().zip(&n) {
+        *v /= k.max(1.0);
+    }
+    let mut e = vec![0f32; (gw - 1) * (gh - 1)];
+    for gy in 0..gh - 1 {
+        for gx in 0..gw - 1 {
+            let a = g[gy * gw + gx];
+            e[gy * (gw - 1) + gx] = (g[gy * gw + gx + 1] - a).abs() + (g[(gy + 1) * gw + gx] - a).abs();
+        }
+    }
+    let t: f32 = e.iter().sum::<f32>().max(1e-6);
+    e.iter().map(|v| v / t).collect()
+}
+
+/// Six frames spaced evenly through the piece (what a viewer scrubbing it, or a jury, sees):
+/// how many adjacent pairs share one composition. Calibrated on the REFS set, where no
+/// professional piece had an adjacent pair above 0.8, against rejected pieces with 3–4.
+pub fn same_layout_pairs(s: &Samples) -> usize {
+    let n = s.frames.len();
+    if n < 6 {
+        return 0;
+    }
+    let (w, h) = (s.w as usize, s.h as usize);
+    let sigs: Vec<Vec<f32>> = (0..6).map(|i| layout_sig(&s.frames[((i as f32 + 0.5) / 6.0 * n as f32) as usize], w, h)).collect();
+    sigs.windows(2).filter(|p| p[0].iter().zip(&p[1]).map(|(a, b)| a.min(*b)).sum::<f32>() > 0.8).count()
+}
+
 /// Tips from the sampled frames and the measured timeline.
 pub fn checks(s: &Samples, tl: &Timeline) -> Vec<Note> {
     let mut notes = Vec::new();
@@ -77,6 +118,12 @@ pub fn checks(s: &Samples, tl: &Timeline) -> Vec<Note> {
     if fast >= 4 && jumps * 2 > fast {
         tip("eye-trace", "timeline".into(), format!("{jumps} of {fast} fast cuts move the point of interest across more than a third of the frame"),
             "in fast runs the eye can't re-find the subject in time; consider keeping the focal point near where the last shot left it, and saving the jump for one deliberate jolt (docs/video/craft/editing.md)");
+    }
+    let same = same_layout_pairs(s);
+    if same >= 2 {
+        notes.push(Note { severity: "tip", check: "layout", path: "timeline".into(),
+            message: format!("{same} of 5 pairs of evenly spaced frames share one composition: scrubbed through, it reads as one layout with the words swapped"),
+            fix: "plan a sequence of different frames: change scale, angle, crop and what fills the frame from beat to beat; repeat a layout only as a deliberate rhyme (docs/video/craft/judge-r1-review.md)".into() });
     }
     notes
 }
@@ -125,6 +172,42 @@ mod tests {
         let frames: Vec<Vec<u8>> = (0..25).map(|_| frame(w, h, Some(w / 2))).collect();
         let s = Samples { step: 1.0 / 6.0, w: w as u32, h: h as u32, coarse: frames.clone(), frames };
         let t = tl(vec![0.5, 0.5, 0.5, 0.5, 2.0]);
-        assert!(checks(&s, &t).is_empty());
+        // (one composition held throughout is the `layout` tip's business)
+        assert!(checks(&s, &t).iter().all(|n| n.check == "layout"));
+    }
+
+    #[test]
+    fn same_layout_through_the_piece() {
+        let (w, h) = (96, 54);
+        // A headline bar in the same place in every frame, with the colour flipping.
+        let frame = |bg: u8, fg: u8| {
+            let mut f = vec![bg; w * h * 3];
+            for y in 10..20 {
+                for x in 8..60 {
+                    let i = (y * w + x) * 3;
+                    f[i..i + 3].copy_from_slice(&[fg, fg, fg]);
+                }
+            }
+            f
+        };
+        let frames: Vec<Vec<u8>> = (0..30).map(|i| if i % 2 == 0 { frame(20, 230) } else { frame(230, 20) }).collect();
+        let s = Samples { step: 0.2, w: w as u32, h: h as u32, coarse: frames.clone(), frames };
+        assert!(same_layout_pairs(&s) >= 4);
+        // The subject moves around the frame: different compositions.
+        let frames: Vec<Vec<u8>> = (0..30)
+            .map(|i| {
+                let mut f = vec![20u8; w * h * 3];
+                let (x0, y0) = ((i * 17) % (w - 20), (i * 7) % (h - 12));
+                for y in y0..y0 + 10 {
+                    for x in x0..x0 + 18 {
+                        let k = (y * w + x) * 3;
+                        f[k..k + 3].copy_from_slice(&[230, 230, 230]);
+                    }
+                }
+                f
+            })
+            .collect();
+        let s = Samples { step: 0.2, w: w as u32, h: h as u32, coarse: frames.clone(), frames };
+        assert!(same_layout_pairs(&s) <= 1, "{}", same_layout_pairs(&s));
     }
 }

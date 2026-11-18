@@ -24,7 +24,7 @@
 - `design`: `auto`, or `off` for explicit cues, beds and the bus only.
 - `palette`: `auto` `clean` `cinematic` `organic` `digital` `luxury` `playful`. `auto` follows the music style.
 - `density`: 0..1, default 0.5. At 0.3 only hero moves make a sound.
-- `ambience`: `room` `studio` `city` `nature` `wind` `ocean` `rain` `night` `office` `cafe` `space`, or `{"type":"rain","level":-6}`.
+- `ambience`: `room` `studio` `city` `nature` `wind` `ocean` `rain` `night` `office` `cafe` `crowd` `fire` `space`; textures `vinyl` `tape`, or `{"type":"rain","level":-6}`.
 - `space`: `auto` `dry` `room` `studio` `chamber` `plate` `hall` `cathedral` `outdoor`.
 - `loudness`: −14 by default; use −16 for Apple, −23 for broadcast, or `"off"`.
 - `truePeak` −1 · `duck` true · `pan` true · `level` (dB) 0 · `transitions` true · `seed` 1.
@@ -34,7 +34,7 @@ Shorthand: `"sound": "organic"` (a palette name) or `"sound": "off"`. Tonal soun
 
 **Per layer, `sfx`:** `"auto"` sounds the layer even when `design` is off, and `false` never sounds it. A name sets the sound for its main event. `{"in":"swish","land":"wood","out":"air","gain":-3}` sets each event.
 
-**Sounds:** motion `air` `swish` `whoosh` `whoosh-air` `whoosh-deep` `passby` `swoosh` `whip` · builds `riser` `shepard` (endless) `downer` `reverse-cymbal` `swell` `braam` `sub-drop` `tape-stop` · hits `impact` `boom` `hit` `thump` `stone` `shatter` · foley (modal, tuned) `glass` `metal` `ping` `wood` `plastic` `ceramic` `paper` `page` `cloth` `droplet` · UI `click` `tick` `pop` `blip` `ticker` `ding` `chime` `typing` `shutter` `snap` `zap` `glitch` · magic `sparkle` `magic` · beds: the ambience names.
+**Sounds:** motion `air` `swish` `whoosh` `whoosh-air` `whoosh-deep` `passby` `swoosh` `whip` · builds `riser` `shepard` (endless) `downer` `reverse-cymbal` `swell` `braam` `sub-drop` `tape-stop` · hits `impact` `boom` `hit` `thump` `stone` `shatter` · foley (modal, tuned) `glass` `metal` `ping` `wood` `plastic` `ceramic` `paper` `page` `cloth` `droplet` `step` `crunch` (snow, gravel) `footsteps` (`count`; `tone` <0.5 crunch) `breath` · UI `click` `tick` `pop` `blip` `ticker` `ding` `chime` `typing` `shutter` `snap` `zap` `glitch` · magic `sparkle` `magic` · beds: the ambience names.
 
 **Parameters:** `duration`, `pitch` (semitones), `intensity`, `size` (the sound's own tail), `motion`, `speed`, `tone`, `count`, `seed`.
 

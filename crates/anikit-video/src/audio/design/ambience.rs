@@ -10,7 +10,7 @@ use std::f32::consts::TAU;
 /// Bed names.
 pub const AMBIENCES: &[&str] = &[
     "room", "studio", "city", "nature", "forest", "wind", "ocean", "rain", "night", "office",
-    "cafe", "space",
+    "cafe", "space", "crowd", "fire", "vinyl", "tape",
 ];
 
 /// Bed RMS in dBFS before the bus level (quiet rooms sit lower).
@@ -19,6 +19,8 @@ fn bed_rms(name: &str) -> f32 {
         "studio" => -52.0,
         "room" => -46.0,
         "office" | "space" => -40.0,
+        // Texture beds sit under everything, as a finish rather than a place.
+        "vinyl" | "tape" => -44.0,
         _ => -36.0,
     }
 }
@@ -38,6 +40,10 @@ pub(super) fn bed(name: &str, p: &DesignParams, sr: f32) -> Option<St> {
         "office" => office(len, sr, seed),
         "cafe" => cafe(len, sr, seed),
         "space" => space(len, sr, seed),
+        "crowd" => crowd(len, sr, seed),
+        "fire" => fire(len, sr, seed),
+        "vinyl" => vinyl(len, sr, seed),
+        "tape" => tape(len, sr, seed),
         _ => return None,
     };
     st.l.truncate(len);
@@ -403,4 +409,96 @@ fn space(len: usize, sr: f32, seed: u64) -> St {
 fn bandpass_st(st: &mut St, hz: f32, q: f32, sr: f32) {
     bandpass(&mut st.l, hz, q, sr);
     bandpass(&mut st.r, hz, q, sr);
+}
+
+/// A crowd: many murmuring voices, denser and wider than `cafe`, no clinks.
+fn crowd(len: usize, sr: f32, seed: u64) -> St {
+    let mut st = St::new(len);
+    let mut n = Noise::new(seed ^ 0xC20D);
+    for _ in 0..20 {
+        let mut syl = Wander::new(n.range(3.5, 6.0), sr);
+        let mut phrase = Wander::new(0.3, sr);
+        let pan = n.range(-1.0, 1.0);
+        let f1 = n.range(350.0, 900.0);
+        let mut x = Vec::with_capacity(len);
+        for _ in 0..len {
+            let gate = (syl.next(&mut n) * 1.6).max(0.0) * (phrase.next(&mut n) + 0.4).max(0.0);
+            x.push(n.pink() * gate);
+        }
+        let mut y = x.clone();
+        bandpass(&mut x, f1, 2.2, sr);
+        bandpass(&mut y, f1 * 2.4, 2.8, sr);
+        for (a, b) in x.iter_mut().zip(&y) {
+            *a += 0.5 * b;
+        }
+        lowpass(&mut x, 2500.0, sr);
+        st.add_mono(0, &x, pan, n.range(0.2, 0.5));
+    }
+    reverb(&mut st, "hall", 0.9, 0.3, 0.0, sr);
+    st
+}
+
+/// Fire: a low roar breathing slowly, with crackles and the odd pop.
+fn fire(len: usize, sr: f32, seed: u64) -> St {
+    let mut st = stereo(len, seed ^ 0xF12E, |n, _, _| n.brown());
+    lowpass_st(&mut st, 400.0, sr);
+    let mut n = Noise::new(seed ^ 0xF1);
+    let mut w = Wander::new(0.4, sr);
+    for k in 0..len {
+        let a = 0.6 + 0.4 * w.next(&mut n);
+        st.l[k] *= a;
+        st.r[k] *= a;
+    }
+    let mut k = 0usize;
+    while k < len {
+        k += frames(-(n.f().max(1e-4)).ln() / 25.0, sr).max(1);
+        if k >= len {
+            break;
+        }
+        let big = n.f() < 0.08;
+        let cl = frames(if big { 0.012 } else { 0.003 }, sr).max(3);
+        let mut c: Vec<f32> = (0..cl).map(|j| n.white() * env_ad(j, 1, cl as f32 * 0.25)).collect();
+        bandpass(&mut c, n.range(1500.0, 6000.0), 1.0, sr);
+        st.add_mono(k, &c, n.range(-0.6, 0.6), if big { 1.2 } else { n.f().powi(2) * 0.6 });
+    }
+    st
+}
+
+/// Vinyl: surface hiss, crackle (sparse clicks of random size) and a low rumble.
+fn vinyl(len: usize, sr: f32, seed: u64) -> St {
+    let mut st = stereo(len, seed ^ 0x717, |n, _, _| n.pink());
+    highpass_st(&mut st, 2500.0, sr);
+    lowpass_st(&mut st, 9000.0, sr);
+    st.scale(0.25);
+    let mut rum = stereo(len, seed ^ 0x718, |n, _, _| n.brown());
+    lowpass_st(&mut rum, 60.0, sr);
+    st.add(0, &rum, 0.12);
+    let mut n = Noise::new(seed ^ 0x719);
+    let mut k = 0usize;
+    while k < len {
+        k += frames(-(n.f().max(1e-4)).ln() / 18.0, sr).max(1);
+        if k >= len {
+            break;
+        }
+        let cl = frames(n.range(0.0002, 0.0015), sr).max(2);
+        let mut c: Vec<f32> = (0..cl).map(|j| n.white() * (1.0 - j as f32 / cl as f32)).collect();
+        highpass(&mut c, 1200.0, sr);
+        st.add_mono(k, &c, n.range(-0.3, 0.3), n.f().powi(3) * 3.0);
+    }
+    st
+}
+
+/// Tape: hiss with a slow wow in its colour and level.
+fn tape(len: usize, sr: f32, seed: u64) -> St {
+    let mut st = stereo(len, seed ^ 0x7A9E, |n, _, _| n.white());
+    highpass_st(&mut st, 1800.0, sr);
+    lowpass_st(&mut st, 12000.0, sr);
+    let mut n = Noise::new(seed ^ 0x7A);
+    let mut w = Wander::new(0.7, sr);
+    for k in 0..len {
+        let a = 0.85 + 0.15 * w.next(&mut n);
+        st.l[k] *= a;
+        st.r[k] *= a;
+    }
+    st
 }

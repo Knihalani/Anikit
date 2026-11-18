@@ -51,6 +51,10 @@ pub const DESIGN_SFX: &[&str] = &[
     "sparkle",
     "magic",
     "shepard",
+    "step",
+    "crunch",
+    "footsteps",
+    "breath",
     "shatter",
     "droplet",
     "blip",
@@ -148,7 +152,7 @@ impl Default for DesignParams {
 fn trim_db(name: &str) -> f32 {
     match name {
         "blip" | "ticker" | "droplet" | "plastic" => -12.0,
-        "air" | "swish" | "cloth" | "rustle" | "paper" | "page" => -9.0,
+        "air" | "swish" | "cloth" | "rustle" | "paper" | "page" | "step" | "crunch" | "footsteps" | "breath" => -9.0,
         "glass" | "clink" | "wood" | "knock" | "ceramic" | "stone" | "thump" | "land" | "metal"
         | "ping" | "sparkle" | "magic" => -7.0,
         "passby" | "whoosh-deep" | "whoosh-air" | "shepard" => -5.0,
@@ -265,6 +269,10 @@ pub fn render(name: &str, p: &DesignParams, rate: u32) -> Result<Sfx, String> {
         "sparkle" => Some(foley::sparkle(&mut c, false)),
         "magic" => Some(foley::sparkle(&mut c, true)),
         "shepard" => Some(foley::shepard(&mut c)),
+        "step" => Some(foley::step(&mut c, false)),
+        "crunch" => Some(foley::step(&mut c, true)),
+        "footsteps" => Some(foley::footsteps(&mut c)),
+        "breath" => Some(foley::breath(&mut c)),
         "shatter" => Some(foley::shatter(&mut c)),
         "droplet" => Some(foley::droplet(&mut c)),
         "blip" => Some(foley::blip(&mut c)),

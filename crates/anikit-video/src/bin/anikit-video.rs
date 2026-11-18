@@ -26,7 +26,7 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|b
   set    spec.json <path> <value> [--delete]   patch one value in place (e.g. scenes.0.layers.1.text Hi)
   info   [--components] [--shaders]  version, encoders, component and shader catalogue
   schema [-o file]              print the JSON Schema of the spec
-  beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
+  beats  music.wav|spec.json    tempo, beats and bars (use them as \"@beat17\", \"@bar5\"); a spec gives its exact grid
   music  spec.json -o out.wav   generate a mastered soundtrack (anikit-video docs music)
   sound  plan|mix|render|list   sound design: cues from the picture, foley, beds (anikit-video docs sound)
   analyze ref.mp4 [-o analysis.json] [--sheet sheet.jpg] [--spec draft.json]
@@ -549,8 +549,12 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             }
         }
         "beats" => {
-            let path = a.input.as_deref().ok_or("missing audio file")?;
-            let b = anikit_video::eval::beat_markers::refine(&anikit_video::audio::analyze_pcm(&anikit_video::audio::decode_file(path)?));
+            let path = a.input.as_deref().ok_or("missing audio file or spec")?;
+            // A spec (or inline music JSON): the score's exact grid, no detection.
+            let b = match anikit_video::music::score_beats(path)? {
+                Some(b) => b,
+                None => anikit_video::eval::beat_markers::refine(&anikit_video::audio::analyze_pcm(&anikit_video::audio::decode_file(path)?)),
+            };
             if json {
                 println!("{}", serde_json::json!({ "bpm": b.bpm, "beats": b.beats, "downbeats": b.downbeats }));
             } else {
