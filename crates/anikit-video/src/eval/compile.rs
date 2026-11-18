@@ -3189,7 +3189,8 @@ impl C<'_> {
                     Some(x) => me.color(x, &format!("{hp}.{key}")).unwrap_or(Rgba([0.0, 0.0, 0.0, 1.0])),
                 }
             };
-            let ink = col(self, &hs.ink, "ink", "source");
+            let cmyk = hs.ink.as_deref() == Some("cmyk");
+            let ink = if cmyk { Rgba([0.0; 4]) } else { col(self, &hs.ink, "ink", "source") };
             let paper = col(self, &hs.paper, "paper", "none");
             let cell = match &hs.cell {
                 Some(Num::Num(c)) => *c as f32,
@@ -3198,7 +3199,7 @@ impl C<'_> {
             if cell < 3.0 {
                 self.d.push(Diagnostic::warning(format!("{hp}.cell"), "cells under 3 px alias into moiré after encoding; use 4 px or more"));
             }
-            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: 45.0, shape, ink, paper, gain: 1.0, ox: 0.0, oy: 0.0 }));
+            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: 45.0, shape, ink, paper, gain: 1.0, ox: 0.0, oy: 0.0, cmyk }));
             ht_nums = Some((hs.cell.clone(), hs.angle.clone(), hs.gain.clone()));
         }
         if let Some(iv) = &l.ink_texture {

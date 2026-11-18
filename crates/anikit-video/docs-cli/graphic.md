@@ -35,7 +35,7 @@
 - **Treatments** on any layer, before blur/shadow (`"print": "photocopy|newsprint|engraving|riso|screenprint"` = starting values):
   `duotone: [shadows, highlights]`, `gradientMap: [c1, c2, c3…]` (or `[offset, colour]` pairs; interpolated in OKLab),
   `posterize: N` (luma steps with a map, RGB steps alone), `toneRange: [black, white]` (stretch a flat source first),
-  `toneAmount` 0..1, `halftone: 10` or `{cell, angle, shape: dot|line|square, ink, paper, gain}` (ink `"source"` keeps
+  `toneAmount` 0..1, `halftone: 10` or `{cell, angle, shape: dot|line|square, ink, paper, gain}` (ink `"cmyk"` separates four screens, `"source"` keeps
   each dot's colour; paper `"none"` leaves only dots; the screen is fixed to the frame, as on press).
   Animate them by name, or give `"=expr"`: `toneAmount`, `halftoneCell`, `halftoneAngle`, `halftoneGain`, `inkAmount`
   (`"animate": [{"to": {"halftoneCell": 40}}]`, `"halftone": {"angle": "=t*30"}`): a screen that grows into a pattern, a duotone fading in.

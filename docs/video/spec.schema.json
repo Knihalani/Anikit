@@ -2984,7 +2984,7 @@
           ]
         },
         "ink": {
-          "description": "Ink colour. Default `\"source\"`: each dot keeps the layer's colour there.",
+          "description": "Ink colour. Default `\"source\"`: each dot keeps the layer's colour there. `\"cmyk\"`: a four-colour\nseparation (C, M, Y, K screens at angle + 15/75/0/45°) multiplied on the paper (default white).",
           "type": [
             "string",
             "null"

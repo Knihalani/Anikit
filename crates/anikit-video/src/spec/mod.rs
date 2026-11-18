@@ -283,7 +283,8 @@ pub struct HalftoneSpec {
     pub angle: Option<Num>,
     /// `dot` (default), `line` or `square`.
     pub shape: Option<String>,
-    /// Ink colour. Default `"source"`: each dot keeps the layer's colour there.
+    /// Ink colour. Default `"source"`: each dot keeps the layer's colour there. `"cmyk"`: a four-colour
+    /// separation (C, M, Y, K screens at angle + 15/75/0/45°) multiplied on the paper (default white).
     pub ink: Option<String>,
     /// Paper colour under the dots, or `"none"` (default): only the dots remain.
     pub paper: Option<String>,

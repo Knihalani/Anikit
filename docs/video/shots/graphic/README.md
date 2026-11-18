@@ -28,3 +28,4 @@ More feature proofs: `tiles-animated.jpg` (custom `tile` motifs, `turns`, `stagg
 `grid-choreography.{jpg,mp4}`: layers tweening between grid fields (`"to": {"cell": …}`) over `show: "under"` guides, at 257 fps.
 `editorial-charts.jpg`: `line-chart` and `bar-chart` with `"look": "editorial"`: a highlight series against grey context, direct labels, the unit on the top gridline, a leader-line note, and before/after ticks on ranked bars.
 `print-presets.jpg`: the five `print` presets on one photo, with the original.
+`cmyk.jpg`: `"halftone": {"ink": "cmyk"}` on a photo: four screens at the press angles, skeleton black, rosettes.

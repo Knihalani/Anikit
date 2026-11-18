@@ -270,10 +270,60 @@ fn spot_radius(shape: u8, k: f32) -> f32 {
 /// image and the screen stays fixed to the frame.
 #[inline(always)]
 fn halftone(h: &Halftone, buf: &mut [u8], w: usize) {
+    if h.cmyk {
+        return halftone_cmyk(h, buf, w);
+    }
     match h.shape {
         1 => halftone_s::<1>(h, buf, w),
         2 => halftone_s::<2>(h, buf, w),
         _ => halftone_s::<0>(h, buf, w),
+    }
+}
+
+/// CMYK separation: under-colour removal to K, four screens at the press angles, the inks multiplied
+/// on the paper (subtractive), the layer's coverage kept.
+fn halftone_cmyk(h: &Halftone, buf: &mut [u8], w: usize) {
+    let rt: [f32; 257] = std::array::from_fn(|i| spot_radius(h.shape, (i as f32 / 256.0 * h.gain).min(1.0)));
+    const INKS: [[f32; 3]; 4] = [[0.0, 0.68, 0.94], [0.93, 0.0, 0.55], [1.0, 0.95, 0.0], [0.14, 0.12, 0.13]];
+    const ANG: [f32; 4] = [15.0, 75.0, 0.0, 45.0];
+    let paper = if h.paper.0[3] > 0.0 { [h.paper.0[0], h.paper.0[1], h.paper.0[2]] } else { [1.0, 1.0, 1.0] };
+    let inv = 1.0 / h.cell;
+    let rot: [(f32, f32); 4] = std::array::from_fn(|k| (h.angle + ANG[k]).to_radians().sin_cos());
+    for (y, row) in buf.chunks_exact_mut(w * 4).enumerate() {
+        let fy = y as f32 + 0.5 + h.oy;
+        for (x, p) in row.chunks_exact_mut(4).enumerate() {
+            let a = p[3] as u32;
+            if a == 0 {
+                continue;
+            }
+            let sa = a as f32 / 255.0;
+            let rgb = [p[0] as f32 / 255.0 / sa, p[1] as f32 / 255.0 / sa, p[2] as f32 / 255.0 / sa].map(|v| v.min(1.0));
+            // Skeleton black: K only takes over past 25% darkness; CMY carry the midtones.
+            let k = ((1.0 - rgb[0].max(rgb[1]).max(rgb[2]) - 0.25) / 0.75).max(0.0);
+            let d = (1.0 - k).max(1e-4);
+            let tones = [((1.0 - rgb[0] - k) / d).max(0.0), ((1.0 - rgb[1] - k) / d).max(0.0), ((1.0 - rgb[2] - k) / d).max(0.0), k];
+            let fx = x as f32 + 0.5 + h.ox;
+            let mut col = paper;
+            for pl in 0..4 {
+                let (sn, cs) = rot[pl];
+                let u = (fx * cs + fy * sn) * inv + 1024.0;
+                let v = (-fx * sn + fy * cs) * inv + 1024.0;
+                let (du, dv) = (u - u.floor() - 0.5, v - v.floor() - 0.5);
+                let dist = match h.shape {
+                    1 => dv.abs(),
+                    2 => du.abs().max(dv.abs()),
+                    _ => (du * du + dv * dv).sqrt(),
+                };
+                let rad = rt[((tones[pl].clamp(0.0, 1.0) * 256.0) as usize).min(256)];
+                let cov = ((rad - dist) * h.cell + 0.5).clamp(0.0, 1.0);
+                for c in 0..3 {
+                    col[c] *= 1.0 - cov * (1.0 - INKS[pl][c]);
+                }
+            }
+            for c in 0..3 {
+                p[c] = (col[c] * sa * 255.0 + 0.5) as u8;
+            }
+        }
     }
 }
 
@@ -476,7 +526,7 @@ mod tests {
             for grey in [40u8, 128, 210] {
                 let (w, h) = (96, 96);
                 let mut buf: Vec<u8> = (0..w * h).flat_map(|_| [grey, grey, grey, 255]).collect();
-                let ht = Halftone { cell: 8.0, angle: 15.0, shape, ink: Rgba([0.0, 0.0, 0.0, 1.0]), paper: Rgba([1.0, 1.0, 1.0, 1.0]), gain: 1.0, ox: 0.0, oy: 0.0 };
+                let ht = Halftone { cell: 8.0, angle: 15.0, shape, ink: Rgba([0.0, 0.0, 0.0, 1.0]), paper: Rgba([1.0, 1.0, 1.0, 1.0]), gain: 1.0, ox: 0.0, oy: 0.0, cmyk: false };
                 apply(&Filter::Halftone(ht), &mut buf, w, h, &mut FilterScratch::default());
                 let mean = buf.chunks(4).map(|p| p[0] as f64).sum::<f64>() / (w * h) as f64;
                 assert!((mean - grey as f64).abs() < 14.0, "shape {shape} grey {grey}: mean {mean}");
@@ -567,12 +617,36 @@ mod graphic_perf {
         let (w, h) = (1920usize, 1080usize);
         let src: Vec<u8> = (0..w * h).flat_map(|i| { let v = ((i % w) * 255 / w) as u8; [v, v / 2, 255 - v, 255] }).collect();
         let mut s = FilterScratch::default();
-        let ht = Halftone { cell: 10.0, angle: 15.0, shape: std::env::var("HS").ok().and_then(|v| v.parse().ok()).unwrap_or(0), ink: Rgba([0.0, 0.0, 0.0, 1.0]), paper: Rgba([1.0, 1.0, 1.0, 1.0]), gain: 1.0, ox: 0.0, oy: 0.0 };
+        let ht = Halftone { cell: 10.0, angle: 15.0, shape: std::env::var("HS").ok().and_then(|v| v.parse().ok()).unwrap_or(0), ink: Rgba([0.0, 0.0, 0.0, 1.0]), paper: Rgba([1.0, 1.0, 1.0, 1.0]), gain: 1.0, ox: 0.0, oy: 0.0, cmyk: std::env::var("CMYK").is_ok() };
         for _ in 0..3 {
             let mut b = src.clone();
             let t = std::time::Instant::now();
             apply(&Filter::Halftone(ht), &mut b, w, h, &mut s);
             eprintln!("halftone 1080p: {:?}", t.elapsed());
+        }
+    }
+}
+
+#[cfg(test)]
+mod cmyk_tests {
+    use super::*;
+
+    #[test]
+    fn cmyk_keeps_tone_and_hue() {
+        let (w, h) = (96, 96);
+        for col in [[200u8, 60, 40], [90, 90, 90], [40, 120, 200]] {
+            let mut b: Vec<u8> = (0..w * h).flat_map(|_| [col[0], col[1], col[2], 255]).collect();
+            let ht = Halftone { cell: 8.0, angle: 0.0, shape: 0, ink: Rgba([0.0; 4]), paper: Rgba([1.0, 1.0, 1.0, 1.0]), gain: 1.0, ox: 0.0, oy: 0.0, cmyk: true };
+            apply(&Filter::Halftone(ht), &mut b, w, h, &mut FilterScratch::default());
+            let mean = |c: usize| b.chunks(4).map(|p| p[c] as f64).sum::<f64>() / (w * h) as f64;
+            let m = [mean(0), mean(1), mean(2)];
+            // The dominant channel stays dominant, and the overall lightness is within reach.
+            let src_max = (0..3).max_by_key(|&i| col[i]).unwrap();
+            let out_max = (0..3).max_by(|&a, &b| m[a].total_cmp(&m[b])).unwrap();
+            assert_eq!(src_max == out_max || col.iter().all(|&c| c == col[0]), true, "{col:?} → {m:?}");
+            let ls = col.iter().map(|&c| c as f64).sum::<f64>() / 3.0;
+            let lo = (m[0] + m[1] + m[2]) / 3.0;
+            assert!((ls - lo).abs() < 45.0, "{col:?} → {m:?}");
         }
     }
 }
