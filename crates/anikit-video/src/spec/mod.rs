@@ -753,6 +753,9 @@ pub struct Layer {
     /// Extrusion / long shadow: the layer's silhouette repeated along a direction, behind it, in one colour.
     /// `{"angle": 45, "length": 120, "color": "#000", "fade": 0}` (angle in degrees, 0 = right, 90 = down).
     pub extrude: Option<ExtrudeSpec>,
+    /// Per-layer motion blur: `true` (180° shutter, 8 samples) or `{"shutter": 270}`. Only this layer
+    /// blurs, and only on frames where it moves, so text being read stays sharp while fast shapes streak.
+    pub motion_blur: Option<MotionBlur>,
     /// Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default).
     #[schemars(with = "Option<serde_json::Value>")]
     pub smear: Option<serde_json::Value>,

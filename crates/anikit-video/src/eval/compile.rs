@@ -2442,6 +2442,11 @@ impl C<'_> {
             let step = len / steps as f32;
             f.extrude = Some((ang.cos() * step, ang.sin() * step, steps, x.fade.unwrap_or(0.0).clamp(0.0, 1.0) as f32, m));
         }
+        f.mblur = match &l.motion_blur {
+            None | Some(spec::MotionBlur::On(false)) => None,
+            Some(spec::MotionBlur::On(true)) => Some((0.5, 8)),
+            Some(spec::MotionBlur::Shutter { shutter }) => Some(((*shutter as f32 / 360.0).clamp(0.01, 2.0), 8)),
+        };
         f.smear = match &l.smear {
             None | Some(serde_json::Value::Bool(false)) => None,
             Some(serde_json::Value::Bool(true)) => Some(1.0),
