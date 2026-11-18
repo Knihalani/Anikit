@@ -1,0 +1,4 @@
+judging pass1 vs ['vertigo', 'halt-and-catch-fire', 'da-vincis-demons']
+  trial 0: {'A': 'da-vincis-demons', 'B': 'vertigo', 'C': 'candidate', 'D': 'halt-and-catch-fire'}  ranking=['B', 'D', 'A', 'C']  35.6s $0.178881
+  trial 1: {'A': 'da-vincis-demons', 'B': 'vertigo', 'C': 'halt-and-catch-fire', 'D': 'candidate'}  ranking=['B', 'C', 'A', 'D']  30.5s $0.1568368
+{"name": "pass1", "verdict": "FAIL", "ref_mean": 8.25, "delta": -4.5, "cost_usd": 0.5, "cand_overall": 3.75, "judged_pro": "0/2"}

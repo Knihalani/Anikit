@@ -1,0 +1,391 @@
+{
+  "name": "pass3",
+  "tags": [
+    "product-launch",
+    "generative",
+    "kinetic-type"
+  ],
+  "refs": [
+    "vertigo",
+    "halt-and-catch-fire",
+    "da-vincis-demons"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4.5,
+      "composition": 3.0,
+      "typography": 3.0,
+      "colour": 4.0,
+      "light_texture": 2.0,
+      "motion": 4.0,
+      "craft": 3.0,
+      "originality": 4.0
+    },
+    "overall": 3.44,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Commit to one visual metaphor and build density. The firework or chrysanthemum shells implied by the spec ('chrys', 'peony', 'pistil') should become a rich, lit night-sky spectacle with real glow, smoke and afterimage, not dotted rings on a flat gradient",
+      "Make the code typographic, as Bass does with the credits in B: let the JSON values visibly drive the image (an 'x' value sliding a burst into place, 'lift' raising it) at expressive scale, instead of single caption lines",
+      "Replace the slide-deck pacing and empty frames with choreography. Each frame should be a composed poster with a deliberate palette (for example deep ink-blue sky with vermilion and gold), and the URL-and-tagline end card should be cut or redesigned",
+      "Find the actual idea behind the fireworks (night, celebration, the gap between Tuesday and Saturday) and stage it with real darkness, light and atmosphere: real fireworks need a night sky, bloom, smoke and trails, which these pale-day dots lack",
+      "Replace slide-style headline + code captions with typography that has a point of view: let the JSON become the fireworks, or explode and choreograph it, instead of laying it over the image as a label",
+      "Fill the frame and build choreography: vary scale, density and camera across shots so each frame works as a poster, and avoid near-empty interstitial frames"
+    ],
+    "tells": [
+      "A pale blue-grey gradient ground with mostly empty frames; two frames are close to blank apart from a few stray tick marks or one line of code",
+      "The headline is a generic condensed grotesk placed top-left like a slide ('Your agent writes the page.'), set against small monospace text",
+      "Raw JSON strings serve as the main typographic texture. The concept (spec in, film out) is honest, but the strings are shown as debug output rather than designed",
+      "Dotted circles and line bursts are rendered as flat vector primitives with no light, material or depth. The only glow in the whole sequence is one soft halo in frame 5",
+      "The end card is a product pitch: the name in a dot-matrix face, a tagline, a code list and a GitHub URL. This reads as a tool demo, not a film",
+      "There is a seed of a real idea in the split frame showing the same spec rendered identically on Tuesday and Saturday (determinism), but it is not developed",
+      "A product demo whose idea is literal: it shows the product name, a tagline, and the JSON spec printed on screen as the 'feature diagram' ('One JSON spec in. A finished film out.', GitHub URL end card)",
+      "Mostly empty frames on a flat pale-blue gradient; one frame is almost entirely blank apart from two tiny ticks, and another contains a single centred JSON line",
+      "The typography is a default condensed grotesk headline set top-left like a slide, plus monospace code strings in highlight bars, with no scale idea or integration with the image. The dot-matrix logotype is the only typographic gesture",
+      "Stock generative primitives: dotted circles and line bursts as fireworks with no material, glow or depth. The light is flat and unmotivated, with only one small radial glow",
+      "There is one genuinely nice idea, the Tuesday/Saturday split screen comparing two shows, but it is not developed"
+    ]
+  },
+  "refs_summary": {
+    "vertigo": {
+      "overall": 9.38,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    },
+    "halt-and-catch-fire": {
+      "overall": 8.25,
+      "judged_professional": "2/2",
+      "mean_rank": 2
+    },
+    "da-vincis-demons": {
+      "overall": 7.25,
+      "judged_professional": "2/2",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 8.29,
+  "delta": -4.85,
+  "trials": [
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "vertigo",
+        "C": "candidate",
+        "D": "halt-and-catch-fire"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Leonardo's notebook pages, the Vitruvian figure, the Mona Lisa and the dome are layered over painted, hand-drawn portraiture, so the subject itself becomes the visual language",
+              "Rich surface work throughout: parchment grain, ink spatter, smoky clouds and mirror-script overlays give every frame real depth",
+              "The frames change in scale and subject (cosmic diagram, architecture, hand-held tool, landscape silhouette, upturned face, machine), which suggests a choreographed journey rather than one repeated layout",
+              "A muted violet and sepia palette holds consistently across the whole sequence",
+              "Credits are set in a small-caps classical serif and simply centred over the image; they are competent but do not engage with the artwork"
+            ],
+            "gaps": [
+              "The type is decorative and passive. Like Bass in B, it should be part of the idea, for example the credits written in Leonardo's mirror-script and then resolving, or taking their proportions from his diagrams",
+              "The look leans on the familiar 'parchment plus grunge' period-drama style. A sharper, more singular graphic device would make it more memorable",
+              "The palette is moody but safe. A bolder accent, or a deliberate tonal shift across the sequence, would give it the punch that B's red-to-green turn has"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One specific idea that belongs only to this film: an extreme close-up of an eye gives way to spirograph spirals, a direct visual form of vertigo and obsession",
+              "Slab-serif display type with an outline treatment is set at strong scale contrast against small caps for the job titles, and right-aligned credit stacks interlock with the spiral",
+              "The palette makes a deliberate leap from monochrome red skin, to violet line on black, to an acid-green Lissajous form, then back to red",
+              "The sequence clearly travels from the eye into the spiral and back out to the eye, with each spiral different in form and weight",
+              "Every frame works on its own as a poster"
+            ],
+            "gaps": [
+              "This is the benchmark entry. The only room for improvement is in the photographic plates, which are tonally flat and rely on the red tint",
+              "Some credit stacks (art direction and similar) are dense and crowd the spiral a little",
+              "The light and texture are of their era; the graphic spirals have little material depth by comparison with the face"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 5,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 4,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "A pale blue-grey gradient ground with mostly empty frames; two frames are close to blank apart from a few stray tick marks or one line of code",
+              "The headline is a generic condensed grotesk placed top-left like a slide ('Your agent writes the page.'), set against small monospace text",
+              "Raw JSON strings serve as the main typographic texture. The concept (spec in, film out) is honest, but the strings are shown as debug output rather than designed",
+              "Dotted circles and line bursts are rendered as flat vector primitives with no light, material or depth. The only glow in the whole sequence is one soft halo in frame 5",
+              "The end card is a product pitch: the name in a dot-matrix face, a tagline, a code list and a GitHub URL. This reads as a tool demo, not a film",
+              "There is a seed of a real idea in the split frame showing the same spec rendered identically on Tuesday and Saturday (determinism), but it is not developed"
+            ],
+            "gaps": [
+              "Commit to one visual metaphor and build density. The firework or chrysanthemum shells implied by the spec ('chrys', 'peony', 'pistil') should become a rich, lit night-sky spectacle with real glow, smoke and afterimage, not dotted rings on a flat gradient",
+              "Make the code typographic, as Bass does with the credits in B: let the JSON values visibly drive the image (an 'x' value sliding a burst into place, 'lift' raising it) at expressive scale, instead of single caption lines",
+              "Replace the slide-deck pacing and empty frames with choreography. Each frame should be a composed poster with a deliberate palette (for example deep ink-blue sky with vermilion and gold), and the URL-and-tagline end card should be cut or redesigned"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific idea: the show's world of early PC hardware rendered as glitch, scanline and silicon-die imagery, with a quartered square echoing a windowed logo",
+              "A bold, nearly monochrome red-magenta palette pushed through to a final burning red disc, which ties directly to the title's meaning",
+              "Real light and material: a backlit glowing chip in a dish, phosphor streaks, a silhouetted figure dissolving in pixel tearing",
+              "Type with a point of view: a delicate old-style serif for the credits plays against a wide-tracked, heavy-sans main title with a square glyph, in a deliberate tension between the analogue and the digital",
+              "The frames vary in scale and abstraction and build towards a resolved, iconic final card"
+            ],
+            "gaps": [
+              "Glitch and datamosh are a well-worn language. A more ownable graphic system would lift it towards B's singularity",
+              "Credits are placed in conventional lower-left or centre positions and do not interact with the imagery",
+              "The middle frames (glitch fields, horizontal streaks) read somewhat interchangeable; each beat needs a more distinct compositional idea"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 34.1,
+        "cost_usd": 0.1620202,
+        "tokens": 72157,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "vertigo",
+        "C": "halt-and-catch-fire",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Dense, layered frames: hand-inked Renaissance drawings (Vitruvian Man, St Peter's dome, Mona Lisa, codex machinery) collaged over painted skies with grain, ink splatter and parchment texture",
+              "A real recurring visual language: Leonardo's codex sketches are the structure, with perspective construction lines radiating across the dome, so the idea fits this subject only",
+              "Varied compositions and scales across frames (full figure, architecture, extreme close-up of a hand with a quill, upturned face, silhouette on a horizon) suggest choreographed camera moves through 2.5D layers",
+              "A controlled palette of desaturated violet, umber and sepia keeps the whole piece consistent",
+              "The weak point is the type: generic small caps in a Trajan-style face, centred like stock credits, with no link to the image"
+            ],
+            "gaps": [
+              "Give the typography an idea: work the credits into the codex, for example as mirror-script handwriting, construction lines or annotations, instead of floating generic small caps",
+              "Commit to one single, memorable graphic gesture the way B's spiral does; the collage of Leonardo's greatest hits reads as illustrative rather than conceptual",
+              "Simplify the grunge: the splatter and texture overlays are applied evenly to every frame, which flattens the hierarchy, so let some frames breathe with real negative space"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.98,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One specific idea that only this film could have: the spiral, which stands for obsession and dizziness, is born out of an extreme close-up of a woman's eye and then takes over the screen",
+              "Choreography across frames: red-tinted eye \u2192 spiral blooming in the iris \u2192 Lissajous/spirograph forms that rotate and morph across black \u2192 back to the eye for the director's credit, so the piece makes a full loop",
+              "A bold, unusual palette: monochrome red flesh against black, with violet and then acid-green line forms",
+              "Typography with a point of view: an outlined, extended slab title that zooms out of the pupil, and the credits set as ragged, right-aligned stacks wrapped around the spiral rather than placed like slides",
+              "Every frame works as a poster, and the absence of colour in the black frames is used deliberately as rhythm"
+            ],
+            "gaps": [
+              "Some credit stacks (art direction/effects) are dense and crowd the right edge, so the hierarchy between role and name could be cleaner",
+              "The black spirograph section uses the same layout across several cards, and a little more variation in placement would add surprise",
+              "Nothing else significant; this is the benchmark the other entries are measured against"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A specific concept: an abstracted pixel and signal journey through early computing, with scanline glitches, silhouettes resolving from data, a four-square grid suggesting a pixel or logo, a glowing silicon die and finally a burnt-out red sun as a 'halt and catch fire' payoff",
+              "A deliberate, saturated red-magenta palette held through the whole piece, shifting from flat graphic red to deep photographic red",
+              "Real light and material: the die is rendered with refraction and depth inside a lens-like dish, light streaks bloom horizontally, and the final orb has film-burn texture",
+              "The progression across frames (abstract glitch \u2192 human silhouette \u2192 grid \u2192 light beam \u2192 object \u2192 title) implies real choreography and escalation",
+              "The title card is a strong typographic choice: tracked, heavy caps with a solid square cursor glyph, which ties the type to the computing theme"
+            ],
+            "gaps": [
+              "The credit type is a generic editorial serif placed in lower-third positions, and it ignores the glitch language around it, so it should be integrated the way the title card is",
+              "Glitch-as-texture is a familiar look, and it needs one more ownable, unexpected image to be as memorable as B's eye-spiral",
+              "Several frames rely on overall red wash, so tighter value contrast would make individual frames read as posters"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 4,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "A product demo whose idea is literal: it shows the product name, a tagline, and the JSON spec printed on screen as the 'feature diagram' ('One JSON spec in. A finished film out.', GitHub URL end card)",
+              "Mostly empty frames on a flat pale-blue gradient; one frame is almost entirely blank apart from two tiny ticks, and another contains a single centred JSON line",
+              "The typography is a default condensed grotesk headline set top-left like a slide, plus monospace code strings in highlight bars, with no scale idea or integration with the image. The dot-matrix logotype is the only typographic gesture",
+              "Stock generative primitives: dotted circles and line bursts as fireworks with no material, glow or depth. The light is flat and unmotivated, with only one small radial glow",
+              "There is one genuinely nice idea, the Tuesday/Saturday split screen comparing two shows, but it is not developed"
+            ],
+            "gaps": [
+              "Find the actual idea behind the fireworks (night, celebration, the gap between Tuesday and Saturday) and stage it with real darkness, light and atmosphere: real fireworks need a night sky, bloom, smoke and trails, which these pale-day dots lack",
+              "Replace slide-style headline + code captions with typography that has a point of view: let the JSON become the fireworks, or explode and choreograph it, instead of laying it over the image as a label",
+              "Fill the frame and build choreography: vary scale, density and camera across shots so each frame works as a poster, and avoid near-empty interstitial frames"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.7,
+        "cost_usd": 0.163285,
+        "tokens": 72229,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "A 20 s held shot with long stretches of near-empty sky. One sampled frame is just a JSON line on a gradient, and there are thin floating sticks with nothing to anchor them.",
+        "The bursts are dotted rings that appear almost fully formed. There is no radial expansion with deceleration, no gravity droop, no fading trails, and no motion blur. In pairs 1/6 s apart, the rings barely change other than scale and opacity.",
+        "Rings stack and overlap into clusters with no depth or occlusion logic. The 'pistil' glow is a soft radial blob that reads like a lens-flare placeholder.",
+        "Shell lines (the 'stars' falling from a burst) render as hairline vertical strokes with uniform weight and no taper, glow or falloff.",
+        "The ANIKIT dot-matrix wordmark forms by overprinting on the burst cluster, which gives a muddy, illegible transition frame (pairs row 3).",
+        "The end card has 5 text sizes and two families crammed into the bottom-right third. The JSON lines are tiny mono text and are hard to read at broadcast scale.",
+        "Audio: the second half (20-32 s) largely repeats the first half's pattern. The broadband noise bursts cut off flat at about 19.5 kHz. The 18-20 s low-pass sweep to silence is a stock 'drop' move.",
+        "The opening headline overlaps a ring (the 'writes' text is crossed by dots) with no deliberate layering."
+      ],
+      "gaps": [
+        "Motion physics and choreography: top studio fireworks work shows ignition, fast-out burst expansion, ease into hang time, gravity fall and trail decay, with cuts on bursts. Here, static rings fade in and out inside one 20 s locked-off shot, which leaves a lot of dead air and no camera language.",
+        "Energy arc: the piece builds to a sweep-down at 18 s and then restarts the same pattern instead of escalating to a finale at 60-80% and releasing into the logo. The 'code becomes fireworks' idea never gets a payoff moment where the spec and the sky lock together.",
+        "Finish and sound: flat vector dots on a plain gradient, with no bloom, atmosphere, smoke or light falloff on the sky. The sound is thin noise bursts and a filtered bed with repeated structure rather than designed launch whistles, cracks and booms layered with a scored arrangement."
+      ]
+    },
+    "meta": {
+      "seconds": 25.0,
+      "cost_usd": 0.1651414,
+      "tokens": 72445,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass3.mp4: 32.0s, 3 shots, median 8.00s, longest 20.00s\nper-second change: [2.9, 3.0, 3.5, 21.5, 15.6, 14.5, 14.9, 17.4, 9.2, 11.7, 12.2, 11.8, 5.4, 6.3, 6.4, 7.6, 7.9, 9.6, 49.0, 4.4, 9.4, 12.7, 10.5, 8.0, 5.7, 3.2, 3.9, 4.6, 8.5, 9.3, 10.0]\nPACE: FAIL \u2014 longest shot 20.0s > 2.5s; median shot 8.0s > 2.0s; 9/31 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 4.5,
+    "composition": 3.0,
+    "typography": 3.0,
+    "colour": 4.0,
+    "light_texture": 2.0,
+    "motion": 4.5,
+    "craft": 4.5,
+    "originality": 4.0,
+    "sound": 4
+  },
+  "full_overall": 3.72,
+  "cost_usd": 0.49,
+  "judge_seconds": 93.8,
+  "verdict": "FAIL"
+}

@@ -1,0 +1,3361 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "intent": {
+  "pace": "fast",
+  "genre": "launch"
+ },
+ "fonts": {},
+ "music": {
+  "style": "orchestral",
+  "bpm": 120,
+  "key": "D",
+  "mood": "bright triumphant",
+  "sections": [
+   {
+    "name": "intro",
+    "bars": 2,
+    "energy": 0.45
+   },
+   {
+    "name": "build",
+    "bars": 4,
+    "energy": 0.7
+   },
+   {
+    "name": "peak",
+    "bars": 4,
+    "energy": 0.9
+   },
+   {
+    "name": "finale",
+    "bars": 3,
+    "energy": 1,
+    "stop": 4
+   },
+   {
+    "name": "outro",
+    "bars": 3,
+    "energy": 0.45
+   }
+  ],
+  "hits": [
+   "@bar11",
+   "@bar13"
+  ],
+  "end": "ring",
+  "followCuts": false
+ },
+ "sound": {
+  "design": "off",
+  "space": "outdoor",
+  "cues": [
+   {
+    "sfx": "boom",
+    "at": 0.0,
+    "x": 0.62,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 1.0,
+    "x": 0.86,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 2.0,
+    "x": 0.34,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 1.4,
+    "x": 0.34,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 3.0,
+    "x": 0.82,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 4.3,
+    "x": 0.62,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 3.75,
+    "x": 0.62,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 4.75,
+    "x": 0.8,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "sparkle",
+    "at": 4.9,
+    "x": 0.8,
+    "gain": -12
+   },
+   {
+    "sfx": "boom",
+    "at": 5.2,
+    "x": 0.5,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 4.65,
+    "x": 0.5,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 5.65,
+    "x": 0.88,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 6.1,
+    "x": 0.68,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 5.55,
+    "x": 0.68,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 6.55,
+    "x": 0.56,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 7.0,
+    "x": 0.84,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 6.45,
+    "x": 0.84,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 7.45,
+    "x": 0.66,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 8.15,
+    "x": 0.366,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 7.65,
+    "x": 0.366,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 8.49,
+    "x": 0.164,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 7.99,
+    "x": 0.164,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 8.83,
+    "x": 0.443,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 8.33,
+    "x": 0.443,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 9.17,
+    "x": 0.559,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 8.67,
+    "x": 0.559,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 9.51,
+    "x": 0.23,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "sparkle",
+    "at": 9.66,
+    "x": 0.23,
+    "gain": -12
+   },
+   {
+    "sfx": "thump",
+    "at": 9.01,
+    "x": 0.23,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 9.85,
+    "x": 0.606,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 9.35,
+    "x": 0.606,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 10.19,
+    "x": 0.637,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 9.69,
+    "x": 0.637,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 10.53,
+    "x": 0.724,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 10.03,
+    "x": 0.724,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 10.87,
+    "x": 0.674,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 10.37,
+    "x": 0.674,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 11.21,
+    "x": 0.236,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "sparkle",
+    "at": 11.36,
+    "x": 0.236,
+    "gain": -12
+   },
+   {
+    "sfx": "thump",
+    "at": 10.71,
+    "x": 0.236,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 11.55,
+    "x": 0.785,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 11.05,
+    "x": 0.785,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 12.35,
+    "x": 0.5,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 11.85,
+    "x": 0.5,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 12.95,
+    "x": 0.39,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 13.55,
+    "x": 0.61,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 13.05,
+    "x": 0.61,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 14.15,
+    "x": 0.47,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 14.75,
+    "x": 0.58,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 14.25,
+    "x": 0.58,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 15.35,
+    "x": 0.4,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 15.95,
+    "x": 0.52,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 15.45,
+    "x": 0.52,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 16.55,
+    "x": 0.63,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 17.15,
+    "x": 0.45,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 16.65,
+    "x": 0.45,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 20.05,
+    "x": 0.46,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 19.6,
+    "x": 0.46,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 20.27,
+    "x": 0.235,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 19.82,
+    "x": 0.235,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 20.49,
+    "x": 0.156,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 20.04,
+    "x": 0.156,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 20.71,
+    "x": 0.629,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 20.26,
+    "x": 0.629,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 20.93,
+    "x": 0.24,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "sparkle",
+    "at": 21.08,
+    "x": 0.24,
+    "gain": -12
+   },
+   {
+    "sfx": "thump",
+    "at": 20.48,
+    "x": 0.24,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 21.15,
+    "x": 0.516,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 20.7,
+    "x": 0.516,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 21.37,
+    "x": 0.918,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 20.92,
+    "x": 0.918,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 21.59,
+    "x": 0.323,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 21.14,
+    "x": 0.323,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 21.81,
+    "x": 0.885,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 21.36,
+    "x": 0.885,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 22.03,
+    "x": 0.904,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "sparkle",
+    "at": 22.18,
+    "x": 0.904,
+    "gain": -12
+   },
+   {
+    "sfx": "thump",
+    "at": 21.58,
+    "x": 0.904,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 22.25,
+    "x": 0.153,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 21.8,
+    "x": 0.153,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 22.47,
+    "x": 0.165,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 22.02,
+    "x": 0.165,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 22.69,
+    "x": 0.24,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 22.24,
+    "x": 0.24,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 22.91,
+    "x": 0.259,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 22.46,
+    "x": 0.259,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 23.13,
+    "x": 0.257,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "sparkle",
+    "at": 23.28,
+    "x": 0.257,
+    "gain": -12
+   },
+   {
+    "sfx": "thump",
+    "at": 22.68,
+    "x": 0.257,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 23.98,
+    "x": 0.5,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 23.28,
+    "x": 0.5,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 28.65,
+    "x": 0.86,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 28.4,
+    "x": 0.86,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 29.45,
+    "x": 0.7,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 30.25,
+    "x": 0.93,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 30.0,
+    "x": 0.93,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 31.05,
+    "x": 0.78,
+    "gain": -9.0,
+    "size": 0.4
+   }
+  ]
+ },
+ "post": {
+  "grain": 0.035
+ },
+ "scenes": [
+  {
+   "duration": 4.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#CBDCE6",
+     "#E4ECEE"
+    ]
+   },
+   "layers": [
+    {
+     "script": [
+      "let cues = [[0.0, 0.62, 0.53, 0.23, \"pistil\", \"#E8432A\", 0.0, 0, \"#E9A23B\"], [1.0, 0.86, 0.5, 0.12, \"peony\", \"#2346B8\", 0.9], [2.0, 0.34, 0.3, 0.17, \"ring\", \"#2346B8\", 0.6], [3.0, 0.82, 0.26, 0.19, \"chrys\", \"#E9A23B\", 0.6]];",
+      "let mv = [0.0, 0.0];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "for c in cues {",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 7.0 * ri).to_radians();",
+      "      let rr = R * rf;",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(2.1 - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(2.2 - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * 1.15; let p2y = cy + vy + 0.42 * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": 1691.2,
+     "height": 78.2,
+     "fill": "#14213D",
+     "x": 114.4,
+     "y": 928.8,
+     "anchor": "left",
+     "start": 0,
+     "end": 0.65
+    },
+    {
+     "text": "00:00.00  A01  5\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 46,
+     "x": 134.4,
+     "y": 928.8,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 0,
+     "end": 0.65
+    },
+    {
+     "shape": "rect",
+     "width": 1691.2,
+     "height": 78.2,
+     "fill": "#14213D",
+     "x": 114.4,
+     "y": 928.8,
+     "anchor": "left",
+     "start": 0.65,
+     "end": 1.65
+    },
+    {
+     "text": "00:01.00  A02  3\" PEONY",
+     "font": "IBM Plex Mono",
+     "size": 46,
+     "x": 134.4,
+     "y": 928.8,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 0.65,
+     "end": 1.65
+    },
+    {
+     "shape": "rect",
+     "width": 1691.2,
+     "height": 78.2,
+     "fill": "#14213D",
+     "x": 114.4,
+     "y": 928.8,
+     "anchor": "left",
+     "start": 1.65,
+     "end": 2.65
+    },
+    {
+     "text": "00:02.00  A03  4\" RING",
+     "font": "IBM Plex Mono",
+     "size": 46,
+     "x": 134.4,
+     "y": 928.8,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 1.65,
+     "end": 2.65
+    },
+    {
+     "shape": "rect",
+     "width": 1691.2,
+     "height": 78.2,
+     "fill": "#14213D",
+     "x": 114.4,
+     "y": 928.8,
+     "anchor": "left",
+     "start": 2.65,
+     "end": 4.0
+    },
+    {
+     "text": "00:03.00  A04  4\" CHRYSANTHEMUM",
+     "font": "IBM Plex Mono",
+     "size": 46,
+     "x": 134.4,
+     "y": 928.8,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 2.65,
+     "end": 4.0
+    },
+    {
+     "text": "Your agent writes the page.",
+     "font": "Archivo",
+     "size": 112,
+     "x": 134.4,
+     "y": 151.20000000000002,
+     "anchor": "left",
+     "color": "#14213D",
+     "axes": {
+      "wdth": 75,
+      "wght": 800
+     },
+     "letterSpacing": -0.01
+    }
+   ]
+  },
+  {
+   "duration": 4.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#CBDCE6",
+     "#E4ECEE"
+    ]
+   },
+   "layers": [
+    {
+     "script": [
+      "let cues = [[0.3, 0.62, 0.32, 0.15, \"peony\", \"#2346B8\", 0.55], [0.75, 0.8, 0.3, 0.18, \"willow\", \"#E9A23B\", 0.55], [1.2, 0.5, 0.24, 0.21, \"pistil\", \"#E8432A\", 0.55, 0, \"#E9A23B\"], [1.6500000000000001, 0.88, 0.5, 0.15, \"ring\", \"#E9A23B\", 0.55], [2.1, 0.68, 0.48, 0.18, \"chrys\", \"#2346B8\", 0.55], [2.55, 0.56, 0.62, 0.21, \"peony\", \"#E8432A\", 0.55], [3.0, 0.84, 0.7, 0.15, \"pistil\", \"#2346B8\", 0.55, 0, \"#E9A23B\"], [3.4499999999999997, 0.66, 0.2, 0.18, \"ring\", \"#E8432A\", 0.55]];",
+      "let mv = [0.0, 0.0];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "for c in cues {",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 7.0 * ri).to_radians();",
+      "      let rr = R * rf;",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(2.1 - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(2.2 - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * 1.15; let p2y = cy + vy + 0.42 * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "text": "00:00.30  B01  3\" PEONY",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 324.0,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0,
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.0,
+      "duration": 0.25
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 830.4,
+     "height": 46,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 324.0,
+     "anchor": "left",
+     "start": 0.27999999999999997,
+     "end": 0.73
+    },
+    {
+     "text": "00:00.30  B01  3\" PEONY",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 324.0,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 0.27999999999999997,
+     "end": 0.73
+    },
+    {
+     "text": "00:00.75  B02  4\" GOLD WILLOW",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 376.0,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0,
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.02,
+      "duration": 0.25
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 830.4,
+     "height": 46,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 376.0,
+     "anchor": "left",
+     "start": 0.73,
+     "end": 1.18
+    },
+    {
+     "text": "00:00.75  B02  4\" GOLD WILLOW",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 376.0,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 0.73,
+     "end": 1.18
+    },
+    {
+     "text": "00:01.20  B03  5\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 428.0,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0,
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.04,
+      "duration": 0.25
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 830.4,
+     "height": 46,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 428.0,
+     "anchor": "left",
+     "start": 1.18,
+     "end": 1.63
+    },
+    {
+     "text": "00:01.20  B03  5\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 428.0,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 1.18,
+     "end": 1.63
+    },
+    {
+     "text": "00:01.65  B04  3\" RING",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 480.0,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0,
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.06,
+      "duration": 0.25
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 830.4,
+     "height": 46,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 480.0,
+     "anchor": "left",
+     "start": 1.6300000000000001,
+     "end": 2.08
+    },
+    {
+     "text": "00:01.65  B04  3\" RING",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 480.0,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 1.6300000000000001,
+     "end": 2.08
+    },
+    {
+     "text": "00:02.10  B05  4\" CHRYSANTHEMUM",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 532.0,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0,
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.08,
+      "duration": 0.25
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 830.4,
+     "height": 46,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 532.0,
+     "anchor": "left",
+     "start": 2.08,
+     "end": 2.5300000000000002
+    },
+    {
+     "text": "00:02.10  B05  4\" CHRYSANTHEMUM",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 532.0,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 2.08,
+     "end": 2.5300000000000002
+    },
+    {
+     "text": "00:02.55  B06  5\" PEONY",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 584.0,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0,
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.1,
+      "duration": 0.25
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 830.4,
+     "height": 46,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 584.0,
+     "anchor": "left",
+     "start": 2.53,
+     "end": 2.98
+    },
+    {
+     "text": "00:02.55  B06  5\" PEONY",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 584.0,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 2.53,
+     "end": 2.98
+    },
+    {
+     "text": "00:03.00  B07  3\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 636.0,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0,
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.12,
+      "duration": 0.25
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 830.4,
+     "height": 46,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 636.0,
+     "anchor": "left",
+     "start": 2.98,
+     "end": 3.43
+    },
+    {
+     "text": "00:03.00  B07  3\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 636.0,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 2.98,
+     "end": 3.43
+    },
+    {
+     "text": "00:03.45  B08  4\" RING",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 688.0,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0,
+     "enter": {
+      "preset": "fadeIn",
+      "delay": 0.14,
+      "duration": 0.25
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 830.4,
+     "height": 46,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 688.0,
+     "anchor": "left",
+     "start": 3.4299999999999997,
+     "end": 3.88
+    },
+    {
+     "text": "00:03.45  B08  4\" RING",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 688.0,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 3.4299999999999997,
+     "end": 3.88
+    },
+    {
+     "text": "Back comes a finished film,\nwith sound.",
+     "font": "Archivo",
+     "size": 84,
+     "x": 134.4,
+     "y": 151.20000000000002,
+     "anchor": "left",
+     "color": "#14213D",
+     "axes": {
+      "wdth": 75,
+      "wght": 800
+     },
+     "letterSpacing": -0.01,
+     "start": 0.9,
+     "lineHeight": 1.0,
+     "enter": {
+      "preset": "mask by line up",
+      "duration": 0.5
+     }
+    }
+   ]
+  },
+  {
+   "duration": 4.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#CBDCE6",
+     "#E4ECEE"
+    ]
+   },
+   "layers": [
+    {
+     "script": [
+      "let cues = [[0.15, 0.366, 0.277, 0.185, \"chrys\", \"#E8432A\", 0.5], [0.32, 0.175, 0.424, 0.157, \"pistil\", \"#E9A23B\", 0.5, 0, \"#E8432A\"], [0.49, 0.164, 0.413, 0.124, \"peony\", \"#2346B8\", 0.5], [0.66, 0.45, 0.247, 0.129, \"willow\", \"#E8432A\", 0.5], [0.83, 0.443, 0.534, 0.132, \"ring\", \"#E9A23B\", 0.5], [1.0, 0.29, 0.458, 0.215, \"chrys\", \"#2346B8\", 0.5], [1.17, 0.559, 0.371, 0.218, \"pistil\", \"#E8432A\", 0.5, 0, \"#E9A23B\"], [1.34, 0.155, 0.546, 0.149, \"peony\", \"#E9A23B\", 0.5], [1.51, 0.23, 0.265, 0.151, \"willow\", \"#2346B8\", 0.5], [1.68, 0.74, 0.289, 0.178, \"ring\", \"#E8432A\", 0.5], [1.85, 0.606, 0.362, 0.175, \"chrys\", \"#E9A23B\", 0.5], [2.02, 0.168, 0.243, 0.141, \"pistil\", \"#2346B8\", 0.5, 0, \"#E8432A\"], [2.19, 0.637, 0.382, 0.151, \"peony\", \"#E8432A\", 0.5], [2.36, 0.565, 0.392, 0.15, \"willow\", \"#E9A23B\", 0.5], [2.53, 0.724, 0.486, 0.144, \"ring\", \"#2346B8\", 0.5], [2.7, 0.557, 0.42, 0.208, \"chrys\", \"#E8432A\", 0.5], [2.87, 0.674, 0.329, 0.218, \"pistil\", \"#E9A23B\", 0.5, 0, \"#E8432A\"], [3.04, 0.21, 0.379, 0.196, \"peony\", \"#2346B8\", 0.5], [3.21, 0.236, 0.406, 0.124, \"willow\", \"#E8432A\", 0.5], [3.38, 0.628, 0.511, 0.177, \"ring\", \"#E9A23B\", 0.5], [3.55, 0.785, 0.339, 0.19, \"chrys\", \"#2346B8\", 0.5], [3.72, 0.572, 0.44, 0.166, \"pistil\", \"#E8432A\", 0.5, 0, \"#E9A23B\"]];",
+      "let mv = [0.0, 0.0];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "for c in cues {",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 7.0 * ri).to_radians();",
+      "      let rr = R * rf;",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(2.1 - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(2.2 - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * 1.15; let p2y = cy + vy + 0.42 * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "text": "00:00.15  C01  4\" CHRYSANTHEMUM",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0.15,
+     "end": 0.32
+    },
+    {
+     "text": "00:00.32  C02  3\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0.32,
+     "end": 0.49
+    },
+    {
+     "text": "00:00.49  C03  3\" PEONY",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0.49,
+     "end": 0.66
+    },
+    {
+     "text": "00:00.66  C04  3\" GOLD WILLOW",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0.66,
+     "end": 0.83
+    },
+    {
+     "text": "00:00.83  C05  3\" RING",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0.83,
+     "end": 1.0
+    },
+    {
+     "text": "00:01.00  C06  5\" CHRYSANTHEMUM",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 1.0,
+     "end": 1.17
+    },
+    {
+     "text": "00:01.17  C07  5\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 1.17,
+     "end": 1.34
+    },
+    {
+     "text": "00:01.34  C08  3\" PEONY",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 1.34,
+     "end": 1.51
+    },
+    {
+     "text": "00:01.51  C09  3\" GOLD WILLOW",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 1.51,
+     "end": 1.68
+    },
+    {
+     "text": "00:01.68  C10  4\" RING",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 1.68,
+     "end": 1.85
+    },
+    {
+     "text": "00:01.85  C11  4\" CHRYSANTHEMUM",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 1.85,
+     "end": 2.02
+    },
+    {
+     "text": "00:02.02  C12  3\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 2.02,
+     "end": 2.19
+    },
+    {
+     "text": "00:02.19  C13  3\" PEONY",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 2.19,
+     "end": 2.36
+    },
+    {
+     "text": "00:02.36  C14  3\" GOLD WILLOW",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 2.36,
+     "end": 2.53
+    },
+    {
+     "text": "00:02.53  C15  3\" RING",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 2.53,
+     "end": 2.7
+    },
+    {
+     "text": "00:02.70  C16  5\" CHRYSANTHEMUM",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 2.7,
+     "end": 2.87
+    },
+    {
+     "text": "00:02.87  C17  5\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 2.87,
+     "end": 3.04
+    },
+    {
+     "text": "00:03.04  C18  4\" PEONY",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 3.04,
+     "end": 3.21
+    },
+    {
+     "text": "00:03.21  C19  3\" GOLD WILLOW",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 3.21,
+     "end": 3.38
+    },
+    {
+     "text": "00:03.38  C20  4\" RING",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 3.38,
+     "end": 3.55
+    },
+    {
+     "text": "00:03.55  C21  4\" CHRYSANTHEMUM",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 3.55,
+     "end": 3.72
+    },
+    {
+     "text": "00:03.72  C22  4\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 3.72,
+     "end": 4.0
+    }
+   ]
+  },
+  {
+   "duration": 6.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#CBDCE6",
+     "#E4ECEE"
+    ]
+   },
+   "layers": [
+    {
+     "script": [
+      "let cues = [[0.35, 0.25, 0.4, 0.09, \"pistil\", \"#E8432A\", 0.5, 0, \"#E9A23B\"], [0.95, 0.14, 0.28, 0.11, \"chrys\", \"#2346B8\", 0.5], [1.55, 0.36, 0.3, 0.13, \"ring\", \"#E9A23B\", 0.5], [2.15, 0.22, 0.3, 0.09, \"peony\", \"#E9A23B\", 0.5], [2.75, 0.33, 0.55, 0.11, \"peony\", \"#E8432A\", 0.5], [3.35, 0.15, 0.5, 0.13, \"chrys\", \"#E9A23B\", 0.5], [3.95, 0.27, 0.26, 0.09, \"pistil\", \"#2346B8\", 0.5, 0, \"#E9A23B\"], [4.55, 0.38, 0.44, 0.11, \"ring\", \"#E8432A\", 0.5], [5.15, 0.2, 0.42, 0.13, \"peony\", \"#2346B8\", 0.5]];",
+      "let mv = [3.2, 0.25];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "for c in cues {",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 7.0 * ri).to_radians();",
+      "      let rr = R * rf;",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(2.1 - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(2.2 - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * 1.15; let p2y = cy + vy + 0.42 * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "script": [
+      "let cues = [[0.35, 0.75, 0.4, 0.09, \"pistil\", \"#E8432A\", 0.5, 0, \"#E9A23B\"], [0.95, 0.64, 0.28, 0.11, \"chrys\", \"#2346B8\", 0.5], [1.55, 0.86, 0.3, 0.13, \"ring\", \"#E9A23B\", 0.5], [2.15, 0.72, 0.3, 0.09, \"peony\", \"#E9A23B\", 0.5], [2.75, 0.8300000000000001, 0.55, 0.11, \"peony\", \"#E8432A\", 0.5], [3.35, 0.65, 0.5, 0.13, \"chrys\", \"#E9A23B\", 0.5], [3.95, 0.77, 0.26, 0.09, \"pistil\", \"#2346B8\", 0.5, 0, \"#E9A23B\"], [4.55, 0.88, 0.44, 0.11, \"ring\", \"#E8432A\", 0.5], [5.15, 0.7, 0.42, 0.13, \"peony\", \"#2346B8\", 0.5]];",
+      "let mv = [3.2, -0.25];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "for c in cues {",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 7.0 * ri).to_radians();",
+      "      let rr = R * rf;",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(2.1 - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(2.2 - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * 1.15; let p2y = cy + vy + 0.42 * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": 3,
+     "height": 1080,
+     "fill": "#14213D",
+     "x": 960.0,
+     "y": 540.0,
+     "end": 3.5,
+     "animate": [
+      {
+       "to": {
+        "scaleY": 0
+       },
+       "at": 3.2,
+       "duration": 0.3,
+       "ease": "inQuad"
+      }
+     ]
+    },
+    {
+     "text": "TUESDAY 21:00:00",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 993.6,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "end": 3.3000000000000003,
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.2
+     }
+    },
+    {
+     "text": "SATURDAY 21:00:00",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 1027.2,
+     "y": 993.6,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "end": 3.3000000000000003,
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.2
+     }
+    },
+    {
+     "text": "Same page. Same film.\nByte for byte.",
+     "font": "Archivo",
+     "size": 84,
+     "x": 134.4,
+     "y": 151.20000000000002,
+     "anchor": "left",
+     "color": "#14213D",
+     "axes": {
+      "wdth": 75,
+      "wght": 800
+     },
+     "letterSpacing": -0.01,
+     "start": 3.9000000000000004,
+     "lineHeight": 1.0,
+     "enter": {
+      "preset": "mask by line up",
+      "duration": 0.5
+     }
+    },
+    {
+     "text": "TUESDAY = SATURDAY",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 993.6,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 3.6,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.2
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#CBDCE6",
+     "#E4ECEE"
+    ]
+   },
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "fill": {
+      "type": "linear",
+      "angle": 180,
+      "stops": [
+       "#93A9BE",
+       "#C4CFD4"
+      ]
+     },
+     "opacity": 0,
+     "animate": [
+      {
+       "to": {
+        "opacity": 1
+       },
+       "duration": 1.6,
+       "ease": "inOutCubic"
+      }
+     ]
+    },
+    {
+     "text": "00:20.00  F00  FINALE \u00d731",
+     "font": "IBM Plex Mono",
+     "size": 64,
+     "x": 134.4,
+     "y": 540.0,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false
+    },
+    {
+     "shape": "rect",
+     "width": 34,
+     "height": 64,
+     "fill": "#E8432A",
+     "x": 1125.1200000000001,
+     "y": 540.0,
+     "opacity": "=step(0.5, fract(t*2))"
+    }
+   ]
+  },
+  {
+   "duration": 6.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#93A9BE",
+     "#C4CFD4"
+    ]
+   },
+   "layers": [
+    {
+     "script": [
+      "let cues = [[0.05, 0.46, 0.44, 0.251, \"chrys\", \"#E9A23B\", 0.45], [0.16, 0.471, 0.414, 0.21, \"pistil\", \"#E8432A\", 0.45, 0, \"#E9A23B\"], [0.27, 0.235, 0.416, 0.216, \"ring\", \"#2346B8\", 0.45], [0.38, 0.746, 0.207, 0.176, \"willow\", \"#E9A23B\", 0.45], [0.49, 0.156, 0.565, 0.223, \"peony\", \"#E8432A\", 0.45], [0.6, 0.115, 0.651, 0.256, \"chrys\", \"#2346B8\", 0.45], [0.71, 0.629, 0.468, 0.159, \"pistil\", \"#E9A23B\", 0.45, 0, \"#E8432A\"], [0.82, 0.093, 0.424, 0.147, \"ring\", \"#E8432A\", 0.45], [0.93, 0.24, 0.281, 0.144, \"willow\", \"#2346B8\", 0.45], [1.04, 0.47, 0.38, 0.241, \"peony\", \"#E9A23B\", 0.45], [1.15, 0.516, 0.48, 0.2, \"chrys\", \"#E8432A\", 0.45], [1.26, 0.636, 0.389, 0.173, \"pistil\", \"#2346B8\", 0.45, 0, \"#E9A23B\"], [1.37, 0.918, 0.658, 0.241, \"ring\", \"#E9A23B\", 0.45], [1.48, 0.675, 0.318, 0.168, \"willow\", \"#E8432A\", 0.45], [1.59, 0.323, 0.195, 0.232, \"peony\", \"#2346B8\", 0.45], [1.7, 0.416, 0.583, 0.186, \"chrys\", \"#E9A23B\", 0.45], [1.81, 0.885, 0.584, 0.14, \"pistil\", \"#E8432A\", 0.45, 0, \"#E9A23B\"], [1.92, 0.256, 0.615, 0.196, \"ring\", \"#2346B8\", 0.45], [2.03, 0.904, 0.359, 0.149, \"willow\", \"#E9A23B\", 0.45], [2.14, 0.609, 0.549, 0.172, \"peony\", \"#E8432A\", 0.45], [2.25, 0.153, 0.326, 0.256, \"chrys\", \"#2346B8\", 0.45], [2.36, 0.717, 0.219, 0.17, \"pistil\", \"#E9A23B\", 0.45, 0, \"#E8432A\"], [2.47, 0.165, 0.19, 0.236, \"ring\", \"#E8432A\", 0.45], [2.58, 0.229, 0.44, 0.194, \"willow\", \"#2346B8\", 0.45], [2.69, 0.24, 0.526, 0.156, \"peony\", \"#E9A23B\", 0.45], [2.8, 0.621, 0.218, 0.19, \"chrys\", \"#E8432A\", 0.45], [2.91, 0.259, 0.295, 0.257, \"pistil\", \"#2346B8\", 0.45, 0, \"#E9A23B\"], [3.02, 0.755, 0.312, 0.246, \"ring\", \"#E9A23B\", 0.45], [3.13, 0.257, 0.357, 0.243, \"willow\", \"#E8432A\", 0.45], [3.24, 0.619, 0.21, 0.259, \"peony\", \"#2346B8\", 0.45], [3.98, 0.5, 0.47, 0.2, \"pistil\", \"#E9A23B\", 0.7, 0, \"#E8432A\"], [4.0, 0.5, 0.42, 0.03, \"name\", \"#E8432A\", 0, 0, [\".###..#...#.#####.#...#.#####.#####\", \"#...#.##..#...#...#..#....#.....#..\", \"#...#.#.#.#...#...#.#.....#.....#..\", \"#####.#..##...#...##......#.....#..\", \"#...#.#...#...#...#.#.....#.....#..\", \"#...#.#...#...#...#..#....#.....#..\", \"#...#.#...#.#####.#...#.#####...#..\"], 0.5, 0.47]];",
+      "let mv = [0.0, 0.0];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "for c in cues {",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 7.0 * ri).to_radians();",
+      "      let rr = R * rf;",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(2.1 - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(2.2 - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * 1.15; let p2y = cy + vy + 0.42 * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 6.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#93A9BE",
+     "#C4CFD4"
+    ]
+   },
+   "layers": [
+    {
+     "draw": [
+      {
+       "circle": [
+        441.6,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        474.0,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        506.4,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        798.0,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        830.4,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        895.2,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        927.6,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1122.0,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1186.8,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1219.2,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1284.0,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1316.4,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1381.2,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1413.6,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1478.4,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1510.8,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        409.2,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        538.8,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        636.0,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1089.6,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        409.2,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        538.8,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        668.4,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1057.2,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        409.2,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        441.6,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        474.0,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        506.4,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        538.8,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        700.8,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1024.8,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        409.2,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        538.8,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1057.2,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        409.2,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        538.8,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1089.6,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        409.2,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        538.8,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        798.0,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        830.4,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        895.2,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        927.6,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1122.0,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1186.8,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1219.2,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1284.0,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1316.4,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      }
+     ]
+    },
+    {
+     "script": [
+      "let cues = [[2.65, 0.86, 0.17, 0.07, \"pistil\", \"#E8432A\", 0.25, 0, \"#E9A23B\"], [3.45, 0.7, 0.13, 0.07, \"pistil\", \"#E8432A\", 0.25, 0, \"#E9A23B\"], [4.25, 0.93, 0.33, 0.07, \"chrys\", \"#E8432A\", 0.25], [5.05, 0.78, 0.3, 0.07, \"pistil\", \"#E9A23B\", 0.25, 0, \"#E8432A\"]];",
+      "let mv = [0.0, 0.0];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "for c in cues {",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 7.0 * ri).to_radians();",
+      "      let rr = R * rf;",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(2.1 - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(2.2 - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * 1.15; let p2y = cy + vy + 0.42 * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "text": "00:00.00  5\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 712.8000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "end": 0.9,
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.15
+     }
+    },
+    {
+     "text": "[0.0, 0.62, 0.53, 0.23, \"pistil\", \"#E8432A\", 0.0, 0, \"#E9A23B\"]",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 712.8000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0.9,
+     "enter": {
+      "preset": "typewriter",
+      "duration": 0.35
+     }
+    },
+    {
+     "text": "00:01.20  5\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 754.4000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "end": 1.02,
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.15
+     }
+    },
+    {
+     "text": "[1.2, 0.5, 0.24, 0.21, \"pistil\", \"#E8432A\", 0.55, 0, \"#E9A23B\"]",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 754.4000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 1.02,
+     "enter": {
+      "preset": "typewriter",
+      "duration": 0.35
+     }
+    },
+    {
+     "text": "00:00.66  3\" GOLD WILLOW",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 796.0000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "end": 1.1400000000000001,
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.15
+     }
+    },
+    {
+     "text": "[0.66, 0.45, 0.247, 0.129, \"willow\", \"#E8432A\", 0.5]",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 796.0000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 1.1400000000000001,
+     "enter": {
+      "preset": "typewriter",
+      "duration": 0.35
+     }
+    },
+    {
+     "text": "00:03.98  4\" PISTIL PEONY",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 837.6000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "end": 1.26,
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.15
+     }
+    },
+    {
+     "text": "[3.98, 0.5, 0.47, 0.2, \"pistil\", \"#E9A23B\", 0.7, 0, \"#E8432A\"]",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 837.6000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 1.26,
+     "enter": {
+      "preset": "typewriter",
+      "duration": 0.35
+     }
+    },
+    {
+     "text": "Every frame and every note of this film came from one JSON spec.",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 650.4000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 1.4,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.3
+     },
+     "maxWidth": 1651.2
+    },
+    {
+     "text": "Anikit Video",
+     "font": "Archivo",
+     "size": 84,
+     "x": 134.4,
+     "y": 950.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "axes": {
+      "wdth": 75,
+      "wght": 800
+     },
+     "letterSpacing": -0.01,
+     "start": 0.3,
+     "enter": {
+      "preset": "mask by line up",
+      "duration": 0.5
+     }
+    },
+    {
+     "text": "github.com/knihalani/anikit",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 940.8,
+     "y": 950.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "start": 0.8,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.3
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 37.699999999999996,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 712.8000000000001,
+     "anchor": "left",
+     "start": 2.4,
+     "end": 3.1799999999999997
+    },
+    {
+     "text": "[0.0, 0.62, 0.53, 0.23, \"pistil\", \"#E8432A\", 0.0, 0, \"#E9A23B\"]",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 712.8000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 2.4,
+     "end": 3.1799999999999997
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 37.699999999999996,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 754.4000000000001,
+     "anchor": "left",
+     "start": 3.2,
+     "end": 3.9800000000000004
+    },
+    {
+     "text": "[1.2, 0.5, 0.24, 0.21, \"pistil\", \"#E8432A\", 0.55, 0, \"#E9A23B\"]",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 754.4000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 3.2,
+     "end": 3.9800000000000004
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 37.699999999999996,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 796.0000000000001,
+     "anchor": "left",
+     "start": 4.0,
+     "end": 4.78
+    },
+    {
+     "text": "[0.66, 0.45, 0.247, 0.129, \"willow\", \"#E8432A\", 0.5]",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 796.0000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 4.0,
+     "end": 4.78
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 37.699999999999996,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 837.6000000000001,
+     "anchor": "left",
+     "start": 4.800000000000001,
+     "end": 5.580000000000001
+    },
+    {
+     "text": "[3.98, 0.5, 0.47, 0.2, \"pistil\", \"#E9A23B\", 0.7, 0, \"#E8432A\"]",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 837.6000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "start": 4.800000000000001,
+     "end": 5.580000000000001
+    }
+   ]
+  }
+ ]
+}

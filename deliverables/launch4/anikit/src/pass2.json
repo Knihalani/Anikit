@@ -1,0 +1,3989 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "intent": {
+  "pace": "fast",
+  "genre": "launch"
+ },
+ "fonts": {},
+ "music": {
+  "style": "orchestral",
+  "bpm": 120,
+  "key": "D",
+  "mood": "bright triumphant",
+  "sections": [
+   {
+    "name": "intro",
+    "bars": 2,
+    "energy": 0.45
+   },
+   {
+    "name": "build",
+    "bars": 4,
+    "energy": 0.7
+   },
+   {
+    "name": "peak",
+    "bars": 4,
+    "energy": 0.9
+   },
+   {
+    "name": "finale",
+    "bars": 3,
+    "energy": 1,
+    "stop": 4
+   },
+   {
+    "name": "outro",
+    "bars": 3,
+    "energy": 0.45
+   }
+  ],
+  "hits": [
+   "@bar11",
+   "@bar13"
+  ],
+  "end": "ring",
+  "followCuts": false
+ },
+ "sound": {
+  "design": "off",
+  "space": "outdoor",
+  "cues": [
+   {
+    "sfx": "boom",
+    "at": 0.0,
+    "x": 0.62,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 1.0,
+    "x": 0.86,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 2.0,
+    "x": 0.34,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 1.4,
+    "x": 0.34,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 3.0,
+    "x": 0.82,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 4.3,
+    "x": 0.62,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 3.75,
+    "x": 0.62,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 4.75,
+    "x": 0.8,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 5.2,
+    "x": 0.5,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 4.65,
+    "x": 0.5,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 5.65,
+    "x": 0.88,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 6.1,
+    "x": 0.7,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 5.55,
+    "x": 0.7,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 6.55,
+    "x": 0.56,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 7.0,
+    "x": 0.84,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 6.45,
+    "x": 0.84,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 7.45,
+    "x": 0.66,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 8.15,
+    "x": 0.366,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 7.65,
+    "x": 0.366,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 8.49,
+    "x": 0.164,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 7.99,
+    "x": 0.164,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 8.83,
+    "x": 0.443,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 8.33,
+    "x": 0.443,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 9.17,
+    "x": 0.559,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 8.67,
+    "x": 0.559,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 9.51,
+    "x": 0.23,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "sparkle",
+    "at": 9.66,
+    "x": 0.23,
+    "gain": -12
+   },
+   {
+    "sfx": "thump",
+    "at": 9.01,
+    "x": 0.23,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 9.85,
+    "x": 0.606,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 9.35,
+    "x": 0.606,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 10.19,
+    "x": 0.637,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 9.69,
+    "x": 0.637,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 10.53,
+    "x": 0.724,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 10.03,
+    "x": 0.724,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 10.87,
+    "x": 0.674,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 10.37,
+    "x": 0.674,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 11.21,
+    "x": 0.236,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "sparkle",
+    "at": 11.36,
+    "x": 0.236,
+    "gain": -12
+   },
+   {
+    "sfx": "thump",
+    "at": 10.71,
+    "x": 0.236,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 11.55,
+    "x": 0.785,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 11.05,
+    "x": 0.785,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 12.15,
+    "x": 0.5,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 11.65,
+    "x": 0.5,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 12.75,
+    "x": 0.39,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 13.35,
+    "x": 0.61,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 12.85,
+    "x": 0.61,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 13.95,
+    "x": 0.47,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 14.55,
+    "x": 0.58,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 14.05,
+    "x": 0.58,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 15.15,
+    "x": 0.4,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 15.75,
+    "x": 0.52,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 15.25,
+    "x": 0.52,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 16.35,
+    "x": 0.63,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 16.95,
+    "x": 0.45,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 16.45,
+    "x": 0.45,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 20.05,
+    "x": 0.46,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 19.6,
+    "x": 0.46,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 20.27,
+    "x": 0.235,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 19.82,
+    "x": 0.235,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 20.49,
+    "x": 0.156,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 20.04,
+    "x": 0.156,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 20.71,
+    "x": 0.629,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 20.26,
+    "x": 0.629,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 20.93,
+    "x": 0.24,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "sparkle",
+    "at": 21.08,
+    "x": 0.24,
+    "gain": -12
+   },
+   {
+    "sfx": "thump",
+    "at": 20.48,
+    "x": 0.24,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 21.15,
+    "x": 0.516,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 20.7,
+    "x": 0.516,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 21.37,
+    "x": 0.918,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 20.92,
+    "x": 0.918,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 21.59,
+    "x": 0.323,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 21.14,
+    "x": 0.323,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 21.81,
+    "x": 0.885,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 21.36,
+    "x": 0.885,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 22.03,
+    "x": 0.904,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "sparkle",
+    "at": 22.18,
+    "x": 0.904,
+    "gain": -12
+   },
+   {
+    "sfx": "thump",
+    "at": 21.58,
+    "x": 0.904,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 22.25,
+    "x": 0.153,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 21.8,
+    "x": 0.153,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 22.47,
+    "x": 0.165,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 22.02,
+    "x": 0.165,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 22.69,
+    "x": 0.24,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 22.24,
+    "x": 0.24,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 22.91,
+    "x": 0.259,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "thump",
+    "at": 22.46,
+    "x": 0.259,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "boom",
+    "at": 23.13,
+    "x": 0.257,
+    "gain": -4.0,
+    "size": 0.8
+   },
+   {
+    "sfx": "sparkle",
+    "at": 23.28,
+    "x": 0.257,
+    "gain": -12
+   },
+   {
+    "sfx": "thump",
+    "at": 22.68,
+    "x": 0.257,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 23.98,
+    "x": 0.5,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 23.28,
+    "x": 0.5,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 28.65,
+    "x": 0.86,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 28.4,
+    "x": 0.86,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 29.45,
+    "x": 0.72,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 30.25,
+    "x": 0.93,
+    "gain": -9.0,
+    "size": 0.4
+   },
+   {
+    "sfx": "thump",
+    "at": 30.0,
+    "x": 0.93,
+    "gain": -16,
+    "pitch": -5
+   },
+   {
+    "sfx": "thump",
+    "at": 31.05,
+    "x": 0.79,
+    "gain": -9.0,
+    "size": 0.4
+   }
+  ]
+ },
+ "post": {
+  "grain": 0.035
+ },
+ "scenes": [
+  {
+   "duration": 4.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#CBDCE6",
+     "#E4ECEE"
+    ]
+   },
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1691.2,
+     "height": 47.6,
+     "fill": "#14213D",
+     "x": 114.4,
+     "y": 928.8,
+     "anchor": "left",
+     "start": 0,
+     "end": 0.65
+    },
+    {
+     "text": "{\"at\": 0.0, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.62, \"y\": 0.53, \"r\": 0.23, \"lift\": 0.0}",
+     "font": "IBM Plex Mono",
+     "size": 28,
+     "x": 134.4,
+     "y": 928.8,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0,
+     "end": 0.65
+    },
+    {
+     "shape": "rect",
+     "width": 1691.2,
+     "height": 47.6,
+     "fill": "#14213D",
+     "x": 114.4,
+     "y": 928.8,
+     "anchor": "left",
+     "start": 0.65,
+     "end": 1.65
+    },
+    {
+     "text": "{\"at\": 1.0, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.86, \"y\": 0.5, \"r\": 0.12, \"lift\": 0.9}",
+     "font": "IBM Plex Mono",
+     "size": 28,
+     "x": 134.4,
+     "y": 928.8,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.65,
+     "end": 1.65
+    },
+    {
+     "shape": "rect",
+     "width": 1691.2,
+     "height": 47.6,
+     "fill": "#14213D",
+     "x": 114.4,
+     "y": 928.8,
+     "anchor": "left",
+     "start": 1.65,
+     "end": 2.65
+    },
+    {
+     "text": "{\"at\": 2.0, \"shell\": \"ring\", \"ink\": \"cobalt\", \"x\": 0.34, \"y\": 0.3, \"r\": 0.17, \"lift\": 0.6}",
+     "font": "IBM Plex Mono",
+     "size": 28,
+     "x": 134.4,
+     "y": 928.8,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.65,
+     "end": 2.65
+    },
+    {
+     "shape": "rect",
+     "width": 1691.2,
+     "height": 47.6,
+     "fill": "#14213D",
+     "x": 114.4,
+     "y": 928.8,
+     "anchor": "left",
+     "start": 2.65,
+     "end": 4.0
+    },
+    {
+     "text": "{\"at\": 3.0, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.82, \"y\": 0.26, \"r\": 0.19, \"lift\": 0.6}",
+     "font": "IBM Plex Mono",
+     "size": 28,
+     "x": 134.4,
+     "y": 928.8,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.65,
+     "end": 4.0
+    },
+    {
+     "script": [
+      "let cues = [",
+      "#{\"at\": 0.0, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.62, \"y\": 0.53, \"r\": 0.23, \"lift\": 0.0},",
+      "#{\"at\": 1.0, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.86, \"y\": 0.5, \"r\": 0.12, \"lift\": 0.9},",
+      "#{\"at\": 2.0, \"shell\": \"ring\", \"ink\": \"cobalt\", \"x\": 0.34, \"y\": 0.3, \"r\": 0.17, \"lift\": 0.6},",
+      "#{\"at\": 3.0, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.82, \"y\": 0.26, \"r\": 0.19, \"lift\": 0.6},",
+      "];",
+      "let mv = [0.0, 0.0];",
+      "let origins = [[0.91, 0.86], [0.8663, 0.86], [0.8575, 0.86], [0.8575, 0.86]];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "let INK = #{ vermilion: \"#E8432A\", gold: \"#E9A23B\", cobalt: \"#2346B8\" };",
+      "for c0 in cues {",
+      "  let c = c0;",
+      "  if type_of(c0) == \"map\" {",
+      "    let ink = INK[c0.ink];",
+      "    let core = if c0.ink == \"gold\" { INK.vermilion } else { INK.gold };",
+      "    c = [c0.at, c0.x, c0.y, c0.r, c0.shell, ink, c0.lift, 0.0, core];",
+      "  }",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  let og = if k < origins.len() { origins[k] } else { () };",
+      "  if lift > 0.0 && type_of(og) == \"array\" {",
+      "    let ts = t0 - lift;",
+      "    let gx = og[0] * w; let gy = og[1] * h;",
+      "    for q in 0..4 {",
+      "      let lg = 0.035 * q;",
+      "      let e = \"(1-pow(1-clamp((t-\" + lg + \")/\" + lift + \",0,1),2.2))\";",
+      "      out.push(#{ shape: \"circle\", width: 12.0 - 2.5 * q, fill: ink, start: ts, end: t0 + 0.03,",
+      "        x: \"=\" + gx + \" + (\" + (cx - gx) + \")*\" + e + shx(mv[1] * w, mv[0] - ts),",
+      "        y: \"=\" + gy + \" + (\" + (cy - gy) + \")*\" + e, opacity: 1.0 - 0.22 * q });",
+      "    }",
+      "  } else if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  if kind != \"name\" {",
+      "    out.push(#{ shape: \"circle\", width: R * 2.6, fill: ink, blur: 60, start: t0, end: t0 + 1.2,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.22*exp(-3.5*t)\" });",
+      "    out.push(#{ shape: \"circle\", width: R * 0.5, fill: \"#FFF8EC\", blur: 18, start: t0, end: t0 + 0.4,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.9*exp(-12*t)\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let sd = k * 1000 + ri * 100 + j;",
+      "      let a = (j * 360.0 / n + 7.0 * ri + (rand(sd) - 0.5) * 3.0).to_radians();",
+      "      let rr = R * rf * (0.96 + 0.08 * rand(sd + 7));",
+      "      let life = 1.9 + 0.7 * rand(sd + 13);",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.2) + \" - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.3) + \" - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * (1.0 + 0.3 * rand(k * 50 + j)); let p2y = cy + vy + (0.30 + 0.16 * rand(k * 50 + j + 3)) * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "text": "Your agent writes the page.",
+     "font": "Archivo",
+     "size": 112,
+     "x": 134.4,
+     "y": 151.20000000000002,
+     "anchor": "left",
+     "color": "#14213D",
+     "axes": {
+      "wdth": 75,
+      "wght": 800
+     },
+     "letterSpacing": -0.01
+    }
+   ]
+  },
+  {
+   "duration": 4.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#CBDCE6",
+     "#E4ECEE"
+    ]
+   },
+   "layers": [
+    {
+     "text": "{\"at\": 0.3, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.62, \"y\": 0.3, \"r\": 0.11, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 604.8000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 34,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 604.8000000000001,
+     "anchor": "left",
+     "start": 0.27999999999999997,
+     "end": 0.73
+    },
+    {
+     "text": "{\"at\": 0.3, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.62, \"y\": 0.3, \"r\": 0.11, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 604.8000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.27999999999999997,
+     "end": 0.73
+    },
+    {
+     "text": "{\"at\": 0.75, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.8, \"y\": 0.22, \"r\": 0.135, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 644.8000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 34,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 644.8000000000001,
+     "anchor": "left",
+     "start": 0.73,
+     "end": 1.18
+    },
+    {
+     "text": "{\"at\": 0.75, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.8, \"y\": 0.22, \"r\": 0.135, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 644.8000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.73,
+     "end": 1.18
+    },
+    {
+     "text": "{\"at\": 1.2, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.5, \"y\": 0.24, \"r\": 0.16, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 684.8000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 34,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 684.8000000000001,
+     "anchor": "left",
+     "start": 1.18,
+     "end": 1.63
+    },
+    {
+     "text": "{\"at\": 1.2, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.5, \"y\": 0.24, \"r\": 0.16, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 684.8000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.18,
+     "end": 1.63
+    },
+    {
+     "text": "{\"at\": 1.65, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.88, \"y\": 0.36, \"r\": 0.11, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 724.8000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 34,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 724.8000000000001,
+     "anchor": "left",
+     "start": 1.6300000000000001,
+     "end": 2.08
+    },
+    {
+     "text": "{\"at\": 1.65, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.88, \"y\": 0.36, \"r\": 0.11, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 724.8000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.6300000000000001,
+     "end": 2.08
+    },
+    {
+     "text": "{\"at\": 2.1, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.7, \"y\": 0.36, \"r\": 0.135, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 764.8000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 34,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 764.8000000000001,
+     "anchor": "left",
+     "start": 2.08,
+     "end": 2.5300000000000002
+    },
+    {
+     "text": "{\"at\": 2.1, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.7, \"y\": 0.36, \"r\": 0.135, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 764.8000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.08,
+     "end": 2.5300000000000002
+    },
+    {
+     "text": "{\"at\": 2.55, \"shell\": \"peony\", \"ink\": \"vermilion\", \"x\": 0.56, \"y\": 0.34, \"r\": 0.16, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 804.8000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 34,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 804.8000000000001,
+     "anchor": "left",
+     "start": 2.53,
+     "end": 2.98
+    },
+    {
+     "text": "{\"at\": 2.55, \"shell\": \"peony\", \"ink\": \"vermilion\", \"x\": 0.56, \"y\": 0.34, \"r\": 0.16, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 804.8000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.53,
+     "end": 2.98
+    },
+    {
+     "text": "{\"at\": 3.0, \"shell\": \"pistil\", \"ink\": \"cobalt\", \"x\": 0.84, \"y\": 0.28, \"r\": 0.11, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 844.8000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 34,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 844.8000000000001,
+     "anchor": "left",
+     "start": 2.98,
+     "end": 3.43
+    },
+    {
+     "text": "{\"at\": 3.0, \"shell\": \"pistil\", \"ink\": \"cobalt\", \"x\": 0.84, \"y\": 0.28, \"r\": 0.11, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 844.8000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.98,
+     "end": 3.43
+    },
+    {
+     "text": "{\"at\": 3.45, \"shell\": \"ring\", \"ink\": \"vermilion\", \"x\": 0.66, \"y\": 0.2, \"r\": 0.135, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 884.8000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 34,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 884.8000000000001,
+     "anchor": "left",
+     "start": 3.4299999999999997,
+     "end": 3.88
+    },
+    {
+     "text": "{\"at\": 3.45, \"shell\": \"ring\", \"ink\": \"vermilion\", \"x\": 0.66, \"y\": 0.2, \"r\": 0.135, \"lift\": 0.55}",
+     "font": "IBM Plex Mono",
+     "size": 24,
+     "x": 134.4,
+     "y": 884.8000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 3.4299999999999997,
+     "end": 3.88
+    },
+    {
+     "script": [
+      "let cues = [",
+      "#{\"at\": 0.3, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.62, \"y\": 0.3, \"r\": 0.11, \"lift\": 0.55},",
+      "#{\"at\": 0.75, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.8, \"y\": 0.22, \"r\": 0.135, \"lift\": 0.55},",
+      "#{\"at\": 1.2, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.5, \"y\": 0.24, \"r\": 0.16, \"lift\": 0.55},",
+      "#{\"at\": 1.65, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.88, \"y\": 0.36, \"r\": 0.11, \"lift\": 0.55},",
+      "#{\"at\": 2.1, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.7, \"y\": 0.36, \"r\": 0.135, \"lift\": 0.55},",
+      "#{\"at\": 2.55, \"shell\": \"peony\", \"ink\": \"vermilion\", \"x\": 0.56, \"y\": 0.34, \"r\": 0.16, \"lift\": 0.55},",
+      "#{\"at\": 3.0, \"shell\": \"pistil\", \"ink\": \"cobalt\", \"x\": 0.84, \"y\": 0.28, \"r\": 0.11, \"lift\": 0.55},",
+      "#{\"at\": 3.45, \"shell\": \"ring\", \"ink\": \"vermilion\", \"x\": 0.66, \"y\": 0.2, \"r\": 0.135, \"lift\": 0.55},",
+      "];",
+      "let mv = [0.0, 0.0];",
+      "let origins = [[0.76, 0.56], [0.76, 0.597], [0.79, 0.6341], [0.7525, 0.6711], [0.7675, 0.7081], [0.7975, 0.7452], [0.775, 0.7822], [0.79, 0.8193]];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "let INK = #{ vermilion: \"#E8432A\", gold: \"#E9A23B\", cobalt: \"#2346B8\" };",
+      "for c0 in cues {",
+      "  let c = c0;",
+      "  if type_of(c0) == \"map\" {",
+      "    let ink = INK[c0.ink];",
+      "    let core = if c0.ink == \"gold\" { INK.vermilion } else { INK.gold };",
+      "    c = [c0.at, c0.x, c0.y, c0.r, c0.shell, ink, c0.lift, 0.0, core];",
+      "  }",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  let og = if k < origins.len() { origins[k] } else { () };",
+      "  if lift > 0.0 && type_of(og) == \"array\" {",
+      "    let ts = t0 - lift;",
+      "    let gx = og[0] * w; let gy = og[1] * h;",
+      "    for q in 0..4 {",
+      "      let lg = 0.035 * q;",
+      "      let e = \"(1-pow(1-clamp((t-\" + lg + \")/\" + lift + \",0,1),2.2))\";",
+      "      out.push(#{ shape: \"circle\", width: 12.0 - 2.5 * q, fill: ink, start: ts, end: t0 + 0.03,",
+      "        x: \"=\" + gx + \" + (\" + (cx - gx) + \")*\" + e + shx(mv[1] * w, mv[0] - ts),",
+      "        y: \"=\" + gy + \" + (\" + (cy - gy) + \")*\" + e, opacity: 1.0 - 0.22 * q });",
+      "    }",
+      "  } else if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  if kind != \"name\" {",
+      "    out.push(#{ shape: \"circle\", width: R * 2.6, fill: ink, blur: 60, start: t0, end: t0 + 1.2,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.22*exp(-3.5*t)\" });",
+      "    out.push(#{ shape: \"circle\", width: R * 0.5, fill: \"#FFF8EC\", blur: 18, start: t0, end: t0 + 0.4,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.9*exp(-12*t)\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let sd = k * 1000 + ri * 100 + j;",
+      "      let a = (j * 360.0 / n + 7.0 * ri + (rand(sd) - 0.5) * 3.0).to_radians();",
+      "      let rr = R * rf * (0.96 + 0.08 * rand(sd + 7));",
+      "      let life = 1.9 + 0.7 * rand(sd + 13);",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.2) + \" - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.3) + \" - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * (1.0 + 0.3 * rand(k * 50 + j)); let p2y = cy + vy + (0.30 + 0.16 * rand(k * 50 + j + 3)) * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "text": "Back comes a finished film,\nwith sound.",
+     "font": "Archivo",
+     "size": 84,
+     "x": 134.4,
+     "y": 151.20000000000002,
+     "anchor": "left",
+     "color": "#14213D",
+     "axes": {
+      "wdth": 75,
+      "wght": 800
+     },
+     "letterSpacing": -0.01,
+     "start": 0.9,
+     "lineHeight": 1.0,
+     "enter": {
+      "preset": "mask by line up",
+      "duration": 0.5
+     }
+    }
+   ]
+  },
+  {
+   "duration": 4.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#CBDCE6",
+     "#E4ECEE"
+    ]
+   },
+   "layers": [
+    {
+     "script": [
+      "let cues = [",
+      "#{\"at\": 0.15, \"shell\": \"chrys\", \"ink\": \"vermilion\", \"x\": 0.366, \"y\": 0.277, \"r\": 0.185, \"lift\": 0.5},",
+      "#{\"at\": 0.32, \"shell\": \"pistil\", \"ink\": \"gold\", \"x\": 0.175, \"y\": 0.424, \"r\": 0.157, \"lift\": 0.5},",
+      "#{\"at\": 0.49, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.164, \"y\": 0.413, \"r\": 0.124, \"lift\": 0.5},",
+      "#{\"at\": 0.66, \"shell\": \"willow\", \"ink\": \"vermilion\", \"x\": 0.45, \"y\": 0.247, \"r\": 0.129, \"lift\": 0.5},",
+      "#{\"at\": 0.83, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.443, \"y\": 0.534, \"r\": 0.132, \"lift\": 0.5},",
+      "#{\"at\": 1.0, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.29, \"y\": 0.458, \"r\": 0.215, \"lift\": 0.5},",
+      "#{\"at\": 1.17, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.559, \"y\": 0.371, \"r\": 0.218, \"lift\": 0.5},",
+      "#{\"at\": 1.34, \"shell\": \"peony\", \"ink\": \"gold\", \"x\": 0.155, \"y\": 0.546, \"r\": 0.149, \"lift\": 0.5},",
+      "#{\"at\": 1.51, \"shell\": \"willow\", \"ink\": \"cobalt\", \"x\": 0.23, \"y\": 0.265, \"r\": 0.151, \"lift\": 0.5},",
+      "#{\"at\": 1.68, \"shell\": \"ring\", \"ink\": \"vermilion\", \"x\": 0.74, \"y\": 0.289, \"r\": 0.178, \"lift\": 0.5},",
+      "#{\"at\": 1.85, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.606, \"y\": 0.362, \"r\": 0.175, \"lift\": 0.5},",
+      "#{\"at\": 2.02, \"shell\": \"pistil\", \"ink\": \"cobalt\", \"x\": 0.168, \"y\": 0.243, \"r\": 0.141, \"lift\": 0.5},",
+      "#{\"at\": 2.19, \"shell\": \"peony\", \"ink\": \"vermilion\", \"x\": 0.637, \"y\": 0.382, \"r\": 0.151, \"lift\": 0.5},",
+      "#{\"at\": 2.36, \"shell\": \"willow\", \"ink\": \"gold\", \"x\": 0.565, \"y\": 0.392, \"r\": 0.15, \"lift\": 0.5},",
+      "#{\"at\": 2.53, \"shell\": \"ring\", \"ink\": \"cobalt\", \"x\": 0.724, \"y\": 0.486, \"r\": 0.144, \"lift\": 0.5},",
+      "#{\"at\": 2.7, \"shell\": \"chrys\", \"ink\": \"vermilion\", \"x\": 0.557, \"y\": 0.42, \"r\": 0.208, \"lift\": 0.5},",
+      "#{\"at\": 2.87, \"shell\": \"pistil\", \"ink\": \"gold\", \"x\": 0.674, \"y\": 0.329, \"r\": 0.218, \"lift\": 0.5},",
+      "#{\"at\": 3.04, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.21, \"y\": 0.379, \"r\": 0.196, \"lift\": 0.5},",
+      "#{\"at\": 3.21, \"shell\": \"willow\", \"ink\": \"vermilion\", \"x\": 0.236, \"y\": 0.406, \"r\": 0.124, \"lift\": 0.5},",
+      "#{\"at\": 3.38, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.628, \"y\": 0.511, \"r\": 0.177, \"lift\": 0.5},",
+      "#{\"at\": 3.55, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.785, \"y\": 0.339, \"r\": 0.19, \"lift\": 0.5},",
+      "#{\"at\": 3.72, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.572, \"y\": 0.44, \"r\": 0.166, \"lift\": 0.5},",
+      "];",
+      "let mv = [0.0, 0.0];",
+      "let origins = [];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "let INK = #{ vermilion: \"#E8432A\", gold: \"#E9A23B\", cobalt: \"#2346B8\" };",
+      "for c0 in cues {",
+      "  let c = c0;",
+      "  if type_of(c0) == \"map\" {",
+      "    let ink = INK[c0.ink];",
+      "    let core = if c0.ink == \"gold\" { INK.vermilion } else { INK.gold };",
+      "    c = [c0.at, c0.x, c0.y, c0.r, c0.shell, ink, c0.lift, 0.0, core];",
+      "  }",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  let og = if k < origins.len() { origins[k] } else { () };",
+      "  if lift > 0.0 && type_of(og) == \"array\" {",
+      "    let ts = t0 - lift;",
+      "    let gx = og[0] * w; let gy = og[1] * h;",
+      "    for q in 0..4 {",
+      "      let lg = 0.035 * q;",
+      "      let e = \"(1-pow(1-clamp((t-\" + lg + \")/\" + lift + \",0,1),2.2))\";",
+      "      out.push(#{ shape: \"circle\", width: 12.0 - 2.5 * q, fill: ink, start: ts, end: t0 + 0.03,",
+      "        x: \"=\" + gx + \" + (\" + (cx - gx) + \")*\" + e + shx(mv[1] * w, mv[0] - ts),",
+      "        y: \"=\" + gy + \" + (\" + (cy - gy) + \")*\" + e, opacity: 1.0 - 0.22 * q });",
+      "    }",
+      "  } else if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  if kind != \"name\" {",
+      "    out.push(#{ shape: \"circle\", width: R * 2.6, fill: ink, blur: 60, start: t0, end: t0 + 1.2,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.22*exp(-3.5*t)\" });",
+      "    out.push(#{ shape: \"circle\", width: R * 0.5, fill: \"#FFF8EC\", blur: 18, start: t0, end: t0 + 0.4,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.9*exp(-12*t)\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let sd = k * 1000 + ri * 100 + j;",
+      "      let a = (j * 360.0 / n + 7.0 * ri + (rand(sd) - 0.5) * 3.0).to_radians();",
+      "      let rr = R * rf * (0.96 + 0.08 * rand(sd + 7));",
+      "      let life = 1.9 + 0.7 * rand(sd + 13);",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.2) + \" - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.3) + \" - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * (1.0 + 0.3 * rand(k * 50 + j)); let p2y = cy + vy + (0.30 + 0.16 * rand(k * 50 + j + 3)) * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "text": "{\"at\": 0.15, \"shell\": \"chrys\", \"ink\": \"vermilion\", \"x\": 0.366, \"y\": 0.277, \"r\": 0.185, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.15,
+     "end": 0.32
+    },
+    {
+     "text": "{\"at\": 0.32, \"shell\": \"pistil\", \"ink\": \"gold\", \"x\": 0.175, \"y\": 0.424, \"r\": 0.157, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.32,
+     "end": 0.49
+    },
+    {
+     "text": "{\"at\": 0.49, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.164, \"y\": 0.413, \"r\": 0.124, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.49,
+     "end": 0.66
+    },
+    {
+     "text": "{\"at\": 0.66, \"shell\": \"willow\", \"ink\": \"vermilion\", \"x\": 0.45, \"y\": 0.247, \"r\": 0.129, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.66,
+     "end": 0.83
+    },
+    {
+     "text": "{\"at\": 0.83, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.443, \"y\": 0.534, \"r\": 0.132, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.83,
+     "end": 1.0
+    },
+    {
+     "text": "{\"at\": 1.0, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.29, \"y\": 0.458, \"r\": 0.215, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.0,
+     "end": 1.17
+    },
+    {
+     "text": "{\"at\": 1.17, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.559, \"y\": 0.371, \"r\": 0.218, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.17,
+     "end": 1.34
+    },
+    {
+     "text": "{\"at\": 1.34, \"shell\": \"peony\", \"ink\": \"gold\", \"x\": 0.155, \"y\": 0.546, \"r\": 0.149, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.34,
+     "end": 1.51
+    },
+    {
+     "text": "{\"at\": 1.51, \"shell\": \"willow\", \"ink\": \"cobalt\", \"x\": 0.23, \"y\": 0.265, \"r\": 0.151, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.51,
+     "end": 1.68
+    },
+    {
+     "text": "{\"at\": 1.68, \"shell\": \"ring\", \"ink\": \"vermilion\", \"x\": 0.74, \"y\": 0.289, \"r\": 0.178, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.68,
+     "end": 1.85
+    },
+    {
+     "text": "{\"at\": 1.85, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.606, \"y\": 0.362, \"r\": 0.175, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.85,
+     "end": 2.02
+    },
+    {
+     "text": "{\"at\": 2.02, \"shell\": \"pistil\", \"ink\": \"cobalt\", \"x\": 0.168, \"y\": 0.243, \"r\": 0.141, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.02,
+     "end": 2.19
+    },
+    {
+     "text": "{\"at\": 2.19, \"shell\": \"peony\", \"ink\": \"vermilion\", \"x\": 0.637, \"y\": 0.382, \"r\": 0.151, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.19,
+     "end": 2.36
+    },
+    {
+     "text": "{\"at\": 2.36, \"shell\": \"willow\", \"ink\": \"gold\", \"x\": 0.565, \"y\": 0.392, \"r\": 0.15, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.36,
+     "end": 2.53
+    },
+    {
+     "text": "{\"at\": 2.53, \"shell\": \"ring\", \"ink\": \"cobalt\", \"x\": 0.724, \"y\": 0.486, \"r\": 0.144, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.53,
+     "end": 2.7
+    },
+    {
+     "text": "{\"at\": 2.7, \"shell\": \"chrys\", \"ink\": \"vermilion\", \"x\": 0.557, \"y\": 0.42, \"r\": 0.208, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.7,
+     "end": 2.87
+    },
+    {
+     "text": "{\"at\": 2.87, \"shell\": \"pistil\", \"ink\": \"gold\", \"x\": 0.674, \"y\": 0.329, \"r\": 0.218, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.87,
+     "end": 3.04
+    },
+    {
+     "text": "{\"at\": 3.04, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.21, \"y\": 0.379, \"r\": 0.196, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 3.04,
+     "end": 3.21
+    },
+    {
+     "text": "{\"at\": 3.21, \"shell\": \"willow\", \"ink\": \"vermilion\", \"x\": 0.236, \"y\": 0.406, \"r\": 0.124, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 3.21,
+     "end": 3.38
+    },
+    {
+     "text": "{\"at\": 3.38, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.628, \"y\": 0.511, \"r\": 0.177, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 3.38,
+     "end": 3.55
+    },
+    {
+     "text": "{\"at\": 3.55, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.785, \"y\": 0.339, \"r\": 0.19, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 3.55,
+     "end": 3.72
+    },
+    {
+     "text": "{\"at\": 3.72, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.572, \"y\": 0.44, \"r\": 0.166, \"lift\": 0.5}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 3.72,
+     "end": 4.0
+    }
+   ]
+  },
+  {
+   "duration": 6.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#CBDCE6",
+     "#E4ECEE"
+    ]
+   },
+   "layers": [
+    {
+     "script": [
+      "let cues = [",
+      "#{\"at\": 0.15, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.25, \"y\": 0.4, \"r\": 0.09, \"lift\": 0.5},",
+      "#{\"at\": 0.75, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.14, \"y\": 0.28, \"r\": 0.11, \"lift\": 0.5},",
+      "#{\"at\": 1.35, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.36, \"y\": 0.3, \"r\": 0.13, \"lift\": 0.5},",
+      "#{\"at\": 1.95, \"shell\": \"peony\", \"ink\": \"gold\", \"x\": 0.22, \"y\": 0.3, \"r\": 0.09, \"lift\": 0.5},",
+      "#{\"at\": 2.55, \"shell\": \"peony\", \"ink\": \"vermilion\", \"x\": 0.33, \"y\": 0.55, \"r\": 0.11, \"lift\": 0.5},",
+      "#{\"at\": 3.15, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.15, \"y\": 0.5, \"r\": 0.13, \"lift\": 0.5},",
+      "#{\"at\": 3.75, \"shell\": \"pistil\", \"ink\": \"cobalt\", \"x\": 0.27, \"y\": 0.26, \"r\": 0.09, \"lift\": 0.5},",
+      "#{\"at\": 4.35, \"shell\": \"ring\", \"ink\": \"vermilion\", \"x\": 0.38, \"y\": 0.44, \"r\": 0.11, \"lift\": 0.5},",
+      "#{\"at\": 4.95, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.2, \"y\": 0.42, \"r\": 0.13, \"lift\": 0.5},",
+      "];",
+      "let mv = [3.2, 0.25];",
+      "let origins = [];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "let INK = #{ vermilion: \"#E8432A\", gold: \"#E9A23B\", cobalt: \"#2346B8\" };",
+      "for c0 in cues {",
+      "  let c = c0;",
+      "  if type_of(c0) == \"map\" {",
+      "    let ink = INK[c0.ink];",
+      "    let core = if c0.ink == \"gold\" { INK.vermilion } else { INK.gold };",
+      "    c = [c0.at, c0.x, c0.y, c0.r, c0.shell, ink, c0.lift, 0.0, core];",
+      "  }",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  let og = if k < origins.len() { origins[k] } else { () };",
+      "  if lift > 0.0 && type_of(og) == \"array\" {",
+      "    let ts = t0 - lift;",
+      "    let gx = og[0] * w; let gy = og[1] * h;",
+      "    for q in 0..4 {",
+      "      let lg = 0.035 * q;",
+      "      let e = \"(1-pow(1-clamp((t-\" + lg + \")/\" + lift + \",0,1),2.2))\";",
+      "      out.push(#{ shape: \"circle\", width: 12.0 - 2.5 * q, fill: ink, start: ts, end: t0 + 0.03,",
+      "        x: \"=\" + gx + \" + (\" + (cx - gx) + \")*\" + e + shx(mv[1] * w, mv[0] - ts),",
+      "        y: \"=\" + gy + \" + (\" + (cy - gy) + \")*\" + e, opacity: 1.0 - 0.22 * q });",
+      "    }",
+      "  } else if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  if kind != \"name\" {",
+      "    out.push(#{ shape: \"circle\", width: R * 2.6, fill: ink, blur: 60, start: t0, end: t0 + 1.2,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.22*exp(-3.5*t)\" });",
+      "    out.push(#{ shape: \"circle\", width: R * 0.5, fill: \"#FFF8EC\", blur: 18, start: t0, end: t0 + 0.4,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.9*exp(-12*t)\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let sd = k * 1000 + ri * 100 + j;",
+      "      let a = (j * 360.0 / n + 7.0 * ri + (rand(sd) - 0.5) * 3.0).to_radians();",
+      "      let rr = R * rf * (0.96 + 0.08 * rand(sd + 7));",
+      "      let life = 1.9 + 0.7 * rand(sd + 13);",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.2) + \" - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.3) + \" - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * (1.0 + 0.3 * rand(k * 50 + j)); let p2y = cy + vy + (0.30 + 0.16 * rand(k * 50 + j + 3)) * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "script": [
+      "let cues = [",
+      "#{\"at\": 0.15, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.75, \"y\": 0.4, \"r\": 0.09, \"lift\": 0.5},",
+      "#{\"at\": 0.75, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.64, \"y\": 0.28, \"r\": 0.11, \"lift\": 0.5},",
+      "#{\"at\": 1.35, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.86, \"y\": 0.3, \"r\": 0.13, \"lift\": 0.5},",
+      "#{\"at\": 1.95, \"shell\": \"peony\", \"ink\": \"gold\", \"x\": 0.72, \"y\": 0.3, \"r\": 0.09, \"lift\": 0.5},",
+      "#{\"at\": 2.55, \"shell\": \"peony\", \"ink\": \"vermilion\", \"x\": 0.83, \"y\": 0.55, \"r\": 0.11, \"lift\": 0.5},",
+      "#{\"at\": 3.15, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.65, \"y\": 0.5, \"r\": 0.13, \"lift\": 0.5},",
+      "#{\"at\": 3.75, \"shell\": \"pistil\", \"ink\": \"cobalt\", \"x\": 0.77, \"y\": 0.26, \"r\": 0.09, \"lift\": 0.5},",
+      "#{\"at\": 4.35, \"shell\": \"ring\", \"ink\": \"vermilion\", \"x\": 0.88, \"y\": 0.44, \"r\": 0.11, \"lift\": 0.5},",
+      "#{\"at\": 4.95, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.7, \"y\": 0.42, \"r\": 0.13, \"lift\": 0.5},",
+      "];",
+      "let mv = [3.2, -0.25];",
+      "let origins = [];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "let INK = #{ vermilion: \"#E8432A\", gold: \"#E9A23B\", cobalt: \"#2346B8\" };",
+      "for c0 in cues {",
+      "  let c = c0;",
+      "  if type_of(c0) == \"map\" {",
+      "    let ink = INK[c0.ink];",
+      "    let core = if c0.ink == \"gold\" { INK.vermilion } else { INK.gold };",
+      "    c = [c0.at, c0.x, c0.y, c0.r, c0.shell, ink, c0.lift, 0.0, core];",
+      "  }",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  let og = if k < origins.len() { origins[k] } else { () };",
+      "  if lift > 0.0 && type_of(og) == \"array\" {",
+      "    let ts = t0 - lift;",
+      "    let gx = og[0] * w; let gy = og[1] * h;",
+      "    for q in 0..4 {",
+      "      let lg = 0.035 * q;",
+      "      let e = \"(1-pow(1-clamp((t-\" + lg + \")/\" + lift + \",0,1),2.2))\";",
+      "      out.push(#{ shape: \"circle\", width: 12.0 - 2.5 * q, fill: ink, start: ts, end: t0 + 0.03,",
+      "        x: \"=\" + gx + \" + (\" + (cx - gx) + \")*\" + e + shx(mv[1] * w, mv[0] - ts),",
+      "        y: \"=\" + gy + \" + (\" + (cy - gy) + \")*\" + e, opacity: 1.0 - 0.22 * q });",
+      "    }",
+      "  } else if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  if kind != \"name\" {",
+      "    out.push(#{ shape: \"circle\", width: R * 2.6, fill: ink, blur: 60, start: t0, end: t0 + 1.2,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.22*exp(-3.5*t)\" });",
+      "    out.push(#{ shape: \"circle\", width: R * 0.5, fill: \"#FFF8EC\", blur: 18, start: t0, end: t0 + 0.4,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.9*exp(-12*t)\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let sd = k * 1000 + ri * 100 + j;",
+      "      let a = (j * 360.0 / n + 7.0 * ri + (rand(sd) - 0.5) * 3.0).to_radians();",
+      "      let rr = R * rf * (0.96 + 0.08 * rand(sd + 7));",
+      "      let life = 1.9 + 0.7 * rand(sd + 13);",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.2) + \" - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.3) + \" - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * (1.0 + 0.3 * rand(k * 50 + j)); let p2y = cy + vy + (0.30 + 0.16 * rand(k * 50 + j + 3)) * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": 3,
+     "height": 1080,
+     "fill": "#14213D",
+     "x": 960.0,
+     "y": 540.0,
+     "end": 3.5,
+     "animate": [
+      {
+       "to": {
+        "scaleY": 0
+       },
+       "at": 3.2,
+       "duration": 0.3,
+       "ease": "inQuad"
+      }
+     ]
+    },
+    {
+     "text": "TUESDAY 21:00:00",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 993.6,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "end": 3.3000000000000003,
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.2
+     }
+    },
+    {
+     "text": "SATURDAY 21:00:00",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 1027.2,
+     "y": 993.6,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "end": 3.3000000000000003,
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.2
+     }
+    },
+    {
+     "text": "Same page. Same film.\nByte for byte.",
+     "font": "Archivo",
+     "size": 84,
+     "x": 134.4,
+     "y": 151.20000000000002,
+     "anchor": "left",
+     "color": "#14213D",
+     "axes": {
+      "wdth": 75,
+      "wght": 800
+     },
+     "letterSpacing": -0.01,
+     "start": 3.9000000000000004,
+     "lineHeight": 1.0,
+     "enter": {
+      "preset": "mask by line up",
+      "duration": 0.5
+     }
+    },
+    {
+     "text": "TUESDAY = SATURDAY",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 993.6,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 3.6,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.2
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#CBDCE6",
+     "#E4ECEE"
+    ]
+   },
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "fill": {
+      "type": "linear",
+      "angle": 180,
+      "stops": [
+       "#7A92AA",
+       "#BAC6CD"
+      ]
+     },
+     "opacity": 0,
+     "animate": [
+      {
+       "to": {
+        "opacity": 1
+       },
+       "duration": 1.6,
+       "ease": "inOutCubic"
+      }
+     ]
+    },
+    {
+     "text": "{\"at\": 0.05, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.46, \"y\": 0.44, \"r\": 0.251, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 540.0,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920
+    },
+    {
+     "shape": "rect",
+     "width": 18,
+     "height": 40,
+     "fill": "#E8432A",
+     "x": 1824.4,
+     "y": 540.0,
+     "opacity": "=step(0.5, fract(t*2))"
+    }
+   ]
+  },
+  {
+   "duration": 6.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#7A92AA",
+     "#BAC6CD"
+    ]
+   },
+   "layers": [
+    {
+     "script": [
+      "let cues = [",
+      "#{\"at\": 0.05, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.46, \"y\": 0.44, \"r\": 0.251, \"lift\": 0.45},",
+      "#{\"at\": 0.16, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.471, \"y\": 0.414, \"r\": 0.21, \"lift\": 0.45},",
+      "#{\"at\": 0.27, \"shell\": \"ring\", \"ink\": \"cobalt\", \"x\": 0.235, \"y\": 0.416, \"r\": 0.216, \"lift\": 0.45},",
+      "#{\"at\": 0.38, \"shell\": \"willow\", \"ink\": \"gold\", \"x\": 0.746, \"y\": 0.207, \"r\": 0.176, \"lift\": 0.45},",
+      "#{\"at\": 0.49, \"shell\": \"peony\", \"ink\": \"vermilion\", \"x\": 0.156, \"y\": 0.565, \"r\": 0.223, \"lift\": 0.45},",
+      "#{\"at\": 0.6, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.115, \"y\": 0.651, \"r\": 0.256, \"lift\": 0.45},",
+      "#{\"at\": 0.71, \"shell\": \"pistil\", \"ink\": \"gold\", \"x\": 0.629, \"y\": 0.468, \"r\": 0.159, \"lift\": 0.45},",
+      "#{\"at\": 0.82, \"shell\": \"ring\", \"ink\": \"vermilion\", \"x\": 0.093, \"y\": 0.424, \"r\": 0.147, \"lift\": 0.45},",
+      "#{\"at\": 0.93, \"shell\": \"willow\", \"ink\": \"cobalt\", \"x\": 0.24, \"y\": 0.281, \"r\": 0.144, \"lift\": 0.45},",
+      "#{\"at\": 1.04, \"shell\": \"peony\", \"ink\": \"gold\", \"x\": 0.47, \"y\": 0.38, \"r\": 0.241, \"lift\": 0.45},",
+      "#{\"at\": 1.15, \"shell\": \"chrys\", \"ink\": \"vermilion\", \"x\": 0.516, \"y\": 0.48, \"r\": 0.2, \"lift\": 0.45},",
+      "#{\"at\": 1.26, \"shell\": \"pistil\", \"ink\": \"cobalt\", \"x\": 0.636, \"y\": 0.389, \"r\": 0.173, \"lift\": 0.45},",
+      "#{\"at\": 1.37, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.918, \"y\": 0.658, \"r\": 0.241, \"lift\": 0.45},",
+      "#{\"at\": 1.48, \"shell\": \"willow\", \"ink\": \"vermilion\", \"x\": 0.675, \"y\": 0.318, \"r\": 0.168, \"lift\": 0.45},",
+      "#{\"at\": 1.59, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.323, \"y\": 0.195, \"r\": 0.232, \"lift\": 0.45},",
+      "#{\"at\": 1.7, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.416, \"y\": 0.583, \"r\": 0.186, \"lift\": 0.45},",
+      "#{\"at\": 1.81, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.885, \"y\": 0.584, \"r\": 0.14, \"lift\": 0.45},",
+      "#{\"at\": 1.92, \"shell\": \"ring\", \"ink\": \"cobalt\", \"x\": 0.256, \"y\": 0.615, \"r\": 0.196, \"lift\": 0.45},",
+      "#{\"at\": 2.03, \"shell\": \"willow\", \"ink\": \"gold\", \"x\": 0.904, \"y\": 0.359, \"r\": 0.149, \"lift\": 0.45},",
+      "#{\"at\": 2.14, \"shell\": \"peony\", \"ink\": \"vermilion\", \"x\": 0.609, \"y\": 0.549, \"r\": 0.172, \"lift\": 0.45},",
+      "#{\"at\": 2.25, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.153, \"y\": 0.326, \"r\": 0.256, \"lift\": 0.45},",
+      "#{\"at\": 2.36, \"shell\": \"pistil\", \"ink\": \"gold\", \"x\": 0.717, \"y\": 0.219, \"r\": 0.17, \"lift\": 0.45},",
+      "#{\"at\": 2.47, \"shell\": \"ring\", \"ink\": \"vermilion\", \"x\": 0.165, \"y\": 0.19, \"r\": 0.236, \"lift\": 0.45},",
+      "#{\"at\": 2.58, \"shell\": \"willow\", \"ink\": \"cobalt\", \"x\": 0.229, \"y\": 0.44, \"r\": 0.194, \"lift\": 0.45},",
+      "#{\"at\": 2.69, \"shell\": \"peony\", \"ink\": \"gold\", \"x\": 0.24, \"y\": 0.526, \"r\": 0.156, \"lift\": 0.45},",
+      "#{\"at\": 2.8, \"shell\": \"chrys\", \"ink\": \"vermilion\", \"x\": 0.621, \"y\": 0.218, \"r\": 0.19, \"lift\": 0.45},",
+      "#{\"at\": 2.91, \"shell\": \"pistil\", \"ink\": \"cobalt\", \"x\": 0.259, \"y\": 0.295, \"r\": 0.257, \"lift\": 0.45},",
+      "#{\"at\": 3.02, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.755, \"y\": 0.312, \"r\": 0.246, \"lift\": 0.45},",
+      "#{\"at\": 3.13, \"shell\": \"willow\", \"ink\": \"vermilion\", \"x\": 0.257, \"y\": 0.357, \"r\": 0.243, \"lift\": 0.45},",
+      "#{\"at\": 3.24, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.619, \"y\": 0.21, \"r\": 0.259, \"lift\": 0.45},",
+      "#{\"at\": 3.98, \"shell\": \"pistil\", \"ink\": \"gold\", \"x\": 0.5, \"y\": 0.47, \"r\": 0.2, \"lift\": 0.7},",
+      "[4.0, 0.5, 0.42, 0.03, \"name\", \"#E8432A\", 0, 0, [\".###..#...#.#####.#...#.#####.#####\", \"#...#.##..#...#...#..#....#.....#..\", \"#...#.#.#.#...#...#.#.....#.....#..\", \"#####.#..##...#...##......#.....#..\", \"#...#.#...#...#...#.#.....#.....#..\", \"#...#.#...#...#...#..#....#.....#..\", \"#...#.#...#.#####.#...#.#####...#..\"], 0.5, 0.47],",
+      "];",
+      "let mv = [0.0, 0.0];",
+      "let origins = [];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "let INK = #{ vermilion: \"#E8432A\", gold: \"#E9A23B\", cobalt: \"#2346B8\" };",
+      "for c0 in cues {",
+      "  let c = c0;",
+      "  if type_of(c0) == \"map\" {",
+      "    let ink = INK[c0.ink];",
+      "    let core = if c0.ink == \"gold\" { INK.vermilion } else { INK.gold };",
+      "    c = [c0.at, c0.x, c0.y, c0.r, c0.shell, ink, c0.lift, 0.0, core];",
+      "  }",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  let og = if k < origins.len() { origins[k] } else { () };",
+      "  if lift > 0.0 && type_of(og) == \"array\" {",
+      "    let ts = t0 - lift;",
+      "    let gx = og[0] * w; let gy = og[1] * h;",
+      "    for q in 0..4 {",
+      "      let lg = 0.035 * q;",
+      "      let e = \"(1-pow(1-clamp((t-\" + lg + \")/\" + lift + \",0,1),2.2))\";",
+      "      out.push(#{ shape: \"circle\", width: 12.0 - 2.5 * q, fill: ink, start: ts, end: t0 + 0.03,",
+      "        x: \"=\" + gx + \" + (\" + (cx - gx) + \")*\" + e + shx(mv[1] * w, mv[0] - ts),",
+      "        y: \"=\" + gy + \" + (\" + (cy - gy) + \")*\" + e, opacity: 1.0 - 0.22 * q });",
+      "    }",
+      "  } else if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  if kind != \"name\" {",
+      "    out.push(#{ shape: \"circle\", width: R * 2.6, fill: ink, blur: 60, start: t0, end: t0 + 1.2,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.22*exp(-3.5*t)\" });",
+      "    out.push(#{ shape: \"circle\", width: R * 0.5, fill: \"#FFF8EC\", blur: 18, start: t0, end: t0 + 0.4,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.9*exp(-12*t)\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let sd = k * 1000 + ri * 100 + j;",
+      "      let a = (j * 360.0 / n + 7.0 * ri + (rand(sd) - 0.5) * 3.0).to_radians();",
+      "      let rr = R * rf * (0.96 + 0.08 * rand(sd + 7));",
+      "      let life = 1.9 + 0.7 * rand(sd + 13);",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.2) + \" - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.3) + \" - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * (1.0 + 0.3 * rand(k * 50 + j)); let p2y = cy + vy + (0.30 + 0.16 * rand(k * 50 + j + 3)) * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "text": "{\"at\": 0.05, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.46, \"y\": 0.44, \"r\": 0.251, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.05,
+     "end": 0.16
+    },
+    {
+     "text": "{\"at\": 0.16, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.471, \"y\": 0.414, \"r\": 0.21, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.16,
+     "end": 0.27
+    },
+    {
+     "text": "{\"at\": 0.27, \"shell\": \"ring\", \"ink\": \"cobalt\", \"x\": 0.235, \"y\": 0.416, \"r\": 0.216, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.27,
+     "end": 0.38
+    },
+    {
+     "text": "{\"at\": 0.38, \"shell\": \"willow\", \"ink\": \"gold\", \"x\": 0.746, \"y\": 0.207, \"r\": 0.176, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.38,
+     "end": 0.49
+    },
+    {
+     "text": "{\"at\": 0.49, \"shell\": \"peony\", \"ink\": \"vermilion\", \"x\": 0.156, \"y\": 0.565, \"r\": 0.223, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.49,
+     "end": 0.6
+    },
+    {
+     "text": "{\"at\": 0.6, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.115, \"y\": 0.651, \"r\": 0.256, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.6,
+     "end": 0.71
+    },
+    {
+     "text": "{\"at\": 0.71, \"shell\": \"pistil\", \"ink\": \"gold\", \"x\": 0.629, \"y\": 0.468, \"r\": 0.159, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.71,
+     "end": 0.82
+    },
+    {
+     "text": "{\"at\": 0.82, \"shell\": \"ring\", \"ink\": \"vermilion\", \"x\": 0.093, \"y\": 0.424, \"r\": 0.147, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.82,
+     "end": 0.93
+    },
+    {
+     "text": "{\"at\": 0.93, \"shell\": \"willow\", \"ink\": \"cobalt\", \"x\": 0.24, \"y\": 0.281, \"r\": 0.144, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.93,
+     "end": 1.04
+    },
+    {
+     "text": "{\"at\": 1.04, \"shell\": \"peony\", \"ink\": \"gold\", \"x\": 0.47, \"y\": 0.38, \"r\": 0.241, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.04,
+     "end": 1.15
+    },
+    {
+     "text": "{\"at\": 1.15, \"shell\": \"chrys\", \"ink\": \"vermilion\", \"x\": 0.516, \"y\": 0.48, \"r\": 0.2, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.15,
+     "end": 1.26
+    },
+    {
+     "text": "{\"at\": 1.26, \"shell\": \"pistil\", \"ink\": \"cobalt\", \"x\": 0.636, \"y\": 0.389, \"r\": 0.173, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.26,
+     "end": 1.37
+    },
+    {
+     "text": "{\"at\": 1.37, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.918, \"y\": 0.658, \"r\": 0.241, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.37,
+     "end": 1.48
+    },
+    {
+     "text": "{\"at\": 1.48, \"shell\": \"willow\", \"ink\": \"vermilion\", \"x\": 0.675, \"y\": 0.318, \"r\": 0.168, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.48,
+     "end": 1.59
+    },
+    {
+     "text": "{\"at\": 1.59, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.323, \"y\": 0.195, \"r\": 0.232, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.59,
+     "end": 1.7
+    },
+    {
+     "text": "{\"at\": 1.7, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.416, \"y\": 0.583, \"r\": 0.186, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.7,
+     "end": 1.81
+    },
+    {
+     "text": "{\"at\": 1.81, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.885, \"y\": 0.584, \"r\": 0.14, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.81,
+     "end": 1.92
+    },
+    {
+     "text": "{\"at\": 1.92, \"shell\": \"ring\", \"ink\": \"cobalt\", \"x\": 0.256, \"y\": 0.615, \"r\": 0.196, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.92,
+     "end": 2.03
+    },
+    {
+     "text": "{\"at\": 2.03, \"shell\": \"willow\", \"ink\": \"gold\", \"x\": 0.904, \"y\": 0.359, \"r\": 0.149, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.03,
+     "end": 2.14
+    },
+    {
+     "text": "{\"at\": 2.14, \"shell\": \"peony\", \"ink\": \"vermilion\", \"x\": 0.609, \"y\": 0.549, \"r\": 0.172, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.14,
+     "end": 2.25
+    },
+    {
+     "text": "{\"at\": 2.25, \"shell\": \"chrys\", \"ink\": \"cobalt\", \"x\": 0.153, \"y\": 0.326, \"r\": 0.256, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.25,
+     "end": 2.36
+    },
+    {
+     "text": "{\"at\": 2.36, \"shell\": \"pistil\", \"ink\": \"gold\", \"x\": 0.717, \"y\": 0.219, \"r\": 0.17, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.36,
+     "end": 2.47
+    },
+    {
+     "text": "{\"at\": 2.47, \"shell\": \"ring\", \"ink\": \"vermilion\", \"x\": 0.165, \"y\": 0.19, \"r\": 0.236, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.47,
+     "end": 2.58
+    },
+    {
+     "text": "{\"at\": 2.58, \"shell\": \"willow\", \"ink\": \"cobalt\", \"x\": 0.229, \"y\": 0.44, \"r\": 0.194, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.58,
+     "end": 2.69
+    },
+    {
+     "text": "{\"at\": 2.69, \"shell\": \"peony\", \"ink\": \"gold\", \"x\": 0.24, \"y\": 0.526, \"r\": 0.156, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.69,
+     "end": 2.8
+    },
+    {
+     "text": "{\"at\": 2.8, \"shell\": \"chrys\", \"ink\": \"vermilion\", \"x\": 0.621, \"y\": 0.218, \"r\": 0.19, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.8,
+     "end": 2.91
+    },
+    {
+     "text": "{\"at\": 2.91, \"shell\": \"pistil\", \"ink\": \"cobalt\", \"x\": 0.259, \"y\": 0.295, \"r\": 0.257, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.91,
+     "end": 3.02
+    },
+    {
+     "text": "{\"at\": 3.02, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.755, \"y\": 0.312, \"r\": 0.246, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 3.02,
+     "end": 3.13
+    },
+    {
+     "text": "{\"at\": 3.13, \"shell\": \"willow\", \"ink\": \"vermilion\", \"x\": 0.257, \"y\": 0.357, \"r\": 0.243, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 3.13,
+     "end": 3.24
+    },
+    {
+     "text": "{\"at\": 3.24, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.619, \"y\": 0.21, \"r\": 0.259, \"lift\": 0.45}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 3.24,
+     "end": 3.98
+    },
+    {
+     "text": "{\"at\": 3.98, \"shell\": \"pistil\", \"ink\": \"gold\", \"x\": 0.5, \"y\": 0.47, \"r\": 0.2, \"lift\": 0.7}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 86.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 3.98,
+     "end": 4.6
+    }
+   ]
+  },
+  {
+   "duration": 6.0,
+   "background": {
+    "type": "linear",
+    "angle": 180,
+    "stops": [
+     "#7A92AA",
+     "#BAC6CD"
+    ]
+   },
+   "layers": [
+    {
+     "draw": [
+      {
+       "circle": [
+        441.6,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        474.0,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        506.4,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        798.0,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        830.4,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        895.2,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        927.6,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1122.0,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1186.8,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1219.2,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1284.0,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1316.4,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1381.2,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1413.6,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1478.4,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1510.8,
+        356.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        409.2,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        538.8,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        636.0,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1089.6,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        388.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        409.2,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        538.8,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        668.4,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1057.2,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        421.2,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        409.2,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        441.6,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        474.0,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        506.4,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        538.8,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        700.8,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1024.8,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        453.6,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        409.2,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        538.8,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1057.2,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        486.0,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        409.2,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        538.8,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1089.6,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        518.4,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        409.2,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        538.8,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        603.6,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        733.2,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        798.0,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        830.4,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        862.8,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        895.2,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        927.6,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        992.4,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1122.0,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1186.8,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1219.2,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1251.6,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1284.0,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1316.4,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      },
+      {
+       "circle": [
+        1446.0,
+        550.8,
+        10.7
+       ],
+       "fill": "#E8432A"
+      }
+     ]
+    },
+    {
+     "script": [
+      "let cues = [",
+      "#{\"at\": 2.65, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.86, \"y\": 0.17, \"r\": 0.07, \"lift\": 0.25},",
+      "#{\"at\": 3.45, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.72, \"y\": 0.12, \"r\": 0.07, \"lift\": 0.25},",
+      "#{\"at\": 4.25, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.93, \"y\": 0.33, \"r\": 0.07, \"lift\": 0.25},",
+      "#{\"at\": 5.05, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.79, \"y\": 0.29, \"r\": 0.07, \"lift\": 0.25},",
+      "];",
+      "let mv = [0.0, 0.0];",
+      "let origins = [];",
+      "fn shx(dx, a) {",
+      "  if dx == 0.0 { return \"\"; }",
+      "  let c = \"clamp((t-(\" + a + \"))/0.6,0,1)\";",
+      "  \" + \" + dx + \"*(\" + c + \"*\" + c + \"*(3-2*\" + c + \"))\"",
+      "}",
+      "// Shell generator: each cue [t, x, y, R, kind, ink, lift] draws one firework,",
+      "// hanabi-catalogue style: a prefire trail rises for `lift` s and breaks at t.",
+      "let out = [];",
+      "let k = 0;",
+      "let INK = #{ vermilion: \"#E8432A\", gold: \"#E9A23B\", cobalt: \"#2346B8\" };",
+      "for c0 in cues {",
+      "  let c = c0;",
+      "  if type_of(c0) == \"map\" {",
+      "    let ink = INK[c0.ink];",
+      "    let core = if c0.ink == \"gold\" { INK.vermilion } else { INK.gold };",
+      "    c = [c0.at, c0.x, c0.y, c0.r, c0.shell, ink, c0.lift, 0.0, core];",
+      "  }",
+      "  let t0 = c[0]; let cx = c[1] * w; let cy = c[2] * h; let R = c[3] * h; let kind = c[4]; let ink = c[5];",
+      "  let lift = if c.len() > 6 { c[6] } else { 0.0 };",
+      "  let ox = if c.len() > 7 { c[7] * w } else { 0.0 };",
+      "  let s = 1.0 * k;",
+      "  // lift trail: a thin capsule rising from below the frame to the break",
+      "  let og = if k < origins.len() { origins[k] } else { () };",
+      "  if lift > 0.0 && type_of(og) == \"array\" {",
+      "    let ts = t0 - lift;",
+      "    let gx = og[0] * w; let gy = og[1] * h;",
+      "    for q in 0..4 {",
+      "      let lg = 0.035 * q;",
+      "      let e = \"(1-pow(1-clamp((t-\" + lg + \")/\" + lift + \",0,1),2.2))\";",
+      "      out.push(#{ shape: \"circle\", width: 12.0 - 2.5 * q, fill: ink, start: ts, end: t0 + 0.03,",
+      "        x: \"=\" + gx + \" + (\" + (cx - gx) + \")*\" + e + shx(mv[1] * w, mv[0] - ts),",
+      "        y: \"=\" + gy + \" + (\" + (cy - gy) + \")*\" + e, opacity: 1.0 - 0.22 * q });",
+      "    }",
+      "  } else if lift > 0.0 {",
+      "    let y0 = h + 40.0;",
+      "    let ts = t0 - lift;",
+      "    out.push(#{ shape: \"rect\", width: 5, height: 70, radius: 3, fill: ink, x: \"=\" + (cx + ox) + shx(mv[1] * w, mv[0] - ts), start: ts, end: t0 + 0.02,",
+      "      y: \"=\" + y0 + \" + (\" + (cy - y0) + \")*(1-pow(1-clamp(t/\" + lift + \",0,1),2.2))\",",
+      "      opacity: \"=0.85\" });",
+      "  }",
+      "  if kind != \"name\" {",
+      "    out.push(#{ shape: \"circle\", width: R * 2.6, fill: ink, blur: 60, start: t0, end: t0 + 1.2,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.22*exp(-3.5*t)\" });",
+      "    out.push(#{ shape: \"circle\", width: R * 0.5, fill: \"#FFF8EC\", blur: 18, start: t0, end: t0 + 0.4,",
+      "      x: \"=\" + cx + shx(mv[1] * w, mv[0] - t0), y: cy, opacity: \"=0.9*exp(-12*t)\" });",
+      "  }",
+      "  let rings = if kind == \"pistil\" { [1.0, 0.48] } else if kind == \"ring\" { [1.0] } else if kind == \"peony\" { [1.0] } else if kind == \"chrys\" { [1.0, 0.62] } else { [] };",
+      "  let ri = 0;",
+      "  for rf in rings {",
+      "    let n = if rf < 0.7 { 18 } else { 36 };",
+      "    if kind == \"ring\" { n = 48; }",
+      "    let col = if ri == 1 && c.len() > 8 { c[8] } else { ink };",
+      "    let dot = if rf < 0.7 { 0.018 * h } else { 0.016 * h };",
+      "    for j in 0..n {",
+      "      let sd = k * 1000 + ri * 100 + j;",
+      "      let a = (j * 360.0 / n + 7.0 * ri + (rand(sd) - 0.5) * 3.0).to_radians();",
+      "      let rr = R * rf * (0.96 + 0.08 * rand(sd + 7));",
+      "      let life = 1.9 + 0.7 * rand(sd + 13);",
+      "      let fx = \"(1-exp(-6.5*t))\";",
+      "      if kind == \"chrys\" {",
+      "        // tailed stars: capsules oriented along their flight",
+      "        out.push(#{ shape: \"rect\", width: 0.9 * dot + 0.20 * rr, scaleX: \"=(\" + (0.9 * dot) + \" + \" + (0.20 * rr) + \"*(1-exp(-25.0*t))*exp(-2.5*t))/\" + (0.9 * dot + 0.20 * rr), height: dot * 0.9, radius: dot * 0.45,",
+      "          fill: col, rotation: a.to_degrees(), start: t0, end: t0 + 2.2,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 34*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.2) + \" - t*1.0, 0, 1)\" });",
+      "        for q in 1..3 {",
+      "          let lag = 0.07 * q;",
+      "          let fq = \"(1-exp(-6.5*max(t-\" + lag + \",0)))\";",
+      "          out.push(#{ shape: \"circle\", width: dot * (0.75 - 0.18 * q), fill: col, start: t0 + lag, end: t0 + 2.0,",
+      "            x: \"=\" + cx + \" + \" + rr + \"*\" + fq + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0 - lag),",
+      "            y: \"=\" + cy + \" + \" + rr + \"*\" + fq + \"*\" + sin(a) + \" + 34*t*t\",",
+      "            opacity: \"=clamp(1.6 - t*1.0, 0, 1)*0.8\" });",
+      "        }",
+      "      } else {",
+      "        out.push(#{ shape: \"circle\", width: dot, scale: \"=1.0 - 0.35*clamp(t/1.8,0,1)\", fill: col, start: t0, end: t0 + 2.3,",
+      "          x: \"=\" + cx + \" + \" + rr + \"*\" + fx + \"*\" + cos(a) + shx(mv[1] * w, mv[0] - t0),",
+      "          y: \"=\" + cy + \" + \" + rr + \"*\" + fx + \"*\" + sin(a) + \" + 30*t*t\",",
+      "          opacity: \"=clamp(\" + (life + 0.3) + \" - t*1.0, 0, 1)\" });",
+      "      }",
+      "    }",
+      "    ri += 1;",
+      "  }",
+      "  if kind == \"willow\" {",
+      "    let n = 22;",
+      "    for j in 0..n {",
+      "      let a = (j * 360.0 / n + 4.0).to_radians();",
+      "      let vx = R * cos(a); let vy = R * sin(a) * 0.7;",
+      "      // parabolic strand: out, then hanging down",
+      "      let p1x = cx + vx * 0.9; let p1y = cy + vy * 0.9 - 0.05 * h;",
+      "      let p2x = cx + vx * (1.0 + 0.3 * rand(k * 50 + j)); let p2y = cy + vy + (0.30 + 0.16 * rand(k * 50 + j + 3)) * h;",
+      "      let d = \"M\" + cx + \" \" + cy + \" Q\" + p1x + \" \" + p1y + \" \" + p2x + \" \" + p2y;",
+      "      out.push(#{ draw: [#{ d: d, stroke: ink, width: 0.0042 * h, cap: \"round\" }], start: t0, end: t0 + 3.0,",
+      "        animate: [#{ from: #{ trimEnd: 0.0 }, to: #{ trimEnd: 1.0 }, duration: 1.6, ease: \"outCubic\" },",
+      "                  #{ from: #{ trimStart: 0.0 }, to: #{ trimStart: 1.0 }, at: 0.9, duration: 2.0, ease: \"inQuad\" }] });",
+      "    }",
+      "  }",
+      "  if kind == \"name\" {",
+      "    let rows = c[8];",
+      "    let p = c[3] * h;",
+      "    let nc = rows[0].len();",
+      "    let nr = rows.len();",
+      "    let x0 = cx - (nc - 1) * p / 2.0; let y0 = cy - (nr - 1) * p / 2.0;",
+      "    let bx = if c.len() > 9 { c[9] * w } else { cx };",
+      "    let by = if c.len() > 10 { c[10] * h } else { cy };",
+      "    let m = 0;",
+      "    for r in 0..nr {",
+      "      let line = rows[r];",
+      "      for q in 0..nc {",
+      "        if line.sub_string(q, 1) == \"#\" {",
+      "          let tx = x0 + q * p; let ty = y0 + r * p;",
+      "          let dl = 0.04 * rand(m * 7 + 3);",
+      "          out.push(#{ shape: \"circle\", width: p * 0.66, fill: ink, start: t0 + dl,",
+      "            x: \"=\" + bx + \" + (\" + (tx - bx) + \")*(1-exp(-5.5*t))\",",
+      "            y: \"=\" + by + \" + (\" + (ty - by) + \")*(1-exp(-5.5*t)) + \" + (0.10 * h) + \"*t*exp(-2.2*t)\" });",
+      "          m += 1;",
+      "        }",
+      "      }",
+      "    }",
+      "  }",
+      "  k += 1;",
+      "}",
+      "out"
+     ]
+    },
+    {
+     "text": "{\"at\": 2.65, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.86, \"y\": 0.17, \"r\": 0.07, \"lift\": 0.25}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 712.8000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.9,
+     "enter": {
+      "preset": "typewriter",
+      "duration": 0.35
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 37.699999999999996,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 712.8000000000001,
+     "anchor": "left",
+     "start": 2.4,
+     "end": 3.1799999999999997
+    },
+    {
+     "text": "{\"at\": 2.65, \"shell\": \"ring\", \"ink\": \"gold\", \"x\": 0.86, \"y\": 0.17, \"r\": 0.07, \"lift\": 0.25}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 712.8000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 2.4,
+     "end": 3.1799999999999997
+    },
+    {
+     "text": "{\"at\": 3.45, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.72, \"y\": 0.12, \"r\": 0.07, \"lift\": 0.25}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 754.4000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.02,
+     "enter": {
+      "preset": "typewriter",
+      "duration": 0.35
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 37.699999999999996,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 754.4000000000001,
+     "anchor": "left",
+     "start": 3.2,
+     "end": 3.9800000000000004
+    },
+    {
+     "text": "{\"at\": 3.45, \"shell\": \"pistil\", \"ink\": \"vermilion\", \"x\": 0.72, \"y\": 0.12, \"r\": 0.07, \"lift\": 0.25}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 754.4000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 3.2,
+     "end": 3.9800000000000004
+    },
+    {
+     "text": "{\"at\": 4.25, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.93, \"y\": 0.33, \"r\": 0.07, \"lift\": 0.25}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 796.0000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.1400000000000001,
+     "enter": {
+      "preset": "typewriter",
+      "duration": 0.35
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 37.699999999999996,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 796.0000000000001,
+     "anchor": "left",
+     "start": 4.0,
+     "end": 4.78
+    },
+    {
+     "text": "{\"at\": 4.25, \"shell\": \"peony\", \"ink\": \"cobalt\", \"x\": 0.93, \"y\": 0.33, \"r\": 0.07, \"lift\": 0.25}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 796.0000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 4.0,
+     "end": 4.78
+    },
+    {
+     "text": "{\"at\": 5.05, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.79, \"y\": 0.29, \"r\": 0.07, \"lift\": 0.25}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 837.6000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 1.26,
+     "enter": {
+      "preset": "typewriter",
+      "duration": 0.35
+     }
+    },
+    {
+     "shape": "rect",
+     "width": 1675.2,
+     "height": 37.699999999999996,
+     "fill": "#14213D",
+     "x": 122.4,
+     "y": 837.6000000000001,
+     "anchor": "left",
+     "start": 4.8,
+     "end": 5.58
+    },
+    {
+     "text": "{\"at\": 5.05, \"shell\": \"chrys\", \"ink\": \"gold\", \"x\": 0.79, \"y\": 0.29, \"r\": 0.07, \"lift\": 0.25}",
+     "font": "IBM Plex Mono",
+     "size": 26,
+     "x": 134.4,
+     "y": 837.6000000000001,
+     "anchor": "left",
+     "color": "#E4ECEE",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 4.8,
+     "end": 5.58
+    },
+    {
+     "text": "Every frame and every note of this film came from one JSON spec.",
+     "font": "IBM Plex Mono",
+     "size": 30,
+     "x": 134.4,
+     "y": 650.4000000000001,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1651.2,
+     "start": 0.6,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.3
+     }
+    },
+    {
+     "text": "Anikit Video",
+     "font": "Archivo",
+     "size": 84,
+     "x": 134.4,
+     "y": 950.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "axes": {
+      "wdth": 75,
+      "wght": 800
+     },
+     "letterSpacing": -0.01,
+     "start": 0.3,
+     "enter": {
+      "preset": "mask by line up",
+      "duration": 0.5
+     }
+    },
+    {
+     "text": "github.com/knihalani/anikit",
+     "font": "IBM Plex Mono",
+     "size": 34,
+     "x": 940.8,
+     "y": 950.4,
+     "anchor": "left",
+     "color": "#14213D",
+     "typeset": false,
+     "maxWidth": 1920,
+     "start": 0.8,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.3
+     }
+    }
+   ]
+  }
+ ]
+}

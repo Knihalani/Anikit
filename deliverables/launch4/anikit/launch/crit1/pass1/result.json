@@ -1,0 +1,388 @@
+{
+  "name": "pass1",
+  "tags": [
+    "product-launch",
+    "generative",
+    "kinetic-type"
+  ],
+  "refs": [
+    "vertigo",
+    "halt-and-catch-fire",
+    "da-vincis-demons"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 5.0,
+      "composition": 3.0,
+      "typography": 4.0,
+      "colour": 4.0,
+      "light_texture": 2.0,
+      "motion": 4.0,
+      "craft": 4.0,
+      "originality": 4.0
+    },
+    "overall": 3.75,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Give the fireworks real light: bloom, trails, smoke, sky illumination, reflections. Right now the subject has no luminance, whereas B and D build entire frames from light",
+      "Commit to the cue-sheet/pyrotechnician idea as the visual language: fill the frame with the firing schedule, rack layouts and timecode as dense, expressive typography, rather than leaving near-empty slides between bursts",
+      "Replace default grotesk/mono-on-gradient with a typographic point of view and a bolder palette (e.g., a true night sky against hot chemical colours), and build choreography so that each frame is a distinct, composed poster",
+      "Light the fireworks: they need bloom, falloff, trails, smoke and a night sky so the subject has material and depth, as C's glowing die does",
+      "Develop the cue-sheet idea into a typographic system that interacts with the bursts (e.g. timecodes igniting the shells, type scale exploding at the finale) instead of slide-placed labels in default faces",
+      "Compose each frame as a poster: fill or deliberately design the negative space, build scale contrast, and remove the product-pitch end card or make it part of the film's idea"
+    ],
+    "tells": [
+      "Pale blue-grey gradient ground with a small primary-ish accent palette (blue, red, orange); mostly empty frames, with frame 2 and frame 4 almost blank",
+      "Default-feeling type: a condensed bold grotesk headline set top-left like a slide ('Your agent writes the page.'), monospaced timecode labels and a JSON code block. Nothing is integrated with the image",
+      "Fireworks rendered as flat dotted rings and straight vector lines. There is no glow, smoke, depth or light falloff, so a subject that is entirely about light has no light",
+      "The end card is product-demo structure: wordmark + tagline + spec snippet + GitHub URL. The piece reads as a feature demo rather than a film",
+      "There is a real seed of an idea in the pyrotechnic cue-sheet framing (shell size, '4\" CHRYSANTHEMUM', 'FINALE \u00d731', a Tuesday/Saturday split screen), but it is not developed visually",
+      "Pale blue-grey gradient ground with mostly empty frames; frame 2 is almost entirely blank apart from two tiny ticks",
+      "Default type: a generic condensed grotesk headline set like a slide title ('Your agent writes the page.') plus monospace timecode labels on a navy bar, a stock 'tech dev-tool' look",
+      "Fireworks drawn as vector-default dotted rings and line fountains, clip-art-like, symmetrical, with no glow, smoke, or light emission even though the subject is literally light",
+      "End card is a product pitch (logo, JSON snippet, GitHub URL); the piece is a demo of a JSON-spec generator, and the cue-sheet conceit (timecodes, shell names, split-screen Tuesday/Saturday) is the only real idea",
+      "Little choreography is visible; the finale frame is a flat pile-up of overlapping primitives"
+    ]
+  },
+  "refs_summary": {
+    "vertigo": {
+      "overall": 9.44,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    },
+    "halt-and-catch-fire": {
+      "overall": 8.25,
+      "judged_professional": "2/2",
+      "mean_rank": 2
+    },
+    "da-vincis-demons": {
+      "overall": 7.06,
+      "judged_professional": "2/2",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 8.25,
+  "delta": -4.5,
+  "trials": [
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "vertigo",
+        "C": "candidate",
+        "D": "halt-and-catch-fire"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Hand-drawn ink illustration layered over Leonardo source material: Vitruvian Man in clouds, St Peter's dome with perspective construction lines, the Mona Lisa merged into a horizon with a rider silhouette, notebook mirror-script behind a portrait",
+              "Each frame is a distinct composite with its own scale and subject. Close-ups (hand, face) alternate with wide landscapes, which suggests real choreography rather than one repeated layout",
+              "Rich layering of paper grain, ink spatter, glow and smoke, with a consistent desaturated violet/umber grade across every frame",
+              "Credits are set in small-caps serif and placed inside each composition; the role/name hierarchy is handled properly",
+              "Weaknesses: the type is tasteful but conventional period-drama dressing, and the 'sketchbook comes alive' concept is the expected route for a Da Vinci subject"
+            ],
+            "gaps": [
+              "Find one governing visual idea, as B does with the spiral/eye, instead of a montage of Leonardo's greatest hits; the frames read as a collage of references more than a single argument",
+              "Give the typography its own point of view (scale, a custom period face, interaction with the drawn lines) rather than discreet small-caps captions",
+              "Push the palette past the generic 'aged parchment + purple grade' toward a bolder, ownable colour idea"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.98,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A single, specific idea that only this film could have: vertigo and obsession expressed as spirographic forms spiralling out of an extreme close-up of a woman's eye",
+              "A deliberate, unusual palette: monochrome red-washed photography against black fields with magenta and acid-green Lissajous forms",
+              "Typography with real character: an outlined slab/Clarendon display face for the title and director, and a stacked, right-aligned credit block that balances the spiral mass",
+              "Clear choreography: eye \u2192 spiral emerging from the pupil \u2192 abstract forms rotating and morphing in colour \u2192 a return to the eye. It is a bookended structure, not a slideshow",
+              "Every frame works as a poster, and the generative forms carry live photographic and mechanical texture rather than reading as a digital default"
+            ],
+            "gaps": [
+              "Benchmark entry. The only quibbles are the dense credit block in frame 4, which crowds the spiral",
+              "Mid-sequence the black voids feel slightly sparse next to the bookend photography",
+              "The light/texture work is limited by its era compared with modern compositing"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 5,
+              "composition": 3,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "Pale blue-grey gradient ground with a small primary-ish accent palette (blue, red, orange); mostly empty frames, with frame 2 and frame 4 almost blank",
+              "Default-feeling type: a condensed bold grotesk headline set top-left like a slide ('Your agent writes the page.'), monospaced timecode labels and a JSON code block. Nothing is integrated with the image",
+              "Fireworks rendered as flat dotted rings and straight vector lines. There is no glow, smoke, depth or light falloff, so a subject that is entirely about light has no light",
+              "The end card is product-demo structure: wordmark + tagline + spec snippet + GitHub URL. The piece reads as a feature demo rather than a film",
+              "There is a real seed of an idea in the pyrotechnic cue-sheet framing (shell size, '4\" CHRYSANTHEMUM', 'FINALE \u00d731', a Tuesday/Saturday split screen), but it is not developed visually"
+            ],
+            "gaps": [
+              "Give the fireworks real light: bloom, trails, smoke, sky illumination, reflections. Right now the subject has no luminance, whereas B and D build entire frames from light",
+              "Commit to the cue-sheet/pyrotechnician idea as the visual language: fill the frame with the firing schedule, rack layouts and timecode as dense, expressive typography, rather than leaving near-empty slides between bursts",
+              "Replace default grotesk/mono-on-gradient with a typographic point of view and a bolder palette (e.g., a true night sky against hot chemical colours), and build choreography so that each frame is a distinct, composed poster"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific concept: early-80s computing seen as a macro journey through circuitry, scan lines and silicon, ending in the title glowing like an overheating core",
+              "A bold, near-monochrome red/magenta palette held throughout with real tonal range, from hot pink fields to deep oxblood",
+              "Real light and texture: glitch striation, horizontal light streaks, a photographed die with caustic glow, a vignetted bloom on the title card",
+              "Typography contrast that carries meaning: a delicate Garamond-style serif for credits against a wide-tracked bold sans title with a pixel-block glyph, which nods to the hardware",
+              "Varied frame structure (abstract glitch, silhouette portrait, overhead chip grid, horizon streak, macro object, title) implies choreographed shifts in scale and pacing"
+            ],
+            "gaps": [
+              "The glitch vocabulary is now widely imitated, so it needs one more unexpected image (like B's eye-to-spiral transformation) to be unforgettable",
+              "Integrate the credits with the imagery, for example credits behaving like signal or data, rather than sitting as a serif overlay in the lower third",
+              "Tighten the mid-sequence frames (the four-square chip, the horizon streak), which are less poster-like than the opener and the title card"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 35.6,
+        "cost_usd": 0.178881,
+        "tokens": 72368,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "vertigo",
+        "C": "halt-and-catch-fire",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Hand-drawn ink illustration layered over Leonardo's notebook pages and mirror-script, with codex material used as the image itself rather than as decoration",
+              "Real texture throughout: ink spatter, parchment grain, smoky cloud plates, and a bruised violet-umber palette held consistently across frames",
+              "Every frame is built differently (Vitruvian figure in clouds, St Peter's with perspective lines, quill close-up, Mona Lisa as landscape, upturned portrait inside an orbit arc, the flying-machine rider), which suggests a camera travelling through one illustrated world",
+              "Layered depth, with figure, diagram and ground in separate planes"
+            ],
+            "gaps": [
+              "Typography is a conventional small-caps serif credit placed in open space; unlike B, the type never becomes part of the idea or the image",
+              "The metaphor ('genius sketches the world') is apt but expected for a Leonardo series; it needs a single sharp graphic conceit like B's spiral",
+              "Grunge overlays and painterly filters date it and occasionally muddy the read; reduce them to one or two decisive textures"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.98,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A single idea that belongs only to this film: the vertigo spiral comes out of a human eye, so the title sequence enacts the film's obsession",
+              "Extreme scale contrast, from a macro eye filling the frame to a black void holding mathematical Lissajous/spirograph forms",
+              "Bold slab-serif display face with an outline treatment, set in hierarchical credit stacks with small labels and large names; the type has a voice and sits on the image (VERTIGO across the eye)",
+              "Unusual, deliberate palette: monochrome blood-red film plate against magenta and then acid-green line forms on black",
+              "Choreography is legible across frames: eye \u2192 spiral emerges in the pupil \u2192 forms rotate and morph in the void \u2192 back to the eye for the director credit, a closed loop",
+              "Every frame works as a poster"
+            ],
+            "gaps": [
+              "Benchmark entry; the gaps are minor",
+              "Some credit blocks are dense and right-ragged against the forms; tighter integration of type with the spirals' motion would elevate them further",
+              "Colour shifts between spirals are abrupt rather than motivated"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Clear conceptual spine: early-computing signal and glitch, the title's 'halt and catch fire' machine instruction rendered as overheating silicon ending in a burning red disc",
+              "Bold near-monochrome palette of hot red/magenta, used as an emotional temperature that rises across the sequence",
+              "Mixed media: scanline and datamosh textures, silhouettes of cast in the noise, macro photography of a glowing die in a liquid dish, and a 2x2 pixel/chip grid as a graphic motif",
+              "Variety of frame structures with real light (bloom, specular, glow) and a progression from abstraction to object to fire"
+            ],
+            "gaps": [
+              "Credit typography is a fairly default transitional serif in light weight; only the end title (blocky square glyph + tracked caps) shows a typographic idea",
+              "Glitch-as-tech is a widely used visual language; the piece needs a moment of surprise beyond 'signal breaks down'",
+              "Some frames (the horizontal light streak) are near-effect-without-subject; anchor each beat to a concrete object as B does with the eye"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 5,
+              "composition": 3,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "Pale blue-grey gradient ground with mostly empty frames; frame 2 is almost entirely blank apart from two tiny ticks",
+              "Default type: a generic condensed grotesk headline set like a slide title ('Your agent writes the page.') plus monospace timecode labels on a navy bar, a stock 'tech dev-tool' look",
+              "Fireworks drawn as vector-default dotted rings and line fountains, clip-art-like, symmetrical, with no glow, smoke, or light emission even though the subject is literally light",
+              "End card is a product pitch (logo, JSON snippet, GitHub URL); the piece is a demo of a JSON-spec generator, and the cue-sheet conceit (timecodes, shell names, split-screen Tuesday/Saturday) is the only real idea",
+              "Little choreography is visible; the finale frame is a flat pile-up of overlapping primitives"
+            ],
+            "gaps": [
+              "Light the fireworks: they need bloom, falloff, trails, smoke and a night sky so the subject has material and depth, as C's glowing die does",
+              "Develop the cue-sheet idea into a typographic system that interacts with the bursts (e.g. timecodes igniting the shells, type scale exploding at the finale) instead of slide-placed labels in default faces",
+              "Compose each frame as a poster: fill or deliberately design the negative space, build scale contrast, and remove the product-pitch end card or make it part of the film's idea"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.5,
+        "cost_usd": 0.1568368,
+        "tokens": 71905,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "Long stretches of near-empty sky (0-3s, and the frame-3 region): a few rising tracer ticks on a flat gradient, which is dead air rather than anticipation",
+        "There are only 3 shots in 32s, with a 20s unbroken take; the TUESDAY/SATURDAY split screen is a hard divider line with no transition design",
+        "The dotted ANIKIT wordmark forms over the dense finale and lands as an illegible red jumble over orange rings before it clears",
+        "The headline mask-wipe reveal clips the descenders of 'Same page. Same film.' mid-move, and the wipe is generic",
+        "The ring bursts read as stamped-on vector circles. They expand without convincing ballistic deceleration, gravity sag, or a decaying trail, and have no glow or light falloff",
+        "Willow and pistil fronds are uniform-weight strokes with no taper or fade, so they look like plotted lines rather than spent embers",
+        "In the end card, the JSON spec text block, the logo, the URL and 'Anikit Video' compete; the hierarchy is cramped in the lower-right quadrant",
+        "Audio drops to near-silence at about 18-20s. It works as a pre-finale breath, but the fade is a plain lowpass roll-off rather than a designed riser or suck-back"
+      ],
+      "gaps": [
+        "Pacing and choreography: build sequenced bursts, cuts or camera moves that hand off every 1-2s, with real anticipation (a launch trail that leads the eye) and overshoot/settle on each bloom, instead of long held wide shots of sparse sky",
+        "Material and light: give bursts a hot core, additive glow, sky illumination, ember decay with tapered trails, and gravity on falling sparks. At 100% the work is flat vector on grain, and there's no sense of light or air",
+        "Sound design: the noise-burst cracks and sparse tonal partials sync to bursts, but the bed is thin and static. Missing are layered low-end thumps, distance delay/reverb tails, crackle textures, and a score that crescendoes into the finale and resolves on the logo"
+      ]
+    },
+    "meta": {
+      "seconds": 24.6,
+      "cost_usd": 0.1638532,
+      "tokens": 72379,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass1.mp4: 32.0s, 3 shots, median 8.00s, longest 20.00s\nper-second change: [2.2, 2.1, 3.0, 22.8, 12.9, 10.6, 12.2, 13.5, 8.7, 11.4, 11.8, 10.8, 4.5, 5.6, 6.6, 8.3, 3.1, 8.9, 34.9, 4.0, 10.7, 14.6, 15.1, 12.7, 8.8, 5.3, 2.7, 5.2, 9.6, 11.0, 11.3]\nPACE: FAIL \u2014 longest shot 20.0s > 2.5s; median shot 8.0s > 2.0s; 10/31 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 5.0,
+    "composition": 3.0,
+    "typography": 4.0,
+    "colour": 4.0,
+    "light_texture": 2.0,
+    "motion": 4.5,
+    "craft": 5.0,
+    "originality": 4.0,
+    "sound": 5
+  },
+  "full_overall": 4.06,
+  "cost_usd": 0.5,
+  "judge_seconds": 90.7,
+  "verdict": "FAIL"
+}
