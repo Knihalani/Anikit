@@ -1193,7 +1193,7 @@ impl Scene3d {
                     (trace::tsc() - c) as f64 / t.elapsed().as_secs_f64() / 1e6
                 });
                 let cy: Vec<f64> = trace::CYCLES.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed) as f64 / hz / 1e3).collect();
-                eprintln!("  cpu (thread-sum): closest-hit traversal {:.0} ms, shadow/AO traversal {:.0} ms", cy[0], cy[1]);
+                eprintln!("  cpu (thread-sum): closest-hit traversal {:.0} ms (camera rays {:.0} ms), shadow/AO traversal {:.0} ms", cy[0] + cy[2], cy[2], cy[1]);
             }
             let r: Vec<u64> = trace::RAYS.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
             eprintln!("  rays: {:.2}M closest ({:.2}M radiance, {:.2}M floor reflections), {:.2}M shadow/AO, {:.2} primary samples per pixel", r[0] as f64 / 1e6, r[3] as f64 / 1e6, r[4] as f64 / 1e6, r[1] as f64 / 1e6, r[2] as f64 / (w * h) as f64);

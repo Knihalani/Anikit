@@ -701,9 +701,9 @@ fn count(k: usize) {
         });
     }
 }
-/// Profiling: CPU time in closest-hit (0) and shadow/AO (1) traversal, in
+/// Profiling: CPU time in closest-hit (0; camera rays: 2) and shadow/AO (1) traversal, in
 /// TSC ticks (`ANIKIT_SCENE3D_PROFILE`; a few ns of overhead per ray).
-pub static CYCLES: [std::sync::atomic::AtomicU64; 2] = [const { std::sync::atomic::AtomicU64::new(0) }; 2];
+pub static CYCLES: [std::sync::atomic::AtomicU64; 3] = [const { std::sync::atomic::AtomicU64::new(0) }; 3];
 struct Cycles(usize, u64);
 impl Cycles {
     #[inline(always)]
@@ -715,7 +715,7 @@ impl Drop for Cycles {
     #[inline(always)]
     fn drop(&mut self) {
         let d = tsc().wrapping_sub(self.1);
-        thread_local!(static LOCAL: std::cell::Cell<[u64; 2]> = const { std::cell::Cell::new([0; 2]) });
+        thread_local!(static LOCAL: std::cell::Cell<[u64; 3]> = const { std::cell::Cell::new([0; 3]) });
         LOCAL.with(|c| {
             let mut v = c.get();
             v[self.0] += d;
@@ -979,7 +979,7 @@ impl Scene {
     /// Closest hit; with `camera`, objects hidden from the camera (cards) are skipped.
     fn trace_f(&self, o: V3, d: V3, tmax: f32, camera: bool) -> Option<Surf> {
         count(0);
-        let _c = Cycles::start(0);
+        let _c = Cycles::start(if camera { 2 } else { 0 });
         let mut best: Option<Surf> = None;
         let mut tm = tmax;
         if let Some(f) = &self.floor {
@@ -1743,6 +1743,10 @@ impl Scene {
             // An opaque (or thick glass) surface: the primary hit proper.
             let haze_add = scale(self.haze.1, 1.0 - haze_f);
             if s.obj == FLOOR {
+                // Only a directly seen floor may skip its reflection ray: post
+                // fills that checkerboard while blurring the reflection plane,
+                // but a floor seen through glass goes straight into `col`.
+                let skip_refl = skip_refl && first.is_none();
                 let (mut dif, refl, fade, rdist) = weighted(luma(thr) * haze_f, || self.shade_floor(&s, d, 0, q, rot, false, skip_refl, skip_vis));
                 let bd = self.backdrop(d);
                 let keepf = (1.0 - fade) * haze_f;
@@ -1797,8 +1801,17 @@ impl Scene {
         let clock = std::time::Instant::now();
         let mut centre: Buf<Sample> = Buf::uninit(w * h);
         let mut tms: Buf<f32> = Buf::uninit(w * h);
-        let tp = par::Shared(tms.as_mut_ptr());
+        // What the refinement test reads of each centre sample (id, normal),
+        // compact so that pass doesn't stream the whole samples back in.
+        let mut ids: Buf<u32> = Buf::uninit(w * h);
+        let mut nrms: Buf<[f32; 3]> = Buf::uninit(w * h);
+        let (tp, ip, np) = (par::Shared(tms.as_mut_ptr()), par::Shared(ids.as_mut_ptr()), par::Shared(nrms.as_mut_ptr()));
         let rough_floor = self.floor.as_ref().is_some_and(|f| f.roughness >= 0.2);
+        assert_eq!(out.len(), w * h);
+        let wr = out.writer();
+        // Every pixel is resolved from its centre sample here, while the
+        // sample is in cache; the refinement pass rewrites only the pixels it
+        // supersamples.
         par::rows(&mut centre, w, |y, row| {
             for x in 0..w {
                 let hs = hash2(x as u32, y as u32);
@@ -1807,8 +1820,15 @@ impl Scene {
                 let odd = !q.full && (x + y) & 1 == 1;
                 let skip = if odd { (rough_floor as u8) | 2 } else { 0 };
                 let s = self.primary(rig, prev, x as f32 + 0.5, y as f32 + 0.5, q, rot, skip);
-                // SAFETY: pixel (x, y) belongs to this row's task only.
-                unsafe { *tp.at(y * w + x) = Self::contrast_luma(&s) };
+                let ci = y * w + x;
+                // SAFETY: pixel (x, y) belongs to this row's task only; `out` outlives the loop.
+                unsafe {
+                    *tp.at(ci) = Self::contrast_luma(&s);
+                    // Truncation keeps the sentinel ids (floor, sky: near usize::MAX) distinct.
+                    *ip.at(ci) = s.id as u32;
+                    *np.at(ci) = [s.nrm.x, s.nrm.y, s.nrm.z];
+                    put_resolved(&wr, ci, &s);
+                }
                 row[x] = s;
             }
         });
@@ -1816,9 +1836,7 @@ impl Scene {
         let snap = |a: &[std::sync::atomic::AtomicU64]| a.iter().map(|v| v.load(std::sync::atomic::Ordering::Relaxed)).collect::<Vec<u64>>();
         let (r0, c0) = (snap(&RAYS), snap(&CYCLES));
         let refined = std::sync::atomic::AtomicU64::new(0);
-        let (centre, tms) = (&centre, &tms);
-        assert_eq!(out.len(), w * h);
-        let wr = out.writer();
+        let (centre, tms, ids, nrms) = (&centre, &tms, &ids, &nrms);
         // Smooth metal: thin specular highlights (bevels) live inside
         // one object, so neighbours with the same id but turned normals also
         // get edge samples (otherwise the lines come out dotted and crawl).
@@ -1833,7 +1851,8 @@ impl Scene {
             let mut nref = 0u64;
             for x in 0..w {
                 let ci = y * w + x;
-                let c = &centre[ci];
+                let (cid, cn) = (ids[ci], nrms[ci]);
+                let shiny_c = (cid as usize) < shiny.len() && shiny[cid as usize];
                 let mut refine = q.full;
                 for (dx, dy) in [(-1i32, 0i32), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (-1, 1), (1, -1)] {
                     let (nx, ny) = (x as i32 + dx, y as i32 + dy);
@@ -1841,16 +1860,22 @@ impl Scene {
                         continue;
                     }
                     let ni = ny as usize * w + nx as usize;
-                    let n = &centre[ni];
-                    let turned = n.id == c.id && c.id < shiny.len() && shiny[c.id] && dot(n.nrm, c.nrm) < ncos;
-                    if n.id != c.id || (tms[ni] - tms[ci]).abs() > q.contrast || turned {
+                    let nid = ids[ni];
+                    let turned = shiny_c && nid == cid && {
+                        let nn = nrms[ni];
+                        dot(v3(nn[0], nn[1], nn[2]), v3(cn[0], cn[1], cn[2])) < ncos
+                    };
+                    if nid != cid || (tms[ni] - tms[ci]).abs() > q.contrast || turned {
                         refine = true;
                         break;
                     }
                 }
+                if !refine {
+                    continue;
+                }
                 samples.clear();
-                samples.push(*c);
-                if refine {
+                samples.push(centre[ci]);
+                {
                     nref += 1;
                     // Two stages: half the samples, then the rest only where they
                     // still disagree (object edges always get all of them).
@@ -2005,6 +2030,15 @@ impl Scene {
 /// Combine a pixel's samples with tone-mapped weights (bright highlights
 /// don't alias). AO and key visibility average weighted by albedo, so the
 /// denoiser can filter them as scalars.
+/// Resolve one sample into pixel `ci` (kept out of line: called from the
+/// AVX2-compiled centre pass, it must compute the same bits as the
+/// refinement pass's resolve).
+#[inline(never)]
+fn put_resolved(wr: &super::kernel::post::PlanesOut, ci: usize, s: &Sample) {
+    // SAFETY: the caller owns pixel `ci` (see `render_frame`).
+    unsafe { wr.put(ci, &resolve(std::slice::from_ref(s))) };
+}
+
 fn resolve(samples: &[Sample]) -> Px {
     let mut px = Px::default();
     let mut wsum = 0.0;
