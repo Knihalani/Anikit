@@ -281,6 +281,38 @@
      "y": 540
     }
    ]
+  },
+  "brick": {
+   "size": [
+    2048,
+    2048
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "tex/brick_dark.png",
+     "width": 2048,
+     "height": 2048,
+     "x": 1024,
+     "y": 1024
+    }
+   ]
+  },
+  "asphalt": {
+   "size": [
+    2048,
+    2048
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "tex/asphalt.png",
+     "width": 2048,
+     "height": 2048,
+     "x": 1024,
+     "y": 1024
+    }
+   ]
   }
  },
  "music": {
@@ -353,6 +385,28 @@
       0.1,
       0.8,
       0.1
+     ]
+    }
+   },
+   "rain": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "sine",
+       "level": 0.0
+      }
+     ],
+     "noise": 1.0,
+     "filter": {
+      "type": "lp",
+      "cutoff": 3800,
+      "res": 0.05
+     },
+     "amp": [
+      0.4,
+      0.2,
+      1.0,
+      1.2
      ]
     }
    }
@@ -559,7 +613,7 @@
       "vel": 0.55
      }
     ],
-    "gain": -17.0,
+    "gain": -11.0,
     "pan": -0.4,
     "reverb": 0.35
    },
@@ -573,7 +627,7 @@
       "vel": 0.5800000000000001
      }
     ],
-    "gain": -16.6,
+    "gain": -10.600000000000001,
     "pan": -0.32727272727272727,
     "reverb": 0.35
    },
@@ -587,7 +641,7 @@
       "vel": 0.6100000000000001
      }
     ],
-    "gain": -16.2,
+    "gain": -10.2,
     "pan": -0.2545454545454546,
     "reverb": 0.35
    },
@@ -601,7 +655,7 @@
       "vel": 0.64
      }
     ],
-    "gain": -15.8,
+    "gain": -9.8,
     "pan": -0.18181818181818185,
     "reverb": 0.35
    },
@@ -615,7 +669,7 @@
       "vel": 0.67
      }
     ],
-    "gain": -15.4,
+    "gain": -9.4,
     "pan": -0.10909090909090909,
     "reverb": 0.35
    },
@@ -629,7 +683,7 @@
       "vel": 0.7000000000000001
      }
     ],
-    "gain": -15.0,
+    "gain": -9.0,
     "pan": -0.036363636363636376,
     "reverb": 0.35
    },
@@ -643,7 +697,7 @@
       "vel": 0.73
      }
     ],
-    "gain": -14.6,
+    "gain": -8.6,
     "pan": 0.036363636363636334,
     "reverb": 0.35
    },
@@ -657,7 +711,7 @@
       "vel": 0.76
      }
     ],
-    "gain": -14.6,
+    "gain": -8.6,
     "pan": 0.10909090909090909,
     "reverb": 0.35
    },
@@ -671,7 +725,7 @@
       "vel": 0.79
      }
     ],
-    "gain": -14.6,
+    "gain": -8.6,
     "pan": 0.18181818181818185,
     "reverb": 0.35
    },
@@ -685,7 +739,7 @@
       "vel": 0.8200000000000001
      }
     ],
-    "gain": -14.6,
+    "gain": -8.6,
     "pan": 0.2545454545454546,
     "reverb": 0.35
    },
@@ -699,7 +753,7 @@
       "vel": 0.8500000000000001
      }
     ],
-    "gain": -14.6,
+    "gain": -8.6,
     "pan": 0.32727272727272727,
     "reverb": 0.35
    },
@@ -713,7 +767,7 @@
       "vel": 0.88
      }
     ],
-    "gain": -14.6,
+    "gain": -8.6,
     "pan": 0.4,
     "reverb": 0.35
    },
@@ -729,6 +783,17 @@
     ],
     "gain": -9,
     "reverb": 0.4
+   },
+   {
+    "name": "rain",
+    "inst": "rain",
+    "clips": [
+     {
+      "at": "@0",
+      "notes": "C4:26"
+     }
+    ],
+    "gain": -27
    }
   ],
   "sfx": [
@@ -739,11 +804,6 @@
    {
     "sfx": "boom",
     "at": "@8.4375"
-   },
-   {
-    "sfx": "reverse-cymbal",
-    "at": "@8.4375",
-    "gain": -8
    }
   ],
   "end": "ring",
@@ -761,7 +821,7 @@
      "component": "scene3d",
      "props": {
       "env": "city",
-      "exposure": 1.0,
+      "exposure": 1.35,
       "quality": "standard",
       "objects": [
        {
@@ -2406,6 +2466,3126 @@
          "emissive": "#FF9A5A",
          "emissiveStrength": 0.5,
          "roughness": 0.2
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         6
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         6
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         2
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         2
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -2
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -2
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -6
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -6
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -10
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -10
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -14
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -14
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -18
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -18
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -22
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -22
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -26
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -26
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -30
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -30
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -34
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -34
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -38
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -38
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -42
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -42
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -46
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -46
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -50
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -50
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -54
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -54
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -58
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -58
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -62
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -62
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -66
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -66
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -70
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -70
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -74
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -74
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -78
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -78
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -82
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -82
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -86
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -86
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -90
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -90
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -94
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -94
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -98
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -98
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -102
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -102
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -106
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -106
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         3.0,
+         -110
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         -5.095,
+         9.0,
+         -110
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         6
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         6
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         2
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         2
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -2
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -2
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -6
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -6
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -10
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -10
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -14
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -14
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -18
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -18
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -22
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -22
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -26
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -26
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -30
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -30
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -34
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -34
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -38
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -38
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -42
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -42
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -46
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -46
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -50
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -50
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -54
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -54
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -58
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -58
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -62
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -62
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -66
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -66
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -70
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -70
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -74
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -74
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -78
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -78
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -82
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -82
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -86
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -86
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -90
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -90
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -94
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -94
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -98
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -98
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -102
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -102
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -106
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -106
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         3.0,
+         -110
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         4.02,
+         6.02
+        ],
+        "pos": [
+         5.095,
+         9.0,
+         -110
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "thin": true,
+        "texture": {
+         "composition": "brick",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
         }
        },
        {

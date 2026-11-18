@@ -12,6 +12,7 @@ def ry(row, band=0, bands_h=1080): return (7-row)*M+M/2 + band*bands_h
 L=[]; notes1=[]; notes2=[]; notes3=[]
 # ---------------- bars 1–2: the score, full bleed, three canon voices stacked (the camera reveals them) ----------------
 L.append({"shape":"rect","width":1920*3,"height":1080*3,"fill":COB,"x":960,"y":540,"end":4.0})
+L.append({"text":"OCTAVA","font":"Archivo Expanded","size":900,"color":"#00000000","stroke":{"color":"#3C4CF0","width":4},"x":"=900-t*60","y":560,"width":5200,"letterSpacing":"-0.03em","end":4.0})
 for r in range(9):
     for band in (-1,0,1):
         L.append({"shape":"rect","width":1920*3,"height":2,"fill":"#FFFFFF1F","x":960,"y":r*M+band*1080,"end":4.0})
@@ -67,15 +68,18 @@ for j,cidx in enumerate(cols):
                   "animate":[{"from":{"scale":0,"fill":VER},"duration":0.16,"ease":"outBack"},{"to":{"fill":COB},"at":0.16,"duration":0.3}]})
 T_END=6.0+((len(cols)+1)//2)*S16
 GL=WX-WM/2                                                       # grid left edge
-info=[("Festival for New Music",64,INK,0.0),("14—29 May 2027",64,INK,0.25),("Basel",64,VER,0.5)]
-for i,(tx,sz,c,dt) in enumerate(info):
-    L.append({"text":tx,"font":"Familjen Grotesk","size":sz,"color":c,"x":GL,"y":WY+7*WM+150+i*78,"anchor":"left","start":round(T_END-0.6+dt,3),
-              "animate":[{"from":{"y":"+40","opacity":0},"duration":0.35,"ease":"outExpo"}]})
-L.append({"text":"Reich\nSaariaho\nAndriessen\nLang\nAbrahamsen","font":"Familjen Grotesk","size":34,"color":"#55545A","lineHeight":1.2,"align":"left",
-          "x":GL+18*WM,"y":WY+7*WM+150-24,"anchor":"topLeft","start":round(T_END-0.2,3),"animate":[{"from":{"opacity":0},"duration":0.4}]})
+GL=WX-WM/2; BY=WY+7*WM+110                                      # grid left, baseline row under the wordmark
+lock=[("14—29.05","Archivo Expanded",150,INK,GL,BY,0.0,"topLeft"),
+      ("2027","Archivo Expanded",150,VER,GL+21*WM,BY,0.12,"topLeft"),
+      ("FESTIVAL FOR NEW MUSIC","Space Mono",30,INK,GL,BY+190,0.3,"topLeft"),
+      ("BASEL · 8 STAGES · 41 PREMIERES","Space Mono",30,INK,GL+21*WM,BY+190,0.4,"topLeft")]
+for (tx,f,sz,c,x,y,dt,an) in lock:
+    L.append({"text":tx,"font":f,"size":sz,"color":c,"x":x,"y":y,"anchor":an,"letterSpacing":"-0.02em" if sz>100 else "0.06em",
+              "start":round(T_END-0.5+dt,3),"animate":[{"from":{"x":"-60","opacity":0},"duration":0.3,"ease":"outExpo"}]})
 # button: one vermilion module drops onto the last grid cell on the final beat
-L.append({"shape":"rect","width":WM*3-4,"height":WM*3-4,"fill":VER,"x":WX+(NC-2)*WM,"y":WY+7*WM+150+70,"start":9.5,
+L.append({"shape":"rect","width":WM*2-4,"height":WM*2-4,"fill":VER,"x":WX+(NC-1.5)*WM,"y":BY+78,"start":9.5,
           "animate":[{"from":{"y":"-700"},"duration":0.2,"ease":"inQuad"}]})
+L.append({"shader":'float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nfloat n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}\nvoid mainImage(out vec4 o, in vec2 f){\n  vec2 R=iResolution.xy; vec2 jit=vec2(n(f*0.08+iTime*0.0), n(f*0.08+7.3))-0.5;\n  vec2 uv=(f+jit*1.6)/R;\n  vec3 c=texture(iChannel0,uv).rgb;\n  float lum=dot(c,vec3(0.299,0.587,0.114));\n  float ink=1.0-lum;                                   // how much ink is on this spot\n  float speck=n(f*0.9)*0.6+n(f*0.23)*0.4;              // uneven ink density\n  vec3 inked=mix(c, c+ (1.0-c)*0.18, smoothstep(0.35,0.95,speck)*ink);\n  float fibre=n(vec2(f.x*0.05,f.y*0.9))*0.5+n(f*0.6)*0.5;\n  vec3 paper=inked*(0.94+0.06*fibre);\n  float grain=(h(f)-0.5)*0.03;\n  o=vec4(paper+grain,1.0);\n}',"filter":True})
 # ---------------- score ----------------
 def notes_string(events, length):
     steps=int(round(length/S16)); grid=[[] for _ in range(steps)]

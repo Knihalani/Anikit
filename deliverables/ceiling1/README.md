@@ -10,6 +10,23 @@ Three pieces, each in a different style, each built from real references gathere
 
 Fonts: `fonts/` holds 27 OFL families downloaded for these pieces (the engine bundles 3).
 
+## Blind-judge scores (`scripts/judge.py run`, 3 trials, style-matched references)
+
+| Piece | Version | Score | Refs | Delta | Judged pro | What changed |
+|---|---|---:|---:|---:|---|---|
+| NIGHT CHORUS | v1: 2D type cards (`nightchorus.mp4`) | 3.25 | 8.79 | −5.54 | 0/3 | |
+| NIGHT CHORUS | v2: ray-traced street of signs, continuous dolly, choir | 3.62 | 8.83 | −5.21 | 0/3 | the credits became real signs in a world |
+| NIGHT CHORUS | v3: + brick, rain, louder choir (`v2/street.mp4`) | 3.38 | 8.71 | −5.33 | 0/3 | within trial noise of v2 |
+| LAST LIGHT | v1 | 3.50 | 7.71 | −4.21 | 0/3 | |
+| LAST LIGHT | v2: opener into the sun, wordmark projected by the light | **4.12** | 7.25 | −3.13 | **1/3** | end card replaced by an in-world gobo; establishing shot |
+| OCTAVA | v1 | 4.00 | 7.87 | −3.87 | 0/3 | |
+| OCTAVA | v2: risograph print material, composer list cut | **5.12** | 7.63 | −2.51 | 0/3 | print material |
+| OCTAVA | v3: layered outline wordmark, typographic lockup (current MP4) | 4.25 | 7.71 | −3.46 | 0/3 | same critique as v2; the spread is judge noise |
+
+Raw judge results (JSON, no images) are in `judge_results/`.
+
+**What the judge keeps asking for**, in its words: "an idea specific to the subject that generates the imagery", "real material and motivated light", "a typographic point of view", "choreography between frames". Its second-order asks for the 3D pieces map directly onto engine gaps: textured surfaces lit by local lights; emissive signs that light their surroundings; animated (shader) textures on 3D surfaces; a material library with normal and roughness maps. Those are the ceiling for the 3D work tonight.
+
 ## The ceiling, in one paragraph
 With custom fonts, JIT GLSL over text channels, ray-traced 3D with volumetric light, and an authored score, the engine can already make frames that sit next to studio references. The title card of NIGHT CHORUS, the reveal of LAST LIGHT and the dates and lockup of OCTAVA are the evidence. What it can't do yet is let an agent get there *from the spec alone*. Every piece needed a Python generator, a downloaded font library, and workarounds for silent failures (wrong font, no texture, black or white exposure). The biggest wins are not new effects. They are removing silent failures and adding three primitives: per-glyph materials and SDF text channels, music-event-driven layers, and scene3d rigs and UVs.
 

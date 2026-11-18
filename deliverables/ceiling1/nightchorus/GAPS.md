@@ -20,3 +20,15 @@ What in the engine held this piece back, ranked by how much it cost the work. Ea
 
 ## Added after the final render
 - **Render cache granularity:** moving one label in one 0.47 s scene re-rendered 15 of 16 chunks (`render cache: reused 1/16 chunks`, 252 s). An edit to one shot should only re-render that shot's chunks.
+
+## v2 (the street): new gaps found while rebuilding after the blind judge
+
+The blind judge (`scripts/judge.py`, 3 trials) scored v1 at **3.25** against refs at 8.79 (FAIL): slide-deck structure, no world/image/depth/light, effects with no subject. v2 rebuilds it as a ray-traced night street where every credit is a real sign (`v2/`). Scores are recorded in `../README.md`.
+
+| # | Gap | Kind | Impact | Workaround |
+|---|---|---|---|---|
+| 10 | **Shader layers inside a composition render blank when the composition is a 3D texture** (plain text compositions work). [3D/SHADER] | bug | Every animated sign treatment (bulb chase, moiré, flicker) was lost on the 3D signs. | Pre-rendered each v1 card with `still` to PNG and textured the signs with image compositions (static). |
+| 11 | **Textured surfaces are lit only by the env and key light, not by local point/spot lights** (`print_light` in `trace.rs`). Brick facades lit by sodium lamps and sign spill show no pools of light, only a flat env tint. [3D] | missing feature | The judge's top complaint is "greybox / no motivated light on materials". Textures make the walls flat and evenly lit. | Baked a darkening gradient into the brick texture; kept local lights for untextured surfaces. |
+| 12 | **No material library and no normal/roughness maps.** Brick, asphalt, weathered paint, neon-tube glass: everything is a flat colour or an albedo-only print. The judge calls the street "previs". [3D] | missing feature | The biggest remaining gap to the references. | Shader-generated brick and asphalt textures pre-rendered to PNG (`v2/tex/`). Albedo-only textures on the road killed the wet reflections, so the road stays untextured. |
+| 13 | **Box sides take no texture** (only ±Z faces print), so a facade needs dozens of rotated panes over the box. [3D] | footgun | 220 extra objects. | Panes. |
+| 14 | **The `smooth` camera spline overshoots between distant keys** (the title billboard ended up framed off-centre), and there is no tension control or per-key ease. [3D] | bug | Cost an iteration. | `"interp": "linear"` with hand-shaped whip and hold keys. |

@@ -24,6 +24,14 @@ for side in (-1,1):
                 c=random.choice(["#FFB866","#FFD9A0","#9CC4FF","#FF9A5A","#2A2A30","#2A2A30"])
                 O.append({"type":"plane","size":[1.3,1.6],"pos":[side*5.08,fl*2.6+0.4,z+random.uniform(-0.6,0.6)],"rot":[0,-side*90,0],
                           "material":{"base":c,"emissive":c,"emissiveStrength":0.5 if c!="#2A2A30" else 0.0,"roughness":0.2}})
+# textured surfaces: brick facades (panes, since box sides take no texture) and wet asphalt
+comps['brick']={"size":[2048,2048],"duration":1,"layers":[{"src":"tex/brick_dark.png","width":2048,"height":2048,"x":1024,"y":1024}]}
+comps['asphalt']={"size":[2048,2048],"duration":1,"layers":[{"src":"tex/asphalt.png","width":2048,"height":2048,"x":1024,"y":1024}]}
+for side in (-1,1):
+    for z in range(8,-112,-4):
+        for yy in (3.0,9.0):
+            O.append({"type":"pane","size":[4.02,6.02],"pos":[side*5.095,yy,z-2],"rot":[0,-side*90,0],"thin":True,
+                      "texture":{"composition":"brick","face":"both"},"material":{"base":"#ffffff","roughness":0.85}})
 # sidewalk curbs
 for side in (-1,1):
     O.append({"type":"box","size":[2.2,0.16,140],"pos":[side*4.0,0,-50],"material":{"base":"#24221F","roughness":0.75}})
@@ -91,10 +99,10 @@ keys.append({"t":round(T_SLAM,4),"pos":[0,1.15,Zs+1.2],"target":[0,4.4,Zt],"foca
 # slam + hold: slow push toward the title billboard
 keys.append({"t":round(T_SLAM+0.25,4),"pos":[0,1.15,Zs-0.2],"target":[0,4.6,Zt],"focal":26,"fstop":5.6})
 keys.append({"t":round(T_END,4),"pos":[0,1.25,Zs-3.0],"target":[0,4.8,Zt],"focal":26,"fstop":5.6})
-props={"env":"city","exposure":1.0,"quality":"standard","objects":O,"lights":lights,
+props={"env":"city","exposure":1.35,"quality":"standard","objects":O,"lights":lights,
        "camera":{"interp":"linear","keys":keys},"shutter":0.3,
        "fog":{"density":0.018,"color":"#0b0d16"},"bloom":0.12,"vignette":0.3}
-score=json.load(open('score_v2.json'))
+score=json.load(open('score_v3.json'))
 spec={"size":[1920,1080],"fps":24,"background":"#000","transition":"cut","intent":{"pace":"frantic"},
  "compositions":comps,"music":dict(score, followCuts=False),"post":{"grain":0.03,"halation":0.25},
  "scenes":[{"duration":round(T_END,4),"layers":[{"component":"scene3d","props":props}]}]}

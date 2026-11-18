@@ -106,9 +106,9 @@ def blinds():
         O.append({"type":"box","size":[12,0.14,0.04],"pos":[mid[0],mid[1]+k*0.45,mid[2]],"rot":[0,36,0],"material":"black"})
     return O
 
-def shot(dur, cam, arm="0", lift="0", spin=True, fog=0.0035, motes=True, extra=None, post=None, layers=None):
+def shot(dur, cam, arm="0", lift="0", spin=True, fog=0.0035, motes=True, extra=None, post=None, layers=None, xlights=None):
     props={"env":{"preset":"night"},"floor":False,"exposure":1.0,"quality":"high","camera":cam,
-           "objects":objects(arm,lift,spin,motes)+blinds(),"lights":lights(),"fog":{"density":fog,"color":"#0a0806","shafts":True},
+           "objects":objects(arm,lift,spin,motes)+blinds()+(extra or []),"lights":lights()+(xlights or []),"fog":{"density":fog,"color":"#0a0806","shafts":True},
            "bloom":0.08,"vignette":0.35}
     s={"duration":dur,"layers":[{"component":"scene3d","props":props}]+(layers or [])}
     if post: s["post"]=post
@@ -130,9 +130,18 @@ sx,sz=arm_xz(ARM_PLAY,(-1.05,2.33))
 scenes.append(shot(2.2, keys((0,[sx+2.1,0.99,sz+1.25],[sx-0.3,0.99,sz-0.2],85,2.8),(2.2,[sx+2.1,0.99,sz+1.25],[sx-0.3,0.99,sz-0.2],85,2.8)),
     arm=str(ARM_PLAY), lift="0.32*pow(1-smoothstep(0.0,2.1,t),1.6)"))
 # S4 wide reveal as the music blooms: camera cranes up and back
-scenes.append(shot(3.6, keys((0,[5.5,1.25,6.5],[-0.3,0.9,0],75,3.5),(3.6,[6.4,2.3,7.8],[-0.6,1.3,0],38,4)), arm=str(ARM_PLAY),
-    layers=[{"text":"ORRERY","font":"Bodoni Moda","weight":900,"size":96,"color":"#F3E4CC","letterSpacing":"0.28em","x":"8%","y":"80%","anchor":"left","opacity":"=smoothstep(1.4,2.2,t)"},
-            {"text":"MODEL ONE  ·  MADE TO BE LISTENED TO","font":"Instrument Sans","size":28,"color":"#E2D2B8","letterSpacing":"0.3em","x":"8.2%","y":"87%","anchor":"left","opacity":"=smoothstep(1.9,2.7,t)"}]))
+scenes.append(shot(2.0, keys((0,[5.5,1.25,6.5],[-0.3,0.9,0],75,3.5),(2.0,[6.0,1.85,7.2],[-0.5,1.1,0],48,4)), arm=str(ARM_PLAY)))
+# S5: the last light writes the name on the wall: a gobo beam through the wordmark (shadow letters in a pool of sun)
+import math as _m
+GL=[-10.0,6.0,-4.0]; GW=[5.0,3.4,-1.0]
+_dx,_dy,_dz=[GW[i]-GL[i] for i in range(3)]
+_yaw=_m.degrees(_m.atan2(-_dx,-_dz)); _pitch=_m.degrees(_m.atan2(_dy,_m.hypot(_dx,_dz)))
+_C=[GL[i]+0.45*(GW[i]-GL[i]) for i in range(3)]
+wall={"type":"box","size":[0.3,9,14],"pos":[5.15,4.5,-1],"material":{"base":"#4a443c","roughness":0.9}}
+gobo={"type":"text","text":"ORRERY","weight":900,"height":0.22,"depth":0.03,"align":"center","pos":[_C[0],_C[1]-0.11,_C[2]],"rot":[_pitch,_yaw,0],"material":"black"}
+scenes.append(shot(2.4, keys((0,[-3.5,1.7,7.5],[4.5,2.8,-1.0],30,5.6),(2.4,[-2.6,1.8,6.2],[4.6,3.0,-1.0],32,5.6)), arm=str(ARM_PLAY),
+    extra=[wall,gobo], xlights=[{"pos":GL,"target":GW,"angle":15,"penumbra":0.3,"intensity":5000,"color":"#FFB070"}],
+    ))
 
 spec={"size":[1920,1080],"fps":FPS,"transition":"cut","background":"#000","intent":{"pace":"calm"},
  "fonts":{"Bodoni Moda":"../fonts/Bodoni_Moda_ital_wght_1_900.ttf","Instrument Sans":"../fonts/Instrument_Sans_wght_700.ttf"},
