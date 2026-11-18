@@ -369,6 +369,35 @@ Based on `crates/anikit-video/src/audio/{sfx,mix}.rs`, `crates/anikit-video/src/
 15. **Asset path:** vendor a curated **CC0-only** pack (Kenney Interface/UI audio) under `assets/sfx/` with its licence file. Add an optional `freesound:` source that requires the *user's* `FREESOUND_API_KEY`, filters `license:"Creative Commons 0"`, downloads previews only, caches per render, and records attribution in the render report. Do not vendor Sonniss, BBC, Pixabay or Mixkit files.
 16. **Sonic-logo / palette preset:** a `brand.sound` block (palette of timbre, reverb and key) applied to all cues, plus a 2–3 s logo sting generator.
 
+### 8.4 Status (v-sound branch, 2026-11-18)
+
+Done in `crates/anikit-video/src/audio/design/` (`anikit-video docs sound`):
+
+- **1** — hit alignment: design cues and `audio[].sfx` with design names land their hit on `at`; the old 13 names keep their old placement for compatibility.
+- **2** — LUFS master: the bus masters to −14 LUFS / −1 dBTP (configurable), and review reports BS.1770 LUFS, true peak and LRA of the real render mix.
+- **3** — per-kind levels.
+- **4** — one registry: design + music library + UI library behind one name space.
+- **5** — round-robin seeds with ±1 st / ±1.5 dB variation, and alternating families on runs of moves.
+- **6** — pan and motion are derived per layer from the picture (`"sound": "auto"`, per-layer `sfx`).
+- **7** — key-tuned tonal effects. Beat quantising is not done: sync to picture wins.
+- **8** — hit ducking with look-ahead and the pre-hit `suck`.
+- **9** — one shared space per film. Per-scene spaces are not done.
+- **10** — 11 ambience beds.
+- **11** — modal foley plus paper, cloth and shatter textures.
+- **12** — partial: thump harmonics and the master low cut; there is no phone-sim review check.
+- **14** — passby, Shepard, sparkle/magic, page and shatter.
+- **15** — partial: CC0 packs are fetched on demand rather than vendored; there is no Freesound source.
+- **Beyond the list:**
+  - physics collisions (scene3d) are heard with the body's material;
+  - SFX and beds step back under voice-over.
+
+Still open:
+
+- **13** — a density and sync linter in review.
+- **16** — a brand sound palette and logo sting.
+- Per-scene spaces.
+- Beat quantising as an option.
+
 ---
 
 ### Sources (beyond those inline)
