@@ -557,6 +557,10 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
             workers.lock().unwrap().insert(c, wk);
         } else {
             pool.lock().unwrap().push(wk);
+            // A chunk is done: hand the frames' freed buffers back, so resident
+            // memory tracks the frames in flight instead of growing with
+            // allocator fragmentation over a long render (a few ms per chunk).
+            crate::memstat::trim();
         }
         if let Some(tap) = tap {
             tap(k, buf);
