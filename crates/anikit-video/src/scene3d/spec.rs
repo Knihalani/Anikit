@@ -950,8 +950,25 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
             "push" => vec![key(0.0, at(-6.0, dist * 1.7, r * height * 1.2)), key(dur * 0.55, at(-2.0, dist * 0.85, r * height)), key(dur, at(0.0, dist * 0.72, r * height * 0.9))],
             "reveal" => vec![key(0.0, at(-25.0, dist * 0.55, r * 0.05)), key(dur, at(8.0, dist * 1.05, r * height * 1.8))],
             "flyby" => vec![key(0.0, at(-amount, dist * 0.8, r * height * 0.7)), key(dur, at(amount, dist * 0.8, r * height * 0.7))],
+            // Product-film moves: a lateral slide with parallax (camera and aim
+            // travel together), a slow 30° arc, a pedestal rise over the subject,
+            // and an overhead flat-lay that turns slowly.
+            "slide" => {
+                let side = v3(r * 0.9, 0.0, 0.0);
+                let p0 = at(-4.0, dist, r * height);
+                vec![CamKey { target: sub(tgt, side), ..key(0.0, sub(p0, side)) }, CamKey { target: add(tgt, side), ..key(dur, add(p0, side)) }]
+            }
+            "arc" => (0..=4).map(|k| k as f32 / 4.0).map(|u| key(u * dur, at(-15.0 + 30.0 * u, dist, r * height))).collect(),
+            "rise" => vec![key(0.0, at(-6.0, dist * 0.95, -r * 0.2)), key(dur, at(-2.0, dist, r * height * 2.4))],
+            "topdown" => (0..=4)
+                .map(|k| k as f32 / 4.0)
+                .map(|u| {
+                    let a = (u * 20.0 - 10.0).to_radians();
+                    CamKey { roll: u * 20.0 - 10.0, ..key(u * dur, v3(c.x + a.sin() * 0.01, c.y + dist * 1.1, c.z + a.cos() * 0.01)) }
+                })
+                .collect(),
             other => {
-                let hint = crate::components::style::closest(other, &["orbit", "dolly", "crane", "static", "push", "reveal", "flyby"]).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+                let hint = crate::components::style::closest(other, &["orbit", "dolly", "crane", "static", "push", "reveal", "flyby", "slide", "arc", "rise", "topdown"]).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
                 return Err(format!("{path}: unknown camera preset `{other}`{hint}"));
             }
         };

@@ -59,7 +59,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - Proof: `docs/video/shots/3d-lights/searchlight.jpg` (two moments of the same shot).
 - **`fog`:** a density per metre, or `{ "density", "color", "shafts": true, "height", "base" }`. `height` makes it height fog: dense at `base` (default 0, the floor) and thinning by e every `height` metres. That gives ground mist, a valley fog, or a set that dissolves into haze. It's integrated exactly along each camera ray (one `exp`), and the layer meets the sky softly. Proof: `docs/video/shots/3d-fog/ground-mist.jpg` (`{ "density": 0.9, "height": 0.25 }`). `shafts` adds volumetric light: spot cones and god rays from the key, with object shadows cut into them. Use density 0.02–0.08 with a dark fog colour at night.
 - **`camera`:**
-  - presets: `push`, `reveal`, `flyby`, `orbit` (all 5 s by default), `dolly`, `crane`, `static`; or `{ "preset", "duration", "degrees", "height", "shake" }`;
+  - presets: `push`, `reveal`, `flyby`, `orbit` (all 5 s by default), `dolly`, `crane`, `static`, plus product-film moves: `slide` (a lateral parallax pass), `arc` (a slow 30° arc), `rise` (a pedestal up from below the subject) and `topdown` (an overhead flat-lay turning 20°); or `{ "preset", "duration", "degrees", "height", "shake" }`;
   - keys: `{ "interp": "smooth"|"linear", "keys": [ { "t", "pos", "target", "focal": 35, "fstop": 2.8, "focus", "shutter": 0.5 } ] }`. A dense per-frame list with linear interpolation works too. `shutter: 0` turns motion blur off.
   - rigs: `"target": "machine"` aims at the object with that `name` (key `target`s become offsets from it); add `"follow": true` to move with it too (key `pos` become offsets).
 - **`objects`:**
