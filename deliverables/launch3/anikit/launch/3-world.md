@@ -1,0 +1,12 @@
+# 3 · One world: the field, seen from the press-box sky
+
+- **Material:** natural turf with mowing stripes (5-yard bands), blade texture and wear, white field paint (yard lines, hashes) and the drill crew's yellow spray dots. Built as a world-space GLSL shader that moves with the camera, so the grass holds at 4–5× zoom. Bodies are a consistent top-down hand: crimson coats, black shakos, white plumes, brass bells, white drum heads, saffron/white silks.
+- **Key light:** one sun, low and from the upper left (late afternoon, warm), casting every player's shadow 2.3 yd long to the lower right; the grandstand's shadow cuts the upper-left of the field. **Arc, not swap:** at the seam (bar 9) the same field passes into the floodlit night show: four cool towers beyond the corners, four short crossed shadows under every player. Same light logic (sources you could point to), turned from sun to floodlight.
+- **Palette family:** turf greens + paint white; crimson/black/white uniforms; brass gold. Accent reserved for the device: the yellow drill dots (the page) and the saffron silks.
+- **Type voice:** Alfa Slab One — the fat slab of painted end-zone lettering and stadium signage; every word is painted *on the turf* in world space, rotated and scaled with the field, crossed by shadows. No overlays, no captions.
+- **Sound world:** a marching band written for the film at 128 bpm (one step per beat): snare cadence alone for bars 1–2 (the dots spray on the snare), then tuba/trombone oom-pah, trumpet melody, bass drum and crash; glockenspiel enters at the seam; a full-band hit and ~1.4 s of silence at bar 13; fanfare to an open B-flat chord.
+- **Anikit means:** world-space turf shader; ~1,000 vector layers whose positions come from the drill sets (`interp` on video time); one camera group per shot mirrored into the shader's uniforms; matte for the day|night seam; hand-written music tracks.
+- **Changes shot to shot:** subject (dots / a rank / the block / rings / the seam / company front / one player / the name), scale (macro 4.6× → wide 0.76×), camera (rotated −30°…+16°, straight-down, tracking, rising).
+
+## Style frames (launch/frames/compare.png: A low sun · B floodlight · C overcast; same moment, bar 8 rings)
+**Picked A.** The long shadows make 144 small figures read as standing bodies with weight and give the frame a light you can point to; C is flat (the "flat light" failure) and B loses the rings' contrast at this scale — floodlight is kept for the second half as the arc, where shots are closer.
