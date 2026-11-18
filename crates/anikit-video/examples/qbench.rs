@@ -19,10 +19,13 @@
 //!    included), checked against the committed baseline.
 //! 5. **Render cache**: timed runs render with `ANIKIT_RENDER_CACHE=0`; a cold
 //!    and a warm cached render must equal the uncached MP4 byte for byte.
+//! 6. **Thread count**: a render on one worker thread must equal the default
+//!    MP4 byte for byte. 7. **Skipped frames**: held/unchanged frames in the
+//!    timed render may not drop below the baseline (static spans re-rendering).
 //!
 //! Options: `--only a,b` · `--runs N` (default 3) · `--gate` (exit 1 on any
 //! failure) · `--update-baseline` · `--out DIR` (default `target/qbench`) ·
-//! `--no-cache-check` · `--json`.
+//! `--no-cache-check` · `--no-thread-check` · `--json`.
 //!
 //! See `docs/video/perf.md` for thresholds and how to read the table.
 
@@ -85,6 +88,10 @@ struct Baseline {
     /// passes as KNOWN while it is no worse than this, and must have an owner.
     #[serde(default)]
     known: std::collections::BTreeMap<String, Known>,
+    /// Frames the timed render skipped (held or unchanged: no render, skip-coded),
+    /// ratcheted: fewer means static spans re-render, a silent speed regression.
+    #[serde(default)]
+    skipped: std::collections::BTreeMap<String, u64>,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone)]
@@ -649,6 +656,9 @@ struct Row {
     render: Fidelity,
     delivered: Fidelity,
     delivered_regressed: bool,
+    /// Frames the timed render skipped as unchanged, and whether that fell below the baseline.
+    held: u64,
+    skip_regressed: bool,
     /// Two default renders of the same clip disagreed.
     nondeterministic: Option<String>,
     /// Over the thresholds but no worse than the recorded known failure (owner).
@@ -813,6 +823,23 @@ fn main() {
                 eprintln!("   RENDER CACHE MISMATCH: {}", bad.join(", "));
             }
         }
+        // Thread count: one worker thread must give the same MP4, byte for byte
+        // (work stealing must never change output). Skipped for slow entries.
+        if e.runs.is_none() && !has("--no-thread-check") && row.wall_s * rayon::current_num_threads() as f64 <= 40.0 {
+            let ev = build(&spec_path).unwrap();
+            let out = out_dir.join(format!("{}.t1.mp4", e.name));
+            let audio = pipeline::mix_audio(&ev, t_audio0, dur, &wav).unwrap_or(None);
+            let pool = rayon::ThreadPoolBuilder::new().num_threads(1).build().unwrap();
+            pool.install(|| pipeline::render_ak264(&ev, &options(e, false), &out, audio.as_deref())).expect("1-thread render");
+            if audio.is_some() {
+                let _ = std::fs::remove_file(&wav);
+            }
+            if std::fs::read(&out).unwrap_or_default() != std::fs::read(&mp4).unwrap_or_default() {
+                row.nondeterministic = Some(format!("1 thread and {} threads give different MP4s", rayon::current_num_threads()));
+                eprintln!("   THREAD-COUNT MISMATCH");
+            }
+            let _ = std::fs::remove_file(&out);
+        }
         anikit_video::components::set_reference(false);
         // 2. Reference.
         let t = Instant::now();
@@ -901,7 +928,20 @@ fn main() {
         } else {
             new_base.known.remove(&e.name);
         }
-        row.pass = (rf.failing.is_empty() || row.known.is_some()) && !row.delivered_regressed && row.nondeterministic.is_none();
+        // Skipped (held/unchanged) frames: a ratchet against the baseline.
+        row.held = row.profile.as_ref().map_or(0, |p| p.unchanged);
+        if let Some(&b) = baseline.skipped.get(&e.name) {
+            if row.held < b {
+                row.skip_regressed = true;
+                row.flags.push(format!("skipped frames {} < baseline {b}: static spans re-render", row.held));
+            }
+        }
+        if !row.skip_regressed || has("--update-baseline") {
+            new_base.skipped.insert(e.name.clone(), row.held);
+        } else {
+            new_base.skipped.insert(e.name.clone(), baseline.skipped[&e.name]);
+        }
+        row.pass = (rf.failing.is_empty() || row.known.is_some()) && !row.delivered_regressed && !row.skip_regressed && row.nondeterministic.is_none();
         if let Some(nd) = &row.nondeterministic {
             row.flags.push(format!("NONDETERMINISTIC: {nd}"));
         }
@@ -939,7 +979,7 @@ fn print_table(rows: &[Row]) {
         let p = r.profile.clone().unwrap_or_default();
         let res = if let (true, Some(o)) = (r.pass, &r.known) {
             format!("KNOWN ({} frames; {o})", r.render.failing.len())
-        } else if r.pass { "PASS".to_string() } else { format!("**FAIL** ({} frames{})", r.render.failing.len(), if r.delivered_regressed { ", delivered regressed" } else { "" }) };
+        } else if r.pass { "PASS".to_string() } else { format!("**FAIL** ({} frames{}{})", r.render.failing.len(), if r.delivered_regressed { ", delivered regressed" } else { "" }, if r.skip_regressed { ", fewer skipped frames" } else { "" }) };
         let flags = if r.flags.is_empty() { String::new() } else { format!(" ⚑ {}", r.flags.join("; ")) };
         println!(
             "| {} | {} | {} ({}) | {:.2} | {:.0} | {:.2} · {:.2} · {:.2} · {:.2} · {:.2} | {:.0} · {:.0} | {:.0} · {:.0} | {:.5} | {:.2} | {:.2} / {:.1} | {:.1} | {:.1} | {:.4} / {:.2} | {}{} |",

@@ -301,6 +301,13 @@ The hot parts live in `scene3d/kernel/`:
   151 → 84 ns). Large meshes build in parallel (650k triangles: 1.3 s).
 - `post.rs`: the post stack on structure-of-arrays planes, row-parallel,
   hot loops in `simd_fn!` kernels (AVX2 + baseline, same bits).
+- Camera rays through thin glass panes: after the first pane, the next
+  hits come from one multi-hit query (the nearest four, `wide::Near`,
+  refilled when used up) instead of a fresh traversal per interface. Same
+  hits in the same order (unit tested; hit points differ by float
+  rounding, ≤ 1 level on 99.9% of differing pixels). Off in scenes with
+  cut-out textures; `ANIKIT_SCENE3D_GLASS_NEAR=0` turns it off. `glass`
+  lookdev: 5050 → 4380 CPU ms per frame, same quality.
 - Volumetric shafts (`Scene::volumetrics`) march at half resolution with an
   R2 low-discrepancy offset per pixel, so the separable 5×5 binomial blur
   cancels the banding (white-noise offsets left sandy grain in bright

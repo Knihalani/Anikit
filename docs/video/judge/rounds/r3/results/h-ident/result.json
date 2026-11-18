@@ -1,0 +1,956 @@
+{
+  "name": "h-ident",
+  "tags": [
+    "brand-idents",
+    "motion-design",
+    "kinetic-type"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "fitc-tokyo-2015",
+    "mad-men"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3.0,
+      "composition": 3.0,
+      "typography": 3.0,
+      "colour": 4.0,
+      "light_texture": 3.0,
+      "motion": 2.0,
+      "craft": 4.0,
+      "originality": 2.0
+    },
+    "overall": 3.0,
+    "judged_professional": "0/6",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a specific idea beyond 'bird flies'. For example, the hover-and-stoop behaviour of a kestrel could drive the edit and the type, the way A's fall drives its narrative.",
+      "Composition and camera never vary. It needs scale shifts, cropping, off-centre framing and real cuts.",
+      "Typography, light and texture are defaults. It needs a typographic point of view and real atmospheric light or material, like B's metalwork or D's print texture.",
+      "It needs a concept that only this film could have. For example, build the piece around the kestrel's stationary hover against the wind instead of a sunset clich\u00e9.",
+      "Break the repeated centred layout. Use scale, cropping and camera movement, as A and C do from frame to frame, so each frame is a distinct poster.",
+      "Replace the default tracked-serif lock-up and flat gradient with considered typography that interacts with the image, plus real texture and light (painted, photographic or material).",
+      "Find a specific idea beyond 'logo = bird'. For example, use the kestrel's hover-and-stoop behaviour as a camera language: the frame holds still while the world moves, then dives into the title.",
+      "Break the single centred layout. Use scale contrast, off-axis framing, macro feather details and real camera moves so each frame works as a distinct poster, as in B and C.",
+      "Replace the default gradient sky and serif caps with real light and texture (backlit feather translucency, atmospheric haze, grain) and a typographic treatment with a point of view that ties into the image.",
+      "Needs a specific idea beyond 'a kestrel flies': e.g. the hover-hunt stillness as a structural device, the way A's fall carries meaning",
+      "Break the locked centred frame with real changes in shot scale, camera and staging between moments",
+      "Give the type and light a point of view: a considered or custom face integrated into the image, and actual texture/atmosphere instead of a stock gradient",
+      "It needs a specific idea beyond 'a bird over a sunset'. For example, A turns its subject into a metaphor (the fall). Give the kestrel a story beat or a visual twist that only this title could have.",
+      "Break the repeated centred layout. Vary scale, camera, cropping and rhythm so each frame is a different poster, the way A moves from a wide shot to the shoes to the fall to the pose.",
+      "Replace the default letter-spaced serif and flat gradient with real typography (a chosen or custom face, built into the image) and real light and texture (atmosphere, grain, a light source with direction).",
+      "Find a concept beyond 'bird in front of sunset', for example the hover-and-stoop hunting behaviour driving the edit, the framing and the reveal, as B builds its whole world from one mechanism.",
+      "Replace the gradient and flat silhouette with designed light and material: a real backlit atmosphere, feather texture and depth layers, so each frame works as a poster.",
+      "Give the type a point of view. Integrate the wordmark into the image or the motion (as D drops its credits into the scene) instead of centring tracked serif caps under a logo."
+    ],
+    "tells": [
+      "The same centred composition repeats across 4 of 6 frames: a bird over a sun disc above a grass strip. Only the wing angle changes.",
+      "Generic sunset gradient, from orange to purple, with a soft glow. It is flat, unmotivated light and has no material.",
+      "Clip-art-like, symmetrical vector bird silhouette",
+      "The end card follows the 'tasteful AI' formula: a small, widely tracked serif in caps, centred on black under a centred emblem",
+      "The idea is literal: the name is Kestrel, so the film shows a kestrel. Nothing in it would surprise or stay with a viewer.",
+      "The transition is a plain crossfade or dissolve, with no choreography or change of weight",
+      "The same centred composition repeats across four frames: a bird silhouette over a sun disc, on a sunset gradient, above a strip of grass. Only the wing pose changes.",
+      "The idea is literal: the product is called 'Kestrel', so it shows a kestrel. Nothing memorable or surprising follows.",
+      "The ending is a textbook 'tasteful AI' lock-up: a symmetrical vector bird with a single peach accent, on black, above a generic serif set in widely tracked caps, with the frame otherwise empty.",
+      "The sunset is a stock radial gradient with clip-art grass and generic wispy clouds. There is no real light, material or texture.",
+      "The transition is a plain cross-dissolve (the ghosted bird in frame 4), and the motion is only a wing flap. There is no camera move and no scale change.",
+      "The bird is a symmetrical vector default, closer to a dove or eagle icon than an observed kestrel. Its signature behaviour, hovering in place, is never used as an idea.",
+      "The same centred composition appears in every frame: a bird silhouette dead-centre on a sun disc over a strip of grass. Only the wing pose changes, so it reads like a slide deck.",
+      "The idea is literal: the product name is 'Kestrel', so the film shows a kestrel. Nothing in it would be remembered or shared.",
+      "The type is a generic tracked-caps editorial serif, small and centred under a symbol on black. This is the textbook 'tasteful AI' end card.",
+      "The background is a default gradient sunset with clip-art grass and stock wisps of cloud. The light is flat and unmotivated, and the bird casts no light or rim.",
+      "The bird is a symmetrical, vector-default silhouette. The transition is a plain cross-dissolve: a ghosted double exposure in frame 4, then a hard cut to black.",
+      "There is almost no motion. The wings flap in place, the camera never moves, and there is no change of scale or perspective.",
+      "The same centred composition across all six frames: a symmetrical bird over a centred sun above a strip of grass",
+      "Wide-tracked caps serif title ('KESTREL') centred under a single icon on a black ground, which is the generic 'tasteful AI' end card",
+      "Default sunset gradient with a soft radial glow, flat unmotivated light and no material",
+      "Clip-art-style symmetrical vector bird; the only motion is a wing flap and a crossfade",
+      "The idea is literal: the name is Kestrel, so it shows a kestrel. Nothing a viewer would remember",
+      "Four of the six frames repeat one composition almost exactly: a centred bird silhouette over a centred sun disc above a strip of grass, with only the wing angle changing. Very little happens.",
+      "The idea is purely literal: the title is 'KESTREL', so the film shows a kestrel, then a kestrel logo. There is no concept a viewer would remember.",
+      "The ending is the generic 'tasteful AI' card: a black ground, a small centred glyph, and a small, widely letter-spaced default serif in caps. It has no scale contrast and no typographic point of view.",
+      "The sunset is a stock gradient with clip-art clouds and the grass is a uniform vector fringe. The bird is a symmetrical, default-looking vector shape, and the light has no real source or atmosphere.",
+      "The transition is a simple crossfade and opacity ghost (frame 4), an effect with no choreography.",
+      "One locked composition across four frames: bird centred over a centred sun over a strip of grass. Only the wing pose changes, so very little happens.",
+      "The sunset is a default radial gradient: orange glow, purple top, wispy clouds. The light has no source logic and there is no texture.",
+      "The silhouette is symmetrical clip-art, and the flapping reads as a few keyframed poses rather than animated flight.",
+      "The end card is a stock tracked-caps serif wordmark ('K E S T R E L') centred under a logo on black, the standard 'tasteful AI' lockup.",
+      "The idea is literal: the name is Kestrel, so the film shows a kestrel. Nothing in it would be remembered or shared.",
+      "The transition is a cross-dissolve from silhouette to an orange-filled logo, an effect without a choreographed idea behind it."
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.06,
+      "judged_professional": "6/6",
+      "mean_rank": 1.67
+    },
+    "fitc-tokyo-2015": {
+      "overall": 7.94,
+      "judged_professional": "6/6",
+      "mean_rank": 3
+    },
+    "mad-men": {
+      "overall": 9.06,
+      "judged_professional": "6/6",
+      "mean_rank": 1.33
+    }
+  },
+  "ref_mean": 8.69,
+  "delta": -5.69,
+  "trials": [
+    {
+      "key": {
+        "A": "mad-men",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "fitc-tokyo-2015"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A specific narrative idea: a silhouetted man walks into an office that dissolves, then falls past skyscraper facades that carry period advertising. The fall and the ad imagery make the show's theme visible.",
+              "Strong graphic contrast: flat black silhouettes cut against photographic 1960s ad collage, reflected in glass curtain-wall grids",
+              "The fall loops back to the reclined pose with a cigarette. The shots are choreographed so the ending answers the opening.",
+              "Restrained credit system: red first name and black surname in a mid-century grotesk. It is consistent and fits the period without becoming pastiche.",
+              "Every composition is different: wide interior, low close-up on the shoes, vertical fall, extreme foreshortening, and the end pose",
+              "Grain and an off-white paper ground give the piece a material feel"
+            ],
+            "gaps": [
+              "The credit type is almost too modest. It sits on the image and does not react to it, so it could play with the facade grid more.",
+              "The interior in the first frame is flatter and more diagrammatic than the collage sections that follow",
+              "The palette rests on black, cream and red. One more unexpected chromatic beat during the fall would add surprise."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific concept: the world map is a clockwork mechanism, with cities that unfold out of gears. It also works as a navigational tool for the series.",
+              "Rich material and light: engraved metal bands, a warm sun core inside an astrolabe, and patinated brass and wood with real specular response",
+              "Varied camera language: a macro on the engraved band, a low flyover of the city mechanism, a top-down map with a pin, and a frontal logo lockup",
+              "The colour is held to a deliberate warm, sepia-bronze world, set against the cool slate of the map",
+              "Credits carry heraldic sigils and a period-appropriate engraved serif, and the logo is integrated into the metal band"
+            ],
+            "gaps": [
+              "Credit typography is small, and the shallow depth of field sometimes swallows it. It sits on the image rather than living in it.",
+              "Framing is centred and conventional compared with the graphic boldness of A",
+              "The bloom on the sun is close to a stock 'epic' trope in the opening and closing frames"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Typography is the subject. Latin and katakana are mixed as modular glyph fragments, alongside pixel and dot-matrix letterforms, and the word builds up to TOKYO.",
+              "Unusual, deliberate palette: hot pink, mint cyan, acid lime and violet on near-black. It is dense without being muddy.",
+              "Every frame has a different structure: a cropped giant D with a target, a horizontal band, a framed type grid, a diagonal scatter, a dot-matrix field and a layered collage",
+              "Texture work such as scanlines, halftone dots and print-like misregistration gives the frames grain and depth",
+              "The density builds toward the final lockup, which points to choreography across the piece"
+            ],
+            "gaps": [
+              "The idea of Tokyo as glitch, signage and type is a familiar motion-design trope. It lacks the narrative specificity of A.",
+              "Busy frames such as the dot matrix and the final collage risk visual noise without a clear focal hierarchy",
+              "There is no real light or physical material. All the texture is applied as a surface treatment, not built into the image."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The same centred composition repeats across 4 of 6 frames: a bird over a sun disc above a grass strip. Only the wing angle changes.",
+              "Generic sunset gradient, from orange to purple, with a soft glow. It is flat, unmotivated light and has no material.",
+              "Clip-art-like, symmetrical vector bird silhouette",
+              "The end card follows the 'tasteful AI' formula: a small, widely tracked serif in caps, centred on black under a centred emblem",
+              "The idea is literal: the name is Kestrel, so the film shows a kestrel. Nothing in it would surprise or stay with a viewer.",
+              "The transition is a plain crossfade or dissolve, with no choreography or change of weight"
+            ],
+            "gaps": [
+              "It needs a specific idea beyond 'bird flies'. For example, the hover-and-stoop behaviour of a kestrel could drive the edit and the type, the way A's fall drives its narrative.",
+              "Composition and camera never vary. It needs scale shifts, cropping, off-centre framing and real cuts.",
+              "Typography, light and texture are defaults. It needs a typographic point of view and real atmospheric light or material, like B's metalwork or D's print texture."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 28.7,
+        "cost_usd": 0.1539022,
+        "tokens": 71740,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "mad-men",
+        "B": "game-of-thrones",
+        "C": "fitc-tokyo-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One clear idea: a flat black silhouette of an executive falls through a modernist office and a tower of period advertising, so the title is a metaphor for the show's whole story.",
+              "Every frame is built differently: a wide shot of the office from behind, a low close-up on the shoes, a tiny falling figure against a curtain-wall fa\u00e7ade, and a big foreground figure tumbling.",
+              "Vintage ad imagery (a pin-up, a whisky glass, the line 'Enjoy the best America has to offer') sits translucently on the window grid, giving dense, meaningful layers.",
+              "Credits are set in a period grotesque with the first name in red caps and the surname in black. The system is restrained and confident, and the credits sit as part of the composition.",
+              "The ending reverses the fall into a calm pose on the sofa, holding a cigarette. That is a real narrative payoff with surprise and wit.",
+              "A deliberate palette of warm grey ground, flat black, red accent and desaturated ad colour, plus a paper-grain texture."
+            ],
+            "gaps": [
+              "The interior in the opening frame is a little flat and diagrammatic next to the richness of the ad montage.",
+              "The light is mostly graphic rather than physical. A touch more atmospheric depth in the office space would add weight.",
+              "With such a small credit type, some credits get lost over the busier montage frames."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific concept: the world is shown as a clockwork map whose cities grow mechanically from the board, and an astrolabe sun binds them together. It also works as an orientation device for viewers.",
+              "Materials are rich and convincing: engraved metal bands, wood, brass gears, aged parchment, and shallow depth of field that reads like a tabletop miniature.",
+              "The light is motivated and dramatic. The armillary sun blows out into warm flares, and the map pieces carry practical-looking shadows.",
+              "Choreography varies: macro close-ups of the engraved band, low tracking shots across the cities, gears assembling, a top-down map view, and a symmetrical title lock-up.",
+              "The credits use a classical inscriptional serif with a small sigil icon for each credit, which ties into the world's heraldry.",
+              "Bronze, slate and parchment make a cohesive, period-appropriate palette."
+            ],
+            "gaps": [
+              "The credit typography is set small and low-contrast, so legibility over busy detail suffers in places.",
+              "The final title lock-up, with its ornate symmetrical crest and glowing serif, is the most conventional frame in an otherwise inventive piece.",
+              "The palette is almost entirely warm, so a cooler counterpoint for the colder northern locations is missing."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The typography is the subject. Latin and katakana letterforms are broken into modular fragments, pixel grids and stencilled geometry, and the piece resolves into 'TOKYO' with Japanese mixed into the letters.",
+              "The palette is deliberate and unusual: hot pink, cyan, acid lime and violet on deep aubergine-black, and it changes from shot to shot.",
+              "Each frame uses a different structure: a giant cropped letter, a horizontal scan band, a framed letter field, diagonal rotated type, an LED dot matrix, and a dense layered collage. That is real choreography, not a repeated layout.",
+              "Print and scanline texture plus grain give the digital material some tactility.",
+              "The density and layering are controlled, and the scale contrast is strong."
+            ],
+            "gaps": [
+              "There is no emotional or narrative arc to match A or B. It is a highly accomplished typographic exercise rather than an idea about a place.",
+              "The glitch-and-dot-matrix vocabulary is a familiar 'Tokyo cyber' aesthetic and risks clich\u00e9, so it needs a more personal visual language.",
+              "The light is purely graphic, with no real depth or physical light, so the frames can feel uniformly flat across the sequence."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The same centred composition repeats across four frames: a bird silhouette over a sun disc, on a sunset gradient, above a strip of grass. Only the wing pose changes.",
+              "The idea is literal: the product is called 'Kestrel', so it shows a kestrel. Nothing memorable or surprising follows.",
+              "The ending is a textbook 'tasteful AI' lock-up: a symmetrical vector bird with a single peach accent, on black, above a generic serif set in widely tracked caps, with the frame otherwise empty.",
+              "The sunset is a stock radial gradient with clip-art grass and generic wispy clouds. There is no real light, material or texture.",
+              "The transition is a plain cross-dissolve (the ghosted bird in frame 4), and the motion is only a wing flap. There is no camera move and no scale change.",
+              "The bird is a symmetrical vector default, closer to a dove or eagle icon than an observed kestrel. Its signature behaviour, hovering in place, is never used as an idea."
+            ],
+            "gaps": [
+              "It needs a concept that only this film could have. For example, build the piece around the kestrel's stationary hover against the wind instead of a sunset clich\u00e9.",
+              "Break the repeated centred layout. Use scale, cropping and camera movement, as A and C do from frame to frame, so each frame is a distinct poster.",
+              "Replace the default tracked-serif lock-up and flat gradient with considered typography that interacts with the image, plus real texture and light (painted, photographic or material)."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.8,
+        "cost_usd": 0.1600258,
+        "tokens": 72043,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "fitc-tokyo-2015",
+        "B": "game-of-thrones",
+        "C": "mad-men",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The type is modular and custom-built: stencil-cut letterforms break apart into geometric glyphs, and Latin and katakana fragments mix together ('TOKYO' reassembling from shards). The type has a clear point of view.",
+              "The palette is deliberate and unusual: hot pink, cyan, acid lime and violet on aubergine-black, with each frame given a different dominant colour.",
+              "The frames are dense and layered: scan-line bands, LED dot-matrix grids, a framed field of letters, a diagonal slash composition. No two frames share a layout.",
+              "The frames build in order: a single glyph, then a band of letters, then a field of letters, then type scattered on a diagonal, then pixel reassembly, then a lockup. That sequence shows clear choreography.",
+              "There is grain, dirt and pixel-noise texture throughout, so the frames don't read as flat vector."
+            ],
+            "gaps": [
+              "It needs a deeper central metaphor. Right now the idea is 'Tokyo as glitchy signage', and it could carry more narrative weight, the way B's clockwork map does.",
+              "Light is graphic, not physical. Adding real glow, bloom or photographic light from neon sources would give the frames depth.",
+              "The final lockup is the busiest frame of the film. The title should resolve with more hierarchy and stillness so it lands as a payoff."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "The idea belongs to this piece alone: the world is a clockwork map that builds itself, inside an astrolabe whose sun-band carries the history. The title doubles as the series' world-building device.",
+              "The light and texture are superb: a blown-out sun core, a carved bronze band with relief engraving, wooden and brass mechanisms, haze and depth of field.",
+              "The camera choreography varies from frame to frame: a macro on the engraving, a low fly-over of the city, a close look at the mechanisms, a pass through the astrolabe rings, a top-down map, then the emblem lockup.",
+              "The colour is a restrained parchment, umber and gold palette with cold slate in the map frames, and it is consistent across the film.",
+              "The credits sit inside the scene with heraldic sigils. The classical inscriptional capitals match the world."
+            ],
+            "gaps": [
+              "The credit typography is slightly conventional: small engraved caps placed in corners. It could be integrated more physically into the mechanisms.",
+              "The map frame is flatter and less lit than the mechanical frames, so the material richness dips for a moment.",
+              "The logo lockup leans on a familiar epic bloom-and-bevel treatment, which is less surprising than the rest of the film."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "The idea is precise: a silhouetted ad-man walks into an office, the office dissolves, and he falls past skyscrapers papered with period advertising before landing in the iconic reclining pose. It works as a visual thesis for the show.",
+              "The flat black silhouette over ghosted photographic ad imagery creates a strong graphic contrast between figure and ground.",
+              "The palette is a disciplined off-white and black with one red accent, used in the type and echoed in the ad imagery.",
+              "The typography has a confident red/black two-word split in a condensed grotesk, placed off-centre against the figure, and it carries through to the end title.",
+              "Scale and camera change drastically across the frames: a wide back view, an extreme close-up of shoes, then the falling figure at several sizes. The choreography is clear."
+            ],
+            "gaps": [
+              "The interior and figure are deliberately flat. A little more paper or print texture on the silhouette would add material richness to rival B.",
+              "Some of the transparent ad layering reads as simple opacity stacking. More intentional compositing (masking, halftone) would deepen the falling frames.",
+              "The credit type is small and placed conventionally in the lower third mid-fall. It could interact with the architecture more."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same centred composition appears in every frame: a bird silhouette dead-centre on a sun disc over a strip of grass. Only the wing pose changes, so it reads like a slide deck.",
+              "The idea is literal: the product name is 'Kestrel', so the film shows a kestrel. Nothing in it would be remembered or shared.",
+              "The type is a generic tracked-caps editorial serif, small and centred under a symbol on black. This is the textbook 'tasteful AI' end card.",
+              "The background is a default gradient sunset with clip-art grass and stock wisps of cloud. The light is flat and unmotivated, and the bird casts no light or rim.",
+              "The bird is a symmetrical, vector-default silhouette. The transition is a plain cross-dissolve: a ghosted double exposure in frame 4, then a hard cut to black.",
+              "There is almost no motion. The wings flap in place, the camera never moves, and there is no change of scale or perspective."
+            ],
+            "gaps": [
+              "Find a specific idea beyond 'logo = bird'. For example, use the kestrel's hover-and-stoop behaviour as a camera language: the frame holds still while the world moves, then dives into the title.",
+              "Break the single centred layout. Use scale contrast, off-axis framing, macro feather details and real camera moves so each frame works as a distinct poster, as in B and C.",
+              "Replace the default gradient sky and serif caps with real light and texture (backlit feather translucency, atmospheric haze, grain) and a typographic treatment with a point of view that ties into the image."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.1,
+        "cost_usd": 0.16048320000000002,
+        "tokens": 72077,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "mad-men",
+        "B": "game-of-thrones",
+        "C": "fitc-tokyo-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One clear idea: a flat silhouette of a man falling through skyscraper glass full of period advertising. It works as a metaphor and gives the sequence its own visual language",
+              "Strict two-tone figure against desaturated cream interiors, with red used only for first names in the credits. The palette is very disciplined",
+              "Credits sit in the composition beside the figure instead of being dropped in the centre, and the red/black name split works as a system",
+              "Each frame uses a different shot scale (wide office, close-up of feet, small figure falling, full-frame lunge, seated end pose), so the choreography is clearly planned",
+              "The ending repeats the opening pose with the man now seated. The loop structure tells the story",
+              "Layered, translucent vintage ad imagery reflected in the curtain-wall grid adds texture and period context"
+            ],
+            "gaps": [
+              "Light is deliberately flat and graphic, so it has less physical depth and material than B",
+              "The illustrated office interior in the first frame is a little plain next to the collaged middle section",
+              "Typography is a well-chosen sans set with restraint rather than a custom typographic idea"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "The specific idea is a clockwork map whose cities build themselves out of gears. It serves as both world-building and navigation",
+              "Real material rendering: worked metal, aged wood, a parchment map, a strong sun-flare inside an armillary sphere",
+              "Shallow depth of field and miniature-scale lensing make the frames read as a physical model",
+              "Serif credits with heraldic sigils sit in perspective within the scene",
+              "Frame sequence shows a camera flying through the map, with towers rising and the armillary bands rotating. Motion is clearly mechanical and choreographed",
+              "The logo resolves inside the same engraved band shown at the start, so the sequence closes its own loop"
+            ],
+            "gaps": [
+              "Warm sepia/bronze grading is dense but sits close to a familiar fantasy palette, so the colour is less surprising than A",
+              "Credit typography is a fairly conventional Trajan-adjacent serif and is sometimes hard to read over busy detail",
+              "Several mid-sequence frames share a similar low-angle miniature composition, so the stills vary less as posters than A's"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Typography is the subject: Latin letterforms are broken into fragments that read as katakana (TOKYO / \u30c8\u30fc\u30ad\u30e7\u30fc), which is a real typographic idea",
+              "Unusual, deliberate palette: hot pink, cyan, acid lime and violet on near-black, with risograph/print grain textures",
+              "Every frame uses a different system (oversized cropped D, a horizontal scan band, a framed character matrix, a diagonal scatter, dot-matrix pixels, a dense collage), so it is clearly not a template",
+              "Dense, layered layouts with misregistration and pixel grids show hands-on craft",
+              "Frame changes imply fast, rhythmic, glitch-cut choreography"
+            ],
+            "gaps": [
+              "The glitch/cyber-Tokyo vocabulary is well-worn, so the idea is less singular than A's falling man",
+              "No narrative arc or ending; the frames feel like a style exploration rather than a resolved film",
+              "Legibility collapses in the later frames, so the strong type idea pays off less than it could"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The same centred composition across all six frames: a symmetrical bird over a centred sun above a strip of grass",
+              "Wide-tracked caps serif title ('KESTREL') centred under a single icon on a black ground, which is the generic 'tasteful AI' end card",
+              "Default sunset gradient with a soft radial glow, flat unmotivated light and no material",
+              "Clip-art-style symmetrical vector bird; the only motion is a wing flap and a crossfade",
+              "The idea is literal: the name is Kestrel, so it shows a kestrel. Nothing a viewer would remember"
+            ],
+            "gaps": [
+              "Needs a specific idea beyond 'a kestrel flies': e.g. the hover-hunt stillness as a structural device, the way A's fall carries meaning",
+              "Break the locked centred frame with real changes in shot scale, camera and staging between moments",
+              "Give the type and light a point of view: a considered or custom face integrated into the image, and actual texture/atmosphere instead of a stock gradient"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 27.5,
+        "cost_usd": 0.15188659999999998,
+        "tokens": 71640,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "mad-men",
+        "B": "candidate",
+        "C": "fitc-tokyo-2015",
+        "D": "game-of-thrones"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "One specific idea that belongs only to this piece: a flat black silhouette of an ad man walks into his office, the office dissolves, and he falls past skyscraper glass that reflects period advertising. The fall stands for the show's whole moral arc, and the last frame resolves it as the famous reclining pose.",
+              "Two image systems are layered on purpose: hard flat-vector silhouettes against photographic 1960s ad imagery (the pin-up in red, the whisky glass, 'ENJOY THE BEST AMERICA HAS TO OFFER') seen through curtain-wall grids. The frames are dense but still read clearly.",
+              "The palette is restrained and deliberate: warm off-white, black and a single period red. The red is tied to the typography, where every first name is set in red and every surname in black, a scheme that runs the whole sequence and ends on 'MAD MEN'.",
+              "The choreography is clear across frames. It moves from wide to an extreme close-up of the shoes, then into a falling figure at several scales and rotations, and ends on a held, resolved pose. The weight and tumble come through in the frames alone.",
+              "Every frame works as a poster. The fine grain and the reflections on the glass give a flat style real material presence."
+            ],
+            "gaps": [
+              "The type is a clean grotesk rather than a custom face. The red/black name scheme is the whole typographic idea, and it could go further in scale and integration, as D's engraved credits do.",
+              "Light is mostly flat by design. A few moments of deeper light or texture would add drama, like D's flares and the glow behind its logo.",
+              "The credits sit apart from the image as a layer on top, not built into the world."
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 2,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Four of the six frames repeat one composition almost exactly: a centred bird silhouette over a centred sun disc above a strip of grass, with only the wing angle changing. Very little happens.",
+              "The idea is purely literal: the title is 'KESTREL', so the film shows a kestrel, then a kestrel logo. There is no concept a viewer would remember.",
+              "The ending is the generic 'tasteful AI' card: a black ground, a small centred glyph, and a small, widely letter-spaced default serif in caps. It has no scale contrast and no typographic point of view.",
+              "The sunset is a stock gradient with clip-art clouds and the grass is a uniform vector fringe. The bird is a symmetrical, default-looking vector shape, and the light has no real source or atmosphere.",
+              "The transition is a simple crossfade and opacity ghost (frame 4), an effect with no choreography."
+            ],
+            "gaps": [
+              "It needs a specific idea beyond 'a bird over a sunset'. For example, A turns its subject into a metaphor (the fall). Give the kestrel a story beat or a visual twist that only this title could have.",
+              "Break the repeated centred layout. Vary scale, camera, cropping and rhythm so each frame is a different poster, the way A moves from a wide shot to the shoes to the fall to the pose.",
+              "Replace the default letter-spaced serif and flat gradient with real typography (a chosen or custom face, built into the image) and real light and texture (atmosphere, grain, a light source with direction)."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Typography is the subject. Latin and katakana glyphs are broken apart and rebuilt, and the letterforms are built from the same rectangles, arcs and dots as the graphics. It ends on a glitched 'TOKYO' lockup that mixes the two scripts.",
+              "The palette is unusual and deliberate: hot pink, cyan, acid lime, violet and red on near-black and on a dirty grey. It is loud but controlled, and changes from frame to frame.",
+              "The frames are dense and layered, with grids, LED dot-matrix type, scanlines and print-like grain. The texture is designed, not a default.",
+              "Composition varies hard across frames: an extreme crop of a 'D', a horizontal band, a framed field of characters, a diagonal slash, a pixel grid and a collage. This shows real choreography, not a slide template."
+            ],
+            "gaps": [
+              "The idea is a strong style but a thin narrative: 'Tokyo as glitch typography' is a familiar trope. It needs a sharper idea of its own, like A's fall.",
+              "No single frame lands with the emotional or iconic weight of A's final pose or D's logo reveal. It needs a decisive hero moment.",
+              "Light is entirely graphic and flat. Some sense of physical depth or material would lift it from a style exercise to a world."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "The idea is specific to its subject: the fantasy map becomes a clockwork mechanism, with cities that unfold like mechanical toys around an armillary sun. Geography, politics and story are all expressed as one machine.",
+              "Light and texture are exceptional: a hot sun-flare behind engraved metal bands, tilt-shift depth of field over the miniature city, and aged brass, wood and parchment. The materials feel real.",
+              "The typography has a point of view. The credits are set in a carved, flared Roman with small caps and engraved sigil icons, built into the world rather than laid over it, and the logo is carved into a medallion.",
+              "The camera choreography is clear: it moves from the armillary band to swooping dives over the cities, then pulls out to the map and lands on the logo reveal, with mechanical weight in every move.",
+              "The palette is bronze, umber, verdigris and parchment, chosen and consistent."
+            ],
+            "gaps": [
+              "The palette is rich but safe: warm sepia and bronze is close to a genre default for fantasy. A's single red is a sharper, more memorable colour decision.",
+              "Frames like the flat map read as more illustrative than the mechanical ones, so the material idea is less consistent across the sequence.",
+              "The credit sizes are small and uniform. There is little expressive scale contrast compared with C's typographic play."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 34.6,
+        "cost_usd": 0.1652748,
+        "tokens": 72311,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "candidate",
+        "B": "game-of-thrones",
+        "C": "fitc-tokyo-2015",
+        "D": "mad-men"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "One locked composition across four frames: bird centred over a centred sun over a strip of grass. Only the wing pose changes, so very little happens.",
+              "The sunset is a default radial gradient: orange glow, purple top, wispy clouds. The light has no source logic and there is no texture.",
+              "The silhouette is symmetrical clip-art, and the flapping reads as a few keyframed poses rather than animated flight.",
+              "The end card is a stock tracked-caps serif wordmark ('K E S T R E L') centred under a logo on black, the standard 'tasteful AI' lockup.",
+              "The idea is literal: the name is Kestrel, so the film shows a kestrel. Nothing in it would be remembered or shared.",
+              "The transition is a cross-dissolve from silhouette to an orange-filled logo, an effect without a choreographed idea behind it."
+            ],
+            "gaps": [
+              "Find a concept beyond 'bird in front of sunset', for example the hover-and-stoop hunting behaviour driving the edit, the framing and the reveal, as B builds its whole world from one mechanism.",
+              "Replace the gradient and flat silhouette with designed light and material: a real backlit atmosphere, feather texture and depth layers, so each frame works as a poster.",
+              "Give the type a point of view. Integrate the wordmark into the image or the motion (as D drops its credits into the scene) instead of centring tracked serif caps under a logo."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "The specific idea: the world is a clockwork map whose cities mechanically build themselves. It is ownable and it carries meaning: a political world as a machine.",
+              "The frames are dense and layered: tooled leather or metal bands with dragon reliefs, gear-driven towers, an astrolabe sun, an inked map.",
+              "The light is real and motivated. A central sun blooms through the armillary bands and there is warm, raking light on the miniatures, with shallow depth of field.",
+              "The type is a carefully chosen display serif with small-caps role labels and sigil icons, placed on the map so it reads as part of the world rather than as overlay.",
+              "The frames show choreography: macro detail, then map flyover, then mechanism, then the sun ring, then the map, ending on the title emblem bookend.",
+              "The palette is consistent: burnished brass, bone and slate, with a hot core light."
+            ],
+            "gaps": [
+              "The title lockup's bevelled, glowing, trajan-esque treatment is more conventional than the rest of the piece.",
+              "In the map frames the credit type sits low-contrast against busy terrain, so legibility suffers in places.",
+              "The heavy bloom and vignette sometimes flatten the midtones and slightly obscure the craft of the miniatures."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The typography is the subject. Latin letterforms are broken into modular glyphs, mixed with katakana fragments and dot-matrix pixel letters, and the 'TOKYO' wordmark is assembled from components.",
+              "The palette is deliberate and unusual: hot pink, cyan, acid lime, violet and yellow on near-black, signal colours that suit Tokyo's signage.",
+              "There is real variety between frames: a giant cropped 'D' and target, a horizontal band, a lime frame of scattered glyphs, a diagonal axis, an LED grid, and a collaged finale. This is not one layout with the words swapped.",
+              "Subtle print and grain texture plus layered UI-like fragments make the frames dense rather than empty.",
+              "Scale contrast is strong: full-bleed letters against tiny tracked glyphs."
+            ],
+            "gaps": [
+              "The idea is a style (Tokyo as glitchy signage typography) rather than a narrative or a single memorable mechanism like B's clockwork map.",
+              "There is no light or depth. Everything is flat graphic, so it lacks B's material richness and its sense of a physical world.",
+              "The glitch and datamosh vocabulary is well worn. It needs one surprising move that only this piece could make to stand out at award level."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "The specific idea: a silhouetted ad man walks into his office, the office dissolves, and he falls past skyscrapers papered with period advertising, then lands in the iconic sofa pose. It is a Saul Bass echo turned into character and theme.",
+              "Every frame works as a poster: black flat silhouettes against desaturated, half-tone vintage ad photography projected onto glass fa\u00e7ades.",
+              "The palette is disciplined, black, bone and one red accent, and the red is used only for names, which ties the type to the system.",
+              "The typography has a period-correct grotesk with a two-tone red/black split for credits and title, placed to balance each composition.",
+              "The choreography is clear and strong: establish, walk, fall, fall closer, then resolve. Scale and angle change dramatically between frames.",
+              "Paper grain and screen texture on the ad layers add age and material."
+            ],
+            "gaps": [
+              "The light is mostly flat by design, so it has less atmospheric depth than B.",
+              "The office establishing frame is sparse and illustrative compared with the dense falling sequences.",
+              "Some credit placements over the busy ad imagery lose hierarchy, for example the 'Enjoy the best America has to offer' line competing with the credits."
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "C",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 32.6,
+        "cost_usd": 0.15998659999999998,
+        "tokens": 72045,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 3,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "The move into the end card is a plain cross-dissolve. Frame 4 shows a grey, half-transparent bird ghosting over the sun and sky, which reads as two layers fighting, not a transformation.",
+        "The wingbeat is a 2D flip of the wing shapes about a fixed pivot. The body never bobs, the tail never fans to correct, and the primaries never bend, so there is no lift or weight. A hovering kestrel is defined by its still head and constantly working body, and that is missing.",
+        "The pairs show only small differences in wing angle. The cycle looks uniform and possibly linear, with no hold at the top or snap on the downstroke.",
+        "The grass, clouds and sun are effectively static (per-second change is about 8). The background is a still plate with no wind, even though the soundtrack carries a wind bed.",
+        "The end card is static for about 2 s, from 3.8 s to 6.0 s: the wordmark and bird simply sit there, with no settle, light move or breath.",
+        "The KESTREL wordmark is a generic wide-tracked serif placed under the mark. It fades in with no relation to the hover or the flight.",
+        "The grass is uniform procedural spikes with near-identical tapers and a hard horizon band. The texture repeats across the width.",
+        "Audio: the noise bed is a perfect rectangle in the spectrogram (1.2\u20133.76 s). It starts and stops abruptly, is band-limited flat to about 20 kHz, and has no envelope or movement, so it reads as generated white noise, not a recorded or designed wind.",
+        "Audio: the low drone is static harmonic stacking for the full length, with no musical event or hit on the logo reveal beyond the noise cutting out."
+      ],
+      "gaps": [
+        "Motion: there is no hover physics or choreography. Top studios would animate the kestrel's signature (the locked head, the working wings and tail, and the gust-and-correct rhythm) and build tension to a stoop or a wing-snap that drives the reveal. Instead the piece holds one repeated flap and then dissolves.",
+        "Transition and arc: the strongest idea (the sunset carried inside the silhouette) arrives through a soft crossfade. It should be a designed, motivated move, such as the sun eclipsing behind the body, a light wipe or a match-cut on the wing apex, landing on a peak and then settling with overshoot.",
+        "Sound: the soundtrack is a static drone plus a hard-gated block of white noise. It needs real design: shaped wind with movement, wing-beat foley synced to each downstroke, a tonal swell into the reveal and a resolved logo sting with a tail."
+      ]
+    },
+    "meta": {
+      "seconds": 25.2,
+      "cost_usd": 0.1667196,
+      "tokens": 72281,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "h-ident.mp4: 6.0s, 1 shots, median 5.97s, longest 5.97s\nper-second change: [8.5, 8.0, 8.9, 98.3, 1.3]\nPACE: FAIL \u2014 longest shot 6.0s > 2.5s; median shot 6.0s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 3.0,
+    "composition": 3.0,
+    "typography": 3.0,
+    "colour": 4.0,
+    "light_texture": 3.0,
+    "motion": 3.0,
+    "craft": 5.0,
+    "originality": 2.0,
+    "sound": 3
+  },
+  "full_overall": 3.22,
+  "cost_usd": 1.118,
+  "judge_seconds": 211.5,
+  "verdict": "FAIL"
+}

@@ -577,3 +577,70 @@ fn transform8_decode_bit_exact() {
         }
     }
 }
+
+#[test]
+fn idr_lookahead_codes_static_content_finer() {
+    // With B-frames the IDR waits for the next frame: macroblocks unchanged in it
+    // get a lower QP (more bytes now, copied onward by skips); a next frame that
+    // differs everywhere leaves the IDR at the frame QP. Decoding stays exact.
+    let (w, h) = (176u32, 144u32);
+    let tex = |seed: u32| {
+        let mut b = YuvBuffer::new(w, h);
+        let mut s = seed;
+        for p in b.y.iter_mut() {
+            s = s.wrapping_mul(1664525).wrapping_add(1013904223);
+            *p = 60 + (s >> 25) as u8;
+        }
+        b
+    };
+    let (a, other) = (tex(1), tex(2));
+    let idr_bytes = |next: &YuvBuffer| {
+        let mut e = Encoder::new(EncoderConfig { bframes: 1, qp: 30, ..cfg(w, h) });
+        assert!(e.encode(&a.frame(), &FrameHints::default()).is_empty(), "IDR is held for lookahead");
+        e.encode(&next.frame(), &FrameHints::default()).len()
+    };
+    let (still, moving) = (idr_bytes(&a), idr_bytes(&other));
+    eprintln!("IDR followed by a static frame {still} bytes, by a changed one {moving}");
+    assert!(still > moving * 5 / 4, "{still} vs {moving}");
+    // a lone IDR comes out of flush
+    let mut e = Encoder::new(EncoderConfig { bframes: 1, ..cfg(w, h) });
+    assert!(e.encode(&a.frame(), &FrameHints::default()).is_empty());
+    assert!(!e.flush().is_empty());
+    // decodes exactly, with IDRs inside the stream too
+    let frames: Vec<_> = (0..9).map(|i| if i % 3 == 2 { other.clone() } else { a.clone() }).collect();
+    for gop in [1u32, 4, 250] {
+        let (_, p) = roundtrip_b(EncoderConfig { bframes: 1, gop, ..cfg(w, h) }, &frames, &format!("la{gop}"));
+        if have_ffmpeg() {
+            assert!(p > 30.0, "psnr {p}");
+        }
+    }
+}
+
+#[test]
+fn ssim_floor_bitrate_ceiling() {
+    // Fresh noise every frame: SSIM rises slowly with bits, so the floor would
+    // take the QP down by its full range. Above the bitrate ceiling (25 Mbit/s
+    // at 1080p30, scaled by area) it stops, so the stream stays near the
+    // constant-QP size.
+    let (w, h) = (320u32, 240u32);
+    let mut s = 7u32;
+    let frames: Vec<YuvBuffer> = (0..24)
+        .map(|_| {
+            let mut b = YuvBuffer::new(w, h);
+            for p in b.y.iter_mut() {
+                s = s.wrapping_mul(1664525).wrapping_add(1013904223);
+                *p = 80 + (s >> 28) as u8;
+            }
+            b
+        })
+        .collect();
+    let enc = |floor: f32| {
+        let mut e = Encoder::new(EncoderConfig { qp: 23, gop: 250, ssim_floor: floor, ..cfg(w, h) });
+        frames.iter().map(|f| e.encode(&f.frame(), &FrameHints::default()).len()).sum::<usize>()
+    };
+    let (flat, floor) = (enc(0.0), enc(0.985));
+    let budget = 25e6 / 8.0 / 30.0 * (w * h) as f64 / (1920.0 * 1080.0);
+    eprintln!("noise: constant QP {flat} bytes, with floor {floor} (budget {budget:.0} bytes/frame)");
+    assert!(flat as f64 / 24.0 > budget, "test content must exceed the ceiling");
+    assert!((floor as f64) < flat as f64 * 1.3, "{floor} vs {flat}");
+}
