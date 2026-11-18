@@ -194,6 +194,22 @@ Built (`anikit-video docs mograph`, `docs/video/spec-reference.md` → Motion gr
 - **10:** `posterizeTime` on a layer or group (plus `wigglePath` for boiling lines).
 - **11 (partly):** critique tips for linear spatial moves, four or more layers starting on one frame, and no follow-through anywhere.
 
+Added later in the night:
+- **1:** `vx`/`vy` in expressions (the layer's own velocity) for custom secondary motion; `drag` on groups.
+- **2:** `carry` on any transition (shared elements travel between layouts: a match move).
+- **3:** per-layer `motionBlur` (additive sub-frame average, adaptive samples, only while moving).
+- **4:** default overshoot retuned to the 3–8% range (`popIn` ~5%, `bouncy` ~8%); `springy` keeps the big bounce.
+- **6 (partly):** camera `dolly` (a push through depth layers with perspective parallax). Orbit and crane moves are still open.
+- **7:** scene `timeRemap` (speed ramps, slow-mo and freezes as an expression of real time).
+- **9 (partly):** loop `ramp` envelopes (oscillators grow in and die away); `extrude` for solid extrusions and long shadows.
+- Recipes: `anikit-video recipes zoom-through | match-move | kinetic-reveal`.
+
+Blind-judge evidence (scripts/judge.py on -v-judge, 3 trials each, refs ~8.2–8.6):
+- Effects-led proofs in four registers scored 3.0–3.1.
+- A structural rework (a facade of windows, editorial programme, no repeated lockup or mono labels) scored 4.38 (from 3.25).
+- Swapping to library fonts, and adding a colour arc, dolly and carried continuity, each held at 4.38 while changing the sub-scores (colour 5, originality 4).
+- What remains is concept and art direction, not motion tooling.
+
 Proof pieces in four registers: `examples/video/motion/` (velo-snap, rainwell-fluid, noodle-handmade, atlas-precision; full-size stills in `stills/`).
 
 ---
