@@ -1,0 +1,1336 @@
+{
+ "size": "16:9",
+ "intent": {
+  "pace": "medium",
+  "genre": "launch"
+ },
+ "music": {
+  "style": "piano",
+  "bpm": 96,
+  "key": "Dm",
+  "mood": "tender, building",
+  "instruments": {
+   "lead": "cello"
+  },
+  "sections": [
+   {
+    "name": "intro",
+    "bars": 2,
+    "energy": 0.15
+   },
+   {
+    "name": "verse",
+    "bars": 4,
+    "energy": 0.5
+   },
+   {
+    "name": "build",
+    "bars": 2,
+    "energy": 0.8
+   },
+   {
+    "name": "payoff",
+    "bars": 4,
+    "energy": 1.0,
+    "stop": 2
+   }
+  ],
+  "hits": [
+   "@bar9"
+  ],
+  "end": "ring",
+  "followCuts": false
+ },
+ "sound": {
+  "palette": "organic",
+  "ambience": "room",
+  "space": "room",
+  "density": 0.4,
+  "cues": [
+   {
+    "sfx": "tick",
+    "at": 0.0,
+    "gain": -14,
+    "x": 0.3
+   },
+   {
+    "sfx": "tick",
+    "at": 0.625,
+    "gain": -14,
+    "x": 0.3
+   },
+   {
+    "sfx": "tick",
+    "at": 1.25,
+    "gain": -14,
+    "x": 0.3
+   },
+   {
+    "sfx": "tick",
+    "at": 1.875,
+    "gain": -14,
+    "x": 0.3
+   },
+   {
+    "sfx": "tick",
+    "at": 2.5,
+    "gain": -14,
+    "x": 0.3
+   },
+   {
+    "sfx": "tick",
+    "at": 3.125,
+    "gain": -14,
+    "x": 0.3
+   },
+   {
+    "sfx": "tick",
+    "at": 3.75,
+    "gain": -14,
+    "x": 0.3
+   },
+   {
+    "sfx": "tick",
+    "at": 4.375,
+    "gain": -14,
+    "x": 0.3
+   },
+   {
+    "sfx": "droplet",
+    "at": 0.25,
+    "gain": -8
+   },
+   {
+    "sfx": "click",
+    "at": 18.75,
+    "gain": -2,
+    "x": -0.4
+   },
+   {
+    "sfx": "click",
+    "at": 20.0,
+    "gain": -4,
+    "x": -0.4,
+    "pitch": -3
+   },
+   {
+    "sfx": "droplet",
+    "at": 25.3,
+    "gain": -9
+   }
+  ]
+ },
+ "compositions": {
+  "seaL": {
+   "size": [
+    1620,
+    870
+   ],
+   "duration": 30,
+   "background": "#000",
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/sea.glsl",
+     "uniforms": {
+      "tt": "=t",
+      "speed": 0.8,
+      "sun": 0.92,
+      "swell": 1.1,
+      "chop": 1.2,
+      "color": [
+       0.01,
+       0.05,
+       0.08
+      ],
+      "sky": [
+       0.28,
+       0.32,
+       0.45
+      ]
+     }
+    },
+    {
+     "shape": "path",
+     "d": "M0 90.0 C105.0 52.5 195.0 33.0 285.0 30.0 C352.5 27.0 420.0 45.0 570.0 72.0 L570.0 375.0 L0 375.0 Z",
+     "fill": "#07080a",
+     "x": 1065.0,
+     "y": 457.5,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M12.0 0 L40.5 0 L49.5 255.0 L3.0 255.0 Z",
+     "fill": "#0b0c0e",
+     "x": 1275.0,
+     "y": 234.0,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "rect",
+     "width": 52.5,
+     "height": 37.5,
+     "fill": "#0b0c0e",
+     "x": 1275.0,
+     "y": 199.5,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "rect",
+     "width": 37.5,
+     "height": 22.5,
+     "fill": "#fff3d6",
+     "x": 1282.5,
+     "y": 209.25,
+     "anchor": "topLeft",
+     "glow": "#ffd9a0"
+    },
+    {
+     "shape": "path",
+     "d": "M0 112.5 L1500.0 0 L1500.0 255.0 Z",
+     "fill": "linear-gradient(90deg, rgba(255,240,210,0.9), rgba(255,240,210,0))",
+     "x": 1301.25,
+     "y": 220.5,
+     "anchor": "left",
+     "blend": "screen",
+     "scaleX": "=-cos(t*1.25 + 0.4)"
+    },
+    {
+     "shape": "path",
+     "d": "M0 13.5 L67.5 13.5 L57.0 25.5 L7.5 25.5 Z M30.0 13.5 L30.0 -25.5 L54.0 10.5 Z",
+     "fill": "#050506",
+     "x": "=390.0 + 4.5*sin(t*1.7)",
+     "y": "=570.0 + 3.75*sin(t*2.3)",
+     "rotation": "=3*sin(t*1.9)",
+     "anchor": "topLeft"
+    },
+    {
+     "repeat": 90,
+     "shape": "rect",
+     "width": 2.25,
+     "height": 67.5,
+     "fill": "rgba(225,230,240,0.30)",
+     "rotation": 12,
+     "x": "=($i*271) % 1620",
+     "y": "=(($i*157) + t*1200.0) % 975.0 - 52.5",
+     "anchor": "topLeft"
+    }
+   ]
+  },
+  "seaS": {
+   "size": [
+    720,
+    387
+   ],
+   "duration": 30,
+   "background": "#000",
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/sea.glsl",
+     "uniforms": {
+      "tt": "=t",
+      "speed": 0.8,
+      "sun": 0.92,
+      "swell": 1.1,
+      "chop": 1.2,
+      "color": [
+       0.01,
+       0.05,
+       0.08
+      ],
+      "sky": [
+       0.28,
+       0.32,
+       0.45
+      ]
+     }
+    },
+    {
+     "shape": "path",
+     "d": "M0 40.0 C46.666666666666664 23.333333333333332 86.66666666666666 14.666666666666666 126.66666666666666 13.333333333333332 C156.66666666666666 12.0 186.66666666666666 20.0 253.33333333333331 32.0 L253.33333333333331 166.66666666666666 L0 166.66666666666666 Z",
+     "fill": "#07080a",
+     "x": 473.3333333333333,
+     "y": 203.33333333333331,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M5.333333333333333 0 L18.0 0 L22.0 113.33333333333333 L1.3333333333333333 113.33333333333333 Z",
+     "fill": "#0b0c0e",
+     "x": 566.6666666666666,
+     "y": 104.0,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "rect",
+     "width": 23.333333333333332,
+     "height": 16.666666666666664,
+     "fill": "#0b0c0e",
+     "x": 566.6666666666666,
+     "y": 88.66666666666666,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "rect",
+     "width": 16.666666666666664,
+     "height": 10.0,
+     "fill": "#fff3d6",
+     "x": 570.0,
+     "y": 93.0,
+     "anchor": "topLeft",
+     "glow": "#ffd9a0"
+    },
+    {
+     "shape": "path",
+     "d": "M0 50.0 L666.6666666666666 0 L666.6666666666666 113.33333333333333 Z",
+     "fill": "linear-gradient(90deg, rgba(255,240,210,0.9), rgba(255,240,210,0))",
+     "x": 578.3333333333333,
+     "y": 98.0,
+     "anchor": "left",
+     "blend": "screen",
+     "scaleX": "=-cos(t*1.25 + 0.4)"
+    },
+    {
+     "shape": "path",
+     "d": "M0 6.0 L30.0 6.0 L25.333333333333332 11.333333333333332 L3.333333333333333 11.333333333333332 Z M13.333333333333332 6.0 L13.333333333333332 -11.333333333333332 L24.0 4.666666666666666 Z",
+     "fill": "#050506",
+     "x": "=173.33333333333331 + 2.0*sin(t*1.7)",
+     "y": "=253.33333333333331 + 1.6666666666666665*sin(t*2.3)",
+     "rotation": "=3*sin(t*1.9)",
+     "anchor": "topLeft"
+    },
+    {
+     "repeat": 90,
+     "shape": "rect",
+     "width": 2,
+     "height": 30.0,
+     "fill": "rgba(225,230,240,0.30)",
+     "rotation": 12,
+     "x": "=($i*271) % 720",
+     "y": "=(($i*157) + t*533.3333333333333) % 433.6666666666667 - 23.333333333333332",
+     "anchor": "topLeft"
+    }
+   ]
+  },
+  "lh": {
+   "size": [
+    2400,
+    1600
+   ],
+   "duration": 30,
+   "background": "#F2EEE6",
+   "layers": [
+    {
+     "composition": "seaL",
+     "x": 120.0,
+     "y": 120.0,
+     "anchor": "topLeft",
+     "width": 2160.0,
+     "height": 1160.0
+    },
+    {
+     "text": "*A lighthouse at dusk, in rain. The beam finds a small boat.*",
+     "font": "Newsreader",
+     "size": 76,
+     "color": "#1b1714",
+     "x": 120.0,
+     "y": 1422.0,
+     "anchor": "left"
+    }
+   ]
+  },
+  "lhS": {
+   "size": [
+    1200,
+    800
+   ],
+   "duration": 30,
+   "background": "#F2EEE6",
+   "layers": [
+    {
+     "composition": "seaS",
+     "x": 60.0,
+     "y": 60.0,
+     "anchor": "topLeft",
+     "width": 1080.0,
+     "height": 580.0
+    },
+    {
+     "text": "*A lighthouse at dusk, in rain. The beam finds a small boat.*",
+     "font": "Newsreader",
+     "size": 38,
+     "color": "#1b1714",
+     "x": 60.0,
+     "y": 711.0,
+     "anchor": "left"
+    }
+   ]
+  },
+  "seaN": {
+   "size": [
+    1620,
+    870
+   ],
+   "duration": 30,
+   "background": "#000",
+   "layers": [
+    {
+     "type": "shader",
+     "src": "src/sea.glsl",
+     "uniforms": {
+      "tt": "=t",
+      "speed": 0.8,
+      "sun": 0.92,
+      "swell": 1.1,
+      "chop": 1.2,
+      "color": [
+       0.01,
+       0.05,
+       0.08
+      ],
+      "sky": [
+       0.28,
+       0.32,
+       0.45
+      ]
+     }
+    },
+    {
+     "shape": "path",
+     "d": "M0 90.0 C105.0 52.5 195.0 33.0 285.0 30.0 C352.5 27.0 420.0 45.0 570.0 72.0 L570.0 375.0 L0 375.0 Z",
+     "fill": "#07080a",
+     "x": 1065.0,
+     "y": 457.5,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M12.0 0 L40.5 0 L49.5 255.0 L3.0 255.0 Z",
+     "fill": "#0b0c0e",
+     "x": 1275.0,
+     "y": 234.0,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "rect",
+     "width": 52.5,
+     "height": 37.5,
+     "fill": "#0b0c0e",
+     "x": 1275.0,
+     "y": 199.5,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "rect",
+     "width": 37.5,
+     "height": 22.5,
+     "fill": "#fff3d6",
+     "x": 1282.5,
+     "y": 209.25,
+     "anchor": "topLeft",
+     "glow": "#ffd9a0"
+    },
+    {
+     "text": "Anikit Video",
+     "font": "Newsreader",
+     "weight": 600,
+     "size": 194,
+     "color": "#07080a",
+     "letterSpacing": "-0.02em",
+     "x": 97.2,
+     "y": 313.2,
+     "anchor": "left"
+    },
+    {
+     "shape": "path",
+     "d": "M0 112.5 L1500.0 0 L1500.0 255.0 Z",
+     "fill": "linear-gradient(90deg, rgba(255,240,210,0.9), rgba(255,240,210,0))",
+     "x": 1301.25,
+     "y": 220.5,
+     "anchor": "left",
+     "blend": "screen",
+     "scaleX": "=-cos(t*1.25 + 0.4)"
+    },
+    {
+     "shape": "path",
+     "d": "M0 13.5 L67.5 13.5 L57.0 25.5 L7.5 25.5 Z M30.0 13.5 L30.0 -25.5 L54.0 10.5 Z",
+     "fill": "#050506",
+     "x": "=390.0 + 4.5*sin(t*1.7)",
+     "y": "=570.0 + 3.75*sin(t*2.3)",
+     "rotation": "=3*sin(t*1.9)",
+     "anchor": "topLeft"
+    },
+    {
+     "repeat": 90,
+     "shape": "rect",
+     "width": 2.25,
+     "height": 67.5,
+     "fill": "rgba(225,230,240,0.30)",
+     "rotation": 12,
+     "x": "=($i*271) % 1620",
+     "y": "=(($i*157) + t*1200.0) % 975.0 - 52.5",
+     "anchor": "topLeft"
+    }
+   ]
+  },
+  "nameP": {
+   "size": [
+    2400,
+    1600
+   ],
+   "duration": 30,
+   "background": "#F2EEE6",
+   "layers": [
+    {
+     "composition": "seaN",
+     "x": 120.0,
+     "y": 120.0,
+     "anchor": "topLeft",
+     "width": 2160.0,
+     "height": 1160.0
+    },
+    {
+     "text": "*anikit-video render spec.json*",
+     "font": "Newsreader",
+     "size": 76,
+     "color": "#1b1714",
+     "x": 120.0,
+     "y": 1422.0,
+     "anchor": "left"
+    }
+   ]
+  }
+ },
+ "scenes": [
+  {
+   "duration": 5.0,
+   "background": "#090707",
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 2400,
+     "height": 1600.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=1480 - 520*smoothstep(0, 5, t)",
+     "y": "=-170 + 690*smoothstep(0, 5, t)",
+     "scale": "=1.2 - 0.56*smoothstep(0, 5, t)",
+     "rotation": "=-7 + 4*smoothstep(0, 5, t)"
+    },
+    {
+     "composition": "lh",
+     "width": 2400,
+     "height": 1600.0,
+     "x": "=1480 - 520*smoothstep(0, 5, t)",
+     "y": "=-170 + 690*smoothstep(0, 5, t)",
+     "scale": "=1.2 - 0.56*smoothstep(0, 5, t)",
+     "rotation": "=-7 + 4*smoothstep(0, 5, t)",
+     "speed": 0.0
+    },
+    {
+     "type": "shader",
+     "src": "src/develop.glsl",
+     "filter": true,
+     "uniforms": {
+      "dev": "=clamp((t+0.9)/4.4, 0, 1)",
+      "cx": "=1480 - 520*smoothstep(0, 5, t)",
+      "cy": "=-170 + 690*smoothstep(0, 5, t)",
+      "hw": "=(1.2 - 0.56*smoothstep(0, 5, t))*1200.0",
+      "hh": "=(1.2 - 0.56*smoothstep(0, 5, t))*800.0",
+      "rot": "=-7 + 4*smoothstep(0, 5, t)"
+     }
+    },
+    {
+     "type": "shader",
+     "src": "src/darkroom.glsl",
+     "filter": true,
+     "uniforms": {
+      "room": 0,
+      "lights": 1,
+      "lx": 0.16,
+      "ly": 0.98,
+      "slosh": 1.0,
+      "wave": "=clamp(t/1.6, 0, 1)*1.0",
+      "seed": 1.0
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "background": "#090707",
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 2400,
+     "height": 1600.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=820 - 60*t",
+     "y": "=560 + 20*t",
+     "scale": "=0.9 + 0.08*t",
+     "rotation": "=4 - 0.6*t"
+    },
+    {
+     "composition": "lh",
+     "width": 2400,
+     "height": 1600.0,
+     "x": "=820 - 60*t",
+     "y": "=560 + 20*t",
+     "scale": "=0.9 + 0.08*t",
+     "rotation": "=4 - 0.6*t",
+     "trimStart": 5.0
+    },
+    {
+     "type": "shader",
+     "src": "src/darkroom.glsl",
+     "filter": true,
+     "uniforms": {
+      "room": 0,
+      "lights": 1,
+      "lx": 0.2,
+      "ly": 0.98,
+      "slosh": 1.0,
+      "wave": -1.0,
+      "seed": 2.0
+     }
+    }
+   ]
+  },
+  {
+   "duration": 3.75,
+   "background": "#090707",
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 2400,
+     "height": 1600.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=640 - 40*t",
+     "y": "=420 + 6*t",
+     "scale": 0.5,
+     "rotation": -5
+    },
+    {
+     "composition": "lh",
+     "width": 2400,
+     "height": 1600.0,
+     "x": "=640 - 40*t",
+     "y": "=420 + 6*t",
+     "scale": 0.5,
+     "rotation": -5,
+     "trimStart": 7.5
+    },
+    {
+     "shape": "rect",
+     "width": 2400,
+     "height": 1600.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=1500 - 40*t",
+     "y": "=690 + 6*t",
+     "scale": 0.5,
+     "rotation": 4
+    },
+    {
+     "composition": "lh",
+     "width": 2400,
+     "height": 1600.0,
+     "x": "=1500 - 40*t",
+     "y": "=690 + 6*t",
+     "scale": 0.5,
+     "rotation": 4,
+     "trimStart": 7.5,
+     "sfx": {
+      "in": "paper"
+     }
+    },
+    {
+     "type": "shader",
+     "src": "src/develop.glsl",
+     "filter": true,
+     "uniforms": {
+      "dev": "=clamp((t-0.1)/1.6, 0, 1)",
+      "cx": "=1500 - 40*t",
+      "cy": "=690 + 6*t",
+      "hw": "=(0.5)*1200.0",
+      "hh": "=(0.5)*800.0",
+      "rot": 4
+     }
+    },
+    {
+     "type": "shader",
+     "src": "src/darkroom.glsl",
+     "filter": true,
+     "uniforms": {
+      "room": 0,
+      "lights": 1,
+      "lx": 0.12,
+      "ly": 0.95,
+      "slosh": 1.0,
+      "wave": -1.0,
+      "seed": 3.0
+     }
+    }
+   ]
+  },
+  {
+   "duration": 3.75,
+   "background": "#090707",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.55,
+       "rotation": 4
+      },
+      "to": {
+       "zoom": 1.0,
+       "rotation": 0
+      },
+      "duration": 3.75,
+      "ease": "outCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=360 + 8*sin(t*0.9 + 0)",
+     "y": "=190 + 6*cos(t*0.8 + 0.0)",
+     "scale": 0.44,
+     "rotation": "=-3 + 0.8*sin(t*0.7 + 0)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=360 + 8*sin(t*0.9 + 0)",
+     "y": "=190 + 6*cos(t*0.8 + 0.0)",
+     "scale": 0.44,
+     "rotation": "=-3 + 0.8*sin(t*0.7 + 0)",
+     "trimStart": 11.25
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=960 + 8*sin(t*0.9 + 1)",
+     "y": "=190 + 6*cos(t*0.8 + 1.7)",
+     "scale": 0.44,
+     "rotation": "=2 + 0.8*sin(t*0.7 + 1)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=960 + 8*sin(t*0.9 + 1)",
+     "y": "=190 + 6*cos(t*0.8 + 1.7)",
+     "scale": 0.44,
+     "rotation": "=2 + 0.8*sin(t*0.7 + 1)",
+     "trimStart": 11.25
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=1560 + 8*sin(t*0.9 + 2)",
+     "y": "=190 + 6*cos(t*0.8 + 3.4)",
+     "scale": 0.44,
+     "rotation": "=-1 + 0.8*sin(t*0.7 + 2)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=1560 + 8*sin(t*0.9 + 2)",
+     "y": "=190 + 6*cos(t*0.8 + 3.4)",
+     "scale": 0.44,
+     "rotation": "=-1 + 0.8*sin(t*0.7 + 2)",
+     "trimStart": 11.25
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=360 + 8*sin(t*0.9 + 3)",
+     "y": "=540 + 6*cos(t*0.8 + 5.1)",
+     "scale": 0.44,
+     "rotation": "=3 + 0.8*sin(t*0.7 + 3)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=360 + 8*sin(t*0.9 + 3)",
+     "y": "=540 + 6*cos(t*0.8 + 5.1)",
+     "scale": 0.44,
+     "rotation": "=3 + 0.8*sin(t*0.7 + 3)",
+     "trimStart": 11.25
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=960 + 8*sin(t*0.9 + 4)",
+     "y": "=540 + 6*cos(t*0.8 + 6.8)",
+     "scale": 0.44,
+     "rotation": "=-2 + 0.8*sin(t*0.7 + 4)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=960 + 8*sin(t*0.9 + 4)",
+     "y": "=540 + 6*cos(t*0.8 + 6.8)",
+     "scale": 0.44,
+     "rotation": "=-2 + 0.8*sin(t*0.7 + 4)",
+     "trimStart": 11.25
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=1560 + 8*sin(t*0.9 + 5)",
+     "y": "=540 + 6*cos(t*0.8 + 8.5)",
+     "scale": 0.44,
+     "rotation": "=1 + 0.8*sin(t*0.7 + 5)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=1560 + 8*sin(t*0.9 + 5)",
+     "y": "=540 + 6*cos(t*0.8 + 8.5)",
+     "scale": 0.44,
+     "rotation": "=1 + 0.8*sin(t*0.7 + 5)",
+     "trimStart": 11.25
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=360 + 8*sin(t*0.9 + 6)",
+     "y": "=890 + 6*cos(t*0.8 + 10.2)",
+     "scale": 0.44,
+     "rotation": "=2 + 0.8*sin(t*0.7 + 6)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=360 + 8*sin(t*0.9 + 6)",
+     "y": "=890 + 6*cos(t*0.8 + 10.2)",
+     "scale": 0.44,
+     "rotation": "=2 + 0.8*sin(t*0.7 + 6)",
+     "trimStart": 11.25
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=960 + 8*sin(t*0.9 + 7)",
+     "y": "=890 + 6*cos(t*0.8 + 11.9)",
+     "scale": 0.44,
+     "rotation": "=-3 + 0.8*sin(t*0.7 + 7)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=960 + 8*sin(t*0.9 + 7)",
+     "y": "=890 + 6*cos(t*0.8 + 11.9)",
+     "scale": 0.44,
+     "rotation": "=-3 + 0.8*sin(t*0.7 + 7)",
+     "trimStart": 11.25
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=1560 + 8*sin(t*0.9 + 8)",
+     "y": "=890 + 6*cos(t*0.8 + 13.6)",
+     "scale": 0.44,
+     "rotation": "=0 + 0.8*sin(t*0.7 + 8)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=1560 + 8*sin(t*0.9 + 8)",
+     "y": "=890 + 6*cos(t*0.8 + 13.6)",
+     "scale": 0.44,
+     "rotation": "=0 + 0.8*sin(t*0.7 + 8)",
+     "trimStart": 11.25
+    },
+    {
+     "type": "shader",
+     "src": "src/darkroom.glsl",
+     "filter": true,
+     "uniforms": {
+      "room": 0,
+      "lights": 1,
+      "lx": 0.18,
+      "ly": 1.0,
+      "slosh": 1.2,
+      "wave": -1.0,
+      "seed": 4.0
+     }
+    }
+   ]
+  },
+  {
+   "duration": 3.75,
+   "background": "#090707",
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 2400,
+     "height": 1600.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": 960,
+     "y": 430,
+     "scale": 0.56,
+     "rotation": -2
+    },
+    {
+     "composition": "lh",
+     "width": 2400,
+     "height": 1600.0,
+     "x": 960,
+     "y": 430,
+     "scale": 0.56,
+     "rotation": -2,
+     "trimStart": 15.0
+    },
+    {
+     "composition": "lh",
+     "width": 2400,
+     "height": 1600.0,
+     "x": "=960 + 1100*pow(1 - smoothstep(0.1, 1.5, t), 3)",
+     "y": "=430 - 120*pow(1 - smoothstep(0.1, 1.5, t), 3)",
+     "scale": 0.56,
+     "rotation": "=-2 + 9*pow(1 - smoothstep(0.1, 1.5, t), 3)",
+     "trimStart": 15.0,
+     "sfx": {
+      "in": "paper"
+     },
+     "opacity": "=0.5 + 0.5*smoothstep(1.45, 1.6, t)"
+    },
+    {
+     "text": "*Same words. Same film.*",
+     "font": "Newsreader",
+     "size": 78,
+     "color": "#EDE6DA",
+     "x": 327.9999999999999,
+     "y": 965,
+     "anchor": "left",
+     "rotation": -1,
+     "start": 1.5,
+     "enter": {
+      "preset": "fade",
+      "duration": 0.5
+     }
+    },
+    {
+     "type": "shader",
+     "src": "src/darkroom.glsl",
+     "filter": true,
+     "uniforms": {
+      "room": 0,
+      "lights": 1,
+      "lx": 0.16,
+      "ly": 0.98,
+      "slosh": 1.0,
+      "wave": -1.0,
+      "seed": 5.0
+     }
+    }
+   ]
+  },
+  {
+   "duration": 1.25,
+   "background": "#000",
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 2400,
+     "height": 1600.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": 960,
+     "y": 430,
+     "scale": 0.56,
+     "rotation": -2
+    },
+    {
+     "composition": "lh",
+     "width": 2400,
+     "height": 1600.0,
+     "x": 960,
+     "y": 430,
+     "scale": 0.56,
+     "rotation": -2,
+     "trimStart": 18.75
+    },
+    {
+     "text": "*Same words. Same film.*",
+     "font": "Newsreader",
+     "size": 78,
+     "color": "#EDE6DA",
+     "x": 327.9999999999999,
+     "y": 965,
+     "anchor": "left",
+     "rotation": -1
+    },
+    {
+     "type": "shader",
+     "src": "src/darkroom.glsl",
+     "filter": true,
+     "uniforms": {
+      "room": 0,
+      "lights": "=1 - smoothstep(0, 1.2, t)",
+      "lx": 0.16,
+      "ly": 0.98,
+      "slosh": 1.0,
+      "wave": -1.0,
+      "seed": 6.0
+     }
+    }
+   ]
+  },
+  {
+   "duration": 5.0,
+   "background": "#090707",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.9,
+       "rotation": -14,
+       "x": 200,
+       "y": 120
+      },
+      "to": {
+       "zoom": 1.45,
+       "rotation": -9,
+       "x": 120,
+       "y": 60
+      },
+      "duration": 5.0,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=360 + 8*sin(t*0.9 + 0)",
+     "y": "=190 + 6*cos(t*0.8 + 0.0)",
+     "scale": 0.44,
+     "rotation": "=-3 + 0.8*sin(t*0.7 + 0)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=360 + 8*sin(t*0.9 + 0)",
+     "y": "=190 + 6*cos(t*0.8 + 0.0)",
+     "scale": 0.44,
+     "rotation": "=-3 + 0.8*sin(t*0.7 + 0)",
+     "trimStart": 20.0
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=960 + 8*sin(t*0.9 + 1)",
+     "y": "=190 + 6*cos(t*0.8 + 1.7)",
+     "scale": 0.44,
+     "rotation": "=2 + 0.8*sin(t*0.7 + 1)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=960 + 8*sin(t*0.9 + 1)",
+     "y": "=190 + 6*cos(t*0.8 + 1.7)",
+     "scale": 0.44,
+     "rotation": "=2 + 0.8*sin(t*0.7 + 1)",
+     "trimStart": 20.0
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=1560 + 8*sin(t*0.9 + 2)",
+     "y": "=190 + 6*cos(t*0.8 + 3.4)",
+     "scale": 0.44,
+     "rotation": "=-1 + 0.8*sin(t*0.7 + 2)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=1560 + 8*sin(t*0.9 + 2)",
+     "y": "=190 + 6*cos(t*0.8 + 3.4)",
+     "scale": 0.44,
+     "rotation": "=-1 + 0.8*sin(t*0.7 + 2)",
+     "trimStart": 20.0
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=360 + 8*sin(t*0.9 + 3)",
+     "y": "=540 + 6*cos(t*0.8 + 5.1)",
+     "scale": 0.44,
+     "rotation": "=3 + 0.8*sin(t*0.7 + 3)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=360 + 8*sin(t*0.9 + 3)",
+     "y": "=540 + 6*cos(t*0.8 + 5.1)",
+     "scale": 0.44,
+     "rotation": "=3 + 0.8*sin(t*0.7 + 3)",
+     "trimStart": 20.0
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=960 + 8*sin(t*0.9 + 4)",
+     "y": "=540 + 6*cos(t*0.8 + 6.8)",
+     "scale": 0.44,
+     "rotation": "=-2 + 0.8*sin(t*0.7 + 4)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=960 + 8*sin(t*0.9 + 4)",
+     "y": "=540 + 6*cos(t*0.8 + 6.8)",
+     "scale": 0.44,
+     "rotation": "=-2 + 0.8*sin(t*0.7 + 4)",
+     "trimStart": 20.0
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=1560 + 8*sin(t*0.9 + 5)",
+     "y": "=540 + 6*cos(t*0.8 + 8.5)",
+     "scale": 0.44,
+     "rotation": "=1 + 0.8*sin(t*0.7 + 5)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=1560 + 8*sin(t*0.9 + 5)",
+     "y": "=540 + 6*cos(t*0.8 + 8.5)",
+     "scale": 0.44,
+     "rotation": "=1 + 0.8*sin(t*0.7 + 5)",
+     "trimStart": 20.0
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=360 + 8*sin(t*0.9 + 6)",
+     "y": "=890 + 6*cos(t*0.8 + 10.2)",
+     "scale": 0.44,
+     "rotation": "=2 + 0.8*sin(t*0.7 + 6)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=360 + 8*sin(t*0.9 + 6)",
+     "y": "=890 + 6*cos(t*0.8 + 10.2)",
+     "scale": 0.44,
+     "rotation": "=2 + 0.8*sin(t*0.7 + 6)",
+     "trimStart": 20.0
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=960 + 8*sin(t*0.9 + 7)",
+     "y": "=890 + 6*cos(t*0.8 + 11.9)",
+     "scale": 0.44,
+     "rotation": "=-3 + 0.8*sin(t*0.7 + 7)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=960 + 8*sin(t*0.9 + 7)",
+     "y": "=890 + 6*cos(t*0.8 + 11.9)",
+     "scale": 0.44,
+     "rotation": "=-3 + 0.8*sin(t*0.7 + 7)",
+     "trimStart": 20.0
+    },
+    {
+     "shape": "rect",
+     "width": 1200,
+     "height": 800.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=1560 + 8*sin(t*0.9 + 8)",
+     "y": "=890 + 6*cos(t*0.8 + 13.6)",
+     "scale": 0.44,
+     "rotation": "=0 + 0.8*sin(t*0.7 + 8)"
+    },
+    {
+     "composition": "lhS",
+     "width": 1200,
+     "height": 800.0,
+     "x": "=1560 + 8*sin(t*0.9 + 8)",
+     "y": "=890 + 6*cos(t*0.8 + 13.6)",
+     "scale": 0.44,
+     "rotation": "=0 + 0.8*sin(t*0.7 + 8)",
+     "trimStart": 20.0
+    },
+    {
+     "type": "shader",
+     "src": "src/darkroom.glsl",
+     "filter": true,
+     "uniforms": {
+      "room": 1,
+      "lights": "=smoothstep(0, 0.08, t)",
+      "lx": 0.16,
+      "ly": 0.98,
+      "slosh": 0.8,
+      "wave": -1.0,
+      "seed": 7.0
+     }
+    }
+   ]
+  },
+  {
+   "duration": 5.0,
+   "background": "#090707",
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 2400,
+     "height": 1600.0,
+     "fill": "#000",
+     "opacity": 0.6,
+     "blur": 26,
+     "x": "=960 - 500*pow(1 - smoothstep(0, 0.7, t), 3)",
+     "y": "=520 + 420*pow(1 - smoothstep(0, 0.7, t), 3)",
+     "scale": "=0.66 + 0.012*t",
+     "rotation": "=-5*pow(1 - smoothstep(0, 0.7, t), 3) - 1"
+    },
+    {
+     "composition": "nameP",
+     "width": 2400,
+     "height": 1600.0,
+     "x": "=960 - 500*pow(1 - smoothstep(0, 0.7, t), 3)",
+     "y": "=520 + 420*pow(1 - smoothstep(0, 0.7, t), 3)",
+     "scale": "=0.66 + 0.012*t",
+     "rotation": "=-5*pow(1 - smoothstep(0, 0.7, t), 3) - 1",
+     "sfx": {
+      "in": "paper"
+     }
+    },
+    {
+     "type": "shader",
+     "src": "src/develop.glsl",
+     "filter": true,
+     "uniforms": {
+      "dev": "=clamp((t-0.3)/2.2, 0, 1)",
+      "cx": "=960 - 500*pow(1 - smoothstep(0, 0.7, t), 3)",
+      "cy": "=520 + 420*pow(1 - smoothstep(0, 0.7, t), 3)",
+      "hw": "=(0.66 + 0.012*t)*1200.0",
+      "hh": "=(0.66 + 0.012*t)*800.0",
+      "rot": "=-5*pow(1 - smoothstep(0, 0.7, t), 3) - 1"
+     }
+    },
+    {
+     "type": "shader",
+     "src": "src/darkroom.glsl",
+     "filter": true,
+     "uniforms": {
+      "room": 1,
+      "lights": 1,
+      "lx": 0.16,
+      "ly": 0.98,
+      "slosh": 0.6,
+      "wave": "=clamp((t-0.1)/1.8, 0, 1)",
+      "seed": 8.0
+     }
+    }
+   ]
+  }
+ ]
+}
