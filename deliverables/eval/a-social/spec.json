@@ -1,0 +1,403 @@
+{
+ "size": "9:16",
+ "fps": 30,
+ "intent": {
+  "pace": "medium"
+ },
+ "music": {
+  "bpm": 96,
+  "key": "D",
+  "end": "ring",
+  "tracks": [
+   {
+    "inst": "nylon-guitar",
+    "chords": "Dmaj7 Bm7 Gmaj7 A",
+    "play": "broken",
+    "gain": -2
+   },
+   {
+    "inst": "bass",
+    "chords": "Dmaj7 Bm7 Gmaj7 A",
+    "bass": "half",
+    "gain": -6,
+    "at": 2.5
+   },
+   {
+    "inst": "drums:brush",
+    "drums": {
+     "kick": "x.......x.......",
+     "snare": "....x.......x...",
+     "shaker": "x.x.x.x.x.x.x.x."
+    },
+    "at": 2.5,
+    "gain": -8
+   },
+   {
+    "inst": "kalimba",
+    "notes": "o5 r/2 r/4 A/8 F#/8 | E/4 D/4 r/2 | B4/8 D/8 F#/8 A/8 B/4 A/4 | r/1",
+    "at": 2.5,
+    "gain": -6
+   },
+   {
+    "inst": "kalimba",
+    "notes": "o5 D/4 A4/4 F#/2",
+    "at": 11.25,
+    "gain": -4
+   }
+  ]
+ },
+ "sound": {
+  "palette": "organic",
+  "ambience": {
+   "type": "cafe",
+   "level": -14
+  },
+  "density": 0.35,
+  "cues": [
+   {
+    "sfx": "droplet",
+    "at": 1.35,
+    "gain": 0
+   },
+   {
+    "sfx": "swish",
+    "at": 2.45,
+    "gain": -6
+   },
+   {
+    "sfx": "ceramic",
+    "at": 6.25,
+    "gain": -6
+   },
+   {
+    "sfx": "paper",
+    "at": 11.25,
+    "gain": -3
+   }
+  ]
+ },
+ "post": {
+  "grain": 0.05,
+  "vignette": 0.12
+ },
+ "scenes": [
+  {
+   "duration": 2.5,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "shaders/coffee.glsl"
+    },
+    {
+     "text": "Pour a cup of",
+     "font": "Fraunces",
+     "axes": {
+      "SOFT": 100,
+      "opsz": 72
+     },
+     "weight": 500,
+     "size": 92,
+     "color": "#F3E6D3",
+     "x": "50%",
+     "y": 250,
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.35
+     }
+    }
+   ]
+  },
+  {
+   "duration": 1.875,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "shaders/bergamot.glsl"
+    },
+    {
+     "text": "Pour a cup of",
+     "font": "Fraunces",
+     "axes": {
+      "SOFT": 100,
+      "opsz": 72
+     },
+     "weight": 500,
+     "size": 92,
+     "color": "#F3E6D3",
+     "x": "50%",
+     "y": 250
+    },
+    {
+     "text": "bergamot,",
+     "font": "Fraunces",
+     "axes": {
+      "SOFT": 100,
+      "WONK": 1,
+      "opsz": 144
+     },
+     "weight": 800,
+     "size": 188,
+     "letterSpacing": "-0.02em",
+     "color": "#EDE58A",
+     "x": "50%",
+     "y": 1460,
+     "animate": [
+      {
+       "from": {
+        "scale": 1.12
+       },
+       "to": {
+        "scale": 1.0
+       },
+       "duration": 0.35,
+       "ease": "outExpo"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1.875,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "shaders/peach.glsl"
+    },
+    {
+     "text": "Pour a cup of",
+     "font": "Fraunces",
+     "axes": {
+      "SOFT": 100,
+      "opsz": 72
+     },
+     "weight": 500,
+     "size": 92,
+     "color": "#F3E6D3",
+     "x": "50%",
+     "y": 250
+    },
+    {
+     "text": "peach,",
+     "font": "Fraunces",
+     "axes": {
+      "SOFT": 100,
+      "WONK": 1,
+      "opsz": 144
+     },
+     "weight": 800,
+     "size": 210,
+     "letterSpacing": "-0.02em",
+     "color": "#FFB98C",
+     "x": "50%",
+     "y": 1460,
+     "animate": [
+      {
+       "from": {
+        "scale": 1.12
+       },
+       "to": {
+        "scale": 1.0
+       },
+       "duration": 0.35,
+       "ease": "outExpo"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 1.875,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "shaders/tea.glsl"
+    },
+    {
+     "text": "Pour a cup of",
+     "font": "Fraunces",
+     "axes": {
+      "SOFT": 100,
+      "opsz": 72
+     },
+     "weight": 500,
+     "size": 92,
+     "color": "#2A1206",
+     "x": "50%",
+     "y": 250
+    },
+    {
+     "text": "black tea.",
+     "font": "Fraunces",
+     "axes": {
+      "SOFT": 100,
+      "WONK": 1,
+      "opsz": 144
+     },
+     "weight": 800,
+     "size": 160,
+     "letterSpacing": "-0.02em",
+     "color": "#2A1206",
+     "x": "50%",
+     "y": 1460,
+     "animate": [
+      {
+       "from": {
+        "scale": 1.12
+       },
+       "to": {
+        "scale": 1.0
+       },
+       "duration": 0.35,
+       "ease": "outExpo"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 3.125,
+   "layers": [
+    {
+     "type": "shader",
+     "src": "shaders/topo.glsl",
+     "animate": [],
+     "uniforms": {
+      "ring": 1
+     }
+    },
+    {
+     "text": "Ethiopia",
+     "font": "Fraunces",
+     "axes": {
+      "SOFT": 100,
+      "opsz": 144
+     },
+     "weight": 300,
+     "size": 120,
+     "italic": true,
+     "color": "#FFD6AA",
+     "x": "50%",
+     "y": 690,
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.15
+     }
+    },
+    {
+     "text": "Guji",
+     "font": "Fraunces",
+     "axes": {
+      "SOFT": 100,
+      "WONK": 1,
+      "opsz": 144
+     },
+     "weight": 800,
+     "size": 300,
+     "letterSpacing": "-0.03em",
+     "color": "#FFD6AA",
+     "x": "50%",
+     "y": 910,
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 0.3
+     }
+    },
+    {
+     "text": "Washed. Grown high.",
+     "font": "Bricolage Grotesque",
+     "weight": 500,
+     "size": 52,
+     "lineHeight": 1.25,
+     "color": "#F3E6D3",
+     "x": "50%",
+     "y": 1420,
+     "enter": {
+      "preset": "fadeUp",
+      "delay": 0.7
+     }
+    }
+   ]
+  },
+  {
+   "duration": 3.75,
+   "layers": [
+    {
+     "layers": [
+      {
+       "type": "shader",
+       "src": "shaders/bag.glsl"
+      },
+      {
+       "text": "HALDE & SONS",
+       "font": "Bricolage Grotesque",
+       "weight": 700,
+       "size": 44,
+       "letterSpacing": "0.18em",
+       "color": "#2A1206",
+       "x": "50%",
+       "y": 580
+      },
+      {
+       "text": "Ethiopia",
+       "font": "Fraunces",
+       "axes": {
+        "SOFT": 100,
+        "opsz": 144
+       },
+       "weight": 300,
+       "italic": true,
+       "size": 104,
+       "color": "#2A1206",
+       "x": "50%",
+       "y": 720
+      },
+      {
+       "text": "Guji",
+       "font": "Fraunces",
+       "axes": {
+        "SOFT": 100,
+        "WONK": 1,
+        "opsz": 144
+       },
+       "weight": 800,
+       "size": 220,
+       "letterSpacing": "-0.03em",
+       "color": "#2A1206",
+       "x": "50%",
+       "y": 870
+      },
+      {
+       "text": "WASHED \u00b7 250 G",
+       "font": "Bricolage Grotesque",
+       "weight": 600,
+       "size": 38,
+       "letterSpacing": "0.12em",
+       "color": "#2A1206",
+       "x": "50%",
+       "y": 1040
+      }
+     ]
+    },
+    {
+     "text": "Out Friday.",
+     "font": "Fraunces",
+     "axes": {
+      "SOFT": 100,
+      "WONK": 1,
+      "opsz": 144
+     },
+     "weight": 800,
+     "size": 150,
+     "letterSpacing": "-0.02em",
+     "color": "#F3E6D3",
+     "x": "50%",
+     "y": 1440,
+     "enter": {
+      "preset": "mask by line up",
+      "delay": 1.0
+     }
+    }
+   ]
+  }
+ ]
+}
