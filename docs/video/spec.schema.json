@@ -1936,6 +1936,13 @@
             }
           ]
         },
+        "balance": {
+          "description": "Balanced line breaks when the text wraps (default on for headlines,\n4% of the frame height and up): every line about the same length.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "split": {
           "description": "`chars`, `words`, `lines`. One of: chars, words, lines.",
           "type": [
