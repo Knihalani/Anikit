@@ -587,6 +587,43 @@ def cmd_run(args):
     judge(name, frames, args.tags.split(","), args, exclude=exclude, video=video)
 
 
+def cmd_refsheet(args):
+    """Research aid (not judging): contact sheets of professional films for a set of tags, so an agent
+    can study them before designing. Refs pinned for evaluation (pins.json) are never shown."""
+    pins = json.loads((ROOT / "docs/video/judge/pins.json").read_text())
+    exclude = {s_ for v in pins.values() for s_ in v["refs"]}
+    if len(load_refs()) < 20:
+        cmd_sync_bench(args)
+        REFS_DIRS[:] = [p for p in (ROOT / "docs/video/judge/refs", BENCH / "export") if p.is_dir()]
+    refs = pick_refs(args.tags.split(","), args.k, random.Random(args.seed), exclude=exclude, fmt=args.format)
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    lines = ["# Reference films (study the moves, never copy the artwork)", ""]
+    for i, r in enumerate(refs, 1):
+        frames = dir_frames(Path(r["_dir"]))[:6]
+        cols, W, H, gap = 3, 640, 360, 8
+        rows = (len(frames) + cols - 1) // cols
+        sheet = Image.new("RGB", (cols * W + (cols + 1) * gap, rows * H + (rows + 1) * gap), (20, 20, 20))
+        for j, f in enumerate(frames):
+            f = trim_bars(f)
+            sc = min(W / f.width, H / f.height)
+            f = f.resize((max(1, round(f.width * sc)), max(1, round(f.height * sc))), Image.LANCZOS)
+            sheet.paste(f, (gap + (j % cols) * (W + gap) + (W - f.width) // 2, gap + (j // cols) * (H + gap) + (H - f.height) // 2))
+        name = f"{i:02d}-{r['slug']}.jpg"
+        sheet.save(out / name, "JPEG", quality=88)
+        notes = next(iter(sorted((ROOT / "docs/video/judge/benchmark").glob(f"*/{r['slug']}.md"))), None)
+        lines.append(f"## {i}. {r.get('title', r['slug'])}")
+        lines.append(f"- frames: `{out / name}`")
+        if r.get("studio") or r.get("year"):
+            lines.append(f"- {r.get('studio', '')} {r.get('year', '')}".rstrip())
+        if notes:
+            lines.append(f"- notes on what makes it work: `{notes.relative_to(ROOT)}`")
+        lines.append(f"- tags: {', '.join(r.get('style_tags', []))}")
+        lines.append("")
+    (out / "INDEX.md").write_text("\n".join(lines))
+    print(f"{len(refs)} reference films → {out}/INDEX.md")
+
+
 def cmd_brief(args):
     """Judge a rebuild of an eval brief against the SAME 3 refs as r1/r2 (pins.json), so scores pair with those rounds."""
     b = {x["id"]: x for x in json.loads((ROOT / "docs/video/judge/briefs.json").read_text())}[args.brief]
@@ -716,6 +753,12 @@ def main():
         if n == "run":
             p.add_argument("--practice", action="store_true",
                            help="build-loop crit: exclude every ref pinned for evaluation (pins.json)")
+    rs = sub.add_parser("refsheet", help="research aid: frame sheets of professional films for tags (eval refs excluded)")
+    rs.add_argument("--tags", required=True)
+    rs.add_argument("--format")
+    rs.add_argument("-k", type=int, default=6)
+    rs.add_argument("--seed", type=int, default=7)
+    rs.add_argument("--out", required=True)
     b = sub.add_parser("batch")
     b.add_argument("manifest")
     b.add_argument("--only")
@@ -737,7 +780,7 @@ def main():
     t = sub.add_parser("table")
     t.add_argument("results", nargs="+")
     args = ap.parse_args()
-    {"run": cmd_run, "control": cmd_control, "table": cmd_table, "batch": cmd_batch, "sync-bench": cmd_sync_bench, "brief": cmd_brief}[args.cmd](args)
+    {"run": cmd_run, "control": cmd_control, "table": cmd_table, "batch": cmd_batch, "sync-bench": cmd_sync_bench, "brief": cmd_brief, "refsheet": cmd_refsheet}[args.cmd](args)
 
 
 if __name__ == "__main__":
