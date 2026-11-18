@@ -227,6 +227,17 @@ Stills (spec beside each in `examples/video/asset-library/`): `docs/video/shots/
 - Static layouts bake a noise-free floor once per spec (1.5–2.5 s). The bake is cached in `$ANIKIT_CACHE/sim` (`ANIKIT_CACHE=off` disables it), so re-renders and parallel chunks of the same spec skip it.
 - `ANIKIT_SCENE3D_PROFILE=1` prints per-stage ms and ray counts; `=2` adds micro-benchmarks of the building blocks.
 - `ANIKIT_SCENE3D_DEBUG=refl|col|diffuse` shows one buffer.
+- `anikit-video check spec.json` also flags the craft tells that make CG read cheap (`docs/video/craft/3d-design.md` §6), from the spec alone:
+  - default lighting with no `rig`;
+  - an orbit over 20°/s;
+  - a linear camera that starts and stops dead;
+  - a locked-off camera with no `shake`;
+  - f/1.4 or wider, or a lens under 20 mm;
+  - bloom over 0.15;
+  - a floating sphere;
+  - more than three hues;
+  - chrome on a white cyc with no flag;
+  - warm metals under sunset or neon.
 - Errors name the exact field with a "did you mean" suggestion: ``objects[2].material: unknown material `crome`; did you mean `chrome`?``.
 
 Reference: `docs/video/components.md#scene3d`. Code: `crates/anikit-video/src/scene3d/`.

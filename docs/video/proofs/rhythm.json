@@ -1,0 +1,8 @@
+{ "music": { "style": "house", "bpm": 122 },
+  "scenes": [ { "duration": 8, "layers": [
+    { "onNotes": { "track": "drums", "keys": ["kick"],
+      "layer": { "shape": "circle", "width": "=120 + 200 * $vel", "fill": "$accent", "duration": 0.4,
+                 "animate": [ { "to": { "scale": 1.6, "opacity": 0 }, "duration": 0.4, "ease": "outCubic" } ] } } },
+    { "onNotes": { "track": "lead",
+      "layer": { "shape": "rect", "anchor": "left", "height": 10, "radius": 5, "fill": "#fff",
+                 "x": "=200 + $t * 180", "y": "=900 - $pitch * 700", "width": "=max(8, $dur * 180)" } } } ] } ] }

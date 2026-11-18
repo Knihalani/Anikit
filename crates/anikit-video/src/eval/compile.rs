@@ -106,6 +106,10 @@ struct C<'a> {
     grid: Option<spec::GridSpec>,
     /// Resting boxes `[left, top, right, bottom]` of the earlier siblings with an `id`, for `"=title.bottom + 24"`.
     sib: Vec<(String, [f32; 4])>,
+    /// The generated music's notes (video seconds) and beats per bar, for `onNotes`.
+    score: Option<Result<(Arc<Vec<crate::music::ScoreNote>>, f64), String>>,
+    /// The music cue the score was bound to (rendered as is).
+    pinned_music: Option<Arc<crate::music::MusicCue>>,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -290,6 +294,8 @@ impl Evaluator {
             video_grid: spec.grid.clone(),
             grid: None,
             sib: Vec::new(),
+            score: None,
+            pinned_music: None,
         };
         c.assets.shaders.bind(&c.assets);
         c.ease_ids.insert("linear".into(), 0);
@@ -371,6 +377,9 @@ impl Evaluator {
             }
             None => 3.0,
         };
+        if spec.scenes.iter().any(|s| any_on_notes(&s.layers)) {
+            c.bind_score(spec, default_dur);
+        }
         let mut scenes = Vec::new();
         let mut t = 0.0f32;
         let mut prev_dur = f32::INFINITY;
@@ -475,15 +484,16 @@ impl Evaluator {
             }
         }
         audio.append(&mut c.audio_extra);
-        let music = match &spec.music {
-            Some(v) => match crate::music::parse_with_cuts(v, &opts.base_dir, &scenes.iter().skip(1).map(|s| (s.start + 0.5 * s.trans.dur) as f64).collect::<Vec<_>>()) {
+        let music = match (&spec.music, c.pinned_music.take()) {
+            (_, Some(m)) => Some(m),
+            (Some(v), None) => match crate::music::parse_with_cuts(v, &opts.base_dir, &scenes.iter().skip(1).map(|s| (s.start + 0.5 * s.trans.dur) as f64).collect::<Vec<_>>()) {
                 Ok(m) => Some(Arc::new(m)),
                 Err(e) => {
                     c.d.push(Diagnostic::error("music", e));
                     None
                 }
             },
-            None => None,
+            (None, None) => None,
         };
         c.smarkers.clear();
         c.scene_start = 0.0;
@@ -515,6 +525,10 @@ impl Evaluator {
         };
         (Some(ev), c.d)
     }
+}
+
+fn any_on_notes(ls: &[Layer]) -> bool {
+    ls.iter().any(|l| l.on_notes.is_some() || l.layers.as_deref().is_some_and(any_on_notes) || l.children.as_deref().is_some_and(any_on_notes))
 }
 
 /// Last moment anything in the node animates (scene time).
@@ -744,6 +758,146 @@ impl C<'_> {
                 }
             }
         }
+    }
+
+    /// Bind the generated music's notes before the scenes compile (`onNotes`). Cuts and the
+    /// video length come from the durations as written; the cue is pinned so the render
+    /// plays exactly this arrangement.
+    fn bind_score(&mut self, spec: &Spec, default_dur: f32) {
+        let Some(v) = &spec.music else {
+            self.score = Some(Err("'onNotes' places layers on the notes of generated `music`; add a top-level \"music\" (e.g. \"music\": \"house\")".into()));
+            return;
+        };
+        let nd = self.d.len();
+        let mut t = 0.0f64;
+        let mut cuts = Vec::new();
+        for (i, s) in spec.scenes.iter().enumerate() {
+            if i > 0 {
+                cuts.push(t);
+            }
+            t += match &s.duration {
+                Some(Num::Str(x)) if x == "auto" => default_dur,
+                Some(d) => self.time_raw(d, "duration"),
+                None => default_dur,
+            } as f64;
+        }
+        if let Some(d) = &spec.duration {
+            t = self.time_raw(d, "duration") as f64;
+        }
+        self.d.truncate(nd);
+        let voice = spec.audio.iter().flatten().chain(spec.scenes.iter().flat_map(|s| s.audio.iter().flatten())).any(|a| a.voice == Some(true));
+        self.score = Some((|| {
+            let mut cue = crate::music::parse_with_cuts(v, &self.o.base_dir, &cuts)?;
+            cue.pinned = Some((t, voice));
+            let notes = crate::music::score(&cue, t, voice)?;
+            let bpb = anikit_music::beat_grid(&cue.spec)?.beats_per_bar;
+            self.pinned_music = Some(Arc::new(cue));
+            Ok((Arc::new(notes), bpb))
+        })());
+    }
+
+    /// `{ "onNotes": … }`: one layer per matching note inside this scene.
+    fn note_layers(&mut self, on: &spec::OnNotes, path: &str, pc: PCtx) -> Vec<Node> {
+        let path = format!("{path}.onNotes");
+        let (notes, bpb) = match &self.score {
+            Some(Ok((n, b))) => (n.clone(), *b),
+            Some(Err(e)) => {
+                self.d.push(Diagnostic::error(&path, e.clone()));
+                return Vec::new();
+            }
+            None => {
+                self.d.push(Diagnostic::error(&path, "'onNotes' works in a scene's layers (and its groups)"));
+                return Vec::new();
+            }
+        };
+        if let Some(tr) = &on.track {
+            if !notes.iter().any(|n| &n.track == tr || &n.role == tr) {
+                let mut names: Vec<&str> = notes.iter().flat_map(|n| [n.track.as_str(), n.role.as_str()]).collect();
+                names.sort_unstable();
+                names.dedup();
+                self.d.push(Diagnostic::error(format!("{path}.track"), format!("the music has no track '{tr}' (tracks and roles: {})", names.join(", "))).suggest(suggest(tr, &names)));
+                return Vec::new();
+            }
+        }
+        let mut keys = Vec::new();
+        for (k, v) in on.keys.iter().flatten().enumerate() {
+            match v {
+                serde_json::Value::Number(n) => keys.push(n.as_f64().unwrap_or(0.0) as f32),
+                serde_json::Value::String(s) => match anikit_music::notes::drum_key(s) {
+                    Some(k) => keys.push(k as f32),
+                    None => self.d.push(Diagnostic::error(format!("{path}.keys[{k}]"), format!("unknown drum '{s}' (kick snare hat ohh clap rim tom crash ride shaker …, or a MIDI number)"))),
+                },
+                _ => self.d.push(Diagnostic::error(format!("{path}.keys[{k}]"), "a MIDI number or a drum name")),
+            }
+        }
+        let (lo, hi) = (self.scene_start + pc.t0, self.scene_start + pc.end.min(self.scene_dur));
+        let every = on.every.unwrap_or(1).max(1) as usize;
+        let sel: Vec<&crate::music::ScoreNote> = notes
+            .iter()
+            .filter(|n| on.track.as_ref().is_none_or(|tr| &n.track == tr || &n.role == tr))
+            .filter(|n| keys.is_empty() || keys.iter().any(|k| (n.key - k).abs() < 0.5))
+            .filter(|n| n.t >= lo as f64 - 1e-6 && n.t < hi as f64)
+            .step_by(every)
+            .collect();
+        let (kmin, kmax) = sel.iter().fold((f32::MAX, f32::MIN), |(a, b), n| (a.min(n.key), b.max(n.key)));
+        let mut out = Vec::with_capacity(sel.len());
+        let nd = self.d.len();
+        for (i, n) in sel.iter().enumerate() {
+            let mut params = serde_json::Map::new();
+            let num = |x: f64| serde_json::Number::from_f64((x * 1e6).round() / 1e6).map_or(serde_json::Value::Null, serde_json::Value::Number);
+            params.insert("t".into(), num(n.t));
+            params.insert("dur".into(), num(n.dur));
+            params.insert("key".into(), num(n.key as f64));
+            params.insert("pitch".into(), num(if kmax > kmin { ((n.key - kmin) / (kmax - kmin)) as f64 } else { 0.5 }));
+            params.insert("vel".into(), num(n.vel as f64));
+            params.insert("beat".into(), num(n.beat));
+            params.insert("bar".into(), num(n.beat / bpb.max(1.0)));
+            params.insert("i".into(), i.into());
+            params.insert("n".into(), sel.len().into());
+            let mut v = crate::spec::reuse::subst(on.layer.clone(), &params);
+            let Some(o) = v.as_object_mut() else {
+                self.d.push(Diagnostic::error(format!("{path}.layer"), "must be a layer object"));
+                return out;
+            };
+            let rel = n.t as f32 - lo;
+            let off = match o.remove("start").or_else(|| o.remove("delay")) {
+                None => 0.0,
+                Some(serde_json::Value::Number(x)) => x.as_f64().unwrap_or(0.0) as f32,
+                Some(_) => {
+                    if i == 0 {
+                        self.d.push(Diagnostic::warning(format!("{path}.layer.start"), "in onNotes, 'start' is seconds from the note (a number, e.g. -0.05 to anticipate)"));
+                    }
+                    0.0
+                }
+            };
+            o.insert("start".into(), num((rel + off) as f64));
+            if !["duration", "end", "frames"].iter().any(|k| o.contains_key(*k)) {
+                o.insert("duration".into(), num((n.dur as f32).max(1.0 / self.fps) as f64));
+            }
+            let mut unknown = Vec::new();
+            let layer: Layer = match serde_ignored::deserialize(v, |p| unknown.push(p.to_string())) {
+                Ok(l) => l,
+                Err(e) => {
+                    self.d.push(Diagnostic::error(format!("{path}.layer"), e.to_string()));
+                    return out;
+                }
+            };
+            if i == 0 {
+                for u in unknown {
+                    self.d.push(Diagnostic::warning(format!("{path}.layer.{u}"), format!("unknown key '{u}' (ignored)")));
+                }
+            }
+            let cpc = PCtx { index: i, count: sel.len(), delay: 0.0, ..pc };
+            let nd_i = self.d.len();
+            if let Some(node) = self.layer(&layer, &format!("{path}.layer"), cpc) {
+                out.push(node);
+            }
+            // The template's problems are reported once, not once per note.
+            if i > 0 {
+                self.d.truncate(nd_i.max(nd));
+            }
+        }
+        out
     }
 
     /// Replace `id.left|right|top|bottom|cx|cy|width|height` (an earlier sibling's resting box) with its value.
@@ -1261,6 +1415,10 @@ impl C<'_> {
             let p = format!("{path}[{i}]");
             let cpc = PCtx { index: i, count: ls.len(), delay: delays[i], ..pc };
             at.push(None);
+            if let Some(on) = &l.on_notes {
+                out.extend(self.note_layers(on, &p, cpc));
+                continue;
+            }
             if let Some(n) = self.layer(l, &p, cpc) {
                 if let Some(id) = &l.id {
                     let rest = |k: usize| {
@@ -1830,6 +1988,7 @@ impl C<'_> {
         if (matches!(n.kind, Kind::Component(..)) || l.path.is_some()) && l.progress.is_none() && life_end.is_finite() {
             tw.insert(0, TweenC { at: 0.0, dur: life_end.max(1e-3), ease: 0, from: vec![(prop::PROGRESS, 1, ValS::Abs(0.0))], to: vec![(prop::PROGRESS, 1, ValS::Abs(1.0))], kf: vec![], repeat: 0, yoyo: false });
         }
+        self.warn_from_overrides(&tw, path);
         n.tracks = self.tracks(&n.base, &n.exprs, &mut tw, life_end);
         self.mograph(l, path, &mut n);
 
@@ -1921,6 +2080,13 @@ impl C<'_> {
                 scale: sc,
                 opacity: o.opacity.unwrap_or(0.0) as f32,
                 stagger: r.stagger.unwrap_or(0.0) as f32,
+                ranks: {
+                    let order = r.order.as_deref().unwrap_or("forward");
+                    if !["forward", "reverse", "center", "random"].contains(&order) {
+                        self.d.push(Diagnostic::error(format!("{path}.repeat.order"), format!("unknown order '{order}'")).suggest(suggest(order, &["forward", "reverse", "center", "random"])));
+                    }
+                    fx::order_ranks(count.min(2000) as usize, order, r.seed.unwrap_or(1.0))
+                },
                 center: r.center.map(|c| [c[0] as f32, c[1] as f32]),
             });
         }
@@ -2086,6 +2252,13 @@ impl C<'_> {
                         opacity: a.opacity.unwrap_or(1.0) as f32,
                         blur: a.blur.unwrap_or(0.0) as f32,
                         color,
+                        axes: a.axes.iter().flatten().filter(|(k, _)| k.len() == 4).map(|(k, v)| (k.clone(), *v as f32)).collect(),
+                        align: match l.align.as_deref() {
+                            Some("left" | "start") => 0.0,
+                            Some("right" | "end") => 1.0,
+                            None if matches!(&l.anchor, Some(spec::Anchor::Name(a)) if a.to_ascii_lowercase().contains("left")) => 0.0,
+                            _ => 0.5,
+                        },
                         smooth: a.smooth.unwrap_or(0.25).max(0.0) as f32,
                         order: fx::order_ranks(layout.units(by).len(), order, a.seed.unwrap_or(1.0)),
                         auto,
@@ -3878,6 +4051,17 @@ impl C<'_> {
         if !crate::assetlib::is_ref(src) {
             return self.o.base_dir.join(src);
         }
+        // An HDRI in a 2D layer is a photo: a rectilinear view of its panorama.
+        let hdri = crate::assetlib::find(src).is_some_and(|e| e.kind == "hdri") || src.starts_with("polyhaven:hdri/");
+        if hdri {
+            return match crate::assetlib::photo_view(crate::assetlib::global(), src) {
+                Ok(p) => p,
+                Err(e) => {
+                    self.d.push(Diagnostic::error(format!("{path}.src"), e));
+                    std::path::PathBuf::from("\0missing-asset")
+                }
+            };
+        }
         match crate::assetlib::get(src) {
             Ok(f) => f.main(),
             Err(e) => {
@@ -4583,6 +4767,34 @@ impl C<'_> {
             return None;
         }
         Some(TweenC { at, dur, ease, from, to, kf, repeat: t.repeat.unwrap_or(0), yoyo: t.yoyo.unwrap_or(false) })
+    }
+
+    /// A `from` holds its value until the tween starts, so a later `from` on a property an
+    /// earlier move already animated snaps it back for the whole gap. Say so, with the fix.
+    fn warn_from_overrides(&mut self, tw: &[TweenC], path: &str) {
+        const NAMES: [&str; 18] = ["x", "y", "width", "height", "scale", "scaleY", "rotation", "skewX", "skewY", "opacity", "blur", "radius", "strokeWidth", "trimStart", "trimEnd", "fill", "stroke", "value"];
+        let touches = |t: &TweenC, s: usize| t.from.iter().chain(&t.to).any(|f| f.0 == s) || t.kf.iter().any(|k| k.0 == s);
+        let mut seen = Vec::new();
+        for b in tw.iter().filter(|b| b.at > 1e-3) {
+            for &(slot, _, _) in &b.from {
+                if seen.contains(&slot) {
+                    continue;
+                }
+                if let Some(a) = tw.iter().find(|a| a.at + 1e-3 < b.at && a.at + a.dur <= b.at + 1e-3 && touches(a, slot)) {
+                    seen.push(slot);
+                    let name = NAMES.iter().find(|n| prop::lookup(n).is_some_and(|(s, _)| s == slot)).copied().unwrap_or("a property");
+                    self.d.push(Diagnostic::warning(
+                        format!("{path}.animate"),
+                        format!(
+                            "'{name}': the 'from' at {:.2} s holds its start value from the beginning, undoing the move at {:.2}–{:.2} s; use 'to' (it continues from where the earlier move ended) or keyframes",
+                            b.at,
+                            a.at,
+                            a.at + a.dur
+                        ),
+                    ));
+                }
+            }
+        }
     }
 
     /// Build per-slot tracks from tweens.
