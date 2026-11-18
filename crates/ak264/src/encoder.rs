@@ -262,6 +262,8 @@ pub(crate) struct QpSet {
     pub zero_dc_intra: (u32, u32),
     /// Per-4×4-block SAD bounds (luma, chroma AC), inter.
     pub zero_sad4: (u32, u32),
+    /// Built with the wide AC dead zone (AQ smooth macroblocks).
+    pub smooth: bool,
     pub lambda: i32,
 }
 
@@ -296,6 +298,7 @@ impl QpSet {
             zero_sad_intra: crate::soa::zero_sad_bounds(&q, &qs, &qc, &qcs, true),
             lambda: (0.85f64 * 2f64.powf((qp as f64 - 12.0) / 6.0)).round().max(1.0) as i32,
             q8: crate::transform::Quant8::new(qp),
+            smooth,
             q,
             qc,
             qs,
@@ -797,9 +800,17 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let yr = ((-16 - by).max(-c.max_mvy), (h16 - by).min(c.max_mvy - 1));
         let clamp = |mv: (i32, i32)| (mv.0.clamp(xr.0, xr.1), mv.1.clamp(yr.0, yr.1));
         let mvcost = |q: (i32, i32)| -> u32 { lambda * (se_len(q.0 - mvp.0) + se_len(q.1 - mvp.1)) };
+        // Candidates are clamped to the window above, whose blocks all lie in
+        // the padded reference: one bounds check here, raw reads per candidate.
+        let rpl = &self.rp().y;
+        let (o0, st) = (rpl.off(bx as isize, by as isize) as isize, rpl.stride as isize);
+        assert!(o0 + (yr.0 as isize) * st + xr.0 as isize >= 0 && o0 + (yr.1 as isize + 15) * st + xr.1 as isize + 16 <= rpl.data.len() as isize);
+        let rbase = rpl.data.as_ptr();
         let eval = |mv: (i32, i32)| -> u32 {
-            let (r, rs) = self.luma_ref_int(mbx, mby, mv);
-            dsp::sad16(src_y, 16, r, rs) + mvcost((mv.0 * 4, mv.1 * 4))
+            debug_assert!(mv.0 >= xr.0 && mv.0 <= xr.1 && mv.1 >= yr.0 && mv.1 <= yr.1);
+            // SAFETY: mv is inside the window checked above.
+            let s = unsafe { crate::simd::sad16_ptr(src_y.as_ptr(), 16, rbase.offset(o0 + mv.1 as isize * st + mv.0 as isize), st as usize) };
+            s + mvcost((mv.0 * 4, mv.1 * 4))
         };
         let round = |q: (i32, i32)| ((q.0 + 2) >> 2, (q.1 + 2) >> 2);
         let mut best = (u32::MAX, (0, 0));
@@ -1153,7 +1164,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
     /// Inter luma residual with the 4×4 or (when it suits the residual) the
     /// 8×8 transform.
     fn luma_resid(&self, src: &[u8; 256], pred: &[u8; 256], cd: &mut Coded, recon: &mut [u8; 256]) {
-        if self.c.t8 && t8::prefer_t8(src, pred) {
+        // (smooth AQ macroblocks keep the 4×4 transform: its wide dead zone is
+        // what stops them coding low-amplitude noise)
+        if self.c.t8 && !self.p.smooth && t8::prefer_t8(src, pred) {
             t8::luma_inter8(src, pred, &self.p.q8, cd, recon);
         } else {
             luma_inter(src, pred, &self.p.qs, cd, recon);
