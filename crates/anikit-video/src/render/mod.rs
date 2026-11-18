@@ -148,6 +148,9 @@ struct State {
     scaled: HashMap<u64, CacheEntry>,
     /// Large gradient fills as dithered bitmaps.
     grads: HashMap<u64, CacheEntry>,
+    /// Pixels of new gradient bitmaps made in frame `grad_frame`.
+    grad_built: i64,
+    grad_frame: u64,
     seen: HashMap<u64, u64>,
     resample_buf: Vec<u8>,
     /// Smooth cubic upscaling for enlarged images (standard quality and up).
@@ -249,6 +252,8 @@ impl Renderer {
                 text: HashMap::new(),
                 scaled: HashMap::new(),
                 grads: HashMap::new(),
+                grad_built: 0,
+                grad_frame: 0,
                 seen: HashMap::new(),
                 resample_buf: Vec::new(),
                 cubic: true,
@@ -1581,7 +1586,8 @@ fn set_gradient_bitmap(st: &mut State, ctx: &mut RenderContext, paint: &Paint, t
     let visible = t.transform_rect_bbox(local).intersect(Rect::new(0.0, 0.0, ctx.width() as f64, ctx.height() as f64));
     // Panels and cards, not frame-sized washes: drawing a bitmap costs vello
     // more than its own gradient, so the area is kept to a quarter frame.
-    let quarter = 0.25 * ctx.width() as f64 * ctx.height() as f64;
+    // (The frame, not the context: region renders draw into smaller contexts.)
+    let quarter = 0.25 * st.frame_size.0 as f64 * st.frame_size.1 as f64;
     if visible.width() <= 0.0 || visible.height() <= 0.0 || visible.area() < gradient::MIN_AREA || (bw * bh) as f64 > quarter.max(gradient::MIN_AREA) {
         return false;
     }
@@ -1593,6 +1599,17 @@ fn set_gradient_bitmap(st: &mut State, ctx: &mut RenderContext, paint: &Paint, t
             e.pix.clone()
         }
         None => {
+            // A budget of new bitmaps per frame (~8% of its pixels): gradients
+            // that change every frame at scale stay with vello's (cheaper) fill;
+            // static ones are made once, over a few frames if need be.
+            if st.grad_frame != now {
+                (st.grad_frame, st.grad_built) = (now, 0);
+            }
+            let budget = 0.08 * st.frame_size.0 as f64 * st.frame_size.1 as f64;
+            if (st.grad_built + bw * bh) as f64 > budget.max(gradient::MIN_AREA) {
+                return false;
+            }
+            st.grad_built += bw * bh;
             // Dither anchored to the bitmap: static gradients keep a fixed pattern.
             let Some(pm) = gradient::render(paint, lin, r0[0], r0[1], bw as usize, bh as usize, (-r0[0] as i32, -r0[1] as i32), Some(&mut st.pix_pool)) else { return false };
             let pix = Arc::new(pm);
