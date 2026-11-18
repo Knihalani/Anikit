@@ -18,6 +18,8 @@ Conventions: frames are given at 24/30/60 fps. Bézier values are CSS `cubic-bez
 
 ## 2. Techniques with numbers
 
+Companion doc: `docs/video/craft/finish-and-life.md` (TASTE) has Williams' frame numbers for overlap and drag, a 2D spring split into sway, jiggle and trailing (Willett et al., UIST 2017), and blink timing; where numbers differ, prefer its sourced ones for character-like secondary motion.
+
 ### 2.1 Spacing: the curves studios actually use
 
 | Name | cubic-bezier | Feel / use | Source |
@@ -85,7 +87,7 @@ Conventions: frames are given at 24/30/60 fps. Bézier values are CSS `cubic-bez
 - **Push-in vs zoom.** A dolly push changes parallax (the foreground grows faster than the background); a zoom scales every plane the same, so it reads flat. A 2.5D push must move the camera *through* the depth planes *(heuristic, geometry)*.
 - **Whip pan.** Blur builds up to a peak at the cut over about 5 frames either side ([WHIP-PF], [WHIP-MC]). Trim each shot to where its blur starts or ends ([WHIP-NFS]). Ease the pan in hard (expo in) into the cut and out hard (expo out) after it, so the two halves read as one continuous move.
 - **Handheld / drift.** School of Motion's subtle camera shake is `wiggle(1, 25)` with its values on sliders so they can be keyframed ([SOM-SHAKE]); camera shakes in forums run to `wiggle(5,15)` ([COW-SHAKE]). Use low frequency (≤ 1 Hz) for "alive", and 5–8 Hz only for impacts, decaying within 0.3–0.5 s *(heuristic)*.
-- **Rack focus** pulls the eye between planes; depth-of-field changes are "one of the most subtle and powerful" 2.5D tools ([PB-25D]). TASTE forbids defocusing text while it is read: rack *to* the type, never away from it mid-read.
+- **Rack focus** pulls the eye between planes; depth-of-field changes are "one of the most subtle and powerful" 2.5D tools ([PB-25D]). Words read best kept sharp while they're being read; rack focus is a tool for everything else (rack *to* the type, not away from it mid-read).
 
 ### 2.6 Transitions as ideas
 
@@ -130,6 +132,8 @@ A transition is an *idea* when it says that A *becomes* B or A *causes* B. It is
 | Linear moves, or Easy Ease 33/33 on every key | Asymmetric custom curves: hard attack, 70–90% landing influence | [AE-SPEED], [VDCI], [M1] |
 | One curve and one duration everywhere | Durations scaled to distance; productive moves with a rare expressive one | [CARBON], [M1] |
 | Everything moves at once | One leader; others overlap by 1–4 frames or hold | [L87], [PAXTON] |
+| The same layout every shot (it reads as a slide deck: 3 of 4 judged pieces in the TASTE A/B, `craft/ab-craft-process.md` on -v-taste) | Vary scale, angle and layout shot to shot, and let the transition carry the change (a zoom-through, a match move, a wipe that follows motion) | TASTE A/B, [SOM-MC] |
+| One move repeated with no escalation | Each beat raises something: scale, speed, density, camera energy, towards a peak and a release | review-div.md on -v-taste |
 | Uniform stagger (same delay, same amount) | Eased, centre- or edge-out, grid-aware distributions; varied amounts | [GSAP-ST], [GSAP-DIST], [SKL-OFF] |
 | Symmetric in-out timing | Fast in, slow settle; exits shorter and accelerating | [M1], [CARBON] |
 | No holds, or dead holds | Moving holds; held stills timed for reading | [AM-HOLD], TASTE §1 |
