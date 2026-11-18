@@ -32,7 +32,7 @@ HAIR_P = "#5b2a2a"
 QUILT = ["#6b3a6e", "#2f6f73", "#d39a3c", "#c76a5a", "#3c4a8a", "#8a4f3a"]
 BUNNY = "#efe3d0"
 
-PARENT = {"font": "Fraunces", "axes": {"SOFT": 100, "WONK": 1, "opsz": 144, "wght": 380}, "color": CREAM}
+PARENT = {"font": "Shantell Sans", "axes": {"INFM": 0, "BNCE": 0, "SPAC": 0, "wght": 430}, "color": CREAM}
 CHILD = {"font": "Shantell Sans", "axes": {"INFM": 100, "BNCE": 100, "SPAC": 0, "wght": 720}, "color": CRAYON}
 
 
@@ -367,7 +367,7 @@ scenes.append({
                            {"to": {"zoom": 2.6, "x": -60, "y": 230}, "at": 2.65, "duration": 0.85, "ease": "inCubic"}]},
     "layers": [
         bedroom(False),
-        text("Once upon\na time,", PARENT, "8.4vh", "9%", "12%", 0.25, end=3.2, exit="fadeOut", enter={"preset": "mask by line up", "duration": 0.9}, lineHeight=0.98),
+        text("Once upon\na time,", PARENT, "7.4vh", "9%", "12%", 0.25, end=3.2, exit="fadeOut", enter={"preset": "mask by line up", "duration": 0.9}, lineHeight=0.98),
         text("a bunny!", CHILD, "9vh", "27%", "31%", 1.0, end=3.2, exit="fadeOut", enter={"preset": "wipeIn", "duration": 0.55}, rotation=-7),
     ],
 })
@@ -379,7 +379,6 @@ g2, s2 = bunny("b", 760, 990, 1.5, walk=walk)
 moon_outline = illo([
     sh("circle", cx=1420, cy=250, r=120, fill="none", stroke=CRAYON, weight=[4, 7], gaps=0.45, boil=8,
        sway={"rotate": 4, "period": 6}),
-    sh("path", d="M1300 400 l 30 -30 m 40 60 l 20 -40 m 60 50 l 6 -40", stroke=CRAYON, weight=[3, 5], boil=8),
 ], grain=0.0)
 scenes.append({
     "id": "quilt", "duration": 3.6, "background": "#0f1640", "transition": {"type": "crossfade", "duration": 0.3},
@@ -390,8 +389,8 @@ scenes.append({
                                               "palette": ["#0f1640", "#3a3f86", "#3c4a8a", "#2f6f73"],
                                               "ranges": [{"color": "#3c4a8a"}, {"color": "#6b3a6e"}, {"color": "#2f6f73"}]}, "depth": 2},
         moon_outline,
-        text("who lost\nthe", PARENT, "12vh", "7%", "12%", 0.15, enter={"preset": "mask by line up", "duration": 0.9}, lineHeight=0.95),
-        text("moon.", dict(PARENT, color=GOLD), "12vh", "17.6%", "25.6%", 0.45, enter={"preset": "mask by line up", "duration": 0.7},
+        text("who lost\nthe", PARENT, "10.5vh", "7%", "12%", 0.15, enter={"preset": "mask by line up", "duration": 0.9}, lineHeight=0.95),
+        text("moon.", dict(PARENT, color=GOLD), "10.5vh", "18%", "24.6%", 0.45, enter={"preset": "mask by line up", "duration": 0.7},
              animate=[{"to": {"rotation": -8}, "at": 1.5, "duration": 0.25, "ease": "outCubic"},
                       {"to": {"y": "+1000", "rotation": 70}, "at": 1.85, "duration": 1.1, "ease": "inCubic"}]),
         {"enter": {"preset": "fadeIn", "delay": 0.45, "duration": 0.7}, "component": "landscape", "props": {"style": "papercut", "time": "night", "terrain": ["hills", "dunes"], "layers": 2, "sky": False,
@@ -434,7 +433,7 @@ scenes.append({
                                           "colors": {"top": "#22306a", "deep": "#121a46", "wave": "#3c4a8a", "glint": "#ffe3a0"}},
          "x": 960, "y": 860, "width": 1920, "height": 440},
         refl,
-        text("moon.", dict(PARENT, color="#fff3cf"), "10vh", 1185, 872, 0.0, anchor="center", rotation=7, loop="float",
+        text("moon.", dict(PARENT, color="#fff3cf"), "9vh", 1185, 872, 0.0, anchor="center", rotation=7, loop="float", scaleY=0.8, opacity=0.88,
              shadow={"x": 4, "y": 6, "blur": 8, "color": "#0a0f30cc"}),
         {"component": "plants", "props": {"style": "papercut", "time": "night", "species": ["grass", "bush"], "count": 7, "spread": [0, 0.45],
                                            "ground": 0.97, "size": 300, "fill": True, "wind": 0.45, "onTwos": True,
@@ -481,12 +480,12 @@ scenes.append({
                                            "ground": 1.0, "size": 420, "wind": 0.5, "onTwos": True,
                                            "colors": {"foliage": ["#2a1830", "#3a2142", "#6b3a6e"], "trunk": "#2a1830", "bark": "#2a1830", "accent": GOLD}}},
         illo(s4, g4),
-        text("moon.", dict(PARENT, color="#fff3cf"), "15vh", 1250, 560, 0.0, anchor="center", end=1.95, exit={"preset": "fadeOut", "duration": 0.35},
-             animate=[{"from": {"y": "+330", "rotation": 14, "opacity": 0.5}, "to": {"y": "+0", "rotation": -4, "opacity": 1}, "at": 0.45, "duration": 0.95, "ease": "outBack"},
+        text("moon.", dict(PARENT, color="#fff3cf"), "15vh", 1250, 560, 0.0, anchor="center", end=1.8, exit={"preset": "fadeOut", "duration": 0.3},
+             animate=[{"from": {"y": "+330", "rotation": 14, "opacity": 0.5}, "to": {"y": 560, "rotation": -4, "opacity": 1}, "at": 0.45, "duration": 0.95, "ease": "outBack"},
                       {"to": {"scale": 1.15}, "at": 1.55, "duration": 0.4, "ease": "outCubic"}],
              shadow={"x": 0, "y": 0, "blur": 30, "color": "#ffcf6aaa"}),
         text("Dreamed up", PARENT, "9vh", "56%", "9%", 0.05, enter={"preset": "mask by line up", "duration": 0.7}),
-        text("together,", CHILD, "9vh", "62%", "19%", 0.25, enter={"preset": "wipeIn", "duration": 0.4}, rotation=-5),
+        text("together,", CHILD, "9vh", "62%", "21%", 0.25, enter={"preset": "wipeIn", "duration": 0.4}, rotation=-5),
     ],
     "audio": [{"src": "sfx/splash.wav", "at": 0.85, "volume": 0.6}, {"sfx": "chime", "at": 1.7, "volume": 0.3},
               {"src": "sfx/thump.wav", "at": 2.65, "volume": 0.5}],
@@ -522,7 +521,7 @@ scenes.append({
                                               "ranges": [{"color": "#3c4a8a"}, {"color": "#6b3a6e"}, {"color": "#c76a5a"}]}, "depth": 1.5},
         moon5,
         illo(s5, g5),
-        dict(PARENT, text="and read aloud, word by word.", size="6.4vh", x=1072, y=548, anchor="center", rotation=-29.8, start=0.45,
+        dict(PARENT, text="and read aloud, word by word.", size="5.0vh", x=1072, y=548, anchor="center", rotation=-29.8, start=0.45,
              split="words", enter={"preset": "fadeUp", "duration": 0.25}, stagger=0.1, shadow={"x": 3, "y": 5, "blur": 5, "color": "#06081c99"}),
     ],
 })
@@ -535,10 +534,10 @@ scenes.append({
     "layers": [
         bedroom(True),
         text("the end.", CHILD, "10vh", "6%", "8%", 0.35, enter={"preset": "wipeIn", "duration": 0.45}, rotation=-5),
-        text("bedtime stories you make together,\nread aloud every night", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 36, "wght": 400}), "3.9vh", "6.4%", "25%", 0.9,
+        text("bedtime stories you make together,\nread aloud every night", dict(PARENT, axes={"INFM": 0, "BNCE": 0, "SPAC": 0, "wght": 400}), "3.3vh", "6.4%", "25%", 0.9,
              enter={"preset": "mask by line up", "duration": 0.6}, lineHeight=1.2, italic=True),
         # the wordmark is sewn into the quilt the whole story came out of
-        text("Burrow", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 144, "wght": 640}), "15vh", 935, 900, 1.3, anchor="center", rotation=-3,
+        text("Burrow", dict(PARENT, axes={"INFM": 30, "BNCE": 20, "SPAC": 0, "wght": 800}), "15vh", 935, 900, 1.3, anchor="center", rotation=-3,
              enter={"preset": "mask by line up", "duration": 0.7}, letterSpacing="-0.01em", color="#f6e6c4",
              shadow={"x": 0, "y": 3, "blur": 2, "color": "#2a1830cc"}),
     ],

@@ -22,7 +22,7 @@ env = dict(os.environ, ANIKIT_RENDER_CACHE="0")
 t0 = time.time()
 
 # 1. soundtrack from the normal pipeline
-subprocess.run([BIN, "render", "spec.json", "-o", os.path.join(frames, "audio.mp4")],
+subprocess.run([BIN, "render", "spec.json", "--scale", "0.25", "-o", os.path.join(frames, "audio.mp4")],
                cwd=HERE, env=env, check=True, capture_output=True)
 
 
