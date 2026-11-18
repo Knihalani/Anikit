@@ -426,6 +426,17 @@ impl ShaderJobs {
             Some(k) => {
                 let id = SHADER_BASE + (k as u32 % KEYED_SPAN);
                 if g.map.get(&id).is_some_and(|e| e.key == k) {
+                    // Reused: keep it in the window (eviction skips ids still
+                    // queued), or a frame still to be rendered could find its job
+                    // evicted by other frames' submissions: a blank shader layer.
+                    g.order.push_back(id);
+                    while g.order.len() > MAX_JOBS {
+                        if let Some(old) = g.order.pop_front() {
+                            if !g.order.contains(&old) {
+                                g.map.remove(&old);
+                            }
+                        }
+                    }
                     return ImageId(id);
                 }
                 id
