@@ -39,9 +39,189 @@ function resolveTarget(t: CaptureTarget): Element {
   return t ?? document.documentElement;
 }
 
+const HTML_NS = 'http://www.w3.org/1999/xhtml';
+const ALWAYS = new Set([
+  'width',
+  'height',
+  'inline-size',
+  'block-size',
+  'transform-origin',
+  'perspective-origin',
+  'border-top-width',
+  'border-right-width',
+  'border-bottom-width',
+  'border-left-width',
+  'border-block-start-width',
+  'border-block-end-width',
+  'border-inline-start-width',
+  'border-inline-end-width',
+  'outline-width',
+  'column-rule-width',
+]);
+const FULL_ELEMENTS = new Set([
+  'script',
+  'style',
+  'link',
+  'meta',
+  'base',
+  'head',
+  'title',
+  'template',
+  'noscript',
+  'iframe',
+  'frame',
+  'object',
+  'embed',
+]);
+const PROBE_EXCLUDED = new Set([
+  'id',
+  'class',
+  'style',
+  'src',
+  'srcset',
+  'srcdoc',
+  'data',
+  'poster',
+  'background',
+  'action',
+  'formaction',
+  'ping',
+  'title',
+  'alt',
+  'placeholder',
+  'value',
+  'name',
+  'for',
+]);
+type StyleCache = WeakMap<Element, { vals: string[]; text: string }>;
+type StylePathCache = WeakMap<Element, boolean>;
+
+let probeFrame: HTMLIFrameElement | null = null;
+let probeContainers: [HTMLElement, HTMLElement] | null = null;
+const defaultStyles = new Map<string, (string | null)[]>();
+
+function styleText(names: string[], vals: string[], include?: boolean[]): string {
+  let s = '';
+  for (let i = 0; i < names.length; i++) if (!include || include[i]) s += `${names[i]}:${vals[i]};`;
+  return s;
+}
+
+function ensureProbe(): [HTMLElement, HTMLElement] | null {
+  if (probeFrame?.isConnected && probeFrame.parentElement === document.body && probeContainers) return probeContainers;
+  if (probeFrame?.parentNode) probeFrame.parentNode.removeChild(probeFrame);
+  probeFrame = null;
+  probeContainers = null;
+  if (!document.body) return null;
+  const frame = document.createElement('iframe');
+  frame.style.cssText =
+    'position:fixed;left:-10000px;top:0;width:400px;height:400px;visibility:hidden;border:0;pointer-events:none';
+  frame.setAttribute('aria-hidden', 'true');
+  try {
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument;
+    if (!doc) throw new Error('probe iframe has no document');
+    doc.open();
+    doc.write('<!DOCTYPE html><html><head></head><body></body></html>');
+    doc.close();
+    const a = doc.createElement('div');
+    a.style.cssText =
+      'direction:ltr;writing-mode:horizontal-tb;color:rgb(0,0,0);font-size:16px;font-weight:400;line-height:normal;width:300px;height:200px';
+    const b = doc.createElement('div');
+    b.style.cssText =
+      'direction:rtl;writing-mode:vertical-rl;color:rgb(1,2,3);font-size:17px;font-weight:300;line-height:1.7;width:357px;height:211px';
+    doc.body.append(a, b);
+    probeFrame = frame;
+    probeContainers = [a, b];
+    return probeContainers;
+  } catch {
+    frame.remove();
+    return null;
+  }
+}
+
+function stableDefaults(src: Element, names: string[]): (string | null)[] {
+  const contexts = ensureProbe();
+  if (!contexts) return names.map(() => null);
+  const attributes = Array.from(src.attributes)
+    .filter((attr) => {
+      const name = attr.name.toLowerCase();
+      return !PROBE_EXCLUDED.has(name) && !name.startsWith('on') && !name.startsWith('aria-') && !name.startsWith('data-');
+    })
+    .map((attr) => ({
+      name: attr.name,
+      namespace: attr.namespaceURI,
+      value: attr.name.toLowerCase() === 'href' ? '' : attr.value,
+    }));
+  const keyAttributes = attributes
+    .map(({ name, value }) => (name.toLowerCase() === 'href' ? name : `${name}=${value}`))
+    .sort();
+  const ns = src.namespaceURI ?? '';
+  const key = `${ns} ${src.localName} ${keyAttributes.join(' ')}`;
+  const cached = defaultStyles.get(key);
+  if (cached) return cached;
+  const values: string[][] = [];
+  const probes: Element[] = [];
+  try {
+    for (const context of contexts) {
+      const probe = context.ownerDocument!.createElementNS(ns || HTML_NS, src.localName);
+      for (const attr of attributes) {
+        if (attr.name.toLowerCase() === 'href') probe.setAttributeNS(attr.namespace, attr.name, '');
+        else probe.setAttributeNS(attr.namespace, attr.name, attr.value);
+      }
+      context.appendChild(probe);
+      probes.push(probe);
+      const cs = context.ownerDocument!.defaultView!.getComputedStyle(probe);
+      const vals = new Array<string>(names.length);
+      for (let i = 0; i < names.length; i++) vals[i] = cs.getPropertyValue(names[i]);
+      values.push(vals);
+    }
+  } catch {
+    return names.map(() => null);
+  } finally {
+    for (const probe of probes) probe.remove();
+  }
+  const result = names.map((_, i) => (values[0][i] === values[1][i] ? values[0][i] : null));
+  defaultStyles.set(key, result);
+  if (defaultStyles.size > 512) defaultStyles.clear();
+  return result;
+}
+
+function sameValues(a: string[], b: string[] | undefined): boolean {
+  if (!b || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
 /** Inline computed styles into a deep clone so it renders standalone. */
-function cloneWithStyles(src: Element): Element {
+function cloneWithStyles(
+  src: Element,
+  names: string[],
+  parentVals?: string[],
+  parentChanged = false,
+  isRoot = false,
+  forceFullSubtree = false,
+  forceFull = false,
+  cache?: StyleCache,
+  pathCache?: StylePathCache,
+): Element {
   const clone = src.cloneNode(false) as Element;
+  const cs = getComputedStyle(src);
+  const vals = new Array<string>(names.length);
+  for (let i = 0; i < names.length; i++) vals[i] = cs.getPropertyValue(names[i]);
+  const cssText = cs.cssText;
+  const namespaceFull = src.namespaceURI !== HTML_NS;
+  const full =
+    forceFull ||
+    isRoot ||
+    forceFullSubtree ||
+    namespaceFull ||
+    FULL_ELEMENTS.has(src.localName) ||
+    src instanceof HTMLCanvasElement ||
+    !!cssText;
+  const previous = cache?.get(src);
+  const same = sameValues(vals, previous?.vals);
+  const changed = parentChanged || !same || pathCache?.get(src) !== full;
+
   if (src instanceof HTMLCanvasElement) {
     const img = document.createElement('img');
     try {
@@ -49,28 +229,48 @@ function cloneWithStyles(src: Element): Element {
     } catch {
       /* tainted canvas */
     }
-    const cs = getComputedStyle(src);
-    img.setAttribute('style', cs.cssText || styleText(cs));
+    img.setAttribute('style', cssText || styleText(names, vals));
     return img;
   }
-  if (src.nodeType === 1) {
-    const cs = getComputedStyle(src);
-    (clone as HTMLElement).setAttribute('style', cs.cssText || styleText(cs));
+
+  let text: string;
+  if (previous && same && !parentChanged && pathCache?.get(src) === full && (!cssText || previous.text === cssText)) text = previous.text;
+  else if (cssText) text = cssText;
+  else if (full) text = styleText(names, vals);
+  else {
+    const defaults = stableDefaults(src, names);
+    const include = new Array<boolean>(names.length);
+    for (let i = 0; i < names.length; i++) {
+      include[i] =
+        ALWAYS.has(names[i]) ||
+        vals[i] !== parentVals?.[i] ||
+        defaults[i] === null ||
+        vals[i] !== defaults[i];
+    }
+    text = styleText(names, vals, include);
   }
+  clone.setAttribute('style', text);
+  cache?.set(src, { vals, text });
+  pathCache?.set(src, full);
+
   for (const child of Array.from(src.childNodes)) {
-    if (child.nodeType === 1) clone.appendChild(cloneWithStyles(child as Element));
-    else if (child.nodeType === 3) clone.appendChild(child.cloneNode());
+    if (child.nodeType === 1) {
+      clone.appendChild(
+        cloneWithStyles(
+          child as Element,
+          names,
+          vals,
+          changed,
+          false,
+          forceFullSubtree || namespaceFull,
+          forceFull,
+          cache,
+          pathCache,
+        ),
+      );
+    } else if (child.nodeType === 3) clone.appendChild(child.cloneNode());
   }
   return clone;
-}
-
-function styleText(cs: CSSStyleDeclaration): string {
-  let s = '';
-  for (let i = 0; i < cs.length; i++) {
-    const k = cs[i];
-    s += `${k}:${cs.getPropertyValue(k)};`;
-  }
-  return s;
 }
 
 function loadImage(url: string): Promise<HTMLImageElement> {
@@ -83,16 +283,33 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 }
 
 /** Render a canvas or DOM element (via SVG foreignObject) into a new canvas. */
-export async function rasterize(target?: CaptureTarget, o: RasterOptions = {}): Promise<HTMLCanvasElement> {
+interface RasterizeInternalOptions {
+  names?: string[];
+  cache?: StyleCache;
+  pathCache?: StylePathCache;
+  canvas?: HTMLCanvasElement;
+  contextOptions?: CanvasRenderingContext2DSettings;
+}
+
+async function rasterizeInternal(
+  target: CaptureTarget | undefined,
+  o: RasterOptions,
+  internal: RasterizeInternalOptions = {},
+): Promise<HTMLCanvasElement> {
   const el = resolveTarget(target);
+  const names = internal.names ?? Array.from(getComputedStyle(el));
   const scale = o.scale ?? Math.min(2, typeof devicePixelRatio === 'number' ? devicePixelRatio : 1);
   const r = el.getBoundingClientRect();
   const w = Math.max(1, Math.round((el === document.documentElement ? innerWidth : r.width) * scale));
   const h = Math.max(1, Math.round((el === document.documentElement ? innerHeight : r.height) * scale));
-  const out = document.createElement('canvas');
-  out.width = w;
-  out.height = h;
-  const ctx = out.getContext('2d')!;
+  const out = internal.canvas ?? document.createElement('canvas');
+  const resized = out.width !== w || out.height !== h;
+  if (resized) {
+    out.width = w;
+    out.height = h;
+  }
+  const ctx = out.getContext('2d', internal.contextOptions)!;
+  if (!resized) ctx.clearRect(0, 0, w, h);
   if (o.background) {
     ctx.fillStyle = o.background;
     ctx.fillRect(0, 0, w, h);
@@ -101,7 +318,9 @@ export async function rasterize(target?: CaptureTarget, o: RasterOptions = {}): 
     ctx.drawImage(el, 0, 0, w, h);
     return out;
   }
-  const clone = cloneWithStyles(el) as HTMLElement;
+  const hasStyles = el.matches('style, link') || !!el.querySelector('style, link');
+  const forceFull = hasStyles || !ensureProbe();
+  const clone = cloneWithStyles(el, names, undefined, false, true, false, forceFull, internal.cache, internal.pathCache) as HTMLElement;
   clone.style.margin = '0';
   clone.style.position = 'relative';
   clone.style.left = clone.style.top = '0';
@@ -115,6 +334,10 @@ export async function rasterize(target?: CaptureTarget, o: RasterOptions = {}): 
   const img = await loadImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
   ctx.drawImage(img, 0, 0, w, h);
   return out;
+}
+
+export async function rasterize(target?: CaptureTarget, o: RasterOptions = {}): Promise<HTMLCanvasElement> {
+  return rasterizeInternal(target, o);
 }
 
 /** A PNG (or WebP/JPEG) screenshot of a canvas, element or the page. */
@@ -219,6 +442,10 @@ export async function record(target?: CaptureTarget, o: RecordOptions = {}): Pro
   const deterministic = !o.realtime;
   const wasManual = isManual();
   const bg = o.background ?? (format === 'frames' ? undefined : '#ffffff');
+  const names = Array.from(getComputedStyle(resolveTarget(target)));
+  const cache: StyleCache = new WeakMap();
+  const pathCache: StylePathCache = new WeakMap();
+  const frameCanvas = document.createElement('canvas');
   if (deterministic) engine.manual(true);
   let gif: GifWriter | null = null;
   const images: Blob[] = [];
@@ -234,7 +461,13 @@ export async function record(target?: CaptureTarget, o: RecordOptions = {}): Pro
         await sleep(1000 / fps);
         await nextFrame();
       }
-      const frame = await rasterize(target, { ...o, background: bg });
+      const frame = await rasterizeInternal(target, { ...o, background: bg }, {
+        names,
+        cache,
+        pathCache,
+        canvas: frameCanvas,
+        contextOptions: format === 'gif' ? { willReadFrequently: true } : undefined,
+      });
       w = frame.width;
       h = frame.height;
       if (format === 'gif') {
