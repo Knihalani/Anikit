@@ -1,0 +1,20 @@
+[
+ {"slug": "blender-studio-charge-2022", "in_set": true,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/7/7a/Charge_-_Blender_Open_Movie-full_movie.webm/Charge_-_Blender_Open_Movie-full_movie.webm.1080p.vp9.webm",
+  "url_480p": "https://upload.wikimedia.org/wikipedia/commons/transcoded/7/7a/Charge_-_Blender_Open_Movie-full_movie.webm/Charge_-_Blender_Open_Movie-full_movie.webm.480p.vp9.webm",
+  "licence": "CC BY 4.0 (Blender Studio)", "page": "https://commons.wikimedia.org/wiki/File:Charge_-_Blender_Open_Movie-full_movie.webm",
+  "fit": "3D narrative / game-cinematic action; weak match for motion design"},
+ {"slug": "nasa-year-in-the-life-of-co2-2014", "in_set": true,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/f/f8/A_Year_In_The_Life_Of_Earth%27s_CO2_11719-1920-MASTER.webm/A_Year_In_The_Life_Of_Earth%27s_CO2_11719-1920-MASTER.webm.1080p.vp9.webm",
+  "url_480p": "https://upload.wikimedia.org/wikipedia/commons/transcoded/f/f8/A_Year_In_The_Life_Of_Earth%27s_CO2_11719-1920-MASTER.webm/A_Year_In_The_Life_Of_Earth%27s_CO2_11719-1920-MASTER.webm.480p.vp9.webm",
+  "licence": "Public domain (NASA Goddard Scientific Visualization Studio)", "page": "https://commons.wikimedia.org/wiki/File:A_Year_In_The_Life_Of_Earth%27s_CO2_11719-1920-MASTER.webm",
+  "fit": "data visualisation: a continuous simulated field with a date counter"},
+ {"slug": "calibration-blender-spring-2019", "in_set": false,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/a/a5/Spring_-_Blender_Open_Movie.webm/Spring_-_Blender_Open_Movie.webm.1080p.vp9.webm",
+  "licence": "CC BY 4.0 (Blender Studio)", "page": "https://commons.wikimedia.org/wiki/File:Spring_-_Blender_Open_Movie.webm",
+  "fit": "calibration only: painterly stylised-3D narrative, calm (measured median shot 4.5 s)"},
+ {"slug": "calibration-blender-sprite-fright-2021", "in_set": false,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/7/76/Sprite_Fright_-_Blender_Open_Movie-full_movie.webm/Sprite_Fright_-_Blender_Open_Movie-full_movie.webm.1080p.vp9.webm",
+  "licence": "CC BY 4.0 (Blender Studio)", "page": "https://commons.wikimedia.org/wiki/File:Sprite_Fright_-_Blender_Open_Movie-full_movie.webm",
+  "fit": "calibration only: stylised-3D comedy-horror narrative"}
+]

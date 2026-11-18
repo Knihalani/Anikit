@@ -10,6 +10,7 @@
 | `bench.py match --spec s.json [--analysis a.json] [--tags "k=v …"] [--text "…"] [-n 3] [--json]` | Profile our video (aspect, pace, medium, type role, palette, purpose) and rank the set; returns the 3 most relevant references from different studios, with reasons and the stills folder. |
 | `bench.py export --out DIR [--no-thumbs] [slug…]` | Write the JUDGE layout: `DIR/index.json` (slug, title, studio, year, url, format, category, style_tags, pace, measured, `real_frames`, `frame_info` [{file, kind, thumb, w, h, src}]; true frames first, thumbnails last) and `DIR/<slug>/01.jpg…` copied from the cache (run `fetch` first). From Python: `sys.path.insert(0, "docs/video/judge/benchmark/tools"); from bench import match_refs; match_refs(spec="s.json", analysis=None, tags=None, text=None, n=3)`. |
 | `bench.py stats` | Counts and distributions across the set (feeds `WHAT-WORLD-CLASS-LOOKS-LIKE.md`). |
+| `clips.json` | Lawfully downloadable reference clips (CC BY / public domain direct files, with licence and fit notes) for motion strips. |
 | `bench.py measure <slug> <clip>` | Run `anikit-video analyze` on a legitimately obtained clip, store the key stats in `measured.json` and a contact sheet in the cache. |
 
 ## Cache (never committed)
