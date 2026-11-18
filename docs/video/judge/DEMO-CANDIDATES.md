@@ -17,12 +17,13 @@ Every judged output, best first within each category. Score = median blind score
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 4.12 | FAIL | 0/3 | 8.29 | 4.33 | Anikit | demo | ceiling1_lastlight_lastlight | `docs/video/judge/demos/results/ceiling1_lastlight_lastlight` |
 | 2 | 3.62 | FAIL | 0/3 | 6.79 | 4.28 | Anikit | r2 | f-3d | `docs/video/judge/rounds/r2/results/f-3d` |
-| 3 | 3.5 | FAIL | 0/3 | 7.08 | 3.78 | Anikit | r1 | f-3d | `docs/video/judge/rounds/r1/results/f-3d` |
-| 4 | 3.25 | FAIL | 0/3 | 7.38 | 3.67 | Anikit | demo | v-sound_calibre9-after | `docs/video/judge/demos/results/v-sound_calibre9-after` |
-| 5 | 3 | FAIL | 0/3 | 7.0 | 3.12 | Anikit | demo | 3d-showcase_showcase | `docs/video/judge/demos/results/3d-showcase_showcase` |
-| 6 | 3 | FAIL | 0/3 | 7.17 | 3.22 | Anikit | demo | sim_unveil | `docs/video/judge/demos/results/sim_unveil` |
-| 7 | 2.75 | FAIL | 0/3 | 7.71 | 2.78 | Anikit | demo | v-sound_physics_drop | `docs/video/judge/demos/results/v-sound_physics_drop` |
-| 8 | 2.25 | FAIL | 0/3 | 7.63 | 2.5 | Anikit | demo | sim_snow | `docs/video/judge/demos/results/sim_snow` |
+| 3 | 3.62 | FAIL | 0/6 | 6.94 | 3.89 | Anikit | demo | f-3d-demo | `docs/video/judge/demos/rebuilds/f-3d-demo` |
+| 4 | 3.5 | FAIL | 0/3 | 7.08 | 3.78 | Anikit | r1 | f-3d | `docs/video/judge/rounds/r1/results/f-3d` |
+| 5 | 3.25 | FAIL | 0/3 | 7.38 | 3.67 | Anikit | demo | v-sound_calibre9-after | `docs/video/judge/demos/results/v-sound_calibre9-after` |
+| 6 | 3 | FAIL | 0/3 | 7.0 | 3.12 | Anikit | demo | 3d-showcase_showcase | `docs/video/judge/demos/results/3d-showcase_showcase` |
+| 7 | 3 | FAIL | 0/3 | 7.17 | 3.22 | Anikit | demo | sim_unveil | `docs/video/judge/demos/results/sim_unveil` |
+| 8 | 2.75 | FAIL | 0/3 | 7.71 | 2.78 | Anikit | demo | v-sound_physics_drop | `docs/video/judge/demos/results/v-sound_physics_drop` |
+| 9 | 2.25 | FAIL | 0/3 | 7.63 | 2.5 | Anikit | demo | sim_snow | `docs/video/judge/demos/results/sim_snow` |
 
 ## 9:16 social ad
 
@@ -140,6 +141,7 @@ Every judged output, best first within each category. Score = median blind score
 | # | Score | Verdict | Judged pro | Refs | Full | Engine | Source | Piece | Result |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 4.5 | FAIL | 0/3 | 8.25 | 4.67 | Anikit | r1 | k-sports | `docs/video/judge/rounds/r1/results/k-sports` |
-| 2 | 3.25 | FAIL | 0/6 | 8.33 | 3.56 | Anikit | r3 | k-sports | `docs/video/judge/rounds/r3/results/k-sports` |
-| 3 | 3.12 | FAIL | 0/3 | 8.17 | 3.61 | Anikit | r2 | k-sports | `docs/video/judge/rounds/r2/results/k-sports` |
-| 4 | 2.38 | FAIL | 0/3 | 8.38 | 2.62 | Anikit | demo | type_3-sport | `docs/video/judge/demos/results/type_3-sport` |
+| 2 | 4.25 | FAIL | 0/6 | 8.33 | 4.39 | Anikit | demo | k-sports-r1-6trials | `docs/video/judge/demos/rebuilds/k-sports-r1-6trials` |
+| 3 | 3.25 | FAIL | 0/6 | 8.33 | 3.56 | Anikit | r3 | k-sports | `docs/video/judge/rounds/r3/results/k-sports` |
+| 4 | 3.12 | FAIL | 0/3 | 8.17 | 3.61 | Anikit | r2 | k-sports | `docs/video/judge/rounds/r2/results/k-sports` |
+| 5 | 2.38 | FAIL | 0/3 | 8.38 | 2.62 | Anikit | demo | type_3-sport | `docs/video/judge/demos/results/type_3-sport` |
