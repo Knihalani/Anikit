@@ -1,0 +1,524 @@
+{
+  "name": "ceiling1_lastlight_lastlight",
+  "tags": [
+    "cg-3d",
+    "title-sequence",
+    "kinetic-type"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "xk-studio-offfmx-2025-main-titles",
+    "the-crown"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 5,
+      "typography": 3,
+      "colour": 5,
+      "light_texture": 5,
+      "motion": 4,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 4.12,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a concept that connects the name to the image, for example records as planets, grooves as orbits or a mechanical solar system. B's world-as-mechanism is the model to follow.",
+      "Replace the default bold sans with a considered or custom wordmark integrated into the object or the light, with real scale contrast.",
+      "Add material specificity and lighting variety (worn vinyl, dust on the deck, a second key or a colour contrast), plus shots at different scales and choreographed camera moves.",
+      "Develop the orrery idea: records, tonearms and dust motes should actually choreograph into an orbital system, as B's mechanisms build the world",
+      "Replace the default bold sans end card with typography that has a point of view and is integrated into the light or the object",
+      "Add material detail and tonal contrast: real vinyl grooves, brushed metal, a second colour to break the orange monotony, and shot variety beyond slow push-ins",
+      "Find an idea tied to the name. An orrery implies orbits and planets, so the record and tonearm could become a planetary system instead of a generic turntable under a spotlight.",
+      "Replace the default sans with a considered typographic system that is integrated into the scene, such as type engraved on the platter or orbiting on the grooves, as B builds its credits into the world.",
+      "Model and light real materials (wood grain, brushed aluminium, vinyl sheen) and plan a camera journey with variety and a resolution, instead of the same haze-and-cone shot repeated."
+    ],
+    "tells": [
+      "The subject is literal and obvious: a turntable with a spotlight beam and dust particles. This is a standard Blender volumetric exercise.",
+      "The type is a single default heavy grotesk wordmark ('ORRERY') placed on a lit disc. There is no typographic idea or integration.",
+      "The whole piece is graded one monochrome orange, and the volumetric haze carries everything. It is effect over subject.",
+      "The materials are generic (plastic deck, plain metal tonearm, flat red label) with little texture or wear.",
+      "The frames repeat the same object under the same light from slightly different angles. Little happens, and the aspect ratios are inconsistent across the sequence.",
+      "The name 'Orrery' is not paid off visually: there is no planetary or orbital idea linking the record to the concept.",
+      "A single stock-feeling subject, a turntable under a volumetric god-ray, repeated across nearly every frame with only small camera changes. Little happens",
+      "The monochrome orange haze is applied everywhere, a stock 'atmospheric dust' look. It is an effect with no subject behind it",
+      "The end card is a generic heavy grotesk wordmark centred in a spotlight disc, with no typographic idea or relationship to the image",
+      "The name 'Orrery' implies planetary motion, but the visuals only hint at it literally (a record as an orbit). The concept is not developed",
+      "The modelling is simplified (blocky tonearm, flat plinth), with default-looking materials and murky, low-contrast frames typical of a student Blender or template piece",
+      "The subject is a turntable rendered in a stock 3D look: a plain box plinth, a simple tonearm made of rectangular primitives, a flat red label, no material storytelling. It reads like a hobbyist Blender scene.",
+      "Volumetric god-rays with floating dust are the only 'idea'. This is an effect with no subject; the same orange haze and spotlight cone repeat across every frame.",
+      "The title 'ORRERY' is set in a default heavy grotesk and pasted into a glowing disc. There is no typographic relationship to the name, which is an orrery and not a record player, nor any scale or craft.",
+      "Compositions are awkward: a near-empty frame showing just a pin on a red edge, inconsistent framing and aspect between shots, and a stiff dolly feel with no choreography or payoff."
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "the-crown": {
+      "overall": 8,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    }
+  },
+  "ref_mean": 8.29,
+  "delta": -4.17,
+  "trials": [
+    {
+      "key": {
+        "A": "the-crown",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "xk-studio-offfmx-2025-main-titles"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Molten gold and metal grow into a crown. The material process itself is the metaphor for how the throne is made.",
+              "Real low-key light: specular highlights pick out a cast, pitted metal surface with smoke and depth in the frame.",
+              "A classical wide-tracked serif (Trajan-like) is used for the credits and placed against the forms, off-centre and in varied positions. It is not centred like a slide.",
+              "The palette is held to bronze, black and cold silver, which suits monarchy and stays restrained.",
+              "The frames move from macro abstraction to faceted jewels to the title reveal, so there is clear choreography."
+            ],
+            "gaps": [
+              "The idea is close to a genre convention for prestige drama (macro liquid metal against black). B's world-building concept is more distinctive.",
+              "Several frames read as a dark ground with a small tracked-caps credit. That gives less range in composition and scale than B.",
+              "The end title is a plain centred serif on a dark haze, without the integrated object or emblem that B's lock-up has."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "It has a specific idea that only this piece could have: a clockwork map of the world whose cities mechanically build themselves. This is an orientation device and a memorable image at once.",
+              "The material is dense and tactile: carved, engraved bands, brass gears, aged map textures and wood.",
+              "Sun-bleached flare and an armillary light source motivate the light and tie the frames together.",
+              "Credits carry house sigils in a custom-feeling inscriptional face, and they are integrated into the world.",
+              "Each frame is a different scale and vantage (macro band, aerial city, mechanism close-up, top-down map, emblem), which implies strong camera choreography.",
+              "The title lock-up is built into the sculpted dragon emblem."
+            ],
+            "gaps": [
+              "The warm sepia grade flattens some frames, so the map frame reads a little muddy.",
+              "The credit type is small and sometimes fights the busy textures (the Michelle Fairley credit sits against detail).",
+              "The bloom on the final title leans toward overexposure clich\u00e9."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The subject is literal and obvious: a turntable with a spotlight beam and dust particles. This is a standard Blender volumetric exercise.",
+              "The type is a single default heavy grotesk wordmark ('ORRERY') placed on a lit disc. There is no typographic idea or integration.",
+              "The whole piece is graded one monochrome orange, and the volumetric haze carries everything. It is effect over subject.",
+              "The materials are generic (plastic deck, plain metal tonearm, flat red label) with little texture or wear.",
+              "The frames repeat the same object under the same light from slightly different angles. Little happens, and the aspect ratios are inconsistent across the sequence.",
+              "The name 'Orrery' is not paid off visually: there is no planetary or orbital idea linking the record to the concept."
+            ],
+            "gaps": [
+              "It needs a concept that connects the name to the image, for example records as planets, grooves as orbits or a mechanical solar system. B's world-as-mechanism is the model to follow.",
+              "Replace the default bold sans with a considered or custom wordmark integrated into the object or the light, with real scale contrast.",
+              "Add material specificity and lighting variety (worn vinyl, dust on the deck, a second key or a colour contrast), plus shots at different scales and choreographed camera moves."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "The 3D is surreal and organic: translucent hands, coral-like growths, hair, fibre and mesh. These are custom simulations, not stock primitives.",
+              "The palette changes deliberately frame to frame (blush, violet dusk, cyan sky, chartreuse, bottle green) while staying coherent.",
+              "The materials are rich, with subsurface scattering, glass, textile weave and fur, and the lighting is studio-grade.",
+              "Each frame is a strong poster with layered depth (the dense textile frame and the knotted glass tubes).",
+              "Its use of the festival's contributor-name format (OFFF MX wordmark, studio names) fits a festival-titles brief."
+            ],
+            "gaps": [
+              "The typography is minimal and slide-like: small bold sans names placed upper-left, not integrated with the forms.",
+              "The frames read as a showcase of disconnected vignettes, not one through-line idea. A unifying concept would lift it toward B.",
+              "The type and image need clearer choreography between frames, such as transitions that morph one organism into the next."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 29.8,
+        "cost_usd": 0.15290199999999998,
+        "tokens": 71686,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "the-crown",
+        "B": "game-of-thrones",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A single strong idea: molten gold being cast into the crown, so the title sequence shows the forging of the monarchy itself",
+              "Real material rendering: liquid metal, pitted gold surface, faceted gems with caustic highlights, smoky low-key light",
+              "Restrained engraved-style spaced serif credits placed off-centre and set against the image, so the type works with the frame instead of sitting on it like a slide",
+              "Macro framing changes from shot to shot (wide smoke, horizontal pour, diagonal close-up, top-down gem setting) and builds to the reveal",
+              "Its risk is that the dark ground, tracked serif and empty end card come close to the 'tasteful' clich\u00e9. What saves it is the material work and the narrative build"
+            ],
+            "gaps": [
+              "The final title card is a plain centred serif on a dark gradient. It needs the integration of image and type that B's logo lockup has",
+              "The near-monochrome black and gold lacks the palette range and environmental world-building B achieves",
+              "The credits are elegant but timid. One expressive typographic moment would lift it above 'beautiful but expected'"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "An idea only this show could have: a mechanical clockwork map where the world builds itself, which also works as a weekly orientation device for viewers",
+              "A dense, layered world: carved astrolabe band, cog-driven cities, Winterfell's tree mechanism, a parchment map with hand-drawn rivers and settlement marks",
+              "Choreography is evident across frames: the camera travels across the map, structures unfold, and the sequence moves from a burst of light through the city models to the emblem",
+              "Type has a point of view: house sigil icons sit beside small-caps credits, and the custom title lockup is built into the carved dragon emblem",
+              "Warm sun-flare light against tactile wood, brass and parchment gives real materiality"
+            ],
+            "gaps": [
+              "The credit type sometimes sits uneasily over busy detail (e.g. over the bone-tree mechanism), so legibility suffers",
+              "The end-card sunburst flare is slightly overcooked compared with the restraint elsewhere",
+              "The palette leans toward a uniform warm sepia grade. More colour contrast between regions would sharpen the storytelling"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A deliberate, unusual palette: dusty rose, clinical blue, acid green and chrome against organic flesh tones",
+              "Rich hybrid materials: translucent rubbery hands, mesh, fur and fibres, glass-and-chrome tubes, sculpted terrain, which shows real look-dev effort",
+              "Every frame is a different world (pink dusk, volcanic night, studio blue, macro thicket, green ring knot), which suggests a festival or conference opener with contributing studios",
+              "The typography is weak: bold-grotesk names sit in the top-left like labels, and only the custom OFFF-style mark shows any typographic idea",
+              "It reads as a showcase of renders rather than one through-line idea, and the hand and tentacle organic-surreal look is a trend of the moment"
+            ],
+            "gaps": [
+              "It lacks a single unifying concept. The vignettes don't build to anything the way B's map builds to its emblem",
+              "Type is placed like captions in default bold sans. It needs integration and scale contrast with the 3D",
+              "There is no choreographic continuity between frames, so it feels like cuts between separate pieces rather than one designed film"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "A single stock-feeling subject, a turntable under a volumetric god-ray, repeated across nearly every frame with only small camera changes. Little happens",
+              "The monochrome orange haze is applied everywhere, a stock 'atmospheric dust' look. It is an effect with no subject behind it",
+              "The end card is a generic heavy grotesk wordmark centred in a spotlight disc, with no typographic idea or relationship to the image",
+              "The name 'Orrery' implies planetary motion, but the visuals only hint at it literally (a record as an orbit). The concept is not developed",
+              "The modelling is simplified (blocky tonearm, flat plinth), with default-looking materials and murky, low-contrast frames typical of a student Blender or template piece"
+            ],
+            "gaps": [
+              "Develop the orrery idea: records, tonearms and dust motes should actually choreograph into an orbital system, as B's mechanisms build the world",
+              "Replace the default bold sans end card with typography that has a point of view and is integrated into the light or the object",
+              "Add material detail and tonal contrast: real vinyl grooves, brushed metal, a second colour to break the orange monotony, and shot variety beyond slow push-ins"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.7,
+        "cost_usd": 0.15524320000000003,
+        "tokens": 71815,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "the-crown",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Festival-ident structure: each frame is a different collaborator's world (Boldtron, Medusa Lab), with a festival lockup (OFFF MX) tying them together. That is a curated, multi-studio commission, not a template.",
+              "Dense, layered material work: translucent jelly hands holding a flesh-coral heart, knitted mesh and ribbed fabric folds with fibres, glassy organic sculptures, a beaded cluster caught in glossy tubes. Every frame has tactile surface detail.",
+              "Unusual palettes chosen per scene: dusty pink over rust terrain, pistachio and blush, bottle-green with ice-blue. These are confident choices, not one accent on a dark ground.",
+              "Strong variety between frames: macro organic abstraction, a volcanic landscape, a sculpture against the sky. The piece builds a surreal 'bodies and terrain' theme rather than repeating one layout."
+            ],
+            "gaps": [
+              "The typography is mostly small studio-name tags in a generic heavy grotesk dropped into a corner. Unlike B, the type is never integrated into the image or the world.",
+              "The cohesion is thematic rather than choreographed. The frames read as a compilation of separate pieces, with no clear camera path or single conceptual journey like B's travelling map.",
+              "The idea is strong as a mood but less specific. Push one governing concept, such as a body that becomes the landscape, so the piece is about something memorable as well as showcasing materials."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea that only this piece could have: the world is rendered as a mechanical, clockwork map, and cities grow out of it like a tabletop orrery. The titles double as geography exposition.",
+              "Clear choreography between frames: the astrolabe band opens on sun-flare, the camera swoops over cogwork cities, a bird's-eye shot locates King's Landing on the parchment map, and the band's emblem returns as the logo lockup. The sequence is bookended and continuous.",
+              "Real material and light: tooled leather or bronze relief, aged wood and metal miniatures, a parchment map with ink rivers, a warm sun burst against a cool, murky world.",
+              "Typography belongs to the world: small trajan-like credit caps with a house sigil beside each name, set low in the frame so the image leads, and a metal-relief title with dragons on the lockup."
+            ],
+            "gaps": [
+              "This is the benchmark entry. The credit type is very small and sometimes sits on busy detail ('Michelle Fairley' over the city), which costs legibility.",
+              "The palette is a fairly conventional fantasy one: amber flare, sepia and verdigris. A more surprising colour decision would make it unimpeachable.",
+              "The logo lockup leans on a familiar sun-burst and lens-flare gesture that is less inventive than the mechanical world before it."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Macro photography, or a very convincing render, of molten and cast gold forming the crown. The concept is metal being shaped into the crown, a quiet metaphor for power being forged.",
+              "Light is genuinely crafted: specular glints on rough gold, smoky darkness, gemstone facets with real refraction and shallow depth of field. The texture serves the subject.",
+              "Credits use classic small-caps spacing and are placed off-centre in negative space, varied from frame to frame. The final 'THE CROWN' lockup is restrained in a Trajan-like serif.",
+              "The macro framings vary (diagonal, horizontal, corner), which implies a slow, weighty and deliberate camera."
+            ],
+            "gaps": [
+              "The dark ground with a centred, tracked serif title is close to the genre default for prestige-drama titles. The end card on its own could be mistaken for a template.",
+              "The palette stays narrowly in gold on black, so the frames blur together. B, by contrast, moves between sun, stone, map and metal.",
+              "The idea is a single process shot with no narrative or geographical layer. Adding a second element, such as history or individuals carved into the metal, would give it the specificity of B."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 2,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The subject is a turntable rendered in a stock 3D look: a plain box plinth, a simple tonearm made of rectangular primitives, a flat red label, no material storytelling. It reads like a hobbyist Blender scene.",
+              "Volumetric god-rays with floating dust are the only 'idea'. This is an effect with no subject; the same orange haze and spotlight cone repeat across every frame.",
+              "The title 'ORRERY' is set in a default heavy grotesk and pasted into a glowing disc. There is no typographic relationship to the name, which is an orrery and not a record player, nor any scale or craft.",
+              "Compositions are awkward: a near-empty frame showing just a pin on a red edge, inconsistent framing and aspect between shots, and a stiff dolly feel with no choreography or payoff."
+            ],
+            "gaps": [
+              "Find an idea tied to the name. An orrery implies orbits and planets, so the record and tonearm could become a planetary system instead of a generic turntable under a spotlight.",
+              "Replace the default sans with a considered typographic system that is integrated into the scene, such as type engraved on the platter or orbiting on the grooves, as B builds its credits into the world.",
+              "Model and light real materials (wood grain, brushed aluminium, vinyl sheen) and plan a camera journey with variety and a resolution, instead of the same haze-and-cone shot repeated."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.6,
+        "cost_usd": 0.16172199999999998,
+        "tokens": 72127,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 5
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Unresolved path-tracing or volumetric noise in the haze (shots 2\u20134): the beam crawls with speckle that reads as render noise, not film grain or dust",
+        "Tonearm and plinth geometry is simple and soft-edged (headshell is a plain box, chrome has no fine bevels or highlights), so it doesn't hold up at the close framings it is given",
+        "Product details don't match between shots: the tonearm shape, the plinth's depth and the label all change from the wide shot to the close-ups",
+        "Label type on the record is soft and smeared in the crop; 'ORRERY' sits on a blown-out disc with no detail in the highlight",
+        "The end frame crowds the logo disc against a cropped turntable in the lower left, so the two shapes compete",
+        "Shot 3 (soft tonearm rising out of frame, empty amber wall) holds roughly 1 s on almost nothing: dead air",
+        "The music bed is cut off sharply at about 19.5 kHz, which suggests a lossy or library source rather than a mix built for this piece"
+      ],
+      "gaps": [
+        "Motion is slow dollies plus one tonearm drop, with no mechanical weight: the stylus doesn't settle or bounce on contact and the platter has no visible spin-up. The orbiting dust, the one idea that could carry the 'orrery' name, only appears in the wide shot instead of building across the whole piece",
+        "Sound is four isolated ticks, a gap, then a dense bed dropping in at 6.4 s with scattered transients and a quick tail. There is no designed needle-drop, vinyl crackle or room tone, and the drop is not prepared for. Little in it is built to match the picture",
+        "Finish is below studio level: noisy volumetrics, simple chrome shading, an inconsistent product model and a soft, overexposed logo end card. Top studios would denoise the haze, add micro-detail to the hero object and design a lockup that rhymes with the opening light source"
+      ]
+    },
+    "meta": {
+      "seconds": 29.1,
+      "cost_usd": 0.1685158,
+      "tokens": 72448,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "lastlight.mp4: 10.8s, 4 shots, median 2.40s, longest 4.21s\nper-second change: [7.6, 40.1, 13.9, 34.4, 10.7, 27.7, 25.0, 36.5, 8.1, 9.7]\nPACE: FAIL \u2014 longest shot 4.2s > 2.5s; median shot 2.4s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 5,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 5,
+    "motion": 4.5,
+    "craft": 4.5,
+    "originality": 3,
+    "sound": 5
+  },
+  "full_overall": 4.33,
+  "cost_usd": 0.638,
+  "judge_seconds": 121.2,
+  "verdict": "FAIL"
+}

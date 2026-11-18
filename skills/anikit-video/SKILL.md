@@ -37,7 +37,7 @@ Everything here is a starting point, never a ceiling: anything the spec keys don
 - **Real materials and light:** scene3d `"env": {"hdri": "polyhaven:hdri/…"}`, materials from `ambientcg:Wood049` (`anikit-video assets search oak`), `"rig": "rembrandt|window|product|…"`, `"set": {"preset": "plinth"}`, `"camera": {"lens": "portrait85", "preset": "orbit"}` (`docs 3d`, `docs assets`).
 - **Motion with weight:** `"inertia": "heavy"`, `"smear": true`, group `"drag": 0.06` (`docs key inertia`).
 - **Type as image:** `"matte": {"layer": "photo"}` (type as a window), text on a path, variable axes (`docs mograph`, `docs type`).
-- **Idea transitions:** `{"type": "zoomThrough", "layer": "logo"}` on the incoming scene (`docs mograph`).
+- **Idea transitions:** `{"type": "zoomThrough", "layer": "logo"}` on the incoming scene; `"carry": ["logo"]` on any transition moves a shared layer from the old layout to the new one (a match move, for continuity between layouts) (`docs mograph`).
 - **Sound from the picture:** `"onNotes": {"track": "drums", "keys": ["kick"], "layer": {…}}` makes a layer per hit; `beat`/`level` in expressions (`docs rhythm`, `docs music`).
 - **Illustration:** components `illo` (lit vector shapes, a consistent hand), `landscape`, `plants` (`docs component illo`).
 - **Print and hand:** `"brush": true` on strokes, `"halftone": {…}`, riso/screenprint filters, patterns and grids (`docs graphic`).
@@ -51,6 +51,7 @@ Look at your contact sheet and answer, then fix and preview again. These are the
 - **The device:** is it literal? Say the idea without the brand name and without the feature's mechanism; if nothing is left, it's the name drawn or the feature diagrammed. Does the one device *escalate* every beat, or does it play once?
 - **The poster test:** pause anywhere. Would that frame hold up as a poster (14 of 15 round-1 films failed this)? Does any layout repeat with the words swapped?
 - **The arc:** does energy build to a peak at about ⅔ and land (11 of 15 had a flat arc)? Is there one surprise?
+- **Colour and continuity:** does colour change with the arc (sodium orange → water cyan), or is it one accent on near-black throughout? Do layouts flow into each other, with shared elements carried across (`carry`), rather than being swapped like slides? (A MOGRAPH A/B: restructuring alone lifted a piece 3.25 → 4.38; fonts on top added 0.)
 - **Material at 100%:** does a crop show material from the subject (grain, edge, light falloff), or flat vector and filter noise?
 - **Type and sound:** is the type a choice for this world, living in the scene rather than an eyebrow-plus-headline lockup? Do motion, camera and sound carry weight from the subject's own materials?
 `critique --render` flags the measurable ones (`layout`, `label`, `motion`, `arc`, `eye-trace`).

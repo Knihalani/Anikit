@@ -1,0 +1,518 @@
+{
+  "name": "graphic_op-art",
+  "tags": [
+    "generative"
+  ],
+  "refs": [
+    "raven-kwok-skyline-2015",
+    "fitc-tokyo-2015",
+    "refik-anadol-machine-hallucination-nyc-2019"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 3,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 2,
+      "craft": 5,
+      "originality": 3
+    },
+    "overall": 3.25,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "No progression: it needs structural change across time (new forms, scale shifts, cuts), not just phase-shifted loops",
+      "No subject or idea; the pattern has to mean something or serve something",
+      "Flat, digital surface with no texture, light or depth, against the layered, printed-feeling richness of D",
+      "Nothing happens across its length; it needs structure, escalation and composition changes between beats, like the chapter variety in A or the build in C",
+      "It needs a subject or idea that motivates the moir\u00e9 and halftone, rather than showing the pattern for its own sake",
+      "The palette and the arbitrary red box need a point of view: a reason for the accent, and integration of type or image into the field",
+      "Needs a subject or idea that the optical patterns serve (a message, a reveal or a transformation) instead of patterns on their own",
+      "Break the fixed split layout: vary scale, cropping and structure so frames progress the way A's do",
+      "Give the accent colour and the overlay a real role, and add texture, depth or type with a point of view"
+    ],
+    "tells": [
+      "All four frames are essentially the same composition, a split-screen of concentric moir\u00e9 rings and a halftone sine wave, so almost nothing happens across the film",
+      "Cream ground, black, and one red accent: the generic restrained palette",
+      "A translucent red zig-zag rectangle sits on top like an overlay with no subject",
+      "Op-art moir\u00e9 and halftone waves are textbook shader or p5 sketches; this is an effect without an idea",
+      "No type, and nothing in the frame justifies leaving it out",
+      "The same split composition repeats in all four frames (concentric moir\u00e9 rings on the left, halftone sine bands on the right, red hatched rectangle in the same position); only the phase shifts",
+      "Cream ground, black and a single red accent: the 'tasteful generative' default palette",
+      "An effect with no subject: a looping shader or p5-style sketch with no progression, payoff or idea",
+      "The red rectangle overlay looks like a placeholder block rather than a designed element",
+      "No typography, and its absence does nothing for the piece",
+      "The same split composition in all four frames (concentric moir\u00e9 rings on the left, halftone S-waves on the right, red hatched rectangle in the same position); only the phase shifts slightly",
+      "Cream and black ground with a single red accent: the generic 'tasteful' palette",
+      "Effects with no subject: stock op-art moir\u00e9 and a halftone wave pattern, with nothing they are about",
+      "The red rectangle sits like a placeholder overlay and is not integrated into the image",
+      "Almost nothing happens across the film; no build, reveal or change of scale"
+    ]
+  },
+  "refs_summary": {
+    "raven-kwok-skyline-2015": {
+      "overall": 5.75,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "fitc-tokyo-2015": {
+      "overall": 8,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "refik-anadol-machine-hallucination-nyc-2019": {
+      "overall": 7.38,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.04,
+  "delta": -3.79,
+  "trials": [
+    {
+      "key": {
+        "A": "refik-anadol-machine-hallucination-nyc-2019",
+        "B": "raven-kwok-skyline-2015",
+        "C": "candidate",
+        "D": "fitc-tokyo-2015"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Large-scale projection-mapped installation in a real industrial hall with columns, walls and floor all used as canvas; this needs real production",
+              "Each frame has its own colour world (electric blue data rain, warm painterly rock, green underwater, monochrome mirrored lattice), so the piece clearly moves through chapters",
+              "Real light: projection falls across uneven surfaces, catches on the columns, and turns visitors into silhouettes for scale",
+              "No type at all, which suits an immersive environment where the space itself is the medium"
+            ],
+            "gaps": [
+              "The immersive-hall format (rock textures, data rain, mirrored grids) is a well-worn genre; it needs one idea that belongs only to this space",
+              "Frames read as documentation photos of a venue rather than a designed film, with no choreographed camera or transitions between chapters",
+              "The chapters feel like a playlist of separate looks, not a narrative arc or a single graphic system like D's"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "Generative Voronoi tessellation whose density changes across frames, from sparse dark to dense inverted light to a structured grid",
+              "Payoff in the last frame: a face resolves out of the cell density, which shows some intent beyond the effect",
+              "Strictly greyscale with flat gradient fills; reads as a code experiment or a reel test rather than a finished film",
+              "No type; its absence is neutral here, since nothing in the piece calls for it"
+            ],
+            "gaps": [
+              "The Voronoi look is a stock creative-coding effect; it needs a conceptual reason for the cells (growth, identity, fracture) carried through the whole piece",
+              "Flat greyscale with no material, light or depth; a lighting and texture pass would give the cells physical presence",
+              "Composition stays centred and symmetrical from frame to frame; it needs scale changes, cuts and choreography like D's"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "All four frames are essentially the same composition, a split-screen of concentric moir\u00e9 rings and a halftone sine wave, so almost nothing happens across the film",
+              "Cream ground, black, and one red accent: the generic restrained palette",
+              "A translucent red zig-zag rectangle sits on top like an overlay with no subject",
+              "Op-art moir\u00e9 and halftone waves are textbook shader or p5 sketches; this is an effect without an idea",
+              "No type, and nothing in the frame justifies leaving it out"
+            ],
+            "gaps": [
+              "No progression: it needs structural change across time (new forms, scale shifts, cuts), not just phase-shifted loops",
+              "No subject or idea; the pattern has to mean something or serve something",
+              "Flat, digital surface with no texture, light or depth, against the layered, printed-feeling richness of D"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Custom modular letterforms that break apart into strokes and katakana-like fragments, so the Latin and Japanese-feeling glyphs merge (\"TOKYO\")",
+              "Bold, unusual palette (hot pink, acid lime, violet, cyan on near-black) used with discipline",
+              "Every frame is a different composition: a huge cropped D with a target ring, a framed type grid, a diagonal cascade, a dense collage, which shows real choreography",
+              "Layered print-like texture, halftone dots and misregistration give the surfaces material",
+              "Type is the image, with expressive scale contrast and integration"
+            ],
+            "gaps": [
+              "The glitch/cyber-Tokyo aesthetic sits close to a familiar genre; push it further from the neon-Japan clich\u00e9",
+              "The dense collage frame risks visual noise; tighten the hierarchy so the key word lands harder",
+              "Light is mostly flat graphic; one moment of real depth or optical light would raise it toward best-of-year"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 26.1,
+        "cost_usd": 0.1381588,
+        "tokens": 69964,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "refik-anadol-machine-hallucination-nyc-2019",
+        "B": "raven-kwok-skyline-2015",
+        "C": "fitc-tokyo-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Large-scale projection mapping across columns, walls and floor of a real industrial hall; the content wraps around the architecture rather than sitting on it",
+              "Each frame is a completely different world (blue data-rain, painterly ochre relief, green underwater, white-line mirrored grid), so the sequence was clearly built as a set of distinct chapters",
+              "Real light falling on real bodies and surfaces, with spill, reflections on a wet-looking floor and silhouettes giving scale; no AI or template produces this physical depth",
+              "The grid chapter uses wireframe linework that responds to the vertical rhythm of the columns, which shows the content was designed for this particular site"
+            ],
+            "gaps": [
+              "Several chapters (painterly relief, underwater) sit close to the stock 'immersive digital art exhibition' language; the piece needs a stronger authorial idea that belongs only to this space",
+              "No typography, and no real narrative thread linking the chapters; a recurring motif or structural device would turn a sampler into a film",
+              "Graphic precision is lower than in C: the frames rely on spectacle and saturation rather than considered compositional tension"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Custom modular display type that breaks Latin and katakana letters into the same stroke components, so the two scripts fuse into one typographic system; a real typographic idea",
+              "A deliberate, unusual palette (hot coral, acid lime, violet, cyan on near-black and putty) that stays consistent across frames",
+              "Each frame uses a different structure (giant cropped 'D' with a target glyph, framed letter field, diagonal cascade, dense layered collage with the 'TOKYO' wordmark), with clear build-and-resolve choreography toward the title",
+              "Print-like grain, halftone dots and misregistration give the flat graphics material texture",
+              "Glitch bars and scan offsets feel tied to the city and signage theme rather than pasted on as an effect"
+            ],
+            "gaps": [
+              "The glitch and cyber-Tokyo vocabulary is a well-trodden genre; it needs one move that goes beyond the expected neon-signage reference",
+              "Depth is entirely flat and graphic; a layer of real light or dimensional material in places would add weight",
+              "The final layered frame verges on visual noise; tighter hierarchy would let the wordmark land harder"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "Voronoi tessellation driven by changing data: density bunches in the first frame, horizontal bands in the second, a rectangular void in the third and a face in the fourth, so the frames show real progression",
+              "The face reveal suggests the system is sampling footage or depth, which gives the procedural effect a subject and a payoff",
+              "The inversion from dark to light ground shows some intent in how the sequence is paced",
+              "However, Voronoi-on-greyscale is a stock TouchDesigner/Houdini look, and the palette and type are absent or default"
+            ],
+            "gaps": [
+              "The Voronoi technique is the whole piece; it needs a concept or narrative that only this film could carry, beyond 'a face emerges from cells'",
+              "Monochrome grey with gradient fills reads as untreated; deliberate colour, grading or material would lift it",
+              "No typography or framing device; composition is mostly centred and symmetrical, without the poster-level layout that C has in every frame"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The same split composition repeats in all four frames (concentric moir\u00e9 rings on the left, halftone sine bands on the right, red hatched rectangle in the same position); only the phase shifts",
+              "Cream ground, black and a single red accent: the 'tasteful generative' default palette",
+              "An effect with no subject: a looping shader or p5-style sketch with no progression, payoff or idea",
+              "The red rectangle overlay looks like a placeholder block rather than a designed element",
+              "No typography, and its absence does nothing for the piece"
+            ],
+            "gaps": [
+              "Nothing happens across its length; it needs structure, escalation and composition changes between beats, like the chapter variety in A or the build in C",
+              "It needs a subject or idea that motivates the moir\u00e9 and halftone, rather than showing the pattern for its own sake",
+              "The palette and the arbitrary red box need a point of view: a reason for the accent, and integration of type or image into the field"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.3,
+        "cost_usd": 0.1388798,
+        "tokens": 70008,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "fitc-tokyo-2015",
+        "B": "raven-kwok-skyline-2015",
+        "C": "refik-anadol-machine-hallucination-nyc-2019",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Custom modular display face: the letterforms are broken into strokes and fragments that turn into katakana, so the type itself carries the Tokyo idea",
+              "A deliberate neon palette (hot pink, acid lime, violet, cyan on near-black) that stays consistent while every frame looks different",
+              "Each frame uses a different layout: a giant cropped 'D' with a target glyph, a framed grid of glyphs, a diagonal scatter, then a dense collage resolving into 'TOKYO'. That reads as real choreography toward a payoff",
+              "Print-like grain, dot screens and glitch slices give it material texture rather than flat vector",
+              "Layered, dense frames where type and graphics work as one system"
+            ],
+            "gaps": [
+              "Glitch and cyber-Tokyo is a well-worn genre; it needs one more idea that is truly its own beyond the mixed Latin and katakana glyphs",
+              "The last frame gets close to visual noise; the hierarchy around the word reveal could be cleaner and harder-hitting",
+              "Light is graphic only; a physical or optical light layer (bloom, real-world capture) would give more depth"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A generative Voronoi system that clearly changes over time: cell density concentrates, flips from dark to light ground, forms horizontal bands and a rectangle, then resolves into a human face. That is a narrative arc, not a looped effect",
+              "No visible type. Its absence suits a purely image-led generative piece, but nothing takes its place as a graphic anchor",
+              "Monochrome is a defensible choice; the varying cell density gives a real sense of tone and depth",
+              "Gradient shading inside the cells adds a faceted, glassy material quality"
+            ],
+            "gaps": [
+              "Strictly greyscale with no tonal or colour accent, so it is less memorable on a festival screen than A or C",
+              "Voronoi tessellation is a common creative-coding look; the face reveal is the only real surprise and it arrives late",
+              "Composition is mostly central and symmetrical from frame to frame; it needs more variety of scale and framing"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Large-scale projection mapping in a real industrial hall with columns, floor and walls; people in the frame give it scale",
+              "Real light behaviour: projected light wraps the columns, bounces off the floor and has physical falloff",
+              "Each frame is a different world: a blue data rain, a warm painterly rockscape, a green underwater scene, and a monochrome mirrored lattice of screens",
+              "Production at this scale only comes from a serious studio",
+              "No type. That suits an immersive environment piece, though the entry is documentation rather than designed frames"
+            ],
+            "gaps": [
+              "Reads as installation documentation; the camera framing is very similar across frames (wide angle, central vanishing point)",
+              "The 'painterly immersive projection' genre is crowded; the content worlds feel familiar rather than authored",
+              "Choreography between scenes is not evident; it plays as a set of separate looks rather than a built sequence"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The same split composition in all four frames (concentric moir\u00e9 rings on the left, halftone S-waves on the right, red hatched rectangle in the same position); only the phase shifts slightly",
+              "Cream and black ground with a single red accent: the generic 'tasteful' palette",
+              "Effects with no subject: stock op-art moir\u00e9 and a halftone wave pattern, with nothing they are about",
+              "The red rectangle sits like a placeholder overlay and is not integrated into the image",
+              "Almost nothing happens across the film; no build, reveal or change of scale"
+            ],
+            "gaps": [
+              "Needs a subject or idea that the optical patterns serve (a message, a reveal or a transformation) instead of patterns on their own",
+              "Break the fixed split layout: vary scale, cropping and structure so frames progress the way A's do",
+              "Give the accent colour and the overlay a real role, and add texture, depth or type with a point of view"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 26.2,
+        "cost_usd": 0.1373982,
+        "tokens": 69914,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 3,
+        "sound": null,
+        "craft": 6
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": true,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": null
+      },
+      "defects": [
+        "The film is one unbroken 4.0s shot, and all six sampled frames are almost identical. It reads as a single oscillation loop, not a film with development.",
+        "Each frame is split into two panels (horizontal-line moir\u00e9 circles and halftone zigzags) that never meet. Nothing moves from one panel to the other, so the frame reads as two side-by-side loops, not one composition.",
+        "The red wavy-line rectangle has hard, unmotivated edges. It moves with the zigzag phase but never reacts to it, so it looks like a separate overlay pasted on top.",
+        "Where the red sine lines run over the black dots they go dark and muddy (multiply-style), and the overlap area loses legibility.",
+        "In the circle panel the horizontal-line rendering steps along the ring edges, giving jagged, combed contours that read like interlace and could shimmer or alias on playback.",
+        "At the frame edges the halftone dots are cut mid-row, so tiles appear to repeat. The edges look clipped rather than composed.",
+        "The paper-grain specks are sparse, uniform digital noise rather than real texture, and there is no light or tonal falloff anywhere."
+      ],
+      "gaps": [
+        "There is no choreography or arc. A single periodic phase shift runs at constant energy for 4s, with no build, peak, release, cut or change of state. Top op-art motion work escalates frequency, scale or interference and then resolves.",
+        "There is no idea beyond 'moir\u00e9 and halftone oscillate'. The two motifs and the red accent are not tied together by a concept, an interaction or a pay-off, and the ending does not land or echo the opening.",
+        "The finish is flat and synthetic: binary black-on-cream with no tonal depth, stepped line-screen edges, a hard-edged red overlay and token grain. The best studios add optical vibration, controlled aliasing used on purpose, and a physical print feel with ink spread and registration."
+      ]
+    },
+    "meta": {
+      "seconds": 19.9,
+      "cost_usd": 0.1454278,
+      "tokens": 70372,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "op-art.mp4: 4.0s, 1 shots, median 4.00s, longest 4.00s\nper-second change: [92.1, 93.0, 89.6]\nPACE: FAIL \u2014 longest shot 4.0s > 2.5s; median shot 4.0s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 2.5,
+    "craft": 5.5,
+    "originality": 3
+  },
+  "full_overall": 3.38,
+  "cost_usd": 0.56,
+  "judge_seconds": 100.5,
+  "verdict": "FAIL"
+}

@@ -1,0 +1,527 @@
+{
+  "name": "octava",
+  "tags": [
+    "motion-design",
+    "kinetic-type",
+    "ident",
+    "generative"
+  ],
+  "refs": [
+    "fitc-tokyo-2015",
+    "demo-festival",
+    "halt-and-catch-fire"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 5,
+      "typography": 4,
+      "colour": 5,
+      "light_texture": 2,
+      "motion": 4,
+      "craft": 5,
+      "originality": 3
+    },
+    "overall": 4,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a specific, ownable idea about this music (minimalism, phasing, Reich) driving the motion, not generic note squares",
+      "Commission or draw a real typographic voice; replace the default grotesk and the off-the-shelf pixel font with type that has scale tension and integrates with the image",
+      "Add material, light and depth (print, projection, physical sound) so frames carry atmosphere instead of reading as flat vector cards",
+      "No material or light: introduce a real surface, print or optical quality the way A uses CRT and silicon textures",
+      "Typography has no point of view: commission or choose faces with character and integrate them with image rather than stacking slide text",
+      "The idea is a literal diagram; find a specific, surprising concept about this festival (sound made visible, a performance, a space) that only this piece could own",
+      "There is no light or material at all. C's phosphor glow and burnt grain give its colour a physical presence. Bring in real texture, print, light or footage.",
+      "Replace the literal piano-roll-to-pixel-letters idea with a concept specific to new music, e.g. type that behaves according to a real score's timing or dissonance.",
+      "The typography needs a point of view beyond a default grotesk plus a pixel grid. Commission or carefully choose a face, and let it interact with the image as B's custom glyph system does."
+    ],
+    "tells": [
+      "It is a fictional-looking 'Festival for New Music, Basel 2027' with a generic info block (name, dates, city in the accent colour, a list of composers) set like slide copy",
+      "The type is a default grotesk throughout; the pixel 'OCTAVA' is a stock bitmap gesture and is not drawn with care",
+      "Flat primary blocks (blue, orange, cream) on solid grounds, with no light, texture or material anywhere",
+      "The idea is literal: squares on a piano-roll staff stand in for notes, the obvious diagram of 'music', and the same square motif repeats across every frame",
+      "The frames read as slide-deck cards (grid, then giant cropped word, then end slate) rather than choreographed transitions",
+      "A literal, obvious idea: the 'new music' festival is shown as a piano-roll grid of squares and pixel-block letters, so the name plus a diagram of the theme",
+      "Generic grotesk and mono defaults (an Inter or Space Grotesk-style face) with the info block set like a slide: title, dates, accent-coloured city, list of names",
+      "A cream ground with one blue and one orange accent on a mostly empty frame matches the 'tasteful AI' template almost exactly",
+      "The only motif is flat squares; there is no light, texture, material or depth anywhere",
+      "A fictional 2027 festival with tidy placeholder content (a famous-composer list) is typical of generated or template output",
+      "The cropped 'MAY' frame is the one scale gesture, and it is a common template move",
+      "The idea is literal and obvious. A music festival is shown as a piano-roll grid with note letters D\u2013D, and the name is set in square-pixel type. It is a diagram of the subject, not a concept.",
+      "Generic grotesk throughout (Inter/Space-Grotesk-like) for the info block, set like a slide: name, dates and city in a stacked list with one orange accent word.",
+      "Flat colour fields (Klein blue, orange, cream) with zero texture, light or depth. Every frame is a vector default.",
+      "Square motif reused in every frame (piano roll, pagination dots, pixel letters, an orange square) with no change in material or scale logic. It reads as one system swapped across slides.",
+      "Placeholder-like details: dot pagination, a list of famous composers as filler, a fictional '2027' festival. It feels like a template or an AI-generated identity mock-up.",
+      "The cropped huge 'MAY' frame is the one moment of scale contrast, but the cropped giant bold word is a stock kinetic-type trope."
+    ]
+  },
+  "refs_summary": {
+    "fitc-tokyo-2015": {
+      "overall": 8,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "demo-festival": {
+      "overall": 7.12,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "halt-and-catch-fire": {
+      "overall": 8.5,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.87,
+  "delta": -3.87,
+  "trials": [
+    {
+      "key": {
+        "A": "halt-and-catch-fire",
+        "B": "fitc-tokyo-2015",
+        "C": "candidate",
+        "D": "demo-festival"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "One idea carries the whole piece: early computing seen as a signal that is breaking down and burning, shown through glitch scanlines, a macro shot of a chip grid and a glowing red disc that reads as a hot die or a lens",
+              "The palette commits fully to saturated red and magenta, and it is clearly motivated by heat and danger rather than used as decoration",
+              "The texture is real and analogue: CRT smear, dust and burn on the disc, a fine grid of circuitry, with depth and material in every frame",
+              "The type has a point of view: a small classic serif for 'AMC presents' contrasts with a heavy, tracked, extended title next to a square cursor glyph that reads as a terminal prompt",
+              "The frames progress from noise to structure to a single resolved object, which implies choreography and an arc"
+            ],
+            "gaps": [
+              "The serif credit sits loosely over the glitch field; it could be tied into the image more tightly",
+              "The middle frame's four-square symbol is a bit literal (a chip or a logo) next to the more poetic opening and closing frames",
+              "Range is narrow: almost every frame is the same red register, which risks monotony over the full length"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The custom modular display type breaks Latin and katakana letterforms into shared geometric parts, a real typographic idea and not a default face",
+              "The palette is unusual and deliberate: hot pink, acid green, violet and slate on near-black, with printed-paper grain",
+              "The frames are dense and layered: interface fragments, dot matrices and overlapping rectangles show an editorial hand, not a template",
+              "Each frame is a different composition (a tight crop, a framed text field, then a full collage), so the choreography moves from reveal to build-up"
+            ],
+            "gaps": [
+              "The idea of Tokyo as glitchy neon signage is a familiar trope; it needs a sharper conceptual hook to match A's specificity",
+              "Light is flat graphic colour with no real luminance or depth, while the neon subject calls for glow and atmosphere",
+              "The busiest frame reaches visual overload: legibility and hierarchy collapse instead of resolving into a poster-grade final frame"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.78,
+            "scores": {
+              "idea": 5,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 2,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "It is a fictional-looking 'Festival for New Music, Basel 2027' with a generic info block (name, dates, city in the accent colour, a list of composers) set like slide copy",
+              "The type is a default grotesk throughout; the pixel 'OCTAVA' is a stock bitmap gesture and is not drawn with care",
+              "Flat primary blocks (blue, orange, cream) on solid grounds, with no light, texture or material anywhere",
+              "The idea is literal: squares on a piano-roll staff stand in for notes, the obvious diagram of 'music', and the same square motif repeats across every frame",
+              "The frames read as slide-deck cards (grid, then giant cropped word, then end slate) rather than choreographed transitions"
+            ],
+            "gaps": [
+              "It needs a specific, ownable idea about this music (minimalism, phasing, Reich) driving the motion, not generic note squares",
+              "Commission or draw a real typographic voice; replace the default grotesk and the off-the-shelf pixel font with type that has scale tension and integrates with the image",
+              "Add material, light and depth (print, projection, physical sound) so frames carry atmosphere instead of reading as flat vector cards"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "It mixes media from real practice: live-action footage of a station platform with a poster in a real street-furniture case, a simulated liquid-chrome sculpture credited to Thomas Traum, and a typographic card credited to Eike K\u00f6nig, which is the structure of a curated designer showcase",
+              "The fluid simulation has real refraction, iridescence and splash detail; the live footage has a motion-blurred train and natural light",
+              "The red-on-grey name card matches the red in the poster, which shows a colour system carried across contributors"
+            ],
+            "gaps": [
+              "Structurally it is an anthology, and the frames don't share one idea, so it lacks A's single, unified concept",
+              "The end card is a centred bold-sans name on a flat grey ground, close to a default slate; the typography should have the energy of the work it credits",
+              "The liquid-chrome segment is a well-worn effect; it needs a subject or a link to the poster idea to be more than a showreel moment"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.5,
+        "cost_usd": 0.148445,
+        "tokens": 69249,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "halt-and-catch-fire",
+        "B": "fitc-tokyo-2015",
+        "C": "demo-festival",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "One committed, unusual palette: hot red and magenta used as a signal-and-heat metaphor rather than as a single accent",
+              "Texture comes from the subject itself: scanline and datamosh tearing, a silicon-die grid with registration marks, and a glowing burned-out disc that reads like a CRT or an overheating chip",
+              "The idea belongs to this show only: the title's own meaning ('halt and catch fire') is acted out as hardware failing",
+              "Typography is chosen for period and meaning: a refined serif for 'AMC presents' against an extended, tracked grotesk title with a small block-cursor glyph",
+              "The frames move from chaos (glitch) to order (chip quadrants) to a single focal burn, which shows deliberate choreography with weight"
+            ],
+            "gaps": [
+              "The middle frame's four-square chip is close to a literal diagram; one more layer of material detail would lift it to the level of the other frames",
+              "The title lockup is small and fairly conventional for the last frame; scale contrast could be pushed further",
+              "The vocabulary stays within a single gesture (glitch to burn); a second surprising beat would make it more memorable"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Custom modular display type that mixes Latin and katakana-like fragments ('TOKYO' assembled from stroke parts), so the typography is itself the idea",
+              "Dense, layered frames: grain, halftone dots, UI-like brackets, colour bars and pixel clusters, deliberately placed and not placeholder",
+              "An unusual palette of acid lime, coral pink, violet and slate on both dark and paper grounds",
+              "Every frame has a different structure (a giant letterform crop, a framed text field, an overlaid cityscape of blocks), which suggests real choreography of glyphs building and decaying",
+              "The print-like texture and misregistration give it material weight rather than a clean digital default"
+            ],
+            "gaps": [
+              "Light is still mostly flat and graphic; A's sense of a physical, lit object is missing",
+              "Density sometimes slides into noise, especially in the third frame, where the hierarchy blurs",
+              "The glitch and cyber-Tokyo language is a familiar genre; it needs a more specific narrative hook to match A's conceptual tightness"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "The frames come from real-world contexts: live-action footage of a Dutch rail platform with a composited poster, which is real light and a real location",
+              "The fluid 3D simulation has convincing iridescent material and a believable splash, which is skilled CG and not a stock primitive",
+              "Artist credits (Thomas Traum, Eike K\u00f6nig) suggest an anthology or showcase trailer, which explains the stylistic jumps",
+              "The end card is plain red bold grotesk centred on grey; competent, but the weakest frame and slide-like"
+            ],
+            "gaps": [
+              "No unifying idea across the frames; it reads like a sampler, not a single authored film",
+              "The end-card typography is a centred bold sans on a flat ground, with no scale play or integration with the image",
+              "The palette is incidental rather than designed; it needs a deliberate colour system tying the live-action, CG and type together"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 2,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "A literal, obvious idea: the 'new music' festival is shown as a piano-roll grid of squares and pixel-block letters, so the name plus a diagram of the theme",
+              "Generic grotesk and mono defaults (an Inter or Space Grotesk-style face) with the info block set like a slide: title, dates, accent-coloured city, list of names",
+              "A cream ground with one blue and one orange accent on a mostly empty frame matches the 'tasteful AI' template almost exactly",
+              "The only motif is flat squares; there is no light, texture, material or depth anywhere",
+              "A fictional 2027 festival with tidy placeholder content (a famous-composer list) is typical of generated or template output",
+              "The cropped 'MAY' frame is the one scale gesture, and it is a common template move"
+            ],
+            "gaps": [
+              "No material or light: introduce a real surface, print or optical quality the way A uses CRT and silicon textures",
+              "Typography has no point of view: commission or choose faces with character and integrate them with image rather than stacking slide text",
+              "The idea is a literal diagram; find a specific, surprising concept about this festival (sound made visible, a performance, a space) that only this piece could own"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.2,
+        "cost_usd": 0.1368088,
+        "tokens": 69304,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "demo-festival",
+        "B": "fitc-tokyo-2015",
+        "C": "halt-and-catch-fire",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Mixes media across frames: a live-action station platform with a motion-blurred train and a composited bespoke 'D' poster, then a liquid-chrome fluid simulation, then a flat red type card. That range points to a studio collaboration, not a template.",
+              "The fluid-sim frame has real material complexity: iridescent oil-slick refraction, ejecta droplets and thin ligaments. It is credited to a named artist (Thomas Traum).",
+              "The red/black/white palette carries from the poster in frame 1 to the 'Eike K\u00f6nig' wordmark, so the identity holds across very different worlds.",
+              "The poster sits convincingly in the real scene, with matched perspective and light.",
+              "Weakness: the end card is a plain centred bold-grotesk name on grey. It is deliberate brand restraint, but it is the least designed frame."
+            ],
+            "gaps": [
+              "The three frames read as separate showcase vignettes. Unlike C, there is no single idea or recurring device carrying through the piece.",
+              "The final type card is a standard centred lockup. Let the letterform take part in the motion (e.g. the 'D' from frame 1 resolving into the name) rather than just appearing.",
+              "The palette jumps from cool daylight to pale-blue CG to neutral grey. C commits to one hue and gets far more atmosphere from it."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Custom modular display type that breaks Latin and katakana into the same geometric strokes. It is a real typographic idea (bilingual Tokyo signage turned into a glyph system), not default fonts.",
+              "Dense, layered frames: grids, dot matrices, scan-bars, registration marks and offset colour plates. Each frame is built differently.",
+              "Unusual palette of hot pink, acid lime, slate and violet with grain and print-like misregistration.",
+              "Clear progression between frames, from a single glyph in close-up to a scrambled text field to a resolved 'TOKYO' composite, which shows deliberate choreography of decoding."
+            ],
+            "gaps": [
+              "The light is all graphic and flat. Unlike C's glowing, burnt red, there is no sense of a physical light source or optical depth.",
+              "The glitch/cyber-signage language is a well-worn genre. One unexpected image or material would make it stand apart.",
+              "The resolved title frame is busy enough to lose hierarchy. Give the payoff the same clear figure/ground C gives 'HALT AND CATCH FIRE'."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific conceptual idea: early-computing hardware (circuit grid, chip-like blocks, CRT/oscilloscope glow) rendered as one burning red signal. The title 'Halt and Catch Fire' is a machine instruction, and the image literally overheats.",
+              "A near-monochrome red with a full tonal range, from hot pink-white to deep oxblood. It is a committed, memorable palette choice.",
+              "Real texture and light: scan-line tearing, phosphor bloom, a vignetted circular lens/sun with organic mottling. It looks optical and analogue, not vector.",
+              "Restrained, well-placed typography: a small serif 'AMC presents' tucked into the glitch, and a tracked wide-sans title with a cursor block, set small against a huge glowing field.",
+              "The frames progress from chaos to grid to a single glowing disc, which implies a strong arc of resolution."
+            ],
+            "gaps": [
+              "The middle frame's four-square grid is the plainest image in the piece. It could carry more of the burnt, analogue texture.",
+              "Type is mostly left to support the image. A more ownable title treatment would bring typography up to the level of the image.",
+              "Variety of motion between frames is implied rather than shown. Clearer changes of scale or camera would strengthen the sense of choreography."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.62,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 2,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The idea is literal and obvious. A music festival is shown as a piano-roll grid with note letters D\u2013D, and the name is set in square-pixel type. It is a diagram of the subject, not a concept.",
+              "Generic grotesk throughout (Inter/Space-Grotesk-like) for the info block, set like a slide: name, dates and city in a stacked list with one orange accent word.",
+              "Flat colour fields (Klein blue, orange, cream) with zero texture, light or depth. Every frame is a vector default.",
+              "Square motif reused in every frame (piano roll, pagination dots, pixel letters, an orange square) with no change in material or scale logic. It reads as one system swapped across slides.",
+              "Placeholder-like details: dot pagination, a list of famous composers as filler, a fictional '2027' festival. It feels like a template or an AI-generated identity mock-up.",
+              "The cropped huge 'MAY' frame is the one moment of scale contrast, but the cropped giant bold word is a stock kinetic-type trope."
+            ],
+            "gaps": [
+              "There is no light or material at all. C's phosphor glow and burnt grain give its colour a physical presence. Bring in real texture, print, light or footage.",
+              "Replace the literal piano-roll-to-pixel-letters idea with a concept specific to new music, e.g. type that behaves according to a real score's timing or dissonance.",
+              "The typography needs a point of view beyond a default grotesk plus a pixel grid. Commission or carefully choose a face, and let it interact with the image as B's custom glyph system does."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.0,
+        "cost_usd": 0.1441526,
+        "tokens": 69672,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "Final lockup holds about 4.8 s with almost no change (per-second change drops to 12 \u2192 7 \u2192 4). That is dead air, not a deliberate settle.",
+        "Faint ghost columns of leftover squares stay under the pixel wordmark at 100%, like an unfinished fade-out or stray low-opacity layer.",
+        "The note grid moves sideways at a constant rate, with no easing and no motion blur between the paired frames. The blocks slide like a sequencer playhead instead of having weight.",
+        "Freeze-frames fail as posters: the '01' frame is mostly empty, and 'AY' is cropped mid-wipe.",
+        "There are too many type voices: pixel display, grotesk, mono staff labels, an ultra-wide black display face with outline echoes, and rotated vertical text.",
+        "Pairs on the final lockup show the dither squares and the artist list barely changing, so the last third adds no new information.",
+        "Audio looks thin: one-shot plucks with few partials, a fixed click grid and short noise bursts, with little low-mid body and no clear mix arc.",
+        "Energy peaks around 55% (cuts at about 4 s and 6 s), then drops off sharply instead of building to a peak and releasing."
+      ],
+      "gaps": [
+        "Choreography: the staff-to-wordmark idea is good but never shown on screen. Notes should visibly fly in and lock into the OCTAVA pixel letters in one continuous move, with eased weight and overshoot, instead of cutting from grid to type.",
+        "Timing: cut the 4.8 s end hold to about 1.5 s with a final accent hit. Move the densest beat (the 2027/BASEL echo stack) to 65\u201375% so the piece actually builds and releases.",
+        "Sound and finish: replace the sparse synth plucks with a produced arrangement, including real instrument timbre, a low end and a riser into the lockup. Add material (paper grain, light falloff on the blocks) and remove the ghost-square artefacts so the frames hold up at 100%."
+      ]
+    },
+    "meta": {
+      "seconds": 24.5,
+      "cost_usd": 0.1572824,
+      "tokens": 71202,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "octava.mp4: 10.8s, 5 shots, median 1.00s, longest 4.80s\nper-second change: [16.7, 25.7, 25.7, 135.8, 27.5, 146.9, 12.1, 12.1, 6.9, 3.6]\nPACE: FAIL \u2014 longest shot 4.8s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 5,
+    "typography": 4,
+    "colour": 5,
+    "light_texture": 2,
+    "motion": 4.5,
+    "craft": 5.5,
+    "originality": 3,
+    "sound": 4
+  },
+  "full_overall": 4.11,
+  "cost_usd": 0.587,
+  "judge_seconds": 119.2,
+  "verdict": "FAIL"
+}

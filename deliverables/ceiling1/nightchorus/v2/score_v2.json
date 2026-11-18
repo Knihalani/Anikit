@@ -1,0 +1,465 @@
+{
+ "bpm": 128,
+ "key": "Fm",
+ "length": "7 bars",
+ "seed": 7,
+ "define": {
+  "grit": {
+   "synth": {
+    "osc": [
+     {
+      "wave": "saw",
+      "voices": 3,
+      "detune": 14
+     },
+     {
+      "wave": "square",
+      "semis": -12,
+      "level": 0.6
+     }
+    ],
+    "sub": 0.5,
+    "filter": {
+     "type": "ladder",
+     "cutoff": 380,
+     "res": 0.35,
+     "drive": 3,
+     "env": 3.2
+    },
+    "fenv": [
+     0.001,
+     0.12,
+     0.0,
+     0.08
+    ],
+    "amp": [
+     0.001,
+     0.2,
+     0.7,
+     0.05
+    ],
+    "mono": true
+   }
+  },
+  "buzz": {
+   "synth": {
+    "osc": [
+     {
+      "wave": "square",
+      "pw": 0.3
+     },
+     {
+      "wave": "saw",
+      "semis": 12,
+      "level": 0.4
+     }
+    ],
+    "filter": {
+     "type": "bp",
+     "cutoff": 1800,
+     "res": 0.5
+    },
+    "lfo": {
+     "rate": 30,
+     "trem": 0.5
+    },
+    "amp": [
+     0.005,
+     0.1,
+     0.8,
+     0.1
+    ]
+   }
+  }
+ },
+ "tracks": [
+  {
+   "name": "kick",
+   "inst": "drums:techno",
+   "clips": [
+    {
+     "at": 1,
+     "bars": 4,
+     "drums": {
+      "kick": "X...x...x...x..o",
+      "tom": "................"
+     }
+    },
+    {
+     "at": 5,
+     "bars": 1,
+     "drums": {
+      "kick": "X...............",
+      "crash": "........X......."
+     }
+    },
+    {
+     "at": 6,
+     "bars": 2,
+     "drums": {
+      "kick": "X.......X.......",
+      "tom": "..............x."
+     }
+    }
+   ],
+   "fx": [
+    {
+     "type": "comp",
+     "threshold": -12,
+     "ratio": 4
+    },
+    {
+     "type": "saturate",
+     "drive": 0.4
+    }
+   ]
+  },
+  {
+   "name": "tops",
+   "inst": "drums:909",
+   "clips": [
+    {
+     "at": 1,
+     "bars": 1,
+     "drums": {
+      "hat": "..x...x...x...x."
+     }
+    },
+    {
+     "at": 2,
+     "bars": 2,
+     "drums": {
+      "hat": "x.xxx.xxx.xxx.xX",
+      "clap": "....x.......x...",
+      "rim": "...x..x....x..x."
+     }
+    },
+    {
+     "at": 4,
+     "bars": 1,
+     "drums": {
+      "hat": "xxxxxxxxxxxxxxxx",
+      "clap": "....x.......x.x.",
+      "snare": "........x.x.xxxx"
+     }
+    },
+    {
+     "at": 5,
+     "bars": 1,
+     "drums": {
+      "clap": "........X.......",
+      "ohh": "........X......."
+     }
+    },
+    {
+     "at": 6,
+     "bars": 1,
+     "drums": {
+      "hat": "x.x.x.x.x.x.x.x.",
+      "clap": "....x.......x..."
+     }
+    }
+   ],
+   "gain": -3
+  },
+  {
+   "name": "bass",
+   "inst": "grit",
+   "clips": [
+    {
+     "at": 1,
+     "bars": 4,
+     "notes": "o2 l16 (F2 r F2 F3 r F2 Ab2 r F2 r Eb3 F2 r C3 Eb2 r)x3 F2 r F2 F3 r F2 Ab2 r Db3 Db3 C3 C3 Bb2 Bb2 Ab2 G2"
+    },
+    {
+     "at": 5,
+     "bars": 1,
+     "notes": "o2 F1/16 r/16 r/8 r/4 Db2/2"
+    },
+    {
+     "at": 6,
+     "bars": 2,
+     "notes": "o2 l16 (F2 r F2 F3 r F2 Ab2 r F2 r Eb3 F2 r C3 Eb2 r) F1/1"
+    }
+   ],
+   "duck": 6,
+   "gain": -2,
+   "automate": {
+    "synth.cutoff": [
+     [
+      0,
+      260
+     ],
+     [
+      "@bar4",
+      900
+     ],
+     [
+      "@bar5",
+      400
+     ],
+     [
+      "@bar6",
+      1200
+     ]
+    ]
+   },
+   "fx": [
+    {
+     "type": "saturate",
+     "drive": 0.5
+    }
+   ]
+  },
+  {
+   "name": "stab",
+   "inst": "synth:stab-house",
+   "clips": [
+    {
+     "at": 2,
+     "bars": 3,
+     "notes": "o4 l16 (r r [F4 Ab4 C5] r r r r [F4 Ab4 C5] r r [Eb4 G4 Bb4] r r r r r)x3"
+    },
+    {
+     "at": 5,
+     "bars": 1,
+     "notes": "o4 r/2 [Db4 F4 Ab4 C5]/2"
+    },
+    {
+     "at": 6,
+     "bars": 1,
+     "notes": "o4 l16 (r r [F4 Ab4 C5] r r r r [F4 Ab4 C5] r r [Eb4 G4 Bb4] r r r r r)"
+    }
+   ],
+   "gain": -6,
+   "fx": [
+    {
+     "type": "delay",
+     "note": "1/8d",
+     "feedback": 0.3,
+     "wet": 0.2
+    }
+   ]
+  },
+  {
+   "name": "buzz",
+   "inst": "buzz",
+   "clips": [
+    {
+     "at": 1,
+     "bars": 1,
+     "notes": "o3 F3/4 r/4 F3/8 r/8 r/4"
+    },
+    {
+     "at": 5,
+     "bars": 1,
+     "notes": "o3 r/2 [F3 C4]/2"
+    },
+    {
+     "at": 7,
+     "bars": 1,
+     "notes": "o3 F3/8 r/8 F3/16 r/16 r/8 r/2"
+    }
+   ],
+   "gain": -12,
+   "pan": 0.2
+  },
+  {
+   "name": "voice0",
+   "inst": "choir",
+   "clips": [
+    {
+     "at": "@0.0000",
+     "notes": "F3:24.128",
+     "vel": 0.55
+    }
+   ],
+   "gain": -17.0,
+   "pan": -0.4,
+   "reverb": 0.35
+  },
+  {
+   "name": "voice1",
+   "inst": "choir",
+   "clips": [
+    {
+     "at": "@0.9375",
+     "notes": "C4:22.363",
+     "vel": 0.5800000000000001
+    }
+   ],
+   "gain": -16.6,
+   "pan": -0.32727272727272727,
+   "reverb": 0.35
+  },
+  {
+   "name": "voice2",
+   "inst": "choir",
+   "clips": [
+    {
+     "at": "@1.8750",
+     "notes": "Ab3:20.597",
+     "vel": 0.6100000000000001
+    }
+   ],
+   "gain": -16.2,
+   "pan": -0.2545454545454546,
+   "reverb": 0.35
+  },
+  {
+   "name": "voice3",
+   "inst": "choir",
+   "clips": [
+    {
+     "at": "@2.3438",
+     "notes": "Eb4:19.832",
+     "vel": 0.64
+    }
+   ],
+   "gain": -15.8,
+   "pan": -0.18181818181818185,
+   "reverb": 0.35
+  },
+  {
+   "name": "voice4",
+   "inst": "choir",
+   "clips": [
+    {
+     "at": "@2.8125",
+     "notes": "F4:19.067",
+     "vel": 0.67
+    }
+   ],
+   "gain": -15.4,
+   "pan": -0.10909090909090909,
+   "reverb": 0.35
+  },
+  {
+   "name": "voice5",
+   "inst": "choir",
+   "clips": [
+    {
+     "at": "@3.2812",
+     "notes": "G4:18.301",
+     "vel": 0.7000000000000001
+    }
+   ],
+   "gain": -15.0,
+   "pan": -0.036363636363636376,
+   "reverb": 0.35
+  },
+  {
+   "name": "voice6",
+   "inst": "choir",
+   "clips": [
+    {
+     "at": "@3.7500",
+     "notes": "Ab4:17.536",
+     "vel": 0.73
+    }
+   ],
+   "gain": -14.6,
+   "pan": 0.036363636363636334,
+   "reverb": 0.35
+  },
+  {
+   "name": "voice7",
+   "inst": "choir",
+   "clips": [
+    {
+     "at": "@4.2188",
+     "notes": "C5:16.771",
+     "vel": 0.76
+    }
+   ],
+   "gain": -14.6,
+   "pan": 0.10909090909090909,
+   "reverb": 0.35
+  },
+  {
+   "name": "voice8",
+   "inst": "choir",
+   "clips": [
+    {
+     "at": "@4.6875",
+     "notes": "Bb4:16.005",
+     "vel": 0.79
+    }
+   ],
+   "gain": -14.6,
+   "pan": 0.18181818181818185,
+   "reverb": 0.35
+  },
+  {
+   "name": "voice9",
+   "inst": "choir",
+   "clips": [
+    {
+     "at": "@5.1562",
+     "notes": "Eb5:15.240",
+     "vel": 0.8200000000000001
+    }
+   ],
+   "gain": -14.6,
+   "pan": 0.2545454545454546,
+   "reverb": 0.35
+  },
+  {
+   "name": "voice10",
+   "inst": "choir",
+   "clips": [
+    {
+     "at": "@5.6250",
+     "notes": "F5:14.475",
+     "vel": 0.8500000000000001
+    }
+   ],
+   "gain": -14.6,
+   "pan": 0.32727272727272727,
+   "reverb": 0.35
+  },
+  {
+   "name": "voice11",
+   "inst": "choir",
+   "clips": [
+    {
+     "at": "@6.0938",
+     "notes": "G5:13.709",
+     "vel": 0.88
+    }
+   ],
+   "gain": -14.6,
+   "pan": 0.4,
+   "reverb": 0.35
+  },
+  {
+   "name": "slam",
+   "inst": "strings",
+   "clips": [
+    {
+     "at": "@8.4375",
+     "notes": "[F3 C4 Ab4 C5 Eb5 G5]:6.000",
+     "vel": 0.8
+    }
+   ],
+   "gain": -9,
+   "reverb": 0.4
+  }
+ ],
+ "sfx": [
+  {
+   "sfx": "impact",
+   "at": "@8.4375"
+  },
+  {
+   "sfx": "boom",
+   "at": "@8.4375"
+  },
+  {
+   "sfx": "reverse-cymbal",
+   "at": "@8.4375",
+   "gain": -8
+  }
+ ],
+ "end": "ring"
+}

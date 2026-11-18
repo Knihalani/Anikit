@@ -219,6 +219,11 @@ pub struct Frame<'a> {
     /// per-pixel threshold `r` in [0, 1). Removes banding from smooth
     /// gradients; values that are exactly representable are unchanged.
     pub dither: bool,
+    /// fragCoord units per output pixel (default 1). A preview rendered at
+    /// 1/k of the final size sets k: `fragCoord` and `iResolution` are then the
+    /// final render's, so pixel-sized looks (cells, grain, line widths) match
+    /// a downscaled final instead of shrinking with the preview.
+    pub coord_scale: f32,
 }
 
 impl<'a> Frame<'a> {
@@ -241,6 +246,7 @@ impl<'a> Frame<'a> {
             max_refine: 1.0,
             alpha: false,
             dither: false,
+            coord_scale: 1.0,
         }
     }
 }
@@ -270,6 +276,9 @@ pub struct Shader {
     pub compile_ms: f64,
     /// Size of the generated code in Cranelift IR instructions.
     pub insts: usize,
+    /// First pixel (fragCoord x, y) a render produced NaN or ±Inf at, packed
+    /// `x << 32 | y`, or `u64::MAX`: see [`Shader::take_nonfinite`].
+    nonfinite: std::sync::atomic::AtomicU64,
 }
 
 impl Shader {
@@ -382,7 +391,17 @@ impl Shader {
             samplers: p.samplers,
             channels_used,
             compile_ms: t0.elapsed().as_secs_f64() * 1e3,
+            nonfinite: std::sync::atomic::AtomicU64::new(u64::MAX),
         })
+    }
+
+    /// The first pixel (fragCoord x, y, rounded down) at which a render since
+    /// the last call produced NaN or ±Inf (shown as 0), and clear it. A NaN
+    /// usually means a division by zero, `sqrt`/`log`/`pow` of a negative, or
+    /// `normalize` of a zero vector.
+    pub fn take_nonfinite(&self) -> Option<(u32, u32)> {
+        let v = self.nonfinite.swap(u64::MAX, std::sync::atomic::Ordering::Relaxed);
+        (v != u64::MAX).then_some(((v >> 32) as u32, v as u32))
     }
 
     fn uniform_buffer(&self, f: &Frame) -> Vec<u32> {
@@ -405,7 +424,8 @@ impl Shader {
         set("iTimeDelta", &[1.0 / f.fps.max(1e-3)]);
         set("iFrameRate", &[f.fps]);
         set("iFrame", &[f.frame as f32]);
-        set("iResolution", &[w, h, 1.0]);
+        let k = f.coord_scale;
+        set("iResolution", &[w * k, h * k, 1.0]);
         set("iMouse", &f.mouse);
         set("iDate", &[2026.0, 0.0, 1.0, f.time]);
         set("iSampleRate", &[48000.0]);
@@ -440,11 +460,9 @@ impl Shader {
                 chan[i] = texture::ChanInfo::of(t);
             }
         }
-        if f.supersample {
-            Env { lane_dx: [-0.25, 0.25, -0.25, 0.25], lane_dy: [0.25, 0.25, -0.25, -0.25], qstep: 1.0, _pad: [0.0; 3], sizes, channels, chan }
-        } else {
-            Env { lane_dx: [0.0, 1.0, 0.0, 1.0], lane_dy: [0.0, 0.0, -1.0, -1.0], qstep: 2.0, _pad: [0.0; 3], sizes, channels, chan }
-        }
+        let k = f.coord_scale;
+        let (dx, dy, qstep) = if f.supersample { ([-0.25, 0.25, -0.25, 0.25], [0.25, 0.25, -0.25, -0.25], 1.0) } else { ([0.0, 1.0, 0.0, 1.0], [0.0, 0.0, -1.0, -1.0], 2.0) };
+        Env { lane_dx: dx.map(|v: f32| v * k), lane_dy: dy.map(|v: f32| v * k), qstep: qstep * k, _pad: [0.0; 3], sizes, channels, chan }
     }
 
     /// Shade into straight-alpha `f32` RGBA (exact shader output; for tests
@@ -513,6 +531,7 @@ impl Shader {
         let env_ptr = &env as *const Env as usize;
         let uni_ptr = uni.as_ptr() as usize;
         let hf = h as f32;
+        let k = f.coord_scale;
         out.par_chunks_mut(w).enumerate().for_each_init(Vec::new, |buf: &mut Vec<f32>, (y, row)| {
             let fl = &flags[y * w..y * w + w];
             let mut x = 0;
@@ -528,7 +547,7 @@ impl Shader {
                 let n = x - s;
                 buf.resize(n * 16, 0.0);
                 // SAFETY: as in `run`; one quad per pixel in supersample mode.
-                unsafe { func(env_ptr as *const Env, uni_ptr as *const u32, s as f32 + 0.5, hf - y as f32 - 0.5, n as i32, buf.as_mut_ptr()) };
+                unsafe { func(env_ptr as *const Env, uni_ptr as *const u32, (s as f32 + 0.5) * k, (hf - y as f32 - 0.5) * k, n as i32, buf.as_mut_ptr()) };
                 for q in 0..n {
                     let b = &buf[q * 16..q * 16 + 16];
                     row[s + q] = std::array::from_fn(|k| (0..4).map(|l| sanitize(b[k * 4 + l])).sum::<f32>() * 0.25);
@@ -628,6 +647,7 @@ impl Shader {
         let env = self.env(f);
         let func = self.kernel.func;
         let hf = h as f32;
+        let k = f.coord_scale;
         let ss = f.supersample;
         // Supersampled: one quad per pixel, one row per task. Otherwise a
         // quad covers 2×2 pixels: two rows per task.
@@ -639,10 +659,19 @@ impl Shader {
             || vec![0.0f32; nq * 16],
             |buf, (ci, rows)| {
                 let py = ci * rows_per;
-                let x0 = 0.5f32;
-                let y0 = hf - py as f32 - 0.5;
+                let x0 = 0.5 * k;
+                let y0 = (hf - py as f32 - 0.5) * k;
                 // SAFETY: env/uniforms outlive the parallel loop; buf holds nq quads.
                 unsafe { func(env_ptr as *const Env, uni_ptr as *const u32, x0, y0, nq as i32, buf.as_mut_ptr()) };
+                // NaN/Inf check: branch-free over the row (vectorises), then locate.
+                if buf.iter().fold(false, |a, v| a | !v.is_finite()) {
+                    let i = buf.iter().position(|v| !v.is_finite()).unwrap_or(0);
+                    let (q, l) = (i / 16, i % 4);
+                    let (x, row) = if ss { (q, py) } else { (q * 2 + l % 2, py + l / 2) };
+                    let y = h.saturating_sub(row + 1);
+                    let packed = ((x as u64) << 32) | y as u64;
+                    let _ = self.nonfinite.compare_exchange(u64::MAX, packed, std::sync::atomic::Ordering::Relaxed, std::sync::atomic::Ordering::Relaxed);
+                }
                 for (q, b) in buf.chunks_exact(16).enumerate() {
                     quad(rows, b.try_into().unwrap(), q, py);
                 }
