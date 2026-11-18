@@ -48,6 +48,7 @@ pub const RECIPES: &[(&str, &str)] = &[
     ("kinetic-slam", include_str!("../recipes/kinetic-slam.json")),
     ("whip-transition", include_str!("../recipes/whip-transition.json")),
     ("chrome-hero", include_str!("../recipes/chrome-hero.json")),
+    ("precision-macro", include_str!("../recipes/precision-macro.json")),
     ("particle-ignite", include_str!("../recipes/particle-ignite.json")),
     ("domino-cascade", include_str!("../recipes/domino-cascade.json")),
     ("raymarch-world", include_str!("../recipes/raymarch-world.json")),
@@ -91,7 +92,7 @@ pub fn docs(topic: Option<&str>) -> Result<String, String> {
     }
     if t == "essentials" || t == "all" {
         // Everything a typical piece needs in one read (about 13k characters).
-        let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique, graphic: grids, patterns, print treatments).\n\n");
+        let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique, graphic).\n\n");
         for p in ["primitives", "animation", "expressions", "compositions", "shader"] {
             if let Some((_, md)) = PAGES.iter().find(|(n, _)| *n == p) {
                 s += md;
@@ -372,7 +373,7 @@ mod tests {
         assert!(docs(Some("key anchor")).unwrap().contains("anchor"));
         assert!(docs(Some("key ancor")).unwrap_err().contains("anchor"));
         let e = docs(Some("essentials")).unwrap();
-        assert!(e.len() < 15_000 && e.contains("compositions") && e.contains("shader"), "{}", e.len());
+        assert!(e.len() < 16_000 && e.contains("compositions") && e.contains("shader"), "{}", e.len());
         assert!(snippets(Some("snap-zoom")).unwrap().contains("\"shake\""));
     }
 

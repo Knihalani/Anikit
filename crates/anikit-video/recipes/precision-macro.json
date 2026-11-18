@@ -1,0 +1,192 @@
+{
+ "about": "Precision product macro: a machined object read through its surfaces, not its silhouette. A knurled aluminium knob turns 40\u00b0 on a brushed plate, with a sunburst cap and an engraved index ring. The `product` rig sweeps its strips across the metal, so highlights run along the knurl and bevels. A 100 mm macro at f/5.6 racks focus from the knob to the scale. Techniques to borrow: `pattern` finishes (brushed, sunburst, knurl, guilloche, clous-de-paris), `imperfections`, animated `rig`, `lens: macro100`, `focus: \"name\"`, `shake: breath`. Build the brief's own object with these; don't reuse this one.",
+ "cost": "~1 s a frame at 1080p on 4 cores",
+ "spec": {
+  "size": "16:9",
+  "fps": 30,
+  "scenes": [
+   {
+    "duration": 5,
+    "layers": [
+     {
+      "component": "scene3d",
+      "props": {
+       "env": "studio",
+       "rig": {
+        "preset": "product",
+        "animate": "sweep",
+        "duration": 5
+       },
+       "camera": {
+        "lens": "macro100",
+        "shake": "breath",
+        "keys": [
+         {
+          "t": 0,
+          "pos": [
+           0.9,
+           0.95,
+           2.5
+          ],
+          "target": [
+           0.05,
+           0.06,
+           0
+          ],
+          "focus": "knob",
+          "fstop": 5.6
+         },
+         {
+          "t": 2.2,
+          "pos": [
+           0.75,
+           0.9,
+           2.4
+          ],
+          "target": [
+           0.05,
+           0.06,
+           0
+          ],
+          "focus": "knob",
+          "fstop": 5.6
+         },
+         {
+          "t": 3.4,
+          "pos": [
+           0.62,
+           0.88,
+           2.32
+          ],
+          "target": [
+           0.05,
+           0.06,
+           0
+          ],
+          "focus": "scale",
+          "fstop": 5.6
+         },
+         {
+          "t": 5,
+          "pos": [
+           0.5,
+           0.85,
+           2.25
+          ],
+          "target": [
+           0.05,
+           0.06,
+           0
+          ],
+          "focus": "scale",
+          "fstop": 5.6
+         }
+        ]
+       },
+       "floor": {
+        "color": "#141416",
+        "roughness": 0.3,
+        "reflect": 0.6
+       },
+       "objects": [
+        {
+         "type": "box",
+         "name": "plate",
+         "size": [
+          1.6,
+          0.04,
+          1.0
+         ],
+         "radius": 0.006,
+         "pos": [
+          0,
+          0.02,
+          -0.1
+         ],
+         "material": {
+          "extends": "aluminium",
+          "base": "#C9CCD0",
+          "roughness": 0.22,
+          "pattern": "brushed",
+          "patternScale": 0.004,
+          "imperfections": 0.2
+         }
+        },
+        {
+         "type": "cylinder",
+         "name": "knob",
+         "radius": 0.16,
+         "height": 0.16,
+         "pos": [
+          0,
+          0.12,
+          0
+         ],
+         "rot": "=[0, -40*ease(clamp(t/4,0,1)), 0]",
+         "material": {
+          "extends": "aluminium",
+          "base": "#D8DADC",
+          "roughness": 0.2,
+          "pattern": "knurl",
+          "patternScale": 0.014
+         }
+        },
+        {
+         "type": "cylinder",
+         "radius": 0.12,
+         "height": 0.012,
+         "pos": [
+          0,
+          0.206,
+          0
+         ],
+         "material": {
+          "extends": "aluminium",
+          "base": "#E8E9EB",
+          "roughness": 0.12,
+          "pattern": "sunburst",
+          "patternScale": 0.006
+         }
+        },
+        {
+         "type": "torus",
+         "name": "scale",
+         "radius": 0.26,
+         "tube": 0.008,
+         "rot": [
+          90,
+          0,
+          0
+         ],
+         "pos": [
+          0,
+          0.045,
+          0
+         ],
+         "material": {
+          "extends": "lacquer"
+         }
+        },
+        {
+         "type": "box",
+         "count": 21,
+         "size": [
+          0.006,
+          0.004,
+          0.035
+         ],
+         "pos": "=[0.3*cos(i*0.2244-3.93), 0.044, 0.3*sin(i*0.2244-3.93)]",
+         "rot": "=[0, -(i*0.2244-3.93)*57.3+90, 0]",
+         "material": {
+          "extends": "black",
+          "roughness": 0.3
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

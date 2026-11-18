@@ -667,3 +667,29 @@ fn friction_forms_from_agent_runs() {
     assert!(e.iter().any(|m| m.contains("invalid colour 'blurple'") && m.contains("oklch(")), "{e:?}");
     assert!(e.iter().any(|m| m.contains("invalid value 'lots'") && m.contains("like 960")), "{e:?}");
 }
+
+#[test]
+fn natural_forms_round_two() {
+    // A shader map, CSS fontStyle, transformOrigin (CSS values too): no warnings, and they take effect.
+    let p = parse_json(r##"{ "scenes": [ { "layers": [
+        { "shader": { "code": "void mainImage(out vec4 c, in vec2 f) { c = vec4(1.0); }", "uniforms": { "k": 1 } } },
+        { "text": "a", "fontStyle": "italic" },
+        { "shape": "rect", "transformOrigin": "50% 0%" },
+        { "shape": "rect", "transformOrigin": "top left" } ] } ] }"##).unwrap();
+    assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+    let ls = &p.spec.scenes[0].layers;
+    assert!(ls[0].shader.as_deref().is_some_and(|s| s.contains("mainImage")) && ls[0].uniforms.is_some());
+    assert_eq!(ls[1].italic, Some(true));
+    assert!(matches!(ls[2].anchor, Some(anikit_video::spec::Anchor::Xy([a, b])) if a == 0.5 && b == 0.0));
+    assert!(matches!(ls[3].anchor, Some(anikit_video::spec::Anchor::Xy([a, b])) if a == 0.0 && b == 0.0));
+    // Hex colours in ternaries and gradient strings in fills already work.
+    let ev = build(r##"{ "size": [64, 64], "scenes": [ { "layers": [ { "shape": "rect", "width": 64, "height": 64, "fill": "=t > 1 ? #ff0000 : #00ff00" } ] } ] }"##);
+    let (w, _, px) = anikit_video::pipeline::render_rgba(&ev, 2.0, 1.0);
+    let i = ((32 * w + 32) * 4) as usize;
+    assert_eq!(&px[i..i + 3], &[255, 0, 0]);
+    assert!(errors(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "fill": "linear-gradient(90deg, #f00, #00f)" }, { "shape": "rect", "fill": "radial-gradient(circle, #f00, #00f)" } ] } ] }"##).is_empty());
+    // Very big specs get advice.
+    let big = format!(r##"{{ "scenes": [ {{ "layers": [ {} ] }} ] }}"##, vec![r##"{ "shape": "circle", "width": 4, "x": 100, "y": 100, "fill": "#ffffff" }"##; 16_000].join(","));
+    let p = parse_json(&big).unwrap();
+    assert!(p.warnings.iter().any(|w| w.to_string().contains("repeat")), "{:?}", p.warnings.len());
+}
