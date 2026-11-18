@@ -269,6 +269,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `d` | SVG path string | | `path` data (`"M0 0 C 50 -40 …"`), local px. |
 | `headSize` | px | `4 × strokeWidth` | `arrow` head size. |
 | `trimStart`, `trimEnd` | 0..1 | `0`, `1` | Draw part of the outline (animate for draw-on; see the `drawOn` preset). |
+| `brush` | `true` or `{taper, pressure, dry, seed}` | none | Paint the stroke as a brush: tapered, pressure-varied, dry bristles; paints on with `trimEnd`. |
 
 ### `image` and `video`
 
