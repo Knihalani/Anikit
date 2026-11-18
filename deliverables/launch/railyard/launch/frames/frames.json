@@ -1,0 +1,28 @@
+{ "size": "16:9", "fonts": {},
+  "defs": {},
+  "scenes": [
+  { "duration": 2, "background": "#2A2926", "layers": [
+    { "component": "paper", "props": { "stock": "canvas", "color": "#2C2B28", "tooth": 0.7, "vignette": 0.2 } },
+    { "component": "cutout", "props": { "color": "#F2D86A", "rotate": -2.5, "enter": "none", "shadow": 0.7, "wobble": 0.1 }, "x": "50%", "y": "52%", "width": 1240, "height": 820 },
+    { "text": "Railyard", "font": "Schibsted Grotesk", "weight": 900, "size": "22vh", "color": "#2D3FB5", "letterSpacing": "-0.04em", "x": "50%", "y": "47%", "rotation": -2.5, "opacity": 0.92 },
+    { "text": "Sent is settled.", "font": "Schibsted Grotesk", "weight": 500, "size": "4.4vh", "color": "#2D3FB5", "x": "51%", "y": "66%", "rotation": -2.5, "opacity": 0.9 },
+    { "component": "cutout", "props": { "color": "#F3EEE2", "texture": "paper", "torn": 0.8, "rotate": -4, "enter": "none", "shadow": 0.8 }, "x": "50%", "y": "8%", "width": 1300, "height": 200 },
+    { "shape": "rect", "width": "100%", "height": "100%", "x": "50%", "y": "50%", "fill": "linear-gradient(135deg, #FFF4E0, #B8A898 55%, #4A4038)", "blend": "multiply" }
+  ]},
+  { "duration": 2, "background": "#2A2926", "layers": [
+    { "component": "paper", "props": { "stock": "canvas", "color": "#2C2B28", "tooth": 0.7, "vignette": 0.2 } },
+    { "component": "cutout", "props": { "color": "#F2D86A", "rotate": 3, "enter": "none", "shadow": 0.7 }, "x": "58%", "y": "55%", "width": 1300, "height": 860 },
+    { "text": "Railyard", "font": "Homemade Apple", "size": "17vh", "color": "#2D3FB5", "x": "56%", "y": "50%", "rotation": -4 },
+    { "component": "brush", "props": { "d": "M0 40 C 300 0, 600 70, 900 20", "color": "#2D3FB5", "size": 10, "texture": "ink", "pressure": "taper" }, "x": "58%", "y": "68%", "width": 900, "height": 80 },
+    { "component": "cutout", "props": { "color": "#F3EEE2", "texture": "paper", "torn": 0.8, "rotate": 7, "enter": "none", "shadow": 0.9 }, "x": "10%", "y": "50%", "width": 520, "height": 1200 },
+    { "shape": "rect", "width": "100%", "height": "100%", "x": "50%", "y": "50%", "fill": "linear-gradient(135deg, #FFF4E0, #B8A898 55%, #4A4038)", "blend": "multiply" }
+  ]},
+  { "duration": 2, "background": "#2A2926", "layers": [
+    { "component": "paper", "props": { "stock": "canvas", "color": "#2C2B28", "tooth": 0.7, "vignette": 0.2 } },
+    { "component": "cutout", "props": { "color": "#F2D86A", "rotate": -1, "enter": "none", "shadow": 0.7 }, "x": "50%", "y": "50%", "width": 2200, "height": 1300 },
+    { "text": "Rail", "font": "Schibsted Grotesk", "weight": 900, "size": "48vh", "color": "#2D3FB5", "letterSpacing": "-0.05em", "x": "4%", "y": "36%", "anchor": "left", "rotation": -1 },
+    { "text": "yard", "font": "Schibsted Grotesk", "weight": 900, "size": "48vh", "color": "#2D3FB5", "letterSpacing": "-0.05em", "x": "30%", "y": "80%", "anchor": "left", "rotation": -1 },
+    { "component": "brush", "props": { "d": "M0 120 C 200 0, 380 160, 560 60 S 900 20, 1000 90", "color": "#1B1A18", "size": 16, "texture": "ink", "pressure": "taper" }, "x": "50%", "y": "60%", "width": 1000, "height": 160, "opacity": 0 },
+    { "shape": "rect", "width": "100%", "height": "100%", "x": "50%", "y": "50%", "fill": "linear-gradient(135deg, #FFF4E0, #B8A898 55%, #4A4038)", "blend": "multiply" }
+  ]}
+]}
