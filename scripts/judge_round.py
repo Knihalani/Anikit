@@ -101,11 +101,11 @@ def cmd_collect(a):
 def _stats(rd, bid):
     p = rd / f"{bid}.stats.json"
     if not p.exists():
-        return None, None
+        return None, None, None
     try:
         s = json.loads(p.read_text())
     except json.JSONDecodeError:
-        return None, None
+        return None, None, None
     from datetime import datetime
     wall = None
     try:
@@ -114,8 +114,14 @@ def _stats(rd, bid):
         wall = round((t1 - t0).total_seconds() / 60, 1)
     except Exception:
         pass
-    rss = max((r.get("peak_rss_mb", 0) for r in s.get("renders", []) if isinstance(r, dict)), default=None)
-    return wall, rss
+    rr = [r for r in s.get("renders", []) if isinstance(r, dict)]
+    rss = max((r.get("peak_rss_mb", 0) for r in rr), default=None)
+    render_s = rr[-1].get("wall_s") if rr else None
+    return wall, rss, render_s
+
+
+def fmt_tok(u):
+    return f"{u['tokens'] / 1e6:.1f}" if u.get("tokens") else "?"
 
 
 def cmd_table(a):
@@ -123,8 +129,8 @@ def cmd_table(a):
     rd.mkdir(parents=True, exist_ok=True)
     usage = json.loads((rd / "usage.json").read_text()) if (rd / "usage.json").exists() else {}
     lines = [f"## Round {a.round}", "",
-             "| Brief | Category | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens | Cost ($) | Peak RSS render (MB) |",
-             "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+             "| Brief | Category | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens (M) | Cost ($) | Final render (s) | Peak RSS render (MB) |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     gaps_by = {}
     scores = []
     rows = []
@@ -134,17 +140,17 @@ def cmd_table(a):
             rows.append((f"hf-{b['id']}", b))
     for name, b in rows:
         p = rd / "results" / name / "result.json"
-        wall, rss = _stats(rd, name)
+        wall, rss, render_s = _stats(rd, name)
         u = usage.get(name, {})
         if not p.exists():
-            lines.append(f"| {name} | {b.get('category','')} | no output | | | | | | {wall or ''} | {u.get('tokens', '')} | {u.get('cost_usd', '')} | {rss or ''} |")
+            lines.append(f"| {name} | {b.get('category','')} | no output | | | | | | {wall or ''} | {fmt_tok(u)} | {u.get('cost_usd', '')} | {render_s or ''} | {rss or ''} |")
             continue
         r = json.loads(p.read_text())
         c = r["candidate"]
         if not name.startswith("hf-"):
             scores.append(c.get("overall") or 0)
         lines.append(f"| {name} | {b.get('category','')} | {r['verdict']} | {c.get('judged_professional')} | {c.get('overall')} | {r['ref_mean']} | {r['delta']} | "
-                     f"{r.get('full_overall', '–')} | {wall or '?'} | {u.get('tokens', '?')} | {u.get('cost_usd', '?')} | {rss or '?'} |")
+                     f"{r.get('full_overall', '–')} | {wall or '?'} | {fmt_tok(u)} | {u.get('cost_usd', '?')} | {render_s or '?'} | {rss or '?'} |")
         gaps_by[name] = c.get("gaps", [])[:3] + (r.get("critic", {}).get("answer", {}).get("gaps", [])[:1])
     if scores:
         lines += ["", f"Mean blind score (Anikit rows) {statistics.mean(scores):.2f}. hf-* rows are HyperFrames on the same brief, same refs and seed. Pass = judged professional in ≥ half the trials and Δ ≥ −1.0 (RUBRIC.md)."]

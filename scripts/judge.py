@@ -506,6 +506,8 @@ def critic(src, workdir, tags=()):
 # ---------------------------------------------------------------- commands
 
 def judge(name, frames, tags, args, exclude=(), video=None):
+    if args.trials < 1:
+        sys.exit("--trials must be >= 1")
     rng = random.Random(args.seed)
     refs = pick_refs(tags, args.refs, rng, exclude=exclude, fmt=args.format)
     out = Path(args.out or ROOT / "docs/video/judge/results") / name

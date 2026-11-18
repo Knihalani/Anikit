@@ -1,27 +1,29 @@
 ## Round r1
 
-| Brief | Category | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens | Cost ($) | Peak RSS render (MB) |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| a-social | 9:16 social ad | FAIL | 0/3 | 3.25 | 7.37 | -4.12 | 3.78 | 8.7 | ? | ? | 567.2 |
-| b-launch | product launch | no output | | | | | |  |  |  |  |
-| hf-b-launch | product launch | FAIL | 0/3 | 2.88 | 7.33 | -4.45 | 3.28 | 10.2 | ? | ? | ? |
-| c-event | event promo | no output | | | | | |  |  |  |  |
-| d-illustration | illustration-led | no output | | | | | |  |  |  |  |
-| e-data | data story | no output | | | | | |  |  |  |  |
-| f-3d | 3D/CG | no output | | | | | |  |  |  |  |
-| g-titles | kinetic type / titles | FAIL | 0/3 | 3.62 | 8.5 | -4.88 | 4.11 | 10.5 | ? | ? | 1727.8 |
-| hf-g-titles | kinetic type / titles | FAIL | 0/3 | 3.38 | 8.42 | -5.04 | 3.78 | 9.8 | ? | ? | ? |
-| h-ident | brand ident | FAIL | 0/3 | 2.75 | 8.67 | -5.92 | 3.17 | 8.3 | ? | ? | 631.3 |
-| i-explainer | 2D explainer | no output | | | | | |  |  |  |  |
-| j-music | music / lyric video | no output | | | | | |  |  |  |  |
-| k-sports | sports / broadcast | FAIL | 0/3 | 4.5 | 8.25 | -3.75 | 4.67 | 10.2 | ? | ? | 1046.1 |
-| l-generative | generative / abstract | no output | | | | | |  |  |  |  |
+| Brief | Category | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens (M) | Cost ($) | Final render (s) | Peak RSS render (MB) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| a-social | 9:16 social ad | FAIL | 0/3 | 3.25 | 7.37 | -4.12 | 3.78 | 8.7 | 2.7 | 1.97 | 25.13 | 567.2 |
+| b-launch | product launch | FAIL | 0/3 | 3.75 | 7.34 | -3.59 | 4.28 | 11.3 | 7.1 | 3.081 | 38.77 | 918.6 |
+| hf-b-launch | product launch | FAIL | 0/3 | 2.88 | 7.33 | -4.45 | 3.28 | 10.2 | 5.4 | 2.899 | ? | ? |
+| c-event | event promo | no output | | | | | | 11.6 | 2.3 | 1.768 | 105.69 | 1400.3 |
+| d-illustration | illustration-led | no output | | | | | | 13.3 | 4.9 | 2.653 | 22.6 | 1750.9 |
+| e-data | data story | no output | | | | | | 11.4 | 2.6 | 1.639 | 55.5 | 771.3 |
+| hf-e-data | data story | no output | | | | | | 12.6 | 5.6 | 2.968 |  |  |
+| f-3d | 3D/CG | no output | | | | | | 15.1 | 3.6 | 2.119 | 108.84 | 987.2 |
+| g-titles | kinetic type / titles | FAIL | 0/3 | 3.62 | 8.5 | -4.88 | 4.11 | 10.5 | 3.0 | 1.673 | 52.74 | 1727.8 |
+| hf-g-titles | kinetic type / titles | FAIL | 0/3 | 3.38 | 8.42 | -5.04 | 3.78 | 9.8 | 4.9 | 2.643 | ? | ? |
+| h-ident | brand ident | FAIL | 0/3 | 2.75 | 8.67 | -5.92 | 3.17 | 8.3 | 1.9 | 1.14 | 15.67 | 631.3 |
+| i-explainer | 2D explainer | no output | | | | | | 16.5 | 4.2 | 2.314 | 291.11 | 1481.3 |
+| j-music | music / lyric video | no output | | | | | | 13.7 | 6.9 | 3.147 | 236.94 | 1283.8 |
+| k-sports | sports / broadcast | FAIL | 0/3 | 4.5 | 8.25 | -3.75 | 4.67 | 10.2 | 2.7 | 1.553 | 76.76 | 1046.1 |
+| l-generative | generative / abstract | no output | | | | | | 25.8 | 3.4 | 1.584 | 1056.08 | 1415.1 |
 
-Mean blind score (Anikit rows) 3.53. hf-* rows are HyperFrames on the same brief, same refs and seed. Pass = judged professional in ≥ half the trials and Δ ≥ −1.0 (RUBRIC.md).
+Mean blind score (Anikit rows) 3.57. hf-* rows are HyperFrames on the same brief, same refs and seed. Pass = judged professional in ≥ half the trials and Δ ≥ −1.0 (RUBRIC.md).
 
 Top gaps per brief:
 
 - **a-social**: Needs a specific, memorable idea about this coffee (origin, ritual, process) instead of a cup and a Venn diagram · Typography needs a real point of view: scale contrast, a custom or carefully chosen face, and type that interacts with the image instead of sitting above it like a slide · Needs real material and light (liquid, crema, steam, paper) and compositions that differ from frame to frame, with choreography between them · Transitions: each note (bergamot, black tea, peach) is a separate card swap. Top work would morph one disc into the next, for example the citrus wheel rotating into the hatch and the leaf, then the three discs physically pouring into the cup, so the Venn becomes the brew rather than a static diagram.
+- **b-launch**: Find an idea beyond the pun on the name; the best entry turns its subject into a visual system rather than illustrating it · Build an image with texture, light and layering, such as real rail material, signal glow and atmosphere, instead of flat vector strokes on a solid field · Make the type part of the motion and give it a stronger face and scale contrast, rather than wordmark plus caption in a repeated end-card layout · Choreography is a series of separate shots (code → yard → perspective → SETTLED → logo) linked by whoosh cuts. Nothing carries through as a match-cut: the train, the signal or the amount never travels across the cuts. Top work would carry the €12,400 car as a continuous object from the code literal to the logo rail.
 - **hf-b-launch**: Find a visual idea behind 'instant settlement' (rails, a physical race, collapsing time) instead of type-on-colour slides; compare how B turns its whole subject into a visual language · Design the typography: deliberate face selection, extreme scale contrast, type that moves as an object, instead of one default sans at one weight · Build real frames with layering, material and light, and choreograph the transitions (the blurred orange block looks like a broken wipe), so each frame could stand as a poster · Choreography and pace: it plays as 2 long shots of UI state changes connected by blur dissolves. It needs ~2 s beats with designed match-cuts (track → pill → logo mark) and real hand-offs instead of defocus. The train/rail metaphor is never pushed into a kinetic peak, and energy stays flat before fizzling out on a static logo card.
 - **g-titles**: Find an idea beyond the 'Lisbon = tiles' cliché, e.g. make the tile pattern itself demonstrate a design system (tokens, variants, breaking rules) so the subject and the visual agree · Commit to typography with a point of view: a custom or carefully drawn face integrated into the tile grid instead of a boxed lockup over the pattern · Add real ceramic material, glaze, light, imperfection and camera choreography, as in B's physical world-building, rather than a flat vector tessellation · Motion: the 'offset' concept, a tile shifted into a pattern, is good but only played once and literally. Top studios would vary the device (rotation, mirroring, colour inversion, rows sliding into place with mass and settle), stage a clear peak at about 70%, and land the title by having the tiles themselves form or reveal it. Here a card is placed on top.
 - **hf-g-titles**: Build a real idea in place of a literal pun: let the azulejo tiling grow into Lisbon's material reality (glazed ceramic, crazing, real light raking across façades) the way B grows its world · Give the typography craft and a point of view: a custom or carefully chosen face that is built from the tile system itself, with scale contrast and integration, instead of default bold sans plus a drop shadow and mono labels · Choreograph change: every frame should be a distinct poster with progression and surprise, not one layout reused with the words and pattern swapped · Choreography peaks too early (the tile flood around 5–6 s, about 40%) and then stops. Top studios would let the tiles assemble the wordmark, push to a peak at 60–80% and leave a shorter, active hold with secondary motion such as tile ripples, a breathing offset shadow or the pattern drifting
