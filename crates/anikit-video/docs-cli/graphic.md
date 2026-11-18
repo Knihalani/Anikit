@@ -32,10 +32,10 @@
   (px, centred on 0,0) at every lattice point; `turns` rotates each mark by a seeded multiple of 360/turns, `stagger` offsets
   alternate rows (also for `dots`), `tileStroke: 6` strokes an open motif (squiggles) instead of filling it. Patterns move with the layer: animate `x`, `rotation` or `scale` for drift.
   One path per layer: thousands of marks cost one fill. Keep `spacing` ≥ 6 px (finer turns to moiré after H.264).
-- **Treatments** on any layer (image, video, shader, text, group, composition), applied before blur/shadow:
+- **Treatments** on any layer, before blur/shadow (`"print": "photocopy|newsprint|engraving|riso|screenprint"` = starting values):
   `duotone: [shadows, highlights]`, `gradientMap: [c1, c2, c3…]` (or `[offset, colour]` pairs; interpolated in OKLab),
   `posterize: N` (luma steps with a map, RGB steps alone), `toneRange: [black, white]` (stretch a flat source first),
-  `toneAmount` 0..1, `halftone: 10` or `{cell, angle, shape: dot|line|square, ink, paper, gain}` (ink `"source"` keeps
+  `toneAmount` 0..1, `halftone: 10` or `{cell, angle, shape: dot|line|square, ink, paper, gain}` (ink `"cmyk"` separates four screens, `"source"` keeps
   each dot's colour; paper `"none"` leaves only dots; the screen is fixed to the frame, as on press).
   Animate them by name, or give `"=expr"`: `toneAmount`, `halftoneCell`, `halftoneAngle`, `halftoneGain`, `inkAmount`
   (`"animate": [{"to": {"halftoneCell": 40}}]`, `"halftone": {"angle": "=t*30"}`): a screen that grows into a pattern, a duotone fading in.
@@ -45,8 +45,8 @@
 - **Brush** `"brush": true` or `{taper: [start, end], pressure, dry, seed}` on a stroked shape (line, path, any outline):
   the stroke becomes a tapered ribbon with pressure wobble, a paper-rough edge and, with `dry` 0.3–0.7, bristles that run out
   of paint toward the end. Width = `strokeWidth`; animate `trimEnd` to paint it on (the end taper follows the brush).
-- **Ink texture** `"inkTexture": 0.35` or `{amount, scale, seed}`: uneven coverage (blotches + pinholes) fixed to the frame,
-  so it reads as ink on paper rather than a grain overlay. Use it on the ink layers only; leave type you must read lighter (≤ 0.2).
+- **Ink texture** `"inkTexture": 0.35` or `{amount, scale, seed, fixed}`: uneven coverage (blotches, chips, pinholes) that
+  moves with the layer, so it reads as material, not a grain overlay (`fixed: true` pins it to the frame). Ink layers only; type ≤ 0.2.
 - **Stepped time** `"step": "twos"` (or `"threes"`, or fps like `8`): the layer and its children animate held, like
   stop-motion or hand-pulled print, while the rest stays smooth. **Boil** `"boil": 2` or `{amount, rotate, fps, seed}`:
   a seeded jitter re-drawn `fps` (12) times a second; on a `multiply` ink layer it reads as plates out of register.

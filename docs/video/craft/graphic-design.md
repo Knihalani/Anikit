@@ -343,7 +343,8 @@ Eight distinct graphic worlds. Each: palette (hex), type, grid, texture, motion.
 - **Grid**: 6-column (240 px columns, §2.2); charts span 4–6 columns; annotations in the remaining columns, aligned to data points.
 - **Texture**: none, or a halftone photograph as the "lead image" scene.
 - **Motion**: §7 reveal order; lines draw at constant speed; highlight colour arrives last on the beat; camera pushes into the annotated point (scale 1→2.5) and cuts to the human detail.
-- **In Anikit**: `line-chart`/`bar-chart` with `look: "editorial"`, `highlight`, `notes`, `compare`; a `draw` layer for a bespoke chart; `dots` for unit charts; Fraunces or a news serif for the title only. Piece: `street-ledger.json`.
+- **Watch out:** the judge's round-1 review found the most recognisable type tell to be a dark navy, charcoal or cream ground with an editorial serif, one accent and a tiny tracked-caps eyebrow over the headline (`judge-r1-review.md`). An editorial palette alone isn't a concept. Take the visual language from the subject.
+- **In Anikit**: `line-chart`/`bar-chart` with `look: "editorial"`, `highlight`, `notes` and `compare`; a `draw` layer for a bespoke chart; `dots` for unit charts. Better still, make the chart from the subject's own objects. The piece `street-ledger.json` paints the line chart as lane lines on asphalt, makes the unit chart from parking bays, and makes the bar chart a street cross-section.
 
 ### 9.5 Memphis
 

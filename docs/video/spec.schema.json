@@ -1639,8 +1639,15 @@
             }
           ]
         },
+        "print": {
+          "description": "A print treatment in one word, as starting values for the keys above (any key you give wins):\n`photocopy`, `newsprint`, `engraving`, `riso`, `screenprint`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "inkTexture": {
-          "description": "Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ \"amount\", \"scale\": px, \"seed\" }`.\nFixed to the frame like the paper, so moving shapes travel through it.",
+          "description": "Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ \"amount\", \"scale\": px, \"seed\" }`.\nThe wear moves with the layer (material locked to the object); `fixed: true` pins it to the frame.",
           "anyOf": [
             {
               "$ref": "#/$defs/InkValue"
@@ -2977,7 +2984,7 @@
           ]
         },
         "ink": {
-          "description": "Ink colour. Default `\"source\"`: each dot keeps the layer's colour there.",
+          "description": "Ink colour. Default `\"source\"`: each dot keeps the layer's colour there. `\"cmyk\"`: a four-colour\nseparation (C, M, Y, K screens at angle + 15/75/0/45°) multiplied on the paper (default white).",
           "type": [
             "string",
             "null"
@@ -3045,6 +3052,13 @@
           ],
           "format": "uint32",
           "minimum": 0
+        },
+        "fixed": {
+          "description": "Pin the wear to the frame (the paper is the screen) instead of the layer (default: it moves with the layer).",
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
