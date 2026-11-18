@@ -52,6 +52,11 @@ What changed between passes:
 
 v4 sits inside the noise of v3 (±0.4), so I stopped at that plateau. Every pass is still a FAIL, judged professional 0/3.
 
+**JUDGE's 6-trial re-judge:** 3.31 blind (0/6 pro), full 3.53. Pooled over 9 trials that is about 3.4 against r2's 2.88: up, but inside the 0.75 tie band. Given strips of consecutive frames, the critic sees the device: idea, invariant, arc and ending all YES; motion 5, craft 5. Its remaining gaps are execution:
+- rigid wings and an off-screen dive;
+- a beat for the dot, and secondary life in the hold;
+- foley and a tonal sting in the sound.
+
 ## What still holds it back, in the judge's words
 
 - **The bird:** "flat cards hinged at the shoulder", with stacked echo blur. An SDF bird drawn in 2D caps craft at about 3. A rigged glTF bird, or a committed stylised language (cut paper, ink), is the next step.

@@ -1,0 +1,101 @@
+{
+ "about": "Fly through a letter into the next shot: the old scene scales up around one layer (here a word) and the new scene shows through its letterforms, then fills the frame. Taste decision: a transition that carries an idea (we go *into* the word) instead of a dissolve; use it once, on the turn of the piece. Swap the word, colours and the second scene; `layer` must be an `id` in the previous scene.",
+ "cost": "~1 s draft, ~2 s final (1080p, 4 cores)",
+ "spec": {
+  "size": "16:9",
+  "fps": 30,
+  "scenes": [
+   {
+    "duration": 1.4,
+    "background": "#ff4d2e",
+    "camera": {
+     "zoom": "=1 + 0.05*t"
+    },
+    "layers": [
+     {
+      "id": "word",
+      "text": "INSIDE",
+      "size": 420,
+      "weight": 900,
+      "letterSpacing": -16,
+      "color": "#160b06",
+      "x": 960,
+      "y": 560,
+      "inertia": "tight",
+      "animator": {
+       "by": "char",
+       "y": 160,
+       "opacity": 0,
+       "duration": 0.45,
+       "smooth": 0.3,
+       "ease": "glide"
+      }
+     },
+     {
+      "text": "chapter two",
+      "size": 40,
+      "weight": 500,
+      "color": "#160b06",
+      "x": 120,
+      "y": 110,
+      "anchor": "left",
+      "start": 0.3,
+      "animator": {
+       "by": "word",
+       "opacity": 0,
+       "duration": 0.35,
+       "smooth": 0.3
+      }
+     }
+    ]
+   },
+   {
+    "duration": 1.8,
+    "background": "#101a2e",
+    "transition": {
+     "type": "zoomThrough",
+     "layer": "word",
+     "duration": 0.6
+    },
+    "layers": [
+     {
+      "shape": "circle",
+      "x": 1300,
+      "y": 540,
+      "width": 620,
+      "height": 620,
+      "fill": "#ffd166",
+      "inertia": "soft",
+      "animate": {
+       "from": {
+        "scale": 0.7
+       },
+       "duration": 0.5,
+       "ease": "glide"
+      }
+     },
+     {
+      "text": "What's\nin here",
+      "size": 170,
+      "weight": 800,
+      "lineHeight": 0.95,
+      "letterSpacing": -6,
+      "color": "#f4f1ea",
+      "x": 140,
+      "y": 540,
+      "anchor": "left",
+      "animator": {
+       "by": "line",
+       "y": 80,
+       "opacity": 0,
+       "delay": 0.25,
+       "duration": 0.5,
+       "smooth": 0.4,
+       "ease": "glide"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

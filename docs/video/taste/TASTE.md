@@ -17,6 +17,7 @@ TASTE.md is the index and the short pass (§10). Each craft doc in `docs/video/c
 | [`award-level.md`](../craft/award-level.md) | 17 winning short-form pieces: one idea, one material pushed to the limit, systems, type that carries meaning | §11 |
 | [`ai-tells.md`](../craft/ai-tells.md) | what reads as generated in 2024–26, and automatable checks | §9 |
 | [`finish-and-life.md`](../craft/finish-and-life.md) | hand-made texture (object-locked, form-following, boiled on twos), secondary and overlapping motion (Williams' numbers, blinks, springs), depth-layered particles, frame density | §5, §11 |
+| [`WHAT-WORKED.md`](../craft/WHAT-WORKED.md) | one page of measured effects on the blind judge: structure about +1, the idea process lifts the idea score (overall gains inside the ±0.75 tie band), fonts +0, menus raised uptake not scores | §8, §10 |
 | [`judge-r1-review.md`](../craft/judge-r1-review.md) | all 11 round-1 pieces under the blind judge: the seven recurring tells (literal 11/11, one layout 11/11, glow for light 10/11…) | §9, §11 |
 | [`ab-craft-process.md`](../craft/ab-craft-process.md) | A/B: the idea process lifted idea 3→5 on one brief, but execution (type, material, layout repetition) caps scores at ~4 | §8, §11 |
 | [`review-div.md`](../craft/review-div.md) | why the div-a…g films read as boring: seven structural failures | §9, §11 |
