@@ -33,7 +33,7 @@ QUILT = ["#6b3a6e", "#2f6f73", "#d39a3c", "#c76a5a", "#3c4a8a", "#8a4f3a"]
 BUNNY = "#efe3d0"
 
 PARENT = {"font": "Fraunces", "axes": {"SOFT": 100, "WONK": 1, "opsz": 144, "wght": 380}, "color": CREAM}
-CHILD = {"font": "Caveat", "weight": 700, "color": CRAYON}
+CHILD = {"font": "Shantell Sans", "axes": {"INFM": 100, "BNCE": 100, "SPAC": 0, "wght": 720}, "color": CRAYON}
 
 
 def sh(shape, **k):
@@ -368,7 +368,7 @@ scenes.append({
     "layers": [
         bedroom(False),
         text("Once upon\na time,", PARENT, "8.4vh", "9%", "12%", 0.25, end=3.2, exit="fadeOut", enter={"preset": "mask by line up", "duration": 0.9}, lineHeight=0.98),
-        text("a bunny!", CHILD, "12vh", "27%", "31%", 1.0, end=3.2, exit="fadeOut", enter={"preset": "wipeIn", "duration": 0.55}, rotation=-7),
+        text("a bunny!", CHILD, "9vh", "27%", "31%", 1.0, end=3.2, exit="fadeOut", enter={"preset": "wipeIn", "duration": 0.55}, rotation=-7),
     ],
 })
 
@@ -441,7 +441,7 @@ scenes.append({
                                            "colors": {"foliage": ["#3a2142", "#6b3a6e", "#8a4f3a"], "trunk": "#2a1830", "bark": "#2a1830", "accent": GOLD}}},
         illo(s3, g3),
         arrow,
-        text("It fell in\nthe pond!", CHILD, "11vh", "66%", "8%", 0.2, enter={"preset": "wipeIn", "duration": 0.6}, rotation=5, lineHeight=0.85),
+        text("It fell in\nthe pond!", CHILD, "7.6vh", "64%", "8%", 0.2, enter={"preset": "wipeIn", "duration": 0.6}, rotation=5, lineHeight=0.85),
     ],
     "audio": [{"src": "sfx/scribble.wav", "at": 0.2, "volume": 0.45}, {"src": "sfx/thump.wav", "at": 0.507, "volume": 0.45},
               {"src": "sfx/thump.wav", "at": 1.157, "volume": 0.45}, {"sfx": "ding", "at": 1.4, "volume": 0.12}],
@@ -459,7 +459,7 @@ moon_up = illo([
     sh("circle", name="mcut4", cx=1336, cy=506, r=153, visible=False),
     sh("circle", cx=1260, cy=560, r=170, fill="#ffe3a0", shade={"amount": 0.4, "offset": 0.08, "rim": 0.03},
        texture={"style": "halftone", "amount": 0.45, "scale": 9}, cut=["mcut4"],
-       animate={"keys": [{"t": 0, "opacity": 0}, {"t": 1.35, "opacity": 0}, {"t": 1.7, "opacity": 1, "ease": "out"}]}),
+       animate={"keys": [{"t": 0, "opacity": 0}, {"t": 1.55, "opacity": 0}, {"t": 1.75, "opacity": 1, "ease": "out"}]}),
     # drips
     sh("ellipse", cx=1200, cy=760, rx=9, ry=14, fill="#9fd4ff", outline=False,
        animate={"keys": [{"t": 0, "opacity": 0}, {"t": 1.4, "opacity": 0, "y": -60}, {"t": 1.5, "opacity": 1, "y": -60}, {"t": 2.3, "y": 200, "opacity": 0, "ease": "in"}]}),
@@ -468,8 +468,10 @@ moon_up = illo([
 ], grain=0.05)
 scenes.append({
     "id": "catch", "duration": 3.0, "background": "#101845",
-    "camera": {"animate": [{"from": {"zoom": 1.08, "y": 40}, "to": {"zoom": 1.02, "y": -8}, "duration": 2.0, "ease": "outCubic"}],
-               "shake": {"amount": 5, "at": 1.45, "duration": 0.3}},
+    "camera": {"animate": [{"from": {"zoom": 1.08, "y": 40}, "to": {"zoom": 1.03, "y": -8}, "duration": 1.3, "ease": "outCubic"},
+                           {"to": {"zoom": 1.14, "x": 60, "y": -20}, "at": 1.62, "duration": 0.35, "ease": "outExpo"},
+                           {"to": {"zoom": 1.06, "x": 20, "y": -10}, "at": 2.0, "duration": 1.2, "ease": "inOutSine"}],
+               "shake": {"amount": 6, "at": 1.65, "duration": 0.3}},
     "layers": [
         {"component": "water", "props": {"style": "papercut", "time": "night", "sun": 0.66, "onTwos": True, "bands": 4,
                                           "colors": {"top": "#2a3a7a", "deep": "#121a46", "wave": "#4a5aa0", "glint": "#ffe3a0"}},
@@ -479,14 +481,14 @@ scenes.append({
                                            "ground": 1.0, "size": 420, "wind": 0.5, "onTwos": True,
                                            "colors": {"foliage": ["#2a1830", "#3a2142", "#6b3a6e"], "trunk": "#2a1830", "bark": "#2a1830", "accent": GOLD}}},
         illo(s4, g4),
-        text("moon.", dict(PARENT, color="#fff3cf"), "15vh", 1250, 560, 0.0, anchor="center", end=1.75, exit={"preset": "fadeOut", "duration": 0.35},
+        text("moon.", dict(PARENT, color="#fff3cf"), "15vh", 1250, 560, 0.0, anchor="center", end=1.95, exit={"preset": "fadeOut", "duration": 0.35},
              animate=[{"from": {"y": "+330", "rotation": 14, "opacity": 0.5}, "to": {"y": "+0", "rotation": -4, "opacity": 1}, "at": 0.45, "duration": 0.95, "ease": "outBack"},
-                      {"to": {"scale": 1.15}, "at": 1.4, "duration": 0.35, "ease": "outCubic"}],
+                      {"to": {"scale": 1.15}, "at": 1.55, "duration": 0.4, "ease": "outCubic"}],
              shadow={"x": 0, "y": 0, "blur": 30, "color": "#ffcf6aaa"}),
         text("Dreamed up", PARENT, "9vh", "56%", "9%", 0.05, enter={"preset": "mask by line up", "duration": 0.7}),
-        text("together,", CHILD, "13vh", "66%", "19%", 0.25, enter={"preset": "wipeIn", "duration": 0.4}, rotation=-5),
+        text("together,", CHILD, "9vh", "62%", "19%", 0.25, enter={"preset": "wipeIn", "duration": 0.4}, rotation=-5),
     ],
-    "audio": [{"src": "sfx/splash.wav", "at": 0.85, "volume": 0.6}, {"sfx": "chime", "at": 1.45, "volume": 0.3},
+    "audio": [{"src": "sfx/splash.wav", "at": 0.85, "volume": 0.6}, {"sfx": "chime", "at": 1.7, "volume": 0.3},
               {"src": "sfx/thump.wav", "at": 2.65, "volume": 0.5}],
 })
 
@@ -520,8 +522,8 @@ scenes.append({
                                               "ranges": [{"color": "#3c4a8a"}, {"color": "#6b3a6e"}, {"color": "#c76a5a"}]}, "depth": 1.5},
         moon5,
         illo(s5, g5),
-        dict(PARENT, text="and read aloud, word by word.", size="5.6vh", x=1086, y=559, anchor="center", rotation=-29.8, start=1.0,
-             split="words", enter={"preset": "fadeUp", "duration": 0.3}, stagger=0.2, shadow={"x": 3, "y": 5, "blur": 5, "color": "#06081c99"}),
+        dict(PARENT, text="and read aloud, word by word.", size="6.4vh", x=1072, y=548, anchor="center", rotation=-29.8, start=0.45,
+             split="words", enter={"preset": "fadeUp", "duration": 0.25}, stagger=0.1, shadow={"x": 3, "y": 5, "blur": 5, "color": "#06081c99"}),
     ],
 })
 
@@ -532,11 +534,13 @@ scenes.append({
     "camera": {"animate": [{"from": {"zoom": 1.35, "x": 182, "y": -57}, "to": {"zoom": 1.0, "x": 0, "y": 0}, "duration": 2.2, "ease": "inOutCubic"}]},
     "layers": [
         bedroom(True),
-        text("Burrow", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 144, "wght": 620}), "17vh", "5.5%", "6%", 0.9,
-             enter={"preset": "mask by line up", "duration": 0.8}, letterSpacing="-0.02em", color="#fff3cf"),
-        text("bedtime stories you make together,\nread aloud every night", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 36, "wght": 400}), "3.9vh", "6.2%", "26%", 1.4,
+        text("the end.", CHILD, "10vh", "6%", "8%", 0.35, enter={"preset": "wipeIn", "duration": 0.45}, rotation=-5),
+        text("bedtime stories you make together,\nread aloud every night", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 36, "wght": 400}), "3.9vh", "6.4%", "25%", 0.9,
              enter={"preset": "mask by line up", "duration": 0.6}, lineHeight=1.2, italic=True),
-        text("the end.", CHILD, "7vh", 1010, 360, 1.8, anchor="center", enter={"preset": "wipeIn", "duration": 0.45}, rotation=-6),
+        # the wordmark is sewn into the quilt the whole story came out of
+        text("Burrow", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 144, "wght": 640}), "15vh", 935, 900, 1.3, anchor="center", rotation=-3,
+             enter={"preset": "mask by line up", "duration": 0.7}, letterSpacing="-0.01em", color="#f6e6c4",
+             shadow={"x": 0, "y": 3, "blur": 2, "color": "#2a1830cc"}),
     ],
 })
 
@@ -560,6 +564,9 @@ spec = {
              "gain": -4, "reverb": 0.55, "pan": 0.15},
             {"inst": "glockenspiel", "notes": "C5/16 D5/16 F5/16 G5/16 A5/16 C6/16 | A5/16 G5/16 F5/16 D5/16 F5/16 G5/16 A5/16 C6/16 D6/16 C6/16 A5/16 F5/16",
              "at": 11.25, "gain": -9, "reverb": 0.6, "pan": 0.25},
+            {"inst": "timpani", "notes": "o2 r/4 F2/16 F2/16 F2/16 F2/16 C2/16 C2/16 C2/16 C2/16 | F2/2.", "at": 10.0, "gain": -9, "reverb": 0.5},
+            {"inst": "choir", "chords": "Bb C F Dm", "play": "pad", "at": 10.0, "gain": -15, "reverb": 0.7},
+            {"inst": "french-horn", "notes": "o3 [F3 A3 C4]/2. | [D3 F3 A3]/2.", "at": 12.5, "gain": -13, "reverb": 0.6},
         ],
     },
     "audio": [{"src": "sfx/night.wav", "volume": 0.35, "fadeIn": 1.0, "fadeOut": 1.5}],
