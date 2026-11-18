@@ -468,7 +468,7 @@ pub const OBJ_KEYS: &[&str] = &[
     "type", "src", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name", "camera", "align", "color", "intensity", "speed", "collide",
     "d", "path", "points", "segments", "sides", "x", "y", "z", "u", "v", "expr", "res", "vertices", "faces", "flat",
 ];
-const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model", "card", "extrude", "lathe", "tube", "surface", "heightfield", "mesh"];
+const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model", "card", "extrude", "lathe", "tube", "surface", "heightfield", "mesh", "cloth"];
 
 /// Shapes are deduplicated by their JSON description.
 pub struct Shapes {
@@ -507,7 +507,12 @@ pub fn mesh_shape(m: anikit_core::raster::Mesh) -> Shape {
 
 pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &HashMap<String, Material>, path: &str) -> Res<ObjDef> {
     let m = v.as_object().ok_or_else(|| format!("{path}: expected an object"))?;
-    check_keys(m, OBJ_KEYS, path)?;
+    if m.get("type").and_then(|t| t.as_str()) == Some("cloth") {
+        let all: Vec<&str> = OBJ_KEYS.iter().chain(super::cloth::KEYS).copied().collect();
+        check_keys(m, &all, path)?;
+    } else {
+        check_keys(m, OBJ_KEYS, path)?;
+    }
     let ty = match m.get("type").and_then(|t| t.as_str()) {
         Some(t) => {
             let t = crate::components::kebab(t);
@@ -647,6 +652,18 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
             }
             (first.unwrap(), ext.x.max(ext.z) * k * 0.5)
         }
+        "cloth" => {
+            // Simulated: rebuilt every frame (two-sided, matte unless told otherwise).
+            let mesh = super::cloth::mesh_at(m, path, 0.0)?;
+            dyn_geom = true;
+            thin = true;
+            let gkey = format!("cloth|{}", serde_json::to_string(m).unwrap_or_default());
+            let mut r: f32 = 0.0;
+            for q in mesh.pos.chunks_exact(3) {
+                r = r.max((q[0] * q[0] + q[2] * q[2]).sqrt());
+            }
+            (shapes.add(gkey, || Ok(mesh_shape(mesh)))?, r)
+        }
         "extrude" | "lathe" | "tube" | "surface" | "heightfield" | "mesh" => {
             // Open geometry: deduplicated by its whole description.
             let gkey = format!("{ty}|{}", serde_json::to_string(m).unwrap_or_default());
@@ -667,7 +684,7 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
             let k = gf("intensity", 1.5)?;
             Material { base: v3(0.0, 0.0, 0.0), metallic: 0.0, roughness: 1.0, specular: 0.0, emissive: scale(c, k), ..Material::chrome() }
         }
-        None => builtin_material(if ty == "slab" || ty == "pane" { "glass" } else { "chrome" }).unwrap(),
+        None => builtin_material(if ty == "slab" || ty == "pane" { "glass" } else if ty == "cloth" { "matte" } else { "chrome" }).unwrap(),
     };
     if let Some(t) = m.get("thin") {
         thin = t.as_bool().ok_or_else(|| format!("{path}.thin: expected true or false"))?;
