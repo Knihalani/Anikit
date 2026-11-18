@@ -496,9 +496,10 @@ pub static STYLES: &[StyleDef] = &[
         prog_minor: &["iim7b5 V7 i7 i7"],
         kit: "drums:jazz|drums:brush|drums",
         drums: [
-            &[("ride", "x..x.xx..x.xx..."), ("phh", "....x.......x...")],
-            &[("ride", "x..x.xx..x.xx..."), ("phh", "....x.......x..."), ("kick", "o.......o.......")],
-            &[("ride", "x..x.xx..x.xx..."), ("phh", "....x.......x..."), ("snare", "......o.......o."), ("kick", "o.......o.......")],
+            // The ride's "spang-a-lang": 1, 2, 2&, 3, 4, 4& (swung 8ths), hi-hat foot on 2 and 4.
+            &[("ride", "x...x.x.x...x.x."), ("phh", "....x.......x...")],
+            &[("ride", "x...x.x.x...x.x."), ("phh", "....x.......x..."), ("kick", "o.......o.......")],
+            &[("ride", "x...X.x.x...X.x."), ("phh", "....x.......x..."), ("snare", "......o.......o."), ("kick", "o.......o.......")],
         ],
         layers: &[
             Layer { humanize: 0.4, ..layer("bass", "contrabass|bass|fretless", Gen::Bass("walk", 2), 0.0, -1.0) },
@@ -1705,6 +1706,15 @@ mod trailer_tests {
         assert!(a.tracks.iter().any(|t| t.notes.iter().any(|n| (n.t - p).abs() < 1e-6)), "the chorus lands");
         let b = compose(&MusicSpec::from_json(&j.replace(r#","stop":2"#, "")).unwrap(), None).unwrap();
         assert!(b.tracks.iter().any(|t| t.notes.iter().any(|n| n.t >= p - 2.0 && n.t < p)));
+    }
+
+    #[test]
+    fn jazz_ride_plays_spang_a_lang() {
+        let a = compose(&MusicSpec::from_json(r#"{"style":"jazz","length":"30s"}"#).unwrap(), None).unwrap();
+        let d = a.tracks.iter().find(|t| t.role == "drums").unwrap();
+        // Ride (51) positions within the beat: on the beat or on the "and" only.
+        let offs: std::collections::BTreeSet<i64> = d.notes.iter().filter(|n| n.key == 51.0).map(|n| ((n.t - n.t.floor()) * 4.0).round() as i64 % 4).collect();
+        assert!(offs.iter().all(|&o| o == 0 || o == 2), "{offs:?}");
     }
 
     #[test]
