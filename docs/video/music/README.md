@@ -116,7 +116,7 @@ Per-component speed (single thread, × real time):
 
 - **Instruments.**
   - Sampled: the bundled GeneralUser GS General MIDI bank, re-encoded as compact Vorbis SF3 (5.9 MB). SF2, SF3 and SFZ files also load.
-  - Optional packs: `anikit-video music fetch essentials` (≈210 MB: Splendid grand, Wurlitzer/CP80/Pianet, FreePats CC0 bass, nylon and clean electric guitars). Once cached, they replace the GM samples for piano, bass, pick-bass, nylon-guitar and clean-guitar automatically. Bigger packs: `fetch salamander`, `fetch vsco2-ce`.
+  - Optional packs: `anikit-video music fetch essentials` (≈210 MB: Splendid grand, Wurlitzer/CP80/Pianet, FreePats CC0 bass, nylon and clean electric guitars). Once cached, they replace the GM samples for piano, bass, pick-bass, nylon-guitar and clean-guitar automatically. Bigger packs: `fetch salamander`, `fetch vsco2-ce`, and `fetch virtuosity` (≈250 MB download: a real acoustic kit, stereo mid-room mic, velocity layers and round robins, which replaces the GM kit for standard, room, rock, power, pop and lofi kits once cached).
   - Physical and modal models: Karplus-Strong guitars, harp and koto; modal marimba, vibraphone, bells, kalimba and handpan.
   - Synths and drum machines.
   - See `LICENSES.md` for every licence.
@@ -124,7 +124,8 @@ Per-component speed (single thread, × real time):
   - Theory: keys, modes, chord symbols and Roman numerals, voice leading.
   - The note language and drum grids.
   - Arrangement helpers: play modes, basslines, a motif-based melody generator.
-  - 15 data-driven styles, with sections and energy, fills, crashes, risers and impacts.
+  - 15 data-driven styles, with sections and energy, fills, crashes, risers and impacts. Any explicit section can take `"stop": beats` for silence right before it (the trailer hole, a false ending), in any style.
+  - Long cinematic-hybrid cues (45 s or more) get a three-act trailer form: a build with a pulse that speeds up, a climax that stops dead, a false ending, then act III.
 - **Mix.**
   - Every track is loudness-matched to its role's level, so balance does not depend on where an instrument came from (sampled, model or synth).
   - Per-track processing: EQ, compressor, drive, width and pan, plus a sidechain pump from the kicks.
