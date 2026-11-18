@@ -1647,6 +1647,10 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        let b = spec::material(&json!({ "extends": "aluminium", "pattern": "spun" }), &HashMap::new(), "m").unwrap();
+        assert_eq!((b.pattern.0, b.aniso), (6, 0.6));
+        let c = spec::material(&json!({ "extends": "aluminium", "pattern": "brushed", "anisotropy": 0.9 }), &HashMap::new(), "m").unwrap();
+        assert_eq!(c.aniso, 0.9);
         let (o, l) = practicals(vec![json!({ "type": "practical", "shape": "tube", "pos": [0, 2, 0], "intensity": 9 }), json!({ "type": "box" })]).unwrap();
         assert_eq!((o.len(), l.len()), (2, 3));
         scene(json!({ "objects": [ { "type": "practical", "shape": "bulb", "pos": [0, 1, 0], "intensity": "=3+sin(t*5)" }, { "type": "practical", "shape": "panel", "pos": [0, 2.5, 0] } ] })).unwrap();

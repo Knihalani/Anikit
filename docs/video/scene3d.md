@@ -134,7 +134,10 @@ Watches, cameras, audio gear and tools are defined by their machined surfaces. `
 - `sunburst`: radial lines from the object's Y axis (dials);
 - `guilloche`: engine-turned waves (rings whose radius ripples with angle);
 - `clous-de-paris`: a hobnail grid of small pyramids;
-- `knurl`: crossed helical grooves (grips and crowns, on the sides of cylinders).
+- `knurl`: crossed helical grooves (grips and crowns, on the sides of cylinders);
+- `spun`: concentric fine grooves around Y (speaker caps, dial centres, lens rings).
+
+**Anisotropy.** Brushed, sunburst and spun metal stretch their highlights across the grain: brushed gives a broad sheen, spun the turned-metal bowtie, and sunburst a bar through the centre. This is on by default (`anisotropy` 0.6; 0–1 sets it, 0 turns it off). Without it, flat machined metal often reflects nothing toward the camera and reads black. Proof: `docs/video/shots/3d-patterns/anisotropy.jpg` (top row 0, bottom row 0.85).
 
 Grooves need about six pixels per period to resolve. Below that they fade into extra roughness (sheen) instead of aliasing, so frame them close: a 100 mm `macro` at f/8–11.
 
