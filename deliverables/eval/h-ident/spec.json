@@ -1,0 +1,376 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "fonts": {},
+ "motionBlur": {
+  "shutter": 180
+ },
+ "post": {
+  "grain": 0.035,
+  "vignette": 0.35,
+  "halation": 0.25,
+  "bloom": 0.06
+ },
+ "scenes": [
+  {
+   "duration": 4.25,
+   "background": "#0b0907",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.75
+      },
+      "to": {
+       "zoom": 1.45
+      },
+      "duration": 2.25,
+      "ease": "outCubic"
+     },
+     {
+      "to": {
+       "zoom": 5.4
+      },
+      "at": 2.3,
+      "duration": 0.9,
+      "ease": "inOutCubic"
+     },
+     {
+      "to": {
+       "zoom": 5.9
+      },
+      "at": 3.2,
+      "duration": 0.65,
+      "ease": "linear"
+     }
+    ],
+    "shake": {
+     "amount": 3,
+     "at": 4.0,
+     "duration": 0.25
+    }
+   },
+   "layers": [
+    {
+     "shader": "film",
+     "filter": true
+    }
+   ]
+  },
+  {
+   "duration": 1.75,
+   "background": "#0b0907",
+   "layers": [
+    {
+     "shape": "circle",
+     "width": 900,
+     "fill": "#3a2a14",
+     "x": "50%",
+     "y": "36%",
+     "blur": 160,
+     "opacity": 0.55
+    },
+    {
+     "text": "KESTREL",
+     "font": "Cormorant Garamond",
+     "weight": 600,
+     "size": "12vh",
+     "x": "50%",
+     "y": "66%",
+     "color": "#EDE3CC",
+     "letterSpacing": 34,
+     "animate": [
+      {
+       "from": {
+        "letterSpacing": 90,
+        "blur": 16,
+        "opacity": 0
+       },
+       "duration": 1.1,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "shader": "film",
+     "filter": true
+    }
+   ]
+  }
+ ],
+ "sound": {
+  "design": "off",
+  "ambience": {
+   "type": "wind",
+   "level": -20
+  },
+  "space": "hall",
+  "cues": [
+   {
+    "sfx": "tick",
+    "at": 0.129,
+    "gain": -4.0,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 0.266,
+    "gain": -4.3,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 0.413,
+    "gain": -4.6,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 0.573,
+    "gain": -4.9,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 0.75,
+    "gain": -5.2,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 0.951,
+    "gain": -5.5,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 1.189,
+    "gain": -5.8,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 1.5,
+    "gain": -6.1,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 2.25,
+    "gain": -6.4,
+    "pitch": -3
+   },
+   {
+    "sfx": "whoosh-deep",
+    "at": 4.12,
+    "gain": -2,
+    "x": 0.0
+   },
+   {
+    "sfx": "boom",
+    "at": 4.25,
+    "gain": -7
+   },
+   {
+    "sfx": "swell",
+    "at": 3.3,
+    "gain": -12
+   }
+  ]
+ },
+ "music": {
+  "bpm": 60,
+  "key": "D",
+  "end": "ring",
+  "tracks": [
+   {
+    "inst": "cello",
+    "notes": "o2 [D2 A2]:4.25",
+    "at": 0.0,
+    "gain": -8
+   },
+   {
+    "inst": "strings",
+    "notes": "o3 [F#3 A3 D4]:1.0 [G3 B3 E4]:0.95",
+    "at": 2.3,
+    "gain": -6
+   },
+   {
+    "inst": "violin",
+    "notes": "o5 A5:1.9",
+    "at": 2.35,
+    "gain": -14
+   },
+   {
+    "inst": "timpani",
+    "notes": "o2 D2:1!",
+    "at": 4.25,
+    "gain": -3
+   },
+   {
+    "inst": "strings",
+    "notes": "o3 [D2 A2 D3 F#3 A3 E4]:1.75",
+    "at": 4.25,
+    "gain": -3
+   },
+   {
+    "inst": "french-horn",
+    "notes": "o3 [D3 A3]:1.7",
+    "at": 4.25,
+    "gain": -6
+   },
+   {
+    "inst": "harp",
+    "notes": "o4 D4/32 A4/32 D5/32 F#5/32 A5/32 E6:1.4",
+    "at": 4.25,
+    "gain": -6
+   },
+   {
+    "inst": "celesta",
+    "notes": "o5 A5:1.4",
+    "at": 4.55,
+    "gain": -10
+   }
+  ]
+ },
+ "script": [
+  "fn rot(px, py, a) { let c = cos(a); let s = sin(a); [px*c - py*s, px*s + py*c] }",
+  "fn lerp2(a, b, t) { a + (b - a) * t }",
+  "fn wingpts(ph, fold, side) {",
+  "  let open = [[10.0,5.0],[18.0,30.0],[20.0,58.0],[4.0,100.0],[-22.0,150.0],[-40.0,168.0],[-46.0,160.0],[-50.0,140.0],[-52.0,118.0],[-50.0,96.0],[-44.0,70.0],[-40.0,46.0],[-30.0,20.0],[-20.0,5.0]];",
+  "  let shut = [[6.0,5.0],[4.0,12.0],[-6.0,16.0],[-30.0,16.0],[-60.0,14.0],[-92.0,10.0],[-96.0,8.0],[-92.0,7.0],[-84.0,7.0],[-74.0,7.0],[-60.0,7.0],[-46.0,6.0],[-32.0,5.0],[-20.0,4.0]];",
+  "  let tau = 2.0 * PI();",
+  "  let phi = (50.0 * cos(tau * ph) - 6.0) * (1.0 - fold);",
+  "  let phi2 = (58.0 * cos(tau * ph - 0.6) - 4.0) * (1.0 - fold);",
+  "  let sweep = 1.0 - 0.18 * (0.5 + 0.5 * sin(tau * ph));",
+  "  let a1 = phi.to_radians();",
+  "  let a2 = phi2.to_radians();",
+  "  let out = [];",
+  "  let k = 0;",
+  "  for p in open {",
+  "    let q = shut[k];",
+  "    let x = lerp2(p[0], q[0], fold);",
+  "    let z = lerp2(p[1], q[1], fold);",
+  "    let y = 0.0;",
+  "    if z > 58.0 {",
+  "      let zr = 58.0;",
+  "      let dz = (z - 58.0) * sweep;",
+  "      let yy = zr * sin(a1) + dz * sin(a2);",
+  "      let zz = zr * cos(a1) + dz * cos(a2);",
+  "      y = yy; z = zz;",
+  "    } else {",
+  "      y = z * sin(a1); z = z * cos(a1);",
+  "    }",
+  "    out.push([x, y, z * side]);",
+  "    k += 1;",
+  "  }",
+  "  out",
+  "}",
+  "fn proj(p, pitch, yaw) {",
+  "  let r = rot(p[0], p[1], pitch);",
+  "  let zz = -r[0] * sin(yaw) + p[2] * cos(yaw);",
+  "  let el = -0.5;",
+  "  [r[0] * cos(yaw) + p[2] * sin(yaw), r[1] * cos(el) - zz * sin(el)]",
+  "}",
+  "fn screen(pts, pitch, yaw, ox, oy, s, hx, hy) {",
+  "  let out = [];",
+  "  for p in pts {",
+  "    let q = proj(p, pitch, yaw);",
+  "    out.push([ox + s * (q[0] - hx), oy - s * (q[1] - hy)]);",
+  "  }",
+  "  out",
+  "}",
+  "// returns draw items for one bird. ph: wing phase 0..1, fold 0..1, ox/oy head position, s scale",
+  "fn bird(ph, fold, ox, oy, s, pitchdeg, yawdeg, col, far, eye) {",
+  "  let pitch = pitchdeg.to_radians();",
+  "  let yaw = yawdeg.to_radians();",
+  "  let head = proj([56.0, 8.0, 0.0], pitch, yaw);",
+  "  let hx = head[0]; let hy = head[1];",
+  "  let body = [[69.0,6.0,0.0],[66.0,13.0,0.0],[59.0,16.0,0.0],[48.0,14.0,0.0],[34.0,12.0,0.0],[10.0,10.0,0.0],[-20.0,6.0,0.0],[-38.0,3.0,0.0],[-38.0,-3.0,0.0],[-22.0,-9.0,0.0],[4.0,-13.0,0.0],[30.0,-11.0,0.0],[44.0,-6.0,0.0],[56.0,-2.0,0.0],[65.0,0.0,0.0]];",
+  "  let tilt = (-28.0 * (1.0 - fold)).to_radians();",
+  "  let spread = 1.0 - 0.7 * fold;",
+  "  let tail = [];",
+  "  for p in [[0.0,-5.0],[-66.0,-24.0*spread],[-74.0,-12.0*spread],[-77.0,0.0],[-74.0,12.0*spread],[-66.0,24.0*spread],[0.0,5.0]] {",
+  "    let r = rot(p[0], 0.0, tilt);",
+  "    tail.push([-36.0 + r[0], r[1], p[1]]);",
+  "  }",
+  "  let beak = [[67.0,8.0,0.0],[75.0,5.0,0.0],[74.0,0.0,0.0],[67.0,2.0,0.0]];",
+  "  let items = [];",
+  "  items.push(#{ points: screen(wingpts(ph, fold, -1.0), pitch, yaw, ox, oy, s, hx, hy), closed: true, fill: far });",
+  "  items.push(#{ points: screen(tail, pitch, yaw, ox, oy, s, hx, hy), closed: true, smooth: true, fill: col });",
+  "  items.push(#{ points: screen(body, pitch, yaw, ox, oy, s, hx, hy), closed: true, smooth: true, fill: col });",
+  "  items.push(#{ points: screen(beak, pitch, yaw, ox, oy, s, hx, hy), closed: true, fill: col });",
+  "  items.push(#{ points: screen(wingpts(ph, fold, 1.0), pitch, yaw, ox, oy, s, hx, hy), closed: true, fill: col });",
+  "  if eye != \"\" {",
+  "    let e = screen([[61.0, 10.0, 0.0]], pitch, yaw, ox, oy, s, hx, hy)[0];",
+  "    items.push(#{ circle: [e[0], e[1], 2.2 * s], fill: eye });",
+  "  }",
+  "  items",
+  "}",
+  "// ---- scene 0: the projector strip, the gate comes alive, the stoop ----",
+  "let N = \"9.0*(1.0-pow(1.0-clamp(T/2.25,0,1),2))\";",
+  "let S = \"(floor(\" + N + \")+smoothstep(0.45,1,fract(\" + N + \")))\";",
+  "let GX = \"400*(9-\" + S + \")\";",
+  "let WEAVE = \"1.6*noise(T*9)\";",
+  "let L = [];",
+  "// film base",
+  "L.push(#{ shape: \"rect\", width: 7000, height: 400, fill: \"#17120d\", x: \"=960+\" + GX + \"-1600\", y: \"=540+\" + WEAVE });",
+  "for k in 0..16 {",
+  "  let cx = 960.0 + 400.0 * (k.to_float() - 9.0);",
+  "  let pos = \"=\" + cx + \"+\" + GX;",
+  "  let fy = \"=540+\" + WEAVE;",
+  "  // sprocket holes (4 per frame, top and bottom)",
+  "  for j in 0..4 {",
+  "    let hx = cx - 150.0 + j.to_float() * 100.0;",
+  "    L.push(#{ shape: \"rect\", width: 34, height: 22, radius: 5, fill: \"#050403\", x: \"=\" + hx + \"+\" + GX, y: \"=372+\" + WEAVE });",
+  "    L.push(#{ shape: \"rect\", width: 34, height: 22, radius: 5, fill: \"#050403\", x: \"=\" + hx + \"+\" + GX, y: \"=708+\" + WEAVE });",
+  "  }",
+  "  // the plate: paper ground",
+  "  let sky = if k == 9 { \"=mix(#E4D3B0, #F2C978, smoothstep(2.3, 3.2, T))\" } else { \"#E4D3B0\" };",
+  "  L.push(#{ shape: \"rect\", width: 360, height: 270, radius: 8, fill: sky, x: pos, y: fy });",
+  "  // Muybridge backdrop grid: fine ruled lines",
+  "  let gi = [];",
+  "  for g in 0..10 { let gx = cx - 180.0 + 36.0 * g.to_float(); gi.push(#{ line: [gx, 405.0, gx, 675.0], stroke: \"#8a7656\", width: 1.2, opacity: 0.55 }); }",
+  "  for g in 0..7 { let gy = 405.0 + 45.0 * g.to_float(); gi.push(#{ line: [cx - 180.0, gy, cx + 180.0, gy], stroke: \"#8a7656\", width: 1.2, opacity: 0.55 }); }",
+  "  let gop = if k == 9 { \"=1-smoothstep(2.4,3.2,T)\" } else { \"1\" };",
+  "  L.push(#{ draw: gi, x: \"=960+\" + GX, y: \"=540+\" + WEAVE, opacity: gop });",
+  "  // low sun behind the hovering bird (gate frame only)",
+  "  if k == 9 {",
+  "    L.push(#{ shape: \"circle\", width: 120, fill: \"#FFF1CF\", x: 1010, y: 520, opacity: \"=0.9*smoothstep(2.5,3.4,T)\", blur: 6 });",
+  "    L.push(#{ shape: \"circle\", width: 300, fill: \"#FFD98A\", x: 1010, y: 520, opacity: \"=0.5*smoothstep(2.5,3.4,T)\", blur: 40 });",
+  "  }",
+  "  if k == 9 {",
+  "    let hp = [[cx - 180.0, 675.0]];",
+  "    for g in 0..25 { let gx = cx - 180.0 + 15.0 * g.to_float(); hp.push([gx, 618.0 - 9.0 * noise(g.to_float() * 0.35) - 4.0 * sin(g.to_float() * 0.7)]); }",
+  "    hp.push([cx + 180.0, 675.0]);",
+  "    L.push(#{ draw: [#{ points: hp, closed: true, smooth: true, fill: \"#5a3f22\" }], x: \"=960+\" + GX, y: \"=540+\" + WEAVE, opacity: \"=0.85*smoothstep(2.4,3.2,T)\" });",
+  "  }",
+  "  // the bird: plate pose, or live in the gate frame",
+  "  let p0 = k % 6;",
+  "  if k != 9 {",
+  "    L.push(#{ draw: bird(p0.to_float() / 6.0, 0.0, cx + 62.0, 492.0, 0.62, 48.0, 30.0, \"#1b140e\", \"#3b2d22\", \"\"), x: \"=960+\" + GX, y: \"=540+\" + WEAVE });",
+  "  } else {",
+  "    for q in 0..6 {",
+  "      let idx = \"mod(\" + p0 + \"+floor(max(0,T-2.25)*30),6)\";",
+  "      let op = \"=(T<3.85)*(abs(\" + idx + \"-\" + q + \")<0.5)\";",
+  "      L.push(#{ draw: bird(q.to_float() / 6.0, 0.0, cx + 30.0, 488.0, 0.62, 48.0 + 4.0*sin(q.to_float()*1.047), 30.0, \"#1b140e\", \"#3b2d22\", \"#E0A33A\"), x: \"=960+\" + GX, y: \"=540+\" + WEAVE, opacity: op });",
+  "    }",
+  "    L.push(#{ draw: bird(0.0, 1.0, cx + 20.0, 466.0, 0.62, -72.0, 18.0, \"#1b140e\", \"#3b2d22\", \"\"), opacity: \"=T>=3.85\", x: \"=960+\" + GX, y: \"=540+320*pow(clamp((T-3.85)/0.4,0,1),2.2)\" });",
+  "  }",
+  "  // gate: plates away from the aperture sit in shadow",
+  "  L.push(#{ shape: \"rect\", width: 362, height: 272, radius: 8, fill: \"#0c0906\", x: pos, y: fy,",
+  "            opacity: \"=0.72*smoothstep(120,620,abs(\" + cx + \"+\" + GX + \"-960))\" });",
+  "}",
+  "spec.scenes[0].layers = L + spec.scenes[0].layers;",
+  "",
+  "// ---- scene 1: the mark ----",
+  "let M = [];",
+  "for q in 0..6 {",
+  "  let op = \"=abs(mod(floor(T*30),6)-\" + q + \")<0.5\";",
+  "  M.push(#{ draw: bird(q.to_float() / 6.0, 0.0, 1010.0, 300.0, 0.95, 48.0 + 4.0*sin(q.to_float()*1.047), 30.0, \"#D9A441\", \"#8f6a2b\", \"\"), opacity: op,",
+  "            enter: #{ preset: \"fadeIn\", duration: 0.5 } });",
+  "}",
+  "spec.scenes[1].layers = M + spec.scenes[1].layers;",
+  "spec"
+ ]
+}

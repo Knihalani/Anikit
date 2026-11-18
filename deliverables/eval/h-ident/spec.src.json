@@ -1,0 +1,236 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "fonts": {},
+ "motionBlur": {
+  "shutter": 180
+ },
+ "post": {
+  "grain": 0.035,
+  "vignette": 0.35,
+  "halation": 0.25,
+  "bloom": 0.06
+ },
+ "scenes": [
+  {
+   "duration": 4.25,
+   "background": "#0b0907",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.75
+      },
+      "to": {
+       "zoom": 1.45
+      },
+      "duration": 2.25,
+      "ease": "outCubic"
+     },
+     {
+      "to": {
+       "zoom": 5.4
+      },
+      "at": 2.3,
+      "duration": 0.9,
+      "ease": "inOutCubic"
+     },
+     {
+      "to": {
+       "zoom": 5.9
+      },
+      "at": 3.2,
+      "duration": 0.65,
+      "ease": "linear"
+     }
+    ],
+    "shake": {
+     "amount": 3,
+     "at": 4.0,
+     "duration": 0.25
+    }
+   },
+   "layers": [
+    {
+     "shader": "film",
+     "filter": true
+    }
+   ]
+  },
+  {
+   "duration": 1.75,
+   "background": "#0b0907",
+   "layers": [
+    {
+     "shape": "circle",
+     "width": 900,
+     "fill": "#3a2a14",
+     "x": "50%",
+     "y": "36%",
+     "blur": 160,
+     "opacity": 0.55
+    },
+    {
+     "text": "KESTREL",
+     "font": "Cormorant Garamond",
+     "weight": 600,
+     "size": "12vh",
+     "x": "50%",
+     "y": "66%",
+     "color": "#EDE3CC",
+     "letterSpacing": 34,
+     "animate": [
+      {
+       "from": {
+        "letterSpacing": 90,
+        "blur": 16,
+        "opacity": 0
+       },
+       "duration": 1.1,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "shader": "film",
+     "filter": true
+    }
+   ]
+  }
+ ],
+ "sound": {
+  "design": "off",
+  "ambience": {
+   "type": "wind",
+   "level": -20
+  },
+  "space": "hall",
+  "cues": [
+   {
+    "sfx": "tick",
+    "at": 0.129,
+    "gain": -4.0,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 0.266,
+    "gain": -4.3,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 0.413,
+    "gain": -4.6,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 0.573,
+    "gain": -4.9,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 0.75,
+    "gain": -5.2,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 0.951,
+    "gain": -5.5,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 1.189,
+    "gain": -5.8,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 1.5,
+    "gain": -6.1,
+    "pitch": -3
+   },
+   {
+    "sfx": "tick",
+    "at": 2.25,
+    "gain": -6.4,
+    "pitch": -3
+   },
+   {
+    "sfx": "whoosh-deep",
+    "at": 4.12,
+    "gain": -2,
+    "x": 0.0
+   },
+   {
+    "sfx": "boom",
+    "at": 4.25,
+    "gain": -7
+   },
+   {
+    "sfx": "swell",
+    "at": 3.3,
+    "gain": -12
+   }
+  ]
+ },
+ "music": {
+  "bpm": 60,
+  "key": "D",
+  "end": "ring",
+  "tracks": [
+   {
+    "inst": "cello",
+    "notes": "o2 [D2 A2]:4.25",
+    "at": 0.0,
+    "gain": -8
+   },
+   {
+    "inst": "strings",
+    "notes": "o3 [F#3 A3 D4]:1.0 [G3 B3 E4]:0.95",
+    "at": 2.3,
+    "gain": -6
+   },
+   {
+    "inst": "violin",
+    "notes": "o5 A5:1.9",
+    "at": 2.35,
+    "gain": -14
+   },
+   {
+    "inst": "timpani",
+    "notes": "o2 D2:1!",
+    "at": 4.25,
+    "gain": -3
+   },
+   {
+    "inst": "strings",
+    "notes": "o3 [D2 A2 D3 F#3 A3 E4]:1.75",
+    "at": 4.25,
+    "gain": -3
+   },
+   {
+    "inst": "french-horn",
+    "notes": "o3 [D3 A3]:1.7",
+    "at": 4.25,
+    "gain": -6
+   },
+   {
+    "inst": "harp",
+    "notes": "o4 D4/32 A4/32 D5/32 F#5/32 A5/32 E6:1.4",
+    "at": 4.25,
+    "gain": -6
+   },
+   {
+    "inst": "celesta",
+    "notes": "o5 A5:1.4",
+    "at": 4.55,
+    "gain": -10
+   }
+  ]
+ }
+}
