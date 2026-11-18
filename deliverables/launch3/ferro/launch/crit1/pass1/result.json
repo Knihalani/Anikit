@@ -1,0 +1,389 @@
+{
+  "name": "pass1",
+  "tags": [
+    "product-launch",
+    "cg-3d"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "da-vincis-demons"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4.0,
+      "composition": 5.0,
+      "typography": 3.0,
+      "colour": 5.5,
+      "light_texture": 4.0,
+      "motion": 5.0,
+      "craft": 3.0,
+      "originality": 3.5
+    },
+    "overall": 4.12,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 3,
+    "gaps": [
+      "Make the product truth visible: show the weight (a balance, a flip, a single-finger lift, slow-motion physics) instead of writing it on the floor",
+      "Invest in materials and food: realistic seasoned cast iron, translucent egg white, believable ingredients, sizzle and steam",
+      "Give the type a point of view: a custom or carefully chosen wordmark integrated into the scene's light and perspective, not default bold italic sans",
+      "Dramatise the one claim, lightness, with a specific visual idea (balance, float, counterweight) instead of generic falling ingredients",
+      "Give the pan and food real material: seasoned-iron sheen, oil, egg translucency, steam. Light them with intent rather than a stock gobo",
+      "Replace default bold-sans-with-shadow with a typographic system tied to the brand and integrated into the space"
+    ],
+    "tells": [
+      "The idea is literal: pan, ingredients drop in, tagline, logo, 'Back it on Kickstarter'. The claim 'half the weight' is stated in text and never demonstrated visually",
+      "Simple 3D modelling: the eggs, tomatoes and mushrooms are primitive discs and spheres, and the pan has no cast-iron material detail (no seasoning, grain or specular character)",
+      "Default heavy-italic grotesk logo and generic bold sans tagline, laid flat on the floor like a slide, with a drop-shadow CTA",
+      "A single orange room with a window-grid shadow is the only lighting idea, repeated in every frame; the shadow is pleasant, but the light is otherwise flat and the materials are untextured",
+      "Square social format and a Kickstarter end card point to a small-budget or self-produced piece",
+      "An empty orange room with a window-grid gobo shadow is a stock 3D-tutorial set-up. The light is a clich\u00e9, not motivated by any story",
+      "Food elements are low-detail primitives (flat egg discs, sphere tomatoes, untextured mushrooms) with no material credibility, the opposite of what a cookware product needs",
+      "Typography is a default heavy grotesk ('FERRO', 'Cast iron, half the weight.') with a generic drop shadow, plus a centred 'Back it on Kickstarter' line set like a slide",
+      "The idea is literal: ingredients fall into the pan and the product name appears. Nothing visualises the actual claim ('half the weight')",
+      "Motion does show some intent (toss, fall, settle, pull-back to wide), which lifts it above pure automation"
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 2.94,
+      "judged_professional": "0/2",
+      "mean_rank": 4
+    },
+    "tiffany-holiday": {
+      "overall": 7.31,
+      "judged_professional": "2/2",
+      "mean_rank": 2
+    },
+    "da-vincis-demons": {
+      "overall": 7.75,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 6.0,
+  "delta": -1.88,
+  "trials": [
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A specific concept tied to its subject: Leonardo's notebooks (Vitruvian Man, Mona Lisa, machine sketches, mirror-script pages) are layered with painted cloud, architecture and character portraits, so the world of the show is built out of his own drawings",
+              "Dense, layered frames: line drawing, ink spatter, parchment grain and painterly light are composited in depth, and every frame works as a poster",
+              "Deliberate palette of bruised violet, sepia and umber kept consistent through the whole sequence, with light used to reveal subjects (a glow behind the Vitruvian figure, a backlit face looking upward)",
+              "Credits are set in a classical small-caps serif with role labels in smaller caps, placed in each composition's negative space instead of a fixed slide position",
+              "The frames vary in scale and subject (cosmic, architectural, intimate portrait, mechanical), which suggests camera moves through layered 2.5D planes and real choreography"
+            ],
+            "gaps": [
+              "The credit typography is safe and conventional (a trajan-like small-caps serif); a more ownable treatment, for example type that inherits the mirror-script or ink logic, would lift it",
+              "The illustrated character portraits lean slightly toward comic-book rendering and are less refined than the archival material around them",
+              "The heavy grunge and spatter texture is a period-typical look; trimming it would make the authored layers read more clearly"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A narrative device that carries the film: a jewelled bird and its trail of sparkle lead the viewer through a New York holiday world (clock face, taxi seen from overhead, ballet stage, brownstone facade, dining table)",
+              "Real cinematographic light: shallow depth of field, practical window light, footlights on the stage and string lights on the facade",
+              "Varied camera language (macro, top-down, wide stage, exterior, interior tabletop) implies choreographed travel between scenes",
+              "No type appears in the sampled frames; for a luxury brand narrative, leaving it out lets the image carry the film",
+              "Against that, the last frame (a painted desert mesa with a shirtless figure) breaks the visual language and reads as a different film or as stitched or generated material, so confidence is lowered"
+            ],
+            "gaps": [
+              "Stylistic consistency: the painted desert frame does not belong to the jewelled-bird world and weakens trust in the craft",
+              "The idea (magic sparkle trail through a festive city) is the standard luxury-holiday trope; it needs a twist only this brand could own, the way A's material is taken from the subject itself",
+              "The sparkle particle trails are generic effects; they need a more designed, specific material behaviour"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 3,
+              "colour": 6,
+              "light_texture": 4,
+              "motion": 5,
+              "craft": 3,
+              "originality": 4
+            },
+            "tells": [
+              "The idea is literal: pan, ingredients drop in, tagline, logo, 'Back it on Kickstarter'. The claim 'half the weight' is stated in text and never demonstrated visually",
+              "Simple 3D modelling: the eggs, tomatoes and mushrooms are primitive discs and spheres, and the pan has no cast-iron material detail (no seasoning, grain or specular character)",
+              "Default heavy-italic grotesk logo and generic bold sans tagline, laid flat on the floor like a slide, with a drop-shadow CTA",
+              "A single orange room with a window-grid shadow is the only lighting idea, repeated in every frame; the shadow is pleasant, but the light is otherwise flat and the materials are untextured",
+              "Square social format and a Kickstarter end card point to a small-budget or self-produced piece"
+            ],
+            "gaps": [
+              "Make the product truth visible: show the weight (a balance, a flip, a single-finger lift, slow-motion physics) instead of writing it on the floor",
+              "Invest in materials and food: realistic seasoned cast iron, translucent egg white, believable ingredients, sizzle and steam",
+              "Give the type a point of view: a custom or carefully chosen wordmark integrated into the scene's light and perspective, not default bold italic sans"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 2,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeats in every frame: one centred, circular object on a seamless pastel or cream ground, with the words-swapped-on-a-slide structure applied to objects",
+              "Unrelated subjects (earbuds case, steering wheel with floating traffic icons, cannabis ball, plug in a vault door, chess-screen ball TV, glowing tech ring) with no narrative link; this looks like a prompt batch, not a film",
+              "Generic 'tasteful AI' render look: soft studio light, plastic-smooth surfaces, placeholder-style UI pills (traffic icons in white circles)",
+              "Inconsistent aspect ratios between frames suggest assets collected rather than designed as one piece",
+              "No typography at all, and its absence does nothing for the piece: there is no message, brand or idea for the image to carry",
+              "Frames give no sign of motion or choreography; each looks like a static hero still"
+            ],
+            "gaps": [
+              "An idea: one concept that connects the objects (transformation, a shared mechanism, a story) instead of a carousel of centred renders",
+              "Composition and camera: break the centred-object-on-seamless template with scale contrast, cropping, environment and layers like A's",
+              "A deliberate palette, real material texture and motivated light, plus typography or narrative that gives a viewer something to remember"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 34.9,
+        "cost_usd": 0.17851619999999999,
+        "tokens": 72341,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A specific conceit: Leonardo's notebook drawings (Vitruvian Man, Mona Lisa, flying machines, mirror-script pages) layered with painted, inked portraits of the characters, so the subject's own visual world becomes the title's language",
+              "Dense, layered frames: hand-drawn line work, painted skies, ink spatter, parchment grain and duotone grading all sit together in each shot",
+              "Deliberate split palette of bruised violet and sepia/umber that changes from frame to frame and holds together as one grade",
+              "Typography is a classical small-caps serif with role/name hierarchy ('consulting producer' / BRIAN NELSON). It is placed into negative space inside each composition, not set like a slide",
+              "Composition changes every frame: wide architectural perspective lines, extreme close-up of a quill, split Mona Lisa horizon with a rider silhouette, low-angle portrait framed by an arc. This implies camera moves and transitions through the drawings"
+            ],
+            "gaps": [
+              "The Leonardo iconography (Vitruvian Man, Mona Lisa) is the most obvious source to quote. It needs a less expected motif to reach the surprise of the best title work",
+              "The credit typography is safe period serif with no interaction with the imagery (no ink-writing, mirroring or perspective-mapping of the names)",
+              "Some frames lean on overlay/texture compositing that reads slightly 'Photoshop collage'. Tighter control of the grunge layers would sharpen the finish"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A narrative through-line: a jewelled bird hero (diamond-pav\u00e9 wings, gold detail) travels through a city across clock face, overhead street, stage, brownstone fa\u00e7ade and dinner table, ending in a painted desert",
+              "Real cinematic lighting: shallow depth of field, practical bokeh, warm interior candlelight against cool exterior blue, stage backlight on the dancer",
+              "Strong camera variety: macro, top-down aerial with a yellow taxi as a colour accent, wide stage, mid-shot fa\u00e7ade. The sparkle trail gives continuity between scenes, which is evidence of choreography",
+              "Style shift in the final frame (painterly Monument Valley) suggests a designed structural turn, not a single-look render",
+              "No type visible in the sampled frames. That suits a luxury brand film, but it gets a neutral score"
+            ],
+            "gaps": [
+              "The idea, a magic jewel flying through a festive city, is a familiar luxury-holiday trope. It needs a sharper conceit to be memorable",
+              "No typographic presence at all. A considered end card or integrated type would complete it as a designed piece",
+              "The jump to the painted desert is not visually bridged in the samples. That stylistic seam needs to feel as authored as A's consistent grade"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 5,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "An empty orange room with a window-grid gobo shadow is a stock 3D-tutorial set-up. The light is a clich\u00e9, not motivated by any story",
+              "Food elements are low-detail primitives (flat egg discs, sphere tomatoes, untextured mushrooms) with no material credibility, the opposite of what a cookware product needs",
+              "Typography is a default heavy grotesk ('FERRO', 'Cast iron, half the weight.') with a generic drop shadow, plus a centred 'Back it on Kickstarter' line set like a slide",
+              "The idea is literal: ingredients fall into the pan and the product name appears. Nothing visualises the actual claim ('half the weight')",
+              "Motion does show some intent (toss, fall, settle, pull-back to wide), which lifts it above pure automation"
+            ],
+            "gaps": [
+              "Dramatise the one claim, lightness, with a specific visual idea (balance, float, counterweight) instead of generic falling ingredients",
+              "Give the pan and food real material: seasoned-iron sheen, oil, egg translucency, steam. Light them with intent rather than a stock gobo",
+              "Replace default bold-sans-with-shadow with a typographic system tied to the brand and integrated into the space"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Every frame uses the same composition: one centred object on a soft cream/pastel seamless ground, swapped out each time. This is slide-deck structure with no choreography between frames",
+              "Unrelated subjects (earbuds, steering wheel, cannabis bud, wall plug, chess-screen TV, glowing chip ring) with no connecting idea: effect with no subject",
+              "Placeholder UI: generic circular icon pills (yield, no-entry, traffic light, arrow) floating around the steering wheel",
+              "AI tells in the detail: the chess board has a nonsensical piece layout, the plug/portal object is ambiguous, and the materials have the uniform 'tasteful render' sheen",
+              "No type at all, and nothing in its absence carries meaning. The empty frames rely only on object rendering"
+            ],
+            "gaps": [
+              "There is no concept connecting the objects. It needs a single idea that motivates each transformation and the order of the frames",
+              "Composition never varies (always centred, always floating). Introduce scale, cropping, camera movement and interaction between frames",
+              "Replace generic icons and incoherent details with designed, logically correct elements, and add real lighting/material choices beyond a soft studio default"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 35.1,
+        "cost_usd": 0.16604,
+        "tokens": 72354,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 6
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "The 6.0 s shot holds without a clear reason. Motion is busiest at 1\u20133 s and then sinks to 6\u201312 per second through the middle, so energy peaks early and goes slack.",
+        "The ingredients fall with almost no motion blur. In the pairs they move like evenly spaced CG props with no squash, settle or weight on landing, and the pancake drops into the pan with no impact.",
+        "Frame 3 is a wide shot with the pan tiny in the corner. It has no subject and reads as dead air.",
+        "'Cast iron, half the weight.' lies flat on the floor in perspective and is partly hidden by falling food. It is hard to read, and the type does nothing with the claim.",
+        "The food models are plain and plasticky: smooth spheres for tomatoes, flat discs for eggs, and no specular variety. The pan has no cast-iron texture or seasoning sheen, so the product looks like generic black plastic.",
+        "The end card mixes a 3D extruded 'FERRO' with a flat 2D overlay line, and the two sit in different lighting and depth.",
+        "The pan's position and angle change from shot to shot with no match cuts, so the edit reads as separate renders rather than one continuous choreography.",
+        "The soundtrack is a steady loop of evenly spaced transients with almost no change in dynamics. There is no build, no drop that lines up with the brand reveal, and no foley for the sizzle, clank or landings."
+      ],
+      "gaps": [
+        "Choreography and weight: the idea is a light pan, so weight should drive the motion. The pan could be tossed or lifted and caught with no effort, against heavy food hitting the surface with real squash and settle, blur and contact shadows. Right now evenly spaced objects fall into a static pan.",
+        "Structure and pacing: there is no build to a peak at 60\u201380%. The film opens at its busiest, then drifts through long holds and a weak wide shot. It needs shots of about 2 s or less, linked by match cuts or motivated camera moves.",
+        "Sound and finish: replace the flat loop with a scored build and real sound design, timed to the cuts and the logo. Bring the materials up to studio standard: a textured, seasoned iron finish with real specular highlights, food that doesn't look like plastic, and type composed in the same space as the scene."
+      ]
+    },
+    "meta": {
+      "seconds": 22.2,
+      "cost_usd": 0.1856142,
+      "tokens": 74960,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass1.mp4: 20.0s, 7 shots, median 2.00s, longest 6.00s\nper-second change: [10.5, 50.7, 39.5, 32.8, 11.1, 37.4, 30.1, 36.7, 11.0, 15.1, 9.2, 17.0, 5.9, 24.7, 18.1, 32.0, 11.9, 24.0, 11.6]\nPACE: FAIL \u2014 longest shot 6.0s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 4.0,
+    "composition": 5.0,
+    "typography": 3.0,
+    "colour": 5.5,
+    "light_texture": 4.0,
+    "motion": 5.0,
+    "craft": 4.5,
+    "originality": 3.5,
+    "sound": 5
+  },
+  "full_overall": 4.39,
+  "cost_usd": 0.53,
+  "judge_seconds": 92.2,
+  "verdict": "FAIL"
+}

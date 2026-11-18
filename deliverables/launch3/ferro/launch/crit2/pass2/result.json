@@ -1,0 +1,390 @@
+{
+  "name": "pass2",
+  "tags": [
+    "product-launch",
+    "cg-3d"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "da-vincis-demons"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4.0,
+      "composition": 3.0,
+      "typography": 2.0,
+      "colour": 3.0,
+      "light_texture": 4.0,
+      "motion": 3.0,
+      "craft": 3.0,
+      "originality": 3.0
+    },
+    "overall": 3.12,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 3,
+    "gaps": [
+      "No idea beyond the literal diagram. It needs a memorable metaphor for lightness that only cast iron could carry",
+      "Material and lighting craft: real iron patina, seasoning sheen and motivated light, not a grey sweep with one gobo",
+      "Typography needs a system (a chosen face, hierarchy, integration with the image), not extruded display text and labels on the props",
+      "It needs an idea beyond the diagram, a way to make lightness felt (a pan that floats, a wrist test, real cooking), rather than a balance scale",
+      "Real material craft is missing: seasoned iron texture, oil sheen, food and steam, and lighting that sells weight and heat",
+      "The type needs a point of view, a chosen or custom face integrated with the image and with scale contrast, not default slab caps glued to the props"
+    ],
+    "tells": [
+      "The idea is literal and obvious: a balance scale with two pans to say 'half the weight'",
+      "Default-looking Blender scene: a grey sweep backdrop, a single window-gobo light pattern (stock HDRI/cookie), untextured mustard-gold plastic material and a low-poly pan",
+      "Typography is a generic heavy slab/grunge display face extruded as 3D text ('FE' builds to 'FERRO'), with tiny unreadable 'HALF THE WEIGHT' on the beam and 'BACK IT ON KICKSTARTER' slapped onto the base",
+      "The same object is orbited from a few angles. Little happens besides a camera move and a tilt of the scale",
+      "The defocused foreground in the first frame looks like accidental depth of field, not a designed shot",
+      "A literal, obvious idea: two pans on a balance scale to say 'half the weight'",
+      "Typography is a default chunky slab in black, set flat on the beam, the base and as floating extruded letters 'FE'/'FERRO'; there's no hierarchy or craft, and 'BACK IT ON KICKSTARTER' is set like a caption",
+      "Stock 3D setup: a grey cyclorama, a window-gobo shadow on the floor and plain gold and black materials, with no surface detail on the cast iron",
+      "The camera just orbits one prop; the last two frames repeat the same frontal composition",
+      "Muddy, low-contrast palette with flat grey dominating"
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 3.0,
+      "judged_professional": "0/2",
+      "mean_rank": 4
+    },
+    "tiffany-holiday": {
+      "overall": 7.94,
+      "judged_professional": "2/2",
+      "mean_rank": 1.5
+    },
+    "da-vincis-demons": {
+      "overall": 7.75,
+      "judged_professional": "2/2",
+      "mean_rank": 1.5
+    }
+  },
+  "ref_mean": 6.23,
+  "delta": -3.11,
+  "trials": [
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A specific concept tied to its subject: Leonardo's notebooks (Vitruvian Man, the Mona Lisa, flying-machine sketches, mirror-script pages) are layered with live-action-derived illustration, so the sequence works as a visual biography",
+              "Dense, multi-layered frames: ink line work over painted skies, grain, ink spatter and parchment texture, plus perspective rays fanning out from the dome",
+              "A deliberate, limited palette of bruised violet, sepia and umber that holds across every frame",
+              "Credits set in a small-caps classical serif and placed differently in each frame so they sit inside the image (inside the orbit arc, on the horizon line); not a slide layout",
+              "Variety of shot types across the frames (cosmic diagram, architecture, extreme close-up of the pen, split-face composite, upward portrait, machine schematic) suggests choreographed transitions and changes of scale"
+            ],
+            "gaps": [
+              "The type is tasteful but conventional for a period title sequence. Custom lettering drawn from Leonardo's own mirror hand would give it a point of view",
+              "The textured-grunge overlay look dates it. Fewer, more decisive layers would make each frame read faster as a poster",
+              "Some frames lean on famous artworks for recognition (Mona Lisa, Vitruvian Man). D invents its imagery rather than quoting it"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A narrative thread: a jewelled bird-brooch carries a sparkle trail through a city at night (clock face, overhead taxi corner, ballet stage, brownstone balcony, dinner table) and then into a painted desert. This is a guided journey with a protagonist, not a set of object shots",
+              "Real cinematic lighting: practical lights, string lights, motivated stage lighting, shallow depth of field with believable bokeh, and a warm/cool contrast that changes from scene to scene",
+              "Strong variety of camera language (macro, top-down, wide stage shot, low-angle architecture, tabletop, over-the-shoulder), which implies complex camera moves and match transitions",
+              "The jump to a painterly desert in the last frame is a genuine surprise and a change of medium",
+              "Highly detailed set dressing and material rendering (facets of the gems, porcelain, brick, glass)"
+            ],
+            "gaps": [
+              "No typography is visible in the sampled frames. The image carries the piece well, but a closing type idea at the same level would complete it (scored as competent absence)",
+              "Sparkle-trail-as-connector is a familiar luxury-holiday device. The bird needs a more distinctive behaviour to make the piece unmistakable",
+              "The shift to the painted desert risks reading as a separate film. The choreography between the two worlds needs a clearer bridge"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The idea is literal and obvious: a balance scale with two pans to say 'half the weight'",
+              "Default-looking Blender scene: a grey sweep backdrop, a single window-gobo light pattern (stock HDRI/cookie), untextured mustard-gold plastic material and a low-poly pan",
+              "Typography is a generic heavy slab/grunge display face extruded as 3D text ('FE' builds to 'FERRO'), with tiny unreadable 'HALF THE WEIGHT' on the beam and 'BACK IT ON KICKSTARTER' slapped onto the base",
+              "The same object is orbited from a few angles. Little happens besides a camera move and a tilt of the scale",
+              "The defocused foreground in the first frame looks like accidental depth of field, not a designed shot"
+            ],
+            "gaps": [
+              "No idea beyond the literal diagram. It needs a memorable metaphor for lightness that only cast iron could carry",
+              "Material and lighting craft: real iron patina, seasoning sheen and motivated light, not a grey sweep with one gobo",
+              "Typography needs a system (a chosen face, hierarchy, integration with the image), not extruded display text and labels on the props"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Every frame repeats one composition: a single centred circular object on a flat pastel or cream ground with a soft drop shadow",
+              "The subjects are unrelated (earbuds, a steering wheel with road-sign icons, a cannabis bud, a plug in a porthole, a chess CRT, a glowing sci-fi ring) with no idea connecting them. This is effect without subject",
+              "Clip-art UI overlays on the steering wheel (yield, no-entry and traffic-light icons in white pills) are placeholder-style graphics",
+              "The polished-but-generic 'tasteful AI render' look: soft studio light everywhere, plasticky surfaces, symmetric product-shot framing, and inconsistent aspect ratios and styles between frames",
+              "No visible typography and no evidence of choreography between frames; they read as separate stills"
+            ],
+            "gaps": [
+              "It needs a single idea and a narrative or graphic system linking the objects. Right now it is an image dump",
+              "Composition and camera: break the centred-object-on-sweep formula with scale contrast, cropping, depth and environments the way D does",
+              "Consistent art direction (one palette, one lighting world, one material language) plus typography or graphic integration with a point of view"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 31.8,
+        "cost_usd": 0.1590768,
+        "tokens": 72017,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The idea belongs to this subject only: Da Vinci's notebook drawings (Vitruvian Man, St Peter's perspective lines, mechanical sketches, Mona Lisa) are layered with hand-inked figures of the characters, so the period imagery and the cast share one visual language",
+              "Every frame is layered: parchment grain, ink spatter, mirror-script handwriting, cloud mattes and construction lines all stack in depth",
+              "A deliberate, unusual palette of bruised violet, sepia and umber, kept consistent but with a different temperature in each frame",
+              "The compositions vary (wide architectural, macro pen nib, split Mona Lisa and horizon, upward portrait, diagonal crossbow), which implies real choreography and camera moves through the drawn world",
+              "Light is motivated: glow behind the Vitruvian figure and rim-lit faces cut out of dark ink"
+            ],
+            "gaps": [
+              "The credit type is a conventional Trajan-style small-caps set in a predictable spot; it should be drawn into the world as ink, mirror-script or engraved construction lines",
+              "Some frames come close to a grungy Photoshop-texture look; the overlays could be fewer and more specific so the drawing reads cleaner",
+              "The illustrated portraits are slightly comic-book in rendering compared with the Leonardo source material; matching the hand-drawn line quality would tighten it"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A narrative device: a jewelled bird carries the story through a clock face, a top-down Manhattan street with a yellow cab, a stage, a brownstone facade and a dinner table, and its sparkle trail ties the shots together",
+              "Real cinematography: shallow depth of field, practical candle and window light, festoon bokeh, a hard theatrical top light on the dancer",
+              "The camera varies (macro, overhead, wide stage, low-angle facade, interior), which shows staged choreography rather than one repeated layout",
+              "Rich material detail in the pav\u00e9 wings, tableware and brickwork",
+              "There is no type in the sampled frames; for a luxury film the absence works because the object speaks, though the end card can't be judged"
+            ],
+            "gaps": [
+              "The final painterly desert-butte frame breaks the visual system; the stylistic shift needs a clearer bridge or a reason",
+              "The sparkle-trail magic is a familiar holiday-luxury convention; it needs a more surprising transformation that only this jewel could make",
+              "Branding and typography aren't visible; a tailored end card would turn a beautiful spot into a memorable one"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "A literal, obvious idea: two pans on a balance scale to say 'half the weight'",
+              "Typography is a default chunky slab in black, set flat on the beam, the base and as floating extruded letters 'FE'/'FERRO'; there's no hierarchy or craft, and 'BACK IT ON KICKSTARTER' is set like a caption",
+              "Stock 3D setup: a grey cyclorama, a window-gobo shadow on the floor and plain gold and black materials, with no surface detail on the cast iron",
+              "The camera just orbits one prop; the last two frames repeat the same frontal composition",
+              "Muddy, low-contrast palette with flat grey dominating"
+            ],
+            "gaps": [
+              "It needs an idea beyond the diagram, a way to make lightness felt (a pan that floats, a wrist test, real cooking), rather than a balance scale",
+              "Real material craft is missing: seasoned iron texture, oil sheen, food and steam, and lighting that sells weight and heat",
+              "The type needs a point of view, a chosen or custom face integrated with the image and with scale contrast, not default slab caps glued to the props"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition in every frame: one centred object on a flat pastel cream, blush or teal ground, with lots of empty space",
+              "Unrelated subjects (earbuds, a steering wheel with floating UI pills, a cannabis bud sphere, a plug in a portal, a ball-shaped retro TV showing chess, a glowing X ring) with no connecting idea, which is a slideshow of prompts",
+              "Generic 'tasteful AI' rendering: soft even light, smooth plasticky materials, placeholder-icon badges around the wheel",
+              "The objects are centred, symmetrical circles every time, and the frames imply only a swap of objects with no camera move or choreography",
+              "There is no type, and its absence doesn't serve anything because there's no message or brand to carry"
+            ],
+            "gaps": [
+              "It needs a single specific idea or narrative that links the frames, where C has a bird carrying the story through every scene",
+              "The framing, scale and camera should change between frames, with choreographed transitions instead of a centred object on an empty backdrop",
+              "Light should be motivated and textured (practical sources, depth of field, real material imperfection) in place of uniform pastel studio light"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 31.8,
+        "cost_usd": 0.1606766,
+        "tokens": 72093,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 4,
+        "craft": 4
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "'HALF THE WEIGHT' on the beam is z-fighting: it renders as doubled, garbled letters in the low-angle shot (pairs row 2).",
+        "The 'BACK IT ON KICKSTARTER' letters cut into the base and the floor, so the bottoms are cut off and the CTA is hard to read.",
+        "The 'FERRO' wordmark appears one letter at a time ('FE' then 'FER'), with no easing, overshoot or settle; each letter just appears.",
+        "The opening frame is so out of focus that the hero pan reads as a mistake rather than a choice.",
+        "The pans look simple and low-detail, with flat plastic shading. The cast iron has no seasoning, micro-roughness or rim highlights, so it does not look like iron.",
+        "The beam tilts in a smooth, weightless arc. There is no overshoot, damped oscillation or settle when the weight changes, which is the entire premise.",
+        "The film has visible grain/noise and soft, slightly smeared detail at 100%, apparently from denoising or compression, not deliberate grain.",
+        "The story is muddled: 'half the weight' ends on a level beam, which suggests the two pans weigh the same.",
+        "The soundtrack cuts out completely for about 1.5 s (\u224812.5\u201314.2 s) with a hard tail and an abrupt restart. It sounds like a stem gap, not a designed drop.",
+        "The music is a steady loop of evenly spaced percussive hits. There are no Foley clanks, metal ring or beam creak to sell the weight."
+      ],
+      "gaps": [
+        "Weight is the concept but nothing in the animation has weight. The pans land with no drop or impact, and the beam has no overshoot, springy settle or secondary motion in the plates and pans. A top studio would build the whole piece around one decisive tip and slow settle.",
+        "The camera choreography is slow orbits and drifts across six long shots, with one 6 s hold and frames that barely change. There is no build to a peak at 60\u201380%, and the wordmark reveal at the end is the only real event. The cuts are not motivated or matched, and there is no transition design.",
+        "The sound has no sound design and is not tied to the picture. It is a uniform loop with an unexplained dropout, with no metal, cast-iron or impact Foley, no hits matched to the beam tipping or the logo landing, and no dynamic arc. Finish is also below studio level: the type has z-fighting and clipping, the materials are generic and the denoise is noisy."
+      ]
+    },
+    "meta": {
+      "seconds": 23.9,
+      "cost_usd": 0.1872684,
+      "tokens": 75104,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass2.mp4: 20.0s, 6 shots, median 2.50s, longest 6.00s\nper-second change: [33.6, 58.1, 9.9, 10.0, 27.1, 6.0, 52.7, 11.3, 19.0, 58.1, 10.5, 32.2, 4.2, 43.1, 18.6, 14.6, 11.2, 5.5, 2.2]\nPACE: FAIL \u2014 longest shot 6.0s > 2.5s; median shot 2.5s > 2.0s; 4/19 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 4.0,
+    "composition": 3.0,
+    "typography": 2.0,
+    "colour": 3.0,
+    "light_texture": 4.0,
+    "motion": 3.5,
+    "craft": 3.5,
+    "originality": 3.0,
+    "sound": 4
+  },
+  "full_overall": 3.33,
+  "cost_usd": 0.507,
+  "judge_seconds": 87.5,
+  "verdict": "FAIL"
+}
