@@ -113,7 +113,9 @@ impl CompTextures {
                     super::scale_list(&mut l, 0.5f32.powi(lod as i32));
                     l
                 });
-                Arc::new(self.render(comp, &l))
+                // Isolated: while this cell initialises, waiting on rayon must not
+                // run another frame on this thread (it could ask for this cell).
+                Arc::new(crate::scene3d::kernel::par::isolated(|| self.render(comp, &l)))
             })
             .clone();
         // Account for it and evict the least recently used beyond the cap.
