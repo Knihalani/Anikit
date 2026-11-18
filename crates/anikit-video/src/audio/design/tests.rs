@@ -470,3 +470,18 @@ fn sound_design_steps_back_under_voice() {
     assert!(10.0 * (under / clear).log10() < -4.0, "{clear} {under}");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn auto_survives_shader_channels_and_nested_layers() {
+    // Layers inside a shader channel tag their own nested display lists.
+    let spec = serde_json::json!({
+        "size": [320, 180], "sound": "auto",
+        "scenes": [{ "duration": 2, "layers": [
+            { "shader": "void mainImage(out vec4 o, in vec2 f) { o = texture(iChannel0, f / iResolution.xy); }",
+              "channels": [{ "layers": [{ "text": "HELLO", "animate": [{ "from": { "x": -100 }, "duration": 0.5 }] }] }] },
+            { "layers": [{ "shape": "rect", "width": 40, "height": 40, "fill": "#fff", "animate": [{ "from": { "y": -60 }, "duration": 0.4 }] }] }
+        ] }]
+    });
+    let ev = evaluator(spec);
+    let _ = auto::plan_cues(&ev, ev.sound.as_ref().unwrap());
+}
