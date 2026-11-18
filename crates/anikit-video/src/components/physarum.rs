@@ -298,7 +298,9 @@ impl Physarum {
             .with_min_len(4096)
             .enumerate()
             .for_each(|(i, value)| {
-                *value = field[i] + sc.dep[i].swap(0, Ordering::Relaxed) as f32 / FIX + mask.map(|m| m[i] * attract).unwrap_or(0.0);
+                let d = sc.dep[i].load(Ordering::Relaxed);
+                sc.dep[i].store(0, Ordering::Relaxed);
+                *value = field[i] + d as f32 / FIX + mask.map(|m| m[i] * attract).unwrap_or(0.0);
             });
         let src = &sc.src;
         let (dif, keep) = (self.diffuse, self.decay);
