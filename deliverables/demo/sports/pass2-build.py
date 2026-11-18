@@ -170,15 +170,14 @@ spec = {
              {"text": "TONIGHT", "font": FONT, "weight": 800, "size": "8vh", "color": CREAM, "letterSpacing": "0.06em",
               "x": "50%", "y": "88%", "animate": slam(0.45, 1.1, 6)}]},
         # 6. lockup on the pitch
-        {"duration": 2.5, "transition": "cut", "background": "#0B1A10",
-         "camera": {"animate": [{"from": {"zoom": 1.25}, "to": {"zoom": 1.0}, "duration": 2.5, "ease": "outQuart"}]},
+        {"duration": 1.5, "transition": "cut", "background": "#0B1A10",
+         "camera": {"animate": [{"from": {"zoom": 1.25}, "to": {"zoom": 1.0}, "duration": 1.5, "ease": "outQuart"}]},
          "layers": pitch_layers(-5, -5) + [
              {"shape": "rect", "width": 1100, "height": 1600, "x": 410, "y": CY, "fill": CRIMSON, "blend": "multiply", "opacity": 0.9, "inertia": "tight", "smear": 1,
               "animate": [{"from": {"x": -700}, "duration": 0.3, "ease": "outExpo"}]},
              {"shape": "rect", "width": 1100, "height": 1600, "x": 1510, "y": CY, "fill": "#0B7C8A", "blend": "multiply", "opacity": 0.9, "inertia": "tight", "smear": 1,
               "animate": [{"from": {"x": 2620}, "duration": 0.3, "ease": "outExpo"}]},
-             {"dots": {"data": on, "size": 34, "color": "#FFF1D2", "appear": "=clamp((t-0.55)*%d - i, 0, 1)" % int(N * 3)},
-              "glow": {"radius": 30, "intensity": 0.7, "color": "#FFD99A"}, "opacity": 0.26},
+
              {"text": "NORTHBRIDGE\nCITY", "font": FONT, "weight": 900, "size": "10vh", "lineHeight": 0.88, "color": CREAM, "align": "right",
               "x": "33%", "y": "50%", "anchor": "right", "animate": slam(0.15)},
              {"text": "HARBOUR\nATHLETIC", "font": FONT, "weight": 900, "size": "10vh", "lineHeight": 0.88, "color": CREAM, "align": "left",
@@ -187,6 +186,14 @@ spec = {
               "x": "50%", "y": "10%", "animate": slam(0.5, 1.1, 6, 0.3)},
              {"text": "TONIGHT", "font": FONT, "weight": 800, "size": "7vh", "color": "#FFE7B8", "letterSpacing": "0.08em",
               "x": "50%", "y": "89%", "animate": slam(0.9, 1.1, 6, 0.3)}]},
+
+        # 7. payoff: the floodlights ARE the clock, pushed in until the bulbs fill the frame
+        {"duration": 1.0, "transition": "cut", "background": "#05080E",
+         "camera": {"animate": [{"from": {"zoom": 2.1, "x": -120}, "to": {"zoom": 2.9, "x": -60}, "duration": 1.0, "ease": "outQuart"}]},
+         "layers": [
+             {"shape": "rect", "width": 2400, "height": 1400, "fill": "radial-gradient(#1A2230, #05080E)"},
+             {"dots": {"data": off, "size": 30, "color": "#1C2230"}},
+             {"dots": {"data": on, "size": 34, "color": "#FFF1D2"}, "glow": {"radius": 30, "intensity": 1.2, "color": "#FFD99A"}}]},
     ],
 }
 json.dump(spec, open("spec.json", "w"), indent=1)
