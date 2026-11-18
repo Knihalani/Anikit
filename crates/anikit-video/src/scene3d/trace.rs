@@ -23,6 +23,7 @@
 //! * **Haze:** exponential fog towards the haze colour.
 
 use super::bvh::{Bvh, Tlas};
+use super::kernel::wide::{Near, TriHit, NEAR_K};
 use super::env::Env;
 use super::math::*;
 use std::sync::Arc;
@@ -239,6 +240,28 @@ impl Shape {
         }
     }
 
+    /// Merge the nearest hits in `(tmin, tmax)` into `near` (see [`Near`]).
+    fn nearest(&self, o: V3, d: V3, tmin: f32, tmax: f32, near: &mut Near<TriHit>) {
+        match self {
+            Shape::Mesh(b) => b.nearest(o, d, tmin, tmax, near),
+            Shape::Sphere => {
+                // Both roots, as successive closest-hit queries find them.
+                let a = dot(d, d);
+                let b = dot(o, d);
+                let c = dot(o, o) - 1.0;
+                let disc = b * b - a * c;
+                if disc >= 0.0 {
+                    let sq = disc.sqrt();
+                    for t in [(-b - sq) / a, (-b + sq) / a] {
+                        if t > tmin && t < tmax {
+                            near.insert(t, TriHit { t, tri: 0, u: 0.0, v: 0.0 });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     #[inline]
     fn occluded(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> bool {
         match self {
@@ -441,6 +464,9 @@ pub struct Scene {
     inv: Vec<[V3; 4]>,
     /// Ambient and unshadowed key diffuse light for an upward normal (the floor).
     up_light: (V3, V3),
+    /// Camera rays continuing through thin glass take the next hits from
+    /// one multi-hit query (there is thin glass and no cut-out object).
+    glass_near: bool,
     /// Underwater caustics on the key light (0 = off) and the time they animate with.
     pub caustics: f32,
     pub time: f32,
@@ -733,6 +759,12 @@ pub fn tsc() -> u64 {
     0
 }
 
+/// `ANIKIT_SCENE3D_GLASS_NEAR=0` turns the multi-hit glass walk off.
+fn glass_near_on() -> bool {
+    static C: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *C.get_or_init(|| std::env::var("ANIKIT_SCENE3D_GLASS_NEAR").as_deref() != Ok("0"))
+}
+
 /// Neighbour normals on a smooth specular object closer than this cosine
 /// don't trigger edge samples (`ANIKIT_SCENE3D_NCOS` overrides; -2 = off).
 fn normal_cos() -> f32 {
@@ -900,6 +932,7 @@ impl Scene {
             time: 0.0,
             gobo: super::rig::Gobo::default(),
             up_light: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)),
+            glass_near: false,
         };
         let up = v3(0.0, 1.0, 0.0);
         s.up_light = (s.env.diffuse(up), s.key_diffuse(up));
@@ -912,6 +945,51 @@ impl Scene {
         let boxes: Vec<(V3, V3)> = self.insts.iter().map(|i| self.world_box(i)).collect();
         self.tlas = Tlas::new(&boxes);
         self.inv = self.insts.iter().map(|i| [scale(i.xf.r[0], 1.0 / i.xf.s.x), scale(i.xf.r[1], 1.0 / i.xf.s.y), scale(i.xf.r[2], 1.0 / i.xf.s.z), i.xf.t]).collect();
+        let thin_glass = self.insts.iter().any(|i| i.thin && i.cam && self.mats.get(i.mat as usize).is_some_and(|m| m.transmission > 0.0));
+        self.glass_near = thin_glass && glass_near_on() && !self.insts.iter().any(|i| self.cutout(i).is_some());
+    }
+
+    /// The nearest [`NEAR_K`] camera-visible hits from `o` along `d` beyond
+    /// `EPS` (floor included): distance, (instance or `FLOOR`, hit). Each has
+    /// the distance and barycentrics [`Scene::trace_f`] would give for it.
+    fn trace_near(&self, o: V3, d: V3) -> Near<(u32, TriHit)> {
+        count(0);
+        let _c = Cycles::start(2);
+        let blank = TriHit { t: 0.0, tri: 0, u: 0.0, v: 0.0 };
+        let mut near = Near::new((u32::MAX, blank));
+        if let Some(f) = &self.floor {
+            if d.y < -1e-7 {
+                let t = (f.y - o.y) / d.y;
+                if t > EPS && t < 1e6 {
+                    near.insert(t, (FLOOR as u32, blank));
+                }
+            }
+        }
+        self.tlas.visit(o, d, EPS, near.far(1e6), |k, _| {
+            let ob = &self.insts[k as usize];
+            if ob.cam {
+                let (lo, ld) = self.to_object(k as usize, o, d);
+                let mut m = Near::new(blank);
+                self.shapes[ob.shape as usize].nearest(lo, ld, EPS, near.far(1e6), &mut m);
+                for e in &m.h[..m.n] {
+                    near.insert(e.0, (k, e.1));
+                }
+            }
+            near.far(1e6)
+        });
+        near
+    }
+
+    /// The surface of a [`Scene::trace_near`] hit at distance `t` from `o`.
+    fn near_surf(&self, o: V3, d: V3, t: f32, k: u32, h: TriHit) -> Surf {
+        let up = v3(0.0, 1.0, 0.0);
+        if k == FLOOR as u32 {
+            return Surf { t, p: madd(o, d, t), ng: up, ns: up, uv: [0.0; 2], on: up, obj: FLOOR, tri: 0 };
+        }
+        let ob = &self.insts[k as usize];
+        let (lo, ld) = self.to_object(k as usize, o, d);
+        let (t, sn, gn, uv) = self.shapes[ob.shape as usize].surface(lo, ld, (h.t, h.tri, h.u, h.v));
+        Surf { t, p: madd(o, d, t), ng: ob.xf.normal(gn), ns: ob.xf.normal(sn), uv, on: norm(gn), obj: k as usize, tri: h.tri }
     }
 
     /// A world ray in instance `k`'s object space (direction unnormalised,
@@ -1589,8 +1667,32 @@ impl Scene {
         let mut first: Option<(f32, V3, usize, (f32, f32))> = None;
         let mut inside_since: Option<f32> = None;
         let none = v3(0.0, 0.0, 0.0);
+        // Past a thin pane: the next hits from one multi-hit query (origin,
+        // camera distance of that origin, hits), refilled when used up.
+        let mut ahead: Option<(V3, f32, Near<(u32, TriHit)>)> = None;
+        // Camera distance of the current origin `o`.
+        let mut obase = 0.0f32;
         for layer in 0..=q.max_glass {
-            let Some(s) = self.trace_f(o, d, 1e6, true) else {
+            let hit = match &mut ahead {
+                None => self.trace_f(o, d, 1e6, true),
+                Some(a) => 'next: {
+                    loop {
+                        // Same rule as a fresh trace from `o`: beyond EPS.
+                        let need = obase + EPS;
+                        let (ao, ab, near) = (a.0, a.1, &a.2);
+                        if let Some(e) = near.h[..near.n].iter().find(|e| ab + e.0 > need) {
+                            let mut s = self.near_surf(ao, d, e.0, e.1 .0, e.1 .1);
+                            s.t = ab + e.0 - obase;
+                            break 'next Some(s);
+                        }
+                        if near.n < NEAR_K {
+                            break 'next None;
+                        }
+                        *a = (o, obase, self.trace_near(o, d));
+                    }
+                }
+            };
+            let Some(s) = hit else {
                 // Fog covers the backdrop too (as if it were 200 m away).
                 let bd = if self.haze.0 > 0.0 {
                     let mut k = 1.0 - (-self.fog_depth(cam.pos, d, 200.0)).exp();
@@ -1666,6 +1768,10 @@ impl Scene {
                     }
                     o = madd(s.p, d, 1e-4);
                     travelled = dist;
+                    obase = dist + 1e-4;
+                    if self.glass_near && ahead.is_none() {
+                        ahead = Some((o, obase, self.trace_near(o, d)));
+                    }
                     continue;
                 }
             }
