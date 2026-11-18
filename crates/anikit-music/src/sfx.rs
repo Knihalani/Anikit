@@ -660,6 +660,7 @@ impl G {
                 s.ph = self.rng.f32();
             }
         }
+        let det_ratio = detune.map(|dt| (dt / 12.0).exp2());
         let mut tl = vec![0.0f32; n];
         let mut tr = vec![0.0f32; n];
         for i in 0..n {
@@ -668,8 +669,8 @@ impl G {
             let trem_rate = 2.0 + 14.0 * p * p;
             let trem = 1.0 - 0.3 * it * (0.5 + 0.5 * (std::f32::consts::TAU * trem_rate * p * d).sin());
             for (k, nf) in notes.iter().enumerate() {
-                for (j, dt) in detune.iter().enumerate() {
-                    let f = f0 * nf * rise * (dt / 12.0).exp2();
+                for (j, dr) in det_ratio.iter().enumerate() {
+                    let f = f0 * nf * rise * dr;
                     let v = saws[k][j].tick(f, fs);
                     if j % 2 == 0 {
                         tl[i] += v;
