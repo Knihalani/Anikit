@@ -44,17 +44,27 @@ Professional launch films do the reverse. They hold **one material world, one li
    - Write 5–9 shots against bars: what we see, what changes, where the device escalates, the one hard stop before the payoff, and the end.
    - Frame 0 is the hook.
 6. **Pass 1.** Build the full film, preview it, then render it and its contact sheet: `render --sheet launch/pass1.png` (6+ frames, evenly spaced).
-7. **`launch/5-crit.md`: outside critique** (see `review.md`).
-   - Give the contact sheet and the brief, and nothing else, to a fresh subagent using the critic prompt in `review.md`.
-   - If you can't spawn one, answer the 15 checks yourself on the sheet, frame by frame, honestly.
-   - Paste the verdict, then list what you will change. **Cut the weakest third of shots or effects.** If the literal or world checks fail, change the idea or world, not the polish.
-8. **Pass 2.** Rebuild against `5-crit.md`, render (`ANIKIT_RENDER_CACHE=0`, foreground), and check the new sheet against the same checks.
-   - Ship only if every "hold constant" and "idea" check passes.
-   - Stop after two polish passes that don't change the idea: polish alone plateaus.
+7. **`launch/5-crit.md`: compare against professional films** (see `review.md`).
+   - Run the blind comparison against real professional launch films: `judge.py run … --practice`, about 3 min.
+   - Paste every gap, and sort each one into IDEA, WORLD or CRAFT.
+   - **Any IDEA gap means a new idea from a different family:** go back to step 2. Don't polish.
+   - Cut the weakest third.
+8. **Pass 2.** Rebuild, render (`ANIKIT_RENDER_CACHE=0`, foreground), and run crit 2 the same way.
+   - Ship the higher-scoring pass; a difference under 0.75 is a tie. At most 3 passes.
+   - Copy the shipped pass to `final.mp4`.
 
 ## Ground rules
 
 - **Honesty:** use only the brief's real facts, names and UI. No invented numbers, customers, testimonials or interface.
 - **Vary across films, not within one:** if this film looks like your last launch film (palette, type, layout family), change the world.
+- **Looks already rejected as generic or AI-made:**
+  - warm dark ground with a glowing serif;
+  - cream paper with an editorial serif and aphorisms;
+  - dark ground with one accent and a mono label;
+  - tiles or dominoes on a cyc with chrome type;
+  - fogged terrain;
+  - landing-page furniture (pills, numbered eyebrows, LIVE dots).
+
+  If your world resembles one of these, it needs a reason from the subject.
 - **The ending performs:** the name lands through an action of the film's world in the last 5–10% of the film. A specific call to action holds 1.5–3 s. Never "Learn more".
 - **Cost:** keep the final render under ~5 min (check `preview`'s estimate). Full-frame shaders and ray-traced 3D are the expensive parts; spend them on the shots that carry the device.

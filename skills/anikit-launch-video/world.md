@@ -4,7 +4,8 @@ Professional launch films in our benchmark (Coinbase, JPMorgan, XREAL, Nothing, 
 
 ## Decide once, in `3-world.md`
 
-- **Material:** one family, from the idea's world. It could be paper and ink, brushed metal and glass, wet asphalt, felt and wood, ceramic glaze, risograph print, or the product's own UI rendered as a lit surface. Not "dark ground with a glow".
+- **Material:** one family, taken from the subject's own world: the place, objects and rituals of the people it's for, or the product's own surfaces. Don't pick from a list of nice materials. Not "dark ground with a glow".
+- **Fidelity:** the shots that carry the device are built at full fidelity. That means real geometry and texture at 100% crop, atmosphere, and secondary motion. The jury's most common complaint about our 3D was "placeholder-level modelling". If a shot can't be made convincing, choose a medium where it can, such as illustration, print or type, rather than shipping a primitive.
 - **Light:** a key light with direction, falloff and colour temperature, motivated by something in the world (window, lamp, screen, sun, the product itself). An arc over the film is good (dawn → noon, cold → warm). Radial glows and gradient washes are the tell.
 - **Palette:** a family drawn from the material and light, with one accent reserved for the device. An arc within the family is good; swapping to an unrelated palette between shots is not.
 - **Type voice:**

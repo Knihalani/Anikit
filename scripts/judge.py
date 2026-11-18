@@ -575,7 +575,16 @@ def cmd_run(args):
     frames = load_frames(args.candidate, args.grid)
     name = args.name or Path(args.candidate).stem
     video = args.candidate if Path(args.candidate).suffix.lower() in (".mp4", ".mov", ".webm", ".mkv") else None
-    judge(name, frames, args.tags.split(","), args, video=video)
+    exclude = ()
+    if getattr(args, "practice", False):
+        # Practice crit while building: never use the refs pinned for evaluation (pins.json), so
+        # building against this judge can't leak into the scores the eval briefs report.
+        pins = json.loads((ROOT / "docs/video/judge/pins.json").read_text())
+        exclude = tuple(sorted({s_ for v in pins.values() for s_ in v["refs"]}))
+        if len(load_refs()) < 20:
+            cmd_sync_bench(args)  # a fresh container has only the in-git refs: fetch the benchmark stills once
+            REFS_DIRS[:] = [p for p in (ROOT / "docs/video/judge/refs", BENCH / "export") if p.is_dir()]
+    judge(name, frames, args.tags.split(","), args, exclude=exclude, video=video)
 
 
 def cmd_brief(args):
@@ -704,6 +713,9 @@ def main():
         p.add_argument("--seed", type=int, default=7)
         p.add_argument("--out")
         p.add_argument("--no-critic", action="store_true")
+        if n == "run":
+            p.add_argument("--practice", action="store_true",
+                           help="build-loop crit: exclude every ref pinned for evaluation (pins.json)")
     b = sub.add_parser("batch")
     b.add_argument("manifest")
     b.add_argument("--only")
