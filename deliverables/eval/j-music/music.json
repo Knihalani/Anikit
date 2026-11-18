@@ -1,0 +1,17 @@
+{
+  "bpm": 108, "key": "D", "length": "20s", "seed": 7,
+  "master": { "lufs": -15, "ceiling": -1, "reverb": "hall" },
+  "end": "ring",
+  "tracks": [
+    { "inst": "piano", "chords": "Gmaj7 Bm Gmaj7 D A Bm G A D", "play": "broken", "gain": -3, "reverb": 0.35,
+      "automate": { "volume": [[0, -2], ["@bar6", 0], ["@bar8", -3], ["@bar9", -1]] } },
+    { "inst": "oohs", "notes": "o4 r:4 | F#4:1.5 A4:0.5 B4:1 A4:1 | F#4:3 r:1 | D4:0.5 E4:0.5 F#4:1 E4:0.5 A4:1.5 | G4:0.5 E4:3 r:0.5 | F#4:0.5 F#4:0.5 A4:1 B4:0.5 D5:1 C#5:0.5 | B4:3 r:1 | r:1 E4:0.5 F#4:0.5 A4:2 | F#4:4",
+      "gain": -1, "reverb": 0.45, "pan": 0.05,
+      "fx": [{ "type": "delay", "note": "1/4", "feedback": 0.25, "wet": 0.12 }] },
+    { "inst": "cello", "notes": "o2 r:4 | B2:4 | G2:4 | D3:4 | A2:4 | B2:4 | G2:4 | A2:4 | D2:4", "gain": -8, "reverb": 0.4,
+      "automate": { "volume": [[0, -12], ["@bar4", -3], ["@bar6", 0], ["@bar8", -6]] } },
+    { "inst": "slow-strings", "chords": "Gmaj7 Bm Gmaj7 D A Bm G A D", "play": "pad", "gain": -11, "reverb": 0.6,
+      "automate": { "volume": [[0, -30], ["@bar4", -10], ["@bar6", 0], ["@bar7", 2], ["@bar8", -8], ["@bar9", -4]] } },
+    { "inst": "celesta", "notes": "o6 r:4 | r:4 | r:4 | r:4 | r:4 | r:4 | r:4 | r:4 | F#6:1 A6:1 D7:2", "gain": -14, "reverb": 0.7 }
+  ]
+}

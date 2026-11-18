@@ -1,0 +1,1 @@
+{"cmd": "anikit-video render deliverables/eval/j-music/spec.json -o deliverables/eval/j-music/final.mp4 --sheet deliverables/eval/j-music/contact.png", "exit": 0, "wall_s": 236.94, "peak_rss_mb": 1283.8}

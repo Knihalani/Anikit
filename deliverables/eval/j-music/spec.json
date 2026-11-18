@@ -1,0 +1,447 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "intent": {
+  "pace": "slow"
+ },
+ "music": {
+  "bpm": 108,
+  "key": "D",
+  "length": "20s",
+  "seed": 7,
+  "master": {
+   "lufs": -15,
+   "ceiling": -1,
+   "reverb": "hall"
+  },
+  "end": "ring",
+  "tracks": [
+   {
+    "inst": "piano",
+    "chords": "Gmaj7 Bm Gmaj7 D A Bm G A D",
+    "play": "broken",
+    "gain": -3,
+    "reverb": 0.35,
+    "automate": {
+     "volume": [
+      [
+       0,
+       -2
+      ],
+      [
+       "@bar6",
+       0
+      ],
+      [
+       "@bar8",
+       -3
+      ],
+      [
+       "@bar9",
+       -1
+      ]
+     ]
+    }
+   },
+   {
+    "inst": "oohs",
+    "notes": "o4 r:4 | F#4:1.5 A4:0.5 B4:1 A4:1 | F#4:3 r:1 | D4:0.5 E4:0.5 F#4:1 E4:0.5 A4:1.5 | G4:0.5 E4:3 r:0.5 | F#4:0.5 F#4:0.5 A4:1 B4:0.5 D5:1 C#5:0.5 | B4:3 r:1 | r:1 E4:0.5 F#4:0.5 A4:2 | F#4:4",
+    "gain": -1,
+    "reverb": 0.45,
+    "pan": 0.05,
+    "fx": [
+     {
+      "type": "delay",
+      "note": "1/4",
+      "feedback": 0.25,
+      "wet": 0.12
+     }
+    ]
+   },
+   {
+    "inst": "cello",
+    "notes": "o2 r:4 | B2:4 | G2:4 | D3:4 | A2:4 | B2:4 | G2:4 | A2:4 | D2:4",
+    "gain": -8,
+    "reverb": 0.4,
+    "automate": {
+     "volume": [
+      [
+       0,
+       -12
+      ],
+      [
+       "@bar4",
+       -3
+      ],
+      [
+       "@bar6",
+       0
+      ],
+      [
+       "@bar8",
+       -6
+      ]
+     ]
+    }
+   },
+   {
+    "inst": "slow-strings",
+    "chords": "Gmaj7 Bm Gmaj7 D A Bm G A D",
+    "play": "pad",
+    "gain": -11,
+    "reverb": 0.6,
+    "automate": {
+     "volume": [
+      [
+       0,
+       -30
+      ],
+      [
+       "@bar4",
+       -10
+      ],
+      [
+       "@bar6",
+       0
+      ],
+      [
+       "@bar7",
+       2
+      ],
+      [
+       "@bar8",
+       -8
+      ],
+      [
+       "@bar9",
+       -4
+      ]
+     ]
+    }
+   },
+   {
+    "inst": "celesta",
+    "notes": "o6 r:4 | r:4 | r:4 | r:4 | r:4 | r:4 | r:4 | r:4 | F#6:1 A6:1 D7:2",
+    "gain": -14,
+    "reverb": 0.7
+   }
+  ]
+ },
+ "defs": {
+  "w": {
+   "text": "$s",
+   "font": "Instrument Serif",
+   "size": "11vh",
+   "color": "#F2E8DA",
+   "enter": {
+    "preset": "blur",
+    "delay": "$at",
+    "duration": 0.75,
+    "ease": "outCubic"
+   }
+  },
+  "lineBox": {
+   "type": "box",
+   "x": "9%",
+   "anchor": "left",
+   "style": {
+    "direction": "row",
+    "gap": 26,
+    "align": "end"
+   },
+   "exit": {
+    "preset": "blur",
+    "duration": 0.5
+   }
+  },
+  "L1": {
+   "use": "lineBox",
+   "start": 2.0,
+   "end": 6.45,
+   "children": [
+    {
+     "use": "w",
+     "with": {
+      "s": "hold",
+      "at": 0.172
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "me",
+      "at": 1.006
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "at",
+      "at": 1.283
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "low",
+      "at": 1.839
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "tide",
+      "at": 2.394
+     }
+    }
+   ]
+  },
+  "L2": {
+   "use": "lineBox",
+   "start": 6.45,
+   "end": 10.9,
+   "children": [
+    {
+     "use": "w",
+     "with": {
+      "s": "when",
+      "at": 0.167
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "the",
+      "at": 0.444
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "harbour",
+      "at": 0.722
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "lights",
+      "at": 1.556
+     },
+     "color": "#FFB86E",
+     "animate": [
+      {
+       "to": {
+        "color": "#6E6A72"
+       },
+       "at": 2.75,
+       "duration": 1.2,
+       "ease": "inOutSine"
+      }
+     ]
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "are",
+      "at": 2.389
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "gone",
+      "at": 2.667
+     }
+    }
+   ]
+  },
+  "L3": {
+   "use": "lineBox",
+   "start": 10.9,
+   "end": 15.35,
+   "children": [
+    {
+     "use": "w",
+     "with": {
+      "s": "we",
+      "at": 0.161
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "were",
+      "at": 0.439
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "never",
+      "at": 0.717
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "meant",
+      "at": 1.55
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "to",
+      "at": 2.106
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "stay",
+      "at": 2.383
+     }
+    }
+   ]
+  },
+  "L4": {
+   "use": "lineBox",
+   "start": 15.35,
+   "end": 20,
+   "children": [
+    {
+     "use": "w",
+     "with": {
+      "s": "but",
+      "at": 0.711
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "we",
+      "at": 0.989
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "stayed",
+      "at": 1.267
+     }
+    },
+    {
+     "use": "w",
+     "with": {
+      "s": "on",
+      "at": 2.378
+     },
+     "color": "#FFB86E"
+    }
+   ],
+   "exit": null
+  }
+ },
+ "scenes": [
+  {
+   "duration": 20,
+   "background": "#05070F",
+   "layers": [
+    {
+     "src": "harbour.glsl",
+     "uniforms": {
+      "drift": 1.0
+     }
+    },
+    {
+     "text": "Harbour Lights",
+     "font": "Inter",
+     "size": "2.6vh",
+     "letterSpacing": "0.28em",
+     "uppercase": true,
+     "color": "#C9B8A6",
+     "x": "9%",
+     "y": "24%",
+     "anchor": "left",
+     "start": 0.25,
+     "end": 1.95,
+     "enter": {
+      "preset": "fade",
+      "duration": 0.8
+     },
+     "exit": {
+      "preset": "fade",
+      "duration": 0.4
+     }
+    },
+    {
+     "text": "Low Tide",
+     "font": "Instrument Serif",
+     "italic": true,
+     "size": "9vh",
+     "color": "#F2E8DA",
+     "x": "9%",
+     "y": "31.5%",
+     "anchor": "left",
+     "start": 0.4,
+     "end": 1.95,
+     "enter": {
+      "preset": "blur",
+      "duration": 0.9
+     },
+     "exit": {
+      "preset": "blur",
+      "duration": 0.4
+     }
+    },
+    {
+     "use": "L1",
+     "y": "31%"
+    },
+    {
+     "use": "L2",
+     "y": "31%"
+    },
+    {
+     "use": "L3",
+     "y": "31%"
+    },
+    {
+     "use": "L4",
+     "y": "31%"
+    },
+    {
+     "type": "group",
+     "opacity": 0.2,
+     "blur": 3,
+     "layers": [
+      {
+       "use": "L1",
+       "y": "84%",
+       "scaleY": -1
+      },
+      {
+       "use": "L2",
+       "y": "84%",
+       "scaleY": -1
+      },
+      {
+       "use": "L3",
+       "y": "84%",
+       "scaleY": -1
+      },
+      {
+       "use": "L4",
+       "y": "84%",
+       "scaleY": -1
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
