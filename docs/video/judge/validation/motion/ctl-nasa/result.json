@@ -1,0 +1,347 @@
+{
+  "refs": [
+    "calibration-blender-spring-2019",
+    "calibration-blender-sprite-fright-2021",
+    "blender-studio-charge-2022"
+  ],
+  "candidate": {
+    "motion": 2,
+    "judged_professional": "0/3",
+    "gaps": [
+      "No authored spacing: no anticipation, overshoot or settle anywhere",
+      "No camera language or cuts. One static equirectangular frame for the entire film",
+      "No focal choreography or handoffs. Nothing directs the eye from one element to the next",
+      "No camera moves and no cuts, unlike A's whip pans and cuts on action",
+      "Uniform linear advection, with no anticipation, overshoot or settle",
+      "No weight, character acting or staged hierarchy of motion",
+      "No easing, anticipation or overshoot anywhere; everything moves at simulation-linear speed",
+      "No camera moves, cuts or transitions to direct the eye or build hierarchy",
+      "No focal choreography or handoffs, just a uniform, undirected texture of motion"
+    ]
+  },
+  "refs_summary": {
+    "blender-studio-charge-2022": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Strip 1 is mostly one sustained shot. The face barely changes, so the movement comes almost entirely from the particles",
+        "The impact frame in strip 2 is a blur-smear cut rather than a built match cut or a designed handoff",
+        "Less layered overlapping action than C. Secondary elements rarely lead or trail the main move",
+        "The grinder close-up holds on a mostly static face while the sparks carry the motion",
+        "Live-action-style camera chaos sometimes hides the spacing instead of designing it",
+        "Less overlapping character acting than A",
+        "The character's facial performance under the sparks is nearly frozen; the life comes from particles, not acting",
+        "The robot's settle after the impact is stiff with little overshoot",
+        "Transitions are mostly hard cuts on blur and lack designed match cuts"
+      ]
+    },
+    "calibration-blender-sprite-fright-2021": {
+      "motion": 9,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The insert in strip 2 holds fairly static for several frames, so energy dips briefly",
+        "A few frames in strip 1 are blur-dominated whip transitions where pose readability suffers",
+        "This is the benchmark entry, so the gaps are only minor polish",
+        "Strongest entry: nothing better to compare it to",
+        "The insert section slows to small moves for several frames",
+        "The strip ends on a two-shot that is somewhat static",
+        "The close-up insert lingers on near-identical frames, so tension briefly flattens into a hold",
+        "Some background plates stay static under fast character action",
+        "The camera language leans on blur rather than designed moves in places"
+      ]
+    },
+    "calibration-blender-spring-2019": {
+      "motion": 7,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The ribs repeat almost the same cycle with little variation, so the energy stays flat with no accent beats",
+        "The cut into the close-up is a soft dissolve rather than a match cut or a designed morph",
+        "The foreground figure's acting is minimal next to C's full-body follow-through",
+        "Long stretches of near-repetitive cyclic motion with little change in tempo",
+        "The figure's motion is small, so there is little weight or acting on show",
+        "Fewer accents and weaker contrast in tempo than A, with no impact beats",
+        "Within a strip only one element moves at a time (the figure) against a mostly static set, with little overlapping action",
+        "Spacing is low-energy; there is no clear acceleration or overshoot peak even at a 'busiest' moment",
+        "The transition to the close-up is a plain cut with no match or morph"
+      ]
+    }
+  },
+  "ref_mean": 8,
+  "trials": [
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "candidate",
+        "C": "calibration-blender-sprite-fright-2021",
+        "D": "calibration-blender-spring-2019"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Spark particles have varied velocities and motion blur, with streaks that follow physical trajectories off the grinder",
+              "Handheld camera drift and a slight push-in keep the close-up alive through the whole hold",
+              "Strip 2 has a fast mech-arm swipe with heavy motion blur that resolves into a framed reveal of the pilot, so the transition is cut on the action",
+              "The mechanical limbs show inertia: they wind up, swing fast, then decelerate into a pose"
+            ],
+            "gaps": [
+              "Strip 1 is mostly one sustained shot. The face barely changes, so the movement comes almost entirely from the particles",
+              "The impact frame in strip 2 is a blur-smear cut rather than a built match cut or a designed handoff",
+              "Less layered overlapping action than C. Secondary elements rarely lead or trail the main move"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "motion": 3,
+            "tells": [
+              "This is a simulation playback, not animation. The fluid field advances at a constant rate tied to the data timestep",
+              "No easing, accents or holds by design. The date counter just ticks through linearly",
+              "Locked-off camera with no framing changes, cuts or transitions across either strip",
+              "The motion is alive everywhere but has no hierarchy: every pixel moves with equal weight and nothing is choreographed"
+            ],
+            "gaps": [
+              "No authored spacing: no anticipation, overshoot or settle anywhere",
+              "No camera language or cuts. One static equirectangular frame for the entire film",
+              "No focal choreography or handoffs. Nothing directs the eye from one element to the next"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Characters whip-pan into frame in sequence. Hair and clothes drag and follow through, and each one lands on a settled expression",
+              "The camera tracks the running characters with a parallax foreground and motion blur, and the boombox lands as an accent on the end beat",
+              "Strip 2 builds an insert close-up of the vine sliding across the wrist, with a slow, eased pull showing a bleeding cut",
+              "The cut back to the wide two-shot reveals the mushroom creature. The cut is motivated and keeps screen direction"
+            ],
+            "gaps": [
+              "The insert in strip 2 holds fairly static for several frames, so energy dips briefly",
+              "A few frames in strip 1 are blur-dominated whip transitions where pose readability suffers",
+              "This is the benchmark entry, so the gaps are only minor polish"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 7,
+            "tells": [
+              "The translucent fin or rib forms ripple in an offset wave, so motion travels along the structure with proper overlap",
+              "The character silhouette in the foreground sways and turns with weight while the background undulates on its own rhythm",
+              "A slow camera float keeps every frame alive with no dead holds",
+              "The final transition is a soft dissolve or volumetric wipe into the character close-up, where the mist carries the change"
+            ],
+            "gaps": [
+              "The ribs repeat almost the same cycle with little variation, so the energy stays flat with no accent beats",
+              "The cut into the close-up is a soft dissolve rather than a match cut or a designed morph",
+              "The foreground figure's acting is minimal next to C's full-body follow-through"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 25.2,
+        "cost_usd": 0.1242226,
+        "tokens": 67900,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-blender-sprite-fright-2021",
+        "B": "candidate",
+        "C": "blender-studio-charge-2022",
+        "D": "calibration-blender-spring-2019"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "The whip pan has motion blur and settles on the next character, carrying energy from one subject to the next",
+              "Overlapping action: the hair, earrings and body lag behind the head turn and follow through",
+              "The cut from the boombox to the extreme close-up of the hand and stick works as a cut on action, and the arm keeps moving through the cut",
+              "The hand-and-stick insert uses a slow ease-in push to build tension before pulling back to the two-shot reaction",
+              "Facial acting has anticipation and clear held poses that still breathe, with no dead frames"
+            ],
+            "gaps": [
+              "Strongest entry: nothing better to compare it to",
+              "The insert section slows to small moves for several frames",
+              "The strip ends on a two-shot that is somewhat static"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 2,
+            "tells": [
+              "Automated simulation playback: the motion comes from the data, not from a designer",
+              "Locked-off camera with no camera language",
+              "Time steps at a constant rate with no easing, accents or hierarchy",
+              "The date counter pops from one value to the next with no transition",
+              "Nothing is choreographed: the whole field moves uniformly and there is no focal hand-off"
+            ],
+            "gaps": [
+              "No camera moves and no cuts, unlike A's whip pans and cuts on action",
+              "Uniform linear advection, with no anticipation, overshoot or settle",
+              "No weight, character acting or staged hierarchy of motion"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Spark particles have convincing ballistic arcs, bounce and decay, and the frames stay alive throughout",
+              "Handheld camera shake and rack focus give a physical sense of weight",
+              "The fast impact has smear and blur frames that sell the force of the hit",
+              "The cut lands on the robot's impact, and the shots afterwards settle with secondary motion on the parts"
+            ],
+            "gaps": [
+              "The grinder close-up holds on a mostly static face while the sparks carry the motion",
+              "Live-action-style camera chaos sometimes hides the spacing instead of designing it",
+              "Less overlapping character acting than A"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 7,
+            "tells": [
+              "The ribbed form undulates in a wave with each segment offset, creating overlap",
+              "Slow, deliberate camera drift with depth parallax",
+              "The organic transition into the close-up has the texture flow and dissolve into the character, much like a morph",
+              "The hair and silhouette sway with soft follow-through"
+            ],
+            "gaps": [
+              "Long stretches of near-repetitive cyclic motion with little change in tempo",
+              "The figure's motion is small, so there is little weight or acting on show",
+              "Fewer accents and weaker contrast in tempo than A, with no impact beats"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 21.6,
+        "cost_usd": 0.1205428,
+        "tokens": 67720,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-blender-spring-2019",
+        "B": "calibration-blender-sprite-fright-2021",
+        "C": "blender-studio-charge-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 7,
+            "tells": [
+              "Slow, eased camera drift past the rib-like ice forms gives real parallax depth",
+              "The character's head and hair make small, organic turns with settling holds that read as hand-made or stop-motion performance",
+              "A cut to a tight close-up with soft, glowing foreground fluid is used as a deliberate mood transition",
+              "Atmospheric particles and light shafts keep the frame alive during the slower beats"
+            ],
+            "gaps": [
+              "Within a strip only one element moves at a time (the figure) against a mostly static set, with little overlapping action",
+              "Spacing is low-energy; there is no clear acceleration or overshoot peak even at a 'busiest' moment",
+              "The transition to the close-up is a plain cut with no match or morph"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 8,
+            "tells": [
+              "Whip-pans with motion-blurred foliage and characters entering frame in staggered, overlapping beats",
+              "Strong squash, stretch and exaggerated fear poses with hair and clothing that follow through",
+              "A boombox enters with an anticipation and impact rhythm",
+              "The insert of the stake piercing the hand uses a tight, eased push and a smear pull-out before the reveal wide shot, which is purposeful cutting",
+              "Secondary motion (glowing mushroom, wristband, a slow-dripping blood bead) keeps holds alive"
+            ],
+            "gaps": [
+              "The close-up insert lingers on near-identical frames, so tension briefly flattens into a hold",
+              "Some background plates stay static under fast character action",
+              "The camera language leans on blur rather than designed moves in places"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Physically simulated sparks with correct ballistic arcs, motion-blur streaks and falloff",
+              "Handheld micro-shake and rack focus give the camera real weight",
+              "Robot limbs swing with heavy inertia and impact, with debris and dust ejecta on the hit",
+              "The cut on action to a fast swing, a blurred impact frame and a reframed medium shot is built for impact"
+            ],
+            "gaps": [
+              "The character's facial performance under the sparks is nearly frozen; the life comes from particles, not acting",
+              "The robot's settle after the impact is stiff with little overshoot",
+              "Transitions are mostly hard cuts on blur and lack designed match cuts"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "motion": 2,
+            "tells": [
+              "Automated simulation playback: the fluid field advances at a constant timestep with no easing",
+              "Locked-off camera with zero camera language",
+              "The date counter ticks linearly as a pop-on text change",
+              "No choreography, staging or accents; the whole field moves at one uniform tempo",
+              "The legend and logo overlay stays frozen in every frame"
+            ],
+            "gaps": [
+              "No easing, anticipation or overshoot anywhere; everything moves at simulation-linear speed",
+              "No camera moves, cuts or transitions to direct the eye or build hierarchy",
+              "No focal choreography or handoffs, just a uniform, undirected texture of motion"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 25.2,
+        "cost_usd": 0.1250386,
+        "tokens": 67936,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.37
+}

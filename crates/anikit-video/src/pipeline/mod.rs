@@ -87,6 +87,13 @@ pub struct StageProfile {
     pub held: u64,
     pub partial: u64,
     pub full: u64,
+    /// Process memory (MiB, Linux; 0 elsewhere): resident when the render started
+    /// (spec, assets, caches), the peak while frames rendered and encoded, the
+    /// encoded stream held for muxing, and the peak while muxing.
+    pub mem_start_mb: f64,
+    pub mem_render_peak_mb: f64,
+    pub mem_stream_mb: f64,
+    pub mem_mux_peak_mb: f64,
 }
 
 /// Called with every frame exactly as it goes to the encoder (index within the range, tight 4:2:0 planes).
@@ -240,7 +247,11 @@ pub fn scale_list(dl: &mut DisplayList, s: f32) {
                     }
                     dl::Filter::Glow { radius, .. } => *radius *= s,
                     dl::Filter::Halftone(h) => h.cell *= s,
-                    dl::Filter::Ink { scale, .. } => *scale *= s,
+                    dl::Filter::Ink { scale, ox, oy, .. } => {
+                        *scale *= s;
+                        *ox *= s;
+                        *oy *= s;
+                    }
                     dl::Filter::ColorMatrix(_) | dl::Filter::Tone(_) => {}
                 }
             }
@@ -279,6 +290,22 @@ fn with_worker<R>(f: impl FnOnce(&mut Worker) -> R) -> R {
         Ok(mut w) => f(&mut w),
         Err(_) => f(&mut new_worker()),
     })
+}
+
+/// Drop every thread's worker (renderer, frame buffers, layer caches): the
+/// video pipeline renders with fresh per-chunk workers, so after an estimate or
+/// a finished render they would only hold memory (hundreds of MiB at 1080p).
+/// Output never depends on it: a later call makes a new worker.
+pub fn release_workers() {
+    let clear = || {
+        WORKER.with(|c| {
+            if let Ok(mut w) = c.try_borrow_mut() {
+                *w = new_worker();
+            }
+        })
+    };
+    rayon::broadcast(|_| clear());
+    clear();
 }
 
 /// Create (or re-create, when fonts were added) this worker's renderer.
@@ -637,8 +664,7 @@ pub fn still_key(ev: &Evaluator, t: f32, scale: f32) -> Option<String> {
     if std::env::var_os("ANIKIT_RENDER_CACHE").is_some_and(|v| v == "0") {
         return None;
     }
-    let mut dl = ev.eval(t);
-    scale_list(&mut dl, scale);
+    let mut dl = eval_scaled(ev, t, scale);
     let mut keys = Vec::new();
     let mut ok = true;
     let mut id_key = |id: &mut dl::ImageId| {
@@ -709,18 +735,38 @@ pub fn frame_look(ev: &Evaluator, q: Quality, i: u32) -> (Option<crate::render::
 /// Render frame `i` with motion blur into `yuv` (a full frame), leaving the
 /// renderer ready for a full incremental render next.
 fn render_blurred(ev: &Evaluator, r: &mut Renderer, i: u32, scale: f32, yuv: &mut YuvFrame) {
-    let mut eval = |t: f32| {
-        let mut d = ev.eval(t);
-        scale_list(&mut d, scale);
-        d
-    };
+    let mut eval = |t: f32| eval_scaled(ev, t, scale);
     r.render_yuv_motion_blur(&mut eval, frame_time(ev, i), ev.shutter, yuv);
     r.invalidate();
 }
 
+/// Run `f` with shaders rendering at output `scale` (their preview scale),
+/// so a scaled render shades only the pixels it shows; faithful shaders still
+/// see final-size coordinates. Restores full size afterwards.
+fn at_scale<R>(scale: f32, f: impl FnOnce() -> R) -> R {
+    struct Reset;
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            crate::eval::set_preview_scale(1.0);
+        }
+    }
+    let _reset = Reset;
+    crate::eval::set_preview_scale(scale);
+    f()
+}
+
+/// The display list at `t`, at output `scale`.
+fn eval_scaled(ev: &Evaluator, t: f32, scale: f32) -> DisplayList {
+    at_scale(scale, || {
+        let mut dl = ev.eval(t);
+        scale_list(&mut dl, scale);
+        dl
+    })
+}
+
 /// Evaluate frame `i` into `out` at `scale`.
 pub fn eval_frame(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) {
-    ev.eval_into(frame_time(ev, i), out);
+    at_scale(scale, || ev.eval_into(frame_time(ev, i), out));
     scale_list(out, scale);
 }
 
@@ -865,11 +911,21 @@ impl AudioJob {
 /// the soundtrack in parallel with the video frames.
 pub fn audio_job(ev: &Evaluator, t0: f32, dur: f32, wav: &std::path::Path) -> Option<AudioJob> {
     use crate::audio::{self, Role, Source};
-    if ev.audio.is_empty() && ev.music.is_none() {
+    if ev.audio.is_empty() && ev.music.is_none() && ev.sound.is_none() {
         return None;
     }
     let cues = ev.audio.clone();
     let music = ev.music.clone();
+    // Sound design: cues come from the picture, so derive them here (cheap:
+    // display lists only, no pixels); synthesis and the mix run in the job.
+    let design = ev.sound.as_ref().map(|plan| {
+        let mut c = audio::design::auto::plan_cues(ev, plan);
+        for x in &mut c {
+            x.at -= t0 as f64;
+        }
+        c.retain(|x| x.at > -2.0);
+        (plan.clone(), c)
+    });
     let video_len = ev.duration as f64;
     let out = wav.to_path_buf();
     let run = move || -> Result<(), String> {
@@ -898,7 +954,28 @@ pub fn audio_job(ev: &Evaluator, t0: f32, dur: f32, wav: &std::path::Path) -> Op
             }
             tracks.push(t);
         }
-        let pcm = audio::mix(&tracks, dur as f64, audio::DEFAULT_RATE, None);
+        let pcm = match &design {
+            None => audio::mix(&tracks, dur as f64, audio::DEFAULT_RATE, None),
+            Some((plan, cues)) => {
+                let opts = audio::design::BusOpts {
+                    target_lufs: plan.target_lufs,
+                    true_peak: plan.spec.true_peak,
+                    space: plan.space.clone(),
+                    ambience: plan.ambience.clone().map(|(n, l)| (n, l, plan.spec.seed)),
+                    sfx_db: plan.spec.level,
+                    duck: plan.spec.duck,
+                };
+                audio::design::mix_design(&tracks, cues, &opts, dur as f64, audio::DEFAULT_RATE, None).map(|(p, rep)| {
+                    if std::env::var_os("ANIKIT_SOUND_REPORT").is_some() {
+                        eprintln!("sound: {} cues, {:.1} LUFS, {:.1} dBTP, music ducked up to {:.1} dB, mixed in {:.0} ms", rep.cues, rep.integrated_lufs, rep.true_peak_dbtp, rep.max_music_duck_db, rep.millis);
+                        for c in cues {
+                            eprintln!("  {:7.3}s  {:<22} {}", c.at + t0 as f64, c.name, c.why);
+                        }
+                    }
+                    p
+                })
+            }
+        };
         if music.is_some() {
             let _ = std::fs::remove_file(&music_wav);
         }
@@ -961,9 +1038,13 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         subpel: opts.quality != Quality::Draft,
         // The encoder decides per frame (auto AQ: on for gradient-dominated frames, off on flat UI) unless the spec sets `encode.aq`.
         aq_strength: ev.encode_aq.unwrap_or(ak264::EncoderConfig::default().aq_strength),
+        // One B picture between references (CABAC qualities; the chunk encoder flushes, the muxer reorders).
+        bframes: if opts.quality != Quality::Draft { 1 } else { 0 },
         ..Default::default()
     };
     let prof = Profile::default();
+    let mem_start = crate::memstat::rss().unwrap_or(0);
+    let peaks = crate::memstat::reset_peak();
     // Encode the audio to AAC while the frames render, so the final mux is a stream copy.
     let m4a = audio.as_ref().map(|_| out.with_extension(format!("audio-{}.m4a", std::process::id())));
     let has_audio = audio.is_some();
@@ -986,6 +1067,15 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     };
     let annexb = render_fused_tap(ev, opts, &cfg, &prof, tap);
     let t_enc = t0.elapsed();
+    let mem_render = if peaks { crate::memstat::peak().unwrap_or(0) } else { 0 };
+    // The frames are done: drop the per-frame images and give the workers' freed
+    // buffers back to the OS before muxing (long-lived processes otherwise keep them).
+    ev.assets.release_frame_images();
+    crate::scene3d::kernel::pool::release();
+    release_workers();
+    crate::memstat::trim();
+    let mem_stream = annexb.len() as u64;
+    let peaks = crate::memstat::reset_peak();
     let tm = Instant::now();
     match has_audio {
         false => std::fs::write(out, ak264::mp4::mux(&annexb, w, h, ev.fps as f64)).map_err(|e| format!("can't write {}: {e}", out.display()))?,
@@ -1025,6 +1115,7 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         }
     }
     let t_mux = tm.elapsed();
+    let mem_mux = if peaks { crate::memstat::peak().unwrap_or(0) } else { 0 };
     let secs = t0.elapsed().as_secs_f32();
     let unchanged = prof.unchanged.load(Ordering::Relaxed) as u32;
     let per = |x: &AtomicU64| x.load(Ordering::Relaxed) as f64 / 1e6 / n.max(1) as f64;
@@ -1046,16 +1137,24 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         held: prof.held.load(Ordering::Relaxed),
         partial: prof.partial.load(Ordering::Relaxed),
         full: prof.full.load(Ordering::Relaxed),
+        mem_start_mb: crate::memstat::mib(mem_start),
+        mem_render_peak_mb: crate::memstat::mib(mem_render),
+        mem_stream_mb: crate::memstat::mib(mem_stream),
+        mem_mux_peak_mb: crate::memstat::mib(mem_mux),
     };
     if opts.profile {
         eprintln!(
-            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting, or nested parallel work in shaders/3D/post: not counted per stage)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
+            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting, or nested parallel work in shaders/3D/post: not counted per stage)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms\n  memory  {:.0} MiB at start, peak {:.0} MiB rendering, stream {:.1} MiB, peak {:.0} MiB muxing (resident)",
             unchanged,
             sp.held,
             sp.partial,
             sp.full,
             1000.0 / wall,
-            sp.mux_ms
+            sp.mux_ms,
+            sp.mem_start_mb,
+            sp.mem_render_peak_mb,
+            sp.mem_stream_mb,
+            sp.mem_mux_peak_mb
         );
     }
     Ok(Summary {
@@ -1320,8 +1419,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
     // Quick look first: one full frame in the middle. Most renders stop here (a few ms).
     let mid = f0 + n / 2;
     let t = Instant::now();
-    let mut dl = ev.eval(frame_time(ev, mid));
-    scale_list(&mut dl, opts.scale);
+    let dl = eval_scaled(ev, frame_time(ev, mid), opts.scale);
     with_renderer(ev, |r, _| {
         r.set_quality(render_quality(opts.quality));
         r.render(&dl);
@@ -1330,6 +1428,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
     // A full frame is an upper bound for an incremental one, and other frames render alongside.
     let quick = quick_ms * changing as f64 / threads as f64 / 1e3 + 0.3;
     if quick < heavy_after * 0.5 {
+        release_workers();
         return Estimate { secs: quick, frame_ms: quick_ms, changing, threads, heaviest: None };
     }
     // Render one sample frame per thread, concurrently, as the pipeline does: layers that
@@ -1344,8 +1443,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
             // the second is the typical cost of a changing frame.
             let next = (i + 1).min(f1.saturating_sub(1));
             with_worker(|w| {
-                let mut dl = ev.eval(frame_time(ev, i));
-                scale_list(&mut dl, opts.scale);
+                let dl = eval_scaled(ev, frame_time(ev, i), opts.scale);
                 ensure_renderer(ev, w);
                 let Worker { renderer, yuv, map, .. } = w;
                 let r = renderer.as_mut().unwrap();
@@ -1353,8 +1451,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
                 r.invalidate();
                 r.render_yuv_incremental(&dl, yuv, map);
                 let t = Instant::now();
-                let mut dl = ev.eval(frame_time(ev, next));
-                scale_list(&mut dl, opts.scale);
+                let dl = eval_scaled(ev, frame_time(ev, next), opts.scale);
                 ensure_renderer(ev, w);
                 let Worker { renderer, yuv, map, last, .. } = w;
                 renderer.as_mut().unwrap().render_yuv_incremental(&dl, yuv, map);
@@ -1383,7 +1480,9 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
             // A layer's cost: its share of the render plus its eval work (shader / 3D images are
             // made while evaluating, so re-time those by forcing a fresh evaluation of the frame).
             for tag in &tags {
-                let sub = DisplayList { width: dl.width, height: dl.height, background: dl.background, ops: dl.ops[tag.ops.clone()].to_vec() };
+                // Layers inside shader channels tag their own (nested) lists, not this one.
+                let Some(ops) = dl.ops.get(tag.ops.clone()) else { continue };
+                let sub = DisplayList { width: dl.width, height: dl.height, background: dl.background, ops: ops.to_vec() };
                 let t = Instant::now();
                 with_renderer(ev, |r, _| {
                     r.invalidate();
@@ -1401,6 +1500,9 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
         }
         _ => None,
     };
+    // The sampled frames left renderers and frame buffers on every thread.
+    release_workers();
+    crate::memstat::trim();
     Estimate { secs, frame_ms, changing, threads, heaviest }
 }
 /// Seconds between progress reports: twice a second on a terminal, every 15 s

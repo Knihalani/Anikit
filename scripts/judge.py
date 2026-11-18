@@ -39,6 +39,7 @@ PACE = ROOT / "docs/video/quality/pace.py"
 DIMS = ["idea", "composition", "typography", "colour", "light_texture", "motion", "craft", "originality"]
 CRITIC_DIMS = ["motion", "sound", "craft"]
 N_FRAMES = 6
+MOTION_FLOOR = 4  # PASS/PRO need the jury's median motion >= this (controls: 5-8)
 MIN_FRAMES = int(os.environ.get("JUDGE_MIN_FRAMES", 4))  # refs need this many real frames
 CELL = (480, 300)
 MODEL = os.environ.get("JUDGE_MODEL", "claude-opus-5-5")
@@ -237,6 +238,9 @@ CRITIC_PROMPT = """You are a senior motion director reviewing one short film sub
 Files here (read every one with the Read tool):
 - frames.jpg: 6 frames sampled evenly in time.
 - pairs.jpg: 3 rows; each row is two frames 1/6 s apart, to judge motion: spacing, easing, weight, motion blur, choreography.
+- strip1.jpg, strip2.jpg, strip3.jpg (if present): the three busiest moments, each 10 consecutive frames 1/10 s apart
+  (left to right, top to bottom). Read the motion from them: spacing and easing (do positions accelerate and settle, or
+  move linearly?), overlap and follow-through, weight, how elements hand off to each other, how cuts and transitions are built.
 - crop.jpg: a 100% (1:1 pixel) crop of the most detailed region of one frame, to judge finish: type rendering, edges, banding, noise, aliasing.
 {audio_line}
 Measured pace (shot lengths, change per second):
@@ -328,6 +332,125 @@ def pace_hint(tags):
     return next((h for t, h in PACE_HINTS if t in tags), "about 2.5 s overall, every shot alive")
 
 
+def motion_strips(src, n_strips=3, n=10, fps=10, w=320):
+    """Strips of n consecutive frames (1/fps s apart) around the n_strips busiest moments (by frame difference),
+    at least 2 s apart. Each strip is one image, 5 frames per row, read left to right, top to bottom."""
+    info = ffprobe(src)
+    sw = 160
+    sh = round(sw * info["h"] / info["w"]) // 2 * 2
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(src), "-vf", f"fps={fps},scale={sw}:{sh}", "-f", "rawvideo",
+                          "-pix_fmt", "gray", "-"], capture_output=True, check=True).stdout
+    fr = np.frombuffer(raw, np.uint8).reshape(-1, sh, sw).astype(np.float32)
+    if len(fr) < n + 2:
+        return []
+    d = np.abs(np.diff(fr, axis=0)).mean(axis=(1, 2))
+    # busiest window of n frames, excluding the first/last half second
+    win = np.convolve(d, np.ones(n - 1), "valid")
+    order = np.argsort(-win)
+    picks = []
+    for i in order:
+        if i < fps // 2 or i + n > len(fr) - fps // 2:
+            continue
+        if all(abs(i - j) >= 2 * fps for j in picks):
+            picks.append(int(i))
+        if len(picks) == n_strips:
+            break
+    strips = []
+    for i in sorted(picks):
+        t0 = i / fps
+        frames = [grab(src, t0 + k / fps) for k in range(n)]
+        frames = [trim_bars(f) for f in frames]
+        fw = w; fh = round(w * frames[0].height / frames[0].width)
+        cols = 5
+        img = Image.new("RGB", (cols * fw + (cols + 1) * 4, ((n + cols - 1) // cols) * (fh + 4) + 4), (24, 24, 24))
+        for k, f in enumerate(frames):
+            img.paste(f.resize((fw, fh), Image.LANCZOS), (4 + (k % cols) * (fw + 4), 4 + (k // cols) * (fh + 4)))
+        strips.append((round(t0, 1), img))
+    return strips
+
+
+CLIPS = Path(os.environ.get("JUDGE_CLIPS", ROOT / ".cache/judge-clips-md"))  # <slug>.mp4, lawfully obtained (clips.json)
+
+MOTION_PROMPT = """You are on the final jury of an international motion-design award, judging MOTION only.
+
+In this directory are {n} entries: {files}. Each is ONE short film, shown as two strips. A strip is 10 consecutive
+frames 1/10 s apart (left to right, top to bottom), taken at that film's two busiest moments. Read every file.
+Some are by top studios; between 0 and {n} are not (amateur, template or automated). Do not assume a quota.
+Ignore subject, style, palette and image resolution. Judge only how things move:
+- spacing and easing: do things accelerate, overshoot and settle, or slide linearly / pop on and freeze?
+- choreography: do elements hand off, overlap and follow through, or does one thing move while the rest holds still?
+- weight and physicality; camera language; how cuts and transitions are built (match cuts, morphs, wipes with intent).
+- life: is anything alive in every frame, or are there dead holds?
+Scale (integers 1-10): 10 = best of the year; 8 = strong studio; 6 = competent; 4 = template; 2 = automated.
+
+Answer with ONLY one fenced ```json block:
+{{"entries": {{"A": {{"verdict": "professional" | "not professional", "confidence": 0.0-1.0, "motion": n,
+  "tells": ["..."], "gaps": ["3 biggest motion gaps vs the best entry"]}}, ...}}, "ranking": ["best", "...", "worst"]}}"""
+
+
+def clip_refs(tags, k, rng, exclude=()):
+    have = {p.stem for p in CLIPS.glob("*.mp4")} - set(exclude)
+    if len(have) < 2:
+        return []
+    refs = [r for r in load_refs() if r["slug"] in have]
+    known = {r["slug"] for r in refs}
+    refs += [{"slug": s_, "style_tags": []} for s_ in have - known]  # clips without stills still count
+    tags = set(tags) | {SYNONYMS[t] for t in tags if t in SYNONYMS}
+    refs.sort(key=lambda r: 2 * len(tags & set(r["style_tags"])) + rng.random(), reverse=True)
+    return refs[:k]
+
+
+def strip_sheet(src, out):
+    st = motion_strips(src, n_strips=2)
+    if not st:
+        return False
+    W = 1200
+    ims = [degrade(img, longest=W, q=80) for _, img in st]
+    sheet = Image.new("RGB", (W, sum(i.height for i in ims) + 12 * (len(ims) - 1)), (24, 24, 24))
+    y = 0
+    for im in ims:
+        sheet.paste(im, (0, y)); y += im.height + 12
+    sheet.save(out, "JPEG", quality=85)
+    return True
+
+
+def motion_compare(src, tags, trials, seed, workdir, exclude=()):
+    refs = clip_refs(tags, 3, random.Random(seed), exclude)
+    if len(refs) < 2:
+        return None
+    entries = [("candidate", src)] + [(r["slug"], CLIPS / f"{r['slug']}.mp4") for r in refs]
+    out = []
+    for t in range(trials):
+        rng = random.Random(seed * 1000 + 500 + t)
+        order = entries[:]
+        rng.shuffle(order)
+        blind = Path(tempfile.mkdtemp(prefix="m"))
+        key = {}
+        for L, (name, path) in zip("ABCDEFG", order):
+            if strip_sheet(path, blind / f"{L}.jpg"):
+                key[L] = name
+        files = ", ".join(f"{L}.jpg" for L in key)
+        ans, meta = claude(MOTION_PROMPT.format(n=len(key), files=files), blind)
+        shutil.copytree(blind, workdir / f"motion{t}", dirs_exist_ok=True)
+        shutil.rmtree(blind, ignore_errors=True)
+        out.append({"key": key, "answer": ans, "meta": meta})
+    per = {}
+    for tr in out:
+        for L, name in tr["key"].items():
+            e = tr["answer"]["entries"].get(L, {})
+            p = per.setdefault(name, {"m": [], "pro": [], "gaps": []})
+            if isinstance(e.get("motion"), (int, float)):
+                p["m"].append(e["motion"])
+            p["pro"].append(1 if str(e.get("verdict", "")).startswith("professional") else 0)
+            p["gaps"] += e.get("gaps", [])
+    summ = {n: {"motion": statistics.median(p["m"]) if p["m"] else None, "judged_professional": f"{sum(p['pro'])}/{len(p['pro'])}",
+                "gaps": p["gaps"]} for n, p in per.items()}
+    rm = [v["motion"] for n, v in summ.items() if n != "candidate" and v["motion"] is not None]
+    return {"refs": [r["slug"] for r in refs], "candidate": summ.get("candidate"), "refs_summary": {n: v for n, v in summ.items() if n != "candidate"},
+            "ref_mean": round(statistics.mean(rm), 2) if rm else None, "trials": out,
+            "cost_usd": round(sum(t["meta"]["cost_usd"] or 0 for t in out), 3)}
+
+
 def critic(src, workdir, tags=()):
     info = ffprobe(src)
     blind = Path(tempfile.mkdtemp(prefix="c"))
@@ -350,6 +473,9 @@ def critic(src, workdir, tags=()):
     for r in rows:
         pairs.paste(r, (0, y)); y += r.height
     pairs.save(blind / "pairs.jpg", quality=88)
+    if os.environ.get("JUDGE_STRIPS", "0") == "1":
+        for k, (t0, img) in enumerate(motion_strips(src)):
+            img.save(blind / f"strip{k + 1}.jpg", quality=85)
     # 100% crop of the most detailed 640x400 window across the frames
     best = None
     for f in fr:
@@ -381,8 +507,18 @@ def critic(src, workdir, tags=()):
 # ---------------------------------------------------------------- commands
 
 def judge(name, frames, tags, args, exclude=(), video=None):
+    if args.trials < 1:
+        sys.exit("--trials must be >= 1")
     rng = random.Random(args.seed)
-    refs = pick_refs(tags, args.refs, rng, exclude=exclude, fmt=args.format)
+    pin = getattr(args, "pin", None)
+    if pin:
+        have = {r["slug"]: r for r in load_refs()}
+        missing = [s_ for s_ in pin if s_ not in have]
+        if missing:
+            sys.exit(f"pinned refs not available locally: {missing}; run `python3 scripts/judge.py sync-bench` first")
+        refs = [have[s_] for s_ in pin]
+    else:
+        refs = pick_refs(tags, args.refs, rng, exclude=exclude, fmt=args.format)
     out = Path(args.out or ROOT / "docs/video/judge/results") / name
     out.mkdir(parents=True, exist_ok=True)
     print(f"judging {name} vs {[r['slug'] for r in refs]}", file=sys.stderr)
@@ -407,6 +543,11 @@ def judge(name, frames, tags, args, exclude=(), video=None):
             dims["sound"] = s["sound"]
         result["full_scores"] = dims
         result["full_overall"] = round(statistics.mean(dims.values()), 2)
+    if video and os.environ.get("JUDGE_MOTION", "0") == "1":  # informational: not part of the verdict (VALIDATION.md)
+        m = motion_compare(video, tags, args.trials, args.seed, out, exclude=exclude)
+        if m:
+            result["motion_blind"] = m
+            print(f"  motion: cand {m['candidate']['motion']} ({m['candidate']['judged_professional']}) vs refs {m['ref_mean']}", file=sys.stderr)
     meta = [t["meta"] for t in trials] + ([result["critic"]["meta"]] if "critic" in result else [])
     result["cost_usd"] = round(sum(m["cost_usd"] or 0 for m in meta), 3)
     result["judge_seconds"] = round(sum(m["seconds"] for m in meta), 1)
@@ -421,6 +562,8 @@ def verdict(cand, delta):
     """PASS: indistinguishable from the style-matched refs. PRO: passes as real studio work but below the refs.
     FAIL: the jury can tell. Thresholds come from controls (held-out pro refs): every control is PRO or PASS."""
     pro = cand.get("pro_rate", 0) >= 0.6
+    if pro and (cand.get("scores", {}).get("motion") or 0) < MOTION_FLOOR:
+        return "FAIL"  # a well-made still is not a film: every control scores motion >= 5
     if pro and delta is not None and delta >= -1.0:
         return "PASS"
     if pro and (cand.get("overall") or 0) >= 5.0:
@@ -435,12 +578,29 @@ def cmd_run(args):
     judge(name, frames, args.tags.split(","), args, video=video)
 
 
+def cmd_brief(args):
+    """Judge a rebuild of an eval brief against the SAME 3 refs as r1/r2 (pins.json), so scores pair with those rounds."""
+    b = {x["id"]: x for x in json.loads((ROOT / "docs/video/judge/briefs.json").read_text())}[args.brief]
+    pins = json.loads((ROOT / "docs/video/judge/pins.json").read_text())[args.brief]
+    if any(s_ not in {r["slug"] for r in load_refs()} for s_ in pins["refs"]):
+        cmd_sync_bench(args)  # REFS's stills are not in git: fetch them once per container
+        REFS_DIRS[:] = [p for p in (ROOT / "docs/video/judge/refs", BENCH / "export") if p.is_dir()]
+    args.format, args.grid, args.pin = b["format"], None, pins["refs"]
+    name = args.name or args.brief
+    r = judge(name, load_frames(args.candidate), b["tags"], args, video=args.candidate)
+    print(f"\n{args.brief}: {r['candidate'].get('overall')} (judged pro {r['candidate'].get('judged_professional')}, verdict {r['verdict']}) "
+          f"vs r1 {pins['r1']} / r2 {pins['r2']}; full {r.get('full_overall')} vs r1 {pins['r1_full']} / r2 {pins['r2_full']}. "
+          f"Result: {Path(args.out or ROOT / 'docs/video/judge/results') / name / 'result.json'}")
+
+
 def cmd_control(args):
     """False-positive check: a held-out professional reference takes the candidate's seat."""
     refs = {r["slug"]: r for r in load_refs()}
     r = refs[args.slug]
     tags = args.tags.split(",") if args.tags else r["style_tags"]
-    judge(f"control-{args.slug}", ref_frames(args.slug), tags, args, exclude=(args.slug,))
+    clip = CLIPS / f"{args.slug}.mp4"
+    judge(f"control-{args.slug}", ref_frames(args.slug), tags, args, exclude=(args.slug,),
+          video=str(clip) if clip.exists() else None)
 
 
 def cmd_table(args):
@@ -479,6 +639,35 @@ def cmd_sync_bench(args):
     subprocess.run([sys.executable, "-I", str(tool), "fetch", "--refresh"], cwd=src, env=env)
     shutil.rmtree(BENCH / "export", ignore_errors=True)
     subprocess.run([sys.executable, "-I", str(tool), "export", "--no-thumbs", "--out", str(BENCH / "export")], cwd=src, env=env, check=True)
+    cj = src / "docs/video/judge/benchmark/clips.json"
+    if cj.exists():
+        sync_clips(cj)
+
+
+MOTION_CLIP_SET = ["calibration-simon-vpro-idents-2010", "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+                   "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+                   "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+                   "calibration-blender-hero-grease-pencil-showcase", "blender-studio-charge-2022"]
+
+
+def sync_clips(clips_json):
+    """Lawful (CC/PD) direct-file clips from REFS's clips.json: a 20 s excerpt from the middle of each, into .cache/judge-clips."""
+    import time
+    allc = ROOT / ".cache/judge-clips"; allc.mkdir(parents=True, exist_ok=True)
+    md = ROOT / ".cache/judge-clips-md"; md.mkdir(parents=True, exist_ok=True)
+    ua = "anikit-judge/1.0 (evaluation; CC/PD clips)"
+    for c in json.loads(Path(clips_json).read_text()):
+        out = allc / f"{c['slug']}.mp4"
+        if not out.exists():
+            d = subprocess.run(["ffprobe", "-v", "error", "-user_agent", ua, "-show_entries", "format=duration", "-of", "csv=p=0", c["url"]],
+                               capture_output=True, text=True).stdout.strip()
+            ss = max(0.0, float(d) / 2 - 10) if d else 0.0
+            time.sleep(5)  # Commons rate-limits
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-user_agent", ua, "-ss", f"{ss:.1f}", "-i", c["url"], "-t", "20", "-an",
+                            "-c:v", "libx264", "-crf", "18", "-preset", "fast", str(out)], check=False)
+            time.sleep(5)
+        if c["slug"] in MOTION_CLIP_SET and out.exists() and not (md / out.name).exists():
+            (md / out.name).symlink_to(out)
 
 
 def cmd_batch(args):
@@ -524,10 +713,19 @@ def main():
     b.add_argument("--out")
     b.add_argument("--no-critic", action="store_true")
     sub.add_parser("sync-bench")
+    bp = sub.add_parser("brief", help="judge a rebuild of an eval brief against its pinned r1/r2 refs")
+    bp.add_argument("brief")
+    bp.add_argument("candidate")
+    bp.add_argument("--name")
+    bp.add_argument("--trials", type=int, default=3)
+    bp.add_argument("--seed", type=int, default=7)
+    bp.add_argument("--refs", type=int, default=3)
+    bp.add_argument("--out")
+    bp.add_argument("--no-critic", action="store_true")
     t = sub.add_parser("table")
     t.add_argument("results", nargs="+")
     args = ap.parse_args()
-    {"run": cmd_run, "control": cmd_control, "table": cmd_table, "batch": cmd_batch, "sync-bench": cmd_sync_bench}[args.cmd](args)
+    {"run": cmd_run, "control": cmd_control, "table": cmd_table, "batch": cmd_batch, "sync-bench": cmd_sync_bench, "brief": cmd_brief}[args.cmd](args)
 
 
 if __name__ == "__main__":

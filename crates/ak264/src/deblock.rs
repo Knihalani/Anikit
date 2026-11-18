@@ -47,7 +47,10 @@ fn bs(p: &MbInfo, bp: usize, q: &MbInfo, bq: usize, mb_edge: bool) -> u8 {
     if p.nz[bp] != 0 || q.nz[bq] != 0 {
         return 2;
     }
-    ((p.mv.0 - q.mv.0).abs() >= 4 || (p.mv.1 - q.mv.1).abs() >= 4) as u8
+    // 4×4 block (raster) → 8×8 quadrant
+    let quad = |b: usize| (b / 8) * 2 + (b % 4) / 2;
+    let (mp, mq) = (p.qmv(quad(bp)), q.qmv(quad(bq)));
+    ((mp.0 - mq.0).abs() >= 4 || (mp.1 - mq.1).abs() >= 4) as u8
 }
 
 /// Filter up to 16 lines across one edge, branch-free and lane-wise.
@@ -357,8 +360,22 @@ fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize)
     let intra = cur.kind != 0;
     for e in 1..4 {
         for k in 0..4 {
-            let v = if intra { 3 } else { 2 * ((nzm >> (k * 4 + e - 1) | nzm >> (k * 4 + e)) & 1) as u8 };
-            let h = if intra { 3 } else { 2 * ((nzm >> ((e - 1) * 4 + k) | nzm >> (e * 4 + k)) & 1) as u8 };
+            if cur.t8 && e != 2 {
+                continue; // inside an 8×8 transform block: not filtered
+            }
+            let mut v = if intra { 3 } else { 2 * ((nzm >> (k * 4 + e - 1) | nzm >> (k * 4 + e)) & 1) as u8 };
+            let mut h = if intra { 3 } else { 2 * ((nzm >> ((e - 1) * 4 + k) | nzm >> (e * 4 + k)) & 1) as u8 };
+            if e == 2 && cur.part != 0 && !intra {
+                // edges between 8×8 partitions: motion vector difference
+                let far = |a: (i16, i16), b: (i16, i16)| ((a.0 - b.0).abs() >= 4 || (a.1 - b.1).abs() >= 4) as u8;
+                let r = k / 2;
+                if v == 0 {
+                    v = far(cur.qmv(r * 2), cur.qmv(r * 2 + 1));
+                }
+                if h == 0 {
+                    h = far(cur.qmv(r), cur.qmv(r + 2));
+                }
+            }
             b[0][e][k] = v;
             b[1][e][k] = h;
             any |= v != 0 || h != 0;

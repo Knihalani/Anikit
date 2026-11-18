@@ -18,6 +18,14 @@ static POOL: Mutex<Vec<Vec<u64>>> = Mutex::new(Vec::new());
 /// Keep at most this many words pooled (2 GiB).
 const MAX_WORDS: usize = 1 << 28;
 
+/// Free every pooled buffer. Call between renders (the pipeline does, when a
+/// render's frames are done), never mid-frame: the next frame just allocates
+/// afresh. Returns the bytes released.
+pub fn release() -> usize {
+    let pooled = std::mem::take(&mut *POOL.lock().unwrap());
+    pooled.iter().map(|v| v.capacity() * 8).sum()
+}
+
 /// Plain data that any bit pattern is valid for (f32, u32, u8 and arrays or
 /// `repr(C)` structs of them).
 ///

@@ -1,0 +1,518 @@
+{
+  "name": "ceiling2_breath_breath",
+  "tags": [
+    "data-story",
+    "editorial-data"
+  ],
+  "refs": [
+    "kurzgesagt-short",
+    "cosmos-spacetime-odyssey",
+    "kurzgesagt-climate"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 6,
+      "composition": 4,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 2,
+      "motion": 4,
+      "craft": 5,
+      "originality": 4
+    },
+    "overall": 4,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "No image: the subject (forests, breath, atmosphere) never appears; give the data a physical, lit, textured world as D does",
+      "The typography has no point of view; pick or draw faces with character and let the numbers become the composition at expressive scale",
+      "Break the repeated slide grid; choreograph camera moves and transitions so each frame is a different poster",
+      "Turn the 'planet breathing' idea into an image with physical light, material and atmosphere, as C makes the eye a nebula. Don't leave it as a polar plot on navy",
+      "Break the repeated slide layout: change scale, framing and the relationship between type and graphic shot to shot, so the spiral can take over the frame",
+      "Commission or choose typography with a point of view, and integrate the numbers (1985 \u2192 2026) into the visual itself rather than placing them as captions",
+      "It has no image or material world: A makes physical, lit, textured matter, and this needs atmosphere (real air, forest, the observatory, breath made visible) instead of a line chart on navy",
+      "Break the slide template: vary the framing, scale and layout per beat, and let the type interact with the spiral rather than sitting in a fixed left column",
+      "Replace the default grotesk/mono pairing and caps-label formula with a typographic idea that has its own point of view (expressive scale on 426.1, custom numerals, type that breathes)"
+    ],
+    "tells": [
+      "Textbook 'tasteful AI' template: near-black navy ground, small tracked orange caps label above a light generic-grotesk headline, monospace data, one accent colour",
+      "The same left-column text plus right-side graphic layout repeats across all four frames; it is a slide deck with the words swapped",
+      "The 'planet breathes' framing and the spiral CO\u2082 chart are well-worn data-viz tropes (spiral and Keeling curve) presented literally",
+      "No light, texture or material; motion is limited to a line drawing on and a counter ticking",
+      "Source footnote and caption hierarchy look auto-laid-out rather than art-directed",
+      "The textbook 'tasteful AI' formula: dark navy ground, small tracked orange caps label above a light grotesk headline, monospace source line, single accent colour",
+      "The same left-text / right-graphic slide layout repeats in all four frames, with words and numbers swapped. Frames 2 and 3 are the same slide at different states",
+      "The type is set at defaults (generic grotesk and generic mono) with no typographic idea beyond size steps; text is placed like a deck",
+      "The light is flat and there is no texture or material. The breath/loop spiral is the one real idea, but it is rendered as a chart, not designed as an image",
+      "Textbook 'tasteful AI' template: dark navy ground, a small tracked-caps orange label ('ONE YEAR AT MAUNA LOA', '68 YEARS, 68 BREATHS') above a light grotesk headline, and a single orange accent",
+      "The same slide layout repeats across frames: text column on the left, graphic on the right, a mono source line at the bottom, with only words and numbers swapped",
+      "Default typography (Inter-like light sans plus generic mono) with only basic scale contrast, set like a deck",
+      "No light, texture or material; flat vector lines on an empty dark field",
+      "The breath-as-loop spiral of the Keeling curve is a nice data idea, but it is a familiar trope (climate spirals) delivered literally",
+      "The 'every year the planet takes a breath / the breath hasn't changed, the air has' copywriting is the polished aphoristic register typical of LLM output"
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-short": {
+      "overall": 6.88,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "cosmos-spacetime-odyssey": {
+      "overall": 8.5,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "kurzgesagt-climate": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.67,
+  "delta": -3.67,
+  "trials": [
+    {
+      "key": {
+        "A": "kurzgesagt-climate",
+        "B": "kurzgesagt-short",
+        "C": "candidate",
+        "D": "cosmos-spacetime-odyssey"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Saturated, deliberate palette (violet road, cyan isometric grid, magenta/lime) used as a system across very different scenes",
+              "Recurring bird characters with consistent construction and expressive posing; smog rendered as a layered, graphic motif that travels from the traffic scene to the isometric map",
+              "Each frame uses a different staging: dense isometric diorama, four-up split screen, hero object with a UI side panel. That variety shows real choreography and editorial pacing, not one repeated layout",
+              "Rim lights, glowing bulb, cast shadows and soft gradients give depth to flat vector shapes"
+            ],
+            "gaps": [
+              "The idea is explanatory (cars pollute, here is the energy map) rather than a single memorable conceit; find a visual metaphor that only this film could own",
+              "The house style is very recognisable, and originality suffers because it reads as a known brand language rather than a new one",
+              "Type is almost absent and the UI sliders and checkmark feel generic; build a typographic layer as distinctive as the illustration"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Same high-craft flat-vector house style: character acting (villain at the STOP button, birds playing a memory game), glowing hazard lights, a stylised heat-map Europe",
+              "Varied scenes across a vertical short: control room, title map, dialogue gag, mammoth hero shot",
+              "The vertical 9:16 format is used competently, but the burned-in captions (\"completely due\", \"misconception\", \"ice age,\") are social-platform defaults sitting on top of the art"
+            ],
+            "gaps": [
+              "The caption typography is default social subtitling with no relation to the illustration; design captions into the frame",
+              "The title card (bevelled white display type over a heat map) is the weakest frame; it reads like a thumbnail rather than a poster",
+              "Compositions are cramped and centred in vertical; use the tall format for scale and depth the way D uses its full frame"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "Textbook 'tasteful AI' template: near-black navy ground, small tracked orange caps label above a light generic-grotesk headline, monospace data, one accent colour",
+              "The same left-column text plus right-side graphic layout repeats across all four frames; it is a slide deck with the words swapped",
+              "The 'planet breathes' framing and the spiral CO\u2082 chart are well-worn data-viz tropes (spiral and Keeling curve) presented literally",
+              "No light, texture or material; motion is limited to a line drawing on and a counter ticking",
+              "Source footnote and caption hierarchy look auto-laid-out rather than art-directed"
+            ],
+            "gaps": [
+              "No image: the subject (forests, breath, atmosphere) never appears; give the data a physical, lit, textured world as D does",
+              "The typography has no point of view; pick or draw faces with character and let the numbers become the composition at expressive scale",
+              "Break the repeated slide grid; choreograph camera moves and transitions so each frame is a different poster"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 8
+            },
+            "tells": [
+              "A specific conceit, the cosmos mirrored in earthly objects (a nebula pooled in a crater, a spiral nautilus echoing the accretion disc, the Helix Nebula as an eye), builds to the title as a payoff",
+              "Photoreal light, texture and depth: wet rock, sand grain, translucent shell, volumetric dust",
+              "Match-cut logic between frames implies true choreography from macro to cosmic scale",
+              "Wide-tracked title set in the frame so the eye's pupil sits in the O; credits are quiet and well placed"
+            ],
+            "gaps": [
+              "The credit typography is a standard tracked sans; it could be pushed further toward the integration the title card achieves",
+              "The nautilus-as-golden-spiral and eye-as-nebula images are familiar science metaphors, so some of the surprise is predictable",
+              "The palette leans on Hubble-image orange and teal; a more unexpected colour decision would raise its originality to the top of the year"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 28.8,
+        "cost_usd": 0.1392706,
+        "tokens": 70018,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "kurzgesagt-climate",
+        "B": "kurzgesagt-short",
+        "C": "cosmos-spacetime-odyssey",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A recognisable house style done with full control: saturated violet/cyan/lime palette, soft bevelled shading, rim highlights and ambient-occlusion shadows on the vehicles",
+              "Real scene variety: a dense isometric traffic jam, an isometric systems map, a four-panel character grid and a car with a UI control panel. That points to an edited story with choreographed transitions, not a single repeated layout",
+              "Purple smog blobs recur as a visual motif across the frames and tie the systems map back to the traffic scene",
+              "Character design has personality (headphones, sunglasses, a bird on the car roof), and staging is asymmetric and deliberate"
+            ],
+            "gaps": [
+              "The idea is explanatory (emissions \u2192 energy \u2192 choices) rather than a single concept only this piece could carry. It needs a central conceit as strong as C's eye/nebula",
+              "No typographic voice is visible. Type should do expressive work instead of being absent or left to UI icons",
+              "The house style is very codified, so surprise is low. A shift in medium or light (true volumetrics, texture) would lift originality"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Same accomplished flat-with-depth illustration language: glows on the alarm lights, layered topographic heat-map title card, a mammoth with considered fur shading against a pastel sky",
+              "Visual wit: a villain at a STOP console with a world map shows the 'climate tipping point' idea as a character gag; birds play a memory-card game to show a 'misconception'",
+              "A heavy rounded display face with an outline and drop shadow, integrated with the map title card, is a chosen brand face, not a default",
+              "Every frame is a different set-up and scale, which points to editorial choreography"
+            ],
+            "gaps": [
+              "Vertical social format with burned-in captions sitting over the art. The caption type is generic and fights the compositions",
+              "The ideas are illustrative gags rather than one memorable, ownable image. Push toward a single transformative visual metaphor",
+              "The palette and gradients repeat the studio's formula. Less variation in light and texture than the best entry"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific visual idea that rhymes scales: a crater pool reflects a nebula, a nautilus spiral echoes a protoplanetary disk, and a human iris becomes the Helix nebula. Micro and macro fuse in a way only this title could",
+              "Real light and material: wet rock, sand grain and footprints, translucent shell lit from behind, volumetric dust and comet trails",
+              "Titles are widely tracked and integrated into the eye: the letters straddle the pupil and the credits sit quietly in the negative space of each frame",
+              "The frames progress from earth to shell to solar system to eye and cosmos, which shows clear choreography and a build to the reveal"
+            ],
+            "gaps": [
+              "The credit typography is conventional (a small tracked-caps role over the name) and could be more integrated with the image",
+              "The iris/nebula match-cut is a famous trope. More surprise in the final reveal would push it to a 10",
+              "Some frames lean on stock-adjacent space-art tropes (a comet streak, the accretion disk). These need a more singular art direction"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 4,
+              "craft": 5,
+              "originality": 4
+            },
+            "tells": [
+              "The textbook 'tasteful AI' formula: dark navy ground, small tracked orange caps label above a light grotesk headline, monospace source line, single accent colour",
+              "The same left-text / right-graphic slide layout repeats in all four frames, with words and numbers swapped. Frames 2 and 3 are the same slide at different states",
+              "The type is set at defaults (generic grotesk and generic mono) with no typographic idea beyond size steps; text is placed like a deck",
+              "The light is flat and there is no texture or material. The breath/loop spiral is the one real idea, but it is rendered as a chart, not designed as an image"
+            ],
+            "gaps": [
+              "Turn the 'planet breathing' idea into an image with physical light, material and atmosphere, as C makes the eye a nebula. Don't leave it as a polar plot on navy",
+              "Break the repeated slide layout: change scale, framing and the relationship between type and graphic shot to shot, so the spiral can take over the frame",
+              "Commission or choose typography with a point of view, and integrate the numbers (1985 \u2192 2026) into the visual itself rather than placing them as captions"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.8,
+        "cost_usd": 0.139227,
+        "tokens": 70019,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "kurzgesagt-short",
+        "C": "kurzgesagt-climate",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A real visual thesis: rhyming natural forms at different scales. A crater holds a nebula, a nautilus spiral echoes an accretion disc, and the sequence resolves on an eye-shaped nebula with the pupil standing in for the O in the title",
+              "Photoreal material work: wet sand with footprints, translucent backlit shell, rocky crater lip, volumetric dust in the protoplanetary disc",
+              "Credits are placed small at the lower right of each shot, tucked against the subject the way a broadcast main title does it",
+              "Warm and cool palettes alternate across shots, and the sequence builds to a hot orange/blue finale",
+              "The final card is a strong poster: the eye replaces the O and the title is widely tracked around it"
+            ],
+            "gaps": [
+              "The typography is a stock wide-tracked sans with no custom or expressive idea; C builds its type language into the illustration, and this title type could sit on any science doc",
+              "The shots stand alone as beautiful plates, with little visible choreography or match-cutting between them; the transitions need to carry the scale-rhyme idea as clearly as the images do",
+              "Some imagery leans on familiar space-doc stock tropes (Helix-style nebula, generic disc and comets); push for one image nobody has seen before"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "A coherent house illustration system: bold saturated palette, rim-lit flat characters, consistent bird mascots, a stylised heat-map Europe",
+              "Narrative staging differs in every frame (villain at control desk, birds playing a memory-card game, mammoth in snow), with no repeated layout",
+              "The headline 'Europe's Next Ice Age' is set in a heavy rounded display face with outline and drop shadow over the map, a deliberate choice that fits the brand",
+              "The villain character is close to a well-known existing game character in design, which hurts originality"
+            ],
+            "gaps": [
+              "The vertical format leaves frames underfilled: big empty areas around single characters, and none of C's density or environmental layering",
+              "Burned-in word-by-word captions ('completely due', 'misconception') in a default small sans sit over the art without integration and cheapen every frame",
+              "Lighting is limited to flat fills with simple rim highlights; there is no atmosphere or depth the way C's environments (smog, isometric world) have it"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered frames: a traffic jam with smog plumes, cars of varied models, and foreground and background depth",
+              "Every shot uses a different spatial grammar (a perspective street scene, an isometric systems map linking steak, planes, solar and wind, a four-panel split-screen of characters, a single hero object with a UI slider), which implies strong choreography and pacing",
+              "A deliberate, unusual palette: violet ground, cyan, acid green and magenta, held consistently while the scheme changes per scene",
+              "Polished character design and consistent shading (rim lights, soft shadows, small glints), with the illustration carrying the explanation",
+              "No visible type; the visuals carry the meaning on their own, so its absence serves the piece"
+            ],
+            "gaps": [
+              "The idea is explainer-literal (emissions shown as black smoke blobs, a data chart icon, eco-mode sliders); there is no single image as memorable as A's eye-for-an-O",
+              "The house style is so established that it reads as brand-consistent rather than surprising; there is no frame that breaks the system",
+              "The UI elements (slider and checkmark) slip toward generic interface iconography; integrate them into the world's material language"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.78,
+            "scores": {
+              "idea": 6,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 4,
+              "craft": 5,
+              "originality": 4
+            },
+            "tells": [
+              "Textbook 'tasteful AI' template: dark navy ground, a small tracked-caps orange label ('ONE YEAR AT MAUNA LOA', '68 YEARS, 68 BREATHS') above a light grotesk headline, and a single orange accent",
+              "The same slide layout repeats across frames: text column on the left, graphic on the right, a mono source line at the bottom, with only words and numbers swapped",
+              "Default typography (Inter-like light sans plus generic mono) with only basic scale contrast, set like a deck",
+              "No light, texture or material; flat vector lines on an empty dark field",
+              "The breath-as-loop spiral of the Keeling curve is a nice data idea, but it is a familiar trope (climate spirals) delivered literally",
+              "The 'every year the planet takes a breath / the breath hasn't changed, the air has' copywriting is the polished aphoristic register typical of LLM output"
+            ],
+            "gaps": [
+              "It has no image or material world: A makes physical, lit, textured matter, and this needs atmosphere (real air, forest, the observatory, breath made visible) instead of a line chart on navy",
+              "Break the slide template: vary the framing, scale and layout per beat, and let the type interact with the spiral rather than sitting in a fixed left column",
+              "Replace the default grotesk/mono pairing and caps-label formula with a typographic idea that has its own point of view (expressive scale on 426.1, custom numerals, type that breathes)"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.6,
+        "cost_usd": 0.14523039999999998,
+        "tokens": 70312,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": true,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": false
+      },
+      "defects": [
+        "All 12.4 s are one continuous shot. Scenes change only by in-place dissolves, so there is no cut, camera move or change of scale between the three sections.",
+        "The pen-tip dot traces the spiral and the curve at a near-linear rate. Nothing accelerates, settles or overshoots, so the line has no weight.",
+        "The headline and body copy fade in and then hold still while only the line moves. Seconds 1\u20133 and 9\u201311 are close to dead air (measured change 0.6\u20131.7 and 0.8\u20131.0).",
+        "Moving from the one-year arc to the 68-year spiral, and from the spiral to the Keeling curve, is done with a crossfade. The spiral never unwinds into the time series, which is the obvious match-transform.",
+        "The source line and axis labels are around 6\u20138 px. They are unreadable at 1080 and will block up after compression.",
+        "At 100% the dense spiral rings show slight moir\u00e9 and stepping where thin strokes sit closer than 2 px apart. The strokes are flat, with no glow and no change in thickness.",
+        "The '426.1' callout and the per-decade '+x.x' annotations crowd the top-right of the Keeling curve and sit close to the data line.",
+        "The audio is short tonal plucks with a few stacked harmonics over a low pad. It drops to silence at about 3.3 s, 6.6 s and 10 s, which reads as separate cues joined at the scene changes rather than one designed score."
+      ],
+      "gaps": [
+        "The motion is not choreographed. Each scene does one thing: a line draws at constant speed, then the scene dissolves. Top studio work would give the line breath-like easing (inhale and exhale timing on the seasonal wobble), let the year counter accelerate through the decades, and transform the spiral physically into the Keeling curve. The piece's single idea needs that continuous transformation as its centrepiece.",
+        "The sound is simple synth plucks in three separate sections, with silent gaps at the scene changes. There is no designed breath sound, no layer that builds as the rings stack up, and no hit when the spiral reaches 2026. The audio follows the structure but adds no weight or emotion.",
+        "The finish is flat vector work. The lines have no light, depth, bloom or variation in thickness, and the micro-type is too small for screen. It reads as a well-styled interactive chart recorded to video rather than a finished film."
+      ]
+    },
+    "meta": {
+      "seconds": 23.8,
+      "cost_usd": 0.1647378,
+      "tokens": 72275,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "breath.mp4: 12.4s, 1 shots, median 12.40s, longest 12.40s\nper-second change: [1.7, 0.6, 1.2, 5.6, 3.9, 7.4, 3.9, 15.8, 4.6, 0.8, 1.0]\nPACE: FAIL \u2014 longest shot 12.4s > 2.5s; median shot 12.4s > 1.5s; 9/11 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 6,
+    "composition": 4,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 2,
+    "motion": 4.5,
+    "craft": 6.0,
+    "originality": 4,
+    "sound": 5
+  },
+  "full_overall": 4.28,
+  "cost_usd": 0.588,
+  "judge_seconds": 113.0,
+  "verdict": "FAIL"
+}

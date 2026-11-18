@@ -41,6 +41,7 @@ pub mod code;
 pub mod devices;
 pub mod lottie;
 pub mod fluid;
+pub mod physarum;
 pub mod metaballs;
 pub mod morph;
 pub mod particle_text;
@@ -152,6 +153,24 @@ pub trait Component: Send + Sync {
     fn duration(&self) -> Option<f32> {
         None
     }
+    /// Collisions in the component's own simulation up to local time `until`
+    /// (sound design: physics hits are heard where they happen). Default none.
+    fn impacts(&self, _until: f32, _aspect: f32) -> Vec<Impact> {
+        Vec::new()
+    }
+}
+
+/// One collision a component reports for sound design.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Impact {
+    /// Local time (seconds).
+    pub t: f32,
+    /// 0..1 (speed change, scaled by body size).
+    pub strength: f32,
+    /// Horizontal position in the component's box, 0..1.
+    pub x: f32,
+    /// What the body is made of, for the sound: `metal`, `glass`, `wood`, `stone`, `ceramic`, `plastic`.
+    pub material: &'static str,
 }
 
 /// A built component plus its box.
@@ -275,6 +294,7 @@ kinds! {
     // Shapes and light
     "morph" => morph::Morph, "Smooth gradient shape morphing between named shapes (circle, square, star, heart, blob, triangle) or SVG paths.", r##"{"shapes":["circle","star","heart"]}"##;
     "fluid" => fluid::Fluid, "Fluid simulation: ink blooming in water, smoke or fire, with real vortices; sources push and inject dye, and `text` writes a word the flow takes apart.", r##"{"look":"ink","text":{"text":"FLUID"}}"##;
+    "physarum" => physarum::Physarum, "Slime-mould network: agents sense a trail field, turn towards it, move and deposit; veins form, merge and re-route. Text can seed or attract them.", r##"{"agents":200000,"spawn":"disc"}"##;
     "metaballs" => metaballs::Metaballs, "Liquid gooey blobs that drift, merge and split, with a gradient fill and glow.", r##"{}"##;
     "god-rays" => rays::GodRays, "Volumetric light rays from a point, slowly turning, with dust motes in the beams.", r##"{}"##;
     "lens-flare" => rays::LensFlare, "Anamorphic lens flare: streak, halo and ghosts along the axis through the centre; `at` can travel a path.", r##"{"at":[0.3,0.3]}"##;

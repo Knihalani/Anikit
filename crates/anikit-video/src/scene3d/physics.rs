@@ -1009,6 +1009,47 @@ impl Sim {
         (st.frames[k].clone(), st.frames[k + 1].clone(), u - k as f32)
     }
 
+    /// Bodies' collisions up to video time `until`: `(t, body, velocity change m/s,
+    /// world position)`. Found in the recording (a velocity change gravity
+    /// can't explain is a contact), so it needs no extra simulation state.
+    /// One body sounds at most every 80 ms.
+    pub fn impacts(&self, until: f32) -> Vec<(f32, usize, f32, [f32; 3])> {
+        let dt = 1.0 / self.record.max(1.0);
+        let n = self.init.len();
+        let mut out = Vec::new();
+        let mut last = vec![f32::NEG_INFINITY; n];
+        let pos = |f: &Vec<Pose7>, i: usize| [f[i][0], f[i][1], f[i][2]];
+        let mut t = self.start + 2.0 * dt;
+        let g = self.gravity;
+        while t <= until {
+            let (a, _, _) = self.at(t);
+            let (b, _, _) = self.at(t - dt);
+            let (c, _, _) = self.at(t - 2.0 * dt);
+            for i in 0..n {
+                let (pa, pb, pc) = (pos(&a, i), pos(&b, i), pos(&c, i));
+                let v1 = [(pa[0] - pb[0]) / dt, (pa[1] - pb[1]) / dt, (pa[2] - pb[2]) / dt];
+                let v0 = [(pb[0] - pc[0]) / dt, (pb[1] - pc[1]) / dt, (pb[2] - pc[2]) / dt];
+                let slowed = v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2] < v0[0] * v0[0] + v0[1] * v0[1] + v0[2] * v0[2];
+                // A contact is a sudden loss of speed: free fall never slows a
+                // falling body, resting bodies don't move, and the test is relative
+                // so it holds in slow motion (`timeScale`) as well as at full speed.
+                let raw = ((v1[0] - v0[0]).powi(2) + (v1[1] - v0[1]).powi(2) + (v1[2] - v0[2]).powi(2)).sqrt();
+                let floor = (g.x * g.x + g.y * g.y + g.z * g.z).sqrt() * dt;
+                let (s0, s1) = ((v0[0] * v0[0] + v0[1] * v0[1] + v0[2] * v0[2]).sqrt(), (v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2]).sqrt());
+                let lost = if s0 > 1e-6 { 1.0 - s1 / s0 } else { 0.0 };
+                let hard = raw > 0.25f32.max(1.5 * floor) && slowed;
+                let relative = s0 > 0.08 && lost > 0.35 && raw > 0.05;
+                if (hard || relative) && t - last[i] > 0.08 && t > self.start + 0.2 {
+                    last[i] = t;
+                    // Report an effective speed change that keeps slow-motion hits audible.
+                    out.push((t - dt, i, raw.max(0.8 * lost), pb));
+                }
+            }
+            t += dt;
+        }
+        out
+    }
+
     /// How far the toppling has spread from the first body (m): the farthest
     /// body tipped more than 30°. For framing domino shots.
     pub fn front(&self, t: f32) -> f32 {

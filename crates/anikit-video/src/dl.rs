@@ -147,6 +147,8 @@ pub struct Halftone {
     pub gain: f32,
     pub ox: f32,
     pub oy: f32,
+    /// Four-colour separation: C, M, Y, K screens at angle + 15/75/0/45°, multiplied on the paper.
+    pub cmyk: bool,
 }
 
 /// Opaque handle to a decoded image or video frame held by the renderer.

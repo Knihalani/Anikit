@@ -40,6 +40,38 @@ pub struct Tracker {
     map: MbMap,
     spare: YuvFrame,
     rects: Vec<Option<Rect>>,
+    /// Content hashes of recently seen images, per live allocation.
+    images: std::cell::RefCell<Vec<(std::sync::Weak<vello_cpu::Pixmap>, u64)>>,
+}
+
+/// An image's identity for change tracking: a hash of its pixels, memoised
+/// per live allocation. A cache that re-makes the same pixels in a new `Arc`
+/// is then no change, so which regions redraw never depends on cache timing.
+fn content_id(memo: &std::cell::RefCell<Vec<(std::sync::Weak<vello_cpu::Pixmap>, u64)>>, p: &std::sync::Arc<vello_cpu::Pixmap>) -> u64 {
+    let mut m = memo.borrow_mut();
+    if let Some(i) = m.iter().position(|(w, _)| std::ptr::eq(w.as_ptr(), std::sync::Arc::as_ptr(p)) && w.strong_count() > 0) {
+        let e = m.remove(i);
+        let h = e.1;
+        m.push(e);
+        return h;
+    }
+    let mut h = Fx::default();
+    h.write_u64(((p.width() as u64) << 32) | p.height() as u64);
+    let px = p.data_as_u8_slice();
+    let mut chunks = px.chunks_exact(8);
+    for c in &mut chunks {
+        h.write_u64(u64::from_le_bytes(c.try_into().unwrap()));
+    }
+    for &b in chunks.remainder() {
+        h.write_u64(b as u64);
+    }
+    let v = h.finish() | 2;
+    m.retain(|(w, _)| w.strong_count() > 0);
+    if m.len() >= 64 {
+        m.remove(0);
+    }
+    m.push((std::sync::Arc::downgrade(p), v));
+    v
 }
 
 /// What [`Renderer::render_yuv_incremental`] did.
@@ -234,6 +266,7 @@ fn hash_filter(h: &mut impl Hasher, fl: &Filter) {
         Filter::Halftone(ht) => {
             h.write_u8(5);
             h.write_u8(ht.shape);
+            h.write_u8(ht.cmyk as u8);
             for v in [ht.cell, ht.angle, ht.gain, ht.ox, ht.oy] {
                 f(h, v);
             }
@@ -451,14 +484,15 @@ impl Renderer {
         std::mem::swap(&mut inc.prev, &mut inc.cur);
         let frame_images = self.frame_images.clone();
         let (dynamic, shared) = (self.dynamic.clone(), self.assets.clone());
+        let memo = &inc.images;
         let image_gen = |id| -> u64 {
             if let Some(p) = frame_images.get(&id) {
-                return std::sync::Arc::as_ptr(p) as u64;
+                return content_id(memo, p);
             }
             if shared.images.get(id).is_some() {
                 return 0;
             }
-            dynamic.as_ref().and_then(|d| d.get(id)).map_or(1, |p| std::sync::Arc::as_ptr(&p) as u64)
+            dynamic.as_ref().and_then(|d| d.get(id)).map_or(1, |p| content_id(memo, &p))
         };
         fingerprint(list, &mut inc.cur, &image_gen);
         let usable = inc.valid && inc.size == (w, h) && inc.bg == bg && yuv.width == w && yuv.height == h;

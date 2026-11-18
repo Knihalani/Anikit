@@ -121,3 +121,41 @@ pub fn map<T: Pod>(n: usize, f: impl Fn(usize) -> T + Sync + Send) -> Buf<T> {
     }
     v
 }
+
+/// Whether `f` holds for any element (parallel; same answer as `iter().any`).
+pub fn any<T: Sync>(v: &[T], f: impl Fn(&T) -> bool + Sync + Send) -> bool {
+    if parallel() {
+        v.par_chunks(16384).any(|c| c.iter().any(&f))
+    } else {
+        v.iter().any(f)
+    }
+}
+
+/// Whether `f(i)` holds for any `i` in `0..n` (parallel).
+pub fn any_index(n: usize, f: impl Fn(usize) -> bool + Sync + Send) -> bool {
+    if parallel() {
+        (0..n).into_par_iter().with_min_len(16384).any(f)
+    } else {
+        (0..n).any(f)
+    }
+}
+
+/// The largest `f(x)` (at least 0), in parallel. Max is exact in any order,
+/// so the result doesn't depend on the split.
+pub fn max<T: Sync>(v: &[T], f: impl Fn(&T) -> f32 + Sync + Send) -> f32 {
+    let m = |c: &[T]| c.iter().fold(0.0f32, |m, x| m.max(f(x)));
+    if parallel() {
+        v.par_chunks(16384).map(m).reduce(|| 0.0, f32::max)
+    } else {
+        m(v)
+    }
+}
+
+/// For each `w`-wide row of `v`: whether `f` holds for any of its elements.
+pub fn rows_any<T: Sync>(v: &[T], w: usize, f: impl Fn(&T) -> bool + Sync + Send) -> Vec<bool> {
+    if parallel() {
+        v.par_chunks(w).map(|r| r.iter().any(&f)).collect()
+    } else {
+        v.chunks(w).map(|r| r.iter().any(&f)).collect()
+    }
+}

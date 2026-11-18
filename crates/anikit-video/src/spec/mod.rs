@@ -125,6 +125,12 @@ pub struct Spec {
     /// Fills the video's length; `@beatN`/`@barN` markers follow its exact grid.
     #[schemars(with = "Option<serde_json::Map<String, serde_json::Value>>")]
     pub music: Option<serde_json::Value>,
+    /// Sound design (`anikit-video docs sound`): `"auto"` derives whooshes, landings, ticks and
+    /// transition sounds from the picture, pans them to their place on screen, puts them in one
+    /// shared space, ducks the music under hits and masters to −14 LUFS / −1 dBTP.
+    /// `{ "palette": "organic", "density": 0.5, "ambience": "city", "space": "room", "cues": [...] }`.
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub sound: Option<serde_json::Value>,
     /// Burned-in captions.
     pub captions: Option<Captions>,
     /// Extra fonts: family name → file path.
@@ -216,6 +222,28 @@ pub struct InkSpec {
     /// Size of the blotches in px. Default 28.
     pub scale: Option<f64>,
     pub seed: Option<u32>,
+    /// Pin the wear to the frame (the paper is the screen) instead of the layer (default: it moves with the layer).
+    pub fixed: Option<bool>,
+}
+
+/// `brush`: on, or the full settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum BrushValue {
+    On(bool),
+    Full(BrushSpec),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BrushSpec {
+    /// Taper lengths at the start and end, as fractions of the stroke. Default `[0.12, 0.25]`.
+    pub taper: Option<[f64; 2]>,
+    /// Width wobble (0..1). Default 0.35.
+    pub pressure: Option<f64>,
+    /// Dry brush (0..1): bristles that skip, more towards the end. Default 0.
+    pub dry: Option<f64>,
+    pub seed: Option<u32>,
 }
 
 /// `boil`: px, or the full settings.
@@ -257,7 +285,8 @@ pub struct HalftoneSpec {
     pub angle: Option<Num>,
     /// `dot` (default), `line` or `square`.
     pub shape: Option<String>,
-    /// Ink colour. Default `"source"`: each dot keeps the layer's colour there.
+    /// Ink colour. Default `"source"`: each dot keeps the layer's colour there. `"cmyk"`: a four-colour
+    /// separation (C, M, Y, K screens at angle + 15/75/0/45°) multiplied on the paper (default white).
     pub ink: Option<String>,
     /// Paper colour under the dots, or `"none"` (default): only the dots remain.
     pub paper: Option<String>,
@@ -421,7 +450,12 @@ pub struct Composition {
 #[serde(rename_all = "camelCase")]
 pub struct Theme {
     /// Colour tokens: `primary`, `secondary`, `accent`, `bg`, `surface`, `text`, `muted`, or your own.
+    /// Any colour may be a riso ink: `"riso:fluorescent-pink"` (`anikit-video palette --riso` lists them).
     pub colors: Option<BTreeMap<String, String>>,
+    /// A value-structured palette from a seed: `"#e4572e split"` (schemes `mono analogous complement split triad`,
+    /// add `dark` for ink grounds). Sets `ink paper mid accent accent2 tint` and the roles `bg text primary secondary
+    /// muted surface`; `colors` still override. `anikit-video palette "#e4572e split"` previews it.
+    pub palette: Option<String>,
     /// Font roles: `heading`, `body`, `mono`.
     pub fonts: Option<BTreeMap<String, String>>,
     /// Default corner radius for boxes.
@@ -571,6 +605,9 @@ pub struct TransitionObj {
     pub shape: Option<String>,
     /// `blinds`: number of bars (default 8).
     pub count: Option<u32>,
+    /// Shared elements (any transition): ids of layers present in both scenes. Each travels from its place and size
+    /// in the old scene to its place and size in the new one during the transition (a match move), cross-fading between the two.
+    pub carry: Option<Vec<String>>,
     /// Uniforms for a shader transition.
     pub uniforms: Option<BTreeMap<String, serde_json::Value>>,
 }
@@ -579,10 +616,19 @@ pub struct TransitionObj {
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Camera {
+    /// Pan in frame pixels from rest (0 = no pan; `"10%"` of the frame width). Positive x
+    /// looks right, so the content moves left. Animatable.
     pub x: Option<Num>,
+    /// Pan in frame pixels from rest (0 = no pan; `"10%"` of the frame height). Positive y
+    /// looks down, so the content moves up. Animatable.
     pub y: Option<Num>,
+    /// Scale about the frame centre after the pan (1 = none, 1.2 = push in). Animatable.
     pub zoom: Option<Num>,
+    /// Degrees about the frame centre. Animatable.
     pub rotation: Option<Num>,
+    /// Dolly: move the camera through depth (a push-in with real parallax: near layers grow faster than far ones).
+    /// Layers at `depth` 0 sit 1 unit away, so `0.5` halves their distance; layers the camera passes disappear. Animatable.
+    pub dolly: Option<Num>,
     /// Depth in focus (layers at this `depth` are sharp). Default 0. Animatable (focus pulls).
     pub focus: Option<Num>,
     /// Depth-of-field strength: blur σ in px per unit of |depth − focus|. Default 0 (off).
@@ -656,6 +702,11 @@ pub struct Layer {
     #[serde(rename = "type")]
     pub kind: Option<String>,
     pub id: Option<String>,
+    /// Sound for this layer (`docs sound`): `"auto"`, `false` (silent), a sound name, or
+    /// `{ "in": "swish", "land": "wood", "out": "air", "gain": -3 }`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub sfx: Option<serde_json::Value>,
     /// Reuse: the name of an entry in top-level `defs`; other keys here override it
     /// (expanded before typing, see `spec/reuse.rs`).
     #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]
@@ -705,6 +756,12 @@ pub struct Layer {
     /// Group drag (overlapping action): child i follows the group's own motion i × drag seconds later,
     /// so a moving group trails and settles part by part. Pairs well with `inertia` on the group.
     pub drag: Option<f64>,
+    /// Extrusion / long shadow: the layer's silhouette repeated along a direction, behind it, in one colour.
+    /// `{"angle": 45, "length": 120, "color": "#000", "fade": 0}` (angle in degrees, 0 = right, 90 = down).
+    pub extrude: Option<ExtrudeSpec>,
+    /// Per-layer motion blur: `true` (180° shutter, 8 samples) or `{"shutter": 270}`. Only this layer
+    /// blurs, and only on frames where it moves, so text being read stays sharp while fast shapes streak.
+    pub motion_blur: Option<MotionBlur>,
     /// Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default).
     #[schemars(with = "Option<serde_json::Value>")]
     pub smear: Option<serde_json::Value>,
@@ -751,8 +808,11 @@ pub struct Layer {
     pub tone_range: Option<[f64; 2]>,
     /// Print halftone screen: a cell size in px, or `{ "cell", "angle", "shape", "ink", "paper", "gain" }`.
     pub halftone: Option<HalftoneValue>,
+    /// A print treatment in one word, as starting values for the keys above (any key you give wins):
+    /// `photocopy`, `newsprint`, `engraving`, `riso`, `screenprint`.
+    pub print: Option<String>,
     /// Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ "amount", "scale": px, "seed" }`.
-    /// Fixed to the frame like the paper, so moving shapes travel through it.
+    /// The wear moves with the layer (material locked to the object); `fixed: true` pins it to the frame.
     pub ink_texture: Option<InkValue>,
     /// Collage cut-out: `"torn"`, `"scissor"` or `"clean"`, or `{ "edge", "amount": px, "rim": px, "rimColor", "shadow": bool, "seed" }`.
     /// Cuts the layer's box with that edge, backs it with a paper rim and a printed shadow. Needs a numeric `width`/`height` (or a `cell`).
@@ -766,7 +826,10 @@ pub struct Layer {
     pub boil: Option<BoilValue>,
     /// `true` clips children to the layer box, or a clip shape.
     pub clip: Option<Clip>,
-    /// A layer whose alpha masks this one.
+    /// A shape that clips this layer (hard-edged, static). Its coordinates are the layer's own
+    /// box: (0, 0) is the layer's top-left, `"50%"` is half its size, and the default position
+    /// is its centre. For an animated or soft mask use `matte` (a sibling layer by id, in the
+    /// parent's coordinates).
     pub mask: Option<Box<Layer>>,
     pub visible: Option<bool>,
 
@@ -812,6 +875,9 @@ pub struct Layer {
     /// Text: wrap at this width (px, `"40vw"`, `"60%"`) without fixing the box
     /// width (`width` wraps *and* sets the box).
     pub max_width: Option<Num>,
+    /// Balanced line breaks when the text wraps (default on for headlines,
+    /// 4% of the frame height and up): every line about the same length.
+    pub balance: Option<bool>,
     /// `chars`, `words`, `lines`.
     pub split: Option<String>,
     pub reveal: Option<Num>,
@@ -853,6 +919,9 @@ pub struct Layer {
     pub pattern: Option<PatternValue>,
     pub trim_start: Option<Num>,
     pub trim_end: Option<Num>,
+    /// Paint the stroke as a brush: `true`, or `{ "taper": [start, end], "pressure": 0..1, "dry": 0..1, "seed" }`.
+    /// Width from `strokeWidth`; tapered ends, pressure wobble, dry-brush bristles; `trimEnd` paints it on.
+    pub brush: Option<BrushValue>,
 
     // ---- image / video
     pub src: Option<String>,
@@ -1012,6 +1081,20 @@ pub struct AnimatorSpec {
     pub duration: Option<f64>,
     pub delay: Option<f64>,
     pub ease: Option<String>,
+}
+
+/// `extrude`: a solid extrusion or long shadow.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExtrudeSpec {
+    /// Direction in degrees (0 = right, 90 = down). Default 45.
+    pub angle: Option<f64>,
+    /// Length in px. Default 60.
+    pub length: Option<f64>,
+    /// Colour (default 50% black).
+    pub color: Option<String>,
+    /// 0 = solid; 1 = fades out toward the far end (a long shadow).
+    pub fade: Option<f64>,
 }
 
 /// `zigzag` shape modifier.
@@ -1346,7 +1429,8 @@ pub struct Tween {
 pub struct AudioCue {
     /// Audio file (mp3, wav, ogg, flac, aac/m4a).
     pub src: Option<String>,
-    /// Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`.
+    /// Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`;
+    /// any other `docs sound` name (`glass`, `passby`, `impact+glass`, `kenney-interface/click`) lands its hit on `at`.
     pub sfx: Option<String>,
     pub at: Option<Num>,
     /// 0..1 or `"-6dB"`.

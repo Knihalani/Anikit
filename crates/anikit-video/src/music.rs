@@ -153,7 +153,7 @@ In a video spec:   "music": {"style":"lofi","bpm":84,"key":"Dm","mood":"warm","h
   or just          "music": "synthwave"         (fills the video; @beatN/@barN follow its exact grid)
 Standalone:        anikit-video music '{"style":"house","length":"15s"}' -o bed.wav [--stems DIR] [--midi out.mid] [--alts DIR: underscore, no-drums, 30s, 15s]
                    anikit-video music --style trap --bpm 140 --key Cm --length 20s -o out.ogg   (ogg/mp3/flac via ffmpeg)
-                   anikit-video music styles | instruments | sfx | fetch essentials|salamander|vsco2-ce
+                   anikit-video music styles | instruments | packs | sfx | fetch essentials|orchestra|all|<pack>
 
 STYLES  played instruments: orchestral acoustic piano jazz rock corporate pop lofi · hybrid: cinematic-hybrid
         synth-led: house synthwave trap tech dnb ambient   (aliases: epic trailer edm chill 80s classical upbeat folk …)
@@ -164,13 +164,13 @@ CHOOSING (your call; see docs/video/taste/TASTE.md §7): pick from the film's co
   "instrumentation": "acoustic|orchestral|band|piano|electronic|hybrid" keeps a style's groove and swaps its instruments,
   e.g. {"style":"house","instrumentation":"band"}; per-part {"instruments":{"lead":"violin"}} wins over both.
 KEYS    instrumentation  bpm  key "Am" "F# dorian"  meter "6/8"  swing 0..1 (0.16 loose, 0.45 lofi, 0.667 triplet)  mood "dark epic"  length "15s"|"8 bars"  seed N
-        sections ["intro:4","build:4","drop:8","outro:2"] or [{"name":"drop","bars":8,"energy":1}]
+        sections ["intro:4","build:4","drop:8","outro:2"] or [{"name":"drop","bars":8,"energy":1,"stop":2}] (stop = beats of silence before it)
         hits ["@2.0","@bar9"] → impact + section change there; tempo nudged (±8%) so hits land on beats (fit:false to keep bpm)
         chords "vi IV I V" | "Am F C G"   instruments {"lead":"violin","drums":"drums:909"}   mute ["lead"]
         sfx [{"sfx":"riser","at":"@bar5"}]  (aligned by hit point: a riser PEAKS at "at")   end ring|fade|cut
         master {"lufs":-14,"ceiling":-1,"reverb":"hall"}   video-only: at (s), gain (dB), duck (dB under voice, default 10)
         underscore: true drops lead/countermelody (automatic under voice-over; false keeps the melody)
-        scores to picture: scene cuts move section starts and get cymbal accents (followCuts:false to stop)
+        scores to picture: scene cuts move section starts, get cymbal accents and swell into bigger sections (followCuts:false to stop)
 TRACKS  (add to a style, or write everything yourself)
   {"inst":"piano","chords":"C Am F G","play":"broken"}        play: pad block stabs arp[-updown][/16] strum pulse/8 power broken x..x..x.
   {"inst":"bass","chords":"C Am F G","bass":"walk"}           bass: root half pulse octave walk house synco rock arp 808
@@ -179,8 +179,8 @@ TRACKS  (add to a style, or write everything yourself)
                                                               x hit X accent o ghost . rest 2/3/4 roll; voices kick snare clap hat ohh rim tom crash ride shaker…
   {"inst":"strings","notes":"o4 l4 A4 C5 E5/2 | [A3 C4 E4]/1","at":3,"gain":-4,"reverb":0.4,"pan":-0.3,"duck":6}
 NOTES   C4 Eb3 F#5 (C7 = octave 7) · C = note in the current octave (o5 C) · degrees 1-7 b3 5' 3,
-        chords need a quality: Cmaj Am Cmaj7 Cdom7 G/B [C E G] or numerals vi IV V7 · r rest · _ hold
-        /4 quarter /8 /16 /2 /1 /8t triplet . dotted :1.5 beats · ! accent ? ghost ^ staccato ~ legato
+        chords need a quality: Cmaj Am Cmaj7 Cdom7 G/B [C E G] or numerals vi IV V7 · r or r4 rest · _ or _8 hold · D' D, octave up/down
+        /4 quarter /8 /16 /2 /1 /8t triplet . dotted :1.5 beats · ! accent ? ghost ^ staccato ~ legato (marks anywhere: C4/8! = C4!/8)
         o3 octave > < · l8 default length · v100 velocity · t+2 transpose · | bar line · @5 bar · (…)x4 repeat
 MAKE ANYTHING (example: docs/video/music/custom.json)
   "define": {"wob": {"synth": {"base":"bass-synth"?, "osc":[{"wave":"saw|square|tri|sine|supersaw","voices":3,"detune":12,"semis":0,"level":0.8,"pw":0.5}],
@@ -196,8 +196,8 @@ INSTRUMENTS (sampled GM bank bundled; `music instruments` lists all) piano epian
         · synths: pad-warm pad-glass lead-saw pluck bell-fm epiano-fm supersaw bass-808 bass-reese bass-acid keys-lofi
         · kits: drums:808 909 trap lofi house techno cinematic, drums (GM) drums:jazz brush orchestra
         · files: "my.sfz", "font.sf2#0"   · fallbacks: "salamander-piano|piano"
-        · deeper samples: `anikit-video music fetch essentials` (≈210 MB: Splendid Grand, Wurlitzer/CP80/Pianet, real bass,
-          nylon + clean guitars); then piano/bass/guitar names use them automatically (credit "E-Pianos by Greg Sullivan, CC BY 3.0" when used)
+        · deeper samples: `music fetch essentials` (≈210 MB: grand, e-pianos, bass, guitars), `fetch orchestra` (≈930 MB: string, brass, wind
+          sections), `fetch virtuosity` (real kit); `music packs` lists all. Common names then use them (credit Greg Sullivan, CC BY 3.0, for e-pianos)
 EXAMPLES
   {"music":{"style":"cinematic-hybrid","key":"Dm","hits":["@bar5"],"sfx":[{"sfx":"braam","at":"@bar5"}]}}
   {"music":{"style":"lofi","mood":"chill","chords":"ii7 V7 Imaj7 vi7","instruments":{"lead":"kalimba"}}}
@@ -205,6 +205,38 @@ EXAMPLES
             {"inst":"drums","drums":{"kick":"x.......x.......","snare":"....x.......x..."}}]}}
 Errors name the field and suggest the closest word. Same spec + seed → bit-identical audio.
 "#;
+
+/// The exact beat grid of a score: `input` is a video spec or music spec file
+/// (`.json`/`.yaml`), or inline JSON. `None` when it is not a spec (an audio file).
+pub fn score_beats(input: &str) -> Result<Option<crate::audio::Beats>, String> {
+    let text = if input.trim_start().starts_with('{') {
+        input.to_string()
+    } else if [".json", ".yaml", ".yml"].iter().any(|e| input.ends_with(e)) {
+        std::fs::read_to_string(input).map_err(|e| format!("can't read {input}: {e}"))?
+    } else {
+        return Ok(None);
+    };
+    let v: serde_json::Value = if input.ends_with(".yaml") || input.ends_with(".yml") {
+        serde_norway::from_str(&text).map_err(|e| format!("{input}: {e}"))?
+    } else {
+        serde_json::from_str(&text).map_err(|e| format!("{input}: {e}"))?
+    };
+    let video_len = v.get("duration").and_then(|d| d.as_f64());
+    let m = match v.get("music") {
+        Some(serde_json::Value::String(s)) => serde_json::json!({ "style": s }),
+        Some(m) => m.clone(),
+        None => v.clone(),
+    };
+    let spec = MusicSpec::from_json(&m.to_string())?;
+    let a = anikit_music::style::compose(&spec, video_len)?;
+    let at = spec.at.unwrap_or(0.0);
+    Ok(Some(crate::audio::Beats {
+        bpm: a.grid.bpm,
+        beats: a.beats().iter().map(|t| t + at).collect(),
+        downbeats: a.bars().iter().map(|t| t + at).collect(),
+        ..Default::default()
+    }))
+}
 
 /// The alternate mixes `--alts` writes: (name, spec). Cutdowns only when the
 /// piece is longer than them.
@@ -289,12 +321,20 @@ fn cmd_music(args: &[String]) -> Result<(), String> {
             }
             return Ok(());
         }
+        Some("packs") => {
+            for p in anikit_music::sf2::packs::PACKS {
+                let have = if anikit_music::sf2::packs::is_cached(p.name) { "cached" } else { "-" };
+                println!("{:<17} {:<7} {:<36} {}  [{}]", p.name, have, p.size, p.description, p.license);
+            }
+            println!("groups: essentials ({}), orchestra ({}), all", anikit_music::sf2::packs::ESSENTIALS.join(" "), anikit_music::sf2::packs::ORCHESTRA.join(" "));
+            return Ok(());
+        }
         Some("sfx") => {
             println!("{}", anikit_music::sfx::SFX.join(" "));
             return Ok(());
         }
         Some("fetch") => {
-            let pack = flags.get("pack").cloned().ok_or("fetch which pack? (essentials, salamander, vsco2-ce, …)")?;
+            let pack = flags.get("pack").cloned().ok_or("fetch which pack? (essentials, orchestra, all, or a name from `anikit-video music packs`)")?;
             let p = anikit_music::sf2::packs::fetch(&pack)?;
             println!("{}", p.display());
             return Ok(());
@@ -448,6 +488,16 @@ pub fn write_audio(path: &Path, rate: u32, l: &[f32], r: &[f32]) -> Result<(), S
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn score_beats_use_the_exact_grid() {
+        let b = score_beats(r#"{"bpm":120,"tracks":[{"inst":"piano","notes":"C4 E4 G4 C5 | C4 E4 G4 C5"}]}"#).unwrap().unwrap();
+        assert_eq!(b.downbeats[0], 0.0);
+        assert!((b.downbeats[1] - 2.0).abs() < 1e-9 && (b.beats[1] - 0.5).abs() < 1e-9);
+        let v = score_beats(r#"{"duration":6,"music":{"style":"house","bpm":120,"at":1.0}}"#).unwrap().unwrap();
+        assert!((v.downbeats[0] - 1.0).abs() < 1e-9);
+        assert!(score_beats("song.wav").unwrap().is_none());
+    }
 
     #[test]
     fn alt_mixes_for_editors() {

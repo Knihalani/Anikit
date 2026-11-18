@@ -151,3 +151,48 @@ fn stroke_gradient_along_follows_trim() {
     let half = strokes(0.5);
     assert!(half < full * 2 / 3 && half > full / 3, "{half} of {full}");
 }
+
+#[test]
+fn carried_layer_travels_between_layouts() {
+    let e = ev(r##"{ "scenes": [
+        { "duration": 1, "layers": [ { "id": "m", "shape": "rect", "x": 100, "y": 100, "width": 100, "height": 100, "fill": "#f00" } ] },
+        { "duration": 1, "transition": { "type": "crossfade", "duration": 0.5, "ease": "linear", "carry": ["m"] },
+          "layers": [ { "id": "m", "shape": "rect", "x": 1100, "y": 100, "width": 300, "height": 300, "fill": "#f00" } ] } ] }"##);
+    // Halfway through the transition (0.5..1.0), copies sit halfway between the two layouts at the mean size.
+    let rects: Vec<[f32; 6]> = e.eval(0.75).ops.iter().filter_map(|o| if let Op::RoundRect { transform, w, .. } = o { if *w == 100.0 || *w == 300.0 { Some(*transform) } else { None } } else { None }).collect();
+    assert!(!rects.is_empty());
+    for t in &rects {
+        // Centre of the drawn box in frame space.
+        let w = if (t[0] - 2.0).abs() < 0.05 { 100.0 } else { 300.0 };
+        let cx = t[0] * w * 0.5 + t[4];
+        assert!((cx - 600.0).abs() < 5.0, "centre {cx} ({t:?})");
+    }
+}
+
+#[test]
+fn camera_dolly_scales_by_depth() {
+    let e = ev(r#"{ "scenes": [ { "duration": 2, "camera": { "dolly": 0.5 }, "layers": [
+        { "shape": "rect", "width": 100, "height": 100, "depth": 0 }, { "shape": "rect", "width": 100, "height": 100, "depth": 3 } ] } ] }"#);
+    let s: Vec<f32> = e.eval(0.5).ops.iter().filter_map(|o| if let Op::RoundRect { transform, w, .. } = o { (*w == 100.0).then_some(transform[0]) } else { None }).collect();
+    // Near: 1 / (1 - 0.5) = 2×; far (distance 4): 4 / 3.5.
+    assert!((s[0] - 2.0).abs() < 1e-3 && (s[1] - 4.0 / 3.5).abs() < 1e-3, "{s:?}");
+}
+
+#[test]
+fn extrude_draws_a_tinted_stack_behind_the_layer() {
+    let e = ev(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "width": 100, "height": 100, "fill": "#fff", "extrude": { "angle": 90, "length": 30, "color": "#000" } } ] } ] }"##);
+    let ops = e.eval(0.5).ops;
+    let tinted = ops.iter().position(|o| matches!(o, Op::PushLayer { filters, .. } if matches!(filters.first(), Some(anikit_video::dl::Filter::ColorMatrix(_)))));
+    assert!(tinted.is_some(), "a colour-matrix layer for the extrusion");
+    // 20 steps of 1.5 px, then the layer itself on top.
+    assert_eq!(count(&ops, |o| matches!(o, Op::RoundRect { .. })), 21);
+}
+
+#[test]
+fn layer_motion_blur_only_when_moving() {
+    let e = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "x": 100, "width": 50, "height": 50, "motionBlur": true,
+        "animate": { "to": { "x": 1500 }, "duration": 0.5, "ease": "linear" } } ] } ] }"#);
+    let rects = |t: f32| count(&e.eval(t).ops, |o| matches!(o, Op::RoundRect { .. }));
+    assert!(rects(0.25) >= 8, "{}", rects(0.25));
+    assert_eq!(rects(1.5), 1, "still frames draw once");
+}

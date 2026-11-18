@@ -1,0 +1,526 @@
+{
+  "name": "mograph_velo-snap",
+  "tags": [
+    "product-launch",
+    "kinetic-type"
+  ],
+  "refs": [
+    "coinbase-system-update",
+    "morph-studio-xreal-1s-2025",
+    "game-of-thrones"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 3,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 1,
+      "motion": 3,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 2.75,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "No concept or world. It needs an idea specific to the product, as A turns its subject into a mechanical world",
+      "The typography is a default typeface centred like a slide. It needs custom letterforms, scale contrast and integration with imagery",
+      "No image, light or material. It needs real texture and lighting, and composition that changes across frames instead of swapping words",
+      "No concept: it needs a visual idea for speed that goes beyond labelling the product 'FAST', for example motion blur used as material, or type that is physically deformed",
+      "Typography needs real craft: a custom or characterful face, scale contrast, crops and integration with imagery rather than centred words on flat fields",
+      "Add image, light and texture, plus variety in composition between frames, so each frame stands as a poster",
+      "It has no idea: it needs a concept beyond the name, the word 'fast' and a date, such as a world or metaphor specific to the product, the way C builds a mechanical map",
+      "The typography needs a point of view: a custom or characterful face, real scale contrast and interaction with image instead of a centred bold sans with an underline",
+      "It needs image, material and light (real texture, depth, a palette beyond black, cream and red) plus varied compositions so the frames progress instead of repeating one layout"
+    ],
+    "tells": [
+      "A slide-deck structure: one word per frame, centred, set in a default heavy grotesk (Inter-like), and the same layout repeats with the word swapped",
+      "A generic system: cream/black ground, one red accent underline, and a tiny tracked monospace label ('ROP 0 1 21', '11.21 \u2014 09:00 CET')",
+      "Literal idea: 'FAST' with speed lines and a countdown dial with '9'. Nothing a viewer would remember",
+      "No light, texture, material or depth at all. The speed lines are placeholder-like bars",
+      "The last two frames are nearly identical (VELO 9 with the underline extending), so little happens",
+      "A default heavy grotesk (Inter-like bold) set centred, slide-style, with the word swapped frame to frame (VELO, FAST, 9, VELO 9)",
+      "Stock motion graphics: 'speed lines' behind FAST, a radial tick-mark dial around a number, and an underline that grows. All are template moves",
+      "Cream, black and a single red accent, with a tiny tracked monospace label ('ROP 0 1 21', '11.21 \u2014 09:00 CET'), which matches the generic AI or template look",
+      "Flat colour fields with no light, texture or material at all",
+      "The last two frames are almost the same composition; there is little happening and nothing a viewer would remember",
+      "A textbook automated/template kinetic-type promo: a heavy default grotesk (Inter-like display weight) with a tiny tracked mono label ('ROP 0 1 21', '11.21 \u2014 09:00 CET')",
+      "A single red accent used as an underline in nearly every frame; speed lines behind 'FAST' are the most literal visualisation possible",
+      "Three of five frames are the same centred word-on-a-flat-field layout with the words swapped ('VELO', 'VELO 9', 'VELO 9' plus date); a slide-deck structure",
+      "The countdown-dial '9' is a stock radial-tick motif; there is no light, texture, material or depth anywhere",
+      "Nothing a viewer would remember: product name plus number plus launch date, with no image, no subject and no point of view"
+    ]
+  },
+  "refs_summary": {
+    "coinbase-system-update": {
+      "overall": 7.12,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "morph-studio-xreal-1s-2025": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "game-of-thrones": {
+      "overall": 9.5,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.71,
+  "delta": -4.96,
+  "trials": [
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "coinbase-system-update",
+        "C": "candidate",
+        "D": "morph-studio-xreal-1s-2025"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea only this piece could have: the world map is built as a clockwork model, so the geography itself becomes the cast and the story",
+              "Real material and texture: engraved brass, carved wood and bone, weathered parchment. The astrolabe band has relief engraving showing narrative scenes",
+              "Light is motivated and dramatic: a central sun-like source flares through the astrolabe rings, and there is atmospheric haze over the miniature cities",
+              "Credits are placed in the world as small-caps serif lockups with sigil icons, set beside the mechanisms rather than over them",
+              "Choreography between frames: macro astrolabe, then a city rising, then gears unfolding, then a map pin-drop, then a bookend logo that echoes the opening band. Every frame works as a poster",
+              "Custom display wordmark with an oversized 'G' and 'T' and a ligatured 'OF'"
+            ],
+            "gaps": [
+              "This is the benchmark entry, so its gaps are minor: the map frame is flatter and less lit than the mechanical shots",
+              "The final logo lockup uses a familiar glowing-sunburst convention that is less inventive than the body of the piece",
+              "The credit type is very small against busy detail, so some credits may lose legibility in motion"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "A committed system: everything is rendered as ASCII and monospace glyphs, so the type is the image, which fits a crypto/code subject",
+              "A deliberate single-colour palette, saturated IKB-like blue with white, held with discipline",
+              "Variety between frames: a running figure, a coin tunnel with flowing glyph fields, a planet made of characters, padlocks beside a code column, a grid of coins in rotation. This implies real choreography and 3D-to-ASCII conversion",
+              "Small inverted label tags ('<<Crypto is...', 'Faster') sit like terminal callouts, which shows a typographic point of view",
+              "Weaknesses: the iconography is literal (dollar signs, padlocks, Bitcoin coins), and the ASCII-shader look is a popular trend"
+            ],
+            "gaps": [
+              "The idea is literal (crypto shown as coins, $ and locks). A was built around a world-building metaphor; this needs a concept beyond 'crypto in ASCII'",
+              "No light or depth hierarchy: the frames are uniformly dense, with none of the focal light and atmosphere that make A's frames read instantly",
+              "Some frames are mostly an effect without a subject (the coin grid, the padlock repeats). It needs a stronger narrative build and a hero moment"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "Competent CG: liquid simulation, refraction, caustics, and glasses rendered as a translucent gel shell with internal bubbles. This is real lookdev effort",
+              "Motion is implied by variety: a splash explosion, a hero product float, a liquid-form morph, a macro, a cellular 'evolution' field",
+              "Generic premium-tech grammar: everything is drenched in blue, liquid 'evolution', bokeh orbs, a familiar launch-film look",
+              "Typography is weak and default: 'XREAL' and '1S' sit on opposite sides of the frame like a slide, and 'EVOLUTION' is set in widely tracked caps over noise, which matches the 'tasteful' tell",
+              "The last frame (orbs and filaments) leans toward effect with no subject"
+            ],
+            "gaps": [
+              "No specific idea: 'liquid evolution' could sell any gadget. A builds its whole film from its subject's world",
+              "The type has no integration or craft. It needs a typographic system tied to the product rather than a centred tracked word over a render",
+              "The monochrome blue gives no light contrast or warm/cool tension. A uses one strong light source and material contrast to make each frame a poster"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 1,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "A slide-deck structure: one word per frame, centred, set in a default heavy grotesk (Inter-like), and the same layout repeats with the word swapped",
+              "A generic system: cream/black ground, one red accent underline, and a tiny tracked monospace label ('ROP 0 1 21', '11.21 \u2014 09:00 CET')",
+              "Literal idea: 'FAST' with speed lines and a countdown dial with '9'. Nothing a viewer would remember",
+              "No light, texture, material or depth at all. The speed lines are placeholder-like bars",
+              "The last two frames are nearly identical (VELO 9 with the underline extending), so little happens"
+            ],
+            "gaps": [
+              "No concept or world. It needs an idea specific to the product, as A turns its subject into a mechanical world",
+              "The typography is a default typeface centred like a slide. It needs custom letterforms, scale contrast and integration with imagery",
+              "No image, light or material. It needs real texture and lighting, and composition that changes across frames instead of swapping words"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 28.9,
+        "cost_usd": 0.15562220000000002,
+        "tokens": 71826,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "coinbase-system-update",
+        "C": "morph-studio-xreal-1s-2025",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A single idea that belongs only to this piece: the world map as a clockwork model that builds itself, so the title sequence works as orientation for the story",
+              "Real material and light: engraved bronze astrolabe band, carved wood and brass gears, a warm sun core that blows out the highlights",
+              "The credits are set in a carved, flared serif and placed inside the mechanism, small with a sigil next to each name, so they belong to the world",
+              "Clear choreography across frames: the astrolabe band opens on the sun, cities rise in detail, the camera pulls to the map, the band closes around the logo at the end. A loop with a clear structure",
+              "The palette is restrained, aged bronze, parchment and slate with a molten gold light source, and stays consistent",
+              "Every frame works as a poster: the Winterfell gears, the Dragonstone-like tower and the map with its pin all hold up as stills"
+            ],
+            "gaps": [
+              "It is the benchmark here; at most the map frame is flatter in light than the 3D city frames",
+              "The logo lock-up is close to a conventional symmetrical title card",
+              "Credit type is small and sometimes hard to read against busy texture"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A committed system: everything (a running figure, a coin, a planet, padlocks, a grid of coins) is drawn in ASCII and monospace glyphs, so the type is the image",
+              "One deliberate, saturated International Klein-style blue with white glyphs, used without hedging",
+              "Glyph density changes to build tone and depth (the shaded figure, the sphere wrapped by a binary ring), which shows real control of rendering",
+              "Each frame is a different scene and scale: a character, a cosmic space, flow fields, code beside locks, a field of spinning coins. That points to choreography, not a repeated layout",
+              "Small labels ('<<Crypto is...', 'Faster') work as UI call-outs that move the narrative along, and the code-terminal text is a fitting texture"
+            ],
+            "gaps": [
+              "The subject treatment is literal (crypto shown as $ signs, coins and padlocks); there is no surprising metaphor at the level of A's clockwork world",
+              "There is no real light or material, so the depth comes only from glyph density; adding atmospheric layering or light falloff would help",
+              "The coin-grid frame is close to filler; a stronger hero image or ending would give it a payoff like A's logo build"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "High-end CG fluid simulation and refraction: liquid glass, the glasses formed from water, bubble fields and caustics. That is studio-grade finish",
+              "The frames vary in scale and lensing: a macro torrent, a hero product shot, a close extreme material shot, an abstract cellular field",
+              "But the look is the familiar tech-launch formula: deep blue on black, liquid and particles, product rising from water",
+              "The typography is generic: a bold sans 'XREAL' and '1S' spread to either side of the product, and widely tracked thin caps for 'EVOLUTION' centred over the image, which is close to the 'tasteful AI' label tell",
+              "The palette is monochrome blue with no counterpoint"
+            ],
+            "gaps": [
+              "The idea stops at 'product made of liquid'; it needs a concept tied to what AR glasses do (seeing, layers of reality) that only this product could carry",
+              "Typography has no point of view; type needs to interact with the material (refracted, formed in liquid) rather than sit on top like a slide",
+              "A single blue palette and conventional rim-lit product hero; add a counter colour or lighting surprise to make frames memorable"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 4,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "A default heavy grotesk (Inter-like bold) set centred, slide-style, with the word swapped frame to frame (VELO, FAST, 9, VELO 9)",
+              "Stock motion graphics: 'speed lines' behind FAST, a radial tick-mark dial around a number, and an underline that grows. All are template moves",
+              "Cream, black and a single red accent, with a tiny tracked monospace label ('ROP 0 1 21', '11.21 \u2014 09:00 CET'), which matches the generic AI or template look",
+              "Flat colour fields with no light, texture or material at all",
+              "The last two frames are almost the same composition; there is little happening and nothing a viewer would remember"
+            ],
+            "gaps": [
+              "No concept: it needs a visual idea for speed that goes beyond labelling the product 'FAST', for example motion blur used as material, or type that is physically deformed",
+              "Typography needs real craft: a custom or characterful face, scale contrast, crops and integration with imagery rather than centred words on flat fields",
+              "Add image, light and texture, plus variety in composition between frames, so each frame stands as a poster"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.7,
+        "cost_usd": 0.1548864,
+        "tokens": 71786,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "coinbase-system-update",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.78,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Real simulation work: liquid and glass caustics, refraction in the lens shells, and a fluid that holds its shape while fracturing. None of it looks like stock primitives",
+              "The product is rendered as material: the glasses are recast as a translucent, organic, almost anatomical form (frames 3\u20134), which is a genuine transformation rather than a static packshot",
+              "Shot scale varies a lot: extreme macro fluid, a hero product shot, a frontal icon and a cellular/neural abstraction, which suggests a built arc from chaos to product to 'evolution'",
+              "Against it: a monochrome electric-blue CG-liquid look is a well-worn tech-launch genre; 'XREAL ... 1S' set wide apart in a default grotesk and a tracked-out 'E V O L U T I O N' are standard launch-film type",
+              "Overall this reads as polished commercial CGI studio work, not an AI tool: geometry stays consistent from shot to shot and the product detail is accurate"
+            ],
+            "gaps": [
+              "The idea is a genre convention (product born from liquid); it needs a concept specific to AR glasses, such as seeing or overlaying worlds, instead of generic 'fluid evolution'",
+              "The typography is an afterthought: wide-spaced default sans and tracked caps laid on top of the image. Type should be integrated into the world the way C's credits sit on the map and the mechanisms",
+              "The single-hue blue grade flattens every shot into the same mood; it needs a counter-colour or a shift in light temperature across the arc to give the film structure and memorability"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 8,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "One committed system: every image (a running figure, a coin in a vortex, an orbiting planet, padlocks, a grid of spinning coins) is built from ASCII glyphs, so the type is the image",
+              "The ASCII medium fits the subject: payment and crypto infrastructure rendered as code and characters, with fake source code ('matchcut_engine.h', 'StartDirectPayment()') used as texture and as narrative",
+              "Tightly limited ultramarine-and-white palette held with discipline; density changes in the glyph fields create depth and flow lines",
+              "Choreography is visible: glyph fields stream directionally (the <<< arrows), the planet's orbit ring carries the label 'Faster', and the coin grid shows staggered rotation phases, which implies careful timing",
+              "Weaknesses: ASCII art is a known trend, the pixel figure and padlocks are a bit literal (security = padlock), and the white label chips ('Crypto is...') feel UI-like"
+            ],
+            "gaps": [
+              "The metaphors are literal: padlock for security, coins for crypto. It needs one surprising image only ASCII could produce, rather than ASCII renderings of stock icons",
+              "There is little tonal or lighting variation; adding glyph weight and size contrast, or a second colour state, would create a dramatic peak the way C's flare-lit title reveal does",
+              "The white tag labels read as placeholder UI; the copy needs a typographic treatment as ambitious as the glyph system around it"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "The idea is specific and unrepeatable: the story's world as a clockwork map whose cities mechanically build themselves, and it doubles as a navigational tool for the series",
+              "Real material and light: an engraved armillary band lit by a sun-flare, aged brass, wood and parchment textures, and a tilt-shift miniature depth of field that sells the scale",
+              "The credits are integrated into the world: a small sigil-plus-Trajan-style serif tucked into the terrain rather than overlaid. The main title is set inside the astrolabe band with flanking beasts",
+              "Every frame works as a poster, and the choreography is clear: the camera travels across the map, mechanisms rise, a needle and pin locate King's Landing, and the title lockup bookends the opening flare",
+              "The palette moves deliberately between warm brass and gold, cool slate and parchment green"
+            ],
+            "gaps": [
+              "The map's diagrammatic overview frame is the least textured moment; it could carry more of the material richness of the mechanism shots",
+              "The credit type is very small against busy detail, so legibility depends on the camera holding still",
+              "The main-title lockup leans on familiar fantasy-epic conventions (flare, Trajan-like serif) where the rest of the piece is invented"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 1,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "A textbook automated/template kinetic-type promo: a heavy default grotesk (Inter-like display weight) with a tiny tracked mono label ('ROP 0 1 21', '11.21 \u2014 09:00 CET')",
+              "A single red accent used as an underline in nearly every frame; speed lines behind 'FAST' are the most literal visualisation possible",
+              "Three of five frames are the same centred word-on-a-flat-field layout with the words swapped ('VELO', 'VELO 9', 'VELO 9' plus date); a slide-deck structure",
+              "The countdown-dial '9' is a stock radial-tick motif; there is no light, texture, material or depth anywhere",
+              "Nothing a viewer would remember: product name plus number plus launch date, with no image, no subject and no point of view"
+            ],
+            "gaps": [
+              "It has no idea: it needs a concept beyond the name, the word 'fast' and a date, such as a world or metaphor specific to the product, the way C builds a mechanical map",
+              "The typography needs a point of view: a custom or characterful face, real scale contrast and interaction with image instead of a centred bold sans with an underline",
+              "It needs image, material and light (real texture, depth, a palette beyond black, cream and red) plus varied compositions so the frames progress instead of repeating one layout"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.1,
+        "cost_usd": 0.160943,
+        "tokens": 72096,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": null,
+        "craft": 6
+      },
+      "checks": {
+        "idea": false,
+        "invariant": false,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": null
+      },
+      "defects": [
+        "Mono labels reveal as broken partial strings ('ROP 0  1  21', '1 21 \u2014 09:0  CE'). This typewriter or scramble mid-state reads as dropped glyphs, not as an intended effect.",
+        "The spec-sheet layout leaves the right 60% of the frame empty except for small tracked labels, and the stat numbers sit almost on the left edge ('182g' is clipped near x=0). The numbers have no margin.",
+        "The stat transition is a hard vertical bar-wipe on top of numbers that are still counting ('140g/74%' under the bars). Two systems fight in the same frame and the wipe has no easing hierarchy.",
+        "The FAST speed lines are stock horizontal dashes that layer over and through the letterforms with no occlusion logic. They read as a template motion-lines preset.",
+        "The dial shot is a static radial tick graphic with a centred '9'. Its tick lengths are uneven and the inner ring is irregular, so it looks procedurally generated rather than drawn.",
+        "The last ~1 s is near-static (change per second 7.6). The hold is earned as a lock-up, but nothing breathes in it: no settle and no secondary motion.",
+        "Everything is flat vector with no grain, light or depth cue. At 100% the edges are clean but there is no material to the finish."
+      ],
+      "gaps": [
+        "There is no single motion idea carrying the film. Five unrelated generic moves (underline grow, skew plus speed lines, radial dial, number count with bar-wipe, underline lock-up) are cut together, and none of them hands off its momentum or geometry into the next shot.",
+        "Weight and easing are thin. The only physical cue is the FAST skew, with no overshoot, drag or follow-through on the heavy grotesk. Top studio work would let 'velocity' deform and spring the type itself and carry motion blur through the cuts.",
+        "The finish and composition are template-grade. There is no texture, light or camera, and the frames are lopsided (empty right halves, partially revealed mono text). Only the opening and closing lock-ups hold up as stills."
+      ]
+    },
+    "meta": {
+      "seconds": 22.2,
+      "cost_usd": 0.149528,
+      "tokens": 70515,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "velo-snap.mp4: 4.5s, 5 shots, median 0.77s, longest 1.47s\nper-second change: [124.0, 121.6, 201.1, 7.6]\nPACE: PASS"
+  },
+  "full_scores": {
+    "idea": 2,
+    "composition": 3,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 1,
+    "motion": 4.0,
+    "craft": 5.0,
+    "originality": 2
+  },
+  "full_overall": 3.0,
+  "cost_usd": 0.621,
+  "judge_seconds": 114.9,
+  "verdict": "FAIL"
+}

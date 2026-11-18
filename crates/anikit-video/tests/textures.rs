@@ -49,3 +49,38 @@ fn components_reach_compositions_through_assets() {
     assert_eq!(a.data_as_u8_slice(), b.data_as_u8_slice());
     assert!(ev.assets.composition_info("nope").is_none());
 }
+
+/// A composition made of a shader layer, used as a texture on a 3D pane, must
+/// show its pixels. Regression: the texture was first requested during the
+/// frame's scale-collecting pass, where shader layers emit nothing, and that
+/// empty list was cached, so shader textures on 3D surfaces stayed blank.
+#[test]
+fn shader_composition_textures_a_3d_surface() {
+    const BIN: &str = env!("CARGO_BIN_EXE_anikit-video");
+    let dir = std::env::temp_dir().join(format!("anikit-video-shadertex-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let spec = r##"{ "size": [320, 180], "compositions": { "sh": { "size": [64, 36], "duration": 1, "layers": [
+        { "shader": "void mainImage(out vec4 o, in vec2 f){ o = vec4(1.0, 0.0, 0.0, 1.0); }" } ] } },
+      "scenes": [ { "duration": 1, "layers": [ { "component": "scene3d", "props": { "env": "night", "floor": false,
+        "objects": [ { "type": "pane", "size": [3, 1.7], "pos": [0, 0, 0], "texture": "#sh", "material": { "base": "#ffffff", "glow": 1 } } ],
+        "camera": { "keys": [ { "t": 0, "pos": [0, 0, 3], "target": [0, 0, 0], "focal": 35 } ] } } } ] } ] }"##;
+    std::fs::write(dir.join("s.json"), spec).unwrap();
+    let out = dir.join("f.png");
+    let st = std::process::Command::new(BIN).args(["still", "s.json", "--at", "0.5", "-o", "f.png"]).current_dir(&dir).output().unwrap();
+    assert!(st.status.success(), "{}", String::from_utf8_lossy(&st.stderr));
+    let img = image_rgba(&out);
+    let (w, h, px) = img;
+    let p = &px[((h / 2) * w + w / 2) * 4..][..4];
+    assert!(p[0] > 150 && p[1] < 80 && p[2] < 80, "centre of the textured pane should be the shader's red, got {p:?}");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+fn image_rgba(path: &std::path::Path) -> (usize, usize, Vec<u8>) {
+    let dec = png::Decoder::new(std::io::BufReader::new(std::fs::File::open(path).unwrap()));
+    let mut r = dec.read_info().unwrap();
+    let mut buf = vec![0; r.output_buffer_size().unwrap()];
+    let info = r.next_frame(&mut buf).unwrap();
+    let ch = match info.color_type { png::ColorType::Rgba => 4, png::ColorType::Rgb => 3, _ => panic!("unexpected colour type") };
+    let rgba: Vec<u8> = if ch == 4 { buf[..info.buffer_size()].to_vec() } else { buf[..info.buffer_size()].chunks_exact(3).flat_map(|c| [c[0], c[1], c[2], 255]).collect() };
+    (info.width as usize, info.height as usize, rgba)
+}

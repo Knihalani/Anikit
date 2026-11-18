@@ -100,6 +100,9 @@
       ],
       "additionalProperties": true
     },
+    "sound": {
+      "description": "Sound design (`anikit-video docs sound`): `\"auto\"` derives whooshes, landings, ticks and\ntransition sounds from the picture, pans them to their place on screen, puts them in one\nshared space, ducks the music under hits and masters to −14 LUFS / −1 dBTP.\n`{ \"palette\": \"organic\", \"density\": 0.5, \"ambience\": \"city\", \"space\": \"room\", \"cues\": [...] }`."
+    },
     "captions": {
       "description": "Burned-in captions.",
       "anyOf": [
@@ -286,7 +289,7 @@
       "type": "object",
       "properties": {
         "colors": {
-          "description": "Colour tokens: `primary`, `secondary`, `accent`, `bg`, `surface`, `text`, `muted`, or your own.",
+          "description": "Colour tokens: `primary`, `secondary`, `accent`, `bg`, `surface`, `text`, `muted`, or your own.\nAny colour may be a riso ink: `\"riso:fluorescent-pink\"` (`anikit-video palette --riso` lists them).",
           "type": [
             "object",
             "null"
@@ -294,6 +297,13 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "palette": {
+          "description": "A value-structured palette from a seed: `\"#e4572e split\"` (schemes `mono analogous complement split triad`,\nadd `dark` for ink grounds). Sets `ink paper mid accent accent2 tint` and the roles `bg text primary secondary\nmuted surface`; `colors` still override. `anikit-video palette \"#e4572e split\"` previews it.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "fonts": {
           "description": "Font roles: `heading`, `body`, `mono`.",
@@ -770,6 +780,16 @@
           "format": "uint32",
           "minimum": 0
         },
+        "carry": {
+          "description": "Shared elements (any transition): ids of layers present in both scenes. Each travels from its place and size\nin the old scene to its place and size in the new one during the transition (a match move), cross-fading between the two.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
         "uniforms": {
           "description": "Uniforms for a shader transition.",
           "type": [
@@ -785,6 +805,7 @@
       "type": "object",
       "properties": {
         "x": {
+          "description": "Pan in frame pixels from rest (0 = no pan; `\"10%\"` of the frame width). Positive x\nlooks right, so the content moves left. Animatable.",
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
@@ -795,6 +816,7 @@
           ]
         },
         "y": {
+          "description": "Pan in frame pixels from rest (0 = no pan; `\"10%\"` of the frame height). Positive y\nlooks down, so the content moves up. Animatable.",
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
@@ -805,6 +827,7 @@
           ]
         },
         "zoom": {
+          "description": "Scale about the frame centre after the pan (1 = none, 1.2 = push in). Animatable.",
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
@@ -815,6 +838,18 @@
           ]
         },
         "rotation": {
+          "description": "Degrees about the frame centre. Animatable.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dolly": {
+          "description": "Dolly: move the camera through depth (a push-in with real parallax: near layers grow faster than far ones).\nLayers at `depth` 0 sit 1 unit away, so `0.5` halves their distance; layers the camera passes disappear. Animatable.",
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
@@ -1186,6 +1221,9 @@
             "null"
           ]
         },
+        "sfx": {
+          "description": "Sound for this layer (`docs sound`): `\"auto\"`, `false` (silent), a sound name, or\n`{ \"in\": \"swish\", \"land\": \"wood\", \"out\": \"air\", \"gain\": -3 }`."
+        },
         "use": {
           "description": "Reuse: the name of an entry in top-level `defs`; other keys here override it\n(expanded before typing, see `spec/reuse.rs`).",
           "type": [
@@ -1345,6 +1383,28 @@
             "null"
           ],
           "format": "double"
+        },
+        "extrude": {
+          "description": "Extrusion / long shadow: the layer's silhouette repeated along a direction, behind it, in one colour.\n`{\"angle\": 45, \"length\": 120, \"color\": \"#000\", \"fade\": 0}` (angle in degrees, 0 = right, 90 = down).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtrudeSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "motionBlur": {
+          "description": "Per-layer motion blur: `true` (180° shutter, 8 samples) or `{\"shutter\": 270}`. Only this layer\nblurs, and only on frames where it moves, so text being read stays sharp while fast shapes streak.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MotionBlur"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "smear": {
           "description": "Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default)."
@@ -1616,8 +1676,15 @@
             }
           ]
         },
+        "print": {
+          "description": "A print treatment in one word, as starting values for the keys above (any key you give wins):\n`photocopy`, `newsprint`, `engraving`, `riso`, `screenprint`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "inkTexture": {
-          "description": "Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ \"amount\", \"scale\": px, \"seed\" }`.\nFixed to the frame like the paper, so moving shapes travel through it.",
+          "description": "Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ \"amount\", \"scale\": px, \"seed\" }`.\nThe wear moves with the layer (material locked to the object); `fixed: true` pins it to the frame.",
           "anyOf": [
             {
               "$ref": "#/$defs/InkValue"
@@ -1664,7 +1731,7 @@
           ]
         },
         "mask": {
-          "description": "A layer whose alpha masks this one.",
+          "description": "A shape that clips this layer (hard-edged, static). Its coordinates are the layer's own\nbox: (0, 0) is the layer's top-left, `\"50%\"` is half its size, and the default position\nis its centre. For an animated or soft mask use `matte` (a sibling layer by id, in the\nparent's coordinates).",
           "anyOf": [
             {
               "$ref": "#/$defs/Layer"
@@ -1681,6 +1748,7 @@
           ]
         },
         "start": {
+          "description": "When the layer appears (seconds into the scene). `delay` means the same.",
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
@@ -1704,6 +1772,28 @@
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "onNotes": {
+          "description": "Generated layers, one per note of the music: `{ \"onNotes\": { \"track\": \"drums\", \"keys\": [\"kick\"], \"layer\": {…} } }`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OnNotes"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "frames": {
+          "description": "Timing in frames instead of seconds: `\"frames\": 12` (only frame 12) or `[12, 18]` (frames 12–17).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Frames"
             },
             {
               "type": "null"
@@ -1881,6 +1971,13 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "balance": {
+          "description": "Balanced line breaks when the text wraps (default on for headlines,\n4% of the frame height and up): every line about the same length.",
+          "type": [
+            "boolean",
+            "null"
           ]
         },
         "split": {
@@ -2118,6 +2215,17 @@
             }
           ]
         },
+        "brush": {
+          "description": "Paint the stroke as a brush: `true`, or `{ \"taper\": [start, end], \"pressure\": 0..1, \"dry\": 0..1, \"seed\" }`.\nWidth from `strokeWidth`; tapered ends, pressure wobble, dry-brush bristles; `trimEnd` paints it on.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BrushValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "src": {
           "type": [
             "string",
@@ -2257,6 +2365,7 @@
             "particle-text",
             "morph",
             "fluid",
+            "physarum",
             "metaballs",
             "god-rays",
             "lens-flare",
@@ -2289,9 +2398,14 @@
             "hatch",
             "paper",
             "cutout",
+            "landscape",
+            "plants",
+            "clouds",
+            "water",
+            "illo",
             "lottie"
           ],
-          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, fluid, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, brush, sketch, hatch, paper, cutout, lottie."
+          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, fluid, physarum, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, brush, sketch, hatch, paper, cutout, landscape, plants, clouds, water, illo, lottie."
         },
         "props": true,
         "progress": {
@@ -2728,6 +2842,65 @@
       },
       "additionalProperties": false
     },
+    "ExtrudeSpec": {
+      "description": "`extrude`: a solid extrusion or long shadow.",
+      "type": "object",
+      "properties": {
+        "angle": {
+          "description": "Direction in degrees (0 = right, 90 = down). Default 45.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "length": {
+          "description": "Length in px. Default 60.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "color": {
+          "description": "Colour (default 50% black).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fade": {
+          "description": "0 = solid; 1 = fades out toward the far end (a long shadow).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      },
+      "additionalProperties": false
+    },
+    "MotionBlur": {
+      "description": "`motionBlur`: on/off, or a shutter angle.",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "shutter": {
+              "description": "Shutter angle in degrees (360 = the whole frame interval). Default 180.",
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "required": [
+            "shutter"
+          ]
+        }
+      ]
+    },
     "MatteSpec": {
       "anyOf": [
         {
@@ -2914,7 +3087,7 @@
           ]
         },
         "ink": {
-          "description": "Ink colour. Default `\"source\"`: each dot keeps the layer's colour there.",
+          "description": "Ink colour. Default `\"source\"`: each dot keeps the layer's colour there. `\"cmyk\"`: a four-colour\nseparation (C, M, Y, K screens at angle + 15/75/0/45°) multiplied on the paper (default white).",
           "type": [
             "string",
             "null"
@@ -2982,6 +3155,13 @@
           ],
           "format": "uint32",
           "minimum": 0
+        },
+        "fixed": {
+          "description": "Pin the wear to the frame (the paper is the screen) instead of the layer (default: it moves with the layer).",
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -3106,6 +3286,61 @@
         },
         {
           "$ref": "#/$defs/Layer"
+        }
+      ]
+    },
+    "OnNotes": {
+      "description": "`onNotes`: one copy of `layer` per note of the generated `music`.",
+      "type": "object",
+      "properties": {
+        "track": {
+          "description": "Track name or role (`drums`, `bass`, `lead`, `chords`, …). Default: every track.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "keys": {
+          "description": "Only these keys: MIDI numbers or drum names (`kick`, `snare`, `hat`, `clap`, `crash`, …).",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": true
+        },
+        "every": {
+          "description": "Keep every n-th matching note (1 = all).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "layer": {
+          "description": "The layer to place on each note. `$t $dur $key $pitch $vel $beat $bar $i $n` are\nreplaced per note; it starts on the note (its own `start` is an offset from it) and\nlasts the note's length unless it sets `duration`, `end` or `frames`."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "layer"
+      ]
+    },
+    "Frames": {
+      "description": "`frames`: one frame number, or a half-open range `[first, end)` (frames into the scene).",
+      "anyOf": [
+        {
+          "type": "number",
+          "format": "double"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "minItems": 2,
+          "maxItems": 2
         }
       ]
     },
@@ -3652,6 +3887,60 @@
       },
       "additionalProperties": false
     },
+    "BrushValue": {
+      "description": "`brush`: on, or the full settings.",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/$defs/BrushSpec"
+        }
+      ]
+    },
+    "BrushSpec": {
+      "type": "object",
+      "properties": {
+        "taper": {
+          "description": "Taper lengths at the start and end, as fractions of the stroke. Default `[0.12, 0.25]`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "pressure": {
+          "description": "Width wobble (0..1). Default 0.35.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "dry": {
+          "description": "Dry brush (0..1): bristles that skip, more towards the end. Default 0.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
     "FitValue": {
       "description": "`fit`: an image mode (`\"cover\"`) or, on text, `true`. Derefs to the word\n(`\"true\"` / `\"false\"` for booleans) so callers match on strings.",
       "anyOf": [
@@ -3886,7 +4175,7 @@
           ]
         },
         "sfx": {
-          "description": "Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`. One of: click, tick, pop, whoosh, swoosh, rise, riser, drop, impact, ding, chime, typing, success.",
+          "description": "Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`;\nany other `docs sound` name (`glass`, `passby`, `impact+glass`, `kenney-interface/click`) lands its hit on `at`. One of: click, tick, pop, whoosh, swoosh, rise, riser, drop, impact, ding, chime, typing, success.",
           "type": [
             "string",
             "null"
@@ -4163,27 +4452,6 @@
           "format": "double"
         }
       }
-    },
-    "MotionBlur": {
-      "description": "`motionBlur`: on/off, or a shutter angle.",
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "shutter": {
-              "description": "Shutter angle in degrees (360 = the whole frame interval). Default 180.",
-              "type": "number",
-              "format": "double"
-            }
-          },
-          "required": [
-            "shutter"
-          ]
-        }
-      ]
     },
     "Composition": {
       "description": "A 2D sub-composition with its own size and clock: layers (one scene) or scenes.",
