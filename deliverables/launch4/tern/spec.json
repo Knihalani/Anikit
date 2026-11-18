@@ -1,0 +1,7887 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "intent": {
+  "pace": "medium"
+ },
+ "compositions": {
+  "pink": {
+   "size": [
+    3840,
+    2160
+   ],
+   "duration": 30,
+   "background": "#F2C4CB",
+   "layers": [
+    {
+     "type": "group",
+     "width": 1920,
+     "height": 1080,
+     "x": 1920.0,
+     "y": 1080.0,
+     "scale": 2,
+     "layers": [
+      {
+       "draw": [
+        {
+         "line": [
+          80,
+          318,
+          1840,
+          318
+         ],
+         "stroke": "#2A2427",
+         "width": 3
+        },
+        {
+         "line": [
+          80,
+          392,
+          1840,
+          392
+         ],
+         "stroke": "#2A2427",
+         "width": 2
+        },
+        {
+         "line": [
+          80,
+          468,
+          1840,
+          468
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          544,
+          1840,
+          544
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          620,
+          1840,
+          620
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          696,
+          1840,
+          696
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          772,
+          1840,
+          772
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          848,
+          1840,
+          848
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          924,
+          1840,
+          924
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          1000,
+          1840,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          520,
+          318,
+          520,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          610,
+          318,
+          610,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          720,
+          318,
+          720,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          830,
+          318,
+          830,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          940,
+          318,
+          940,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          1050,
+          318,
+          1050,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          1118,
+          130,
+          1560,
+          130
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2
+        },
+        {
+         "line": [
+          1738,
+          130,
+          1840,
+          130
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2
+        },
+        {
+         "line": [
+          1118,
+          214,
+          1560,
+          214
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2
+        },
+        {
+         "line": [
+          1738,
+          214,
+          1840,
+          214
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2
+        }
+       ],
+       "inkTexture": 0.12
+      },
+      {
+       "text": "SOUND REPORT",
+       "font": "Archivo",
+       "size": 86,
+       "weight": 800,
+       "axes": {
+        "wdth": 62
+       },
+       "letterSpacing": "-0.01em",
+       "color": "#2A2427",
+       "x": 80,
+       "y": 150,
+       "anchor": "left"
+      },
+      {
+       "text": "FIELD \u00b7 STUDIO \u00b7 SET",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 84,
+       "y": 212,
+       "anchor": "left"
+      },
+      {
+       "text": "PRODUCTION",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1000,
+       "y": 121,
+       "anchor": "bottomLeft"
+      },
+      {
+       "text": "DATE",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1620,
+       "y": 121,
+       "anchor": "bottomLeft"
+      },
+      {
+       "text": "RECORDER",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1000,
+       "y": 205,
+       "anchor": "bottomLeft"
+      },
+      {
+       "text": "ROLL",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1620,
+       "y": 205,
+       "anchor": "bottomLeft"
+      },
+      {
+       "text": "SCENE / SUBJECT",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 96,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TAKE",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 536,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TR 1",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 626,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TR 2",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 736,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TR 3",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 846,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TR 4",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 956,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "NOTES   \u25cb = CIRCLE TAKE   NG \u00b7 FS \u00b7 INC \u00b7 WT \u00b7 RT",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1066,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "PINK \u2014 MIXER COPY",
+       "font": "Archivo",
+       "size": 15,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 80,
+       "y": 1046,
+       "anchor": "left"
+      },
+      {
+       "text": "CARBONLESS \u2014 PRESS FIRMLY",
+       "font": "Archivo",
+       "size": 15,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1840,
+       "y": 1046,
+       "anchor": "right"
+      },
+      {
+       "text": "field\u2002recording",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 1128,
+       "y": 108,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 0
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 3,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 1750,
+       "y": 192,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 1
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 10,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "the\u2002old\u2002one",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 1128,
+       "y": 192,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 2
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 17,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "dawn\u2002chorus",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 96,
+       "y": 434.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 3
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 24,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 552,
+       "y": 434.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 4
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 31,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M648.6 430.8 Q659.3 438.3 660.9 440.6 Q667.5 426.2 681.8 410.0",
+       "x": 665.2,
+       "y": 425.3,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.14706014242427,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 5
+       },
+       "start": -1,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.12429531882349548,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "FS\u2002\u2014",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 1070,
+       "y": 434.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 6
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 45,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "missed\u2002the\u2002top",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 1201.25,
+       "y": 434.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -0.45,
+       "enter": {
+        "preset": "wipe",
+        "duration": 1.2,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 7
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 52,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "kick,\u2002live\u2002room",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 96,
+       "y": 510.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 8
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 59,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "3",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 552,
+       "y": 510.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 9
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 66,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M649.3 505.7 Q653.7 512.6 663.6 517.9 Q666.8 500.7 679.4 480.0",
+       "x": 664.3499999999999,
+       "y": 498.95,
+       "stroke": "#2343A6",
+       "strokeWidth": 4.5285468497120585,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 10
+       },
+       "start": -1,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.13016939377439737,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "NG\u2002\u2014\u2002clipped",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 1070,
+       "y": 510.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 2.5,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 11
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 80,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "rain\u2002on\u2002tin\u2002roof",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 96,
+       "y": 586.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 12
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 87,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 552,
+       "y": 586.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 13
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 94,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M649.2 584.4 Q653.8 592.4 661.5 593.6 Q672.3 582.6 682.7 563.8",
+       "x": 665.95,
+       "y": 578.7,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.47785670098831,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 14
+       },
+       "start": -1,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16650565682533827,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "INC\u2002\u2014\u2002batt\u2002died",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 1070,
+       "y": 586.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 3.125,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 15
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 108,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "the\u2002riff,\u20022am",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 96,
+       "y": 662.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 16
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 115,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 552,
+       "y": 662.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 17
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 122,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M652.2 655.0 Q656.5 664.2 663.6 668.1 Q668.3 655.7 682.4 640.6",
+       "x": 667.3,
+       "y": 654.35,
+       "stroke": "#2343A6",
+       "strokeWidth": 4.538669509569677,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 18
+       },
+       "start": -1,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.12757257776989764,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "FS\u2002\u2014\u2002wasn't\u2002rolling",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 1070,
+       "y": 662.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 3.75,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 19
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 136,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M1122 194 C 1180 186, 1250 199, 1360 188",
+       "x": 1241.0,
+       "y": 192.5,
+       "stroke": "#2343A6",
+       "strokeWidth": 6.25,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 20
+       },
+       "start": 5.6,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.3,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "Tern",
+       "font": "Reenie Beanie",
+       "size": 84,
+       "color": "#2343A6",
+       "x": 1400.5,
+       "y": 184,
+       "anchor": "left",
+       "rotation": -3,
+       "start": 7.5,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.45,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 21
+       },
+       "animator": {
+        "by": "char",
+        "y": 5.25,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 150,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "blackbird,\u20025:12am",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 96,
+       "y": 738.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 8.9,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.55,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 22
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 157,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 552,
+       "y": 738.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 9.450000000000001,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.1,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 23
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 164,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M650.9 730.9 Q656.2 740.8 664.1 749.9 Q670.7 732.9 683.4 713.3",
+       "x": 667.15,
+       "y": 731.5999999999999,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.142094183411956,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 24
+       },
+       "start": 9.6,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.15253232485338447,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M763.3 735.5 Q764.1 742.1 773.0 744.4 Q782.0 729.4 789.8 713.8",
+       "x": 776.55,
+       "y": 729.0999999999999,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.720518559809475,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 25
+       },
+       "start": 9.7,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.15943058955228248,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M873.1 735.1 Q876.1 741.9 883.4 748.6 Q891.4 735.1 905.1 710.4",
+       "x": 889.1,
+       "y": 729.5,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.851664784222537,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 26
+       },
+       "start": 9.799999999999999,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.12153356624981425,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M978.6 735.2 Q987.3 739.0 989.3 746.3 Q997.3 733.7 1010.0 714.7",
+       "x": 994.3,
+       "y": 730.5,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.551566393477615,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 27
+       },
+       "start": 9.9,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.14078398675452355,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "got\u2002the\u2002top",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 1070,
+       "y": 738.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 9.85,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 28
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 199,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M1115.5 704.3 Q1133.8 701.6 1152.6 699.7 Q1171.6 698.5 1190.4 698.0 Q1208.5 698.3 1225.7 699.4 Q1241.4 701.2 1255.5 703.8 Q1267.6 706.9 1281.4 709.8 Q1289.3 714.2 1294.6 718.9 Q1297.0 724.1 1296.5 729.4 Q1293.1 734.9 1286.8 740.4 Q1277.9 745.8 1266.4 750.9 Q1252.6 755.7 1236.4 759.9 Q1219.1 763.7 1200.4 766.8 Q1180.9 769.3 1161.0 771.0 Q1141.0 771.8 1121.5 771.9 Q1102.8 771.2 1085.3 769.6 Q1072.9 766.1 1059.4 763.2 Q1048.1 759.7 1039.2 755.6 Q1032.9 751.0 1029.4 746.1 Q1028.7 740.8 1030.9 735.4 Q1035.8 730.0 1043.6 724.6 Q1052.7 719.2 1065.7 714.3 Q1080.7 709.7 1097.5 705.7 Q1115.7 702.3 1135.0 699.5 Q1154.9 697.5 1175.0 696.2 Q1194.9 695.8 1214.1 696.2",
+       "x": 1162.85,
+       "y": 733.8499999999999,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.625,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 29
+       },
+       "start": 10.45,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.42,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "door,\u2002slammed",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 96,
+       "y": 814.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 11.25,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.55,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 30
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 213,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "2",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 552,
+       "y": 814.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 11.8,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.1,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 31
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 220,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M649.8 808.6 Q656.0 815.0 658.9 825.9 Q667.8 810.9 679.7 784.9",
+       "x": 664.75,
+       "y": 805.4,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.583310808983835,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 32
+       },
+       "start": 11.95,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16935092736470328,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M759.2 809.2 Q764.6 816.2 768.3 822.2 Q777.4 809.5 790.7 790.8",
+       "x": 774.95,
+       "y": 806.5,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.893261728834156,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 33
+       },
+       "start": 12.049999999999999,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.123386949352755,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M868.1 810.2 Q874.8 818.7 882.8 819.8 Q886.2 804.6 901.5 786.3",
+       "x": 884.8,
+       "y": 803.05,
+       "stroke": "#2343A6",
+       "strokeWidth": 4.703714875971404,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 34
+       },
+       "start": 12.149999999999999,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.12464045115853115,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M980.3 807.6 Q986.4 817.8 989.6 821.8 Q996.4 809.4 1015.3 790.1",
+       "x": 997.8,
+       "y": 805.95,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.160169282437654,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 35
+       },
+       "start": 12.25,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16746104084430086,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "no\u2002clip",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 1070,
+       "y": 814.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 12.35,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 36
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 255,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M1092.5 779.5 Q1105.7 777.0 1119.5 775.3 Q1133.5 774.2 1147.5 774.0 Q1161.2 774.5 1174.2 775.8 Q1186.3 777.8 1197.2 780.6 Q1206.7 784.0 1214.5 788.0 Q1220.4 792.5 1224.4 797.4 Q1226.3 802.6 1226.1 807.9 Q1223.7 813.4 1219.3 818.8 Q1212.8 824.0 1204.4 829.0 Q1194.4 833.6 1179.2 835.8 Q1167.2 839.1 1154.3 841.7 Q1140.8 843.7 1127.0 844.9 Q1113.2 845.4 1099.6 845.1 Q1086.6 844.1 1074.4 842.4 Q1063.2 840.0 1053.4 836.9 Q1045.1 833.2 1038.6 829.0 Q1033.9 824.4 1031.2 819.5 Q1030.5 814.3 1031.9 809.0 Q1035.4 803.7 1040.8 798.5 Q1045.6 792.9 1055.2 788.2 Q1066.3 783.9 1078.8 780.2 Q1092.3 777.2 1106.5 774.8 Q1121.1 773.2 1135.9 772.4 Q1150.5 772.4 1164.5 773.2",
+       "x": 1128.4,
+       "y": 808.9,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.625,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 37
+       },
+       "start": 12.9,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.42,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "thunder,\u2002overhead",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 96,
+       "y": 890.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 13.9,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.55,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 38
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 269,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 552,
+       "y": 890.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 14.450000000000001,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.1,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 39
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 276,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M648.3 883.2 Q656.0 895.1 661.2 901.2 Q671.2 882.2 680.2 866.5",
+       "x": 664.25,
+       "y": 883.85,
+       "stroke": "#2343A6",
+       "strokeWidth": 4.528831237528698,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 40
+       },
+       "start": 14.6,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.15761648217587332,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M760.0 883.8 Q763.4 896.1 772.3 901.7 Q779.0 881.7 792.5 862.0",
+       "x": 776.25,
+       "y": 881.85,
+       "stroke": "#2343A6",
+       "strokeWidth": 4.785809316053781,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 41
+       },
+       "start": 14.7,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.14475302921923625,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M870.2 884.8 Q878.5 894.9 881.8 895.5 Q888.2 884.7 900.0 864.3",
+       "x": 885.1,
+       "y": 879.9,
+       "stroke": "#2343A6",
+       "strokeWidth": 6.174616090830325,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 42
+       },
+       "start": 14.799999999999999,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16909685395158294,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M979.4 888.4 Q983.1 895.7 991.6 896.5 Q997.6 886.6 1009.4 864.7",
+       "x": 994.4,
+       "y": 880.6,
+       "stroke": "#2343A6",
+       "strokeWidth": 6.245400463413104,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 43
+       },
+       "start": 14.9,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.1288956402186513,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "still\u2002no\u2002clip",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 1070,
+       "y": 890.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 15.55,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 44
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 311,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M1122.9 846.6 Q1145.0 843.3 1167.8 840.8 Q1190.8 839.3 1213.6 838.8 Q1235.7 839.4 1256.6 840.9 Q1275.8 843.4 1293.0 846.8 Q1307.7 851.0 1321.8 855.6 Q1331.2 861.2 1337.3 867.5 Q1340.0 874.1 1339.3 881.1 Q1335.2 888.1 1327.7 895.1 Q1317.0 902.0 1303.4 908.5 Q1287.0 914.6 1267.1 919.6 Q1246.7 924.2 1224.9 928.1 Q1202.0 931.1 1178.5 933.1 Q1155.1 934.1 1132.1 934.1 Q1110.1 933.0 1089.5 930.9 Q1068.9 928.6 1052.2 924.6 Q1038.3 919.7 1027.3 914.1 Q1019.6 907.9 1015.4 901.2 Q1014.7 894.2 1017.5 886.9 Q1023.8 879.7 1033.5 872.5 Q1046.2 865.7 1062.0 859.2 Q1080.3 853.4 1100.8 848.2 Q1122.9 843.8 1146.4 840.4 Q1170.5 837.9 1194.9 836.4 Q1219.0 836.0 1242.3 836.7",
+       "x": 1177.35,
+       "y": 885.05,
+       "stroke": "#2343A6",
+       "strokeWidth": 7.5,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 45
+       },
+       "start": 16.3,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "the\u2002whole\u2002night",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 96,
+       "y": 966.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 19.0,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.55,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 46
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 325,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 552,
+       "y": 966.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 19.55,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.1,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 47
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 332,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M650.5 963.1 Q655.3 966.7 658.7 974.2 Q670.3 959.8 681.1 941.9",
+       "x": 665.8,
+       "y": 958.05,
+       "stroke": "#2343A6",
+       "strokeWidth": 4.729401864306882,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 48
+       },
+       "start": 19.7,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.1389395906482754,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M762.3 958.7 Q767.0 972.9 768.5 972.4 Q778.0 959.8 789.6 945.4",
+       "x": 775.95,
+       "y": 959.15,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.236709585507391,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 49
+       },
+       "start": 19.8,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.14903163976675476,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M868.7 964.9 Q876.2 973.3 879.2 974.0 Q888.0 956.5 904.5 938.8",
+       "x": 886.6,
+       "y": 956.4,
+       "stroke": "#2343A6",
+       "strokeWidth": 6.142634128853555,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 50
+       },
+       "start": 19.9,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16141090435031735,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M982.1 961.7 Q988.5 971.8 990.4 975.8 Q997.8 961.7 1011.1 941.4",
+       "x": 996.6,
+       "y": 958.5999999999999,
+       "stroke": "#2343A6",
+       "strokeWidth": 4.917126565042801,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 51
+       },
+       "start": 20.0,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.13340029109208948,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "30\u2002hrs,\u2002one\u2002roll",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#2343A6",
+       "x": 1070,
+       "y": 966.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 19.75,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 52
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 367,
+        "smooth": 1
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M1144.3 933.3 Q1168.7 930.2 1193.9 927.8 Q1219.3 926.1 1244.4 925.2 Q1268.7 925.1 1291.7 925.8 Q1312.8 927.2 1331.6 929.4 Q1347.8 932.3 1359.9 936.0 Q1369.5 940.0 1375.7 944.6 Q1378.2 949.5 1377.0 954.6 Q1372.2 960.0 1363.9 965.3 Q1352.2 970.6 1337.3 975.8 Q1319.6 980.6 1301.6 985.6 Q1279.0 989.6 1254.8 993.1 Q1229.4 995.9 1203.5 998.0 Q1177.6 999.3 1152.3 999.9 Q1128.0 999.6 1105.3 998.5 Q1086.9 996.0 1069.1 993.4 Q1054.2 990.2 1042.5 986.3 Q1034.2 981.9 1029.6 977.1 Q1028.7 971.9 1031.6 966.5 Q1038.3 960.9 1048.6 955.4 Q1062.9 950.0 1079.7 944.8 Q1099.3 939.9 1121.3 935.5 Q1145.3 931.6 1170.7 928.4 Q1197.1 925.8 1223.8 924.0 Q1250.3 923.1 1276.1 922.9",
+       "x": 1203.45,
+       "y": 961.4,
+       "stroke": "#2343A6",
+       "strokeWidth": 5.625,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 53
+       },
+       "start": 20.35,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.42,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M1422.0 140.7 Q1433.4 138.1 1445.3 136.5 Q1457.4 135.7 1469.4 135.9 Q1481.0 137.1 1492.1 139.1 Q1502.3 142.1 1511.5 145.9 Q1519.4 150.4 1525.3 155.7 Q1530.2 161.3 1533.4 167.4 Q1534.9 173.7 1534.6 180.1 Q1532.6 186.5 1528.9 192.8 Q1523.6 198.9 1516.7 204.5 Q1508.5 209.6 1500.9 215.4 Q1490.1 219.4 1478.5 222.5 Q1466.3 224.7 1453.8 225.9 Q1441.2 226.1 1428.9 225.4 Q1417.1 223.7 1406.0 221.0 Q1398.3 215.9 1389.7 211.7 Q1382.4 206.9 1376.6 201.5 Q1372.4 195.5 1369.9 189.2 Q1369.2 182.7 1370.3 176.1 Q1373.1 169.6 1377.7 163.2 Q1382.5 156.7 1390.6 151.0 Q1399.9 146.0 1410.5 141.6 Q1422.0 138.1 1434.1 135.5 Q1446.7 133.9 1459.5 133.2 Q1472.1 133.5 1484.4 134.8",
+       "x": 1452.0500000000002,
+       "y": 179.64999999999998,
+       "stroke": "#2343A6",
+       "strokeWidth": 6.25,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 54
+       },
+       "start": 26.0,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "rolls\u2002the\u2002moment\u2002you\u2002lift\u2002it.",
+       "font": "Reenie Beanie",
+       "size": 46,
+       "color": "#2343A6",
+       "x": 1128,
+       "y": 258,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 8.0,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.75,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 55
+       },
+       "animator": {
+        "by": "char",
+        "y": 2.875,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 388,
+        "smooth": 1
+       }
+      },
+      {
+       "text": "every\u2002take's\u2002a\u2002keeper.",
+       "font": "Reenie Beanie",
+       "size": 46,
+       "color": "#2343A6",
+       "x": 1128,
+       "y": 306,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 27.2,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.75,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 56
+       },
+       "animator": {
+        "by": "char",
+        "y": 2.875,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 395,
+        "smooth": 1
+       }
+      },
+      {
+       "shader": "// Carbonless stock: fibres, formation and tooth as a multiply layer over the page (paper, print and ink),\n// so ink sits in the paper. It lives in page space and moves with the sheet.\nfloat h(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }\nfloat n(vec2 p) {\n    vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);\n    return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y);\n}\nvoid mainImage(out vec4 o, in vec2 f) {\n    vec2 p = f / iResolution.x * 1920.0;\n    float fib = smoothstep(0.72, 0.95, n(vec2(p.x * 0.6 + p.y * 0.05, p.y * 9.0)))\n              + smoothstep(0.75, 0.97, n(vec2(p.x * 7.0, p.y * 0.5 - p.x * 0.1) + 17.0));\n    float mott = n(p * 0.012) * 0.6 + n(p * 0.04) * 0.4;\n    float tooth = h(floor(p * 1.3));\n    float k = 1.0 - (0.05 * fib + 0.06 * (mott - 0.5) + 0.04 * (tooth - 0.5)) - 0.02;\n    o = vec4(vec3(k), 1.0);\n}\n",
+       "blend": "multiply",
+       "width": 1920,
+       "height": 1080,
+       "x": 960.0,
+       "y": 540.0
+      }
+     ]
+    }
+   ]
+  },
+  "yellow": {
+   "size": [
+    3840,
+    2160
+   ],
+   "duration": 30,
+   "background": "#F3E3A2",
+   "layers": [
+    {
+     "type": "group",
+     "width": 1920,
+     "height": 1080,
+     "x": 1920.0,
+     "y": 1080.0,
+     "scale": 2,
+     "layers": [
+      {
+       "draw": [
+        {
+         "line": [
+          80,
+          318,
+          1840,
+          318
+         ],
+         "stroke": "#2A2427",
+         "width": 3
+        },
+        {
+         "line": [
+          80,
+          392,
+          1840,
+          392
+         ],
+         "stroke": "#2A2427",
+         "width": 2
+        },
+        {
+         "line": [
+          80,
+          468,
+          1840,
+          468
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          544,
+          1840,
+          544
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          620,
+          1840,
+          620
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          696,
+          1840,
+          696
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          772,
+          1840,
+          772
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          848,
+          1840,
+          848
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          924,
+          1840,
+          924
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          1000,
+          1840,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          520,
+          318,
+          520,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          610,
+          318,
+          610,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          720,
+          318,
+          720,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          830,
+          318,
+          830,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          940,
+          318,
+          940,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          1050,
+          318,
+          1050,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          1118,
+          130,
+          1560,
+          130
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2
+        },
+        {
+         "line": [
+          1738,
+          130,
+          1840,
+          130
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2
+        },
+        {
+         "line": [
+          1118,
+          214,
+          1560,
+          214
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2
+        },
+        {
+         "line": [
+          1738,
+          214,
+          1840,
+          214
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2
+        }
+       ],
+       "inkTexture": 0.12
+      },
+      {
+       "text": "SOUND REPORT",
+       "font": "Archivo",
+       "size": 86,
+       "weight": 800,
+       "axes": {
+        "wdth": 62
+       },
+       "letterSpacing": "-0.01em",
+       "color": "#2A2427",
+       "x": 80,
+       "y": 150,
+       "anchor": "left"
+      },
+      {
+       "text": "FIELD \u00b7 STUDIO \u00b7 SET",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 84,
+       "y": 212,
+       "anchor": "left"
+      },
+      {
+       "text": "PRODUCTION",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1000,
+       "y": 121,
+       "anchor": "bottomLeft"
+      },
+      {
+       "text": "DATE",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1620,
+       "y": 121,
+       "anchor": "bottomLeft"
+      },
+      {
+       "text": "RECORDER",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1000,
+       "y": 205,
+       "anchor": "bottomLeft"
+      },
+      {
+       "text": "ROLL",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1620,
+       "y": 205,
+       "anchor": "bottomLeft"
+      },
+      {
+       "text": "SCENE / SUBJECT",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 96,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TAKE",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 536,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TR 1",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 626,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TR 2",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 736,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TR 3",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 846,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TR 4",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 956,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "NOTES   \u25cb = CIRCLE TAKE   NG \u00b7 FS \u00b7 INC \u00b7 WT \u00b7 RT",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1066,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "YELLOW \u2014 PRODUCTION",
+       "font": "Archivo",
+       "size": 15,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 80,
+       "y": 1046,
+       "anchor": "left"
+      },
+      {
+       "text": "CARBONLESS \u2014 PRESS FIRMLY",
+       "font": "Archivo",
+       "size": 15,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1840,
+       "y": 1046,
+       "anchor": "right"
+      },
+      {
+       "text": "field\u2002recording",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1131,
+       "y": 110,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 0
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 3,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1753,
+       "y": 194,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 1
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 10,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "the\u2002old\u2002one",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1131,
+       "y": 194,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 2
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 17,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "dawn\u2002chorus",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 436.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 3
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 24,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 436.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 4
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 31,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M648.6 430.8 Q659.3 438.3 660.9 440.6 Q667.5 426.2 681.8 410.0",
+       "x": 668.2,
+       "y": 427.3,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.14706014242427,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 5
+       },
+       "start": -1,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.12429531882349548,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "FS\u2002\u2014",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 436.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 6
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 45,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "missed\u2002the\u2002top",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1204.25,
+       "y": 436.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -0.45,
+       "enter": {
+        "preset": "wipe",
+        "duration": 1.2,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 7
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 52,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "kick,\u2002live\u2002room",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 512.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 8
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 59,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "3",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 512.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 9
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 66,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M649.3 505.7 Q653.7 512.6 663.6 517.9 Q666.8 500.7 679.4 480.0",
+       "x": 667.3499999999999,
+       "y": 500.95,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.5285468497120585,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 10
+       },
+       "start": -1,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.13016939377439737,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "NG\u2002\u2014\u2002clipped",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 512.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 2.5,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 11
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 80,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "rain\u2002on\u2002tin\u2002roof",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 588.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 12
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 87,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 588.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 13
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 94,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M649.2 584.4 Q653.8 592.4 661.5 593.6 Q672.3 582.6 682.7 563.8",
+       "x": 668.95,
+       "y": 580.7,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.47785670098831,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 14
+       },
+       "start": -1,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16650565682533827,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "INC\u2002\u2014\u2002batt\u2002died",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 588.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 3.125,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 15
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 108,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "the\u2002riff,\u20022am",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 664.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 16
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 115,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 664.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 17
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 122,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M652.2 655.0 Q656.5 664.2 663.6 668.1 Q668.3 655.7 682.4 640.6",
+       "x": 670.3,
+       "y": 656.35,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.538669509569677,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 18
+       },
+       "start": -1,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.12757257776989764,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "FS\u2002\u2014\u2002wasn't\u2002rolling",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 664.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 3.75,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 19
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 136,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M1122 194 C 1180 186, 1250 199, 1360 188",
+       "x": 1244.0,
+       "y": 194.5,
+       "stroke": "#4B5687",
+       "strokeWidth": 6.25,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 20
+       },
+       "start": 5.6,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.3,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "Tern",
+       "font": "Reenie Beanie",
+       "size": 84,
+       "color": "#4B5687",
+       "x": 1403.5,
+       "y": 186,
+       "anchor": "left",
+       "rotation": -3,
+       "start": 7.5,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.45,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 21
+       },
+       "animator": {
+        "by": "char",
+        "y": 5.25,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 150,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "blackbird,\u20025:12am",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 740.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 8.9,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.55,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 22
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 157,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 740.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 9.450000000000001,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.1,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 23
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 164,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M650.9 730.9 Q656.2 740.8 664.1 749.9 Q670.7 732.9 683.4 713.3",
+       "x": 670.15,
+       "y": 733.5999999999999,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.142094183411956,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 24
+       },
+       "start": 9.6,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.15253232485338447,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M763.3 735.5 Q764.1 742.1 773.0 744.4 Q782.0 729.4 789.8 713.8",
+       "x": 779.55,
+       "y": 731.0999999999999,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.720518559809475,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 25
+       },
+       "start": 9.7,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.15943058955228248,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M873.1 735.1 Q876.1 741.9 883.4 748.6 Q891.4 735.1 905.1 710.4",
+       "x": 892.1,
+       "y": 731.5,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.851664784222537,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 26
+       },
+       "start": 9.799999999999999,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.12153356624981425,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M978.6 735.2 Q987.3 739.0 989.3 746.3 Q997.3 733.7 1010.0 714.7",
+       "x": 997.3,
+       "y": 732.5,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.551566393477615,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 27
+       },
+       "start": 9.9,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.14078398675452355,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "got\u2002the\u2002top",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 740.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 9.85,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 28
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 199,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M1115.5 704.3 Q1133.8 701.6 1152.6 699.7 Q1171.6 698.5 1190.4 698.0 Q1208.5 698.3 1225.7 699.4 Q1241.4 701.2 1255.5 703.8 Q1267.6 706.9 1281.4 709.8 Q1289.3 714.2 1294.6 718.9 Q1297.0 724.1 1296.5 729.4 Q1293.1 734.9 1286.8 740.4 Q1277.9 745.8 1266.4 750.9 Q1252.6 755.7 1236.4 759.9 Q1219.1 763.7 1200.4 766.8 Q1180.9 769.3 1161.0 771.0 Q1141.0 771.8 1121.5 771.9 Q1102.8 771.2 1085.3 769.6 Q1072.9 766.1 1059.4 763.2 Q1048.1 759.7 1039.2 755.6 Q1032.9 751.0 1029.4 746.1 Q1028.7 740.8 1030.9 735.4 Q1035.8 730.0 1043.6 724.6 Q1052.7 719.2 1065.7 714.3 Q1080.7 709.7 1097.5 705.7 Q1115.7 702.3 1135.0 699.5 Q1154.9 697.5 1175.0 696.2 Q1194.9 695.8 1214.1 696.2",
+       "x": 1165.85,
+       "y": 735.8499999999999,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.625,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 29
+       },
+       "start": 10.45,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.42,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "door,\u2002slammed",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 816.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 11.25,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.55,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 30
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 213,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "2",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 816.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 11.8,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.1,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 31
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 220,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M649.8 808.6 Q656.0 815.0 658.9 825.9 Q667.8 810.9 679.7 784.9",
+       "x": 667.75,
+       "y": 807.4,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.583310808983835,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 32
+       },
+       "start": 11.95,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16935092736470328,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M759.2 809.2 Q764.6 816.2 768.3 822.2 Q777.4 809.5 790.7 790.8",
+       "x": 777.95,
+       "y": 808.5,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.893261728834156,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 33
+       },
+       "start": 12.049999999999999,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.123386949352755,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M868.1 810.2 Q874.8 818.7 882.8 819.8 Q886.2 804.6 901.5 786.3",
+       "x": 887.8,
+       "y": 805.05,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.703714875971404,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 34
+       },
+       "start": 12.149999999999999,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.12464045115853115,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M980.3 807.6 Q986.4 817.8 989.6 821.8 Q996.4 809.4 1015.3 790.1",
+       "x": 1000.8,
+       "y": 807.95,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.160169282437654,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 35
+       },
+       "start": 12.25,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16746104084430086,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "no\u2002clip",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 816.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 12.35,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 36
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 255,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M1092.5 779.5 Q1105.7 777.0 1119.5 775.3 Q1133.5 774.2 1147.5 774.0 Q1161.2 774.5 1174.2 775.8 Q1186.3 777.8 1197.2 780.6 Q1206.7 784.0 1214.5 788.0 Q1220.4 792.5 1224.4 797.4 Q1226.3 802.6 1226.1 807.9 Q1223.7 813.4 1219.3 818.8 Q1212.8 824.0 1204.4 829.0 Q1194.4 833.6 1179.2 835.8 Q1167.2 839.1 1154.3 841.7 Q1140.8 843.7 1127.0 844.9 Q1113.2 845.4 1099.6 845.1 Q1086.6 844.1 1074.4 842.4 Q1063.2 840.0 1053.4 836.9 Q1045.1 833.2 1038.6 829.0 Q1033.9 824.4 1031.2 819.5 Q1030.5 814.3 1031.9 809.0 Q1035.4 803.7 1040.8 798.5 Q1045.6 792.9 1055.2 788.2 Q1066.3 783.9 1078.8 780.2 Q1092.3 777.2 1106.5 774.8 Q1121.1 773.2 1135.9 772.4 Q1150.5 772.4 1164.5 773.2",
+       "x": 1131.4,
+       "y": 810.9,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.625,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 37
+       },
+       "start": 12.9,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.42,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "thunder,\u2002overhead",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 892.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 13.9,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.55,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 38
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 269,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 892.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 14.450000000000001,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.1,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 39
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 276,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M648.3 883.2 Q656.0 895.1 661.2 901.2 Q671.2 882.2 680.2 866.5",
+       "x": 667.25,
+       "y": 885.85,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.528831237528698,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 40
+       },
+       "start": 14.6,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.15761648217587332,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M760.0 883.8 Q763.4 896.1 772.3 901.7 Q779.0 881.7 792.5 862.0",
+       "x": 779.25,
+       "y": 883.85,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.785809316053781,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 41
+       },
+       "start": 14.7,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.14475302921923625,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M870.2 884.8 Q878.5 894.9 881.8 895.5 Q888.2 884.7 900.0 864.3",
+       "x": 888.1,
+       "y": 881.9,
+       "stroke": "#4B5687",
+       "strokeWidth": 6.174616090830325,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 42
+       },
+       "start": 14.799999999999999,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16909685395158294,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M979.4 888.4 Q983.1 895.7 991.6 896.5 Q997.6 886.6 1009.4 864.7",
+       "x": 997.4,
+       "y": 882.6,
+       "stroke": "#4B5687",
+       "strokeWidth": 6.245400463413104,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 43
+       },
+       "start": 14.9,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.1288956402186513,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "still\u2002no\u2002clip",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 892.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 15.55,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 44
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 311,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M1122.9 846.6 Q1145.0 843.3 1167.8 840.8 Q1190.8 839.3 1213.6 838.8 Q1235.7 839.4 1256.6 840.9 Q1275.8 843.4 1293.0 846.8 Q1307.7 851.0 1321.8 855.6 Q1331.2 861.2 1337.3 867.5 Q1340.0 874.1 1339.3 881.1 Q1335.2 888.1 1327.7 895.1 Q1317.0 902.0 1303.4 908.5 Q1287.0 914.6 1267.1 919.6 Q1246.7 924.2 1224.9 928.1 Q1202.0 931.1 1178.5 933.1 Q1155.1 934.1 1132.1 934.1 Q1110.1 933.0 1089.5 930.9 Q1068.9 928.6 1052.2 924.6 Q1038.3 919.7 1027.3 914.1 Q1019.6 907.9 1015.4 901.2 Q1014.7 894.2 1017.5 886.9 Q1023.8 879.7 1033.5 872.5 Q1046.2 865.7 1062.0 859.2 Q1080.3 853.4 1100.8 848.2 Q1122.9 843.8 1146.4 840.4 Q1170.5 837.9 1194.9 836.4 Q1219.0 836.0 1242.3 836.7",
+       "x": 1180.35,
+       "y": 887.05,
+       "stroke": "#4B5687",
+       "strokeWidth": 7.5,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 45
+       },
+       "start": 16.3,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "the\u2002whole\u2002night",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 968.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 19.0,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.55,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 46
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 325,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 968.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 19.55,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.1,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 47
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 332,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M650.5 963.1 Q655.3 966.7 658.7 974.2 Q670.3 959.8 681.1 941.9",
+       "x": 668.8,
+       "y": 960.05,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.729401864306882,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 48
+       },
+       "start": 19.7,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.1389395906482754,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M762.3 958.7 Q767.0 972.9 768.5 972.4 Q778.0 959.8 789.6 945.4",
+       "x": 778.95,
+       "y": 961.15,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.236709585507391,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 49
+       },
+       "start": 19.8,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.14903163976675476,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M868.7 964.9 Q876.2 973.3 879.2 974.0 Q888.0 956.5 904.5 938.8",
+       "x": 889.6,
+       "y": 958.4,
+       "stroke": "#4B5687",
+       "strokeWidth": 6.142634128853555,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 50
+       },
+       "start": 19.9,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16141090435031735,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M982.1 961.7 Q988.5 971.8 990.4 975.8 Q997.8 961.7 1011.1 941.4",
+       "x": 999.6,
+       "y": 960.5999999999999,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.917126565042801,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 51
+       },
+       "start": 20.0,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.13340029109208948,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "30\u2002hrs,\u2002one\u2002roll",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 968.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 19.75,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 52
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 367,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M1144.3 933.3 Q1168.7 930.2 1193.9 927.8 Q1219.3 926.1 1244.4 925.2 Q1268.7 925.1 1291.7 925.8 Q1312.8 927.2 1331.6 929.4 Q1347.8 932.3 1359.9 936.0 Q1369.5 940.0 1375.7 944.6 Q1378.2 949.5 1377.0 954.6 Q1372.2 960.0 1363.9 965.3 Q1352.2 970.6 1337.3 975.8 Q1319.6 980.6 1301.6 985.6 Q1279.0 989.6 1254.8 993.1 Q1229.4 995.9 1203.5 998.0 Q1177.6 999.3 1152.3 999.9 Q1128.0 999.6 1105.3 998.5 Q1086.9 996.0 1069.1 993.4 Q1054.2 990.2 1042.5 986.3 Q1034.2 981.9 1029.6 977.1 Q1028.7 971.9 1031.6 966.5 Q1038.3 960.9 1048.6 955.4 Q1062.9 950.0 1079.7 944.8 Q1099.3 939.9 1121.3 935.5 Q1145.3 931.6 1170.7 928.4 Q1197.1 925.8 1223.8 924.0 Q1250.3 923.1 1276.1 922.9",
+       "x": 1206.45,
+       "y": 963.4,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.625,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 53
+       },
+       "start": 20.35,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.42,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M1422.0 140.7 Q1433.4 138.1 1445.3 136.5 Q1457.4 135.7 1469.4 135.9 Q1481.0 137.1 1492.1 139.1 Q1502.3 142.1 1511.5 145.9 Q1519.4 150.4 1525.3 155.7 Q1530.2 161.3 1533.4 167.4 Q1534.9 173.7 1534.6 180.1 Q1532.6 186.5 1528.9 192.8 Q1523.6 198.9 1516.7 204.5 Q1508.5 209.6 1500.9 215.4 Q1490.1 219.4 1478.5 222.5 Q1466.3 224.7 1453.8 225.9 Q1441.2 226.1 1428.9 225.4 Q1417.1 223.7 1406.0 221.0 Q1398.3 215.9 1389.7 211.7 Q1382.4 206.9 1376.6 201.5 Q1372.4 195.5 1369.9 189.2 Q1369.2 182.7 1370.3 176.1 Q1373.1 169.6 1377.7 163.2 Q1382.5 156.7 1390.6 151.0 Q1399.9 146.0 1410.5 141.6 Q1422.0 138.1 1434.1 135.5 Q1446.7 133.9 1459.5 133.2 Q1472.1 133.5 1484.4 134.8",
+       "x": 1455.0500000000002,
+       "y": 181.64999999999998,
+       "stroke": "#4B5687",
+       "strokeWidth": 6.25,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 54
+       },
+       "start": 26.0,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "rolls\u2002the\u2002moment\u2002you\u2002lift\u2002it.",
+       "font": "Reenie Beanie",
+       "size": 46,
+       "color": "#4B5687",
+       "x": 1131,
+       "y": 260,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 8.0,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.75,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 55
+       },
+       "animator": {
+        "by": "char",
+        "y": 2.875,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 388,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "every\u2002take's\u2002a\u2002keeper.",
+       "font": "Reenie Beanie",
+       "size": 46,
+       "color": "#4B5687",
+       "x": 1131,
+       "y": 308,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 27.2,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.75,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 56
+       },
+       "animator": {
+        "by": "char",
+        "y": 2.875,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 395,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shader": "// Carbonless stock: fibres, formation and tooth as a multiply layer over the page (paper, print and ink),\n// so ink sits in the paper. It lives in page space and moves with the sheet.\nfloat h(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }\nfloat n(vec2 p) {\n    vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);\n    return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y);\n}\nvoid mainImage(out vec4 o, in vec2 f) {\n    vec2 p = f / iResolution.x * 1920.0;\n    float fib = smoothstep(0.72, 0.95, n(vec2(p.x * 0.6 + p.y * 0.05, p.y * 9.0)))\n              + smoothstep(0.75, 0.97, n(vec2(p.x * 7.0, p.y * 0.5 - p.x * 0.1) + 17.0));\n    float mott = n(p * 0.012) * 0.6 + n(p * 0.04) * 0.4;\n    float tooth = h(floor(p * 1.3));\n    float k = 1.0 - (0.05 * fib + 0.06 * (mott - 0.5) + 0.04 * (tooth - 0.5)) - 0.02;\n    o = vec4(vec3(k), 1.0);\n}\n",
+       "blend": "multiply",
+       "width": 1920,
+       "height": 1080,
+       "x": 960.0,
+       "y": 540.0
+      }
+     ]
+    }
+   ]
+  },
+  "white": {
+   "size": [
+    3840,
+    2160
+   ],
+   "duration": 30,
+   "background": "#F4F2EC",
+   "layers": [
+    {
+     "type": "group",
+     "width": 1920,
+     "height": 1080,
+     "x": 1920.0,
+     "y": 1080.0,
+     "scale": 2,
+     "layers": [
+      {
+       "draw": [
+        {
+         "line": [
+          80,
+          318,
+          1840,
+          318
+         ],
+         "stroke": "#2A2427",
+         "width": 3
+        },
+        {
+         "line": [
+          80,
+          392,
+          1840,
+          392
+         ],
+         "stroke": "#2A2427",
+         "width": 2
+        },
+        {
+         "line": [
+          80,
+          468,
+          1840,
+          468
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          544,
+          1840,
+          544
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          620,
+          1840,
+          620
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          696,
+          1840,
+          696
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          772,
+          1840,
+          772
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          848,
+          1840,
+          848
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          924,
+          1840,
+          924
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          80,
+          1000,
+          1840,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          520,
+          318,
+          520,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          610,
+          318,
+          610,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          720,
+          318,
+          720,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          830,
+          318,
+          830,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          940,
+          318,
+          940,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          1050,
+          318,
+          1050,
+          1000
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2,
+         "opacity": 0.8
+        },
+        {
+         "line": [
+          1118,
+          130,
+          1560,
+          130
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2
+        },
+        {
+         "line": [
+          1738,
+          130,
+          1840,
+          130
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2
+        },
+        {
+         "line": [
+          1118,
+          214,
+          1560,
+          214
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2
+        },
+        {
+         "line": [
+          1738,
+          214,
+          1840,
+          214
+         ],
+         "stroke": "#2A2427",
+         "width": 1.2
+        }
+       ],
+       "inkTexture": 0.12
+      },
+      {
+       "text": "SOUND REPORT",
+       "font": "Archivo",
+       "size": 86,
+       "weight": 800,
+       "axes": {
+        "wdth": 62
+       },
+       "letterSpacing": "-0.01em",
+       "color": "#2A2427",
+       "x": 80,
+       "y": 150,
+       "anchor": "left"
+      },
+      {
+       "text": "FIELD \u00b7 STUDIO \u00b7 SET",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 84,
+       "y": 212,
+       "anchor": "left"
+      },
+      {
+       "text": "PRODUCTION",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1000,
+       "y": 121,
+       "anchor": "bottomLeft"
+      },
+      {
+       "text": "DATE",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1620,
+       "y": 121,
+       "anchor": "bottomLeft"
+      },
+      {
+       "text": "RECORDER",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1000,
+       "y": 205,
+       "anchor": "bottomLeft"
+      },
+      {
+       "text": "ROLL",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1620,
+       "y": 205,
+       "anchor": "bottomLeft"
+      },
+      {
+       "text": "SCENE / SUBJECT",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 96,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TAKE",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 536,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TR 1",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 626,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TR 2",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 736,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TR 3",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 846,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "TR 4",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 956,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "NOTES   \u25cb = CIRCLE TAKE   NG \u00b7 FS \u00b7 INC \u00b7 WT \u00b7 RT",
+       "font": "Archivo",
+       "size": 17,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1066,
+       "y": 344,
+       "anchor": "left"
+      },
+      {
+       "text": "WHITE \u2014 POST",
+       "font": "Archivo",
+       "size": 15,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 80,
+       "y": 1046,
+       "anchor": "left"
+      },
+      {
+       "text": "CARBONLESS \u2014 PRESS FIRMLY",
+       "font": "Archivo",
+       "size": 15,
+       "weight": 600,
+       "axes": {
+        "wdth": 75
+       },
+       "letterSpacing": "0.06em",
+       "color": "#2A2427",
+       "x": 1840,
+       "y": 1046,
+       "anchor": "right"
+      },
+      {
+       "text": "field\u2002recording",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1131,
+       "y": 110,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 0
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 3,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1753,
+       "y": 194,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 1
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 10,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "the\u2002old\u2002one",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1131,
+       "y": 194,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 2
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 17,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "dawn\u2002chorus",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 436.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 3
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 24,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 436.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 4
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 31,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M648.6 430.8 Q659.3 438.3 660.9 440.6 Q667.5 426.2 681.8 410.0",
+       "x": 668.2,
+       "y": 427.3,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.14706014242427,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 5
+       },
+       "start": -1,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.12429531882349548,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "FS\u2002\u2014",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 436.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 6
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 45,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "missed\u2002the\u2002top",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1204.25,
+       "y": 436.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -0.45,
+       "enter": {
+        "preset": "wipe",
+        "duration": 1.2,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 7
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 52,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "kick,\u2002live\u2002room",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 512.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 8
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 59,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "3",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 512.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 9
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 66,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M649.3 505.7 Q653.7 512.6 663.6 517.9 Q666.8 500.7 679.4 480.0",
+       "x": 667.3499999999999,
+       "y": 500.95,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.5285468497120585,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 10
+       },
+       "start": -1,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.13016939377439737,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "NG\u2002\u2014\u2002clipped",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 512.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 2.5,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 11
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 80,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "rain\u2002on\u2002tin\u2002roof",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 588.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 12
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 87,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 588.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 13
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 94,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M649.2 584.4 Q653.8 592.4 661.5 593.6 Q672.3 582.6 682.7 563.8",
+       "x": 668.95,
+       "y": 580.7,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.47785670098831,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 14
+       },
+       "start": -1,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16650565682533827,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "INC\u2002\u2014\u2002batt\u2002died",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 588.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 3.125,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 15
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 108,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "the\u2002riff,\u20022am",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 664.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 16
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 115,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 664.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": -1,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.01,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 17
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 122,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M652.2 655.0 Q656.5 664.2 663.6 668.1 Q668.3 655.7 682.4 640.6",
+       "x": 670.3,
+       "y": 656.35,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.538669509569677,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 18
+       },
+       "start": -1,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.12757257776989764,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "FS\u2002\u2014\u2002wasn't\u2002rolling",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 664.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 3.75,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 19
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 136,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M1122 194 C 1180 186, 1250 199, 1360 188",
+       "x": 1244.0,
+       "y": 194.5,
+       "stroke": "#4B5687",
+       "strokeWidth": 6.25,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 20
+       },
+       "start": 5.6,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.3,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "Tern",
+       "font": "Reenie Beanie",
+       "size": 84,
+       "color": "#4B5687",
+       "x": 1403.5,
+       "y": 186,
+       "anchor": "left",
+       "rotation": -3,
+       "start": 7.5,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.45,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 21
+       },
+       "animator": {
+        "by": "char",
+        "y": 5.25,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 150,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "blackbird,\u20025:12am",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 740.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 8.9,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.55,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 22
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 157,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 740.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 9.450000000000001,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.1,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 23
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 164,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M650.9 730.9 Q656.2 740.8 664.1 749.9 Q670.7 732.9 683.4 713.3",
+       "x": 670.15,
+       "y": 733.5999999999999,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.142094183411956,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 24
+       },
+       "start": 9.6,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.15253232485338447,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M763.3 735.5 Q764.1 742.1 773.0 744.4 Q782.0 729.4 789.8 713.8",
+       "x": 779.55,
+       "y": 731.0999999999999,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.720518559809475,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 25
+       },
+       "start": 9.7,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.15943058955228248,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M873.1 735.1 Q876.1 741.9 883.4 748.6 Q891.4 735.1 905.1 710.4",
+       "x": 892.1,
+       "y": 731.5,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.851664784222537,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 26
+       },
+       "start": 9.799999999999999,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.12153356624981425,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M978.6 735.2 Q987.3 739.0 989.3 746.3 Q997.3 733.7 1010.0 714.7",
+       "x": 997.3,
+       "y": 732.5,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.551566393477615,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 27
+       },
+       "start": 9.9,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.14078398675452355,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "got\u2002the\u2002top",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 740.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 9.85,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 28
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 199,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M1115.5 704.3 Q1133.8 701.6 1152.6 699.7 Q1171.6 698.5 1190.4 698.0 Q1208.5 698.3 1225.7 699.4 Q1241.4 701.2 1255.5 703.8 Q1267.6 706.9 1281.4 709.8 Q1289.3 714.2 1294.6 718.9 Q1297.0 724.1 1296.5 729.4 Q1293.1 734.9 1286.8 740.4 Q1277.9 745.8 1266.4 750.9 Q1252.6 755.7 1236.4 759.9 Q1219.1 763.7 1200.4 766.8 Q1180.9 769.3 1161.0 771.0 Q1141.0 771.8 1121.5 771.9 Q1102.8 771.2 1085.3 769.6 Q1072.9 766.1 1059.4 763.2 Q1048.1 759.7 1039.2 755.6 Q1032.9 751.0 1029.4 746.1 Q1028.7 740.8 1030.9 735.4 Q1035.8 730.0 1043.6 724.6 Q1052.7 719.2 1065.7 714.3 Q1080.7 709.7 1097.5 705.7 Q1115.7 702.3 1135.0 699.5 Q1154.9 697.5 1175.0 696.2 Q1194.9 695.8 1214.1 696.2",
+       "x": 1165.85,
+       "y": 735.8499999999999,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.625,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 29
+       },
+       "start": 10.45,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.42,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "door,\u2002slammed",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 816.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 11.25,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.55,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 30
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 213,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "2",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 816.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 11.8,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.1,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 31
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 220,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M649.8 808.6 Q656.0 815.0 658.9 825.9 Q667.8 810.9 679.7 784.9",
+       "x": 667.75,
+       "y": 807.4,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.583310808983835,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 32
+       },
+       "start": 11.95,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16935092736470328,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M759.2 809.2 Q764.6 816.2 768.3 822.2 Q777.4 809.5 790.7 790.8",
+       "x": 777.95,
+       "y": 808.5,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.893261728834156,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 33
+       },
+       "start": 12.049999999999999,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.123386949352755,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M868.1 810.2 Q874.8 818.7 882.8 819.8 Q886.2 804.6 901.5 786.3",
+       "x": 887.8,
+       "y": 805.05,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.703714875971404,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 34
+       },
+       "start": 12.149999999999999,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.12464045115853115,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M980.3 807.6 Q986.4 817.8 989.6 821.8 Q996.4 809.4 1015.3 790.1",
+       "x": 1000.8,
+       "y": 807.95,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.160169282437654,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 35
+       },
+       "start": 12.25,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16746104084430086,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "no\u2002clip",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 816.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 12.35,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 36
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 255,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M1092.5 779.5 Q1105.7 777.0 1119.5 775.3 Q1133.5 774.2 1147.5 774.0 Q1161.2 774.5 1174.2 775.8 Q1186.3 777.8 1197.2 780.6 Q1206.7 784.0 1214.5 788.0 Q1220.4 792.5 1224.4 797.4 Q1226.3 802.6 1226.1 807.9 Q1223.7 813.4 1219.3 818.8 Q1212.8 824.0 1204.4 829.0 Q1194.4 833.6 1179.2 835.8 Q1167.2 839.1 1154.3 841.7 Q1140.8 843.7 1127.0 844.9 Q1113.2 845.4 1099.6 845.1 Q1086.6 844.1 1074.4 842.4 Q1063.2 840.0 1053.4 836.9 Q1045.1 833.2 1038.6 829.0 Q1033.9 824.4 1031.2 819.5 Q1030.5 814.3 1031.9 809.0 Q1035.4 803.7 1040.8 798.5 Q1045.6 792.9 1055.2 788.2 Q1066.3 783.9 1078.8 780.2 Q1092.3 777.2 1106.5 774.8 Q1121.1 773.2 1135.9 772.4 Q1150.5 772.4 1164.5 773.2",
+       "x": 1131.4,
+       "y": 810.9,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.625,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 37
+       },
+       "start": 12.9,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.42,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "thunder,\u2002overhead",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 892.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 13.9,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.55,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 38
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 269,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 892.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 14.450000000000001,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.1,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 39
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 276,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M648.3 883.2 Q656.0 895.1 661.2 901.2 Q671.2 882.2 680.2 866.5",
+       "x": 667.25,
+       "y": 885.85,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.528831237528698,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 40
+       },
+       "start": 14.6,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.15761648217587332,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M760.0 883.8 Q763.4 896.1 772.3 901.7 Q779.0 881.7 792.5 862.0",
+       "x": 779.25,
+       "y": 883.85,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.785809316053781,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 41
+       },
+       "start": 14.7,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.14475302921923625,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M870.2 884.8 Q878.5 894.9 881.8 895.5 Q888.2 884.7 900.0 864.3",
+       "x": 888.1,
+       "y": 881.9,
+       "stroke": "#4B5687",
+       "strokeWidth": 6.174616090830325,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 42
+       },
+       "start": 14.799999999999999,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16909685395158294,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M979.4 888.4 Q983.1 895.7 991.6 896.5 Q997.6 886.6 1009.4 864.7",
+       "x": 997.4,
+       "y": 882.6,
+       "stroke": "#4B5687",
+       "strokeWidth": 6.245400463413104,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 43
+       },
+       "start": 14.9,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.1288956402186513,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "still\u2002no\u2002clip",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 892.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 15.55,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 44
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 311,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M1122.9 846.6 Q1145.0 843.3 1167.8 840.8 Q1190.8 839.3 1213.6 838.8 Q1235.7 839.4 1256.6 840.9 Q1275.8 843.4 1293.0 846.8 Q1307.7 851.0 1321.8 855.6 Q1331.2 861.2 1337.3 867.5 Q1340.0 874.1 1339.3 881.1 Q1335.2 888.1 1327.7 895.1 Q1317.0 902.0 1303.4 908.5 Q1287.0 914.6 1267.1 919.6 Q1246.7 924.2 1224.9 928.1 Q1202.0 931.1 1178.5 933.1 Q1155.1 934.1 1132.1 934.1 Q1110.1 933.0 1089.5 930.9 Q1068.9 928.6 1052.2 924.6 Q1038.3 919.7 1027.3 914.1 Q1019.6 907.9 1015.4 901.2 Q1014.7 894.2 1017.5 886.9 Q1023.8 879.7 1033.5 872.5 Q1046.2 865.7 1062.0 859.2 Q1080.3 853.4 1100.8 848.2 Q1122.9 843.8 1146.4 840.4 Q1170.5 837.9 1194.9 836.4 Q1219.0 836.0 1242.3 836.7",
+       "x": 1180.35,
+       "y": 887.05,
+       "stroke": "#4B5687",
+       "strokeWidth": 7.5,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 45
+       },
+       "start": 16.3,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "the\u2002whole\u2002night",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 99,
+       "y": 968.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 19.0,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.55,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 46
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 325,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "1",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 555,
+       "y": 968.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 19.55,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.1,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 47
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 332,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M650.5 963.1 Q655.3 966.7 658.7 974.2 Q670.3 959.8 681.1 941.9",
+       "x": 668.8,
+       "y": 960.05,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.729401864306882,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 48
+       },
+       "start": 19.7,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.1389395906482754,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M762.3 958.7 Q767.0 972.9 768.5 972.4 Q778.0 959.8 789.6 945.4",
+       "x": 778.95,
+       "y": 961.15,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.236709585507391,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 49
+       },
+       "start": 19.8,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.14903163976675476,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M868.7 964.9 Q876.2 973.3 879.2 974.0 Q888.0 956.5 904.5 938.8",
+       "x": 889.6,
+       "y": 958.4,
+       "stroke": "#4B5687",
+       "strokeWidth": 6.142634128853555,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 50
+       },
+       "start": 19.9,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.16141090435031735,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M982.1 961.7 Q988.5 971.8 990.4 975.8 Q997.8 961.7 1011.1 941.4",
+       "x": 999.6,
+       "y": 960.5999999999999,
+       "stroke": "#4B5687",
+       "strokeWidth": 4.917126565042801,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 51
+       },
+       "start": 20.0,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.13340029109208948,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "30\u2002hrs,\u2002one\u2002roll",
+       "font": "Reenie Beanie",
+       "size": 56,
+       "color": "#4B5687",
+       "x": 1073,
+       "y": 968.0,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 19.75,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.5,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 52
+       },
+       "animator": {
+        "by": "char",
+        "y": 3.5,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 367,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M1144.3 933.3 Q1168.7 930.2 1193.9 927.8 Q1219.3 926.1 1244.4 925.2 Q1268.7 925.1 1291.7 925.8 Q1312.8 927.2 1331.6 929.4 Q1347.8 932.3 1359.9 936.0 Q1369.5 940.0 1375.7 944.6 Q1378.2 949.5 1377.0 954.6 Q1372.2 960.0 1363.9 965.3 Q1352.2 970.6 1337.3 975.8 Q1319.6 980.6 1301.6 985.6 Q1279.0 989.6 1254.8 993.1 Q1229.4 995.9 1203.5 998.0 Q1177.6 999.3 1152.3 999.9 Q1128.0 999.6 1105.3 998.5 Q1086.9 996.0 1069.1 993.4 Q1054.2 990.2 1042.5 986.3 Q1034.2 981.9 1029.6 977.1 Q1028.7 971.9 1031.6 966.5 Q1038.3 960.9 1048.6 955.4 Q1062.9 950.0 1079.7 944.8 Q1099.3 939.9 1121.3 935.5 Q1145.3 931.6 1170.7 928.4 Q1197.1 925.8 1223.8 924.0 Q1250.3 923.1 1276.1 922.9",
+       "x": 1206.45,
+       "y": 963.4,
+       "stroke": "#4B5687",
+       "strokeWidth": 5.625,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 53
+       },
+       "start": 20.35,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.42,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shape": "path",
+       "d": "M1422.0 140.7 Q1433.4 138.1 1445.3 136.5 Q1457.4 135.7 1469.4 135.9 Q1481.0 137.1 1492.1 139.1 Q1502.3 142.1 1511.5 145.9 Q1519.4 150.4 1525.3 155.7 Q1530.2 161.3 1533.4 167.4 Q1534.9 173.7 1534.6 180.1 Q1532.6 186.5 1528.9 192.8 Q1523.6 198.9 1516.7 204.5 Q1508.5 209.6 1500.9 215.4 Q1490.1 219.4 1478.5 222.5 Q1466.3 224.7 1453.8 225.9 Q1441.2 226.1 1428.9 225.4 Q1417.1 223.7 1406.0 221.0 Q1398.3 215.9 1389.7 211.7 Q1382.4 206.9 1376.6 201.5 Q1372.4 195.5 1369.9 189.2 Q1369.2 182.7 1370.3 176.1 Q1373.1 169.6 1377.7 163.2 Q1382.5 156.7 1390.6 151.0 Q1399.9 146.0 1410.5 141.6 Q1422.0 138.1 1434.1 135.5 Q1446.7 133.9 1459.5 133.2 Q1472.1 133.5 1484.4 134.8",
+       "x": 1455.0500000000002,
+       "y": 181.64999999999998,
+       "stroke": "#4B5687",
+       "strokeWidth": 6.25,
+       "fill": null,
+       "brush": {
+        "taper": [
+         0.15,
+         0.35
+        ],
+        "pressure": 0.45,
+        "seed": 54
+       },
+       "start": 26.0,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.5,
+         "ease": "inOutSine"
+        }
+       ],
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "rolls\u2002the\u2002moment\u2002you\u2002lift\u2002it.",
+       "font": "Reenie Beanie",
+       "size": 46,
+       "color": "#4B5687",
+       "x": 1131,
+       "y": 260,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 8.0,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.75,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 55
+       },
+       "animator": {
+        "by": "char",
+        "y": 2.875,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 388,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "text": "every\u2002take's\u2002a\u2002keeper.",
+       "font": "Reenie Beanie",
+       "size": 46,
+       "color": "#4B5687",
+       "x": 1131,
+       "y": 308,
+       "anchor": "left",
+       "rotation": -1.2,
+       "start": 27.2,
+       "enter": {
+        "preset": "wipe",
+        "duration": 0.75,
+        "ease": "inOutQuad"
+       },
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 0.6,
+        "seed": 56
+       },
+       "animator": {
+        "by": "char",
+        "y": 2.875,
+        "rotation": 4,
+        "scale": 1.05,
+        "start": 0,
+        "end": 0.45,
+        "order": "random",
+        "seed": 395,
+        "smooth": 1
+       },
+       "opacity": 0.55,
+       "blur": 1.2
+      },
+      {
+       "shader": "// Carbonless stock: fibres, formation and tooth as a multiply layer over the page (paper, print and ink),\n// so ink sits in the paper. It lives in page space and moves with the sheet.\nfloat h(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }\nfloat n(vec2 p) {\n    vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);\n    return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y);\n}\nvoid mainImage(out vec4 o, in vec2 f) {\n    vec2 p = f / iResolution.x * 1920.0;\n    float fib = smoothstep(0.72, 0.95, n(vec2(p.x * 0.6 + p.y * 0.05, p.y * 9.0)))\n              + smoothstep(0.75, 0.97, n(vec2(p.x * 7.0, p.y * 0.5 - p.x * 0.1) + 17.0));\n    float mott = n(p * 0.012) * 0.6 + n(p * 0.04) * 0.4;\n    float tooth = h(floor(p * 1.3));\n    float k = 1.0 - (0.05 * fib + 0.06 * (mott - 0.5) + 0.04 * (tooth - 0.5)) - 0.02;\n    o = vec4(vec3(k), 1.0);\n}\n",
+       "blend": "multiply",
+       "width": 1920,
+       "height": 1080,
+       "x": 960.0,
+       "y": 540.0
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "post": {
+  "grain": 0.035,
+  "vignette": 0.15
+ },
+ "music": {
+  "style": "acoustic",
+  "bpm": 96,
+  "key": "D",
+  "mood": "warm bright",
+  "seed": 4,
+  "end": "ring",
+  "sections": [
+   {
+    "name": "intro",
+    "bars": 3,
+    "energy": 0.25
+   },
+   {
+    "name": "verse",
+    "bars": 6,
+    "energy": 0.55,
+    "stop": 2
+   },
+   {
+    "name": "outro",
+    "bars": 3,
+    "energy": 0.4
+   }
+  ],
+  "hits": [
+   "@bar4",
+   "@bar7"
+  ],
+  "tracks": [
+   {
+    "inst": "flute",
+    "notes": "@4 r2 o6 l16 A B A F# A/8 r8 D7/16 B/16 A/8",
+    "gain": -6,
+    "reverb": 0.5
+   }
+  ]
+ },
+ "sound": {
+  "palette": "organic",
+  "density": 0.3,
+  "ambience": {
+   "type": "room",
+   "level": -24
+  },
+  "cues": [
+   {
+    "sfx": "page",
+    "at": 0.1,
+    "gain": -12
+   },
+   {
+    "sfx": "thump",
+    "at": 11.87,
+    "gain": -2,
+    "intensity": 0.8
+   },
+   {
+    "sfx": "boom",
+    "at": 15.0,
+    "gain": 0,
+    "intensity": 1,
+    "size": 1
+   },
+   {
+    "sfx": "rain",
+    "at": 15.0,
+    "duration": 3.5,
+    "gain": -12
+   },
+   {
+    "sfx": "paper",
+    "at": 21.4,
+    "gain": -10
+   },
+   {
+    "sfx": "rain",
+    "at": 3.0,
+    "duration": 0.9,
+    "gain": -18
+   },
+   {
+    "sfx": "night",
+    "at": 18.9,
+    "duration": 2.3,
+    "gain": -14
+   }
+  ]
+ },
+ "scenes": [
+  {
+   "duration": 2.5,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 2.6,
+    "x": 330.0,
+    "y": -130.0,
+    "animate": [
+     {
+      "from": {
+       "zoom": 2.6,
+       "x": 330.0,
+       "y": -130.0
+      },
+      "to": {
+       "zoom": 2.45,
+       "x": 370.0,
+       "y": -120.0
+      },
+      "at": 0,
+      "duration": 2.5,
+      "ease": "outCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 0
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 1.6,
+    "x": 140.0,
+    "y": -20.0,
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.6,
+       "x": 140.0,
+       "y": -20.0
+      },
+      "to": {
+       "zoom": 1.5,
+       "x": 180.0,
+       "y": -10.0
+      },
+      "at": 0,
+      "duration": 2.5,
+      "ease": "outCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 2.5
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 1.25,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 2.5,
+    "x": 300.0,
+    "y": -324.0
+   },
+   "layers": [
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 5.0
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 1.25,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 3.6,
+    "x": 440.0,
+    "y": -344.0
+   },
+   "layers": [
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 6.25
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 1.25,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 2.25,
+    "x": 370.0,
+    "y": -300.0
+   },
+   "layers": [
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 7.5
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 1.5,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 1.6,
+    "x": -260.0,
+    "y": 174.0,
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.6,
+       "x": -260.0,
+       "y": 174.0
+      },
+      "to": {
+       "zoom": 1.6,
+       "x": -60.0,
+       "y": 174.0
+      },
+      "at": 0.6,
+      "duration": 0.7,
+      "ease": "inOutCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 8.75
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 1.0,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 3.4,
+    "x": 206.25,
+    "y": 194.0
+   },
+   "layers": [
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 10.25
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 1.55,
+    "x": 90.0,
+    "y": 191.61290322580646,
+    "shake": {
+     "amount": 8,
+     "at": 0.62,
+     "duration": 0.35
+    },
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.55,
+       "x": 90.0,
+       "y": 191.61290322580646
+      },
+      "to": {
+       "zoom": 1.75,
+       "x": 220.0,
+       "y": 231.42857142857144
+      },
+      "at": 0.95,
+      "duration": 0.7,
+      "ease": "inOutCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 11.25
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 5.0,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 1.9,
+    "x": -454.7368421052631,
+    "y": 255.78947368421052,
+    "shake": {
+     "amount": 14,
+     "at": 1.25,
+     "duration": 0.6
+    },
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.9,
+       "x": -454.7368421052631,
+       "y": 255.78947368421052
+      },
+      "to": {
+       "zoom": 1.3,
+       "x": -190.0,
+       "y": 124.61538461538464
+      },
+      "at": 1.55,
+      "duration": 1.3,
+      "ease": "inOutCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 13.75
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540,
+     "fill": "#EEF2FF",
+     "blend": "screen",
+     "opacity": 0,
+     "animate": [
+      {
+       "keyframes": {
+        "opacity": [
+         0,
+         0.45,
+         0.05,
+         0.3,
+         0
+        ]
+       },
+       "at": 1.18,
+       "duration": 0.3
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.5,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 1.7,
+    "x": -260.0,
+    "y": 222.3529411764706,
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.7,
+       "x": -260.0,
+       "y": 222.3529411764706
+      },
+      "to": {
+       "zoom": 1.8,
+       "x": 190.0,
+       "y": 240.0
+      },
+      "at": 0.85,
+      "duration": 0.9,
+      "ease": "inOutCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 18.75
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 3.75,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 1.0,
+    "x": 0.0,
+    "y": 0.0,
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0,
+       "x": 0.0,
+       "y": 0.0
+      },
+      "to": {
+       "zoom": 0.84,
+       "x": 50.0,
+       "y": 60.0
+      },
+      "at": 0.2,
+      "duration": 2.4,
+      "ease": "inOutCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "composition": "white",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 1030.0,
+     "y": 604.0,
+     "trimStart": 21.25,
+     "rotation": 1.4,
+     "shadow": {
+      "color": "#00000055",
+      "blur": 18,
+      "y": 6
+     }
+    },
+    {
+     "composition": "yellow",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 996.0,
+     "y": 570.0,
+     "trimStart": 21.25,
+     "rotation": 0.6,
+     "shadow": {
+      "color": "#00000044",
+      "blur": 14,
+      "y": 4
+     }
+    },
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 21.25
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 2.0,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 3.3,
+    "x": 500.0,
+    "y": -355.0,
+    "animate": [
+     {
+      "from": {
+       "zoom": 3.3,
+       "x": 500.0,
+       "y": -355.0
+      },
+      "to": {
+       "zoom": 3.1,
+       "x": 500.0,
+       "y": -350.0
+      },
+      "at": 0,
+      "duration": 2.0,
+      "ease": "outCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 25.0
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 3.0,
+   "background": "#4A4D55",
+   "camera": {
+    "zoom": 2.05,
+    "x": 370.0,
+    "y": -276.5853658536585,
+    "animate": [
+     {
+      "from": {
+       "zoom": 2.05,
+       "x": 370.0,
+       "y": -276.5853658536585
+      },
+      "to": {
+       "zoom": 2.25,
+       "x": 380.0,
+       "y": -300.0
+      },
+      "at": 0,
+      "duration": 3.0,
+      "ease": "inOutSine"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "composition": "pink",
+     "width": 3840,
+     "height": 2160,
+     "scale": 0.5,
+     "x": 960.0,
+     "y": 540.0,
+     "trimStart": 27.0
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960.0,
+     "y": 540.0,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.28,
+       0.18
+      ],
+      "radius": 1.15,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.6,
+        "#e9e1e4"
+       ],
+       [
+        1,
+        "#c9bfc4"
+       ]
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

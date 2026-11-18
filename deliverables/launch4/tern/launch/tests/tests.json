@@ -1,0 +1,2089 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "compositions": {
+  "pinkA": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 6,
+   "background": "#F2C4CB",
+   "layers": [
+    {
+     "draw": [
+      {
+       "line": [
+        80,
+        242,
+        1840,
+        242
+       ],
+       "stroke": "#2A2427",
+       "width": 3
+      },
+      {
+       "line": [
+        80,
+        318,
+        1840,
+        318
+       ],
+       "stroke": "#2A2427",
+       "width": 2
+      },
+      {
+       "line": [
+        80,
+        404,
+        1840,
+        404
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        490,
+        1840,
+        490
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        576,
+        1840,
+        576
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        662,
+        1840,
+        662
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        748,
+        1840,
+        748
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        834,
+        1840,
+        834
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        920,
+        1840,
+        920
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        1006,
+        1840,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        520,
+        242,
+        520,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        610,
+        242,
+        610,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        720,
+        242,
+        720,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        830,
+        242,
+        830,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        940,
+        242,
+        940,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        1050,
+        242,
+        1050,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        1000,
+        92,
+        1360,
+        92
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2
+      },
+      {
+       "line": [
+        1460,
+        92,
+        1840,
+        92
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2
+      },
+      {
+       "line": [
+        1000,
+        168,
+        1360,
+        168
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2
+      },
+      {
+       "line": [
+        1460,
+        168,
+        1840,
+        168
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2
+      }
+     ],
+     "inkTexture": 0.15
+    },
+    {
+     "text": "SOUND REPORT",
+     "font": "Archivo",
+     "size": 86,
+     "weight": 800,
+     "axes": {
+      "wdth": 62
+     },
+     "letterSpacing": "-0.01em",
+     "color": "#2A2427",
+     "x": 80,
+     "y": 112,
+     "anchor": "left"
+    },
+    {
+     "text": "FIELD \u00b7 STUDIO \u00b7 SET",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 84,
+     "y": 176,
+     "anchor": "left"
+    },
+    {
+     "text": "PRODUCTION",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1000,
+     "y": 74,
+     "anchor": "left"
+    },
+    {
+     "text": "DATE",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1460,
+     "y": 74,
+     "anchor": "left"
+    },
+    {
+     "text": "RECORDER",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1000,
+     "y": 150,
+     "anchor": "left"
+    },
+    {
+     "text": "ROLL",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1460,
+     "y": 150,
+     "anchor": "left"
+    },
+    {
+     "text": "SCENE / SUBJECT",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 96,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TAKE",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 536,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TR 1",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 626,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TR 2",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 736,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TR 3",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 846,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TR 4",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 956,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "NOTES  (\u25cb = CIRCLE TAKE   NG \u00b7 FS \u00b7 INC \u00b7 WT \u00b7 RT)",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1066,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "PINK \u2014 MIXER COPY",
+     "font": "Archivo",
+     "size": 15,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 80,
+     "y": 1046,
+     "anchor": "left"
+    },
+    {
+     "text": "CARBONLESS \u2014 PRESS FIRMLY",
+     "font": "Archivo",
+     "size": 15,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1840,
+     "y": 1046,
+     "anchor": "right"
+    },
+    {
+     "text": "dawn chorus",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 96,
+     "y": 365.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.5,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "1",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 548,
+     "y": 365.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.1,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "FS \u2014 missed the top",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 1070,
+     "y": 365.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.6,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.9,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "kick, live room",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 96,
+     "y": 451.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.5,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "3",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 548,
+     "y": 451.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.1,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "NG \u2014 clipped",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 1070,
+     "y": 451.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 1.6,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.6,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "blackbird 5:12am",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 96,
+     "y": 537.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.5,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "1",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 548,
+     "y": 537.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.1,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "got the top",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 1070,
+     "y": 537.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 2.4,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.6,
+      "ease": "linear"
+     }
+    },
+    {
+     "draw": [
+      {
+       "d": "M1175.9 502.4 Q1205.3 498.8 1235.7 496.0 Q1266.3 493.9 1296.7 492.7 Q1326.0 492.4 1353.7 492.9 Q1379.1 494.3 1401.8 496.5 Q1421.3 499.5 1439.9 502.8 Q1452.1 507.2 1460.0 512.1 Q1463.4 517.5 1462.2 523.3 Q1456.5 529.3 1446.3 535.4 Q1431.9 541.4 1413.5 547.3 Q1391.5 552.9 1365.0 557.7 Q1337.7 562.3 1308.5 566.3 Q1277.9 569.6 1246.7 572.1 Q1215.5 573.7 1185.0 574.5 Q1155.7 574.4 1128.5 573.4 Q1101.2 572.2 1079.2 569.5 Q1060.8 565.9 1046.5 561.7 Q1036.5 556.8 1031.1 551.4 Q1030.4 545.6 1034.4 539.5 Q1043.0 533.2 1056.2 527.0 Q1073.3 520.9 1094.5 515.0 Q1119.0 509.5 1146.4 504.5 Q1176.0 500.1 1207.2 496.4 Q1239.5 493.5 1271.9 491.4 Q1304.0 490.2 1334.9 490.0",
+       "stroke": "#2343A6",
+       "width": 5,
+       "cap": "round"
+      }
+     ],
+     "start": 3.2,
+     "opacity": 0.92,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.45,
+       "ease": "inOutSine"
+      }
+     ]
+    }
+   ]
+  },
+  "pinkB": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 6,
+   "background": "#F2C4CB",
+   "layers": [
+    {
+     "draw": [
+      {
+       "line": [
+        80,
+        242,
+        1840,
+        242
+       ],
+       "stroke": "#2A2427",
+       "width": 3
+      },
+      {
+       "line": [
+        80,
+        318,
+        1840,
+        318
+       ],
+       "stroke": "#2A2427",
+       "width": 2
+      },
+      {
+       "line": [
+        80,
+        404,
+        1840,
+        404
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        490,
+        1840,
+        490
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        576,
+        1840,
+        576
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        662,
+        1840,
+        662
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        748,
+        1840,
+        748
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        834,
+        1840,
+        834
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        920,
+        1840,
+        920
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        1006,
+        1840,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        520,
+        242,
+        520,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        610,
+        242,
+        610,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        720,
+        242,
+        720,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        830,
+        242,
+        830,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        940,
+        242,
+        940,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        1050,
+        242,
+        1050,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        1000,
+        92,
+        1360,
+        92
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2
+      },
+      {
+       "line": [
+        1460,
+        92,
+        1840,
+        92
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2
+      },
+      {
+       "line": [
+        1000,
+        168,
+        1360,
+        168
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2
+      },
+      {
+       "line": [
+        1460,
+        168,
+        1840,
+        168
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2
+      }
+     ],
+     "inkTexture": 0.15
+    },
+    {
+     "text": "SOUND REPORT",
+     "font": "Archivo",
+     "size": 86,
+     "weight": 800,
+     "axes": {
+      "wdth": 62
+     },
+     "letterSpacing": "-0.01em",
+     "color": "#2A2427",
+     "x": 80,
+     "y": 112,
+     "anchor": "left"
+    },
+    {
+     "text": "FIELD \u00b7 STUDIO \u00b7 SET",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 84,
+     "y": 176,
+     "anchor": "left"
+    },
+    {
+     "text": "PRODUCTION",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1000,
+     "y": 74,
+     "anchor": "left"
+    },
+    {
+     "text": "DATE",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1460,
+     "y": 74,
+     "anchor": "left"
+    },
+    {
+     "text": "RECORDER",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1000,
+     "y": 150,
+     "anchor": "left"
+    },
+    {
+     "text": "ROLL",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1460,
+     "y": 150,
+     "anchor": "left"
+    },
+    {
+     "text": "SCENE / SUBJECT",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 96,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TAKE",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 536,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TR 1",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 626,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TR 2",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 736,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TR 3",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 846,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TR 4",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 956,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "NOTES  (\u25cb = CIRCLE TAKE   NG \u00b7 FS \u00b7 INC \u00b7 WT \u00b7 RT)",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1066,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "PINK \u2014 MIXER COPY",
+     "font": "Archivo",
+     "size": 15,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 80,
+     "y": 1046,
+     "anchor": "left"
+    },
+    {
+     "text": "CARBONLESS \u2014 PRESS FIRMLY",
+     "font": "Archivo",
+     "size": 15,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1840,
+     "y": 1046,
+     "anchor": "right"
+    },
+    {
+     "text": "dawn chorus",
+     "font": "Caveat",
+     "size": 48,
+     "color": "#2343A6",
+     "x": 96,
+     "y": 365.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.5,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "1",
+     "font": "Caveat",
+     "size": 48,
+     "color": "#2343A6",
+     "x": 548,
+     "y": 365.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.1,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "FS \u2014 missed the top",
+     "font": "Caveat",
+     "size": 48,
+     "color": "#2343A6",
+     "x": 1070,
+     "y": 365.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.6,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.9,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "kick, live room",
+     "font": "Caveat",
+     "size": 48,
+     "color": "#2343A6",
+     "x": 96,
+     "y": 451.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.5,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "3",
+     "font": "Caveat",
+     "size": 48,
+     "color": "#2343A6",
+     "x": 548,
+     "y": 451.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.1,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "NG \u2014 clipped",
+     "font": "Caveat",
+     "size": 48,
+     "color": "#2343A6",
+     "x": 1070,
+     "y": 451.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 1.6,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.6,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "blackbird 5:12am",
+     "font": "Caveat",
+     "size": 48,
+     "color": "#2343A6",
+     "x": 96,
+     "y": 537.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.5,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "1",
+     "font": "Caveat",
+     "size": 48,
+     "color": "#2343A6",
+     "x": 548,
+     "y": 537.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.1,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "got the top",
+     "font": "Caveat",
+     "size": 48,
+     "color": "#2343A6",
+     "x": 1070,
+     "y": 537.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 2.4,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.6,
+      "ease": "linear"
+     }
+    },
+    {
+     "draw": [
+      {
+       "d": "M1175.9 502.4 Q1205.3 498.8 1235.7 496.0 Q1266.3 493.9 1296.7 492.7 Q1326.0 492.4 1353.7 492.9 Q1379.1 494.3 1401.8 496.5 Q1421.3 499.5 1439.9 502.8 Q1452.1 507.2 1460.0 512.1 Q1463.4 517.5 1462.2 523.3 Q1456.5 529.3 1446.3 535.4 Q1431.9 541.4 1413.5 547.3 Q1391.5 552.9 1365.0 557.7 Q1337.7 562.3 1308.5 566.3 Q1277.9 569.6 1246.7 572.1 Q1215.5 573.7 1185.0 574.5 Q1155.7 574.4 1128.5 573.4 Q1101.2 572.2 1079.2 569.5 Q1060.8 565.9 1046.5 561.7 Q1036.5 556.8 1031.1 551.4 Q1030.4 545.6 1034.4 539.5 Q1043.0 533.2 1056.2 527.0 Q1073.3 520.9 1094.5 515.0 Q1119.0 509.5 1146.4 504.5 Q1176.0 500.1 1207.2 496.4 Q1239.5 493.5 1271.9 491.4 Q1304.0 490.2 1334.9 490.0",
+       "stroke": "#2343A6",
+       "width": 5,
+       "cap": "round"
+      }
+     ],
+     "start": 3.2,
+     "opacity": 0.92,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.45,
+       "ease": "inOutSine"
+      }
+     ]
+    }
+   ]
+  },
+  "yellow": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 6,
+   "background": "#F3E3A2",
+   "layers": [
+    {
+     "draw": [
+      {
+       "line": [
+        80,
+        242,
+        1840,
+        242
+       ],
+       "stroke": "#2A2427",
+       "width": 3
+      },
+      {
+       "line": [
+        80,
+        318,
+        1840,
+        318
+       ],
+       "stroke": "#2A2427",
+       "width": 2
+      },
+      {
+       "line": [
+        80,
+        404,
+        1840,
+        404
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        490,
+        1840,
+        490
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        576,
+        1840,
+        576
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        662,
+        1840,
+        662
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        748,
+        1840,
+        748
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        834,
+        1840,
+        834
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        920,
+        1840,
+        920
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        80,
+        1006,
+        1840,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        520,
+        242,
+        520,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        610,
+        242,
+        610,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        720,
+        242,
+        720,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        830,
+        242,
+        830,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        940,
+        242,
+        940,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        1050,
+        242,
+        1050,
+        1006
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2,
+       "opacity": 0.8
+      },
+      {
+       "line": [
+        1000,
+        92,
+        1360,
+        92
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2
+      },
+      {
+       "line": [
+        1460,
+        92,
+        1840,
+        92
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2
+      },
+      {
+       "line": [
+        1000,
+        168,
+        1360,
+        168
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2
+      },
+      {
+       "line": [
+        1460,
+        168,
+        1840,
+        168
+       ],
+       "stroke": "#2A2427",
+       "width": 1.2
+      }
+     ],
+     "inkTexture": 0.15
+    },
+    {
+     "text": "SOUND REPORT",
+     "font": "Archivo",
+     "size": 86,
+     "weight": 800,
+     "axes": {
+      "wdth": 62
+     },
+     "letterSpacing": "-0.01em",
+     "color": "#2A2427",
+     "x": 80,
+     "y": 112,
+     "anchor": "left"
+    },
+    {
+     "text": "FIELD \u00b7 STUDIO \u00b7 SET",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 84,
+     "y": 176,
+     "anchor": "left"
+    },
+    {
+     "text": "PRODUCTION",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1000,
+     "y": 74,
+     "anchor": "left"
+    },
+    {
+     "text": "DATE",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1460,
+     "y": 74,
+     "anchor": "left"
+    },
+    {
+     "text": "RECORDER",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1000,
+     "y": 150,
+     "anchor": "left"
+    },
+    {
+     "text": "ROLL",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1460,
+     "y": 150,
+     "anchor": "left"
+    },
+    {
+     "text": "SCENE / SUBJECT",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 96,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TAKE",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 536,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TR 1",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 626,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TR 2",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 736,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TR 3",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 846,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "TR 4",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 956,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "NOTES  (\u25cb = CIRCLE TAKE   NG \u00b7 FS \u00b7 INC \u00b7 WT \u00b7 RT)",
+     "font": "Archivo",
+     "size": 17,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1066,
+     "y": 268,
+     "anchor": "left"
+    },
+    {
+     "text": "PINK \u2014 MIXER COPY",
+     "font": "Archivo",
+     "size": 15,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 80,
+     "y": 1046,
+     "anchor": "left"
+    },
+    {
+     "text": "CARBONLESS \u2014 PRESS FIRMLY",
+     "font": "Archivo",
+     "size": 15,
+     "weight": 600,
+     "axes": {
+      "wdth": 75
+     },
+     "letterSpacing": "0.06em",
+     "color": "#2A2427",
+     "x": 1840,
+     "y": 1046,
+     "anchor": "right"
+    },
+    {
+     "text": "dawn chorus",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 96,
+     "y": 365.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.5,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "1",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 548,
+     "y": 365.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.1,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "FS \u2014 missed the top",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 1070,
+     "y": 365.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.6,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.9,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "kick, live room",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 96,
+     "y": 451.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.5,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "3",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 548,
+     "y": 451.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.1,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "NG \u2014 clipped",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 1070,
+     "y": 451.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 1.6,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.6,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "blackbird 5:12am",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 96,
+     "y": 537.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.5,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "1",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 548,
+     "y": 537.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 0.0,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.1,
+      "ease": "linear"
+     }
+    },
+    {
+     "text": "got the top",
+     "font": "Reenie Beanie",
+     "size": 56,
+     "color": "#2343A6",
+     "x": 1070,
+     "y": 537.0,
+     "anchor": "left",
+     "rotation": -1.5,
+     "start": 2.4,
+     "enter": {
+      "preset": "wipe",
+      "duration": 0.6,
+      "ease": "linear"
+     }
+    },
+    {
+     "draw": [
+      {
+       "d": "M1175.9 502.4 Q1205.3 498.8 1235.7 496.0 Q1266.3 493.9 1296.7 492.7 Q1326.0 492.4 1353.7 492.9 Q1379.1 494.3 1401.8 496.5 Q1421.3 499.5 1439.9 502.8 Q1452.1 507.2 1460.0 512.1 Q1463.4 517.5 1462.2 523.3 Q1456.5 529.3 1446.3 535.4 Q1431.9 541.4 1413.5 547.3 Q1391.5 552.9 1365.0 557.7 Q1337.7 562.3 1308.5 566.3 Q1277.9 569.6 1246.7 572.1 Q1215.5 573.7 1185.0 574.5 Q1155.7 574.4 1128.5 573.4 Q1101.2 572.2 1079.2 569.5 Q1060.8 565.9 1046.5 561.7 Q1036.5 556.8 1031.1 551.4 Q1030.4 545.6 1034.4 539.5 Q1043.0 533.2 1056.2 527.0 Q1073.3 520.9 1094.5 515.0 Q1119.0 509.5 1146.4 504.5 Q1176.0 500.1 1207.2 496.4 Q1239.5 493.5 1271.9 491.4 Q1304.0 490.2 1334.9 490.0",
+       "stroke": "#2343A6",
+       "width": 5,
+       "cap": "round"
+      }
+     ],
+     "start": 3.2,
+     "opacity": 0.92,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.45,
+       "ease": "inOutSine"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "scenes": [
+  {
+   "duration": 4,
+   "background": "#000",
+   "layers": [
+    {
+     "composition": "pinkA",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.3,
+       0.2
+      ],
+      "radius": 1.1,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.55,
+        "#d9cfd3"
+       ],
+       [
+        1,
+        "#8d8288"
+       ]
+      ]
+     }
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.7,
+       "x": 300,
+       "y": -60
+      },
+      "to": {
+       "zoom": 1.5,
+       "x": 300,
+       "y": -60
+      },
+      "duration": 4
+     }
+    ]
+   }
+  },
+  {
+   "duration": 4,
+   "background": "#000",
+   "layers": [
+    {
+     "composition": "pinkB",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.3,
+       0.2
+      ],
+      "radius": 1.1,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.55,
+        "#d9cfd3"
+       ],
+       [
+        1,
+        "#8d8288"
+       ]
+      ]
+     }
+    }
+   ],
+   "camera": {
+    "zoom": 2.6,
+    "x": 380,
+    "y": -10
+   }
+  },
+  {
+   "duration": 2,
+   "background": "#000",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "preset": "studio",
+       "color": "#3a3336"
+      },
+      "rig": {
+       "preset": "window",
+       "gobo": "blinds",
+       "warmth": 0.2
+      },
+      "camera": {
+       "lens": "macro100",
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.25,
+          0.55,
+          0.95
+         ],
+         "target": [
+          0.12,
+          0,
+          0.05
+         ],
+         "fstop": 4
+        },
+        {
+         "t": 2,
+         "pos": [
+          0.22,
+          0.52,
+          0.9
+         ],
+         "target": [
+          0.12,
+          0,
+          0.05
+         ],
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "plane",
+        "name": "page",
+        "size": [
+         1.92,
+         1.08
+        ],
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "texture": "#pinkA",
+        "material": {
+         "base": "#ffffff",
+         "roughness": 0.85
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 3,
+   "background": "#F3E3A2",
+   "layers": [
+    {
+     "text": "NG",
+     "font": "Archivo",
+     "size": "70vh",
+     "weight": 900,
+     "axes": {
+      "wdth": 62
+     },
+     "color": "#2A2427",
+     "x": "50%",
+     "y": "52%",
+     "inkTexture": 0.2
+    },
+    {
+     "shape": "path",
+     "d": "M300 620 C 700 560, 1200 640, 1650 470",
+     "x": 300,
+     "y": 470,
+     "stroke": "#2343A6",
+     "strokeWidth": 26,
+     "brush": {
+      "pressure": 0.6
+     },
+     "blend": "multiply",
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.4,
+       "at": 0.8,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540,
+     "blend": "multiply",
+     "fill": {
+      "type": "radial",
+      "center": [
+       0.3,
+       0.2
+      ],
+      "radius": 1.1,
+      "stops": [
+       [
+        0,
+        "#ffffff"
+       ],
+       [
+        0.55,
+        "#d9cfd3"
+       ],
+       [
+        1,
+        "#8d8288"
+       ]
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}
