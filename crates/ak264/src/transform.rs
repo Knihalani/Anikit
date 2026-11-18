@@ -254,3 +254,173 @@ mod tests {
         }
     }
 }
+
+// ---------------------------------------------------------------- 8×8 (High profile)
+
+/// 8×8 zig-zag (frame) scan: scan index → raster index (y*8+x).
+pub const ZIGZAG8: [usize; 64] = [
+    0, 1, 8, 16, 9, 2, 3, 10, 17, 24, 32, 25, 18, 11, 4, 5, 12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13, 6, 7, 14, 21, 28, 35, 42, 49, 56, 57,
+    50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51, 58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63,
+];
+
+/// normAdjust8x8 (Table 8-16 / equation 8-319), by QP%6 and position class.
+const V8: [[i32; 6]; 6] = [
+    [20, 18, 32, 19, 25, 24],
+    [22, 19, 35, 21, 28, 26],
+    [26, 23, 42, 24, 33, 31],
+    [28, 25, 45, 26, 35, 33],
+    [32, 28, 51, 30, 40, 38],
+    [36, 32, 58, 34, 46, 43],
+];
+/// Forward multipliers matching V8 (2^22 / (V8·norm), as x264).
+const MF8: [[i32; 6]; 6] = [
+    [13107, 11428, 20972, 12222, 16777, 15481],
+    [11916, 10826, 19174, 11058, 14980, 14290],
+    [10082, 8943, 15978, 9675, 12710, 11985],
+    [9362, 8228, 14913, 8931, 11984, 11259],
+    [8192, 7346, 13159, 7740, 10486, 9777],
+    [7282, 6428, 11570, 6830, 9118, 8640],
+];
+
+#[inline(always)]
+const fn class8(i: usize) -> usize {
+    let (x, y) = (i & 7, i >> 3);
+    if x % 4 == 0 && y % 4 == 0 {
+        0
+    } else if x % 2 == 1 && y % 2 == 1 {
+        1
+    } else if x % 4 == 2 && y % 4 == 2 {
+        2
+    } else if (x % 4 == 0 && y % 2 == 1) || (x % 2 == 1 && y % 4 == 0) {
+        3
+    } else if (x % 4 == 0 && y % 4 == 2) || (x % 4 == 2 && y % 4 == 0) {
+        4
+    } else {
+        5
+    }
+}
+
+/// 8×8 quantiser state for one QP (flat scaling lists).
+#[derive(Clone, Copy)]
+pub struct Quant8 {
+    pub qp: u8,
+    pub mf: [i32; 64],
+    /// LevelScale8x8 = 16·normAdjust8x8, raster.
+    pub ls: [i32; 64],
+    pub qbits: u32,
+    pub f_inter: i32,
+}
+
+impl Quant8 {
+    pub fn new(qp: u8) -> Self {
+        let r = (qp % 6) as usize;
+        let mut mf = [0; 64];
+        let mut ls = [0; 64];
+        for i in 0..64 {
+            mf[i] = MF8[r][class8(i)];
+            ls[i] = 16 * V8[r][class8(i)];
+        }
+        let qbits = 16 + (qp / 6) as u32;
+        Quant8 { qp, mf, ls, qbits, f_inter: (1 << qbits) / 6 }
+    }
+}
+
+/// Forward 8×8 core transform (rows then columns), raster in and out.
+pub fn fdct8(r: &[i32; 64]) -> [i32; 64] {
+    #[inline(always)]
+    fn d1(s: [i32; 8]) -> [i32; 8] {
+        let (s07, s16, s25, s34) = (s[0] + s[7], s[1] + s[6], s[2] + s[5], s[3] + s[4]);
+        let (a0, a1, a2, a3) = (s07 + s34, s16 + s25, s07 - s34, s16 - s25);
+        let (d07, d16, d25, d34) = (s[0] - s[7], s[1] - s[6], s[2] - s[5], s[3] - s[4]);
+        let a4 = d16 + d25 + (d07 + (d07 >> 1));
+        let a5 = d07 - d34 - (d25 + (d25 >> 1));
+        let a6 = d07 + d34 - (d16 + (d16 >> 1));
+        let a7 = d16 - d25 + (d34 + (d34 >> 1));
+        [a0 + a1, a4 + (a7 >> 2), a2 + (a3 >> 1), a5 + (a6 >> 2), a0 - a1, a6 - (a5 >> 2), (a2 >> 1) - a3, (a4 >> 2) - a7]
+    }
+    let mut t = [0i32; 64];
+    for y in 0..8 {
+        let row: [i32; 8] = r[y * 8..y * 8 + 8].try_into().unwrap();
+        t[y * 8..y * 8 + 8].copy_from_slice(&d1(row));
+    }
+    let mut o = [0i32; 64];
+    for x in 0..8 {
+        let col = d1(std::array::from_fn(|y| t[y * 8 + x]));
+        for y in 0..8 {
+            o[y * 8 + x] = col[y];
+        }
+    }
+    o
+}
+
+/// Inverse 8×8 transform of scaled coefficients (8.5.13), including the final
+/// (x + 32) >> 6: the residual, raster.
+pub fn idct8(d: &[i32; 64]) -> [i32; 64] {
+    #[inline(always)]
+    fn i1(s: [i32; 8]) -> [i32; 8] {
+        let a0 = s[0] + s[4];
+        let a2 = s[0] - s[4];
+        let a4 = (s[2] >> 1) - s[6];
+        let a6 = (s[6] >> 1) + s[2];
+        let (b0, b2, b4, b6) = (a0 + a6, a2 + a4, a2 - a4, a0 - a6);
+        let a1 = -s[3] + s[5] - s[7] - (s[7] >> 1);
+        let a3 = s[1] + s[7] - s[3] - (s[3] >> 1);
+        let a5 = -s[1] + s[7] + s[5] + (s[5] >> 1);
+        let a7 = s[3] + s[5] + s[1] + (s[1] >> 1);
+        let b1 = (a7 >> 2) + a1;
+        let b3 = a3 + (a5 >> 2);
+        let b5 = (a3 >> 2) - a5;
+        let b7 = a7 - (a1 >> 2);
+        [b0 + b7, b2 + b5, b4 + b3, b6 + b1, b6 - b1, b4 - b3, b2 - b5, b0 - b7]
+    }
+    let mut t = [0i32; 64];
+    for y in 0..8 {
+        let row: [i32; 8] = d[y * 8..y * 8 + 8].try_into().unwrap();
+        t[y * 8..y * 8 + 8].copy_from_slice(&i1(row));
+    }
+    let mut o = [0i32; 64];
+    for x in 0..8 {
+        let col = i1(std::array::from_fn(|y| t[y * 8 + x]));
+        for y in 0..8 {
+            o[y * 8 + x] = (col[y] + 32) >> 6;
+        }
+    }
+    o
+}
+
+/// Quantise in place (inter rounding); returns the number of nonzero levels.
+pub fn quant8(c: &mut [i32; 64], q: &Quant8) -> u32 {
+    let mut n = 0;
+    for i in 0..64 {
+        let a = ((c[i].unsigned_abs() as i64 * q.mf[i] as i64 + q.f_inter as i64) >> q.qbits) as i32;
+        let v = if c[i] < 0 { -a } else { a };
+        c[i] = v.clamp(-32768, 32767);
+        n += (v != 0) as u32;
+    }
+    n
+}
+
+/// Scale levels for the inverse transform (8.5.12.1, flat lists).
+pub fn dequant8(c: &mut [i32; 64], q: &Quant8) {
+    let q6 = (q.qp / 6) as u32;
+    for i in 0..64 {
+        c[i] = if q6 >= 6 { (c[i] * q.ls[i]) << (q6 - 6) } else { (c[i] * q.ls[i] + (1 << (5 - q6))) >> (6 - q6) };
+    }
+}
+
+#[cfg(test)]
+mod t8 {
+    use super::*;
+    #[test]
+    fn roundtrip8_low_qp() {
+        let r: [i32; 64] = std::array::from_fn(|i| ((i * 37 + (i / 8) * 11) % 41) as i32 - 20);
+        let q = Quant8::new(4);
+        let mut c = fdct8(&r);
+        quant8(&mut c, &q);
+        dequant8(&mut c, &q);
+        let o = idct8(&c);
+        for i in 0..64 {
+            assert!((o[i] - r[i]).abs() <= 1, "{i}: {} vs {}", o[i], r[i]);
+        }
+    }
+}

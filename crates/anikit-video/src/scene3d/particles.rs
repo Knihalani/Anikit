@@ -37,7 +37,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 const KEYS: &[&str] = &[
-    "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch", "shadows", "force",
+    "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch", "shadows", "force", "trail", "size_dist", "scatter", "glint",
 ];
 const EMIT_KEYS: &[&str] = &["shape", "pos", "position", "radius", "size", "surface", "axis", "image", "composition", "frame", "threshold", "rot", "rotation"];
 
@@ -109,6 +109,13 @@ pub struct Def {
     friction: f32,
     pub size: f32,
     size_var: f32,
+    /// Power-law sizes: (min, max, exponent α), p(size) ∝ size^-α.
+    size_pow: Option<(f32, f32, f32)>,
+    /// Lit particles: forward scattering (Henyey–Greenstein g, -0.9..0.9;
+    /// 0 keeps the diffuse sphere phase) and glints (per-particle facets
+    /// flashing the key light; amount and sharpness).
+    scatter: f32,
+    glint: (f32, f32),
     colors: Vec<V3>,
     color_by: ColorBy,
     speed_range: (f32, f32),
@@ -122,6 +129,9 @@ pub struct Def {
     stretch: f32,
     /// Absorbing particles shadow each other and the scene.
     pub shadows: bool,
+    /// Trails: length (s), taper exponent, opacity. Drawn through the
+    /// particle's past positions; rendering only (not in the cache key).
+    pub trail: Option<(f32, f32, f32)>,
     /// Hash of the description (disk cache key).
     key: u64,
     /// Custom acceleration field, size, colour and opacity per particle.
@@ -312,6 +322,36 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
             _ => gf(m, "size", 0.004, path)?.max(1e-5),
         },
         size_var: gf(m, "size_var", 0.5, path)?.clamp(0.0, 1.0),
+        size_pow: match m.get("size_dist") {
+            None | Some(Value::Null) => None,
+            Some(Value::Object(o)) => {
+                let p = format!("{path}.size_dist");
+                for k in o.keys() {
+                    if !["min", "max", "power"].contains(&k.as_str()) {
+                        return Err(format!("{p}: unknown key \"{k}\" (expected min, max, power)"));
+                    }
+                }
+                let base = gf(m, "size", 0.004, path)?;
+                let lo = gf(o, "min", base * 0.25, &p)?.max(1e-5);
+                let hi = gf(o, "max", base * 4.0, &p)?.max(lo * 1.0001);
+                Some((lo, hi, gf(o, "power", 2.5, &p)?.clamp(0.0, 8.0)))
+            }
+            Some(_) => return Err(format!("{path}.size_dist: expected {{ \"min\", \"max\", \"power\" }} (p(size) ∝ size^-power)")),
+        },
+        scatter: gf(m, "scatter", 0.0, path)?.clamp(-0.95, 0.95),
+        glint: match m.get("glint") {
+            None | Some(Value::Null) => (0.0, 0.0),
+            Some(Value::Object(o)) => {
+                let p = format!("{path}.glint");
+                for k in o.keys() {
+                    if !["amount", "sharpness"].contains(&k.as_str()) {
+                        return Err(format!("{p}: unknown key \"{k}\" (expected amount, sharpness)"));
+                    }
+                }
+                (gf(o, "amount", 1.0, &p)?.max(0.0), gf(o, "sharpness", 60.0, &p)?.clamp(2.0, 2000.0))
+            }
+            Some(x) => (spec::f(x, &format!("{path}.glint"))?.max(0.0), 60.0),
+        },
         colors,
         color_by,
         speed_range: sr,
@@ -327,6 +367,20 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
         substeps: gf(m, "substeps", 2.0, path)?.clamp(1.0, 16.0) as u32,
         stretch: gf(m, "stretch", 1.0, path)?.max(0.0),
         shadows: m.get("shadows").and_then(|x| x.as_bool()).unwrap_or(blend == Blend::Over),
+        trail: match m.get("trail") {
+            None | Some(Value::Null) => None,
+            Some(Value::Object(o)) => {
+                let p = format!("{path}.trail");
+                for k in o.keys() {
+                    if !["length", "taper", "opacity"].contains(&k.as_str()) {
+                        return Err(format!("{p}: unknown key \"{k}\" (expected length, taper, opacity)"));
+                    }
+                }
+                Some((gf(o, "length", 0.3, &p)?.max(0.0), gf(o, "taper", 1.0, &p)?.max(0.0), gf(o, "opacity", 1.0, &p)?.clamp(0.0, 4.0)))
+            }
+            Some(x) => Some((spec::f(x, &format!("{path}.trail"))?.max(0.0), 1.0, 1.0)),
+        }
+        .filter(|t| t.0 > 0.0 && t.2 > 0.0),
         force: m.get("force").map(|x| pexpr3(x, &format!("{path}.force"))).transpose()?.map(Arc::new),
         size_e: match m.get("size") {
             Some(Value::String(x)) => Some(PExpr::compile(x, &format!("{path}.size"))?),
@@ -340,6 +394,12 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
         key: {
             // An image emitter's file can change under the same spec.
             let stamp = emit_v.get("image").and_then(|x| x.as_str()).and_then(|f| std::fs::metadata(f).ok()).and_then(|m| m.modified().ok()).map(|t| format!("{t:?}")).unwrap_or_default();
+            let mut v = v.clone();
+            if let Some(o) = v.as_object_mut() {
+                for k in ["trail", "scatter", "glint"] {
+                    o.remove(k);
+                }
+            }
             crate::components::style::fnv(&[b"anikit-particles-v1", v.to_string().as_bytes(), emit_v.to_string().as_bytes(), stamp.as_bytes()])
         },
     })
@@ -423,6 +483,71 @@ fn eval3p(e: &[PExpr; 3], p: V3, v: V3, t: f32, age: f32, i: usize) -> V3 {
 }
 
 // ------------------------------------------------------------------ emitters
+
+impl Def {
+    /// Radius of particle `i` (without a `size` expression).
+    #[inline]
+    pub fn size_of(&self, i: usize) -> f32 {
+        let u = hu(self.seed, i as u32, 7);
+        match self.size_pow {
+            Some((lo, hi, a)) => {
+                // Inverse CDF of p(s) ∝ s^-a on [lo, hi].
+                if (a - 1.0).abs() < 1e-3 {
+                    lo * (hi / lo).powf(u)
+                } else {
+                    let e = 1.0 - a;
+                    (lo.powf(e) + u * (hi.powf(e) - lo.powf(e))).powf(1.0 / e)
+                }
+            }
+            None => self.size * (1.0 + self.size_var * (u - 0.5) * 2.0),
+        }
+    }
+}
+
+/// Expands `"layers"` on a particle object into one object per layer: each
+/// takes the base keys, its `share` of `count`, its own seed, and its own
+/// overrides (`emit` merges key by key). Without layers, the object itself.
+pub fn expand_layers(o: &Value, path: &str) -> Res<Vec<Value>> {
+    let Some(Value::Array(ls)) = o.get("layers") else {
+        if o.get("layers").is_some_and(|x| !x.is_null()) {
+            return Err(format!("{path}.layers: expected an array of layers ({{ \"share\", ...particle keys }})"));
+        }
+        return Ok(vec![o.clone()]);
+    };
+    let base = o.as_object().ok_or_else(|| format!("{path}: expected an object"))?;
+    let count = base.get("count").and_then(|c| c.as_f64()).unwrap_or(100_000.0);
+    let seed = base.get("seed").and_then(|c| c.as_f64()).unwrap_or(1.0);
+    let shares: Vec<f64> = ls.iter().map(|l| l.get("share").and_then(|x| x.as_f64()).unwrap_or(1.0).max(0.0)).collect();
+    let tot: f64 = shares.iter().sum::<f64>().max(1e-9);
+    let mut out = Vec::new();
+    for (k, l) in ls.iter().enumerate() {
+        let lm = l.as_object().ok_or_else(|| format!("{path}.layers[{k}]: expected an object"))?;
+        let mut m = base.clone();
+        m.remove("layers");
+        m.insert("count".into(), Value::from((count * shares[k] / tot).round()));
+        m.insert("seed".into(), Value::from(seed + 101.0 * (k + 1) as f64));
+        for (key, v) in lm {
+            if key == "share" {
+                continue;
+            }
+            if key == "layers" {
+                return Err(format!("{path}.layers[{k}]: layers can't nest"));
+            }
+            match (m.get_mut(key), v) {
+                (Some(Value::Object(dst)), Value::Object(src)) if key == "emit" => {
+                    for (a, b) in src {
+                        dst.insert(a.clone(), b.clone());
+                    }
+                }
+                _ => {
+                    m.insert(key.clone(), v.clone());
+                }
+            }
+        }
+        out.push(Value::Object(m));
+    }
+    Ok(out)
+}
 
 #[inline]
 fn hu(seed: u32, i: u32, k: u32) -> f32 {
@@ -670,7 +795,8 @@ impl Clone for Live {
 }
 
 struct SimState {
-    live: Option<Live>,
+    /// Live states: render chunks and trails work on several stretches of the timeline.
+    lives: Vec<Live>,
     snaps: HashMap<i64, Arc<Snap>>,
     order: Vec<i64>,
     checkpoints: Vec<Live>,
@@ -702,6 +828,8 @@ pub struct Sim {
 type Targets = (Vec<[f32; 3]>, Vec<f32>, Vec<[f32; 3]>);
 
 const CHECK_EVERY: i64 = 60;
+/// Most frames of history a trail can span.
+const TRAIL_MAX: usize = 120;
 const SORT_EVERY: i64 = 30;
 const SNAP_BUDGET: usize = 3 << 30;
 const CHECK_BUDGET: usize = 2 << 30;
@@ -740,7 +868,7 @@ impl Sim {
             floor_y: if def.collide { floor_y } else { None },
             colliders: Vec::new(),
             key: crate::components::style::fnv(&[&def.key.to_le_bytes(), &fps.to_bits().to_le_bytes(), &floor_y.unwrap_or(f32::NAN).to_bits().to_le_bytes()]),
-            state: Mutex::new(SimState { live: None, snaps: HashMap::new(), order: Vec::new(), checkpoints: Vec::new(), steps: 0, sim_ms: 0.0 }),
+            state: Mutex::new(SimState { lives: Vec::new(), snaps: HashMap::new(), order: Vec::new(), checkpoints: Vec::new(), steps: 0, sim_ms: 0.0 }),
             busy: std::sync::atomic::AtomicBool::new(false),
             stride: 1,
         })
@@ -768,6 +896,11 @@ impl Sim {
         if self.def.collide {
             self.colliders = objs;
         }
+    }
+
+    /// Frames of history a trail reads (0 without one).
+    pub fn trail_frames(&self) -> usize {
+        self.def.trail.map(|t| ((t.0 / self.dt).ceil() as usize).clamp(1, TRAIL_MAX)).unwrap_or(0)
     }
 
     /// Birth time and cycle length of particle `i` (`life` systems recycle).
@@ -1115,20 +1248,18 @@ impl Sim {
             return s.clone();
         }
         let clock = std::time::Instant::now();
-        let mut live = match st.live.take() {
-            Some(l) if l.frame <= f => l,
-            ahead => {
-                // Behind the live state (keep it for later frames): restart
-                // from the latest checkpoint at or before `f`, in memory or on disk.
-                st.live = ahead;
-                let mem = st.checkpoints.iter().filter(|c| c.frame <= f).max_by_key(|c| c.frame).cloned();
-                let from_disk = self.disk_checkpoint(f, mem.as_ref().map(|c| c.frame).unwrap_or(0));
-                match (mem, from_disk) {
-                    (_, Some(d)) => d,
-                    (Some(c), None) => c,
-                    (None, None) => self.init(),
-                }
-            }
+        // Start from the closest state at or before `f`: a live one, a
+        // checkpoint in memory, or (when those are a checkpoint interval or
+        // more behind) one on disk.
+        let best = st.lives.iter().enumerate().filter(|(_, l)| l.frame <= f).max_by_key(|(_, l)| l.frame).map(|(k, l)| (k, l.frame));
+        let mem = st.checkpoints.iter().enumerate().filter(|(_, c)| c.frame <= f).max_by_key(|(_, c)| c.frame).map(|(k, c)| (k, c.frame));
+        let base = best.map(|b| b.1).max(mem.map(|m| m.1)).unwrap_or(-1);
+        let disk = if f - base >= CHECK_EVERY { self.disk_checkpoint(f, base.max(0)) } else { None };
+        let mut live = match (disk, best, mem) {
+            (Some(d), _, _) => d,
+            (None, Some((k, lf)), _) if lf == base => st.lives.swap_remove(k),
+            (None, _, Some((k, _))) => st.checkpoints[k].clone(),
+            _ => self.init(),
         };
         let s0 = st.steps;
         let prof = std::env::var_os("ANIKIT_PARTICLES_PROFILE").is_some();
@@ -1145,7 +1276,7 @@ impl Sim {
                 self.save_checkpoint(&live);
             }
             // Frames close behind the target are likely asked for next (render batches).
-            if f - live.frame <= 24 && live.frame < f {
+            if f - live.frame <= 24.max(self.trail_frames() as i64 + 1) && live.frame < f {
                 let c1 = std::time::Instant::now();
                 let s = Arc::new(self.snap(&live));
                 t_snap += c1.elapsed().as_secs_f64();
@@ -1161,8 +1292,12 @@ impl Sim {
         }
         st.snaps.insert(f, s.clone());
         st.order.push(f);
-        if st.live.as_ref().is_none_or(|l| l.frame <= live.frame) {
-            st.live = Some(live);
+        st.lives.push(live);
+        // Keep a few (about 1 GB at most), dropping the one furthest behind.
+        let keep = (1usize << 30).checked_div(self.n_sim().max(1) * 24).unwrap_or(1).clamp(1, 6);
+        while st.lives.len() > keep {
+            let k = st.lives.iter().enumerate().min_by_key(|(_, l)| l.frame).map(|(k, _)| k).unwrap();
+            st.lives.swap_remove(k);
         }
         // Evict the oldest snapshots over budget.
         let per = s.bytes().max(1);
@@ -1347,6 +1482,10 @@ struct Pyr {
 /// point into the bins bracketing their blur; each used bin is convolved with
 /// its disc once, so out-of-focus particles get real lens bokeh (discs, not
 /// Gaussian blobs) at the cost of a point splat.
+/// Light and coverage of a particle grow with its projected area (surface
+/// brightness stays its own), up to the largest defocus kernel's.
+const BIG_AREA: f32 = std::f32::consts::PI * 64.0 * 64.0;
+
 const BINS: [(f32, usize); 17] = [
     (4.0, 1), (4.757, 1), (5.657, 1), (6.727, 1),
     (8.0, 2), (9.514, 2), (11.31, 2), (13.45, 2),
@@ -1781,7 +1920,7 @@ impl ShadowMap {
                 }
                 let size = match &d.size_e {
                     Some(e) => e.at(v3(p[0], p[1], p[2]), v3(0.0, 0.0, 0.0), t, sim.age(i, t), i).max(0.0),
-                    None => d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0),
+                    None => d.size_of(i),
                 };
                 let od = op * std::f32::consts::PI * size * size / texel_area * sim.stride as f32;
                 let e = ext(p);
@@ -1940,6 +2079,100 @@ fn fast_acos(x: f32) -> f32 {
 }
 
 /// Splat every live system into one layer.
+fn streak_gap() -> f32 {
+    static G: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    *G.get_or_init(|| std::env::var("ANIKIT_STREAK_GAP").ok().and_then(|v| v.parse().ok()).unwrap_or(0.5))
+}
+
+/// One splat with the kernel picked for a footprint (`kk`, blend `lw`; see `render`).
+#[inline(always)]
+#[allow(clippy::too_many_arguments)]
+fn put(py: &mut Pyr, kk: usize, lw: f32, foot: f32, draft: bool, x: f32, y: f32, v0: &[f32; 8], v1: &[f32; 8]) {
+    if kk == usize::MAX {
+        if foot < 0.25 || draft {
+            // Disc ⊗ tent ≈ the tent itself.
+            py.splat(0, x, y, v0);
+        } else {
+            py.stamp(x, y, foot, v0);
+        }
+        return;
+    }
+    if lw < 0.999 {
+        if kk == 0 {
+            py.stamp(x, y, 3.99, v0);
+        } else {
+            py.splat_bin(kk - 1, x, y, v0);
+        }
+    }
+    if lw > 0.001 {
+        py.splat_bin(kk, x, y, v1);
+    }
+}
+
+/// Past states a trail reads: the snapshot `q` frames back, and its slot of
+/// every particle id (`None` when the slots match the current snapshot's).
+type Hist = Vec<(Arc<Snap>, Option<Vec<u32>>)>;
+
+fn history(sim: &Sim, snap: &Snap) -> Hist {
+    let k = sim.trail_frames();
+    if k == 0 {
+        return Vec::new();
+    }
+    let ids = snap.id.iter().copied().max().map(|m| m as usize + 1).unwrap_or(0);
+    // Oldest first: the simulation then steps forward through them once
+    // (newest first, each would restart from a checkpoint).
+    let k = (1..=k).take_while(|&q| snap.t - q as f32 * sim.dt >= sim.def.start - sim.dt * 0.25).count();
+    let mut snaps: Vec<Arc<Snap>> = (1..=k).rev().map(|q| sim.at(snap.t - q as f32 * sim.dt)).collect();
+    snaps.reverse();
+    snaps
+        .into_iter()
+        .map(|sn| {
+            let inv = (!Arc::ptr_eq(&sn.id, &snap.id)).then(|| {
+                let mut iv = vec![u32::MAX; ids];
+                for (j, &id) in sn.id.iter().enumerate() {
+                    if let Some(x) = iv.get_mut(id as usize) {
+                        *x = j as u32;
+                    }
+                }
+                iv
+            });
+            (sn, inv)
+        })
+        .collect()
+}
+
+/// Screen points of particle `i` (slot `j`) over its trail, head first, into
+/// `out`; stops where the particle was not yet born or was recycled. Returns the count.
+#[inline]
+#[allow(clippy::too_many_arguments)]
+fn trail_points(sim: &Sim, hist: &Hist, j: usize, i: usize, t: f32, head: (f32, f32, f32), pj: &Proj, out: &mut [(f32, f32, f32); TRAIL_MAX + 1]) -> usize {
+    out[0] = head;
+    let a0 = sim.age(i, t);
+    let mut n = 1;
+    for (q, (sn, inv)) in hist.iter().enumerate() {
+        let jq = match inv {
+            Some(iv) => iv.get(i).copied().unwrap_or(u32::MAX) as usize,
+            None => j,
+        };
+        if jq >= sn.pos.len() {
+            break;
+        }
+        let tq = t - (q + 1) as f32 * sim.dt;
+        let aq = sim.age(i, tq);
+        if aq < 0.0 || (sim.def.life.is_some() && aq > a0) {
+            break;
+        }
+        let p = sn.pos[jq];
+        let s = pj.at(v3(p[0], p[1], p[2]));
+        if s.2 < 0.05 {
+            break;
+        }
+        out[n] = s;
+        n += 1;
+    }
+    n
+}
+
 pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
     let clock = std::time::Instant::now();
     let refm = reference();
@@ -1985,6 +2218,12 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
     for (sim, snap) in systems {
         let d = &sim.def;
         let n = snap.pos.len();
+        let ch = std::time::Instant::now();
+        let hist = history(sim, snap);
+        if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() && !hist.is_empty() {
+            eprintln!("  trail history: {} frames in {:.0} ms", hist.len(), ch.elapsed().as_secs_f64() * 1e3);
+        }
+        let tr = d.trail.filter(|_| !hist.is_empty());
         let spread2 = if sim.stride > 1 { sim.stride as f32 / std::f32::consts::PI } else { 0.0 };
         // Bands of rows (multiples of 64, so every level splits exactly).
         // Threaded: 64-row bands. Pass 1 finds the bands each particle can
@@ -2005,13 +2244,31 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     }
                     let size = match &d.size_e {
                         Some(e) => e.at(p, snap.vel(j), t, sim.age(i, t), i).max(0.0),
-                        None => d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0),
+                        None => d.size_of(i),
                     };
                     let r_px = size * pj.k / z;
                     let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
                     // A preview particle stands for `stride` of them: spread it over about that many pixels.
-                let foot = (r_px * r_px + coc * coc + spread2).sqrt();
+                    let foot = (r_px * r_px + coc * coc + spread2).sqrt();
                     let margin = foot + 4.0;
+                    if tr.is_some() {
+                        let mut pts = [(0.0f32, 0.0f32, 0.0f32); TRAIL_MAX + 1];
+                        let m = trail_points(sim, &hist, j, i, t, (sx, sy, z), &pj, &mut pts);
+                        let (mut x0, mut x1, mut y0, mut y1) = (f32::MAX, f32::MIN, f32::MAX, f32::MIN);
+                        for &(x, y, _) in &pts[..m] {
+                            x0 = x0.min(x);
+                            x1 = x1.max(x);
+                            y0 = y0.min(y);
+                            y1 = y1.max(y);
+                        }
+                        let reach = foot + 7.0;
+                        if x1 < -reach || y1 < -reach || x0 > w as f32 + reach || y0 > h as f32 + reach {
+                            return (255, 0);
+                        }
+                        let lo = ((y0 - reach).max(0.0) as usize / BAND).min(nb - 1);
+                        let hi = (((y1 + reach).max(0.0) as usize) / BAND).min(nb - 1);
+                        return (lo as u8, hi as u8);
+                    }
                     if sx < -margin || sy < -margin || sx > w as f32 + margin || sy > h as f32 + margin {
                         return (255, 0);
                     }
@@ -2025,6 +2282,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 })
                 .collect()
         });
+        let t_ranges = clock.elapsed();
         let work = |band: (i32, i32), bi: Option<u8>| -> Pyr {
             let mut py = if band == (0, i32::MAX) { Pyr::new(w, h, levels, c) } else { Pyr::new_band(w, h, levels, c, band) };
             for j in 0..n {
@@ -2042,19 +2300,20 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 }
                 let size = match &d.size_e {
                     Some(e) => e.at(p, snap.vel(j), t, sim.age(i, t), i).max(0.0),
-                    None => d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0),
+                    None => d.size_of(i),
                 };
                 let r_px = size * pj.k / z;
                 let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
                 // A preview particle stands for `stride` of them: spread it over about that many pixels.
                 let foot = (r_px * r_px + coc * coc + spread2).sqrt();
                 let margin = foot + 4.0;
-                if sx < -margin || sy < -margin || sx > w as f32 + margin || sy > h as f32 + margin {
-                    continue;
-                }
+                let mut head = !(sx < -margin || sy < -margin || sx > w as f32 + margin || sy > h as f32 + margin);
                 // Depth test against the scene at the particle's centre.
                 let (ix, iy) = (sx as i32, sy as i32);
-                if ix >= 0 && iy >= 0 && (ix as usize) < w && (iy as usize) < h && v.depth[iy as usize * w + ix as usize] < z - size * 2.0 {
+                if head && ix >= 0 && iy >= 0 && (ix as usize) < w && (iy as usize) < h && v.depth[iy as usize * w + ix as usize] < z - size * 2.0 {
+                    head = false;
+                }
+                if !head && tr.is_none() {
                     continue;
                 }
                 // Threads own bands of rows (pass 1 already picked the particles that can reach this one).
@@ -2075,7 +2334,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let l = if kk == 0 || kk == usize::MAX { 0 } else { BINS[kk - 1].1 };
                 let tex = (1u32 << l) as f32;
                 // Streak samples at most half a texel apart (a texel in draft).
-                let ns = if v.draft { ((ml / tex).ceil() as usize).clamp(1, 24) } else { ((ml * 2.0 / tex).ceil() as usize).clamp(1, 48) };
+                let ns = if v.draft { ((ml / tex).ceil() as usize).clamp(1, 24) } else { ((ml / (tex * streak_gap())).ceil() as usize).clamp(1, 48) };
                 // Energy: projected disc area (world size) — in focus it's smaller than a pixel.
                 let area = std::f32::consts::PI * r_px * r_px;
                 // Lit colour.
@@ -2087,7 +2346,29 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     let amb = lerp3(v.amb.1, v.amb.0, 0.5 + 0.5 * to_cam.y.max(0.0));
                     let vis = v.shadow.map(|m| m.trans(p)).unwrap_or(1.0);
                     let keyc = scale(v.key.1, vis);
-                    let mut l = add(scale(keyc, phase * 0.66), amb);
+                    let mut l = if d.scatter != 0.0 {
+                        // Henyey–Greenstein towards the camera (forward: backlit rims glow),
+                        // normalised to the diffuse phase's mean.
+                        let g = d.scatter;
+                        let c = -ca;
+                        let hg = (1.0 - g * g) / (1.0 + g * g - 2.0 * g * c).max(1e-4).powf(1.5);
+                        add(scale(keyc, hg * 0.25 * 0.66 * 2.0), amb)
+                    } else {
+                        add(scale(keyc, phase * 0.66), amb)
+                    };
+                    if d.glint.0 > 0.0 {
+                        // A facet per particle, tumbling: it flashes when it
+                        // mirrors the key light into the camera.
+                        let (a1, a2) = (hu(d.seed, i as u32, 61) * std::f32::consts::TAU + t * (hu(d.seed, i as u32, 62) - 0.5) * 6.0, hu(d.seed, i as u32, 63) * 2.0 - 1.0);
+                        let r = (1.0 - a2 * a2).max(0.0).sqrt();
+                        let n = v3(r * a1.cos(), a2, r * a1.sin());
+                        let hv = norm(add(to_cam, v.key.0));
+                        let ndh = dot(n, hv).abs();
+                        let sh = d.glint.1;
+                        // Normalised Blinn lobe: (s + 2) / 2 · cos^s.
+                        let spark = ndh.powf(sh) * (sh + 2.0) * 0.5 * d.glint.0 * 0.05;
+                        l = add(l, scale(keyc, spark));
+                    }
                     // Particles that have arrived on a target surface shade like it (two-sided).
                     if let (Some(tg), Some((_, delay, nrm))) = (&d.target, &sim.tgt) {
                         let wv = ((((t - tg.from) / (tg.to - tg.from)) - delay[i]) * 2.5).clamp(0.0, 1.0);
@@ -2107,7 +2388,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let mut val = [0.0f32; 8];
                 match d.blend {
                     Blend::Add => {
-                        let e = d.emissive * a * area.min(4.0);
+                        let e = d.emissive * a * area.min(BIG_AREA);
                         let o = eo.unwrap_or(0);
                         val[o] = lc[0] * e;
                         val[o + 1] = lc[1] * e;
@@ -2115,7 +2396,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     }
                     Blend::Over => {
                         // Optical depth: covered fraction of a pixel.
-                        let od = a * area.min(4.0);
+                        let od = a * area.min(BIG_AREA);
                         let o = ab.unwrap_or(0);
                         val[o] = lc[0] * od;
                         val[o + 1] = lc[1] * od;
@@ -2136,6 +2417,56 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                         *x *= k;
                     }
                 }
+                if let Some((len, taper, op)) = tr {
+                    let mut pts = [(0.0f32, 0.0f32, 0.0f32); TRAIL_MAX + 1];
+                    let m = trail_points(sim, &hist, j, i, t, (sx, sy, z), &pj, &mut pts);
+                    // The head's surface brightness spread along the path:
+                    // a sample `step` px long carries val · step · 2 / (π · foot).
+                    let fe = foot.max(0.7);
+                    let per = op * 2.0 / (std::f32::consts::PI * fe);
+                    let kf = len / sim.dt;
+                    let dz = size * 2.0;
+                    // Only the samples this band's rows can receive (generous: a bilinear splat at level l reaches 1.5·2^l px).
+                    let reach = foot + 4.0 * tex + 4.0;
+                    let (ylo, yhi) = if py.band == (0, i32::MAX) { (f32::MIN, f32::MAX) } else { (py.band.0 as f32 - reach, py.band.1 as f32 + reach) };
+                    for q in 0..m.saturating_sub(1) {
+                        let (a, b) = (pts[q], pts[q + 1]);
+                        if a.1.min(b.1) > yhi || a.1.max(b.1) < ylo {
+                            continue;
+                        }
+                        let (ex, ey) = (b.0 - a.0, b.1 - a.1);
+                        let sl = (ex * ex + ey * ey).sqrt();
+                        // Samples at most 1.2σ of the footprint apart (ripple below 1e-5), and half a texel.
+                        let gap = (1.2 * (foot * foot * 0.25 + 1.0 / 6.0).sqrt()).max(if v.draft { tex } else { 0.5 * tex });
+                        let ns = ((sl / gap).ceil() as usize).clamp(1, 512);
+                        let step = sl / ns as f32;
+                        for k in 0..ns {
+                            let f = (k as f32 + 0.5) / ns as f32;
+                            let u = (q as f32 + f) / kf;
+                            if u >= 1.0 {
+                                break;
+                            }
+                            let (x, y, zz) = (a.0 + ex * f, a.1 + ey * f, a.2 + (b.2 - a.2) * f);
+                            if x < -margin || y < ylo || x > w as f32 + margin || y > yhi || y < -margin || y > h as f32 + margin {
+                                continue;
+                            }
+                            let (ix, iy) = (x as i32, y as i32);
+                            if ix >= 0 && iy >= 0 && (ix as usize) < w && (iy as usize) < h && v.depth[iy as usize * w + ix as usize] < zz - dz {
+                                continue;
+                            }
+                            let wt = (1.0 - u).powf(taper) * per * step;
+                            let vs = val.map(|x| x * wt);
+                            if refm {
+                                py.disc(x, y, foot, &vs);
+                            } else {
+                                put(&mut py, kk, lw, foot, v.draft, x, y, &vs.map(|x| x * (1.0 - lw)), &vs.map(|x| x * lw));
+                            }
+                        }
+                    }
+                    if !head {
+                        continue;
+                    }
+                }
                 if refm {
                     // Exact: the full footprint at 32–128 instants (at most 0.5 px apart).
                     let nt = if ml > 0.01 { ((ml * 2.0).ceil() as usize).clamp(32, 128) } else { 1 };
@@ -2150,26 +2481,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let (v0, v1) = (val.map(|x| x * inv * (1.0 - lw)), val.map(|x| x * inv * lw));
                 for k in 0..ns {
                     let u = if ns == 1 { 0.0 } else { (k as f32 + 0.5) * inv - 0.5 };
-                    let (x, y) = (sx + mx * u, sy + my * u);
-                    if kk == usize::MAX {
-                        if foot < 0.25 || v.draft {
-                            // Disc ⊗ tent ≈ the tent itself.
-                            py.splat(0, x, y, &v0);
-                        } else {
-                            py.stamp(x, y, foot, &v0);
-                        }
-                        continue;
-                    }
-                    if lw < 0.999 {
-                        if kk == 0 {
-                            py.stamp(x, y, 3.99, &v0);
-                        } else {
-                            py.splat_bin(kk - 1, x, y, &v0);
-                        }
-                    }
-                    if lw > 0.001 {
-                        py.splat_bin(kk, x, y, &v1);
-                    }
+                    put(&mut py, kk, lw, foot, v.draft, sx + mx * u, sy + my * u, &v0, &v1);
                 }
             }
             py
@@ -2179,11 +2491,15 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
         } else {
             use rayon::prelude::*;
             let parts: Vec<Pyr> = (0..nb).into_par_iter().map(|b| work(((b * BAND) as i32, if b + 1 == nb { i32::MAX } else { ((b + 1) * BAND) as i32 }), Some(b as u8))).collect();
+            let t_bands = clock.elapsed();
             let mut full = Pyr::new(w, h, levels, c);
             for p in parts {
                 full.absorb(p);
             }
             pyrs.push(full);
+            if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
+                eprintln!("  splat passes: ranges {:.0} ms, bands {:.0} ms, absorb {:.0} ms", t_ranges.as_secs_f64() * 1e3, (t_bands - t_ranges).as_secs_f64() * 1e3, (clock.elapsed() - t_bands).as_secs_f64() * 1e3);
+            }
         }
     }
     let t_splat = clock.elapsed();
@@ -2324,6 +2640,65 @@ mod tests {
         // From a plain thread the splatter splits the frame over the global pool's threads.
         let many = std::thread::scope(|sc| sc.spawn(|| render(&[(&s, snap.clone())], &v, 0.1).buf).join().unwrap());
         assert!(rayon::current_num_threads() < 2 || one.iter().zip(&many).all(|(a, b)| a.to_bits() == b.to_bits()), "layers differ between 1 and {} threads", rayon::current_num_threads());
+    }
+
+    #[test]
+    fn trails_are_identical_at_any_thread_count_and_follow_the_path() {
+        // Long enough to span a re-sort of the slots (ids move between snapshots).
+        let spec = |trail: bool| serde_json::json!({ "count": 3000, "emit": { "shape": "ball", "radius": 0.5, "pos": [0, 1, 0] }, "size": 0.004, "attractors": [{ "pos": [0, 1, 0], "strength": 1.5, "swirl": 1.2 }], "blend": "add", "trail": if trail { serde_json::json!({ "length": 0.5, "taper": 1 }) } else { serde_json::Value::Null } });
+        let (w, h) = (320usize, 180usize);
+        let depth = vec![1e9f32; w * h];
+        let cam = Camera { pos: v3(0.0, 1.0, 4.0), target: v3(0.0, 1.0, 0.0), fov: 40.0, focus: 4.0, aperture: 0.0, roll: 0.0, shutter: 0.0 };
+        let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: 4.0, aperture: 0.0, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)), shadow: None, draft: false };
+        let s = sim(spec(true));
+        let t = 1.2;
+        let snap = s.at(t);
+        let one = rayon::ThreadPoolBuilder::new().num_threads(1).build().unwrap().install(|| render(&[(&s, snap.clone())], &v, t));
+        let many = std::thread::scope(|sc| sc.spawn(|| render(&[(&s, snap.clone())], &v, t)).join().unwrap());
+        assert!(rayon::current_num_threads() < 2 || one.buf.iter().zip(&many.buf).all(|(a, b)| a.to_bits() == b.to_bits()), "trails differ between thread counts");
+        // The trail adds light (a dot with a 0.5 s tail is brighter than the dot).
+        let p = sim(spec(false));
+        let dots = render(&[(&p, p.at(t))], &v, t).emitted();
+        assert!(one.emitted() > dots * 3.0, "trail {} vs dots {dots}", one.emitted());
+    }
+
+    #[test]
+    fn power_law_sizes_and_layers() {
+        // p(s) ∝ s^-2.5 on [1, 10] mm: the median is near the small end (≈1.6 mm), the max reaches 10.
+        let s = sim(serde_json::json!({ "count": 20000, "size_dist": { "min": 0.001, "max": 0.01, "power": 2.5 } }));
+        let mut v: Vec<f32> = (0..20000).map(|i| s.def.size_of(i)).collect();
+        v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        assert!(v[0] >= 0.001 && v[19999] <= 0.01 + 1e-6, "{} {}", v[0], v[19999]);
+        let median = v[10000];
+        let expect = (0.001f32.powf(-1.5) + 0.5 * (0.01f32.powf(-1.5) - 0.001f32.powf(-1.5))).powf(-1.0 / 1.5);
+        assert!((median - expect).abs() / expect < 0.03, "median {median} vs {expect}");
+        assert!(v[19900] > 0.005, "the tail reaches big sizes");
+        // Layers: shares of the count, own seeds, merged emitters.
+        let o = serde_json::json!({ "type": "particles", "count": 1000, "emit": { "shape": "box", "size": 2 }, "layers": [ { "share": 1, "emit": { "pos": [0, 0, 3] } }, { "share": 3, "opacity": 0.5 } ] });
+        let ls = expand_layers(&o, "o").unwrap();
+        assert_eq!(ls.len(), 2);
+        assert_eq!(ls[0]["count"], 250.0);
+        assert_eq!(ls[1]["count"], 750.0);
+        assert_eq!(ls[0]["emit"]["size"], 2);
+        assert_eq!(ls[0]["emit"]["pos"], serde_json::json!([0, 0, 3]));
+        assert_eq!(ls[1]["opacity"], 0.5);
+        assert_ne!(ls[0]["seed"], ls[1]["seed"]);
+        assert!(ls.iter().all(|l| l.get("layers").is_none()));
+    }
+
+    #[test]
+    fn big_particles_keep_their_surface_brightness() {
+        // A 10 px disc emits about as much light as its area (no cap at 4 px²).
+        let s = sim(serde_json::json!({ "count": 1, "emit": { "shape": "point", "pos": [0, 1, 0] }, "size": 0.05, "size_var": 0, "velocity": [0, 0, 0], "spread": 0, "gravity": 0, "drag": 0, "collide": false }));
+        let (w, h) = (320usize, 180usize);
+        let depth = vec![1e9f32; w * h];
+        let cam = Camera { pos: v3(0.0, 1.0, 3.0), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus: 3.0, aperture: 0.0, roll: 0.0, shutter: 0.0 };
+        let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: 3.0, aperture: 0.0, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)), shadow: None, draft: false };
+        let snap = s.at(0.0);
+        let r_px = 0.05 * (h as f32 * 0.5 / 15f32.to_radians().tan()) / 3.0;
+        let e = render(&[(&s, snap)], &v, 0.0).emitted() as f32;
+        let area = std::f32::consts::PI * r_px * r_px;
+        assert!(r_px > 5.0 && (e - area).abs() / area < 0.02, "light {e} vs area {area} (r {r_px} px)");
     }
 
     #[test]

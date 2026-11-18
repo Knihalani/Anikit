@@ -1,0 +1,8 @@
+{ "scenes": [ { "duration": 4, "layers": [ { "component": "scene3d", "props": {
+  "env": "studio", "rig": { "preset": "product", "animate": "sweep", "duration": 4 }, "set": { "preset": "plinth", "color": "#2A2B30" },
+  "camera": { "lens": "portrait85", "shake": "breath", "keys": [
+    { "t": 0, "pos": [-1.6, 1.5, 9.5], "target": [0, 0.15, 0], "focus": "logo", "fstop": 4 },
+    { "t": 4, "pos": [1.2, 1.2, 8.8], "target": [0, 0.15, 0], "focus": "logo", "fstop": 4 } ] },
+  "objects": [
+    { "text": "ANIKIT", "name": "logo", "height": 0.42, "material": { "extends": "chrome", "imperfections": 0.25 } },
+    { "type": "sphere", "radius": 0.16, "pos": [0.95, 0.16, 0.55], "material": { "extends": "glass", "smudges": 0.4 } } ] } } ] } ] }

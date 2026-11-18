@@ -23,7 +23,6 @@ mod encoder;
 mod frame;
 mod headers;
 mod intra;
-mod lookahead;
 mod mc;
 pub mod mp4;
 mod simd;

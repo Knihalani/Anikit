@@ -10,7 +10,7 @@
           "animate": { "from": { "scaleY": 0, "opacity": 0 }, "duration": 0.35, "ease": "outExpo" } },
         { "shape": "rect", "x": 960, "y": 540, "width": 3, "height": 26, "fill": "$dim", "anchor": [0.5, 18.5],
           "repeat": { "count": 120, "offset": { "rotate": 3 } }, "rotation": "=t*-40" },
-        { "shape": "circle", "x": 960, "y": 540, "width": 120, "height": 120, "fill": "$signal", "enter": { "preset": "popIn", "duration": 0.4 } },
+        { "shape": "circle", "x": 960, "y": 540, "width": 120, "height": 120, "fill": "$signal", "inertia": "bouncy", "animate": { "from": { "scale": 0 }, "duration": 0.2, "ease": "glide" } },
         { "text": "PULSE RECORDS / ID 07", "font": "JetBrains Mono", "size": 22, "letterSpacing": 4, "color": "$bone", "x": 160, "y": 1000, "anchor": "left",
           "animator": { "opacity": 0, "order": "random", "seed": 3, "duration": 0.5, "smooth": 0.05 } }
       ] },

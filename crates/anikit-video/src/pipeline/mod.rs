@@ -247,6 +247,7 @@ pub fn scale_list(dl: &mut DisplayList, s: f32) {
                     }
                     dl::Filter::Glow { radius, .. } => *radius *= s,
                     dl::Filter::Halftone(h) => h.cell *= s,
+                    dl::Filter::Ink { scale, .. } => *scale *= s,
                     dl::Filter::ColorMatrix(_) | dl::Filter::Tone(_) => {}
                 }
             }
@@ -635,6 +636,50 @@ fn chunk_keys(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, 
         .collect()
 }
 
+/// A cache key for a still at `t` (same inputs as the chunk cache: the evaluated frame,
+/// image contents, look, scale and this binary); `None` when the frame has images whose
+/// content can't be keyed. `ANIKIT_RENDER_CACHE=0` turns it off.
+pub fn still_key(ev: &Evaluator, t: f32, scale: f32) -> Option<String> {
+    use std::collections::hash_map::DefaultHasher;
+    if std::env::var_os("ANIKIT_RENDER_CACHE").is_some_and(|v| v == "0") {
+        return None;
+    }
+    let mut dl = ev.eval(t);
+    scale_list(&mut dl, scale);
+    let mut keys = Vec::new();
+    let mut ok = true;
+    let mut id_key = |id: &mut dl::ImageId| {
+        match ev.assets.content_key(*id) {
+            Some(k) => keys.push(k),
+            None => ok = false,
+        }
+        *id = dl::ImageId(0);
+    };
+    for op in &mut dl.ops {
+        let paint = match op {
+            Op::Image { image, .. } => {
+                id_key(image);
+                None
+            }
+            Op::Fill { paint, .. } | Op::Stroke { paint, .. } | Op::RoundRect { paint, .. } | Op::Glyphs { paint, .. } => Some(paint),
+            _ => None,
+        };
+        if let Some(dl::Paint::Image { image, .. }) = paint {
+            id_key(image);
+        }
+    }
+    if !ok {
+        return None;
+    }
+    let exe = std::env::current_exe().ok().and_then(|p| std::fs::metadata(p).ok()).map(|m| (m.len(), m.modified().ok()));
+    let mut h = DefaultHasher::new();
+    ("anikit-still-1", format!("{exe:?}"), scale.to_bits(), t.to_bits()).hash(&mut h);
+    hash_list(&dl).hash(&mut h);
+    keys.hash(&mut h);
+    format!("{:?}{}", ev.post_at(t), ev.needs_blur(t, false)).hash(&mut h);
+    Some(format!("still1-{:016x}", h.finish()))
+}
+
 /// Default chunk length for `n` frames: up to 16 chunks of 30–300 frames, or, when the
 /// spec has expensive layers (3D, shaders, video), chunks of 8+ frames (up to 16), so a
 /// short heavy clip keeps every core busy. Depends only on the spec, never the machine.
@@ -747,10 +792,34 @@ fn straight(pm: &crate::render::FrameRgba) -> (u32, u32, Vec<u8>) {
 /// Save straight RGBA8 as PNG.
 pub fn save_png(path: &std::path::Path, w: u32, h: u32, rgba: Vec<u8>) -> Result<(), String> {
     let img = image::RgbaImage::from_raw(w, h, rgba).ok_or("bad image buffer")?;
+    // JPEG has no alpha: write RGB (quality 92) when asked for .jpg.
+    if path.extension().is_some_and(|e| e.eq_ignore_ascii_case("jpg") || e.eq_ignore_ascii_case("jpeg")) {
+        let rgb = image::DynamicImage::ImageRgba8(img).to_rgb8();
+        let f = std::fs::File::create(path).map_err(|e| format!("can't write {}: {e}", path.display()))?;
+        let mut enc = image::codecs::jpeg::JpegEncoder::new_with_quality(std::io::BufWriter::new(f), 92);
+        return enc.encode_image(&rgb).map_err(|e| format!("can't write {}: {e}", path.display()));
+    }
     img.save(path).map_err(|e| format!("can't write {}: {e}", path.display()))
 }
 
 /// A contact sheet: `cols × rows` frames evenly spread over the video, each `cell_w` wide.
+/// A cache key for a contact sheet: its layout plus every cell's still key.
+pub fn sheet_key(ev: &Evaluator, cols: u32, rows: u32, cell_w: u32) -> Option<String> {
+    use std::collections::hash_map::DefaultHasher;
+    let n = cols * rows;
+    let scale = cell_w as f32 / ev.width as f32;
+    let cells: Option<Vec<String>> = (0..n)
+        .into_par_iter()
+        .map(|k| {
+            let t = if n > 1 { ev.duration * (k as f32 + 0.5) / n as f32 } else { ev.duration * 0.5 };
+            still_key(ev, t, scale)
+        })
+        .collect();
+    let mut h = DefaultHasher::new();
+    ("anikit-sheet-1", cols, rows, cell_w, cells?).hash(&mut h);
+    Some(format!("sheet1-{:016x}", h.finish()))
+}
+
 pub fn contact_sheet(ev: &Evaluator, cols: u32, rows: u32, cell_w: u32) -> (u32, u32, Vec<u8>) {
     let n = cols * rows;
     let scale = cell_w as f32 / ev.width as f32;
@@ -899,6 +968,8 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         subpel: opts.quality != Quality::Draft,
         // The encoder decides per frame (auto AQ: on for gradient-dominated frames, off on flat UI) unless the spec sets `encode.aq`.
         aq_strength: ev.encode_aq.unwrap_or(ak264::EncoderConfig::default().aq_strength),
+        // One B picture between references (CABAC qualities; the chunk encoder flushes, the muxer reorders).
+        bframes: if opts.quality != Quality::Draft { 1 } else { 0 },
         ..Default::default()
     };
     let prof = Profile::default();

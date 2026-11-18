@@ -62,7 +62,7 @@ impl Pace {
         match self {
             Pace::Calm => Limits { longest: f32::INFINITY, median: f32::INFINITY, same: 0.85, dead_air: 3.0 },
             Pace::Steady => Limits { longest: 6.0, median: 3.5, same: 0.45, dead_air: 2.0 },
-            Pace::Fast => Limits { longest: 2.5, median: 1.5, same: 0.2, dead_air: 1.0 },
+            Pace::Fast => Limits { longest: 3.0, median: 2.0, same: 0.2, dead_air: 1.0 },
             Pace::Frantic => Limits { longest: 1.2, median: 0.7, same: 0.1, dead_air: 0.5 },
         }
     }
@@ -245,8 +245,10 @@ pub fn time_axis(ev: &Evaluator, s: &Samples, intent: &Intent, beats: Option<&[f
     if dur >= 3.0 {
         // Pace against intent.
         let mut slow = Vec::new();
-        if tl.longest > lim.longest {
-            slow.push(format!("longest shot {:.1} s > {:.1} s", tl.longest, lim.longest));
+        // The last shot may hold on purpose (a lockup, an end card).
+        let body_longest = if tl.shots.len() > 2 { tl.shots[..tl.shots.len() - 1].iter().copied().fold(0.0f32, f32::max) } else { tl.longest };
+        if body_longest > lim.longest {
+            slow.push(format!("longest shot {:.1} s > {:.1} s", body_longest, lim.longest));
         }
         if tl.median > lim.median {
             slow.push(format!("median shot {:.1} s > {:.1} s", tl.median, lim.median));
@@ -259,7 +261,10 @@ pub fn time_axis(ev: &Evaluator, s: &Samples, intent: &Intent, beats: Option<&[f
                 Pace::Fast | Pace::Frantic => "cut or make a major change on the beat every 0.5–1.5 s (\"@beat17\"): whips, snaps, speed ramps, impacts, match cuts; 1–4 words per shot",
                 _ => "shorten the longest holds, or give them a change (a camera move, a reveal, light), or declare a calmer \"intent\"",
             };
-            note("warning", "pace", format!("timeline ({} shots, median {:.1} s)", tl.shots.len(), tl.median), format!("slower than the {} intent ({}): {}", intent.pace.name(), intent.source, slow.join("; ")), fix);
+            // Shot lengths are advice (holds can be deliberate); static seconds,
+            // where nothing changes, are the stronger signal.
+            let sev = if tl.same > lim.same { "warning" } else { "tip" };
+            note(sev, "pace", format!("timeline ({} shots, median {:.1} s)", tl.shots.len(), tl.median), format!("slower than the {} intent ({}): {}", intent.pace.name(), intent.source, slow.join("; ")), fix);
         }
         // Too fast for a calm or steady film.
         if matches!(intent.pace, Pace::Calm | Pace::Steady) && tl.median < 0.6 && tl.shots.len() >= 6 {
@@ -530,7 +535,9 @@ pub fn composition(ev: &Evaluator, s: &Samples, tl: &Timeline) -> (Vec<Note>, Ve
     }
     // Centred, symmetric layouts repeated.
     let mid = |l: &Layout| (((l.bbox[0] + l.bbox[2]) / 2.0 - 0.5).abs(), ((l.bbox[1] + l.bbox[3]) / 2.0 - 0.5).abs());
-    let centred: Vec<&(f32, Layout)> = lays.iter().filter(|(_, l)| mid(l).0 < 0.06 && mid(l).1 < 0.12).collect();
+    // A full-bleed image (a shader world, a photo) fills the frame: its box is
+    // centred by definition, so it says nothing about the composition.
+    let centred: Vec<&(f32, Layout)> = lays.iter().filter(|(_, l)| mid(l).0 < 0.06 && mid(l).1 < 0.12 && l.occupied < 0.8).collect();
     if lays.len() >= 4 && centred.len() * 10 >= lays.len() * 7 {
         let (t, l) = centred[0];
         worst.push(("centred".into(), *t, l.bbox));
@@ -543,7 +550,10 @@ pub fn composition(ev: &Evaluator, s: &Samples, tl: &Timeline) -> (Vec<Note>, Ve
         });
     }
     // Centred headline over a smooth backdrop (BAR #1–2), at pixels.
-    let slide: Vec<&(f32, Layout)> = lays.iter().filter(|(_, l)| l.occupied < 0.2 && ((l.bbox[0] + l.bbox[2]) / 2.0 - 0.5).abs() < 0.08).collect();
+    // Only shots with words on screen: a small centred image (an eye, an
+    // object) in a wordless film is a composition choice, not a slide.
+    let has_text = |t: f32| ev.eval(t).ops.iter().any(|o| matches!(o, crate::dl::Op::Glyphs { .. }));
+    let slide: Vec<&(f32, Layout)> = lays.iter().filter(|(t, l)| l.occupied < 0.2 && ((l.bbox[0] + l.bbox[2]) / 2.0 - 0.5).abs() < 0.08 && has_text(*t)).collect();
     if !slide.is_empty() {
         let (t, l) = slide[0];
         worst.push(("slide".into(), *t, l.bbox));
@@ -626,10 +636,20 @@ pub fn write_pack(dir: &std::path::Path, p: &crate::preview::Preview, tl: &Timel
 
 /// Audio levels of the final mix: approximate loudness (gated RMS, ≈ LUFS), peak and clipping.
 pub fn audio(ev: &Evaluator, base: &std::path::Path) -> (Option<String>, Vec<Note>) {
-    if ev.audio.is_empty() {
+    if ev.audio.is_empty() && ev.music.is_none() {
         return (None, Vec::new());
     }
-    let Ok(pcm) = crate::audio::mix(&ev.audio, ev.duration as f64, 24_000, Some(base)) else { return (None, Vec::new()) };
+    // Generated music is rendered to a temporary file and measured with the rest.
+    let mut tracks = ev.audio.clone();
+    let tmp = std::env::temp_dir().join(format!("anikit-review-{}.music.wav", std::process::id()));
+    if let Some(m) = &ev.music {
+        if let Ok(t) = crate::music::render_track(m, ev.duration as f64, &tmp, !ev.audio.is_empty()) {
+            tracks.push(t);
+        }
+    }
+    let mixed = crate::audio::mix(&tracks, ev.duration as f64, 24_000, Some(base));
+    let _ = std::fs::remove_file(&tmp);
+    let Ok(pcm) = mixed else { return (None, Vec::new()) };
     let mono: Vec<f32> = pcm.samples.chunks(2).map(|c| (c[0] + c.get(1).copied().unwrap_or(c[0])) * 0.5).collect();
     let peak = pcm.samples.iter().fold(0.0f32, |m, x| m.max(x.abs()));
     let clipped = pcm.samples.iter().filter(|x| x.abs() >= 0.999).count();

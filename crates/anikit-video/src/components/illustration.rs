@@ -125,7 +125,7 @@ fn catmull(pts: &[[f32; 2]]) -> Vec<[f32; 2]> {
 }
 
 /// Smooth 1D value noise in [-1, 1].
-fn vnoise(x: f32, seed: u32) -> f32 {
+pub(super) fn vnoise(x: f32, seed: u32) -> f32 {
     let i = x.floor();
     let f = x - i;
     let i = i as i32 as u32;
@@ -147,21 +147,21 @@ struct Brush {
 }
 
 /// A resampled centreline: points, unit normals and arc length.
-struct Line {
-    p: Vec<[f32; 2]>,
-    n: Vec<[f32; 2]>,
-    s: Vec<f32>,
+pub(super) struct Line {
+    pub(super) p: Vec<[f32; 2]>,
+    pub(super) n: Vec<[f32; 2]>,
+    pub(super) s: Vec<f32>,
 }
 
 impl Line {
-    fn len(&self) -> f32 {
+    pub(super) fn len(&self) -> f32 {
         *self.s.last().unwrap_or(&0.0)
     }
 }
 
 /// Resample `poly` (already in px) evenly, displace it by the boil, and
 /// compute normals.
-fn resample(poly: &[[f32; 2]], boil: f32, bseed: u32) -> Line {
+pub(super) fn resample(poly: &[[f32; 2]], boil: f32, bseed: u32) -> Line {
     let mut cum = Vec::with_capacity(poly.len());
     let mut acc = 0.0;
     cum.push(0.0);
@@ -263,7 +263,7 @@ fn pressure_at(p: &Pressure, u: f32) -> f32 {
 }
 
 /// Tip shape for a normalised distance from a stroke end (0 at the tip).
-fn tip(x: f32) -> f32 {
+pub(super) fn tip(x: f32) -> f32 {
     if x >= 1.0 {
         1.0
     } else {
@@ -273,7 +273,7 @@ fn tip(x: f32) -> f32 {
 
 /// Fill polygon between `left[i] = p + n·(c + hl)` and `right[i] = p + n·(c − hr)`
 /// over samples `i0..=i1`, with round caps.
-fn ribbon(path: &mut Path, l: &Line, i0: usize, i1: usize, prof: &dyn Fn(usize) -> (f32, f32, f32)) {
+pub(super) fn ribbon(path: &mut Path, l: &Line, i0: usize, i1: usize, prof: &dyn Fn(usize) -> (f32, f32, f32)) {
     if i1 <= i0 {
         return;
     }

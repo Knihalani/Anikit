@@ -26,6 +26,7 @@
 pub mod authoring;
 pub mod bvh;
 pub mod rig;
+pub mod sets;
 pub mod env;
 pub mod geom;
 pub mod gltf;
@@ -114,7 +115,7 @@ pub fn shorthand(mut v: Value) -> Value {
 }
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig", "set",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -146,10 +147,13 @@ struct Prepared {
     backdrop: (V3, V3),
     glow: (V3, V3, f32),
     haze: (f32, V3),
+    haze_height: (f32, f32),
     lights: Vec<trace::Light>,
     /// Underwater caustics strength (0 = off).
     caustics: f32,
     gobo: rig::Gobo,
+    /// An animated rig: (rig, the env it was applied to, camera view, key level).
+    rig_anim: Option<Arc<(rig::Rig, env::Env, V3, f32)>>,
     /// Ink outlines: (width in px at 1080p, colour sRGB).
     outline: Option<(f32, [u8; 3])>,
     /// Volumetric light shafts in the fog.
@@ -183,6 +187,8 @@ struct FloorParams {
     reflect: f32,
     pool: (f32, f32, f32),
     fade: (f32, f32),
+    /// PBR texture set (`floor.texture`), 0 = none.
+    pbr: u32,
 }
 
 fn num_or(m: &Map<String, Value>, k: &str, d: f32) -> Result<f32, String> {
@@ -310,6 +316,9 @@ impl Prepare for Scene3d {
                 .collect(),
             None => objs_v,
         };
+        // `set`: a stage built around the subject (plinth, steps, field, ...).
+        // (Built after the objects below, so a plinth fits the subject.)
+        let mut set: Option<sets::Built> = None;
         let outline = match m.get("outline") {
             None if look_outline => Some((1.6, [22u8, 20, 24])),
             None | Some(Value::Bool(false)) => None,
@@ -329,10 +338,27 @@ impl Prepare for Scene3d {
         let mut parts = Vec::new();
         for (i, o) in objs_v.iter().enumerate() {
             if o.get("type").and_then(|t| t.as_str()) == Some("particles") {
-                parts.push(particles::parse(o, &mut shapes, &mut mats, &named, &objs_v, &format!("objects[{i}]")).map_err(Error)?);
+                for o in particles::expand_layers(o, &format!("objects[{i}]")).map_err(Error)? {
+                    parts.push(particles::parse(&o, &mut shapes, &mut mats, &named, &objs_v, &format!("objects[{i}]")).map_err(Error)?);
+                }
                 continue;
             }
             objs.push(spec::object(o, &mut shapes, &mut mats, &named, &format!("objects[{i}]")).map_err(Error)?);
+        }
+        if let Some(sv) = m.get("set") {
+            // The subject's footprint (half-width on the floor) at t = 0.
+            let mut probe = Scene::new(shapes.list.clone(), mats.clone(), Vec::new(), es.env.clone(), None);
+            probe.insts = instances(&objs, 0.0, 0.0);
+            let mut fit: f32 = 0.0;
+            for i in &probe.insts {
+                let (a, b) = probe.world_box(i);
+                fit = fit.max(a.x.abs()).max(b.x.abs()).max(a.z.abs()).max(b.z.abs());
+            }
+            let built = sets::build(sv, "set", (fit > 0.0).then_some(fit)).map_err(Error)?;
+            for (k, o) in built.objects.iter().enumerate() {
+                objs.push(spec::object(o, &mut shapes, &mut mats, &named, &format!("set[{k}]")).map_err(Error)?);
+            }
+            set = Some(built);
         }
 
         // Physics: body groups become objects whose transforms come from the simulation.
@@ -351,10 +377,18 @@ impl Prepare for Scene3d {
         // Floor.
         let floor = match m.get("floor") {
             Some(Value::Bool(false)) => None,
+            None if set.as_ref().is_some_and(|b| b.no_floor) => None,
             v => {
                 let mut fp = if es.name == "hdri" {
-                    // A neutral ground that catches shadows and melts into the HDRI's horizon.
-                    FloorParams { y: 0.0, color: v3(0.18, 0.18, 0.18), roughness: 0.55, mirror: 0.0, reflect: 0.2, pool: (0.0, 0.0, 0.0), fade: (6.0, 40.0) }
+                    // A ground that catches shadows, with the albedo that makes it
+                    // match the HDRI's own ground under the HDRI's light, so it
+                    // melts into the photographed horizon.
+                    let up = v3(0.0, 1.0, 0.0);
+                    let lit = add(es.env.diffuse(up), es.env.key_box().map(|k| scale(k.radiance, es.env.key_solid_angle * dot(up, k.c).max(0.0) / std::f32::consts::PI)).unwrap_or(v3(0.0, 0.0, 0.0)));
+                    let g = es.env.map.as_ref().map(|m| m.ground()).unwrap_or(v3(0.1, 0.1, 0.1));
+                    let alb = |a: f32, b: f32| (a / b.max(1e-5)).clamp(0.03, 0.85);
+                    let color = v3(alb(g.x, lit.x), alb(g.y, lit.y), alb(g.z, lit.z));
+                    FloorParams { y: 0.0, color, roughness: 0.6, mirror: 0.0, reflect: 0.12, pool: (0.0, 0.0, 0.0), fade: (4.0, 18.0), pbr: 0 }
                 } else if bright {
                     let color = match es.name.as_str() {
                         "overcast" => v3(0.2, 0.27, 0.12),
@@ -367,14 +401,39 @@ impl Prepare for Scene3d {
                         "interior" => (0.3, 0.5),
                         _ => (0.35, 0.35),
                     };
-                    FloorParams { y: 0.0, color, roughness, mirror: 0.0, reflect, pool: (0.0, 0.0, 0.0), fade: (25.0, 250.0) }
+                    FloorParams { y: 0.0, color, roughness, mirror: 0.0, reflect, pool: (0.0, 0.0, 0.0), fade: (25.0, 250.0), pbr: 0 }
                 } else {
-                    FloorParams { y: 0.0, color: v3(0.035, 0.035, 0.04), roughness: 0.09, mirror: 0.06, reflect: 1.0, pool: (0.0, 0.0, 5.0), fade: (7.0, 16.0) }
+                    FloorParams { y: 0.0, color: v3(0.035, 0.035, 0.04), roughness: 0.09, mirror: 0.06, reflect: 1.0, pool: (0.0, 0.0, 5.0), fade: (7.0, 16.0), pbr: 0 }
                 };
+                if let Some(y) = set.as_ref().and_then(|b| b.floor_y) {
+                    fp.y = y;
+                }
                 if let Some(Value::Object(fm)) = v {
                     for k in fm.keys() {
-                        if !["color", "roughness", "reflect", "mirror", "y"].contains(&k.as_str()) {
-                            return Err(Error(format!("floor: unknown key `{k}` (color, roughness, reflect, mirror, y)")));
+                        if !["color", "roughness", "reflect", "mirror", "y", "texture", "scale", "texture_rotate"].contains(&k.as_str()) {
+                            return Err(Error(format!("floor: unknown key `{k}` (color, roughness, reflect, mirror, y, texture, scale, textureRotate)")));
+                        }
+                    }
+                    if let Some(t) = fm.get("texture") {
+                        // A ground material: the set's albedo times `color` (white unless given).
+                        let src = t.as_str().ok_or_else(|| Error("floor.texture: expected an asset ref (`ambientcg:WoodFloor051`) or a folder of maps".into()))?;
+                        let o = pbr::SetOpts {
+                            scale: num_or(fm, "scale", 1.0).map_err(Error)?.max(1e-3),
+                            tint: v3(1.0, 1.0, 1.0),
+                            mapping: pbr::Mapping::Triplanar,
+                            rough_mul: 1.0,
+                            normal_strength: 1.0,
+                            keep_rough: false,
+                            keep_metal: true,
+                            rotate: num_or(fm, "texture_rotate", 0.0).map_err(Error)?,
+                            max: 2048,
+                        };
+                        fp.pbr = pbr::load(src, &o).map_err(|e| Error(format!("floor.texture: {e}")))?;
+                        if !fm.contains_key("color") {
+                            fp.color = v3(1.0, 1.0, 1.0);
+                        }
+                        if !fm.contains_key("reflect") {
+                            fp.reflect = 0.6;
                         }
                     }
                     if let Some(c) = fm.get("color") {
@@ -404,12 +463,16 @@ impl Prepare for Scene3d {
         // `rig`: a lighting setup placed around the camera's view at t = 0.
         let rig = m.get("rig").map(|r| rig::parse(r, "rig")).transpose().map_err(Error)?;
         let mut gobo = rig::Gobo::default();
+        let mut rig_anim_base: Option<(env::Env, V3, f32)> = None;
         if let Some(r) = &rig {
             let c0 = camera.at(0.0, 16.0 / 9.0, 0.0);
             let view = norm(sub(c0.target, c0.pos));
             // Keep the env's key level so exposure and the look stay calibrated.
             let level = es.env.key_box().map(|k| luma(k.radiance) * es.env.key_solid_angle * (1.0 - k.falloff / 3.0) / std::f32::consts::PI).unwrap_or(1.0).max(0.2);
             let (e, g) = r.apply(&es.env, view, level);
+            if r.anim != 0 {
+                rig_anim_base = Some((es.env.clone(), view, level));
+            }
             es.env = e;
             gobo = g;
         }
@@ -454,6 +517,26 @@ impl Prepare for Scene3d {
                 }
             }
             "city" => (backdrop, (0.012, v3(0.01, 0.012, 0.03)), auto_exp),
+            "hdri" => {
+                // HDRIs are scene-referred at whatever level they were shot:
+                // expose so a white card facing a typical direction (the mean
+                // over eight around-the-horizon normals, tilted up 20°)
+                // reads light grey. `env.exposure` offsets this in stops.
+                let kd = |n: V3| {
+                    es.env.key_box().map(|k| scale(k.radiance, es.env.key_solid_angle * dot(n, k.c).max(0.0) * (1.0 - k.falloff / 3.0) / std::f32::consts::PI)).unwrap_or(v3(0.0, 0.0, 0.0))
+                };
+                // (Up itself is left out: an overhead noon sun would expose
+                // for the tops of things and leave every face in the dark.)
+                let mut irr = 0.0;
+                for k in 0..8 {
+                    let a = k as f32 * std::f32::consts::TAU / 8.0;
+                    let n = norm(v3(a.cos(), 0.36, a.sin()));
+                    irr += luma(add(es.env.diffuse(n), kd(n)));
+                }
+                irr /= 8.0;
+                let e = 0.9 / irr.max(1e-4);
+                (backdrop, (es.haze, es.env.map.as_ref().map(|m| m.mean()).unwrap_or(v3(0.5, 0.5, 0.5))), e)
+            }
             _ => (backdrop, haze, auto_exp),
         };
         let caustics = if es.name == "underwater" { 1.0 } else { 0.0 };
@@ -468,16 +551,21 @@ impl Prepare for Scene3d {
         }
         // `fog`: { "density": per metre, "color", "shafts" } overrides the env's haze.
         let mut shafts = false;
+        let mut haze_height = (0.0f32, 0.0f32);
         let haze = match m.get("fog") {
             None => haze,
             Some(Value::Number(d)) => (d.as_f64().unwrap_or(0.0) as f32, haze.1),
             Some(Value::Object(f)) => {
                 for k in f.keys() {
-                    if !["density", "color", "shafts"].contains(&k.as_str()) {
-                        return Err(Error(format!("fog: unknown key `{k}` (density, color, shafts)")));
+                    if !["density", "color", "shafts", "height", "base"].contains(&k.as_str()) {
+                        return Err(Error(format!("fog: unknown key `{k}` (density, color, shafts, height, base)")));
                     }
                 }
                 shafts = f.get("shafts").and_then(|x| x.as_bool()).unwrap_or(false);
+                if let Some(h) = f.get("height") {
+                    let h = h.as_f64().filter(|h| *h > 0.0).ok_or_else(|| Error("fog.height: expected a falloff height in metres (> 0)".into()))? as f32;
+                    haze_height = (h, num_or(f, "base", 0.0).map_err(Error)?);
+                }
                 let d = num_or(f, "density", haze.0).map_err(Error)?;
                 let c = f.get("color").map(|c| spec::color(c, "fog.color")).transpose().map_err(Error)?.unwrap_or(haze.1);
                 (d, c)
@@ -516,7 +604,7 @@ impl Prepare for Scene3d {
         // Static layouts get a baked, noise-free floor.
         let total: u64 = objs.iter().map(|o| o.count as u64 * o.lanes as u64).sum();
         let t_objs = clock.elapsed();
-        let floor_vis = if floor.is_some() && total <= 400 && objs.iter().all(|o| !o.dynamic()) {
+        let floor_vis = if floor.is_some() && total <= 400 && objs.iter().all(|o| !o.dynamic()) && rig_anim_base.is_none() {
             let fp = floor.clone().unwrap();
             // The bake is deterministic, so it is cached on disk by the scene's
             // description (plus model files' size and mtime).
@@ -568,9 +656,14 @@ impl Prepare for Scene3d {
             backdrop,
             glow,
             haze,
+            haze_height,
             lights: local_lights,
             caustics,
             gobo,
+            rig_anim: match (rig, rig_anim_base) {
+                (Some(r), Some((e, v, l))) => Some(Arc::new((r, e, v, l))),
+                _ => None,
+            },
             outline,
             shafts,
             camera,
@@ -593,7 +686,7 @@ impl Prepare for Scene3d {
 }
 
 fn make_floor(f: &FloorParams, vis: Option<Arc<FloorVis>>) -> Floor {
-    Floor { y: f.y, color: f.color, roughness: f.roughness, mirror: f.mirror, reflect: f.reflect, pool: f.pool, fade: f.fade, vis }
+    Floor { y: f.y, color: f.color, roughness: f.roughness, mirror: f.mirror, reflect: f.reflect, pool: f.pool, fade: f.fade, vis, pbr: f.pbr }
 }
 
 fn read_floor_vis(path: &std::path::Path) -> Option<FloorVis> {
@@ -654,14 +747,90 @@ pub fn lint(props: &Value) -> Vec<(String, String)> {
             }
         }
     }
-    if env == "cyc" && props.get("look").and_then(|l| l.as_str()).is_none_or(|l| l == "photo" || l == "pbr") {
+    if env == "cyc" && props.get("rig").is_none() && props.get("look").and_then(|l| l.as_str()).is_none_or(|l| l == "photo" || l == "pbr") {
         let dark_card = objs.iter().any(|o| o.get("type").and_then(|t| t.as_str()) == Some("card") && o.get("intensity").and_then(|k| k.as_f64()).is_some_and(|k| k < 0.2));
         let chrome = objs.iter().position(|o| matches!(mat_of(o).as_str(), "chrome" | "mirror") && o.get("type").and_then(|t| t.as_str()) != Some("card"));
         if let (Some(i), false) = (chrome, dark_card) {
             out.push((format!(".objects[{i}].material"), "chrome on the white `cyc` reflects only white and reads flat; add a black card ({ \"type\": \"card\", \"color\": \"#000\", \"intensity\": 0, \"pos\": [0, 0.5, 2.5], \"rot\": [0, 180, 0] }) or use env `studio`".into()));
         }
     }
+    look_lint(props, &objs, &mut out);
     out
+}
+
+/// Craft checks (docs/video/craft/3d-design.md §6): the tells that make CG read
+/// cheap, caught from the spec alone.
+fn look_lint(props: &Value, objs: &[Value], out: &mut Vec<(String, String)>) {
+    let num = |v: Option<&Value>| v.and_then(|x| x.as_f64()).map(|x| x as f32);
+    let has_rig = props.get("rig").is_some();
+    let has_lights = props.get("lights").and_then(|l| l.as_array()).is_some_and(|a| !a.is_empty());
+    let has_metal_or_glass = objs.iter().any(|o| {
+        let m = o.get("material").map(|m| m.to_string().to_lowercase()).unwrap_or_default();
+        ["chrome", "mirror", "glass", "aluminium", "gold", "copper", "titanium"].iter().any(|k| m.contains(k))
+    });
+    if !has_rig && !has_lights && !objs.is_empty() && props.get("env").is_none() {
+        let hint = if has_metal_or_glass { "`product` (strips and flags draw edges on metal and glass)" } else { "`rembrandt` (4:1) or `loop` (3:1)" };
+        out.push(("".into(), format!("default lighting reads flat and generic; set a `rig`, e.g. {hint}")));
+    }
+    // Camera.
+    let cam = props.get("camera");
+    if let Some(Value::Object(c)) = cam {
+        if let Some(p) = c.get("preset").and_then(|p| p.as_str()) {
+            let deg = num(c.get("degrees")).unwrap_or(70.0);
+            let dur = num(c.get("duration")).unwrap_or(5.0).max(0.1);
+            if p == "orbit" && deg / dur > 20.0 {
+                out.push((".camera".into(), format!("orbit at {:.0}°/s feels like a turntable demo; keep it under 15°/s (e.g. degrees {:.0} over {dur} s)", deg / dur, 15.0 * dur)));
+            }
+        }
+        if let Some(keys) = c.get("keys").and_then(|k| k.as_array()) {
+            if c.get("interp").and_then(|i| i.as_str()) == Some("linear") && keys.len() <= 3 && c.get("ease").and_then(|e| e.as_bool()) != Some(true) {
+                out.push((".camera.interp".into(), "a linear move starts and stops dead; use `smooth` (eased) unless it's a dense tracked path".into()));
+            }
+            let still = keys.len() == 1 || keys.windows(2).all(|w| w[0].get("pos") == w[1].get("pos") && w[0].get("target") == w[1].get("target"));
+            if still && c.get("shake").is_none() {
+                out.push((".camera.shake".into(), "a locked-off CG camera looks dead; add `\"shake\": \"breath\"` (0.15% of the frame)".into()));
+            }
+            for (i, k) in keys.iter().enumerate() {
+                if num(k.get("fstop")).is_some_and(|n| n < 1.4) {
+                    out.push((format!(".camera.keys[{i}].fstop"), "below f/1.4 everything but a sliver is mush; product work sits at f/2.8–8".into()));
+                }
+                if num(k.get("focal")).is_some_and(|f| f < 20.0) {
+                    out.push((format!(".camera.keys[{i}].focal"), "under 20 mm distorts products; use 24 only for scale shots, 50–135 for heroes".into()));
+                }
+            }
+        }
+    }
+    if num(props.get("bloom")).is_some_and(|b| b > 0.15) {
+        out.push((".bloom".into(), "heavy bloom is the classic cheap-CG tell; keep it under 0.1 and let emissives carry it".into()));
+    }
+    // Floating spheres (an easy, common mistake: contact sells the scale).
+    for (i, o) in objs.iter().enumerate() {
+        if o.get("type").and_then(|t| t.as_str()) == Some("sphere") && o.get("keys").is_none() && o.get("count").is_none() {
+            let r = num(o.get("radius")).unwrap_or(0.5);
+            if let Some(y) = o.get("pos").and_then(|p| p.as_array()).and_then(|a| a.get(1)).and_then(|y| y.as_f64()) {
+                if (y as f32) - r > 0.03 && (y as f32) - r < 1.0 {
+                    out.push((format!(".objects[{i}].pos"), format!("the sphere floats {:.2} m above the floor; set y = radius ({r}) for contact, or lift it clearly", y as f32 - r)));
+                }
+            }
+        }
+    }
+    // Palette: more than three hues of colour fight each other.
+    let mut hues: Vec<f32> = Vec::new();
+    for o in objs {
+        let c = o.get("color").or_else(|| o.get("material").and_then(|m| m.get("base"))).and_then(|c| c.as_str());
+        if let Some(c) = c.and_then(|c| spec::color(&Value::String(c.into()), "").ok()) {
+            let (mx, mn) = (c.x.max(c.y).max(c.z), c.x.min(c.y).min(c.z));
+            if mx - mn > 0.08 * mx.max(1e-3) && mx > 0.02 {
+                let h = if mx == c.x { ((c.y - c.z) / (mx - mn)).rem_euclid(6.0) } else if mx == c.y { (c.z - c.x) / (mx - mn) + 2.0 } else { (c.x - c.y) / (mx - mn) + 4.0 } * 60.0;
+                if !hues.iter().any(|&q| ((q - h + 540.0) % 360.0 - 180.0).abs() < 25.0) {
+                    hues.push(h);
+                }
+            }
+        }
+    }
+    if hues.len() > 3 {
+        out.push((".objects".into(), format!("{} distinct hues; studio palettes hold to one or two plus neutrals, with the accent on the hero only", hues.len())));
+    }
 }
 
 /// Ink outlines from the primary pass: silhouettes (object id), creases
@@ -845,7 +1014,7 @@ impl Scene3d {
         let prof = std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some();
         if prof {
             trace::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed);
-            for r in trace::RAYS.iter().chain(&trace::TIMES) {
+            for r in trace::RAYS.iter().chain(&trace::TIMES).chain(&trace::CYCLES) {
                 r.store(0, std::sync::atomic::Ordering::Relaxed);
             }
         }
@@ -865,10 +1034,17 @@ impl Scene3d {
                 }
             }
         }
-        let mut scene = Scene::new(shapes, p.mats.clone(), Vec::new(), p.env.clone(), p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
+        // An animated rig rebuilds the lights for this frame (before the scene,
+        // which derives its floor lighting from them).
+        let env_t = match &p.rig_anim {
+            Some(ra) => ra.0.apply_at(&ra.1, ra.2, ra.3, t).0,
+            None => p.env.clone(),
+        };
+        let mut scene = Scene::new(shapes, p.mats.clone(), Vec::new(), env_t, p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
         scene.backdrop = p.backdrop;
         scene.glow = p.glow;
         scene.haze = p.haze;
+        scene.haze_height = p.haze_height;
         scene.lights = p.lights.clone();
         scene.caustics = p.caustics;
         scene.gobo = p.gobo;
@@ -955,31 +1131,38 @@ impl Scene3d {
             q.shadow_rays = q.shadow_rays.min(1);
             q.secondary_rays = 0;
         }
-        scene.render_frame(&cam, &prev, w, h, &q, &mut px);
-        let t_trace = clock.elapsed();
-        let layer = self.particles(t, dt, &cam, &prev, &mut px, w, h, assets);
-        let t_parts = clock.elapsed();
-        let mut pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
-        if draft {
-            // Drafts: a lighter denoise and no motion blur (focus blur stays: it is composition).
-            pp.denoise = pp.denoise.min(2);
-            pp.shutter = 0.0;
-        }
-        if let Some(path) = std::env::var_os("ANIKIT_SCENE3D_DUMP") {
-            // Development aid: the primary pass and post settings, for examples/post_bench.
-            post::dump(std::path::Path::new(&path), &px, w, h, &pp);
-        }
-        let vol = if p.shafts && p.haze.0 > 0.0 {
-            let depth: &[f32] = &px.depth;
-            let steps = match p.quality.edge_spp { 0..=3 => 8, 4..=8 => 16, _ => 32 };
-            Some(scene.volumetrics(&cam, w, h, depth, p.haze.0, steps))
-        } else {
-            None
-        };
-        let mut out = post::process_planes(&px, w, h, &pp, vol.as_ref().map(|v| post::Volume { px: v, w: w.div_ceil(2), h: h.div_ceil(2) }), layer.as_ref());
-        if let Some((width, ink)) = p.outline {
-            outlines(&mut out, &px, w, h, width, ink);
-        }
+        // Trace, particles and post run on the render pool (see `kernel::par::isolated`).
+        let (out, t_trace, t_parts) = kernel::par::isolated(|| {
+            scene.render_frame(&cam, &prev, w, h, &q, &mut px);
+            let t_trace = clock.elapsed();
+            let layer = self.particles(t, dt, &cam, &prev, &mut px, w, h, assets);
+            let t_parts = clock.elapsed();
+            let mut pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
+            if draft {
+                // Drafts: a lighter denoise and no motion blur (focus blur stays: it is composition).
+                pp.denoise = pp.denoise.min(2);
+                pp.shutter = 0.0;
+            }
+            if let Some(path) = std::env::var_os("ANIKIT_SCENE3D_DUMP") {
+                // Development aid: the primary pass and post settings, for examples/post_bench.
+                post::dump(std::path::Path::new(&path), &px, w, h, &pp);
+            }
+            let out = {
+                let vol = if p.shafts && p.haze.0 > 0.0 {
+                    let depth: &[f32] = &px.depth;
+                    let steps = match p.quality.edge_spp { 0..=3 => 8, 4..=8 => 16, _ => 32 };
+                    Some(scene.volumetrics(&cam, w, h, depth, p.haze.0, steps))
+                } else {
+                    None
+                };
+                let mut out = post::process_planes(&px, w, h, &pp, vol.as_ref().map(|v| post::Volume { px: v, w: w.div_ceil(2), h: h.div_ceil(2) }), layer.as_ref());
+                if let Some((width, ink)) = p.outline {
+                    outlines(&mut out, &px, w, h, width, ink);
+                }
+                out
+            };
+            (out, t_trace, t_parts)
+        });
         if prof {
             let ms = |d: std::time::Duration| d.as_secs_f64() * 1e3;
             eprintln!(
@@ -992,6 +1175,17 @@ impl Scene3d {
             );
             let tm: Vec<u64> = trace::TIMES.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
             eprintln!("  wall: centre pass {:.0} ms, refinement {:.0} ms ({:.1}% of pixels refined)", tm[0] as f64 / 1e3, tm[1] as f64 / 1e3, tm[2] as f64 * 100.0 / (w * h) as f64);
+            {
+                // TSC ticks per µs, calibrated once.
+                static HZ: std::sync::OnceLock<f64> = std::sync::OnceLock::new();
+                let hz = *HZ.get_or_init(|| {
+                    let (c, t) = (trace::tsc(), std::time::Instant::now());
+                    while t.elapsed().as_millis() < 50 {}
+                    (trace::tsc() - c) as f64 / t.elapsed().as_secs_f64() / 1e6
+                });
+                let cy: Vec<f64> = trace::CYCLES.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed) as f64 / hz / 1e3).collect();
+                eprintln!("  cpu (thread-sum): closest-hit traversal {:.0} ms, shadow/AO traversal {:.0} ms", cy[0], cy[1]);
+            }
             let r: Vec<u64> = trace::RAYS.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
             eprintln!("  rays: {:.2}M closest ({:.2}M radiance, {:.2}M floor reflections), {:.2}M shadow/AO, {:.2} primary samples per pixel", r[0] as f64 / 1e6, r[3] as f64 / 1e6, r[4] as f64 / 1e6, r[1] as f64 / 1e6, r[2] as f64 / (w * h) as f64);
         }
@@ -1226,7 +1420,36 @@ mod tests {
     }
 
     #[test]
+    fn height_fog_integrates_exactly() {
+        let e = env::Env::preset_tinted("studio", v3(1.0, 0.0, 0.0), v3(0.0, 0.0, 1.0), v3(1.0, 1.0, 1.0), v3(0.0, 1.0, 0.0)).unwrap();
+        let mut sc = Scene::new(Vec::new(), Vec::new(), Vec::new(), e, None);
+        sc.haze = (0.2, v3(0.5, 0.5, 0.5));
+        sc.haze_height = (0.8, 0.0);
+        for (o, d) in [(v3(0.0, 0.5, 0.0), norm(v3(1.0, 0.3, 0.0))), (v3(0.0, 3.0, 0.0), norm(v3(0.2, -0.4, 1.0))), (v3(0.0, 1.0, 0.0), v3(1.0, 0.0, 0.0))] {
+            let n = 20000;
+            let dist = 10.0;
+            let mut acc = 0.0f64;
+            for k in 0..n {
+                let y = o.y + d.y * dist * (k as f32 + 0.5) / n as f32;
+                acc += 0.2 * (-(y.max(0.0)) as f64 / 0.8).exp() * (dist / n as f32) as f64;
+            }
+            let got = sc.fog_depth(o, d, dist) as f64;
+            assert!((got - acc).abs() < 1e-3 * acc.max(1e-3), "{got} vs {acc}");
+        }
+        sc.haze_height = (0.0, 0.0);
+        assert!((sc.fog_depth(v3(0.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), 5.0) - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
     fn errors_suggest_fixes() {
+        let m = spec::material(&json!({ "extends": "chrome", "imperfections": 0.5, "dust": 0.2 }), &HashMap::new(), "m").unwrap();
+        assert_eq!(m.imperf, [0.5, 0.3, 0.25, 0.2]);
+        scene(json!({ "objects": [ { "type": "box", "material": { "extends": "lacquer", "smudges": 0.8, "scratches": 0.5 } } ] })).unwrap();
+        for set in ["plinth", "podium", "steps", "sweep", "field", "arches", "terrain"] {
+            scene(json!({ "set": set, "objects": [ { "type": "sphere", "radius": 0.3, "pos": [0, 0.3, 0] } ] })).unwrap();
+        }
+        let e = scene(json!({ "set": "plint", "objects": [] })).err().unwrap();
+        assert!(e.contains("did you mean `plinth`"), "{e}");
         for look in ["toon", "ink", "clay", "paper", "cardboard", "gouache"] {
             scene(json!({ "look": look, "objects": [ { "type": "sphere", "color": "#E4572E" } ] })).unwrap();
         }
@@ -1236,8 +1459,16 @@ mod tests {
         let e = scene(json!({ "look": "tooon", "objects": [] })).err().unwrap();
         assert!(e.contains("did you mean `toon`"), "{e}");
         assert_eq!(lint(&json!({ "env": "sunset", "objects": [ { "text": "A", "material": "gold" } ] })).len(), 1);
-        assert_eq!(lint(&json!({ "objects": [ { "text": "A" } ] })).len(), 1, "chrome on cyc without a flag");
-        assert!(lint(&json!({ "objects": [ { "text": "A" }, { "type": "card", "intensity": 0 } ] })).is_empty());
+        assert_eq!(lint(&json!({ "env": "cyc", "objects": [ { "text": "A" } ] })).len(), 1, "chrome on cyc without a flag");
+        assert!(lint(&json!({ "env": "cyc", "objects": [ { "text": "A" }, { "type": "card", "intensity": 0 } ] })).is_empty());
+        // Craft checks: default light, turntable orbit, dead camera, floating sphere, palette, bloom.
+        let w = lint(&json!({ "objects": [ { "type": "sphere", "radius": 0.3, "pos": [0, 0.6, 0] }, { "type": "box", "color": "#E4572E" }, { "type": "box", "color": "#29335C" }, { "type": "box", "color": "#A8C686" }, { "type": "box", "color": "#F3A712" }, { "type": "box", "color": "#7B2CBF" } ], "camera": { "preset": "orbit", "degrees": 360, "duration": 4 }, "bloom": 0.3 }));
+        let all = w.iter().map(|(p, m)| format!("{p}: {m}")).collect::<Vec<_>>().join("\n");
+        for needle in ["`rig`", "turntable", "floats", "hues", "bloom"] {
+            assert!(all.contains(needle), "missing {needle}: {all}");
+        }
+        let still = lint(&json!({ "env": "studio", "camera": { "keys": [ { "t": 0, "pos": [0, 1, 4], "target": [0, 0, 0] } ] }, "objects": [] }));
+        assert!(still.iter().any(|(_, m)| m.contains("breath")));
         // Scripts expand inside `objects`; open geometry parses.
         scene(json!({ "objects": [ { "script": "let o = []; for k in 0..3 { o.push(#{ type: \"lathe\", points: [[0.0, 0.0], [0.2, 0.3], [0.0, 0.6]], pos: [k * 0.5, 0.0, 0.0] }); } o" } ] })).unwrap();
         let e = scene(json!({ "objects": [ { "type": "sphere", "material": "crome" } ] })).err().unwrap();
@@ -1363,5 +1594,117 @@ mod tests {
         let hf = 2.0 * ((c.fov.to_radians() * 0.5).tan() * 16.0 / 9.0).atan();
         assert!((hf.to_degrees() - 54.43).abs() < 0.1, "{}", hf.to_degrees());
         assert!(c.aperture > 0.5, "f/2.8 at 10 m focus blurs the far field");
+    }
+}
+
+/// HDRI environments and PBR texture sets end to end, from local files (no network).
+#[cfg(test)]
+mod asset_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn dir(tag: &str) -> std::path::PathBuf {
+        let d = std::env::temp_dir().join(format!("anikit-s3d-assets-{tag}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    /// A 128×64 sky: blue above, brown below, a small 4000-nit sun.
+    fn write_hdr(path: &std::path::Path) {
+        let (w, h) = (128u32, 64u32);
+        let img = image::Rgb32FImage::from_fn(w, h, |x, y| {
+            if (60..62).contains(&x) && (14..16).contains(&y) {
+                image::Rgb([4000.0, 3800.0, 3400.0])
+            } else if y < h / 2 {
+                image::Rgb([0.35, 0.5, 0.8])
+            } else {
+                image::Rgb([0.12, 0.09, 0.06])
+            }
+        });
+        image::DynamicImage::ImageRgb32F(img).save(path).unwrap();
+    }
+
+    fn mean(px: &[u8]) -> [f32; 3] {
+        let n = (px.len() / 4) as f32;
+        let mut m = [0.0; 3];
+        for p in px.chunks_exact(4) {
+            for k in 0..3 {
+                m[k] += p[k] as f32 / n;
+            }
+        }
+        m
+    }
+
+    #[test]
+    fn hdri_env_lights_reflects_and_backs_the_scene() {
+        let d = dir("hdri");
+        let hdr = d.join("sky.hdr");
+        write_hdr(&hdr);
+        let props = |bg: Value| json!({
+            "env": { "hdri": hdr.to_string_lossy(), "background": bg },
+            "camera": { "keys": [ { "t": 0, "pos": [0, 0.6, 3], "target": [0, 0.5, 0], "focal": 40 } ] },
+            "objects": [ { "type": "sphere", "radius": 0.5, "pos": [0, 0.5, 0], "material": "chrome" } ]
+        });
+        let mut s = Scene3d::try_from(props(json!(true))).unwrap();
+        s.prepare().map_err(|e| e.0).unwrap();
+        let p = s.p();
+        assert!(p.env.map.is_some());
+        assert!(p.env.key_box().is_some(), "the sun becomes the traced key");
+        let px = s.render(0.0, 1.0 / 30.0, 64, 36, None);
+        // The top of the frame is the blue sky.
+        let top = mean(&px[..64 * 4 * 4]);
+        assert!(top[2] > top[0] + 10.0, "sky should be blue: {top:?}");
+        // Without the background, rays that miss see the dark studio backdrop instead.
+        let mut s2 = Scene3d::try_from(props(json!(false))).unwrap();
+        s2.prepare().map_err(|e| e.0).unwrap();
+        let top2 = mean(&s2.render(0.0, 1.0 / 30.0, 64, 36, None)[..64 * 4 * 4]);
+        assert!(top2[2] + 20.0 < top[2], "{top2:?} vs {top:?}");
+        // A mood that isn't one names the moods (no network needed to fail).
+        let e = Scene3d::try_from(json!({ "env": { "hdri": "sunsett" } })).and_then(|mut s| s.prepare().map_err(|e| e.0)).err().unwrap_or_default();
+        assert!(e.contains("sunset") && e.contains("mood"), "{e}");
+        // Unknown keys and bad values are reported.
+        let bad = Scene3d::try_from(json!({ "env": { "hdri": hdr.to_string_lossy(), "rotation": 3 } })).and_then(|mut s| s.prepare().map_err(|e| e.0));
+        let msg = bad.err().unwrap_or_default();
+        assert!(msg.contains("rotation"), "{msg}");
+        let _ = std::fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn texture_sets_tint_and_roughen_a_material() {
+        let d = dir("pbr");
+        // Red albedo, mid roughness, flat normal.
+        image::RgbImage::from_pixel(32, 32, image::Rgb([200, 30, 30])).save(d.join("Red_Color.jpg")).unwrap();
+        image::GrayImage::from_pixel(32, 32, image::Luma([200])).save(d.join("Red_Roughness.png")).unwrap();
+        image::RgbImage::from_pixel(32, 32, image::Rgb([128, 128, 255])).save(d.join("Red_NormalGL.png")).unwrap();
+        let s = Scene3d::try_from(json!({
+            "env": "studio",
+            "objects": [ { "type": "sphere", "radius": 0.5, "pos": [0, 0.5, 0], "material": { "texture": d.to_string_lossy(), "scale": 2 } } ]
+        }))
+        .and_then(|mut s| s.prepare().map_err(|e| e.0).map(|_| s))
+        .unwrap();
+        let m = &s.p().mats[s.p().objs.iter().find_map(|o| o.parts.first().map(|x| x.1 as usize)).unwrap_or(0)];
+        assert!(m.pbr > 0);
+        let px = s.render(0.0, 1.0 / 30.0, 48, 48, None);
+        // The sphere in the middle reads red.
+        let c = &px[(24 * 48 + 24) * 4..(24 * 48 + 24) * 4 + 3];
+        assert!(c[0] as i32 > c[1] as i32 + 30, "{c:?}");
+        // The same set on the ground: the floor reads red too.
+        let g = Scene3d::try_from(json!({
+            "env": "studio", "floor": { "texture": d.to_string_lossy() },
+            "camera": { "keys": [ { "t": 0, "pos": [0, 2, 2], "target": [0, 0, 0], "focal": 30 } ] },
+            "objects": [ { "type": "sphere", "radius": 0.1, "pos": [5, 0.1, 5] } ]
+        }))
+        .and_then(|mut s| s.prepare().map_err(|e| e.0).map(|_| s))
+        .unwrap();
+        let px = g.render(0.0, 1.0 / 30.0, 32, 32, None);
+        let c = &px[(16 * 32 + 16) * 4..(16 * 32 + 16) * 4 + 3];
+        assert!(c[0] as i32 > c[1] as i32 + 20, "floor {c:?}");
+        // A folder without a colour map is an error that says so.
+        let empty = dir("pbr-empty");
+        let e = Scene3d::try_from(json!({ "objects": [ { "type": "sphere", "material": { "texture": empty.to_string_lossy() } } ] })).and_then(|mut s| s.prepare().map_err(|e| e.0));
+        assert!(e.unwrap_err().contains("albedo"));
+        let _ = std::fs::remove_dir_all(&d);
+        let _ = std::fs::remove_dir_all(&empty);
     }
 }

@@ -1,0 +1,4 @@
+{ "size": "1080p", "scenes": [ { "duration": 3, "background": "#f1efe8", "layers": [
+  { "text": "variable weather", "font": "Fraunces", "size": "20vh", "color": "#1a1714", "axes": { "wght": 150, "SOFT": 0 }, "letterSpacing": "-0.02em",
+    "animator": { "by": "char", "axes": { "wght": 900, "SOFT": 100 }, "start": 0, "end": 0.25, "smooth": 0.3,
+      "offset": "=-0.3 + 1.6*fract(t/2.5)" } } ] } ] }

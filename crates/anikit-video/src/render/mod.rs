@@ -1421,10 +1421,19 @@ fn draw_offscreen(
     let org = st.org;
     // Filtered layers without a key are cached by content: a static glow or
     // blur is filtered once, while its opacity can still animate.
-    let cache_key = cache_key.or_else(|| {
-        let frame_base = Affine::translate((org.0 as f64, org.1 as f64)) * base;
-        incremental::auto_layer_key(inner, filters, &frame_base)
-    });
+    let frame_base = Affine::translate((org.0 as f64, org.1 as f64)) * base;
+    let cache_key = match cache_key {
+        // An explicit key names the layer's content; where it lands in the frame is
+        // mixed in, so a layer moved by an outer transform is never blitted stale.
+        Some(k) => {
+            let mut h = k ^ 0x9e37_79b9_7f4a_7c15;
+            for c in frame_base.as_coeffs() {
+                h = (h ^ c.to_bits()).wrapping_mul(0x0000_0100_0000_01b3).rotate_left(29);
+            }
+            Some(h)
+        }
+        None => incremental::auto_layer_key(inner, filters, &frame_base),
+    };
     let cache_key = cache_key.filter(|_| !st.reference);
     let cached = cache_key.and_then(|k| st.cache.get_mut(&k)).map(|e| {
         e.last_used = now;
@@ -1475,7 +1484,10 @@ fn draw_offscreen(
             sub.reset();
             st.pool.push(sub);
             for f in filters {
-                if let dl::Filter::Halftone(ht) = f {
+                if let dl::Filter::Ink { amount, scale, seed, ox, oy } = f {
+                    let g = dl::Filter::Ink { amount: *amount, scale: *scale, seed: *seed, ox: ox + (org.0 as f64 + r.x0) as f32, oy: oy + (org.1 as f64 + r.y0) as f32 };
+                    filter::apply(&g, pm.data_as_u8_slice_mut(), w as usize, h as usize, &mut st.filters);
+                } else if let dl::Filter::Halftone(ht) = f {
                     // The screen is fixed to the frame, not to this bitmap.
                     let ht = dl::Halftone { ox: ht.ox + (org.0 as f64 + r.x0) as f32, oy: ht.oy + (org.1 as f64 + r.y0) as f32, ..*ht };
                     filter::apply(&dl::Filter::Halftone(ht), pm.data_as_u8_slice_mut(), w as usize, h as usize, &mut st.filters);

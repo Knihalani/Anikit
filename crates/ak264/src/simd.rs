@@ -792,6 +792,101 @@ unsafe fn _mm_hadd_epi16_sse2(v: std::arch::x86_64::__m128i) -> std::arch::x86_6
     _mm_packs_epi32(p, p)
 }
 
+/// Sum of |8×8 Hadamard| of (a − b) over the 8×8 block at offset `o` of two
+/// 16-wide blocks (unnormalised).
+#[inline]
+pub fn had8_sum(a: &[u8; 256], b: &[u8; 256], o: usize) -> u32 {
+    assert!(o + 7 * 16 + 8 <= 256);
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: SSE2 is baseline on x86_64; the 8-byte loads stay inside `a`/`b` (asserted).
+    unsafe {
+        use std::arch::x86_64::*;
+        let z = _mm_setzero_si128();
+        let mut r = [z; 8];
+        for (y, v) in r.iter_mut().enumerate() {
+            let pa = _mm_unpacklo_epi8(_mm_loadl_epi64(a.as_ptr().add(o + y * 16) as *const __m128i), z);
+            let pb = _mm_unpacklo_epi8(_mm_loadl_epi64(b.as_ptr().add(o + y * 16) as *const __m128i), z);
+            *v = _mm_sub_epi16(pa, pb);
+        }
+        #[inline(always)]
+        unsafe fn bf(r: &mut [__m128i; 8]) {
+            for (i, j) in [(0, 1), (2, 3), (4, 5), (6, 7), (0, 2), (1, 3), (4, 6), (5, 7), (0, 4), (1, 5), (2, 6), (3, 7)] {
+                let (x, y) = (r[i], r[j]);
+                r[i] = _mm_add_epi16(x, y);
+                r[j] = _mm_sub_epi16(x, y);
+            }
+        }
+        bf(&mut r);
+        // transpose 8×8 i16
+        let t0 = _mm_unpacklo_epi16(r[0], r[1]);
+        let t1 = _mm_unpackhi_epi16(r[0], r[1]);
+        let t2 = _mm_unpacklo_epi16(r[2], r[3]);
+        let t3 = _mm_unpackhi_epi16(r[2], r[3]);
+        let t4 = _mm_unpacklo_epi16(r[4], r[5]);
+        let t5 = _mm_unpackhi_epi16(r[4], r[5]);
+        let t6 = _mm_unpacklo_epi16(r[6], r[7]);
+        let t7 = _mm_unpackhi_epi16(r[6], r[7]);
+        let u0 = _mm_unpacklo_epi32(t0, t2);
+        let u1 = _mm_unpackhi_epi32(t0, t2);
+        let u2 = _mm_unpacklo_epi32(t1, t3);
+        let u3 = _mm_unpackhi_epi32(t1, t3);
+        let u4 = _mm_unpacklo_epi32(t4, t6);
+        let u5 = _mm_unpackhi_epi32(t4, t6);
+        let u6 = _mm_unpacklo_epi32(t5, t7);
+        let u7 = _mm_unpackhi_epi32(t5, t7);
+        r[0] = _mm_unpacklo_epi64(u0, u4);
+        r[1] = _mm_unpackhi_epi64(u0, u4);
+        r[2] = _mm_unpacklo_epi64(u1, u5);
+        r[3] = _mm_unpackhi_epi64(u1, u5);
+        r[4] = _mm_unpacklo_epi64(u2, u6);
+        r[5] = _mm_unpackhi_epi64(u2, u6);
+        r[6] = _mm_unpacklo_epi64(u3, u7);
+        r[7] = _mm_unpackhi_epi64(u3, u7);
+        bf(&mut r);
+        // |x| summed: values fit i16 (|x| ≤ 64·255); madd pairs into i32
+        let one = _mm_set1_epi16(1);
+        let mut acc = z;
+        for v in r {
+            let ab = _mm_max_epi16(v, _mm_sub_epi16(z, v));
+            acc = _mm_add_epi32(acc, _mm_madd_epi16(ab, one));
+        }
+        let acc = _mm_add_epi32(acc, _mm_shuffle_epi32::<0b01_00_11_10>(acc));
+        let acc = _mm_add_epi32(acc, _mm_shuffle_epi32::<0b10_11_00_01>(acc));
+        _mm_cvtsi128_si32(acc) as u32
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    had8_sum_scalar(a, b, o)
+}
+
+/// Scalar reference of [`had8_sum`].
+#[cfg_attr(target_arch = "x86_64", allow(dead_code))]
+pub fn had8_sum_scalar(a: &[u8; 256], b: &[u8; 256], o: usize) -> u32 {
+    let mut m = [[0i32; 8]; 8];
+    for y in 0..8 {
+        for x in 0..8 {
+            m[y][x] = a[o + y * 16 + x] as i32 - b[o + y * 16 + x] as i32;
+        }
+    }
+    let bf = |m: &mut [[i32; 8]; 8]| {
+        for (i, j) in [(0, 1), (2, 3), (4, 5), (6, 7), (0, 2), (1, 3), (4, 6), (5, 7), (0, 4), (1, 5), (2, 6), (3, 7)] {
+            for k in 0..8 {
+                let (x, y) = (m[i][k], m[j][k]);
+                m[i][k] = x + y;
+                m[j][k] = x - y;
+            }
+        }
+    };
+    bf(&mut m);
+    let mut t = [[0i32; 8]; 8];
+    for y in 0..8 {
+        for x in 0..8 {
+            t[x][y] = m[y][x];
+        }
+    }
+    bf(&mut t);
+    t.iter().flatten().map(|v| v.unsigned_abs()).sum()
+}
+
 /// Sum and sum of squares of a block whose length is a multiple of 16.
 #[inline]
 pub fn sum_sq(p: &[u8]) -> (u32, u32) {
@@ -1051,6 +1146,18 @@ mod maxsad_test {
                 }
             }
             assert_eq!(super::max_sad4(&a[..64], &b[..64], 8, 8), mc);
+        }
+    }
+}
+
+#[cfg(test)]
+mod had8_tests {
+    #[test]
+    fn had8_matches_scalar() {
+        let a: [u8; 256] = std::array::from_fn(|i| (i * 97 % 256) as u8);
+        let b: [u8; 256] = std::array::from_fn(|i| (255 - i * 31 % 256) as u8);
+        for o in [0, 8, 128, 136] {
+            assert_eq!(super::had8_sum(&a, &b, o), super::had8_sum_scalar(&a, &b, o));
         }
     }
 }
