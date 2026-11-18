@@ -222,6 +222,8 @@ pub struct InkSpec {
     /// Size of the blotches in px. Default 28.
     pub scale: Option<f64>,
     pub seed: Option<u32>,
+    /// Pin the wear to the frame (the paper is the screen) instead of the layer (default: it moves with the layer).
+    pub fixed: Option<bool>,
 }
 
 /// `brush`: on, or the full settings.
@@ -795,7 +797,7 @@ pub struct Layer {
     /// `photocopy`, `newsprint`, `engraving`, `riso`, `screenprint`.
     pub print: Option<String>,
     /// Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ "amount", "scale": px, "seed" }`.
-    /// Fixed to the frame like the paper, so moving shapes travel through it.
+    /// The wear moves with the layer (material locked to the object); `fixed: true` pins it to the frame.
     pub ink_texture: Option<InkValue>,
     /// Collage cut-out: `"torn"`, `"scissor"` or `"clean"`, or `{ "edge", "amount": px, "rim": px, "rimColor", "shadow": bool, "seed" }`.
     /// Cuts the layer's box with that edge, backs it with a paper rim and a printed shadow. Needs a numeric `width`/`height` (or a `cell`).

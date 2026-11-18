@@ -610,6 +610,7 @@ fn empty_node(kind: Kind) -> Node {
         treat: Vec::new(),
         treat_slot: 0,
         live_pattern: None,
+        ink_follow: false,
         brush: None,
         step: 0.0,
         boil: None,
@@ -3207,6 +3208,7 @@ impl C<'_> {
                 spec::InkValue::Amount(a) => (Num::Num(*a), 28.0, 1),
                 spec::InkValue::Full(o) => (o.amount.clone().unwrap_or(Num::Num(0.35)), o.scale.unwrap_or(28.0), o.seed.unwrap_or(1)),
             };
+            n.ink_follow = !matches!(iv, spec::InkValue::Full(spec::InkSpec { fixed: Some(true), .. }));
             n.treat.push(Filter::Ink { amount: 0.35, scale: scale.max(1.0) as f32, seed, ox: 0.0, oy: 0.0 });
             ink_num = Some(amount);
         }
@@ -5535,7 +5537,7 @@ fn print_preset(l: &Layer, p: &str) -> Option<Layer> {
             gain: None,
         })
     };
-    let ink = |a: f64, scale: f64| spec::InkValue::Full(spec::InkSpec { amount: Some(Num::Num(a)), scale: Some(scale), seed: None });
+    let ink = |a: f64, scale: f64| spec::InkValue::Full(spec::InkSpec { amount: Some(Num::Num(a)), scale: Some(scale), seed: None, fixed: None });
     match p {
         "photocopy" => {
             o.duotone.get_or_insert_with(|| vec!["#161616".into(), "#efeee9".into()]);

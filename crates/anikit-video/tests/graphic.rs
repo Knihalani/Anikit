@@ -194,3 +194,16 @@ fn print_presets_expand_and_yield_to_explicit_keys() {
     let bad = parse_json(r#"{ "scenes": [ { "layers": [ { "shape": "circle", "print": "xerox" } ] } ] }"#).unwrap();
     assert!(Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string().contains("print"));
 }
+
+#[test]
+fn ink_texture_follows_the_layer_unless_fixed() {
+    let ink_at = |src: &str, t: f32| {
+        let e = ev(src);
+        let ops = e.eval(t).ops;
+        ops.iter().find_map(|o| if let Op::PushLayer { filters, .. } = o { filters.iter().find_map(|f| if let Filter::Ink { ox, .. } = f { Some(*ox) } else { None }) } else { None }).unwrap()
+    };
+    let moving = r##"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "width": 100, "height": 100, "x": "=200 + t * 300", "inkTexture": 0.3 } ] } ] }"##;
+    assert!((ink_at(moving, 0.0) - ink_at(moving, 1.0) - 300.0).abs() < 0.5);
+    let fixed = r##"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "width": 100, "height": 100, "x": "=200 + t * 300", "inkTexture": { "amount": 0.3, "fixed": true } } ] } ] }"##;
+    assert_eq!(ink_at(fixed, 0.0), ink_at(fixed, 1.0));
+}
