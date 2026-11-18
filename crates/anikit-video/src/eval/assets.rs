@@ -416,6 +416,6 @@ mod tests {
                 a.image_premul(key, 1, 1, &mut || vec![2; 4]);
             }
         }
-        println!("reused_key_make_calls={reused_key_make_calls}");
+        assert_eq!(reused_key_make_calls, 1);
     }
 }
