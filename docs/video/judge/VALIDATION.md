@@ -142,3 +142,28 @@ Two false accepts (div-g, div-f) and one false reject (NASA, a slow continuous f
 The separation is 1–2 points. Strips also nudged div-f's motion up from 5 (without strips) to 6. That is too weak to gate on, and it would inflate the "full" score compared with r1.
 
 **What would fix it:** lawful clips of real motion-design and kinetic-type work. That means owner permission or press files, or the user approving clip downloads for evaluation only. Until then, motion is judged inside the stills stage (median 3 for rejected and r1 work, 7 for controls) and in the critic's frame pairs and pace check.
+
+### Motion compare v2: real motion-design clips (01:20)
+
+REFS then added lawful motion-design clips: 3 VPRO ident and type pieces by Simon François (CC BY 3.0), NASA's "How Far Away Is Voyager 1?" (PD), Blender's 2D "Hero" (CC BY) and Charge. These 6 became the motion reference pool (`.cache/judge-clips-md`; `judge.py sync-bench` rebuilds it).
+
+| Candidate | Motion | Judged pro | Refs mean |
+|---|---|---|---|
+| div-a (rejected) | 3 | 0/3 | 7.0 |
+| div-c (rejected) | 3 | 0/3 | 8.0 |
+| div-f (rejected) | 7 | **3/3** | 7.0 |
+| div-g (rejected) | 6 | **3/3** | 7.33 |
+| r1 g-titles | 3 | 1/3 | 7.33 |
+| r1 h-ident | 3 | 0/3 | 7.67 |
+| r1 k-sports | 4 | 0/3 | 7.0 |
+| control: VPRO idents | 7 | 3/3 | 6.33 |
+| control: VPRO leader | 7 | 3/3 | 8.0 |
+| control: Voyager | 6 | 3/3 | 8.0 |
+| control: Hero | 8 | 3/3 | 5.67 |
+| control: VPRO launch reel | 4 | **0/3** | 7.67 |
+
+This is better than v1: weak motion separates clearly, with 5 of 7 of our pieces scoring 3–4 against refs at 7–8. Two problems remain:
+- div-f and div-g read as professional motion. The user rejected them as boring and for "AI slop typography", not for their motion, so this may be a fair motion verdict. But it can't be validated against the user's words.
+- One false reject: the launch-reel excerpt. It is also rated 0–1/3 when used as a reference, so the excerpt itself may be weak.
+
+**Decision:** off by default (`JUDGE_MOTION=1` enables it as an informational column, never part of the verdict). The parent will ask the user at 07:00 whether to download the real reference clips for evaluation. With those, this stage can be validated properly.
