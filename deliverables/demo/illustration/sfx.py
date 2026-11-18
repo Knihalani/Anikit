@@ -55,19 +55,20 @@ for f0, period, gain, ph in ((4300, 0.62, 0.22, 0.0), (3900, 0.81, 0.15, 0.27), 
             m = int(0.022 * SR)
             if s + m < n:
                 chirp[s:s + m] += np.sin(np.pi * np.arange(m) / m) ** 2
-        k += period * (0.85 + 0.3 * rng.random())
+        k += period * (0.6 + 1.2 * rng.random()) + (1.5 * rng.random() if rng.random() < 0.25 else 0)
     amb += gain * chirp * np.sin(2 * np.pi * f0 * t)
 write("night", amb, 0.5)
 
 # crayon scribble: bursts of band noise, one per stroke
 n = int(0.7 * SR)
-x = bandnoise(n, 0.55, 0.05)
+x = bandnoise(n, 0.82, 0.3)
 strokes = np.zeros(n)
 for s in np.arange(0, 0.62, 0.075):
     a = int((s + 0.01 * rng.random()) * SR)
     m = int(0.06 * SR)
     strokes[a:a + m] += np.sin(np.pi * np.arange(m) / m) ** 1.5 * (0.6 + 0.4 * rng.random())
-write("scribble", x * strokes, 0.7)
+fade = np.minimum(1, np.minimum(np.arange(n) / (0.06 * SR), (n - np.arange(n)) / (0.15 * SR)))
+write("scribble", x * strokes * fade, 0.7)
 
 # hop thump: low sine with a pitch drop and a little grass
 n = int(0.25 * SR)

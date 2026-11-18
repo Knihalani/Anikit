@@ -327,21 +327,33 @@ def fg_tufts():
     return L
 
 
-def crayon_world():
-    """The child's crayon drawing of the scene; the papercut world fills in underneath it, then the lines fade."""
+CRAYON_BUNNY = [  # bunny-local coordinates, feet at (0, 0), same proportions as bunny()
+    [(-42, -2), (-82, -21), (-76, -132), (0, -143), (74, -139), (82, -15), (34, 0)],
+    [(34, -114), (-19, -124), (-19, -208), (34, -213), (86, -210), (91, -124), (42, -114)],
+    [(13, -202), (-11, -263), (-6, -310), (13, -309), (34, -303), (34, -242), (25, -206)],
+    [(46, -206), (46, -263), (61, -303), (78, -299), (93, -284), (76, -232), (59, -202)],
+    [(-63, -51), (-82, -63), (-78, -80), (-61, -80)],
+]
+
+
+def crayon_world(bx, by, s):
+    """The child's crayon drawing of the scene (hills, stars and the bunny, drawn where the
+    real bunny will stand); the papercut world fills in underneath it, then the lines fade."""
+    def P(x, y):
+        return f"{bx + s * x:.0f} {by + s * y:.0f}"
     paths = [
         {"d": "M-20 650 C 300 600, 620 640, 960 655 S 1600 610, 1940 640", "size": 9},
         {"d": "M-20 805 C 400 770, 900 830, 1300 795 S 1700 780, 1940 805", "size": 10},
-        {"d": "M300 858 C 262 840, 268 735, 340 724 C 410 728, 418 846, 372 860 Z", "size": 10},
-        {"d": "M372 752 C 322 742, 322 662, 372 658 C 422 660, 426 742, 380 752", "size": 10},
-        {"d": "M352 668 C 330 610, 334 565, 352 566 C 372 572, 372 630, 364 664", "size": 9},
-        {"d": "M384 664 C 384 610, 398 572, 414 576 C 428 590, 412 640, 396 668", "size": 9},
-        {"d": "M280 812 C 262 800, 266 784, 282 784", "size": 9},
-        {"d": "M394 700 l 4 2", "size": 12},
-        {"d": "M120 220 l 18 -40 l 18 40 l -42 -25 h 48 Z", "size": 5},
-        {"d": "M860 120 l 12 -26 l 12 26 l -28 -16 h 32 Z", "size": 5},
     ]
-    return {"component": "sketch", "end": 1.9, "exit": {"preset": "fadeOut", "duration": 0.5},
+    for pts in CRAYON_BUNNY:
+        d = "M" + P(*pts[0])
+        for i in range(1, len(pts) - 2, 3):
+            d += " C " + ", ".join(P(*q) for q in pts[i:i + 3])
+        paths.append({"d": d, "size": 13})
+    paths.append({"d": f"M{P(57, -168)} L {P(61, -165)}", "size": 16})
+    paths += [{"d": "M120 220 l 18 -40 l 18 40 l -42 -25 h 48 Z", "size": 5},
+              {"d": "M860 120 l 12 -26 l 12 26 l -28 -16 h 32 Z", "size": 5}]
+    return {"component": "sketch", "end": 1.3, "exit": {"preset": "fadeOut", "duration": 0.4},
             "props": {"draw": 0.45, "stagger": 0.07, "boil": 8, "color": CRAYON, "texture": "marker", "pressure": "even", "paths": paths}}
 
 # ------------------------------------------------------------------ scenes
@@ -355,15 +367,15 @@ scenes.append({
                            {"to": {"zoom": 2.6, "x": -60, "y": 230}, "at": 2.65, "duration": 0.85, "ease": "inCubic"}]},
     "layers": [
         bedroom(False),
-        text("Once upon\na tonight,", PARENT, "8.4vh", "9%", "12%", 0.25, end=3.2, exit="fadeOut", enter={"preset": "mask by line up", "duration": 0.9}, lineHeight=0.98),
+        text("Once upon\na time,", PARENT, "8.4vh", "9%", "12%", 0.25, end=3.2, exit="fadeOut", enter={"preset": "mask by line up", "duration": 0.9}, lineHeight=0.98),
         text("a bunny!", CHILD, "12vh", "27%", "31%", 1.0, end=3.2, exit="fadeOut", enter={"preset": "wipeIn", "duration": 0.55}, rotation=-7),
     ],
 })
 
 # 2. Quilt country: the quilt's hills become the story. 3.8 - 7.4
 story_pal = ["#0f1640", "#3a3f86", "#3c4a8a", "#6b3a6e"]
-walk = hops(-420, 330, 0.9, 3.4, 4, 70)
-g2, s2 = bunny("b", 760, 860, 0.95, walk=walk)
+walk = hops(-460, 330, 0.9, 3.4, 4, 60, s=1.4)
+g2, s2 = bunny("b", 760, 990, 1.5, walk=walk)
 moon_outline = illo([
     sh("circle", cx=1420, cy=250, r=120, fill="none", stroke=CRAYON, weight=[4, 7], gaps=0.45, boil=8,
        sway={"rotate": 4, "period": 6}),
@@ -389,7 +401,7 @@ scenes.append({
         {"enter": {"preset": "fadeIn", "delay": 0.45, "duration": 0.7}, "component": "plants", "props": {"style": "papercut", "time": "night", "species": ["grass", "flowers"], "count": 14, "spread": [0, 1],
                                            "ground": 0.99, "size": 160, "wind": 0.5, "onTwos": True,
                                            "colors": {"foliage": ["#5a2f4e", "#8a4f3a", "#c76a5a"], "trunk": "#3a1f2e", "bark": "#3a1f2e", "accent": GOLD}}},
-        crayon_world(),
+        crayon_world(300, 990, 1.5),
         dict(illo(s2, g2), enter={"preset": "fadeIn", "delay": 0.7, "duration": 0.25}),
         fg_tufts(),
     ],
@@ -399,7 +411,7 @@ scenes.append({
 })
 
 # 3. The pond: the moon is in the water. 7.4 - 11.0
-g3, s3 = bunny("c", 470, 985, 1.15, walk=hops(-360, 0, 0.0, 1.3, 2, 60, hold=3.4), look_down=True)
+g3, s3 = bunny("c", 360, 1150, 2.0, walk=hops(-640, 0, 0.0, 1.3, 2, 60, s=1.5, hold=3.4), look_down=True)
 refl = illo([
     sh("ellipse", cx=1180, cy=890, rx=160, ry=46, fill={"stops": [[0, "#fff0b8"], [0.62, "#000000"], [1, "#000000"]], "gradient": "radial"},
        opacity=0.85, blend="screen", outline=False, sway={"x": 8, "scale": 0.03, "period": 1.6}),
@@ -408,7 +420,7 @@ refl = illo([
 ], grain=0.05)
 arrow = {"component": "brush", "props": {"d": "M1500 330 C 1560 520, 1470 690, 1330 810 M1330 810 l 56 -2 M1330 810 l 10 -54",
                                          "texture": "marker", "color": CRAYON, "size": 14, "pressure": "even", "draw": 0.7, "delay": 0.5, "boil": 8}}
-s3.insert(0, sh("path", d="M-60 1100 L -60 900 C 120 880, 420 900, 640 950 C 760 980, 820 1040, 860 1100 Z", fill="#3a2142",
+s3.insert(0, sh("path", d="M-60 1100 L -60 960 C 200 930, 520 960, 700 1010 C 780 1040, 820 1080, 840 1100 Z", fill="#3a2142",
                   shade={"amount": 0.5, "offset": 0.1, "rim": 0.02}, texture={"style": "contour", "amount": 0.3}))
 scenes.append({
     "id": "pond", "duration": 3.4, "background": "#0f1640",
@@ -444,12 +456,10 @@ g4, s4 = bunny("d", 560, 1010, 2.1, lantern=False,
 moon_up = illo([
     sh("circle", cx=1260, cy=560, r=420, fill={"stops": [[0, "#ffe7a6"], [0.62, "#000000"], [1, "#000000"]], "gradient": "radial"}, blend="screen", outline=False,
        animate={"keys": [{"t": 0, "opacity": 0.15, "y": 300}, {"t": 0.6, "opacity": 0.2, "y": 300}, {"t": 1.6, "opacity": 1, "y": 0, "ease": "out"}]}),
-    sh("circle", name="mcut4", cx=1336, cy=506, r=153, visible=False,
-       animate={"keys": [{"t": 0, "y": 360}, {"t": 0.6, "y": 360}, {"t": 1.5, "y": -20, "ease": "outBack"}, {"t": 1.9, "y": 0}]}),
+    sh("circle", name="mcut4", cx=1336, cy=506, r=153, visible=False),
     sh("circle", cx=1260, cy=560, r=170, fill="#ffe3a0", shade={"amount": 0.4, "offset": 0.08, "rim": 0.03},
        texture={"style": "halftone", "amount": 0.45, "scale": 9}, cut=["mcut4"],
-       animate={"keys": [{"t": 0, "y": 360, "squash": 0.6}, {"t": 0.6, "y": 360, "squash": 0.6}, {"t": 1.5, "y": -20, "squash": 1.08, "ease": "out"},
-                         {"t": 1.9, "y": 0, "squash": 1.0, "ease": "inOut"}]}),
+       animate={"keys": [{"t": 0, "opacity": 0}, {"t": 1.35, "opacity": 0}, {"t": 1.7, "opacity": 1, "ease": "out"}]}),
     # drips
     sh("ellipse", cx=1200, cy=760, rx=9, ry=14, fill="#9fd4ff", outline=False,
        animate={"keys": [{"t": 0, "opacity": 0}, {"t": 1.4, "opacity": 0, "y": -60}, {"t": 1.5, "opacity": 1, "y": -60}, {"t": 2.3, "y": 200, "opacity": 0, "ease": "in"}]}),
@@ -469,6 +479,10 @@ scenes.append({
                                            "ground": 1.0, "size": 420, "wind": 0.5, "onTwos": True,
                                            "colors": {"foliage": ["#2a1830", "#3a2142", "#6b3a6e"], "trunk": "#2a1830", "bark": "#2a1830", "accent": GOLD}}},
         illo(s4, g4),
+        text("moon.", dict(PARENT, color="#fff3cf"), "15vh", 1250, 560, 0.0, anchor="center", end=1.75, exit={"preset": "fadeOut", "duration": 0.35},
+             animate=[{"from": {"y": "+330", "rotation": 14, "opacity": 0.5}, "to": {"y": "+0", "rotation": -4, "opacity": 1}, "at": 0.45, "duration": 0.95, "ease": "outBack"},
+                      {"to": {"scale": 1.15}, "at": 1.4, "duration": 0.35, "ease": "outCubic"}],
+             shadow={"x": 0, "y": 0, "blur": 30, "color": "#ffcf6aaa"}),
         text("Dreamed up", PARENT, "9vh", "56%", "9%", 0.05, enter={"preset": "mask by line up", "duration": 0.7}),
         text("together,", CHILD, "13vh", "66%", "19%", 0.25, enter={"preset": "wipeIn", "duration": 0.4}, rotation=-5),
     ],
@@ -515,16 +529,14 @@ scenes.append({
 scenes.append({
     "audio": [{"src": "sfx/scribble.wav", "at": 0.6, "volume": 0.45}],
     "id": "end", "duration": 3.1, "background": WALL, "transition": {"type": "crossfade", "duration": 0.6},
-    "camera": {"animate": [{"from": {"zoom": 1.35, "x": -330, "y": 160}, "to": {"zoom": 1.0, "x": 0, "y": 0}, "duration": 2.2, "ease": "inOutCubic"}]},
+    "camera": {"animate": [{"from": {"zoom": 1.35, "x": 182, "y": -57}, "to": {"zoom": 1.0, "x": 0, "y": 0}, "duration": 2.2, "ease": "inOutCubic"}]},
     "layers": [
         bedroom(True),
-        text("the end.", CHILD, "15vh", "6%", "7%", 0.6, enter={"preset": "wipeIn", "duration": 0.6}, rotation=-6),
-        text("(until tomorrow night)", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 72, "wght": 380}), "4.6vh", "8%", "28%", 1.0,
-             enter={"preset": "mask by line up", "duration": 0.6}, italic=True),
-        text("Burrow", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 144, "wght": 620}), "11vh", 1436, 560, 1.15,
-             enter={"preset": "mask by line up", "duration": 0.7}, letterSpacing="-0.02em", color="#fff3cf"),
-        text("bedtime stories\nyou make together", dict(PARENT, axes={"SOFT": 100, "opsz": 24, "wght": 420}), "3vh", 1444, 690, 1.5, lineHeight=1.2,
-             enter={"preset": "fadeUp", "duration": 0.5}, color="#d9d2ec"),
+        text("Burrow", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 144, "wght": 620}), "17vh", "5.5%", "6%", 0.9,
+             enter={"preset": "mask by line up", "duration": 0.8}, letterSpacing="-0.02em", color="#fff3cf"),
+        text("bedtime stories you make together,\nread aloud every night", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 36, "wght": 400}), "3.9vh", "6.2%", "26%", 1.4,
+             enter={"preset": "mask by line up", "duration": 0.6}, lineHeight=1.2, italic=True),
+        text("the end.", CHILD, "7vh", 1010, 360, 1.8, anchor="center", enter={"preset": "wipeIn", "duration": 0.45}, rotation=-6),
     ],
 })
 
@@ -537,7 +549,7 @@ for sc in scenes:
 spec = {
     "size": "16:9", "fps": 24, "encode": {"crf": 25},
     "intent": {"pace": "calm", "audience": "parents of 3-7 year olds", "tone": "warm, hushed, wonder"},
-    "post": {"bloom": 0.14, "bloomThreshold": 0.72, "halation": 0.18, "vignette": 0.3, "grain": 0.035, "grainSize": 1.2},
+    "post": {"bloom": 0.14, "bloomThreshold": 0.72, "halation": 0.18, "vignette": 0.3, "grain": 0.018, "grainSize": 1.2},
     "music": {
         "bpm": 72, "meter": "3/4", "key": "F", "end": "ring", "master": {"lufs": -15, "reverb": "hall"},
         "tracks": [
@@ -550,7 +562,7 @@ spec = {
              "at": 11.25, "gain": -9, "reverb": 0.6, "pan": 0.25},
         ],
     },
-    "audio": [{"src": "sfx/night.wav", "volume": 0.55}],
+    "audio": [{"src": "sfx/night.wav", "volume": 0.35, "fadeIn": 1.0, "fadeOut": 1.5}],
     "scenes": scenes,
 }
 
