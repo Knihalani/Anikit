@@ -1691,6 +1691,7 @@
           ]
         },
         "start": {
+          "description": "When the layer appears (seconds into the scene). `delay` means the same.",
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
@@ -1714,6 +1715,28 @@
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "onNotes": {
+          "description": "Generated layers, one per note of the music: `{ \"onNotes\": { \"track\": \"drums\", \"keys\": [\"kick\"], \"layer\": {…} } }`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OnNotes"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "frames": {
+          "description": "Timing in frames instead of seconds: `\"frames\": 12` (only frame 12) or `[12, 18]` (frames 12–17).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Frames"
             },
             {
               "type": "null"
@@ -3116,6 +3139,61 @@
         },
         {
           "$ref": "#/$defs/Layer"
+        }
+      ]
+    },
+    "OnNotes": {
+      "description": "`onNotes`: one copy of `layer` per note of the generated `music`.",
+      "type": "object",
+      "properties": {
+        "track": {
+          "description": "Track name or role (`drums`, `bass`, `lead`, `chords`, …). Default: every track.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "keys": {
+          "description": "Only these keys: MIDI numbers or drum names (`kick`, `snare`, `hat`, `clap`, `crash`, …).",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": true
+        },
+        "every": {
+          "description": "Keep every n-th matching note (1 = all).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "layer": {
+          "description": "The layer to place on each note. `$t $dur $key $pitch $vel $beat $bar $i $n` are\nreplaced per note; it starts on the note (its own `start` is an offset from it) and\nlasts the note's length unless it sets `duration`, `end` or `frames`."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "layer"
+      ]
+    },
+    "Frames": {
+      "description": "`frames`: one frame number, or a half-open range `[first, end)` (frames into the scene).",
+      "anyOf": [
+        {
+          "type": "number",
+          "format": "double"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "minItems": 2,
+          "maxItems": 2
         }
       ]
     },
