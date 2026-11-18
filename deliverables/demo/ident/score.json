@@ -1,0 +1,99 @@
+{
+ "brief": "h-ident",
+ "invocation": "python3 scripts/judge.py brief h-ident deliverables/demo/ident/final.mp4 --out deliverables/demo/ident/judge (3 trials, seed 7, refs game-of-thrones, fitc-tokyo-2015, mad-men)",
+ "baselines": {
+  "r1": {
+   "blind": 2.75,
+   "full": 3.17
+  },
+  "r2": {
+   "blind": 2.88,
+   "full": 3.56
+  }
+ },
+ "passes": {
+  "v1": {
+   "blind_overall": 3.38,
+   "full_overall": 3.56,
+   "scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 4,
+    "motion": 3,
+    "craft": 3,
+    "originality": 3
+   },
+   "full_scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 4,
+    "motion": 3.5,
+    "craft": 3.5,
+    "originality": 3,
+    "sound": 4
+   },
+   "judged_pro": "0/3",
+   "verdict": "FAIL"
+  },
+  "v3 (final)": {
+   "blind_overall": 3.62,
+   "full_overall": 3.72,
+   "scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 4,
+    "motion": 4,
+    "craft": 3,
+    "originality": 3
+   },
+   "full_scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 4,
+    "motion": 4.0,
+    "craft": 3.5,
+    "originality": 3,
+    "sound": 4
+   },
+   "judged_pro": "0/3",
+   "verdict": "FAIL"
+  },
+  "v4": {
+   "blind_overall": 3.25,
+   "full_overall": 3.61,
+   "scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 4,
+    "motion": 3,
+    "craft": 2,
+    "originality": 2
+   },
+   "full_scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 4,
+    "motion": 3.5,
+    "craft": 3.0,
+    "originality": 2,
+    "sound": 5
+   },
+   "judged_pro": "0/3",
+   "verdict": "FAIL"
+  }
+ },
+ "final": "v3",
+ "note": "v4 (wing flex, longer push, dusk, lighter grain) scored 3.25/3.61: inside the \u00b10.4 noise of v3, so the search stopped at a plateau. 3 trials each; a 6-trial re-judge decides."
+}

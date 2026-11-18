@@ -8,7 +8,7 @@ python3 scripts/judge.py brief <brief-id> path/to/final.mp4 --out deliverables/d
 
 - The first run in a container fetches REFS's reference stills into `.cache/` (`sync-bench`, about 1 min). The `claude` CLI must be on PATH (`JUDGE_MODEL` defaults to claude-opus-5-5).
 - The command prints the new score next to r1 and r2. The full answer (tells, 3 gaps per trial, critic, the panels the jury saw) is in `<out>/<brief-id>/result.json` and `trial*/`, `critic/`.
-- **Noise:** about ±0.4 per piece between identical runs. A rebuild is only clearly better if it gains more than 0.5. Use `--trials 6` for a decision run.
+- **Noise:** identical runs of the same MP4 with the same refs and seed differ by up to about **0.5**, even at 6 trials each. For example, the c-event rebuild scored 3.69 in one 6-trial run and 4.19 in another. Treat a change under 0.75 as a tie. For a decision, pool runs (average the per-trial scores across runs) rather than trusting one run.
 - Verdicts: PASS = judged pro in ≥ 2/3 trials, within 1.0 of the refs and motion ≥ 4; PRO = judged pro, score ≥ 5 and motion ≥ 4; otherwise FAIL (`RUBRIC.md`).
 
 | Brief | Rebuild owner | Command | Pinned refs | r1 | r2 |
