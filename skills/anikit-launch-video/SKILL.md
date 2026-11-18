@@ -22,6 +22,11 @@ Professional launch films do the reverse. They hold **one material world, one li
    - Write the single benefit the audience should believe afterwards, as ≤ 15 words without the product's name.
    - Choose the mode: **proof** (the real product or UI visible by 5 s) or **teaser** (withheld until the end).
    - List the brief's other facts under "not in this film". A film carries one promise; the rest goes on the end card at most.
+1b. **`launch/refs/`: research and references** (see `research.md`).
+   - **Subject:** research the subject's world: users, rituals, materials and insider details (`refs/world.md`).
+   - **References:** collect 6–10 professional films in this category and neighbouring ones, plus 2–3 from outside motion. For each, write the moves worth stealing (`refs/refs.md`).
+   - **Assets:** gather real assets (HDRIs, materials, models, fonts, the brand's own material) and, if you have images, run `board`.
+   - **Gate:** every idea in step 2 must cite one insider detail and one reference move.
 2. **`launch/2-ideas.md`: four ideas, then pick one.**
    - Write ≥ 4 ideas, each a different metaphor or device, one deliberately out there.
    - Run the **literal test** and the **swap test** on each (`idea.md`), then pick one and say why.
@@ -35,6 +40,11 @@ Professional launch films do the reverse. They hold **one material world, one li
    - the Anikit means (scene3d, shader, illo, graphic print, footage-like grade…).
 
    Then write what will **change** shot to shot: subject, scale, camera.
+3b. **`launch/tests/`: play** (see `research.md`).
+   - Before locking the world, make 4–8 quick technique tests (2–4 s clips or stills) that could carry the idea.
+   - Use at least three different engine capabilities (3D, shaders, simulation, type as image, print, illustration, motion, sound-driven picture), including one you haven't used.
+   - Compare them on one sheet and write in `tests/notes.md` what surprised you, what looked stock, and what can't be made convincing.
+   - Build the world around the strongest test.
 4. **`launch/frames/`: three style frames, compared.**
    - Make three `still`s of the same key moment, varying one decision (material, light, or type treatment), each a finished poster.
    - Put them side by side, pick one, and write in `3-world.md` why.
