@@ -216,7 +216,7 @@ def cmd_demos(a):
     cats = {}
     cat_of = {b["id"]: b["category"] for b in briefs()}
     cat_of_tag = {b["tags"][0]: b["category"] for b in briefs()}
-    for p in sorted(J.glob("rounds/*/results/*/result.json")) + sorted(J.glob("demos/results/*/result.json")):
+    for p in sorted(J.glob("rounds/*/results/*/result.json")) + sorted(J.glob("demos/*/*/result.json")):
         r = json.loads(p.read_text())
         rnd = p.parts[-4] if p.parts[-4] != "demos" else "demo"
         if rnd == "r0-div":
