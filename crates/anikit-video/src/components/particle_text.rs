@@ -82,7 +82,48 @@ pub(crate) fn text_outline(s: &str, st: &TextStyle) -> Path {
 
 /// About `n` points evenly covering the inside of `path` (jittered grid),
 /// in random order. Returns exactly `n` points (duplicating if short).
+/// `path.winding(p)` for many points: the segments with their control-point
+/// y-range, so segments a point's horizontal ray can't cross are skipped.
+/// kurbo's winding is the sum over segments, and a segment whose y-range
+/// (padded for rounding) excludes `p.y` contributes exactly 0, so the result
+/// is the same as `path.winding(p)`; it just skips the per-segment extrema
+/// split for most segments.
+struct Winding {
+    segs: Vec<(f64, f64, kurbo::BezPath)>,
+}
+
+impl Winding {
+    fn new(path: &Path) -> Winding {
+        use kurbo::ParamCurve;
+        let segs = path
+            .segments()
+            .map(|seg| {
+                let ys: Vec<f64> = match seg {
+                    kurbo::PathSeg::Line(l) => vec![l.p0.y, l.p1.y],
+                    kurbo::PathSeg::Quad(q) => vec![q.p0.y, q.p1.y, q.p2.y],
+                    kurbo::PathSeg::Cubic(c) => vec![c.p0.y, c.p1.y, c.p2.y, c.p3.y],
+                };
+                let (lo, hi) = ys.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), &y| (a.min(y), b.max(y)));
+                // Sub-segment endpoints are evaluated points of the curve: inside the
+                // control hull up to rounding, which this margin covers many times over.
+                let pad = 1e-7 * (1.0 + lo.abs().max(hi.abs()));
+                // One segment as its own path: its winding is that segment's term.
+                let mut one = kurbo::BezPath::new();
+                one.move_to(seg.start());
+                one.push(seg.as_path_el());
+                (lo - pad, hi + pad, one)
+            })
+            .collect();
+        Winding { segs }
+    }
+
+    fn winding(&self, p: kurbo::Point) -> i32 {
+        self.segs.iter().filter(|(lo, hi, _)| p.y >= *lo && p.y <= *hi).map(|(_, _, seg)| seg.winding(p)).sum()
+    }
+}
+
 fn sample_inside(path: &Path, n: usize, seed: u64) -> Vec<[f32; 2]> {
+    let wind = Winding::new(path);
     let b = path.bounding_box();
     let area = path.area().abs().max(1.0);
     let mut rng = Rng::new(seed);
@@ -98,7 +139,7 @@ fn sample_inside(path: &Path, n: usize, seed: u64) -> Vec<[f32; 2]> {
             while x < b.x1 {
                 let jx = x + (rng.f() as f64 - 0.5) * s * 0.5;
                 let jy = y + (rng.f() as f64 - 0.5) * s * 0.5;
-                if path.winding(kurbo::Point::new(jx, jy)) != 0 {
+                if wind.winding(kurbo::Point::new(jx, jy)) != 0 {
                     pts.push([jx as f32, jy as f32]);
                 }
                 x += s;
@@ -931,6 +972,36 @@ impl Component for ParticleText {
 mod tests {
     use super::super::{build, preview, Theme};
     use serde_json::json;
+
+    /// The segment index gives exactly kurbo's winding number, including on
+    /// and next to the outline (points on segment end y values, extrema).
+    #[test]
+    fn winding_index_matches_kurbo() {
+        use super::super::text::{Face, TextStyle};
+        use super::{text_outline, Rgba, Rng, Winding, REF};
+        use kurbo::{ParamCurve, Shape};
+        for (word, face) in [("PULSE", Face::Display), ("Ship it, gq@&%", Face::Sans), ("Hello", Face::Serif)] {
+            let st = TextStyle::new(face, REF, 700, Rgba([1.0; 4]));
+            let path = text_outline(word, &st);
+            let wind = Winding::new(&path);
+            let b = path.bounding_box();
+            let mut rng = Rng::new(9);
+            let mut checked = 0;
+            for i in 0..40_000 {
+                let p = if i % 4 == 0 {
+                    // Exactly on a segment end point's y (and x), the fiddly case.
+                    let seg = path.segments().nth(i / 4 % path.segments().count()).unwrap();
+                    let e = if i % 8 == 0 { seg.start() } else { seg.end() };
+                    kurbo::Point::new(e.x + (rng.f() as f64 - 0.5) * 3.0, e.y)
+                } else {
+                    kurbo::Point::new(b.x0 + rng.f() as f64 * b.width(), b.y0 + rng.f() as f64 * b.height())
+                };
+                assert_eq!(wind.winding(p), path.winding(p), "{word} at {p:?}");
+                checked += 1;
+            }
+            assert_eq!(checked, 40_000);
+        }
+    }
 
     #[test]
     fn forms_reforms_and_leaves() {

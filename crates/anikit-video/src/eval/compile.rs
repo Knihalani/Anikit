@@ -467,6 +467,9 @@ impl Evaluator {
             }
             let depth = camera.base[prop::APERTURE] != 0.0
                 || camera.tracks.iter().any(|t| t.slot as usize == prop::APERTURE)
+                || camera.base[prop::DOLLY] != 0.0
+                || camera.tracks.iter().any(|t| t.slot as usize == prop::DOLLY)
+                || camera.exprs.iter().any(|e| e.0 as usize == prop::DOLLY)
                 || layers.iter().any(|n| n.base[prop::DEPTH] != 0.0 || n.tracks.iter().any(|t| t.slot as usize == prop::DEPTH) || n.exprs.iter().any(|e| e.0 as usize == prop::DEPTH));
             // Leading layers that fill the frame and don't move are the backdrop.
             let (fw, fh) = (c.w, c.h);
@@ -840,6 +843,7 @@ impl C<'_> {
         self.score = Some((|| {
             let mut cue = crate::music::parse_with_cuts(v, &self.o.base_dir, &cuts)?;
             cue.pinned = Some((t, voice));
+            self.beat_marks.pin(t);
             let notes = crate::music::score(&cue, t, voice)?;
             let bpb = anikit_music::beat_grid(&cue.spec)?.beats_per_bar;
             self.pinned_music = Some(Arc::new(cue));
@@ -1415,6 +1419,7 @@ impl C<'_> {
             self.set(&mut camera, prop::ZOOM, cam.zoom.as_ref(), &format!("{cp}.zoom"), 1.0);
             self.set(&mut camera, prop::ROT, cam.rotation.as_ref(), &format!("{cp}.rotation"), 1.0);
             self.set(&mut camera, prop::FOCUS, cam.focus.as_ref(), &format!("{cp}.focus"), 1.0);
+            self.set(&mut camera, prop::DOLLY, cam.dolly.as_ref(), &format!("{cp}.dolly"), 1.0);
             self.set(&mut camera, prop::APERTURE, cam.aperture.as_ref(), &format!("{cp}.aperture"), 1.0);
             let mut tw = Vec::new();
             if let Some(a) = &cam.animate {
@@ -2424,6 +2429,19 @@ impl C<'_> {
             } else {
                 self.d.push(Diagnostic::error(format!("{path}.posterizeTime"), "posterizeTime is poses per second (e.g. 12)"));
             }
+        }
+        if let Some(x) = &l.extrude {
+            let ang = x.angle.unwrap_or(45.0).to_radians() as f32;
+            let len = x.length.unwrap_or(60.0).clamp(0.0, 2000.0) as f32;
+            let steps = (len / 1.5).ceil().clamp(1.0, 400.0) as u32;
+            let c = match &x.color {
+                Some(c) => self.color(c, &format!("{path}.extrude.color")).unwrap_or(Rgba([0.0, 0.0, 0.0, 0.5])),
+                None => Rgba([0.0, 0.0, 0.0, 0.5]),
+            };
+            // RGB := the colour, alpha := alpha × colour alpha (unpremultiplied 4×5 matrix).
+            let m = [0.0, 0.0, 0.0, 0.0, c.0[0], 0.0, 0.0, 0.0, 0.0, c.0[1], 0.0, 0.0, 0.0, 0.0, c.0[2], 0.0, 0.0, 0.0, c.0[3], 0.0];
+            let step = len / steps as f32;
+            f.extrude = Some((ang.cos() * step, ang.sin() * step, steps, x.fade.unwrap_or(0.0).clamp(0.0, 1.0) as f32, m));
         }
         f.smear = match &l.smear {
             None | Some(serde_json::Value::Bool(false)) => None,
