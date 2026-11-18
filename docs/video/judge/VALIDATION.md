@@ -104,3 +104,41 @@ Median per-dimension score:
 - Some references are famous, so the jury may recognise them. That only makes the bar harder.
 - The critic stage for these runs predates the yes/no TASTE checks, which were added at 22:00.
 - Cost: about $0.47–0.66 per piece (3 trials, plus the critic for MP4s); about 2–3 min wall time per piece.
+
+## Motion stages (validated 2026-11-18 00:45–01:05, both kept OFF)
+
+The parent asked for a motion-aware stage, because the jury sees only about 6 stills and motion barely registers. Two stages were built (`scripts/judge.py`) and validated the same way as the stills judge. **Neither discriminates well enough to gate on. Both are off by default** (`JUDGE_MOTION=1` and `JUDGE_STRIPS=1` enable them), and the stills verdict remains the gate.
+
+**Reference clips.** The environment refused to download the references' YouTube or Vimeo videos, so only lawful direct files were usable (REFS's `clips.json`): three Blender Studio open movies (CC BY 4.0) and one NASA SVS visualisation (public domain). Each was cut to a 20 s excerpt into `.cache/judge-clips/`. None of the motion-design or kinetic-type references is lawfully downloadable.
+
+**1. Blind motion compare.** Two strips per film, each 10 consecutive frames 1/10 s apart around the busiest moments, compared blind with 3 of the clips. 3 trials.
+
+| Candidate | Motion | Judged pro | Refs mean |
+|---|---|---|---|
+| div-c (rejected) | 4 | 0/3 | 6.33 |
+| div-f (rejected) | 6 | **2/3** | 6.33 |
+| div-g (rejected) | 6 | **3/3** | 6.67 |
+| r1 a-social | 4 | 0/3 | 6.67 |
+| r1 g-titles | 4 | 0/3 | 6.33 |
+| r1 k-sports | 5 | 0/3 | 6.33 |
+| control: Charge | 8 | 3/3 | 5.67 |
+| control: Spring | 7 | 3/3 | 6.0 |
+| control: Sprite Fright | 8 | 3/3 | 6.0 |
+| control: NASA CO₂ | 2 | **0/3** | 8.0 |
+
+Two false accepts (div-g, div-f) and one false reject (NASA, a slow continuous field). The available clips are narrative 3D films, a poor reference for motion-design choreography, and NASA's near-static field drags the reference mean down.
+
+**2. Critic with strips.** The candidate alone: three 10-frame strips plus frame pairs.
+
+| Film | Motion | Craft |
+|---|---|---|
+| div-g (rejected) | 6 | 7 |
+| div-f (rejected) | 6 | 6 |
+| r1 k-sports | 5 | 6 |
+| Charge | 7 | 8 |
+| Sprite Fright | 8 | 8 |
+| NASA CO₂ | 4 | 5 |
+
+The separation is 1–2 points. Strips also nudged div-f's motion up from 5 (without strips) to 6. That is too weak to gate on, and it would inflate the "full" score compared with r1.
+
+**What would fix it:** lawful clips of real motion-design and kinetic-type work. That means owner permission or press files, or the user approving clip downloads for evaluation only. Until then, motion is judged inside the stills stage (median 3 for rejected and r1 work, 7 for controls) and in the critic's frame pairs and pace check.

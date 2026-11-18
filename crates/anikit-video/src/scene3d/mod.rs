@@ -24,6 +24,7 @@
 #![allow(clippy::too_many_arguments, clippy::needless_range_loop, clippy::type_complexity, clippy::question_mark, clippy::new_without_default)]
 
 pub mod authoring;
+pub mod cloth;
 pub mod bvh;
 pub mod rig;
 pub mod sets;
@@ -149,6 +150,8 @@ struct Prepared {
     haze: (f32, V3),
     haze_height: (f32, f32),
     lights: Vec<trace::Light>,
+    /// Local lights animated by expressions of `t`.
+    light_anims: Vec<spec::LightAnim>,
     /// Underwater caustics strength (0 = off).
     caustics: f32,
     gobo: rig::Gobo,
@@ -243,10 +246,12 @@ impl Prepare for Scene3d {
         let env_v = m.get("env").cloned().unwrap_or(if lookdev { Value::from("studio") } else { Value::Null });
         let mut es = spec::env(&env_v, "env").map_err(Error)?;
         let mut local_lights = Vec::new();
+        let mut light_anims: Vec<spec::LightAnim> = Vec::new();
         if let Some(l) = m.get("lights") {
-            let (e, loc) = spec::lights(l, &es.env, "lights").map_err(Error)?;
+            let (e, loc, an) = spec::lights(l, &es.env, "lights").map_err(Error)?;
             es.env = e;
             local_lights = loc;
+            light_anims = an;
         }
         let bright = matches!(es.name.as_str(), "cyc" | "sunset" | "overcast" | "interior" | "underwater");
 
@@ -658,6 +663,7 @@ impl Prepare for Scene3d {
             haze,
             haze_height,
             lights: local_lights,
+            light_anims,
             caustics,
             gobo,
             rig_anim: match (rig, rig_anim_base) {
@@ -1046,6 +1052,9 @@ impl Scene3d {
         scene.haze = p.haze;
         scene.haze_height = p.haze_height;
         scene.lights = p.lights.clone();
+        for a in &p.light_anims {
+            a.apply(&mut scene.lights[a.idx], t);
+        }
         scene.caustics = p.caustics;
         scene.gobo = p.gobo;
         scene.time = t;
@@ -1329,7 +1338,59 @@ impl Scene3d {
     }
 }
 
+impl Scene3d {
+    /// Physics collisions with their on-screen x (through the camera) and a
+    /// material guess from the body's surface.
+    fn physics_impacts(&self, until: f32, aspect: f32) -> Vec<crate::components::Impact> {
+        let p = self.p();
+        let mut out = Vec::new();
+        let mut seen: Vec<*const physics::Sim> = Vec::new();
+        for o in &p.objs {
+            let Some((sim, _)) = &o.phys else { continue };
+            if seen.contains(&Arc::as_ptr(sim)) {
+                continue;
+            }
+            seen.push(Arc::as_ptr(sim));
+            // Which object (and so material) each body belongs to.
+            let owner = |b: usize| p.objs.iter().find(|o2| o2.phys.as_ref().is_some_and(|(s2, f)| Arc::ptr_eq(s2, sim) && b >= *f as usize && b < (*f + o2.count) as usize));
+            for (t, b, dv, w) in sim.impacts(until) {
+                let cam = p.camera.at(t, aspect, p.default_aperture);
+                let (f, r, _) = cam.basis();
+                let rel = sub(v3(w[0], w[1], w[2]), cam.pos);
+                let z = dot(rel, f).max(1e-3);
+                let half = (cam.fov.to_radians() * 0.5).tan() * aspect;
+                let x = (0.5 + 0.5 * dot(rel, r) / (z * half)).clamp(-0.2, 1.2);
+                let size = sim.scale_of(b).clamp(0.05, 4.0);
+                let material = owner(b).and_then(|o2| o2.parts.first()).and_then(|(_, m)| p.mats.get(*m as usize)).map(|m| {
+                    if m.transmission > 0.5 {
+                        "glass"
+                    } else if m.metallic > 0.5 {
+                        "metal"
+                    } else if m.roughness < 0.25 {
+                        // Glossy and hard: ceramic, lacquer, porcelain.
+                        "ceramic"
+                    } else if size > 1.5 {
+                        "stone"
+                    } else {
+                        "wood"
+                    }
+                });
+                out.push(crate::components::Impact { t, strength: (dv / 2.5 * size.sqrt()).clamp(0.0, 1.0), x, material: material.unwrap_or("wood") });
+            }
+        }
+        out.sort_by(|a, b| a.t.total_cmp(&b.t));
+        out
+    }
+}
+
 impl Component for Scene3d {
+    fn impacts(&self, until: f32, aspect: f32) -> Vec<crate::components::Impact> {
+        if self.prepared.is_none() {
+            return Vec::new();
+        }
+        self.physics_impacts(until, aspect)
+    }
+
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let p = self.p();
         // Previews and reviews (`still --width`, `critique --render`) trace at the size they show.
@@ -1442,6 +1503,11 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        let e0 = env::Env::preset_tinted("studio", v3(1.0, 0.0, 0.0), v3(0.0, 0.0, 1.0), v3(1.0, 1.0, 1.0), v3(0.0, 1.0, 0.0)).unwrap();
+        let (_, mut ls, an) = spec::lights(&json!([ { "pos": "=[cos(t), 2, sin(t)]", "target": [0, 0, 0], "intensity": "=10+5*sin(t*3)" } ]), &e0, "lights").unwrap();
+        assert_eq!(an.len(), 1);
+        an[0].apply(&mut ls[0], 1.0);
+        assert!((ls[0].pos.x - 1f32.cos()).abs() < 1e-5 && (luma(ls[0].power) - (10.0 + 5.0 * 3f32.sin())).abs() < 1e-3);
         let m = spec::material(&json!({ "extends": "chrome", "imperfections": 0.5, "dust": 0.2 }), &HashMap::new(), "m").unwrap();
         assert_eq!(m.imperf, [0.5, 0.3, 0.25, 0.2]);
         scene(json!({ "objects": [ { "type": "box", "material": { "extends": "lacquer", "smudges": 0.8, "scratches": 0.5 } } ] })).unwrap();

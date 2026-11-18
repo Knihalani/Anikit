@@ -1,0 +1,346 @@
+{
+  "refs": [
+    "calibration-blender-spring-2019",
+    "nasa-year-in-the-life-of-co2-2014",
+    "calibration-blender-sprite-fright-2021"
+  ],
+  "candidate": {
+    "motion": 6,
+    "judged_professional": "2/3",
+    "gaps": [
+      "Second busiest moment is a linear counter on a static hero object, the kind of choreography you'd expect from a template",
+      "No overlap or follow-through: one element moves while the rest holds",
+      "No weight or physicality; the slow sheen on the metal is the only secondary life",
+      "The power-reserve section is close to linear: the counter climbs in near-even steps with no ease into the final value or settle",
+      "Little weight or physicality; the product floats with a uniform drift rather than reacting",
+      "The layout of the second strip holds steady with mostly incremental changes, which reads as template infographic beats compared with C's acting and camera energy",
+      "No overshoot and settle: values and objects slide linearly or pop",
+      "Elements move one at a time instead of overlapping in a choreographed handoff",
+      "Inconsistent jitter instead of deliberate weight; the transition into the stat card is a plain cut"
+    ]
+  },
+  "refs_summary": {
+    "calibration-blender-sprite-fright-2021": {
+      "motion": 9,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Insert cuts in the second strip are a little choppy; one frame goes nearly empty during the transition",
+        "The camera move in the first strip is mostly blur-driven and is less clear to read than D's motivated camera",
+        "Some reaction poses snap into place with only a short settle",
+        "The insert section sits on a slow move for many frames, so energy dips briefly",
+        "One near-black frame in the transition reads as a slightly abrupt cut rather than a designed one",
+        "Some frames of the camera whip are lost to blur, so it is a little less legible than ideal",
+        "Is the reference entry",
+        "Strip 2 has a few near-hold frames on the wrist insert",
+        "A dark, blurred frame makes one beat hard to read"
+      ]
+    },
+    "nasa-year-in-the-life-of-co2-2014": {
+      "motion": 2,
+      "judged_professional": "0/3",
+      "gaps": [
+        "No authored camera or framing changes at all",
+        "No easing, accents or hierarchy; every pixel moves at the same mechanical cadence",
+        "No cuts, transitions or character/element hand-offs",
+        "No authored easing, anticipation or settle; everything runs at a uniform data-driven pace",
+        "No camera moves or staging to guide the eye compared with C's whip pans and push-ins",
+        "No choreography or handoffs between elements; it is one global field update",
+        "No designed spacing, easing or accents",
+        "No camera, cuts or transitions",
+        "No hierarchy or handoff between elements: everything flows uniformly"
+      ]
+    },
+    "calibration-blender-spring-2019": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The climbing section is slow and similar from frame to frame; less dynamic range in spacing than A",
+        "The cut from the wide establishing shot to the climb is abrupt, with no matching action",
+        "Fewer overlapping elements; mostly one character against moving atmosphere",
+        "The busiest moments are still slow; the character's displacement per frame is small, so there is less dynamic range than in C",
+        "The camera holds roughly the same framing for 15+ frames with no accent move",
+        "Less overlapping choreography between multiple elements; one figure carries the action",
+        "Low energy at its 'busiest' moments: mostly a slow drift, with no clear acceleration peak or accent",
+        "The character moves very little, so there is little weight or follow-through to read",
+        "The transition is a plain cut, not a match cut or a built transition"
+      ]
+    }
+  },
+  "ref_mean": 6.33,
+  "trials": [
+    {
+      "key": {
+        "A": "calibration-blender-sprite-fright-2021",
+        "B": "candidate",
+        "C": "nasa-year-in-the-life-of-co2-2014",
+        "D": "calibration-blender-spring-2019"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 8,
+            "tells": [
+              "Whip-pan hand-off from one character to the next, with motion blur that ramps up and down instead of a hard cut",
+              "Secondary action on every frame: hair, flailing arms and the swinging boombox follow through after the main move",
+              "Insert shot of the hand and wound has a quick push-in and a settle, then a cut that keeps the eyeline into the reaction shot",
+              "Strong spacing contrast: big fast travel, then a hold that still has life in it (shaking hand, sliding flashlight)"
+            ],
+            "gaps": [
+              "Insert cuts in the second strip are a little choppy; one frame goes nearly empty during the transition",
+              "The camera move in the first strip is mostly blur-driven and is less clear to read than D's motivated camera",
+              "Some reaction poses snap into place with only a short settle"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "motion": 6,
+            "tells": [
+              "Eased camera pull-back and rotation from the macro dial texture to the full watch: a clean, intentional reveal",
+              "The dial's wave pattern morphs into a radial swirl, which works as a transition with intent",
+              "Power-reserve section: the watch is basically locked off while a counter steps up linearly (8h\u219247h) and the ring fills at a constant rate",
+              "Typography pops from value to value with no easing or overshoot"
+            ],
+            "gaps": [
+              "Second busiest moment is a linear counter on a static hero object, the kind of choreography you'd expect from a template",
+              "No overlap or follow-through: one element moves while the rest holds",
+              "No weight or physicality; the slow sheen on the metal is the only secondary life"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 2,
+            "tells": [
+              "Simulation output rendered at a constant timestep with a locked-off camera",
+              "Motion is just the data advancing; no easing, no staging, no authored timing",
+              "Date label ticks over mechanically and nothing else in the graphics moves",
+              "Both 'busiest moments' look the same, with no choreography or transitions"
+            ],
+            "gaps": [
+              "No authored camera or framing changes at all",
+              "No easing, accents or hierarchy; every pixel moves at the same mechanical cadence",
+              "No cuts, transitions or character/element hand-offs"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Slow motivated camera drift and parallax along the skeleton's ribs while the character climbs: weighted and physical",
+              "The character's climbing has believable weight shifts and holds that still read as alive (hair and cloth stir)",
+              "Soft-focus foreground wash used as a transition into the close-up, a wipe built from scene elements",
+              "Atmospheric particles and haze keep every frame alive"
+            ],
+            "gaps": [
+              "The climbing section is slow and similar from frame to frame; less dynamic range in spacing than A",
+              "The cut from the wide establishing shot to the climb is abrupt, with no matching action",
+              "Fewer overlapping elements; mostly one character against moving atmosphere"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 25.0,
+        "cost_usd": 0.12622339999999999,
+        "tokens": 68112,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "nasa-year-in-the-life-of-co2-2014",
+        "B": "candidate",
+        "C": "calibration-blender-sprite-fright-2021",
+        "D": "calibration-blender-spring-2019"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "motion": 3,
+            "tells": [
+              "Motion comes from a simulation stepped at a fixed rate, not animated: about 4 frames per simulated day, with a date counter ticking linearly",
+              "Locked equirectangular map with no camera language at all",
+              "The flow fields are alive everywhere, but nothing is designed: there are no eases, accents or hierarchy",
+              "No cuts or transitions; the strips just continue a timeline",
+              "Static overlays (logo, legend, date bar) never animate"
+            ],
+            "gaps": [
+              "No authored easing, anticipation or settle; everything runs at a uniform data-driven pace",
+              "No camera moves or staging to guide the eye compared with C's whip pans and push-ins",
+              "No choreography or handoffs between elements; it is one global field update"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 7,
+            "tells": [
+              "Continuous eased camera pull-back from the macro guilloche texture to the full watch, revealing the context in one move",
+              "The wave pattern morphs from parallel waves into a radial swirl during the pull-back, which is a deliberate transition device",
+              "The copper accent line carries through the texture shot and hands off to the hands",
+              "Power-reserve strip: the counter ticks, the ring segments fill and the watch drifts and rotates slightly while the dial pattern turns, so several layers stay alive"
+            ],
+            "gaps": [
+              "The power-reserve section is close to linear: the counter climbs in near-even steps with no ease into the final value or settle",
+              "Little weight or physicality; the product floats with a uniform drift rather than reacting",
+              "The layout of the second strip holds steady with mostly incremental changes, which reads as template infographic beats compared with C's acting and camera energy"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Fast camera whip and pan through characters with motion blur on the background and strong spacing contrast",
+              "Overlapping action: characters flee in staggered, offset timing, with hair and limbs following through",
+              "Character acting: wide-eyed takes, a squash on the boombox prop and a clear anticipation beat",
+              "Second strip: a tight insert of the thorn scratch with a slow, deliberate push, then a cut wide to the reaction, which is good cut rhythm and a cause-effect match",
+              "Nothing is dead in any frame; even the insert has a subtle drift and secondary motion"
+            ],
+            "gaps": [
+              "The insert section sits on a slow move for many frames, so energy dips briefly",
+              "One near-black frame in the transition reads as a slightly abrupt cut rather than a designed one",
+              "Some frames of the camera whip are lost to blur, so it is a little less legible than ideal"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "The character moves along the bony ribs with weight in the climb and small hair and cloth follow-through",
+              "Drifting particles and a slow camera parallax across the rib cage keep every frame alive",
+              "Atmospheric light shafts shift gently over time",
+              "The transition to the close-up with the white mist billowing reads as an intentional organic wipe or reveal",
+              "Pacing has a stop-motion or tactile quality and is restrained and confident"
+            ],
+            "gaps": [
+              "The busiest moments are still slow; the character's displacement per frame is small, so there is less dynamic range than in C",
+              "The camera holds roughly the same framing for 15+ frames with no accent move",
+              "Less overlapping choreography between multiple elements; one figure carries the action"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "D",
+          "B",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 27.5,
+        "cost_usd": 0.1305194,
+        "tokens": 68322,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-blender-spring-2019",
+        "B": "nasa-year-in-the-life-of-co2-2014",
+        "C": "calibration-blender-sprite-fright-2021",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 7,
+            "tells": [
+              "Slow, eased camera drift past layered translucent forms gives parallax depth",
+              "Character silhouette has small secondary sways and head turns rather than holding still",
+              "Background fins undulate in staggered, overlapping waves",
+              "Hard cut to a soft-focus close-up with foreground fog drifting through it, which reads as a deliberate shot change"
+            ],
+            "gaps": [
+              "Low energy at its 'busiest' moments: mostly a slow drift, with no clear acceleration peak or accent",
+              "The character moves very little, so there is little weight or follow-through to read",
+              "The transition is a plain cut, not a match cut or a built transition"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "motion": 2,
+            "tells": [
+              "Scientific simulation playback where each frame is a data timestep (the date counter ticks over)",
+              "Locked frame with no camera language at all",
+              "No easing or choreography: the fluid motion comes from the data, not from design choices",
+              "Static overlay UI, and the date text pops from one value to the next"
+            ],
+            "gaps": [
+              "No designed spacing, easing or accents",
+              "No camera, cuts or transitions",
+              "No hierarchy or handoff between elements: everything flows uniformly"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Whip pans with directional motion blur, plus smear-like stretch on fast actions",
+              "Overlapping action as characters lead into each other, with hair and clothing following through",
+              "Strong weight in the hand, flashlight and sliding-wrist beat, which settles into a reaction close-up",
+              "Cuts land on action, with framing built around eyelines; something is alive in every frame"
+            ],
+            "gaps": [
+              "Is the reference entry",
+              "Strip 2 has a few near-hold frames on the wrist insert",
+              "A dark, blurred frame makes one beat hard to read"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "motion": 5,
+            "tells": [
+              "The first strip is a decent pull-back reveal, but it reads as a single eased camera scale with no secondary motion",
+              "The power-reserve counter rises almost linearly (8\u219247h at about 4h a step) with no ease or accent at its peaks",
+              "The watch wobbles between frames in scale and position, and the hands shift inconsistently, which looks procedural or jittery rather than designed",
+              "The ring segments step on and off mechanically, with no anticipation or settle, and the text pops on"
+            ],
+            "gaps": [
+              "No overshoot and settle: values and objects slide linearly or pop",
+              "Elements move one at a time instead of overlapping in a choreographed handoff",
+              "Inconsistent jitter instead of deliberate weight; the transition into the stat card is a plain cut"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 25.2,
+        "cost_usd": 0.1265386,
+        "tokens": 68119,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.383
+}

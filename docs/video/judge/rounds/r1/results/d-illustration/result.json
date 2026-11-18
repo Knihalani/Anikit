@@ -1,0 +1,527 @@
+{
+  "name": "d-illustration",
+  "tags": [
+    "illustration",
+    "product-launch"
+  ],
+  "refs": [
+    "osko-launch",
+    "morph-studio-xreal-1s-2025",
+    "found-devialet-opera-de-paris-2022"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 3,
+      "typography": 3,
+      "colour": 5,
+      "light_texture": 3,
+      "motion": 3,
+      "craft": 3,
+      "originality": 3
+    },
+    "overall": 3.38,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Commit to a real visual world: hand-made texture, cut paper, real lighting on the burrow interior. The craft and material depth of A would show the step change.",
+      "Replace the slide captions with typography that has a point of view: hand-lettered or custom type living inside the scene, with scale and rhythm.",
+      "Choreograph a genuine transformation (the child's drawing physically becoming the world) instead of an opacity crossfade and a repeated establishing shot. Every frame should be a distinct poster.",
+      "There is no real material or light. Give the paper, burrow and night actual texture and motivated light (the lamp in frame 2 casts nothing), as C's caustics and A's stone and gold do",
+      "Replace the slide-caption layout with typography built into the world, and stop reusing one wide shot. Each frame should be its own composition",
+      "Find a specific, surprising idea: the drawing-comes-alive transformation should be choreographed as the centrepiece, not a cross-dissolve",
+      "Build every frame as its own poster with real staging, varied scale and depth, instead of reusing one landscape layout under different captions",
+      "Choose type with a point of view and integrate it into the illustration, rather than default serif captions in the corner and a centred logo on a glow",
+      "Add real texture and light (paper grain, painted gradients, warm light from the burrow), and make the drawing-to-whale transformation an actual choreographed moment, at the level of C's material craft"
+    ],
+    "tells": [
+      "Captions are set as default slides: generic editorial serif in the top-left ('At bedtime, in a little burrow\u2026', 'A brand-new story, every night.'), with no scale contrast or integration with the image.",
+      "The end card is the textbook generic look: a centred bold serif wordmark 'Burrow' and a small tagline on a navy radial-gradient vignette, with a glowing circle behind the logo.",
+      "Frames 1 and 4 are the same composition with the words swapped: same hills, moon, trees and burrow circle. Little happens across the film.",
+      "Flat vector primitives with no material: triangle trees, wavy-band hills, a clip-art cloud, a cute whale with blush cheeks. The 'paper' drawing is the only texture and is a flat overlay.",
+      "Light is unmotivated: soft glow blobs around the moon and the burrow, and a translucent crossfade in frame 3 that muddies the image rather than transforming it.",
+      "The idea is literal (product name + bunnies + 'stories made together'), and the drawing-becomes-real beat is the obvious move, executed as a dissolve.",
+      "Slide-deck structure: a caption set in a generic editorial serif sits top-left on each frame like a slide title ('At bedtime, in a little burrow\u2026', 'A brand-new story, every night.')",
+      "Frames 1 and 4 are the same composition with the words swapped and the burrow glow turned off. Little happens",
+      "Frame 3 is a muddy cross-dissolve where the previous caption ghosts over the next scene, the whale card and the illustrated whale double-expose, and rabbit ears float transparent. That is an automated-transition artefact, not a designed transition",
+      "Clip-art-like vector shapes: three-triangle trees, stock cloud strokes, a flat moon disc with a blurred halo, a cutesy whale",
+      "The end card is a centred serif product name plus tagline on a radial-gradient navy ground, with a single warm accent. That is the generic 'tasteful AI' lockup",
+      "The concept is literal: an app that makes bedtime stories, shown as 'parent and child draw a whale and it comes alive'",
+      "Captions are default editorial-serif sentences pinned top-left like slide titles ('At bedtime, in a little burrow\u2026', 'A brand-new story, every night.')",
+      "Frames 1 and 4 use the same composition with the words swapped (moon, hills, glowing burrow), which is slide-deck structure",
+      "End card is a centred logo and serif wordmark with a small tagline on a dark-blue radial glow, the generic 'tasteful AI' sign-off",
+      "Vector-default illustration: triangle trees, stock cloud shapes, plain gradients, almost no texture or real light",
+      "The cross-fade from the child's drawing to the whale is the one good idea, but it is executed as a semi-transparent overlap with ghosted text, not a designed transition"
+    ]
+  },
+  "refs_summary": {
+    "osko-launch": {
+      "overall": 6.62,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "morph-studio-xreal-1s-2025": {
+      "overall": 7.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1.67
+    },
+    "found-devialet-opera-de-paris-2022": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 1.33
+    }
+  },
+  "ref_mean": 7.16,
+  "delta": -3.78,
+  "trials": [
+    {
+      "key": {
+        "A": "found-devialet-opera-de-paris-2022",
+        "B": "osko-launch",
+        "C": "candidate",
+        "D": "morph-studio-xreal-1s-2025"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Devialet Phantom product film in a built CG world: an ivory-and-gold set of plinths, ribbon arches and fluted glass against lacquer-red curtains. The palette is deliberate and expensive.",
+              "Material work at studio level: brushed gold inlays, a stone-textured plinth, matte ceramic speaker shells, a frosted glass arch with soft contact shadows.",
+              "Frame 3 is a real idea: the speaker sits on a turret that opens onto a watch-movement gear train, linking the product to haute horlogerie. Only this brand could own that shot.",
+              "Choreography reads clearly across the frames: wide hero, then an enveloping close-up as ribbons wrap the driver, a top-down mechanism reveal, a front-on Phantom Reactor, and a three-product finale. Scale and angle vary with intent.",
+              "Typography is almost entirely held back (only the engraved DEVIALET on the product). That suits a luxury object film but adds nothing of its own."
+            ],
+            "gaps": [
+              "The core concept ('Chinese New Year luxury set dressing') still reads as seasonal product staging. Push the clockwork metaphor into the spine of the film rather than a single shot.",
+              "Frames 1 and 5 share the same three-plinth hero layout. Replace one with a more radical camera or scale idea to avoid the catalogue repeat.",
+              "No typographic voice. Even a restrained, custom-set end line integrated into the gold architecture would lift it from product render to authored piece."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "Witty narrative device: an 'I.O.U.' sticky note replaces the food in a fridge. It appears first in a stylised 3D tupperware close-up, then as a reveal when a retro mint fridge opens and spills warm interior light onto a reflective floor. That is a memorable, shareable gag.",
+              "The film deliberately switches style per vignette: a moody 3D VW camper under a moon, character-animated flat golfer poses (swing, follow-through, facepalm), and glossy emoji-style icons for things you'd owe someone (coffee, beer, flying cash, heart, gift). This reads as a payments or 'pay back your friends' campaign directed in chapters.",
+              "The golfer frames show genuine pose-to-pose character animation with comic timing, not a static asset.",
+              "Weaknesses: the emoji grid is close to stock icon-set territory, the illustration styles are not unified by any typographic or graphic system, and the camper shot is generic."
+            ],
+            "gaps": [
+              "No unifying design system. The 3D, flat-vector and emoji sections feel like different vendors. A shared palette, light logic or type layer would make it one film.",
+              "The icon grid frame is the weakest image: a centred 3\u00d72 layout on black. Give it composition, choreography or integration with the narrative.",
+              "Typography is limited to the handwritten note. A designed type layer could carry the payoff with the same wit as the fridge gag."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "Captions are set as default slides: generic editorial serif in the top-left ('At bedtime, in a little burrow\u2026', 'A brand-new story, every night.'), with no scale contrast or integration with the image.",
+              "The end card is the textbook generic look: a centred bold serif wordmark 'Burrow' and a small tagline on a navy radial-gradient vignette, with a glowing circle behind the logo.",
+              "Frames 1 and 4 are the same composition with the words swapped: same hills, moon, trees and burrow circle. Little happens across the film.",
+              "Flat vector primitives with no material: triangle trees, wavy-band hills, a clip-art cloud, a cute whale with blush cheeks. The 'paper' drawing is the only texture and is a flat overlay.",
+              "Light is unmotivated: soft glow blobs around the moon and the burrow, and a translucent crossfade in frame 3 that muddies the image rather than transforming it.",
+              "The idea is literal (product name + bunnies + 'stories made together'), and the drawing-becomes-real beat is the obvious move, executed as a dissolve."
+            ],
+            "gaps": [
+              "Commit to a real visual world: hand-made texture, cut paper, real lighting on the burrow interior. The craft and material depth of A would show the step change.",
+              "Replace the slide captions with typography that has a point of view: hand-lettered or custom type living inside the scene, with scale and rhythm.",
+              "Choreograph a genuine transformation (the child's drawing physically becoming the world) instead of an opacity crossfade and a repeated establishing shot. Every frame should be a distinct poster."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "XREAL 1S launch film built on high-end fluid and caustic simulation: glasses assembled from water, a liquid shell, splash trails and a cellular 'evolution' macro world. The FX sims are costly and controlled, not stock.",
+              "The metaphor is legible and follows a progression: a coil or tendon form erupting into spray, the product breaching a fluid surface, a liquid cast of the glasses, a macro of the hinge, then organic neural strands. The motion clearly has weight and variety.",
+              "Light and refraction are the strongest part: real internal caustics, bubbles, subsurface glow and a selective depth of field.",
+              "Typography is serviceable: a bold grotesk 'XREAL' wordmark split around the product with '1S', and widely tracked caps 'EVOLUTION'. These are tech-launch conventions rather than a typographic idea.",
+              "The monochrome electric-blue palette is effective but category-standard for tech launches."
+            ],
+            "gaps": [
+              "The palette is a single blue throughout. Introduce a second temperature or a moment of colour contrast so the film doesn't read as one long look-dev pass.",
+              "The type is tech-launch default (tracked caps 'EVOLUTION', a wordmark either side of the hero). Integrate type into the liquid, so it refracts or forms out of the sim.",
+              "Liquid-tech-product is a well-worn genre. Find the specific idea only XREAL owns (what you see through the glasses) rather than generic 'evolution' abstraction."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 37.1,
+        "cost_usd": 0.16689700000000002,
+        "tokens": 72373,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "found-devialet-opera-de-paris-2022",
+        "B": "osko-launch",
+        "C": "morph-studio-xreal-1s-2025",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Built product-stage world with a clear brand logic: cream travertine plinths, gold inlay, lacquer-red pleated drapes. It is a festive / Lunar New Year palette that suits a luxury audio brand",
+              "Material work is strong: stone grain on the plinths, brushed gold edges, matte ceramic speaker shells, glass fluting with real refraction",
+              "The camera moves through very different setups: a wide hero arrangement, ribbons wrapping the speaker, a top-down reveal into a watch-movement gear well, then the hero shot again. That reads as planned choreography, not one layout repeated",
+              "The gear-movement reveal under the plinth is a specific idea tying acoustic engineering to haute horlogerie",
+              "Type is almost absent apart from the product wordmark, which suits a pure product-luxury film"
+            ],
+            "gaps": [
+              "The idea stays inside the 'luxury product on plinths' genre. C turns the product into its subject matter (water / evolution); A only stages it",
+              "The bookend frames (1 and 5) are near-duplicate hero layouts. A bolder final image would make the ending feel earned rather than repeated",
+              "Light is even showroom softbox throughout. One dramatic lighting turn would add the tension C gets from its caustics"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "A witty, specific narrative device: the 'I.O.U.' sticky note left in an emptied leftovers tub, then revealed inside a retro fridge. That is a human insight about owing someone, not a feature diagram",
+              "Deliberate mixed-media structure across 3D (VW bus at night, fridge), flat character animation (golfer's swing-to-despair pose sequence) and glossy emoji-style icons (coffee, beer, flying money, heart, gift). It reads like a payments / gifting brand's 'ways to say thanks' vignette film",
+              "The golfer frames show real pose-to-pose key animation with comic timing, and the fridge pair implies a door-open lighting change with a reflection on the floor",
+              "The icon grid is the weakest frame. It is close to stock emoji and slide-like, which keeps craft below A and C"
+            ],
+            "gaps": [
+              "Visual language is inconsistent between vignettes. C keeps one material world throughout; B needs a unifying art direction, or a more intentional collision of styles",
+              "The hand-lettered 'I.O.U.' is the only typography. A typographic system that carries the joke across scenes would lift it",
+              "Lighting and texture are generic in the flat and icon sections. Give them the same material care as the night bus and the fridge interior"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific concept: AR glasses dissolved into and reformed from water and organic tendrils under the word 'EVOLUTION'. The product is rendered as a living liquid body, not just placed on a backdrop",
+              "Heavy simulation and look-dev work: fluid sims, splash particles, translucent refractive glasses with caustic interiors, cellular / neural strand structures, chromatic aberration and depth of field",
+              "An extreme monochrome cobalt palette held with discipline. The blues vary from near-black to electric, so it never feels like one flat colour",
+              "Type is minimal but considered: a bold XREAL wordmark and a light '1S' set wide across the product, and widely tracked 'EVOLUTION' embedded inside the cell structure instead of laid over it",
+              "Frame variety implies real choreography: explosion, then hero, then a macro of the liquid glasses, a material close-up, and a cellular world"
+            ],
+            "gaps": [
+              "The cobalt 'liquid tech' language is a well-worn genre. One unexpected colour beat or material would make it unmistakable",
+              "The tracked-caps 'EVOLUTION' sits close to a default tasteful-tech move. A more expressive typographic gesture would give it a point of view",
+              "Narrative clarity: the evolution idea is mostly atmosphere. A clearer arc from origin to device would deepen it"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "Slide-deck structure: a caption set in a generic editorial serif sits top-left on each frame like a slide title ('At bedtime, in a little burrow\u2026', 'A brand-new story, every night.')",
+              "Frames 1 and 4 are the same composition with the words swapped and the burrow glow turned off. Little happens",
+              "Frame 3 is a muddy cross-dissolve where the previous caption ghosts over the next scene, the whale card and the illustrated whale double-expose, and rabbit ears float transparent. That is an automated-transition artefact, not a designed transition",
+              "Clip-art-like vector shapes: three-triangle trees, stock cloud strokes, a flat moon disc with a blurred halo, a cutesy whale",
+              "The end card is a centred serif product name plus tagline on a radial-gradient navy ground, with a single warm accent. That is the generic 'tasteful AI' lockup",
+              "The concept is literal: an app that makes bedtime stories, shown as 'parent and child draw a whale and it comes alive'"
+            ],
+            "gaps": [
+              "There is no real material or light. Give the paper, burrow and night actual texture and motivated light (the lamp in frame 2 casts nothing), as C's caustics and A's stone and gold do",
+              "Replace the slide-caption layout with typography built into the world, and stop reusing one wide shot. Each frame should be its own composition",
+              "Find a specific, surprising idea: the drawing-comes-alive transformation should be choreographed as the centrepiece, not a cross-dissolve"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.0,
+        "cost_usd": 0.1607668,
+        "tokens": 72088,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "osko-launch",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "High-end fluid/particle simulation: the glasses are built from water, with caustics, refraction, bubbles and fibrous splashes that would be expensive to fake",
+              "Frames change scale and framing a lot (macro splash, hero product, translucent liquid shell, cellular macro), which reads as real choreography of form and material",
+              "Liquid and glass materials hold up in every frame, with convincing subsurface light and depth of field",
+              "Against it: an all-blue tech palette on black, and type that is a stock bold grotesk wordmark plus a tracked-caps 'E V O L U T I O N' sitting in the middle of the frame, which is the generic premium-tech launch formula",
+              "The idea (product 'evolves' out of liquid) is a common launch-film trope"
+            ],
+            "gaps": [
+              "Swap the default cool-blue tech palette for a colour story that belongs to this product; C's red, cream and gold shows how much a deliberate palette adds",
+              "Give the type an idea: the tracked-caps 'EVOLUTION' and the plain lockup sit on top of the image instead of working with the liquid",
+              "Push the concept past 'product made of water' to a specific idea about what the glasses do, so the spectacle has a meaning to remember"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "A witty, specific idea: a hand-scrawled 'I.O.U.' sticky note replaces the food you owe someone, carried through stylised 3D (the fridge shelf, the retro fridge opening with light spilling and a reflection on the floor)",
+              "Mixes media on purpose: 3D night scene with a VW van, character animation of a golfer (wind-up, swing, head in hands, a clear acting beat), and a grid of glossy emoji-style icons",
+              "The fridge reveal uses light motivated by the story: the glow from the open door carries the joke",
+              "The hand-written type is part of the gag rather than a label",
+              "Against it: the style changes so much between frames that it looks like a set of spots rather than one look, and the icon grid frame is flat, placeholder-like UI"
+            ],
+            "gaps": [
+              "Pull the different styles into one visual system; next to A's or C's consistency it reads as separate executions",
+              "Give the icon-grid frame some staging: it is a symmetrical grid of emoji on black with no light or layout idea",
+              "Raise the finish of the 3D materials and lighting (the van scene and the bottles) to the material quality of C"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 9,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A deliberate palette: lacquer red against cream, ivory and brushed gold, clearly a cultural or seasonal edition and tied to the brand's gold-trim finish",
+              "Rich materials: travertine-like stone plinths, gold inlay lines, ribbed glass screens, ceramic-white speakers, soft and believable architectural light",
+              "Clever world-building: ribbon arches wrap the speaker, and an overhead shot shows a watch-like gear movement under the product, a reference to precision engineering",
+              "Frames move through wide, macro, top-down and hero group shots, each one composed like a poster with layered depth",
+              "Type is limited to the product's own branding, which suits a pure product film"
+            ],
+            "gaps": [
+              "The idea is luxury product staging done extremely well, not a surprising concept; add one moment no other speaker film would have",
+              "Bring in designed typography or a title moment so the piece has a typographic voice",
+              "Add more surprise to the motion (transformation or a change of scale) beyond elegant camera moves through a set"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "Captions are default editorial-serif sentences pinned top-left like slide titles ('At bedtime, in a little burrow\u2026', 'A brand-new story, every night.')",
+              "Frames 1 and 4 use the same composition with the words swapped (moon, hills, glowing burrow), which is slide-deck structure",
+              "End card is a centred logo and serif wordmark with a small tagline on a dark-blue radial glow, the generic 'tasteful AI' sign-off",
+              "Vector-default illustration: triangle trees, stock cloud shapes, plain gradients, almost no texture or real light",
+              "The cross-fade from the child's drawing to the whale is the one good idea, but it is executed as a semi-transparent overlap with ghosted text, not a designed transition"
+            ],
+            "gaps": [
+              "Build every frame as its own poster with real staging, varied scale and depth, instead of reusing one landscape layout under different captions",
+              "Choose type with a point of view and integrate it into the illustration, rather than default serif captions in the corner and a centred logo on a glow",
+              "Add real texture and light (paper grain, painted gradients, warm light from the burrow), and make the drawing-to-whale transformation an actual choreographed moment, at the level of C's material craft"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.8,
+        "cost_usd": 0.1583598,
+        "tokens": 71978,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "Frame 3 is a muddy double-exposure crossfade: the drawing card, the whale, the clouds, two moons and the ghosted bunny ears all overlap at about 50% opacity, and the outgoing caption is clipped off the top edge",
+        "The whale's drawing-to-whale transformation is a plain opacity dissolve rather than a built morph or a line-to-fill transition",
+        "Long near-static holds: 7 of 19 seconds barely change from the second before, and the 11.4 s shot is mostly gentle drift and bobbing",
+        "The noise swell from about 5.0 to 7.6 s starts and stops with hard rectangular edges at about 19 kHz, which sounds like a generated white-noise block rather than a designed riser, and it doesn't resolve on a visible event",
+        "The small whale silhouette at the moon in frame 5 is a flat, tiny cutout with weak staging against the busy moon halo",
+        "The burrow porthole in frame 5 is dim and muddy brown, and it reads like a rendering mistake rather than a lit window",
+        "The logo end card is centred and generic, and the type sits on a vignette with visible gradient softness"
+      ],
+      "gaps": [
+        "Motion has no weight or choreography: almost everything is a crossfade, slow drift or sine bob, with no anticipation, overshoot or follow-through, and no motivated camera move such as pushing into the drawing or through the porthole to tie the scenes together",
+        "No energy arc: the piece runs at one soft level for its whole length, so the drawing coming to life (the idea's payoff) never peaks, and the cut to the end card is the biggest change in the film",
+        "The sound is a thin, static synth pad with a crude noise block and a single bell-like hit near the logo; there are no Foley details (pencil scratch, paper, water, a breath from the whale's spout), no voice despite 'reads it aloud', and nothing locked to the visual beats"
+      ]
+    },
+    "meta": {
+      "seconds": 19.3,
+      "cost_usd": 0.14227499999999998,
+      "tokens": 71933,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 20.0s, 2 shots, median 10.00s, longest 11.40s\nper-second change: [7.2, 9.7, 9.5, 100.3, 6.2, 5.0, 2.8, 78.2, 42.4, 9.4, 5.7, 5.8, 25.4, 13.0, 8.2, 19.1, 4.6, 1.7, 1.1]\nPACE: FAIL \u2014 longest shot 11.4s > 2.5s; median shot 10.0s > 1.5s; 7/19 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 3,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 3,
+    "motion": 3.5,
+    "craft": 4.5,
+    "originality": 3,
+    "sound": 4
+  },
+  "full_overall": 3.67,
+  "cost_usd": 0.628,
+  "judge_seconds": 120.2,
+  "verdict": "FAIL"
+}

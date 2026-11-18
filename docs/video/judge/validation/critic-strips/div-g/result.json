@@ -1,0 +1,43 @@
+{
+  "answer": {
+    "scores": {
+      "motion": 6,
+      "sound": 6,
+      "craft": 7
+    },
+    "checks": {
+      "idea": true,
+      "invariant": true,
+      "arc": false,
+      "type_meaning": true,
+      "freeze_frame": false,
+      "ending": true,
+      "restraint": true,
+      "material": true,
+      "sync": true
+    },
+    "defects": [
+      "Zooming out on the dense pattern (strip3, around 9\u201310s) shimmers into moir\u00e9 and the tile motifs blur into mush before the wordmark arrives",
+      "Per-second change drops to 1.5\u20132.6 at 9\u201311s, so the frame sits nearly static on a washed-out field for about 2s before the letters build",
+      "The 7.9s chapter-02/03 shot stretches one tile-rotation move over many beats, and the measured pace fails",
+      "The thin 1px grout and grid lines step and alias where the tile plane is tilted (crop, strip1 edges)",
+      "The single-letter outline ghosts and loose stray squares during the OFF build (frame 4, the last pairs row) look like unfinished scaffolding, not a designed state",
+      "The pale lavender background under the final lockup lowers contrast and makes the end card look flat next to the saturated middle",
+      "The 'Theme: Systems' and date text in the end bar is small and leans on the yellow accent; it is legible but slight"
+    ],
+    "gaps": [
+      "Energy peaks too early (seconds 2\u20137 run flat-high at 63\u201380) and then falls into dead air instead of building to a peak at 60\u201380%. The pattern variations read as one move repeated (rotate tiles to the next pattern) rather than a choreographed escalation with a distinct climax.",
+      "Motion lacks weight and hierarchy: tiles flip with uniform timing and little overlap or offset cascade, there is no camera language beyond a slow tilt and zoom, and the handoff from pattern chaos to wordmark is a fade-down with no causal transform (the tiles never physically fly in to become the letters).",
+      "Sound is a steady grid of clicky percussive transients with a sustained bed. It has one clear hit at about 7.5s but no real dynamic shape, drop or silence before the logo, and the hits don't visibly treat individual tile flips as foley. It reads as competent library rhythm, not designed sound."
+    ]
+  },
+  "meta": {
+    "seconds": 26.7,
+    "cost_usd": 0.1812938,
+    "tokens": 74517,
+    "models": [
+      "claude-opus-5-5"
+    ]
+  },
+  "pace": "offset2027.mp4: 15.0s, 4 shots, median 3.23s, longest 7.90s\nper-second change: [19.8, 9.9, 80.1, 71.1, 67.5, 66.7, 63.0, 67.8, 20.6, 1.5, 2.6, 35.0, 21.2, 13.6]\nPACE: FAIL \u2014 longest shot 7.9s > 2.5s; median shot 3.2s > 1.5s"
+}

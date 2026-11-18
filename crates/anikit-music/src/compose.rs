@@ -414,8 +414,9 @@ fn clamp_range(mut k: i32, center: i32) -> i32 {
 /// A guide-tone countermelody: the 3rd or 7th of each chord, voice-led by the
 /// smallest step, held for the chord.
 pub fn counter(chords: &[ChordAt], center: i32, vel: f32) -> Vec<Note> {
+    // Guide tones (3rds and 7ths) by nearest motion, one per chord…
     let mut prev = center;
-    let mut out = Vec::new();
+    let mut keys = Vec::with_capacity(chords.len());
     for c in chords {
         let ints = &c.chord.intervals;
         let mut cands: Vec<i32> = Vec::new();
@@ -429,8 +430,26 @@ pub fn counter(chords: &[ChordAt], center: i32, vel: f32) -> Vec<Note> {
             cands.push(c.chord.root);
         }
         let k = clamp_range(nearest_tone(prev, &cands), center);
-        out.push(Note { t: c.t, len: c.len * 0.98, key: k as f32, vel });
+        keys.push(k);
         prev = k;
+    }
+    // …phrased in fours (swelling to the third chord, easing off), with a
+    // passing note into the next guide tone when the line moves by more than a step.
+    const ARC: [f32; 4] = [0.85, 0.95, 1.0, 0.88];
+    let mut out = Vec::new();
+    for (i, c) in chords.iter().enumerate() {
+        let k = keys[i];
+        let v = vel * ARC[i % 4];
+        let next = keys.get(i + 1).copied();
+        match next {
+            Some(n) if (n - k).abs() >= 2 && c.len >= 2.0 => {
+                let d = n - k;
+                let pass = k + d.signum() * if d.abs() >= 3 { 2 } else { 1 };
+                out.push(Note { t: c.t, len: c.len - 1.0, key: k as f32, vel: v });
+                out.push(Note { t: c.t + c.len - 1.0, len: 0.98, key: pass as f32, vel: v * 0.85 });
+            }
+            _ => out.push(Note { t: c.t, len: c.len * 0.98, key: k as f32, vel: v }),
+        }
     }
     out
 }
@@ -441,6 +460,22 @@ mod tests {
 
     fn prog(s: &str, key: &Key) -> Vec<ChordAt> {
         crate::arrange::chord_line(s, key, 4.0).unwrap()
+    }
+
+    #[test]
+    fn countermelody_phrases_and_passes() {
+        let key = Key::parse("C").unwrap();
+        let c = prog("Cmaj7 Am7 Dm7 G7 Cmaj7 Fmaj7 Dm7 G7", &key);
+        let n = counter(&c, 62, 0.6);
+        let vels: std::collections::BTreeSet<i64> = n.iter().map(|x| (x.vel * 1000.0) as i64).collect();
+        assert!(vels.len() >= 3, "dynamics vary: {vels:?}");
+        // Passing notes fall a beat before the next chord and step toward it.
+        for w in n.windows(2) {
+            assert!(w[0].t + w[0].len <= w[1].t + 1e-6, "no overlaps");
+        }
+        let lens: std::collections::BTreeSet<i64> = n.iter().map(|x| (x.len * 100.0) as i64).collect();
+        assert!(lens.len() >= 2 || n.len() == c.len(), "{lens:?}");
+        assert_eq!(n, counter(&c, 62, 0.6));
     }
 
     #[test]

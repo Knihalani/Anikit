@@ -466,9 +466,9 @@ impl ObjDef {
 
 pub const OBJ_KEYS: &[&str] = &[
     "type", "src", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name", "camera", "align", "color", "intensity", "speed", "collide",
-    "d", "path", "points", "segments", "sides", "x", "y", "z", "u", "v", "expr", "res", "vertices", "faces", "flat",
+    "d", "path", "points", "segments", "sides", "x", "y", "z", "u", "v", "expr", "res", "vertices", "faces", "flat", "smooth",
 ];
-const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model", "card", "extrude", "lathe", "tube", "surface", "heightfield", "mesh"];
+const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model", "card", "extrude", "lathe", "tube", "surface", "heightfield", "mesh", "cloth"];
 
 /// Shapes are deduplicated by their JSON description.
 pub struct Shapes {
@@ -507,7 +507,12 @@ pub fn mesh_shape(m: anikit_core::raster::Mesh) -> Shape {
 
 pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &HashMap<String, Material>, path: &str) -> Res<ObjDef> {
     let m = v.as_object().ok_or_else(|| format!("{path}: expected an object"))?;
-    check_keys(m, OBJ_KEYS, path)?;
+    if m.get("type").and_then(|t| t.as_str()) == Some("cloth") {
+        let all: Vec<&str> = OBJ_KEYS.iter().chain(super::cloth::KEYS).copied().collect();
+        check_keys(m, &all, path)?;
+    } else {
+        check_keys(m, OBJ_KEYS, path)?;
+    }
     let ty = match m.get("type").and_then(|t| t.as_str()) {
         Some(t) => {
             let t = crate::components::kebab(t);
@@ -647,6 +652,18 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
             }
             (first.unwrap(), ext.x.max(ext.z) * k * 0.5)
         }
+        "cloth" => {
+            // Simulated: rebuilt every frame (two-sided, matte unless told otherwise).
+            let mesh = super::cloth::mesh_at(m, path, 0.0)?;
+            dyn_geom = true;
+            thin = true;
+            let gkey = format!("cloth|{}", serde_json::to_string(m).unwrap_or_default());
+            let mut r: f32 = 0.0;
+            for q in mesh.pos.chunks_exact(3) {
+                r = r.max((q[0] * q[0] + q[2] * q[2]).sqrt());
+            }
+            (shapes.add(gkey, || Ok(mesh_shape(mesh)))?, r)
+        }
         "extrude" | "lathe" | "tube" | "surface" | "heightfield" | "mesh" => {
             // Open geometry: deduplicated by its whole description.
             let gkey = format!("{ty}|{}", serde_json::to_string(m).unwrap_or_default());
@@ -667,7 +684,7 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
             let k = gf("intensity", 1.5)?;
             Material { base: v3(0.0, 0.0, 0.0), metallic: 0.0, roughness: 1.0, specular: 0.0, emissive: scale(c, k), ..Material::chrome() }
         }
-        None => builtin_material(if ty == "slab" || ty == "pane" { "glass" } else { "chrome" }).unwrap(),
+        None => builtin_material(if ty == "slab" || ty == "pane" { "glass" } else if ty == "cloth" { "matte" } else { "chrome" }).unwrap(),
     };
     if let Some(t) = m.get("thin") {
         thin = t.as_bool().ok_or_else(|| format!("{path}.thin: expected true or false"))?;
@@ -1290,7 +1307,30 @@ fn hdri_env(v: &Value, path: &str) -> Res<Option<EnvSpec>> {
 /// `[{ "dir": [x, y, z], "size": [w, h] (degrees), "roll", "color", "intensity", "soft", "key": true }]`.
 /// They light diffuse surfaces and show as crisp shapes in reflections; the
 /// one marked `key` also casts the traced soft shadows.
-pub fn lights(v: &Value, env: &Env, path: &str) -> Res<(Env, Vec<super::trace::Light>)> {
+/// A local light whose position, aim or intensity is an expression of `t`.
+#[derive(Clone)]
+pub struct LightAnim {
+    pub idx: usize,
+    pub pos: [Num; 3],
+    pub target: Option<[Num; 3]>,
+    pub intensity: Num,
+    pub color: V3,
+}
+
+impl LightAnim {
+    /// Update `l` for time `t`.
+    pub fn apply(&self, l: &mut super::trace::Light, t: f32) {
+        let v = Vars { t: t as f64, gt: t as f64, ..Vars::default() };
+        l.pos = eval3(&self.pos, &v);
+        l.power = scale(self.color, self.intensity.at(&v).max(0.0));
+        if let Some(tg) = &self.target {
+            l.dir = norm(sub(eval3(tg, &v), l.pos));
+        }
+    }
+}
+
+pub fn lights(v: &Value, env: &Env, path: &str) -> Res<(Env, Vec<super::trace::Light>, Vec<LightAnim>)> {
+    let mut anims = Vec::new();
     let a = v.as_array().ok_or_else(|| format!("{path}: expected an array of lights"))?;
     let mut boxes = env.boxes.clone();
     let mut key = env.key;
@@ -1301,16 +1341,22 @@ pub fn lights(v: &Value, env: &Env, path: &str) -> Res<(Env, Vec<super::trace::L
         check_keys(m, &["dir", "size", "roll", "color", "intensity", "soft", "key", "pos", "target", "angle", "penumbra", "shadow", "type"], &p)?;
         if let Some(pos) = m.get("pos") {
             // A local point light, or a spot light when it has a `target`.
-            let v3c = |x: &Value, q: &str| -> Res<V3> {
-                let a = x.as_array().filter(|a| a.len() == 3).ok_or_else(|| format!("{q}: expected [x, y, z]"))?;
-                Ok(v3(f(&a[0], q)?, f(&a[1], q)?, f(&a[2], q)?))
-            };
-            let pos = v3c(pos, &format!("{p}.pos"))?;
+            // `pos`, `target` and `intensity` may be "=expressions" of `t`
+            // (a practical that moves, a spot that tracks, a light that pulses).
+            let pos_n = vec3(pos, &format!("{p}.pos"))?;
+            let tgt_n = m.get("target").map(|t| vec3(t, &format!("{p}.target"))).transpose()?;
+            let k_n = m.get("intensity").map(|x| num(x, &format!("{p}.intensity"))).transpose()?.unwrap_or(Num::C(10.0));
+            let v0 = Vars::default();
+            let pos = eval3(&pos_n, &v0);
             let c = m.get("color").map(|c| color(c, &format!("{p}.color"))).transpose()?.unwrap_or(v3(1.0, 1.0, 1.0));
-            let k = m.get("intensity").map(|x| f(x, &format!("{p}.intensity"))).transpose()?.unwrap_or(10.0);
+            let k = k_n.at(&v0);
+            let animated = pos_n.iter().chain(tgt_n.iter().flatten()).any(|n| matches!(n, Num::E(..))) || matches!(k_n, Num::E(..));
+            if animated {
+                anims.push(LightAnim { idx: local.len(), pos: pos_n, target: tgt_n.clone(), intensity: k_n, color: c });
+            }
             let (dir, co, ci) = match m.get("target") {
-                Some(t) => {
-                    let tg = v3c(t, &format!("{p}.target"))?;
+                Some(_) => {
+                    let tg = eval3(tgt_n.as_ref().unwrap(), &v0);
                     let ang = m.get("angle").map(|x| f(x, &format!("{p}.angle"))).transpose()?.unwrap_or(30.0).clamp(1.0, 179.0);
                     let pen = m.get("penumbra").map(|x| f(x, &format!("{p}.penumbra"))).transpose()?.unwrap_or(0.25).clamp(0.0, 1.0);
                     let outer = (ang * 0.5).to_radians();
@@ -1348,5 +1394,5 @@ pub fn lights(v: &Value, env: &Env, path: &str) -> Res<(Env, Vec<super::trace::L
             key = Some(boxes.len() - 1);
         }
     }
-    Ok((Env::new(boxes, key, env.zenith, env.horizon, env.ground, env.band).with_map(env.map.clone()), local))
+    Ok((Env::new(boxes, key, env.zenith, env.horizon, env.ground, env.band).with_map(env.map.clone()), local, anims))
 }
