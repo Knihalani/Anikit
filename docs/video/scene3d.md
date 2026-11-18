@@ -69,6 +69,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - animation: `keys: [{ t, pos, rot, scale, ease }]`, `spin`, `start`/`end`;
   - instances: `count` and `lanes`;
   - `texture`: `"#comp"`, `{ "composition", "frame": "=i", "face": "front|back|both" }`, or a list of these (one per face);
+    compositions can contain shader layers (including ones that read text channels), so a 3D sign, screen or poster can carry an animated GLSL treatment (proof: `deliverables/ceiling1/proof_shader_texture_3d.png`, top row as 2D layers, bottom row on 3D panes);
   - `material`: a name or an object;
   - flags: `camera: false` (a reflector card), `shadow`, `thin`.
 - **`materials`:**
