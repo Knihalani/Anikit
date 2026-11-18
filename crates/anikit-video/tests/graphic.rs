@@ -170,3 +170,15 @@ fn theme_palette_and_riso_inks() {
     let err = Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string();
     assert!(err.contains("theme.palette") && err.contains("split"), "{err}");
 }
+
+#[test]
+fn tween_between_cells() {
+    let e = ev(r##"{ "grid": { "columns": 12, "rows": 8, "margin": [54, 96], "gutter": 24 }, "scenes": [ { "duration": 2, "layers": [
+        { "cell": "1-6/1-4", "shape": "rect", "fill": "#f00", "animate": [ { "to": { "cell": "7-12/5-8" }, "duration": 1 } ] } ] } ] }"##);
+    let rect = |t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::RoundRect { x, y, w, h, transform, .. } = o { Some((transform[4] + x, transform[5] + y, *w, *h)) } else { None }).unwrap();
+    let (x0, y0, w0, _) = rect(0.0);
+    let (x1, y1, w1, h1) = rect(1.5);
+    assert!((x0 - 96.0).abs() < 0.5 && (y0 - 54.0).abs() < 0.5, "{x0} {y0}");
+    assert!((x1 - (96.0 + 6.0 * 146.0)).abs() < 0.5 && (y1 - (54.0 + 4.0 * 124.5)).abs() < 0.5, "{x1} {y1}");
+    assert!((w0 - w1).abs() < 0.5 && (h1 - (4.0 * 100.5 + 3.0 * 24.0)).abs() < 0.5);
+}

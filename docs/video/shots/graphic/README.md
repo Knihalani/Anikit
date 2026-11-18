@@ -23,3 +23,4 @@ More feature proofs: `tiles-animated.jpg` (custom `tile` motifs, `turns`, `stagg
 `brush.jpg` / `brush.mp4`: `brush` strokes (ensō with dry bristles, a pressure swash and a tapered rule) painting on with `trimEnd`, at 415 fps.
 `photo-treatments.jpg`: the treatments on a real photo (`polyhaven:hdri/venice_sunset` backplate): the original, a duotone with a pre-curve, a 5 px line screen (engraving), and a two-plate riso of the same photo (blue duotone plus pink halftone, multiply, offset 6 px).
 `palettes.jpg`: `theme.palette` from five seeds and schemes (`anikit-video palette "<seed> <scheme>"`): value-structured ink, paper, mid, accent, accent2, tint, muted and surface.
+`grid-choreography.{jpg,mp4}`: layers tweening between grid fields (`"to": {"cell": …}`) over `show: "under"` guides, at 257 fps.
