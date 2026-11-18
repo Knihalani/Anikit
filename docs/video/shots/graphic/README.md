@@ -2,7 +2,7 @@
 
 **Reel:** `graphic-reel.mp4` (59.7 s) runs all five pieces back to back with their scores, re-encoded with x264 CRF 21.
 
-Five short pieces, each in a different graphic-design tradition. Every one is built from the `graphic` features
+Six short pieces, each in a different graphic-design tradition. Every one is built from the `graphic` features
 (`anikit-video docs graphic`) plus standard layers, with no bitmaps. Specs are in `examples/video/graphic/`, and the fonts
 (OFL) are in `examples/video/graphic/fonts/`. Render times are wall clock on this container (`render`, release build, 1920×1080).
 
@@ -12,6 +12,7 @@ Five short pieces, each in a different graphic-design tradition. Every one is bu
 | `pieces/paper-weekend.mp4` | Risograph zine (3 inks: fluo pink, medium blue, yellow) | multiply overprint, misregistered plates, halftone blob and type, posterised gradient-map over a reaction-diffusion shader, pattern pages | 9.2 s | 16 s (17 fps: the turing shader + grain) |
 | `pieces/fold-identity.mp4` | Corporate identity system (Space Grotesk, pine/signal) | squircle + arc mark, `grid.show: "under"` construction, arcs pattern from the mark, colour columns on the grid, signage | 12.5 s | 1.1 s (343 fps) |
 | `pieces/tempest-collage.mp4` | Collage theatre poster, Polish-poster spirit (Anton, navy/red/yellow on grey board) | `cutout` torn and scissor pieces with paper rims and printed shadows, posterised gradient-map ocean (shader), halftoned gem, `inkTexture` red sun, hard camera reframes on the beat inside one poster | 11.0 s | 86 s (4 fps: ocean + hero shaders every frame) |
+| `pieces/salone-memphis.mp4` | Memphis, 9:16 (Bricolage Grotesque, pink/mint/lemon/cobalt/red) | Patterns matted inside shapes (terrazzo `tile` confetti in a squircle slab, stripes in a ball), a squiggle `tile` field, `blob`, `arc` half-discs, spring drops, and a cell shuffle on a 6×10 vertical grid | 9.0 s | 1.5 s (183 fps) |
 | `pieces/street-ledger.mp4` | Editorial data story told in the street's own language: road markings | Asphalt built from aggregate (two jittered dot patterns plus `inkTexture`), worn paint (`inkTexture` with fine chips) on road-stencil type (Anton, `scaleY` 1.9). The line chart is painted lane lines (dashed context, a solid yellow story line drawing on), the unit chart is 100 parking bays with 38 bike racks, and the bar chart is a street cross-section with lanes as wide as their share. | 17.0 s | 14 s (37 fps) |
 
 `paper-weekend.mp4` and `tempest-collage.mp4` are re-encoded with x264 CRF 22 for repo size, because grain and halftone are expensive to encode. The others are the engine's own MP4s.

@@ -257,6 +257,14 @@ Trailing full-frame tiled-image layers blended with Overlay or Soft Light (the `
 
 An opaque `background` colour is a backdrop like a field: YUV planes are filled from it and only the ops' boxes rasterise, with no full-frame clear and RGBA→YUV conversion. An empty 1080p frame went from 1.5 to 0.13 ms. Pixels are identical to vello's clear (tested).
 
+### Dithered gradients
+
+vello interpolates gradient stops in premultiplied sRGB and rounds to 8 bits, which bands on slow, dark gradients (cards, panels, glows over content). A `Fill` or `RoundRect` with a linear or radial gradient covering between about 48×48 px and a quarter of the frame, whose colours change by at most 4 levels per device pixel (the slopes that band), is instead evaluated in float: a 4096-step premultiplied table and a fixed 64×64 triangular dither of ±½ level, into a bitmap the shape is filled with. The bitmap lives in the gradient's own frame (its centre or start at the origin), so a gradient that only moves is a cache hit, drawn at a whole-pixel offset (within ½ px on a slope that gentle). The result is within 3–4 levels of vello's gradient (dither plus that offset), with column averages on the exact ramp instead of 8-bit steps (test `large_gradients_are_dithered_not_banded`). Proof: `docs/video/proof/gradient-{vello,dithered}{,-x8}.png` (`examples/gradient_proof.rs`; the `-x8` crops stretch contrast ×8). Leading full-frame gradients already go through the dithered float field (smooth backdrops). Frame-sized animated washes stay with vello for speed: a bitmap costs more to draw than vello's own gradient.
+
+### Change tracking by content
+
+Incremental frames identify images by a hash of their pixels, memoised per live allocation, not by the allocation itself. A cache that re-makes the same pixels in a new `Arc` (a component cache, a shader result evicted and re-rendered) is then no change, so which regions redraw, and so the output, never depends on cache timing across threads (test `same_pixels_in_a_new_allocation_are_unchanged`).
+
 ### Long strokes
 
 A stroke whose bounds reach far past the frame (perspective grids, long guides) is clipped to the view, inflated by the stroke's reach, before vello sees it. Line segments are clipped exactly; curves whose control hull misses are dropped. Pixels are identical (tested). Dashed strokes are left alone, since clipping would shift the dash phase.
