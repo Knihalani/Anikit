@@ -577,3 +577,41 @@ fn transform8_decode_bit_exact() {
         }
     }
 }
+
+#[test]
+fn idr_lookahead_codes_static_content_finer() {
+    // With B-frames the IDR waits for the next frame: macroblocks unchanged in it
+    // get a lower QP (more bytes now, copied onward by skips); a next frame that
+    // differs everywhere leaves the IDR at the frame QP. Decoding stays exact.
+    let (w, h) = (176u32, 144u32);
+    let tex = |seed: u32| {
+        let mut b = YuvBuffer::new(w, h);
+        let mut s = seed;
+        for p in b.y.iter_mut() {
+            s = s.wrapping_mul(1664525).wrapping_add(1013904223);
+            *p = 60 + (s >> 25) as u8;
+        }
+        b
+    };
+    let (a, other) = (tex(1), tex(2));
+    let idr_bytes = |next: &YuvBuffer| {
+        let mut e = Encoder::new(EncoderConfig { bframes: 1, qp: 30, ..cfg(w, h) });
+        assert!(e.encode(&a.frame(), &FrameHints::default()).is_empty(), "IDR is held for lookahead");
+        e.encode(&next.frame(), &FrameHints::default()).len()
+    };
+    let (still, moving) = (idr_bytes(&a), idr_bytes(&other));
+    eprintln!("IDR followed by a static frame {still} bytes, by a changed one {moving}");
+    assert!(still > moving * 5 / 4, "{still} vs {moving}");
+    // a lone IDR comes out of flush
+    let mut e = Encoder::new(EncoderConfig { bframes: 1, ..cfg(w, h) });
+    assert!(e.encode(&a.frame(), &FrameHints::default()).is_empty());
+    assert!(!e.flush().is_empty());
+    // decodes exactly, with IDRs inside the stream too
+    let frames: Vec<_> = (0..9).map(|i| if i % 3 == 2 { other.clone() } else { a.clone() }).collect();
+    for gop in [1u32, 4, 250] {
+        let (_, p) = roundtrip_b(EncoderConfig { bframes: 1, gop, ..cfg(w, h) }, &frames, &format!("la{gop}"));
+        if have_ffmpeg() {
+            assert!(p > 30.0, "psnr {p}");
+        }
+    }
+}

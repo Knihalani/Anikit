@@ -351,6 +351,8 @@ pub(crate) struct FrameCtx<'a> {
     pub deblock: bool,
     /// Deblock inside each slice (multi-slice frames, idc 2).
     pub slice_deblock: bool,
+    /// Per-macroblock QP change (empty: none): the IDR lookahead's.
+    pub qd: &'a [i8],
 }
 
 pub(crate) const NO_HINT: (i16, i16) = (i16::MIN, i16::MIN);
@@ -367,10 +369,17 @@ struct Held {
 
 /// A B picture whose SSIM estimate is this far below the following P
 /// picture's is coded again at the P QP.
-const B_SSIM_SLACK: f64 = 0.001;
+const B_SSIM_SLACK: f64 = 0.0015;
 
 /// QP of B pictures above the P pictures'.
-const B_QP_OFFSET: i32 = 2;
+const B_QP_OFFSET: i32 = 4;
+
+/// IDR lookahead (with B-frames): QP drop of the IDR macroblocks that are
+/// still unchanged in the next frame. Content that persists is copied onward
+/// by skips, so it is worth coding well once (a one-frame "macroblock tree").
+/// Applied only when the IDR coded at the frame QP is below
+/// `FLOOR_PSNR_CAP`: above it the error isn't visible.
+const IDR_STATIC_QP_DROP: i8 = 6;
 
 /// Is macroblock (mx, my) identical in `a` and `b` (luma and chroma)?
 fn mb_equal(a: &Pic, b: &Pic, mx: usize, my: usize) -> bool {
@@ -656,6 +665,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
     fn encode_mb(&mut self, mbx: usize, mby: usize, src_y: &[u8; 256], src_c: &[[u8; 64]; 2]) {
         let c = self.c;
         let (off, smooth) = if c.aq > 0.0 { aq_offset(src_y, src_c, c.aq) } else { (0, false) };
+        let off = off + c.qd.get(mby * c.mbw + mbx).map_or(0, |&d| d as i32);
         self.mb_qp = (c.qp as i32 + off).clamp(0, 51) as u8;
         self.p = if smooth { &c.qsets_smooth[self.mb_qp as usize] } else { &c.qsets[self.mb_qp as usize] };
         let mbi = mby * c.mbw + mbx;
@@ -2316,6 +2326,10 @@ pub struct Encoder {
     cur: Pic,
     /// Macroblocks where `recon` (the picture before the reference) differs from `refp`.
     stale: Vec<bool>,
+    /// IDR held for one frame of lookahead (pixels, input index, grain hint)
+    /// and the per-macroblock QP change derived from the next frame.
+    idr_hold: Option<(crate::frame::YuvBuffer, u64, f32)>,
+    qd: Vec<i8>,
     touched: Vec<bool>,
     hpel: Option<crate::mc::HpelPlanes>,
     /// Macroblocks of the reference changed since `hpel` was last updated.
@@ -2396,6 +2410,8 @@ impl Encoder {
             level,
             cur: Pic::new(mbw, mbh, 0),
             stale: vec![true; mbw * mbh],
+            idr_hold: None,
+            qd: vec![0; mbw * mbh],
             touched: vec![false; mbw * mbh],
             hpel: None,
             hpel_dirty: vec![true; mbw * mbh],
@@ -2505,6 +2521,9 @@ impl Encoder {
     pub fn encode(&mut self, f: &YuvFrame, hints: &FrameHints) -> &[u8] {
         assert_eq!((f.width, f.height), (self.cfg.width, self.cfg.height), "ak264: frame size mismatch");
         self.out.clear();
+        if self.idr_hold.is_some() {
+            self.code_held_idr(Some(f));
+        }
         let gidx = self.frames_in;
         self.frames_in += 1;
         let idr = self.frame_in_gop == 0 || self.cfg.gop <= 1 || self.frame_in_gop >= self.cfg.gop as u64;
@@ -2520,6 +2539,14 @@ impl Encoder {
         if idr {
             self.flush_pending();
             self.frame_in_gop = 0;
+            if self.cfg.gop != 1 {
+                // held for one frame of lookahead (see `code_held_idr`)
+                let mut b = self.pend_pool.pop().unwrap_or_else(|| crate::frame::YuvBuffer::new(self.cfg.width, self.cfg.height));
+                b.copy_from(f);
+                self.idr_hold = Some((b, gidx, hints.grain));
+                self.frame_in_gop += 1;
+                return &self.out;
+            }
             self.code_frame(f, hints, true, 0, gidx);
             self.acc_reset();
             self.frame_in_gop += 1;
@@ -2579,6 +2606,10 @@ impl Encoder {
     }
 
     fn flush_pending(&mut self) {
+        if self.idr_hold.is_some() {
+            self.code_held_idr(None);
+            return;
+        }
         if !self.b_pays(None) {
             self.code_pending_p();
             return;
@@ -2590,6 +2621,40 @@ impl Encoder {
         self.pend_pool.push(last.buf);
         self.acc_reset();
         self.code_pending_b(0.0);
+    }
+
+    /// Code the IDR held for lookahead. Its macroblocks that are (nearly)
+    /// unchanged in `next`, the following frame, get a QP `IDR_STATIC_QP_DROP`
+    /// lower (when the frame-QP IDR reads under `FLOOR_PSNR_CAP`): they will be
+    /// copied onward. Content that changes keeps the frame
+    /// QP, so streams that change everywhere (grain, full-frame motion) are
+    /// coded as before.
+    fn code_held_idr(&mut self, next: Option<&YuvFrame>) {
+        let (b, gidx, grain) = self.idr_hold.take().unwrap();
+        self.qd.fill(0);
+        if let Some(n) = next {
+            let (w, h) = (self.cfg.width as usize, self.cfg.height as usize);
+            for my in 0..self.mbh {
+                for mx in 0..self.mbw {
+                    let (x0, y0) = (mx * 16, my * 16);
+                    let (x1, y1) = ((x0 + 16).min(w), (y0 + 16).min(h));
+                    let mut sad = 0u32;
+                    for y in y0..y1 {
+                        let (ra, rb) = (&b.y[y * w + x0..y * w + x1], &n.y[y * n.y_stride + x0..y * n.y_stride + x1]);
+                        sad += ra.iter().zip(rb).map(|(&p, &q)| p.abs_diff(q) as u32).sum::<u32>();
+                    }
+                    // mean absolute difference ≤ 0.5
+                    if sad * 2 <= ((x1 - x0) * (y1 - y0)) as u32 {
+                        self.qd[my * self.mbw + mx] = -IDR_STATIC_QP_DROP;
+                    }
+                }
+            }
+        }
+        let hints = FrameHints { grain, ..Default::default() };
+        self.code_frame(&b.frame(), &hints, true, 0, gidx);
+        self.pend_pool.push(b);
+        self.qd.fill(0);
+        self.acc_reset();
     }
 
     /// Change map since the last reference picture: nothing changed yet.
@@ -2700,6 +2765,7 @@ impl Encoder {
                 idr_id: 0,
                 deblock: self.cfg.deblock,
                 slice_deblock: false,
+                qd: &[],
             };
             let r = &mut self.brecon;
             let (ys, yp) = (r.y.stride, r.y.pad);
@@ -2900,9 +2966,24 @@ impl Encoder {
             stats.skip = nmb as u32;
         } else {
             let mark = self.out.len();
+            // IDR lookahead: code at the frame QP first; only if the error is
+            // visible (PSNR under the cap) code the persistent content finer.
+            let la = idr && self.qd.iter().any(|&d| d != 0);
+            let qd = if la { std::mem::replace(&mut self.qd, vec![0; nmb]) } else { Vec::new() };
             self.encode_slices(idr, frame_num, &mut stats);
             if self.cfg.deblock && self.writers.len() == 1 {
                 crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &mut self.touched);
+            }
+            if la {
+                self.qd = qd;
+                if ssim_luma(&self.cur.y, &self.recon.y, w, h, self.grain).1 < FLOOR_PSNR_CAP {
+                    self.out.truncate(mark);
+                    stats = FrameStats { idr, ..Default::default() };
+                    self.encode_slices(idr, frame_num, &mut stats);
+                    if self.cfg.deblock && self.writers.len() == 1 {
+                        crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &mut self.touched);
+                    }
+                }
             }
             if idr && self.cfg.ssim_floor > 0.0 {
                 // An IDR has no history to steer by: measure it, and if it is
@@ -3069,6 +3150,7 @@ impl Encoder {
             idr_id: self.idr_count & 0xffff,
             deblock: self.cfg.deblock,
             slice_deblock: self.cfg.deblock && self.writers.len() > 1,
+            qd: if idr { &self.qd } else { &[] },
         };
         let rows = self.slice_rows(idr);
         // Split recon planes and MB info into bands.
