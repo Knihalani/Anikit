@@ -805,6 +805,7 @@
       "type": "object",
       "properties": {
         "x": {
+          "description": "Pan in frame pixels from rest (0 = no pan; `\"10%\"` of the frame width). Positive x\nlooks right, so the content moves left. Animatable.",
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
@@ -815,6 +816,7 @@
           ]
         },
         "y": {
+          "description": "Pan in frame pixels from rest (0 = no pan; `\"10%\"` of the frame height). Positive y\nlooks down, so the content moves up. Animatable.",
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
@@ -825,6 +827,7 @@
           ]
         },
         "zoom": {
+          "description": "Scale about the frame centre after the pan (1 = none, 1.2 = push in). Animatable.",
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
@@ -835,6 +838,7 @@
           ]
         },
         "rotation": {
+          "description": "Degrees about the frame centre. Animatable.",
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
@@ -1391,6 +1395,17 @@
             }
           ]
         },
+        "motionBlur": {
+          "description": "Per-layer motion blur: `true` (180° shutter, 8 samples) or `{\"shutter\": 270}`. Only this layer\nblurs, and only on frames where it moves, so text being read stays sharp while fast shapes streak.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MotionBlur"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "smear": {
           "description": "Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default)."
         },
@@ -1716,7 +1731,7 @@
           ]
         },
         "mask": {
-          "description": "A layer whose alpha masks this one.",
+          "description": "A shape that clips this layer (hard-edged, static). Its coordinates are the layer's own\nbox: (0, 0) is the layer's top-left, `\"50%\"` is half its size, and the default position\nis its centre. For an animated or soft mask use `matte` (a sibling layer by id, in the\nparent's coordinates).",
           "anyOf": [
             {
               "$ref": "#/$defs/Layer"
@@ -2864,6 +2879,27 @@
         }
       },
       "additionalProperties": false
+    },
+    "MotionBlur": {
+      "description": "`motionBlur`: on/off, or a shutter angle.",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "shutter": {
+              "description": "Shutter angle in degrees (360 = the whole frame interval). Default 180.",
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "required": [
+            "shutter"
+          ]
+        }
+      ]
     },
     "MatteSpec": {
       "anyOf": [
@@ -4416,27 +4452,6 @@
           "format": "double"
         }
       }
-    },
-    "MotionBlur": {
-      "description": "`motionBlur`: on/off, or a shutter angle.",
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "shutter": {
-              "description": "Shutter angle in degrees (360 = the whole frame interval). Default 180.",
-              "type": "number",
-              "format": "double"
-            }
-          },
-          "required": [
-            "shutter"
-          ]
-        }
-      ]
     },
     "Composition": {
       "description": "A 2D sub-composition with its own size and clock: layers (one scene) or scenes.",

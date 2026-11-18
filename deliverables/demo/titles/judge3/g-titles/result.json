@@ -1,0 +1,521 @@
+{
+  "name": "g-titles",
+  "tags": [
+    "kinetic-type",
+    "title-sequence"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "thank-you-for-smoking",
+    "xk-studio-offfmx-2025-main-titles"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 5,
+      "typography": 4,
+      "colour": 5,
+      "light_texture": 3,
+      "motion": 4,
+      "craft": 5,
+      "originality": 3
+    },
+    "overall": 4.12,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find an idea beyond the pun: actually print it (real offset plates, ink spread, paper fibre, press mechanics) so the misregistration has a physical cause and a material world like B's",
+      "Commission or draw a face with a point of view, and let the type interact with an image instead of sitting centred-left like a slide",
+      "Choreograph a journey with distinct compositions and shifts in scale or space, instead of swapping colours and grounds on the same wordmark",
+      "Commit to physical print: real plates, ink, press registration, halftone, paper, shot or simulated with actual light, the way B and C make their worlds tangible",
+      "Develop a typographic point of view, such as a custom or modified face or a layout system that makes 'design systems' the idea instead of the word set large",
+      "Build choreography and surprise across frames, so each frame is a distinct poster rather than one wordmark recoloured",
+      "Needs an idea beyond the literal pun, such as a print-process narrative with real ink, plates and paper the way A uses real packaging",
+      "Needs a custom or characterful wordmark and a credit/info layout with genuine hierarchy instead of a slide-like corner block",
+      "Needs material depth and varied choreography; B builds a world, while D swaps one layout between frames"
+    ],
+    "tells": [
+      "The idea is literal and obvious: the word 'Offset' illustrated by CMYK misregistration, the product name plus a diagram of its meaning",
+      "Generic 'tasteful AI' recipe: cream ground, then a flat cobalt ground, a small three-column info row (Design Systems Conference / Lisboa Portugal / 14\u201315 May 2027) over a hairline rule, and a small italic serif tagline in the corner ('One system, every offset.')",
+      "Typography is a stock heavy grotesk with no custom drawing; scale contrast is the only typographic move",
+      "Repeated composition: the same wordmark recurs in nearly every frame with a colour swap, and the repeating-ticker frame is a stock kinetic-type template move",
+      "Grain is an applied overlay, not real print texture; light is flat and unmotivated",
+      "The idea is literal: the word 'Offset' is visualised as CMYK misregistration. It is the first pun anyone would reach for",
+      "Cream paper ground, one cobalt accent, a generic heavy grotesk wordmark, a small grid of info labels on a hairline rule, and an italic serif tagline ('One system, every offset.'). This is the 'tasteful AI' conference-template look",
+      "The same word in the same face is repeated in every frame, with only scale or colour swapped. It is closer to a slide sequence than a choreographed piece",
+      "The repeating-word tiling band is a stock kinetic-type template move",
+      "The grain overlay passes for texture, but there is no real print material, light or depth even though the subject (offset printing) calls for it",
+      "The idea is literal: 'Offset' illustrated with CMYK misregistration, which is the name plus a diagram of the name",
+      "Generic 'tasteful AI' system: cream paper ground, one cobalt accent, a small three-column info row with a hairline rule, and an italic serif tagline ('One system, every offset.') tucked bottom-right",
+      "The type is a stock heavy grotesk with no custom drawing; the scale contrast comes from cropping, not from typographic invention",
+      "The repeated-word tiling frame is a stock kinetic-type template move",
+      "Paper grain is a uniform overlay filter, not a real print texture; the light is flat",
+      "Its fictional 2027 conference branding fits a generated or spec piece"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.38,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "thank-you-for-smoking": {
+      "overall": 8.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.38,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 8.46,
+  "delta": -4.34,
+  "trials": [
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "thank-you-for-smoking"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered 3D frames with real material variety: translucent skin-like hand, coral-like growth, knitted/mesh textiles, glass and chrome tubing, frosted acrylic",
+              "A deliberate, unusual palette that changes from shot to shot: dusty pink over rust terrain, violet dusk volcano, sky blue, sage/olive green with crimson clusters",
+              "Lighting is motivated and cinematic: rim light, subsurface scattering and atmospheric haze on the mountain",
+              "Frames read as a festival-style title sequence with studio credits (Boldtron, Medusa Lab) and a custom OFFF MX wordmark, which points to a commissioned collaborative piece",
+              "Each shot is a different world, so the variety shows authorship rather than one repeated layout"
+            ],
+            "gaps": [
+              "The credit typography is a small default bold sans dropped top-left, with no integration into the image the way B and D build type into their worlds",
+              "The organic-surreal 3D vocabulary (tendrils, hair, glossy tubes) is current festival-reel language; it needs one conceptual thread that only this piece could have",
+              "The shots feel like separate studio vignettes rather than one choreographed journey; transitions or a shared motif would bind the sequence"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A singular concept: the world map as a clockwork model that builds itself, so the opening doubles as the show's geography and orientation",
+              "Real material and light: tarnished brass, carved wood, engraved armillary band, warm volumetric sun flare, aged parchment map",
+              "Choreography across frames, travelling from the astrolabe band to the cities that unfold to the map with a pin to the lockup, so the camera journey is the structure",
+              "Credits are set in an engraved Trajan-like serif with heraldic sigil bullets and placed inside the scene as if part of the model",
+              "Every frame works as a poster; the final title lockup is cast into the same metal object"
+            ],
+            "gaps": [
+              "Credit type is small and sometimes fights the busy texture for legibility",
+              "The palette is restrained into a warm sepia-brass monotone, with little colour contrast between locations",
+              "The closing lockup with flare is more conventional than the mechanical world before it"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 5,
+              "originality": 2
+            },
+            "tells": [
+              "The idea is literal and obvious: the word 'Offset' illustrated by CMYK misregistration, the product name plus a diagram of its meaning",
+              "Generic 'tasteful AI' recipe: cream ground, then a flat cobalt ground, a small three-column info row (Design Systems Conference / Lisboa Portugal / 14\u201315 May 2027) over a hairline rule, and a small italic serif tagline in the corner ('One system, every offset.')",
+              "Typography is a stock heavy grotesk with no custom drawing; scale contrast is the only typographic move",
+              "Repeated composition: the same wordmark recurs in nearly every frame with a colour swap, and the repeating-ticker frame is a stock kinetic-type template move",
+              "Grain is an applied overlay, not real print texture; light is flat and unmotivated"
+            ],
+            "gaps": [
+              "Find an idea beyond the pun: actually print it (real offset plates, ink spread, paper fibre, press mechanics) so the misregistration has a physical cause and a material world like B's",
+              "Commission or draw a face with a point of view, and let the type interact with an image instead of sitting centred-left like a slide",
+              "Choreograph a journey with distinct compositions and shifts in scale or space, instead of swapping colours and grounds on the same wordmark"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, witty idea: every credit is designed as a period cigarette pack, which suits a satire about tobacco lobbying",
+              "The typography has a strong point of view: each card uses a different, period-researched lettering style (ribbon banner caps, brush script, Clarendon-style serif with 'LIGHTS', art-deco caps, script plus condensed bold) that pastiches real packaging",
+              "Real print texture: off-register gold, aged stock, engraved crests, eagle and bloodhound vignettes, and tiny compliance copy ('Underage sale prohibited', 'Honey-toasted tobacco lights')",
+              "A deliberate vintage palette of royal blue, orange/mustard, cream with red-white-blue stripe, menthol green and Marlboro red",
+              "The frame sequence implies close, sliding macro camera moves across the pack surfaces, ending on a row of filters"
+            ],
+            "gaps": [
+              "Motion is implied to be mostly lateral pans across flat artwork; it needs more dimensional camera work or 3D choreography to match B's spatial journey",
+              "The one-pack-per-credit structure repeats in rhythm; it needs a mid-sequence escalation or break in the pattern",
+              "Lighting is largely flat scan lighting; real foil glints, cellophane and shallow focus would add the materiality B achieves"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.0,
+        "cost_usd": 0.1586128,
+        "tokens": 71989,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "thank-you-for-smoking",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, layered 3D: knotted glass tubes, frayed fibres, mesh cloth, coral-like growths. These are real simulated materials with subsurface scattering and refraction, not stock primitives",
+              "Each frame has a different setting (dusk terrain, smoking peak, sky-blue horizon, green studio sweep), but they share one organic and synthetic language",
+              "Unusual palette pairings: pale ice blue against olive chrome and crimson, sage green against blush and rust",
+              "Typography is a weak point: small studio-name labels in a generic heavy grotesk sit on the image like captions, though the OFFF MX mark is a real identity",
+              "Reads as a festival or collective reel. The craft is high, but the idea is an anthology of looks rather than one concept"
+            ],
+            "gaps": [
+              "Give it one through-line or narrative so it plays as a single piece instead of a sequence of separate studio vignettes",
+              "Work the typography into the 3D world (lit, occluded, made of the material) instead of pasting small labels over it",
+              "Show choreography between shots, such as match cuts or a transforming form, so the motion means more than a camera on a sculpture"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea that belongs only to this piece: the world as a clockwork map, with cities that build themselves out of gears, and it doubles as the show's narrative atlas",
+              "Real material and texture: an engraved bronze astrolabe band, weathered wood, brass cogs, parchment terrain, all under motivated sunburst light inside the sphere",
+              "Strong choreography: the camera flies across the map and the mechanical structures unfold, ending on the band and logo bookend that the opening set up",
+              "Restrained engraved-serif credits sit in the world beside house sigils, with clear hierarchy between role and name"
+            ],
+            "gaps": [
+              "The credits are small and sometimes get lost against busy texture, so they could be anchored with more contrast",
+              "The sepia-gold grade is dominant, and a little more colour separation between regions would help readability",
+              "Few gaps remain. This is the benchmark the other entries are measured against"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "The concept is one only this film could have: every credit is a period cigarette pack, so the brand design becomes the satire",
+              "Typography with real character: each name gets its own pastiche (script, engraved serif 'LIGHTS', deco caps, condensed packaging sans), all integrated into authentic layouts",
+              "A deliberate vintage palette of royal blue and gold, orange and cream, tobacco green, red. Paper grain, foil and print texture are present",
+              "Jokes are packed into the details: 'Underage sale prohibited', 'Honey-toasted', 'Premium blend', the row of filters under the director credit"
+            ],
+            "gaps": [
+              "The motion appears limited to pans and slides across flat art, so it needs more physical choreography (packs opening, foil tearing, objects in depth)",
+              "Light is mostly flat scanned-print. Real lit dimensionality would add presence",
+              "Varying the framing rhythm would help, since most frames are similar horizontal crops of packaging"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The idea is literal: the word 'Offset' is visualised as CMYK misregistration. It is the first pun anyone would reach for",
+              "Cream paper ground, one cobalt accent, a generic heavy grotesk wordmark, a small grid of info labels on a hairline rule, and an italic serif tagline ('One system, every offset.'). This is the 'tasteful AI' conference-template look",
+              "The same word in the same face is repeated in every frame, with only scale or colour swapped. It is closer to a slide sequence than a choreographed piece",
+              "The repeating-word tiling band is a stock kinetic-type template move",
+              "The grain overlay passes for texture, but there is no real print material, light or depth even though the subject (offset printing) calls for it"
+            ],
+            "gaps": [
+              "Commit to physical print: real plates, ink, press registration, halftone, paper, shot or simulated with actual light, the way B and C make their worlds tangible",
+              "Develop a typographic point of view, such as a custom or modified face or a layout system that makes 'design systems' the idea instead of the word set large",
+              "Build choreography and surprise across frames, so each frame is a distinct poster rather than one wordmark recoloured"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.9,
+        "cost_usd": 0.1532092,
+        "tokens": 71722,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "game-of-thrones",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Every credit is set as a fake cigarette-pack brand: each name gets its own period-appropriate lettering (script, condensed slab, art-deco caps, banner-ribbon serif), so the type itself carries the satire",
+              "Lithographic texture is convincing: halftone grain, gold foil, ink misregistration, printed-stock warmth",
+              "Pack ephemera (crests, a hound engraving, a DC-3 plane, tax stamps, filter rows, 'underage sale prohibited') shows real research and wit",
+              "The palette changes on every card but stays in one mid-century packaging range, so the set holds together as a system"
+            ],
+            "gaps": [
+              "The motion implied by the frames is mostly push-ins and pans across flat artwork, with less spatial choreography than B",
+              "No physical light or depth, so it stays graphic surface rather than a built world",
+              "Card-per-credit structure is close to repeating, and only the content varies"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, ownable idea: a clockwork map that builds the world's geography and politics as mechanical sculpture",
+              "Real material and light: engraved brass, carved wood, an astrolabe sun flare, tilt-shift depth",
+              "Strong evidence of choreography: the camera flies across the map, then cities unfold from gears, which tells a spatial story",
+              "Credits are integrated into the world with sigil icons and a carved-feel trajectan-style serif, not overlaid like a slide"
+            ],
+            "gaps": [
+              "Credit typography is understated and conventional next to A's expressive type",
+              "The warm sepia grade is near-monochrome and safe",
+              "The sigil-plus-caps credit lockup repeats identically"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Dense, layered 3D with specific materials: cloth mesh, translucent resin, fibres, glossy organics, lava-lit terrain",
+              "The variety of worlds and palettes between frames points to a festival-titles anthology (OFFF-style) with studio name cards",
+              "Simulation detail (hair, cloth, particle eruption) needs real craft"
+            ],
+            "gaps": [
+              "No unifying idea: it reads as a showcase of renders rather than a single concept",
+              "Typography is a default bold grotesk label dropped top-left with no integration, scale or point of view",
+              "The 'organic-abstract 3D blob' look is very current festival trend, so it is less memorable and less specific than B"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 5,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The idea is literal: 'Offset' illustrated with CMYK misregistration, which is the name plus a diagram of the name",
+              "Generic 'tasteful AI' system: cream paper ground, one cobalt accent, a small three-column info row with a hairline rule, and an italic serif tagline ('One system, every offset.') tucked bottom-right",
+              "The type is a stock heavy grotesk with no custom drawing; the scale contrast comes from cropping, not from typographic invention",
+              "The repeated-word tiling frame is a stock kinetic-type template move",
+              "Paper grain is a uniform overlay filter, not a real print texture; the light is flat",
+              "Its fictional 2027 conference branding fits a generated or spec piece"
+            ],
+            "gaps": [
+              "Needs an idea beyond the literal pun, such as a print-process narrative with real ink, plates and paper the way A uses real packaging",
+              "Needs a custom or characterful wordmark and a credit/info layout with genuine hierarchy instead of a slide-like corner block",
+              "Needs material depth and varied choreography; B builds a world, while D swaps one layout between frames"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.6,
+        "cost_usd": 0.15003260000000002,
+        "tokens": 71556,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 6,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": false,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Final 3-4 s is close to static: per-second change falls to 2.7-12 after the lockup. That is dead air, not a held beat.",
+        "The CMYK misregistration is the same RGB-split fringe on every glyph, including the small type in the lockup. At 1:1 it reads as a chromatic-aberration filter, not real plate offset, and it softens the edges of the copy.",
+        "In the stripe shot the large black 'Offset' collides with the 'OFFSET' rows and is unreadable. It reads as clutter, not as layering.",
+        "The repeated 'OFFSET' marquee rows are a stock kinetic-type move. They slide at constant speed, rows alternate direction, and there is no easing or staggered hand-off.",
+        "The pairs show the layered-plate frame barely changing in 1/6 s, while the colour plates drift with little visible ease or overshoot. Weight is missing from the snap into register.",
+        "Two shots run long (median 4.8 s, longest 5.9 s) with no reveal inside them strong enough to justify the hold.",
+        "The palette goes past restraint: blue, cream, cyan, magenta, yellow and black all compete in the stripe section, so there is no single accent."
+      ],
+      "gaps": [
+        "Choreography: misregistration snapping into register is the right idea, but it plays as one drift and one snap. Top work would stage it as a sequence: plates arriving with different timing, overshoot and a settle, a decisive hit at the moment of registration, and the type system then building out from that hit. Right now there is a constant-speed marquee and a long static tail.",
+        "Finish: the offset should look like printing. Top work would show plate-specific ink overprint and multiply, paper texture moving under the ink, and halftone or trapping detail at 1:1, so the 'offset' is a material and not a uniform RGB-split post effect on every element.",
+        "Sound and arc: the riser into the drop at about 6 s lands well. After that, dense evenly spaced transients flatten the dynamics, and the release at 12-14 s has no strong closing hit paired with the final registration. Top work would leave more space, give the drop a designed sound for registration snapping in, and finish with a cleaner single resolve."
+      ]
+    },
+    "meta": {
+      "seconds": 22.1,
+      "cost_usd": 0.16191519999999998,
+      "tokens": 72139,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final3.mp4: 15.0s, 3 shots, median 4.77s, longest 5.87s\nper-second change: [27.0, 16.9, 48.4, 13.9, 29.6, 68.9, 60.2, 68.6, 53.7, 70.3, 11.4, 5.9, 2.7, 12.4]\nPACE: FAIL \u2014 longest shot 5.9s > 2.5s; median shot 4.8s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 5,
+    "typography": 4,
+    "colour": 5,
+    "light_texture": 3,
+    "motion": 5.0,
+    "craft": 5.5,
+    "originality": 3,
+    "sound": 6
+  },
+  "full_overall": 4.5,
+  "cost_usd": 0.624,
+  "judge_seconds": 110.6,
+  "verdict": "FAIL"
+}

@@ -1,0 +1,528 @@
+{
+  "name": "i-explainer",
+  "tags": [
+    "explainer-2d",
+    "editorial-data",
+    "illustration",
+    "motion-design"
+  ],
+  "refs": [
+    "kurzgesagt-short",
+    "kurzgesagt-climate",
+    "cosmos-spacetime-odyssey"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 4,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 4,
+      "motion": 4,
+      "craft": 3,
+      "originality": 3
+    },
+    "overall": 3.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Replace the feature diagram with a specific, ownable idea about silence, a concept that could not be swapped onto any other audio brand.",
+      "Treat the type as craft: if letters distort through a ring, they should be legible, choreographed and resolve into a meaningful word. Replace the default serif end card and mono captions with a real typographic system.",
+      "Give each beat a different composition, palette shift and material, with real surfaces and motivated light, so the frames progress instead of repeating one dark ring layout.",
+      "It needs a real typographic idea: the distorted word should stay legible and have its distortion designed, not dissolve into garbled glyphs, and the end card should not be default serif on cream",
+      "Compositions repeat; it needs a varied progression of scale, camera and staging, as A and C have",
+      "The idea goes no further than the product diagram; it needs a specific, memorable metaphor and real material and light beyond a generic chrome ring on black",
+      "Give it a real idea beyond 'pressure ring equals sound', for example a specific environment or human moment that noise cancellation transforms, as C builds a universe from one metaphor",
+      "Make the typography deliberate: a legible, designed distortion of a real word and a face chosen for the brand, not a default serif centred on cream",
+      "Vary the choreography and scale across shots (macro material, product, world) and build real light and texture into the ring and surface"
+    ],
+    "tells": [
+      "The idea is literal and obvious: sound shown as rings, noise cancellation explained as 'silence made from sound', with a diagram of the feature and a caption naming it.",
+      "This is the generic 'tasteful AI' formula: a dark ground with a single copper accent, small monospaced explanatory captions in the lower left, and a cream end frame with a centred editorial-serif italic 'Silence' in default Didone style.",
+      "The type is garbled and incoherent ('SOSSTIEN', melting nonsense glyphs). It reads as distorted generated text, not intentional typographic play, because no word survives legibly to pay off the distortion.",
+      "The same composition repeats across frames 2 and 3: a ring over warped type on a dark plane with orange arcs. Little changes between them.",
+      "The chrome ring is a stock 3D primitive, the shading is smooth and textureless, and the light is flat specular with no material story.",
+      "The generic 'tasteful AI' formula: a dark ground with a single copper accent, then a cream end card with a generic editorial-serif italic headline ('Silence') centred like a slide",
+      "Small monospace captions in the corner ('Sound is air, pushed into waves\u2026') read as the standard AI-tool label treatment",
+      "The warped type is illegible mush; the letterforms break down into garbled glyphs rather than a controlled distortion, which suggests a generated rather than built simulation",
+      "A stock 3D primitive (a chrome ring over ripples) repeats across three frames with the same camera and composition, so little changes",
+      "The idea is literal: sound waves, then a ring, then silence diagrams the product feature (noise cancellation)",
+      "It hits the 'tasteful AI' checklist: a dark ground with a single copper accent, then a cream ground with a centred generic editorial italic serif 'Silence'",
+      "Small monospace caption blocks in the lower left ('Sound is air, pushed into waves...', 'Active noise cancellation: silence, made from sound.') read like default explainer labels",
+      "The warped type under the ring degrades into illegible glyph mush ('EOSSTTEEN'-like) instead of a controlled refraction of a real word, a common generative or procedural artefact",
+      "The same composition repeats across three frames (ring over rippled disc, warped word, low angle) with little change of scale or subject",
+      "The idea is a literal diagram of the feature (sound waves become rings, cancellation becomes silence), with nothing a viewer would remember",
+      "Light is a generic dark-studio sheen with no material identity for the product"
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-short": {
+      "overall": 6.38,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "kurzgesagt-climate": {
+      "overall": 7.38,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "cosmos-spacetime-odyssey": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.17,
+  "delta": -3.55,
+  "trials": [
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "kurzgesagt-short",
+        "C": "candidate",
+        "D": "kurzgesagt-climate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Each frame is a different physical world that rhymes with cosmic structure: a nebula seen in a rock crater pool, the nautilus spiral on wet sand, an accretion disc, and the Helix-nebula 'eye'. That is a real conceptual through-line from micro to macro.",
+              "The light and materials are believable: the sand and the shell's nacre have tactile grain and subsurface warmth, the crater rock is wet basalt, and the disc has a real volumetric glow.",
+              "Composition changes from shot to shot (low macro, top-down, wide orbital, frontal iris), which points to camera choreography rather than one repeated layout.",
+              "The credit typography is restrained broadcast convention: small tracked caps placed lower right. Competent but it adds nothing, and the widely tracked title lockup over the eye is a well-worn genre trope.",
+              "The palette moves from cold slate to warm sand to an orange and blue eye, so colour builds toward the finale."
+            ],
+            "gaps": [
+              "The type is generic network-credit setting. Give the credits and title a typographic idea that comes out of the imagery, for example letterforms following the spiral or reflected in the pool.",
+              "The closing nebula-eye is a familiar astronomy image and lands as expected. End on an image the sequence has earned rather than a stock-feeling plate.",
+              "Some plates such as the accretion disc and the comets read as standard space-VFX vocabulary. Push the micro/macro match-cuts harder so the transitions themselves become the signature."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "There is a highly consistent house illustration system: chunky rounded birds, saturated non-naturalistic palettes and a strong value structure, with dark purple soot blobs used as a recurring graphic motif for emissions.",
+              "The frames are dense and layered: a perspective traffic scene with depth and atmosphere, an isometric systems map with many readable vignettes, a four-panel split-screen, and a car with UI-like gauges. The framing and staging vary a lot.",
+              "The soft shadows, rim highlights, glow on the bulb and smoke clusters show deliberate light design within a flat idiom.",
+              "The variety of scenes and the recurring characters imply choreographed explainer motion with weight and continuity.",
+              "Type is minimal in these frames. The icon-driven storytelling carries the meaning, which suits the piece, though the explainer format limits how ambitious the idea can be."
+            ],
+            "gaps": [
+              "The idea is explainer-literal (emissions shown as smoke, a systems map). Find one surprising visual metaphor that only this film could own, in the way A turns the eye into a nebula.",
+              "The light is stylised flat-plus-glow. A more cinematic lighting pass at key beats would add depth and mood.",
+              "The house style is recognisable but well established. Break your own formula at a climactic moment to create surprise."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "It uses the same accomplished illustration system as D (bird characters, saturated palette, a mammoth with stylised fur rendering), and the character acting is readable: a villain at the STOP button, a misunderstanding staged as a memory game.",
+              "The 'Europe's Next Ice Age' title card is custom-styled with a dimensional outline and sits over a heat-map coastline, so the type is integrated with the image rather than placed like a slide.",
+              "It is a vertical short-form cut with burned-in subtitle captions in a default-looking small sans. That is functional, not designed, and the caption placement repeats from frame to frame.",
+              "The frames are less dense than D, with more empty ground and simpler staging, as is typical for a social cutdown."
+            ],
+            "gaps": [
+              "The captions are set like platform defaults. Design them as part of the frame, with a size and weight hierarchy and placement that responds to each composition.",
+              "The vertical framing leaves large empty areas such as the mammoth's sky and the gradient under the birds. Recompose for 9:16 instead of adapting a horizontal layout.",
+              "The gags are literal (a Bond-villain stop button, a matching game). Raise the idea from illustrating the script to an image a viewer would remember."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The idea is literal and obvious: sound shown as rings, noise cancellation explained as 'silence made from sound', with a diagram of the feature and a caption naming it.",
+              "This is the generic 'tasteful AI' formula: a dark ground with a single copper accent, small monospaced explanatory captions in the lower left, and a cream end frame with a centred editorial-serif italic 'Silence' in default Didone style.",
+              "The type is garbled and incoherent ('SOSSTIEN', melting nonsense glyphs). It reads as distorted generated text, not intentional typographic play, because no word survives legibly to pay off the distortion.",
+              "The same composition repeats across frames 2 and 3: a ring over warped type on a dark plane with orange arcs. Little changes between them.",
+              "The chrome ring is a stock 3D primitive, the shading is smooth and textureless, and the light is flat specular with no material story."
+            ],
+            "gaps": [
+              "Replace the feature diagram with a specific, ownable idea about silence, a concept that could not be swapped onto any other audio brand.",
+              "Treat the type as craft: if letters distort through a ring, they should be legible, choreographed and resolve into a meaningful word. Replace the default serif end card and mono captions with a real typographic system.",
+              "Give each beat a different composition, palette shift and material, with real surfaces and motivated light, so the frames progress instead of repeating one dark ring layout."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 35.7,
+        "cost_usd": 0.1519878,
+        "tokens": 70661,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "kurzgesagt-short",
+        "C": "kurzgesagt-climate",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A clear visual idea runs through the frames: a nebula held in a crater-like puddle, a nautilus on sand and a protoplanetary disk all link the small scale to the cosmic one",
+              "Each frame is a different scale and setting, which suggests a real journey and choreography from frame to frame",
+              "Light and texture are physical and motivated: wet rock, grains of sand, the translucent shell, the glow of the accretion disk",
+              "The end title is built around a real image (the Helix Nebula as an iris), with the 'O' of COSMOS sitting at the pupil, so type and image are integrated",
+              "The credits are small, well-placed tracked caps that are functional and don't push into the image"
+            ],
+            "gaps": [
+              "The typography is conservative: wide-tracked sans caps and a modest subtitle, with little typographic point of view",
+              "Some of the space imagery (the disk, the comets) leans on familiar science-documentary VFX language rather than a look of its own",
+              "The credits are placed like lower thirds and are not integrated into each scene's geometry the way the end title is"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "A consistent house illustration system with character acting (the villain at the STOP button, the birds' memory game, the mammoth), which is designed rather than clip-art",
+              "Scene variety is high: every frame is a new setup, and the metaphors are explanatory rather than literal",
+              "A saturated, deliberate palette with a recognisable studio style",
+              "Vertical reformatting plus burned-in default social captions ('completely due', 'misconception') weakens the frames; the captions are set like a slide in a plain sans",
+              "The title card 'Europe's Next Ice Age' uses a bubbly, outlined display face over a map, which is serviceable but not a typographic idea"
+            ],
+            "gaps": [
+              "The burned-in caption typography is default and sits on top of the art with no integration; it needs a designed caption system",
+              "Compositions are cropped for 9:16 and feel cut down (the characters are cramped and the mammoth crops awkwardly) instead of being composed for the format",
+              "The light is flat and the shading cel-simple; it lacks the depth and texture of A"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Four distinct staging modes (a dense traffic scene, an isometric systems map, a split-screen character grid and a product UI vignette) show strong choreography and variety",
+              "Frames are dense and layered, with a consistent soot-cloud motif linking emissions across scenes",
+              "A bold, unusual palette (purple, cyan, magenta, acid green) held under control",
+              "Characters have personality (headphones, sunglasses, glasses), and the isometric world-building shows high-effort craft",
+              "There is no visible type; the absence suits the explanatory flow, and the icons carry the information"
+            ],
+            "gaps": [
+              "It lives very close to an established studio house style, so originality is limited",
+              "The light is flat and the materials are uniform; it lacks the photographic depth and texture that A has",
+              "The UI elements (sliders, the checkmark, the bar-chart badge) border on generic infographic iconography"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The generic 'tasteful AI' formula: a dark ground with a single copper accent, then a cream end card with a generic editorial-serif italic headline ('Silence') centred like a slide",
+              "Small monospace captions in the corner ('Sound is air, pushed into waves\u2026') read as the standard AI-tool label treatment",
+              "The warped type is illegible mush; the letterforms break down into garbled glyphs rather than a controlled distortion, which suggests a generated rather than built simulation",
+              "A stock 3D primitive (a chrome ring over ripples) repeats across three frames with the same camera and composition, so little changes",
+              "The idea is literal: sound waves, then a ring, then silence diagrams the product feature (noise cancellation)"
+            ],
+            "gaps": [
+              "It needs a real typographic idea: the distorted word should stay legible and have its distortion designed, not dissolve into garbled glyphs, and the end card should not be default serif on cream",
+              "Compositions repeat; it needs a varied progression of scale, camera and staging, as A and C have",
+              "The idea goes no further than the product diagram; it needs a specific, memorable metaphor and real material and light beyond a generic chrome ring on black"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.4,
+        "cost_usd": 0.1418586,
+        "tokens": 70145,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "kurzgesagt-climate",
+        "B": "kurzgesagt-short",
+        "C": "cosmos-spacetime-odyssey",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.86,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, fully populated isometric worlds: a traffic jam with individually designed vehicles, soot clouds and guardrails; an energy map with steak, plane, solar panels, wind turbines and forest tiles linked by paths",
+              "A recurring bird cast (headphones, glasses, sunglasses) used as characters with personality, not mascots dropped into frames",
+              "Bold, deliberate palette that changes per scene (violet street, cyan grid, four-colour split screen, lime and teal) yet stays in one system",
+              "Soft rim light, contact shadows and glow on the bulb give volume within a flat-illustration language",
+              "Real variety between frames: wide isometric world, 2x2 character split, product-style car shot with a UI slider panel, which implies edited choreography rather than a single repeated layout",
+              "Absence of on-screen type serves an explainer whose voiceover carries the words; the iconography (chart, check mark, sliders) does the typographic work"
+            ],
+            "gaps": [
+              "The idea is a well-made explainer on carbon and energy but visually stays in a familiar 'educational isometric' house style; it needs a signature conceit that only this film could have, as C has with the eye and nebula",
+              "The UI slider and check-mark frame drops toward generic infographic language; integrate data into the world instead of sitting it on a side panel",
+              "Light is pleasant but uniform; a motivated lighting shift (smog dimming the city, the bulb actually lighting the map) would give dramatic weight"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.78,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "Confident, characterful illustration: a moustached villain at a STOP console with a world map, birds playing a memory game, a magenta mammoth with an outsized tusk loop",
+              "Saturated, coherent palette with a stylised heat-map Europe for the title card",
+              "Scene variety and narrative staging across frames (control room, title, dialogue gag, mammoth), consistent with an established studio pipeline",
+              "Typography is the weak point: a chunky outlined title over the map, and burned-in social-media captions ('completely due', 'misconception', 'ice age,') that sit like auto-subtitles over the art"
+            ],
+            "gaps": [
+              "The burned-in caption strip is the default vertical-video convention; design captions as part of the image or drop them",
+              "Compositions are cramped by the vertical crop, with characters and key art centred and cut; recompose for 9:16 instead of reframing 16:9 layouts",
+              "Light and texture are flat compared with C; add atmosphere (ice haze, depth falloff, grain) so the 'Ice Age' premise is felt, not only illustrated"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A specific visual thesis of macro equals micro: a crater that holds a nebula, a nautilus shell on sand, a protoplanetary disc, and an eye resolving into the Helix-like nebula for the title",
+              "Photoreal light and material: wet rock, raking light across sand texture, translucent shell glow, volumetric dust in the disc",
+              "The end card resolves the sequence: the eye's pupil becomes the 'O' of a widely tracked COSMOS, so the type is locked into the image",
+              "Credits set small and quiet in tracked caps beside the subject, in a hierarchy suited to title-sequence convention",
+              "Strong choreography of scale (ground to object to stellar system to cosmic eye), so each frame reads as a poster"
+            ],
+            "gaps": [
+              "Some space imagery (comets streaking toward the disc) leans on familiar sci-fi stock vocabulary; push for a less expected cosmic image",
+              "The wide-tracked thin sans for the title is elegant but expected for the genre; there is room for a more ownable typographic voice",
+              "The palette swings between cool and warm per shot without a clear arc; a deliberate colour progression would tighten the sequence"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.68,
+            "scores": {
+              "idea": 5,
+              "composition": 5,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 5,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "It hits the 'tasteful AI' checklist: a dark ground with a single copper accent, then a cream ground with a centred generic editorial italic serif 'Silence'",
+              "Small monospace caption blocks in the lower left ('Sound is air, pushed into waves...', 'Active noise cancellation: silence, made from sound.') read like default explainer labels",
+              "The warped type under the ring degrades into illegible glyph mush ('EOSSTTEEN'-like) instead of a controlled refraction of a real word, a common generative or procedural artefact",
+              "The same composition repeats across three frames (ring over rippled disc, warped word, low angle) with little change of scale or subject",
+              "The idea is a literal diagram of the feature (sound waves become rings, cancellation becomes silence), with nothing a viewer would remember",
+              "Light is a generic dark-studio sheen with no material identity for the product"
+            ],
+            "gaps": [
+              "Give it a real idea beyond 'pressure ring equals sound', for example a specific environment or human moment that noise cancellation transforms, as C builds a universe from one metaphor",
+              "Make the typography deliberate: a legible, designed distortion of a real word and a face chosen for the brand, not a default serif centred on cream",
+              "Vary the choreography and scale across shots (macro material, product, world) and build real light and texture into the ring and surface"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.5,
+        "cost_usd": 0.1503278,
+        "tokens": 70578,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 6,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": false,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "The ripple displacement turns the display type into unreadable smears in frames 2\u20134. 'NOISE' and the word inside the ring are illegible for long stretches, not just at peak turbulence.",
+        "Letterforms tear and pinch at the 100% crop. The displacement map breaks counters and strokes apart instead of bending them, and the result reads as a default warp filter.",
+        "The white 'Silence' section is nearly static. In the pairs, frames 1/6 s apart are almost identical, leaving about 8 s of slow push with no secondary motion.",
+        "There is a very soft, out-of-focus orange band across the upper midground in the dark section. It pulls attention and has no clear role.",
+        "The mono captions are small, thin, and low contrast against the busy ripple background, and they sit at the edge of legibility at delivery size.",
+        "The soundtrack is mostly a noise bed, clean sine sweeps, and one bell-like chime with few partials. It is functional but sounds synthetic, with little texture in the layers.",
+        "The film moves through three type styles (mono, wide grotesk, high-contrast italic serif) with no shared system between them."
+      ],
+      "gaps": [
+        "Motion: it is one continuous camera move with one effect (ripple displacement) for 20 s. The waves have no change in spacing and no accents of their own, so the build comes from the soundtrack, not the picture. The ring's arrival, and the moment it flattens the waves, needs real anticipation, overshoot, and settle, plus a few deliberate held beats. The post-cut white section needs secondary motion or a quicker end, not a long, even push.",
+        "Sound: the noise wash, rising sine glissandi, and hard cut to silence are a well-timed idea. The cut to silence at about 21 s lands exactly on the 138-point visual spike. But the palette is thin: no recorded material, no low-end weight under the ring, and no spatial movement. Top studios would build the noise from many real sources and make the cancellation audible as a phase-inverted collapse, not a mute.",
+        "Finish: the type distortion needs to be art-directed so the words stay partly readable and break up only on the key beats. Display, caption, and payoff type should come from one considered system. The orange midground blur and the generic warp artefacts keep the dark section from reading as finished studio work, even though the lighting and material on the ring are good."
+      ]
+    },
+    "meta": {
+      "seconds": 22.7,
+      "cost_usd": 0.1565584,
+      "tokens": 71557,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final-v3.mp4: 30.0s, 1 shots, median 30.00s, longest 30.00s\nper-second change: [13.1, 27.8, 32.7, 21.1, 23.3, 32.3, 23.3, 15.5, 18.3, 13.9, 12.8, 14.3, 18.9, 19.1, 21.2, 19.6, 18.0, 17.1, 10.0, 16.1, 138.4, 22.6, 22.6, 19.7, 14.1, 11.3, 20.4, 15.4, 15.9]\nPACE: FAIL \u2014 longest shot 30.0s > 2.5s; median shot 30.0s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 4,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 4,
+    "motion": 5.0,
+    "craft": 4.5,
+    "originality": 3,
+    "sound": 6
+  },
+  "full_overall": 4.17,
+  "cost_usd": 0.601,
+  "judge_seconds": 121.3,
+  "verdict": "FAIL"
+}
