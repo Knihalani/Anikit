@@ -60,3 +60,7 @@ These are counts of pieces whose jury tells name the pattern.
   - `--render` `layout` fires when most shots share one composition (measured on the sampled frames).
 - **`docs taste`:** a "what the judge keeps saying" line pointing here.
 - **Director prompt:** the literal-idea self-check, and "plan a sequence of different frames".
+
+## Round 2 update (same briefs, same refs)
+
+12/12 FAIL again, paired mean Δ −0.01 (`docs/video/judge/rounds/r2/`). Dropped or eased: dead holds (gone), flat material (critic material fails 6 → 2), weak sound (critic sound 4 → 5.5). Persisting: the literal idea (idea median fell 3.5 → 3), one layout with the words swapped, type set like a caption (critic "type carries meaning" fails rose 5 → 9 of 12 even with new faces), no camera journey or escalation. New: c-event and k-sports had no built world at all. What moved scores since is in `WHAT-WORKED.md`.

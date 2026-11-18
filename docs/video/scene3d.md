@@ -55,13 +55,14 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - or an object: `{ "preset": "cyc", "color": "#EEEBE5", "key": [-0.55, 1, 0.45], "haze": 0.0015 }`.
 - **`lights`:** `[{ "dir": [x, y, z], "size": [w°, h°], "color", "intensity": 4, "roll", "key": true }]`. These are extra softboxes or strips. They light the scene and show as crisp shapes in chrome. `key` casts the traced shadows.
 - **Local lights** (in `lights`, given a `pos`): a point light `{ "pos": [x, y, z], "color", "intensity": 10 }`, or a spot when it also has a `target`, `angle` (degrees) and `penumbra` (0–1). They fall off with the inverse square and cast hard traced shadows (`"shadow": false` turns them off). Use them for light pools on the floor, LEDs and practicals.
+  - **Practicals** in one object: `{ "type": "practical", "shape": "bulb"|"tube"|"panel", "pos", "color", "intensity", "size" }`. Each makes the visible source (an emissive sphere, a horizontal tube, or a ceiling panel facing down) *and* its light (one point, three points along the tube, or a wide soft spot), in the same colour and level. `intensity` may be an expression, so a bulb can flicker. Proof: `docs/video/shots/3d-lights/practicals.jpg`.
   - `pos`, `target` and `intensity` take `"=expressions"` of `t`: a searchlight that sweeps (`"pos": "=[2.2*sin(t*0.9), 3.2, 1+1.2*cos(t*0.9)]"`), a spot that tracks, a sign that flickers (`"intensity": "=1.2+max(0,sin(t*7))"`).
   - Proof: `docs/video/shots/3d-lights/searchlight.jpg` (two moments of the same shot).
   - Texture prints (compositions on panes, planes and text) are lit by local lights too, like matte paper: a sodium lamp pools on a brick-textured wall and a sign spills its colour onto a textured facade. Each shadowed light costs one shadow ray per textured pixel (a street with 20 shadowed lamps and many textured panes roughly doubles the trace time); set `"shadow": false` on fill lights.
-- **`fog`:** a density per metre, or `{ "density", "color", "shafts": true, "height", "base" }`. `height` makes it height fog: dense at `base` (default 0, the floor) and thinning by e every `height` metres. That gives ground mist, a valley fog, or a set that dissolves into haze. It's integrated exactly along each camera ray (one `exp`), and the layer meets the sky softly. Proof: `docs/video/shots/3d-fog/ground-mist.jpg` (`{ "density": 0.9, "height": 0.25 }`). `shafts` adds volumetric light: spot cones and god rays from the key, with object shadows cut into them. Use density 0.02–0.08 with a dark fog colour at night.
+- **`fog`:** a density per metre, or `{ "density", "color", "shafts": true, "height", "base" }`. `height` makes it height fog: dense at `base` (default 0, the floor) and thinning by e every `height` metres. That gives ground mist, a valley fog, or a set that dissolves into haze. It's integrated exactly along each camera ray (one `exp`), and the layer meets the sky softly. Proof: `docs/video/shots/3d-fog/ground-mist.jpg` (`{ "density": 0.9, "height": 0.25 }`). `drift` (0–1) makes the fog patchy and moving: density follows smooth noise of feature size `scale` (metres, default 2.5), carried by `wind` (m/s, default `[0.25, 0, 0.05]`). Proof: `docs/video/shots/3d-fog/drift.jpg` (two moments). `shafts` adds volumetric light: spot cones and god rays from the key, with object shadows cut into them. Use density 0.02–0.08 with a dark fog colour at night.
 - **`camera`:**
   - presets: `push`, `reveal`, `flyby`, `orbit` (all 5 s by default), `dolly`, `crane`, `static`, plus product-film moves: `slide` (a lateral parallax pass), `arc` (a slow 30° arc), `rise` (a pedestal up from below the subject) and `topdown` (an overhead flat-lay turning 20°); or `{ "preset", "duration", "degrees", "height", "shake" }`;
-  - keys: `{ "interp": "smooth"|"linear", "keys": [ { "t", "pos", "target", "focal": 35, "fstop": 2.8, "focus", "shutter": 0.5 } ] }`. A dense per-frame list with linear interpolation works too. `shutter: 0` turns motion blur off.
+  - keys: `{ "interp": "smooth"|"linear", "keys": [ { "t", "pos", "target", "focal": 35, "fstop": 2.8, "focus", "shutter": 0.5, "ease" } ] }`. A key's `ease` shapes the move into it: `linear`, `in`, `out`, `inOut`, `inExpo`, `outExpo` (a fast push that lands softly), `inOutExpo`, or `settle` (lands with a ~1% overshoot, like a dolly braking). A dense per-frame list with linear interpolation works too. `shutter: 0` turns motion blur off.
   - rigs: `"target": "machine"` aims at the object with that `name` (key `target`s become offsets from it); add `"follow": true` to move with it too (key `pos` become offsets).
 - **`objects`:**
   - `type`: `text`, `box`, `slab`/`pane`, `plane`, `card`, `sphere`, `cylinder`, `torus`, `phone`, `extrude`, `lathe`, `tube`, `surface`, `heightfield`, `mesh` (see *Make your own geometry*), `model` (glTF/GLB via `src`: meshes, PBR factors and node animation, which loops at `speed`);
@@ -109,6 +110,8 @@ Dial numerals, a logo on a can, a label on a bottle: put a `plane` just above th
 
 - Leave the composition's `background` out, so it's transparent.
 - Lift the plane about 0.5 mm off the surface.
+- Print on a dielectric (enamel, ceramic, lacquer, paper). A metal surface mirrors the set, so the print sits on a reflection and reads poorly.
+- Open shapes (planes, surfaces, heightfields, and lathes whose profile doesn't close on the axis) are thin shells automatically. A watch crystal can be a glass `lathe` dome with no closing profile.
 
 Proof: `docs/video/shots/3d-decals/dial.jpg` (type and an index printed on a guilloché dial; spec beside it).
 
@@ -293,6 +296,13 @@ The hot parts live in `scene3d/kernel/`:
   151 → 84 ns). Large meshes build in parallel (650k triangles: 1.3 s).
 - `post.rs`: the post stack on structure-of-arrays planes, row-parallel,
   hot loops in `simd_fn!` kernels (AVX2 + baseline, same bits).
+- Camera rays through thin glass panes: after the first pane, the next
+  hits come from one multi-hit query (the nearest four, `wide::Near`,
+  refilled when used up) instead of a fresh traversal per interface. Same
+  hits in the same order (unit tested; hit points differ by float
+  rounding, ≤ 1 level on 99.9% of differing pixels). Off in scenes with
+  cut-out textures; `ANIKIT_SCENE3D_GLASS_NEAR=0` turns it off. `glass`
+  lookdev: 5050 → 4380 CPU ms per frame, same quality.
 - Volumetric shafts (`Scene::volumetrics`) march at half resolution with an
   R2 low-discrepancy offset per pixel, so the separable 5×5 binomial blur
   cancels the banding (white-noise offsets left sandy grain in bright
@@ -319,6 +329,26 @@ changes an edge pixel's coverage and a clamp built from centre samples
 accepts any mix. Limiting reuse to whole-pixel motion removes the error but
 also the reuse: every lookdev shot has a moving camera. Speed gain at best
 ~3%.
+
+Also measured and rejected (scene3d_bench, 4 frames vs the 25-spp references):
+
+- Checkerboarding the reflection ray on glossy floors (roughness 0.03–0.2,
+  e.g. the default studio floor at 0.09): chrome ΔE p99.9 4.7 → 21–27, and
+  slower once sharp contact reflections are re-traced. Its reflections are
+  mostly too sharp for post's gap fill.
+- Edge sub-samples with one bounce less (max depth 3 → 2): cyc ΔE 14.8 →
+  24, panes flicker 10 → 36, no faster.
+- Bounding the next camera-ray traversal by a thin pane's exit face: no
+  gain (traversal from inside the pane still enters the nearby boxes).
+
+Where the time goes (`ANIKIT_SCENE3D_PROFILE=1`, 1080p, 4 cores): closest-hit
+traversal is 45–60% of trace CPU (camera rays 40–65% of that; glass panes
+re-trace per interface), shadow/AO rays are negligible, refinement covers
+3–6% of pixels but edge samples cost ~2.6× a centre sample, and post is
+140–175 ms (floor reflection, denoise, depth of field, motion blur, bloom
+~20–45 ms each). The cheapest quality lever is edge samples: standard's 6
+→ 9 costs ~6% CPU on cyc and takes ΔE p99.9 14.8 → 10.3, flicker 42 → 29
+(chrome flicker 10 → 5.3); 12 costs ~22% for ΔE 7.4, flicker 21.
 
 Measure every change:
 

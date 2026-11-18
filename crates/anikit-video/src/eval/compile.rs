@@ -542,12 +542,21 @@ impl Evaluator {
             encode_crf,
             groove: c.groove.and_then(|m| m.ok()),
             shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
+            inputs_key: serde_json::to_value(spec).map(|v| super::inputs::inputs_key(&v, &opts.base_dir)).unwrap_or(0),
         };
         (Some(ev), c.d)
     }
 }
 
 const COLOUR_FORMS: &str = "use \"#ff5a1f\", \"#f51\", \"#ff5a1f80\" (with alpha), a name like \"white\", a theme token like \"$accent\", \"rgb(255, 90, 31)\", \"hsl(20, 100, 56)\", \"oklch(0.7, 0.19, 40)\", or a per-frame expression \"=mix($primary, $accent, p)\"";
+
+/// `"transparent"` / `"none"` as a background: fully clear (not opaque black).
+fn clear_bg(p: spec::Paint) -> spec::Paint {
+    match &p {
+        spec::Paint::Css(c) if c.trim().eq_ignore_ascii_case("transparent") || c.trim().eq_ignore_ascii_case("none") => spec::Paint::Css("#00000000".into()),
+        _ => p,
+    }
+}
 
 fn any_on_notes(ls: &[Layer]) -> bool {
     ls.iter().any(|l| l.on_notes.is_some() || l.layers.as_deref().is_some_and(any_on_notes) || l.children.as_deref().is_some_and(any_on_notes))
@@ -639,6 +648,7 @@ fn empty_node(kind: Kind) -> Node {
         inertia: None,
         posterize_time: 0.0,
         drag: 0.0,
+        loop_ramp: 0.0,
     }
 }
 
@@ -1402,6 +1412,7 @@ impl C<'_> {
             Some(b) => (b, format!("{path}.background")),
             None => (default_bg, "background".to_string()),
         };
+        let bp = &clear_bg(bp.clone());
         let (bg, bg_color) = self.paint(bp, &bpath).unwrap_or((PaintC::Solid, Rgba([0.0, 0.0, 0.0, 1.0])));
         let bg_color = match &bg {
             PaintC::Solid => bg_color,
@@ -2124,6 +2135,9 @@ impl C<'_> {
                     None
                 }
             };
+            if let Some(r) = p.ramp {
+                n.loop_ramp = r.clamp(0.0, 60.0) as f32;
+            }
             if let Some(lp) = lp {
                 if matches!(lp, LoopC::Float { period, .. } | LoopC::Pulse { period, .. } | LoopC::Spin { period } | LoopC::Wiggle { period, .. } | LoopC::Breathe { period, .. } | LoopC::Blink { period } if period <= 0.0)
                 {
@@ -2443,6 +2457,11 @@ impl C<'_> {
             let step = len / steps as f32;
             f.extrude = Some((ang.cos() * step, ang.sin() * step, steps, x.fade.unwrap_or(0.0).clamp(0.0, 1.0) as f32, m));
         }
+        f.mblur = match &l.motion_blur {
+            None | Some(spec::MotionBlur::On(false)) => None,
+            Some(spec::MotionBlur::On(true)) => Some((0.5, 8)),
+            Some(spec::MotionBlur::Shutter { shutter }) => Some(((*shutter as f32 / 360.0).clamp(0.01, 2.0), 8)),
+        };
         f.smear = match &l.smear {
             None | Some(serde_json::Value::Bool(false)) => None,
             Some(serde_json::Value::Bool(true)) => Some(1.0),
@@ -3750,8 +3769,11 @@ impl C<'_> {
         l.kind = Some("shape".into());
         let pc = PCtx { size: box_, t0: 0.0, end: f32::INFINITY, delay: 0.0, index: 0, count: 1, in_box: false };
         let n = self.layer(&l, path, pc)?;
-        if !n.tracks.is_empty() || !n.exprs.is_empty() {
-            self.d.push(Diagnostic::warning(path, "clip shapes are static; their animation is ignored"));
+        if !n.tracks.is_empty() || !n.exprs.is_empty() || l.loop_.is_some() || l.update.is_some() {
+            self.d.push(Diagnostic::warning(
+                path,
+                "a mask / clip shape is a static, hard-edged clip, so its animation (animate, presets, loop, expressions, update) is ignored. For an animated or soft mask, use a track matte: give the mask its own sibling layer with an \"id\" and set \"matte\": { \"layer\": \"that-id\" } on this layer (the matte uses the parent's coordinates and animates like any layer)",
+            ));
         }
         let (w, h) = (n.base[prop::W], n.base[prop::H]);
         let mut p = match &n.kind {
@@ -3877,7 +3899,7 @@ impl C<'_> {
         let sub = Spec {
             size: cdef.size.clone().or(Some(spec::Size::Wh([self.w as u32, self.h as u32]))),
             fps: Some(self.fps as f64),
-            background: Some(cdef.background.clone().unwrap_or(spec::Paint::Css("#00000000".into()))),
+            background: Some(clear_bg(cdef.background.clone().unwrap_or(spec::Paint::Css("#00000000".into())))),
             theme: self.spec_theme.clone(),
             scenes,
             transition: cdef.transition.clone(),

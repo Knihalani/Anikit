@@ -19,6 +19,7 @@ cargo run --release -p anikit-video --example qbench -- --only ui,post --runs 1 
    - blurs at full resolution (no decimation);
    - no layer cache, no fused backdrop → YUV path, no incremental regions, no held or deduplicated frames;
    - motion blur in ~0.5 px steps (8–96 samples) with whole-frame samples;
+   - shader layers supersampled 2×2 at every pixel, except filter shaders, which are never supersampled (the look, not an approximation);
    - components in reference mode (`components::reference()`, for components with their own speed knobs).
 
    Every frame is rendered from scratch and converted to YUV in double precision. Same post look and motion-blur decisions as the default, so only *approximations* are measured, not intent.
@@ -26,7 +27,9 @@ cargo run --release -p anikit-video --example qbench -- --only ui,post --runs 1 
 4. **Delivered fidelity.** The decoded MP4 is compared with the reference, encoder loss included, against `qbench/baseline.json`.
 5. **Determinism.** A second default render of the clip must produce the same frames.
 6. **Render cache.** Timed runs always render everything: qbench sets `ANIKIT_RENDER_CACHE=0` itself. Then, for every entry without a `runs` override, it renders the clip twice more with the cache on, into a scratch cache directory: once cold (filling it) and once warm (splicing cached chunks). Both MP4s must equal the uncached MP4 byte for byte, or the entry FAILs ("render cache … differs"). `--no-cache-check` skips this.
-7. **Memory.** The `RSS MiB: start · peak` column is the process's resident memory when the timed render started and its peak while frames rendered and encoded (`StageProfile.mem_*`, from `memstat`). qbench holds earlier entries' results, so for a clean number per spec use `examples/mem_probe.rs` (below).
+7. **Thread count.** For every entry without a `runs` override whose timed render takes at most 40 CPU-seconds, the clip is rendered again on a one-thread rayon pool. The MP4 must equal the default (all cores) MP4 byte for byte, or the entry FAILs: work stealing must never change output. `--no-thread-check` skips this. The `comps` entry (nested compositions, a shader filter, post) is there for this check.
+8. **Skipped frames.** The timed render's held and unchanged frames (`StageProfile.unchanged`) are ratcheted in `baseline.json` (`skipped`). Fewer means static spans re-render, a silent speed regression, and the entry FAILs.
+9. **Memory.** The `RSS MiB: start · peak` column is the process's resident memory when the timed render started and its peak while frames rendered and encoded (`StageProfile.mem_*`, from `memstat`). qbench holds earlier entries' results, so for a clean number per spec use `examples/mem_probe.rs` (below).
 
 ## Metrics and thresholds
 
@@ -190,6 +193,12 @@ Open items, with their owners (all messaged with numbers):
 - the chunk's index and length;
 - this binary (size and mtime);
 - for every frame in it, the evaluated display list, with image ids replaced by content identities (shader-job key, per-frame image key, pixel hash for stored images), plus the post look and motion-blur flag.
+
+Font ids in a display list are handed out in the order threads first use a face, so they differ between runs. Keys replace each with a hash of the face (font bytes, index, variation coordinates, synthetic bold and skew), as they replace image ids with content keys. Before this, launch reused only 6–8 of its 16 chunks on an unchanged re-render; now all 16.
+
+Every chunk key also covers `Evaluator::inputs_key`: the contents of every file the spec names, such as fonts, LUTs, images, shader sources, HDRIs, models and nested composition specs (and the files those name). A changed file at the same path is never served stale. Before this, a font or LUT changed in place could hit.
+
+A render in which any renderer asked for an image and didn't get it (an evicted per-frame image, a failed component or shader image) stores nothing, and says so. A frame drawn without a layer is never cached and spliced into later renders: CEILING-2 saw three flat-background frames stick that way. `render --no-cache` (or `ANIKIT_RENDER_CACHE=0`) renders everything and stores nothing, for a clean final.
 
 A re-render splices unchanged chunks back in byte for byte and renders only the rest. An audio-only change reuses every video chunk; only the mux runs again. A frame with an image whose content can't be identified without rendering makes its chunk uncacheable, so it is simply rendered. `ANIKIT_RENDER_CACHE=0` turns the cache off. Progress output prints `render cache: reused N/M chunks`.
 

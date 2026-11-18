@@ -47,6 +47,9 @@ pub const RECIPES: &[(&str, &str)] = &[
     ("launch-sting", include_str!("../recipes/launch-sting.json")),
     ("kinetic-slam", include_str!("../recipes/kinetic-slam.json")),
     ("whip-transition", include_str!("../recipes/whip-transition.json")),
+    ("zoom-through", include_str!("../recipes/zoom-through.json")),
+    ("match-move", include_str!("../recipes/match-move.json")),
+    ("kinetic-reveal", include_str!("../recipes/kinetic-reveal.json")),
     ("chrome-hero", include_str!("../recipes/chrome-hero.json")),
     ("precision-macro", include_str!("../recipes/precision-macro.json")),
     ("particle-ignite", include_str!("../recipes/particle-ignite.json")),
@@ -254,7 +257,9 @@ fn key_doc(name: &str) -> Result<String, String> {
         }
         p.get("type").map(|t| t.to_string().replace('"', "")).unwrap_or_default()
     };
-    for (def, d) in &defs {
+    // The root object (top-level keys) first, then every definition.
+    let root = [("Spec".to_string(), schema.clone())];
+    for (def, d) in root.iter().map(|(n, v)| (n, v)).chain(defs.iter()) {
         let Some(props) = d.get("properties").and_then(|p| p.as_object()) else { continue };
         for (k, p) in props {
             all.insert(k.clone());
@@ -280,6 +285,33 @@ fn key_doc(name: &str) -> Result<String, String> {
                 out += &format!("{def}.{k}: {t}{desc}{fields}{ex}\n");
             }
         }
+    }
+    // Words that are values rather than keys: say where they go.
+    use crate::spec::validate as val;
+    let lists: [(&[&str], &str); 8] = [
+        (val::TRANSITIONS, "a transition: `\"transition\": \"NAME\"` (scene or top level)"),
+        (val::ENTER_PRESETS, "an entrance preset: `\"enter\": \"NAME\"`"),
+        (val::EXIT_PRESETS, "an exit preset: `\"exit\": \"NAME\"`"),
+        (val::LOOP_PRESETS, "a loop preset: `\"loop\": \"NAME\"`"),
+        (val::ANIM_PROPS, "an animatable property: `\"animate\": [{ \"to\": { \"NAME\": … } }]`, keyframes, or an expression"),
+        (val::LAYER_TYPES, "a layer type: `\"type\": \"NAME\"` (usually inferred)"),
+        (val::SHAPES, "a shape: `\"shape\": \"NAME\"`"),
+        (val::BLENDS, "a blend mode: `\"blend\": \"NAME\"`"),
+    ];
+    let mut uses = String::new();
+    for (list, what) in lists {
+        if let Some(n) = list.iter().find(|n| n.eq_ignore_ascii_case(name)) {
+            uses += &format!("  {}\n", what.replace("NAME", n));
+        }
+    }
+    if !val::ANIM_PROPS.iter().any(|n| n.eq_ignore_ascii_case(name)) && crate::eval::prop::lookup(name).is_some() {
+        uses += &format!("  {}\n", lists[4].1.replace("NAME", name));
+    }
+    if crate::components::KINDS.iter().any(|k| k.name.eq_ignore_ascii_case(name)) {
+        uses += &format!("  a component: `{{ \"component\": \"{name}\", \"props\": {{…}} }}` (`anikit-video docs components`)\n");
+    }
+    if !uses.is_empty() {
+        out += &format!("'{name}' is a value, not a key. It is:\n{uses}");
     }
     if out.is_empty() {
         let hint = suggest(name, all.iter().map(|s| s.as_str())).map(|s| format!(" Did you mean '{s}'?")).unwrap_or_default();
@@ -403,6 +435,24 @@ mod tests {
             assert!(v["about"].as_str().is_some_and(|a| a.len() > 20), "{n}");
             compiles(v["spec"].clone(), &format!("recipe {n}"));
         }
+    }
+
+    #[test]
+    fn every_schema_key_resolves() {
+        let schema: Value = serde_json::from_str(&crate::spec::schema_json()).unwrap();
+        let defs = schema.get("$defs").or_else(|| schema.get("definitions")).and_then(|d| d.as_object()).unwrap();
+        let mut keys: Vec<String> = schema["properties"].as_object().unwrap().keys().cloned().collect();
+        for d in defs.values() {
+            keys.extend(d.get("properties").and_then(|p| p.as_object()).into_iter().flat_map(|p| p.keys().cloned()));
+        }
+        assert!(keys.len() > 100);
+        for k in ["sound", "onNotes", "frames", "carry", "smear", "inertia", "music", "cut"] {
+            assert!(keys.iter().any(|x| x == k), "{k} missing from the schema");
+        }
+        for k in &keys {
+            assert!(key_doc(k).is_ok(), "docs key {k} does not resolve");
+        }
+        assert!(key_doc("wipe").unwrap().contains("a transition") && key_doc("wipe").unwrap().contains("animatable property"));
     }
 
     #[test]

@@ -21,8 +21,12 @@ pub const RIGS: &[&str] = &["rembrandt", "clamshell", "product", "high-key", "lo
 /// blinds or foliage, projected along the key direction.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Gobo {
-    /// 0 none, 1 venetian blinds, 2 window panes, 3 leaves.
+    /// 0 none, 1 venetian blinds, 2 window panes, 3 leaves, 4 a text card ([`TextGobo`]).
     pub kind: u8,
+    /// Text card: its index in the registry (see [`text_gobo`]).
+    pub text: u32,
+    /// The frame time (text cards can slide in).
+    pub t: f32,
     /// Pattern period in metres.
     pub scale: f32,
     /// Edge softness (0..1).
@@ -39,6 +43,9 @@ impl Gobo {
     pub fn at(&self, p: V3) -> f32 {
         if self.kind == 0 {
             return 1.0;
+        }
+        if self.kind == 4 {
+            return text_gobo_at(self.text, p, self.dir, self.t);
         }
         let (a, b) = (dot(p, self.u) / self.scale, dot(p, self.v) / self.scale);
         let s = self.soft.max(0.01);
@@ -63,6 +70,188 @@ impl Gobo {
             }
         }
     }
+}
+
+/// A word cut out of a card held above the table: the key light prints it
+/// (as shadow, or as light through the cut-out with `invert`) on everything
+/// below, projected along the light. Defined by where the word lands on the
+/// plane `y = 0`, so it reads straight down the camera's z axis.
+pub struct TextGobo {
+    /// Coverage mask (1 = letter), row-major, `w × h`, rows going +z.
+    mask: Vec<f32>,
+    w: usize,
+    h: usize,
+    /// Footprint on y = 0: centre (x, z) and size in metres.
+    cx: f32,
+    cz: f32,
+    sw: f32,
+    sh: f32,
+    /// Height of the card above y = 0 (sets how far objects' patterns shift).
+    card: f32,
+    /// Shadow darkness (1 = letters fully block the key), and inverted (light through letters).
+    strength: f32,
+    invert: bool,
+    /// Slide-in: offset (x, z) in metres at `t0`, settling to 0 by `t0 + dur` (out-cubic).
+    from: (f32, f32),
+    t0: f32,
+    dur: f32,
+}
+
+fn gobos() -> &'static std::sync::RwLock<Vec<std::sync::Arc<TextGobo>>> {
+    static G: std::sync::OnceLock<std::sync::RwLock<Vec<std::sync::Arc<TextGobo>>>> = std::sync::OnceLock::new();
+    G.get_or_init(Default::default)
+}
+
+fn text_gobo_at(id: u32, p: V3, dir: V3, t: f32) -> f32 {
+    let g = match gobos().read().unwrap().get(id as usize) {
+        Some(g) => g.clone(),
+        None => return 1.0,
+    };
+    if dir.y <= 1e-3 {
+        return 1.0;
+    }
+    // Along the light to the card plane, then back down to y = 0: where this point's light crosses the card.
+    let k = (g.card - p.y) / dir.y;
+    let (qx, qz) = (p.x + dir.x * k - dir.x * g.card / dir.y, p.z + dir.z * k - dir.z * g.card / dir.y);
+    let e = if g.dur > 0.0 { ((t - g.t0) / g.dur).clamp(0.0, 1.0) } else { 1.0 };
+    let e = 1.0 - (1.0 - e).powi(3);
+    let (ox, oz) = (g.from.0 * (1.0 - e), g.from.1 * (1.0 - e));
+    let u = (qx - ox - g.cx) / g.sw + 0.5;
+    let v = (qz - oz - g.cz) / g.sh + 0.5;
+    let c = if !(0.0..1.0).contains(&u) || !(0.0..1.0).contains(&v) {
+        0.0
+    } else {
+        let (x, y) = (u * g.w as f32 - 0.5, v * g.h as f32 - 0.5);
+        let (x0, y0) = (x.floor().max(0.0) as usize, y.floor().max(0.0) as usize);
+        let (x1, y1) = ((x0 + 1).min(g.w - 1), (y0 + 1).min(g.h - 1));
+        let (tx, ty) = ((x - x0 as f32).clamp(0.0, 1.0), (y - y0 as f32).clamp(0.0, 1.0));
+        let m = |xx: usize, yy: usize| g.mask[yy * g.w + xx];
+        let a = m(x0, y0) + (m(x1, y0) - m(x0, y0)) * tx;
+        let b = m(x0, y1) + (m(x1, y1) - m(x0, y1)) * tx;
+        a + (b - a) * ty
+    };
+    if g.invert {
+        // Light only through the letters (the rest of the card blocks most of it).
+        1.0 - g.strength * (1.0 - c)
+    } else {
+        1.0 - g.strength * c
+    }
+}
+
+/// Parse `"gobo": {"text", "font", "weight", "tracking", "size", "at": [x, z], "height", "strength", "invert", "softness", "from": [dx, dz], "start", "settle"}`
+/// and register it; returns a [`Gobo`] for the key direction `dir`.
+pub fn text_gobo(v: &Value, dir: V3, path: &str) -> Res<Gobo> {
+    let m = v.as_object().ok_or_else(|| format!("{path}: expected an object with `text`"))?;
+    check_keys(m, &["text", "font", "weight", "tracking", "size", "at", "height", "strength", "invert", "softness", "from", "start", "settle"], path)?;
+    let text = m.get("text").and_then(|x| x.as_str()).ok_or_else(|| format!("{path}.text: the word the light prints"))?;
+    let font = m.get("font").and_then(|x| x.as_str()).unwrap_or("Instrument Serif");
+    let g = |k: &str, d: f32| -> Res<f32> { m.get(k).map(|x| f(x, &format!("{path}.{k}"))).transpose().map(|o| o.unwrap_or(d)) };
+    let pair = |k: &str, d: (f32, f32)| -> Res<(f32, f32)> {
+        match m.get(k) {
+            None => Ok(d),
+            Some(Value::Array(a)) if a.len() == 2 => Ok((f(&a[0], path)?, f(&a[1], path)?)),
+            _ => Err(format!("{path}.{k}: expected [x, z] in metres")),
+        }
+    };
+    let size = g("size", 0.06)?.max(1e-3);
+    let at = pair("at", (0.0, 0.0))?;
+    let letters = crate::components::text3d::glyph_outlines(text, font, g("weight", 500.0)?, g("tracking", 0.0)?);
+    // Bounds in em units (y up from the baseline).
+    let (mut x0, mut y0, mut x1, mut y1) = (f32::MAX, f32::MAX, f32::MIN, f32::MIN);
+    for c in letters.iter().flatten().flatten() {
+        x0 = x0.min(c[0]);
+        x1 = x1.max(c[0]);
+        y0 = y0.min(c[1]);
+        y1 = y1.max(c[1]);
+    }
+    if x1 <= x0 || y1 <= y0 {
+        return Err(format!("{path}.text: `{text}` has no outlines in font `{font}`"));
+    }
+    // `size` is the cap-ish height of the printed word (the outline's ink height).
+    let em = y1 - y0;
+    let (sw, sh) = (size * (x1 - x0) / em, size);
+    let pad = 0.06;
+    let (sw, sh) = (sw * (1.0 + 2.0 * pad), sh * (1.0 + 2.0 * pad * (x1 - x0) / em));
+    let w = 2400usize;
+    let h = ((w as f32 * sh / sw).round() as usize).clamp(8, 3000);
+    // Even-odd scanline fill, 4× vertical supersampling.
+    let mut mask = vec![0f32; w * h];
+    let px = |x: f32| ((x - x0) / (x1 - x0) * (1.0 - 2.0 * pad) + pad) * w as f32;
+    let (ey0, ey1) = (y0, y1);
+    let ys = (sh - size) / 2.0 / sh;
+    let py = |y: f32| (ys + (ey1 - y) / (ey1 - ey0) * (size / sh)) * h as f32;
+    let edges: Vec<(f32, f32, f32, f32)> = letters
+        .iter()
+        .flatten()
+        .flat_map(|c| (0..c.len()).map(move |i| (c[i], c[(i + 1) % c.len()])))
+        .map(|(a, b)| (px(a[0]), py(a[1]), px(b[0]), py(b[1])))
+        .collect();
+    const SS: usize = 4;
+    let mut xs = Vec::new();
+    for row in 0..h {
+        for s in 0..SS {
+            let y = row as f32 + (s as f32 + 0.5) / SS as f32;
+            xs.clear();
+            for &(ax, ay, bx, by) in &edges {
+                if (ay <= y && by > y) || (by <= y && ay > y) {
+                    xs.push(ax + (y - ay) / (by - ay) * (bx - ax));
+                }
+            }
+            xs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            for pair in xs.chunks_exact(2) {
+                let (a, b) = (pair[0].max(0.0), pair[1].min(w as f32));
+                let mut x = a;
+                while x < b {
+                    let xi = x.floor();
+                    let next = (xi + 1.0).min(b);
+                    let i = xi as usize;
+                    if i < w {
+                        mask[row * w + i] += (next - x) / SS as f32;
+                    }
+                    x = next;
+                }
+            }
+        }
+    }
+    // Penumbra: a box blur `softness` metres wide (a real card's shadow edge).
+    let soft = g("softness", 0.0015)?.max(0.0);
+    let r = ((soft / sw * w as f32).round() as usize).min(64);
+    if r > 0 {
+        let mut tmp = vec![0f32; w * h];
+        for y in 0..h {
+            for x in 0..w {
+                let (a, b) = (x.saturating_sub(r), (x + r).min(w - 1));
+                tmp[y * w + x] = mask[y * w + a..=y * w + b].iter().sum::<f32>() / (b - a + 1) as f32;
+            }
+        }
+        for y in 0..h {
+            for x in 0..w {
+                let (a, b) = (y.saturating_sub(r), (y + r).min(h - 1));
+                mask[y * w + x] = (a..=b).map(|yy| tmp[yy * w + x]).sum::<f32>() / (b - a + 1) as f32;
+            }
+        }
+    }
+    for c in &mut mask {
+        *c = c.clamp(0.0, 1.0);
+    }
+    let tg = TextGobo {
+        mask,
+        w,
+        h,
+        cx: at.0,
+        cz: at.1,
+        sw,
+        sh,
+        card: g("height", 0.3)?.max(0.01),
+        strength: g("strength", 0.92)?.clamp(0.0, 1.0),
+        invert: m.get("invert").and_then(|x| x.as_bool()).unwrap_or(false),
+        from: pair("from", (0.0, 0.0))?,
+        t0: g("start", 0.0)?,
+        dur: g("settle", 0.0)?.max(0.0),
+    };
+    let mut reg = gobos().write().unwrap();
+    reg.push(std::sync::Arc::new(tg));
+    Ok(Gobo { kind: 4, text: (reg.len() - 1) as u32, t: 0.0, scale: 1.0, soft: 0.0, dir: norm(dir), u: v3(1.0, 0.0, 0.0), v: v3(0.0, 0.0, 1.0) })
 }
 
 fn vn2(x: f32, y: f32) -> f32 {
@@ -296,7 +485,7 @@ impl Rig {
         let up = if kd.y.abs() > 0.95 { v3(0.0, 0.0, 1.0) } else { v3(0.0, 1.0, 0.0) };
         let u = norm(cross(up, kd));
         let v = cross(kd, u);
-        (out, Gobo { kind: self.gobo, scale: self.gobo_scale, soft: self.gobo_soft, dir: kd, u, v })
+        (out, Gobo { kind: self.gobo, text: 0, t: 0.0, scale: self.gobo_scale, soft: self.gobo_soft, dir: kd, u, v })
     }
 }
 
@@ -327,5 +516,31 @@ mod tests {
         let sw = parse(&json!({ "preset": "product", "animate": "sweep" }), "rig").unwrap();
         let (a, b) = (sw.apply_at(&env, v3(0.0, 0.0, -1.0), 1.0, 0.0).0, sw.apply_at(&env, v3(0.0, 0.0, -1.0), 1.0, 2.5).0);
         assert!(dot(a.boxes[2].c, b.boxes[2].c) < 0.5, "the strip travels");
+    }
+}
+
+#[cfg(test)]
+mod text_gobo_tests {
+    use super::*;
+
+    #[test]
+    fn a_word_is_printed_where_asked_and_slides_in() {
+        let d = norm(v3(0.6, 0.6, 0.2));
+        let v: Value = serde_json::json!({ "text": "HI", "font": "Inter", "size": 0.1, "at": [0.0, 0.0], "height": 0.3, "from": [0.5, 0.0], "start": 0.0, "settle": 1.0 });
+        let mut g = text_gobo(&v, d, "gobo").unwrap();
+        g.t = 2.0;
+        // Shadow letters: somewhere across the word's footprint the light is blocked; far away it isn't.
+        let dark = (0..200).map(|i| g.at(v3(-0.08 + i as f32 * 0.0008, 0.0, 0.0))).fold(1.0f32, f32::min);
+        assert!(dark < 0.3, "{dark}");
+        assert_eq!(g.at(v3(1.0, 0.0, 1.0)), 1.0);
+        // Before it settles the word is still to the right: the centre is lit.
+        g.t = 0.0;
+        let early = (0..200).map(|i| g.at(v3(-0.08 + i as f32 * 0.0008, 0.0, 0.0))).fold(1.0f32, f32::min);
+        assert!(early > 0.9, "{early}");
+        // Inverted: light only through the letters.
+        let inv: Value = serde_json::json!({ "text": "HI", "font": "Inter", "size": 0.1, "invert": true, "strength": 0.8 });
+        let gi = text_gobo(&inv, d, "gobo").unwrap();
+        assert!((gi.at(v3(1.0, 0.0, 1.0)) - 0.2).abs() < 1e-4);
+        assert!(text_gobo(&serde_json::json!({ "txt": "x" }), d, "gobo").unwrap_err().contains("txt"));
     }
 }
