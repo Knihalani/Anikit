@@ -378,12 +378,14 @@ fn process_track(l: &mut [f32], r: &mut [f32], m: &TrackMix, rate: u32, pump: Op
         dsp::Eq::new(rate as f32, &p).process(l, r);
     }
     if let Some(c) = &m.comp {
-        let p: dsp::CompressorParams = match c {
-            serde_json::Value::Bool(true) => Default::default(),
-            serde_json::Value::Bool(false) => return Ok(()),
-            v => serde_json::from_value(v.clone()).map_err(|e| format!("comp: {e}"))?,
+        let p: Option<dsp::CompressorParams> = match c {
+            serde_json::Value::Bool(true) => Some(Default::default()),
+            serde_json::Value::Bool(false) => None,
+            v => Some(serde_json::from_value(v.clone()).map_err(|e| format!("comp: {e}"))?),
         };
-        dsp::Compressor::new(rate as f32, &p).process(l, r);
+        if let Some(p) = p {
+            dsp::Compressor::new(rate as f32, &p).process(l, r);
+        }
     }
     if m.drive > 0.0 {
         dsp::Saturator::new(rate as f32, &dsp::SaturatorParams { drive: m.drive, ..Default::default() }).process(l, r);
@@ -556,4 +558,20 @@ pub fn onset_error(l: &[f32], r: &[f32], rate: u32, times: &[f64]) -> serde_json
         "meanAbsMs": errs.iter().map(|e| e.abs()).sum::<f64>() / m,
         "maxAbsMs": errs.iter().map(|e| e.abs()).fold(0.0, f64::max),
     })
+}
+
+#[cfg(test)]
+mod track_tests {
+    use super::*;
+
+    #[test]
+    fn comp_false_still_pans() {
+        // `"comp": false` used to return early and skip drive, width and pan.
+        let tone: Vec<f32> = (0..48_000).map(|i| (i as f32 * 0.05).sin() * 0.3).collect();
+        let (mut l, mut r) = (tone.clone(), tone);
+        let m = TrackMix { pan: 1.0, comp: Some(serde_json::json!(false)), ..Default::default() };
+        process_track(&mut l, &mut r, &m, 48_000, None).unwrap();
+        let (el, er) = (l.iter().map(|x| x * x).sum::<f32>(), r.iter().map(|x| x * x).sum::<f32>());
+        assert!(el < er * 1e-3, "panned hard right: L {el}, R {er}");
+    }
 }

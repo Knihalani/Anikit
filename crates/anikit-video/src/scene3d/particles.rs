@@ -37,7 +37,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 const KEYS: &[&str] = &[
-    "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch", "shadows", "force", "trail",
+    "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch", "shadows", "force", "trail", "size_dist", "scatter", "glint",
 ];
 const EMIT_KEYS: &[&str] = &["shape", "pos", "position", "radius", "size", "surface", "axis", "image", "composition", "frame", "threshold", "rot", "rotation"];
 
@@ -109,6 +109,13 @@ pub struct Def {
     friction: f32,
     pub size: f32,
     size_var: f32,
+    /// Power-law sizes: (min, max, exponent α), p(size) ∝ size^-α.
+    size_pow: Option<(f32, f32, f32)>,
+    /// Lit particles: forward scattering (Henyey–Greenstein g, -0.9..0.9;
+    /// 0 keeps the diffuse sphere phase) and glints (per-particle facets
+    /// flashing the key light; amount and sharpness).
+    scatter: f32,
+    glint: (f32, f32),
     colors: Vec<V3>,
     color_by: ColorBy,
     speed_range: (f32, f32),
@@ -315,6 +322,36 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
             _ => gf(m, "size", 0.004, path)?.max(1e-5),
         },
         size_var: gf(m, "size_var", 0.5, path)?.clamp(0.0, 1.0),
+        size_pow: match m.get("size_dist") {
+            None | Some(Value::Null) => None,
+            Some(Value::Object(o)) => {
+                let p = format!("{path}.size_dist");
+                for k in o.keys() {
+                    if !["min", "max", "power"].contains(&k.as_str()) {
+                        return Err(format!("{p}: unknown key \"{k}\" (expected min, max, power)"));
+                    }
+                }
+                let base = gf(m, "size", 0.004, path)?;
+                let lo = gf(o, "min", base * 0.25, &p)?.max(1e-5);
+                let hi = gf(o, "max", base * 4.0, &p)?.max(lo * 1.0001);
+                Some((lo, hi, gf(o, "power", 2.5, &p)?.clamp(0.0, 8.0)))
+            }
+            Some(_) => return Err(format!("{path}.size_dist: expected {{ \"min\", \"max\", \"power\" }} (p(size) ∝ size^-power)")),
+        },
+        scatter: gf(m, "scatter", 0.0, path)?.clamp(-0.95, 0.95),
+        glint: match m.get("glint") {
+            None | Some(Value::Null) => (0.0, 0.0),
+            Some(Value::Object(o)) => {
+                let p = format!("{path}.glint");
+                for k in o.keys() {
+                    if !["amount", "sharpness"].contains(&k.as_str()) {
+                        return Err(format!("{p}: unknown key \"{k}\" (expected amount, sharpness)"));
+                    }
+                }
+                (gf(o, "amount", 1.0, &p)?.max(0.0), gf(o, "sharpness", 60.0, &p)?.clamp(2.0, 2000.0))
+            }
+            Some(x) => (spec::f(x, &format!("{path}.glint"))?.max(0.0), 60.0),
+        },
         colors,
         color_by,
         speed_range: sr,
@@ -359,7 +396,9 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
             let stamp = emit_v.get("image").and_then(|x| x.as_str()).and_then(|f| std::fs::metadata(f).ok()).and_then(|m| m.modified().ok()).map(|t| format!("{t:?}")).unwrap_or_default();
             let mut v = v.clone();
             if let Some(o) = v.as_object_mut() {
-                o.remove("trail");
+                for k in ["trail", "scatter", "glint"] {
+                    o.remove(k);
+                }
             }
             crate::components::style::fnv(&[b"anikit-particles-v1", v.to_string().as_bytes(), emit_v.to_string().as_bytes(), stamp.as_bytes()])
         },
@@ -444,6 +483,71 @@ fn eval3p(e: &[PExpr; 3], p: V3, v: V3, t: f32, age: f32, i: usize) -> V3 {
 }
 
 // ------------------------------------------------------------------ emitters
+
+impl Def {
+    /// Radius of particle `i` (without a `size` expression).
+    #[inline]
+    pub fn size_of(&self, i: usize) -> f32 {
+        let u = hu(self.seed, i as u32, 7);
+        match self.size_pow {
+            Some((lo, hi, a)) => {
+                // Inverse CDF of p(s) ∝ s^-a on [lo, hi].
+                if (a - 1.0).abs() < 1e-3 {
+                    lo * (hi / lo).powf(u)
+                } else {
+                    let e = 1.0 - a;
+                    (lo.powf(e) + u * (hi.powf(e) - lo.powf(e))).powf(1.0 / e)
+                }
+            }
+            None => self.size * (1.0 + self.size_var * (u - 0.5) * 2.0),
+        }
+    }
+}
+
+/// Expands `"layers"` on a particle object into one object per layer: each
+/// takes the base keys, its `share` of `count`, its own seed, and its own
+/// overrides (`emit` merges key by key). Without layers, the object itself.
+pub fn expand_layers(o: &Value, path: &str) -> Res<Vec<Value>> {
+    let Some(Value::Array(ls)) = o.get("layers") else {
+        if o.get("layers").is_some_and(|x| !x.is_null()) {
+            return Err(format!("{path}.layers: expected an array of layers ({{ \"share\", ...particle keys }})"));
+        }
+        return Ok(vec![o.clone()]);
+    };
+    let base = o.as_object().ok_or_else(|| format!("{path}: expected an object"))?;
+    let count = base.get("count").and_then(|c| c.as_f64()).unwrap_or(100_000.0);
+    let seed = base.get("seed").and_then(|c| c.as_f64()).unwrap_or(1.0);
+    let shares: Vec<f64> = ls.iter().map(|l| l.get("share").and_then(|x| x.as_f64()).unwrap_or(1.0).max(0.0)).collect();
+    let tot: f64 = shares.iter().sum::<f64>().max(1e-9);
+    let mut out = Vec::new();
+    for (k, l) in ls.iter().enumerate() {
+        let lm = l.as_object().ok_or_else(|| format!("{path}.layers[{k}]: expected an object"))?;
+        let mut m = base.clone();
+        m.remove("layers");
+        m.insert("count".into(), Value::from((count * shares[k] / tot).round()));
+        m.insert("seed".into(), Value::from(seed + 101.0 * (k + 1) as f64));
+        for (key, v) in lm {
+            if key == "share" {
+                continue;
+            }
+            if key == "layers" {
+                return Err(format!("{path}.layers[{k}]: layers can't nest"));
+            }
+            match (m.get_mut(key), v) {
+                (Some(Value::Object(dst)), Value::Object(src)) if key == "emit" => {
+                    for (a, b) in src {
+                        dst.insert(a.clone(), b.clone());
+                    }
+                }
+                _ => {
+                    m.insert(key.clone(), v.clone());
+                }
+            }
+        }
+        out.push(Value::Object(m));
+    }
+    Ok(out)
+}
 
 #[inline]
 fn hu(seed: u32, i: u32, k: u32) -> f32 {
@@ -1378,6 +1482,10 @@ struct Pyr {
 /// point into the bins bracketing their blur; each used bin is convolved with
 /// its disc once, so out-of-focus particles get real lens bokeh (discs, not
 /// Gaussian blobs) at the cost of a point splat.
+/// Light and coverage of a particle grow with its projected area (surface
+/// brightness stays its own), up to the largest defocus kernel's.
+const BIG_AREA: f32 = std::f32::consts::PI * 64.0 * 64.0;
+
 const BINS: [(f32, usize); 17] = [
     (4.0, 1), (4.757, 1), (5.657, 1), (6.727, 1),
     (8.0, 2), (9.514, 2), (11.31, 2), (13.45, 2),
@@ -1812,7 +1920,7 @@ impl ShadowMap {
                 }
                 let size = match &d.size_e {
                     Some(e) => e.at(v3(p[0], p[1], p[2]), v3(0.0, 0.0, 0.0), t, sim.age(i, t), i).max(0.0),
-                    None => d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0),
+                    None => d.size_of(i),
                 };
                 let od = op * std::f32::consts::PI * size * size / texel_area * sim.stride as f32;
                 let e = ext(p);
@@ -2136,7 +2244,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     }
                     let size = match &d.size_e {
                         Some(e) => e.at(p, snap.vel(j), t, sim.age(i, t), i).max(0.0),
-                        None => d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0),
+                        None => d.size_of(i),
                     };
                     let r_px = size * pj.k / z;
                     let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
@@ -2192,7 +2300,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 }
                 let size = match &d.size_e {
                     Some(e) => e.at(p, snap.vel(j), t, sim.age(i, t), i).max(0.0),
-                    None => d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0),
+                    None => d.size_of(i),
                 };
                 let r_px = size * pj.k / z;
                 let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
@@ -2238,7 +2346,29 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     let amb = lerp3(v.amb.1, v.amb.0, 0.5 + 0.5 * to_cam.y.max(0.0));
                     let vis = v.shadow.map(|m| m.trans(p)).unwrap_or(1.0);
                     let keyc = scale(v.key.1, vis);
-                    let mut l = add(scale(keyc, phase * 0.66), amb);
+                    let mut l = if d.scatter != 0.0 {
+                        // Henyey–Greenstein towards the camera (forward: backlit rims glow),
+                        // normalised to the diffuse phase's mean.
+                        let g = d.scatter;
+                        let c = -ca;
+                        let hg = (1.0 - g * g) / (1.0 + g * g - 2.0 * g * c).max(1e-4).powf(1.5);
+                        add(scale(keyc, hg * 0.25 * 0.66 * 2.0), amb)
+                    } else {
+                        add(scale(keyc, phase * 0.66), amb)
+                    };
+                    if d.glint.0 > 0.0 {
+                        // A facet per particle, tumbling: it flashes when it
+                        // mirrors the key light into the camera.
+                        let (a1, a2) = (hu(d.seed, i as u32, 61) * std::f32::consts::TAU + t * (hu(d.seed, i as u32, 62) - 0.5) * 6.0, hu(d.seed, i as u32, 63) * 2.0 - 1.0);
+                        let r = (1.0 - a2 * a2).max(0.0).sqrt();
+                        let n = v3(r * a1.cos(), a2, r * a1.sin());
+                        let hv = norm(add(to_cam, v.key.0));
+                        let ndh = dot(n, hv).abs();
+                        let sh = d.glint.1;
+                        // Normalised Blinn lobe: (s + 2) / 2 · cos^s.
+                        let spark = ndh.powf(sh) * (sh + 2.0) * 0.5 * d.glint.0 * 0.05;
+                        l = add(l, scale(keyc, spark));
+                    }
                     // Particles that have arrived on a target surface shade like it (two-sided).
                     if let (Some(tg), Some((_, delay, nrm))) = (&d.target, &sim.tgt) {
                         let wv = ((((t - tg.from) / (tg.to - tg.from)) - delay[i]) * 2.5).clamp(0.0, 1.0);
@@ -2258,7 +2388,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let mut val = [0.0f32; 8];
                 match d.blend {
                     Blend::Add => {
-                        let e = d.emissive * a * area.min(4.0);
+                        let e = d.emissive * a * area.min(BIG_AREA);
                         let o = eo.unwrap_or(0);
                         val[o] = lc[0] * e;
                         val[o + 1] = lc[1] * e;
@@ -2266,7 +2396,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     }
                     Blend::Over => {
                         // Optical depth: covered fraction of a pixel.
-                        let od = a * area.min(4.0);
+                        let od = a * area.min(BIG_AREA);
                         let o = ab.unwrap_or(0);
                         val[o] = lc[0] * od;
                         val[o + 1] = lc[1] * od;
@@ -2530,6 +2660,45 @@ mod tests {
         let p = sim(spec(false));
         let dots = render(&[(&p, p.at(t))], &v, t).emitted();
         assert!(one.emitted() > dots * 3.0, "trail {} vs dots {dots}", one.emitted());
+    }
+
+    #[test]
+    fn power_law_sizes_and_layers() {
+        // p(s) ∝ s^-2.5 on [1, 10] mm: the median is near the small end (≈1.6 mm), the max reaches 10.
+        let s = sim(serde_json::json!({ "count": 20000, "size_dist": { "min": 0.001, "max": 0.01, "power": 2.5 } }));
+        let mut v: Vec<f32> = (0..20000).map(|i| s.def.size_of(i)).collect();
+        v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        assert!(v[0] >= 0.001 && v[19999] <= 0.01 + 1e-6, "{} {}", v[0], v[19999]);
+        let median = v[10000];
+        let expect = (0.001f32.powf(-1.5) + 0.5 * (0.01f32.powf(-1.5) - 0.001f32.powf(-1.5))).powf(-1.0 / 1.5);
+        assert!((median - expect).abs() / expect < 0.03, "median {median} vs {expect}");
+        assert!(v[19900] > 0.005, "the tail reaches big sizes");
+        // Layers: shares of the count, own seeds, merged emitters.
+        let o = serde_json::json!({ "type": "particles", "count": 1000, "emit": { "shape": "box", "size": 2 }, "layers": [ { "share": 1, "emit": { "pos": [0, 0, 3] } }, { "share": 3, "opacity": 0.5 } ] });
+        let ls = expand_layers(&o, "o").unwrap();
+        assert_eq!(ls.len(), 2);
+        assert_eq!(ls[0]["count"], 250.0);
+        assert_eq!(ls[1]["count"], 750.0);
+        assert_eq!(ls[0]["emit"]["size"], 2);
+        assert_eq!(ls[0]["emit"]["pos"], serde_json::json!([0, 0, 3]));
+        assert_eq!(ls[1]["opacity"], 0.5);
+        assert_ne!(ls[0]["seed"], ls[1]["seed"]);
+        assert!(ls.iter().all(|l| l.get("layers").is_none()));
+    }
+
+    #[test]
+    fn big_particles_keep_their_surface_brightness() {
+        // A 10 px disc emits about as much light as its area (no cap at 4 px²).
+        let s = sim(serde_json::json!({ "count": 1, "emit": { "shape": "point", "pos": [0, 1, 0] }, "size": 0.05, "size_var": 0, "velocity": [0, 0, 0], "spread": 0, "gravity": 0, "drag": 0, "collide": false }));
+        let (w, h) = (320usize, 180usize);
+        let depth = vec![1e9f32; w * h];
+        let cam = Camera { pos: v3(0.0, 1.0, 3.0), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus: 3.0, aperture: 0.0, roll: 0.0, shutter: 0.0 };
+        let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: 3.0, aperture: 0.0, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)), shadow: None, draft: false };
+        let snap = s.at(0.0);
+        let r_px = 0.05 * (h as f32 * 0.5 / 15f32.to_radians().tan()) / 3.0;
+        let e = render(&[(&s, snap)], &v, 0.0).emitted() as f32;
+        let area = std::f32::consts::PI * r_px * r_px;
+        assert!(r_px > 5.0 && (e - area).abs() / area < 0.02, "light {e} vs area {area} (r {r_px} px)");
     }
 
     #[test]
