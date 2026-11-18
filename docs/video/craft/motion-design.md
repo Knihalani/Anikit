@@ -18,6 +18,8 @@ Conventions: frames are given at 24/30/60 fps. Bézier values are CSS `cubic-bez
 
 ## 2. Techniques with numbers
 
+Companion doc: `docs/video/craft/finish-and-life.md` (TASTE) has Williams' frame numbers for overlap and drag, a 2D spring split into sway, jiggle and trailing (Willett et al., UIST 2017), and blink timing; where numbers differ, prefer its sourced ones for character-like secondary motion.
+
 ### 2.1 Spacing: the curves studios actually use
 
 | Name | cubic-bezier | Feel / use | Source |
@@ -85,7 +87,7 @@ Conventions: frames are given at 24/30/60 fps. Bézier values are CSS `cubic-bez
 - **Push-in vs zoom.** A dolly push changes parallax (the foreground grows faster than the background); a zoom scales every plane the same, so it reads flat. A 2.5D push must move the camera *through* the depth planes *(heuristic, geometry)*.
 - **Whip pan.** Blur builds up to a peak at the cut over about 5 frames either side ([WHIP-PF], [WHIP-MC]). Trim each shot to where its blur starts or ends ([WHIP-NFS]). Ease the pan in hard (expo in) into the cut and out hard (expo out) after it, so the two halves read as one continuous move.
 - **Handheld / drift.** School of Motion's subtle camera shake is `wiggle(1, 25)` with its values on sliders so they can be keyframed ([SOM-SHAKE]); camera shakes in forums run to `wiggle(5,15)` ([COW-SHAKE]). Use low frequency (≤ 1 Hz) for "alive", and 5–8 Hz only for impacts, decaying within 0.3–0.5 s *(heuristic)*.
-- **Rack focus** pulls the eye between planes; depth-of-field changes are "one of the most subtle and powerful" 2.5D tools ([PB-25D]). TASTE forbids defocusing text while it is read: rack *to* the type, never away from it mid-read.
+- **Rack focus** pulls the eye between planes; depth-of-field changes are "one of the most subtle and powerful" 2.5D tools ([PB-25D]). Words read best kept sharp while they're being read; rack focus is a tool for everything else (rack *to* the type, not away from it mid-read).
 
 ### 2.6 Transitions as ideas
 
@@ -130,6 +132,8 @@ A transition is an *idea* when it says that A *becomes* B or A *causes* B. It is
 | Linear moves, or Easy Ease 33/33 on every key | Asymmetric custom curves: hard attack, 70–90% landing influence | [AE-SPEED], [VDCI], [M1] |
 | One curve and one duration everywhere | Durations scaled to distance; productive moves with a rare expressive one | [CARBON], [M1] |
 | Everything moves at once | One leader; others overlap by 1–4 frames or hold | [L87], [PAXTON] |
+| The same layout every shot (it reads as a slide deck: 3 of 4 judged pieces in the TASTE A/B, `craft/ab-craft-process.md` on -v-taste) | Vary scale, angle and layout shot to shot, and let the transition carry the change (a zoom-through, a match move, a wipe that follows motion) | TASTE A/B, [SOM-MC] |
+| One move repeated with no escalation | Each beat raises something: scale, speed, density, camera energy, towards a peak and a release | review-div.md on -v-taste |
 | Uniform stagger (same delay, same amount) | Eased, centre- or edge-out, grid-aware distributions; varied amounts | [GSAP-ST], [GSAP-DIST], [SKL-OFF] |
 | Symmetric in-out timing | Fast in, slow settle; exits shorter and accelerating | [M1], [CARBON] |
 | No holds, or dead holds | Moving holds; held stills timed for reading | [AM-HOLD], TASTE §1 |
@@ -178,6 +182,19 @@ A transition is an *idea* when it says that A *becomes* B or A *causes* B. It is
 9. **Procedural rig kit.** Oscillators with amplitude envelopes (fade in and out, never constant), path chains (trailing followers on a path, rope or tail), pendulum or jiggle secondary motion, and noise drift that continues the last move (a moving hold, [AM-HOLD]).
 10. **Per-layer frame rate ("on 2s").** `fps: 12` or `posterize` on a layer or group while the camera and other layers stay on 1s ([BLOOP-SV], [GS12]). Designed imperfection: boiling lines and stroke jitter on 2s ([ST]).
 11. **Critique checks for motion tells.** Flag symmetric curves, linear spatial moves, uniform staggers, more than N layers starting on the same frame, overshoot over 10% on non-cartoon pieces, holds with zero motion over 2 s, and cuts on every beat. These extend TASTE's ⚙ checks with the numbers above.
+
+### Status (overnight build, MOGRAPH)
+
+Built (`anikit-video docs mograph`, `docs/video/spec-reference.md` → Motion graphics):
+- **1 (partly):** `inertia` (a spring that chases any layer's own motion; presets `soft`/`bouncy`/`tight`/`heavy`) and group `drag` (child i follows the group i × drag s later). `velocity`/`valueAt` in expressions are still open.
+- **2 (partly):** `zoomThrough` (fly into a layer of the outgoing scene, the next scene shows through its shape), shape `reveal` (circle/diamond/square/star/blob + spin), `blinds`, `split`, `whip`, and track mattes (`matte`) inside a scene. Carry-over/shared elements and a match-cut helper are still open.
+- **3:** `smear` (speed-proportional stretch along the travel, volume kept). Per-layer motion blur is still open.
+- **4 (partly):** named curves `glide`, `snap`, `land`, `launch`, `material`, `emphasizedDecelerate/Accelerate`, `productive`, `expressive`, `expressiveEntrance/Exit`, and `"ease": [x1, y1, x2, y2]` with per-keyframe ease. Not yet retuned: `popIn`/`bounceIn` overshoot (a change to shared presets, flagged for the parent).
+- **8 (partly):** repeater stagger `order` (`center`, `reverse`, `random` + seed) and the text `animator` range selector.
+- **10:** `posterizeTime` on a layer or group (plus `wigglePath` for boiling lines).
+- **11 (partly):** critique tips for linear spatial moves, four or more layers starting on one frame, and no follow-through anywhere.
+
+Proof pieces in four registers: `examples/video/motion/` (velo-snap, rainwell-fluid, noodle-handmade, atlas-precision; full-size stills in `stills/`).
 
 ---
 

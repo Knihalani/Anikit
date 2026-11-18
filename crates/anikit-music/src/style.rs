@@ -496,9 +496,10 @@ pub static STYLES: &[StyleDef] = &[
         prog_minor: &["iim7b5 V7 i7 i7"],
         kit: "drums:jazz|drums:brush|drums",
         drums: [
-            &[("ride", "x..x.xx..x.xx..."), ("phh", "....x.......x...")],
-            &[("ride", "x..x.xx..x.xx..."), ("phh", "....x.......x..."), ("kick", "o.......o.......")],
-            &[("ride", "x..x.xx..x.xx..."), ("phh", "....x.......x..."), ("snare", "......o.......o."), ("kick", "o.......o.......")],
+            // The ride's "spang-a-lang": 1, 2, 2&, 3, 4, 4& (swung 8ths), hi-hat foot on 2 and 4.
+            &[("ride", "x...x.x.x...x.x."), ("phh", "....x.......x...")],
+            &[("ride", "x...x.x.x...x.x."), ("phh", "....x.......x..."), ("kick", "o.......o.......")],
+            &[("ride", "x...X.x.x...X.x."), ("phh", "....x.......x..."), ("snare", "......o.......o."), ("kick", "o.......o.......")],
         ],
         layers: &[
             Layer { humanize: 0.4, ..layer("bass", "contrabass|bass|fretless", Gen::Bass("walk", 2), 0.0, -1.0) },
@@ -886,6 +887,14 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 (None, Some(i)) => i.kit.to_string(),
                 (None, None) => st.kit.to_string(),
             };
+            // Synthwave's snare is the 80s gated one: its own track through a plate
+            // whose tail is cut a quarter second after each hit.
+            let gated = st.name == "synthwave" && inst_override.is_none();
+            let snare: Vec<Note> = if gated { drum_notes.iter().filter(|n| n.key == 38.0 || n.key == 40.0).cloned().collect() } else { Vec::new() };
+            if !snare.is_empty() {
+                drum_notes.retain(|n| n.key != 38.0 && n.key != 40.0);
+            }
+            let snare_inst = inst.clone();
             tracks.push(TrackPlan {
                 name: "drums".into(),
                 role: "drums".into(),
@@ -897,6 +906,21 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 fx: None,
                 automate: None,
             });
+            if !snare.is_empty() {
+                tracks.push(TrackPlan {
+                    name: "snare".into(),
+                    role: "drums".into(),
+                    inst: snare_inst,
+                    notes: snare,
+                    // Tracks are loudness-matched, so the snare alone sits 9 dB under the kit
+                    // (measured: the backbeat balance stays within 0.3 dB of the unsplit kit).
+                    mix: TrackMix { gain: -9.0, ..Default::default() },
+                    humanize: 0.0,
+                    straight: false,
+                    fx: Some(serde_json::json!([{ "type": "gated-reverb", "preset": "plate", "wet": 4.0, "hold": 0.22, "release": 0.025 }])),
+                    automate: None,
+                });
+            }
         }
         let level_of = |l: &Layer| l.level;
         for (li, l) in st.layers.iter().enumerate() {
@@ -1155,6 +1179,18 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 }
             }
         }
+        // A cut that opens a bigger section gets a reverse cymbal swelling into it
+        // (risers already cover drops in riser styles).
+        if spec.follow_cuts != Some(false) {
+            for (si, s) in sections.iter().enumerate().skip(1) {
+                let at = grid.secs(s.bar * bpb);
+                let rise = s.energy > sections[si - 1].energy + 0.15;
+                let riser_here = st.riser && s.energy >= 0.85 && sections[si - 1].energy < s.energy - 0.2;
+                if rise && !riser_here && spec.cuts.iter().any(|&c| (c - at).abs() <= 0.3 * grid.beat()) {
+                    sfx.push(SfxPlan { name: "reverse-cymbal".into(), at, gain: -12.0, params: serde_json::json!({ "seed": seed }) });
+                }
+            }
+        }
         // Risers into big sections, impacts on hits and drops.
         for (si, s) in sections.iter().enumerate().skip(1) {
             let prev = &sections[si - 1];
@@ -1184,6 +1220,21 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
             tracks.push(t);
         }
     }
+    // Explicit stops: silence before a section, in any style and on every track.
+    if !spec.sections.is_empty() {
+        for (sec, s) in sections.iter().zip(&spec.sections) {
+            let SectionSpec::Full(o) = s else { continue };
+            let Some(stop) = o.stop.filter(|&b| b > 0.0) else { continue };
+            let p = sec.bar * bpb;
+            let w0 = (p - stop).max(0.0);
+            for tr in tracks.iter_mut() {
+                tr.notes.retain(|n| !(n.t >= w0 - 1e-9 && n.t < p - 1e-9));
+                for n in tr.notes.iter_mut().filter(|n| n.t < w0 && n.t + n.len > w0) {
+                    n.len = (w0 - n.t).max(0.05);
+                }
+            }
+        }
+    }
     for c in &spec.sfx {
         let mut params = serde_json::Map::new();
         for (k, v) in &c.params {
@@ -1211,7 +1262,8 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
         let tonic = arrange::ChordAt { chord: crate::theory::Chord { root: key.tonic, intervals: if key.is_minor() { vec![0, 3, 7] } else { vec![0, 4, 7] }, bass: None }, t, len: 8.0 };
         for tr in tracks.iter_mut() {
             let tail: Vec<Note> = match tr.role.as_str() {
-                "drums" => vec![Note { t, len: 2.0, key: 36.0, vel: 0.9 }, Note { t, len: 4.0, key: 49.0, vel: 0.8 }],
+                "drums" if tr.name == "drums" => vec![Note { t, len: 2.0, key: 36.0, vel: 0.9 }, Note { t, len: 4.0, key: 49.0, vel: 0.8 }],
+                "drums" => continue,
                 "bass" | "808" | "low" | "basses" | "sub" => vec![Note { t, len: 6.0, key: (36 + key.tonic - if key.tonic > 7 { 12 } else { 0 }) as f32, vel: 0.8 }],
                 "lead" | "melody" | "right" => vec![Note { t, len: 4.0, key: (72 + key.tonic - if key.tonic > 7 { 12 } else { 0 }) as f32, vel: 0.75 }],
                 "bells" | "glock" | "pluck" | "arp" | "ostinato" | "timpani" | "counter" => continue,
@@ -1579,9 +1631,24 @@ mod cut_tests {
         assert!(a.sections.iter().any(|s| s.bar == 9.0 && s.name == "chorus"), "{:?}", a.sections);
         let d = a.tracks.iter().find(|t| t.role == "drums").unwrap();
         assert!(d.notes.iter().any(|n| n.t == 28.0 && n.key == 57.0), "cymbal on the beat nearest 13.9 s");
+        // Pop already has a riser into that chorus: no extra swell.
+        assert!(!a.sfx.iter().any(|x| x.name == "reverse-cymbal"));
         let off = MusicSpec::from_json(r#"{"style":"pop","bpm":120,"length":"40s","cuts":[13.9],"followCuts":false}"#).unwrap();
         let b = compose(&off, None).unwrap();
         assert!(!b.tracks.iter().find(|t| t.role == "drums").unwrap().notes.iter().any(|n| n.key == 57.0));
+    }
+
+    #[test]
+    fn cuts_into_bigger_sections_get_a_reverse_swell() {
+        let plain = compose(&MusicSpec::from_json(r#"{"style":"acoustic","bpm":120,"length":"40s"}"#).unwrap(), None).unwrap();
+        let bpb = plain.grid.beats_per_bar;
+        let w = plain.sections.windows(2).find(|w| w[1].energy > w[0].energy + 0.15).expect("a rising boundary");
+        let t = plain.grid.secs(w[1].bar * bpb);
+        let a = compose(&MusicSpec::from_json(&format!(r#"{{"style":"acoustic","bpm":120,"length":"40s","cuts":[{t}]}}"#)).unwrap(), None).unwrap();
+        assert!(a.sfx.iter().any(|x| x.name == "reverse-cymbal" && (x.at - t).abs() < 1e-6));
+        let off = compose(&MusicSpec::from_json(&format!(r#"{{"style":"acoustic","bpm":120,"length":"40s","cuts":[{t}],"followCuts":false}}"#)).unwrap(), None).unwrap();
+        assert!(!off.sfx.iter().any(|x| x.name == "reverse-cymbal"));
+        assert!(!plain.sfx.iter().any(|x| x.name == "reverse-cymbal"), "no cuts, no swell");
     }
 }
 
@@ -1627,5 +1694,39 @@ mod trailer_tests {
         // Short cues keep the simple form.
         let s = compose(&MusicSpec::from_json(r#"{"style":"cinematic-hybrid","length":"30s"}"#).unwrap(), None).unwrap();
         assert!(!s.sections.iter().any(|x| x.name == "break"));
+    }
+
+    #[test]
+    fn explicit_section_stops_work_in_any_style() {
+        let j = r#"{"style":"piano","bpm":120,"sections":[{"name":"verse","bars":4},{"name":"chorus","bars":4,"stop":2}]}"#;
+        let a = compose(&MusicSpec::from_json(j).unwrap(), None).unwrap();
+        let p = 4.0 * a.grid.beats_per_bar;
+        assert!(a.tracks.iter().all(|t| !t.notes.iter().any(|n| n.t >= p - 2.0 && n.t < p)), "silent for 2 beats");
+        assert!(a.tracks.iter().all(|t| !t.notes.iter().any(|n| n.t < p - 2.0 && n.t + n.len > p - 2.0 + 1e-6)), "nothing rings in");
+        assert!(a.tracks.iter().any(|t| t.notes.iter().any(|n| (n.t - p).abs() < 1e-6)), "the chorus lands");
+        let b = compose(&MusicSpec::from_json(&j.replace(r#","stop":2"#, "")).unwrap(), None).unwrap();
+        assert!(b.tracks.iter().any(|t| t.notes.iter().any(|n| n.t >= p - 2.0 && n.t < p)));
+    }
+
+    #[test]
+    fn jazz_ride_plays_spang_a_lang() {
+        let a = compose(&MusicSpec::from_json(r#"{"style":"jazz","length":"30s"}"#).unwrap(), None).unwrap();
+        let d = a.tracks.iter().find(|t| t.role == "drums").unwrap();
+        // Ride (51) positions within the beat: on the beat or on the "and" only.
+        let offs: std::collections::BTreeSet<i64> = d.notes.iter().filter(|n| n.key == 51.0).map(|n| ((n.t - n.t.floor()) * 4.0).round() as i64 % 4).collect();
+        assert!(offs.iter().all(|&o| o == 0 || o == 2), "{offs:?}");
+    }
+
+    #[test]
+    fn synthwave_snare_is_gated_on_its_own_track() {
+        let a = compose(&MusicSpec::from_json(r#"{"style":"synthwave","length":"30s"}"#).unwrap(), None).unwrap();
+        let sn = a.tracks.iter().find(|t| t.name == "snare").expect("snare track");
+        assert!(sn.notes.iter().all(|n| n.key == 38.0 || n.key == 40.0) && !sn.notes.is_empty());
+        assert!(sn.fx.as_ref().unwrap().to_string().contains("gated-reverb"));
+        let kit = a.tracks.iter().find(|t| t.name == "drums").unwrap();
+        assert!(!kit.notes.iter().any(|n| n.key == 38.0 || n.key == 40.0));
+        // Other styles keep one drum track.
+        let p = compose(&MusicSpec::from_json(r#"{"style":"pop","length":"30s"}"#).unwrap(), None).unwrap();
+        assert_eq!(p.tracks.iter().filter(|t| t.role == "drums").count(), 1);
     }
 }

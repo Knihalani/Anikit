@@ -218,6 +218,26 @@ pub struct InkSpec {
     pub seed: Option<u32>,
 }
 
+/// `brush`: on, or the full settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum BrushValue {
+    On(bool),
+    Full(BrushSpec),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BrushSpec {
+    /// Taper lengths at the start and end, as fractions of the stroke. Default `[0.12, 0.25]`.
+    pub taper: Option<[f64; 2]>,
+    /// Width wobble (0..1). Default 0.35.
+    pub pressure: Option<f64>,
+    /// Dry brush (0..1): bristles that skip, more towards the end. Default 0.
+    pub dry: Option<f64>,
+    pub seed: Option<u32>,
+}
+
 /// `boil`: px, or the full settings.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
@@ -805,6 +825,9 @@ pub struct Layer {
     pub line_height: Option<f64>,
     pub letter_spacing: Option<Num>,
     pub uppercase: Option<bool>,
+    /// Trim the text box to the first line's cap height and the last line's baseline (CSS `text-box: cap alphabetic`),
+    /// so `anchor` and grid cells align the letters, not the line box. Default on for text in a grid `cell`.
+    pub text_box_trim: Option<bool>,
     pub max_lines: Option<u32>,
     /// Text: wrap at this width (px, `"40vw"`, `"60%"`) without fixing the box
     /// width (`width` wraps *and* sets the box).
@@ -850,6 +873,9 @@ pub struct Layer {
     pub pattern: Option<PatternValue>,
     pub trim_start: Option<Num>,
     pub trim_end: Option<Num>,
+    /// Paint the stroke as a brush: `true`, or `{ "taper": [start, end], "pressure": 0..1, "dry": 0..1, "seed" }`.
+    /// Width from `strokeWidth`; tapered ends, pressure wobble, dry-brush bristles; `trimEnd` paints it on.
+    pub brush: Option<BrushValue>,
 
     // ---- image / video
     pub src: Option<String>,
@@ -946,6 +972,9 @@ pub struct RepeaterSpec {
     pub offset: Option<RepeatOffset>,
     /// Seconds of delay per copy (copy i plays i × stagger later).
     pub stagger: Option<f64>,
+    /// Stagger order: `forward` (default), `reverse`, `center` (middle first), `random` (with `seed`).
+    pub order: Option<String>,
+    pub seed: Option<f64>,
     /// Rotation/scale centre `[x, y]` in parent pixels (default: the layer's own position).
     pub center: Option<[f64; 2]>,
 }
@@ -988,6 +1017,9 @@ pub struct AnimatorSpec {
     pub opacity: Option<f64>,
     pub blur: Option<f64>,
     pub color: Option<String>,
+    /// Variable-font axis values at full selection, e.g. `{"wght": 900, "wdth": 125}`
+    /// (a weight wave across the units). Spacing stays that of the base text.
+    pub axes: Option<BTreeMap<String, f64>>,
     /// Range start / end as fractions of the units (0..1). Defaults 0 and 1. Animatable as `rangeStart` / `rangeEnd`.
     pub start: Option<Num>,
     pub end: Option<Num>,

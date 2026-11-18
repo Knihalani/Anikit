@@ -112,6 +112,21 @@ pub struct Fluid {
     /// Simulated seconds per second.
     pub speed: f32,
     pub seed: u32,
+    /// Advection: `maccormack` (sharp: little numerical diffusion) or `linear` (soft, semi-Lagrangian).
+    pub advection: String,
+    /// Sub-grid turbulence: curl noise finer than the velocity grid, scaled
+    /// by the local swirl, that tears dye into filaments (0 = off).
+    pub turbulence: f32,
+    /// Octaves of it (each half the size of the last), down to about two dye cells.
+    pub octaves: u32,
+    /// Ink: extra absorption where the dye's edge is sharp (filament walls read darker).
+    pub edge: f32,
+    /// Ink: colour of thin, dilute ink (Beer–Lambert gives the dense colour);
+    /// `chroma` is how far thin regions move towards it (0–1).
+    pub thin_color: Option<Color>,
+    pub chroma: f32,
+    /// Ink: paper granulation (pigment settling into the paper's grain), 0–1.
+    pub granulation: f32,
     #[serde(skip)]
     sim: OnceLock<Sim>,
 }
@@ -138,6 +153,13 @@ impl Default for Fluid {
             light: -60.0,
             speed: 1.0,
             seed: 3,
+            advection: "maccormack".into(),
+            turbulence: 0.7,
+            octaves: 3,
+            edge: 0.35,
+            thin_color: None,
+            chroma: 0.0,
+            granulation: 0.0,
             sim: OnceLock::new(),
         }
     }
@@ -187,6 +209,12 @@ impl Prepare for Fluid {
             // A default: a jet rising from the bottom centre.
             self.sources.push(Source { pos: [0.5, 0.92], radius: 0.06, angle: -90.0, speed: 0.7, amount: 1.4, heat: if self.look == "ink" { 0.0 } else { 1.0 }, end: 4.0, ..Source::default() });
         }
+        if !["maccormack", "linear"].contains(&self.advection.as_str()) {
+            return Err(Error(format!("fluid: unknown advection `{}` (maccormack, linear)", self.advection)));
+        }
+        self.octaves = self.octaves.clamp(1, 6);
+        self.chroma = self.chroma.clamp(0.0, 1.0);
+        self.granulation = self.granulation.clamp(0.0, 1.0);
         if self.look != "ink" && self.buoyancy == 0.0 {
             self.buoyancy = 0.9;
         }
@@ -256,7 +284,116 @@ fn bicubic(g: &[f32], w: usize, h: usize, x: f32, y: f32) -> f32 {
         }
         acc += r * wyj;
     }
-    acc.max(0.0)
+    // Clamp to the four nearest values: no ringing (dark halos, colour fringes) at sharp edges.
+    let (x0, y0) = ((ix.clamp(0, w as i32 - 1)) as usize, (iy.clamp(0, h as i32 - 1)) as usize);
+    let (x1, y1) = ((x0 + 1).min(w - 1), (y0 + 1).min(h - 1));
+    let (a, b, c, d) = (g[y0 * w + x0], g[y0 * w + x1], g[y1 * w + x0], g[y1 * w + x1]);
+    acc.clamp(a.min(b).min(c).min(d), a.max(b).max(c).max(d))
+}
+
+/// Semi-Lagrangian advection of `src` (`w × h`) by displacements `ox, oy`
+/// (cells per step) times `sign`. `open`: departures outside the grid read 0.
+fn advect_sl(src: &[f32], w: usize, h: usize, ox: &[f32], oy: &[f32], sign: f32, open: bool) -> Vec<f32> {
+    let mut out = vec![0.0f32; w * h];
+    out.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+        for x in 0..w {
+            let i = y * w + x;
+            let (px, py) = (x as f32 - ox[i] * sign, y as f32 - oy[i] * sign);
+            row[x] = if open && !(px > -0.5 && py > -0.5 && px < w as f32 - 0.5 && py < h as f32 - 0.5) { 0.0 } else { bilerp(src, w, h, px, py) };
+        }
+    });
+    out
+}
+
+/// Bilinear taps (indices and weights) at a departure point, clamped to the grid.
+#[inline(always)]
+fn taps(w: usize, h: usize, px: f32, py: f32) -> ([usize; 4], [f32; 4]) {
+    let x = px.clamp(0.0, (w - 1) as f32);
+    let y = py.clamp(0.0, (h - 1) as f32);
+    let (x0, y0) = (x as usize, y as usize);
+    let (x1, y1) = ((x0 + 1).min(w - 1), (y0 + 1).min(h - 1));
+    let (tx, ty) = (x - x0 as f32, y - y0 as f32);
+    ([y0 * w + x0, y0 * w + x1, y1 * w + x0, y1 * w + x1], [(1.0 - tx) * (1.0 - ty), tx * (1.0 - ty), (1.0 - tx) * ty, tx * ty])
+}
+
+/// `advect_sl` of several fields at once (shared departure points).
+fn advect_sl_n<const N: usize>(src: [&[f32]; N], w: usize, h: usize, ox: &[f32], oy: &[f32], sign: f32) -> [Vec<f32>; N] {
+    let mut out: [Vec<f32>; N] = std::array::from_fn(|_| vec![0.0f32; w * h]);
+    let rows: Vec<(usize, Vec<[f32; N]>)> = (0..h)
+        .into_par_iter()
+        .map(|y| {
+            let mut r = vec![[0.0f32; N]; w];
+            for (x, o) in r.iter_mut().enumerate() {
+                let i = y * w + x;
+                let (px, py) = (x as f32 - ox[i] * sign, y as f32 - oy[i] * sign);
+                if !(px > -0.5 && py > -0.5 && px < w as f32 - 0.5 && py < h as f32 - 0.5) {
+                    continue;
+                }
+                let (ix, wt) = taps(w, h, px, py);
+                for c in 0..N {
+                    let g = src[c];
+                    o[c] = g[ix[0]] * wt[0] + g[ix[1]] * wt[1] + g[ix[2]] * wt[2] + g[ix[3]] * wt[3];
+                }
+            }
+            (y, r)
+        })
+        .collect();
+    for (y, r) in rows {
+        for (x, v) in r.into_iter().enumerate() {
+            for c in 0..N {
+                out[c][y * w + x] = v[c];
+            }
+        }
+    }
+    out
+}
+
+/// MacCormack advection (Selle et al. 2008) of several fields at once, with
+/// open boundaries: a forward and a backward semi-Lagrangian step estimate
+/// the error and half of it is corrected (far less numerical diffusion).
+fn advect_mac_n<const N: usize>(src: [&[f32]; N], w: usize, h: usize, ox: &[f32], oy: &[f32]) -> [Vec<f32>; N] {
+    let mut fwd = advect_sl_n(src, w, h, ox, oy, 1.0);
+    let back: [Vec<f32>; N] = advect_sl_n(std::array::from_fn(|c| fwd[c].as_slice()), w, h, ox, oy, -1.0);
+    let fixes: Vec<Vec<[f32; N]>> = (0..h)
+        .into_par_iter()
+        .map(|y| {
+            let mut r = vec![[0.0f32; N]; w];
+            for (x, o) in r.iter_mut().enumerate() {
+                let i = y * w + x;
+                let (px, py) = (x as f32 - ox[i], y as f32 - oy[i]);
+                if !(px > -0.5 && py > -0.5 && px < w as f32 - 0.5 && py < h as f32 - 0.5) {
+                    continue;
+                }
+                let (ix, _) = taps(w, h, px, py);
+                // Where the correction would leave the departure cell's range
+                // in any channel, keep the first-order value in all of them
+                // (Selle et al.): channels stay consistent, so no colour fringes.
+                let mut ok = true;
+                for c in 0..N {
+                    let g = src[c];
+                    let (a, b, cc, d) = (g[ix[0]], g[ix[1]], g[ix[2]], g[ix[3]]);
+                    let (lo, hi) = (a.min(b).min(cc).min(d), a.max(b).max(cc).max(d));
+                    let v = fwd[c][i] + 0.5 * (g[i] - back[c][i]);
+                    ok &= v >= lo && v <= hi;
+                    o[c] = v;
+                }
+                if !ok {
+                    for c in 0..N {
+                        o[c] = fwd[c][i];
+                    }
+                }
+            }
+            r
+        })
+        .collect();
+    for (y, r) in fixes.into_iter().enumerate() {
+        for (x, v) in r.into_iter().enumerate() {
+            for c in 0..N {
+                fwd[c][y * w + x] = v[c];
+            }
+        }
+    }
+    fwd
 }
 
 impl Fluid {
@@ -298,6 +435,7 @@ impl Fluid {
 
     /// One step of `dt` simulated seconds.
     fn step(&self, s: &Sim, f: &mut Fields, dt: f32, noise: &Noise) {
+        let c_step = std::time::Instant::now();
         let (nx, ny, ddx, ddy) = (s.nx, s.ny, s.dx, s.dy);
         let t = f.step as f32 / HZ;
         // Velocity units: cells per second (the box height is `ny` cells).
@@ -436,18 +574,12 @@ impl Fluid {
                 }
             }
         });
-        // 3. Advect velocity (semi-Lagrangian), in cells.
-        let (su, sv) = (nu, nv);
-        let mut au = vec![0.0f32; nx * ny];
-        let mut av = vec![0.0f32; nx * ny];
-        au.par_chunks_mut(nx).zip(av.par_chunks_mut(nx)).enumerate().for_each(|(y, (ru, rv))| {
-            for x in 0..nx {
-                let i = y * nx + x;
-                let (px, py) = (x as f32 - su[i] * dt, y as f32 - sv[i] * dt);
-                ru[x] = bilerp(&su, nx, ny, px, py);
-                rv[x] = bilerp(&sv, nx, ny, px, py);
-            }
-        });
+        // 3. Advect velocity, in cells.
+        let mac = self.advection == "maccormack";
+        let (ox, oy): (Vec<f32>, Vec<f32>) = (nu.iter().map(|x| x * dt).collect(), nv.iter().map(|x| x * dt).collect());
+        // Velocity stays first-order: MacCormack on the coarse grid leaves
+        // kinks that the fine dye shears into axis-aligned steps.
+        let (au, av) = (advect_sl(&nu, nx, ny, &ox, &oy, 1.0, false), advect_sl(&nv, nx, ny, &ox, &oy, 1.0, false));
         // Open boundaries: the flow (and the dye) leaves the frame freely.
         // 4. Project: solve ∇²p = ∇·u (Jacobi), subtract ∇p.
         let div: Vec<f32> = (0..nx * ny)
@@ -491,26 +623,102 @@ impl Fluid {
         let keep = self.fade.clamp(0.0, 1.0).powf(dt);
         let hkeep = self.cool.clamp(0.0, 1.0).powf(dt);
         let (u, v) = (&f.u, &f.v);
+        // Displacement of each fine cell this step (fine cells): the coarse
+        // flow, plus sub-grid turbulence.
+        let mut fox = vec![0.0f32; ddx * ddy];
+        let mut foy = vec![0.0f32; ddx * ddy];
+        fox.par_chunks_mut(ddx).zip(foy.par_chunks_mut(ddx)).enumerate().for_each(|(y, (rx, ry))| {
+            for x in 0..ddx {
+                let (cx, cy) = ((x as f32 + 0.5) / det - 0.5, (y as f32 + 0.5) / det - 0.5);
+                rx[x] = bilerp(u, nx, ny, cx, cy) * dt * det;
+                ry[x] = bilerp(v, nx, ny, cx, cy) * dt * det;
+            }
+        });
+        let c_turb = std::time::Instant::now();
+        if self.turbulence > 0.0 {
+            self.turbulence_into(s, &f.u, &f.v, t, dt, noise, &mut fox, &mut foy);
+        }
+        // Outside the frame is clear water.
         let adv = |src: &Vec<f32>, k: f32| -> Vec<f32> {
-            let mut out = vec![0.0f32; ddx * ddy];
-            out.par_chunks_mut(ddx).enumerate().for_each(|(y, row)| {
-                for x in 0..ddx {
-                    // Velocity at this fine cell (coarse cell coordinates).
-                    let (cx, cy) = ((x as f32 + 0.5) / det - 0.5, (y as f32 + 0.5) / det - 0.5);
-                    let (vx, vy) = (bilerp(u, nx, ny, cx, cy), bilerp(v, nx, ny, cx, cy));
-                    let (px, py) = (x as f32 - vx * dt * det, y as f32 - vy * dt * det);
-                    // Outside the frame is clear water.
-                    let inside = px > -0.5 && py > -0.5 && px < ddx as f32 - 0.5 && py < ddy as f32 - 0.5;
-                    row[x] = if inside { bilerp(src, ddx, ddy, px, py) * k } else { 0.0 };
-                }
-            });
-            out
+            let [mut o] = if mac { advect_mac_n([src.as_slice()], ddx, ddy, &fox, &foy) } else { advect_sl_n([src.as_slice()], ddx, ddy, &fox, &foy, 1.0) };
+            if k != 1.0 {
+                o.iter_mut().for_each(|x| *x *= k);
+            }
+            o
         };
-        f.dye = [adv(&f.dye[0], keep), adv(&f.dye[1], keep), adv(&f.dye[2], keep)];
+        let c_adv = std::time::Instant::now();
+        let src3 = [f.dye[0].as_slice(), f.dye[1].as_slice(), f.dye[2].as_slice()];
+        let mut d3 = if mac { advect_mac_n(src3, ddx, ddy, &fox, &foy) } else { advect_sl_n(src3, ddx, ddy, &fox, &foy, 1.0) };
+        if keep != 1.0 {
+            d3.iter_mut().for_each(|g| g.iter_mut().for_each(|x| *x *= keep));
+        }
+        f.dye = d3;
+        if std::env::var_os("ANIKIT_FLUID_STEP_PROFILE").is_some() {
+            eprintln!("fluid step: before turbulence {:.1} ms, turbulence {:.1} ms, dye {:.1} ms", (c_turb - c_step).as_secs_f64() * 1e3, (c_adv - c_turb).as_secs_f64() * 1e3, c_adv.elapsed().as_secs_f64() * 1e3);
+        }
         if self.look != "ink" || self.text.as_ref().is_some_and(|w| w.heat > 0.0) || self.sources.iter().any(|s| s.heat > 0.0) {
             f.heat = adv(&f.heat, hkeep);
         }
         f.step += 1;
+    }
+
+    /// Adds sub-grid turbulence to the fine displacements: the curl of
+    /// `m · ψ`, where ψ is multi-octave noise finer than the velocity grid
+    /// (Kolmogorov-like amplitudes, velocity ∝ size^⅓) and `m` the local
+    /// coarse swirl |ω|, so still water stays still and the field stays
+    /// divergence-free (after Kim et al. 2008, "Wavelet turbulence").
+    #[allow(clippy::too_many_arguments)]
+    fn turbulence_into(&self, s: &Sim, u: &[f32], v: &[f32], t: f32, dt: f32, noise: &Noise, fox: &mut [f32], foy: &mut [f32]) {
+        let (nx, ny, ddx, ddy) = (s.nx, s.ny, s.dx, s.dy);
+        let det = self.detail as f32;
+        // Coarse |ω| (1/s), smoothed by the bilinear lookup below.
+        let w: Vec<f32> = (0..nx * ny)
+            .into_par_iter()
+            .map(|i| {
+                let (x, y) = (i % nx, i / nx);
+                let (xl, xr, yu, yd) = (x.saturating_sub(1), (x + 1).min(nx - 1), y.saturating_sub(1), (y + 1).min(ny - 1));
+                ((v[y * nx + xr] - v[y * nx + xl]) * 0.5 - (u[yd * nx + x] - u[yu * nx + x]) * 0.5).abs()
+            })
+            .collect();
+        // ψ on fine-cell corners. Largest eddy: three coarse cells; the
+        // smallest is kept at four dye cells or more (finer aliases into
+        // sawtooth edges).
+        let (cw, ch) = (ddx + 1, ddy + 1);
+        let big = 3.0 * det;
+        let base = 1.0 / big as f64;
+        let oct = (self.octaves as usize).min(((big / 4.0).log2().floor() as usize + 1).max(1));
+        let tf = t as f64;
+        let psi: Vec<f32> = (0..cw * ch)
+            .into_par_iter()
+            .with_min_len(1024)
+            .map(|k| {
+                let (x, y) = ((k % cw) as f32, (k / cw) as f32);
+                let m = bilerp(&w, nx, ny, x / det - 0.5, y / det - 0.5);
+                if m < 1e-3 {
+                    return 0.0;
+                }
+                let mut acc = 0.0f64;
+                let (mut f, mut a) = (base, 1.0f64);
+                for o in 0..oct {
+                    // Smaller eddies turn over faster (τ ∝ size^⅔).
+                    let ev = 0.6 * (1u32 << o) as f64 * 0.63f64.powi(o as i32);
+                    acc += a * noise.noise3(x as f64 * f + o as f64 * 31.7, y as f64 * f - o as f64 * 17.3, tf * ev + o as f64 * 5.1);
+                    f *= 2.0;
+                    // ψ ∝ size^(4/3): halving the size scales it by 2^-4/3.
+                    a *= 0.397;
+                }
+                // ψ in fine cells² per second: |ω| (1/s) × the largest eddy's size² (fine cells).
+                (acc * m as f64) as f32
+            })
+            .collect();
+        let amp = self.turbulence * big * 0.5 * dt;
+        fox.par_chunks_mut(ddx).zip(foy.par_chunks_mut(ddx)).enumerate().for_each(|(y, (rx, ry))| {
+            for x in 0..ddx {
+                let (a, b, c, d) = (psi[y * cw + x], psi[y * cw + x + 1], psi[(y + 1) * cw + x], psi[(y + 1) * cw + x + 1]);
+                rx[x] += ((c + d) - (a + b)) * 0.5 * amp;
+                ry[x] -= ((b + d) - (a + c)) * 0.5 * amp;
+            }
+        });
     }
 
     /// The fields at video frame `frame` (`fps`), stepping as needed.
@@ -571,22 +779,37 @@ impl Fluid {
         });
         let dens = self.density;
         // Smoke: light transmittance per fine cell, marching towards the light.
+        // Shadows are soft: march a 2× box-downsampled density in steps of
+        // one of its cells (sharper fields alias into streaks along the light).
+        let (hx, hy) = (ddx.div_ceil(2), ddy.div_ceil(2));
         let shadow: Vec<f32> = if self.look != "ink" {
+            let rho: Vec<f32> = (0..hx * hy)
+                .into_par_iter()
+                .map(|k| {
+                    let (x, y) = ((k % hx) * 2, (k / hx) * 2);
+                    let mut acc = 0.0;
+                    for (xx, yy) in [(x, y), (x + 1, y), (x, y + 1), (x + 1, y + 1)] {
+                        let i = yy.min(ddy - 1) * ddx + xx.min(ddx - 1);
+                        acc += fr.dye[0][i] + fr.dye[1][i] + fr.dye[2][i];
+                    }
+                    acc * 0.25
+                })
+                .collect();
             let a = self.light.to_radians();
             let (lx, ly) = (-a.cos(), -a.sin());
-            let steps = 24;
-            let stepl = (ddy as f32 * 0.012).max(1.0);
-            (0..ddx * ddy)
+            // As far as before: 29% of the height.
+            let steps = ((hy as f32 * 0.29).ceil() as usize).max(4);
+            (0..hx * hy)
                 .into_par_iter()
                 .map(|i| {
-                    let (x, y) = ((i % ddx) as f32, (i / ddx) as f32);
+                    let (x, y) = ((i % hx) as f32, (i / hx) as f32);
                     let mut od = 0.0;
                     for k in 1..=steps {
-                        let (px, py) = (x + lx * stepl * k as f32, y + ly * stepl * k as f32);
-                        if px < 0.0 || py < 0.0 || px >= ddx as f32 || py >= ddy as f32 {
+                        let (px, py) = (x + lx * k as f32, y + ly * k as f32);
+                        if px < 0.0 || py < 0.0 || px >= hx as f32 || py >= hy as f32 {
                             break;
                         }
-                        od += (bilerp(&fr.dye[0], ddx, ddy, px, py) + bilerp(&fr.dye[1], ddx, ddy, px, py) + bilerp(&fr.dye[2], ddx, ddy, px, py)) * stepl;
+                        od += bilerp(&rho, hx, hy, px, py) * 2.0;
                     }
                     (-od * dens * 0.02).exp()
                 })
@@ -594,6 +817,14 @@ impl Fluid {
         } else {
             Vec::new()
         };
+        let shadow_at = |gx: f32, gy: f32| bilerp(&shadow, hx, hy, (gx - 0.5) * 0.5, (gy - 0.5) * 0.5);
+        // Thin ink's absorbance shape (sums to 1).
+        let thin_abs = {
+            let a = self.absorb(rgb_lin(self.thin_color, [0.1, 0.3, 0.55]));
+            let t = (a[0] + a[1] + a[2]).max(1e-6);
+            a.map(|x| x / t)
+        };
+        let paper = (self.granulation > 0.0).then(|| Noise::new(self.seed ^ 0x5a5a));
         let mut out = vec![0u8; w * h * 4];
         let (kx, ky) = (ddx as f32 / w as f32, ddy as f32 / h as f32);
         out.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
@@ -602,22 +833,37 @@ impl Fluid {
                 let d = [bicubic(&fr.dye[0], ddx, ddy, gx, gy), bicubic(&fr.dye[1], ddx, ddy, gx, gy), bicubic(&fr.dye[2], ddx, ddy, gx, gy)];
                 let c = match self.look.as_str() {
                     "ink" => {
-                        // Beer–Lambert on paper, plus a faint sheen where filaments are thin and sharp.
+                        // Beer–Lambert: transmittance exp(-absorbance × thickness).
                         let sum = d[0] + d[1] + d[2];
-                        let e = 1.0;
-                        let gxr = bilerp(&fr.dye[2], ddx, ddy, gx + e, gy) - bilerp(&fr.dye[2], ddx, ddy, gx - e, gy);
-                        let gyr = bilerp(&fr.dye[2], ddx, ddy, gx, gy + e) - bilerp(&fr.dye[2], ddx, ddy, gx, gy - e);
-                        let edge = ((gxr * gxr + gyr * gyr).sqrt() * 0.6).min(0.12) * (1.0 - (-sum * 2.0).exp());
-                        let mut o = [0.0f32; 3];
-                        for k in 0..3 {
-                            o[k] = bg[k] * (-d[k] * dens * 1.3).exp() * (1.0 - edge) + edge * 0.04;
+                        let mut a = d.map(|x| x * dens * 1.3);
+                        if self.edge > 0.0 && sum > 1e-4 {
+                            // Filament walls: relative gradient |∇ρ| / ρ (per dye cell).
+                            let sx = |ox: f32, oy: f32| bilerp(&fr.dye[0], ddx, ddy, gx + ox, gy + oy) + bilerp(&fr.dye[1], ddx, ddy, gx + ox, gy + oy) + bilerp(&fr.dye[2], ddx, ddy, gx + ox, gy + oy);
+                            let (ex, ey) = ((sx(1.0, 0.0) - sx(-1.0, 0.0)) * 0.5, (sx(0.0, 1.0) - sx(0.0, -1.0)) * 0.5);
+                            let r = ((ex * ex + ey * ey).sqrt() / (sum + 0.08)).min(1.5);
+                            a = a.map(|x| x * (1.0 + self.edge * r));
                         }
-                        o
+                        if self.chroma > 0.0 {
+                            // Thin ink drifts towards `thin_color` (same total absorbance).
+                            let thin = thin_abs;
+                            let tot = a[0] + a[1] + a[2];
+                            let wt = self.chroma * (-sum * dens * 1.5).exp();
+                            for k in 0..3 {
+                                a[k] += (thin[k] * tot - a[k]) * wt;
+                            }
+                        }
+                        if self.granulation > 0.0 {
+                            // Pigment settles in the paper's valleys: fine grain, in output pixels.
+                            let g = paper.as_ref().map(|p| p.noise3(x as f64 * 0.35, y as f64 * 0.35, 0.0) as f32 * 0.6 + p.noise3(x as f64 * 0.9, y as f64 * 0.9, 3.0) as f32 * 0.4).unwrap_or(0.0);
+                            let k = 1.0 + self.granulation * g * 1.6 * (1.0 - (-sum * 3.0).exp());
+                            a = a.map(|x| x * k.max(0.0));
+                        }
+                        [bg[0] * (-a[0]).exp(), bg[1] * (-a[1]).exp(), bg[2] * (-a[2]).exp()]
                     }
                     "smoke" => {
                         let rho = (d[0] + d[1] + d[2]) / 3.0 * dens * 2.5;
                         let a = 1.0 - (-rho).exp();
-                        let t = bilerp(&shadow, ddx, ddy, gx, gy);
+                        let t = shadow_at(gx, gy);
                         let lit = [d[0], d[1], d[2]].map(|v| v / (d[0] + d[1] + d[2]).max(1e-6) * 3.0);
                         let l = 0.08 + 1.1 * t;
                         [bg[0] * (1.0 - a) + lit[0] * l * a, bg[1] * (1.0 - a) + lit[1] * l * a, bg[2] * (1.0 - a) + lit[2] * l * a]
@@ -629,7 +875,7 @@ impl Fluid {
                         let a = 1.0 - (-soot * 1.5).exp();
                         let tk = (ht * 1.3).min(3.0);
                         let em = [tk.powf(1.5) * 2.2, tk.powf(2.4) * 1.1, tk.powf(4.0) * 0.45];
-                        let t = bilerp(&shadow, ddx, ddy, gx, gy);
+                        let t = shadow_at(gx, gy);
                         [bg[0] * (1.0 - a) + 0.05 * t * a + em[0], bg[1] * (1.0 - a) + 0.045 * t * a + em[1], bg[2] * (1.0 - a) + 0.04 * t * a + em[2]]
                     }
                 };
@@ -648,7 +894,7 @@ impl Fluid {
 }
 
 /// The word as a dye mask on the fine grid (1 inside the letters).
-fn word_mask(w: &Word, dx: usize, dy: usize, aspect: f32) -> Vec<f32> {
+pub(crate) fn word_mask(w: &Word, dx: usize, dy: usize, aspect: f32) -> Vec<f32> {
     let mut mask = vec![0.0f32; dx * dy];
     let Ok(mesh) = crate::scene3d::geom::text(&w.text, &w.font, w.weight, 0.02, 1.0, 0.1, 0.0, 0.5) else { return mask };
     // Centre the word's bounds on `pos`, cap height `size`.
@@ -724,7 +970,8 @@ impl Fluid {
             self.speed,
             self.seed
         );
-        fnv(&[all.as_bytes()])
+        let more = format!("{}{}{}{}{:?}{}{}", self.advection, self.turbulence, self.octaves, self.edge, self.thin_color.map(|c| c.0 .0), self.chroma, self.granulation);
+        fnv(&[all.as_bytes(), more.as_bytes()])
     }
 }
 

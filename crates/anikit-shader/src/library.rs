@@ -63,6 +63,7 @@ lib! {
     "flow-lines", Image, 449, "Curves grow from seeds along a swirling flow field and draw themselves on paper in a weighted palette.";
     "ink", Image, 340, "A drop of ink blooming in backlit water: billows, torn tendrils, a second ink curling through.";
     "soap-film", Image, 104, "Macro of a draining soap film: physically based thin-film colour bands swirling, black film at the top.";
+    "sky", Image, 222, "Golden-hour sky with two cloud decks in parallax: sun-lit edges, warm shadowed bases, cirrus, horizon haze.";
     "caustics", Image, 51, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
     "flow-ink", Image, 151, "Two inks marbled by a curl-noise flow field on paper.";
     "turing", Image, 25, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
@@ -72,7 +73,7 @@ lib! {
     "halftone", Filter, 29, "Printed dots: CMYK screens at classic angles (or one black screen) on paper.";
     "risograph", Filter, 28, "Two or three spot inks, out of register, with stencil grain: the risograph look.";
     "linocut", Filter, 19, "Carved block print: solid ink, tone-following gouges, bold outlines, paper tooth.";
-    "watercolour", Filter, 34, "Washes that bleed and pool dark at their edges, with paper granulation.";
+    "watercolour", Filter, 32, "Washes that bleed and pool dark at their edges, with paper granulation.";
     "crosshatch", Filter, 25, "Pen or pencil hatching: more directions for darker tones, hand wobble, outlines.";
     "film", Filter, 25, "Photochemical stock: filmic curve, lifted blacks, red halation, gate weave, midtone grain.";
     "dither", Filter, 18, "Ordered (Bayer) dither into a 2- or 3-colour palette at a chosen pixel size.";

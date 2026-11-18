@@ -17,7 +17,8 @@
   `show: "under"` draws the field edges as hairlines beneath the layers (a guidelines look; `color` sets them).
 - **Cell** `"cell": "head"` | `"1-6/2-4"` (columns 1–6, rows 2–4) | `"7/1"` | `"9-"` (column 9 to the end, all rows) |
   `[col, row, cols, rows]`. Sets x, y, width, and height (not for text). `anchor` picks the point of the cell (default
-  `topLeft`; `bottomLeft` sits a caption on the field's foot) and text alignment follows it. With `baseline`, a text's
+  `topLeft`; `bottomLeft` sits a caption on the field's foot) and text alignment follows it. Text in a cell is trimmed to
+  cap height and baseline (`textBoxTrim`, any text layer can opt in), so letters, not line boxes, meet the field edges. With `baseline`, a text's
   leading rounds to whole baseline units. Explicit `x`/`y`/`width`/`height` still win. Animation applies on top.
   With a grid, a hand-placed edge 1.5–8 px off a grid line gets a warning with the exact snap value (overprint plates exempt).
 - **Shapes** `squircle` / `superellipse` (`exponent`: 2 ellipse, 4–5 squircle, 2.5 Piet Hein, < 1 pinched star),
@@ -40,6 +41,9 @@
 - **Cutout** (collage) `"cutout": "torn"` | `"scissor"` | `"clean"` or `{edge, amount, rim, rimColor, shadow, seed}` on any
   layer with a numeric width/height or a `cell`: clips it to a cut edge, backs it with a paper rim (torn: 8 px) and a tight
   printed shadow. Motion, time and blend move to the piece, so `enter`/`animate` move paper and content together.
+- **Brush** `"brush": true` or `{taper: [start, end], pressure, dry, seed}` on a stroked shape (line, path, any outline):
+  the stroke becomes a tapered ribbon with pressure wobble, a paper-rough edge and, with `dry` 0.3–0.7, bristles that run out
+  of paint toward the end. Width = `strokeWidth`; animate `trimEnd` to paint it on (the end taper follows the brush).
 - **Ink texture** `"inkTexture": 0.35` or `{amount, scale, seed}`: uneven coverage (blotches + pinholes) fixed to the frame,
   so it reads as ink on paper rather than a grain overlay. Use it on the ink layers only; leave type you must read lighter (≤ 0.2).
 - **Stepped time** `"step": "twos"` (or `"threes"`, or fps like `8`): the layer and its children animate held, like

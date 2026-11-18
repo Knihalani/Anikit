@@ -68,6 +68,9 @@ pub struct SectionObj {
     pub energy: Option<f32>,
     /// Chords for this section only.
     pub chords: Option<String>,
+    /// Beats of silence right before this section: every part stops (ringing
+    /// notes are cut, the reverb tails ring on), then the section lands.
+    pub stop: Option<f64>,
 }
 
 /// A sound effect on the timeline, aligned by its hit point.
@@ -257,7 +260,8 @@ pub struct MusicSpec {
     /// voice-over get it automatically unless this is `false`.
     pub underscore: Option<bool>,
     /// Picture cuts (seconds on the music timeline): sections start on them where the form allows, and
-    /// each gets a cymbal accent on the nearest beat. Filled from the video's scene cuts automatically.
+    /// each gets a cymbal accent on the nearest beat; a cut that opens a bigger section gets a reverse
+    /// cymbal swelling into it. Filled from the video's scene cuts automatically.
     pub cuts: Vec<f64>,
     /// Score to the video's cuts (default true).
     pub follow_cuts: Option<bool>,

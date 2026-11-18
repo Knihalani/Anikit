@@ -241,6 +241,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `letterSpacing` | length or `"0.05em"` | `0` | |
 | `uppercase` | bool | `false` | |
 | `maxLines` | integer | none | Truncates with an ellipsis. |
+| `textBoxTrim` | bool | `false` (`true` in a grid `cell`) | Align by cap height and last baseline instead of the line box (CSS `text-box: cap alphabetic`). |
 | `fit` | bool | `false` | `true` shrinks the size (never grows it) so the widest line fits `width` (default 85% of the parent), keeping your line breaks. Use it for big kinetic words on 9:16. |
 | `stroke` | colour or stroke | none | Outlined text: `"#000"` or `{ "color": "$accent", "width": 3 }` (px). Drawn under the fill; with `"color": "none"` only the outline shows. |
 | `split` | `chars` / `words` / `lines` | none | Splits the text into units so `enter`/`exit` presets stagger across them (kinetic type). |
@@ -268,6 +269,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `d` | SVG path string | | `path` data (`"M0 0 C 50 -40 …"`), local px. |
 | `headSize` | px | `4 × strokeWidth` | `arrow` head size. |
 | `trimStart`, `trimEnd` | 0..1 | `0`, `1` | Draw part of the outline (animate for draw-on; see the `drawOn` preset). |
+| `brush` | `true` or `{taper, pressure, dry, seed}` | none | Paint the stroke as a brush: tapered, pressure-varied, dry bristles; paints on with `trimEnd`. |
 
 ### `image` and `video`
 

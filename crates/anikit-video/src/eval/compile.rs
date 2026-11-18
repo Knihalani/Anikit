@@ -593,6 +593,7 @@ fn empty_node(kind: Kind) -> Node {
         treat: Vec::new(),
         treat_slot: 0,
         live_pattern: None,
+        brush: None,
         step: 0.0,
         boil: None,
         clip: false,
@@ -1869,6 +1870,16 @@ impl C<'_> {
             },
         };
 
+        if l.text_box_trim == Some(true) {
+            if let Kind::Text { layout, .. } = &n.kind {
+                // Re-anchor so the anchor's y refers to the cap-top…baseline box.
+                let h = n.base[prop::H].max(1e-3);
+                let (top, bot) = (layout.cap_top, layout.last_baseline);
+                if bot > top {
+                    n.anchor[1] = (top + n.anchor[1] * (bot - top)) / h;
+                }
+            }
+        }
         if l.cell.is_none() && !pc.in_box {
             self.near_grid_check(l, path, &n, pc.size);
         }
@@ -2114,6 +2125,13 @@ impl C<'_> {
                 scale: sc,
                 opacity: o.opacity.unwrap_or(0.0) as f32,
                 stagger: r.stagger.unwrap_or(0.0) as f32,
+                ranks: {
+                    let order = r.order.as_deref().unwrap_or("forward");
+                    if !["forward", "reverse", "center", "random"].contains(&order) {
+                        self.d.push(Diagnostic::error(format!("{path}.repeat.order"), format!("unknown order '{order}'")).suggest(suggest(order, &["forward", "reverse", "center", "random"])));
+                    }
+                    fx::order_ranks(count.min(2000) as usize, order, r.seed.unwrap_or(1.0))
+                },
                 center: r.center.map(|c| [c[0] as f32, c[1] as f32]),
             });
         }
@@ -2217,6 +2235,29 @@ impl C<'_> {
                 self.d.push(Diagnostic::warning(path, "shape modifiers (roundCorners, zigzag, puckerBloat, offsetPath, twist, wigglePath) apply to shape layers"));
             }
         }
+        if let Some(bv) = &l.brush {
+            let o = match bv {
+                spec::BrushValue::On(false) => None,
+                spec::BrushValue::On(true) => Some(spec::BrushSpec::default()),
+                spec::BrushValue::Full(f) => Some(f.clone()),
+            };
+            if let Some(o) = o {
+                let (w, h) = (n.base[prop::W] as f64, n.base[prop::H] as f64);
+                match &n.kind {
+                    Kind::Shape { shape, path: p, stroke: Some(_), .. } => {
+                        let src = match shape {
+                            ShapeKind::Rect => kurbo::Shape::to_path(&kurbo::RoundedRect::new(0.0, 0.0, w, h, (n.base[prop::RADIUS] as f64).min(w.min(h) * 0.5).max(0.0)), 0.1),
+                            ShapeKind::Ellipse => kurbo::Shape::to_path(&kurbo::Ellipse::new((w * 0.5, h * 0.5), (w * 0.5, h * 0.5), 0.0), 0.1),
+                            ShapeKind::Path => p.clone(),
+                        };
+                        let t = o.taper.unwrap_or([0.12, 0.25]);
+                        n.brush = super::graphic::Brush::new(&src, [t[0] as f32, t[1] as f32], o.pressure.unwrap_or(0.35) as f32, o.dry.unwrap_or(0.0) as f32, o.seed.unwrap_or(1)).map(Arc::new);
+                    }
+                    Kind::Shape { .. } => self.d.push(Diagnostic::warning(format!("{path}.brush"), "a brush paints the stroke: add \"stroke\" (and \"strokeWidth\")")),
+                    _ => self.d.push(Diagnostic::warning(format!("{path}.brush"), "brush applies to shape layers (lines, paths, any outline)")),
+                }
+            }
+        }
         if let Some(a) = &l.animator {
             let units = match &n.kind {
                 Kind::Text { kinetic: None, split: None, layout, .. } => Some(layout.clone()),
@@ -2256,6 +2297,13 @@ impl C<'_> {
                         opacity: a.opacity.unwrap_or(1.0) as f32,
                         blur: a.blur.unwrap_or(0.0) as f32,
                         color,
+                        axes: a.axes.iter().flatten().filter(|(k, _)| k.len() == 4).map(|(k, v)| (k.clone(), *v as f32)).collect(),
+                        align: match l.align.as_deref() {
+                            Some("left" | "start") => 0.0,
+                            Some("right" | "end") => 1.0,
+                            None if matches!(&l.anchor, Some(spec::Anchor::Name(a)) if a.to_ascii_lowercase().contains("left")) => 0.0,
+                            _ => 0.5,
+                        },
                         smooth: a.smooth.unwrap_or(0.25).max(0.0) as f32,
                         order: fx::order_ranks(layout.units(by).len(), order, a.seed.unwrap_or(1.0)),
                         auto,
@@ -2854,6 +2902,9 @@ impl C<'_> {
             o.width = Some(Num::Num(w as f64));
         }
         if is_text {
+            if o.text_box_trim.is_none() {
+                o.text_box_trim = Some(true);
+            }
             if o.align.is_none() {
                 o.align = Some(if anchor[0] < 0.25 { "left" } else if anchor[0] > 0.75 { "right" } else { "center" }.into());
             }
@@ -4044,6 +4095,17 @@ impl C<'_> {
     fn media_path(&mut self, src: &str, path: &str) -> std::path::PathBuf {
         if !crate::assetlib::is_ref(src) {
             return self.o.base_dir.join(src);
+        }
+        // An HDRI in a 2D layer is a photo: a rectilinear view of its panorama.
+        let hdri = crate::assetlib::find(src).is_some_and(|e| e.kind == "hdri") || src.starts_with("polyhaven:hdri/");
+        if hdri {
+            return match crate::assetlib::photo_view(crate::assetlib::global(), src) {
+                Ok(p) => p,
+                Err(e) => {
+                    self.d.push(Diagnostic::error(format!("{path}.src"), e));
+                    std::path::PathBuf::from("\0missing-asset")
+                }
+            };
         }
         match crate::assetlib::get(src) {
             Ok(f) => f.main(),

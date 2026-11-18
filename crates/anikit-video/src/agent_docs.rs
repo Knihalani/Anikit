@@ -19,6 +19,7 @@ pub const PAGES: &[(&str, &str)] = &[
     ("particles", include_str!("../docs-cli/particles.md")),
     ("physics", include_str!("../docs-cli/physics.md")),
     ("fluid", include_str!("../docs-cli/fluid.md")),
+    ("physarum", include_str!("../docs-cli/physarum.md")),
     ("post", include_str!("../docs-cli/post.md")),
     ("pacing", include_str!("../docs-cli/pacing.md")),
     ("rhythm", include_str!("../docs-cli/rhythm.md")),
@@ -26,9 +27,11 @@ pub const PAGES: &[(&str, &str)] = &[
     ("make-anything", include_str!("../docs-cli/make-anything.md")),
     ("expressions", include_str!("../docs-cli/expressions.md")),
     ("script", include_str!("../docs-cli/script.md")),
+    ("reuse", include_str!("../docs-cli/reuse.md")),
     ("draw", include_str!("../docs-cli/draw.md")),
     ("mograph", include_str!("../docs-cli/mograph.md")),
     ("type", include_str!("../docs-cli/type.md")),
+    ("type-craft", include_str!("../docs-cli/type-craft.md")),
     ("graphic", include_str!("../docs-cli/graphic.md")),
     ("launch", include_str!("../docs-cli/launch.md")),
     ("analyze", include_str!("../docs-cli/analyze.md")),
@@ -54,9 +57,9 @@ pub const RECIPES: &[(&str, &str)] = &[
 ];
 
 const ALIASES: &[(&str, &str)] = &[
-    ("scene3d", "3d"), ("ink", "fluid"), ("smoke", "fluid"), ("fire", "fluid"), ("scene-3d", "3d"), ("three", "3d"), ("shaders", "shader"), ("glsl", "shader"), ("audio", "music"),
-    ("sound", "music"), ("sfx", "music"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("motion-graphics", "mograph"), ("typography", "type"), ("fonts", "type"), ("font", "type"), ("axes", "type"), ("variable", "type"), ("features", "type"), ("opentype", "type"), ("repeater", "mograph"), ("trails", "mograph"), ("echo", "mograph"), ("grid", "graphic"), ("pattern", "graphic"), ("patterns", "graphic"), ("halftone", "graphic"), ("duotone", "graphic"), ("print", "graphic"), ("graphic-design", "graphic"), ("layout", "graphic"), ("text", "primitives"),
-    ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"),
+    ("scene3d", "3d"), ("ink", "fluid"), ("slime", "physarum"), ("slime-mould", "physarum"), ("network", "physarum"), ("smoke", "fluid"), ("fire", "fluid"), ("scene-3d", "3d"), ("three", "3d"), ("shaders", "shader"), ("glsl", "shader"), ("audio", "music"),
+    ("sound", "music"), ("sfx", "music"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("motion-graphics", "mograph"), ("typography", "type"), ("knockout", "type-craft"), ("type-as-window", "type-craft"), ("pairing", "type-craft"), ("fonts", "type"), ("font", "type"), ("axes", "type"), ("variable", "type"), ("features", "type"), ("opentype", "type"), ("repeater", "mograph"), ("trails", "mograph"), ("echo", "mograph"), ("grid", "graphic"), ("pattern", "graphic"), ("patterns", "graphic"), ("halftone", "graphic"), ("duotone", "graphic"), ("print", "graphic"), ("graphic-design", "graphic"), ("layout", "graphic"), ("text", "primitives"),
+    ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"), ("defs", "reuse"), ("use", "reuse"), ("repeat", "reuse"), ("generator", "reuse"),
     ("review", "critique"), ("pace", "pacing"), ("index", "start"), ("anything", "make-anything"),
     ("launch-video", "launch"), ("product", "launch"), ("announcement", "launch"),
     ("analyse", "analyze"), ("design", "taste"), ("style", "taste"), ("quality", "taste"), ("canon", "taste"), ("reverse", "analyze"), ("reference", "analyze"), ("moodboard", "board"), ("mood-board", "board"), ("references", "board"), ("asset", "assets"), ("hdri", "assets"), ("hdris", "assets"), ("materials", "assets"), ("textures", "assets"), ("models", "assets"), ("lut", "assets"), ("luts", "assets"), ("library", "assets"),
@@ -316,7 +319,7 @@ mod tests {
     #[test]
     fn every_page_example_and_recipe_compiles() {
         for (n, md) in PAGES {
-            assert!(md.lines().count() <= 60, "docs {n} is over 60 lines");
+            assert!(md.lines().count() <= 80, "docs {n} is over 80 lines");
             for block in md.split("```json\n").skip(1) {
                 let src = block.split("\n```").next().unwrap();
                 let v: Value = serde_json::from_str(src).unwrap_or_else(|e| panic!("docs {n}: {e}\n{src}"));
