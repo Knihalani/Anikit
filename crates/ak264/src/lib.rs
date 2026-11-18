@@ -2,8 +2,11 @@
 //!
 //! A fast, renderer-aware H.264 encoder in pure Rust.
 //!
-//! - Annex-B output: Main profile (CABAC, default) or Constrained Baseline (CAVLC).
-//! - Constant QP. Intra 16×16 / 4×4, P 16×16 (integer or quarter-pel motion), P_Skip.
+//! - Annex-B output: High profile (CABAC with the 8×8 transform, default), Main
+//!   (CABAC) or Constrained Baseline (CAVLC).
+//! - Constant QP with an optional SSIM floor. Intra 16×16 / 4×4; P 16×16 (opt-in
+//!   16×8 / 8×16 / 8×8) with quarter-pel motion and P_Skip; optional non-reference
+//!   B pictures (L0 / L1 / bi / spatial direct / B_Skip).
 //! - Renderer hints: a per-macroblock change map (unchanged macroblocks cost almost
 //!   nothing) and known layer translations (exact motion vectors).
 //! - Chunk-parallel encoding ([`encode_chunks`], [`encode_parallel`] fusing a

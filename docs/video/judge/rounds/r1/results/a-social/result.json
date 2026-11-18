@@ -1,0 +1,529 @@
+{
+  "name": "a-social",
+  "tags": [
+    "social-vertical",
+    "vertical",
+    "motion-design",
+    "illustration"
+  ],
+  "refs": [
+    "kurzgesagt-short",
+    "new-yorker-festival",
+    "hermes-buck"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 4,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 3,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 3.25,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Needs a specific, memorable idea about this coffee (origin, ritual, process) instead of a cup and a Venn diagram",
+      "Typography needs a real point of view: scale contrast, a custom or carefully chosen face, and type that interacts with the image instead of sitting above it like a slide",
+      "Needs real material and light (liquid, crema, steam, paper) and compositions that differ from frame to frame, with choreography between them",
+      "It needs a real idea about this coffee, such as origin, ritual or taste made visible, instead of a cup plus a Venn diagram",
+      "Drop the centred-circle-on-cream template. Vary scale, framing and density so each frame works as a poster, as in A",
+      "Give the typography a point of view and give the materials real light: crema, steam, ceramic, paper grain instead of noise fills",
+      "No ownable idea. Find a visual concept specific to this Ethiopian washed coffee (process, origin, ritual) instead of a cup and a Venn diagram",
+      "Break the centred-circle template. Build compositions with layering, cropping and density so each frame stands alone as a poster, as C's frames do",
+      "Replace the generic grotesk, mono labels and noise fill with considered typography and real material (paper, liquid, light on crema)"
+    ],
+    "tells": [
+      "The textbook 'tasteful AI' formula: cream ground, a heavy bold-grotesk headline ('One cup.', 'Out Friday.'), a small tracked mono label underneath, and a mostly empty frame",
+      "The idea is literal: a coffee cup seen from above, a leaf in a circle, then a flavour-note Venn diagram (bergamot, peach, black tea). This is the product plus a diagram of the feature",
+      "The same centred-circle composition repeats in every frame; it works like slides with the content swapped",
+      "The texture is a uniform noise or halftone filter on flat circles; the vignette light is generic and unmotivated",
+      "The headline gets a red offset or drop shadow as a decorative effect with no typographic idea behind it",
+      "Textbook 'tasteful AI' system: cream vignette ground, a heavy bold-sans headline ('One cup.', 'Out Friday.') with a small tracked monospace caps label underneath",
+      "The same centred-circle composition repeats in nearly every frame (cup, leaf disc, cup again), like a slide deck",
+      "A literal, obvious idea: a top-down coffee cup plus a Venn diagram of the tasting notes (bergamot, peach, black tea). It is a feature diagram, not a concept",
+      "The noise fill and halftone ring are effects applied as decoration. The coffee surface has no light or liquid material",
+      "Generic brand lockup ('HALDE & SONS / COFFEE ROASTERS') set in default grotesk with no typographic idea",
+      "One frame is almost empty, with a stray tiny mark in the corner. Little happens between beats",
+      "Textbook 'tasteful AI' formula: cream ground, a bold-sans headline with a fake offset shadow ('One cup.' / 'Out Friday.'), and tiny tracked mono labels ('HALDE & SONS \u00b7 NEW ROAST')",
+      "Literal, obvious idea: a top-down cup, a leaf, then a Venn diagram of tasting notes (bergamot / peach / black tea) as product name plus feature diagram",
+      "Same centred-circle composition repeated in every frame, so it reads like slides; the second frame is almost empty with a stray glyph in the corner",
+      "Generic noise fills and line-hatching halos stand in for texture; flat, unmotivated light",
+      "Typography is default grotesk and mono with no scale idea or integration with the image"
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-short": {
+      "overall": 7,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "new-yorker-festival": {
+      "overall": 7,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "hermes-buck": {
+      "overall": 8.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.37,
+  "delta": -4.12,
+  "trials": [
+    {
+      "key": {
+        "A": "hermes-buck",
+        "B": "kurzgesagt-short",
+        "C": "candidate",
+        "D": "new-yorker-festival"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A consistent folk/circus iconography (tiger, tarot and horseshoe, cannon, strongman barbell) that adds up to a point of view, not stock assets",
+              "Ribbed fabric or paper texture across the whole ground, with grain and halftone stippling on each object; material is designed, not filtered",
+              "Deliberate oxblood red with sage, ochre and blush; the flower borders with hidden eyes reward a close look",
+              "The borders change between frames (eyes appear, flowers move), which suggests looping secondary animation around a hero object",
+              "No type; its absence suits a decorative loop and keeps each frame a self-contained tile"
+            ],
+            "gaps": [
+              "Every frame uses the same composition (one centred object on a patterned field), so the film risks reading as a sticker set rather than a sequence",
+              "No visible transformation or transition idea between objects; the choreography should connect them (the cannon fires into the tiger, and so on)",
+              "No narrative or typographic hook that would make the piece memorable beyond its surface charm"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A mature, house-style flat vector character system with consistent rim light, bevels and glowing saturated gradients, like a large explainer studio's",
+              "Each frame is a different scene (villain control room, title card over heat-map Europe, birds with a memory game, mammoth), which implies real editorial choreography and storyboarding",
+              "Visual metaphors carry the science (a STOP button, a matching game for 'misconception'), so the image does the explaining",
+              "The title type is chunky and outlined, and it sits on the map instead of a slide"
+            ],
+            "gaps": [
+              "Caption subtitles are set in a default sans and sit over the art without any design integration",
+              "The flat, glossy vector house style is polished but familiar; there is little surprise in its form",
+              "Light is generic gradient glow rather than motivated, textured light; the frames lack the material richness of A"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "Genuine dry-brush gouache strokes with uneven edges and overlaps; the mark-making is gestural, not vector-default",
+              "Moves from a figurative Chrysler-spire abstraction to plaid, then to Mondrian-like grids and city windows, which implies a progression from building to pattern to street grid",
+              "A bold, deliberate palette of cobalt, signal yellow, green, red and black",
+              "Frame formats vary (square to wide), which suggests designed reframing",
+              "No type; the absence works because the brush marks are the voice"
+            ],
+            "gaps": [
+              "The idea is a loose 'painted city' riff, with no sharp concept tying the frames together the way A's iconography does",
+              "The middle frames (plaid, crossed lines) read as abstract filler, with no clear subject or progression",
+              "Composition and finish are less resolved than A; several frames feel like sketches rather than posters"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook 'tasteful AI' formula: cream ground, a heavy bold-grotesk headline ('One cup.', 'Out Friday.'), a small tracked mono label underneath, and a mostly empty frame",
+              "The idea is literal: a coffee cup seen from above, a leaf in a circle, then a flavour-note Venn diagram (bergamot, peach, black tea). This is the product plus a diagram of the feature",
+              "The same centred-circle composition repeats in every frame; it works like slides with the content swapped",
+              "The texture is a uniform noise or halftone filter on flat circles; the vignette light is generic and unmotivated",
+              "The headline gets a red offset or drop shadow as a decorative effect with no typographic idea behind it"
+            ],
+            "gaps": [
+              "Needs a specific, memorable idea about this coffee (origin, ritual, process) instead of a cup and a Venn diagram",
+              "Typography needs a real point of view: scale contrast, a custom or carefully chosen face, and type that interacts with the image instead of sitting above it like a slide",
+              "Needs real material and light (liquid, crema, steam, paper) and compositions that differ from frame to frame, with choreography between them"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 27.3,
+        "cost_usd": 0.33628620000000004,
+        "tokens": 70037,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "hermes-buck",
+        "B": "kurzgesagt-short",
+        "C": "new-yorker-festival",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.86,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A coherent symbolic world (tiger head, tarot cards, horseshoe, circus cannon, strongman's barbell) built around a specific circus, fortune and luck theme rather than a generic subject",
+              "The textures look designed: a woven, fabric-like grain across the red ground, plus grainy stipple shading and riso-style speckle on every object",
+              "Unusual palette: oxblood red with teal-grey foliage, ochre, and small pink and peach accents. The colours are consistent and look chosen",
+              "The folk-art borders include tiny eye motifs hidden in the leaves, a detail an automated tool would not add",
+              "Varied object silhouettes and off-centre placement. The border rearranges itself in each frame, which suggests the foliage grows or moves rather than being one fixed template",
+              "No type is visible. Leaving it out suits a piece that tells its story through emblems"
+            ],
+            "gaps": [
+              "Each frame centres a single emblem. Choreography that shows objects interacting or turning into one another (tiger into cannon, cards into horseshoe) would give it the momentum of the very best work",
+              "The four frames read as a set of stickers on the same ground. Changes in scale, camera or depth between beats would add surprise",
+              "A strong typographic or title moment that uses the same textures would make it a complete piece rather than a run of illustrations"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Well-developed house style: the character design (villain at the control desk, birds playing a memory game, mammoth) is consistent and full of personality, not clip-art",
+              "The scenes vary a lot (interior set, stylised map, a dialogue gag, a landscape), which suggests real storyboarding and gag-led editing",
+              "Saturated, deliberate gradients with layered rim light on the characters. The cartography in the title card is stylised, not stock",
+              "The chunky, outlined title 'Europe's Next Ice Age' fits the illustration system",
+              "Weaknesses: burned-in captions in a generic font placed over the art, and a house style the market has seen many times"
+            ],
+            "gaps": [
+              "The default-looking subtitle captions sit on top of the frames and work against the art. Bring them into the design or drop them",
+              "It uses a very familiar explainer house style. It needs one visual idea specific to this ice-age story",
+              "The flat vector shading has little material quality. Texture or depth like A's would make each frame hold up as a poster"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.62,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 6,
+              "originality": 7
+            },
+            "tells": [
+              "Gestural, hand-painted brush marks with dry-brush edges. Real mark-making texture instead of vector defaults",
+              "A recognisable idea: a New York abstraction that moves from the Chrysler spire into a Mondrian Boogie-Woogie grid, which suggests a city-into-painting concept",
+              "Frame size and shape change (portrait, square, wide), and the structure shifts from figurative to plaid to scattered lines to grid, which implies a real progression",
+              "A restrained primary palette with some unexpected green",
+              "No type is visible. Leaving it out mostly works for a painterly abstraction"
+            ],
+            "gaps": [
+              "The compositions are looser and less resolved than A's. The plaid frame especially feels like a placeholder rather than a finished poster",
+              "The Mondrian and Chrysler references are expected. It needs a twist only this piece could deliver",
+              "The finish is uneven: the marks look digital-brush-flat in places, and there is no layering or depth from light"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Textbook 'tasteful AI' system: cream vignette ground, a heavy bold-sans headline ('One cup.', 'Out Friday.') with a small tracked monospace caps label underneath",
+              "The same centred-circle composition repeats in nearly every frame (cup, leaf disc, cup again), like a slide deck",
+              "A literal, obvious idea: a top-down coffee cup plus a Venn diagram of the tasting notes (bergamot, peach, black tea). It is a feature diagram, not a concept",
+              "The noise fill and halftone ring are effects applied as decoration. The coffee surface has no light or liquid material",
+              "Generic brand lockup ('HALDE & SONS / COFFEE ROASTERS') set in default grotesk with no typographic idea",
+              "One frame is almost empty, with a stray tiny mark in the corner. Little happens between beats"
+            ],
+            "gaps": [
+              "It needs a real idea about this coffee, such as origin, ritual or taste made visible, instead of a cup plus a Venn diagram",
+              "Drop the centred-circle-on-cream template. Vary scale, framing and density so each frame works as a poster, as in A",
+              "Give the typography a point of view and give the materials real light: crema, steam, ceramic, paper grain instead of noise fills"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.0,
+        "cost_usd": 0.14554699999999998,
+        "tokens": 70335,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "new-yorker-festival",
+        "B": "kurzgesagt-short",
+        "C": "hermes-buck",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "Hand-painted brush strokes with real dry-brush texture, uneven edges and opacity variation; not vector defaults",
+              "A clear visual idea: the Chrysler Building's art-deco crown breaks down into a Mondrian/Broadway-Boogie-Woogie grid, so the city turns into abstraction",
+              "The frames change a lot, from a figurative spire to plaid to scattered diagonals to a dense layered grid, which suggests choreographed transformation rather than a reused layout",
+              "Deliberate primary palette (cobalt, yellow, red, green, black) that shifts per frame but stays one system",
+              "No type; the absence suits a painterly, music-driven piece"
+            ],
+            "gaps": [
+              "The middle frames (plaid, scattered diagonals) read as loose sketches. Compose them as finished posters with the density of the last frame",
+              "Light and depth are flat paint throughout. Add scale contrast or layered occlusion so the grid feels like a city and not only a canvas",
+              "Make the concept thread explicit: carry the building silhouette through each transformation so the viewer feels one continuous metamorphosis, as C does with its consistent world"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Fully built character world: a mad-scientist figure at a control console with a world map, birds at a card-matching table, a stylised mammoth on snow. These are bespoke scenes, not stock",
+              "Vivid but controlled palette with a consistent house style; the heat-map Europe title card is a real piece of design",
+              "Every frame is a different set and staging, which shows heavy animation investment and narrative choreography",
+              "The visual metaphors carry the explanation (the memory-card game stands for 'misconception', the STOP button for 'completely due')",
+              "Weaknesses: caption subtitles are small default-ish sans placed over the image, and the house style is recognisable rather than specific to this piece"
+            ],
+            "gaps": [
+              "The subtitle typography is generic and stuck on. Integrate captions into the layout with a real typographic voice",
+              "The style is a well-known explainer formula. Push one image or idea that only this subject (Europe's ice age) could produce",
+              "Light is flat cel-gradient. Use more atmospheric light and texture (cold haze, ice material) to match the tactile richness of C"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Specific world: circus and fortune-teller iconography (tiger, tarot and horseshoe, cannon, strongman barbell) on a folk-botanical ground with hidden eyes in the foliage, an idea with its own mythology",
+              "Rich material texture: woven/linen grain, risograph-style grain on each object, and paper-cut shading that suggests physical collage",
+              "Unusual, disciplined palette: oxblood red, sage teal, ochre and cream",
+              "The patterned ground stays constant while the hero objects swap, which implies seamless pattern-driven transitions and choreography between frames",
+              "No type is visible; the absence suits a pure visual or title sequence and every frame works as a poster"
+            ],
+            "gaps": [
+              "The centred-hero-object layout repeats in all four frames. Vary scale and cropping (extreme close-ups, objects interacting) to show more choreographic range",
+              "Add depth or light events (a spotlight, shadow casting from the objects onto the fabric) to raise the stakes beyond flat collage",
+              "If it is a title or brand piece, bring in a custom typographic moment that belongs to this world to finish the system"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Textbook 'tasteful AI' formula: cream ground, a bold-sans headline with a fake offset shadow ('One cup.' / 'Out Friday.'), and tiny tracked mono labels ('HALDE & SONS \u00b7 NEW ROAST')",
+              "Literal, obvious idea: a top-down cup, a leaf, then a Venn diagram of tasting notes (bergamot / peach / black tea) as product name plus feature diagram",
+              "Same centred-circle composition repeated in every frame, so it reads like slides; the second frame is almost empty with a stray glyph in the corner",
+              "Generic noise fills and line-hatching halos stand in for texture; flat, unmotivated light",
+              "Typography is default grotesk and mono with no scale idea or integration with the image"
+            ],
+            "gaps": [
+              "No ownable idea. Find a visual concept specific to this Ethiopian washed coffee (process, origin, ritual) instead of a cup and a Venn diagram",
+              "Break the centred-circle template. Build compositions with layering, cropping and density so each frame stands alone as a poster, as C's frames do",
+              "Replace the generic grotesk, mono labels and noise fill with considered typography and real material (paper, liquid, light on crema)"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.3,
+        "cost_usd": 0.1442636,
+        "tokens": 70278,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 6,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "Frame 3 is almost empty: one stray, half-rendered grey 'B' glyph floats top-right while the title builds in. It looks like a broken text animation, not a designed beat.",
+        "Black-tea disc hatching: thin diagonal lines show moir\u00e9 and stair-stepped edges at 100%. The hatch also runs through the leaf's translucent green, so the leaf reads as dirty, not overprinted.",
+        "Leaf vein strokes stop short of the leaf edge and overshoot unevenly. Thin white strokes are aliased on the diagonals.",
+        "Within each 1/6 s pair, the hero objects barely change (a few degrees of rotation, a slight scale). Motion is mostly a slow drift, with no anticipation, overshoot or weight.",
+        "End card holds about 6.9 s while the only things that change are the caption fading from grey to black and the logo appearing. That is dead air against a 1.5 s benchmark.",
+        "Mid-fade 'Ethiopia Guji \u00b7 washed' sits in low-contrast grey on off-white. It is close to illegible in the poster frame.",
+        "Mottled 'texture' fills are a large-scale noise overlay with no light or falloff. They read as a filter, not as print or material."
+      ],
+      "gaps": [
+        "Transitions: each note (bergamot, black tea, peach) is a separate card swap. Top work would morph one disc into the next, for example the citrus wheel rotating into the hatch and the leaf, then the three discs physically pouring into the cup, so the Venn becomes the brew rather than a static diagram.",
+        "Timing and arc: energy peaks early and repeatedly (change spikes at 3, 6 and 8\u20139 s), then dies into a long static end hold. There is no build to a peak at around 70% and no designed release. The tail needs to land in under 2 s, with the steam loop and logo hit timed to the 12.3 s drop.",
+        "Finish and sound: hatch moir\u00e9, aliased hairlines, ghost-glyph frames and a flat noise overlay keep it at template level. The soundtrack is dense and produced, but it is a steady pluck/percussion loop. Apart from the 12.3 s break, no sound design voices the objects (citrus cut, leaf rustle, pour)."
+      ]
+    },
+    "meta": {
+      "seconds": 23.8,
+      "cost_usd": 0.1802446,
+      "tokens": 74336,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 15.0s, 5 shots, median 1.90s, longest 6.87s\nper-second change: [2.8, 1.5, 40.4, 26.7, 11.8, 31.2, 6.6, 37.2, 37.2, 4.1, 30.8, 2.6, 0.6, 1.1]\nPACE: FAIL \u2014 longest shot 6.9s > 2.5s; median shot 1.9s > 1.5s; 6/14 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 4.0,
+    "craft": 5.0,
+    "originality": 2,
+    "sound": 6
+  },
+  "full_overall": 3.78,
+  "cost_usd": 0.806,
+  "judge_seconds": 112.4,
+  "verdict": "FAIL"
+}

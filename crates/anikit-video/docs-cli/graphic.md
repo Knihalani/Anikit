@@ -20,7 +20,8 @@
   `topLeft`; `bottomLeft` sits a caption on the field's foot) and text alignment follows it. Text in a cell is trimmed to
   cap height and baseline (`textBoxTrim`, any text layer can opt in), so letters, not line boxes, meet the field edges. With `baseline`, a text's
   leading rounds to whole baseline units. Explicit `x`/`y`/`width`/`height` still win. Animation applies on top.
-  With a grid, a hand-placed edge 1.5–8 px off a grid line gets a warning with the exact snap value (overprint plates exempt).
+  Animate between fields: `"animate": [{"to": {"cell": "7-12/1-4"}, "ease": "inOutExpo"}]` (layouts that re-arrange on the
+  grid). A hand-placed edge 1.5–8 px off a grid line gets a warning with the exact snap value (overprint plates exempt).
 - **Shapes** `squircle` / `superellipse` (`exponent`: 2 ellipse, 4–5 squircle, 2.5 Piet Hein, < 1 pinched star),
   `blob` (`sides` lobes, `wobble` 0..1, `seed`; animate with `wigglePath`), `arc` (`startAngle`, `endAngle` deg, 0 = 12
   o'clock clockwise; `innerRadius` 0..1 makes a ring segment; 0 = pie wedge).
@@ -49,8 +50,11 @@
 - **Stepped time** `"step": "twos"` (or `"threes"`, or fps like `8`): the layer and its children animate held, like
   stop-motion or hand-pulled print, while the rest stays smooth. **Boil** `"boil": 2` or `{amount, rotate, fps, seed}`:
   a seeded jitter re-drawn `fps` (12) times a second; on a `multiply` ink layer it reads as plates out of register.
+- **Colour** `"theme": {"palette": "#e4572e split"}` builds a value-structured set from one seed (ink L 0.19, paper 0.97,
+  mid, accent, accent2 by `mono analogous complement split triad`, `dark` swaps grounds); `colors` override. Preview with
+  `anikit-video palette "#e4572e split"`. Real riso inks anywhere a colour goes: `"riso:fluorescent-pink"` (`palette riso`).
 - **Overprint**: two ink layers with `"blend": "multiply"` mix like spot inks; offset one 3–6 px for misregistration.
   Whole-frame print looks (risograph, screenprint, linocut, print-offset…) are shader filters: `docs shader`.
 
-Whole pieces to borrow from: `anikit-video recipes swiss-grid-poster | riso-overprint | torn-collage | op-art-field`.
-Taste, numbers and style recipes (Swiss, riso, identity, editorial data, Memphis, Polish poster, op-art): `docs/video/craft/graphic-design.md`.
+Charts with editorial polish: `line-chart`/`bar-chart` props `"look": "editorial"`, `highlight`, `notes`, `compare` (`docs component line-chart`).
+Pieces: `anikit-video recipes swiss-grid-poster | riso-overprint | torn-collage | op-art-field`; taste, numbers and 8 style recipes: `docs/video/craft/graphic-design.md`.

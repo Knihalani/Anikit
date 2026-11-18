@@ -8,6 +8,7 @@
 
 pub mod beats;
 pub mod decode;
+pub mod design;
 pub mod mix;
 pub mod sfx;
 pub mod wav;
