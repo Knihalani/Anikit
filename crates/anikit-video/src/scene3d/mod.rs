@@ -1541,6 +1541,11 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        let e = spec::camera(&json!({ "keys": [ { "t": 0, "pos": [0, 1, 10], "target": [0, 0, 0] }, { "t": 1, "pos": [0, 1, 0], "target": [0, 0, -5], "ease": "outExpo" } ] }), (v3(0.0, 0.5, 0.0), 1.0), "camera").unwrap();
+        assert!(e.at(0.5, 16.0 / 9.0, 0.0).pos.z < 0.5, "outExpo is 97% there at half time");
+        let st = spec::camera(&json!({ "keys": [ { "t": 0, "pos": [0, 1, 10], "target": [0, 0, 0] }, { "t": 1, "pos": [0, 1, 0], "target": [0, 0, -5], "ease": "settle" } ] }), (v3(0.0, 0.5, 0.0), 1.0), "camera").unwrap();
+        assert!((0..20).any(|k| st.at(0.5 + k as f32 * 0.025, 16.0 / 9.0, 0.0).pos.z < 0.0), "settle overshoots a little");
+        assert!(spec::camera(&json!({ "keys": [ { "t": 0, "pos": [0, 1, 10], "target": [0, 0, 0], "ease": "outExp" } ] }), (v3(0.0, 0.5, 0.0), 1.0), "camera").err().unwrap().contains("did you mean `outExpo`"));
         for pr in ["slide", "arc", "rise", "topdown"] {
             let c = spec::camera(&json!(pr), (v3(0.0, 0.5, 0.0), 1.0), "camera").unwrap();
             for k in 0..=10 {
