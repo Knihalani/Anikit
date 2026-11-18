@@ -1,0 +1,1050 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "background": "#050505",
+ "intent": "fast",
+ "theme": {
+  "colors": {
+   "night": "#050505",
+   "warm": "#ffd9a0",
+   "sodium": "#ff8a2a",
+   "cyan": "#7fe3ff",
+   "paper": "#f3ede2",
+   "brick": "#1a1512",
+   "deep": "#04141a"
+  }
+ },
+ "post": {
+  "preset": "cinematic",
+  "bloom": 0.5,
+  "halation": 0.35,
+  "grain": 0.035,
+  "vignette": 0.3
+ },
+ "transition": "cut",
+ "scenes": [
+  {
+   "id": "door",
+   "duration": 0.9,
+   "camera": {
+    "zoom": "=1 + 0.12*t"
+   },
+   "notes": "a door of light cracks open in the dark",
+   "layers": [
+    {
+     "shader": "light-shafts",
+     "supersample": false,
+     "uniforms": {
+      "angle": 6,
+      "spread": 0.6,
+      "panes": 1,
+      "intensity": 1.8,
+      "haze": 1.5
+     },
+     "matte": "door"
+    },
+    {
+     "id": "door",
+     "shape": "rect",
+     "x": 960,
+     "y": 540,
+     "width": 30,
+     "height": 1300,
+     "fill": "#fff",
+     "inertia": "heavy",
+     "animate": {
+      "from": {
+       "scaleX": 0.05
+      },
+      "to": {
+       "scaleX": 8
+      },
+      "at": 0.1,
+      "duration": 0.55,
+      "ease": "snap"
+     }
+    }
+   ]
+  },
+  {
+   "id": "facade",
+   "duration": 1.5,
+   "transition": {
+    "type": "crossfade",
+    "duration": 0.3
+   },
+   "camera": {
+    "dolly": "=t*0.22",
+    "x": "=-30*t"
+   },
+   "notes": "the harbour warehouse at night, layered in depth; the camera dollies in as windows light at random",
+   "layers": [
+    {
+     "shape": "rect",
+     "x": 960,
+     "y": 540,
+     "width": 2400,
+     "height": 1400,
+     "fill": {
+      "type": "linear",
+      "angle": 180,
+      "stops": [
+       "#0b1622",
+       "#050505"
+      ]
+     },
+     "depth": 3
+    },
+    {
+     "shape": "rect",
+     "x": 960,
+     "y": 520,
+     "width": 1700,
+     "height": 900,
+     "fill": "$brick",
+     "depth": 1
+    },
+    {
+     "shader": "light-shafts",
+     "supersample": false,
+     "uniforms": {
+      "angle": -25,
+      "spread": 0.35,
+      "panes": 2,
+      "intensity": 1.8,
+      "haze": 1.2,
+      "color": [
+       1,
+       0.8,
+       0.5
+      ]
+     },
+     "matte": "windows",
+     "depth": 1
+    },
+    {
+     "id": "windows",
+     "type": "group",
+     "x": 960,
+     "y": 540,
+     "width": 1920,
+     "height": 1080,
+     "depth": 1,
+     "layers": [
+      {
+       "shape": "rect",
+       "x": 330,
+       "y": 230,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.29,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 540,
+       "y": 230,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.5,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 750,
+       "y": 230,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.38,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 960,
+       "y": 230,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.54,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 1170,
+       "y": 230,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.56,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 1380,
+       "y": 230,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.17,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 1590,
+       "y": 230,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.13,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 330,
+       "y": 400,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.71,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 540,
+       "y": 400,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.3,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 750,
+       "y": 400,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.28,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 960,
+       "y": 400,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.82,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 1170,
+       "y": 400,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.45,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 1380,
+       "y": 400,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.71,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 1590,
+       "y": 400,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.45,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 330,
+       "y": 570,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.57,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 540,
+       "y": 570,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.23,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 750,
+       "y": 570,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.56,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 960,
+       "y": 570,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.73,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 1170,
+       "y": 570,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.49,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 1380,
+       "y": 570,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.64,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 1590,
+       "y": 570,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.59,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 330,
+       "y": 740,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.16,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 540,
+       "y": 740,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.65,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 750,
+       "y": 740,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.53,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 960,
+       "y": 740,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.33,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 1170,
+       "y": 740,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.14,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 1380,
+       "y": 740,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.73,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      },
+      {
+       "shape": "rect",
+       "x": 1590,
+       "y": 740,
+       "width": 150,
+       "height": 115,
+       "radius": 3,
+       "fill": "#fff",
+       "animate": {
+        "from": {
+         "opacity": 0
+        },
+        "at": 0.45,
+        "duration": 0.08,
+        "ease": "linear"
+       }
+      }
+     ]
+    },
+    {
+     "id": "w1",
+     "shape": "rect",
+     "x": 1170,
+     "y": 570,
+     "width": 150,
+     "height": 115,
+     "radius": 3,
+     "fill": "#ffd9a0",
+     "depth": 1,
+     "opacity": 0.0
+    },
+    {
+     "draw": [
+      {
+       "points": [
+        [
+         0,
+         1080
+        ],
+        [
+         0,
+         930
+        ],
+        [
+         160,
+         930
+        ],
+        [
+         160,
+         880
+        ],
+        [
+         230,
+         880
+        ],
+        [
+         230,
+         930
+        ],
+        [
+         640,
+         930
+        ],
+        [
+         700,
+         860
+        ],
+        [
+         760,
+         930
+        ],
+        [
+         1920,
+         930
+        ],
+        [
+         1920,
+         1080
+        ]
+       ],
+       "closed": true,
+       "fill": "#050505"
+      },
+      {
+       "rect": [
+        1260,
+        780,
+        16,
+        150
+       ],
+       "fill": "#050505"
+      },
+      {
+       "rect": [
+        1180,
+        800,
+        180,
+        10
+       ],
+       "fill": "#050505"
+      }
+     ],
+     "depth": 0
+    },
+    {
+     "text": "Lumen",
+     "font": "Big Shoulders",
+     "size": 170,
+     "weight": 800,
+     "color": "$paper",
+     "x": 260,
+     "y": 960,
+     "anchor": "bottomLeft",
+     "start": 0.45,
+     "depth": 0,
+     "animator": {
+      "by": "char",
+      "y": 60,
+      "opacity": 0,
+      "duration": 0.4,
+      "smooth": 0.3,
+      "ease": "glide"
+     }
+    },
+    {
+     "text": "a festival of light on Bristol's harbour",
+     "font": "Newsreader",
+     "italic": true,
+     "size": 40,
+     "color": "$warm",
+     "x": 1680,
+     "y": 950,
+     "anchor": "bottomRight",
+     "start": 0.65,
+     "depth": 0,
+     "animator": {
+      "by": "word",
+      "y": 20,
+      "opacity": 0,
+      "duration": 0.45,
+      "smooth": 0.3,
+      "ease": "glide"
+     }
+    }
+   ]
+  },
+  {
+   "id": "water",
+   "duration": 1.4,
+   "background": "#04141a",
+   "transition": {
+    "type": "zoomThrough",
+    "layer": "windows",
+    "duration": 0.5
+   },
+   "notes": "through the windows into the harbour water: cold cyan light, the programme set at contrasting scales",
+   "layers": [
+    {
+     "shader": "caustics",
+     "supersample": false,
+     "uniforms": {
+      "speed": 0.9,
+      "depth": 1.3,
+      "tint": [
+       0.3,
+       0.8,
+       0.95
+      ]
+     },
+     "opacity": 0.9
+    },
+    {
+     "shape": "rect",
+     "x": 960,
+     "y": 540,
+     "width": 1920,
+     "height": 1080,
+     "fill": "#04141a77"
+    },
+    {
+     "type": "group",
+     "drag": 0.03,
+     "x": 960,
+     "y": 540,
+     "width": 1920,
+     "height": 1080,
+     "animate": {
+      "from": {
+       "y": 640
+      },
+      "duration": 0.5,
+      "ease": "glide"
+     },
+     "layers": [
+      {
+       "text": "Night Swimmers",
+       "font": "Big Shoulders",
+       "size": 250,
+       "weight": 800,
+       "color": "#e9fbff",
+       "x": 120,
+       "y": 260,
+       "anchor": "left"
+      },
+      {
+       "text": "Kaito Mori \u2014 forty lit buoys, set adrift at dusk",
+       "font": "Newsreader",
+       "italic": true,
+       "size": 38,
+       "color": "$cyan",
+       "x": 128,
+       "y": 400,
+       "anchor": "left"
+      },
+      {
+       "text": "Tidal Rooms",
+       "font": "Big Shoulders",
+       "size": 130,
+       "weight": 700,
+       "color": "$cyan",
+       "x": 1800,
+       "y": 720,
+       "anchor": "right"
+      },
+      {
+       "text": "Anna Voss \u2014 projection, the old dry dock",
+       "font": "Newsreader",
+       "italic": true,
+       "size": 34,
+       "color": "#e9fbff",
+       "x": 1800,
+       "y": 810,
+       "anchor": "right"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sodium",
+   "duration": 1.2,
+   "background": "#120700",
+   "transition": {
+    "type": "whip",
+    "direction": "left"
+   },
+   "notes": "sodium orange: 400 street lamps retuned; a giant L of sodium light, the beams sweeping",
+   "layers": [
+    {
+     "shape": "rect",
+     "x": 1480,
+     "y": 1200,
+     "width": 70,
+     "height": 1700,
+     "fill": {
+      "type": "linear",
+      "angle": 0,
+      "stops": [
+       [
+        0,
+        "#ff8a2a00"
+       ],
+       [
+        1,
+        "#ff8a2a"
+       ]
+      ]
+     },
+     "anchor": [
+      0.5,
+      1
+     ],
+     "blend": "add",
+     "blur": 14,
+     "opacity": 0.55,
+     "rotation": "=-40 + 12*sin(t*1.7)",
+     "repeat": {
+      "count": 6,
+      "offset": {
+       "rotate": 14
+      },
+      "stagger": 0.05
+     },
+     "animate": {
+      "from": {
+       "scaleY": 0
+      },
+      "duration": 0.45,
+      "ease": "glide"
+     }
+    },
+    {
+     "shader": "light-shafts",
+     "supersample": false,
+     "uniforms": {
+      "angle": 30,
+      "spread": 0.35,
+      "panes": 4,
+      "intensity": 1.7,
+      "haze": 1.2,
+      "color": [
+       1,
+       0.55,
+       0.15
+      ]
+     },
+     "matte": "L"
+    },
+    {
+     "id": "L",
+     "text": "L",
+     "font": "Big Shoulders",
+     "size": 1500,
+     "weight": 900,
+     "x": 560,
+     "y": 600,
+     "inertia": "tight",
+     "animate": {
+      "from": {
+       "scale": 1.2,
+       "x": "+140"
+      },
+      "duration": 1.0,
+      "ease": "glide"
+     }
+    },
+    {
+     "text": "Sodium Hours",
+     "font": "Big Shoulders",
+     "size": 150,
+     "weight": 800,
+     "color": "#ffe2c2",
+     "x": 1800,
+     "y": 330,
+     "anchor": "right",
+     "animator": {
+      "by": "char",
+      "y": 60,
+      "opacity": 0,
+      "delay": 0.1,
+      "duration": 0.45,
+      "smooth": 0.35,
+      "ease": "glide"
+     }
+    },
+    {
+     "text": "Ruth Adeyemi \u2014 400 street lamps, retuned",
+     "font": "Newsreader",
+     "italic": true,
+     "size": 38,
+     "color": "$sodium",
+     "x": 1800,
+     "y": 430,
+     "anchor": "right",
+     "start": 0.3,
+     "animator": {
+      "by": "word",
+      "opacity": 0,
+      "duration": 0.4,
+      "smooth": 0.3
+     }
+    }
+   ]
+  },
+  {
+   "id": "name",
+   "duration": 1.5,
+   "background": "#050505",
+   "transition": {
+    "type": "crossfade",
+    "duration": 0.55,
+    "ease": "inOutCubic",
+    "carry": [
+     "L"
+    ]
+   },
+   "camera": {
+    "zoom": "=1 + 0.03*t"
+   },
+   "notes": "button: the sodium L travels into its place as the first letter; the light inside turns from sodium to white",
+   "layers": [
+    {
+     "shader": "light-shafts",
+     "supersample": false,
+     "uniforms": {
+      "angle": "=-30 + 40*t",
+      "spread": 0.35,
+      "panes": 5,
+      "intensity": 1.7,
+      "haze": 1.2,
+      "color": [
+       1,
+       0.92,
+       0.82
+      ]
+     },
+     "matte": "nm"
+    },
+    {
+     "id": "nm",
+     "type": "group",
+     "x": 960,
+     "y": 540,
+     "width": 1920,
+     "height": 1080,
+     "layers": [
+      {
+       "text": "UMEN",
+       "font": "Big Shoulders",
+       "size": 560,
+       "weight": 900,
+       "letterSpacing": -6,
+       "x": 1110,
+       "y": 560,
+       "animator": {
+        "by": "char",
+        "y": 160,
+        "opacity": 0,
+        "delay": 0.25,
+        "duration": 0.45,
+        "smooth": 0.3,
+        "ease": "glide"
+       }
+      }
+     ]
+    },
+    {
+     "id": "L",
+     "text": "L",
+     "font": "Big Shoulders",
+     "size": 560,
+     "weight": 900,
+     "x": 640,
+     "y": 560,
+     "color": "#ffd9a0"
+    },
+    {
+     "text": "18\u201324 March \u00b7 Bristol Harbourside \u00b7 lumen.fest",
+     "font": "Newsreader",
+     "italic": true,
+     "size": 42,
+     "color": "$paper",
+     "x": 960,
+     "y": 930,
+     "start": 0.6,
+     "animator": {
+      "by": "word",
+      "y": 20,
+      "opacity": 0,
+      "duration": 0.45,
+      "smooth": 0.3,
+      "ease": "glide"
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "start_utc": "2026-11-18T01:38:03Z",
+ "end_utc": "2026-11-18T01:49:13Z",
+ "renders": [
+  {
+   "cmd": "anikit-video render deliverables/eval/l-generative/spec.json -o deliverables/eval/l-generative/final.mp4 --sheet deliverables/eval/l-generative/contact.png",
+   "exit": 0,
+   "wall_s": 422.27,
+   "peak_rss_mb": 658.4
+  }
+ ]
+}

@@ -510,7 +510,15 @@ def judge(name, frames, tags, args, exclude=(), video=None):
     if args.trials < 1:
         sys.exit("--trials must be >= 1")
     rng = random.Random(args.seed)
-    refs = pick_refs(tags, args.refs, rng, exclude=exclude, fmt=args.format)
+    pin = getattr(args, "pin", None)
+    if pin:
+        have = {r["slug"]: r for r in load_refs()}
+        missing = [s_ for s_ in pin if s_ not in have]
+        if missing:
+            sys.exit(f"pinned refs not available locally: {missing}; run `python3 scripts/judge.py sync-bench` first")
+        refs = [have[s_] for s_ in pin]
+    else:
+        refs = pick_refs(tags, args.refs, rng, exclude=exclude, fmt=args.format)
     out = Path(args.out or ROOT / "docs/video/judge/results") / name
     out.mkdir(parents=True, exist_ok=True)
     print(f"judging {name} vs {[r['slug'] for r in refs]}", file=sys.stderr)
@@ -568,6 +576,21 @@ def cmd_run(args):
     name = args.name or Path(args.candidate).stem
     video = args.candidate if Path(args.candidate).suffix.lower() in (".mp4", ".mov", ".webm", ".mkv") else None
     judge(name, frames, args.tags.split(","), args, video=video)
+
+
+def cmd_brief(args):
+    """Judge a rebuild of an eval brief against the SAME 3 refs as r1/r2 (pins.json), so scores pair with those rounds."""
+    b = {x["id"]: x for x in json.loads((ROOT / "docs/video/judge/briefs.json").read_text())}[args.brief]
+    pins = json.loads((ROOT / "docs/video/judge/pins.json").read_text())[args.brief]
+    if any(s_ not in {r["slug"] for r in load_refs()} for s_ in pins["refs"]):
+        cmd_sync_bench(args)  # REFS's stills are not in git: fetch them once per container
+        REFS_DIRS[:] = [p for p in (ROOT / "docs/video/judge/refs", BENCH / "export") if p.is_dir()]
+    args.format, args.grid, args.pin = b["format"], None, pins["refs"]
+    name = args.name or args.brief
+    r = judge(name, load_frames(args.candidate), b["tags"], args, video=args.candidate)
+    print(f"\n{args.brief}: {r['candidate'].get('overall')} (judged pro {r['candidate'].get('judged_professional')}, verdict {r['verdict']}) "
+          f"vs r1 {pins['r1']} / r2 {pins['r2']}; full {r.get('full_overall')} vs r1 {pins['r1_full']} / r2 {pins['r2_full']}. "
+          f"Result: {Path(args.out or ROOT / 'docs/video/judge/results') / name / 'result.json'}")
 
 
 def cmd_control(args):
@@ -690,10 +713,19 @@ def main():
     b.add_argument("--out")
     b.add_argument("--no-critic", action="store_true")
     sub.add_parser("sync-bench")
+    bp = sub.add_parser("brief", help="judge a rebuild of an eval brief against its pinned r1/r2 refs")
+    bp.add_argument("brief")
+    bp.add_argument("candidate")
+    bp.add_argument("--name")
+    bp.add_argument("--trials", type=int, default=3)
+    bp.add_argument("--seed", type=int, default=7)
+    bp.add_argument("--refs", type=int, default=3)
+    bp.add_argument("--out")
+    bp.add_argument("--no-critic", action="store_true")
     t = sub.add_parser("table")
     t.add_argument("results", nargs="+")
     args = ap.parse_args()
-    {"run": cmd_run, "control": cmd_control, "table": cmd_table, "batch": cmd_batch, "sync-bench": cmd_sync_bench}[args.cmd](args)
+    {"run": cmd_run, "control": cmd_control, "table": cmd_table, "batch": cmd_batch, "sync-bench": cmd_sync_bench, "brief": cmd_brief}[args.cmd](args)
 
 
 if __name__ == "__main__":

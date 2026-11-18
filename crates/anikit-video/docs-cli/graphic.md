@@ -13,8 +13,7 @@
 
 - **Grid** `grid` on the video, a scene (replaces) or a `group` (for its children): `columns` (12), `rows` (8), `margin`
   (length, `[v, h]` or `[t, r, b, l]`; default 5% of the short side), `gutter` (length or `[col, row]`; default 2%),
-  `baseline` px, `areas` name → range, `show: true` tints fields and baselines over the scene to check a layout;
-  `show: "under"` draws the field edges as hairlines beneath the layers (a guidelines look; `color` sets them).
+  `baseline` px, `areas` name → range, `show: true` tints fields over the scene; `"under"`: hairline guides beneath (`color`).
 - **Cell** `"cell": "head"` | `"1-6/2-4"` (columns 1–6, rows 2–4) | `"7/1"` | `"9-"` (column 9 to the end, all rows) |
   `[col, row, cols, rows]`. Sets x, y, width, and height (not for text). `anchor` picks the point of the cell (default
   `topLeft`; `bottomLeft` sits a caption on the field's foot) and text alignment follows it. Text in a cell is trimmed to
@@ -22,16 +21,17 @@
   leading rounds to whole baseline units. Explicit `x`/`y`/`width`/`height` still win. Animation applies on top.
   Animate between fields: `"animate": [{"to": {"cell": "7-12/1-4"}, "ease": "inOutExpo"}]` (layouts that re-arrange on the
   grid). A hand-placed edge 1.5–8 px off a grid line gets a warning with the exact snap value (overprint plates exempt).
-- **Shapes** `squircle` / `superellipse` (`exponent`: 2 ellipse, 4–5 squircle, 2.5 Piet Hein, < 1 pinched star),
-  `blob` (`sides` lobes, `wobble` 0..1, `seed`; animate with `wigglePath`), `arc` (`startAngle`, `endAngle` deg, 0 = 12
-  o'clock clockwise; `innerRadius` 0..1 makes a ring segment; 0 = pie wedge).
+- **Shapes** `squircle`/`superellipse` (`exponent` 2 ellipse, 4–5 squircle), `blob` (`sides`, `wobble` 0..1, `seed`), `arc`
+  (`startAngle`/`endAngle` deg, 0 = 12 o'clock, clockwise; `innerRadius` 0..1 = ring segment, 0 = wedge).
 - **Patterns** `"pattern": "dots 32"` or `{kind, spacing, mark, angle, seed, jitter, ramp}` fill the layer's box (clipped):
   `dots grid lines stripes checker triangles diamonds crosses rings waves zigzag truchet arcs scales bricks`.
   `mark` = mark size / spacing; `ramp: [0.05, 1]` grows marks across the box (a vector halftone ramp); `jitter` 0..1.
   Your own motif: `{"tile": "M-12 -12 L12 -12 L0 14 Z", "spacing": 48, "turns": 4, "stagger": true}` draws that SVG path
   (px, centred on 0,0) at every lattice point; `turns` rotates each mark by a seeded multiple of 360/turns, `stagger` offsets
-  alternate rows (also for `dots`), `tileStroke: 6` strokes an open motif (squiggles) instead of filling it. Patterns move with the layer: animate `x`, `rotation` or `scale` for drift.
-  One path per layer: thousands of marks cost one fill. Keep `spacing` ≥ 6 px (finer turns to moiré after H.264).
+  alternate rows (also for `dots`), `tileStroke: 6` strokes an open motif (squiggles) instead of filling it.
+  **Field** `"field": "0.5 + 0.5 * sin(d * 18 - t * 3)"` sizes each mark from `u v` (0..1), `x y` (px from centre), `d` (0 centre
+  … 1 corner), `a`, `r` (random), `t`: op-art line weights, wave amplitude; `"clamp(t * 2 - d * 1.5, 0, 1)"` grows marks from the
+  centre. One path per layer (thousands of marks, one fill); keep `spacing` ≥ 6 px (finer turns to moiré after H.264).
 - **Treatments** on any layer, before blur/shadow (`"print": "photocopy|newsprint|engraving|riso|screenprint"` = starting values):
   `duotone: [shadows, highlights]`, `gradientMap: [c1, c2, c3…]` (or `[offset, colour]` pairs; interpolated in OKLab),
   `posterize: N` (luma steps with a map, RGB steps alone), `toneRange: [black, white]` (stretch a flat source first),

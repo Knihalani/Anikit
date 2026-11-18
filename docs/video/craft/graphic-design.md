@@ -354,7 +354,7 @@ Eight distinct graphic worlds. Each: palette (hex), type, grid, texture, motion.
 - **Grid**: objects in perspective-free axonometric arrangement; shapes stacked like furniture (columns, half-discs, slabs).
 - **Texture**: flat; patterns (squiggles, terrazzo confetti, dot grids) as laminates on shapes [32].
 - **Motion**: objects assemble like a set being built: drop, bounce with 1 overshoot, settle; patterns slide inside their shapes (masked). Avoid "Corporate Memphis" figures entirely.
-- **In Anikit**: `pattern` with your own `tile` motifs (`tileStroke` for squiggles, `turns: 4`, `stagger`), `blob`, `arc` half-discs and `squircle` slabs. Patterns inside shapes go through a pattern layer with `matte`, and assembly uses `animate` with `outBack`. Still: `docs/video/shots/graphic/tiles-animated.jpg`.
+- **In Anikit**: `pattern` with your own `tile` motifs (`tileStroke` for squiggles, `turns: 4`, `stagger`), `blob`, `arc` half-discs and `squircle` slabs. Patterns inside shapes go through a pattern layer with `matte`, and assembly uses `animate` with `outBack`. Still: `docs/video/shots/graphic/tiles-animated.jpg`; piece (9:16): `salone-memphis.json`.
 
 ### 9.6 Polish poster
 
