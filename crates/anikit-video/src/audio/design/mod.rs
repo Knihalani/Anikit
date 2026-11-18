@@ -50,6 +50,7 @@ pub const DESIGN_SFX: &[&str] = &[
     "passby",
     "sparkle",
     "magic",
+    "shepard",
     "shatter",
     "droplet",
     "blip",
@@ -150,7 +151,7 @@ fn trim_db(name: &str) -> f32 {
         "air" | "swish" | "cloth" | "rustle" | "paper" | "page" => -9.0,
         "glass" | "clink" | "wood" | "knock" | "ceramic" | "stone" | "thump" | "land" | "metal"
         | "ping" | "sparkle" | "magic" => -7.0,
-        "passby" | "whoosh-deep" | "whoosh-air" => -5.0,
+        "passby" | "whoosh-deep" | "whoosh-air" | "shepard" => -5.0,
         _ => -3.0,
     }
 }
@@ -263,6 +264,7 @@ pub fn render(name: &str, p: &DesignParams, rate: u32) -> Result<Sfx, String> {
         "passby" => Some(foley::air(&mut c, Air::Passby)),
         "sparkle" => Some(foley::sparkle(&mut c, false)),
         "magic" => Some(foley::sparkle(&mut c, true)),
+        "shepard" => Some(foley::shepard(&mut c)),
         "shatter" => Some(foley::shatter(&mut c)),
         "droplet" => Some(foley::droplet(&mut c)),
         "blip" => Some(foley::blip(&mut c)),

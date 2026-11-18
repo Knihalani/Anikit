@@ -577,3 +577,47 @@ pub(super) fn ticker(c: &mut Ctx) -> (St, f32) {
     }
     (st, 0.0)
 }
+
+/// Shepard riser: octave-spaced partials glide up together under a fixed
+/// bell over log-frequency, so it climbs without ever arriving, with filtered
+/// noise rising under it. The hit is the end (cut it on the reveal).
+pub(super) fn shepard(c: &mut Ctx) -> (St, f32) {
+    let sr = c.sr;
+    let dur = c.dur(3.0);
+    let len = frames(dur, sr);
+    let octaves_up = 1.0 + 1.5 * c.i(); // how far each partial climbs
+    let base = 55.0 * c.pf();
+    let n_p = 8;
+    let mut st = St::new(len);
+    for ch in 0..2 {
+        let mut x = vec![0.0f32; len];
+        for p in 0..n_p {
+            let mut ph = (p as f32 * 1.7 + ch as f32 * 0.3) % TAU;
+            for (k, o) in x.iter_mut().enumerate() {
+                let u = k as f32 / len as f32;
+                // Position in a cycle of `n_p` octaves.
+                let pos = (p as f32 + octaves_up * u) % n_p as f32;
+                let f = base * pos.exp2();
+                ph += TAU * f / sr;
+                if ph > TAU {
+                    ph -= TAU;
+                }
+                let w = (std::f32::consts::PI * pos / n_p as f32).sin().powi(2);
+                *o += ph.sin() * w;
+            }
+        }
+        let dst = if ch == 0 { &mut st.l } else { &mut st.r };
+        for (k, (d, s)) in dst.iter_mut().zip(x).enumerate() {
+            let u = k as f32 / len as f32;
+            // Swell in, peak at the end.
+            *d = s * (0.15 + 0.85 * u * u) * 0.25;
+        }
+    }
+    let air = swept_noise(&mut c.n, len, sr, 1.5, true, |k| 300.0 * (20.0f32).powf(k as f32 / len as f32), |k| {
+        let u = k as f32 / len as f32;
+        u * u * 0.5
+    });
+    st.add_moving(0, &air, -0.4, 0.4, 1.0);
+    st.fade_end(frames(0.01, sr));
+    (st, dur)
+}

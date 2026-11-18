@@ -440,3 +440,33 @@ fn physics_collisions_are_heard() {
     // Right of centre on screen → panned right.
     assert!(first.params.pan > 0.05, "{hits:?}");
 }
+
+#[test]
+fn sound_design_steps_back_under_voice() {
+    let dir = std::env::temp_dir().join(format!("ak-sound-vo-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let wav = dir.join("vo.wav");
+    // "Voice" from 1.0 to 2.0 s.
+    let vo: Vec<f32> = (0..SR as usize * 3).map(|i| if (SR as usize..2 * SR as usize).contains(&i) { 0.2 * (std::f32::consts::TAU * 180.0 * i as f32 / SR as f32).sin() } else { 0.0 }).collect();
+    crate::audio::write_wav(&wav, &crate::audio::Pcm::from_mono(SR, &vo), crate::audio::WavFormat::Float32).unwrap();
+    let track: crate::audio::Track = serde_json::from_value(serde_json::json!({ "src": wav.to_string_lossy(), "voice": true })).unwrap();
+    let opts = BusOpts { target_lufs: None, space: None, ..Default::default() };
+    // The same tick, once in the clear and once under the voice; compare its level.
+    let level = |at: f64, with_voice: bool| {
+        let tracks = if with_voice { vec![track.clone()] } else { vec![] };
+        let (pcm, _) = mix_design(&tracks, &[Cue::new("blip", at)], &opts, 3.0, SR, None).unwrap();
+        let a = (at * SR as f64) as usize * 2;
+        let s = &pcm.samples[a..a + 2 * 2400];
+        let mut e: f32 = s.iter().map(|x| x * x).sum();
+        if with_voice {
+            // Remove the voice's own energy.
+            let v: f32 = vo[a / 2..a / 2 + 2400].iter().map(|x| 2.0 * x * x).sum();
+            e -= v;
+        }
+        e
+    };
+    let clear = level(1.5, false);
+    let under = level(1.5, true);
+    assert!(10.0 * (under / clear).log10() < -4.0, "{clear} {under}");
+    let _ = std::fs::remove_dir_all(&dir);
+}

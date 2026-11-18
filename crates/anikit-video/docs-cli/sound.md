@@ -34,7 +34,7 @@ Shorthand: `"sound": "organic"` (a palette name) or `"sound": "off"`. Tonal soun
 
 **Per layer, `sfx`:** `"auto"` sounds the layer even when `design` is off, and `false` never sounds it. A name sets the sound for its main event. `{"in":"swish","land":"wood","out":"air","gain":-3}` sets each event.
 
-**Sounds:** motion `air` `swish` `whoosh` `whoosh-air` `whoosh-deep` `passby` `swoosh` `whip` · builds `riser` `downer` `reverse-cymbal` `swell` `braam` `sub-drop` `tape-stop` · hits `impact` `boom` `hit` `thump` `stone` `shatter` · foley (modal, tuned) `glass` `metal` `ping` `wood` `plastic` `ceramic` `paper` `page` `cloth` `droplet` · UI `click` `tick` `pop` `blip` `ticker` `ding` `chime` `typing` `shutter` `snap` `zap` `glitch` · magic `sparkle` `magic` · beds: the ambience names.
+**Sounds:** motion `air` `swish` `whoosh` `whoosh-air` `whoosh-deep` `passby` `swoosh` `whip` · builds `riser` `shepard` (endless) `downer` `reverse-cymbal` `swell` `braam` `sub-drop` `tape-stop` · hits `impact` `boom` `hit` `thump` `stone` `shatter` · foley (modal, tuned) `glass` `metal` `ping` `wood` `plastic` `ceramic` `paper` `page` `cloth` `droplet` · UI `click` `tick` `pop` `blip` `ticker` `ding` `chime` `typing` `shutter` `snap` `zap` `glitch` · magic `sparkle` `magic` · beds: the ambience names.
 
 **Parameters:** `duration`, `pitch` (semitones), `intensity`, `size` (the sound's own tail), `motion`, `speed`, `tone`, `count`, `seed`.
 

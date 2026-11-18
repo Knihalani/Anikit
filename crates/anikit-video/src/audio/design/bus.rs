@@ -299,17 +299,22 @@ pub fn mix_design(
     }
     lap("duck");
     lap("duck");
-    // 6. Sum.
+    // 6. Sum. Under voice-over the sound design steps back (−6 dB) and the
+    // bed further (−9 dB, about where beds sit under dialogue), with 50 ms
+    // look-ahead, so words stay clear.
+    let vgain = voice_duck(&voice, rate);
     let mut l = vec![0.0f32; n];
     let mut r = vec![0.0f32; n];
     for k in 0..n {
-        l[k] = music[2 * k] + voice[2 * k] + fsfx[2 * k] + dry_l[k];
-        r[k] = music[2 * k + 1] + voice[2 * k + 1] + fsfx[2 * k + 1] + dry_r[k];
+        let (gs, _) = vgain.as_ref().map(|v| v[k]).unwrap_or((1.0, 1.0));
+        l[k] = music[2 * k] + voice[2 * k] + fsfx[2 * k] + dry_l[k] * gs;
+        r[k] = music[2 * k + 1] + voice[2 * k + 1] + fsfx[2 * k + 1] + dry_r[k] * gs;
     }
     if let Some(a) = &amb {
         for k in 0..n.min(a.l.len()) {
-            l[k] += a.l[k];
-            r[k] += a.r[k];
+            let (_, ga) = vgain.as_ref().map(|v| v[k]).unwrap_or((1.0, 1.0));
+            l[k] += a.l[k] * ga;
+            r[k] += a.r[k] * ga;
         }
     }
     lap("sum");
@@ -354,4 +359,39 @@ pub fn mix_design(
             millis: t0.elapsed().as_secs_f64() * 1e3,
         },
     ))
+}
+
+/// Per-frame `(sfx gain, bed gain)` while the voice stem is active (`None`
+/// when there is no voice): 20 ms blocks above −45 dBFS, held 200 ms,
+/// anticipated 50 ms, smoothed.
+fn voice_duck(voice: &[f32], rate: u32) -> Option<Vec<(f32, f32)>> {
+    let n = voice.len() / 2;
+    let blk = (rate as usize / 50).max(1);
+    let thr = 10f32.powf(-45.0 / 20.0);
+    let act: Vec<bool> = voice.chunks(blk * 2).map(|c| c.iter().any(|x| x.abs() > thr)).collect();
+    if !act.iter().any(|a| *a) {
+        return None;
+    }
+    let hold = 10; // blocks (200 ms)
+    let ahead = 3; // blocks (60 ms)
+    let mut on = vec![false; act.len()];
+    for (i, &a) in act.iter().enumerate() {
+        if a {
+            for o in on.iter_mut().take((i + hold + 1).min(act.len())).skip(i.saturating_sub(ahead)) {
+                *o = true;
+            }
+        }
+    }
+    let (ds, da) = (10f32.powf(-6.0 / 20.0), 10f32.powf(-9.0 / 20.0));
+    let k = 1.0 - (-1.0 / (0.03 * rate as f32)).exp();
+    let (mut gs, mut ga) = (1.0f32, 1.0f32);
+    let mut out = Vec::with_capacity(n);
+    for i in 0..n {
+        let duck = on[(i / blk).min(on.len() - 1)];
+        let (ts, ta) = if duck { (ds, da) } else { (1.0, 1.0) };
+        gs += (ts - gs) * k;
+        ga += (ta - ga) * k;
+        out.push((gs, ga));
+    }
+    Some(out)
 }
