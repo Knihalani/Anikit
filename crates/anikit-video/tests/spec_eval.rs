@@ -701,3 +701,31 @@ fn animated_masks_say_how_to_animate() {
         assert!(e.iter().any(|x| x.contains("track matte") && x.contains("\"matte\"")), "{m}: {e:?}");
     }
 }
+
+#[test]
+fn fade_sugar_and_transparent_composition_backgrounds() {
+    let p = parse_json(r##"{ "scenes": [ { "layers": [ { "text": "a", "fadeIn": 0.5, "fadeOut": 0.4 } ] } ] }"##).unwrap();
+    assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+    let l = &p.spec.scenes[0].layers[0];
+    assert!(l.enter.is_some() && l.exit.is_some());
+    let ev = build(r##"{ "size": [64, 64], "scenes": [ { "duration": 3, "layers": [ { "shape": "rect", "width": 64, "height": 64, "fill": "#ffffff", "fadeIn": 1 } ] } ] }"##);
+    let lum = |t: f32| {
+        let (w, _, px) = anikit_video::pipeline::render_rgba(&ev, t, 1.0);
+        px[((32 * w + 32) * 4) as usize]
+    };
+    assert!(lum(0.0) < 40 && lum(0.5) > 40 && lum(0.5) < 230 && lum(1.5) > 240, "{} {} {}", lum(0.0), lum(0.5), lum(1.5));
+    for bg in ["transparent", "none"] {
+        let ev = build(&format!(r##"{{ "size": [64, 64], "background": "#ff0000", "compositions": {{ "c": {{ "size": [64, 64], "duration": 2, "background": "{bg}",
+            "layers": [ {{ "shape": "circle", "width": 10, "fill": "#fff" }} ] }} }}, "scenes": [ {{ "layers": [ {{ "composition": "c", "width": 64, "height": 64 }} ] }} ] }}"##));
+        let (_, _, px) = anikit_video::pipeline::render_rgba(&ev, 1.0, 1.0);
+        let i = ((3 * 64 + 3) * 4) as usize;
+        assert_eq!(&px[i..i + 3], &[255, 0, 0], "{bg}: the composition's background shows through");
+    }
+}
+
+#[test]
+fn fade_sugar_leaves_audio_alone() {
+    let p = parse_json(r##"{ "audio": [ { "src": "a.mp3", "fadeIn": 1, "fadeOut": 2 } ], "scenes": [ { "layers": [ "a" ] } ] }"##).unwrap();
+    let a = &p.spec.audio.as_ref().unwrap()[0];
+    assert_eq!((a.fade_in, a.fade_out), (Some(1.0), Some(2.0)));
+}

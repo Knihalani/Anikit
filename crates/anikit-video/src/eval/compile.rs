@@ -549,6 +549,14 @@ impl Evaluator {
 
 const COLOUR_FORMS: &str = "use \"#ff5a1f\", \"#f51\", \"#ff5a1f80\" (with alpha), a name like \"white\", a theme token like \"$accent\", \"rgb(255, 90, 31)\", \"hsl(20, 100, 56)\", \"oklch(0.7, 0.19, 40)\", or a per-frame expression \"=mix($primary, $accent, p)\"";
 
+/// `"transparent"` / `"none"` as a background: fully clear (not opaque black).
+fn clear_bg(p: spec::Paint) -> spec::Paint {
+    match &p {
+        spec::Paint::Css(c) if c.trim().eq_ignore_ascii_case("transparent") || c.trim().eq_ignore_ascii_case("none") => spec::Paint::Css("#00000000".into()),
+        _ => p,
+    }
+}
+
 fn any_on_notes(ls: &[Layer]) -> bool {
     ls.iter().any(|l| l.on_notes.is_some() || l.layers.as_deref().is_some_and(any_on_notes) || l.children.as_deref().is_some_and(any_on_notes))
 }
@@ -1402,6 +1410,7 @@ impl C<'_> {
             Some(b) => (b, format!("{path}.background")),
             None => (default_bg, "background".to_string()),
         };
+        let bp = &clear_bg(bp.clone());
         let (bg, bg_color) = self.paint(bp, &bpath).unwrap_or((PaintC::Solid, Rgba([0.0, 0.0, 0.0, 1.0])));
         let bg_color = match &bg {
             PaintC::Solid => bg_color,
@@ -3880,7 +3889,7 @@ impl C<'_> {
         let sub = Spec {
             size: cdef.size.clone().or(Some(spec::Size::Wh([self.w as u32, self.h as u32]))),
             fps: Some(self.fps as f64),
-            background: Some(cdef.background.clone().unwrap_or(spec::Paint::Css("#00000000".into()))),
+            background: Some(clear_bg(cdef.background.clone().unwrap_or(spec::Paint::Css("#00000000".into())))),
             theme: self.spec_theme.clone(),
             scenes,
             transition: cdef.transition.clone(),
