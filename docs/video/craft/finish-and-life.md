@@ -233,7 +233,7 @@ These come from the CEILING-2 judge critiques (`deliverables/ceiling2/*/GAPS.md`
   - power-law sizes: `"size_dist": { "min": 0.002, "max": 0.03, "power": 2.5 }`;
   - particles lit by the key: `"scatter": 0.6` (forward scatter, so particles between the camera and the key glow) and `"glint": 1.5` (facets flashing the key);
   - big foreground particles now keep their full brightness;
-  - still to come: a deposit/read-back field (physarum, ink trails).
+  - a deposit and read-back field: the `physarum` component (Jones slime mould; spawns from or is attracted to `text`; `anikit-video docs physarum`, `examples/video/sim/physarum.json`).
 - *(the original ask)* **Depth-layered particles** (SIM):
   - one emitter split into ≥ 3 depth layers, with size and speed scaling by 1/depth;
   - a skewed size distribution (1–3% hero particles);
