@@ -149,6 +149,7 @@ struct Prepared {
     glow: (V3, V3, f32),
     haze: (f32, V3),
     haze_height: (f32, f32),
+    haze_drift: (f32, f32, V3),
     lights: Vec<trace::Light>,
     /// Local lights animated by expressions of `t`.
     light_anims: Vec<spec::LightAnim>,
@@ -569,19 +570,28 @@ impl Prepare for Scene3d {
         // `fog`: { "density": per metre, "color", "shafts" } overrides the env's haze.
         let mut shafts = false;
         let mut haze_height = (0.0f32, 0.0f32);
+        let mut haze_drift = (0.0f32, 2.5f32, v3(0.0, 0.0, 0.0));
         let haze = match m.get("fog") {
             None => haze,
             Some(Value::Number(d)) => (d.as_f64().unwrap_or(0.0) as f32, haze.1),
             Some(Value::Object(f)) => {
                 for k in f.keys() {
-                    if !["density", "color", "shafts", "height", "base"].contains(&k.as_str()) {
-                        return Err(Error(format!("fog: unknown key `{k}` (density, color, shafts, height, base)")));
+                    if !["density", "color", "shafts", "height", "base", "drift", "scale", "wind"].contains(&k.as_str()) {
+                        return Err(Error(format!("fog: unknown key `{k}` (density, color, shafts, height, base, drift, scale, wind)")));
                     }
                 }
                 shafts = f.get("shafts").and_then(|x| x.as_bool()).unwrap_or(false);
                 if let Some(h) = f.get("height") {
                     let h = h.as_f64().filter(|h| *h > 0.0).ok_or_else(|| Error("fog.height: expected a falloff height in metres (> 0)".into()))? as f32;
                     haze_height = (h, num_or(f, "base", 0.0).map_err(Error)?);
+                }
+                if let Some(a) = f.get("drift") {
+                    let a = a.as_f64().ok_or_else(|| Error("fog.drift: expected 0–1".into()))? as f32;
+                    let w = match f.get("wind").and_then(|w| w.as_array()) {
+                        Some(w) if w.len() == 3 => v3(w[0].as_f64().unwrap_or(0.0) as f32, w[1].as_f64().unwrap_or(0.0) as f32, w[2].as_f64().unwrap_or(0.0) as f32),
+                        _ => v3(0.25, 0.0, 0.05),
+                    };
+                    haze_drift = (a.clamp(0.0, 1.0), num_or(f, "scale", 2.5).map_err(Error)?, w);
                 }
                 let d = num_or(f, "density", haze.0).map_err(Error)?;
                 let c = f.get("color").map(|c| spec::color(c, "fog.color")).transpose().map_err(Error)?.unwrap_or(haze.1);
@@ -674,6 +684,7 @@ impl Prepare for Scene3d {
             glow,
             haze,
             haze_height,
+            haze_drift,
             lights: local_lights,
             light_anims,
             caustics,
@@ -1132,6 +1143,7 @@ impl Scene3d {
         scene.glow = p.glow;
         scene.haze = p.haze;
         scene.haze_height = p.haze_height;
+        scene.haze_drift = p.haze_drift;
         scene.lights = p.lights.clone();
         for a in &p.light_anims {
             a.apply(&mut scene.lights[a.idx], t);
@@ -1618,6 +1630,13 @@ mod tests {
         }
         sc.haze_height = (0.0, 0.0);
         assert!((sc.fog_depth(v3(0.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), 5.0) - 1.0).abs() < 1e-6);
+        // Drifting fog: deterministic, and it moves with time.
+        sc.haze_drift = (0.9, 2.0, v3(1.0, 0.0, 0.0));
+        let (o, d) = (v3(0.0, 1.0, 0.0), norm(v3(1.0, 0.0, 0.3)));
+        let a = sc.fog_depth(o, d, 10.0);
+        assert_eq!(a.to_bits(), sc.fog_depth(o, d, 10.0).to_bits());
+        sc.time = 2.0;
+        assert!((sc.fog_depth(o, d, 10.0) - a).abs() > 1e-4);
     }
 
     #[test]

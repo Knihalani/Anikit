@@ -437,6 +437,8 @@ pub struct Scene {
     /// Height fog: falloff height in metres (0 = uniform) and base height.
     /// Density is `haze.0 · e^{-(y - base)/falloff}` above the base.
     pub haze_height: (f32, f32),
+    /// Drifting fog: noise amplitude (0..1), feature size (m), wind (m/s).
+    pub haze_drift: (f32, f32, V3),
     /// Local point and spot lights.
     pub lights: Vec<Light>,
     /// Per instance: world → object transform as three rows of
@@ -898,6 +900,7 @@ impl Scene {
             glow: (v3(0.0, 0.0, -1.0), v3(0.0, 0.0, 0.0), 0.1),
             haze: (0.0, v3(0.0, 0.0, 0.0)),
             haze_height: (0.0, 0.0),
+            haze_drift: (0.0, 2.0, v3(0.0, 0.0, 0.0)),
             lights: Vec::new(),
             inv: Vec::new(),
             caustics: 0.0,
@@ -1077,6 +1080,24 @@ impl Scene {
     /// height fog integrated in closed form (dense near the floor, thin above).
     #[inline]
     pub fn fog_depth(&self, o: V3, d: V3, dist: f32) -> f32 {
+        let tau = self.fog_depth_smooth(o, d, dist);
+        let (amp, size, wind) = self.haze_drift;
+        if amp <= 0.0 {
+            return tau;
+        }
+        // Patchy, drifting fog: density scaled by smooth noise sampled at three
+        // points along the (first 40 m of the) ray, moving with the wind.
+        let span = dist.min(40.0);
+        let off = scale(wind, self.time);
+        let mut k = 0.0;
+        for f in [0.2, 0.5, 0.8] {
+            let p = sub(madd(o, d, span * f), off);
+            k += vnoise(scale(p, 1.0 / size.max(0.05)));
+        }
+        tau * (1.0 + amp * (2.0 * k / 3.0 - 1.0) * 1.6).max(0.0)
+    }
+
+    fn fog_depth_smooth(&self, o: V3, d: V3, dist: f32) -> f32 {
         let (h, y0) = self.haze_height;
         if h <= 0.0 {
             return self.haze.0 * dist;
