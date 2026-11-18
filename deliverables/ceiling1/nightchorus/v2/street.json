@@ -9,20 +9,86 @@
  "intent": {
   "pace": "frantic"
  },
+ "fonts": {
+  "Anton": "../../fonts/Anton.ttf",
+  "Monoton": "../../fonts/Monoton.ttf",
+  "Bebas Neue": "../../fonts/Bebas_Neue.ttf",
+  "UnifrakturMaguntia": "../../fonts/UnifrakturMaguntia.ttf",
+  "Six Caps": "../../fonts/Six_Caps.ttf",
+  "Rubik Mono One": "../../fonts/Rubik_Mono_One.ttf",
+  "Bodoni Moda Black": "../../fonts/Bodoni_Moda_ital_wght_1_900.ttf",
+  "Instrument Sans": "../../fonts/Instrument_Sans_wght_700.ttf",
+  "Bungee Shade": "../../fonts/Bungee_Shade.ttf",
+  "Archivo Black": "../../fonts/Archivo_Black.ttf",
+  "Big Shoulders Display Black": "../../fonts/Big_Shoulders_Display_wght_900.ttf",
+  "Major Mono Display": "../../fonts/Major_Mono_Display.ttf"
+ },
  "compositions": {
   "c00": {
    "size": [
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.9375,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c00.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "radial-gradient(#140A10, #020102)"
+    },
+    {
+     "text": "A HALCYON\nPICTURE",
+     "font": "Monoton",
+     "size": 250,
+     "lineHeight": 1.02,
+     "align": "center",
+     "letterSpacing": "0.03em",
+     "y": "44%",
+     "color": "#FF2D7A",
+     "blur": 28,
+     "opacity": "=t<0.06?0:(t<0.10?1:(t<0.16?0.15:(t<0.2?1:(t<0.24?0.3:1))))",
+     "blend": "add"
+    },
+    {
+     "text": "A HALCYON\nPICTURE",
+     "font": "Monoton",
+     "size": 250,
+     "lineHeight": 1.02,
+     "align": "center",
+     "letterSpacing": "0.03em",
+     "y": "44%",
+     "color": "#FF2D7A",
+     "blur": 8,
+     "opacity": "=t<0.06?0:(t<0.10?1:(t<0.16?0.15:(t<0.2?1:(t<0.24?0.3:1))))",
+     "blend": "add"
+    },
+    {
+     "text": "A HALCYON\nPICTURE",
+     "font": "Monoton",
+     "size": 250,
+     "lineHeight": 1.02,
+     "align": "center",
+     "letterSpacing": "0.03em",
+     "y": "44%",
+     "color": "#FFD2E4",
+     "glow": "#FF2D7A",
+     "opacity": "=t<0.06?0:(t<0.10?1:(t<0.16?0.15:(t<0.2?1:(t<0.24?0.3:1))))"
+    },
+    {
+     "text": "A HALCYON\nPICTURE",
+     "font": "Monoton",
+     "size": 250,
+     "lineHeight": 1.02,
+     "align": "center",
+     "letterSpacing": "0.03em",
+     "y": "112%",
+     "color": "#FF2D7A",
+     "scaleY": -0.55,
+     "blur": 10,
+     "opacity": "=0.28*(t<0.06?0:(t<0.10?1:(t<0.16?0.15:(t<0.2?1:(t<0.24?0.3:1)))))"
     }
    ]
   },
@@ -31,14 +97,46 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.9375,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c01.png",
-     "width": 1920,
-     "height": 1080,
-     "x": 960,
-     "y": 540
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R;  float m=0.0; float r2=length(f-R*vec2(0.22,0.8)); float b=smoothstep(0.4,0.6,0.5+0.5*sin(r2*0.5+iTime*6.0)); o=vec4(mix(vec3(0.03,0.0,0.03),vec3(0.93,0.07,0.36),b),1.0);  }"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float r=length(f-R*vec2(0.5,0.5)); float ring=smoothstep(0.35,0.65,0.5+0.5*sin(r*0.55 - iTime*12.0));\n  vec3 col = mix(vec3(0.000,0.851,0.710), vec3(1.0,0.98,0.92), ring);\n  o = vec4(col*m, m);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "MIRA\nOYELARAN",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.88,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "fit": true,
+         "width": 1760,
+         "height": 900,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "scale": 1.18
+       },
+       "duration": 0.22,
+       "ease": "outExpo"
+      }
+     ]
     }
    ]
   },
@@ -47,14 +145,40 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c02.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "#000"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=24.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  float r=length(f-c)/cs; float on=step(0.5,mm);\n  float chase = 0.75+0.25*step(0.5,fract((cell.x+cell.y)*0.25 - iTime*4.0));\n  float bulb=smoothstep(0.36,0.30,r); float halo=exp(-r*r*7.0);\n  vec3 w=vec3(1.000,0.769,0.420);\n  vec3 col = on*(w*bulb*1.3*chase + w*halo*0.45) + (1.0-on)*w*0.05*bulb;\n  o = vec4(col, max(on*max(bulb,halo*0.8), 1.0*bulb));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "TOMAS VELD",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.88,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "fit": true,
+         "width": 1820,
+         "height": 700,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
     }
    ]
   },
@@ -63,14 +187,40 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c03.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "#F2E600"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float ang=0.785; mat2 rot=mat2(cos(ang),-sin(ang),sin(ang),cos(ang));\n  vec2 q=rot*f; float cs=16.0*(1.0+2.0*exp(-iTime*10.0)); vec2 cc=(floor(q/cs)+0.5)*cs; vec2 back=transpose(rot)*cc;\n  float v=textureLod(iChannel0, back/R, 2.5).a;\n  float shade = mix(1.0, 0.45, uv.y);\n  float rad = sqrt(v*shade)*0.62*cs;\n  float d = length(q-cc);\n  float dot_ = smoothstep(rad+0.8, rad-0.8, d);\n  o = vec4(vec3(0.02)*dot_, dot_);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "JUNO ABARA",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.88,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "fit": true,
+         "width": 1860,
+         "height": 900,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
     }
    ]
   },
@@ -79,14 +229,40 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c04.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "#1531FF"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float oo=14.0*(1.0+5.0*exp(-iTime*9.0)); float r=texture(iChannel0, uv+vec2(oo,0.0)/R).a, g=m, b=texture(iChannel0, uv-vec2(oo,0.0)/R).a;\n  vec3 col=vec3(r, g, b); col = col*vec3(1.0);\n  o = vec4(col, max(max(r,g),b));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "ISAK\nLINDQVIST",
+         "font": "Bebas Neue",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.82,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "fit": true,
+         "width": 1760,
+         "height": 980,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
     }
    ]
   },
@@ -95,14 +271,39 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c05.png",
-     "width": 1920,
-     "height": 1080,
-     "x": 960,
-     "y": 540
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R;  float m=0.0; float n=hash(floor(f/1.5)); float n2=hash(floor(f/7.0)+3.1); vec3 c=vec3(0.937,0.906,0.855)*(0.94+0.06*n)*(0.97+0.03*n2); float v=length(uv-0.5); c*=1.0-0.35*v*v; o=vec4(c,1.0);  }"
+    },
+    {
+     "text": "Renata Sol\u00e9",
+     "font": "UnifrakturMaguntia",
+     "size": 400,
+     "width": 1900,
+     "scale": "=1+0.05*t",
+     "color": "#C8102E",
+     "stroke": {
+      "color": "#111",
+      "width": 6
+     },
+     "shadow": {
+      "x": 8,
+      "y": 8,
+      "blur": 0,
+      "color": "#111"
+     }
+    },
+    {
+     "text": "with",
+     "font": "Instrument Sans",
+     "size": 40,
+     "color": "#111",
+     "letterSpacing": "0.18em",
+     "y": "8%",
+     "uppercase": true
     }
    ]
   },
@@ -111,14 +312,49 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c06.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "#0B0B0B"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  vec3 col=vec3(0.0); float a=0.0;\n  for(int k=1;k<15;k++){ float fk=float(k); vec2 off=vec2(-1.0,1.0)*fk*2.0*min(1.0,0.25+iTime*5.0)/R; float s=texture(iChannel0,uv+off).a;\n     float hit = step(0.5,s)*(1.0-a); col += hit*mix(vec3(0.878,0.149,0.106), vec3(0.878,0.149,0.106)*0.18, fk/15.0); a=max(a,step(0.5,s)); }\n  col = mix(col, vec3(0.961,0.922,0.867), m); a=max(a,m);\n  o = vec4(col*a, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "KENJI\nARAMAKI",
+         "font": "Archivo Black",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.9,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "fit": true,
+         "width": 1600,
+         "height": 860,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "text": "casting",
+     "font": "Instrument Sans",
+     "size": 36,
+     "color": "#F5EBDD",
+     "letterSpacing": "0.18em",
+     "y": "8%",
+     "uppercase": true
     }
    ]
   },
@@ -143,14 +379,49 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c08.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "#0A0A0A"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float s = step(0.5, fract((f.x + f.y*0.0)/14.0 + iTime*0.0));\n  float h = step(0.5, fract((f.y+iTime*90.0)/18.0));\n  vec3 col = mix(vec3(1.000,1.000,1.000), vec3(1.000,0.353,0.000), h);\n  o = vec4(col*m, m);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "SAUL\nKIM",
+         "font": "Rubik Mono One",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.95,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "54%",
+         "fit": true,
+         "width": 1700,
+         "height": 820,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "text": "production design",
+     "font": "Instrument Sans",
+     "size": 36,
+     "color": "#FF5A00",
+     "letterSpacing": "0.18em",
+     "y": "7%",
+     "uppercase": true
     }
    ]
   },
@@ -159,14 +430,57 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c09.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "radial-gradient(#0E4A33, #031A12)"
+    },
+    {
+     "text": "*Lev Ansari*",
+     "font": "Bodoni Moda",
+     "weight": 900,
+     "size": 300,
+     "width": 1800,
+     "color": "linear-gradient(180deg, #FFF1B8, #D9A441 55%, #8A5A12)",
+     "shadow": {
+      "x": 0,
+      "y": 10,
+      "blur": 40,
+      "color": "#000a"
+     }
+    },
+    {
+     "text": "*Lev Ansari*",
+     "font": "Bodoni Moda",
+     "weight": 900,
+     "size": 300,
+     "width": 1800,
+     "color": "#fff",
+     "id": "levm"
+    },
+    {
+     "shape": "rect",
+     "width": 360,
+     "height": 700,
+     "rotation": 18,
+     "fill": "linear-gradient(90deg, #FFF8E000, #FFFDF2 50%, #FFF8E000)",
+     "x": "=-200+t*5200",
+     "blend": "screen",
+     "matte": "levm"
+    },
+    {
+     "text": "cinematography",
+     "font": "Instrument Sans",
+     "size": 36,
+     "color": "#E8C979",
+     "letterSpacing": "0.18em",
+     "y": "20%",
+     "uppercase": true
     }
    ]
   },
@@ -175,14 +489,49 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c10.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "#020407"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float b1=mb(uv,1.0), b3=mb(uv,3.0), b5=mb(uv,5.0);\n  float tube=exp(-pow((b1-0.5)/0.16,2.0));\n  float core=exp(-pow((b1-0.5)/0.06,2.0));\n  float glow=exp(-pow((b3-0.5)/0.32,2.0))*0.55 + exp(-pow((b5-0.45)/0.4,2.0))*0.35;\n  float fl = 0.88+0.12*step(0.25,hash(vec2(floor(iTime*24.0),7.0)));\n  vec3 c = vec3(0.149,0.878,1.000);\n  vec3 col = (c*tube*1.3 + vec3(1.0,0.96,0.92)*core*0.8 + c*glow)*fl*1.0;\n  float a = clamp(max(max(tube, core), glow)*1.0, 0.0, 1.0);\n  o = vec4(col, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "HAZE &\nCINDER",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.92,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "56%",
+         "fit": true,
+         "width": 1400,
+         "height": 700,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "text": "music",
+     "font": "Instrument Sans",
+     "size": 36,
+     "color": "#26E0FF",
+     "letterSpacing": "0.18em",
+     "y": "8%",
+     "uppercase": true
     }
    ]
   },
@@ -191,14 +540,40 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c11.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "#000"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=9.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  vec2 d=abs(f-c)/cs; float px=step(d.x,0.40)*step(d.y,0.40);\n  float sub = fract(f.x/cs*3.0);\n  vec3 rgb = vec3(step(sub,0.333), step(0.333,sub)*step(sub,0.666), step(0.666,sub));\n  vec3 base = vec3(1.000,1.000,1.000);\n  vec3 col = (base*0.55 + rgb*base*0.9)*px*mm*1.2 + base*0.04*px;\n  o = vec4(col, px*max(mm, 0.12));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "WRITTEN &\nDIRECTED BY",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.9,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "fit": true,
+         "width": 1800,
+         "height": 900,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
     }
    ]
   },
@@ -207,14 +582,22 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c12.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "#FFFFFF"
+    },
+    {
+     "text": "ADA",
+     "font": "Anton",
+     "size": 900,
+     "color": "#000",
+     "letterSpacing": "-0.01em"
     }
    ]
   },
@@ -223,14 +606,22 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c13.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "#000"
+    },
+    {
+     "text": "ADA",
+     "font": "Anton",
+     "size": 900,
+     "color": "#FFFFFF",
+     "letterSpacing": "-0.01em"
     }
    ]
   },
@@ -239,14 +630,22 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c14.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "#FF2D7A"
+    },
+    {
+     "text": "KOV\u00c1\u010c",
+     "font": "Anton",
+     "size": 640,
+     "color": "#000",
+     "letterSpacing": "-0.01em"
     }
    ]
   },
@@ -255,14 +654,22 @@
     1920,
     1080
    ],
-   "duration": 1,
+   "duration": 0.5,
+   "loop": true,
+   "background": "#000",
    "layers": [
     {
-     "src": "cards/c15.png",
+     "shape": "rect",
      "width": 1920,
      "height": 1080,
-     "x": 960,
-     "y": 540
+     "fill": "#000"
+    },
+    {
+     "text": "KOV\u00c1\u010c",
+     "font": "Anton",
+     "size": 640,
+     "color": "#FF2D7A",
+     "letterSpacing": "-0.01em"
     }
    ]
   },

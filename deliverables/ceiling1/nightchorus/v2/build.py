@@ -16,7 +16,15 @@ def vs(e): return f"=[{e},{e},{e}]"
 def tex(name):
     comps[name]={"size":[1920,1080],"duration":1,"layers":[{"src":f"cards/{name}.png","width":1920,"height":1080,"x":960,"y":540}]}
     return {"composition":name}
-for n,_ in cards+strobe: tex(n)
+# live sign treatments: each card is the v1 scene itself, looping as a composition (shader layers animate on 3D)
+V1=json.load(open('../nightchorus.json'))
+FONTS={k:"../"+v for k,v in V1["fonts"].items()}
+def live(n, idx):
+    sc=V1["scenes"][idx]
+    comps[n]={"size":[1920,1080],"duration":max(sc["duration"],0.5),"loop":True,"background":"#000","layers":sc["layers"]}
+for k,(n,_) in enumerate(cards+strobe):
+    if n=="c07": tex(n)            # the editor card was re-set for the sign (static)
+    else: live(n, k)
 tex("c16")
 O=[]
 GLOW={"base":"#ffffff","glow":1.0,"roughness":0.35,"transmission":0}
@@ -125,7 +133,7 @@ props={"env":"city","exposure":1.35,"quality":"standard","objects":O,"lights":li
        "camera":{"interp":"linear","keys":keys},"shutter":0.3,
        "fog":{"density":0.018,"color":"#0b0d16"},"bloom":0.12,"vignette":0.3}
 score=json.load(open('score_v3.json'))
-spec={"size":[1920,1080],"fps":24,"background":"#000","transition":"cut","intent":{"pace":"frantic"},
+spec={"size":[1920,1080],"fps":24,"background":"#000","transition":"cut","intent":{"pace":"frantic"},"fonts":FONTS,
  "compositions":comps,"music":dict(score, followCuts=False),"post":{"grain":0.03,"halation":0.25},
  "scenes":[{"duration":round(T_END,4),"layers":[{"component":"scene3d","props":props}]}]}
 json.dump(spec,open('street.json','w'),indent=1)
