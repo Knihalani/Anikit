@@ -147,6 +147,7 @@ struct Prepared {
     backdrop: (V3, V3),
     glow: (V3, V3, f32),
     haze: (f32, V3),
+    haze_height: (f32, f32),
     lights: Vec<trace::Light>,
     /// Underwater caustics strength (0 = off).
     caustics: f32,
@@ -337,7 +338,9 @@ impl Prepare for Scene3d {
         let mut parts = Vec::new();
         for (i, o) in objs_v.iter().enumerate() {
             if o.get("type").and_then(|t| t.as_str()) == Some("particles") {
-                parts.push(particles::parse(o, &mut shapes, &mut mats, &named, &objs_v, &format!("objects[{i}]")).map_err(Error)?);
+                for o in particles::expand_layers(o, &format!("objects[{i}]")).map_err(Error)? {
+                    parts.push(particles::parse(&o, &mut shapes, &mut mats, &named, &objs_v, &format!("objects[{i}]")).map_err(Error)?);
+                }
                 continue;
             }
             objs.push(spec::object(o, &mut shapes, &mut mats, &named, &format!("objects[{i}]")).map_err(Error)?);
@@ -548,16 +551,21 @@ impl Prepare for Scene3d {
         }
         // `fog`: { "density": per metre, "color", "shafts" } overrides the env's haze.
         let mut shafts = false;
+        let mut haze_height = (0.0f32, 0.0f32);
         let haze = match m.get("fog") {
             None => haze,
             Some(Value::Number(d)) => (d.as_f64().unwrap_or(0.0) as f32, haze.1),
             Some(Value::Object(f)) => {
                 for k in f.keys() {
-                    if !["density", "color", "shafts"].contains(&k.as_str()) {
-                        return Err(Error(format!("fog: unknown key `{k}` (density, color, shafts)")));
+                    if !["density", "color", "shafts", "height", "base"].contains(&k.as_str()) {
+                        return Err(Error(format!("fog: unknown key `{k}` (density, color, shafts, height, base)")));
                     }
                 }
                 shafts = f.get("shafts").and_then(|x| x.as_bool()).unwrap_or(false);
+                if let Some(h) = f.get("height") {
+                    let h = h.as_f64().filter(|h| *h > 0.0).ok_or_else(|| Error("fog.height: expected a falloff height in metres (> 0)".into()))? as f32;
+                    haze_height = (h, num_or(f, "base", 0.0).map_err(Error)?);
+                }
                 let d = num_or(f, "density", haze.0).map_err(Error)?;
                 let c = f.get("color").map(|c| spec::color(c, "fog.color")).transpose().map_err(Error)?.unwrap_or(haze.1);
                 (d, c)
@@ -648,6 +656,7 @@ impl Prepare for Scene3d {
             backdrop,
             glow,
             haze,
+            haze_height,
             lights: local_lights,
             caustics,
             gobo,
@@ -1005,7 +1014,7 @@ impl Scene3d {
         let prof = std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some();
         if prof {
             trace::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed);
-            for r in trace::RAYS.iter().chain(&trace::TIMES) {
+            for r in trace::RAYS.iter().chain(&trace::TIMES).chain(&trace::CYCLES) {
                 r.store(0, std::sync::atomic::Ordering::Relaxed);
             }
         }
@@ -1035,6 +1044,7 @@ impl Scene3d {
         scene.backdrop = p.backdrop;
         scene.glow = p.glow;
         scene.haze = p.haze;
+        scene.haze_height = p.haze_height;
         scene.lights = p.lights.clone();
         scene.caustics = p.caustics;
         scene.gobo = p.gobo;
@@ -1165,6 +1175,17 @@ impl Scene3d {
             );
             let tm: Vec<u64> = trace::TIMES.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
             eprintln!("  wall: centre pass {:.0} ms, refinement {:.0} ms ({:.1}% of pixels refined)", tm[0] as f64 / 1e3, tm[1] as f64 / 1e3, tm[2] as f64 * 100.0 / (w * h) as f64);
+            {
+                // TSC ticks per µs, calibrated once.
+                static HZ: std::sync::OnceLock<f64> = std::sync::OnceLock::new();
+                let hz = *HZ.get_or_init(|| {
+                    let (c, t) = (trace::tsc(), std::time::Instant::now());
+                    while t.elapsed().as_millis() < 50 {}
+                    (trace::tsc() - c) as f64 / t.elapsed().as_secs_f64() / 1e6
+                });
+                let cy: Vec<f64> = trace::CYCLES.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed) as f64 / hz / 1e3).collect();
+                eprintln!("  cpu (thread-sum): closest-hit traversal {:.0} ms, shadow/AO traversal {:.0} ms", cy[0], cy[1]);
+            }
             let r: Vec<u64> = trace::RAYS.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
             eprintln!("  rays: {:.2}M closest ({:.2}M radiance, {:.2}M floor reflections), {:.2}M shadow/AO, {:.2} primary samples per pixel", r[0] as f64 / 1e6, r[3] as f64 / 1e6, r[4] as f64 / 1e6, r[1] as f64 / 1e6, r[2] as f64 / (w * h) as f64);
         }
@@ -1448,6 +1469,27 @@ mod tests {
         let (f0, f1) = (r.at_with(0.0, 16.0 / 9.0, 0.0, &res).focus, r.at_with(1.0, 16.0 / 9.0, 0.0, &res).focus);
         assert!((f0 - 2.0).abs() < 1e-3 && (f1 - 10.0).abs() < 1e-3, "{f0} {f1}");
         assert!(spec::camera(&json!({ "preset": "static", "shake": "handheldd" }), b, "camera").err().unwrap().contains("did you mean `handheld`"));
+    }
+
+    #[test]
+    fn height_fog_integrates_exactly() {
+        let e = env::Env::preset_tinted("studio", v3(1.0, 0.0, 0.0), v3(0.0, 0.0, 1.0), v3(1.0, 1.0, 1.0), v3(0.0, 1.0, 0.0)).unwrap();
+        let mut sc = Scene::new(Vec::new(), Vec::new(), Vec::new(), e, None);
+        sc.haze = (0.2, v3(0.5, 0.5, 0.5));
+        sc.haze_height = (0.8, 0.0);
+        for (o, d) in [(v3(0.0, 0.5, 0.0), norm(v3(1.0, 0.3, 0.0))), (v3(0.0, 3.0, 0.0), norm(v3(0.2, -0.4, 1.0))), (v3(0.0, 1.0, 0.0), v3(1.0, 0.0, 0.0))] {
+            let n = 20000;
+            let dist = 10.0;
+            let mut acc = 0.0f64;
+            for k in 0..n {
+                let y = o.y + d.y * dist * (k as f32 + 0.5) / n as f32;
+                acc += 0.2 * (-(y.max(0.0)) as f64 / 0.8).exp() * (dist / n as f32) as f64;
+            }
+            let got = sc.fog_depth(o, d, dist) as f64;
+            assert!((got - acc).abs() < 1e-3 * acc.max(1e-3), "{got} vs {acc}");
+        }
+        sc.haze_height = (0.0, 0.0);
+        assert!((sc.fog_depth(v3(0.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), 5.0) - 1.0).abs() < 1e-6);
     }
 
     #[test]

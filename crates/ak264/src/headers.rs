@@ -16,6 +16,8 @@ pub(crate) struct SeqInfo {
     pub cabac: bool,
     /// B-frames: POC type 0, two reference frames, one frame of reordering.
     pub bframes: bool,
+    /// High profile (8×8 transform).
+    pub high: bool,
 }
 
 /// (level_idc, MaxMBPS, MaxFS)
@@ -70,7 +72,10 @@ fn timing(fps: f64) -> (u32, u32) {
 }
 
 pub(crate) fn write_sps(w: &mut BitWriter, s: &SeqInfo, level: u8) {
-    if s.cabac {
+    if s.high {
+        w.put(8, 100); // High
+        w.put(8, 0);
+    } else if s.cabac {
         w.put(8, 77); // Main
         w.put(8, 0b0100_0000); // constraint_set1
     } else {
@@ -79,6 +84,13 @@ pub(crate) fn write_sps(w: &mut BitWriter, s: &SeqInfo, level: u8) {
     }
     w.put(8, level as u32);
     w.ue(0); // sps id
+    if s.high {
+        w.ue(1); // chroma_format_idc 4:2:0
+        w.ue(0); // bit_depth_luma_minus8
+        w.ue(0); // bit_depth_chroma_minus8
+        w.bit(false); // qpprime_y_zero_transform_bypass_flag
+        w.bit(false); // seq_scaling_matrix_present_flag
+    }
     w.ue(LOG2_MAX_FRAME_NUM - 4);
     if s.bframes {
         w.ue(0); // pic_order_cnt_type
@@ -135,7 +147,7 @@ pub(crate) fn write_sps(w: &mut BitWriter, s: &SeqInfo, level: u8) {
     w.trailing();
 }
 
-pub(crate) fn write_pps(w: &mut BitWriter, qp: u8, cabac: bool) {
+pub(crate) fn write_pps(w: &mut BitWriter, qp: u8, cabac: bool, t8: bool) {
     w.ue(0);
     w.ue(0);
     w.bit(cabac); // entropy_coding_mode_flag
@@ -151,6 +163,11 @@ pub(crate) fn write_pps(w: &mut BitWriter, qp: u8, cabac: bool) {
     w.bit(true); // deblocking_filter_control_present
     w.bit(false); // constrained_intra_pred
     w.bit(false); // redundant_pic_cnt
+    if t8 {
+        w.bit(true); // transform_8x8_mode_flag
+        w.bit(false); // pic_scaling_matrix_present_flag
+        w.se(0); // second_chroma_qp_index_offset
+    }
     w.trailing();
 }
 

@@ -580,7 +580,7 @@ pub fn cutout_d(w: f64, h: f64, edge: &str, amount: f64, grow: f64, seed: u32) -
 }
 
 /// 1D value noise in [-0.5, 0.5], smooth.
-fn smooth_noise(seed: u32, x: f64) -> f64 {
+pub fn smooth_noise(seed: u32, x: f64) -> f64 {
     let i = x.floor();
     let f = x - i;
     let s = f * f * (3.0 - 2.0 * f);
@@ -603,5 +603,173 @@ mod cutout_tests {
             assert!(p.area().abs() > 400.0 * 300.0 * 0.85, "{edge}");
             assert_eq!(d, cutout_d(400.0, 300.0, edge, 10.0, 0.0, 4));
         }
+    }
+}
+
+/// A brush: a variable-width filled ribbon along a flattened path.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Brush {
+    /// Flattened centre line and cumulative lengths.
+    pub pts: Vec<[f32; 2]>,
+    pub cum: Vec<f32>,
+    /// Taper lengths at the start and the end, as fractions of the whole length.
+    pub taper: [f32; 2],
+    /// Width wobble 0..1 (pressure).
+    pub pressure: f32,
+    /// Dry brush 0..1: bristle bands that skip, more towards the end.
+    pub dry: f32,
+    pub seed: u32,
+}
+
+impl Brush {
+    pub fn new(p: &BezPath, taper: [f32; 2], pressure: f32, dry: f32, seed: u32) -> Option<Brush> {
+        let mut pts: Vec<[f32; 2]> = Vec::new();
+        kurbo::flatten(p, 0.2, |el| match el {
+            PathEl::MoveTo(q) => {
+                if pts.is_empty() {
+                    pts.push([q.x as f32, q.y as f32])
+                }
+            }
+            PathEl::LineTo(q) => pts.push([q.x as f32, q.y as f32]),
+            PathEl::ClosePath => {
+                if let Some(&f) = pts.first() {
+                    pts.push(f)
+                }
+            }
+            _ => {}
+        });
+        pts.dedup();
+        if pts.len() < 2 {
+            return None;
+        }
+        let mut cum = vec![0.0f32];
+        for k in 1..pts.len() {
+            let d = ((pts[k][0] - pts[k - 1][0]).powi(2) + (pts[k][1] - pts[k - 1][1]).powi(2)).sqrt();
+            cum.push(cum[k - 1] + d);
+        }
+        Some(Brush { pts, cum, taper: taper.map(|t| t.clamp(0.0, 1.0)), pressure: pressure.clamp(0.0, 1.0), dry: dry.clamp(0.0, 1.0), seed })
+    }
+
+    fn at(&self, s: f32) -> ([f32; 2], [f32; 2]) {
+        let k = match self.cum.binary_search_by(|c| c.total_cmp(&s)) {
+            Ok(i) => i.max(1),
+            Err(i) => i.clamp(1, self.cum.len() - 1),
+        };
+        let (a, b) = (self.pts[k - 1], self.pts[k]);
+        let seg = (self.cum[k] - self.cum[k - 1]).max(1e-6);
+        let f = ((s - self.cum[k - 1]) / seg).clamp(0.0, 1.0);
+        let d = [(b[0] - a[0]) / seg, (b[1] - a[1]) / seg];
+        ([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], d)
+    }
+
+    /// The ribbon for the visible span `[t0, t1]` (fractions) at stroke width `width`, into `out`.
+    pub fn build(&self, width: f32, t0: f32, t1: f32, out: &mut BezPath) {
+        let len = *self.cum.last().unwrap_or(&0.0);
+        let (s0, s1) = (t0.clamp(0.0, 1.0) * len, t1.clamp(0.0, 1.0) * len);
+        if s1 - s0 < 0.5 || width <= 0.0 {
+            return;
+        }
+        let step = (width * 0.25).clamp(1.0, 4.0);
+        let n = ((s1 - s0) / step).ceil().max(1.0) as usize;
+        let hw = |s: f32| {
+            let a = if self.taper[0] > 0.0 { ((s / (self.taper[0] * len)).min(1.0)).sqrt() } else { 1.0 };
+            // The end taper follows the drawing head, as a brush lifting off.
+            let b = if self.taper[1] > 0.0 { (((s1 - s) / (self.taper[1] * len)).min(1.0)).sqrt() } else { 1.0 };
+            let p = 1.0 + self.pressure * 0.8 * smooth_noise(self.seed, (s / (width * 6.0).max(8.0)) as f64) as f32 * 2.0;
+            0.5 * width * a.min(b).max(0.04) * p.max(0.15)
+        };
+        let samples: Vec<([f32; 2], [f32; 2], f32, f32)> = (0..=n)
+            .map(|i| {
+                let s = s0 + (s1 - s0) * i as f32 / n as f32;
+                let (p, d) = self.at(s);
+                (p, [-d[1], d[0]], hw(s), s)
+            })
+            .collect();
+        let bands: usize = if self.dry > 0.0 { 13 } else { 1 };
+        // Fine roughness of the outer edges (paper tooth), a few % of the width.
+        let rough = |s: f32, side: u32| 1.0 + 0.06 * (smooth_noise(self.seed ^ (0x7a11 + side), (s / 3.0) as f64) as f32) * 2.0;
+        for b in 0..bands {
+            // Band edges across the width (-1..1), wandering a little along the stroke.
+            let edge = |k: usize, s: f32| -> f32 {
+                if bands == 1 {
+                    return if k == 0 { -rough(s, 0) } else { rough(s, 1) };
+                }
+                let base = -1.0 + 2.0 * k as f32 / bands as f32;
+                if k == 0 || k == bands {
+                    return base * rough(s, k as u32);
+                }
+                base + 0.5 / bands as f32 * smooth_noise(self.seed.wrapping_add(313 * k as u32), (s / (width * 1.5).max(5.0)) as f64) as f32 * 2.0
+            };
+            // Paint load of this bristle along the stroke: it runs dry more towards the end.
+            let load = |s: f32| -> f32 {
+                if bands == 1 {
+                    return 1.0;
+                }
+                let u = s / len.max(1e-3);
+                let nz = smooth_noise(self.seed.wrapping_add(97 * (b as u32 + 1)), (s / (width * 2.5).max(6.0)) as f64) as f32 + 0.5;
+                ((nz - self.dry * (0.3 + 0.7 * u)) * 6.0).clamp(0.0, 1.0)
+            };
+            let mut run: Vec<(usize, f32)> = Vec::new();
+            let flush = |run: &mut Vec<(usize, f32)>, out: &mut BezPath| {
+                if run.len() >= 2 {
+                    let m = run.len();
+                    for pass in 0..2 {
+                        for k in 0..m {
+                            let kk = if pass == 0 { k } else { m - 1 - k };
+                            let (i, ld) = run[kk];
+                            let (p, nrm, h, sv) = samples[i];
+                            let (lo, hi) = (edge(b, sv), edge(b + 1, sv) + if bands > 1 { 0.03 } else { 0.0 });
+                            // A bristle thins as it loses paint: shrink the band towards its middle.
+                            let mid = 0.5 * (lo + hi);
+                            let e = if pass == 0 { mid + (lo - mid) * ld } else { mid + (hi - mid) * ld };
+                            let q = (p[0] as f64 + (nrm[0] * h * e) as f64, p[1] as f64 + (nrm[1] * h * e) as f64);
+                            if pass == 0 && k == 0 {
+                                out.move_to(q)
+                            } else {
+                                out.line_to(q)
+                            }
+                        }
+                    }
+                    out.close_path();
+                }
+                run.clear();
+            };
+            for (i, smp) in samples.iter().enumerate() {
+                let ld = load(smp.3);
+                if ld > 0.02 {
+                    run.push((i, ld));
+                } else {
+                    flush(&mut run, out);
+                }
+            }
+            flush(&mut run, out);
+        }
+    }
+}
+
+#[cfg(test)]
+mod brush_tests {
+    use super::*;
+
+    #[test]
+    fn brush_ribbon_tapers_and_draws_on() {
+        let p = BezPath::from_svg("M0 0 L400 0").unwrap();
+        let b = Brush::new(&p, [0.2, 0.2], 0.0, 0.0, 1).unwrap();
+        let mut full = BezPath::new();
+        b.build(20.0, 0.0, 1.0, &mut full);
+        let bb = full.bounding_box();
+        assert!((bb.width() - 400.0).abs() < 1.0 && bb.height() <= 22.5 && bb.height() > 18.0, "{bb:?}");
+        // Area below a full-width bar (tapers).
+        assert!(full.area().abs() < 400.0 * 20.0 * 0.95);
+        let mut half = BezPath::new();
+        b.build(20.0, 0.0, 0.5, &mut half);
+        assert!((half.bounding_box().width() - 200.0).abs() < 1.0);
+        // Dry brush: several bristle runs, deterministic.
+        let d = Brush::new(&p, [0.1, 0.1], 0.3, 0.7, 4).unwrap();
+        let (mut a, mut c) = (BezPath::new(), BezPath::new());
+        d.build(30.0, 0.0, 1.0, &mut a);
+        d.build(30.0, 0.0, 1.0, &mut c);
+        assert_eq!(a, c);
+        assert!(a.elements().iter().filter(|e| matches!(e, PathEl::ClosePath)).count() > 9);
     }
 }

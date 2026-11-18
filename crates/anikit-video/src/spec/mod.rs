@@ -224,6 +224,26 @@ pub struct InkSpec {
     pub seed: Option<u32>,
 }
 
+/// `brush`: on, or the full settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum BrushValue {
+    On(bool),
+    Full(BrushSpec),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BrushSpec {
+    /// Taper lengths at the start and end, as fractions of the stroke. Default `[0.12, 0.25]`.
+    pub taper: Option<[f64; 2]>,
+    /// Width wobble (0..1). Default 0.35.
+    pub pressure: Option<f64>,
+    /// Dry brush (0..1): bristles that skip, more towards the end. Default 0.
+    pub dry: Option<f64>,
+    pub seed: Option<u32>,
+}
+
 /// `boil`: px, or the full settings.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
@@ -864,6 +884,9 @@ pub struct Layer {
     pub pattern: Option<PatternValue>,
     pub trim_start: Option<Num>,
     pub trim_end: Option<Num>,
+    /// Paint the stroke as a brush: `true`, or `{ "taper": [start, end], "pressure": 0..1, "dry": 0..1, "seed" }`.
+    /// Width from `strokeWidth`; tapered ends, pressure wobble, dry-brush bristles; `trimEnd` paints it on.
+    pub brush: Option<BrushValue>,
 
     // ---- image / video
     pub src: Option<String>,

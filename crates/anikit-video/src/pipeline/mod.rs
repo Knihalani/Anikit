@@ -87,6 +87,13 @@ pub struct StageProfile {
     pub held: u64,
     pub partial: u64,
     pub full: u64,
+    /// Process memory (MiB, Linux; 0 elsewhere): resident when the render started
+    /// (spec, assets, caches), the peak while frames rendered and encoded, the
+    /// encoded stream held for muxing, and the peak while muxing.
+    pub mem_start_mb: f64,
+    pub mem_render_peak_mb: f64,
+    pub mem_stream_mb: f64,
+    pub mem_mux_peak_mb: f64,
 }
 
 /// Called with every frame exactly as it goes to the encoder (index within the range, tight 4:2:0 planes).
@@ -992,9 +999,13 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         subpel: opts.quality != Quality::Draft,
         // The encoder decides per frame (auto AQ: on for gradient-dominated frames, off on flat UI) unless the spec sets `encode.aq`.
         aq_strength: ev.encode_aq.unwrap_or(ak264::EncoderConfig::default().aq_strength),
+        // One B picture between references (CABAC qualities; the chunk encoder flushes, the muxer reorders).
+        bframes: if opts.quality != Quality::Draft { 1 } else { 0 },
         ..Default::default()
     };
     let prof = Profile::default();
+    let mem_start = crate::memstat::rss().unwrap_or(0);
+    let peaks = crate::memstat::reset_peak();
     // Encode the audio to AAC while the frames render, so the final mux is a stream copy.
     let m4a = audio.as_ref().map(|_| out.with_extension(format!("audio-{}.m4a", std::process::id())));
     let has_audio = audio.is_some();
@@ -1017,6 +1028,13 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     };
     let annexb = render_fused_tap(ev, opts, &cfg, &prof, tap);
     let t_enc = t0.elapsed();
+    let mem_render = if peaks { crate::memstat::peak().unwrap_or(0) } else { 0 };
+    // The frames are done: drop the per-frame images and give the workers' freed
+    // buffers back to the OS before muxing (long-lived processes otherwise keep them).
+    ev.assets.release_frame_images();
+    crate::memstat::trim();
+    let mem_stream = annexb.len() as u64;
+    let peaks = crate::memstat::reset_peak();
     let tm = Instant::now();
     match has_audio {
         false => std::fs::write(out, ak264::mp4::mux(&annexb, w, h, ev.fps as f64)).map_err(|e| format!("can't write {}: {e}", out.display()))?,
@@ -1056,6 +1074,7 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         }
     }
     let t_mux = tm.elapsed();
+    let mem_mux = if peaks { crate::memstat::peak().unwrap_or(0) } else { 0 };
     let secs = t0.elapsed().as_secs_f32();
     let unchanged = prof.unchanged.load(Ordering::Relaxed) as u32;
     let per = |x: &AtomicU64| x.load(Ordering::Relaxed) as f64 / 1e6 / n.max(1) as f64;
@@ -1077,16 +1096,24 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         held: prof.held.load(Ordering::Relaxed),
         partial: prof.partial.load(Ordering::Relaxed),
         full: prof.full.load(Ordering::Relaxed),
+        mem_start_mb: crate::memstat::mib(mem_start),
+        mem_render_peak_mb: crate::memstat::mib(mem_render),
+        mem_stream_mb: crate::memstat::mib(mem_stream),
+        mem_mux_peak_mb: crate::memstat::mib(mem_mux),
     };
     if opts.profile {
         eprintln!(
-            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting, or nested parallel work in shaders/3D/post: not counted per stage)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
+            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting, or nested parallel work in shaders/3D/post: not counted per stage)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms\n  memory  {:.0} MiB at start, peak {:.0} MiB rendering, stream {:.1} MiB, peak {:.0} MiB muxing (resident)",
             unchanged,
             sp.held,
             sp.partial,
             sp.full,
             1000.0 / wall,
-            sp.mux_ms
+            sp.mux_ms,
+            sp.mem_start_mb,
+            sp.mem_render_peak_mb,
+            sp.mem_stream_mb,
+            sp.mem_mux_peak_mb
         );
     }
     Ok(Summary {

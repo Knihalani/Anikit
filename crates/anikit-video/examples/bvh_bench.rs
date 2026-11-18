@@ -24,9 +24,18 @@ fn rays(n: usize, lo: V3, hi: V3) -> Vec<(V3, V3)> {
 }
 
 fn main() {
+    {
+        // Build time on a dense mesh (640k triangles).
+        let m = anikit_core::raster::sphere(400, 800);
+        let c = Instant::now();
+        let b = Bvh::new(&m.pos, &m.nrm, &m.idx);
+        println!("dense sphere ({} tris): built in {:.0} ms", b.tris.len(), c.elapsed().as_secs_f64() * 1e3);
+    }
     let meshes = [("slab", geom::rounded_box([1.6, 0.9, 0.008], 0.027, 0.0024)), ("glass", geom::text("GLASS", "Inter", 800.0, 0.02, 0.22, 0.06, 0.0099, 0.0).unwrap()), ("text", geom::text("ANIKIT", "", 700.0, 0.0, 1.0, 0.34, 0.045, 0.0).unwrap()), ("torus", geom::torus(0.7, 0.112))];
     for (name, m) in meshes {
+        let c = Instant::now();
         let b = Bvh::with_uv(&m.pos, &m.nrm, &m.uv, &m.idx);
+        println!("{name}: built in {:.1} ms", c.elapsed().as_secs_f64() * 1e3);
         let rs = rays(1_000_000, b.lo, b.hi);
         for rep in 0..2 {
             let c = Instant::now();

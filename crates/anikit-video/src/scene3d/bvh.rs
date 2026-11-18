@@ -1,10 +1,11 @@
 //! Triangle bounding-volume hierarchy for the `scene3d` ray tracer.
 //!
-//! Built once per mesh in object space (binned SAH, 12 bins, ≤ 4 triangles
-//! per leaf). Objects move rigidly, so a moving object only changes the
+//! Built once per mesh in object space (binned SAH with spatial splits, see
+//! [`super::kernel::sbvh`]). Objects move rigidly, so a moving object only changes the
 //! object-to-world transform its rays are mapped through; the hierarchy is
 //! never rebuilt per frame.
 
+use super::kernel::sbvh;
 use super::kernel::wide::{BNode as Node, Boxes8, Mesh8};
 use super::math::*;
 
@@ -71,97 +72,8 @@ impl Bvh {
             tris.push(Tri { v0: a, e1, e2, n: [fix(nn(t[0])), fix(nn(t[1])), fix(nn(t[2]))], uv: [tc(t[0]), tc(t[1]), tc(t[2])] });
         }
         let n = tris.len();
-        let cent: Vec<V3> = tris.iter().map(|t| add(t.v0, scale(add(t.e1, t.e2), 1.0 / 3.0))).collect();
-        let tlo: Vec<V3> = tris.iter().map(|t| vmin(t.v0, vmin(add(t.v0, t.e1), add(t.v0, t.e2)))).collect();
-        let thi: Vec<V3> = tris.iter().map(|t| vmax(t.v0, vmax(add(t.v0, t.e1), add(t.v0, t.e2)))).collect();
-        let mut order: Vec<u32> = (0..n as u32).collect();
-        let mut nodes = vec![Node { lo: v3(0.0, 0.0, 0.0), hi: v3(0.0, 0.0, 0.0), first: 0, count: n as u32 }];
-        let mut stack = vec![0usize];
-        while let Some(ni) = stack.pop() {
-            let (first, count) = (nodes[ni].first as usize, nodes[ni].count as usize);
-            let (mut lo, mut hi) = (v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN));
-            let (mut clo, mut chi) = (lo, hi);
-            for &i in &order[first..first + count] {
-                lo = vmin(lo, tlo[i as usize]);
-                hi = vmax(hi, thi[i as usize]);
-                clo = vmin(clo, cent[i as usize]);
-                chi = vmax(chi, cent[i as usize]);
-            }
-            nodes[ni].lo = lo;
-            nodes[ni].hi = hi;
-            if count <= 4 {
-                continue;
-            }
-            // Binned SAH over the longest centroid axis.
-            let ext = sub(chi, clo);
-            let axis = if ext.x >= ext.y && ext.x >= ext.z { 0 } else if ext.y >= ext.z { 1 } else { 2 };
-            let (amin, aext) = (get(clo, axis), get(ext, axis));
-            if aext < 1e-9 {
-                continue;
-            }
-            const B: usize = 12;
-            let mut bins = [(0u32, v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN)); B];
-            let bin_of = |i: u32| (((get(cent[i as usize], axis) - amin) / aext * B as f32) as usize).min(B - 1);
-            for &i in &order[first..first + count] {
-                let b = &mut bins[bin_of(i)];
-                b.0 += 1;
-                b.1 = vmin(b.1, tlo[i as usize]);
-                b.2 = vmax(b.2, thi[i as usize]);
-            }
-            let area = |lo: V3, hi: V3| {
-                let d = sub(hi, lo);
-                d.x * d.y + d.y * d.z + d.z * d.x
-            };
-            let mut best = (f32::MAX, 0usize);
-            for s in 1..B {
-                let (mut ln, mut ll, mut lh) = (0u32, v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN));
-                for b in &bins[..s] {
-                    ln += b.0;
-                    if b.0 > 0 {
-                        ll = vmin(ll, b.1);
-                        lh = vmax(lh, b.2);
-                    }
-                }
-                let (mut rn, mut rl, mut rh) = (0u32, v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN));
-                for b in &bins[s..] {
-                    rn += b.0;
-                    if b.0 > 0 {
-                        rl = vmin(rl, b.1);
-                        rh = vmax(rh, b.2);
-                    }
-                }
-                if ln == 0 || rn == 0 {
-                    continue;
-                }
-                let c = ln as f32 * area(ll, lh) + rn as f32 * area(rl, rh);
-                if c < best.0 {
-                    best = (c, s);
-                }
-            }
-            let leaf_cost = count as f32 * area(lo, hi);
-            if best.0 >= leaf_cost && count <= 16 {
-                continue;
-            }
-            let split = if best.0 == f32::MAX { B / 2 } else { best.1 };
-            let slice = &mut order[first..first + count];
-            let mut m = 0;
-            for k in 0..slice.len() {
-                if bin_of(slice[k]) < split {
-                    slice.swap(k, m);
-                    m += 1;
-                }
-            }
-            if m == 0 || m == count {
-                m = count / 2;
-            }
-            let l = nodes.len();
-            nodes.push(Node { lo, hi, first: first as u32, count: m as u32 });
-            nodes.push(Node { lo, hi, first: (first + m) as u32, count: (count - m) as u32 });
-            nodes[ni].first = l as u32;
-            nodes[ni].count = 0;
-            stack.push(l);
-            stack.push(l + 1);
-        }
+        let verts: Vec<[V3; 3]> = tris.iter().map(|t| [t.v0, add(t.v0, t.e1), add(t.v0, t.e2)]).collect();
+        let (nodes, order) = sbvh::build(&verts);
         let tris: Vec<Tri> = order.iter().map(|&i| tris[i as usize]).collect();
         let (lo, hi) = if n == 0 { (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) } else { (nodes[0].lo, nodes[0].hi) };
         let geo: Vec<(V3, V3, V3)> = tris.iter().map(|t| (t.v0, t.e1, t.e2)).collect();
@@ -351,6 +263,49 @@ mod tests {
             assert_eq!(b.occluded(o, d, 1e-4, 1e9), best.is_some());
             let two = b.intersect2(o, d, 1e-4, 1e9);
             assert_eq!(two.is_some(), best.is_some());
+        }
+    }
+
+    /// Long thin triangles take spatial splits (references duplicated):
+    /// hits must still match a brute-force search over the original mesh.
+    #[test]
+    fn spatial_splits_match_brute_force() {
+        // A fan of long slivers across a thin slab, plus a few small ones.
+        let (mut pos, mut idx) = (Vec::new(), Vec::new());
+        let mut seed = 7u32;
+        let mut rnd = || {
+            seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+            (seed >> 8) as f32 / (1u32 << 24) as f32
+        };
+        for _ in 0..400 {
+            let (y, z) = (rnd() * 0.2, rnd() * 0.05);
+            let base = (pos.len() / 3) as u32;
+            pos.extend_from_slice(&[-2.0, y, z, 2.0, y + rnd() * 0.01, z, rnd() * 4.0 - 2.0, y + 0.01, z + rnd() * 0.02]);
+            idx.extend_from_slice(&[base, base + 1, base + 2]);
+        }
+        let b = Bvh::new(&pos, &[], &idx);
+        let orig: Vec<Tri> = idx
+            .chunks_exact(3)
+            .map(|t| {
+                let p = |i: u32| v3(pos[i as usize * 3], pos[i as usize * 3 + 1], pos[i as usize * 3 + 2]);
+                let a = p(t[0]);
+                Tri { v0: a, e1: sub(p(t[1]), a), e2: sub(p(t[2]), a), n: [a; 3], uv: [[0.0; 2]; 3] }
+            })
+            .collect();
+        assert!(b.tris.len() > orig.len(), "expected spatial splits to duplicate some triangles");
+        for _ in 0..2000 {
+            let o = v3(rnd() * 4.0 - 2.0, rnd() * 0.4 - 0.1, 1.0);
+            let d = norm(v3(rnd() * 0.4 - 0.2, rnd() * 0.2 - 0.1, -1.0));
+            let mut best: Option<f32> = None;
+            for t in &orig {
+                if let Some((t, _, _)) = tri_hit(t, o, d, 1e-4, best.unwrap_or(1e9)) {
+                    best = Some(t);
+                }
+            }
+            let fast = b.intersect(o, d, 1e-4, 1e9);
+            assert_eq!(fast.map(|h| h.t), best);
+            assert_eq!(b.occluded(o, d, 1e-4, 1e9), best.is_some());
+            assert_eq!(b.intersect2(o, d, 1e-4, 1e9), best);
         }
     }
 }

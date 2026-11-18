@@ -1,0 +1,510 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 3,
+   "transition": "cut",
+   "scene3d": {
+    "env": "studio",
+    "rig": {
+     "preset": "product",
+     "animate": "reveal",
+     "duration": 2.6
+    },
+    "set": {
+     "preset": "plinth",
+     "color": "#1E1F23"
+    },
+    "camera": {
+     "lens": "macro100",
+     "shake": "breath",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.5,
+        0.62,
+        3.4
+       ],
+       "target": [
+        0,
+        0.5,
+        0
+       ],
+       "fstop": 4
+      },
+      {
+       "t": 3,
+       "pos": [
+        0.25,
+        0.58,
+        2.9
+       ],
+       "target": [
+        0,
+        0.48,
+        0
+       ],
+       "fstop": 4
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "hero",
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.17,
+        0.0
+       ],
+       [
+        0.2,
+        0.03
+       ],
+       [
+        0.2,
+        0.55
+       ],
+       [
+        0.16,
+        0.68
+       ],
+       [
+        0.07,
+        0.78
+       ],
+       [
+        0.07,
+        0.9
+       ],
+       [
+        0.0,
+        0.9
+       ]
+      ],
+      "segments": 128,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "material": {
+       "extends": "aluminium",
+       "base": "#C9CDD2",
+       "roughness": 0.2,
+       "imperfections": 0.3
+      }
+     }
+    ]
+   },
+   "layers": []
+  },
+  {
+   "duration": 3,
+   "transition": "cut",
+   "scene3d": {
+    "env": "studio",
+    "rig": {
+     "preset": "rim",
+     "beam": true,
+     "ratio": 6
+    },
+    "set": {
+     "preset": "field",
+     "color": "#6A6E78"
+    },
+    "camera": {
+     "lens": "normal35",
+     "shake": "shoulder",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        1.6,
+        0.9,
+        6.0
+       ],
+       "target": [
+        0,
+        0.35,
+        0
+       ]
+      },
+      {
+       "t": 3,
+       "pos": [
+        2.3,
+        2.4,
+        6.4
+       ],
+       "target": [
+        0,
+        0.4,
+        0
+       ]
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "sphere",
+      "name": "orb",
+      "radius": 0.45,
+      "pos": [
+       0,
+       0.45,
+       0
+      ],
+      "material": {
+       "extends": "chrome",
+       "imperfections": 0.2
+      }
+     }
+    ]
+   },
+   "layers": []
+  },
+  {
+   "duration": 3,
+   "transition": "cut",
+   "scene3d": {
+    "env": "cyc",
+    "rig": "rembrandt",
+    "look": "clay",
+    "set": {
+     "preset": "sweep",
+     "color": "#C8664A"
+    },
+    "camera": {
+     "lens": "portrait85",
+     "shake": "handheld",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        1.4,
+        1.0,
+        6.4
+       ],
+       "target": [
+        0,
+        0.4,
+        0
+       ]
+      },
+      {
+       "t": 3,
+       "pos": [
+        1.0,
+        0.85,
+        5.2
+       ],
+       "target": [
+        0,
+        0.4,
+        0
+       ]
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "hero",
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.17,
+        0.0
+       ],
+       [
+        0.2,
+        0.03
+       ],
+       [
+        0.2,
+        0.55
+       ],
+       [
+        0.16,
+        0.68
+       ],
+       [
+        0.07,
+        0.78
+       ],
+       [
+        0.07,
+        0.9
+       ],
+       [
+        0.0,
+        0.9
+       ]
+      ],
+      "segments": 128,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "color": "#F2E8D8"
+     },
+     {
+      "type": "sphere",
+      "radius": 0.18,
+      "pos": [
+       0.55,
+       0.18,
+       0.3
+      ],
+      "color": "#2F4858"
+     },
+     {
+      "type": "box",
+      "size": [
+       0.32,
+       0.32,
+       0.32
+      ],
+      "pos": [
+       -0.55,
+       0.16,
+       -0.1
+      ],
+      "rot": [
+       0,
+       30,
+       0
+      ],
+      "color": "#F3B562"
+     }
+    ]
+   },
+   "layers": []
+  },
+  {
+   "duration": 3,
+   "transition": "cut",
+   "scene3d": {
+    "env": "studio",
+    "rig": {
+     "preset": "window",
+     "beam": true
+    },
+    "floor": {
+     "color": "#77726C",
+     "roughness": 0.45,
+     "reflect": 0.25
+    },
+    "camera": {
+     "lens": "normal50",
+     "shake": "breath",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        -0.9,
+        1.0,
+        4.8
+       ],
+       "target": [
+        0,
+        0.4,
+        0
+       ],
+       "fstop": 5.6
+      },
+      {
+       "t": 3,
+       "pos": [
+        0.6,
+        0.95,
+        4.6
+       ],
+       "target": [
+        0,
+        0.4,
+        0
+       ],
+       "fstop": 5.6
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "hero",
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.17,
+        0.0
+       ],
+       [
+        0.2,
+        0.03
+       ],
+       [
+        0.2,
+        0.55
+       ],
+       [
+        0.16,
+        0.68
+       ],
+       [
+        0.07,
+        0.78
+       ],
+       [
+        0.07,
+        0.9
+       ],
+       [
+        0.0,
+        0.9
+       ]
+      ],
+      "segments": 128,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "material": {
+       "extends": "ceramic",
+       "base": "#E6DED2",
+       "roughness": 0.3
+      }
+     },
+     {
+      "type": "sphere",
+      "radius": 0.16,
+      "pos": [
+       0.62,
+       0.16,
+       0.3
+      ],
+      "material": "chrome"
+     },
+     {
+      "type": "box",
+      "size": [
+       0.3,
+       0.3,
+       0.3
+      ],
+      "pos": [
+       -0.62,
+       0.15,
+       -0.1
+      ],
+      "rot": [
+       0,
+       25,
+       0
+      ],
+      "material": {
+       "extends": "plastic",
+       "base": "#C2462E"
+      }
+     }
+    ]
+   },
+   "layers": []
+  },
+  {
+   "duration": 3.5,
+   "transition": "cut",
+   "scene3d": {
+    "env": "studio",
+    "rig": {
+     "preset": "product",
+     "animate": "sweep",
+     "duration": 3.5
+    },
+    "set": {
+     "preset": "plinth",
+     "color": "#2A2B30"
+    },
+    "camera": {
+     "lens": "portrait85",
+     "shake": "breath",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        -1.6,
+        1.5,
+        9.5
+       ],
+       "target": [
+        0,
+        0.15,
+        0
+       ],
+       "focus": "logo",
+       "fstop": 4
+      },
+      {
+       "t": 3.5,
+       "pos": [
+        1.2,
+        1.2,
+        8.8
+       ],
+       "target": [
+        0,
+        0.15,
+        0
+       ],
+       "focus": "logo",
+       "fstop": 4
+      }
+     ]
+    },
+    "objects": [
+     {
+      "text": "ANIKIT",
+      "name": "logo",
+      "height": 0.42,
+      "material": {
+       "extends": "chrome",
+       "imperfections": 0.25
+      }
+     },
+     {
+      "type": "sphere",
+      "radius": 0.16,
+      "pos": [
+       0.95,
+       0.16,
+       0.55
+      ],
+      "material": {
+       "extends": "glass",
+       "smudges": 0.4
+      }
+     }
+    ]
+   },
+   "layers": []
+  }
+ ]
+}
