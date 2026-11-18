@@ -31,15 +31,12 @@ def stencil(text, h, shadow_xz, d, height, t0, slide, weight=650, extra=None):
 
 CUP = [
     # Saucer and cup: turned profiles, glazed porcelain.
-    {"type": "lathe", "points": [[0.0, 0.0], [0.05, 0.0], [0.075, 0.008], [0.08, 0.013], [0.074, 0.012], [0.05, 0.006], [0.0, 0.006]], "segments": 96,
-     "pos": [0, 0, 0], "material": {"base": "#F4F1EA", "roughness": 0.12, "clearcoat": 1.0}},
-    {"type": "lathe", "points": [[0.0, 0.0065], [0.026, 0.0065], [0.03, 0.012], [0.04, 0.03], [0.047, 0.07], [0.049, 0.079], [0.046, 0.08], [0.044, 0.07], [0.037, 0.03], [0.028, 0.016], [0.0, 0.016]],
-     "segments": 96, "pos": [0, 0, 0], "material": {"base": "#F4F1EA", "roughness": 0.1, "clearcoat": 1.0}},
-    {"type": "torus", "radius": 0.016, "tube": 0.0035, "pos": [0.053, 0.05, 0], "rot": [90, 0, 0], "material": {"base": "#F4F1EA", "roughness": 0.1, "clearcoat": 1.0}},
+    # A cupping bowl: wide, low, stoneware.
+    {"type": "lathe", "points": [[0.0, 0.0065], [0.03, 0.0065], [0.036, 0.012], [0.05, 0.03], [0.058, 0.056], [0.06, 0.062], [0.057, 0.063], [0.055, 0.056], [0.046, 0.03], [0.032, 0.016], [0.0, 0.016]],
+     "segments": 128, "pos": [0, 0, 0], "material": {"base": "#E9E2D6", "roughness": 0.35, "clearcoat": 0.4}},
     # The coffee: a dark mirror with a crema ring.
-    {"type": "cylinder", "radius": 0.0438, "height": 0.001, "pos": [0, 0.067, 0], "material": {"base": "#140904", "roughness": 0.03, "clearcoat": 1.0, "specular": 1.3}},
-    {"type": "torus", "radius": 0.0425, "tube": 0.0016, "pos": [0, 0.0675, 0], "material": {"base": "#9A5A2C", "roughness": 0.6}},
-    {"type": "model", "src": "polyhaven:model/wooden_spoon", "height": 0.012, "scale": 1, "pos": [0.0, 0.009, 0.06], "rot": [0, 70, 0]},
+    {"type": "cylinder", "radius": 0.0545, "height": 0.001, "pos": [0, 0.053, 0], "material": {"base": "#1E0E06", "roughness": 0.38, "clearcoat": 0.25, "specular": 0.6}},
+    {"type": "model", "src": "polyhaven:model/wooden_spoon", "height": 0.012, "scale": 1, "pos": [0.02, 0.009, 0.085], "rot": [0, 70, 0]},
 ]
 
 def steam(seed):
@@ -58,12 +55,13 @@ def cam(t, az, dist, el, focal, fs=4.0, tgt=(0.0, 0.03, 0.06)):
 # 0.9 s and holds; the light takes the note's colour, the camera never repeats.
 # (start, word, size, light colour, sun az/el, camera az0→az1, dist, elevation, focal, target, word centre)
 SHOTS = [
-    (0.0, "bergamot", 0.042, "#F7F08A", (200, 36), (-14, -6), 0.34, 60, 50, (0.0, 0.03, 0.07), (0.0, 0.12)),
-    (2.5, "peach", 0.058, "#FF9C78", (206, 32), (8, 16), 0.26, 32, 50, (0.02, 0.01, 0.12), (0.03, 0.13)),
-    (5.0, "black tea", 0.06, "#E2661E", (212, 30), (-20, -10), 0.5, 84, 45, (0.0, 0.0, 0.09), (0.0, 0.14)),
-    (7.5, "washed", 0.05, "#BFD8FF", (196, 40), (26, 18), 0.36, 26, 55, (0.0, 0.02, 0.1), (0.0, 0.13)),
-    (10.0, "Ethiopia", 0.06, "#FFD08A", (204, 30), (-8, 0), 0.42, 52, 50, (0.0, 0.02, 0.08), (0.0, 0.13)),
-    (12.5, "Guji", 0.12, "#FFB45E", (214, 26), (4, 10), 0.62, 62, 45, (0.0, 0.02, 0.1), (0.0, 0.17)),
+    # Scale contrast: small and placed, then huge and cropped by the frame, words running over the bowl.
+    (0.0, "bergamot", 0.04, "#F4EBA0", (200, 40), (-14, -6), 0.36, 62, 50, (0.0, 0.02, 0.06), (0.0, 0.12)),
+    (2.5, "peach", 0.16, "#FFB89A", (206, 38), (8, 14), 0.42, 74, 50, (0.0, 0.0, 0.04), (0.0, 0.03)),
+    (5.0, "black tea", 0.05, "#F09048", (212, 34), (-24, -14), 0.5, 86, 45, (0.06, 0.0, 0.09), (0.07, 0.15)),
+    (7.5, "washed", 0.11, "#E4ECF4", (196, 44), (22, 30), 0.3, 58, 50, (0.0, 0.0, 0.12), (0.0, 0.14)),
+    (10.0, "Ethiopia", 0.03, "#FFD69A", (204, 36), (-6, 2), 0.22, 66, 60, (0.0, 0.02, 0.07), (0.0, 0.11)),
+    (12.5, "Guji", 0.2, "#FFBE74", (214, 32), (6, 10), 0.72, 68, 45, (0.0, 0.02, 0.12), (0.0, 0.2)),
 ]
 scenes = []
 for i, (t0, word, h, col, (az, el), (c0, c1), dist, cel, focal, tgt, at) in enumerate(SHOTS):
@@ -71,7 +69,7 @@ for i, (t0, word, h, col, (az, el), (c0, c1), dist, cel, focal, tgt, at) in enum
     dur = 2.5
     objs = [TABLE] + CUP
     props = {
-        "env": {"hdri": "polyhaven:hdri/brown_photostudio_02", "rotate": 40, "exposure": -2.0, "background": "blur", "key": False},
+        "env": {"hdri": "polyhaven:hdri/brown_photostudio_02", "rotate": 40, "exposure": -2.2, "background": "blur", "key": False},
         "lights": [{"dir": d, "size": 1.0, "color": col, "intensity": 20000, "key": True}],
         # The sun through a cut-out: the note is written in light across the table, sliding in and settling.
         "gobo": {"text": word, "font": SERIF, "weight": 600, "size": h, "at": list(at), "height": 0.3, "invert": True,
