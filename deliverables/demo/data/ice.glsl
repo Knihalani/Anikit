@@ -14,9 +14,9 @@ uniform float grow;    // = 48.0  bars revealed (fractional)
 uniform float hl;      // = -1.0  highlighted bar index
 uniform float edge;    // = 0.0   direction the water opens from, degrees (0 bottom, -90 right)
 uniform float yi;      // = -1.0  >= 0: cover follows the data, index into D (fractional = blend)
-const float CF[11] = float[11](0.0, 0.015, 0.06, 0.13, 0.24, 0.34, 0.48, 0.62, 0.74, 0.85, 0.92);
+const float CF[11] = float[11](0.000, 0.013, 0.052, 0.123, 0.232, 0.327, 0.456, 0.606, 0.729, 0.842, 0.913);
 float coverOf(float ext) {
-  float f = ext / 8.0;
+  float f = ext / 9.0;
   float c = 1.0;
   for (int k = 0; k < 10; k++) {
     if (f >= CF[k] && f < CF[k + 1]) { c = (float(k) + (f - CF[k]) / (CF[k + 1] - CF[k])) * 0.1; }
@@ -85,6 +85,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   vec2 warp = vec2(fbm(p * 0.9 + 3.1), fbm(p * 0.9 + 8.4)) - 0.5;
   vec2 q = p + warp * 0.55;
   vec3 f = floe(q, 0.0);
+  // floe sizes vary: in some regions the pack is broken into smaller floes
+  if (fract(f.y * 7.31) > 0.7 && chart < 0.5) { vec3 f2 = floe(q * 2.4 + 7.0, 0.0); f.x = min(f.x, f2.x / 2.4 + 0.007); }
   float edgeDist = f.x;                     // cell units
   // ice-edge bias: lower frame (uv.y small) melts first
   vec2 ed = vec2(sin(radians(edge)), cos(radians(edge)));
@@ -123,7 +125,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   vec3 f2 = floe(q * 4.3 + 11.0, 0.0);
   float brashAmt = clamp(1.0 - abs(margin - 0.2) * 1.6, 0.0, 1.0) * step(f2.y, 0.33) * step(0.05, cov);
   float sdB = (f2.x - 0.14 - 0.2 * fbm(q * 11.0)) / 4.3;
-  sdB = (brashAmt > 0.0 && chart < 0.5) ? sdB : -1.0;
+  if (chart > 0.5) { brashAmt = step(f2.y, 0.07) * step(uv.y, 0.135); }  // a little brash adrift below the bars
+  sdB = brashAmt > 0.0 ? sdB : -1.0;
   float px = scale / iResolution.x * 1.3;
   float ice = smoothstep(-px, px, sd);
   float iceB = smoothstep(-px, px, sdB) * (1.0 - ice);
@@ -131,11 +134,16 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   // ---- ice surface: snow height field
   float h = fbm(q * 5.0) * 0.6 + fbm(q * 23.0) * 0.25 + 0.15 * smoothstep(0.08, 0.0, abs(fbm(q * 2.3 + 5.0) - 0.5)); // ridges
   float e = 0.002 * scale;
-  float hx = fbm((q + vec2(e, 0.0)) * 5.0) * 0.6 + fbm((q + vec2(e, 0.0)) * 23.0) * 0.25;
-  float hy = fbm((q + vec2(0.0, e)) * 5.0) * 0.6 + fbm((q + vec2(0.0, e)) * 23.0) * 0.25;
-  vec3 n = normalize(vec3(-(hx - (fbm(q * 5.0) * 0.6 + fbm(q * 23.0) * 0.25)) / e * 0.016, -(hy - (fbm(q * 5.0) * 0.6 + fbm(q * 23.0) * 0.25)) / e * 0.016, 1.0));
+  // snow: soft drifts plus wind-blown sastrugi streaks (stretched noise), no paper grain
+  vec2 sq = vec2(q.x * 2.2 + q.y * 0.6, q.y * 9.0 - q.x * 1.4);
+  float h0 = fbm(q * 3.2) * 0.7 + fbm(sq) * 0.22;
+  float hx = fbm((q + vec2(e, 0.0)) * 3.2) * 0.7 + fbm(vec2((q.x + e) * 2.2 + q.y * 0.6, q.y * 9.0 - (q.x + e) * 1.4)) * 0.22;
+  float hy = fbm((q + vec2(0.0, e)) * 3.2) * 0.7 + fbm(vec2(q.x * 2.2 + (q.y + e) * 0.6, (q.y + e) * 9.0 - q.x * 1.4)) * 0.22;
+  vec3 n = normalize(vec3(-(hx - h0) / e * 0.022, -(hy - h0) / e * 0.022, 1.0));
   float diff = clamp(0.62 + 2.2 * (dot(n, L) - L.z), 0.0, 1.0);
-  vec3 snow = vec3(0.93, 0.96, 0.99);
+  // albedo: fresh snow vs older, greyer bare ice in patches
+  float age = smoothstep(0.35, 0.75, fbm(q * 1.1 + 31.0));
+  vec3 snow = mix(vec3(0.94, 0.965, 0.99), vec3(0.74, 0.82, 0.88), age * 0.55);
   vec3 iceCol = snow * (sunCol * (0.34 + 0.62 * diff) + skyCol * 0.22);
   // melt ponds: turquoise patches on floes in summer
   float pond = smoothstep(0.66, 0.70, fbm(q * 3.1 + 21.0)) * (0.5 + 0.5 * clamp(1.0 - margin, 0.0, 1.0));
@@ -143,11 +151,16 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   // thin, blue rim at the floe edge (the ice is translucent where it is thin)
   float rim = smoothstep(0.07, 0.0, sd);
   iceCol = mix(iceCol, vec3(0.55, 0.80, 0.90) * (0.7 + 0.3 * sunCol), rim * 0.55);
+  // wet, slushy margin just inside the edge, and a bright lip where the floe edge catches the light
+  float wet = smoothstep(0.045, 0.012, sd) * (1.0 - smoothstep(0.012, 0.0, sd));
+  iceCol = mix(iceCol, vec3(0.40, 0.56, 0.64) * (0.75 + 0.25 * sunCol), wet * 0.32);
+  iceCol += sunCol * 0.10 * smoothstep(0.010, 0.0, sd) * step(0.0, sd);
 
   // ---- water: dark, with sky reflection and wind ripples
   float rip = fbm(p * vec2(26.0, 34.0) + vec2(iTime * 0.5, iTime * 0.2));
   vec3 deep = mix(vec3(0.020, 0.055, 0.085), vec3(0.025, 0.030, 0.060), sun);
-  vec3 water = deep + skyCol * (0.05 + 0.03 * rip);
+  vec3 water = deep + skyCol * (0.05 + 0.03 * rip + 0.05 * uv.y);
+  water += sunCol * 0.05 * sun * smoothstep(0.55, 1.0, 1.0 - abs(uv.x - 0.25) * 1.6);
   // sun glint, strongest with a low sun
   float glint = pow(clamp(rip, 0.0, 1.0), 9.0) * (0.15 + 1.2 * sun);
   water += sunCol * glint * 0.5;
