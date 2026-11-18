@@ -8,15 +8,16 @@
 //! Notes language (tokens separated by spaces; durations attach to a token):
 //! - pitches: `C4` `Eb3` `F#5` (MIDI octave, C4 = middle C); scale degrees
 //!   `1`…`7` in the track's key with `b`/`#` prefix and `'`/`,` octave marks
-//!   (`5,` = fifth below, `3'` = third above); `r` or `-` rest; `_` holds the
-//!   previous note(s) longer.
+//!   (`5,` = fifth below, `3'` = third above; letters too: `D'`); `r` or `-` rest
+//!   (`r4` = quarter rest); `_` holds the previous note(s) longer (`_8`).
 //! - chords: symbols `Am` `Cmaj` `Cmaj7` `Cdom7` `G/B` `F#m7b5`, Roman numerals `vi` `IV` `V7`,
 //!   or explicit `[C4 E4 G4]` / `[1 3 5]`; voiced near the current octave.
 //!   A letter with an octave is a note (`C7` = C in octave 7); a bare letter is a note in
 //!   the current octave (`o7 C`). Chords need a quality: `Cmaj` `Am` `Cdom7` `[C E G]`.
 //! - durations: `/4` quarter (1 beat), `/8`, `/16`, `/2`, `/1`, `/8t` triplet;
 //!   `.` dotted; `:1.5` explicit beats. Default from `l8` / `l:0.5`.
-//! - marks: `!` accent, `?` ghost, `^` staccato, `~` legato (tied into the next onset).
+//! - marks: `!` accent, `?` ghost, `^` staccato, `~` legato (tied into the next onset);
+//!   anywhere in the token (`C4/8!` = `C4!/8` = `!C4/8`).
 //! - directives: `o3` octave, `>` `<` octave up/down, `v100` velocity (1–127),
 //!   `l16` default length, `t+2` transpose, `|` bar line (pads to the next bar),
 //!   `@5` jump to bar 5, `(…)x4` repeat.
@@ -213,8 +214,19 @@ impl Parser<'_> {
             self.t = (bar - 1.0).max(0.0) * bpb;
             return Ok(());
         }
-        // Split marks and duration off the pitch part.
-        let (head, dur, marks) = split_token(tok);
+        // Marks may sit anywhere outside brackets (`C4/8!`, `C4!/8`, `!C4`): pull them out.
+        let (clean, marks) = pull_marks(tok);
+        // Split the duration off the pitch part.
+        let (head, dur, _) = split_token(&clean);
+        // `r4` `r8.` `_2` `-16t`: a rest or hold with a bare length.
+        let bare_len: Option<String> = ["r", "_", "-"].iter().find_map(|p| {
+            let n = head.strip_prefix(p)?;
+            (dur.is_empty() && n.starts_with(|c: char| c.is_ascii_digit())).then(|| format!("/{n}"))
+        });
+        let (head, dur): (&str, &str) = match &bare_len {
+            Some(d) => (&head[..1], d.as_str()),
+            None => (head, dur),
+        };
         let (len, _) = self.duration(pos, tok, dur, "")?;
         let mut vel = self.ctx.vel;
         let mut gate = 0.92;
@@ -262,7 +274,7 @@ impl Parser<'_> {
 
     /// `dur` is the suffix (`/8.`, `:1.5`, `/8t`); `bare` a bare number for `l8`.
     fn duration(&self, pos: usize, tok: &str, dur: &str, bare: &str) -> Result<(f64, bool), String> {
-        let bad = || self.err(pos, tok, "durations: /4 (quarter), /8, /16, /2, /1, /8t (triplet), /4. (dotted) or :1.5 (beats)");
+        let bad = || self.err(pos, tok, "length after the pitch: C4/4 (quarter), /8, /16, /2, /1, /8t (triplet), /4. (dotted) or C4:1.5 (beats); rests r4 or r/4");
         let s = if !bare.is_empty() { bare } else { dur };
         if s.is_empty() {
             return Ok((self.ctx.len, false));
@@ -309,6 +321,15 @@ impl Parser<'_> {
         if let Some(k) = note_key(head) {
             return Ok(vec![k]);
         }
+        // `D'` / `C4,`: octave marks on a letter name (one octave per mark).
+        let marks_at = head.find(['\'', ',']);
+        if let Some(i) = marks_at.filter(|&i| i > 0 && head[i..].chars().all(|c| c == '\'' || c == ',')) {
+            let shift: i32 = head[i..].chars().map(|c| if c == '\'' { 12 } else { -12 }).sum();
+            let base = &head[..i];
+            if note_key(base).is_some() || crate::theory::pitch_class(base).is_some() {
+                return Ok(self.pitches(pos, tok, base)?.into_iter().map(|k| k + shift).collect());
+            }
+        }
         if crate::theory::pitch_class(head).is_some() {
             let letter = crate::theory::pitch_class(&head[..1]).unwrap_or(0);
             let acc: i32 = head[1..].chars().map(|c| if c == '#' || c == '♯' { 1 } else { -1 }).sum();
@@ -344,7 +365,7 @@ impl Parser<'_> {
                 Err(self.err(
                     pos,
                     tok,
-                    &format!("not a note, chord or directive{fix}. Notes: C5 (octave 5), C (current octave, set with o5), Eb3, F#4; chords: Cmaj Am7 Cdom7 G/B [C E G] or numerals vi IV V7; rest r; hold _; durations C5/8 C5/4. C5:1.5"),
+                    &format!("not a note, chord or directive{fix}. Write: notes C5 (octave 5), C or D' (current octave, ' up , down), Eb3, F#4; scale degrees 1 3 5 5, 3'; chords Cmaj Am7 Cdom7 G/B [C E G] or vi IV V7; rest r or r4; hold _ or _8; length after the pitch: C5/8 C5/4. C5:1.5; marks anywhere: C5/8! (accent) C5? (ghost) C5^ (staccato) C5~ (legato). Example: \"o4 C/8 E/8 G/4! r4 | Am/2 F/2\""),
                 ))
             }
         }
@@ -405,6 +426,25 @@ fn suggest(head: &str) -> String {
         return " — check the chord root (A–G, then # or b)".into();
     }
     String::new()
+}
+
+/// Remove the marks `!?^~` from anywhere outside `[…]`: (`C4/8`, `!`).
+fn pull_marks(tok: &str) -> (String, String) {
+    let (mut clean, mut marks) = (String::with_capacity(tok.len()), String::new());
+    let mut depth = 0;
+    for c in tok.chars() {
+        match c {
+            '[' => depth += 1,
+            ']' => depth -= 1,
+            _ => {}
+        }
+        if depth == 0 && matches!(c, '!' | '?' | '^' | '~') {
+            marks.push(c);
+        } else {
+            clean.push(c);
+        }
+    }
+    (clean, marks)
 }
 
 /// `C4/8.!` → (`C4`, `/8.`, `!`).
@@ -582,6 +622,38 @@ mod tests {
         assert!(e.is_empty() || e.contains("uppercase"), "{e}");
         let e = parse("H4", &ctx).unwrap_err();
         assert!(e.contains("use B") && e.contains("Cmaj"), "{e}");
+    }
+
+    #[test]
+    fn natural_orders_agents_wrote() {
+        let ctx = Ctx::default();
+        let p = |s: &str| parse(s, &ctx).unwrap_or_else(|e| panic!("{s}: {e}"));
+        // Marks before or after the length, or in front.
+        let a = p("C4/8!");
+        assert_eq!(a.0, p("C4!/8").0);
+        assert_eq!(a.0, p("!C4/8").0);
+        assert_eq!(p("D2!/8").0, p("D2/8!").0);
+        assert!(a.0[0].vel > ctx.vel);
+        // Rests and holds with a bare length.
+        assert_eq!(p("C4/4 r4 C4/4").0[1].t, 2.0);
+        assert_eq!(p("r8. C4").0[0].t, 0.75);
+        assert_eq!(p("r/4 C4").0[0].t, 1.0);
+        let h = p("C4/4 _4").0;
+        assert!(h.len() == 1 && h[0].len > 1.5, "the hold lengthens the note: {h:?}");
+        // Octave marks on letter names.
+        let k = |s: &str| p(s).0.iter().map(|n| n.key as i32).collect::<Vec<_>>();
+        assert_eq!(k("o4 D'"), vec![74]);
+        assert_eq!(k("o4 D,"), vec![50]);
+        assert_eq!(k("C4'"), vec![72]);
+        assert_eq!(k("o4 F#'/8!"), vec![78]);
+        // Degrees still work, and chords with marks.
+        assert_eq!(k("1 3'"), vec![60, 76]);
+        assert_eq!(k("[C4 E4 G4]/2!").len(), 3);
+        // Errors show the right form with an example.
+        let e = parse("Q4", &ctx).unwrap_err();
+        assert!(e.contains("r4") && e.contains("C5/8!") && e.contains("Example"), "{e}");
+        let e = parse("C4/x", &ctx).unwrap_err();
+        assert!(e.contains("C4/4") && e.contains("r4"), "{e}");
     }
 
     #[test]

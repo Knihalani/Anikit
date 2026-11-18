@@ -1,0 +1,349 @@
+{
+  "refs": [
+    "blender-studio-charge-2022",
+    "nasa-year-in-the-life-of-co2-2014",
+    "calibration-blender-sprite-fright-2021"
+  ],
+  "candidate": {
+    "motion": 4,
+    "judged_professional": "0/3",
+    "gaps": [
+      "No overshoot or settle on the type, and the type has no weight",
+      "Elements never interact: the lightning, the type and the waveform each run on their own",
+      "Dead holds on the name cards with nothing alive except the loop",
+      "Dead holds on the type: nothing settles, breathes or follows through once it lands",
+      "Transitions are pop-cuts, not built hand-offs (no morph from the lightning into the waveform or the list)",
+      "Uniform stagger with no easing variety or weight; there is no camera and no physical interaction between layers",
+      "No easing or overshoot on the type; items appear linearly, then freeze",
+      "Weak choreography: one element animates at a time while the rest holds still, with no overlap",
+      "Cuts are plain hard swaps with no match cuts, morphs or motivated wipes; the lightning never drives the transitions"
+    ]
+  },
+  "refs_summary": {
+    "calibration-blender-sprite-fright-2021": {
+      "motion": 9,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The close-up on the hand holds a fairly still pose for several frames, and the energy dips there",
+        "The cut from the close-up back to the two-shot is a plain cut, not a built transition",
+        "Acting is pushed but stays within house-style poses; it lacks one standout weight beat",
+        "Best entry; the insert-shot section holds a little long with mostly small motion",
+        "One dark blur frame in the transition reads briefly muddy",
+        "Reaction poses at the end hold near-static for a beat",
+        "A dark, near-empty frame in the second strip briefly loses readability during the push",
+        "The vine's creep is fairly even in spacing across several frames before the cut",
+        "Heavy motion-blur smears in the chase make some poses hard to read at 10 fps"
+      ]
+    },
+    "nasa-year-in-the-life-of-co2-2014": {
+      "motion": 2,
+      "judged_professional": "0/3",
+      "gaps": [
+        "No authored timing, easing or emphasis anywhere",
+        "No camera language: no push-ins, reframes or focus to guide the eye",
+        "No hierarchy and no handoffs between elements; it is all uniform fluid drift",
+        "No designed spacing: everything moves at simulation speed, with no anticipation, overshoot or settle",
+        "No camera moves, cuts or transitions to direct attention",
+        "No hierarchy or hand-off between elements; the motion is uniform texture, not staging",
+        "No authored spacing or easing at all; the timing is set by data playback",
+        "No camera language or transitions: one locked frame, no cuts",
+        "No focal hierarchy or handoff; the whole frame changes evenly and nothing leads the eye"
+      ]
+    },
+    "blender-studio-charge-2022": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Strip 2 leans on blur and darkness, so the arcs of the action read less clearly",
+        "The character's face stays fairly still while the sparks do all the moving; the acting is underplayed",
+        "Fewer clear choreographic handoffs between elements than in A",
+        "Face close-up is held fairly static under the sparks, with less character performance than C",
+        "The transition to the next shot is a blur/dark smash rather than a clearly designed match or hand-off",
+        "Some frames read as murky camera shake; the readability of the action beats is weaker than C's staging",
+        "The face shot runs about 0.7 s with little change in the performance; the sparks carry the life",
+        "The ending settle on the mech close-up drifts slightly rather than landing a clear hit",
+        "Less character-driven squash, overlap and secondary action than C"
+      ]
+    }
+  },
+  "ref_mean": 6.33,
+  "trials": [
+    {
+      "key": {
+        "A": "calibration-blender-sprite-fright-2021",
+        "B": "candidate",
+        "C": "nasa-year-in-the-life-of-co2-2014",
+        "D": "blender-studio-charge-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 8,
+            "tells": [
+              "Whip-pan camera with motion blur carries the eye from character to character instead of cutting",
+              "Staggered, overlapping reactions: each character's head, hair and arms lead and trail at different rates",
+              "Hair and clothing keep moving after the body stops (follow-through)",
+              "Insert close-ups on hand, thorn and blood are cut to the beat and timed for comedy",
+              "Every frame has something moving: foreground foliage, the glowing creature, the boombox swinging into frame"
+            ],
+            "gaps": [
+              "The close-up on the hand holds a fairly still pose for several frames, and the energy dips there",
+              "The cut from the close-up back to the two-shot is a plain cut, not a built transition",
+              "Acting is pushed but stays within house-style poses; it lacks one standout weight beat"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Sparks follow physical paths: ballistic arcs, streaks from motion blur, varied life spans",
+              "Camera breathes like a handheld shot, with rack focus and depth of field telling you where to look",
+              "Mech limbs move with mass: wind-up, impact, then a short settle",
+              "Cuts go from close-up to wide on the action beat, with foreground pieces wiping across frame"
+            ],
+            "gaps": [
+              "Strip 2 leans on blur and darkness, so the arcs of the action read less clearly",
+              "The character's face stays fairly still while the sparks do all the moving; the acting is underplayed",
+              "Fewer clear choreographic handoffs between elements than in A"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "motion": 4,
+            "tells": [
+              "Name cards pop on and then hold, with only a voltage counter ticking",
+              "The lightning is a looping stock-style overlay that has no relationship to the type",
+              "List items arrive one per beat with the same fade and slide, a template stagger with no easing variety",
+              "Transitions are hard cuts or flash frames, not intent-driven morphs or match cuts",
+              "The header slides in linearly from the top and stops dead"
+            ],
+            "gaps": [
+              "No overshoot or settle on the type, and the type has no weight",
+              "Elements never interact: the lightning, the type and the waveform each run on their own",
+              "Dead holds on the name cards with nothing alive except the loop"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "motion": 2,
+            "tells": [
+              "Motion is simulation output played back at a constant rate, with no authored easing",
+              "Frame changes are minimal and uniform; the date counter ticks mechanically",
+              "No camera move, no cut design and no choreography: one locked-off full-frame map",
+              "The overlay UI (logo, legend, date) is completely static"
+            ],
+            "gaps": [
+              "No authored timing, easing or emphasis anywhere",
+              "No camera language: no push-ins, reframes or focus to guide the eye",
+              "No hierarchy and no handoffs between elements; it is all uniform fluid drift"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 24.9,
+        "cost_usd": 0.1488464,
+        "tokens": 69900,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "nasa-year-in-the-life-of-co2-2014",
+        "B": "candidate",
+        "C": "calibration-blender-sprite-fright-2021",
+        "D": "blender-studio-charge-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 2,
+            "tells": [
+              "Data-driven fluid simulation advancing at a constant rate with no authored easing or acceleration",
+              "Locked-off camera on a fixed equirectangular map for both strips; no camera language at all",
+              "Date counter ticks mechanically; the overlay UI (logo, legend, bar) is frozen in every frame",
+              "Busiest moments look the same as any other moment, so there is no rhythm or emphasis",
+              "Field is alive everywhere, but only as procedural turbulence, not choreography"
+            ],
+            "gaps": [
+              "No designed spacing: everything moves at simulation speed, with no anticipation, overshoot or settle",
+              "No camera moves, cuts or transitions to direct attention",
+              "No hierarchy or hand-off between elements; the motion is uniform texture, not staging"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "motion": 4,
+            "tells": [
+              "Hard cuts between yellow and black cards with no match cut or motivated transition",
+              "Name type holds static across many frames while only a looping lightning element jitters behind it",
+              "List rows add one per frame with a simple fade/slide-in and identical timing: a template stagger",
+              "Header 'ALL CIRCUITS LIVE' slides in linearly from the left and freezes",
+              "kV counter increments as a number tick; the waveform is a generic looping overlay"
+            ],
+            "gaps": [
+              "Dead holds on the type: nothing settles, breathes or follows through once it lands",
+              "Transitions are pop-cuts, not built hand-offs (no morph from the lightning into the waveform or the list)",
+              "Uniform stagger with no easing variety or weight; there is no camera and no physical interaction between layers"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Whip-pan camera with motion blur hands focus from character to character and carries momentum through the cut",
+              "Strong anticipation and follow-through: hair, clothes and limbs drag and overlap as the characters recoil",
+              "Smear and blur frames on fast actions, and the boombox swing lands with weight",
+              "Second strip cuts in to a hand/wrist insert, with a slow push and secondary action (thorn, scratch, bleed), then a clean cut back to a reaction two-shot",
+              "Something is alive in every frame: eyes, mouths and the glowing creature keep acting even in the holds"
+            ],
+            "gaps": [
+              "Best entry; the insert-shot section holds a little long with mostly small motion",
+              "One dark blur frame in the transition reads briefly muddy",
+              "Reaction poses at the end hold near-static for a beat"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Sparks follow physical trajectories with motion blur and varied speeds; the particle work has real weight",
+              "Focus pull and shallow depth of field hand attention from the grinder to the face",
+              "Handheld-feel camera with micro-drift keeps every frame alive",
+              "Mech arm and robot head have mass: a fast whip with blur, then a cut on action into the next shot",
+              "Second strip uses foreground occlusion and a parallax camera move as the robot rises into frame"
+            ],
+            "gaps": [
+              "Face close-up is held fairly static under the sparks, with less character performance than C",
+              "The transition to the next shot is a blur/dark smash rather than a clearly designed match or hand-off",
+              "Some frames read as murky camera shake; the readability of the action beats is weaker than C's staging"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "D",
+          "B",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 27.1,
+        "cost_usd": 0.142183,
+        "tokens": 69988,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "nasa-year-in-the-life-of-co2-2014",
+        "C": "calibration-blender-sprite-fright-2021",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Spark particles have real physics: varied velocities, motion-blurred streaks, gravity arcs and different lifetimes",
+              "Handheld-feel camera with small drifts and rack-focus pulls between the grinder and the face",
+              "Robot strip: the arm whips past the lens and its motion blur works as a wipe into the reverse shot (an intentional transition)",
+              "The arm swings through frame with clear acceleration and the mech head turns with weight; the background figure keeps reacting"
+            ],
+            "gaps": [
+              "The face shot runs about 0.7 s with little change in the performance; the sparks carry the life",
+              "The ending settle on the mech close-up drifts slightly rather than landing a clear hit",
+              "Less character-driven squash, overlap and secondary action than C"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "motion": 2,
+            "tells": [
+              "Simulation data played back at a constant rate; the date counter steps linearly",
+              "No easing, camera, cuts or choreography; a locked-off equirectangular frame throughout",
+              "Change between frames is small, diffuse fluid drift with no authored timing or accents",
+              "Static overlay UI (logo, legend, date) never animates"
+            ],
+            "gaps": [
+              "No authored spacing or easing at all; the timing is set by data playback",
+              "No camera language or transitions: one locked frame, no cuts",
+              "No focal hierarchy or handoff; the whole frame changes evenly and nothing leads the eye"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Whip-pan and character handoffs: the camera passes one fleeing character to the next, overlapping in depth",
+              "Strong anticipation and follow-through: hair and clothing drag, the boombox swings in with an arc and overshoot",
+              "The vine-on-wrist shot uses tight close-up staging, a slow creep with easing, then a hard cut to the reaction",
+              "Expressive acting changes in the faces; nothing is held dead and background foliage smears with the motion"
+            ],
+            "gaps": [
+              "A dark, near-empty frame in the second strip briefly loses readability during the push",
+              "The vine's creep is fairly even in spacing across several frames before the cut",
+              "Heavy motion-blur smears in the chase make some poses hard to read at 10 fps"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "motion": 4,
+            "tells": [
+              "Name cards hard-cut or pop between yellow and black layouts with no transition design",
+              "The lightning bolt jitters procedurally while the type holds rigidly for about 1 s (a dead hold apart from noise)",
+              "List items fade or slide in one per frame in a strictly sequential, evenly spaced stagger: a template text-animator look",
+              "The kV counter ticks randomly; the waveform line wobbles generically and nothing interacts with the type"
+            ],
+            "gaps": [
+              "No easing or overshoot on the type; items appear linearly, then freeze",
+              "Weak choreography: one element animates at a time while the rest holds still, with no overlap",
+              "Cuts are plain hard swaps with no match cuts, morphs or motivated wipes; the lightning never drives the transitions"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 25.1,
+        "cost_usd": 0.1395432,
+        "tokens": 69860,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.431
+}

@@ -16,7 +16,7 @@ A scene string is a title card (`"Title | subtitle"`); a layer string is centred
 
 | Kind | Write |
 |---|---|
-| time | `1.5` · `"1.5s"` · `"500ms"` · `"12f"` · `"@marker"` · `"@marker+0.2"` |
+| time | `1.5` · `"1.5s"` · `"500ms"` · `"12f"` · `"@marker"` · `"@marker+0.2"` · `"@beat17"` `"@bar5+0.25"` · `"2 beats"` · arithmetic `"=12 / fps"` (fixed at load: no `t`) |
 | length | `120` (px) · `"50%"` (of parent) · `"10vw"` · `"8vh"` · `"5vmin"` |
 | colour | `"#7c5cff"` · `"#fff8"` · `"oklch(70% 0.15 250)"` · `"$primary"` · `"linear-gradient(135deg, $primary, $accent)"` |
 | expression | `"=960 + 300 * sin(t * 2)"` (vars `t T gt p i n w h fps frame beat bar level bpm`; `c ? a : b`, `&& ||`; `sin mix remap smoothstep ease noise rand …`). Colours too: `"=hsl(t * 60, 70, 55)"`, `"=mix($primary, $accent, level)"`. See [`authoring.md`](authoring.md) |
@@ -98,7 +98,7 @@ anikit-video check  spec.json [--json]          errors and warnings with paths a
 anikit-video still  spec.json --at 2.5 -o f.png [--width 640] [--watch]
 anikit-video sheet  spec.json -o sheet.png [--frames 12]
 anikit-video render spec.json -o out.mp4 [--quality draft|standard|high] [--from 2 --to 5] [--profile]
-anikit-video beats  music.wav [--json]           tempo, beat and bar times ("@beatN" / "@barN")
+anikit-video beats  music.wav|spec.json [--json] tempo, beat and bar times ("@beatN" / "@barN"); a spec gives its score's exact grid
 ```
 
 `--json` prints one compact line, for example `{"ok":false,"errors":["scenes[0].layers[1].type: unknown layer type 'txt', did you mean 'text'?"],"warnings":[]}`. Output by extension: `.mp4` (our ak264 encoder; x264 with `--quality high`), `.webm`, `.mov`, `.gif`, `.png` sequence.

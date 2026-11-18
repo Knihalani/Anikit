@@ -1,0 +1,347 @@
+{
+  "refs": [
+    "blender-studio-charge-2022",
+    "nasa-year-in-the-life-of-co2-2014",
+    "calibration-blender-spring-2019"
+  ],
+  "candidate": {
+    "motion": 4,
+    "judged_professional": "0/3",
+    "gaps": [
+      "No easing hierarchy: everything moves at one tempo with no anticipation or settle",
+      "No physicality, depth or parallax; it is a flat 2D transform",
+      "Choreography is algorithmic repetition rather than authored handoffs and follow-through",
+      "No easing curves, so the camera/scale move lacks acceleration and a landing",
+      "No physical weight or follow-through on elements",
+      "Changes run in procedural unison instead of overlapping and handing off",
+      "No weight, overshoot or settle on the tile flips and morphs",
+      "No choreography: all tiles change uniformly instead of in cascades or handoffs",
+      "No camera language beyond a mechanical scale change"
+    ]
+  },
+  "refs_summary": {
+    "calibration-blender-spring-2019": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The busiest moment is still restrained, with low-amplitude movement and few big accents compared to D",
+        "The figure mostly sways in place; there is little choreographed handoff between character and environment",
+        "Camera energy is low, with no strong moves or impacts to punctuate the beat",
+        "Lower overall energy and travel than D; the busiest moment is still restrained",
+        "Camera mostly holds, with little dynamic movement",
+        "The cut is a straight cut rather than a built transition",
+        "The camera is mostly static in the long held shot",
+        "The character's action is subtle; there are few strong key poses or accents",
+        "Strip 2 has some near-hold frames where only the hair moves"
+      ]
+    },
+    "nasa-year-in-the-life-of-co2-2014": {
+      "motion": 2,
+      "judged_professional": "0/3",
+      "gaps": [
+        "No authored timing, spacing or easing",
+        "No camera language or edit structure at all",
+        "No focal choreography to guide the eye; motion is evenly distributed noise",
+        "No authored easing, anticipation or accents; the motion is what the solver produced, not designed",
+        "No camera language or framing changes to direct the eye",
+        "No choreography or hand-offs; every region moves at the same visual priority",
+        "No easing, anticipation or settle; all spacing is linear simulation time",
+        "No camera moves and no cuts or transitions to judge",
+        "No focal point or staging, so nothing leads the eye"
+      ]
+    },
+    "blender-studio-charge-2022": {
+      "motion": 9,
+      "judged_professional": "3/3",
+      "gaps": [
+        "A few transitional frames turn to blur-heavy mush, so readability briefly drops",
+        "Some held reaction beats on the face rely on the sparks to stay alive",
+        "The action edit is dense enough that some follow-through gets cut short",
+        "The chaotic action frames briefly lose readability (frame 15 is a near-illegible blur)",
+        "Cut rhythm leans on conventional live-action coverage rather than inventive transitions",
+        "Some holds on the face rely on the sparks for life rather than performance",
+        "Strip 1 is a fairly static framing of the face; most of the energy comes from the particles, not the character",
+        "The cut into the robot shot is a blur-smash with little graphic match or intent",
+        "Character performance is limited; the secondary motion is carried by the FX"
+      ]
+    }
+  },
+  "ref_mean": 6.33,
+  "trials": [
+    {
+      "key": {
+        "A": "calibration-blender-spring-2019",
+        "B": "candidate",
+        "C": "nasa-year-in-the-life-of-co2-2014",
+        "D": "blender-studio-charge-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Organic secondary motion in hair and cloth; the character settles in small weighted shifts, not linear slides",
+              "The rib-like forms in the background drift and breathe in parallax, so no frame is fully dead",
+              "Slow, motivated camera push with soft depth-of-field changes",
+              "The cut to the close-up is built as a soft light-and-texture transition, not a hard pop"
+            ],
+            "gaps": [
+              "The busiest moment is still restrained, with low-amplitude movement and few big accents compared to D",
+              "The figure mostly sways in place; there is little choreographed handoff between character and environment",
+              "Camera energy is low, with no strong moves or impacts to punctuate the beat"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "motion": 4,
+            "tells": [
+              "A constant-rate zoom-out with mechanical, even spacing",
+              "Tile changes ripple as a uniform procedural wave across a repeating grid, which reads like a generator or template",
+              "Elements flip and rotate in lockstep, with no overlap, overshoot or individual timing",
+              "No weight, no camera language beyond a scale transform, and no designed transitions"
+            ],
+            "gaps": [
+              "No easing hierarchy: everything moves at one tempo with no anticipation or settle",
+              "No physicality, depth or parallax; it is a flat 2D transform",
+              "Choreography is algorithmic repetition rather than authored handoffs and follow-through"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 2,
+            "tells": [
+              "Raw simulation playback advancing with a date counter; the motion is the data, not animation",
+              "Locked-off frame: no camera, no cuts, no transitions",
+              "The fluid churn is continuous but carries no timing intent, accents or easing",
+              "Static overlays (logo, legend, timestamp) pop from value to value"
+            ],
+            "gaps": [
+              "No authored timing, spacing or easing",
+              "No camera language or edit structure at all",
+              "No focal choreography to guide the eye; motion is evenly distributed noise"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Spark particles have convincing ballistic arcs, motion blur and decay",
+              "Handheld camera micro-shake and focus pulls sell weight and impact",
+              "Fast, overlapping action: robot limbs swing through frame while the background character reacts",
+              "Cuts land on action, with whip-blur transitions motivated by movement"
+            ],
+            "gaps": [
+              "A few transitional frames turn to blur-heavy mush, so readability briefly drops",
+              "Some held reaction beats on the face rely on the sparks to stay alive",
+              "The action edit is dense enough that some follow-through gets cut short"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 24.5,
+        "cost_usd": 0.1252146,
+        "tokens": 68081,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "nasa-year-in-the-life-of-co2-2014",
+        "B": "candidate",
+        "C": "calibration-blender-spring-2019",
+        "D": "blender-studio-charge-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 3,
+            "tells": [
+              "Raw simulation playback: fluid advection driven entirely by data, no authored timing",
+              "Locked equirectangular frame, no camera move at all",
+              "Date counter steps mechanically, at about 3-4 frames per day, with no easing",
+              "No cuts or transitions, just continuous output",
+              "Busy everywhere but evenly so, with no focal hierarchy, accents or holds that mean anything"
+            ],
+            "gaps": [
+              "No authored easing, anticipation or accents; the motion is what the solver produced, not designed",
+              "No camera language or framing changes to direct the eye",
+              "No choreography or hand-offs; every region moves at the same visual priority"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "motion": 3,
+            "tells": [
+              "Uniform, near-linear zoom-out with a constant-looking scale step between frames",
+              "Rigid tiled pattern repeating with no secondary motion",
+              "Second strip is a nearly static field where wave/arc glyphs pop and morph in a mechanical, procedural pattern",
+              "Flat, weightless 2D transforms with no overshoot or settle",
+              "Long stretches where the only change is scale, which reads as dead"
+            ],
+            "gaps": [
+              "No easing curves, so the camera/scale move lacks acceleration and a landing",
+              "No physical weight or follow-through on elements",
+              "Changes run in procedural unison instead of overlapping and handing off"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "The character pushes through translucent tendrils, which react with lag and secondary follow-through",
+              "Organic, slightly stepped stop-motion cadence with deliberate holds and tiny head/hair drift",
+              "Shallow-depth camera with layered parallax; the tendrils sway independently of the figure",
+              "A purposeful cut from the wide back view to a tight reaction close-up, with soft foreground occlusion",
+              "Something is moving in every frame: the environment breathes even while the figure holds"
+            ],
+            "gaps": [
+              "Lower overall energy and travel than D; the busiest moment is still restrained",
+              "Camera mostly holds, with little dynamic movement",
+              "The cut is a straight cut rather than a built transition"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Particle sparks have believable ballistic arcs, motion blur and varied life-spans",
+              "A handheld-feeling camera with a push-in and rack focus from the grinding to the face",
+              "Impact-driven action cut: the robot strike carries smear-frame motion blur, then a hard cut to the aftermath",
+              "Heavy mechanical limbs show mass, with acceleration into the hit and a settle afterwards",
+              "Multiple layers (sparks, character, foreground machinery) move on offset timings"
+            ],
+            "gaps": [
+              "The chaotic action frames briefly lose readability (frame 15 is a near-illegible blur)",
+              "Cut rhythm leans on conventional live-action coverage rather than inventive transitions",
+              "Some holds on the face rely on the sparks for life rather than performance"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "C",
+          "A",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 25.8,
+        "cost_usd": 0.12651440000000003,
+        "tokens": 68142,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "nasa-year-in-the-life-of-co2-2014",
+        "C": "calibration-blender-spring-2019",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Spark particles have varied velocity, gravity arcs and motion blur, so every frame is alive",
+              "Handheld camera with micro-shake and rack focus that is motivated by the action",
+              "The robot-arm move has real mass: it accelerates in, smears with motion blur and settles with a hard cut on impact",
+              "Cuts land on peaks of action (impact cut in strip 2, frame 5) rather than on holds"
+            ],
+            "gaps": [
+              "Strip 1 is a fairly static framing of the face; most of the energy comes from the particles, not the character",
+              "The cut into the robot shot is a blur-smash with little graphic match or intent",
+              "Character performance is limited; the secondary motion is carried by the FX"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "motion": 2,
+            "tells": [
+              "A data-driven simulation played back at a constant rate with no authored easing",
+              "A locked-off camera with zero camera language",
+              "The date counter ticks mechanically and the UI frame is completely frozen",
+              "The fluid motion is uniform everywhere, with no hierarchy, accents or choreography"
+            ],
+            "gaps": [
+              "No easing, anticipation or settle; all spacing is linear simulation time",
+              "No camera moves and no cuts or transitions to judge",
+              "No focal point or staging, so nothing leads the eye"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "The character's hair and silhouette show follow-through and overlapping action against the drifting environment",
+              "The ribbed structure undulates in a staggered wave, and the offsets read as organic",
+              "Volumetric light and particulate drift keep every frame alive",
+              "The transition to the close-up wrap shot is a motivated match on shape and texture (the ribs become the fur and blanket)"
+            ],
+            "gaps": [
+              "The camera is mostly static in the long held shot",
+              "The character's action is subtle; there are few strong key poses or accents",
+              "Strip 2 has some near-hold frames where only the hair moves"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "motion": 4,
+            "tells": [
+              "A steady, near-linear zoom-out with no ease-in or ease-out",
+              "Tile motifs swap and rotate in place in rigid, procedural increments",
+              "Every element moves in lockstep with the grid, with no overlap or offset timing",
+              "Several consecutive frames are near-identical (dead holds) in strip 2"
+            ],
+            "gaps": [
+              "No weight, overshoot or settle on the tile flips and morphs",
+              "No choreography: all tiles change uniformly instead of in cascades or handoffs",
+              "No camera language beyond a mechanical scale change"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 22.7,
+        "cost_usd": 0.12158580000000001,
+        "tokens": 67886,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.373
+}

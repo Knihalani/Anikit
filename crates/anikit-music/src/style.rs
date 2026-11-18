@@ -219,7 +219,7 @@ pub static STYLES: &[StyleDef] = &[
             &[("kick", "x..x..x.x..x..x."), ("tom3", "x.xx.xx.x.xx.xx."), ("tom2", "...x...x...x...x"), ("snare", "....X.......X..."), ("crash", "x...............")],
         ],
         layers: &[
-            Layer { reverb: 0.25, humanize: 0.1, ..layer("ostinato", "strings|vsco-violins|strings-synth", Gen::Ostinato("0o0101o0101o0101", 50), 0.3, -3.0) },
+            Layer { reverb: 0.25, humanize: 0.1, ..layer("ostinato", "spiccato|strings|strings-synth", Gen::Ostinato("0o0101o0101o0101", 50), 0.3, -3.0) },
             Layer { reverb: 0.35, ..layer("low", "cello|strings", Gen::Bass("root", 2), 0.0, -4.0) },
             Layer { reverb: 0.4, ..layer("brass", "french-horn|brass|brass-synth", Gen::Chords("pad", 3, 55), 0.8, -4.0) },
             Layer { reverb: 0.5, ..layer("choir", "choir|aahs|pad-choir", Gen::Chords("pad", 4, 64), 0.6, -9.0) },

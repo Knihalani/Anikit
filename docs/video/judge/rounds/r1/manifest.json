@@ -1,1 +1,150 @@
-[]
+[
+ {
+  "name": "a-social",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-a-social:deliverables/eval/a-social/final.mp4",
+  "tags": [
+   "social-vertical",
+   "vertical",
+   "motion-design",
+   "illustration"
+  ],
+  "format": "9:16"
+ },
+ {
+  "name": "b-launch",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-b-launch:deliverables/eval/b-launch/final.mp4",
+  "tags": [
+   "product-launch",
+   "motion-design"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "c-event",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-c-event:deliverables/eval/c-event/final.mp4",
+  "tags": [
+   "event-promo",
+   "music-video",
+   "kinetic-type",
+   "vertical"
+  ],
+  "format": "9:16"
+ },
+ {
+  "name": "d-illustration",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-d-illustration:deliverables/eval/d-illustration/final.mp4",
+  "tags": [
+   "illustration",
+   "product-launch"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "e-data",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-e-data:deliverables/eval/e-data/final.mp4",
+  "tags": [
+   "data-story",
+   "editorial-data"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "f-3d",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-f-3d:deliverables/eval/f-3d/final.mp4",
+  "tags": [
+   "cg-3d",
+   "3d-cg",
+   "luxury",
+   "product-launch"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "g-titles",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-g-titles:deliverables/eval/g-titles/final.mp4",
+  "tags": [
+   "kinetic-type",
+   "title-sequence"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "h-ident",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-h-ident:deliverables/eval/h-ident/final.mp4",
+  "tags": [
+   "brand-idents",
+   "motion-design",
+   "kinetic-type"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "hf-b-launch",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-hf-b-launch:deliverables/eval-hf/b-launch/final.mp4",
+  "tags": [
+   "product-launch",
+   "motion-design"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "hf-e-data",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-hf-e-data:deliverables/eval-hf/e-data/final.mp4",
+  "tags": [
+   "data-story",
+   "editorial-data"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "hf-g-titles",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-hf-g-titles:deliverables/eval-hf/g-titles/final.mp4",
+  "tags": [
+   "kinetic-type",
+   "title-sequence"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "i-explainer",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-i-explainer:deliverables/eval/i-explainer/final.mp4",
+  "tags": [
+   "explainer-2d",
+   "editorial-data",
+   "illustration",
+   "motion-design"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "j-music",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-j-music:deliverables/eval/j-music/final.mp4",
+  "tags": [
+   "music-video",
+   "kinetic-type"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "k-sports",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-k-sports:deliverables/eval/k-sports/final.mp4",
+  "tags": [
+   "broadcast-sports",
+   "motion-design",
+   "3d-cg",
+   "kinetic-type"
+  ],
+  "format": "16:9"
+ },
+ {
+  "name": "l-generative",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-eval-r1-l-generative:deliverables/eval/l-generative/final.mp4",
+  "tags": [
+   "generative",
+   "motion-design",
+   "3d-cg",
+   "music-video"
+  ],
+  "format": "16:9"
+ }
+]

@@ -37,7 +37,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 const KEYS: &[&str] = &[
-    "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch", "shadows", "force", "trail", "size_dist", "scatter", "glint",
+    "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch", "shadows", "force", "trail", "size_dist", "scatter", "glint", "sprite",
 ];
 const EMIT_KEYS: &[&str] = &["shape", "pos", "position", "radius", "size", "surface", "axis", "image", "composition", "frame", "threshold", "rot", "rotation"];
 
@@ -116,6 +116,10 @@ pub struct Def {
     /// flashing the key light; amount and sharpness).
     scatter: f32,
     glint: (f32, f32),
+    /// Sprites: each particle is a flat, tumbling shape (confetti, petals,
+    /// paper): corners (unit square or triangle) scaled by (1, aspect),
+    /// tumble (turns per second) and two-sided translucency.
+    sprite: Option<Sprite>,
     colors: Vec<V3>,
     color_by: ColorBy,
     speed_range: (f32, f32),
@@ -339,6 +343,7 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
             Some(_) => return Err(format!("{path}.size_dist: expected {{ \"min\", \"max\", \"power\" }} (p(size) ∝ size^-power)")),
         },
         scatter: gf(m, "scatter", 0.0, path)?.clamp(-0.95, 0.95),
+        sprite: sprite(m.get("sprite"), path)?,
         glint: match m.get("glint") {
             None | Some(Value::Null) => (0.0, 0.0),
             Some(Value::Object(o)) => {
@@ -502,6 +507,51 @@ impl Def {
             None => self.size * (1.0 + self.size_var * (u - 0.5) * 2.0),
         }
     }
+}
+
+#[derive(Clone, Copy)]
+pub struct Sprite {
+    tri: bool,
+    aspect: f32,
+    tumble: f32,
+    translucency: f32,
+}
+
+fn sprite(v: Option<&Value>, path: &str) -> Res<Option<Sprite>> {
+    let p = format!("{path}.sprite");
+    let mut s = Sprite { tri: false, aspect: 0.5, tumble: 1.2, translucency: 0.35 };
+    match v {
+        None | Some(Value::Null) | Some(Value::Bool(false)) => return Ok(None),
+        Some(Value::Bool(true)) => {}
+        Some(Value::String(x)) => match x.as_str() {
+            "confetti" | "quad" => {}
+            "square" => s.aspect = 1.0,
+            "petal" | "triangle" | "tri" => {
+                s.tri = true;
+                s.aspect = 0.8;
+            }
+            "paper" => {
+                s.aspect = 0.75;
+                s.tumble = 0.4;
+            }
+            o => return Err(format!("{p}: unknown `{o}` (confetti, square, triangle, petal, paper, or {{ \"shape\", \"aspect\", \"tumble\", \"translucency\" }})")),
+        },
+        Some(Value::Object(o)) => {
+            spec::check_keys(o, &["shape", "aspect", "tumble", "translucency"], &p)?;
+            if let Some(x) = o.get("shape") {
+                s.tri = match x.as_str() {
+                    Some("quad") => false,
+                    Some("triangle") | Some("tri") => true,
+                    _ => return Err(format!("{p}.shape: `quad` or `triangle`")),
+                };
+            }
+            s.aspect = gf(o, "aspect", s.aspect, &p)?.clamp(0.02, 50.0);
+            s.tumble = gf(o, "tumble", s.tumble, &p)?;
+            s.translucency = gf(o, "translucency", s.translucency, &p)?.clamp(0.0, 1.0);
+        }
+        Some(_) => return Err(format!("{p}: expected a name (confetti, petal, paper…) or {{ \"shape\", \"aspect\", \"tumble\" }}")),
+    }
+    Ok(Some(s))
 }
 
 /// Expands `"layers"` on a particle object into one object per layer: each
@@ -2250,7 +2300,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
                     // A preview particle stands for `stride` of them: spread it over about that many pixels.
                     let foot = (r_px * r_px + coc * coc + spread2).sqrt();
-                    let margin = foot + 4.0;
+                    let margin = foot.max(d.sprite.map(|sp| r_px * (1.0 + sp.aspect * sp.aspect).sqrt()).unwrap_or(0.0)) + 4.0;
                     if tr.is_some() {
                         let mut pts = [(0.0f32, 0.0f32, 0.0f32); TRAIL_MAX + 1];
                         let m = trail_points(sim, &hist, j, i, t, (sx, sy, z), &pj, &mut pts);
@@ -2275,7 +2325,9 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     let vel = snap.vel(j);
                     let back = madd(p, vel, -v.shutter * sim.dt * d.stretch);
                     let by = if v.shutter > 0.0 { pp.at(back).1 } else { sy };
-                    let reach = foot + 7.0 + (sy - by).abs() * 0.5;
+                    // Sprites reach their corners (and sweep along their motion).
+                    let spr = d.sprite.map(|sp| r_px * (1.0 + sp.aspect * sp.aspect).sqrt() + (sy - by).abs() * 0.5).unwrap_or(0.0);
+                    let reach = (foot + 7.0 + (sy - by).abs() * 0.5).max(spr + 3.0);
                     let lo = ((sy - reach).max(0.0) as usize / BAND).min(nb - 1);
                     let hi = (((sy + reach).max(0.0) as usize) / BAND).min(nb - 1);
                     (lo as u8, hi as u8)
@@ -2306,7 +2358,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
                 // A preview particle stands for `stride` of them: spread it over about that many pixels.
                 let foot = (r_px * r_px + coc * coc + spread2).sqrt();
-                let margin = foot + 4.0;
+                let margin = foot.max(d.sprite.map(|sp| r_px * (1.0 + sp.aspect * sp.aspect).sqrt()).unwrap_or(0.0)) + 4.0;
                 let mut head = !(sx < -margin || sy < -margin || sx > w as f32 + margin || sy > h as f32 + margin);
                 // Depth test against the scene at the particle's centre.
                 let (ix, iy) = (sx as i32, sy as i32);
@@ -2385,6 +2437,130 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 } else {
                     col
                 };
+                // Sprites: a flat shape, tumbling, drawn with its real outline and normal.
+                if let (Some(sp), true) = (d.sprite, head && coc < (2.0f32).max(r_px * 0.5)) {
+                    let (h1, h2, h3, h4) = (hu(d.seed, i as u32, 71), hu(d.seed, i as u32, 72), hu(d.seed, i as u32, 73), hu(d.seed, i as u32, 74));
+                    // A random tumble axis and phase, and a rate within ±40% of `tumble`.
+                    let (az, el) = (h1 * std::f32::consts::TAU, (h2 * 2.0 - 1.0).asin());
+                    let ax = v3(el.cos() * az.cos(), el.sin(), el.cos() * az.sin());
+                    let rate = sp.tumble * (0.6 + 0.8 * h3) * std::f32::consts::TAU;
+                    // Two fixed directions perpendicular to the axis, rotated about it.
+                    let up = if ax.y.abs() < 0.9 { v3(0.0, 1.0, 0.0) } else { v3(1.0, 0.0, 0.0) };
+                    let b1 = norm(cross(ax, up));
+                    let b2 = cross(ax, b1);
+                    let half = size;
+                    let ns = if v.shutter > 0.0 { ((ml / r_px.max(0.5)).ceil() as usize).clamp(1, 8) } else { 1 };
+                    let to_cam = norm(sub(v.cam.pos, p));
+                    let vis = v.shadow.map(|m| m.trans(p)).unwrap_or(1.0);
+                    let keyc = scale(v.key.1, vis);
+                    let k = sim.stride.max(1) as f32;
+                    let banded = py.band != (0, i32::MAX);
+                    for q in 0..ns {
+                        let u = if ns == 1 { 0.0 } else { (q as f32 + 0.5) / ns as f32 - 0.5 };
+                        let tq = t + u * v.shutter * sim.dt;
+                        let ang = h4 * std::f32::consts::TAU + rate * tq;
+                        let (ca, sa) = (ang.cos(), ang.sin());
+                        // The sheet's axes: e1 along the tumble axis, e2 turning about it.
+                        let e2 = add(scale(b1, ca), scale(b2, sa));
+                        let e1 = ax;
+                        let nrm = cross(e1, e2);
+                        let pc = madd(p, vel, u * v.shutter * sim.dt * d.stretch);
+                        let (w1, w2) = (half, half * sp.aspect);
+                        let corners: [V3; 4] = if sp.tri {
+                            [madd(pc, e1, w1), madd(madd(pc, e1, -w1), e2, w2), madd(madd(pc, e1, -w1), e2, -w2), madd(pc, e1, w1)]
+                        } else {
+                            [madd(madd(pc, e1, w1), e2, w2), madd(madd(pc, e1, -w1), e2, w2), madd(madd(pc, e1, -w1), e2, -w2), madd(madd(pc, e1, w1), e2, -w2)]
+                        };
+                        let sc = corners.map(|c| pj.at(c));
+                        if sc.iter().any(|c| c.2 < 0.05) {
+                            continue;
+                        }
+                        // Shading: two-sided Lambert, light through the paper, a specular flash.
+                        let n = if dot(nrm, to_cam) < 0.0 { scale(nrm, -1.0) } else { nrm };
+                        let ndl = dot(n, v.key.0);
+                        let amb = lerp3(v.amb.1, v.amb.0, 0.5 + 0.5 * n.y);
+                        // Lambert for a flat card (radiance = albedo · E · cos / π, as the sphere phase).
+                        let mut l = add(scale(keyc, (ndl.max(0.0) + (-ndl).max(0.0) * sp.translucency) / std::f32::consts::PI), amb);
+                        if d.glint.0 > 0.0 {
+                            let hv = norm(add(to_cam, v.key.0));
+                            let s = dot(n, hv).max(0.0).powf(d.glint.1);
+                            l = add(l, scale(keyc, s * d.glint.0 * (d.glint.1 + 2.0) * 0.125 / std::f32::consts::PI));
+                        }
+                        let lc = if d.lit { [col[0] * l.x, col[1] * l.y, col[2] * l.z] } else { col };
+                        // Coverage per pixel: distance to the outline's edges (anti-aliased).
+                        let pts: [(f32, f32); 4] = [(sc[0].0, sc[0].1), (sc[1].0, sc[1].1), (sc[2].0, sc[2].1), (sc[3].0, sc[3].1)];
+                        let area2: f32 = (0..4).map(|e| pts[e].0 * pts[(e + 1) % 4].1 - pts[(e + 1) % 4].0 * pts[e].1).sum();
+                        if area2.abs() < 1e-6 {
+                            // Edge-on: a thin line, drawn as a point of its area (≈ 0).
+                            continue;
+                        }
+                        let sgn = area2.signum();
+                        let mut edges = [(0.0f32, 0.0f32, 0.0f32); 4];
+                        let mut ne = 0;
+                        for e in 0..4 {
+                            let (a0, a1) = (pts[e], pts[(e + 1) % 4]);
+                            let (ex, ey) = (a1.0 - a0.0, a1.1 - a0.1);
+                            let l = (ex * ex + ey * ey).sqrt();
+                            if l < 1e-5 {
+                                continue;
+                            }
+                            // Inside is where the signed distance is positive.
+                            let (nx, ny) = (-ey / l * sgn, ex / l * sgn);
+                            edges[ne] = (nx, ny, -(nx * a0.0 + ny * a0.1));
+                            ne += 1;
+                        }
+                        let (x0, x1) = (pts.iter().map(|q| q.0).fold(f32::MAX, f32::min).floor() as i32 - 1, pts.iter().map(|q| q.0).fold(f32::MIN, f32::max).ceil() as i32 + 1);
+                        let (y0, y1) = (pts.iter().map(|q| q.1).fold(f32::MAX, f32::min).floor() as i32 - 1, pts.iter().map(|q| q.1).fold(f32::MIN, f32::max).ceil() as i32 + 1);
+                        let (x0, x1) = (x0.max(0), x1.min(w as i32 - 1));
+                        let (mut y0, mut y1) = (y0.max(0), y1.min(h as i32 - 1));
+                        if banded {
+                            y0 = y0.max(py.band.0);
+                            y1 = y1.min(py.band.1 - 1);
+                        }
+                        let wq = 1.0 / ns as f32;
+                        for yy in y0..=y1 {
+                            for xx in x0..=x1 {
+                                let (cx, cy) = (xx as f32 + 0.5, yy as f32 + 0.5);
+                                let mut dmin = f32::MAX;
+                                for &(nx, ny, c0) in &edges[..ne] {
+                                    dmin = dmin.min(nx * cx + ny * cy + c0);
+                                }
+                                let cov = (dmin + 0.5).clamp(0.0, 1.0);
+                                if cov <= 0.0 {
+                                    continue;
+                                }
+                                // Depth against the scene.
+                                if v.depth[yy as usize * w + xx as usize] < z - size * 2.0 {
+                                    continue;
+                                }
+                                let wv = cov * a * wq * k;
+                                let mut pv = [0.0f32; 8];
+                                match d.blend {
+                                    Blend::Add => {
+                                        let o = eo.unwrap_or(0);
+                                        for c in 0..3 {
+                                            pv[o + c] = lc[c] * d.emissive * wv;
+                                        }
+                                    }
+                                    Blend::Over => {
+                                        let o = ab.unwrap_or(0);
+                                        for c in 0..3 {
+                                            pv[o + c] = lc[c] * wv;
+                                        }
+                                        pv[o + 3] = wv;
+                                        if let Some(o) = eo {
+                                            for c in 0..3 {
+                                                pv[o + c] = col[c] * d.emissive * wv;
+                                            }
+                                        }
+                                    }
+                                }
+                                py.splat(0, cx, cy, &pv);
+                            }
+                        }
+                    }
+                    continue;
+                }
                 let mut val = [0.0f32; 8];
                 match d.blend {
                     Blend::Add => {
@@ -2660,6 +2836,22 @@ mod tests {
         let p = sim(spec(false));
         let dots = render(&[(&p, p.at(t))], &v, t).emitted();
         assert!(one.emitted() > dots * 3.0, "trail {} vs dots {dots}", one.emitted());
+    }
+
+    #[test]
+    fn sprites_are_identical_at_any_thread_count() {
+        // Big tumbling quads crossing band edges, with motion blur and glints.
+        let s = sim(serde_json::json!({ "count": 400, "emit": { "shape": "ball", "radius": 0.5, "pos": [0, 1, 0] }, "size": 0.06, "velocity": [0.5, 0.8, 0], "spread": 1, "gravity": 0, "blend": "over", "lit": true, "sprite": "confetti", "glint": 1.5 }));
+        let snap = s.at(0.4);
+        let (w, h) = (320usize, 180usize);
+        let depth = vec![1e9f32; w * h];
+        let cam = Camera { pos: v3(0.0, 1.0, 3.0), target: v3(0.0, 1.0, 0.0), fov: 40.0, focus: 3.0, aperture: 0.0, roll: 0.0, shutter: 0.5 };
+        let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: 3.0, aperture: 0.0, shutter: 0.5, key: (v3(0.3, 0.9, 0.3), v3(3.0, 3.0, 3.0)), amb: (v3(0.2, 0.2, 0.2), v3(0.1, 0.1, 0.1)), shadow: None, draft: false };
+        let one = rayon::ThreadPoolBuilder::new().num_threads(1).build().unwrap().install(|| render(&[(&s, snap.clone())], &v, 0.4).buf);
+        let many = std::thread::scope(|sc| sc.spawn(|| render(&[(&s, snap.clone())], &v, 0.4).buf).join().unwrap());
+        assert!(rayon::current_num_threads() < 2 || one.iter().zip(&many).all(|(a, b)| a.to_bits() == b.to_bits()), "sprites differ between thread counts");
+        // Coverage: an opaque sprite covers about its projected area.
+        assert!(one.iter().any(|x| *x > 0.5), "nothing drawn");
     }
 
     #[test]

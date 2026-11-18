@@ -1,0 +1,351 @@
+{
+  "refs": [
+    "blender-studio-charge-2022",
+    "nasa-year-in-the-life-of-co2-2014",
+    "calibration-blender-sprite-fright-2021"
+  ],
+  "candidate": {
+    "motion": 4,
+    "judged_professional": "0/3",
+    "gaps": [
+      "Dead holds: over half of each busiest-moment strip is a fully static frame",
+      "No secondary motion, overshoot or follow-through, just single ease-out tweens per layer",
+      "Transitions are hard pops or blank frames rather than match cuts or morphs (e.g. cup to citrus slice could have morphed)",
+      "Long dead holds with nothing alive on screen",
+      "No overlap or follow-through between type and illustration",
+      "Scene changes miss the obvious circular-shape match transition and use plain cuts",
+      "Long dead holds with nothing alive in the frame, compared with A and C which move in every frame",
+      "No overlap or hand-off between the image and the type; the shapes never interact",
+      "Transitions are plain cuts rather than morphs or wipes, even though the circular shapes invite match transitions"
+    ]
+  },
+  "refs_summary": {
+    "calibration-blender-sprite-fright-2021": {
+      "motion": 9,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The insert of the vine-wrapped hand has a few near-static frames where only the vine creeps",
+        "The camera language is energetic but conventional for features, and there is no standout transition device",
+        "Ties with D on craft, so there is no gap to a clearly better entry; small dips in energy between beats",
+        "A few frames in the hand insert are near-static (a slight hold)",
+        "Whip-pan blur smears readability for 1\u20132 frames",
+        "Grade is so dark that silhouettes read weakly during fast moves",
+        "The insert on the wrist runs a few frames longer than it needs to",
+        "Some blur frames read as smeared rather than as designed smear drawings",
+        "The cut back to the wide reaction is a plain hard cut where a match could have been built"
+      ]
+    },
+    "nasa-year-in-the-life-of-co2-2014": {
+      "motion": 3,
+      "judged_professional": "0/3",
+      "gaps": [
+        "No authored easing, anticipation or emphasis; the timing is set by the simulation step",
+        "No camera language or cut design at all, and no guided focus to direct the eye",
+        "No hierarchy or handoffs between elements; the busiest moment looks like every other moment",
+        "No easing or accents: every frame moves at the same rate",
+        "No staging or hierarchy, so the eye has no focal action to follow",
+        "No camera, cut or transition craft compared with C",
+        "No designed spacing, anticipation, overshoot or settle anywhere",
+        "No hierarchy or hand-off; the whole field changes evenly and nothing leads the eye",
+        "No camera moves, cuts or staging, where C cuts with clear intent"
+      ]
+    },
+    "blender-studio-charge-2022": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Character acting in the grinder close-up is limited, with the face mostly holding while particles carry the energy",
+        "The transition is a fairly standard blur/occlusion whip and less designed than a match cut",
+        "Some frames are motion-blur mush that reads more as chaos than clear staging of the beat",
+        "The close-up of the face relies on the sparks for life while the character barely acts",
+        "Impact cut includes a muddy blurred frame instead of a crisp accent",
+        "The robot's rise toward the camera is fairly even in speed, with less easing contrast than C",
+        "Welding shot is a long, steady middle with little change in the main action across about 0.6 s",
+        "The cut into the fight works mostly through blur rather than a clearly built match or hand-off",
+        "Character acting on the face is small next to C's broad squash, lag and follow-through"
+      ]
+    }
+  },
+  "ref_mean": 6.67,
+  "trials": [
+    {
+      "key": {
+        "A": "calibration-blender-sprite-fright-2021",
+        "B": "candidate",
+        "C": "nasa-year-in-the-life-of-co2-2014",
+        "D": "blender-studio-charge-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 8,
+            "tells": [
+              "Whip-pan camera moves with directional motion blur that carry momentum from character to character (frames 1-8)",
+              "Overlapping action: hair, ears and limbs drag and follow through behind heads as they turn and recoil",
+              "Strong poses with anticipation and squash: the jaw-drop and recoil read as weighted acting, not tweens",
+              "Cuts are motivated: the flashlight push-in to the hand and the vine-wrap insert hand off to a reaction two-shot",
+              "Secondary life in every frame: background foliage blurs, the creature lurks, and rack/defocus shifts happen during the dialogue beat"
+            ],
+            "gaps": [
+              "The insert of the vine-wrapped hand has a few near-static frames where only the vine creeps",
+              "The camera language is energetic but conventional for features, and there is no standout transition device",
+              "Ties with D on craft, so there is no gap to a clearly better entry; small dips in energy between beats"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "motion": 4,
+            "tells": [
+              "Hard cuts between scenes with no transition: the cup pops to an empty frame, then the citrus appears",
+              "Per-letter fade/slide-in typewriter reveal that looks like a preset text animator",
+              "The citrus scale-up eases out, then the frame freezes into a dead hold for 6+ frames with nothing moving",
+              "The leaf has a decent rotate-and-scale ease-out with a slight settle, but it then holds rigid for the rest of the strip",
+              "One element moves at a time: text and icon animate but nothing overlaps, hands off or follows through"
+            ],
+            "gaps": [
+              "Dead holds: over half of each busiest-moment strip is a fully static frame",
+              "No secondary motion, overshoot or follow-through, just single ease-out tweens per layer",
+              "Transitions are hard pops or blank frames rather than match cuts or morphs (e.g. cup to citrus slice could have morphed)"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 2,
+            "tells": [
+              "Data-driven simulation playback (atmospheric model) where the motion comes from the dataset, not from authoring",
+              "Uniform temporal flow with no easing, accents or timing choices; the date ticker just advances",
+              "Locked-off camera with no framing, moves or cuts",
+              "No choreography: the whole field advances in constant lockstep",
+              "The static overlay UI (logos, legend, date bar) never animates"
+            ],
+            "gaps": [
+              "No authored easing, anticipation or emphasis; the timing is set by the simulation step",
+              "No camera language or cut design at all, and no guided focus to direct the eye",
+              "No hierarchy or handoffs between elements; the busiest moment looks like every other moment"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 8,
+            "tells": [
+              "Spark particles with physically plausible trajectories, motion streaks and falloff that react to the grinder",
+              "Handheld camera micro-shake and focus breathing sell weight and proximity",
+              "Fast mechanical arm swings with heavy motion blur, then a hit frame and a wipe-like occluding foreground pass into the next shot",
+              "Robot head turn and arm movements have mass: they accelerate in, settle, and continue with secondary jiggle",
+              "Every frame is alive: sparks, smoke, flicker and a moving foreground keep energy even in the close-up hold"
+            ],
+            "gaps": [
+              "Character acting in the grinder close-up is limited, with the face mostly holding while particles carry the energy",
+              "The transition is a fairly standard blur/occlusion whip and less designed than a match cut",
+              "Some frames are motion-blur mush that reads more as chaos than clear staging of the beat"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 28.9,
+        "cost_usd": 0.1448666,
+        "tokens": 70119,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "nasa-year-in-the-life-of-co2-2014",
+        "B": "candidate",
+        "C": "calibration-blender-sprite-fright-2021",
+        "D": "blender-studio-charge-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "motion": 3,
+            "tells": [
+              "Simulation-driven fluid advection played back at constant rate; no authored timing",
+              "Date counter ticks mechanically and stays on screen; nothing is designed for emphasis",
+              "No camera language at all: locked equirectangular frame, no cuts or transitions",
+              "Motion is present in every frame, but it is uniform data playback, not acting or choreography"
+            ],
+            "gaps": [
+              "No easing or accents: every frame moves at the same rate",
+              "No staging or hierarchy, so the eye has no focal action to follow",
+              "No camera, cut or transition craft compared with C"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "motion": 4,
+            "tells": [
+              "Preset per-letter fade/slide type reveal (Ber g \u2192 Bergamot.)",
+              "Icon scale-up eases in and then freezes: rows 2 and 4 are near-identical dead holds for 5\u20136 frames",
+              "Hard cut to an empty frame between scenes; no match cut or morph even though cup, lime and peach are all circular",
+              "Leaf does a single rotate+scale with no overshoot or secondary motion; the text and icon move as separate layers with no handoff"
+            ],
+            "gaps": [
+              "Long dead holds with nothing alive on screen",
+              "No overlap or follow-through between type and illustration",
+              "Scene changes miss the obvious circular-shape match transition and use plain cuts"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.92,
+            "motion": 9,
+            "tells": [
+              "Whip pans with motion blur pass the action between characters (girl \u2192 boy \u2192 boombox)",
+              "Strong anticipation, squash and recoil in the faces; secondary motion in hair and clothing",
+              "Insert close-up of the hand with the vine tightening, then a cut out to the reveal shot; clear cut grammar",
+              "Something is moving in every frame, and the camera is motivated by the characters"
+            ],
+            "gaps": [
+              "A few frames in the hand insert are near-static (a slight hold)",
+              "Whip-pan blur smears readability for 1\u20132 frames",
+              "Grade is so dark that silhouettes read weakly during fast moves"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "motion": 8,
+            "tells": [
+              "Spark particles with physically plausible trajectories, falloff and depth-of-field streaking",
+              "Handheld camera micro-shake and rack focus give weight",
+              "Robot arm swing has momentum and impact; the cut lands on the hit",
+              "Mech pushes forward with settle and slight overshoot"
+            ],
+            "gaps": [
+              "The close-up of the face relies on the sparks for life while the character barely acts",
+              "Impact cut includes a muddy blurred frame instead of a crisp accent",
+              "The robot's rise toward the camera is fairly even in speed, with less easing contrast than C"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "D",
+          "B",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 22.2,
+        "cost_usd": 0.1372064,
+        "tokens": 69732,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "nasa-year-in-the-life-of-co2-2014",
+        "C": "calibration-blender-sprite-fright-2021",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Spark particles have varied velocities and motion blur, with streaks that change length frame to frame",
+              "Handheld camera drifts and re-frames during the welding close-up instead of sitting locked off",
+              "Impact cut into the robot fight: a fast whip pan with heavy blur, then the camera settles on the next shot",
+              "The robot head carries weight: it swings in, lags behind the arm and recoils",
+              "Foreground debris and background figures move together, with no dead frames"
+            ],
+            "gaps": [
+              "Welding shot is a long, steady middle with little change in the main action across about 0.6 s",
+              "The cut into the fight works mostly through blur rather than a clearly built match or hand-off",
+              "Character acting on the face is small next to C's broad squash, lag and follow-through"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 3,
+            "tells": [
+              "Simulation output played back at a constant rate, with no easing, keyed timing or choreography",
+              "Camera locked off the whole time, with no framing or camera language",
+              "Date counter ticks over in mechanical steps",
+              "The fluid is alive in every frame, but only because it is data, not an authored performance",
+              "No cuts or transitions to speak of; the two strips are the same shot"
+            ],
+            "gaps": [
+              "No designed spacing, anticipation, overshoot or settle anywhere",
+              "No hierarchy or hand-off; the whole field changes evenly and nothing leads the eye",
+              "No camera moves, cuts or staging, where C cuts with clear intent"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Whip pan with directional motion blur hands the viewer from one character to the next as each passes through frame",
+              "Strong overlap: hair, limbs and the boombox lag and follow through behind the bodies",
+              "Clear acting poses with snap-to-hold timing that still keeps moving (moving holds)",
+              "Intentional cut to an insert close-up on the hand and thorn, push-in, then a reaction cut that pays it off",
+              "Debris, foliage and characters move on different timings with offset staggers"
+            ],
+            "gaps": [
+              "The insert on the wrist runs a few frames longer than it needs to",
+              "Some blur frames read as smeared rather than as designed smear drawings",
+              "The cut back to the wide reaction is a plain hard cut where a match could have been built"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "motion": 4,
+            "tells": [
+              "Shapes scale up from centre with a generic ease-out and then freeze for 5\u20136 frames (dead holds)",
+              "Per-letter type-on uses a stock stagger with fade and offset that looks like a preset",
+              "Hard pop cuts between items (cup to lime, peach to leaf) with no morph or match",
+              "Only one element moves at a time: the type finishes, then everything stops",
+              "Leaf has a small rotate and scale settle, then dies completely"
+            ],
+            "gaps": [
+              "Long dead holds with nothing alive in the frame, compared with A and C which move in every frame",
+              "No overlap or hand-off between the image and the type; the shapes never interact",
+              "Transitions are plain cuts rather than morphs or wipes, even though the circular shapes invite match transitions"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 25.2,
+        "cost_usd": 0.1423666,
+        "tokens": 69994,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.424
+}

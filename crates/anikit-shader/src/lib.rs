@@ -570,6 +570,17 @@ impl Shader {
                     convert(&mut row[x], src[x], x, y);
                 }
             });
+        } else if !f.supersample {
+            self.run_quads(f, px, w, |rows, b, q, py| {
+                let o = quad_rgba8(b, (q * 2) as u32, py as u32, alpha, dither);
+                let nrows = rows.len() / w;
+                let x = q * 2;
+                for (l, (dx, dy)) in [(0, 0), (1, 0), (0, 1), (1, 1)].into_iter().enumerate() {
+                    if x + dx < w && dy < nrows {
+                        rows[dy * w + x + dx] = o[l];
+                    }
+                }
+            });
         } else {
             self.run(f, px, w, convert);
         }
@@ -582,6 +593,33 @@ impl Shader {
 
     /// Run the kernel over the frame; `put` writes one output pixel.
     fn run<P: Send>(&self, f: &Frame, out: &mut [P], w: usize, put: impl Fn(&mut P, [f32; 4], usize, usize) + Sync) {
+        let ss = f.supersample;
+        self.run_quads(f, out, w, |rows, b, q, py| {
+            let lane = |l: usize| [b[l], b[4 + l], b[8 + l], b[12 + l]];
+            if ss {
+                let mut s = [0.0f32; 4];
+                for l in 0..4 {
+                    let c = lane(l);
+                    for k in 0..4 {
+                        s[k] += sanitize(c[k]);
+                    }
+                }
+                put(&mut rows[q], s.map(|v| v * 0.25), q, py);
+            } else {
+                let nrows = rows.len() / w;
+                for (l, (dx, dy)) in [(0, 0), (1, 0), (0, 1), (1, 1)].into_iter().enumerate() {
+                    let x = q * 2 + dx;
+                    if x < w && dy < nrows {
+                        put(&mut rows[dy * w + x], lane(l).map(sanitize), x, py + dy);
+                    }
+                }
+            }
+        });
+    }
+
+    /// Run the kernel over the frame; `quad` gets the output rows of a task,
+    /// one quad's 16 floats (r, g, b, a × 4 lanes), the quad index and the top row.
+    fn run_quads<P: Send>(&self, f: &Frame, out: &mut [P], w: usize, quad: impl Fn(&mut [P], &[f32; 16], usize, usize) + Sync) {
         let h = out.len().checked_div(w).unwrap_or(0);
         if w == 0 || h == 0 {
             return;
@@ -605,31 +643,57 @@ impl Shader {
                 let y0 = hf - py as f32 - 0.5;
                 // SAFETY: env/uniforms outlive the parallel loop; buf holds nq quads.
                 unsafe { func(env_ptr as *const Env, uni_ptr as *const u32, x0, y0, nq as i32, buf.as_mut_ptr()) };
-                let nrows = rows.len() / w;
-                for q in 0..nq {
-                    let b = &buf[q * 16..q * 16 + 16];
-                    let lane = |l: usize| [b[l], b[4 + l], b[8 + l], b[12 + l]];
-                    if ss {
-                        let mut s = [0.0f32; 4];
-                        for l in 0..4 {
-                            let c = lane(l);
-                            for k in 0..4 {
-                                s[k] += sanitize(c[k]);
-                            }
-                        }
-                        put(&mut rows[q], s.map(|v| v * 0.25), q, py);
-                    } else {
-                        for (l, (dx, dy)) in [(0, 0), (1, 0), (0, 1), (1, 1)].into_iter().enumerate() {
-                            let x = q * 2 + dx;
-                            if x < w && dy < nrows {
-                                put(&mut rows[dy * w + x], lane(l).map(sanitize), x, py + dy);
-                            }
-                        }
-                    }
+                for (q, b) in buf.chunks_exact(16).enumerate() {
+                    quad(rows, b.try_into().unwrap(), q, py);
                 }
             },
         );
     }
+}
+
+/// One 1-sample quad to RGBA8, the same bits as the per-pixel conversion in
+/// [`Shader::render`] but laid out lane-wise so it vectorises: clamp (NaN to
+/// 0), premultiply, dither or round.
+#[inline(always)]
+fn quad_rgba8(b: &[f32; 16], x: u32, y: u32, alpha: bool, dither: bool) -> [[u8; 4]; 4] {
+    // Not `clamp`: that keeps NaN, and NaN must read as 0 here.
+    #[allow(clippy::manual_clamp)]
+    let cl = |v: f32| v.max(0.0).min(1.0);
+    let mut a = [1.0f32; 4];
+    if alpha {
+        for l in 0..4 {
+            a[l] = cl(b[12 + l]);
+        }
+    }
+    let xs = [x, x + 1, x, x + 1];
+    let ys = [y, y, y + 1, y + 1];
+    let mut h = [0u32; 4];
+    for l in 0..4 {
+        h[l] = xs[l].wrapping_mul(0x8da6_b343) ^ ys[l].wrapping_mul(0xd816_3841);
+    }
+    let mut o = [[0u8; 4]; 4];
+    for c in 0..3 {
+        let mut r = [0.5f32; 4];
+        if dither {
+            for l in 0..4 {
+                let mut v = h[l];
+                v ^= v >> 15;
+                v = v.wrapping_mul(0x2c1b_3c6d);
+                v ^= v >> 12;
+                v = v.wrapping_mul(0x297a_2d39);
+                v ^= v >> 15;
+                h[l] = v;
+                r[l] = (v >> 8) as f32 * (1.0 / 16_777_216.0);
+            }
+        }
+        for l in 0..4 {
+            o[l][c] = (cl(b[c * 4 + l]) * a[l] * 255.0 + r[l]).min(255.0) as u8;
+        }
+    }
+    for l in 0..4 {
+        o[l][3] = (a[l] * 255.0 + 0.5).min(255.0) as u8;
+    }
+    o
 }
 
 /// Per-pixel dither thresholds in [0, 1) for r, g, b (a fixed hash pattern).
