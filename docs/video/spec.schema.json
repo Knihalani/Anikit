@@ -3474,6 +3474,14 @@
           ],
           "format": "double"
         },
+        "ramp": {
+          "description": "Loops: seconds the amplitude takes to grow in after the layer starts and to die away before it ends\n(an envelope, so the oscillation never starts or stops dead).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
         "cps": {
           "description": "Typewriter characters per second.",
           "type": [

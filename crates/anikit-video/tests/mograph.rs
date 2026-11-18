@@ -206,3 +206,16 @@ fn expressions_see_the_layers_velocity() {
     assert!((rot(0.5) - 10.0).abs() < 0.2, "{}", rot(0.5));
     assert!(rot(1.5).abs() < 1e-3);
 }
+
+#[test]
+fn loop_ramp_eases_the_oscillation_in() {
+    let src = |ramp: &str| format!(r#"{{ "scenes": [ {{ "duration": 4, "layers": [ {{ "shape": "rect", "y": 500, "width": 10, "height": 10,
+        "loop": {{ "preset": "float", "amount": 40, "period": 1 {ramp} }} }} ] }} ] }}"#);
+    let y = |e: &Evaluator, t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::RoundRect { transform, .. } = o { Some(transform[5]) } else { None }).unwrap();
+    let (a, b) = (ev(&src("")), ev(&src(r#", "ramp": 1"#)));
+    // At t = 0.25 s the plain float is at full swing; the ramped one has barely started.
+    assert!((y(&a, 0.25) - y(&a, 0.0)).abs() > 35.0);
+    assert!((y(&b, 0.25) - y(&b, 0.0)).abs() < 8.0);
+    // Mid-life both swing the same.
+    assert!((y(&a, 2.25) - y(&b, 2.25)).abs() < 1e-3);
+}

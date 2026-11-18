@@ -401,6 +401,8 @@ pub(crate) struct Node {
     pub posterize_time: f32,
     /// Group drag: seconds of lag per child on the group's own transform.
     pub drag: f32,
+    /// Loop envelope: seconds of fade-in after the start and fade-out before the end (0 = constant).
+    pub loop_ramp: f32,
 }
 
 pub(crate) const PART_BG: u8 = 1;
@@ -1312,18 +1314,29 @@ impl Evaluator {
             let s = tr.slot as usize;
             v[s] = tr.sample(lt, v[s], &self.easings);
         }
+        let env = if n.loop_ramp > 0.0 && !n.loops.is_empty() {
+            let s = |x: f32| {
+                let x = x.clamp(0.0, 1.0);
+                x * x * (3.0 - 2.0 * x)
+            };
+            let tail = if n.end.is_finite() { s((n.end - n.start - lt) / n.loop_ramp) } else { 1.0 };
+            s(lt / n.loop_ramp) * tail
+        } else {
+            1.0
+        };
         for l in &n.loops {
             let tau = std::f32::consts::TAU;
             match *l {
-                LoopC::Float { amount, period } => v[prop::Y] += amount * (tau * lt / period).sin(),
+                LoopC::Float { amount, period } => v[prop::Y] += env * amount * (tau * lt / period).sin(),
                 LoopC::Pulse { amount, period } => {
+                    let amount = amount * env;
                     let k = 1.0 + amount * 0.5 * (1.0 - (tau * lt / period).cos());
                     v[prop::SX] *= k;
                     v[prop::SY] *= k;
                 }
                 LoopC::Spin { period } => v[prop::ROT] += 360.0 * lt / period,
-                LoopC::Wiggle { amount, period } => v[prop::ROT] += amount * noise1((lt / period) as f64 * 2.0) as f32,
-                LoopC::Breathe { amount, period } => v[prop::OPACITY] *= 1.0 - amount * 0.5 * (1.0 - (tau * lt / period).cos()),
+                LoopC::Wiggle { amount, period } => v[prop::ROT] += env * amount * noise1((lt / period) as f64 * 2.0) as f32,
+                LoopC::Breathe { amount, period } => v[prop::OPACITY] *= 1.0 - env * amount * 0.5 * (1.0 - (tau * lt / period).cos()),
                 LoopC::Blink { period } => {
                     if (lt / period).fract() >= 0.5 {
                         v[prop::OPACITY] = 0.0

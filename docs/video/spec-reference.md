@@ -226,7 +226,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `enter` | preset | none | Entrance animation, at `start`. |
 | `exit` | preset | none | Exit animation, finishing at `end`. |
 | `animate` | array of tweens | `[]` | Explicit animation (see **Animation**). |
-| `loop` | preset | none | A repeating motion while visible: `float`, `pulse`, `spin`, `wiggle`, `breathe`, `blink`. |
+| `loop` | preset | none | A repeating motion while visible: `float`, `pulse`, `spin`, `wiggle`, `breathe`, `blink`. Object form `{"preset": "wiggle", "amount", "period", "ramp": 0.4}`: `ramp` fades the amplitude in after the start and out before the end, so the oscillation never starts or stops dead. |
 | `visible` | bool | `true` | `false` skips the layer. |
 
 ### `text`
