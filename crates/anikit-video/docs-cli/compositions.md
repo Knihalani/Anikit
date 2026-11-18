@@ -3,7 +3,7 @@
 ```json
 { "compositions": {
     "ticker": { "size": [800, 200], "duration": 2, "background": "#000",
-      "layers": [ { "text": "LIVE · LIVE · LIVE · LIVE", "size": 90, "color": "#C8FF00", "x": "=400 - (t*600 % 800)" } ] } },
+      "layers": [ { "text": "north sea · salt · stone · tide · ", "size": 90, "color": "#C8FF00", "x": "=400 - (t*600 % 800)" } ] } },
   "scenes": [ { "duration": 4, "layers": [
     { "composition": "ticker", "loop": true, "width": 800, "height": 200, "rotation": -8 },
     { "composition": "ticker", "loop": true, "speed": 1.5, "trimStart": 0.5, "width": 800, "height": 200, "y": "75%", "rotation": 6 } ] } ] }

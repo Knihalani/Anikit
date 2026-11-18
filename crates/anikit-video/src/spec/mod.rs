@@ -623,6 +623,22 @@ pub enum Scale {
     Xy([Num; 2]),
 }
 
+/// `onNotes`: one copy of `layer` per note of the generated `music`.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct OnNotes {
+    /// Track name or role (`drums`, `bass`, `lead`, `chords`, …). Default: every track.
+    pub track: Option<String>,
+    /// Only these keys: MIDI numbers or drum names (`kick`, `snare`, `hat`, `clap`, `crash`, …).
+    pub keys: Option<Vec<serde_json::Value>>,
+    /// Keep every n-th matching note (1 = all).
+    pub every: Option<u32>,
+    /// The layer to place on each note. `$t $dur $key $pitch $vel $beat $bar $i $n` are
+    /// replaced per note; it starts on the note (its own `start` is an offset from it) and
+    /// lasts the note's length unless it sets `duration`, `end` or `frames`.
+    pub layer: serde_json::Value,
+}
+
 /// `frames`: one frame number, or a half-open range `[first, end)` (frames into the scene).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
@@ -760,6 +776,9 @@ pub struct Layer {
     pub start: Option<Num>,
     pub end: Option<Num>,
     pub duration: Option<Num>,
+    /// Generated layers, one per note of the music: `{ "onNotes": { "track": "drums", "keys": ["kick"], "layer": {…} } }`.
+    #[serde(rename = "onNotes")]
+    pub on_notes: Option<OnNotes>,
     /// Timing in frames instead of seconds: `"frames": 12` (only frame 12) or `[12, 18]` (frames 12–17).
     pub frames: Option<Frames>,
     pub enter: Option<Preset>,
@@ -786,6 +805,9 @@ pub struct Layer {
     pub line_height: Option<f64>,
     pub letter_spacing: Option<Num>,
     pub uppercase: Option<bool>,
+    /// Trim the text box to the first line's cap height and the last line's baseline (CSS `text-box: cap alphabetic`),
+    /// so `anchor` and grid cells align the letters, not the line box. Default on for text in a grid `cell`.
+    pub text_box_trim: Option<bool>,
     pub max_lines: Option<u32>,
     /// Text: wrap at this width (px, `"40vw"`, `"60%"`) without fixing the box
     /// width (`width` wraps *and* sets the box).
@@ -927,6 +949,9 @@ pub struct RepeaterSpec {
     pub offset: Option<RepeatOffset>,
     /// Seconds of delay per copy (copy i plays i × stagger later).
     pub stagger: Option<f64>,
+    /// Stagger order: `forward` (default), `reverse`, `center` (middle first), `random` (with `seed`).
+    pub order: Option<String>,
+    pub seed: Option<f64>,
     /// Rotation/scale centre `[x, y]` in parent pixels (default: the layer's own position).
     pub center: Option<[f64; 2]>,
 }
@@ -969,6 +994,9 @@ pub struct AnimatorSpec {
     pub opacity: Option<f64>,
     pub blur: Option<f64>,
     pub color: Option<String>,
+    /// Variable-font axis values at full selection, e.g. `{"wght": 900, "wdth": 125}`
+    /// (a weight wave across the units). Spacing stays that of the base text.
+    pub axes: Option<BTreeMap<String, f64>>,
     /// Range start / end as fractions of the units (0..1). Defaults 0 and 1. Animatable as `rangeStart` / `rangeEnd`.
     pub start: Option<Num>,
     pub end: Option<Num>,

@@ -71,8 +71,9 @@ pub struct PostSettings {
     /// Dither the 8-bit output (on by default: removes banding).
     pub dither: bool,
     /// A 3D LUT applied after tone mapping: `anikit:lut/<look>` (`assets list --type lut`),
-    /// another library ref, or a `.cube` path.
-    pub lut: Option<String>,
+    /// another library ref, a `.cube` path, or the film model's own parameters
+    /// (`{"base": "teal-orange", "contrast": 0.6, "shadows": [0, 0.01, 0.03], …}`).
+    pub lut: Option<serde_json::Value>,
     /// How much of the LUT (0..1).
     pub lut_mix: f32,
 }
@@ -251,7 +252,7 @@ impl PostSpec {
                 }
                 let s: PostSettings = serde_json::from_value(v).map_err(|e| format!("post: {e}"))?;
                 if let Some(l) = &s.lut {
-                    crate::assetlib::lut::load(l).map_err(|e| format!("post.lut: {e}"))?;
+                    crate::assetlib::lut::load_value(l).map_err(|e| format!("post.lut: {e}"))?;
                 }
                 Ok(s)
             }
@@ -432,7 +433,7 @@ impl PostProcessor {
         let (lut, grade, img, dith) = (&self.to_srgb[..], &self.grade, &self.img, &self.dith);
         let (sat, tonemap, vig, dither) = (p.saturation, p.tonemap, p.vignette, p.dither);
         // Checked when the spec was resolved; a LUT that fails now is skipped.
-        let grade_lut = p.lut.as_deref().filter(|_| p.lut_mix > 0.0).and_then(|l| crate::assetlib::lut::load(l).ok());
+        let grade_lut = p.lut.as_ref().filter(|_| p.lut_mix > 0.0).and_then(|l| crate::assetlib::lut::load_value(l).ok());
         let lut_mix = p.lut_mix.clamp(0.0, 1.0);
         let enc = |v: f32| -> f32 {
             let s = v.clamp(0.0, 1.0).sqrt() * SRGB_LUT as f32;
@@ -759,6 +760,13 @@ mod tests {
     fn lut_grades_and_mix_zero_is_off() {
         let base = PostSettings { dither: false, ..Default::default() };
         let mono = PostSettings { lut: Some("anikit:lut/mono-silver".into()), ..base.clone() };
+        // The film model's own parameters work too (a preset is only a start).
+        let custom = PostSettings { lut: Some(serde_json::json!({ "base": "mono-silver", "contrast": 0.2, "mono": [1.1, 1.0, 0.85] })), ..base.clone() };
+        let mut cp = [200u8, 60, 40, 255].repeat(16);
+        PostProcessor::default().apply(&mut cp, 4, 4, &custom, 0);
+        assert!(cp[0] > cp[2] + 10, "toned mono: {:?}", &cp[..4]);
+        let bad = PostSettings { lut: Some(serde_json::json!({ "contrst": 1 })), ..base.clone() };
+        assert!(crate::assetlib::lut::load_value(bad.lut.as_ref().unwrap()).unwrap_err().contains("contrast"));
         assert!(!mono.is_identity());
         let mut px = [200u8, 60, 40, 255].repeat(16);
         PostProcessor::default().apply(&mut px, 4, 4, &mono, 0);

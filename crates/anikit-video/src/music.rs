@@ -18,6 +18,9 @@ pub struct MusicCue {
     pub gain: f64,
     /// Duck under voice-over by this many dB (None = never).
     pub duck: Option<f64>,
+    /// Video length and voice-over flag the score was bound with (`onNotes`): the render
+    /// uses them too, so the sound matches the pictures exactly.
+    pub pinned: Option<(f64, bool)>,
 }
 
 /// Parse the spec's `music` value.
@@ -71,7 +74,7 @@ fn parse_inner(v: &serde_json::Value, base: &Path) -> Result<MusicCue, String> {
             anikit_music::custom::TrackAuto::parse(au, &a.grid, &format!("track '{}'.automate", t.name))?;
         }
     }
-    Ok(MusicCue { at: spec.at.unwrap_or(0.0), gain: spec.gain.unwrap_or(0.0), duck, spec, base: base.to_path_buf() })
+    Ok(MusicCue { at: spec.at.unwrap_or(0.0), gain: spec.gain.unwrap_or(0.0), duck, spec, base: base.to_path_buf(), pinned: None })
 }
 
 /// The exact time (video seconds) of `@beatN` / `@barN` (1-based).
@@ -81,10 +84,48 @@ pub fn marker(cue: &MusicCue, kind: &str, n: usize) -> Result<f64, String> {
     Ok(cue.at + g.secs((n.max(1) - 1) as f64 * unit))
 }
 
+/// One note of the generated music, on the video timeline.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ScoreNote {
+    /// Track name and role (`drums`, `bass`, `lead`, …).
+    pub track: String,
+    pub role: String,
+    /// Video seconds of the note's start (on the grid, swing included; humanisation is ignored).
+    pub t: f64,
+    /// Length in seconds.
+    pub dur: f64,
+    /// MIDI key (GM drum key on drum tracks) and velocity 0..1.
+    pub key: f32,
+    pub vel: f32,
+    /// Beat position from the music's start (fractional).
+    pub beat: f64,
+}
+
+/// Every note the music will play for a video of `video_len` seconds, sorted by time.
+/// It uses the same arrangement as [`render_track`], so pictures bound to it land on the sound.
+pub fn score(cue: &MusicCue, video_len: f64, has_voice: bool) -> Result<Vec<ScoreNote>, String> {
+    let opts = RenderOpts { video_length: Some((video_len - cue.at).max(0.1)), base_dir: Some(cue.base.clone()), rate: audio::DEFAULT_RATE, stems: false };
+    let mut spec = cue.spec.clone();
+    if has_voice && spec.underscore.is_none() {
+        spec.underscore = Some(true);
+    }
+    let a = anikit_music::arrange(&spec, &opts)?;
+    let mut out = Vec::new();
+    for tr in &a.tracks {
+        for n in &tr.notes {
+            let (t0, t1) = if tr.straight { (a.grid.secs(n.t), a.grid.secs(n.t + n.len)) } else { (a.grid.swung(n.t), a.grid.swung(n.t + n.len)) };
+            out.push(ScoreNote { track: tr.name.clone(), role: tr.role.clone(), t: cue.at + t0, dur: (t1 - t0).max(0.0), key: n.key, vel: n.vel, beat: n.t });
+        }
+    }
+    out.sort_by(|x, y| x.t.total_cmp(&y.t).then(x.key.total_cmp(&y.key)));
+    Ok(out)
+}
+
 /// Render the music for a video of `video_len` seconds into a float WAV at
 /// `wav`, returning the track that places it (ducked under voice when the
 /// video has voice-over).
 pub fn render_track(cue: &MusicCue, video_len: f64, wav: &Path, has_voice: bool) -> Result<Track, String> {
+    let (video_len, has_voice) = cue.pinned.unwrap_or((video_len, has_voice));
     let opts = RenderOpts { video_length: Some((video_len - cue.at).max(0.1)), base_dir: Some(cue.base.clone()), rate: audio::DEFAULT_RATE, stems: false };
     // Under voice-over, play the underscore mix (no melody) unless the spec says otherwise.
     let mut spec = cue.spec.clone();
@@ -110,7 +151,7 @@ pub fn render_track(cue: &MusicCue, video_len: f64, wav: &Path, has_voice: bool)
 const DOCS: &str = r#"MUSIC — generated, mastered soundtracks (−14 LUFS, −1 dBTP), deterministic, 25–80× real time, rendered alongside the frames
 In a video spec:   "music": {"style":"lofi","bpm":84,"key":"Dm","mood":"warm","hits":["@bar5"]}
   or just          "music": "synthwave"         (fills the video; @beatN/@barN follow its exact grid)
-Standalone:        anikit-video music '{"style":"house","length":"15s"}' -o bed.wav [--stems DIR] [--midi out.mid]
+Standalone:        anikit-video music '{"style":"house","length":"15s"}' -o bed.wav [--stems DIR] [--midi out.mid] [--alts DIR: underscore, no-drums, 30s, 15s]
                    anikit-video music --style trap --bpm 140 --key Cm --length 20s -o out.ogg   (ogg/mp3/flac via ffmpeg)
                    anikit-video music styles | instruments | sfx | fetch essentials|salamander|vsco2-ce
 
@@ -146,7 +187,7 @@ MAKE ANYTHING (example: docs/video/music/custom.json)
              "sub":0.3, "noise":0, "filter":{"type":"ladder|lp|lp4|bp|formant","cutoff":800,"res":0.4,"drive":1.5,"env":2,"track":0.5},
              "amp":[a,d,s,r], "fenv":[a,d,s,r], "lfo":{"rate":5,"vib":8,"cutoff":0.5,"trem":0.2}, "pitch":[12,0.05], "glide":0.05, "mono":true}},
              "kit": {"sampler": {"zones":[{"file":"kick.wav","key":36},{"file":"c4.wav","root":"C4","lo":48,"hi":72,"vel":[1,90],"loop":[s,e]}],"release":0.3}}}
-  then {"inst":"wob", …}.  Per track: "fx":[{"type":"eq|comp|delay|reverb|chorus|saturate|widener|transient|filter|gain|autopan", …params}]
+  then {"inst":"wob", …}.  Per track: "fx":[{"type":"eq|comp|delay|reverb|chorus|saturate|widener|transient|filter|gain|autopan|gated-reverb", …params}]
   "automate": {"volume"|"pan"|"lp"|"hp"|"reverb"|"delay"|"synth.cutoff|res|drive|env|vib|…": [[beat, v], ["@bar5", v]] or "=400+3000*saw(bar/4)"}
         expr vars beat bar t bpm; fns sin cos abs min max clamp mix saw tri sq step smooth exp log pow
 INSTRUMENTS (sampled GM bank bundled; `music instruments` lists all) piano epiano rhodes organ strings violin cello
@@ -164,6 +205,31 @@ EXAMPLES
             {"inst":"drums","drums":{"kick":"x.......x.......","snare":"....x.......x..."}}]}}
 Errors name the field and suggest the closest word. Same spec + seed → bit-identical audio.
 "#;
+
+/// The alternate mixes `--alts` writes: (name, spec). Cutdowns only when the
+/// piece is longer than them.
+fn alt_mixes(v: &serde_json::Value, seconds: f64) -> Result<Vec<(&'static str, serde_json::Value)>, String> {
+    let mut out = Vec::new();
+    let mut u = v.clone();
+    u["underscore"] = serde_json::json!(true);
+    out.push(("underscore", u));
+    let mut d = v.clone();
+    let mut mute: Vec<serde_json::Value> = d.get("mute").and_then(|m| m.as_array().cloned()).unwrap_or_default();
+    mute.push(serde_json::json!("drums"));
+    d["mute"] = serde_json::Value::Array(mute);
+    out.push(("no-drums", d));
+    for (name, len) in [("30s", 30.0), ("15s", 15.0)] {
+        if seconds > len + 1.0 {
+            let mut c = v.clone();
+            c["length"] = serde_json::json!(format!("{len}s"));
+            if let Some(o) = c.as_object_mut() {
+                o.remove("sections");
+            }
+            out.push((name, c));
+        }
+    }
+    Ok(out)
+}
 
 /// `anikit-video docs music` text (≤ 60 lines).
 pub fn docs() -> &'static str {
@@ -284,6 +350,17 @@ fn cmd_music(args: &[String]) -> Result<(), String> {
             write_audio(&dir.join(format!("{}.wav", s.name)), r.rate, &s.l, &s.r)?;
         }
     }
+    if let Some(dir) = flags.get("alts").map(PathBuf::from) {
+        // Alternate mixes for editors: the same piece under voice-over, without
+        // drums, and cut down to 30 and 15 s (each with its own ending).
+        std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+        let stem = Path::new(&out).file_stem().and_then(|s| s.to_str()).unwrap_or("music").to_string();
+        for (name, path) in alt_mixes(&v, r.duration())? {
+            let spec = MusicSpec::from_json(&path.to_string())?;
+            let a = anikit_music::render(&spec, &RenderOpts { stems: false, ..opts.clone() })?;
+            write_audio(&dir.join(format!("{stem}-{name}.wav")), a.rate, &a.l, &a.r)?;
+        }
+    }
     if let Some(m) = flags.get("midi") {
         let song = anikit_music::midi::MidiSong {
             bpm: r.arrangement.grid.bpm,
@@ -366,4 +443,26 @@ pub fn write_audio(path: &Path, rate: u32, l: &[f32], r: &[f32]) -> Result<(), S
         return Err(format!("ffmpeg: {}", String::from_utf8_lossy(&o.stderr).trim()));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn alt_mixes_for_editors() {
+        let v = serde_json::json!({ "style": "pop", "length": "40s", "mute": ["pad"], "sections": ["intro", "chorus"] });
+        let alts = alt_mixes(&v, 40.0).unwrap();
+        let names: Vec<&str> = alts.iter().map(|a| a.0).collect();
+        assert_eq!(names, ["underscore", "no-drums", "30s", "15s"]);
+        assert_eq!(alts[0].1["underscore"], true);
+        assert_eq!(alts[1].1["mute"], serde_json::json!(["pad", "drums"]));
+        assert_eq!(alts[2].1["length"], "30s");
+        assert!(alts[2].1.get("sections").is_none());
+        // A 20 s piece only gets the 15 s cutdown.
+        assert_eq!(alt_mixes(&v, 20.0).unwrap().len(), 3);
+        for (_, s) in &alts {
+            MusicSpec::from_json(&s.to_string()).unwrap();
+        }
+    }
 }

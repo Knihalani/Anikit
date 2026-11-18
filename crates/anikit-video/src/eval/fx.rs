@@ -20,6 +20,8 @@ pub(crate) struct RepC {
     pub scale: [f32; 2],
     pub opacity: f32,
     pub stagger: f32,
+    /// Stagger rank of each copy (empty = in order).
+    pub ranks: Vec<u32>,
     /// Rotation/scale centre in parent pixels; `None` = the layer's position.
     pub center: Option<[f32; 2]>,
 }
@@ -215,6 +217,10 @@ pub(crate) struct AnimatorC {
     pub blur: f32,
     /// Target colour (OKLab + alpha).
     pub color: Option<[f32; 4]>,
+    /// Variable-font axis targets at full selection.
+    pub axes: Vec<(String, f32)>,
+    /// Line alignment for axis-driven advance changes: 0 left, 0.5 centre, 1 right.
+    pub align: f32,
     pub smooth: f32,
     /// Rank of each unit in selection order (empty = in order).
     pub order: Vec<u32>,
@@ -777,7 +783,7 @@ mod tests {
 
     #[test]
     fn animator_selection() {
-        let a = AnimatorC { by: Default::default(), dx: 0.0, dy: 0.0, rot: 0.0, scale: 1.0, opacity: 0.0, blur: 0.0, color: None, smooth: 0.0, order: vec![], auto: None };
+        let a = AnimatorC { by: Default::default(), dx: 0.0, dy: 0.0, rot: 0.0, scale: 1.0, opacity: 0.0, blur: 0.0, color: None, axes: vec![], align: 0.5, smooth: 0.0, order: vec![], auto: None };
         assert_eq!(a.amount(0.5, 0.0, 1.0), 1.0);
         assert_eq!(a.amount(0.5, 0.6, 1.6), 0.0);
         let r = order_ranks(10, "random", 3.0);
@@ -802,7 +808,7 @@ mod tests {
 
     #[test]
     fn repeater_transform() {
-        let r = RepC { count: 4, d: [10.0, 0.0], rot: 90.0, scale: [1.0, 1.0], opacity: -0.25, stagger: 0.0, center: None };
+        let r = RepC { count: 4, d: [10.0, 0.0], rot: 90.0, scale: [1.0, 1.0], opacity: -0.25, stagger: 0.0, ranks: vec![], center: None };
         let m = r.xf(1, [0.0, 0.0]);
         // (0,0) → translated by 10 then rotated 90° about the origin → (0, 10).
         let x = m[0] * 0.0 + m[2] * 0.0 + m[4];
