@@ -53,6 +53,8 @@ struct Item {
     /// Exactly the 16×16 blocks that change, when `rect` is much looser
     /// (a clip growing or sweeping: only the band between its edges changes).
     blocks: Option<Vec<(usize, usize)>>,
+    /// For a clip that changes: its layer's push op (index, aligned lists).
+    clip_of: Option<usize>,
 }
 
 fn op_transform(op: &Op) -> Option<&crate::dl::Affine> {
@@ -179,7 +181,7 @@ fn changes(a: &[Op], b: &[Op], ra: &[Option<Rect>], rb: &[Option<Rect>], cut: f6
                 if moved < cut {
                     let rect = ba.union(bb);
                     let blocks = clip_blocks(pa, ta, pb, tb, rect);
-                    out.push(Item { rect, moved, event: false, vel: None, blocks });
+                    out.push(Item { rect, moved, event: false, vel: None, blocks, clip_of: Some(i) });
                 }
             }
             (Op::PushLayer { .. } | Op::PopLayer, _) => {}
@@ -194,6 +196,7 @@ fn changes(a: &[Op], b: &[Op], ra: &[Option<Rect>], rb: &[Option<Rect>], cut: f6
                             event: true,
                             vel: None,
                             blocks: None,
+                            clip_of: None,
                         });
                         continue;
                     }
@@ -207,6 +210,7 @@ fn changes(a: &[Op], b: &[Op], ra: &[Option<Rect>], rb: &[Option<Rect>], cut: f6
                         event: true,
                         vel: None,
                         blocks: None,
+                        clip_of: None,
                     });
                 } else {
                     out.push(Item {
@@ -215,6 +219,7 @@ fn changes(a: &[Op], b: &[Op], ra: &[Option<Rect>], rb: &[Option<Rect>], cut: f6
                         event: false,
                         vel: translation(x, y, xa),
                         blocks: None,
+                        clip_of: None,
                     });
                 }
             }
@@ -233,6 +238,7 @@ fn changes(a: &[Op], b: &[Op], ra: &[Option<Rect>], rb: &[Option<Rect>], cut: f6
             event: true,
             vel: None,
             blocks: None,
+            clip_of: None,
         });
     }
 }
@@ -374,6 +380,24 @@ fn op_transform_mut(op: &mut Op) -> Option<&mut crate::dl::Affine> {
     }
 }
 
+/// The `PopLayer` closing the layer pushed at `p`.
+fn layer_end(ops: &[Op], p: usize) -> Option<usize> {
+    let mut depth = 0usize;
+    for (j, op) in ops.iter().enumerate().skip(p) {
+        match op {
+            Op::PushLayer { .. } => depth += 1,
+            Op::PopLayer => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(j);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
 /// Box-filter a `bw × bh` RGB accumulator along `slot` (its length is the
 /// filter width), into `out`. Taps every ½ px, bilinear, clamped to the box.
 fn smear_box(acc: &[f32], bw: usize, bh: usize, slot: Vec2, out: &mut Vec<f32>) {
@@ -459,6 +483,24 @@ fn smear_box(acc: &[f32], bw: usize, bh: usize, slot: Vec2, out: &mut Vec<f32>) 
 }
 
 impl Renderer {
+    /// Add the coverage (0..1) of clip `path` under `aff` to `out`, over box `r`.
+    fn clip_coverage(&mut self, path: &kurbo::BezPath, aff: &crate::dl::Affine, r: [usize; 4], out: &mut [f32]) {
+        let (bw, bh) = ((r[2] - r[0]) as u16, (r[3] - r[1]) as u16);
+        let ctx = self.mask_ctx.get_or_insert_with(|| vello_cpu::RenderContext::new(bw, bh));
+        ctx.reset_and_resize(bw, bh);
+        ctx.set_paint(super::color(crate::dl::Rgba([1.0, 1.0, 1.0, 1.0])));
+        ctx.set_fill_rule(vello_cpu::peniko::Fill::NonZero);
+        ctx.set_transform(Affine::translate((-(r[0] as f64), -(r[1] as f64))) * super::affine(aff));
+        ctx.fill_path(path);
+        ctx.flush();
+        self.mask_pix.resize(bw, bh);
+        ctx.render_with(&mut self.mask_pix, &mut self.st.res, vello_cpu::RasterizerSettings::default());
+        ctx.reset();
+        for (o, p) in out.iter_mut().zip(self.mask_pix.data_as_u8_slice().chunks_exact(4)) {
+            *o += p[3] as f32 / 255.0;
+        }
+    }
+
     /// Render the frame at `t` with a shutter open for `shutter` seconds
     /// (centred on `t`; 180° at 30 fps = 1/60 s). `eval(t)` must return the
     /// display list at time `t`. Static frames render once.
@@ -625,6 +667,33 @@ impl Renderer {
             boxes = vec![([0, 0, w, h], n.max(2), smear)];
         }
         let full = boxes.len() == 1 && boxes[0].0 == [0, 0, w, h];
+        // Clip wipes (an iris, a wipe): in a box where only one layer's clip
+        // changes and everything else is still, the shutter average is the
+        // layer shown in proportion to the time each pixel spends inside the
+        // clip. Two renders and a clip mask per sample, not a render per sample.
+        let wipes: Vec<Option<(usize, usize)>> = boxes
+            .iter()
+            .map(|(b, _, _)| {
+                if reference || full || !aligned {
+                    return None;
+                }
+                let br = Rect::new(b[0] as f64, b[1] as f64, b[2] as f64, b[3] as f64);
+                let inside: Vec<&Item> = items.iter().filter(|i| i.rect.inflate(3.0, 3.0).overlaps(br)).collect();
+                let p = inside.first()?.clip_of?;
+                if inside.iter().any(|i| i.event || i.clip_of != Some(p)) {
+                    return None;
+                }
+                let q = layer_end(&tc.ops, p)?;
+                let calm = (0..tc.ops.len()).all(|j| {
+                    j == p
+                        || j == q
+                        || still[j]
+                        || (!matches!(tc.ops[j], Op::PushLayer { .. } | Op::PopLayer)
+                            && [&rects[0], &rects[1], &rects[2]].iter().all(|r| r[j].is_none_or(|r| !r.overlaps(br))))
+                });
+                calm.then_some((p, q))
+            })
+            .collect();
         // Post runs once on the average: switch it off for the samples.
         let post = self.post.take();
         let lin: Vec<f32> = (0..256).map(|i| super::post::srgb_to_linear(i as f32 / 255.0)).collect();
@@ -665,11 +734,46 @@ impl Renderer {
         let mut slots: Vec<(u32, DisplayList)> = Vec::new();
         let mut sample_rects = Vec::new();
         // Boxes with the same sample count share their sub-frame lists.
-        let mut counts: Vec<usize> = boxes.iter().map(|b| b.1).collect();
+        // Wipe boxes: two renders and the clip's coverage over the shutter.
+        for ((r, n, _), (&o, wipe)) in boxes.iter().zip(offs.iter().zip(&wipes)) {
+            let Some((p, q)) = *wipe else { continue };
+            let (pk, qk) = (k + p, k + q);
+            let mut outside = center.clone();
+            outside.ops.drain(pk..=qk);
+            let mut unclipped = center.clone();
+            if let Op::PushLayer { clip, .. } = &mut unclipped.ops[pk] {
+                *clip = None;
+            }
+            let region = Some([r[0] as u32, r[1] as u32, r[2] as u32, r[3] as u32]);
+            let (bw, bh) = (r[2] - r[0], r[3] - r[1]);
+            let read = |me: &mut Self, l: &DisplayList| -> Vec<f32> {
+                me.render_region(l, region, true, None, None);
+                let px = me.frame.data_as_u8_slice();
+                (r[1]..r[3]).flat_map(|y| px[(y * w + r[0]) * 4..(y * w + r[2]) * 4].chunks_exact(4).flat_map(|p| [lin[p[0] as usize], lin[p[1] as usize], lin[p[2] as usize]])).collect()
+            };
+            let (lo, hi) = (read(self, &outside), read(self, &unclipped));
+            let mut cover = vec![0f32; bw * bh];
+            for i in 0..*n {
+                let ts = t - shutter * 0.5 + shutter * (i as f32 + 0.5) / *n as f32;
+                let l = eval(ts);
+                match l.ops.get(pk) {
+                    Some(Op::PushLayer { clip: Some((path, aff)), .. }) if l.ops.len() == center.ops.len() => self.clip_coverage(path, aff, *r, &mut cover),
+                    _ => cover.iter_mut().for_each(|c| *c += 1.0),
+                }
+            }
+            let nf = *n as f32;
+            for (j, c) in cover.iter().enumerate() {
+                for ch in 0..3 {
+                    let (a, b) = (lo[j * 3 + ch], hi[j * 3 + ch]);
+                    acc[o + j * 3 + ch] = (nf - c) * a + c * b;
+                }
+            }
+        }
+        let mut counts: Vec<usize> = boxes.iter().zip(&wipes).filter(|(_, w)| w.is_none()).map(|(b, _)| b.1).collect();
         counts.sort_unstable();
         counts.dedup();
         for &n in &counts {
-            let regions: Vec<([usize; 4], usize)> = boxes.iter().zip(&offs).filter(|(b, _)| b.1 == n).map(|(b, &o)| (b.0, o)).collect();
+            let regions: Vec<([usize; 4], usize)> = boxes.iter().zip(offs.iter().zip(&wipes)).filter(|(b, (_, w))| b.1 == n && w.is_none()).map(|(b, (&o, _))| (b.0, o)).collect();
             for i in 0..n {
                 // Sample times spread evenly over the open shutter (centres of n slots).
                 let ts = t - shutter * 0.5 + shutter * (i as f32 + 0.5) / n as f32;

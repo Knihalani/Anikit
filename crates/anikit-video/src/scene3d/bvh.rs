@@ -87,6 +87,12 @@ impl Bvh {
         self.wide.closest(o, d, tmin, tmax).map(|h| Hit { t: h.t, tri: h.tri, u: h.u, v: h.v })
     }
 
+    /// Merge the nearest few hits into `near` (see [`super::kernel::wide::Near`]).
+    #[inline]
+    pub fn nearest(&self, o: V3, d: V3, tmin: f32, tmax: f32, near: &mut super::kernel::wide::Near<super::kernel::wide::TriHit>) {
+        self.wide.nearest(o, d, tmin, tmax, near)
+    }
+
     /// Whether anything is hit along the segment (shadow and AO rays).
     #[inline]
     pub fn occluded(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> bool {
@@ -263,6 +269,35 @@ mod tests {
             assert_eq!(b.occluded(o, d, 1e-4, 1e9), best.is_some());
             let two = b.intersect2(o, d, 1e-4, 1e9);
             assert_eq!(two.is_some(), best.is_some());
+        }
+    }
+
+    /// The multi-hit query returns the same hits, in order, as repeated
+    /// closest-hit queries that start just past the previous hit.
+    #[test]
+    fn nearest_matches_successive_closest() {
+        use super::super::kernel::wide::{Near, TriHit, NEAR_K};
+        let m = anikit_core::raster::sphere(10, 20);
+        let b = Bvh::new(&m.pos, &m.nrm, &m.idx);
+        let mut seed = 3u32;
+        let mut rnd = || {
+            seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+            (seed >> 8) as f32 / (1u32 << 24) as f32 * 2.0 - 1.0
+        };
+        for _ in 0..500 {
+            let o = v3(rnd() * 0.5, rnd() * 0.5, 3.0);
+            let d = norm(v3(rnd() * 0.2, rnd() * 0.2, -1.0));
+            let mut near = Near::new(TriHit { t: 0.0, tri: 0, u: 0.0, v: 0.0 });
+            b.nearest(o, d, 1e-4, 1e9, &mut near);
+            let mut tmin = 1e-4;
+            let mut seq = Vec::new();
+            while seq.len() < NEAR_K {
+                let Some(h) = b.intersect(o, d, tmin, 1e9) else { break };
+                seq.push(h.t);
+                tmin = h.t;
+            }
+            let got: Vec<f32> = near.h[..near.n].iter().map(|e| e.0).collect();
+            assert_eq!(got, seq);
         }
     }
 

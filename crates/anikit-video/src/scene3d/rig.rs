@@ -172,8 +172,8 @@ pub fn text_gobo(v: &Value, dir: V3, path: &str) -> Res<Gobo> {
     let (sw, sh) = (size * (x1 - x0) / em, size);
     let pad = 0.06;
     let (sw, sh) = (sw * (1.0 + 2.0 * pad), sh * (1.0 + 2.0 * pad * (x1 - x0) / em));
-    let w = 1400usize;
-    let h = ((w as f32 * sh / sw).round() as usize).clamp(8, 2000);
+    let w = 2400usize;
+    let h = ((w as f32 * sh / sw).round() as usize).clamp(8, 3000);
     // Even-odd scanline fill, 4× vertical supersampling.
     let mut mask = vec![0f32; w * h];
     let px = |x: f32| ((x - x0) / (x1 - x0) * (1.0 - 2.0 * pad) + pad) * w as f32;

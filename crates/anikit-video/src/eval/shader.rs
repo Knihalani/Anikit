@@ -612,8 +612,10 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> (Pixmap, f64) {
     f.channels = chans;
     // Reference mode (the quality harness) shades every pixel with the full 2×2
     // grid; draft mode skips anti-aliasing; otherwise adaptive at AA_THRESHOLD.
+    // `job.supersample` already includes reference mode, except for filters,
+    // which are never supersampled (it would soften the frame they read).
     let reference = crate::components::reference();
-    f.supersample = (job.supersample && !crate::components::style::draft()) || reference;
+    f.supersample = job.supersample && (reference || !crate::components::style::draft());
     f.adaptive = !reference;
     f.threshold = anikit_shader::AA_THRESHOLD;
     f.max_refine = anikit_shader::AA_MAX_REFINE;
@@ -687,7 +689,9 @@ impl Evaluator {
             progress,
             uniforms,
             channels: chans,
-            supersample: sc.supersample || crate::components::reference(),
+            // The reference supersamples every shader except filters: not
+            // supersampling a filter is the look, not a speed approximation.
+            supersample: sc.supersample || (crate::components::reference() && !sc.filter),
             alpha: sc.alpha,
             label: sc.label.clone(),
             audio,
@@ -742,9 +746,11 @@ impl Evaluator {
                         let mut ops = Vec::new();
                         let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0, amul: 1.0 };
                         let k = [dw / w.max(1e-3), 0.0, 0.0, dh / h.max(1e-3), 0.0, 0.0];
-                        for n in nodes {
-                            self.emit_node(n, &ccx, &k, [w, h], 1.0, &mut ops);
-                        }
+                        super::untagged(|| {
+                            for n in nodes {
+                                self.emit_node(n, &ccx, &k, [w, h], 1.0, &mut ops);
+                            }
+                        });
                         ChanData::List(DisplayList { width: dw as u32, height: dh as u32, background: Rgba([0.0; 4]), ops })
                     }
                     ChannelC::Comp { ev, time } => ChanData::Comp(Arc::downgrade(ev), time.map(lt, ev.duration)),

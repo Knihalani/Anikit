@@ -1,0 +1,76 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 4,
+   "scene3d": {
+    "env": "cyc",
+    "rig": {
+     "preset": "golden",
+     "gobo": false,
+     "warmth": 0.4,
+     "ratio": 4
+    },
+    "set": "landscape",
+    "fog": {
+     "density": 0.12,
+     "height": 1.4,
+     "color": "#E6D2B2",
+     "drift": 0.9,
+     "scale": 3.0,
+     "wind": [
+      0.8,
+      0,
+      0.2
+     ]
+    },
+    "camera": {
+     "lens": "normal35",
+     "shake": "breath",
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        2.6,
+        2.4,
+        10.5
+       ],
+       "target": [
+        0,
+        1.0,
+        0
+       ],
+       "fstop": 8
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "box",
+      "size": [
+       0.7,
+       2.2,
+       0.7
+      ],
+      "radius": 0.04,
+      "pos": [
+       0,
+       1.1,
+       0
+      ],
+      "material": {
+       "extends": "matte",
+       "base": "#EDE6DA",
+       "imperfections": 0.3
+      }
+     }
+    ]
+   },
+   "layers": []
+  }
+ ]
+}

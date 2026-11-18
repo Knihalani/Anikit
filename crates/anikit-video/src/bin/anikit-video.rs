@@ -48,7 +48,7 @@ impl Args {
         let cmd = it.next().ok_or(USAGE)?;
         let mut input = None;
         let mut flags = Vec::new();
-        const BOOL: &[&str] = &["--json", "--watch", "--no-audio", "--components", "--shaders", "--quiet", "--profile"];
+        const BOOL: &[&str] = &["--json", "--watch", "--no-audio", "--components", "--shaders", "--quiet", "--profile", "--no-cache"];
         while let Some(a) = it.next() {
             if a.starts_with('-') && a.len() > 1 {
                 let (k, v) = match a.split_once('=') {
@@ -676,6 +676,10 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             let from = a.get("--from").map(|s| resolve_time(&ev, s)).transpose()?;
             let to = a.get("--to").map(|s| resolve_time(&ev, s)).transpose()?;
             let scale = a.num("--scale")?.unwrap_or(if quality == Quality::Draft { 0.5 } else { 1.0 });
+            if a.has("--no-cache") {
+                // Render every chunk and store none (a clean final).
+                std::env::set_var("ANIKIT_RENDER_CACHE", "0");
+            }
             let opts = RenderOptions { codec, quality, from, to, scale, progress: !json && !a.has("--quiet"), audio: !a.has("--no-audio"), profile: a.has("--profile") };
             let w = ((ev.width as f32 * scale).round() as u32).max(2);
             let h = ((ev.height as f32 * scale).round() as u32).max(2);

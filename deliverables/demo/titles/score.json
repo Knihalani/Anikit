@@ -69,6 +69,11 @@
    },
    "judged_pro": "0/3",
    "ref_mean": 8.46
+  },
+  {
+   "pass": "pass 4 (not kept): halftone dot-swell transition + giant bleeding lockup",
+   "overall": 4.12,
+   "full": 4.33
   }
  ],
  "final": "pass 3",
@@ -78,5 +83,17 @@
   "r2_wall_s": 1156.6,
   "r2_peak_rss_mb": 5037
  },
- "defects": "clean (scripts/defects.py)"
+ "defects": "clean (scripts/defects.py)",
+ "judge_6trial_final": {
+  "blind": 4.38,
+  "full": 4.5,
+  "pro": "0/6",
+  "critic": {
+   "motion": 5,
+   "sound": 5,
+   "craft": 6
+  },
+  "pooled_9": 4.3,
+  "by": "JUDGE"
+ }
 }
