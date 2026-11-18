@@ -17,7 +17,8 @@ Fonts: `fonts/` holds 27 OFL families downloaded for these pieces (the engine bu
 | NIGHT CHORUS | v1: 2D type cards (`nightchorus.mp4`) | 3.25 | 8.79 | −5.54 | 0/3 | |
 | NIGHT CHORUS | v2: ray-traced street of signs, continuous dolly, choir | 3.62 | 8.83 | −5.21 | 0/3 | the credits became real signs in a world |
 | NIGHT CHORUS | v3: + brick, rain, louder choir | 3.38 | 8.71 | −5.33 | 0/3 | within trial noise of v2 |
-| NIGHT CHORUS | v4: signs ignite one by one with their choir voices; per-letter title (`v2/street.mp4`, current) | 3.38 | 8.83 | −5.45 | 0/3 | critic motion/sound/craft 6/6/6; the judge: "the signs should actually illuminate wet ground, brick and fog" (engine gaps 1–2 below) |
+| NIGHT CHORUS | v4: signs ignite one by one with their choir voices; per-letter title | 3.38 | 8.83 | −5.45 | 0/3 | critic motion/sound/craft 6/6/6; the judge: "the signs should actually illuminate wet ground, brick and fog" (engine gaps 1–2 below) |
+| NIGHT CHORUS | v5: + textured prints lit by local lights (engine fix), mid-tone brick (`v2/street.mp4`, current) | 3.62 | 8.79 | −5.17 | 0/3 | lit brick, falloff, spill; the judge's remaining notes are about concept and type system |
 | LAST LIGHT | v1 | 3.50 | 7.71 | −4.21 | 0/3 | |
 | LAST LIGHT | v2: opener into the sun, wordmark projected by the light | **4.12** | 7.25 | −3.13 | **1/3** | end card replaced by an in-world gobo; establishing shot |
 | LAST LIGHT | v3: + the dust settles into orbits around the record after the drop (current) | 4.00 | 7.29 | −3.29 | 0/3 | the 6 sampled frames rarely catch the orbit; same critique (model detail, one mood) |
@@ -28,6 +29,9 @@ Fonts: `fonts/` holds 27 OFL families downloaded for these pieces (the engine bu
 Raw judge results (JSON, no images) are in `judge_results/`.
 
 **What the judge keeps asking for**, in its words: "an idea specific to the subject that generates the imagery", "real material and motivated light", "a typographic point of view", "choreography between frames". Its second-order asks for the 3D pieces map directly onto engine gaps: textured surfaces lit by local lights; emissive signs that light their surroundings; animated (shader) textures on 3D surfaces; a material library with normal and roughness maps. Those are the ceiling for the 3D work tonight.
+
+## Engine change made on this branch
+- **scene3d: texture prints are lit by local point/spot lights** (`trace.rs` `print_light`; commit c099f42). Before: brick-textured walls ignored lamps and sign spill, which was the judge's #1 complaint about the street ("greybox, signs light nothing"). After: pools of lamp light and coloured spill on textured facades. Proof (before | after): `proof_print_local_lights.png`. Test: `scene3d::tests::textured_prints_are_lit_by_local_lights`; all 50 scene3d tests and clippy pass. Cost: one shadow ray per shadowed light per textured pixel (the street went from about 2.1 to 4.2 s per still with 20 shadowed lamps).
 
 ## The ceiling, in one paragraph
 With custom fonts, JIT GLSL over text channels, ray-traced 3D with volumetric light, and an authored score, the engine can already make frames that sit next to studio references. The title card of NIGHT CHORUS, the reveal of LAST LIGHT and the dates and lockup of OCTAVA are the evidence. What it can't do yet is let an agent get there *from the spec alone*. Every piece needed a Python generator, a downloaded font library, and workarounds for silent failures (wrong font, no texture, black or white exposure). The biggest wins are not new effects. They are removing silent failures and adding three primitives: per-glyph materials and SDF text channels, music-event-driven layers, and scene3d rigs and UVs.

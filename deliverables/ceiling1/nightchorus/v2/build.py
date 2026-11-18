@@ -96,8 +96,8 @@ for fx in (-4.5,0,4.5):
 for i,z in enumerate(range(2,-110,-14)):
     side=1 if i%2 else -1
     O.append({"type":"cylinder","radius":0.07,"height":5.0,"pos":[side*3.4,2.5,z],"material":"black"})
-    lights.append({"pos":[side*3.0,4.9,z],"color":"#FFB25A","intensity":90})
-lights.append({"dir":[0.2,0.6,0.7],"size":[80,40],"color":"#2B3A66","intensity":0.35})
+    lights.append({"pos":[side*3.0,4.9,z],"color":"#FFB25A","intensity":45})
+lights.append({"dir":[0.2,0.6,0.7],"size":[80,40],"color":"#2B3A66","intensity":0.2})
 lights+=signlights
 # rain streaks
 O.append({"type":"particles","count":6000,"emit":{"shape":"box","size":[10,12,60],"pos":[0,8,-30]},"gravity":9.0,"drag":0.0,"life":1.4,
