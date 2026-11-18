@@ -1,0 +1,313 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; background: var(--night); overflow: hidden; font-family: "Inter", sans-serif; color: var(--ink); }
+    #m-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 900px 760px at 600px 540px, #0d2231 0%, #08141e 55%, #050c13 100%); }
+    #m-cam { position: absolute; left: 0; top: 0; width: 1200px; height: 1080px; transform-origin: 600px 540px; }
+    #m-map { position: absolute; left: 0; top: 0; width: 1200px; height: 1080px;
+      -webkit-mask-image: radial-gradient(circle 600px at 600px 540px, #000 62%, rgba(0,0,0,0.6) 82%, transparent 100%);
+      mask-image: radial-gradient(circle 600px at 600px 540px, #000 62%, rgba(0,0,0,0.6) 82%, transparent 100%); }
+    .m-grid { fill: none; stroke: rgba(160, 196, 216, 0.16); stroke-width: 1.2; }
+    #m-arctic { fill: none; stroke: rgba(160, 196, 216, 0.26); stroke-width: 1.2; stroke-dasharray: 2 7; }
+    #m-land { fill: #172835; stroke: #34506a; stroke-width: 1.1; stroke-linejoin: round; }
+    #m-gl { fill: rgba(255, 92, 54, 0); stroke: rgba(255, 92, 54, 0); stroke-width: 2.4; stroke-linejoin: round; }
+    #m-ring { fill: none; stroke: #a9c3d0; stroke-width: 2; stroke-dasharray: 7 7; }
+    #m-ghost { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 3 6; opacity: 0; }
+    #m-loss { fill: url(#m-hatch); fill-rule: evenodd; opacity: 0; }
+    .m-lab { position: absolute; font-family: "IBM Plex Mono", monospace; font-size: 24px; letter-spacing: 0.08em; color: var(--muted); white-space: nowrap; }
+    #m-ringlab { color: #c9dbe3; }
+    #m-icelab { color: #0b1c27; font-weight: 700; font-size: 24px; letter-spacing: 0.18em; }
+    #m-gllab { color: var(--accent); }
+    #m-ghostlab { color: var(--accent); }
+
+    #m-col { position: absolute; left: 1150px; top: 0; width: 680px; height: 1080px; }
+    #m-kicker { position: absolute; left: 0; top: 168px; font-family: "IBM Plex Mono", monospace; font-size: 26px; letter-spacing: 0.2em; color: var(--muted); }
+    #m-head { position: absolute; left: 0; top: 226px; width: 660px; font-size: 76px; font-weight: 700; line-height: 1.06; letter-spacing: -0.025em; }
+    #m-head span { display: inline-block; }
+    #m-head .hl { color: #ffffff; }
+    #m-sub { position: absolute; left: 0; top: 590px; width: 600px; font-size: 34px; font-weight: 400; line-height: 1.3; color: var(--muted); }
+
+    #m-panel { position: absolute; left: 0; top: 0; width: 680px; height: 1080px; }
+    #m-plabel { position: absolute; left: 0; top: 150px; font-family: "IBM Plex Mono", monospace; font-size: 26px; letter-spacing: 0.2em; color: var(--muted); }
+    #m-year { position: absolute; left: -8px; top: 178px; font-size: 220px; font-weight: 900; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums; }
+    #m-pct { position: absolute; left: -8px; top: 178px; font-size: 220px; font-weight: 900; letter-spacing: -0.045em; line-height: 1; color: var(--accent); }
+    #m-valrow { position: absolute; left: 0; top: 420px; white-space: nowrap; }
+    #m-val { font-size: 76px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    #m-unit { font-size: 34px; color: var(--muted); margin-left: 14px; }
+    #m-plabel2 { position: absolute; left: 0; top: 150px; font-family: "IBM Plex Mono", monospace; font-size: 26px; letter-spacing: 0.14em; color: var(--muted); white-space: nowrap; }
+    #m-cap { position: absolute; left: 0; top: 418px; width: 680px; font-size: 44px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; }
+    #m-cap em { font-style: normal; color: var(--muted); font-weight: 400; font-size: 36px; }
+
+    #m-chart { position: absolute; left: 0; top: 572px; width: 680px; height: 400px; overflow: visible; }
+    .c-grid { stroke: rgba(160, 196, 216, 0.16); stroke-width: 1.2; }
+    .c-axis { stroke: rgba(200, 222, 232, 0.5); stroke-width: 1.5; }
+    .c-t { font-family: "IBM Plex Mono", monospace; font-size: 24px; fill: var(--muted); }
+    #c-line { fill: none; stroke: #eaf3f7; stroke-width: 3.2; stroke-linejoin: round; stroke-linecap: round; }
+    #c-area { fill: url(#c-fill); }
+    #c-dot { fill: #ffffff; }
+    #c-rec { fill: var(--accent); opacity: 0; }
+    #c-reclab { font-family: "IBM Plex Mono", monospace; font-size: 24px; fill: var(--accent); opacity: 0; letter-spacing: 0.04em; }
+    .c-avg { stroke-width: 4; stroke-linecap: round; opacity: 0; }
+    #c-avg0 { stroke: #a9c3d0; }
+    #c-avg1 { stroke: var(--accent); }
+    .c-avgt { font-family: "IBM Plex Mono", monospace; font-size: 24px; opacity: 0; }
+
+    #m-src { position: absolute; left: 80px; top: 990px; font-family: "IBM Plex Mono", monospace; font-size: 22px; letter-spacing: 0.06em; color: #7890a0; white-space: nowrap; }
+  </style>
+
+  <div id="root" data-composition-id="map" data-width="1920" data-height="1080" data-layout-allow-overflow>
+    <div id="m-bg"></div>
+    <div id="m-cam">
+      <svg id="m-map" viewBox="0 0 1200 1080" width="1200" height="1080">
+        <defs>
+          <radialGradient id="m-icegrad" gradientUnits="userSpaceOnUse" cx="600" cy="540" r="300">
+            <stop offset="0" stop-color="#ffffff" />
+            <stop offset="0.62" stop-color="#eef6f9" />
+            <stop offset="1" stop-color="#bcd8e4" />
+          </radialGradient>
+          <filter id="m-tex" x="0" y="0" width="1200" height="1080" filterUnits="userSpaceOnUse">
+            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="4" seed="7" result="n" />
+            <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.72  0 0 0 0 0.82  0 0 0 -2.2 1.35" />
+          </filter>
+          <filter id="m-glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="14" /></filter>
+          <clipPath id="m-iceclip"><path id="m-iceclip-p" d="" /></clipPath>
+          <pattern id="m-hatch" patternUnits="userSpaceOnUse" width="11" height="11" patternTransform="rotate(45)">
+            <rect width="11" height="11" fill="rgba(255,92,54,0.20)" />
+            <line x1="0" y1="0" x2="0" y2="11" stroke="#ff5c36" stroke-width="3" />
+          </pattern>
+        </defs>
+        <g id="m-gridg">
+          __RINGS__
+          __MERIDIANS__
+          <path id="m-arctic" d="__ARCTIC__" />
+        </g>
+        <path id="m-iceglow" d="" fill="none" stroke="#cdeeff" stroke-width="10" opacity="0.35" filter="url(#m-glow)" />
+        <path id="m-ice" d="" fill="url(#m-icegrad)" />
+        <rect id="m-icetex" x="0" y="0" width="1200" height="1080" filter="url(#m-tex)" clip-path="url(#m-iceclip)" opacity="0.55" />
+        <path id="m-loss" d="" />
+        <path id="m-land" d="__LAND__" />
+        <path id="m-gl" d="__GREENLAND__" />
+        <circle id="m-ring" cx="600" cy="540" r="285" />
+        <circle id="m-ghost" cx="600" cy="540" r="200" />
+        <g id="m-pole"><line x1="592" y1="540" x2="608" y2="540" stroke="#0b1c27" stroke-width="2" /><line x1="600" y1="532" x2="600" y2="548" stroke="#0b1c27" stroke-width="2" /></g>
+      </svg>
+      <div id="m-icelab" class="m-lab" style="left: 600px; top: 556px; transform: translateX(-50%)">SEA ICE</div>
+      <div id="m-ringlab" class="m-lab">1979</div>
+      <div id="m-ghostlab" class="m-lab">2012</div>
+      <div id="m-gllab" class="m-lab" style="left: 70px; top: 800px">GREENLAND · 2.2M km²</div>
+    </div>
+
+    <div id="m-col">
+      <div id="m-kicker">ARCTIC SEA ICE</div>
+      <h1 id="m-head"><span>Every</span> <span>September,</span> <span>the</span> <span>Arctic's</span> <span>ice</span> <span>cap</span> <span>melts</span> <span>to</span> <span>its</span> <span class="hl">smallest.</span></h1>
+
+      <div id="m-panel">
+        <div id="m-plabel">SEPTEMBER SEA ICE EXTENT</div>
+        <div id="m-year">1979</div>
+        <div id="m-pct">−36%</div>
+        <div id="m-valrow"><span id="m-val">7.05</span><span id="m-unit">million km²</span></div>
+        <div id="m-plabel2">TEN-YEAR AVERAGE, 2017–26 VS 1979–88</div>
+        <div id="m-cap">2.6 million km² less ice<br /><em>— more than the area of Greenland.</em></div>
+        <svg id="m-chart" viewBox="0 0 680 400" width="680" height="400">
+          <defs>
+            <linearGradient id="c-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#cfe6f0" stop-opacity="0.22" />
+              <stop offset="1" stop-color="#cfe6f0" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <g id="c-frame">
+            <line class="c-grid" x1="70" x2="660" y1="50" y2="50" />
+            <line class="c-grid" x1="70" x2="660" y1="140" y2="140" />
+            <line class="c-grid" x1="70" x2="660" y1="230" y2="230" />
+            <line class="c-axis" id="c-base" x1="70" x2="660" y1="320" y2="320" />
+            <text class="c-t" x="0" y="58">8M</text>
+            <text class="c-t" x="0" y="148">6M</text>
+            <text class="c-t" x="0" y="238">4M</text>
+            <text class="c-t" x="70" y="362">1979</text>
+            <text class="c-t" x="660" y="362" text-anchor="end">2026</text>
+          </g>
+          <path id="c-area" d="" />
+          <path id="c-line" d="" />
+          <line id="c-avg0" class="c-avg" x1="0" x2="0" y1="0" y2="0" />
+          <line id="c-avg1" class="c-avg" x1="0" x2="0" y1="0" y2="0" />
+          <text id="c-avgt0" class="c-avgt" fill="#a9c3d0">1979–88 · 7.21M</text>
+          <text id="c-avgt1" class="c-avgt" fill="#ff5c36">2017–26 · 4.61M</text>
+          <circle id="c-rec" r="8" cx="0" cy="0" />
+          <text id="c-reclab">2012 · 3.57M · RECORD LOW</text>
+          <circle id="c-dot" r="7" cx="0" cy="0" />
+        </svg>
+      </div>
+    </div>
+
+    <div id="m-src">SOURCE: NSIDC SEA ICE INDEX, VERSION 4 (G02135) · SEPTEMBER MONTHLY AVERAGE EXTENT</div>
+  </div>
+
+  <script>
+    (function () {
+      // NSIDC Sea Ice Index v4, N_09_extent_v4.0.csv: September average extent, million km²
+      const DATA = __DATA__;
+      const Y0 = 1979, N = DATA.length, Y1 = Y0 + N - 1;
+      const PX_PER_KM = 0.19, CX = 600, CY = 540;
+      const AVG_A = 7.212, AVG_B = 4.611; // 1979–88 and 2017–26 means (computed in build/data.py)
+      const kmR = (e) => Math.sqrt((e * 1e6) / Math.PI) * PX_PER_KM; // equal-area: disc radius in px for an area
+
+      // --- film clock (seconds, scene-local) ---
+      const T = { grow: 2.2, growD: 1.6, runA: 5.0, runB: 16.0, rec: 16.7, cmp: 18.8, cmpD: 1.2, loss: 21.7, end: 25.2 };
+      const clamp = (x) => Math.max(0, Math.min(1, x));
+      const sstep = (x) => x * x * (3 - 2 * x);
+      const expoOut = (x) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+      const inOut2 = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+      function yearAt(t) {
+        const u = clamp((t - T.runA) / (T.runB - T.runA));
+        const e = 0.55 * u + 0.45 * sstep(u);
+        return Y0 + (Y1 - Y0) * e;
+      }
+      function extentAt(yf) {
+        const i = Math.max(0, Math.min(N - 1, Math.floor(yf - Y0)));
+        const j = Math.min(N - 1, i + 1);
+        const f = clamp(yf - Y0 - i);
+        const s = (1 - Math.cos(Math.PI * f)) / 2;
+        return DATA[i] + (DATA[j] - DATA[i]) * s;
+      }
+      // blob outline with exact area pi*R^2
+      const K = [2, 3, 4, 5, 7], AMP = [0.045, 0.035, 0.028, 0.018, 0.012], PH = [0.4, 2.1, 4.0, 1.3, 5.2], W = [0.05, -0.08, 0.11, -0.13, 0.17];
+      const M = 220;
+      function blob(R, yf, cx, cy) {
+        const rs = new Array(M);
+        let a2 = 0;
+        for (let m = 0; m < M; m++) {
+          const th = (m / M) * Math.PI * 2;
+          let r = 1;
+          for (let k = 0; k < K.length; k++) r += AMP[k] * Math.sin(K[k] * th + PH[k] + W[k] * (yf - Y0) * 3.2);
+          rs[m] = r; a2 += r * r;
+        }
+        const norm = R / Math.sqrt(a2 / M);
+        let d = "";
+        for (let m = 0; m < M; m++) {
+          const th = (m / M) * Math.PI * 2;
+          const x = cx + Math.cos(th) * rs[m] * norm, y = cy + Math.sin(th) * rs[m] * norm;
+          d += (m ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1);
+        }
+        return d + "Z";
+      }
+      const circ = (r) => `M${CX - r},${CY}a${r},${r} 0 1,0 ${2 * r},0a${r},${r} 0 1,0 ${-2 * r},0Z`;
+      // chart mapping
+      const cx0 = 70, cx1 = 660, cyOf = (v) => 320 - (v - 2) * 45;
+      const cxOf = (yf) => cx0 + ((yf - Y0) / (Y1 - Y0)) * (cx1 - cx0);
+
+      const $ = (id) => document.getElementById(id);
+      const ice = $("m-ice"), iceclip = $("m-iceclip-p"), glow = $("m-iceglow"), loss = $("m-loss");
+      const ring = $("m-ring"), ringlab = $("m-ringlab"), year = $("m-year"), val = $("m-val");
+      const cline = $("c-line"), carea = $("c-area"), cdot = $("c-dot");
+      let lastYear = -1;
+
+      function draw(t) {
+        const g = expoOut(clamp((t - T.grow) / T.growD));
+        const yf = yearAt(t);
+        const c = inOut2(clamp((t - T.cmp) / T.cmpD));
+        const eNow = extentAt(yf);
+        const eDisc = eNow + (AVG_B - eNow) * c;
+        const eRing = DATA[0] + (AVG_A - DATA[0]) * c;
+        const R = kmR(eDisc) * g;
+        const d = R > 0.5 ? blob(R, yf, CX, CY) : "M0,0Z";
+        ice.setAttribute("d", d); iceclip.setAttribute("d", d); glow.setAttribute("d", d);
+        const rr = kmR(eRing);
+        ring.setAttribute("r", rr.toFixed(1));
+        loss.setAttribute("d", circ(rr) + (R > 0.5 ? d : ""));
+        ringlab.style.left = (CX + rr * Math.cos(-0.78) + 12).toFixed(1) + "px";
+        ringlab.style.top = (CY + rr * Math.sin(-0.78) - 34).toFixed(1) + "px";
+        ringlab.textContent = c > 0.5 ? "1979–88 AVG" : "1979";
+        // data panel
+        const yi = Math.round(yf);
+        if (yi !== lastYear) { year.textContent = String(yi); val.textContent = DATA[yi - Y0].toFixed(2); lastYear = yi; }
+        // chart line up to yf
+        const runOn = t >= T.runA - 0.6;
+        let p = "", a = "";
+        if (runOn) {
+          const last = Math.floor(yf - Y0);
+          for (let i = 0; i <= last; i++) p += (i ? "L" : "M") + cxOf(Y0 + i).toFixed(1) + "," + cyOf(DATA[i]).toFixed(1);
+          const ex = cxOf(yf), ey = cyOf(last < N - 1 ? DATA[last] + (DATA[last + 1] - DATA[last]) * (yf - Y0 - last) : DATA[N - 1]);
+          if (yf - Y0 > last) p += "L" + ex.toFixed(1) + "," + ey.toFixed(1);
+          a = p + `L${ex.toFixed(1)},320L${cx0},320Z`;
+          cdot.setAttribute("cx", ex.toFixed(1)); cdot.setAttribute("cy", ey.toFixed(1));
+        }
+        cline.setAttribute("d", p || "M0,0"); carea.setAttribute("d", a || "M0,0");
+      }
+
+      // static chart geometry for annotations
+      const ri = 2012 - Y0;
+      $("c-rec").setAttribute("cx", cxOf(2012)); $("c-rec").setAttribute("cy", cyOf(DATA[ri]));
+      const rl = $("c-reclab"); rl.setAttribute("x", cxOf(2012) + 40); rl.setAttribute("y", cyOf(DATA[ri]) + 46); rl.setAttribute("text-anchor", "end");
+      const a0 = $("c-avg0"), a1 = $("c-avg1");
+      a0.setAttribute("x1", cxOf(1979)); a0.setAttribute("x2", cxOf(1988)); a0.setAttribute("y1", cyOf(AVG_A)); a0.setAttribute("y2", cyOf(AVG_A));
+      a1.setAttribute("x1", cxOf(2017)); a1.setAttribute("x2", cxOf(2026)); a1.setAttribute("y1", cyOf(AVG_B)); a1.setAttribute("y2", cyOf(AVG_B));
+      $("c-avgt0").setAttribute("x", cxOf(1979)); $("c-avgt0").setAttribute("y", cyOf(AVG_A) - 26);
+      $("c-avgt1").setAttribute("x", cxOf(2026)); $("c-avgt1").setAttribute("y", cyOf(AVG_B) + 46); $("c-avgt1").setAttribute("text-anchor", "end");
+      const gr = kmR(3.57);
+      $("m-ghost").setAttribute("r", gr.toFixed(1));
+      const gl = $("m-ghostlab"); gl.style.left = (CX + gr * Math.cos(0.75) + 10) + "px"; gl.style.top = (CY + gr * Math.sin(0.75) + 4) + "px";
+
+      const tl = gsap.timeline({ paused: true });
+      const clock = { t: 0 };
+      tl.fromTo(clock, { t: 0 }, { t: 30, duration: 30, ease: "none", onUpdate: () => draw(clock.t) }, 0);
+
+      // camera: settle in, slow drift, pull back for the end
+      tl.fromTo("#m-cam", { scale: 1.08, rotation: -4 }, { scale: 1, rotation: 0, duration: 4.2, ease: "power3.out" }, 0);
+      tl.to("#m-cam", { rotation: 3, duration: 21, ease: "none" }, 4.2);
+      tl.to("#m-cam", { scale: 0.86, x: -60, opacity: 0.14, filter: "blur(4px)", duration: 0.9, ease: "power2.inOut" }, T.end);
+      tl.fromTo("#m-bg", { opacity: 0.45 }, { opacity: 1, duration: 1.6, ease: "power2.out" }, 0);
+      tl.fromTo("#m-gridg", { opacity: 0.3 }, { opacity: 1, duration: 1.4, ease: "power2.inOut" }, 0);
+      tl.fromTo("#m-land", { opacity: 0.25 }, { opacity: 1, duration: 1.8, ease: "power2.out" }, 0);
+      tl.fromTo("#m-pole", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 2.4);
+      tl.fromTo("#m-icetex", { opacity: 0 }, { opacity: 0.55, duration: 1.2 }, 2.6);
+      tl.fromTo("#m-icelab", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power2.out" }, 3.0);
+      tl.to("#m-icelab", { opacity: 0, duration: 0.2 }, 5.0);
+      tl.fromTo("#m-ring", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, 4.6);
+      tl.fromTo("#m-ringlab", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 4.75);
+
+      // opening line
+      tl.fromTo("#m-kicker", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 0.35);
+      tl.fromTo("#m-head span", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, stagger: 0.075, ease: "power2.out" }, 0.6);
+      tl.to("#m-head span", { opacity: 0, filter: "blur(8px)", duration: 0.18, stagger: 0.02, ease: "power2.in" }, 4.15);
+      tl.to("#m-kicker", { opacity: 0, filter: "blur(8px)", duration: 0.18 }, 4.15);
+
+      // data panel
+      tl.fromTo("#m-plabel", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 4.45);
+      tl.fromTo("#m-year", { opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 4.5);
+      tl.fromTo("#m-valrow", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 4.62);
+      tl.fromTo("#c-frame", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 4.5);
+      tl.fromTo(["#c-line", "#c-area", "#c-dot"], { opacity: 0 }, { opacity: 1, duration: 0.3 }, 4.7);
+
+      // 2012 record
+      tl.fromTo("#c-rec", { opacity: 0, scale: 0, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, T.rec);
+      tl.fromTo("#c-reclab", { opacity: 0 }, { opacity: 1, duration: 0.25 }, T.rec + 0.12);
+      tl.fromTo("#m-ghost", { opacity: 0 }, { opacity: 0.95, duration: 0.3 }, T.rec + 0.05);
+      tl.fromTo("#m-ghostlab", { opacity: 0 }, { opacity: 1, duration: 0.25 }, T.rec + 0.15);
+      tl.to(["#m-ghost", "#m-ghostlab"], { opacity: 0, duration: 0.35 }, T.cmp);
+
+      // compare decades
+      tl.to(["#c-line", "#c-area"], { opacity: 0.35, duration: 0.5 }, T.cmp);
+      tl.to("#c-dot", { opacity: 0, duration: 0.3 }, T.cmp);
+      tl.to(["#c-rec", "#c-reclab"], { opacity: 0.0, duration: 0.3 }, T.cmp);
+      tl.fromTo(["#c-avg0", "#c-avgt0"], { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, T.cmp + 0.3);
+      tl.fromTo(["#c-avg1", "#c-avgt1"], { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, T.cmp + 0.7);
+      tl.to(["#m-year", "#m-valrow", "#m-plabel"], { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power2.in" }, T.cmp + 0.9);
+      tl.fromTo("#m-pct", { opacity: 0, filter: "blur(12px)", scale: 1.04, transformOrigin: "0% 50%" }, { opacity: 1, filter: "blur(0px)", scale: 1, duration: 0.35, ease: "expo.out" }, T.cmp + 1.2);
+      tl.fromTo("#m-plabel2", { opacity: 0 }, { opacity: 1, duration: 0.3 }, T.cmp + 1.25);
+      tl.fromTo("#m-cap", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, T.cmp + 1.45);
+
+      // the loss, made physical: annulus + Greenland
+      tl.fromTo("#m-loss", { opacity: 0 }, { opacity: 0.9, duration: 0.5, ease: "power2.out" }, T.loss);
+      tl.fromTo("#m-gl", { fill: "rgba(255,92,54,0)", stroke: "rgba(255,92,54,0)" }, { fill: "rgba(255,92,54,0.32)", stroke: "rgba(255,92,54,1)", duration: 0.5, ease: "power2.out" }, T.loss + 0.25);
+      tl.fromTo("#m-gllab", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25 }, T.loss + 0.45);
+
+      // exit to the end card
+      tl.to("#m-col", { opacity: 0, filter: "blur(10px)", duration: 0.35, ease: "power2.in" }, T.end);
+      tl.to(["#m-gllab", "#m-ringlab"], { opacity: 0, duration: 0.3 }, T.end);
+      tl.to("#m-src", { opacity: 0, duration: 0.3 }, T.end);
+      tl.fromTo("#m-src", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 4.6);
+
+      draw(0);
+      window.__timelines["map"] = tl;
+    })();
+  </script>
+</template>
