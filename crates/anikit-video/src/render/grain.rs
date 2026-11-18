@@ -8,24 +8,63 @@
 //! of a 256×256 lookup table per channel (the W3C blend in 8-bit sRGB, as
 //! vello blends), at exactly the texels vello's nearest sampling would read.
 
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 use vello_cpu::Pixmap;
 
 use super::View;
 use crate::dl::{self, Blend, Op, Paint, Rgba};
 
-/// One grain layer: its tile, integer texel offset, blend and strength.
+/// Blend LUTs and tiles already checked opaque, kept across frames.
+#[derive(Default)]
+pub(crate) struct Cache {
+    luts: Vec<(Blend, u32, Arc<[u8]>)>, // key: (blend, alpha.to_bits())
+    opaque: Vec<Weak<Pixmap>>,
+}
+
+impl Cache {
+    fn lut(&mut self, blend: Blend, alpha: f32) -> Arc<[u8]> {
+        let key = (blend, alpha.to_bits());
+        if let Some((_, _, lut)) = self.luts.iter().find(|(b, a, _)| (*b, *a) == key) {
+            return lut.clone();
+        }
+        let lut = build_lut(blend, alpha);
+        self.luts.push((blend, alpha.to_bits(), lut.clone()));
+        if self.luts.len() > 8 {
+            self.luts.remove(0);
+        }
+        lut
+    }
+
+    fn opaque(&mut self, tile: &Arc<Pixmap>) -> bool {
+        if self.opaque.iter().any(|w| w.as_ptr() == Arc::as_ptr(tile)) {
+            return true;
+        }
+        if tile.width() == 0
+            || tile.height() == 0
+            || tile.data_as_u8_slice().iter().skip(3).step_by(4).any(|&a| a != 255)
+        {
+            return false;
+        }
+        self.opaque.retain(|w| w.strong_count() > 0);
+        self.opaque.push(Arc::downgrade(tile));
+        if self.opaque.len() > 16 {
+            self.opaque.remove(0);
+        }
+        true
+    }
+}
+
+/// One grain layer: its tile, integer texel offset and blend lookup table.
 pub(crate) struct Grain {
     tile: Arc<Pixmap>,
     off: (i64, i64),
-    blend: Blend,
-    alpha: f32,
+    lut: Arc<[u8]>,
 }
 
 /// Trailing grain layers of `ops` (in draw order) and where they start, if
 /// the frame is opaque and every trailing layer qualifies.
-pub(crate) fn tail(ops: &[Op], w: f64, h: f64, bg: Rgba, assets: &View, out: &mut Vec<Grain>) -> Option<usize> {
+pub(crate) fn tail(ops: &[Op], w: f64, h: f64, bg: Rgba, assets: &View, cache: &mut Cache, out: &mut Vec<Grain>) -> Option<usize> {
     out.clear();
     if bg.0[3] < 1.0 {
         return None;
@@ -47,10 +86,11 @@ pub(crate) fn tail(ops: &[Op], w: f64, h: f64, bg: Rgba, assets: &View, out: &mu
                     && t[5].fract() == 0.0 =>
             {
                 let Some(tile) = assets.image(*image) else { break };
-                if tile.width() == 0 || tile.height() == 0 || tile.data_as_u8_slice().chunks_exact(4).any(|p| p[3] != 255) {
+                if !cache.opaque(&tile) {
                     break;
                 }
-                Grain { tile, off: (t[4] as i64, t[5] as i64), blend: *blend, alpha: (opacity * po).clamp(0.0, 1.0) }
+                let alpha = (opacity * po).clamp(0.0, 1.0);
+                Grain { tile, off: (t[4] as i64, t[5] as i64), lut: cache.lut(*blend, alpha) }
             }
             _ => break,
         };
@@ -59,6 +99,18 @@ pub(crate) fn tail(ops: &[Op], w: f64, h: f64, bg: Rgba, assets: &View, out: &mu
     }
     out.reverse();
     (k < ops.len()).then_some(k)
+}
+
+fn build_lut(blend: Blend, alpha: f32) -> Arc<[u8]> {
+    let mut lut = vec![0u8; 256 * 256];
+    for s in 0..256 {
+        for b in 0..256 {
+            let (bf, sf) = (b as f32 / 255.0, s as f32 / 255.0);
+            let v = bf + alpha * (mix(blend, bf, sf) - bf);
+            lut[s * 256 + b] = (v * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
+        }
+    }
+    lut.into()
 }
 
 /// W3C separable blend of source `s` over backdrop `b` (0..1).
@@ -93,16 +145,9 @@ pub(crate) fn apply(layers: &[Grain], frame: &mut [u8], fw: usize, region: [usiz
     }
     for g in layers {
         // lut[s * 256 + b]: the blended, faded result for backdrop b under source s.
-        let mut lut = vec![0u8; 256 * 256];
-        for s in 0..256 {
-            for b in 0..256 {
-                let (bf, sf) = (b as f32 / 255.0, s as f32 / 255.0);
-                let v = bf + g.alpha * (mix(g.blend, bf, sf) - bf);
-                lut[s * 256 + b] = (v * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
-            }
-        }
         let (tw, th) = (g.tile.width() as i64, g.tile.height() as i64);
         let tpx = g.tile.data_as_u8_slice();
+        let lut = &g.lut;
         let row = |(y, frow): (usize, &mut [u8])| {
             // Pixel centre (x + ½) + offset lands in texel x + offset.
             let ty = (y as i64 + g.off.1).rem_euclid(th) as usize;
@@ -117,5 +162,48 @@ pub(crate) fn apply(layers: &[Grain], frame: &mut [u8], fw: usize, region: [usiz
         };
         use rayon::prelude::*;
         frame[y0 * fw * 4..y1 * fw * 4].par_chunks_mut(fw * 4).enumerate().for_each(|(y, r)| row((y + y0, r)));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn lut_cache_reuses_entries_and_matches_blend_calculation() {
+        let mut cache = Cache::default();
+        for blend in [Blend::Overlay, Blend::SoftLight] {
+            for alpha in [0.0, 0.2, 0.65, 1.0] {
+                let cached = cache.lut(blend, alpha);
+                assert!(Arc::ptr_eq(&cached, &cache.lut(blend, alpha)));
+                assert_eq!(&*cached, &*build_lut(blend, alpha));
+            }
+        }
+        assert!(!Arc::ptr_eq(&cache.lut(Blend::Overlay, 0.2), &cache.lut(Blend::Overlay, 0.3)));
+    }
+
+    #[test]
+    fn opaque_cache_reuses_tiles_and_prunes_dropped_tiles() {
+        let mut cache = Cache::default();
+        let mut tile = Pixmap::new(2, 2);
+        tile.data_as_u8_slice_mut().fill(255);
+        let tile = Arc::new(tile);
+
+        assert!(cache.opaque(&tile));
+        assert_eq!(cache.opaque.len(), 1);
+        assert!(cache.opaque(&tile));
+        assert_eq!(cache.opaque.len(), 1);
+
+        let mut translucent = Pixmap::new(2, 2);
+        translucent.data_as_u8_slice_mut().fill(255);
+        translucent.data_as_u8_slice_mut()[3] = 254;
+        assert!(!cache.opaque(&Arc::new(translucent)));
+        assert_eq!(cache.opaque.len(), 1);
+
+        drop(tile);
+        let mut next = Pixmap::new(2, 2);
+        next.data_as_u8_slice_mut().fill(255);
+        assert!(cache.opaque(&Arc::new(next)));
+        assert_eq!(cache.opaque.len(), 1);
     }
 }
