@@ -1,0 +1,526 @@
+{
+  "name": "d-illustration",
+  "tags": [
+    "illustration",
+    "product-launch"
+  ],
+  "refs": [
+    "osko-launch",
+    "morph-studio-xreal-1s-2025",
+    "found-devialet-opera-de-paris-2022"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 6,
+      "composition": 5,
+      "typography": 3,
+      "colour": 5,
+      "light_texture": 4,
+      "motion": 4,
+      "craft": 4,
+      "originality": 4
+    },
+    "overall": 4.38,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs an idea beyond a literal map of the feature; B's 'I.O.U.' gag shows a specific, memorable concept",
+      "The typography needs a point of view: a custom or hand-lettered face, scale contrast, and type integrated into the earth layers rather than captioned over them",
+      "The illustration needs real choreography and depth (camera moves, layered parallax, characters acting inside the chambers) in place of a static diagram that zooms in and out",
+      "Needs a typographic point of view: custom or characterful lettering integrated into the burrow world rather than default serif captions in the corners",
+      "The burrow chambers should hold real, distinct illustrated vignettes with light spilling into the earth; at the moment they're icon glyphs in identical blobs",
+      "Break the repeated wide shot with camera moves and changes of scale, like the macro-to-wide choreography in C",
+      "Give the stories real content: each chamber should hold a distinct, crafted miniature scene, not a repeated silhouette icon",
+      "Replace the default serif captions with lettering that has a point of view and lives inside the illustrated world (dug into the soil, glowing in the chambers)",
+      "Build actual light and material: lantern glow spilling through tunnels, earth layers with roots and strata, so the textures match the craft of A and C"
+    ],
+    "tells": [
+      "Generic editorial serif set as slide captions ('Every night, a new story.', 'Dreamed up together,'), placed top-left or bottom-right, with an italic word for emphasis: textbook default typography",
+      "The end card is the 'tasteful AI' formula: a large serif wordmark 'Burrow' over a small line of body copy (the product description plus 'Ages 3\u20137') in the corner",
+      "The idea is literal: a burrow, an app name and a diagram of stored stories (nodes connected by tunnels)",
+      "Frames 4 and 5 are the same composition with only the text changed",
+      "The burrow network is a uniform graph of identical rounded chambers with clip-art silhouette icons (castle, rocket, moon), and the dark empty chambers in frames 2 and 3 look like placeholders",
+      "The grain overlay is applied evenly over flat shapes; the warm glow is a simple radial gradient, not designed light",
+      "Typography is a generic editorial serif with an italic-word accent ('Dreamed up *together*'), set small top-left like a slide caption: the 'tasteful AI' type pattern",
+      "The last two frames are the same composition with only the copy swapped (slide-deck structure); the end frame is a headline plus a two-line subhead plus an age range, like an app-store card",
+      "Illustration is simple, symmetrical and vector-default (house, crescent moon, star sprinkles, blob chambers) with a light grain overlay standing in for texture",
+      "The idea (stories kept as rooms in a burrow) is literally the product name drawn as a diagram of the feature",
+      "Dark navy/plum ground with a single warm amber accent and mostly empty frames",
+      "The typography is defaults: a generic editorial serif with an italicised word ('together'), set top-left like a slide caption, and an end card that is headline plus small sub-copy (Burrow / Make a new bedtime story\u2026 Ages 3\u20137)",
+      "The illustration is simple vector primitives (house, crescent moon, blob chambers joined by lines) with a uniform grain overlay standing in for texture",
+      "The last two frames are almost the same composition with copy swapped, and the burrow grid uses the same icons repeated (moons, rockets, castles, balloons)",
+      "The idea (stories stored as chambers in a burrow) is literal: the product name drawn as a diagram of the feature",
+      "The pacing is one straight downward push into the chamber and back out; there is little choreography or character animation"
+    ]
+  },
+  "refs_summary": {
+    "osko-launch": {
+      "overall": 7.12,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "morph-studio-xreal-1s-2025": {
+      "overall": 7.25,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "found-devialet-opera-de-paris-2022": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 1.33
+    }
+  },
+  "ref_mean": 7.33,
+  "delta": -2.95,
+  "trials": [
+    {
+      "key": {
+        "A": "found-devialet-opera-de-paris-2022",
+        "B": "osko-launch",
+        "C": "candidate",
+        "D": "morph-studio-xreal-1s-2025"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The CGI set is built for this product: travertine-like plinths with brass inlay, red pleated drapes, and gold ribbons wrapping the speaker in the second frame",
+              "A real surprise reveal: in the third frame the floor opens onto a watch-movement gear train under the speaker, which refers to the brand's engineering and luxury positioning",
+              "The red, cream and gold palette is deliberate and seasonal (it reads as a Lunar New Year edition), and it holds across every shot",
+              "The shots vary (hero group, macro on the grille, top-down, front, closing tableau), which implies a planned camera route through one set",
+              "Materials are physically convincing: brushed metal, stone grain and soft shadows",
+              "The only visible type is the brand mark on the product; with no other typography, the closing tableau relies entirely on the set"
+            ],
+            "gaps": [
+              "The idea is a luxury podium showcase, a familiar genre; apart from the gear reveal, little is specific to this film",
+              "The first and last frames repeat the same three-plinth composition, so the ending adds little",
+              "There is no typographic or narrative layer that would make the piece more than a polished product turntable"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "It has a real comedic idea, the 'I.O.U.' gag: a sticky note in an empty food tub, then on an opened fridge whose glossy floor reflects the note",
+              "The film switches rendering style on purpose: a night van in a stylised 3D landscape, a photoreal 3D fridge shelf, flat-vector golf poses and a glossy emoji-icon grid, all tied by one theme of small debts and gifts",
+              "The golfer sequence (swing, follow-through, facepalm) is three poses that land a beat, which is evidence of character timing",
+              "The icon grid (coffee, beer, flying cash, heart, gift) works as a menu of 'what you owe', so the structure is narrative, not decorative",
+              "The hand-lettered 'I.O.U.' carries the film; there is no default typeface"
+            ],
+            "gaps": [
+              "The style switching risks reading as a compilation; a stronger unifying art direction would bring it up to A and D's level of visual consistency",
+              "Some frames are thin (the icon grid on black, the golfer on grey), with empty grounds and little layering",
+              "Lighting is strong in the fridge shots but flat in the 2D segments; texture and grain would bind the styles together"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 5,
+              "composition": 5,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "Generic editorial serif set as slide captions ('Every night, a new story.', 'Dreamed up together,'), placed top-left or bottom-right, with an italic word for emphasis: textbook default typography",
+              "The end card is the 'tasteful AI' formula: a large serif wordmark 'Burrow' over a small line of body copy (the product description plus 'Ages 3\u20137') in the corner",
+              "The idea is literal: a burrow, an app name and a diagram of stored stories (nodes connected by tunnels)",
+              "Frames 4 and 5 are the same composition with only the text changed",
+              "The burrow network is a uniform graph of identical rounded chambers with clip-art silhouette icons (castle, rocket, moon), and the dark empty chambers in frames 2 and 3 look like placeholders",
+              "The grain overlay is applied evenly over flat shapes; the warm glow is a simple radial gradient, not designed light"
+            ],
+            "gaps": [
+              "It needs an idea beyond a literal map of the feature; B's 'I.O.U.' gag shows a specific, memorable concept",
+              "The typography needs a point of view: a custom or hand-lettered face, scale contrast, and type integrated into the earth layers rather than captioned over them",
+              "The illustration needs real choreography and depth (camera moves, layered parallax, characters acting inside the chambers) in place of a static diagram that zooms in and out"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "High-end fluid and particle simulation: the glasses form out of water, with refractive bubbles, caustics and stringy tendrils",
+              "A clear transformation idea ('Evolution'): the product is shown being formed out of liquid matter, frame by frame",
+              "The frames are varied: an abstract splash, a hero with the wordmark, a frontal liquid sculpture, a macro on the material and a cellular close",
+              "Lighting and refraction are physically rich, and depth of field is used with intent",
+              "The typography is the weak point: the 'XREAL 1S' wordmark split across the frame and the wide-tracked 'EVOLUTION' are standard tech-launch moves"
+            ],
+            "gaps": [
+              "The monochrome electric-blue liquid look is a well-worn tech-launch clich\u00e9; it needs a less expected palette or material",
+              "The type is a default tracked-caps title over the image; it should be integrated with the liquid (formed, refracted or distorted by it)",
+              "Spectacle outweighs concept; it lacks the human or witty hook that makes B memorable"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.7,
+        "cost_usd": 0.159282,
+        "tokens": 72005,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "found-devialet-opera-de-paris-2022",
+        "B": "osko-launch",
+        "C": "morph-studio-xreal-1s-2025",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Product-specific world: the speaker's own forms (gold rims, cream shells, the Phantom's grille rosette) become the architecture of the set \u2014 ribbons, arches, fluted plinths",
+              "Watch-movement gears exposed beneath a plinth turn 'precision engineering' into a visual metaphor rather than a diagram",
+              "Real material work: travertine-like plinths with grain, brushed gold edging, matte vs gloss ceramic, soft GI bounce from the red drapery",
+              "Deliberate cream/gold/vermilion palette that reads as a luxury or Lunar New Year edition and stays consistent from shot to shot",
+              "Varied camera grammar from frame to frame (wide hero, macro through ribbons, top-down reveal, frontal portrait, low-angle group) suggests planned choreography",
+              "Type is limited to the product's own logo; leaving it out suits a mood piece, but there's no typographic idea"
+            ],
+            "gaps": [
+              "The set-dressing vocabulary (arches, plinths, ribbons) is close to the standard luxury-CG kit; it needs one image nobody has seen before, like C's material transformation",
+              "No type or title system; a bespoke end-frame lockup would give the piece an authored voice",
+              "Bookended hero group shots make the structure predictable; it needs a surprise or a turn in the middle act"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "A narrative gag runs through the piece: an 'I.O.U.' sticky note on a food tub, then the same note revealed inside an opening fridge, which shows a writer behind it",
+              "Deliberate mix of media (night-drive 3D diorama, stylised CG pantry, flat character animation, emoji-style icon grid) is a recognisable brand-anthology approach for a payments app",
+              "Golfer swing-to-facepalm pose sequence shows key-pose animation thinking and comic timing",
+              "Retro mint fridge with a reflective floor and interior glow is specific, motivated light",
+              "Weaknesses: flat vector golfer and the icon grid sit near stock/emoji style, and the hand-lettered IOU is the only type"
+            ],
+            "gaps": [
+              "Styles feel collaged rather than unified; it needs a binding art direction (palette, grain, light) the way A holds one world",
+              "The icon grid is the weakest frame, close to placeholder emoji; replace it with a designed transition or a character beat",
+              "Lighting and material in the flat segments are default; add texture and depth to match the fridge shot"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "The core idea is the product being 'evolved' from liquid, organic membranes and neural filaments. It's a material metamorphosis specific to the 'EVOLUTION' line, not a stock turntable",
+              "High-end simulation work: fluid splash with motion blur and chromatic fringing, glassy gel shell with trapped bubbles, vein-like webbing pulled off the frame",
+              "Frames escalate from abstract (splash, gel macro) to object reveal to cellular macro, which implies choreographed shifts in scale",
+              "Real refraction, caustics and subsurface in the translucent material",
+              "Weakness: monochrome electric blue on black is a familiar tech-launch palette; the type (bold sans wordmark, wide-tracked caps 'EVOLUTION') is competent but generic"
+            ],
+            "gaps": [
+              "Palette is single-hue tech blue; a second, unexpected accent or temperature shift would make it ownable",
+              "Typography is the most default element (widely tracked thin caps over a busy background); it needs integration with the material, for example type formed or refracted by the fluid",
+              "The 'XREAL ... 1S' lockup splits awkwardly around the product; tighten the end-frame composition"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "Typography is a generic editorial serif with an italic-word accent ('Dreamed up *together*'), set small top-left like a slide caption: the 'tasteful AI' type pattern",
+              "The last two frames are the same composition with only the copy swapped (slide-deck structure); the end frame is a headline plus a two-line subhead plus an age range, like an app-store card",
+              "Illustration is simple, symmetrical and vector-default (house, crescent moon, star sprinkles, blob chambers) with a light grain overlay standing in for texture",
+              "The idea (stories kept as rooms in a burrow) is literally the product name drawn as a diagram of the feature",
+              "Dark navy/plum ground with a single warm amber accent and mostly empty frames"
+            ],
+            "gaps": [
+              "Needs a typographic point of view: custom or characterful lettering integrated into the burrow world rather than default serif captions in the corners",
+              "The burrow chambers should hold real, distinct illustrated vignettes with light spilling into the earth; at the moment they're icon glyphs in identical blobs",
+              "Break the repeated wide shot with camera moves and changes of scale, like the macro-to-wide choreography in C"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.7,
+        "cost_usd": 0.1575468,
+        "tokens": 71927,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "osko-launch",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.86,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Real refractive simulation: the glasses form out of fluid and then appear as a solid liquid-glass object, with caustics, internal bubbles and subsurface scattering on the cast form",
+              "Each frame changes scale a lot: an exploding fluid helix, a hero product shot, a frontal macro, a soft-body close-up and a cellular bubble field, which shows choreographed transitions rather than one repeated layout",
+              "The XREAL / 1S lockup is split across the frame around the product, so the type is placed deliberately",
+              "The all-blue monochrome is on-brand but expected for tech; the widely tracked 'EVOLUTION' caps title is the most generic element in the piece"
+            ],
+            "gaps": [
+              "The 'liquid becomes product' metaphor is a familiar category trope; it needs a concept tied to what AR glasses actually do (seeing layered realities)",
+              "The one-hue blue palette flattens the frames; a second temperature or a deliberate tonal break would give the sequence a climax",
+              "The wide-tracked serif-less 'EVOLUTION' title is generic; the type should take part in the fluid world instead of sitting on top of it"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 8
+            },
+            "tells": [
+              "It has a specific, witty narrative device: an 'I.O.U.' sticky note left in place of a food container in the fridge, paid off in a separate wide shot of two retro fridges with a light spill and floor reflection",
+              "It switches media on purpose: a 3D night drive with a VW bus, a stylised CG fridge interior, a flat-character golf swing sequence and glossy emoji-style icons. That reads as an anthology of 'things you owe someone' rather than inconsistency",
+              "The golf sequence uses the classic three-pose cycle (swing, follow-through, facepalm), which shows real timing and comic beats",
+              "The emoji icon grid is the weakest frame: centred, slide-like and close to stock assets"
+            ],
+            "gaps": [
+              "The visual language is fragmented; a unifying graphic device or grade across the styles would make it read as one film rather than a compilation",
+              "The icon-grid frame is placeholder-level; replace it with a staged scene of the same quality as the fridge shots",
+              "The only typography is the hand-lettered I.O.U.; an end card or title treatment with a point of view would land the idea"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "It uses a deliberate, unusual palette: lacquer red, ivory, travertine-textured plinths and brushed gold inlay, which reads as Lunar New Year luxury and suits Devialet's brand",
+              "The top-down shot reveals a watch-movement gear train under the speaker, tying the product to haute horlogerie: a specific idea, not generic product staging",
+              "Materials are rendered convincingly: stone grain, ceramic-white shells, fine gold edging and soft architectural shadows from the slatted red screens",
+              "Composition is dense and layered (arches, ribbons, fluted glass), and every frame works as a still"
+            ],
+            "gaps": [
+              "Typography is nearly absent (only the logo on the product); a typographic system with a point of view could carry the cultural or seasonal story",
+              "The bookend frames repeat the plinth trio from close angles; it needs a bigger transformation or reveal between them",
+              "The motion implied is mostly elegant camera orbits and ribbon wraps; it needs a moment of real surprise or a physical event with weight"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.68,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "The typography is defaults: a generic editorial serif with an italicised word ('together'), set top-left like a slide caption, and an end card that is headline plus small sub-copy (Burrow / Make a new bedtime story\u2026 Ages 3\u20137)",
+              "The illustration is simple vector primitives (house, crescent moon, blob chambers joined by lines) with a uniform grain overlay standing in for texture",
+              "The last two frames are almost the same composition with copy swapped, and the burrow grid uses the same icons repeated (moons, rockets, castles, balloons)",
+              "The idea (stories stored as chambers in a burrow) is literal: the product name drawn as a diagram of the feature",
+              "The pacing is one straight downward push into the chamber and back out; there is little choreography or character animation"
+            ],
+            "gaps": [
+              "Give the stories real content: each chamber should hold a distinct, crafted miniature scene, not a repeated silhouette icon",
+              "Replace the default serif captions with lettering that has a point of view and lives inside the illustrated world (dug into the soil, glowing in the chambers)",
+              "Build actual light and material: lantern glow spilling through tunnels, earth layers with roots and strata, so the textures match the craft of A and C"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.0,
+        "cost_usd": 0.1564504,
+        "tokens": 71869,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 5,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "Frames 5 and 6 are nearly the same wide shot. The last ~3 s barely change (per-second change 4.8, 2.4, 1.4), so the end is dead air and not a settle.",
+        "Mid-dive frame (frame 2) is mostly flat black, unlit chamber shapes on a brown field. It is a waiting frame with no subject and no light.",
+        "The 'then read aloud' line is caught half-drawn and illegible in a pair frame, a generic per-glyph wipe that does not belong to the burrow material.",
+        "The pairs show the camera moving at near-constant speed between keys, with little ease into the reveals. Chambers light up without anticipation or follow-through.",
+        "The grain overlay is uniform and heavy across flat vector fills, with a slightly noisy edge on the glow at 100%. It does not respond to light, so it reads as a filter on top.",
+        "The house and moon in the opening are small and pushed to the edges, and they shrink to tiny icons in the end-frame lockup. The brand mark 'Burrow' crowds the moon and telescope.",
+        "The music starts with plucked, sparse notes up to ~3.8 s, then turns into a steady wash. Above ~4 s the transients are evenly spaced and do not clearly line up with chamber reveals or text beats."
+      ],
+      "gaps": [
+        "Choreography: one continuous push-in/pull-back with linear-feeling camera travel. Top studio work would give the descent weight (gravity on the tunnel, a snap when the chamber ignites) and stagger the network lighting so it spreads like a story being told, not appearing all at once.",
+        "Arc and ending: the peak at ~11-13 s releases into a held wide shot that idles for ~4 s. The payoff needs one last beat, such as a new chamber lighting for tonight's story or the house window going dark, so the end settles on purpose.",
+        "Sound: after a plucked opening the score turns into an undifferentiated pad with little sound design (no dirt, tunnel or ignition foley). Hits are not clearly locked to picture, and the dynamics are flat from 5 to 18 s."
+      ]
+    },
+    "meta": {
+      "seconds": 21.1,
+      "cost_usd": 0.1607238,
+      "tokens": 72116,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 20.0s, 1 shots, median 20.00s, longest 20.00s\nper-second change: [6.5, 7.1, 3.7, 13.9, 24.2, 11.8, 18.8, 9.0, 6.6, 4.9, 7.8, 28.8, 33.6, 14.5, 8.9, 8.1, 4.8, 2.4, 1.4]\nPACE: FAIL \u2014 longest shot 20.0s > 2.5s; median shot 20.0s > 1.5s; 5/19 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 6,
+    "composition": 5,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 4,
+    "motion": 5.0,
+    "craft": 5.5,
+    "originality": 4,
+    "sound": 5
+  },
+  "full_overall": 4.72,
+  "cost_usd": 0.634,
+  "judge_seconds": 113.5,
+  "verdict": "FAIL"
+}
