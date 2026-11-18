@@ -44,7 +44,7 @@ def arm_xz(a_deg, rel):
     a=math.radians(a_deg); x,z=rel
     return (PIV[0]+x*math.cos(a)-z*math.sin(a), PIV[1]+x*math.sin(a)+z*math.cos(a))
 
-def objects(arm="0", lift="0", spin=True, motes=True):
+def objects(arm="0", lift="0", spin=True, motes=True, orbit=False):
     """arm, lift: expressions of t (degrees toward record; scaled units of lift)."""
     sp=f"t*{SPIN}" if spin else "0"
     O=[
@@ -93,6 +93,16 @@ def objects(arm="0", lift="0", spin=True, motes=True):
         O.append({"type":"particles","count":3000,"emit":{"shape":"box","size":[6,4,6],"pos":[-1.0,2.6,-0.8]},
                   "flow":{"strength":0.05,"scale":1.5,"evolve":0.1},"gravity":-0.002,"drag":0.9,"life":6,
                   "size":"=0.008+0.012*rand(i)","color":["#FFD7A0"],"blend":"add","emissive":1.5,"opacity":"=0.8*smoothstep(0,0.15,age)*(1-smoothstep(0.8,1,age))*(1-smoothstep((36.25-((x+0.4)*-0.5407+(y-0.9)*0.32+(z-0.2)*-0.778))*0.06,(36.25-((x+0.4)*-0.5407+(y-0.9)*0.32+(z-0.2)*-0.778))*0.085,sqrt(max(0,(x+0.4)*(x+0.4)+(y-0.9)*(y-0.9)+(z-0.2)*(z-0.2)-((x+0.4)*-0.5407+(y-0.9)*0.32+(z-0.2)*-0.778)*((x+0.4)*-0.5407+(y-0.9)*0.32+(z-0.2)*-0.778)))))"})
+    if orbit:
+        R="(1.9+floor(rand(i)*4.0)*0.75)"          # four orbits around the spindle
+        Y="(1.05+floor(rand(i)*4.0)*0.07)"
+        dx="(x+0.4)"; dz="(z)"; r=f"(sqrt({dx}*{dx}+{dz}*{dz})+0.001)"
+        O.append({"type":"particles","count":2600,"life":4,
+                  "emit":{"pos":f"=[-0.4+{R}*cos(rand(i+7)*6.2832), {Y}, {R}*sin(rand(i+7)*6.2832)]",
+                          "vel":f"=[-1.1*sin(rand(i+7)*6.2832), 0, 1.1*cos(rand(i+7)*6.2832)]"},
+                  "force":f"=[-{dz}/{r}*1.0 + {dx}/{r}*({R}-{r})*3.0, ({Y}-y)*3.0, {dx}/{r}*1.0 + {dz}/{r}*({R}-{r})*3.0]",
+                  "drag":0.9,"gravity":0.0,"size":"=0.007+0.01*rand(i+3)","color":["#FFD7A0"],"blend":"add","emissive":1.6,
+                  "opacity":"=0.75*smoothstep(0,0.2,age)*(1-smoothstep(0.85,1,age))"})
     return O
 
 SUN=[-20.0,12.5,-28.0]
@@ -106,9 +116,9 @@ def blinds():
         O.append({"type":"box","size":[12,0.14,0.04],"pos":[mid[0],mid[1]+k*0.45,mid[2]],"rot":[0,36,0],"material":"black"})
     return O
 
-def shot(dur, cam, arm="0", lift="0", spin=True, fog=0.0035, motes=True, extra=None, post=None, layers=None, xlights=None):
+def shot(dur, cam, arm="0", lift="0", spin=True, fog=0.0035, motes=True, extra=None, post=None, layers=None, xlights=None, orbit=False):
     props={"env":{"preset":"night"},"floor":False,"exposure":1.0,"quality":"high","camera":cam,
-           "objects":objects(arm,lift,spin,motes)+blinds()+(extra or []),"lights":lights()+(xlights or []),"fog":{"density":fog,"color":"#0a0806","shafts":True},
+           "objects":objects(arm,lift,spin,motes,orbit)+blinds()+(extra or []),"lights":lights()+(xlights or []),"fog":{"density":fog,"color":"#0a0806","shafts":True},
            "bloom":0.08,"vignette":0.35}
     s={"duration":dur,"layers":[{"component":"scene3d","props":props}]+(layers or [])}
     if post: s["post"]=post
@@ -130,7 +140,7 @@ sx,sz=arm_xz(ARM_PLAY,(-1.05,2.33))
 scenes.append(shot(2.2, keys((0,[sx+2.1,0.99,sz+1.25],[sx-0.3,0.99,sz-0.2],85,2.8),(2.2,[sx+2.1,0.99,sz+1.25],[sx-0.3,0.99,sz-0.2],85,2.8)),
     arm=str(ARM_PLAY), lift="0.32*pow(1-smoothstep(0.0,2.1,t),1.6)"))
 # S4 wide reveal as the music blooms: camera cranes up and back
-scenes.append(shot(2.0, keys((0,[5.5,1.25,6.5],[-0.3,0.9,0],75,3.5),(2.0,[6.0,1.85,7.2],[-0.5,1.1,0],48,4)), arm=str(ARM_PLAY)))
+scenes.append(shot(2.0, keys((0,[5.5,1.35,6.5],[-0.3,0.9,0],75,3.5),(2.0,[5.6,3.4,6.6],[-0.4,0.9,0],45,4)), arm=str(ARM_PLAY), orbit=True))
 # S5: the last light writes the name on the wall: a gobo beam through the wordmark (shadow letters in a pool of sun)
 import math as _m
 GL=[-10.0,6.0,-4.0]; GW=[5.0,3.4,-1.0]

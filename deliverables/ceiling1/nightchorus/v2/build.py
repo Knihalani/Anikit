@@ -7,6 +7,11 @@ cards=[("c00",0.0),("c01",2*B),("c02",4*B),("c03",5*B),("c04",6*B),("c05",7*B),(
 strobe=[("c12",14*B),("c13",14.5*B),("c14",15*B),("c15",15.5*B)]
 T_SWELL=16*B; T_SLAM=18*B; T_OFF=24*B; T_END=26*B+0.5
 comps={}
+def steps(pts,last):
+    # piecewise-constant: value v while t < edge, for (edge, v) in order; then `last`
+    e=str(last)
+    for edge,v in reversed(pts): e=f"(t<{edge:.3f}?{v}:{e})"
+    return e
 def vs(e): return f"=[{e},{e},{e}]"
 def tex(name):
     comps[name]={"size":[1920,1080],"duration":1,"layers":[{"src":f"cards/{name}.png","width":1920,"height":1080,"x":960,"y":540}]}
@@ -48,9 +53,14 @@ for k,(n,t) in enumerate(cards):
     z=-7.0*k
     y=3.0 + (0.4 if k%3==0 else 0.0)
     x=side*(5.1-SIGN_W/2-0.25)
-    O.append({"type":"pane","size":[SIGN_W,SIGN_H],"pos":[x,y,z],"rot":[0,side*12,0],"texture":tex(n) if False else {"composition":n,"face":"both"},
-              "material":GLOW,"thin":True,"name":n,
-              "scale":vs(f"(t<{T_OFF+0.05+k*0.11:.3f}?1:0)") if k else vs("(t<0.06?0:(t<0.10?1:(t<0.16?0:(t<0.20?1:(t<0.24?0:1)))))")})
+    on=t-0.02 if k else 0.0
+    fl=f"(t<{on:.3f}?0:(t<{on+0.04:.3f}?1:(t<{on+0.09:.3f}?0:(t<{on+0.12:.3f}?1:(t<{on+0.15:.3f}?0:1)))))"
+    off=f"(t<{T_OFF+0.05+k*0.11:.3f}?1:0)"
+    O.append({"type":"pane","size":[SIGN_W,SIGN_H],"pos":[x,y,z],"rot":[0,side*12,0],"texture":{"composition":n,"face":"both"},
+              "material":GLOW,"thin":True,"name":n,"scale":vs(f"{fl}*{off}")})
+    ry=math.radians(side*12)
+    O.append({"type":"box","size":[SIGN_W+0.1,SIGN_H+0.1,0.06],"radius":0.03,"pos":[x-math.sin(ry)*0.05,y,z-math.cos(ry)*0.05],"rot":[0,side*12,0],
+              "material":{"base":"#0c0c0e","roughness":0.4,"metallic":0.3}})
     # bracket arm
     O.append({"type":"box","size":[0.5,0.06,0.06],"pos":[side*4.9,y+SIGN_H/2+0.08,z],"material":"black"})
     signs.append((x,y,z,side,t))
@@ -63,8 +73,20 @@ for j,(n,t) in enumerate(strobe):
               "scale":vs(f"((t>={t:.3f} && t<{t1:.3f})?1:0)")})
 # --- title billboard at the end of the street
 Zt=Zs-16
-O.append({"type":"pane","size":[14,7.875],"pos":[0,6.2,Zt],"texture":{"composition":"c16","face":"both"},"material":GLOW,
-          "scale":vs(f"((t<{T_SLAM:.3f})?0:(t<{T_OFF+0.47:.3f}?1:(t<{T_OFF+0.50:.3f}?0:(t<{T_OFF+0.56:.3f}?1:(t<{T_OFF+0.6:.3f}?0:(t<{T_OFF+0.66:.3f}?1:0))))))")})
+boxes=json.load(open('cards/title_boxes.json'))
+SX=14/1920
+O.append({"type":"plane","size":[14,7.875],"pos":[0,6.2,Zt],"material":{"base":"#060607","roughness":0.6}})
+random.seed(4)
+wake=[random.uniform(0.05,2*B-0.15) for _ in boxes]
+offs=[0.06+q*(B/4)*0.66 for q in range(len(boxes))]; random.shuffle(offs)
+for q,(x0,y0,x1,y1) in enumerate(boxes):
+    nm=f"L{q:02d}"
+    comps[nm]={"size":[x1-x0,y1-y0],"duration":1,"layers":[{"src":f"cards/{nm}.png","width":x1-x0,"height":y1-y0,"x":(x1-x0)/2,"y":(y1-y0)/2}]}
+    cx=((x0+x1)/2-960)*SX; cy=6.2-((y0+y1)/2-540)*SX
+    w0=T_SWELL+wake[q]; o0=T_OFF+offs[q]
+    e=steps([(w0,0),(w0+0.04,1),(w0+0.1,0),(w0+0.13,1),(T_SLAM,0),(o0,1),(o0+0.035,0),(o0+0.07,1)],0)
+    O.append({"type":"pane","size":[(x1-x0)*SX,(y1-y0)*SX],"pos":[cx,cy,Zt+0.02+q*0.002],"texture":{"composition":nm,"face":"both"},
+              "material":GLOW,"thin":True,"scale":vs(e)})
 O.append({"type":"box","size":[14.6,8.4,0.3],"pos":[0,2.2,Zt-0.3],"material":{"base":"#0b0b0c","roughness":0.6}})
 # street lamps (sodium)
 lights=[]

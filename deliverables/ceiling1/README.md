@@ -16,9 +16,11 @@ Fonts: `fonts/` holds 27 OFL families downloaded for these pieces (the engine bu
 |---|---|---:|---:|---:|---|---|
 | NIGHT CHORUS | v1: 2D type cards (`nightchorus.mp4`) | 3.25 | 8.79 | −5.54 | 0/3 | |
 | NIGHT CHORUS | v2: ray-traced street of signs, continuous dolly, choir | 3.62 | 8.83 | −5.21 | 0/3 | the credits became real signs in a world |
-| NIGHT CHORUS | v3: + brick, rain, louder choir (`v2/street.mp4`) | 3.38 | 8.71 | −5.33 | 0/3 | within trial noise of v2 |
+| NIGHT CHORUS | v3: + brick, rain, louder choir | 3.38 | 8.71 | −5.33 | 0/3 | within trial noise of v2 |
+| NIGHT CHORUS | v4: signs ignite one by one with their choir voices; per-letter title (`v2/street.mp4`, current) | 3.38 | 8.83 | −5.45 | 0/3 | critic motion/sound/craft 6/6/6; the judge: "the signs should actually illuminate wet ground, brick and fog" (engine gaps 1–2 below) |
 | LAST LIGHT | v1 | 3.50 | 7.71 | −4.21 | 0/3 | |
 | LAST LIGHT | v2: opener into the sun, wordmark projected by the light | **4.12** | 7.25 | −3.13 | **1/3** | end card replaced by an in-world gobo; establishing shot |
+| LAST LIGHT | v3: + the dust settles into orbits around the record after the drop (current) | 4.00 | 7.29 | −3.29 | 0/3 | the 6 sampled frames rarely catch the orbit; same critique (model detail, one mood) |
 | OCTAVA | v1 | 4.00 | 7.87 | −3.87 | 0/3 | |
 | OCTAVA | v2: risograph print material, composer list cut | **5.12** | 7.63 | −2.51 | 0/3 | print material |
 | OCTAVA | v3: layered outline wordmark, typographic lockup (current MP4) | 4.25 | 7.71 | −3.46 | 0/3 | same critique as v2; the spread is judge noise |
