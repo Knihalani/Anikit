@@ -594,6 +594,27 @@ mod tests {
     }
 
     #[test]
+    fn box_blur_is_bit_identical_across_runs_and_thread_counts() {
+        let pools: Vec<_> = [1, 4].into_iter().map(|n| rayon::ThreadPoolBuilder::new().num_threads(n).build().unwrap()).collect();
+        for (w, h, r) in [(0, 0, 1), (0, 9, 3), (9, 0, 3), (1, 1, 0), (37, 23, 0), (37, 23, 5), (8, 8, 64), (1, 9, 3), (64, 1, 3), (2400, 80, 64)] {
+            let original: Vec<f32> = (0..w * h).map(|i| ((i * 7919 % 65521) as f32) / 65521.0).collect();
+            let mut expected = original.clone();
+            box_blur(&mut expected, w, h, r);
+            let expected: Vec<_> = expected.iter().map(|v| v.to_bits()).collect();
+            for pool in &pools {
+                for _ in 0..3 {
+                    let actual = pool.install(|| {
+                        let mut actual = original.clone();
+                        box_blur(&mut actual, w, h, r);
+                        actual.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+                    });
+                    assert_eq!(actual, expected, "box_blur({w}, {h}, {r}), {} threads", pool.current_num_threads());
+                }
+            }
+        }
+    }
+
+    #[test]
     fn box_blur_matches_naive_reference() {
         for (w, h, r) in [(37, 23, 1), (37, 23, 5), (37, 23, 40), (8, 8, 64), (1, 9, 3), (64, 1, 3)] {
             let mut state = 1u32;
