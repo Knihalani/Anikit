@@ -43,36 +43,36 @@ Tests: `tests/timing.rs::custom_instruments_fx_and_automation`, which covers a s
 
 ## Listening-proxy metrics (all 15 styles)
 
-Produced by `cargo run --release -p anikit-music --example demos -- out/`. Two caveats:
+Produced by `cargo run --release -p anikit-music --example demos -- out/` with the bundled bank only (no packs fetched, reverb cache warm); regenerated after the overnight changes. Two caveats:
 nobody has listened to these renders yet, and metrics cannot judge musicality.
 
-| style | bpm | LUFS | dBTP | clipped | LRA (LU) | bands sub / low / low-mid / high-mid / air (dB re total) | L/R corr | kick onset error, mean / max (ms) | render |
+| style | bpm | LUFS | dBTP | clipped | LRA (LU) | bands sub / low / low-mid / high-mid / air (dB re total) | L/R corr | kick onset error, mean abs / max (ms) | render |
 |---|---|---|---|---|---|---|---|---|---|
-| lofi | 84.0 | -14.08 | -1.02 | 0 % | 5.9 | -6 / -4 / -5 / -24 / -31 | 0.93 | 0.9 / 1.8 | 0.91 s (27×) |
-| house | 124.0 | -14.01 | -1.02 | 0 % | 4.2 | -2 / -5 / -10 / -19 / -17 | 0.92 | 0.9 / 1.3 | 0.96 s (25×) |
-| cinematic | 100.0 | -14.00 | -1.02 | 0 % | 7.9 | -8 / -3 / -6 / -19 / -19 | 0.91 | 14.6 / 27.2 | 0.97 s (25×) |
-| orchestral | 92.0 | -14.00 | -1.02 | 0 % | 4.3 | -19 / -5 / -2 / -18 / -30 | 0.88 | – | 0.48 s (50×) |
-| synthwave | 104.0 | -14.00 | -1.02 | 0 % | 5.9 | -3 / -5 / -10 / -17 / -17 | 0.95 | 0.5 / 1.5 | 0.74 s (33×) |
-| trap | 140.0 | -14.07 | -1.02 | 0 % | 10.2 | -1 / -7 / -16 / -17 / -18 | 0.98 | 3.9 / 19.9 | 0.66 s (30×) |
-| ambient | 70.0 | -14.00 | -1.02 | 0 % | 2.9 | -12 / -5 / -2 / -20 / -31 | 0.66 | – | 0.57 s (42×) |
-| rock | 128.0 | -14.01 | -1.02 | 0 % | 5.8 | -20 / -3 / -4 / -11 / -21 | 0.88 | 6.0 / 25.6 | 0.38 s (52×) |
-| corporate | 116.0 | -14.01 | -1.02 | 0 % | 4.7 | -11 / -3 / -5 / -12 / -13 | 0.92 | 1.5 / 2.7 | 0.44 s (46×) |
-| jazz | 132.0 | -14.00 | -1.02 | 0 % | 3.2 | -16 / -3 / -4 / -13 / -23 | 0.98 | 2.1 / 21.5 | 0.33 s (61×) |
-| piano | 76.0 | -14.01 | -1.00 | 0 % | 1.5 | -30 / -7 / -1 / -22 / -50 | 0.90 | – | 0.30 s (80×) |
-| acoustic | 96.0 | -14.00 | -1.02 | 0 % | 2.6 | -12 / -5 / -4 / -11 / -9 | 0.88 | 0.3 / 1.5 | 0.33 s (61×) |
-| pop | 112.0 | -14.01 | -1.02 | 0 % | 6.4 | -4 / -5 / -6 / -17 / -16 | 0.97 | 1.9 / 24.5 | 0.60 s (34×) |
-| tech | 120.0 | -14.01 | -1.02 | 0 % | 6.0 | -4 / -4 / -9 / -16 / -16 | 0.93 | 0.7 / 1.3 | 0.61 s (33×) |
-| dnb | 172.0 | -14.05 | -1.02 | 0 % | 11.3 | -3 / -5 / -11 / -17 / -15 | 0.80 | 2.9 / 12.8 | 0.68 s (29×) |
+| lofi | 84.0 | -14.02 | -1.02 | 0 % | 3.3 | -6 / -3 / -6 / -19 / -28 | 0.93 | 3.2 / 29.9 | 0.66 s (37×) |
+| house | 124.0 | -14.01 | -1.02 | 0 % | 4.6 | -2 / -6 / -10 / -19 / -17 | 0.89 | 0.9 / 1.5 | 0.69 s (35×) |
+| cinematic | 100.0 | -14.00 | -1.02 | 0 % | 7.7 | -9 / -2 / -6 / -19 / -19 | 0.83 | 11.7 / 27.7 | 0.62 s (39×) |
+| orchestral | 92.0 | -13.99 | -1.02 | 0 % | 5.1 | -10 / -5 / -2 / -19 / -29 | 0.82 | – | 0.45 s (53×) |
+| synthwave | 104.0 | -14.00 | -1.02 | 0 % | 5.7 | -3 / -5 / -9 / -16 / -17 | 0.91 | 0.6 / 1.0 | 0.53 s (45×) |
+| trap | 140.0 | -14.01 | -1.02 | 0 % | 6.3 | -1 / -7 / -15 / -18 / -19 | 0.96 | 4.6 / 26.3 | 0.39 s (52×) |
+| ambient | 70.0 | -14.00 | -1.42 | 0 % | 2.1 | -16 / -4 / -2 / -20 / -29 | 0.42 | – | 0.51 s (47×) |
+| rock | 128.0 | -14.00 | -1.02 | 0 % | 4.7 | -18 / -4 / -3 / -10 / -21 | 0.85 | 6.7 / 25.9 | 0.32 s (62×) |
+| corporate | 116.0 | -14.04 | -1.02 | 0 % | 5.9 | -13 / -3 / -5 / -12 / -14 | 0.89 | 1.6 / 2.7 | 0.53 s (38×) |
+| jazz | 132.0 | -13.99 | -1.02 | 0 % | 2.2 | -12 / -3 / -5 / -13 / -23 | 0.95 | 2.9 / 27.2 | 0.30 s (66×) |
+| piano | 76.0 | -14.00 | -1.02 | 0 % | 6.0 | -29 / -6 / -1 / -21 / -32 | 0.75 | – | 0.26 s (93×) |
+| acoustic | 96.0 | -14.02 | -1.02 | 0 % | 6.6 | -11 / -4 / -5 / -11 / -10 | 0.88 | 0.3 / 0.8 | 0.34 s (59×) |
+| pop | 112.0 | -14.06 | -1.02 | 0 % | 7.6 | -8 / -3 / -6 / -12 / -15 | 0.94 | 1.4 / 17.6 | 0.36 s (55×) |
+| tech | 120.0 | -14.01 | -1.02 | 0 % | 4.6 | -3 / -4 / -9 / -18 / -18 | 0.90 | 0.8 / 1.3 | 0.37 s (54×) |
+| dnb | 172.0 | -14.04 | -1.02 | 0 % | 6.3 | -3 / -4 / -10 / -17 / -15 | 0.78 | 2.6 / 12.7 | 0.49 s (41×) |
 
-- **Loudness and peak.** Every style is within ±0.1 LU of −14 LUFS and at or below −1.00 dBTP, with no clipped samples.
+- **Loudness and peak.** Every style is within ±0.1 LU of −14 LUFS and at or below −1.00 dBTP (ambient peaks lower, −1.42), with no clipped samples.
   - The meter matches EBU Tech 3341 cases 1–5 within 0.02 LU and the true-peak cases exactly.
   - Loudness range matches EBU Tech 3342 cases 1–4 exactly.
 - **Timing.** The sequencer is sample-accurate.
   - On an isolated click track with no humanisation, onsets on the fitted grid are within the detector's 0.5 ms resolution (`tests/timing.rs`).
-  - In full mixes, kick onsets read 0.3–2 ms late (the attack shape plus up to ≈0.4 ms of humanisation).
-  - The larger maxima for cinematic, trap, rock, pop and jazz come from the detector, not from timing. In those kits the kick sits under slow-attack booms, toms or 808 tails, so the steepest energy rise near the beat belongs to another drum.
+  - In full mixes, kick onsets read 0.3–3 ms from the beat on average (the attack shape plus humanisation of up to ±0.7 ms).
+  - The larger maxima for lofi, cinematic, trap, rock, pop and jazz come from the detector, not from timing. In those kits the kick sits under slow-attack booms, toms, 808 tails, ghost snares or the room, so the steepest energy rise near the beat belongs to another drum.
 - **Spectral balance.**
-  - Electronic styles carry the most sub energy: trap −1.5 dB, house −2.4 dB.
+  - Electronic styles carry the most sub energy: trap −1.4 dB, house −2.2 dB.
   - Acoustic and orchestral styles centre on the low-mids.
   - Lofi and piano are deliberately dark, with air around −30 to −50 dB.
 
@@ -81,9 +81,9 @@ nobody has listened to these renders yet, and metrics cannot judge musicality.
 Measured on the 4-vCPU cloud container (2.1 GHz Xeon), release build, end to end
 from spec to mastered audio:
 
-- **15 demos, all in one process:** 25–80× real time.
-- **A fresh CLI run** (`anikit-video music --style house --length 20s`): about 0.8 s, roughly 25×.
-- **A 2-minute house track:** about 3.7 s (≈33×). That time splits into voices 1.5 s, mix 1.0 s and master 1.1 s.
+- **15 demos, all in one process:** 35–93× real time.
+- **A fresh CLI run** (`anikit-video music --style house --length 20s`): about 0.66 s, roughly 30×.
+- **A 2-minute house track:** about 3.6 s (≈33×). That time splits into voices 1.8 s, mix 1.0 s and master 0.8 s.
 
 **The 100× goal is not met yet.** The mastering chain is serial:
 
@@ -91,7 +91,7 @@ from spec to mastered audio:
 - true-peak limiter, run 2 iterations
 - loudness meter
 
-It costs ≈1 s per 2 minutes. The synth voices cost 500–1000× real time each.
+It costs ≈0.8 s per 2 minutes. The synth voices cost 500–1000× real time each.
 
 What already went in to get here:
 
