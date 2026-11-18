@@ -488,6 +488,7 @@ impl Prepare for Scene3d {
             // Keep the env's key level so exposure and the look stay calibrated.
             let level = es.env.key_box().map(|k| luma(k.radiance) * es.env.key_solid_angle * (1.0 - k.falloff / 3.0) / std::f32::consts::PI).unwrap_or(1.0).max(0.2);
             let (e, g) = r.apply(&es.env, view, level);
+            local_lights.extend(r.spots(bounds.0, bounds.1, view, level));
             if r.anim != 0 {
                 rig_anim_base = Some((es.env.clone(), view, level));
             }
@@ -1647,6 +1648,10 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        let pin = rig::parse(&json!("pinspot"), "rig").unwrap();
+        let sp = pin.spots(v3(0.0, 0.5, 0.0), 1.0, v3(0.0, 0.0, -1.0), 1.0);
+        assert_eq!(sp.len(), 1);
+        assert!(sp[0].pos.y > 4.0 && sp[0].dir.y < -0.9, "a pinspot hangs above, pointing down");
         let b = spec::material(&json!({ "extends": "aluminium", "pattern": "spun" }), &HashMap::new(), "m").unwrap();
         assert_eq!((b.pattern.0, b.aniso), (6, 0.6));
         let c = spec::material(&json!({ "extends": "aluminium", "pattern": "brushed", "anisotropy": 0.9 }), &HashMap::new(), "m").unwrap();

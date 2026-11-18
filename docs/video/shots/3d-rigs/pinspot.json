@@ -1,0 +1,139 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "scenes": [
+  {
+   "duration": 2,
+   "scene3d": {
+    "env": "night",
+    "rig": "pinspot",
+    "camera": {
+     "keys": [
+      {
+       "t": 0,
+       "pos": [
+        0.25,
+        1.05,
+        4.6
+       ],
+       "target": [
+        0,
+        0.42,
+        0
+       ],
+       "focal": 55,
+       "fstop": 5.6
+      }
+     ]
+    },
+    "objects": [
+     {
+      "type": "lathe",
+      "name": "bottle",
+      "points": [
+       [
+        0,
+        0
+       ],
+       [
+        0.17,
+        0.0
+       ],
+       [
+        0.2,
+        0.03
+       ],
+       [
+        0.2,
+        0.55
+       ],
+       [
+        0.16,
+        0.68
+       ],
+       [
+        0.07,
+        0.78
+       ],
+       [
+        0.07,
+        0.9
+       ],
+       [
+        0.0,
+        0.9
+       ]
+      ],
+      "segments": 128,
+      "pos": [
+       0,
+       0.12,
+       0
+      ],
+      "material": {
+       "extends": "ceramic",
+       "base": "#E6DED2",
+       "roughness": 0.3
+      }
+     },
+     {
+      "type": "cylinder",
+      "radius": 0.42,
+      "height": 0.12,
+      "pos": [
+       0,
+       0.06,
+       0
+      ],
+      "material": {
+       "extends": "matte",
+       "base": "#3A3C40",
+       "roughness": 0.5
+      }
+     },
+     {
+      "type": "sphere",
+      "radius": 0.16,
+      "pos": [
+       0.62,
+       0.16,
+       0.3
+      ],
+      "material": "chrome"
+     },
+     {
+      "type": "box",
+      "size": [
+       0.3,
+       0.3,
+       0.3
+      ],
+      "pos": [
+       -0.62,
+       0.15,
+       -0.1
+      ],
+      "rot": [
+       0,
+       25,
+       0
+      ],
+      "material": {
+       "extends": "plastic",
+       "base": "#C2462E"
+      }
+     }
+    ],
+    "floor": {
+     "color": "#77726C",
+     "roughness": 0.45,
+     "reflect": 0.25
+    }
+   },
+   "layers": []
+  }
+ ]
+}

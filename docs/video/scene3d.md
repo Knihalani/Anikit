@@ -197,6 +197,8 @@ Light like a gaffer, not with an HDRI default. `rig` places a named setup around
 | `golden` | low warm sun through foliage (gobo), cool sky fill | 5:1 |
 | `window` | crisp daylight through window panes (gobo) | 6:1 |
 | `top` | one overhead source (pendant, skylight) | 10:1 |
+| `pinspot` | a museum vitrine: one narrow real spot straight down, a pool of light on the set, a faint warm rim | ~30:1 |
+| `stage` | a follow spot from front-high (a real spot with a pool) and a strong cool backlight; add `beam` | 10:1 |
 
 Tune it with an object: `{ "preset": "rembrandt", "ratio": 6, "rim": 1.5, "key": 1.2, "angle": 60, "height": 25, "warmth": 0.4, "gobo": "blinds", "goboScale": 0.4, "softness": 0.1, "beam": true }`.
 - `angle`/`height`: the key's azimuth from the camera (+ = camera left) and elevation, in degrees.
@@ -213,7 +215,7 @@ Tune it with an object: `{ "preset": "rembrandt", "ratio": 6, "rim": 1.5, "key":
 
   Animated rigs rebuild the lights each frame (about 2 ms) and skip the baked floor.
 
-Stills (one scene, six rigs) and `sweep.mp4` (3 s, 1080p30, rendered in 43 s on 4 cores): `docs/video/shots/3d-rigs/`. Rigs cost nothing extra: a rig is a few softboxes, the same as an env. Gobos add one pattern lookup per shaded point. Measured 1080p traces on 4 cores: 0.62–0.79 s.
+`pinspot` and `stage` place a real local spot around the subject, so light falls off and pools; the others are softboxes at infinity. Stills (one scene, six rigs, plus `pinspot.jpg` and `stage.jpg`) and `sweep.mp4` (3 s, 1080p30, rendered in 43 s on 4 cores): `docs/video/shots/3d-rigs/`. Rigs cost nothing extra: a rig is a few softboxes, the same as an env. Gobos add one pattern lookup per shaded point. Measured 1080p traces on 4 cores: 0.62–0.79 s.
 Why and how studios light: `docs/video/craft/3d-design.md`.
 
 All of it together: `docs/video/shots/3d-showcase/showcase.mp4` (15.5 s, five shots: a macro reveal, an abstract field, a clay sweep, window light and the hero logo; `contact.jpg`; spec beside it).
