@@ -1,0 +1,1 @@
+{"cmd": "anikit-video render deliverables/eval/l-generative/spec.json -o deliverables/eval/l-generative/final.mp4 --sheet deliverables/eval/l-generative/contact.png", "exit": 0, "wall_s": 422.27, "peak_rss_mb": 658.4}

@@ -1,0 +1,348 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "intent": {
+  "pace": "slow"
+ },
+ "scenes": [
+  {
+   "duration": 20,
+   "background": "#09090A",
+   "layers": [
+    {
+     "type": "shader",
+     "src": "signal.glsl",
+     "channels": [
+      "#word"
+     ]
+    }
+   ]
+  }
+ ],
+ "post": {
+  "grain": 0.05,
+  "bloom": 0.12
+ },
+ "music": {
+  "bpm": 120,
+  "key": "Dm",
+  "length": "20s",
+  "seed": 7,
+  "end": "ring",
+  "followCuts": false,
+  "master": {
+   "lufs": -14,
+   "ceiling": -1,
+   "reverb": "hall"
+  },
+  "define": {
+   "static": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "sine",
+       "level": 0.0
+      }
+     ],
+     "noise": 1.0,
+     "filter": {
+      "type": "bp",
+      "cutoff": 2600,
+      "res": 0.3
+     },
+     "amp": [
+      0.8,
+      0.1,
+      1,
+      0.05
+     ]
+    }
+   },
+   "tone": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "sine",
+       "level": 0.9
+      },
+      {
+       "wave": "tri",
+       "level": 0.15,
+       "semis": 12
+      }
+     ],
+     "amp": [
+      0.02,
+      0.2,
+      0.85,
+      3.0
+     ],
+     "lfo": {
+      "rate": 5,
+      "vib": 4
+     }
+    }
+   },
+   "pulse": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "saw",
+       "voices": 2,
+       "detune": 8
+      }
+     ],
+     "sub": 0.4,
+     "filter": {
+      "type": "ladder",
+      "cutoff": 300,
+      "res": 0.5,
+      "env": 2
+     },
+     "fenv": [
+      0.002,
+      0.12,
+      0,
+      0.08
+     ],
+     "amp": [
+      0.002,
+      0.15,
+      0.3,
+      0.06
+     ],
+     "mono": true
+    }
+   }
+  },
+  "tracks": [
+   {
+    "inst": "static",
+    "notes": "C5/1 C5/1 C5/1 C5/1 C5/1 C5/1 C5/2.",
+    "at": 0,
+    "gain": -16,
+    "automate": {
+     "volume": [
+      [
+       0,
+       0.9
+      ],
+      [
+       6,
+       0.6
+      ],
+      [
+       12,
+       0.25
+      ],
+      [
+       26.5,
+       0.1
+      ],
+      [
+       27,
+       0
+      ]
+     ],
+     "lp": [
+      [
+       0,
+       3000
+      ],
+      [
+       20,
+       12000
+      ]
+     ]
+    }
+   },
+   {
+    "inst": "bell-fm",
+    "notes": "D5/4",
+    "at": 1.5,
+    "gain": -6,
+    "reverb": 0.5,
+    "pan": 0.3
+   },
+   {
+    "inst": "bell-fm",
+    "notes": "A5/4",
+    "at": 4.0,
+    "gain": -7,
+    "reverb": 0.5,
+    "pan": -0.4
+   },
+   {
+    "inst": "bell-fm",
+    "notes": "F5/4",
+    "at": 6.5,
+    "gain": -7,
+    "reverb": 0.5,
+    "pan": 0.05
+   },
+   {
+    "inst": "bell-fm",
+    "notes": "E6/4",
+    "at": 8.0,
+    "gain": -8,
+    "reverb": 0.5,
+    "pan": -0.1
+   },
+   {
+    "inst": "bell-fm",
+    "notes": "C6/4",
+    "at": 9.5,
+    "gain": -8,
+    "reverb": 0.5,
+    "pan": 0.6
+   },
+   {
+    "inst": "bell-fm",
+    "notes": "G5/4",
+    "at": 10.5,
+    "gain": -8,
+    "reverb": 0.5,
+    "pan": -0.7
+   },
+   {
+    "inst": "bell-fm",
+    "notes": "D6/4",
+    "at": 11.25,
+    "gain": -7,
+    "reverb": 0.5,
+    "pan": 0.0
+   },
+   {
+    "inst": "pad-glass",
+    "notes": "[D4 F4 A4]/1 [D4 F4 A4 C5]/1 [Bb3 D4 F4 A4]/1 [G3 Bb3 D4 E4 A4]/1 [A3 C#4 E4 G4 Bb4]/2.",
+    "at": 4.0,
+    "gain": -9,
+    "automate": {
+     "volume": [
+      [
+       0,
+       0.2
+      ],
+      [
+       14,
+       1.0
+      ],
+      [
+       18.9,
+       1.0
+      ],
+      [
+       19,
+       0
+      ]
+     ],
+     "lp": [
+      [
+       0,
+       700
+      ],
+      [
+       18.5,
+       7000
+      ]
+     ]
+    }
+   },
+   {
+    "inst": "pulse",
+    "notes": "o2 l8 (D2 D2 D3 D2 D2 D2 C3 D2)x2 (Bb1 Bb1 Bb2 Bb1 A1 A1 A2 A1)x1 (A1 A2 A1 A2 A1 A2 A1 A2)x1 A1/16 A2/16 A1/16 A2/16 A1/16 A2/16 A1/16 A2/16",
+    "at": 8.0,
+    "gain": -8,
+    "automate": {
+     "synth.cutoff": [
+      [
+       0,
+       250
+      ],
+      [
+       11,
+       2400
+      ]
+     ],
+     "volume": [
+      [
+       0,
+       0.5
+      ],
+      [
+       11,
+       1.0
+      ]
+     ]
+    }
+   },
+   {
+    "inst": "tone",
+    "notes": "D5/2 _/1",
+    "at": 13.9,
+    "gain": -10,
+    "reverb": 0.4
+   },
+   {
+    "inst": "strings",
+    "notes": "[D3 A3 D4 F4 A4]/1 _/1 _/2",
+    "at": 15.0,
+    "gain": -6,
+    "reverb": 0.6
+   },
+   {
+    "inst": "pad-warm",
+    "notes": "[D2 A2 D3]/1 _/1 _/2",
+    "at": 15.0,
+    "gain": -8
+   },
+   {
+    "inst": "bell-fm",
+    "notes": "D6/2 A5/2",
+    "at": 15.0,
+    "gain": -10,
+    "reverb": 0.7
+   }
+  ],
+  "sfx": [
+   {
+    "sfx": "riser",
+    "at": 13.4
+   },
+   {
+    "sfx": "sub-drop",
+    "at": 13.45
+   },
+   {
+    "sfx": "impact",
+    "at": 15.0
+   }
+  ]
+ },
+ "compositions": {
+  "word": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 20,
+   "background": "#000000",
+   "layers": [
+    {
+     "text": "SIGNAL",
+     "font": "Archivo",
+     "axes": {
+      "wght": 900,
+      "wdth": 125
+     },
+     "size": 300,
+     "letterSpacing": 0.04,
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "color": "#FFFFFF"
+    }
+   ]
+  }
+ }
+}
