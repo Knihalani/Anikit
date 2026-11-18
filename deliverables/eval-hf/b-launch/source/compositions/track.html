@@ -1,0 +1,210 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: #e7e9e4;
+      font-family: "Inter", sans-serif;
+      color: #121311;
+      overflow: hidden;
+    }
+    #trk-world {
+      position: absolute;
+      inset: 0;
+    }
+    #trk-rails {
+      position: absolute;
+      left: 100px;
+      top: 500px;
+      width: 1720px;
+      height: 80px;
+      transform-origin: 0 50%;
+      background-image: repeating-linear-gradient(90deg, #b4b8b0 0 10px, transparent 10px 40px);
+      background-size: 100% 64px;
+      background-position: 0 8px;
+      background-repeat: no-repeat;
+    }
+    .rail {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 6px;
+      background: #121311;
+    }
+    #trk-rail-a { top: 22px; }
+    #trk-rail-b { top: 52px; }
+    .stn {
+      position: absolute;
+      top: 618px;
+    }
+    #trk-stn-a { left: 160px; }
+    #trk-stn-b { right: 120px; text-align: right; }
+    .stn-name {
+      font-size: 40px;
+      font-weight: 700;
+      color: #6d716a;
+    }
+    .stn-bal {
+      font-size: 84px;
+      font-weight: 900;
+      letter-spacing: -0.035em;
+      line-height: 1.05;
+      font-variant-numeric: tabular-nums;
+    }
+    .sig {
+      position: absolute;
+      width: 0;
+      height: 0;
+    }
+    .post {
+      position: absolute;
+      left: -4px;
+      bottom: 0;
+      width: 8px;
+      background: #121311;
+      transform-origin: 50% 100%;
+    }
+    .lamp {
+      position: absolute;
+      left: -22px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 6px solid #121311;
+      background: #e7e9e4;
+    }
+    .card {
+      position: absolute;
+      left: -4px;
+      width: 420px;
+      padding: 22px 28px 26px;
+      background: #121311;
+      border-radius: 10px;
+      font-family: "JetBrains Mono", monospace;
+      color: #e7e9e4;
+      transform-origin: 0 100%;
+    }
+    .card .from {
+      font-size: 28px;
+      color: #8c9088;
+    }
+    .card .ev {
+      margin-top: 8px;
+      font-size: 38px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .card .ev b {
+      color: #ff4f1a;
+    }
+    #trk-token {
+      position: absolute;
+      left: 200px;
+      top: 498px;
+      width: 300px;
+      height: 84px;
+      background: #ff4f1a;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #trk-token-t {
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    .head {
+      position: absolute;
+      left: 160px;
+      top: 850px;
+      font-size: 96px;
+      font-weight: 900;
+      letter-spacing: -0.045em;
+      white-space: nowrap;
+    }
+    .head span {
+      display: inline-block;
+      margin-right: 0.22em;
+    }
+    .head .hot {
+      color: #ff4f1a;
+    }
+  </style>
+  <div id="root" data-composition-id="track" data-width="1920" data-height="1080">
+    <div id="trk-world">
+      <div id="trk-rails"><div class="rail" id="trk-rail-a"></div><div class="rail" id="trk-rail-b"></div></div>
+
+      <div class="sig" id="trk-s1" style="left:520px;top:500px">
+        <div class="post" id="trk-p1" style="height:120px"></div>
+        <div class="lamp" id="trk-l1" style="top:-150px"></div>
+        <div class="card" id="trk-c1" style="bottom:166px"><div class="from">→ your webhook</div><div class="ev"><b>transfer</b>.created</div></div>
+      </div>
+      <div class="sig" id="trk-s2" style="left:960px;top:500px">
+        <div class="post" id="trk-p2" style="height:120px"></div>
+        <div class="lamp" id="trk-l2" style="top:-150px"></div>
+        <div class="card" id="trk-c2" style="bottom:166px"><div class="from">→ your webhook</div><div class="ev"><b>transfer</b>.pending</div></div>
+      </div>
+      <div class="sig" id="trk-s3" style="left:1400px;top:500px">
+        <div class="post" id="trk-p3" style="height:120px"></div>
+        <div class="lamp" id="trk-l3" style="top:-150px"></div>
+        <div class="card" id="trk-c3" style="bottom:166px"><div class="from">→ your webhook</div><div class="ev"><b>transfer</b>.settled</div></div>
+      </div>
+
+      <div class="stn" id="trk-stn-a"><div class="stn-name">Northwind · Bank account</div><div class="stn-bal" id="trk-bal-a">$12,800.00</div></div>
+      <div class="stn" id="trk-stn-b"><div class="stn-name">Acme Supply · Bank account</div><div class="stn-bal" id="trk-bal-b">$3,150.00</div></div>
+
+      <div class="head" id="trk-h1"><span>Settled</span><span class="hot">instantly.</span></div>
+      <div class="head" id="trk-h2"><span>A</span><span>webhook</span><span>at</span><span>every</span><span>state</span><span>change.</span></div>
+    </div>
+    <div id="trk-token"><span id="trk-token-t">$2,400.00</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // the yard builds around the token
+    tl.fromTo("#trk-rails", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "power2.inOut" }, 0);
+    tl.fromTo("#trk-stn-a, #trk-stn-b", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out", stagger: 0.1 }, 0.3);
+    ["1", "2", "3"].forEach((n, i) => {
+      tl.fromTo("#trk-p" + n, { scaleY: 0 }, { scaleY: 1, duration: 0.26, ease: "expo.out" }, 0.28 + i * 0.07);
+      tl.fromTo("#trk-l" + n, { scale: 0 }, { scale: 1, duration: 0.26, ease: "expo.out" }, 0.36 + i * 0.07);
+    });
+
+    // one run, one ease: x 0 -> 1250 between 0.9 s and 2.0 s
+    const T0 = 0.9, TD = 1.1, DX = 1250;
+    tl.fromTo("#trk-token", { x: 0 }, { x: DX, duration: TD, ease: "power2.inOut" }, T0);
+    // time the token's centre (200 + 150 + x) crosses each signal: invert power2.inOut
+    const cross = (sigX) => {
+      const p = (sigX - 350) / DX;
+      const u = p < 0.5 ? Math.sqrt(p / 2) : 1 - Math.sqrt((1 - p) / 2);
+      return T0 + u * TD;
+    };
+    [[1, 520], [2, 960], [3, 1400]].forEach(([n, x]) => {
+      const tc = cross(x);
+      tl.fromTo("#trk-l" + n, { backgroundColor: "#e7e9e4" }, { backgroundColor: "#ff4f1a", duration: 0.05 }, tc);
+      tl.fromTo("#trk-c" + n, { opacity: 0, scale: 0.86, filter: "blur(8px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.32, ease: "expo.out" }, tc);
+    });
+
+    // balances move as the money lands
+    const bal = { a: 12800, b: 3150 };
+    const fmt = (v) => "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const balA = document.querySelector("#trk-bal-a");
+    const balB = document.querySelector("#trk-bal-b");
+    tl.fromTo(bal, { a: 12800, b: 3150 }, {
+      a: 10400, b: 5550, duration: 0.45, ease: "power3.out",
+      onUpdate: () => { balA.textContent = fmt(Math.round(bal.a)); balB.textContent = fmt(Math.round(bal.b)); },
+    }, 1.98);
+    tl.fromTo("#trk-bal-b", { color: "#121311" }, { color: "#ff4f1a", duration: 0.1 }, 1.98);
+
+    // lines
+    tl.fromTo("#trk-h1 span", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power2.out", stagger: 0.07 }, 2.25);
+    tl.to("#trk-h1 span", { opacity: 0, filter: "blur(8px)", duration: 0.13, ease: "power2.in", stagger: 0.03 }, 3.25);
+    tl.fromTo("#trk-h2 span", { color: "#b4b8b0", opacity: 0 }, { color: "#121311", opacity: 1, duration: 0.1, stagger: 0.08 }, 3.45);
+
+    // object becomes the world: the token swells past the frame
+    tl.to("#trk-world", { opacity: 0, filter: "blur(15px)", duration: 0.3, ease: "power2.in" }, 5.02);
+    tl.to("#trk-token-t", { opacity: 0, duration: 0.12 }, 5.0);
+    tl.to("#trk-token", { x: 960 - 350, y: 0, scaleX: 7.2, scaleY: 14, borderRadius: 0, duration: 0.56, ease: "power3.inOut" }, 5.02);
+    window.__timelines["track"] = tl;
+  </script>
+</template>

@@ -1,0 +1,92 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: #ff4f1a;
+      font-family: "Inter", sans-serif;
+      color: #121311;
+      overflow: hidden;
+    }
+    #end-lockup {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 330px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 36px;
+    }
+    #end-mark {
+      width: 132px;
+      height: 132px;
+    }
+    #end-mark path {
+      fill: none;
+      stroke: #121311;
+      stroke-width: 17;
+      stroke-linecap: butt;
+    }
+    #end-word {
+      font-size: 156px;
+      font-weight: 900;
+      letter-spacing: -0.055em;
+      line-height: 1;
+      padding-bottom: 12px;
+    }
+    #end-sub {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 560px;
+      text-align: center;
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    #end-cta {
+      position: absolute;
+      left: 50%;
+      top: 680px;
+      transform: translateX(-50%);
+    }
+    #end-cta-box {
+      background: #121311;
+      color: #e7e9e4;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 44px;
+      padding: 18px 34px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    #end-cta-box b {
+      color: #ff4f1a;
+    }
+  </style>
+  <div id="root" data-composition-id="endcard" data-width="1920" data-height="1080">
+    <div id="end-lockup">
+      <svg id="end-mark" viewBox="0 0 132 132">
+        <path id="end-r1" d="M34 128 V4" />
+        <path id="end-r2" d="M74 128 V4" />
+        <path id="end-r3" d="M74 84 C74 44 112 40 112 4" />
+      </svg>
+      <div id="end-word">Railyard</div>
+    </div>
+    <div id="end-sub">One call. Settled instantly.</div>
+    <div id="end-cta"><div id="end-cta-box"><b>POST</b> /v1/transfers</div></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // the mark is laid like track: two rails, then the switch
+    ["#end-r1", "#end-r2", "#end-r3"].forEach((sel, i) => {
+      const len = document.querySelector(sel).getTotalLength();
+      tl.fromTo(sel, { strokeDasharray: len, strokeDashoffset: len }, { strokeDashoffset: 0, duration: 0.34, ease: "power3.inOut" }, 0.08 + i * 0.12);
+    });
+    // wordmark wipes in beside it, landing on the impact
+    tl.fromTo("#end-word", { clipPath: "inset(0 100% 0 0)", x: -30 }, { clipPath: "inset(0 0% 0 0)", x: 0, duration: 0.3, ease: "expo.out" }, 0.44);
+    tl.fromTo("#end-sub", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 0.95);
+    tl.fromTo("#end-cta-box", { opacity: 0, scaleX: 0.2, filter: "blur(10px)" }, { opacity: 1, scaleX: 1, filter: "blur(0px)", duration: 0.24, ease: "power3.out" }, 1.25);
+    window.__timelines["endcard"] = tl;
+  </script>
+</template>

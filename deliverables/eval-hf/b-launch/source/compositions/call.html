@@ -1,0 +1,182 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      font-family: "Inter", sans-serif;
+      color: #121311;
+      overflow: hidden;
+    }
+    #call-ground {
+      position: absolute;
+      inset: 0;
+      background: #ff4f1a;
+    }
+    #call-title {
+      position: absolute;
+      left: 180px;
+      top: 450px;
+      font-size: 156px;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    #call-title span {
+      display: inline-block;
+      margin-right: 0.2em;
+    }
+    #call-title .hot {
+      color: #ffffff;
+    }
+    #call-panel {
+      position: absolute;
+      left: 340px;
+      top: 200px;
+      width: 1240px;
+      height: 680px;
+      background: #121311;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    #call-bar {
+      height: 72px;
+      border-bottom: 2px solid #2c2e2a;
+      display: flex;
+      align-items: center;
+      padding: 0 40px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 28px;
+      color: #8c9088;
+    }
+    #call-code {
+      padding: 40px 64px 0;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 42px;
+      line-height: 63px;
+      color: #e7e9e4;
+      white-space: pre;
+    }
+    .ln {
+      display: block;
+      height: 63px;
+      overflow: hidden;
+    }
+    .ln > span.t {
+      display: inline-block;
+      overflow: hidden;
+      vertical-align: top;
+      white-space: pre;
+    }
+    .k {
+      color: #e7e9e4;
+    }
+    .s {
+      color: #ffb59c;
+    }
+    .m {
+      color: #ff4f1a;
+      font-weight: 700;
+    }
+    #call-amt {
+      border-radius: 4px;
+    }
+    #call-resp {
+      position: absolute;
+      left: 64px;
+      bottom: 44px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 40px;
+      color: #e7e9e4;
+      white-space: pre;
+    }
+    #call-resp .ok {
+      color: #121311;
+      background: #9be27a;
+      padding: 2px 10px;
+      border-radius: 4px;
+    }
+    #call-token {
+      position: absolute;
+      left: 200px;
+      top: 498px;
+      width: 300px;
+      height: 84px;
+      background: #ff4f1a;
+      border-radius: 8px;
+      transform-origin: 0 0;
+    }
+    #call-token-a,
+    #call-token-b {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+    #call-token-a {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 56px;
+      color: #121311;
+    }
+    #call-token-b {
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: #121311;
+    }
+  </style>
+  <div id="root" data-composition-id="call" data-width="1920" data-height="1080">
+    <div id="call-ground"></div>
+    <div id="call-title">
+      <span>Railyard</span><span>moves</span><span>it</span><span class="hot">now.</span>
+    </div>
+    <div id="call-panel" data-layout-allow-overflow>
+      <div id="call-bar">example request</div>
+      <div id="call-code"><span class="ln"><span class="t" id="l0"><span class="m">POST</span> /v1/transfers</span></span><span class="ln"><span class="t" id="l1">{</span></span><span class="ln"><span class="t" id="l2">  <span class="k">"from":</span>   <span class="s">"acct_northwind"</span>,</span></span><span class="ln"><span class="t" id="l3">  <span class="k">"to":</span>     <span class="s">"acct_acme_supply"</span>,</span></span><span class="ln"><span class="t" id="l4">  <span class="k">"amount":</span> <span class="s" id="call-amt" data-layout-allow-overlap>"2400.00"</span>,</span></span><span class="ln"><span class="t" id="l5">  <span class="k">"currency":</span> <span class="s">"usd"</span></span></span><span class="ln"><span class="t" id="l6">}</span></span></div>
+      <div id="call-resp">← <span class="ok">200</span>  "status": "created"</div>
+    </div>
+    <div id="call-token" data-layout-allow-overlap>
+      <div id="call-token-a">"2400.00"</div>
+      <div id="call-token-b">$2,400.00</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // 1. the name: per-word blur in, no translate
+    tl.fromTo("#call-title span", { opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power2.out", stagger: 0.08 }, 0.06);
+    tl.to("#call-title span", { opacity: 0, filter: "blur(10px)", duration: 0.14, ease: "power2.in", stagger: 0.03 }, 1.42);
+
+    // 2. one call: the panel morphs open from a narrow block
+    tl.fromTo("#call-panel", { scaleX: 0.08, scaleY: 0.12, opacity: 0, filter: "blur(12px)" }, { scaleX: 1, scaleY: 1, opacity: 1, filter: "blur(0px)", duration: 0.3, ease: "power3.out" }, 1.52);
+    tl.fromTo("#call-bar", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 1.7);
+
+    // 3. the request types in, line by line (monospace: one character per step)
+    const lines = [
+      ["#l0", 18], ["#l1", 1], ["#l2", 28], ["#l3", 30], ["#l4", 21], ["#l5", 19], ["#l6", 1],
+    ];
+    let t = 1.78;
+    lines.forEach(([sel, n]) => {
+      const d = Math.max(0.04, n * 0.0055);
+      tl.fromTo(sel, { width: "0ch" }, { width: n + "ch", duration: d, ease: "steps(" + n + ")" }, t);
+      t += d + 0.03;
+    });
+    // 4. enter: the response lands
+    tl.fromTo("#call-resp", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power4.out" }, 2.98);
+    tl.fromTo("#call-amt", { backgroundColor: "rgba(255,79,26,0)", color: "#ffb59c" }, { backgroundColor: "rgba(255,79,26,1)", color: "#121311", duration: 0.12 }, 3.08);
+
+    // 5. carry across: the amount lifts out of the code and becomes the train
+    // amount span sits at x = 340 + 64 + 12ch(25.2px), y = 200 + 72 + 40 + 4 * 63
+    const sx = 404 + 12 * 25.2, sy = 312 + 4 * 63, sw = 9 * 25.2;
+    const s0 = sw / 300;
+    tl.fromTo("#call-token", { x: sx - 200, y: sy - 498 + (63 - 84 * s0) / 2, scale: s0, opacity: 0 }, { opacity: 1, duration: 0.01 }, 3.18);
+    tl.to("#call-token", { x: 0, y: 0, scale: 1, duration: 0.42, ease: "power3.inOut" }, 3.18);
+    tl.fromTo("#call-token-a", { opacity: 1 }, { opacity: 0, duration: 0.16 }, 3.3);
+    tl.fromTo("#call-token-b", { opacity: 0 }, { opacity: 1, duration: 0.16 }, 3.3);
+    tl.to("#call-panel", { opacity: 0, scale: 0.94, filter: "blur(14px)", duration: 0.3, ease: "power2.in" }, 3.2);
+    // colour flood: the token stays, the world turns to the yard's grey
+    tl.fromTo("#call-ground", { backgroundColor: "#ff4f1a" }, { backgroundColor: "#e7e9e4", duration: 0.4, ease: "power2.inOut" }, 3.2);
+    window.__timelines["call"] = tl;
+  </script>
+</template>

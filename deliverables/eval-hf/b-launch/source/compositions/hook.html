@@ -1,0 +1,128 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: #e7e9e4;
+      font-family: "Inter", sans-serif;
+      color: #121311;
+      overflow: hidden;
+    }
+    #hook-stage {
+      position: absolute;
+      left: 180px;
+      top: 330px;
+    }
+    #hook-meta {
+      font-size: 52px;
+      font-weight: 700;
+      color: #6d716a;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 26px;
+    }
+    #hook-status {
+      font-size: 34px;
+      font-weight: 700;
+      color: #121311;
+      border: 3px solid #121311;
+      padding: 6px 16px 8px;
+      border-radius: 4px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    #hook-spin {
+      width: 26px;
+      height: 26px;
+      border: 4px solid #121311;
+      border-right-color: transparent;
+      border-radius: 50%;
+    }
+    #hook-line {
+      margin-top: 26px;
+      font-size: 178px;
+      font-weight: 900;
+      letter-spacing: -0.045em;
+      line-height: 1;
+      display: flex;
+      white-space: nowrap;
+    }
+    #hook-slot {
+      position: relative;
+      height: 206px;
+      overflow: hidden;
+      margin-left: 0.24em;
+      width: 1100px;
+    }
+    #hook-reel {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    #hook-reel div {
+      height: 280px;
+      line-height: 196px;
+    }
+    #hook-reel .late {
+      color: #c22d12;
+    }
+    #hook-note {
+      margin-top: 34px;
+      font-size: 44px;
+      font-weight: 700;
+      color: #c22d12;
+      opacity: 0;
+    }
+    #hook-band {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1920px;
+      height: 1080px;
+      background: #ff4f1a;
+    }
+  </style>
+  <div id="root" data-composition-id="hook" data-width="1920" data-height="1080">
+    <div id="hook-stage">
+      <div id="hook-meta">
+        <span id="hook-amount">$2,400.00 to Acme Supply</span>
+        <span id="hook-status"><span id="hook-spin"></span>Processing</span>
+      </div>
+      <div id="hook-line">
+        <span>Arrives</span>
+        <span id="hook-slot"
+          ><span id="hook-reel"
+            ><div>Tuesday</div>
+            <div>Wednesday</div>
+            <div>Thursday</div>
+            <div class="late">Friday</div></span
+          ></span
+        >
+      </div>
+      <div id="hook-note">3–5 business days.</div>
+    </div>
+    <div id="hook-band"></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // spinner turns the whole time (linear: constant speed is the point)
+    tl.fromTo("#hook-spin", { rotation: 0 }, { rotation: 900, duration: 2.4, ease: "none" }, 0);
+    // the arrival day rolls later and later, like a slot machine
+    const rolls = [0.45, 0.8, 1.15];
+    rolls.forEach((t, i) => {
+      tl.fromTo(
+        "#hook-reel",
+        { y: -280 * i },
+        { y: -280 * (i + 1), duration: 0.16, ease: "power3.inOut" },
+        t - 0.08,
+      );
+    });
+    tl.fromTo("#hook-note", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 1.25);
+    // a signal-orange train whips through and takes the frame
+    tl.fromTo("#hook-band", { x: -1960 }, { x: 0, duration: 0.34, ease: "power3.in" }, 2.06);
+    tl.fromTo("#hook-stage", { x: 0, filter: "blur(0px)" }, { x: 260, filter: "blur(10px)", duration: 0.34, ease: "power3.in" }, 2.06);
+    window.__timelines["hook"] = tl;
+  </script>
+</template>
