@@ -20,3 +20,4 @@ and `grid.jpg`, with their specs.
 The data in *The Street Ledger* is illustrative (a fictional city) and is labelled so on screen.
 
 More feature proofs: `tiles-animated.jpg` (custom `tile` motifs, `turns`, `stagger`, `ramp`, and a halftone whose cell and angle animate), `op-art.jpg` / `op-art.mp4` (pattern `field`s driven by distance and time, live at 46 fps with three regenerated patterns).
+`brush.jpg` / `brush.mp4`: `brush` strokes (ensō with dry bristles, a pressure swash and a tapered rule) painting on with `trimEnd`, at 415 fps.
