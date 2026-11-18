@@ -770,6 +770,16 @@
           "format": "uint32",
           "minimum": 0
         },
+        "carry": {
+          "description": "Shared elements (any transition): ids of layers present in both scenes. Each travels from its place and size\nin the old scene to its place and size in the new one during the transition (a match move), cross-fading between the two.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
         "uniforms": {
           "description": "Uniforms for a shader transition.",
           "type": [
@@ -1711,6 +1721,17 @@
             }
           ]
         },
+        "onNotes": {
+          "description": "Generated layers, one per note of the music: `{ \"onNotes\": { \"track\": \"drums\", \"keys\": [\"kick\"], \"layer\": {…} } }`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OnNotes"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "frames": {
           "description": "Timing in frames instead of seconds: `\"frames\": 12` (only frame 12) or `[12, 18]` (frames 12–17).",
           "anyOf": [
@@ -2124,17 +2145,6 @@
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "brush": {
-          "description": "Paint the stroke as a brush: `true`, or `{ \"taper\": [start, end], \"pressure\": 0..1, \"dry\": 0..1, \"seed\" }`.\nWidth from `strokeWidth`; tapered ends, pressure wobble, dry-brush bristles; `trimEnd` paints it on.",
-          "anyOf": [
-            {
-              "$ref": "#/$defs/BrushValue"
             },
             {
               "type": "null"
@@ -3132,6 +3142,43 @@
         }
       ]
     },
+    "OnNotes": {
+      "description": "`onNotes`: one copy of `layer` per note of the generated `music`.",
+      "type": "object",
+      "properties": {
+        "track": {
+          "description": "Track name or role (`drums`, `bass`, `lead`, `chords`, …). Default: every track.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "keys": {
+          "description": "Only these keys: MIDI numbers or drum names (`kick`, `snare`, `hat`, `clap`, `crash`, …).",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": true
+        },
+        "every": {
+          "description": "Keep every n-th matching note (1 = all).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "layer": {
+          "description": "The layer to place on each note. `$t $dur $key $pitch $vel $beat $bar $i $n` are\nreplaced per note; it starts on the note (its own `start` is an offset from it) and\nlasts the note's length unless it sets `duration`, `end` or `frames`."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "layer"
+      ]
+    },
     "Frames": {
       "description": "`frames`: one frame number, or a half-open range `[first, end)` (frames into the scene).",
       "anyOf": [
@@ -3689,60 +3736,6 @@
             "string",
             "null"
           ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "BrushValue": {
-      "description": "`brush`: on, or the full settings.",
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "$ref": "#/$defs/BrushSpec"
-        }
-      ]
-    },
-    "BrushSpec": {
-      "type": "object",
-      "properties": {
-        "taper": {
-          "description": "Taper lengths at the start and end, as fractions of the stroke. Default `[0.12, 0.25]`.",
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "type": "number",
-            "format": "double"
-          },
-          "minItems": 2,
-          "maxItems": 2
-        },
-        "pressure": {
-          "description": "Width wobble (0..1). Default 0.35.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
-        },
-        "dry": {
-          "description": "Dry brush (0..1): bristles that skip, more towards the end. Default 0.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
-        },
-        "seed": {
-          "type": [
-            "integer",
-            "null"
-          ],
-          "format": "uint32",
-          "minimum": 0
         }
       },
       "additionalProperties": false

@@ -166,6 +166,7 @@ That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the 
 | `reveal` | The new scene grows out of a shape | `shape`: `circle` `diamond` `square` `star` `blob`; `amount` (spin °); `origin` |
 | `blinds` | Staggered bars open onto the new scene | `count` (8), `direction` |
 | `split` | The old frame splits in two and the halves part | `direction`: `left`/`right` part sideways, `up`/`down` vertically |
+| *(any)* + `carry: ["id", …]` | Shared elements: each layer with that `id` in both scenes travels from its old place and size to its new one during the transition (a match move between layouts) | needs a duration |
 | `whip` | Whip pan: both scenes travel a frame, blurred and stretched by speed | `direction`, `amount` (extra blur). 0.35 s |
 
 Defaults: duration 0.5 s (glitch 0.3 s), ease `inOutCubic` (`reveal`, `blinds`, `split`, `whip`: `inOutExpo`).

@@ -394,7 +394,7 @@ impl Evaluator {
             let path = format!("scenes[{i}]");
             let id = s.id.clone().unwrap_or_else(|| format!("scene{}", i + 1));
             let trans = if i == 0 {
-                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None, layer: None, shape: 0, count: 0 }
+                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None, layer: None, shape: 0, count: 0, carry: Vec::new() }
             } else {
                 let (tr, tp) = match (&s.transition, &default_trans) {
                     (Some(t), _) => (Some(t), format!("{path}.transition")),
@@ -1364,7 +1364,11 @@ impl C<'_> {
         if kind == TransKind::ZoomThrough && o.layer.is_none() {
             self.d.push(Diagnostic::error(format!("{path}.layer"), "zoomThrough needs 'layer': the id of a layer in the previous scene to fly into"));
         }
-        TransC { kind, dur, ease, dir, color, origin, amount, shader, layer: o.layer.clone(), shape, count: o.count.unwrap_or(8).clamp(1, 64) }
+        let carry = o.carry.clone().unwrap_or_default();
+        if !carry.is_empty() && kind == TransKind::Cut {
+            self.d.push(Diagnostic::warning(format!("{path}.carry"), "a cut has no duration to carry layers across; give the transition a type and duration"));
+        }
+        TransC { kind, dur, ease, dir, color, origin, amount, shader, layer: o.layer.clone(), shape, count: o.count.unwrap_or(8).clamp(1, 64), carry }
     }
 
     fn scene(&mut self, s: &spec::Scene, path: &str, dur: f32, default_bg: &spec::Paint) -> Built {

@@ -597,6 +597,9 @@ pub struct TransitionObj {
     pub shape: Option<String>,
     /// `blinds`: number of bars (default 8).
     pub count: Option<u32>,
+    /// Shared elements (any transition): ids of layers present in both scenes. Each travels from its place and size
+    /// in the old scene to its place and size in the new one during the transition (a match move), cross-fading between the two.
+    pub carry: Option<Vec<String>>,
     /// Uniforms for a shader transition.
     pub uniforms: Option<BTreeMap<String, serde_json::Value>>,
 }
