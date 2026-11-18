@@ -1,0 +1,1 @@
+{"cmd": "anikit-video render deliverables/eval/h-ident/spec.json -o deliverables/eval/h-ident/final.mp4 --sheet /tmp/claude-0/-home-user-anikit/795f076b-b257-571d-9bdc-7acf66398a21/scratchpad/contact.png", "exit": 0, "wall_s": 15.67, "peak_rss_mb": 631.3}
