@@ -1248,7 +1248,11 @@ fn render_video_rgba(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder
         let frames: Vec<Vec<u8>> = (start..end)
             .into_par_iter()
             .map(|i| {
-                let (fw, _, px) = render_rgba(ev, frame_time(ev, i), opts.scale);
+                let (fw, _, mut px) = render_rgba(ev, frame_time(ev, i), opts.scale);
+                if fw == w {
+                    px.truncate((w * h * 4) as usize);
+                    return px;
+                }
                 let mut out = Vec::with_capacity((w * h * 4) as usize);
                 for y in 0..h as usize {
                     out.extend_from_slice(&px[y * fw as usize * 4..(y * fw as usize + w as usize) * 4]);
