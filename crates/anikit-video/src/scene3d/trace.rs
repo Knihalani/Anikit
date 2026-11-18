@@ -1242,11 +1242,16 @@ impl Scene {
             .map(|(t, _)| t.sample(s.uv[0], s.uv[1]))
     }
 
-    /// Radiance of a texture print: lit like paper plus its own glow.
+    /// Radiance of a texture print: lit like paper (environment, key and the
+    /// local point/spot lights at `p`) plus its own glow.
     #[inline]
-    fn print_light(&self, t: [f32; 4], n: V3, glow: f32) -> V3 {
+    fn print_light(&self, t: [f32; 4], p: V3, n: V3, glow: f32) -> V3 {
         let c = v3(t[0], t[1], t[2]);
-        let lit = add(self.env.diffuse(n), self.key_diffuse(n));
+        let mut lit = add(self.env.diffuse(n), self.key_diffuse(n));
+        if !self.lights.is_empty() && glow < 1.0 {
+            // Prints are matte: diffuse only (roughness 1, no specular).
+            lit = add(lit, self.local_lights(p, n, n, 1.0, v3(0.0, 0.0, 0.0)).0);
+        }
         add(scale(c, glow * 1.6), scale(mul(c, lit), 1.0 - glow))
     }
 
@@ -1281,7 +1286,7 @@ impl Scene {
         let mut out = v3(0.0, 0.0, 0.0);
         let mut cover = 0.0;
         if let Some(t) = self.print(ob, s) {
-            out = self.print_light(t, n, m.tex_glow);
+            out = self.print_light(t, s.p, n, m.tex_glow);
             cover = t[3];
             if cover >= 0.999 {
                 return (add(out, m.emissive), Diffuse::default());
@@ -1621,7 +1626,7 @@ impl Scene {
                     let fr = fresnel_dielectric(nv, 1.0 / m.ior);
                     let mut a = 0.0;
                     if let Some(t) = self.print(ob, &s) {
-                        col = add(col, scale(mul(self.print_light(t, n, m.tex_glow), thr), haze_f));
+                        col = add(col, scale(mul(self.print_light(t, s.p, n, m.tex_glow), thr), haze_f));
                         a = t[3];
                     }
                     let r = reflect(d, n);

@@ -57,6 +57,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
 - **Local lights** (in `lights`, given a `pos`): a point light `{ "pos": [x, y, z], "color", "intensity": 10 }`, or a spot when it also has a `target`, `angle` (degrees) and `penumbra` (0–1). They fall off with the inverse square and cast hard traced shadows (`"shadow": false` turns them off). Use them for light pools on the floor, LEDs and practicals.
   - `pos`, `target` and `intensity` take `"=expressions"` of `t`: a searchlight that sweeps (`"pos": "=[2.2*sin(t*0.9), 3.2, 1+1.2*cos(t*0.9)]"`), a spot that tracks, a sign that flickers (`"intensity": "=1.2+max(0,sin(t*7))"`).
   - Proof: `docs/video/shots/3d-lights/searchlight.jpg` (two moments of the same shot).
+  - Texture prints (compositions on panes, planes and text) are lit by local lights too, like matte paper: a sodium lamp pools on a brick-textured wall and a sign spills its colour onto a textured facade. Each shadowed light costs one shadow ray per textured pixel (a street with 20 shadowed lamps and many textured panes roughly doubles the trace time); set `"shadow": false` on fill lights.
 - **`fog`:** a density per metre, or `{ "density", "color", "shafts": true, "height", "base" }`. `height` makes it height fog: dense at `base` (default 0, the floor) and thinning by e every `height` metres. That gives ground mist, a valley fog, or a set that dissolves into haze. It's integrated exactly along each camera ray (one `exp`), and the layer meets the sky softly. Proof: `docs/video/shots/3d-fog/ground-mist.jpg` (`{ "density": 0.9, "height": 0.25 }`). `shafts` adds volumetric light: spot cones and god rays from the key, with object shadows cut into them. Use density 0.02–0.08 with a dark fog colour at night.
 - **`camera`:**
   - presets: `push`, `reveal`, `flyby`, `orbit` (all 5 s by default), `dolly`, `crane`, `static`; or `{ "preset", "duration", "degrees", "height", "shake" }`;
@@ -68,6 +69,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - animation: `keys: [{ t, pos, rot, scale, ease }]`, `spin`, `start`/`end`;
   - instances: `count` and `lanes`;
   - `texture`: `"#comp"`, `{ "composition", "frame": "=i", "face": "front|back|both" }`, or a list of these (one per face);
+    compositions can contain shader layers (including ones that read text channels), so a 3D sign, screen or poster can carry an animated GLSL treatment (proof: `deliverables/ceiling1/proof_shader_texture_3d.png`, top row as 2D layers, bottom row on 3D panes);
   - `material`: a name or an object;
   - flags: `camera: false` (a reflector card), `shadow`, `thin`.
 - **`materials`:**
