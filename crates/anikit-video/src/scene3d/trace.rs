@@ -697,9 +697,9 @@ fn count(k: usize) {
         });
     }
 }
-/// Profiling: CPU time in closest-hit (0) and shadow/AO (1) traversal, in
+/// Profiling: CPU time in closest-hit (0; camera rays: 2) and shadow/AO (1) traversal, in
 /// TSC ticks (`ANIKIT_SCENE3D_PROFILE`; a few ns of overhead per ray).
-pub static CYCLES: [std::sync::atomic::AtomicU64; 2] = [const { std::sync::atomic::AtomicU64::new(0) }; 2];
+pub static CYCLES: [std::sync::atomic::AtomicU64; 3] = [const { std::sync::atomic::AtomicU64::new(0) }; 3];
 struct Cycles(usize, u64);
 impl Cycles {
     #[inline(always)]
@@ -711,7 +711,7 @@ impl Drop for Cycles {
     #[inline(always)]
     fn drop(&mut self) {
         let d = tsc().wrapping_sub(self.1);
-        thread_local!(static LOCAL: std::cell::Cell<[u64; 2]> = const { std::cell::Cell::new([0; 2]) });
+        thread_local!(static LOCAL: std::cell::Cell<[u64; 3]> = const { std::cell::Cell::new([0; 3]) });
         LOCAL.with(|c| {
             let mut v = c.get();
             v[self.0] += d;
@@ -975,7 +975,7 @@ impl Scene {
     /// Closest hit; with `camera`, objects hidden from the camera (cards) are skipped.
     fn trace_f(&self, o: V3, d: V3, tmax: f32, camera: bool) -> Option<Surf> {
         count(0);
-        let _c = Cycles::start(0);
+        let _c = Cycles::start(if camera { 2 } else { 0 });
         let mut best: Option<Surf> = None;
         let mut tm = tmax;
         if let Some(f) = &self.floor {
