@@ -288,6 +288,22 @@ fn with_worker<R>(f: impl FnOnce(&mut Worker) -> R) -> R {
     })
 }
 
+/// Drop every thread's worker (renderer, frame buffers, layer caches): the
+/// video pipeline renders with fresh per-chunk workers, so after an estimate or
+/// a finished render they would only hold memory (hundreds of MiB at 1080p).
+/// Output never depends on it: a later call makes a new worker.
+pub fn release_workers() {
+    let clear = || {
+        WORKER.with(|c| {
+            if let Ok(mut w) = c.try_borrow_mut() {
+                *w = new_worker();
+            }
+        })
+    };
+    rayon::broadcast(|_| clear());
+    clear();
+}
+
 /// Create (or re-create, when fonts were added) this worker's renderer.
 fn ensure_renderer(ev: &Evaluator, w: &mut Worker) {
     // Only new font faces need new assets; images come from a live source. New faces are
@@ -1033,6 +1049,7 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     // buffers back to the OS before muxing (long-lived processes otherwise keep them).
     ev.assets.release_frame_images();
     crate::scene3d::kernel::pool::release();
+    release_workers();
     crate::memstat::trim();
     let mem_stream = annexb.len() as u64;
     let peaks = crate::memstat::reset_peak();
@@ -1389,6 +1406,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
     // A full frame is an upper bound for an incremental one, and other frames render alongside.
     let quick = quick_ms * changing as f64 / threads as f64 / 1e3 + 0.3;
     if quick < heavy_after * 0.5 {
+        release_workers();
         return Estimate { secs: quick, frame_ms: quick_ms, changing, threads, heaviest: None };
     }
     // Render one sample frame per thread, concurrently, as the pipeline does: layers that
@@ -1460,6 +1478,9 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
         }
         _ => None,
     };
+    // The sampled frames left renderers and frame buffers on every thread.
+    release_workers();
+    crate::memstat::trim();
     Estimate { secs, frame_ms, changing, threads, heaviest }
 }
 /// Seconds between progress reports: twice a second on a terminal, every 15 s
