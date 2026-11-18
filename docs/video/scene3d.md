@@ -282,6 +282,12 @@ The hot parts live in `scene3d/kernel/`:
   151 → 84 ns). Large meshes build in parallel (650k triangles: 1.3 s).
 - `post.rs`: the post stack on structure-of-arrays planes, row-parallel,
   hot loops in `simd_fn!` kernels (AVX2 + baseline, same bits).
+- Volumetric shafts (`Scene::volumetrics`) march at half resolution with an
+  R2 low-discrepancy offset per pixel, so the separable 5×5 binomial blur
+  cancels the banding (white-noise offsets left sandy grain in bright
+  beams), and each local light's scattering fades out over the outer 40% of
+  its reach (no visible sphere where the march stops). Before/after:
+  `docs/video/shots/rtk/shafts-before-after.jpg`.
 - `envk.rs`: environment softboxes evaluated eight lanes at a time (same
   bits as `Softbox::eval`).
 - `pool.rs`: frame-sized buffers reused across frames (fresh 100+ MB
