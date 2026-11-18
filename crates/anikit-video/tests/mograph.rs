@@ -177,3 +177,13 @@ fn camera_dolly_scales_by_depth() {
     // Near: 1 / (1 - 0.5) = 2×; far (distance 4): 4 / 3.5.
     assert!((s[0] - 2.0).abs() < 1e-3 && (s[1] - 4.0 / 3.5).abs() < 1e-3, "{s:?}");
 }
+
+#[test]
+fn extrude_draws_a_tinted_stack_behind_the_layer() {
+    let e = ev(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "width": 100, "height": 100, "fill": "#fff", "extrude": { "angle": 90, "length": 30, "color": "#000" } } ] } ] }"##);
+    let ops = e.eval(0.5).ops;
+    let tinted = ops.iter().position(|o| matches!(o, Op::PushLayer { filters, .. } if matches!(filters.first(), Some(anikit_video::dl::Filter::ColorMatrix(_)))));
+    assert!(tinted.is_some(), "a colour-matrix layer for the extrusion");
+    // 20 steps of 1.5 px, then the layer itself on top.
+    assert_eq!(count(&ops, |o| matches!(o, Op::RoundRect { .. })), 21);
+}

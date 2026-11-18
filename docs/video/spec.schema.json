@@ -1380,6 +1380,17 @@
           ],
           "format": "double"
         },
+        "extrude": {
+          "description": "Extrusion / long shadow: the layer's silhouette repeated along a direction, behind it, in one colour.\n`{\"angle\": 45, \"length\": 120, \"color\": \"#000\", \"fade\": 0}` (angle in degrees, 0 = right, 90 = down).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtrudeSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "smear": {
           "description": "Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default)."
         },
@@ -2798,6 +2809,44 @@
             "string",
             "null"
           ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ExtrudeSpec": {
+      "description": "`extrude`: a solid extrusion or long shadow.",
+      "type": "object",
+      "properties": {
+        "angle": {
+          "description": "Direction in degrees (0 = right, 90 = down). Default 45.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "length": {
+          "description": "Length in px. Default 60.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "color": {
+          "description": "Colour (default 50% black).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fade": {
+          "description": "0 = solid; 1 = fades out toward the far end (a long shadow).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
         }
       },
       "additionalProperties": false

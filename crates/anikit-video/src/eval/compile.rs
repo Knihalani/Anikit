@@ -2428,6 +2428,19 @@ impl C<'_> {
                 self.d.push(Diagnostic::error(format!("{path}.posterizeTime"), "posterizeTime is poses per second (e.g. 12)"));
             }
         }
+        if let Some(x) = &l.extrude {
+            let ang = x.angle.unwrap_or(45.0).to_radians() as f32;
+            let len = x.length.unwrap_or(60.0).clamp(0.0, 2000.0) as f32;
+            let steps = (len / 1.5).ceil().clamp(1.0, 400.0) as u32;
+            let c = match &x.color {
+                Some(c) => self.color(c, &format!("{path}.extrude.color")).unwrap_or(Rgba([0.0, 0.0, 0.0, 0.5])),
+                None => Rgba([0.0, 0.0, 0.0, 0.5]),
+            };
+            // RGB := the colour, alpha := alpha × colour alpha (unpremultiplied 4×5 matrix).
+            let m = [0.0, 0.0, 0.0, 0.0, c.0[0], 0.0, 0.0, 0.0, 0.0, c.0[1], 0.0, 0.0, 0.0, 0.0, c.0[2], 0.0, 0.0, 0.0, c.0[3], 0.0];
+            let step = len / steps as f32;
+            f.extrude = Some((ang.cos() * step, ang.sin() * step, steps, x.fade.unwrap_or(0.0).clamp(0.0, 1.0) as f32, m));
+        }
         f.smear = match &l.smear {
             None | Some(serde_json::Value::Bool(false)) => None,
             Some(serde_json::Value::Bool(true)) => Some(1.0),

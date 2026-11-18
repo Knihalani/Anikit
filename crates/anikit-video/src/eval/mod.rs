@@ -1348,6 +1348,22 @@ impl Evaluator {
         if n.matte.is_some() {
             out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
         }
+        if let Some((dx, dy, steps, fade, m)) = n.fx.as_deref().and_then(|f| f.extrude) {
+            // One tinted layer holding the silhouette stepped back along the direction (far end first).
+            out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::ColorMatrix(m)], clip: None, cache_key: None });
+            let at = out.len();
+            for k in (1..=steps).rev() {
+                let a = 1.0 - fade * (k as f32 - 1.0) / steps as f32;
+                let c = Cx { amul: cx.amul * a, ..*cx };
+                let px = dl::mul(&translate(dx * k as f32, dy * k as f32), parent);
+                self.emit_node_inner(n, &c, &px, psize, po, out);
+            }
+            if out.len() == at {
+                out.pop();
+            } else {
+                out.push(Op::PopLayer);
+            }
+        }
         let body = out.len();
         match n.fx.as_deref() {
             Some(fx) if fx.repeat.is_some() || fx.echo.is_some() => self.emit_fx(n, fx, cx, parent, psize, po, out),
