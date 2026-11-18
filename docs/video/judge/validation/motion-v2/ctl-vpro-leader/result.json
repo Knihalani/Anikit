@@ -1,0 +1,341 @@
+{
+  "refs": [
+    "calibration-simon-vpro-idents-2010",
+    "calibration-blender-hero-grease-pencil-showcase",
+    "blender-studio-charge-2022"
+  ],
+  "candidate": {
+    "motion": 7,
+    "judged_professional": "3/3",
+    "gaps": [
+      "The word is typed on letter by letter with a cursor, which reads as a template device next to the fluid morph",
+      "Once set, the 'vrije' text holds still while only the swoosh moves (one element at a time)",
+      "There is no camera language at all; everything is flat graphic space",
+      "The letters of 'geluide' type on almost linearly with a cursor-like reveal, a weaker beat than the blob",
+      "The end frames settle into a near-static hold where only the small dots stay alive",
+      "Its weight is graphic rather than physical, with no secondary follow-through on the type itself",
+      "Typewriter reveal is the most template-like move in the set, with no easing on the type",
+      "The type and the blob don't hand off to each other; they act in parallel instead of interacting",
+      "Flat 2D frame with no camera or depth"
+    ]
+  },
+  "refs_summary": {
+    "blender-studio-charge-2022": {
+      "motion": 9,
+      "judged_professional": "3/3",
+      "gaps": [
+        "It leans on simulated particles and shake for energy rather than authored character acting",
+        "The cut-on-action transition is functional rather than a designed match cut or morph",
+        "The second strip settles into a near-locked framing for its last 4 frames",
+        "Heavy motion blur and darkness sometimes hide the clarity of the key poses",
+        "The cut into the robot shot uses impact rather than a crafted match",
+        "The welding beat holds the framing fairly static while only the sparks carry the motion",
+        "Heavy darkness and blur sometimes hide the readability of the key pose",
+        "Close-up section is mostly sparks over a fairly static face",
+        "Mech's final reveal settles quickly without much follow-through"
+      ]
+    },
+    "calibration-blender-hero-grease-pencil-showcase": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The long cross-dissolve is a soft, generic transition rather than a built match cut",
+        "The background characters are partly limited animation (held poses on 2s and 3s)",
+        "The face close-up is mostly a held drawing during the dissolve, so there is little life in those frames",
+        "The dissolve in strip 1 is a soft blend rather than a built match cut or morph",
+        "Character timing is close to on-twos, so in-between spacing is less refined than C's",
+        "During the dissolve the camera barely moves and little energy carries across the transition",
+        "The dissolve is fairly soft and slow compared with C's kinetic cutting",
+        "Background crowd is mostly held, so life is concentrated in a single figure",
+        "Camera is mostly locked; depth comes from character staging rather than camera moves"
+      ]
+    },
+    "calibration-simon-vpro-idents-2010": {
+      "motion": 7,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The scale changes jump by cuts instead of eased motion, so there is little overshoot or settle",
+        "The long dead hold on the black logo has only a subtle flicker of life",
+        "One idea (spin plus scale) is repeated, with no layered choreography or hand-off between elements",
+        "Five-plus frames of near-static logo on black make a dead hold before the pop back to white",
+        "Choreography is basically one radial gesture with little overlapping or secondary motion",
+        "The cuts between white and black are pops rather than eased or morphed transitions",
+        "Essentially two elements (star and wordmark) move as one locked unit, with little overlap or offset timing between them",
+        "Dead hold at the resolve; nothing secondary keeps moving",
+        "No camera language; everything is a 2D scale or rotate in the frame plane"
+      ]
+    }
+  },
+  "ref_mean": 8,
+  "trials": [
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "candidate",
+        "C": "calibration-blender-hero-grease-pencil-showcase",
+        "D": "calibration-simon-vpro-idents-2010"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Sparks have per-particle velocity, streaking and falloff in every frame, never looping uniformly",
+              "Handheld camera drift and focus shifts carry weight; the shot is never static",
+              "The mech arm swings through frame with motion blur and the cut lands on the strike (cut on action)",
+              "The background mech and the character keep moving while the hero element acts"
+            ],
+            "gaps": [
+              "It leans on simulated particles and shake for energy rather than authored character acting",
+              "The cut-on-action transition is functional rather than a designed match cut or morph",
+              "The second strip settles into a near-locked framing for its last 4 frames"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 7,
+            "tells": [
+              "The liquid blob stretches, overshoots and pulls back with clear squash and anticipation",
+              "A morph carries the shape into the dot and then the ring, a deliberate shape hand-off",
+              "The swoosh arcs and trails off with tapering follow-through while the type builds",
+              "Small dots drift and blink, so the end frame is not fully dead"
+            ],
+            "gaps": [
+              "The word is typed on letter by letter with a cursor, which reads as a template device next to the fluid morph",
+              "Once set, the 'vrije' text holds still while only the swoosh moves (one element at a time)",
+              "There is no camera language at all; everything is flat graphic space"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 7,
+            "tells": [
+              "The crowd shot has secondary motion: heads turn and hair and clothing follow through at different times",
+              "The character springs into a run with anticipation, and a foreground body wipe hides the cut into a new angle",
+              "A slow cross-dissolve goes from the face to the wide shot of the runner, with a light bloom that carries mood"
+            ],
+            "gaps": [
+              "The long cross-dissolve is a soft, generic transition rather than a built match cut",
+              "The background characters are partly limited animation (held poses on 2s and 3s)",
+              "The face close-up is mostly a held drawing during the dissolve, so there is little life in those frames"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "motion": 6,
+            "tells": [
+              "The logo snaps from white to black with a rotating starburst and a scale punch-in, timed hard cuts",
+              "The star blades rotate and track behind the letters, giving the type depth and layering",
+              "The scale-out ends on a 4-5 frame near-hold of the logo before the snap back to white"
+            ],
+            "gaps": [
+              "The scale changes jump by cuts instead of eased motion, so there is little overshoot or settle",
+              "The long dead hold on the black logo has only a subtle flicker of life",
+              "One idea (spin plus scale) is repeated, with no layered choreography or hand-off between elements"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 21.6,
+        "cost_usd": 0.1252668,
+        "tokens": 68186,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-blender-hero-grease-pencil-showcase",
+        "B": "candidate",
+        "C": "blender-studio-charge-2022",
+        "D": "calibration-simon-vpro-idents-2010"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Clear anticipation on the old woman: head turn, then a squash before she lunges forward",
+              "A foreground body crosses the lens as a deliberate wipe into a new staging, so the cut is motivated",
+              "The background crowd keeps doing small secondary actions while the lead acts, so no frame is a dead hold",
+              "The first strip uses a long, slow cross-dissolve from the close-up to the wide shot, with an eased push on the walking figure"
+            ],
+            "gaps": [
+              "The dissolve in strip 1 is a soft blend rather than a built match cut or morph",
+              "Character timing is close to on-twos, so in-between spacing is less refined than C's",
+              "During the dissolve the camera barely moves and little energy carries across the transition"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "The liquid blob squashes and stretches with strong arcs and drag on its tail",
+              "The blob shrinks into a dot and morphs into a record/ring shape, a transition built with intent",
+              "Swooshes drive the letters on, and the dots keep orbiting during the type reveal",
+              "Easing is clearly non-linear: fast expansion, then a decelerating settle"
+            ],
+            "gaps": [
+              "The letters of 'geluide' type on almost linearly with a cursor-like reveal, a weaker beat than the blob",
+              "The end frames settle into a near-static hold where only the small dots stay alive",
+              "Its weight is graphic rather than physical, with no secondary follow-through on the type itself"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Spark particles have convincing ballistic weight, motion blur and varied lifetimes",
+              "Handheld camera shake and rack focus give it a cinematic camera language",
+              "The robot head whips through frame with heavy motion blur, and the cut lands on the impact",
+              "Overlapping action: the robot arm, the character's recoil and the debris all move on separate timings"
+            ],
+            "gaps": [
+              "Heavy motion blur and darkness sometimes hide the clarity of the key poses",
+              "The cut into the robot shot uses impact rather than a crafted match",
+              "The welding beat holds the framing fairly static while only the sparks carry the motion"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "The starburst blades rotate and scale, and the gradient trails suggest motion blur and directional energy",
+              "A hard cut from the white logo to black is used as a graphic punch",
+              "The logo scales up with overshoot, then snaps back to its rest size",
+              "The blades retract into the blue accent on the logo, closing the loop with intent"
+            ],
+            "gaps": [
+              "Five-plus frames of near-static logo on black make a dead hold before the pop back to white",
+              "Choreography is basically one radial gesture with little overlapping or secondary motion",
+              "The cuts between white and black are pops rather than eased or morphed transitions"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 21.2,
+        "cost_usd": 0.12707960000000001,
+        "tokens": 68283,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-simon-vpro-idents-2010",
+        "B": "calibration-blender-hero-grease-pencil-showcase",
+        "C": "blender-studio-charge-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "Starburst rotates with gradient smear trails that suggest motion blur, while the wordmark scales up with a punchy ease-out",
+              "Logo pushes past the frame and then pulls back to a settle, a clear overshoot-and-recover",
+              "Hard cuts from the white card to the black field are on the beat and look deliberate",
+              "The second strip ends on about 4 near-static frames of the settled logo, with only a small blade wipe behind it"
+            ],
+            "gaps": [
+              "Essentially two elements (star and wordmark) move as one locked unit, with little overlap or offset timing between them",
+              "Dead hold at the resolve; nothing secondary keeps moving",
+              "No camera language; everything is a 2D scale or rotate in the frame plane"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Long cross-dissolve from the close-up face to the wide desert walker works as a story transition (one character's thought becomes the other's journey)",
+              "Crowd shot has a held background while the lead character's head turn, anticipation and lunge read clearly, with hair and scarf follow-through",
+              "Character pushes into the lens until a fist fills the frame and cuts on the action to a reverse wide, a strong motivated cut",
+              "Some secondary crowd characters hold on limited animation"
+            ],
+            "gaps": [
+              "The dissolve is fairly soft and slow compared with C's kinetic cutting",
+              "Background crowd is mostly held, so life is concentrated in a single figure",
+              "Camera is mostly locked; depth comes from character staging rather than camera moves"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Spark particles have convincing ballistic arcs, motion-blur streaks and varied lifetimes, so every frame is alive",
+              "Handheld-feel camera with focus pulls and shallow-depth reframing",
+              "Robot arm strikes carry weight: a fast swing, smeared impact, then a recoil and settle",
+              "Cuts on action into a whip-blurred transition frame, then a reveal of the mech with readable secondary motion"
+            ],
+            "gaps": [
+              "Heavy darkness and blur sometimes hide the readability of the key pose",
+              "Close-up section is mostly sparks over a fairly static face",
+              "Mech's final reveal settles quickly without much follow-through"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 7,
+            "tells": [
+              "Liquid blob grows, stretches into an S-curve, tapers and snaps down into a dot, with good squash and stretch and eased spacing",
+              "Blob morphs into a record or dot icon, a purposeful morph transition",
+              "Blue swoosh arcs around the wordmark with a tapering tail, and the small dots keep drifting so the frame stays alive",
+              "Second word is revealed by a typewriter cursor, letters popping on at a near-linear rate"
+            ],
+            "gaps": [
+              "Typewriter reveal is the most template-like move in the set, with no easing on the type",
+              "The type and the blob don't hand off to each other; they act in parallel instead of interacting",
+              "Flat 2D frame with no camera or depth"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "D",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 23.6,
+        "cost_usd": 0.12973020000000002,
+        "tokens": 68402,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.382
+}

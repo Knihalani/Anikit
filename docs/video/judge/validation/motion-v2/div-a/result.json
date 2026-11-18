@@ -1,0 +1,351 @@
+{
+  "refs": [
+    "calibration-blender-hero-grease-pencil-showcase",
+    "calibration-simon-vpro-idents-2010",
+    "calibration-simon-vpro-motion-identity-launch-showreel-2010"
+  ],
+  "candidate": {
+    "motion": 3,
+    "judged_professional": "0/3",
+    "gaps": [
+      "No easing or overshoot anywhere; motion is either a fade or a constant-speed wipe",
+      "No overlap: one element moves while everything else holds",
+      "No weight, depth or camera; cuts between sections are dissolves with no intent",
+      "No overlap or handoff: each section fades out fully before the next one starts",
+      "Nothing moves inside the bean grid or the map, so most frames are dead holds",
+      "No camera, weight or overshoot: every move is opacity or a mask wipe at a flat rate",
+      "No staggering or overlap; one element animates while everything else freezes",
+      "No easing, overshoot or weight anywhere; every move is linear",
+      "Transitions are generic dissolves, not match cuts or wipes tied to the content"
+    ]
+  },
+  "refs_summary": {
+    "calibration-simon-vpro-motion-identity-launch-showreel-2010": {
+      "motion": 4,
+      "judged_professional": "0/3",
+      "gaps": [
+        "The logo itself never moves (no scale, overshoot or settle), while C drives the mark with real momentum",
+        "Transitions are fades and hard pops, not choreographed reveals",
+        "No overlap or hand-off between elements, and no sense of weight or camera",
+        "The logo itself never moves: no scale, anticipation or settle",
+        "Many near-identical frames back to back, so most of the film is a dead hold",
+        "Cuts are colour pops with no match cut, morph or motivated wipe",
+        "No movement, scale or physicality in the main element, compared with B's overshooting burst",
+        "No transitions with intent; the changes are pops and linear fades",
+        "No overlap between elements, and no frame where several things move at once"
+      ]
+    },
+    "calibration-simon-vpro-idents-2010": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The settle in strip 2 holds for about 4 near-identical frames before the cut to white",
+        "The cut back to the white logo is a plain hard cut rather than a built match transition",
+        "No camera move beyond scale changes; less sense of physical weight than D's character work",
+        "The logo holds almost still for about 4 frames before the white end card, which is a dead stretch",
+        "Mostly 2D scale and rotate with no real camera move or sense of depth",
+        "The blades have little visible weight or drag next to D's physical follow-through",
+        "A long tail where the settled logo barely moves for about 4 frames",
+        "Cuts from white to black are hard switches with no transition built into the motion",
+        "Within the shot it is all one rig (rotate plus scale), with little secondary motion or offset"
+      ]
+    },
+    "calibration-blender-hero-grease-pencil-showcase": {
+      "motion": 9,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The opening close-up holds for about 3 frames with little change before the dissolve",
+        "Background crowd motion is subtle and partly held during the main action",
+        "The dissolve is long and soft; a sharper built transition could add punch",
+        "The dissolve runs for many frames, so energy dips during it",
+        "Some crowd figures hold fairly still on their limited-animation 'twos'",
+        "The camera moves very little in the wide shot apart from the walk toward it",
+        "The opening close-up is held on 3\u20134 nearly identical frames before the dissolve starts",
+        "The dissolve is long and soft, not a sharper cut that lands on a motion beat",
+        "Some limited-animation holds on secondary crowd members"
+      ]
+    }
+  },
+  "ref_mean": 7,
+  "trials": [
+    {
+      "key": {
+        "A": "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+        "B": "candidate",
+        "C": "calibration-simon-vpro-idents-2010",
+        "D": "calibration-blender-hero-grease-pencil-showcase"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "motion": 4,
+            "tells": [
+              "The logo stays locked in place in all 20 frames; only fills and background change",
+              "The first strip is a straight linear fade from dark grey to white with light streaks that just dissolve away",
+              "The cyan and yellow colour flashes pop on for two frames and pop off, with no ease in or out",
+              "The pattern and sunburst fills swap inside the letterforms with no follow-through or settle",
+              "Dead holds: frames 5-7 and 10-12 are nearly identical"
+            ],
+            "gaps": [
+              "The logo itself never moves (no scale, overshoot or settle), while C drives the mark with real momentum",
+              "Transitions are fades and hard pops, not choreographed reveals",
+              "No overlap or hand-off between elements, and no sense of weight or camera"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "motion": 3,
+            "tells": [
+              "Nearly every transition is an opacity cross-fade: the topo map, headline and bean grid all fade in or out in place",
+              "The brush stroke wipes in at a steady speed (linear spacing) and then freezes",
+              "Type writes on letter by letter ('WA', 'WAS', 'Ethiopian Guji, washed process'), which reads as a template or automated reveal",
+              "The bean grid holds completely still for 3-4 frames before fading",
+              "The ring outline draws on at a steady rate behind static text"
+            ],
+            "gaps": [
+              "No easing or overshoot anywhere; motion is either a fade or a constant-speed wipe",
+              "No overlap: one element moves while everything else holds",
+              "No weight, depth or camera; cuts between sections are dissolves with no intent"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "The logo shrinks, then punches up to oversized scale with clear acceleration, then eases back down and settles",
+              "The gradient-blade starburst rotates and spreads behind the type, overlapping the logo's own move and following through as it shrinks to a sliver",
+              "A hard white-to-black cut is reused as a bookend into and out of the sequence",
+              "Spacing changes from frame to frame, with big jumps on the hit and tight frames on the settle",
+              "Something is moving in nearly every frame"
+            ],
+            "gaps": [
+              "The settle in strip 2 holds for about 4 near-identical frames before the cut to white",
+              "The cut back to the white logo is a plain hard cut rather than a built match transition",
+              "No camera move beyond scale changes; less sense of physical weight than D's character work"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 9,
+            "tells": [
+              "A motivated cross-dissolve match cut takes us from the driver's close-up to him walking through the desert, with figures and composition lined up across the blend",
+              "The old woman shows anticipation (head turn, recoil), then breaks into a run toward camera with overlapping action in her scarf, hair and arms",
+              "Secondary crowd figures keep small motions alive in the background",
+              "Her body passes the camera as a natural wipe into the next shot",
+              "Smoke, light bloom and the walk cycle keep every frame alive"
+            ],
+            "gaps": [
+              "The opening close-up holds for about 3 frames with little change before the dissolve",
+              "Background crowd motion is subtle and partly held during the main action",
+              "The dissolve is long and soft; a sharper built transition could add punch"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "C",
+          "A",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 23.6,
+        "cost_usd": 0.1379146,
+        "tokens": 69307,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-simon-vpro-idents-2010",
+        "B": "candidate",
+        "C": "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+        "D": "calibration-blender-hero-grease-pencil-showcase"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "Wordmark scales up hard, overshoots past the frame, then settles back to rest size",
+              "Star-burst blades rotate and fan out with staggered timing that overlaps the logo's scale move",
+              "Blades collapse into the logo's blue accent wedge, a shape morph that hands off into the end card",
+              "Hard cuts between black and white frames are timed to the beats of the move"
+            ],
+            "gaps": [
+              "The logo holds almost still for about 4 frames before the white end card, which is a dead stretch",
+              "Mostly 2D scale and rotate with no real camera move or sense of depth",
+              "The blades have little visible weight or drag next to D's physical follow-through"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "motion": 4,
+            "tells": [
+              "Scenes change with uniform linear opacity crossfades and text fades in place",
+              "Contour map, bean grid and headlines stay static while one element moves",
+              "The blue stroke wipes on at constant speed with no ease into its end",
+              "The orange ring draws on while the type typewrites letter by letter, a template-style reveal"
+            ],
+            "gaps": [
+              "No overlap or handoff: each section fades out fully before the next one starts",
+              "Nothing moves inside the bean grid or the map, so most frames are dead holds",
+              "No camera, weight or overshoot: every move is opacity or a mask wipe at a flat rate"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "motion": 3,
+            "tells": [
+              "Background steps linearly from grey to white while the logo stays frozen",
+              "Colour flashes pop on and off with hard cuts and no transition design",
+              "Streaks and dot fills appear inside the frozen logo instead of moving it",
+              "Looks like automated variations on a static logo"
+            ],
+            "gaps": [
+              "The logo itself never moves: no scale, anticipation or settle",
+              "Many near-identical frames back to back, so most of the film is a dead hold",
+              "Cuts are colour pops with no match cut, morph or motivated wipe"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Long, motivated cross-dissolve from the close-up face to the wide shot of the figure walking",
+              "Hand-drawn character acting: the head turns, the expression changes and the character anticipates before stepping forward",
+              "Background crowd keeps moving in secondary action while the lead character acts",
+              "A foreground body pushes past the camera to wipe into the next shot, a wipe with intent"
+            ],
+            "gaps": [
+              "The dissolve runs for many frames, so energy dips during it",
+              "Some crowd figures hold fairly still on their limited-animation 'twos'",
+              "The camera moves very little in the wide shot apart from the walk toward it"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 19.3,
+        "cost_usd": 0.132623,
+        "tokens": 69048,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-blender-hero-grease-pencil-showcase",
+        "B": "calibration-simon-vpro-idents-2010",
+        "C": "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Cross-dissolve from the close-up into the wide uses a matching frame position: the figure in the wide shot sits where the face was, so it reads as a deliberate match transition",
+              "The background characters keep shifting and holding poses, so the crowd shot never goes dead",
+              "The lead character turns with anticipation and acting beats, and her hair and scarf follow through",
+              "The camera pushes past her and her arm becomes a foreground wipe into the next shot, a transition carried by the movement itself",
+              "Spacing varies from frame to frame: things ease into key poses and accelerate into the wipe"
+            ],
+            "gaps": [
+              "The opening close-up is held on 3\u20134 nearly identical frames before the dissolve starts",
+              "The dissolve is long and soft, not a sharper cut that lands on a motion beat",
+              "Some limited-animation holds on secondary crowd members"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "The starburst blades rotate and fan out with eased, uneven spacing",
+              "The wordmark scales up, overshoots past the frame and then pulls back to settle",
+              "The burst and the logo move together, each driving the other's scale",
+              "Motion blur and gradient trails on the blades give speed and weight",
+              "Clean bookends: it opens on the white-card logo and closes back on it"
+            ],
+            "gaps": [
+              "A long tail where the settled logo barely moves for about 4 frames",
+              "Cuts from white to black are hard switches with no transition built into the motion",
+              "Within the shot it is all one rig (rotate plus scale), with little secondary motion or offset"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.55,
+            "motion": 4,
+            "tells": [
+              "The logo stays locked and never moves; all the change comes from background colour flashes and fades",
+              "The light streaks fade linearly, with no easing or follow-through",
+              "Fill effects swap in and out (cyan, sunburst, hatching) with no animated build-up",
+              "Long dead holds on the static white card",
+              "Feels like a bank of colour variants cut together, not a choreographed ident"
+            ],
+            "gaps": [
+              "No movement, scale or physicality in the main element, compared with B's overshooting burst",
+              "No transitions with intent; the changes are pops and linear fades",
+              "No overlap between elements, and no frame where several things move at once"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "motion": 3,
+            "tells": [
+              "Every scene changes with the same linear opacity cross-fade",
+              "Body copy types on character by character, a template default",
+              "The brush-stroke wipe grows at even speed with no easing at either end",
+              "The grid of beans is completely static and only fades out as a block, with no stagger",
+              "The stroke circle draws on at even speed while the logo just sits there"
+            ],
+            "gaps": [
+              "No staggering or overlap; one element animates while everything else freezes",
+              "No easing, overshoot or weight anywhere; every move is linear",
+              "Transitions are generic dissolves, not match cuts or wipes tied to the content"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 23.4,
+        "cost_usd": 0.13573000000000002,
+        "tokens": 69193,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.406
+}

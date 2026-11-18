@@ -234,6 +234,7 @@ fn hash_filter(h: &mut impl Hasher, fl: &Filter) {
         Filter::Halftone(ht) => {
             h.write_u8(5);
             h.write_u8(ht.shape);
+            h.write_u8(ht.cmyk as u8);
             for v in [ht.cell, ht.angle, ht.gain, ht.ox, ht.oy] {
                 f(h, v);
             }

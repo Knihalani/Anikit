@@ -210,6 +210,9 @@ pub(crate) struct ShaderC {
     pub audio: Option<Arc<super::audio_react::AudioFeatures>>,
     /// Buffer passes (`"buffers"`).
     pub passes: Option<Arc<Passes>>,
+    /// Previews may pass final-size fragCoord (no `texelFetch`, whose texel
+    /// addresses depend on the real channel size, and no buffers).
+    pub faithful: bool,
 }
 
 /// Shared handle for transitions (`TransC` is `Clone + PartialEq + Debug`).
@@ -324,6 +327,8 @@ pub(crate) struct Job {
     beat: [f32; 4],
     /// Buffer passes and the global time of layer frame 0.
     passes: Option<(Arc<Passes>, f32)>,
+    /// fragCoord units per rendered pixel (1 / preview scale for faithful previews).
+    coord_scale: f32,
 }
 
 /// Measured cost of one shader layer (or transition) over the renders so far.
@@ -339,6 +344,9 @@ pub struct ShaderStat {
     pub width: u32,
     pub height: u32,
     pub supersample: bool,
+    /// The first pixel (fragCoord x, y) where this shader produced NaN or ±Inf
+    /// (rendered as 0, usually black), if it ever did.
+    pub nonfinite: Option<(u32, u32)>,
 }
 
 struct Entry {
@@ -355,8 +363,8 @@ struct Inner {
     with_result: VecDeque<u32>,
 }
 
-/// Per label: (total ms, renders, w, h, supersample).
-type Tally = (f64, u32, u32, u32, bool);
+/// Per label: (total ms, renders, w, h, supersample, first NaN/Inf pixel).
+type Tally = (f64, u32, u32, u32, bool, Option<(u32, u32)>);
 
 /// Pending and recent shader renders, looked up by image id.
 #[derive(Default)]
@@ -424,8 +432,11 @@ impl ShaderJobs {
         {
             let j = &e.job;
             let mut st = self.stats.lock().unwrap();
-            let s = st.entry(j.label.clone()).or_insert((0.0, 0, j.w, j.h, j.supersample));
+            let s = st.entry(j.label.clone()).or_insert((0.0, 0, j.w, j.h, j.supersample, None));
             s.0 += ms;
+            if s.5.is_none() {
+                s.5 = j.shader.take_nonfinite();
+            }
             s.1 += 1;
             (s.2, s.3) = (j.w, j.h);
         }
@@ -451,7 +462,7 @@ impl ShaderJobs {
             .lock()
             .unwrap()
             .iter()
-            .map(|(l, &(ms, n, w, h, ss))| ShaderStat { label: l.to_string(), ms: (ms / n.max(1) as f64) as f32, renders: n, width: w, height: h, supersample: ss })
+            .map(|(l, &(ms, n, w, h, ss, nf))| ShaderStat { label: l.to_string(), ms: (ms / n.max(1) as f64) as f32, renders: n, width: w, height: h, supersample: ss, nonfinite: nf })
             .collect();
         v.sort_by(|a, b| b.ms.total_cmp(&a.ms));
         v
@@ -570,6 +581,7 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> (Pixmap, f64) {
     f.threshold = anikit_shader::AA_THRESHOLD;
     f.max_refine = anikit_shader::AA_MAX_REFINE;
     f.alpha = job.alpha;
+    f.coord_scale = job.coord_scale;
     // Smooth shader gradients would band in 8 bits; exact values are untouched.
     f.dither = true;
     let mut pm = Pixmap::new(job.w.clamp(1, 65535) as u16, job.h.clamp(1, 65535) as u16);
@@ -644,6 +656,7 @@ impl Evaluator {
             audio,
             beat,
             passes: sc.passes.clone().map(|p| (p, cx.gt - time)),
+            coord_scale: if sc.faithful { 1.0 / preview_scale() } else { 1.0 },
         };
         self.assets.shaders.submit(job, key)
     }

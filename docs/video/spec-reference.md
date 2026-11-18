@@ -212,6 +212,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `shadow` | shadow | none | `{ "x": 0, "y": 12, "blur": 32, "color": "#0008" }` or `true` for a soft default. |
 | `cell` | area name, `"1-6/2-4"`, `[col, row, cols, rows]` | none | Place the layer in a field of the scene's `grid` (sets x, y, width; height except for text). `anchor` picks the cell point (default `topLeft`). See `anikit-video docs graphic`. |
 | `duotone`, `gradientMap` | `[dark, light]`, `[c1, c2, …]` | none | Map the layer's luma to inks (OKLab). `toneRange: [black, white]` pre-stretches, `posterize: N` steps, `toneAmount` mixes. |
+| `print` | `photocopy` `newsprint` `engraving` `riso` `screenprint` | none | One-word print treatment: starting values for `duotone`/`gradientMap`/`posterize`/`toneRange`/`halftone`/`inkTexture` (your keys win). |
 | `halftone` | px or `{cell, angle, shape, ink, paper, gain}` | none | Print screen over the layer (dot/line/square; ink `"source"` keeps colours; fixed to the frame). |
 | `cutout` | `"torn"`, `"scissor"`, `"clean"` or `{edge, amount, rim, rimColor, shadow, seed}` | none | Collage piece: cut edge, paper rim, printed shadow (needs numeric width/height or a cell). |
 | `inkTexture` | 0..1 or `{amount, scale, seed}` | none | Uneven ink coverage fixed to the frame (riso, screenprint). |
@@ -421,7 +422,7 @@ Three layers of control, from simplest to most precise.
 
 **Animatable properties:** `x`, `y`, `width`, `height`, `scale`, `scaleX`, `scaleY`, `rotation`, `skewX`, `skewY`, `opacity`, `blur`, `radius`, `fill`/`color` (interpolated in OKLab), `stroke`(colour), `strokeWidth`, `trimStart`, `trimEnd`, `reveal`, `value`, `wipe`, `depth`, `pathOffset`, `dashOffset`, `rangeStart`/`rangeEnd`/`rangeOffset` (text animator); camera: `zoom`, `focus`, `aperture`.
 
-**Easings:** `linear`, `ease`, `easeIn`, `easeOut`, `easeInOut`; Penner names as `in`/`out`/`inOut` + `Sine`, `Quad`, `Cubic`, `Quart`, `Quint`, `Expo`, `Circ`, `Back`, `Elastic`, `Bounce` (e.g. `outCubic`, `inOutBack`; `easeOutCubic` also works); `cubicBezier(0.2, 0, 0, 1)` or an array `"ease": [0.2, 0, 0, 1]`; `steps(4)`; GSAP-style `back.out(1.7)`, `elastic.out(1, 0.3)`; springs `gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy`.
+**Easings:** `linear`, `ease`, `easeIn`, `easeOut`, `easeInOut`; Penner names as `in`/`out`/`inOut` + `Sine`, `Quad`, `Cubic`, `Quart`, `Quint`, `Expo`, `Circ`, `Back`, `Elastic`, `Bounce` (e.g. `outCubic`, `inOutBack`; `easeOutCubic` also works); `cubicBezier(0.2, 0, 0, 1)` or an array `"ease": [0.2, 0, 0, 1]`; `steps(4)`; GSAP-style `back.out(1.7)`, `elastic.out(1, 0.3)`; springs `gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy` (~8% overshoot), `springy` (~39%, the old `bouncy`).
 
 ### 3. Expressions
 

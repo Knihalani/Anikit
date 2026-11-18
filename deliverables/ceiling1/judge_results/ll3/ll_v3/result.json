@@ -1,0 +1,527 @@
+{
+  "name": "ll_v3",
+  "tags": [
+    "3d-cg",
+    "product-launch",
+    "luxury"
+  ],
+  "refs": [
+    "osko-launch",
+    "the-crown",
+    "tiffany-holiday"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 4,
+      "typography": 3,
+      "colour": 5,
+      "light_texture": 5,
+      "motion": 4,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 4,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Build the idea the name promises (record as orbit, needle as planetary motion) instead of a generic hero product render",
+      "Replace the default grotesk end card with typography that lives inside the image, the way D's credits sit inside its macro shots",
+      "Add modelling detail, surface wear and a second light source or colour so the frames carry material richness rather than haze",
+      "Build an idea out of the name: orbits, a planetary system, the record as a solar system. The concept should drive every shot, as the forging idea drives C",
+      "Vary the camera language and the scale. Move from macro stylus-in-groove to wide space, and give the cuts choreographed rhythm instead of repeated tonearm close-ups",
+      "Design the typography: a considered face, scale contrast and an end card integrated into the image, not a default sans pasted on a disc",
+      "Find an idea tied to the name: an orrery is planetary motion, and the record and stylus could become orbits. At the moment the name and the image are unrelated",
+      "Material and modelling craft: real wear, lacquer, brushed metal and dust that sits on surfaces, as in A's macro gold",
+      "Typography: build a custom or carefully chosen wordmark integrated into the light and space, not a default sans on a circle"
+    ],
+    "tells": [
+      "A stock product-render recipe: a turntable in a single volumetric god-ray with floating dust particles, an effect carrying most of the piece",
+      "One amber monochrome with a small red accent, the same mood held in every frame, so there is little variety",
+      "A simple, low-detail model (blocky tonearm, plain plinth) and shallow-depth-of-field passes that repeat across frames with little choreography",
+      "The only type is 'ORRERY' in a default bold grotesk dropped onto a lit disc, with no typographic idea. The name points to an orrery, but the visuals never develop that metaphor of orbits and planets",
+      "A single subject (a generic turntable model) under a single volumetric spotlight full of dust particles. That is the default 'atmospheric' setup of a hobbyist Blender or C4D render",
+      "Five of six frames are near-identical low-angle orbits of the tonearm against the same orange haze. One composition repeats with little happening",
+      "The only type is the word 'ORRERY' in a default bold grotesk on a plain cream disc, with no typographic idea and no scale or integration",
+      "Monochrome orange with one red label accent and a teal edge light. The colour comes from a preset, not from an idea",
+      "The concept is literal: a record player plus light rays, with no link to the name 'Orrery' (planets, orbits) beyond the spinning platter",
+      "The geometry is simplistic and the turntable lacks material detail. Haze and noise cover the absence of texture",
+      "One subject (a turntable) under one effect (an orange volumetric god-ray with dust particles) repeated across almost every frame, which reads as effect without an idea",
+      "The tonearm and platter are simple default-looking geometry with flat materials. Scale and detail don't hold up in close-ups, and one frame is a nearly empty wall with a floating block",
+      "Monochrome orange wash with no contrast or palette decision beyond the light colour",
+      "The 'ORRERY' payoff is a default bold grotesk dropped onto a light disc, with no layout, scale idea or integration",
+      "Little choreography: slow push-ins on the same object, with no progression or surprise"
+    ]
+  },
+  "refs_summary": {
+    "osko-launch": {
+      "overall": 5.38,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "the-crown": {
+      "overall": 9.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "tiffany-holiday": {
+      "overall": 7.38,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.29,
+  "delta": -3.29,
+  "trials": [
+    {
+      "key": {
+        "A": "tiffany-holiday",
+        "B": "osko-launch",
+        "C": "candidate",
+        "D": "the-crown"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A jewelled bird hero character carried through a range of scenes (clock face, overhead street with a taxi, ballet stage, brownstone facades, a dinner table) shows a real narrative journey, not one layout repeated",
+              "The camera grammar changes from shot to shot: a top-down crane over the intersection, shallow-focus macro on the clock, a wide stage with a backlit dancer",
+              "Motivated practical light (string lights, candles, stage strips) and a deliberate teal and warm palette that fits a luxury brand",
+              "The final painted Monument Valley frame breaks into a different medium, which reads as an intended surprise"
+            ],
+            "gaps": [
+              "No typography is visible, and nothing replaces it as a graphic signature. A title or end card that uses the bird's sparkle trail as a typographic device would tie the piece together the way D's type is tied to its image",
+              "The sparkle-trail motif is a familiar holiday-spot clich\u00e9. It needs a more specific visual idea that grows out of the jewellery's material",
+              "The jump in style to the painted desert is not set up anywhere in the sampled frames. Introduce the painterly language earlier so it reads as structure rather than a cut to a different film"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "A clear, witty throughline: an 'I.O.U.' sticky note left in a fridge, returning from the shelf close-up to the fridge-open payoff, which is a real concept rather than effect with no subject",
+              "Deliberate switches of medium (3D fridge with a floor reflection, flat-vector golfer stepped through a pose sequence, an emoji grid) suggest a multi-artist campaign rather than one template",
+              "The flat illustration is close to vector-default (gradient shirt, generic character), and the icon grid looks like a stock emoji set laid out like a slide, which pulls the score down",
+              "The type is only a handwritten note, used as a prop and never designed"
+            ],
+            "gaps": [
+              "The frames do not share one visual system. Choose a unifying art direction, or a deliberate collage rule, so the style changes read as authored",
+              "The emoji grid and the centred car on a flat ground are slide-like and empty. Give those frames layered compositions and real staging",
+              "The light is mostly flat studio fill. Treat material and light the way C and D do, as in the moody spill of the fridge-open frame, and carry that through the whole film"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 5,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "A stock product-render recipe: a turntable in a single volumetric god-ray with floating dust particles, an effect carrying most of the piece",
+              "One amber monochrome with a small red accent, the same mood held in every frame, so there is little variety",
+              "A simple, low-detail model (blocky tonearm, plain plinth) and shallow-depth-of-field passes that repeat across frames with little choreography",
+              "The only type is 'ORRERY' in a default bold grotesk dropped onto a lit disc, with no typographic idea. The name points to an orrery, but the visuals never develop that metaphor of orbits and planets"
+            ],
+            "gaps": [
+              "Build the idea the name promises (record as orbit, needle as planetary motion) instead of a generic hero product render",
+              "Replace the default grotesk end card with typography that lives inside the image, the way D's credits sit inside its macro shots",
+              "Add modelling detail, surface wear and a second light source or colour so the frames carry material richness rather than haze"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 8
+            },
+            "tells": [
+              "A single, specific idea: the crown being cast from molten metal and assembled, shot in extreme macro, which is exactly this show's subject and theme",
+              "A restrained near-black and bronze palette with real metallic texture, smoke and specular highlights; every frame works as a poster",
+              "The credits are set in a carefully chosen, widely tracked serif with careful scale and placement, sitting in the negative space of each composition. The title card earns its minimalism",
+              "The macro forms progress clearly from raw ore to cast metal to jewelled setting to gemstone, which shows real choreography between frames"
+            ],
+            "gaps": [
+              "The dark serif-on-black language sits close to the prestige-drama title convention, so it surprises less than it impresses",
+              "The palette and pacing are very controlled. One unexpected beat, such as a scale reveal or a colour break, would lift it from great to unforgettable",
+              "The final title card goes back to centred type on a dark ground. Holding the title against the finished crown would land the payoff more strongly"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.8,
+        "cost_usd": 0.15846000000000002,
+        "tokens": 71777,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "tiffany-holiday",
+        "B": "osko-launch",
+        "C": "the-crown",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A recurring hero object (a jewelled bird made of diamonds and gold) moves through very different spaces: a clock face, a top-down street corner with a yellow cab, a stage, a brownstone fa\u00e7ade, a dinner table. That is a planned journey, not a looped effect",
+              "The overhead street-corner shot uses a real camera vocabulary: high angle, a strong diagonal from the crosswalk, and a cab as the colour accent",
+              "Lighting is motivated and suits each scene: warm window glow and string lights against a blue dusk, candlelight and a shallow focal plane on the table, hard stage strips behind the ballerina",
+              "The sparkle trail carries the eye between frames, which suggests choreographed transitions",
+              "The last frame, a painted-style figure in front of a red mesa, breaks the visual world. It looks like a separate segment and weakens the piece's coherence",
+              "No type is visible. For a mood-led luxury holiday film its absence is fine, but the frames never set up a brand or title moment"
+            ],
+            "gaps": [
+              "Unify the world: the painted desert frame reads as a different film. Either justify the change of style inside the story or cut it",
+              "The festive-city sparkle-trail idea is familiar from luxury holiday spots. It needs one surprising twist that only this brand could own",
+              "There is no typographic end-frame or title idea. The Crown proves that restrained type woven into the image can carry the authorship"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "It has a real narrative device. A handwritten 'I.O.U.' Post-it repeats across a 3D fridge shelf and a retro fridge interior, a light comedic premise about owing someone",
+              "The mixed media look deliberate: 3D product renders, flat character animation (a golf swing in three poses), toy-car illustration and an icon grid. This is the kind of multi-style brief a studio gets for a payments or gifting app",
+              "The golf sequence implies real character timing (anticipation, swing, follow-through, reaction)",
+              "Against it: the coffee/beer/cash/heart/gift icon grid looks like emoji and is placeholder-adjacent, and the vector characters lean towards house-style defaults",
+              "The frames switch between landscape and portrait, and the grounds alternate between black and cream with no clear system. It feels like a social-ad toolkit, not a crafted film",
+              "The only type is the handwritten 'I.O.U.' gag. It suits the idea, but there is no typographic thinking beyond it"
+            ],
+            "gaps": [
+              "Pick one visual language, or make the style switches part of the joke. Right now the changes in medium look arbitrary",
+              "Swap the generic emoji icon grid for a bespoke illustrated beat with real design intent",
+              "The lighting on the fridge and shelf renders is flat and lacks material richness. Give the 3D the texture and motivated light seen in A and C"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 8
+            },
+            "tells": [
+              "One governing idea: molten gold cools and gets worked into the crown, so the credits sequence is the object being made. Only this title could use it",
+              "Extreme macro shots of metal, smoke and gemstone facets, with real specular highlights, a shallow focal plane and a dense material surface",
+              "A strict, deliberate palette of black, bronze-gold and cold silver smoke, with no extra accent colour",
+              "The credits are set in a small, widely spaced classical serif and placed off-axis in the negative space of each shot. The type is integrated with the image, not stacked like slides",
+              "The frames escalate from raw ore to forged branch, set mount, faceted stone and then the title card, which is clear choreography",
+              "The final 'THE CROWN' wordmark uses restraint as the statement"
+            ],
+            "gaps": [
+              "The dark-ground-plus-small-spaced-serif formula is now widely imitated, so it risks reading as genre convention rather than surprise",
+              "The sequence has almost no departure from its single tonal register. One unexpected scale shift or light event would raise it from excellent to unforgettable",
+              "The type placement is elegant but safe. It could interact with the metal (reflection, engraving) more boldly"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "A single subject (a generic turntable model) under a single volumetric spotlight full of dust particles. That is the default 'atmospheric' setup of a hobbyist Blender or C4D render",
+              "Five of six frames are near-identical low-angle orbits of the tonearm against the same orange haze. One composition repeats with little happening",
+              "The only type is the word 'ORRERY' in a default bold grotesk on a plain cream disc, with no typographic idea and no scale or integration",
+              "Monochrome orange with one red label accent and a teal edge light. The colour comes from a preset, not from an idea",
+              "The concept is literal: a record player plus light rays, with no link to the name 'Orrery' (planets, orbits) beyond the spinning platter",
+              "The geometry is simplistic and the turntable lacks material detail. Haze and noise cover the absence of texture"
+            ],
+            "gaps": [
+              "Build an idea out of the name: orbits, a planetary system, the record as a solar system. The concept should drive every shot, as the forging idea drives C",
+              "Vary the camera language and the scale. Move from macro stylus-in-groove to wide space, and give the cuts choreographed rhythm instead of repeated tonearm close-ups",
+              "Design the typography: a considered face, scale contrast and an end card integrated into the image, not a default sans pasted on a disc"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 35.5,
+        "cost_usd": 0.1640404,
+        "tokens": 72064,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "the-crown",
+        "B": "osko-launch",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 8,
+              "craft": 10,
+              "originality": 8
+            },
+            "tells": [
+              "The central idea is specific to this show: molten gold forming into regalia, so the crown is literally being made over the length of the titles",
+              "Macro material work with real substance: cast-metal grain, a crystal facet with caustics, rivets and pav\u00e9 settings, and shallow-focus light that falls off convincingly",
+              "The type has a point of view: small wide-tracked classical serif credits sit in the negative space next to the object instead of being centred like a slide, and the end title uses a tiny 'THE' over spaced roman caps",
+              "Tight palette of near-black, smoke and bronze-gold that suits the subject, with no stray accent colour",
+              "The frames show choreography: smoke, then a molten strand, then a cast form, then the assembled crown, then the title card, with the scale moving from abstract macro toward the object being revealed"
+            ],
+            "gaps": [
+              "It is the benchmark here. Against the year's best, the dark-gold luxury macro language is close to a genre convention for prestige drama titles",
+              "The camera grammar repeats (slow macro push, shallow focus) and lacks a structural surprise or a change in rhythm",
+              "The title card falls back to a plain centred lockup on a smoky ground, a quieter ending than the frames before it"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "It has a narrative device: a jewelled bird leads the viewer through a city (clock, street corner, stage, dining room), which shows the frames were planned and the scenes vary",
+              "The cinematography is considered: a top-down street corner with a yellow cab as the colour hit, rim-lit dancer silhouettes, and practical candle and fairy-light sources motivating the light",
+              "The jewelled bird is modelled in convincing detail",
+              "There is a stylistic jump at the end into a painted desert with a figure, which reads either as a deliberate shift of world or as inconsistency",
+              "The sparkle trail is a familiar holiday-luxury clich\u00e9"
+            ],
+            "gaps": [
+              "Stylistic consistency: the painted desert frame breaks the photoreal world without a clear transition. It needs to be earned the way A's material logic is",
+              "No typography is visible in the sampled frames, and the brand moment needs a typographic idea as considered as A's credit placement",
+              "The palette drifts scene to scene (teal, sodium, blue stage, warm interior, terracotta). It needs a controlling colour logic"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "It has a clear campaign idea: an 'I.O.U.' note left in place of things borrowed (fridge leftovers, golf, car, coffee), told through several vignettes",
+              "It mixes media deliberately (3D fridge with a floor reflection, flat-vector golfer sequence, emoji-style icon grid), which looks like a multi-artist brand system, but the cohesion is weak",
+              "The golfer's three-pose sequence shows timing and character animation",
+              "The emoji icon grid and the plain flat car are close to stock or vector default, and the dark-ground icon grid is close to a slide",
+              "The 'I.O.U.' type is a handwritten sticky note, which is functional but not a typographic idea"
+            ],
+            "gaps": [
+              "One visual language: the styles jump between 3D, flat illustration and emoji icons with no rule binding them. A holds one material world from start to finish",
+              "Replace the generic icon grid and the vector-default car with designed frames that have depth, light and material",
+              "Give the I.O.U. an ownable typographic or graphic treatment so the payoff lands as memorably as A's title"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "One subject (a turntable) under one effect (an orange volumetric god-ray with dust particles) repeated across almost every frame, which reads as effect without an idea",
+              "The tonearm and platter are simple default-looking geometry with flat materials. Scale and detail don't hold up in close-ups, and one frame is a nearly empty wall with a floating block",
+              "Monochrome orange wash with no contrast or palette decision beyond the light colour",
+              "The 'ORRERY' payoff is a default bold grotesk dropped onto a light disc, with no layout, scale idea or integration",
+              "Little choreography: slow push-ins on the same object, with no progression or surprise"
+            ],
+            "gaps": [
+              "Find an idea tied to the name: an orrery is planetary motion, and the record and stylus could become orbits. At the moment the name and the image are unrelated",
+              "Material and modelling craft: real wear, lacquer, brushed metal and dust that sits on surfaces, as in A's macro gold",
+              "Typography: build a custom or carefully chosen wordmark integrated into the light and space, not a default sans on a circle"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.0,
+        "cost_usd": 0.161065,
+        "tokens": 71920,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 4,
+        "craft": 5
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "The record label text is garbled and mirrored at 100%: 'ORRERY' renders as unreadable, smeared glyphs on the red label, and the small lettering is illegible",
+        "The volumetric beam shows heavy noise, with horizontal streaking and stepping in the haze (frames 1\u20133). The denoising is visibly under-sampled",
+        "Frame 3 is murky dead air: a near-flat brown wall, the headshell cropped at the top edge and no clear subject",
+        "Frame 4 is a soft, low-contrast close-up of the tonearm. The subject reads as mud with no edge light or separation",
+        "The dust particles in the wide shot clump in regular horizontal rows, which reads as CG emitter repetition, not organic motes",
+        "The end card is a plain sans-serif 'ORRERY' on a bright disc, uneasily composited over the rendered scene. Its relationship to the turntable is unclear and the blacks are crushed around it",
+        "The audio has a hard full-band noise wall starting at ~6.4s, brick-walled at ~19.5 kHz, with almost no dynamic shaping inside it",
+        "There are ~2.2s of near-silence (4.1\u20136.4s), with only a low hum, under picture that is also slow-moving"
+      ],
+      "gaps": [
+        "Motion: the piece is mostly slow push-ins and a single tonearm drop with no choreographed escalation. The 4.2s long shot and the murky middle section are dead air, and the 'orrery' idea (dust orbiting the platter like a planetary system) shows up only in one wide shot. It never builds to a payoff or rhymes back to the opening beam",
+        "Sound: there are sparse, periodic ticks with decaying tails, then silence, then a static wall of crackle/noise. There is no musical arrangement, no build, no sub-bass impact on the needle drop, and transients that don't clearly lock to the cuts. It reads as a few sound-design layers, not a scored, mixed track",
+        "Finish: the render is noisy in the volumetrics, the hero label typography is unreadable at 1:1, two of the six frames are low-contrast mud, and the end-title integration is weak. Top studio work would have clean, denoised haze, crisp label type that pays off the title, and a lit, composed hero frame on every shot"
+      ]
+    },
+    "meta": {
+      "seconds": 22.0,
+      "cost_usd": 0.1550058,
+      "tokens": 71120,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "lastlight.mp4: 10.8s, 4 shots, median 2.40s, longest 4.21s\nper-second change: [7.6, 40.1, 13.9, 34.4, 10.7, 27.7, 25.0, 36.5, 8.1, 9.7]\nPACE: FAIL \u2014 longest shot 4.2s > 2.5s; median shot 2.4s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 4,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 5,
+    "motion": 4.0,
+    "craft": 4.5,
+    "originality": 3,
+    "sound": 4
+  },
+  "full_overall": 4.06,
+  "cost_usd": 0.639,
+  "judge_seconds": 122.3,
+  "verdict": "FAIL"
+}

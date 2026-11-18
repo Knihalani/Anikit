@@ -38,3 +38,17 @@ Colour fonts (Nabla, Honk, Bungee Spice) draw their own palette; `color` doesn't
   offset by 0.04 em gives an inline/offset print look.
 - **Hard offset shadow** (70s, print, poster): `"shadow": {"x": 14, "y": 14, "blur": 0, "color": "#2c1a10"}` on the text layer. It follows
   per-glyph animators. Offset about 0.05–0.07 em, in a darker shade of the paper rather than black.
+
+## Choreography (numbers from typography.md §2: advice, not rules)
+
+- **Hold ≈ 0.5 s + words ÷ 3**, counted from when the *last* word is legible. Count a number as two words.
+- **Stagger:** 15–30 ms per char reads as one gesture, 40–80 ms is deliberate (3–12 char titles), 60–150 ms per word, 80–200 ms per line.
+  Keep a reveal of more than 8 characters inside 1.2 s overall.
+- **Ease:** `outExpo`/`outQuart` in; `inQuart` out, at 0.6–0.7× the entrance. Overshoot only for playful briefs, and gently.
+  Travel 0.3–0.6 em: further than that reads as a slide-in, not a type entrance.
+- **Animate in, then hold still.** Text that wobbles while it's being read is a tell. Spend the motion on one property (position *or* tracking *or* weight).
+- **Signature moves:** mask by line up (`"kinetic": "mask by line up"`, 120 ms per line); tracking converge (`animate` `letterSpacing` from +0.25 em to 0
+  over 1.5–3 s); weight punch (`axes.wght` 100→800 in 250–450 ms as the word lands); width morph pinned to the left edge (`axes.wdth`);
+  a weight wave (animator `axes`); a slam cut on a beat (0–2 frames in, held 12–24 frames).
+- **Escalate.** Repeating one entrance on every card reads as a template. Vary unit, direction or property across beats and build toward the payoff.
+- Wrapped headlines get balanced lines automatically (`"balance": false` turns it off).
