@@ -69,6 +69,28 @@ def lit(layer):
 
 
 # ------------------------------------------------------------------ the bunny
+def hops(x0, x1, t0, t1, n, h, s=1.0, hold=None):
+    """Root keyframes for n hops from x0 to x1: crouch (anticipation), stretch in the air, squash on landing, settle."""
+    keys = [{"t": 0, "x": x0, "y": 0, "squash": 1.0}]
+    if t0 > 0:
+        keys.append({"t": t0, "x": x0, "y": 0, "squash": 1.0})
+    dur = (t1 - t0) / n
+    for i in range(n):
+        a = t0 + i * dur
+        xa = x0 + (x1 - x0) * i / n
+        xb = x0 + (x1 - x0) * (i + 1) / n
+        keys += [
+            {"t": round(a + 0.18 * dur, 3), "x": xa, "y": 0, "squash": 0.88, "ease": "out"},
+            {"t": round(a + 0.5 * dur, 3), "x": (xa + xb) / 2, "y": -h * s, "squash": 1.08, "ease": "out"},
+            {"t": round(a + 0.78 * dur, 3), "x": xb, "y": 0, "squash": 1.04, "ease": "in"},
+            {"t": round(a + 0.88 * dur, 3), "x": xb, "y": 0, "squash": 0.88, "ease": "out"},
+            {"t": round(a + dur, 3), "x": xb, "y": 0, "squash": 1.0, "ease": "out"},
+        ]
+    if hold:
+        keys.append({"t": hold, "x": x1, "y": 0, "squash": 1.0})
+    return keys
+
+
 def bunny(px, x, y, s=1.0, walk=None, lantern=True, net=False, sleep=False, look_down=False, delay=0.0, keys=None):
     """Shapes + groups for the bunny, feet at (x, y), facing right. `walk` is a list of
     group keyframes for the root (travel)."""
@@ -86,15 +108,15 @@ def bunny(px, x, y, s=1.0, walk=None, lantern=True, net=False, sleep=False, look
         root["animate"] = {"keys": keys, "ease": "inOut"}
     g.append(root)
     body = {"name": px + "body", "parent": px + "root", "pivot": [X(0), Y(0)],
-            "cycle": {"style": "bob", "speed": 1.6, "amount": 1.6 * s} if walk else {"style": "breathe", "amount": 1.4}}
+            "cycle": {"style": "breathe", "amount": 1.4}}
     g.append(body)
-    head = {"name": px + "head", "parent": px + "body", "pivot": [X(20), Y(-120)], "lag": 0.1,
+    head = {"name": px + "head", "parent": px + "body", "pivot": [X(20), Y(-120)], "lag": 0.04,
             "cycle": {"style": "nod", "speed": 0.4, "amount": 1.4}}
     if look_down:
         head["rotate"] = 14
     g.append(head)
-    g.append({"name": px + "ears", "parent": px + "head", "pivot": [X(28), Y(-196)], "lag": 0.08,
-              "spring": {"stiffness": 70, "damping": 6, "drag": 0.35}, "rotate": -8 if not sleep else -60})
+    g.append({"name": px + "ears", "parent": px + "head", "pivot": [X(28), Y(-196)],
+              "spring": {"stiffness": 120, "damping": 8, "drag": 0.08}, "rotate": -8 if not sleep else -60})
     g.append({"name": px + "eye", "parent": px + "head", "pivot": [X(54), Y(-168)],
               "blink": {"every": 2.6, "seed": len(px)}})
     sh_ = []
@@ -129,6 +151,10 @@ def bunny(px, x, y, s=1.0, walk=None, lantern=True, net=False, sleep=False, look
         sh_.append(sh("path", points=[[X(70), Y(-92)], [X(70), Y(-60)]], stroke=INK, weight=[2, 3], group=px + "lamp"))
         sh_.append(sh("circle", cx=X(70), cy=Y(-34), r=70 * s, fill={"stops": [[0, GOLD], [0.62, "#000000"], [1, "#000000"]], "gradient": "radial"},
                       opacity=0.55, blend="screen", outline=False, group=px + "lamp"))
+        sh_.append(sh("ellipse", cx=X(60), cy=Y(4), rx=150 * s, ry=30 * s, fill={"stops": [[0, "#c89a4a"], [0.7, "#000000"], [1, "#000000"]], "gradient": "radial"},
+                      blend="screen", outline=False, group=px + "root"))
+        sh_.append(sh("circle", cx=X(30), cy=Y(-80), r=110 * s, fill={"stops": [[0, "#6a5030"], [0.7, "#000000"], [1, "#000000"]], "gradient": "radial"},
+                      blend="screen", outline=False, group=px + "body"))
         sh_.append(sh("rect", cx=X(70), cy=Y(-36), w=26 * s, h=34 * s, radius=6 * s, fill=GOLD,
                       shade={"amount": 0.3, "offset": 0.1}, lineColor="#7a3b1e", group=px + "lamp"))
         sh_.append(sh("rect", cx=X(70), cy=Y(-56), w=30 * s, h=7 * s, radius=2, fill="#7a3b1e", group=px + "lamp"))
@@ -300,14 +326,33 @@ def fg_tufts():
     L["depth"] = -0.4
     return L
 
+
+def crayon_world():
+    """The child's crayon drawing of the scene; the papercut world fills in underneath it, then the lines fade."""
+    paths = [
+        {"d": "M-20 650 C 300 600, 620 640, 960 655 S 1600 610, 1940 640", "size": 9},
+        {"d": "M-20 805 C 400 770, 900 830, 1300 795 S 1700 780, 1940 805", "size": 10},
+        {"d": "M300 858 C 262 840, 268 735, 340 724 C 410 728, 418 846, 372 860 Z", "size": 10},
+        {"d": "M372 752 C 322 742, 322 662, 372 658 C 422 660, 426 742, 380 752", "size": 10},
+        {"d": "M352 668 C 330 610, 334 565, 352 566 C 372 572, 372 630, 364 664", "size": 9},
+        {"d": "M384 664 C 384 610, 398 572, 414 576 C 428 590, 412 640, 396 668", "size": 9},
+        {"d": "M280 812 C 262 800, 266 784, 282 784", "size": 9},
+        {"d": "M394 700 l 4 2", "size": 12},
+        {"d": "M120 220 l 18 -40 l 18 40 l -42 -25 h 48 Z", "size": 5},
+        {"d": "M860 120 l 12 -26 l 12 26 l -28 -16 h 32 Z", "size": 5},
+    ]
+    return {"component": "sketch", "end": 1.9, "exit": {"preset": "fadeOut", "duration": 0.5},
+            "props": {"draw": 0.45, "stagger": 0.07, "boil": 8, "color": CRAYON, "texture": "marker", "pressure": "even", "paths": paths}}
+
 # ------------------------------------------------------------------ scenes
 scenes = []
 
 # 1. Bedroom: the story starts out loud. 0.0 - 3.8
 scenes.append({
+    "audio": [{"src": "sfx/scribble.wav", "at": 1.0, "volume": 0.45}],
     "id": "room", "duration": 3.8, "background": WALL,
     "camera": {"animate": [{"from": {"zoom": 1.06, "x": 40}, "to": {"zoom": 1.14, "x": -30, "y": 30}, "duration": 3.0, "ease": "inOutSine"},
-                           {"to": {"zoom": 1.5, "x": -60, "y": 220}, "at": 3.0, "duration": 0.8, "ease": "inExpo"}]},
+                           {"to": {"zoom": 2.6, "x": -60, "y": 230}, "at": 2.65, "duration": 0.85, "ease": "inCubic"}]},
     "layers": [
         bedroom(False),
         text("Once upon\na tonight,", PARENT, "8.4vh", "9%", "12%", 0.25, end=3.2, exit="fadeOut", enter={"preset": "mask by line up", "duration": 0.9}, lineHeight=0.98),
@@ -317,7 +362,7 @@ scenes.append({
 
 # 2. Quilt country: the quilt's hills become the story. 3.8 - 7.4
 story_pal = ["#0f1640", "#3a3f86", "#3c4a8a", "#6b3a6e"]
-walk = [{"t": 0, "x": -360}, {"t": 3.4, "x": 360}]
+walk = hops(-420, 330, 0.9, 3.4, 4, 70)
 g2, s2 = bunny("b", 760, 860, 0.95, walk=walk)
 moon_outline = illo([
     sh("circle", cx=1420, cy=250, r=120, fill="none", stroke=CRAYON, weight=[4, 7], gaps=0.45, boil=8,
@@ -325,44 +370,48 @@ moon_outline = illo([
     sh("path", d="M1300 400 l 30 -30 m 40 60 l 20 -40 m 60 50 l 6 -40", stroke=CRAYON, weight=[3, 5], boil=8),
 ], grain=0.0)
 scenes.append({
-    "id": "quilt", "duration": 3.6, "background": "#0f1640", "transition": {"type": "zoom", "duration": 0.6},
+    "id": "quilt", "duration": 3.6, "background": "#0f1640", "transition": {"type": "crossfade", "duration": 0.3},
     "camera": {"animate": [{"from": {"zoom": 1.12, "x": -80}, "to": {"zoom": 1.04, "x": 35}, "duration": 3.6, "ease": "outCubic"}]},
     "layers": [
-        {"component": "landscape", "props": {"style": "papercut", "time": "night", "terrain": ["hills", "hills", "woods"], "layers": 3,
+        {"enter": {"preset": "fadeIn", "delay": 0.45, "duration": 0.7}, "component": "landscape", "props": {"style": "papercut", "time": "night", "terrain": ["hills", "hills", "woods"], "layers": 3,
                                               "horizon": 0.58, "depth": 0.3, "mist": 0.35, "parallax": 26, "sun": [1.6, -0.5], "seed": 4,
                                               "palette": ["#0f1640", "#3a3f86", "#3c4a8a", "#2f6f73"],
                                               "ranges": [{"color": "#3c4a8a"}, {"color": "#6b3a6e"}, {"color": "#2f6f73"}]}, "depth": 2},
         moon_outline,
-        text("who lost\nthe moon.", PARENT, "12vh", "7%", "12%", 0.15, enter={"preset": "mask by line up", "duration": 0.9}, lineHeight=0.95, depth=1.4),
-        {"component": "landscape", "props": {"style": "papercut", "time": "night", "terrain": ["hills", "dunes"], "layers": 2, "sky": False,
+        text("who lost\nthe", PARENT, "12vh", "7%", "12%", 0.15, enter={"preset": "mask by line up", "duration": 0.9}, lineHeight=0.95),
+        text("moon.", dict(PARENT, color=GOLD), "12vh", "17.6%", "25.6%", 0.45, enter={"preset": "mask by line up", "duration": 0.7},
+             animate=[{"to": {"rotation": -8}, "at": 1.5, "duration": 0.25, "ease": "outCubic"},
+                      {"to": {"y": "+1000", "rotation": 70}, "at": 1.85, "duration": 1.1, "ease": "inCubic"}]),
+        {"enter": {"preset": "fadeIn", "delay": 0.45, "duration": 0.7}, "component": "landscape", "props": {"style": "papercut", "time": "night", "terrain": ["hills", "dunes"], "layers": 2, "sky": False,
                                               "horizon": 0.74, "depth": 0.95, "parallax": 60, "seed": 9,
                                               "palette": ["#0f1640", "#3a3f86", "#c76a5a", "#8a4f3a"],
                                               "ranges": [{"color": "#c76a5a"}, {"color": "#d39a3c"}]}},
-        {"component": "plants", "props": {"style": "papercut", "time": "night", "species": ["grass", "flowers"], "count": 14, "spread": [0, 1],
+        {"enter": {"preset": "fadeIn", "delay": 0.45, "duration": 0.7}, "component": "plants", "props": {"style": "papercut", "time": "night", "species": ["grass", "flowers"], "count": 14, "spread": [0, 1],
                                            "ground": 0.99, "size": 160, "wind": 0.5, "onTwos": True,
                                            "colors": {"foliage": ["#5a2f4e", "#8a4f3a", "#c76a5a"], "trunk": "#3a1f2e", "bark": "#3a1f2e", "accent": GOLD}}},
-        illo(s2, g2),
+        crayon_world(),
+        dict(illo(s2, g2), enter={"preset": "fadeIn", "delay": 0.7, "duration": 0.25}),
         fg_tufts(),
     ],
-    "audio": [{"sfx": "whoosh", "at": -0.5, "volume": 0.25}],
+    "audio": [{"src": "sfx/scribble.wav", "at": 0.0, "volume": 0.5}, {"src": "sfx/scribble.wav", "at": 0.45, "volume": 0.35},
+              {"sfx": "swoosh", "at": 1.8, "volume": 0.18}]
+             + [{"src": "sfx/thump.wav", "at": round(0.9 + (i + 0.78) * 0.625, 3), "volume": 0.45} for i in range(4)],
 })
 
 # 3. The pond: the moon is in the water. 7.4 - 11.0
-g3, s3 = bunny("c", 470, 985, 1.15, walk=[{"t": 0, "x": -330}, {"t": 1.3, "x": 0}, {"t": 3.6, "x": 0}], look_down=True)
+g3, s3 = bunny("c", 470, 985, 1.15, walk=hops(-360, 0, 0.0, 1.3, 2, 60, hold=3.4), look_down=True)
 refl = illo([
     sh("ellipse", cx=1180, cy=890, rx=160, ry=46, fill={"stops": [[0, "#fff0b8"], [0.62, "#000000"], [1, "#000000"]], "gradient": "radial"},
        opacity=0.85, blend="screen", outline=False, sway={"x": 8, "scale": 0.03, "period": 1.6}),
-    sh("ellipse", cx=1180, cy=890, rx=84, ry=24, fill="#ffe3a0", outline=False, sway={"x": 5, "scale": 0.04, "period": 1.3},
-       texture={"style": "halftone", "amount": 0.4, "scale": 6}),
     sh("path", d="M1080 890 q 50 -10 100 0 t 100 0", stroke="#0f1640", weight=[2, 4], opacity=0.6, sway={"x": 14, "period": 1.1}),
     sh("path", d="M1110 910 q 40 -8 80 0 t 80 0", stroke="#0f1640", weight=[2, 3], opacity=0.5, sway={"x": -10, "period": 1.4}),
 ], grain=0.05)
-arrow = {"component": "brush", "props": {"d": "M1500 330 C 1560 520, 1480 700, 1330 840 M1330 840 l 56 -4 M1330 840 l 8 -54",
+arrow = {"component": "brush", "props": {"d": "M1500 330 C 1560 520, 1470 690, 1330 810 M1330 810 l 56 -2 M1330 810 l 10 -54",
                                          "texture": "marker", "color": CRAYON, "size": 14, "pressure": "even", "draw": 0.7, "delay": 0.5, "boil": 8}}
 s3.insert(0, sh("path", d="M-60 1100 L -60 900 C 120 880, 420 900, 640 950 C 760 980, 820 1040, 860 1100 Z", fill="#3a2142",
                   shade={"amount": 0.5, "offset": 0.1, "rim": 0.02}, texture={"style": "contour", "amount": 0.3}))
 scenes.append({
-    "id": "pond", "duration": 3.6, "background": "#0f1640",
+    "id": "pond", "duration": 3.4, "background": "#0f1640",
     "camera": {"animate": [{"from": {"zoom": 1.05, "x": 40}, "to": {"zoom": 1.12, "x": -40, "y": 30}, "duration": 3.6, "ease": "inOutSine"}]},
     "layers": [
         {"component": "landscape", "props": {"style": "papercut", "time": "night", "terrain": ["mountains", "woods"], "layers": 3,
@@ -373,6 +422,8 @@ scenes.append({
                                           "colors": {"top": "#22306a", "deep": "#121a46", "wave": "#3c4a8a", "glint": "#ffe3a0"}},
          "x": 960, "y": 860, "width": 1920, "height": 440},
         refl,
+        text("moon.", dict(PARENT, color="#fff3cf"), "10vh", 1185, 872, 0.0, anchor="center", rotation=7, loop="float",
+             shadow={"x": 4, "y": 6, "blur": 8, "color": "#0a0f30cc"}),
         {"component": "plants", "props": {"style": "papercut", "time": "night", "species": ["grass", "bush"], "count": 7, "spread": [0, 0.45],
                                            "ground": 0.97, "size": 300, "fill": True, "wind": 0.45, "onTwos": True,
                                            "colors": {"foliage": ["#3a2142", "#6b3a6e", "#8a4f3a"], "trunk": "#2a1830", "bark": "#2a1830", "accent": GOLD}}},
@@ -380,12 +431,15 @@ scenes.append({
         arrow,
         text("It fell in\nthe pond!", CHILD, "11vh", "66%", "8%", 0.2, enter={"preset": "wipeIn", "duration": 0.6}, rotation=5, lineHeight=0.85),
     ],
-    "audio": [{"sfx": "ding", "at": 0.6, "volume": 0.18}],
+    "audio": [{"src": "sfx/scribble.wav", "at": 0.2, "volume": 0.45}, {"src": "sfx/thump.wav", "at": 0.507, "volume": 0.45},
+              {"src": "sfx/thump.wav", "at": 1.157, "volume": 0.45}, {"sfx": "ding", "at": 1.4, "volume": 0.12}],
 })
 
 # 4. Close-up: fishing the moon out. Type = two voices in one line. 11.0 - 14.2
 g4, s4 = bunny("d", 560, 1010, 2.1, lantern=False,
-               keys=[{"t": 0, "squash": 1}, {"t": 0.5, "squash": 0.9}, {"t": 1.05, "squash": 1.08, "ease": "outBack"}, {"t": 1.6, "squash": 1.0}],
+               keys=[{"t": 0, "squash": 1}, {"t": 0.5, "squash": 0.9}, {"t": 1.05, "squash": 1.08, "ease": "outBack"}, {"t": 1.6, "squash": 1.0},
+                     {"t": 2.0, "squash": 1.0}, {"t": 2.15, "squash": 0.86, "ease": "out"}, {"t": 2.4, "y": -90, "squash": 1.1, "ease": "out"},
+                     {"t": 2.65, "y": 0, "squash": 1.04, "ease": "in"}, {"t": 2.75, "squash": 0.9, "ease": "out"}, {"t": 2.95, "squash": 1.0, "ease": "out"}],
                net=[{"t": 0, "rotate": 30}, {"t": 0.5, "rotate": 38}, {"t": 1.1, "rotate": -26, "ease": "outBack"}, {"t": 3.2, "rotate": -22}])
 moon_up = illo([
     sh("circle", cx=1260, cy=560, r=420, fill={"stops": [[0, "#ffe7a6"], [0.62, "#000000"], [1, "#000000"]], "gradient": "radial"}, blend="screen", outline=False,
@@ -403,7 +457,7 @@ moon_up = illo([
        animate={"keys": [{"t": 0, "opacity": 0}, {"t": 1.6, "opacity": 0, "y": -60}, {"t": 1.7, "opacity": 1, "y": -60}, {"t": 2.6, "y": 220, "opacity": 0, "ease": "in"}]}),
 ], grain=0.05)
 scenes.append({
-    "id": "catch", "duration": 3.2, "background": "#101845",
+    "id": "catch", "duration": 3.0, "background": "#101845",
     "camera": {"animate": [{"from": {"zoom": 1.08, "y": 40}, "to": {"zoom": 1.02, "y": -8}, "duration": 2.0, "ease": "outCubic"}],
                "shake": {"amount": 5, "at": 1.45, "duration": 0.3}},
     "layers": [
@@ -418,46 +472,59 @@ scenes.append({
         text("Dreamed up", PARENT, "9vh", "56%", "9%", 0.05, enter={"preset": "mask by line up", "duration": 0.7}),
         text("together,", CHILD, "13vh", "66%", "19%", 0.25, enter={"preset": "wipeIn", "duration": 0.4}, rotation=-5),
     ],
-    "audio": [{"sfx": "chime", "at": 1.45, "volume": 0.35}],
+    "audio": [{"src": "sfx/splash.wav", "at": 0.85, "volume": 0.6}, {"sfx": "chime", "at": 1.45, "volume": 0.3},
+              {"src": "sfx/thump.wav", "at": 2.65, "volume": 0.5}],
 })
 
 # 5. The moon goes back up; the story is read aloud, word by word. 14.2 - 16.9
-g5, s5 = bunny("e", 1130, 640, 0.42, walk=[{"t": 0, "x": -40}, {"t": 2.2, "x": 40}])
+g5, s5 = bunny("e", 640, 930, 0.95, lantern=False, keys=[{"t": 0, "squash": 1.0}, {"t": 0.25, "squash": 0.9, "ease": "out"},
+                                                         {"t": 0.6, "squash": 1.06, "y": -40, "ease": "out"}, {"t": 0.95, "squash": 1.0, "y": 0, "ease": "in"},
+                                                         {"t": 1.05, "squash": 0.94}, {"t": 1.25, "squash": 1.0}])
+# the hill she stands on, nearest to camera
+s5.insert(0, sh("path", d="M-60 1100 L -60 900 C 240 860, 560 870, 900 930 C 1200 980, 1500 1020, 1980 1000 L 1980 1100 Z", fill="#2a1830",
+                shade={"amount": 0.4, "offset": 0.06, "rim": 0.02}, texture={"style": "contour", "amount": 0.25}))
+PAW = (640 + 0.95 * 30, 930 - 0.95 * 92)
+moonkeys = [{"t": 0, "x": -470, "y": 380}, {"t": 0.2, "x": -470, "y": 380}, {"t": 1.3, "x": 0, "y": 0, "ease": "out"}]
 moon5 = illo([
-    sh("circle", cx=1520, cy=290, r=260, fill={"stops": [[0, "#ffe7a6"], [0.62, "#000000"], [1, "#000000"]], "gradient": "radial"}, blend="screen", outline=False),
-    sh("circle", name="mcut5", cx=1555, cy=265, r=70, visible=False,
-       animate={"keys": [{"t": 0, "y": 200}, {"t": 1.2, "y": 0, "ease": "out"}]}),
+    sh("circle", cx=1520, cy=290, r=300, fill={"stops": [[0, "#ffe7a6"], [0.62, "#000000"], [1, "#000000"]], "gradient": "radial"}, blend="screen",
+       outline=False, animate={"keys": moonkeys}),
+    sh("path", d=f"M{PAW[0]:.0f} {PAW[1]:.0f} Q 880 760 1050 690", stroke=CREAM, weight=[1.5, 2.5], opacity=0.85,
+       animate={"keys": [{"t": 0, "d": f"M{PAW[0]:.0f} {PAW[1]:.0f} Q 880 760 1050 690"}, {"t": 0.2, "d": f"M{PAW[0]:.0f} {PAW[1]:.0f} Q 880 760 1050 690"},
+                         {"t": 1.3, "d": f"M{PAW[0]:.0f} {PAW[1]:.0f} L 1490 372", "ease": "out"}]}),
+    sh("circle", name="mcut5", cx=1555, cy=265, r=70, visible=False, animate={"keys": moonkeys}),
     sh("circle", cx=1520, cy=290, r=78, fill="#ffe3a0", cut=["mcut5"], shade={"amount": 0.3, "offset": 0.08},
-       texture={"style": "halftone", "amount": 0.35, "scale": 7},
-       animate={"keys": [{"t": 0, "y": 200}, {"t": 1.2, "y": 0, "ease": "out"}]}),
-    sh("path", d="M1170 600 C 1260 450, 1380 340, 1450 300", stroke=GOLD, weight=[1, 3], gaps=0.5, opacity=0.8),
+       texture={"style": "halftone", "amount": 0.35, "scale": 7}, animate={"keys": moonkeys}),
 ], grain=0.04)
 scenes.append({
-    "id": "sky", "duration": 2.7, "background": "#141c50", "transition": {"type": "crossfade", "duration": 0.5},
-    "camera": {"animate": [{"from": {"zoom": 1.15, "y": 80}, "to": {"zoom": 1.0, "y": 0}, "duration": 2.7, "ease": "inOutSine"}]},
+    "audio": [{"src": "sfx/pluck.wav", "at": 0.25, "volume": 0.45}, {"src": "sfx/thump.wav", "at": 0.95, "volume": 0.35}],
+    "id": "sky", "duration": 3.1, "background": "#141c50", "transition": {"type": "crossfade", "duration": 0.5},
+    "camera": {"animate": [{"from": {"zoom": 1.12, "y": 60}, "to": {"zoom": 1.03, "y": -10}, "duration": 2.7, "ease": "inOutSine"}]},
     "layers": [
-        {"component": "landscape", "props": {"style": "papercut", "time": "night", "terrain": ["hills", "hills", "woods"], "layers": 4,
-                                              "horizon": 0.6, "depth": 0.85, "mist": 0.3, "parallax": 10, "sun": [1.6, -0.5], "seed": 4,
+        {"component": "landscape", "props": {"style": "papercut", "time": "night", "terrain": ["hills", "hills", "woods"], "layers": 3,
+                                              "horizon": 0.62, "depth": 0.5, "mist": 0.3, "parallax": 10, "sun": [1.6, -0.5], "seed": 4,
                                               "palette": ["#141c50", "#3a4790", "#3c4a8a", "#2f6f73"],
-                                              "ranges": [{"color": "#3c4a8a"}, {"color": "#6b3a6e"}, {"color": "#c76a5a"}, {"color": "#d39a3c"}]}},
+                                              "ranges": [{"color": "#3c4a8a"}, {"color": "#6b3a6e"}, {"color": "#c76a5a"}]}, "depth": 1.5},
         moon5,
         illo(s5, g5),
-        dict(PARENT, text="and read aloud, word by word.", size="6.4vh", x="50%", y="84%", anchor="center", start=0.2,
-             split="words", enter={"preset": "fadeUp", "duration": 0.35}, stagger=0.22),
+        dict(PARENT, text="and read aloud, word by word.", size="5.6vh", x=1086, y=559, anchor="center", rotation=-29.8, start=1.0,
+             split="words", enter={"preset": "fadeUp", "duration": 0.3}, stagger=0.2, shadow={"x": 3, "y": 5, "blur": 5, "color": "#06081c99"}),
     ],
 })
 
 # 6. Back in the room: the moon is in the window. The child is asleep. 16.9 - 20.0
 scenes.append({
+    "audio": [{"src": "sfx/scribble.wav", "at": 0.6, "volume": 0.45}],
     "id": "end", "duration": 3.1, "background": WALL, "transition": {"type": "crossfade", "duration": 0.6},
     "camera": {"animate": [{"from": {"zoom": 1.35, "x": -330, "y": 160}, "to": {"zoom": 1.0, "x": 0, "y": 0}, "duration": 2.2, "ease": "inOutCubic"}]},
     "layers": [
         bedroom(True),
-        text("Burrow", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 144, "wght": 600}), "17vh", "5%", "7%", 1.2,
-             enter={"preset": "mask by line up", "duration": 0.9}, letterSpacing="-0.02em"),
-        text("A new bedtime story,\nmade together every night.", dict(PARENT, axes={"SOFT": 100, "opsz": 24, "wght": 400}), "3.6vh", "5.6%", "27%", 1.7,
-             enter={"preset": "fadeUp", "duration": 0.7}, lineHeight=1.25),
-        text("the end.", CHILD, "6.5vh", "22%", "36%", 2.0, enter={"preset": "wipeIn", "duration": 0.5}, rotation=-8),
+        text("the end.", CHILD, "15vh", "6%", "7%", 0.6, enter={"preset": "wipeIn", "duration": 0.6}, rotation=-6),
+        text("(until tomorrow night)", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 72, "wght": 380}), "4.6vh", "8%", "28%", 1.0,
+             enter={"preset": "mask by line up", "duration": 0.6}, italic=True),
+        text("Burrow", dict(PARENT, axes={"SOFT": 100, "WONK": 1, "opsz": 144, "wght": 620}), "11vh", 1436, 560, 1.15,
+             enter={"preset": "mask by line up", "duration": 0.7}, letterSpacing="-0.02em", color="#fff3cf"),
+        text("bedtime stories\nyou make together", dict(PARENT, axes={"SOFT": 100, "opsz": 24, "wght": 420}), "3vh", 1444, 690, 1.5, lineHeight=1.2,
+             enter={"preset": "fadeUp", "duration": 0.5}, color="#d9d2ec"),
     ],
 })
 
@@ -483,6 +550,7 @@ spec = {
              "at": 11.25, "gain": -9, "reverb": 0.6, "pan": 0.25},
         ],
     },
+    "audio": [{"src": "sfx/night.wav", "volume": 0.55}],
     "scenes": scenes,
 }
 
