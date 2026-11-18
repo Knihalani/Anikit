@@ -729,3 +729,24 @@ fn fade_sugar_leaves_audio_alone() {
     let a = &p.spec.audio.as_ref().unwrap()[0];
     assert_eq!((a.fade_in, a.fade_out), (Some(1.0), Some(2.0)));
 }
+
+#[test]
+fn a_repeated_grid_driven_by_one_array() {
+    // 12 cells; each flips (scaleY to 0 and back) at its own time from one table, and holds a per-cell value.
+    let ev = build(r##"{ "size": [480, 360], "scenes": [ { "duration": 4, "layers": [
+        { "shape": "rect", "repeat": 12, "anchor": "topLeft", "width": 100, "height": 100,
+          "x": "=($i % 4) * 120", "y": "=floor($i / 4) * 120",
+          "opacity": "=t >= [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 0.25, 0.75, 1.25, 1.75][$i] ? 1 : 0.2",
+          "height": "=steps([0, 2], [100, 60], t)",
+          "fill": "#ffffff" } ] } ] }"##);
+    let alpha = |t: f32| -> Vec<bool> {
+        ev.eval(t).ops.iter().filter_map(|o| match o { Op::RoundRect { paint: anikit_video::dl::Paint::Solid(c), .. } => Some(c.0[3] > 0.5), _ => None }).collect()
+    };
+    let at1 = alpha(1.1);
+    assert_eq!(at1.len(), 12);
+    // Cells whose time ≤ 1.1: 0, 0.5, 1, 0.25, 0.75 → indices 0, 1, 2, 8, 9.
+    let on: Vec<usize> = at1.iter().enumerate().filter(|(_, &b)| b).map(|(k, _)| k).collect();
+    assert_eq!(on, vec![0, 1, 2, 8, 9]);
+    let h = |t: f32| ev.eval(t).ops.iter().find_map(|o| match o { Op::RoundRect { h, .. } => Some(*h), _ => None }).unwrap();
+    assert_eq!((h(1.0), h(2.5)), (100.0, 60.0), "steps holds each value until the next time");
+}
