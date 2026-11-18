@@ -694,11 +694,9 @@ fn approx_bytes(display_list: &DisplayList) -> usize {
     bytes
 }
 
-/// Cache keys for each chunk (`None`: not cacheable, e.g. an image whose content
-/// can't be identified without rendering it). Evaluated display lists for safe
-/// frames are handed to the render loop. A key covers the encoder settings, the
-/// chunk's index and length, this binary, and each frame's hashed display list
-/// (image ids replaced by content identities) and finishing look.
+/// Cache keys for each chunk; keying placeholders provide per-frame image keys
+/// without rasterizing those images.
+/// Safe evaluated display lists are handed to the render loop.
 fn chunk_keys(
     ev: &Evaluator,
     opts: &RenderOptions,
@@ -717,7 +715,7 @@ fn chunk_keys(
         .map(|k| {
             let i = (f0 + k) as u32;
             let mut dl = DisplayList::default();
-            eval_frame(ev, i, opts.scale, &mut dl);
+            let placeholders = eval_frame_keying(ev, i, opts.scale, &mut dl);
             if retainable_display_list(&dl) {
                 let bytes = approx_bytes(&dl);
                 let retained = retained_bytes.fetch_add(bytes, Ordering::Relaxed);
@@ -745,7 +743,10 @@ fn chunk_keys(
                         Some(k)
                     })
                 } else {
-                    ev.assets.content_key(*id)
+                    placeholders
+                        .get(&id.0)
+                        .map(|key| key ^ 0x564f_4c41)
+                        .or_else(|| ev.assets.content_key(*id))
                 };
                 match k {
                     Some(k) => keys.push(k),
@@ -913,6 +914,12 @@ fn eval_scaled(ev: &Evaluator, t: f32, scale: f32) -> DisplayList {
 pub fn eval_frame(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) {
     at_scale(scale, || ev.eval_into(frame_time(ev, i), out));
     scale_list(out, scale);
+}
+
+fn eval_frame_keying(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) -> std::collections::HashMap<u32, u64> {
+    let placeholders = at_scale(scale, || ev.eval_keying_into(frame_time(ev, i), out));
+    scale_list(out, scale);
+    placeholders
 }
 
 /// Render one frame to straight-alpha RGBA8 (for stills).
