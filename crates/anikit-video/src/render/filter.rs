@@ -665,7 +665,7 @@ mod cmyk_tests {
             // The dominant channel stays dominant, and the overall lightness is within reach.
             let src_max = (0..3).max_by_key(|&i| col[i]).unwrap();
             let out_max = (0..3).max_by(|&a, &b| m[a].total_cmp(&m[b])).unwrap();
-            assert_eq!(src_max == out_max || col.iter().all(|&c| c == col[0]), true, "{col:?} → {m:?}");
+            assert!(src_max == out_max || col.iter().all(|&c| c == col[0]), "{col:?} → {m:?}");
             let ls = col.iter().map(|&c| c as f64).sum::<f64>() / 3.0;
             let lo = (m[0] + m[1] + m[2]) / 3.0;
             assert!((ls - lo).abs() < 45.0, "{col:?} → {m:?}");
