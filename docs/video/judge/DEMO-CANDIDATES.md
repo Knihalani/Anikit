@@ -6,8 +6,9 @@ Every judged output, best first within each category. Score = median blind score
 
 | # | Score | Verdict | Judged pro | Refs | Full | Engine | Source | Piece | Result |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 2.88 | FAIL | 0/3 | 7.25 | 3.44 | Anikit | r2 | i-explainer | `docs/video/judge/rounds/r2/results/i-explainer` |
-| 2 | 2.75 | FAIL | 0/3 | 7.5 | 3.11 | Anikit | r1 | i-explainer | `docs/video/judge/rounds/r1/results/i-explainer` |
+| 1 | 3.88 | FAIL | 0/6 | 7.31 | 4.28 | Anikit | demo | i-explainer-demo | `docs/video/judge/demos/rebuilds/i-explainer-demo` |
+| 2 | 2.88 | FAIL | 0/3 | 7.25 | 3.44 | Anikit | r2 | i-explainer | `docs/video/judge/rounds/r2/results/i-explainer` |
+| 3 | 2.75 | FAIL | 0/3 | 7.5 | 3.11 | Anikit | r1 | i-explainer | `docs/video/judge/rounds/r1/results/i-explainer` |
 
 ## 3D/CG
 
@@ -71,9 +72,10 @@ Every judged output, best first within each category. Score = median blind score
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 3.62 | FAIL | 0/3 | 8.0 | 3.89 | Anikit | r2 | l-generative | `docs/video/judge/rounds/r2/results/l-generative` |
 | 2 | 3.5 | FAIL | 0/3 | 7.42 | 3.78 | Anikit | demo | ceiling2_bloom_bloom | `docs/video/judge/demos/results/ceiling2_bloom_bloom` |
-| 3 | 3.38 | FAIL | 0/3 | 7.79 | 3.61 | Anikit | demo | sim_ink | `docs/video/judge/demos/results/sim_ink` |
-| 4 | 3.25 | FAIL | 0/3 | 7.04 | 3.38 | Anikit | demo | graphic_op-art | `docs/video/judge/demos/results/graphic_op-art` |
-| 5 | 3.12 | FAIL | 0/3 | 8.04 | 3.39 | Anikit | r1 | l-generative | `docs/video/judge/rounds/r1/results/l-generative` |
+| 3 | 3.44 | FAIL | 0/6 | 7.92 | 3.56 | Anikit | demo | l-generative-demo | `docs/video/judge/demos/rebuilds/l-generative-demo` |
+| 4 | 3.38 | FAIL | 0/3 | 7.79 | 3.61 | Anikit | demo | sim_ink | `docs/video/judge/demos/results/sim_ink` |
+| 5 | 3.25 | FAIL | 0/3 | 7.04 | 3.38 | Anikit | demo | graphic_op-art | `docs/video/judge/demos/results/graphic_op-art` |
+| 6 | 3.12 | FAIL | 0/3 | 8.04 | 3.39 | Anikit | r1 | l-generative | `docs/video/judge/rounds/r1/results/l-generative` |
 
 ## illustration-led
 
@@ -89,17 +91,18 @@ Every judged output, best first within each category. Score = median blind score
 
 | # | Score | Verdict | Judged pro | Refs | Full | Engine | Source | Piece | Result |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 4.12 | FAIL | 0/3 | 8.42 | 4.56 | Anikit | demo | v-sound_offset2027-after | `docs/video/judge/demos/results/v-sound_offset2027-after` |
-| 2 | 3.88 | FAIL | 0/3 | 8.54 | 4.39 | Anikit | r2 | g-titles | `docs/video/judge/rounds/r2/results/g-titles` |
-| 3 | 3.62 | FAIL | 0/3 | 8.5 | 4.11 | Anikit | r1 | g-titles | `docs/video/judge/rounds/r1/results/g-titles` |
-| 4 | 3.62 | FAIL | 0/3 | 8.42 | 4.0 | Anikit | demo | ceiling1_nightchorus_nightchorus | `docs/video/judge/demos/results/ceiling1_nightchorus_nightchorus` |
-| 5 | 3.5 | FAIL | 0/3 | 8.12 | 4.11 | Anikit | demo | ceiling1_nightchorus_v2_street | `docs/video/judge/demos/results/ceiling1_nightchorus_v2_street` |
-| 6 | 3.38 | FAIL | 0/3 | 8.42 | 3.78 | HyperFrames | r1 | hf-g-titles | `docs/video/judge/rounds/r1/results/hf-g-titles` |
-| 7 | 3 | FAIL | 0/3 | 8.33 | 3.12 | Anikit | demo | type_2-editorial | `docs/video/judge/demos/results/type_2-editorial` |
-| 8 | 2.88 | FAIL | 0/3 | 8.42 | 2.94 | Anikit | demo | type_1-swiss | `docs/video/judge/demos/results/type_1-swiss` |
-| 9 | 2.62 | FAIL | 0/3 | 8.58 | 2.88 | Anikit | demo | graphic_grid-choreography | `docs/video/judge/demos/results/graphic_grid-choreography` |
-| 10 | 2.62 | FAIL | 0/3 | 8.42 | 2.81 | Anikit | demo | type_5-weight-wave | `docs/video/judge/demos/results/type_5-weight-wave` |
-| 11 | 2.5 | FAIL | 0/3 | 8.5 | 2.69 | Anikit | demo | type_4-terminal | `docs/video/judge/demos/results/type_4-terminal` |
+| 1 | 4.38 | FAIL | 0/6 | 8.52 | 4.5 | Anikit | demo | g-titles-demo | `docs/video/judge/demos/rebuilds/g-titles-demo` |
+| 2 | 4.12 | FAIL | 0/3 | 8.42 | 4.56 | Anikit | demo | v-sound_offset2027-after | `docs/video/judge/demos/results/v-sound_offset2027-after` |
+| 3 | 3.88 | FAIL | 0/3 | 8.54 | 4.39 | Anikit | r2 | g-titles | `docs/video/judge/rounds/r2/results/g-titles` |
+| 4 | 3.62 | FAIL | 0/3 | 8.5 | 4.11 | Anikit | r1 | g-titles | `docs/video/judge/rounds/r1/results/g-titles` |
+| 5 | 3.62 | FAIL | 0/3 | 8.42 | 4.0 | Anikit | demo | ceiling1_nightchorus_nightchorus | `docs/video/judge/demos/results/ceiling1_nightchorus_nightchorus` |
+| 6 | 3.5 | FAIL | 0/3 | 8.12 | 4.11 | Anikit | demo | ceiling1_nightchorus_v2_street | `docs/video/judge/demos/results/ceiling1_nightchorus_v2_street` |
+| 7 | 3.38 | FAIL | 0/3 | 8.42 | 3.78 | HyperFrames | r1 | hf-g-titles | `docs/video/judge/rounds/r1/results/hf-g-titles` |
+| 8 | 3 | FAIL | 0/3 | 8.33 | 3.12 | Anikit | demo | type_2-editorial | `docs/video/judge/demos/results/type_2-editorial` |
+| 9 | 2.88 | FAIL | 0/3 | 8.42 | 2.94 | Anikit | demo | type_1-swiss | `docs/video/judge/demos/results/type_1-swiss` |
+| 10 | 2.62 | FAIL | 0/3 | 8.58 | 2.88 | Anikit | demo | graphic_grid-choreography | `docs/video/judge/demos/results/graphic_grid-choreography` |
+| 11 | 2.62 | FAIL | 0/3 | 8.42 | 2.81 | Anikit | demo | type_5-weight-wave | `docs/video/judge/demos/results/type_5-weight-wave` |
+| 12 | 2.5 | FAIL | 0/3 | 8.5 | 2.69 | Anikit | demo | type_4-terminal | `docs/video/judge/demos/results/type_4-terminal` |
 
 ## music / lyric video
 
