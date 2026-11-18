@@ -226,7 +226,7 @@ Tune it with an object: `{ "preset": "rembrandt", "ratio": 6, "rim": 1.5, "key":
 `pinspot` and `stage` place a real local spot around the subject, so light falls off and pools; the others are softboxes at infinity. Stills (one scene, six rigs, plus `pinspot.jpg` and `stage.jpg`) and `sweep.mp4` (3 s, 1080p30, rendered in 43 s on 4 cores): `docs/video/shots/3d-rigs/`. Rigs cost nothing extra: a rig is a few softboxes, the same as an env. Gobos add one pattern lookup per shaded point. Measured 1080p traces on 4 cores: 0.62–0.79 s.
 Why and how studios light: `docs/video/craft/3d-design.md`.
 
-All of it together: `docs/video/shots/3d-showcase/showcase.mp4` (15.5 s, five shots: a macro reveal, an abstract field, a clay sweep, window light and the hero logo; `contact.jpg`; spec beside it).
+All of it together: `docs/video/shots/3d-showcase/showcase.mp4` (15.5 s, five shots: a macro reveal, an abstract field, a clay sweep, window light, and a guilloché dial engraving itself; rendered in 237 s on 4 cores; `contact.jpg`; spec beside it).
 
 ## Looks and worlds beyond the studio
 
