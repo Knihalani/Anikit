@@ -1672,6 +1672,10 @@ impl Scene {
             // An opaque (or thick glass) surface: the primary hit proper.
             let haze_add = scale(self.haze.1, 1.0 - haze_f);
             if s.obj == FLOOR {
+                // Only a directly seen floor may skip its reflection ray: post
+                // fills that checkerboard while blurring the reflection plane,
+                // but a floor seen through glass goes straight into `col`.
+                let skip_refl = skip_refl && first.is_none();
                 let (mut dif, refl, fade, rdist) = weighted(luma(thr) * haze_f, || self.shade_floor(&s, d, 0, q, rot, false, skip_refl, skip_vis));
                 let bd = self.backdrop(d);
                 let keepf = (1.0 - fade) * haze_f;
