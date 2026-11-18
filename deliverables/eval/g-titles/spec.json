@@ -1,0 +1,163 @@
+{
+  "size": "16:9",
+  "fps": 30,
+  "background": "#D3CAB7",
+  "theme": { "colors": { "glaze": "#F4F0E6", "cobalt": "#1C3A8C", "ochre": "#E3A21A", "grout": "#D3CAB7" } },
+  "post": { "grain": 0.03, "grainSize": 1.3, "vignette": 0.18 },
+  "music": {
+    "bpm": 96, "key": "Am", "end": "ring",
+    "tracks": [
+      { "inst": "nylon-guitar", "chords": "Am Dm E7 Am F Am", "play": "broken", "gain": -2, "reverb": 0.35 },
+      { "inst": "strings", "chords": "Am Dm E7 Am F Am", "play": "pad", "at": 2.5, "gain": -10, "reverb": 0.5 },
+      { "inst": "marimba", "notes": "@3 l8 r E5 A5 C6 E6 r A5 E5 | @4 r A5 E6 C6 A5 r E6 C6 | @5 C6 F5 A5 C6 F6 r C6 A5 | @6 E6/1", "gain": -8, "reverb": 0.3, "pan": 0.2 },
+      { "inst": "cello", "notes": "@3 o3 E2/1 | A2/1 | F2/1 | A2/1", "gain": -7, "reverb": 0.4 },
+      { "inst": "drums:orchestra", "drums": { "kick": "x...............", "tom": "........x.....x." }, "at": 5.0, "bars": 2, "gain": -9 },
+      { "inst": "timpani", "notes": "@4 o2 A/2 r/2 | @5 F/1 | @6 A/1", "gain": -6 }
+    ],
+    "sfx": [
+      { "sfx": "click", "at": 1.05, "gain": -10 },
+      { "sfx": "click", "at": 1.65, "gain": -12 },
+      { "sfx": "swoosh", "at": 7.85, "gain": -9 },
+      { "sfx": "swoosh", "at": 9.1, "gain": -12 },
+      { "sfx": "impact", "at": 10.0, "gain": -10 }
+    ],
+    "master": { "lufs": -14, "reverb": "hall" }
+  },
+  "scenes": [
+    {
+      "duration": 15,
+      "layers": [
+        {
+          "id": "wall",
+          "width": 1920, "height": 1080, "x": 960, "y": 540,
+          "animate": [
+            { "from": { "scale": 5.4 }, "to": { "scale": 4.7 }, "duration": 2.5, "ease": "linear" },
+            { "to": { "scale": 1.0 }, "at": 2.5, "duration": 3.0, "ease": "inOutCubic" },
+            { "to": { "scale": 0.94 }, "at": 5.5, "duration": 9.5, "ease": "linear" }
+          ],
+          "layers": [
+            { "script": [
+              "let T = 180.0; let S = 174.0; let ox = 870.0; let oy = 450.0;",
+              "let rows = [];",
+              "for r in -3..4 {",
+              "  let tiles = []; let rf = r.to_float();",
+              "  for c in -8..8 {",
+              "    let pc = ((c % 2) + 2) % 2; let pr = ((r % 2) + 2) % 2;",
+              "    let rot = if pr == 0 { if pc == 0 { 180.0 } else { 270.0 } } else { if pc == 0 { 90.0 } else { 0.0 } };",
+              "    let cf = c.to_float();",
+              "    let d = sqrt((cf + 0.5) * (cf + 0.5) + (rf + 0.5) * (rf + 0.5));",
+              "    let hero = (c == 0 && r == 0);",
+              "    let t0 = if hero { 0.0 } else { 2.45 + 0.30 * (d - 0.7) + 0.05 * rand(c * 31 + r * 7 + 100) };",
+              "    let blue = [",
+              "      #{ circle: [0.0, 0.0, 64.0], fill: \"$cobalt\" },",
+              "      #{ circle: [0.0, 0.0, 44.0], fill: \"$glaze\" },",
+              "      #{ circle: [0.0, 0.0, 22.0], fill: \"$cobalt\" },",
+              "      #{ circle: [0.0, 0.0, 82.0], stroke: \"$cobalt\", width: 3.0 },",
+              "      #{ circle: [S, S, 116.0], stroke: \"$cobalt\", width: 13.0 },",
+              "      #{ circle: [S, S, 30.0], fill: \"$cobalt\" },",
+              "      #{ circle: [S, 0.0, 17.0], fill: \"$cobalt\" },",
+              "      #{ circle: [0.0, S, 17.0], fill: \"$cobalt\" },",
+              "      #{ d: \"M 87 30 Q 112 42 118 66 Q 96 58 87 30 Z\", fill: \"$cobalt\" },",
+              "      #{ d: \"M 30 87 Q 42 112 66 118 Q 58 96 30 87 Z\", fill: \"$cobalt\" },",
+              "      #{ circle: [138.0, 22.0, 5.0], fill: \"$cobalt\" },",
+              "      #{ circle: [22.0, 138.0, 5.0], fill: \"$cobalt\" }",
+              "    ];",
+              "    let ochre = [",
+              "      #{ d: \"M 52 52 Q 84 60 92 92 Q 60 84 52 52 Z\", fill: \"$ochre\" },",
+              "      #{ circle: [S, S, 46.0], stroke: \"$ochre\", width: 9.0 },",
+              "      #{ circle: [0.0, 0.0, 33.0], stroke: \"$ochre\", width: 6.0 }",
+              "    ];",
+              "    let kids = [ #{ shape: \"rect\", width: S, height: S, radius: 3.0, fill: \"$glaze\" } ];",
+              "    if hero {",
+              "      kids.push(#{ id: \"construct\", draw: [",
+              "        #{ line: [0.0, 0.0, S, S], stroke: \"$cobalt\", width: 0.7 }, #{ line: [S, 0.0, 0.0, S], stroke: \"$cobalt\", width: 0.7 },",
+              "        #{ line: [S / 2.0, 0.0, S / 2.0, S], stroke: \"$cobalt\", width: 0.5 }, #{ line: [0.0, S / 2.0, S, S / 2.0], stroke: \"$cobalt\", width: 0.5 },",
+              "        #{ circle: [0.0, 0.0, 64.0], stroke: \"$cobalt\", width: 0.7 }, #{ circle: [0.0, 0.0, 44.0], stroke: \"$cobalt\", width: 0.7 },",
+              "        #{ circle: [S, S, 116.0], stroke: \"$cobalt\", width: 0.7 }, #{ circle: [S, S, 46.0], stroke: \"$cobalt\", width: 0.7 },",
+              "        #{ circle: [S / 2.0, S / 2.0, 87.0], stroke: \"$cobalt\", width: 0.5 } ],",
+              "        clip: true, enter: #{ preset: \"draw\", duration: 1.1, delay: 0.1 }, exit: #{ preset: \"fade\", duration: 0.5 }, end: 2.4 });",
+              "      kids.push(#{ draw: blue, inkTexture: 0.28, start: 0.95, enter: #{ preset: \"fade\", duration: 0.12 },",
+              "        animate: [ #{ from: #{ x: 99.0, y: 84.0 }, to: #{ x: 87.0, y: 87.0 }, duration: 0.5, ease: \"outExpo\" } ] });",
+              "      kids.push(#{ draw: ochre, blend: \"multiply\", inkTexture: 0.2, start: 1.55, boil: #{ amount: 0.6, fps: 8 }, enter: #{ preset: \"fade\", duration: 0.12 },",
+              "        animate: [ #{ from: #{ x: 76.0, y: 97.0 }, to: #{ x: 87.0, y: 87.0 }, duration: 0.6, ease: \"outExpo\" } ] });",
+              "    } else {",
+              "      kids.push(#{ draw: blue, inkTexture: 0.28 });",
+              "      kids.push(#{ draw: ochre, blend: \"multiply\", inkTexture: 0.2, boil: #{ amount: 0.6, fps: 8, seed: (c + 8) * 13 + r + 3 } });",
+              "    }",
+              "    let tile = #{ layers: kids, width: S, height: S, x: ox + cf * T + T / 2.0, y: oy + rf * T + T / 2.0, rotation: rot, start: t0, clip: true };",
+              "    if !hero {",
+              "      tile.animate = [ #{ from: #{ rotation: rot - 90.0, scale: 0.55, opacity: 0.0 }, to: #{ rotation: rot, scale: 1.0, opacity: 1.0 }, duration: 0.55, ease: \"outBack\" } ];",
+              "    }",
+              "    tiles.push(tile);",
+              "  }",
+              "  let dir = if ((r % 2) + 2) % 2 == 0 { -1.0 } else { 1.0 };",
+              "  let lag = 0.06 * (rf + 3.0);",
+              "  rows.push(#{ layers: tiles, width: 1920.0, height: 1080.0, x: 960.0, y: 540.0,",
+              "    animate: [ #{ to: #{ x: 960.0 + dir * T }, at: 7.5 + lag, duration: 0.8, ease: \"inOutExpo\" },",
+              "               #{ to: #{ x: 960.0 + dir * T * 1.5 }, at: 8.75 + lag * 0.6, duration: 0.6, ease: \"inOutExpo\" },",
+              "               #{ to: #{ x: 960.0 + dir * T * 1.5 + dir * 40.0 }, at: 9.4, duration: 5.6, ease: \"linear\" } ] });",
+              "}",
+              "rows"
+            ] }
+          ]
+        },
+        {
+          "id": "light",
+          "shape": "rect", "width": 1920, "height": 1080,
+          "fill": "radial-gradient(#FFFFFF, #FFFFFF, #CBBFA6)",
+          "blend": "multiply", "opacity": 0.8
+        },
+        {
+          "id": "sheen",
+          "shape": "rect", "width": 900, "height": 2600, "rotation": 24, "y": 540,
+          "fill": "linear-gradient(90deg, #FFFFFF00, #FFFFFF, #FFFFFF00)",
+          "blend": "screen", "opacity": 0.22, "blur": 40,
+          "x": "=-700 + 3400 * clamp((gt - 3.2) / 3.4, 0, 1)"
+        },
+        {
+          "id": "cartouche",
+          "start": 9.95,
+          "width": 1180, "height": 520, "x": 960, "y": 540,
+          "animate": [ { "from": { "scaleY": 0.0, "scaleX": 0.86 }, "to": { "scaleY": 1.0, "scaleX": 1.0 }, "duration": 0.6, "ease": "outExpo" } ],
+          "layers": [
+            { "shape": "rect", "width": 1180, "height": 520, "fill": "#00000000", "x": 598, "y": 268, "blur": 22, "opacity": 0.0, "shadow": { "color": "#2a2416", "blur": 40, "y": 14 } },
+            { "shape": "rect", "width": 1180, "height": 520, "fill": "$glaze", "stroke": "$cobalt", "strokeWidth": 14, "radius": 4 },
+            { "shape": "rect", "width": 1130, "height": 470, "fill": "#00000000", "stroke": "$cobalt", "strokeWidth": 3 },
+            { "shape": "rect", "width": 1100, "height": 440, "fill": "#00000000", "stroke": "$ochre", "strokeWidth": 5, "blend": "multiply" }
+          ]
+        },
+        {
+          "id": "word-ochre",
+          "start": 10.2,
+          "text": "OFFSET", "font": "Archivo", "axes": { "wght": 850, "wdth": 118 }, "size": 210, "letterSpacing": "0.02em",
+          "color": "$ochre", "blend": "multiply", "x": 960, "y": 455,
+          "inkTexture": 0.15, "boil": { "amount": 0.7, "fps": 8 },
+          "animate": [
+            { "from": { "x": 900, "y": 415, "opacity": 0 }, "to": { "x": 971, "y": 464, "opacity": 1 }, "duration": 0.9, "ease": "outExpo" }
+          ]
+        },
+        {
+          "id": "word",
+          "start": 10.1,
+          "text": "OFFSET", "font": "Archivo", "axes": { "wght": 850, "wdth": 118 }, "size": 210, "letterSpacing": "0.02em",
+          "color": "$cobalt", "x": 960, "y": 455,
+          "enter": { "preset": "mask by char up", "duration": 0.7, "stagger": 0.04 }
+        },
+        {
+          "id": "sub",
+          "start": 10.7,
+          "text": "Design Systems Conference", "font": "Archivo", "axes": { "wght": 560, "wdth": 100 }, "size": 60,
+          "color": "$cobalt", "x": 960, "y": 625,
+          "enter": { "preset": "fadeUp", "duration": 0.6 }
+        },
+        {
+          "id": "date",
+          "start": 11.05,
+          "text": "LISBON  ·  14–15 MAY 2027", "font": "Archivo", "axes": { "wght": 640, "wdth": 108 }, "size": 40, "letterSpacing": "0.14em",
+          "color": "$cobalt", "x": 960, "y": 708,
+          "enter": { "preset": "fadeUp", "duration": 0.6 }
+        }
+      ]
+    }
+  ]
+}
