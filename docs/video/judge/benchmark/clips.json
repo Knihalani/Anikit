@@ -1,20 +1,114 @@
 [
- {"slug": "blender-studio-charge-2022", "in_set": true,
+ {
+  "slug": "blender-studio-charge-2022",
+  "in_set": true,
   "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/7/7a/Charge_-_Blender_Open_Movie-full_movie.webm/Charge_-_Blender_Open_Movie-full_movie.webm.1080p.vp9.webm",
   "url_480p": "https://upload.wikimedia.org/wikipedia/commons/transcoded/7/7a/Charge_-_Blender_Open_Movie-full_movie.webm/Charge_-_Blender_Open_Movie-full_movie.webm.480p.vp9.webm",
-  "licence": "CC BY 4.0 (Blender Studio)", "page": "https://commons.wikimedia.org/wiki/File:Charge_-_Blender_Open_Movie-full_movie.webm",
-  "fit": "3D narrative / game-cinematic action; weak match for motion design"},
- {"slug": "nasa-year-in-the-life-of-co2-2014", "in_set": true,
+  "licence": "CC BY 4.0 (Blender Studio)",
+  "page": "https://commons.wikimedia.org/wiki/File:Charge_-_Blender_Open_Movie-full_movie.webm",
+  "fit": "3D narrative / game-cinematic action; weak match for motion design"
+ },
+ {
+  "slug": "nasa-year-in-the-life-of-co2-2014",
+  "in_set": true,
   "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/f/f8/A_Year_In_The_Life_Of_Earth%27s_CO2_11719-1920-MASTER.webm/A_Year_In_The_Life_Of_Earth%27s_CO2_11719-1920-MASTER.webm.1080p.vp9.webm",
   "url_480p": "https://upload.wikimedia.org/wikipedia/commons/transcoded/f/f8/A_Year_In_The_Life_Of_Earth%27s_CO2_11719-1920-MASTER.webm/A_Year_In_The_Life_Of_Earth%27s_CO2_11719-1920-MASTER.webm.480p.vp9.webm",
-  "licence": "Public domain (NASA Goddard Scientific Visualization Studio)", "page": "https://commons.wikimedia.org/wiki/File:A_Year_In_The_Life_Of_Earth%27s_CO2_11719-1920-MASTER.webm",
-  "fit": "data visualisation: a continuous simulated field with a date counter"},
- {"slug": "calibration-blender-spring-2019", "in_set": false,
+  "licence": "Public domain (NASA Goddard Scientific Visualization Studio)",
+  "page": "https://commons.wikimedia.org/wiki/File:A_Year_In_The_Life_Of_Earth%27s_CO2_11719-1920-MASTER.webm",
+  "fit": "data visualisation: a continuous simulated field with a date counter"
+ },
+ {
+  "slug": "calibration-blender-spring-2019",
+  "in_set": false,
   "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/a/a5/Spring_-_Blender_Open_Movie.webm/Spring_-_Blender_Open_Movie.webm.1080p.vp9.webm",
-  "licence": "CC BY 4.0 (Blender Studio)", "page": "https://commons.wikimedia.org/wiki/File:Spring_-_Blender_Open_Movie.webm",
-  "fit": "calibration only: painterly stylised-3D narrative, calm (measured median shot 4.5 s)"},
- {"slug": "calibration-blender-sprite-fright-2021", "in_set": false,
+  "licence": "CC BY 4.0 (Blender Studio)",
+  "page": "https://commons.wikimedia.org/wiki/File:Spring_-_Blender_Open_Movie.webm",
+  "fit": "calibration only: painterly stylised-3D narrative, calm (measured median shot 4.5 s)"
+ },
+ {
+  "slug": "calibration-blender-sprite-fright-2021",
+  "in_set": false,
   "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/7/76/Sprite_Fright_-_Blender_Open_Movie-full_movie.webm/Sprite_Fright_-_Blender_Open_Movie-full_movie.webm.1080p.vp9.webm",
-  "licence": "CC BY 4.0 (Blender Studio)", "page": "https://commons.wikimedia.org/wiki/File:Sprite_Fright_-_Blender_Open_Movie-full_movie.webm",
-  "fit": "calibration only: stylised-3D comedy-horror narrative"}
+  "licence": "CC BY 4.0 (Blender Studio)",
+  "page": "https://commons.wikimedia.org/wiki/File:Sprite_Fright_-_Blender_Open_Movie-full_movie.webm",
+  "fit": "calibration only: stylised-3D comedy-horror narrative"
+ },
+ {
+  "slug": "calibration-simon-vpro-idents-2010",
+  "in_set": false,
+  "title": "VPRO Idents (2010)",
+  "author": "Simon François (VPRO identity)",
+  "year": 2010,
+  "category": "brand-idents",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/3/35/VPRO%2C_Idents_%E2%80%94_motion_design%2C_2010.webm",
+  "licence": "CC BY 3.0",
+  "page": "https://commons.wikimedia.org/wiki/File:VPRO,_Idents_%E2%80%94_motion_design,_2010.webm",
+  "length_s": 50,
+  "fit": "calibration only (CC/PD, not world-class set): Real broadcast ident package for Dutch broadcaster VPRO: a strict typographic wordmark with geometric wipes, letter substitutions and line-field transitions, cut tight; native 720p"
+ },
+ {
+  "slug": "calibration-simon-vpro-motion-identity-launch-showreel-2010",
+  "in_set": false,
+  "title": "VPRO Motion identity launch showreel (2010)",
+  "author": "Simon François",
+  "year": 2010,
+  "category": "brand-idents",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/6/63/VPRO%2C_Motion_identity_launching_showreel_%E2%80%94_motion_design%2C_2010.webm",
+  "licence": "CC BY 3.0",
+  "page": "https://commons.wikimedia.org/wiki/File:VPRO,_Motion_identity_launching_showreel_%E2%80%94_motion_design,_2010.webm",
+  "length_s": 25,
+  "fit": "calibration only (CC/PD, not world-class set): Launch reel of the same identity system: light-streak build, wordmark reveals and rule-based variations, a textbook motion system; 720p"
+ },
+ {
+  "slug": "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+  "in_set": false,
+  "title": "VPRO Vrije Geluiden program leader (2015)",
+  "author": "Simon François",
+  "year": 2015,
+  "category": "brand-idents",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/36/VPRO%2C_Vrije_Geluiden_program_leader_%E2%80%94_motion_design%2C_2015.webm/VPRO%2C_Vrije_Geluiden_program_leader_%E2%80%94_motion_design%2C_2015.webm.1080p.vp9.webm",
+  "licence": "CC BY 3.0",
+  "page": "https://commons.wikimedia.org/wiki/File:VPRO,_Vrije_Geluiden_program_leader_%E2%80%94_motion_design,_2015.webm",
+  "length_s": 30,
+  "fit": "calibration only (CC/PD, not world-class set): Flat blue blob character that squashes and morphs into and out of bold type, with good overlap and follow-through on white; 1080p"
+ },
+ {
+  "slug": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+  "in_set": false,
+  "title": "How Far Away Is Voyager 1? One Light-Day, Explained",
+  "author": "NASA Scientific Visualization Studio (J. North, K. Kim)",
+  "year": 2026,
+  "category": "explainer-2d",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/a/ac/How_Far_Away_Is_Voyager_1%3F_One_Light-Day%2C_Explained_%28SVS15120_-_20261104_Voyager_1LD_EXPLAINER_Video_Final_UHD%29.webm/How_Far_Away_Is_Voyager_1%3F_One_Light-Day%2C_Explained_%28SVS15120_-_20261104_Voyager_1LD_EXPLAINER_Video_Final_UHD%29.webm.1080p.vp9.webm",
+  "licence": "Public domain (NASA)",
+  "page": "https://commons.wikimedia.org/wiki/File:How_Far_Away_Is_Voyager_1%3F_One_Light-Day,_Explained_(SVS15120_-_20261104_Voyager_1LD_EXPLAINER_Video_Final_UHD).webm",
+  "length_s": 84,
+  "fit": "calibration only (CC/PD, not world-class set): Gold line-art orbit diagrams, tracked kinetic captions and CG spacecraft over a restrained palette: polished science explainer design; 4K source"
+ },
+ {
+  "slug": "calibration-nasa-perpetual-ocean-2-western-boundary-currents-beauty",
+  "in_set": false,
+  "title": "Perpetual Ocean 2: Western Boundary Currents (beauty)",
+  "author": "NASA Scientific Visualization Studio",
+  "year": 2025,
+  "category": "data-story",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/4/48/Perpetual_ocean2_CLOSE_093_clean_noDate_2160p60-FULL-001.webm/Perpetual_ocean2_CLOSE_093_clean_noDate_2160p60-FULL-001.webm.1080p.vp9.webm",
+  "licence": "Public domain (NASA)",
+  "page": "https://commons.wikimedia.org/wiki/File:Perpetual_ocean2_CLOSE_093_clean_noDate_2160p60-FULL-001.webm",
+  "length_s": 147,
+  "fit": "calibration only (CC/PD, not world-class set): Successor to the famous Perpetual Ocean: streamline flow-field data visualisation with a Van Gogh look and a slow camera; a generative/data-art benchmark (60p source)"
+ },
+ {
+  "slug": "calibration-blender-hero-grease-pencil-showcase",
+  "in_set": false,
+  "title": "Hero (Grease Pencil showcase)",
+  "author": "Blender Foundation / Daniel M. Lara",
+  "year": 2018,
+  "category": "illustration",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/a/a9/HERO_-_Blender_Open_Movie-full_movie.webm/HERO_-_Blender_Open_Movie-full_movie.webm.1080p.vp9.webm",
+  "licence": "CC BY 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:HERO_-_Blender_Open_Movie-full_movie.webm",
+  "length_s": 237,
+  "fit": "calibration only (CC/PD, not world-class set): Hand-drawn 2D action animation with strong posing and smears, made in Grease Pencil. It is narrative, so low priority, but it is 2D rather than 3D"
+ }
 ]
