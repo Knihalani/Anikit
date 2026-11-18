@@ -112,6 +112,28 @@ fn natural_forms(v: &mut serde_json::Value) {
                     m.entry("italic").or_insert(Value::Bool(it));
                 }
             }
+            // `"fadeIn": 0.5` / `"fadeOut": 0.4`: an opacity entrance / exit of that many seconds.
+            // Only on layers: audio cues and the music's master have their own fadeIn/fadeOut.
+            let audio_src = m.get("src").and_then(|v| v.as_str()).is_some_and(|s| {
+                let s = s.to_ascii_lowercase();
+                [".mp3", ".wav", ".m4a", ".ogg", ".flac", ".aac", ".opus"].iter().any(|e| s.ends_with(e))
+            });
+            let layer_like = ["text", "shape", "component", "composition", "draw", "dots", "shader", "children", "layers", "src"].iter().any(|k| m.contains_key(*k))
+                && !audio_src
+                && !["sfx", "voice", "volume", "duck", "lufs", "ceiling", "say"].iter().any(|k| m.contains_key(*k));
+            for (k, preset, slot) in [("fadeIn", "fadeIn", "enter"), ("fadeOut", "fadeOut", "exit")].into_iter().filter(|_| layer_like) {
+                if let Some(d) = m.get(k).cloned() {
+                    let secs = match &d {
+                        Value::Number(_) => Some(d.clone()),
+                        Value::Bool(true) => Some(serde_json::json!(0.5)),
+                        _ => None,
+                    };
+                    if let (Some(secs), false) = (secs, m.contains_key(slot)) {
+                        m.remove(k);
+                        m.insert(slot.into(), serde_json::json!({ "preset": preset, "duration": secs }));
+                    }
+                }
+            }
             if let Some(o) = m.remove("transformOrigin") {
                 m.entry("anchor").or_insert(o);
             }

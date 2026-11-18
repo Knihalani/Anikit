@@ -109,6 +109,8 @@ Dial numerals, a logo on a can, a label on a bottle: put a `plane` just above th
 
 - Leave the composition's `background` out, so it's transparent.
 - Lift the plane about 0.5 mm off the surface.
+- Print on a dielectric (enamel, ceramic, lacquer, paper). A metal surface mirrors the set, so the print sits on a reflection and reads poorly.
+- Open shapes (planes, surfaces, heightfields, and lathes whose profile doesn't close on the axis) are thin shells automatically. A watch crystal can be a glass `lathe` dome with no closing profile.
 
 Proof: `docs/video/shots/3d-decals/dial.jpg` (type and an index printed on a guilloché dial; spec beside it).
 
@@ -319,6 +321,26 @@ changes an edge pixel's coverage and a clamp built from centre samples
 accepts any mix. Limiting reuse to whole-pixel motion removes the error but
 also the reuse: every lookdev shot has a moving camera. Speed gain at best
 ~3%.
+
+Also measured and rejected (scene3d_bench, 4 frames vs the 25-spp references):
+
+- Checkerboarding the reflection ray on glossy floors (roughness 0.03–0.2,
+  e.g. the default studio floor at 0.09): chrome ΔE p99.9 4.7 → 21–27, and
+  slower once sharp contact reflections are re-traced. Its reflections are
+  mostly too sharp for post's gap fill.
+- Edge sub-samples with one bounce less (max depth 3 → 2): cyc ΔE 14.8 →
+  24, panes flicker 10 → 36, no faster.
+- Bounding the next camera-ray traversal by a thin pane's exit face: no
+  gain (traversal from inside the pane still enters the nearby boxes).
+
+Where the time goes (`ANIKIT_SCENE3D_PROFILE=1`, 1080p, 4 cores): closest-hit
+traversal is 45–60% of trace CPU (camera rays 40–65% of that; glass panes
+re-trace per interface), shadow/AO rays are negligible, refinement covers
+3–6% of pixels but edge samples cost ~2.6× a centre sample, and post is
+140–175 ms (floor reflection, denoise, depth of field, motion blur, bloom
+~20–45 ms each). The cheapest quality lever is edge samples: standard's 6
+→ 9 costs ~6% CPU on cyc and takes ΔE p99.9 14.8 → 10.3, flicker 42 → 29
+(chrome flicker 10 → 5.3); 12 costs ~22% for ΔE 7.4, flicker 21.
 
 Measure every change:
 

@@ -14,3 +14,5 @@ Each div piece was re-judged with r1's exact tags and seed, so both sides faced 
 | **mean** | 3.21 | 3.55 | **+0.34** | +0.26 | |
 
 **Judge noise (test-retest).** Re-running three r1 pieces with identical settings gave b-launch 3.75→3.75, e-data 3.62→3.62 and g-titles 3.62→3.25. A single piece's score moves by up to about ±0.4 between runs, so per-brief deltas of 0.5 or less are within noise. Only e-data (+1.0) is clearly better. Taken together, the round is a small but consistent gain: 6 of 7 briefs are equal or up, by +0.34 on average. That is still about 3.7 points below the references, and every piece is still judged non-professional in every trial.
+
+**Update (03:25):** a larger test-retest sample shows run-to-run spread up to about 0.5 (c-event rebuild: 3.69 and 4.19 in two 6-trial runs of the identical file, refs and seed). Read deltas under about 0.75 as ties.
