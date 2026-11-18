@@ -42,7 +42,7 @@ Best per brief:
 
 | Brief | Score | Source |
 |---|---|---|
-| e-data | ~5.4 | GRAPHIC |
+| e-data | ~5.1 | GRAPHIC v11 (v9 scored ~5.4 but had a 9 vs 18 million km² contradiction) |
 | d-illustration | ~4.9 | COMPONENTS |
 | OCTAVA (event promo) | ~4.6 | CEILING-1 |
 | k-sports | 4.5 | r1 |
