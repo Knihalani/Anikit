@@ -176,9 +176,41 @@ def cmd_table(a):
     print(section)
 
 
+def cmd_demos(a):
+    """Rank every judged output (rounds/*/results, demos/results) by blind score within its category -> DEMO-CANDIDATES.md."""
+    cats = {}
+    cat_of = {b["id"]: b["category"] for b in briefs()}
+    cat_of_tag = {b["tags"][0]: b["category"] for b in briefs()}
+    for p in sorted(J.glob("rounds/*/results/*/result.json")) + sorted(J.glob("demos/results/*/result.json")):
+        r = json.loads(p.read_text())
+        rnd = p.parts[-4] if p.parts[-4] != "demos" else "demo"
+        if rnd == "r0-div":
+            continue  # re-scores of rejected work, not candidates
+        name = r["name"]
+        base = name[3:] if name.startswith("hf-") else name
+        t0 = (r.get("tags") or ["other"])[0]
+        cat = r.get("category") or cat_of.get(base) or cat_of_tag.get(t0, t0)
+        engine = "HyperFrames" if name.startswith("hf-") else "Anikit"
+        c = r["candidate"]
+        cats.setdefault(cat, []).append((c.get("overall") or 0, rnd, name, engine, r["verdict"], c.get("judged_professional"),
+                                         r.get("ref_mean"), r.get("full_overall"), str(p.parent.relative_to(ROOT))))
+    L = ["# Demo candidates (ranked by blind judge score per category)", "",
+         "Every judged output, best first within each category. Score = median blind score (1-10) vs style-matched refs; "
+         "PASS needs >= 2/3 trials judged professional and within 1.0 of the refs (RUBRIC.md). Regenerate: "
+         "`python3 scripts/judge_round.py demos`.", ""]
+    for cat in sorted(cats):
+        L += [f"## {cat}", "", "| # | Score | Verdict | Judged pro | Refs | Full | Engine | Source | Piece | Result |", "|---|---|---|---|---|---|---|---|---|---|"]
+        for i, (sc, rnd, name, eng, v, jp, rm, fo, path) in enumerate(sorted(cats[cat], key=lambda x: -x[0]), 1):
+            L.append(f"| {i} | {sc} | {v} | {jp} | {rm} | {fo or '–'} | {eng} | {rnd} | {name} | `{path}` |")
+        L.append("")
+    (J / "DEMO-CANDIDATES.md").write_text("\n".join(L))
+    print("\n".join(L))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("demos")
     for n in ("prompts", "collect", "table"):
         p = sub.add_parser(n)
         p.add_argument("--round", required=True)
@@ -187,7 +219,7 @@ def main():
         p.add_argument("--skip-done", action="store_true")
         p.add_argument("--no-sync", action="store_true", help="don't re-fetch REFS's benchmark stills")
     a = ap.parse_args()
-    {"prompts": cmd_prompts, "collect": cmd_collect, "table": cmd_table}[a.cmd](a)
+    {"prompts": cmd_prompts, "collect": cmd_collect, "table": cmd_table, "demos": cmd_demos}[a.cmd](a)
 
 
 if __name__ == "__main__":
