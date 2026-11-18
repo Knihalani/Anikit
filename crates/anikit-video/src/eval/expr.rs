@@ -841,6 +841,7 @@ impl ColorExpr {
             }
             ColorKind::Oklch => {
                 let (l, ch, h) = (a(0), a(1), a(2).to_radians());
+                let l = if l > 1.5 { l / 100.0 } else { l }; // `oklch(70, 0.15, 30)` like CSS's 70%
                 let lab = [l as f32, (ch * h.cos()) as f32, (ch * h.sin()) as f32, 1.0];
                 let c = super::oklab_to_rgba(lab).0;
                 [c[0] as f64, c[1] as f64, c[2] as f64]
