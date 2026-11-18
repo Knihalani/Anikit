@@ -693,3 +693,11 @@ fn natural_forms_round_two() {
     let p = parse_json(&big).unwrap();
     assert!(p.warnings.iter().any(|w| w.to_string().contains("repeat")), "{:?}", p.warnings.len());
 }
+
+#[test]
+fn animated_masks_say_how_to_animate() {
+    for m in [r#"{"shape":"circle","width":100,"loop":"pulse"}"#, r#"{"shape":"circle","width":100,"enter":"popIn"}"#, r#"{"shape":"circle","x":"=t*100"}"#] {
+        let e = errors(&format!(r#"{{ "scenes": [ {{ "layers": [ {{ "shape": "rect", "width": 400, "height": 400, "mask": {m} }} ] }} ] }}"#));
+        assert!(e.iter().any(|x| x.contains("track matte") && x.contains("\"matte\"")), "{m}: {e:?}");
+    }
+}

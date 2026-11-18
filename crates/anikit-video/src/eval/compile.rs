@@ -3733,8 +3733,11 @@ impl C<'_> {
         l.kind = Some("shape".into());
         let pc = PCtx { size: box_, t0: 0.0, end: f32::INFINITY, delay: 0.0, index: 0, count: 1, in_box: false };
         let n = self.layer(&l, path, pc)?;
-        if !n.tracks.is_empty() || !n.exprs.is_empty() {
-            self.d.push(Diagnostic::warning(path, "clip shapes are static; their animation is ignored"));
+        if !n.tracks.is_empty() || !n.exprs.is_empty() || l.loop_.is_some() || l.update.is_some() {
+            self.d.push(Diagnostic::warning(
+                path,
+                "a mask / clip shape is a static, hard-edged clip, so its animation (animate, presets, loop, expressions, update) is ignored. For an animated or soft mask, use a track matte: give the mask its own sibling layer with an \"id\" and set \"matte\": { \"layer\": \"that-id\" } on this layer (the matte uses the parent's coordinates and animates like any layer)",
+            ));
         }
         let (w, h) = (n.base[prop::W], n.base[prop::H]);
         let mut p = match &n.kind {

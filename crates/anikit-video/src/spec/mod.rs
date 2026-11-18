@@ -616,9 +616,15 @@ pub struct TransitionObj {
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Camera {
+    /// Pan in frame pixels from rest (0 = no pan; `"10%"` of the frame width). Positive x
+    /// looks right, so the content moves left. Animatable.
     pub x: Option<Num>,
+    /// Pan in frame pixels from rest (0 = no pan; `"10%"` of the frame height). Positive y
+    /// looks down, so the content moves up. Animatable.
     pub y: Option<Num>,
+    /// Scale about the frame centre after the pan (1 = none, 1.2 = push in). Animatable.
     pub zoom: Option<Num>,
+    /// Degrees about the frame centre. Animatable.
     pub rotation: Option<Num>,
     /// Depth in focus (layers at this `depth` are sharp). Default 0. Animatable (focus pulls).
     pub focus: Option<Num>,
@@ -811,7 +817,10 @@ pub struct Layer {
     pub boil: Option<BoilValue>,
     /// `true` clips children to the layer box, or a clip shape.
     pub clip: Option<Clip>,
-    /// A layer whose alpha masks this one.
+    /// A shape that clips this layer (hard-edged, static). Its coordinates are the layer's own
+    /// box: (0, 0) is the layer's top-left, `"50%"` is half its size, and the default position
+    /// is its centre. For an animated or soft mask use `matte` (a sibling layer by id, in the
+    /// parent's coordinates).
     pub mask: Option<Box<Layer>>,
     pub visible: Option<bool>,
 
