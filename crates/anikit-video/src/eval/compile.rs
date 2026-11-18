@@ -2370,7 +2370,28 @@ impl C<'_> {
                 let maxw = mw.unwrap_or(pc.size[0] * 0.9);
                 if given_w.is_none() && l0.width > maxw && (!pc.in_box || mw.is_some()) {
                     tspec.width = Some(maxw);
-                    self.assets.fonts.layout(&tspec)
+                    let lw = self.assets.fonts.layout(&tspec);
+                    // Balanced breaks for headlines (CSS text-wrap: balance): the narrowest
+                    // width with the same line count, so no line is a stub.
+                    let n_lines = lw.lines.len();
+                    let headline = tspec.style.size >= self.h * 0.04;
+                    if n_lines >= 2 && l.balance.unwrap_or(headline) {
+                        let (mut lo, mut hi) = (maxw / n_lines as f32 * 0.8, maxw);
+                        for _ in 0..10 {
+                            let mid = (lo + hi) * 0.5;
+                            let mut probe = tspec.clone();
+                            probe.width = Some(mid);
+                            if self.assets.fonts.layout(&probe).lines.len() > n_lines {
+                                lo = mid;
+                            } else {
+                                hi = mid;
+                            }
+                        }
+                        tspec.width = Some((hi + 1.0).min(maxw));
+                        self.assets.fonts.layout(&tspec)
+                    } else {
+                        lw
+                    }
                 } else {
                     l0
                 }
