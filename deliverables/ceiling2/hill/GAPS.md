@@ -17,7 +17,51 @@
 ## Honest verdict next to the references
 The idea and the staging hold up: the scale contrast in the eye shot, the reveal in the wake shot, and the continuity of the trees becoming fur. The surface craft does not, yet. Hilda's frames have a wider value range (pure blacks next to lit planes), light drawn as designed shapes, and a hand-drawn line inside the silhouettes. Ours sits in a narrower mid-violet band, with light as radial falloffs. The character is a rigid SDF puppet, not drawn animation. Nothing in the frame is a real brush mark.
 
+### Iteration 2 (after the first comparison)
+Light is now drawn as a shape: the lantern throws a hard-edged, stippled wedge of warm light up the creature's face, Hilda-style, instead of a radial glow. The blacks are deeper, and silhouettes get a dry-brush edge (`brushEdge`: bristle streaks along a direction, re-drawn on twos). The eye shot gained most. Hand-drawn interior line and real character animation are still missing (gaps 1–2).
+
+### Blind judge (scripts/judge.py, -v-judge branch)
+Run 1: **FAIL, 3.62** (refs: Mad Men, Tintin and Spider-Verse titles, mean 8.71; judged pro 0/3). The critic's defects:
+- a blank flat frame at about 60–70%;
+- the light wedge is a hard polygon with no volumetric falloff;
+- the eye opens as a vector morph with no lid squash;
+- the walk is stiff and moves as one rigid silhouette;
+- the hatch texture is uniform and procedural;
+- the snow is one layer of soft dots;
+- the title is a generic italic serif that competes with the reveal.
+
+**The blank frames were real, and an engine bug** (gap 0 below).
+
+Run 2, after the clean render: **FAIL, 3.75** (ref mean 8.50). Removing the defect barely moved the score, so the gap is craft and idea execution, not the blank frames.
+
+### Iteration 3: rebuilt on main d9c9b60 (font library, glyph fallback); judge **FAIL 4.0** (from 3.75; ref mean 8.33)
+| Dimension | Before (run 2) | After |
+|---|---|---|
+| idea | 4 | 5 |
+| light_texture | 4 | 5 |
+| originality | 3 | 4 |
+| motion | 4.0 | 3.5 |
+| sound | 4 | 3 |
+
+What changed:
+- **Hand-made texture:** `furTex` replaces the repeating dash grid with long, domain-warped strands gathered into clumps, re-drawn on twos.
+- **Layered particles:** `snowfall` has 4 depths. Far flakes are fine and dense; near flakes are big, soft and smeared along their velocity, with a gust; flakes near the lantern turn warm.
+- **Secondary motion on the wanderer:** the hood tip, hem, pack, bedroll and cup each lag the step by a different phase.
+- **The eye:** the lower lid leads and the upper lid peels from the outer corner. There's a fleshy lid band, a wet bead of light along the lower lid, and the brow fold lifts as it opens.
+- **Choreographed title:** Fraunces from the new library, each word landing on its own beat with `axes.SOFT` 0→100 and `wght` 300→560 as it settles, then a tracking-out. A Caveat hand-written subtitle ("a story told by the snow"). Font loading by library name worked first time.
+
+What still fails, according to the judge, and why it's the engine ceiling, not polish:
+- the walk still reads as a sliding cut-out;
+- the eye "pops" between 1/6 s samples;
+- the hill's wake has no anticipation, mass or settle (no trees swaying, no snow shedding);
+- the cut-out tree layers read as clip art;
+- the sound is thin, with no low-end rumble or foley on the reveal.
+
+These map directly onto gaps 1 (no painted primitive), 2 (no rig: a weighted walk with overlapping action is hand-keyed maths in GLSL) and 8 (no foley). New gap: **12. Secondary motion can't be authored on shader-drawn characters.** MOGRAPH's inertia and smear work on layers, but a character drawn inside a shader gets none of it. Every lag is a hand-written phase offset.
+
 ## Gaps, ranked (most limiting first)
+
+0. **P0 render-cache bug: stale or blank chunks are spliced into renders.** The final had 3 flat background-colour frames (8.12 s, 8.92 s, 8.96 s). `still` at those exact times is correct, and so is `render --from 7.8 --to 9.4`. A full re-render reported `render cache: reused 16/16 chunks` and reproduced the blank frames byte for byte. With `ANIKIT_RENDER_CACHE=0`, the render is clean, and exactly those 3 frames differ. So some earlier render produced blank frames, possibly a transient or race in shader evaluation, and the chunk cache then preserved them indefinitely. *Workaround:* `ANIKIT_RENDER_CACHE=0` for finals. *Want:* the cache key covers shader file contents, the cache validates chunks (no flat or NaN frames), and the render-time blank frame itself is found and fixed.
 
 1. **No painterly / drawn rendering primitive for shader-built worlds.** `brush`/`sketch`/`hatch` are separate vector components, so they can't follow a shader's shapes or be used *inside* GLSL. Every surface texture had to be faked with hash noise (stipple and fur dashes), and it reads as "procedural", not painted.
    *Workaround:* `spray()` (12 fps re-seeded stipple) and a tangential-dash fur pattern.
@@ -39,7 +83,8 @@ The idea and the staging hold up: the scale contrast in the eye shot, the reveal
    *Want:* a small natural-foley set (wind, rain, footsteps on several surfaces, cloth, breath, creature, fire, water).
 9. **Note-language papercuts:** rests need a slash (`r/4`, not `r4`), accents go after the duration (`D2/16?`, not `D2?/16`), and a hold is a separate token (`C3 _`). Each mistake costs a round trip. Errors are clear, though.
 10. **Draft is barely faster for shader-heavy specs.** `--quality draft` (960×540) ran at 4 fps against 2 fps at full quality: about 2×, not the 4× fewer pixels.
-11. **Shader cost.** 330–430 ms/frame at 1080p with supersampling for 2D SDF illustration (no raymarching). Most of that is fbm and per-pixel loops over tree cells. That's acceptable for a 12 s piece, but iterating on full-res stills (~1 s each) is the bottleneck. The `--watch` flow helps.
+11. **The default encode is huge for grainy shader work:** 120 MB for 12 s at the default settings (the GitHub file limit is 100 MB). Re-encoded with x264 CRF 21: 12 MB with no visible loss. *Want:* a bitrate-aware default, or a `--target-size`.
+12. **Shader cost.** 330–430 ms/frame at 1080p with supersampling for 2D SDF illustration (no raymarching). Most of that is fbm and per-pixel loops over tree cells. That's acceptable for a 12 s piece, but iterating on full-res stills (~1 s each) is the bottleneck. The `--watch` flow helps.
 
 ## What worked well
 - Shaders as a painting medium: full control of light, parallax per depth plane, 12 fps boil, and all animated from the timeline with `animate` on uniforms (`eye`, `wake`, `walk`, camera).

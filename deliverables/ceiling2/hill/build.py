@@ -42,9 +42,17 @@ add("s3_eye", 2.9,
      {"keyframes": {"eye": [[0, 0], [0.10, 0.07, "inOutSine"], [0.15, 0.0, "inSine"], [0.30, 0.0], [0.42, 1.15, "outCubic"], [0.52, 1.0, "inOutSine"], [1, 1.0]]}, "duration": 2.9, "ease": "linear"}])
 
 TITLE = [
-    {"text": "*The Hill That Woke*", "font": "Fraunces 72pt SuperSoft Wonky", "size": "7.6vh", "color": "#E9E4FF", "letterSpacing": "-0.01em",
-     "x": "7%", "y": "17%", "anchor": "left", "start": 1.85,
-     "animate": [{"from": {"opacity": 0, "y": "+18", "blur": 6}, "duration": 1.1, "ease": "outCubic"}]},
+    # each word lands on its own beat after the head settles, the face softening from sharp to round as it arrives
+    {"text": w, "font": "Fraunces", "size": "10vh", "color": "#ECE8FF", "letterSpacing": "-0.03em",
+     "axes": {"wght": 560, "SOFT": 0, "WONK": 1, "opsz": 144}, "italic": True,
+     "x": x, "y": "15%", "anchor": "left", "start": 1.55 + 0.22*i,
+     "animate": [{"from": {"opacity": 0, "y": "+40", "axes.SOFT": 0, "axes.wght": 300}, "to": {"axes.SOFT": 100, "axes.wght": 560},
+                  "duration": 0.9, "ease": "outCubic"},
+                 {"to": {"letterSpacing": 2}, "at": 0.9, "duration": 1.0, "ease": "linear"}]}
+    for i, (w, x) in enumerate([("The", "6%"), ("Hill", "15.2%"), ("That", "25.2%"), ("Woke", "36.0%")])
+] + [
+    {"text": "a story told by the snow", "font": "Caveat", "size": "3.6vh", "color": "#B9BDE8", "x": "6.3%", "y": "25.5%",
+     "anchor": "left", "start": 2.5, "animate": [{"from": {"opacity": 0, "x": "-20"}, "duration": 0.7, "ease": "outCubic"}]}
 ]
 add("s4_wake", 3.4,
     {"camx": 0.10, "camy": 0.0, "zoom": 1.18, "walk": 0.0, "wake": 0.0},
@@ -89,7 +97,6 @@ spec = {
     "transition": "cut",
     "background": "#0e112e",
     "intent": {"pace": "steady", "feeling": "hushed wonder, then awe"},
-    "fonts": {"Fraunces 72pt SuperSoft Wonky": "fonts/Fraunces-SoftItalic.ttf"},
     "music": MUSIC,
     "scenes": [s for n, s in scenes if (ONLY is None or n == ONLY)],
 }

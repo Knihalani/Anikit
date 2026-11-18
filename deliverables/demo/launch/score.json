@@ -1,0 +1,519 @@
+{
+  "name": "b-launch",
+  "tags": [
+    "product-launch",
+    "motion-design"
+  ],
+  "refs": [
+    "coinbase-system-update",
+    "jpmorgan-payments",
+    "morph-studio-xreal-1s-2025"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 6,
+      "composition": 4,
+      "typography": 5,
+      "colour": 5,
+      "light_texture": 4,
+      "motion": 5,
+      "craft": 4,
+      "originality": 4
+    },
+    "overall": 4.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a concept beyond 'payments = departures board': a twist only this brand could own",
+      "The flap mechanics need real craft: physical flap weight, motion blur, mechanical sound sync, plausible character sequencing and texture",
+      "The end frames need composition and type hierarchy instead of a centred slide of tagline text",
+      "It needs a world beyond the board (a station, the people waiting, the moment the flaps resolve) so the metaphor builds into a story",
+      "Control the framing and type: end frames that aren't cropped, a deliberate typographic hierarchy, and a hero moment where the type scale breaks",
+      "Light and material are flat and generic. Add atmosphere, real reflections, wear on the flaps and depth of field with intent",
+      "Push the metaphor past the obvious board. Show the rail network, the flap mechanism in macro, or a narrative that payoffs the 'delays' tension visually instead of in copy",
+      "Compose each frame as a poster. Control crops and scale contrast deliberately, and add a typographic system beyond one default split-flap face in white, amber and green",
+      "Add real light and material, such as reflections on flaps, depth of field, station atmosphere and dust, so the board feels physical rather than a flat render"
+    ],
+    "tells": [
+      "The split-flap departures board as a metaphor for payment 'delays' is the first idea anyone would have; it is literal (product name + feature list + 'Delays: none')",
+      "The glyphs break down incoherently: 'NNNP 7PR5k', 'ROAKHFEL\u2026' smears and a misaligned 'HMOK' row read like generator artifacts rather than designed flap animation",
+      "Fictional brand 'Railyard' with slide-style copy ('One API call. Instant settlement. A webhook every state change.') is set like a deck",
+      "Light is flat and generic. There is no real material on the flaps (hinges, wear, reflections), and the last two frames are the same green-header layout with the words swapped",
+      "The header labels are cropped and illegible, the board edges are cropped awkwardly and there is no considered framing",
+      "The split-flap departure board as a metaphor for payments ('DELAYS: NONE') is clever but literal: product name plus a diagram of the feature",
+      "Stock-looking split-flap asset with a default condensed grotesk and conventional amber/white/green status colours. There's no typographic idea beyond the board itself",
+      "Awkward cropping: copy is cut off at both frame edges ('NE API CALL. INSTANT', 'ETTLEMENT', 'DELAYS: NONE' clipped) and the logo is cut off at the top. That reads as uncontrolled framing, not intent",
+      "Every frame is the same board at different camera angles, so it's one layout with the words swapped",
+      "A fictional-sounding brand ('Railyard') and copy written like a feature list ('A webhook every state change') are typical of generated or template product promos",
+      "The concept is literal: the product is called Railyard, so the film uses a split-flap departure board, and the line 'DELAYS: NONE' spells out the pun",
+      "Every frame shares the same matte black board, viewed from slightly different angles. The look is repetitive and slide-like",
+      "Text runs off the frame edges ('NE API CALL. INSTANT / ETTLEMENT', 'ELAYS: NON'). The crops read as accidental rather than designed",
+      "Garbled glyph strings ('NNNP 7PR4k', a scrambled row of overlapping letters) look like automated or uncontrolled flap generation",
+      "The light is flat and murky, and the flaps have little material variation. The default stencil-style board face is used without adaptation"
+    ]
+  },
+  "refs_summary": {
+    "coinbase-system-update": {
+      "overall": 8.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "jpmorgan-payments": {
+      "overall": 7,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "morph-studio-xreal-1s-2025": {
+      "overall": 7.25,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    }
+  },
+  "ref_mean": 7.46,
+  "delta": -2.84,
+  "trials": [
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "coinbase-system-update",
+        "C": "candidate",
+        "D": "jpmorgan-payments"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Hero product (XREAL 1S glasses) re-imagined as liquid/translucent organic matter: simulation-heavy fluid, caustics and refraction that are hard to fake consistently across frames",
+              "Real shot variety across the frames: an extreme macro of a twisting temple arm exploding into splash, a product hero with type split around it, a frontal glass-cast hero, a macro of the material, and a cellular/bubble 'EVOLUTION' frame. That reads as choreographed escalation, not one repeated layout",
+              "Light is motivated and layered: rim light, internal scattering and depth-of-field falloff on the bubbles",
+              "Typography is restrained but sits correctly: the bold wordmark and the light '1S' frame the product, and wide-tracked 'EVOLUTION' is integrated into the depth plane"
+            ],
+            "gaps": [
+              "The monochrome electric-blue 'liquid tech' look is a well-worn product-launch convention; it needs a palette or material idea that is specific to this product",
+              "The typography is functional brand lock-up only; it never becomes part of the image the way B's type is the image",
+              "The idea (product = fluid evolution) is a metaphor many launch films share; it lacks one memorable conceptual twist"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The whole world is built from typed characters: a figure, a planet, coins, padlocks and flow fields are all ASCII glyph fields. Typography is the medium, not a caption",
+              "A committed, unusual palette (pure ultramarine with white mono) held across every frame gives a strong system identity",
+              "Each frame is a different composition (running figure, flow field with a coin, orbiting planet, locks next to a code column, coin grid), so the frames read as narrative choreography",
+              "Witty details like the in-world code ('matchcut_engine.h', 'StartDirectPayment()') and the tag labels '<<Crypto is...' and 'Faster' show authored copy and a point of view",
+              "Varied glyph density gives tonal modelling, which is deliberate craft rather than a filter dropped on footage"
+            ],
+            "gaps": [
+              "The ASCII-art aesthetic has precedent; it needs one moment that breaks its own system for surprise",
+              "The flat ground gives almost no light or depth; it could gain dimensionality through glyph-scale parallax or layered planes",
+              "Crypto iconography (dollar signs, bitcoin coins, padlocks) is literal; the subject matter is less inventive than the treatment"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Warm window-light shadows (gobo) and soft bounce on a cream ground give a coherent material world of glass, brushed gold and a wood-panel floor",
+              "The objects change shot to shot (graph ribbons, coin-on-phone, a floor node, a glass tablet with a stylus, a stacked lock-coin), which implies a transition-led sequence",
+              "Brand typography (the J.P.Morgan serif and UI type) is legible and placed correctly",
+              "Against it: the frames lean into the cream-and-gold 'premium fintech' look, lock and cart icons in rings, and a glass-UI dashboard, all close to stock 3D-icon conventions"
+            ],
+            "gaps": [
+              "The idea is literal: payment features drawn as glossy icons, with nothing a viewer would remember beyond the finish",
+              "The UI placeholder (a balance figure, a chart and a 'Monthly summary' button) is generic; it needs a typographic or graphic idea of its own",
+              "Every frame uses the same camera angle, lighting and isolated hero object, which is close to the 'one layout, swapped object' pattern"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 5,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The split-flap departures board as a metaphor for payment 'delays' is the first idea anyone would have; it is literal (product name + feature list + 'Delays: none')",
+              "The glyphs break down incoherently: 'NNNP 7PR5k', 'ROAKHFEL\u2026' smears and a misaligned 'HMOK' row read like generator artifacts rather than designed flap animation",
+              "Fictional brand 'Railyard' with slide-style copy ('One API call. Instant settlement. A webhook every state change.') is set like a deck",
+              "Light is flat and generic. There is no real material on the flaps (hinges, wear, reflections), and the last two frames are the same green-header layout with the words swapped",
+              "The header labels are cropped and illegible, the board edges are cropped awkwardly and there is no considered framing"
+            ],
+            "gaps": [
+              "It needs a concept beyond 'payments = departures board': a twist only this brand could own",
+              "The flap mechanics need real craft: physical flap weight, motion blur, mechanical sound sync, plausible character sequencing and texture",
+              "The end frames need composition and type hierarchy instead of a centred slide of tagline text"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 33.2,
+        "cost_usd": 0.1600164,
+        "tokens": 72056,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "coinbase-system-update",
+        "C": "jpmorgan-payments",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Heavy liquid and glass simulation: the glasses are re-formed from water, with refraction, caustics, sub-surface glow and splash detail that templates and AI tools can't hold together consistently from frame to frame",
+              "The frames move through distinct scales and states (an abstract splash, a hero shot with the logo, a macro of the material, the frame in liquid form, a cellular 'evolution' world), which reads as real choreography",
+              "The XREAL / 1S lockup is split across the frame with the product between the two words, a deliberate layout choice",
+              "Against that, the monochrome electric blue and the 'liquid tech' language are a well-worn category look, and 'E V O L U T I O N' in thin tracked caps is close to the generic tasteful default"
+            ],
+            "gaps": [
+              "The idea (the product made of liquid) is a category trope. It needs a concept tied to what AR glasses actually do, the way B's ASCII world is tied to its subject",
+              "The single blue palette goes flat over the whole film. Bring in a counter-colour or a shift in temperature to give it an arc",
+              "The type is an afterthought (default-looking sans, tracked caps). Build it into the simulation instead of floating it on top"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 8,
+              "originality": 9
+            },
+            "tells": [
+              "The whole film is built from typographic characters ($, #, <, 0/1, code fragments), so the type is the image. That system belongs to this subject (crypto, data, payments) and no other",
+              "A bold, committed palette: a single saturated ultramarine with white glyphs, used as a constraint rather than the generic accent-on-dark look",
+              "Varied staging and choreography: a running figure, a coin travelling through a flow field, an orbiting glyph planet, padlocks beside a code column, a grid of coins rotating at staggered phases",
+              "The small inverted label tags ('<<Crypto is...', 'Faster') work like a playful UI voice-over, a considered typographic detail",
+              "The rotating coin grid, with each coin at a different angle, shows deliberate timing work"
+            ],
+            "gaps": [
+              "The ASCII-art aesthetic has precedent, so it should push further into surprise (a scale break or a change of system) to stop it from feeling like a filter",
+              "There's little depth or light variation. Some density shifts or layered parallax would give more weight",
+              "The narrative copy ('Crypto is... Faster... Secure') is literal. A sharper line would make it memorable"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Strong, motivated light: raking window-light shadows, glass-and-gold materials with believable refraction and edge glow, and paper-grain texture on the ground",
+              "Each frame is composed as a still-life poster with a clear hero object and long shadows",
+              "Real J.P. Morgan branding and an on-screen UI that has actually been designed (a balance figure, chart and labels), not grey placeholder bars",
+              "Against that, it sits close to the 'tasteful' look: cream ground, a single gold accent, isolated objects, and icon-in-a-coin metaphors (padlock = secure, cart = payment) that are literal"
+            ],
+            "gaps": [
+              "The idea is a set of literal feature icons in luxury materials, with no single concept running through it. It needs a through-line that only this brand could own",
+              "The framing repeats (one object, cream table, diagonal shadow). It needs more scale contrast and a frame that breaks the pattern",
+              "The typography is limited to the UI and the logo. There's no expressive type moment to carry the message"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 5,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "The split-flap departure board as a metaphor for payments ('DELAYS: NONE') is clever but literal: product name plus a diagram of the feature",
+              "Stock-looking split-flap asset with a default condensed grotesk and conventional amber/white/green status colours. There's no typographic idea beyond the board itself",
+              "Awkward cropping: copy is cut off at both frame edges ('NE API CALL. INSTANT', 'ETTLEMENT', 'DELAYS: NONE' clipped) and the logo is cut off at the top. That reads as uncontrolled framing, not intent",
+              "Every frame is the same board at different camera angles, so it's one layout with the words swapped",
+              "A fictional-sounding brand ('Railyard') and copy written like a feature list ('A webhook every state change') are typical of generated or template product promos"
+            ],
+            "gaps": [
+              "It needs a world beyond the board (a station, the people waiting, the moment the flaps resolve) so the metaphor builds into a story",
+              "Control the framing and type: end frames that aren't cropped, a deliberate typographic hierarchy, and a hero moment where the type scale breaks",
+              "Light and material are flat and generic. Add atmosphere, real reflections, wear on the flaps and depth of field with intent"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.7,
+        "cost_usd": 0.1597366,
+        "tokens": 72046,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "jpmorgan-payments",
+        "B": "coinbase-system-update",
+        "C": "morph-studio-xreal-1s-2025",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Raked window-shadow light falls across a paper-textured ground. It is consistent across shots and clearly art-directed, not flat default light",
+              "Glass and gold materials have believable refraction, edge highlights and contact shadows",
+              "A coherent object system: coin and dial token, layered glass waves, phone, a floor grid inlaid with gold, a stack of lock coins. Each shot reworks the same token into a new form",
+              "The camera angles and scale vary from shot to shot. The ghosted echo trails on the waves and coins suggest choreographed motion",
+              "The UI type is small, restrained and set in the brand's style; real JP Morgan branding is integrated into the objects"
+            ],
+            "gaps": [
+              "The idea is a premium-materials take on fintech icons (lock, chart, phone). It is beautiful but expected, with no conceptual turn as specific as B's ASCII language",
+              "The typography is only incidental UI. There is no typographic moment with a point of view",
+              "The champagne-gold-on-cream palette is a luxury clich\u00e9. One unexpected colour or a tonal break would make it memorable"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 9
+            },
+            "tells": [
+              "The whole film is built from typography. Figures, coins, locks and a planet are rendered in ASCII and glyphs, so type is the image rather than a caption on top of it",
+              "A committed, unusual palette: one saturated electric blue with white, held with total discipline",
+              "Every frame has a different structure: a running figure, a flow field with a vortex coin, an orbiting glyph planet, a triptych of locks with a code column, and a grid of spinning coins. That suggests real choreography and rhythm",
+              "Witty details, such as the code readout ('matchcut_engine.h', 'StartDirectPayment()') and the '<<Crypto is...' / 'Faster' callout tags, give it a voice",
+              "The density and layering are high. Glyph fields have depth, scale shifts and directional flow"
+            ],
+            "gaps": [
+              "Light and texture are deliberately flat. A little depth or bloom in the glyph fields could add physicality without breaking the look",
+              "The ASCII aesthetic sits in a known crypto and tech genre. The subject matter (lock = secure, coin = money) is still fairly literal",
+              "The callout labels are small and generic-mono. A stronger typographic headline moment would give the piece a payoff frame"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Sophisticated liquid and glass simulation: the glasses are re-formed as a water sculpture, with refractive splashes, bubbles and organic fibres",
+              "Varied shot language: an extreme macro on a hinge with chromatic aberration, a hero product shot, a frontal liquid sculpture, an abstract macro and a cellular 'evolution' world",
+              "The real product (XREAL 1S) is matched by rendering of commercial quality"
+            ],
+            "gaps": [
+              "The type is generic. A bold-sans wordmark and a widely tracked 'E V O L U T I O N' in thin caps over an abstract background read as stock launch-film typography",
+              "The palette is the default deep-tech blue on black and does nothing to stand apart",
+              "Liquid-sim product reveals are a well-worn launch trope. The 'evolution' concept is announced in a word rather than shown through a specific idea"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 4,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 5,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "The concept is literal: the product is called Railyard, so the film uses a split-flap departure board, and the line 'DELAYS: NONE' spells out the pun",
+              "Every frame shares the same matte black board, viewed from slightly different angles. The look is repetitive and slide-like",
+              "Text runs off the frame edges ('NE API CALL. INSTANT / ETTLEMENT', 'ELAYS: NON'). The crops read as accidental rather than designed",
+              "Garbled glyph strings ('NNNP 7PR4k', a scrambled row of overlapping letters) look like automated or uncontrolled flap generation",
+              "The light is flat and murky, and the flaps have little material variation. The default stencil-style board face is used without adaptation"
+            ],
+            "gaps": [
+              "Push the metaphor past the obvious board. Show the rail network, the flap mechanism in macro, or a narrative that payoffs the 'delays' tension visually instead of in copy",
+              "Compose each frame as a poster. Control crops and scale contrast deliberately, and add a typographic system beyond one default split-flap face in white, amber and green",
+              "Add real light and material, such as reflections on flaps, depth of field, station atmosphere and dust, so the board feels physical rather than a flat render"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.5,
+        "cost_usd": 0.1563118,
+        "tokens": 71866,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 6,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "The copy card ('ONE API CALL. INSTANT SETTLEMENT. A WEBHOOK... EVERY STATE CHANGE.') is cut off at both frame edges. The first letters are lost ('NE', 'ETTLEMENT', 'VERY'), and in the pairs the line looks like it wraps around ('INSTANTNE'), so it reads as a layout bug and not a deliberate crop.",
+        "The copy card is a flat, frontal, nearly static hold of body text. It is dead air in a 15 s piece, and it explains in words what the board metaphor already showed.",
+        "The wide board shot is a locked-off, frontal hold. Only one row is changing (the 09:41 row scrambling) while the rest of the frame sits still.",
+        "At 1:1, the half-flipped flaps leave faint ghost glyph fragments over the digits (around the '4', '1' and '5'), and the glyphs are slightly soft. They look like a texture swap, not real flap geometry with a thickness edge.",
+        "The lighting is a low-contrast near-black falloff with crushed shadows. The flaps have almost no specular response or depth, so the board looks more like a CG preset than a physical object.",
+        "The tilted close-ups (DELAYED, PENDING, SETTLED) use the same angled-board camera move with a different word each time. They read as interchangeable, and the camera has no motivated push or rack.",
+        "Pace fails the benchmark: the longest shot is 3.2 s and the median 2.4 s, against a world-class median of about 2 s, with holds on text cards that have no reason to last that long."
+      ],
+      "gaps": [
+        "Motion: the flap physics has no weight or cascade choreography. Top work would ripple the state change down the board with staggered overshoot, settle and bounce, sell the SETTLED moment as one big wave or wipe that is clearly the peak (around 60\u201370%), and use camera moves that react to the flips. Here the camera repeats the same tilt-and-hold.",
+        "Sound: the flap clatter bursts line up with the flips, and a tonal bed comes in from about 6 s, but the arrangement is blocky. It switches between clatter and drone sections with static tonal partials and no clear build into the resolve. There is no designed silence or single signature hit before the 'DELAYS: NONE' resolve.",
+        "Finish: the flaps need real modelled thickness, edge highlights, slight per-flap irregularity, motion blur on the flip and graded light with depth. The text-heavy copy card should be replaced by staging the message on the board itself, framed so nothing is clipped."
+      ]
+    },
+    "meta": {
+      "seconds": 28.1,
+      "cost_usd": 0.1680404,
+      "tokens": 72411,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "v2.mp4: 15.0s, 7 shots, median 2.40s, longest 3.20s\nper-second change: [38.9, 35.0, 17.8, 22.2, 18.1, 28.0, 26.5, 18.2, 28.4, 21.5, 16.3, 13.6, 22.6, 12.2]\nPACE: FAIL \u2014 longest shot 3.2s > 2.5s; median shot 2.4s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 6,
+    "composition": 4,
+    "typography": 5,
+    "colour": 5,
+    "light_texture": 4,
+    "motion": 5.5,
+    "craft": 5.0,
+    "originality": 4,
+    "sound": 6
+  },
+  "full_overall": 4.94,
+  "cost_usd": 0.644,
+  "judge_seconds": 123.5,
+  "verdict": "FAIL"
+}
