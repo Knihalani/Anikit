@@ -94,6 +94,7 @@ See `docs/video/overnight/DEMOS.md` for all paths. Pooled blind scores:
 - **Post:** 3.6× faster, bit-exact (290 → 80 ms/frame per thread).
 - **Glass:** faster 3D glass (multi-hit walk).
 - **Mesh traversal:** SBVH, about 1.8×.
+- **3D standard renders overall:** 2.4–3.6× faster than the original numbers and better on every quality metric (1080p, 4 cores: cyc 1853 → 743 ms, chrome 1584 → 545 ms, glass 2685 → 940 ms per frame). Still about 2–4× off the 250 ms target.
 - **3D quality for cost:** edges at 9 samples (+7–17% CPU, flicker clearly down).
 
 **Memory:** memory kept after renders cut 5–20×, and r2's 5 GB peaks are gone (0.5–1.4 GB in r3).
