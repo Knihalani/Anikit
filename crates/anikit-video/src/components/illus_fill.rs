@@ -14,6 +14,7 @@ use super::{Component, Ctx, Error, Prepare};
 use crate::dl::{self, Affine, Op, Path, Rgba, IDENTITY};
 use kurbo::{PathEl, Point, Shape};
 use serde::Deserialize;
+use std::sync::{Arc, Mutex};
 
 // ------------------------------------------------------------------ shapes
 
@@ -148,6 +149,8 @@ fn push_clip(out: &mut Vec<Op>, path: Path, transform: Affine) {
 
 // ------------------------------------------------------------------ hatch
 
+type HatchStrokeCache = Mutex<Option<((u32, u32, u32), Arc<(Path, Strokes)>)>>;
+
 #[derive(Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Hatch {
@@ -182,6 +185,8 @@ pub struct Hatch {
     pub draw: f32,
     #[serde(skip)]
     path: Option<Path>,
+    #[serde(skip)]
+    cache: HatchStrokeCache,
 }
 impl Default for Hatch {
     fn default() -> Self {
@@ -203,6 +208,7 @@ impl Default for Hatch {
             seed: 1,
             draw: 0.0,
             path: None,
+            cache: Mutex::new(None),
         }
     }
 }
@@ -256,6 +262,22 @@ struct Strokes {
 }
 
 impl Hatch {
+    fn cached_strokes(&self, w: f32, h: f32, seed: u32) -> Arc<(Path, Strokes)> {
+        let key = (w.to_bits(), h.to_bits(), seed);
+        if let Ok(cache) = self.cache.lock() {
+            if let Some((cached_key, strokes)) = cache.as_ref() {
+                if *cached_key == key {
+                    return Arc::clone(strokes);
+                }
+            }
+        }
+        let strokes = Arc::new(self.strokes(w, h, seed));
+        if let Ok(mut cache) = self.cache.lock() {
+            *cache = Some((key, Arc::clone(&strokes)));
+        }
+        strokes
+    }
+
     fn tone_at(&self, x: f32, y: f32, bb: (f32, f32, f32, f32)) -> f32 {
         match (self.tone_from, self.tone_to) {
             (None, None) => self.tone,
@@ -374,7 +396,8 @@ impl Component for Hatch {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let frame = if self.boil > 0.0 { (t * self.boil).floor() as u32 } else { 0 };
         let seed = self.seed.wrapping_mul(977).wrapping_add(frame.wrapping_mul(131));
-        let (shape, st) = self.strokes(ctx.width, ctx.height, seed);
+        let cached = self.cached_strokes(ctx.width, ctx.height, seed);
+        let (shape, st) = (&cached.0, &cached.1);
         let prog = if self.draw > 0.0 { clamp01(t / self.draw) } else { 1.0 };
         let mut out = Vec::new();
         push_clip(&mut out, shape.clone(), IDENTITY);
@@ -412,7 +435,7 @@ impl Component for Hatch {
         if self.outline {
             let mut rng = Rng::new(seed as u64 + 5);
             let ph = rng.f() * 50.0;
-            for r in rings(&shape, 6.0) {
+            for r in rings(shape, 6.0) {
                 let j = self.jitter;
                 let p = displaced(&r, |i, _| j * 1.6 * vnoise2(i as f32 * 0.15 + ph, ph, 3));
                 out.push(Op::Stroke { path: p, paint: dl::Paint::Solid(col), stroke: super::style::line(self.width * 1.6, [0.0, ease_out(clamp01(prog * 1.5))]), transform: IDENTITY });
@@ -822,5 +845,49 @@ impl Component for Cutout {
     }
     fn duration(&self) -> Option<f32> {
         (self.enter != "none").then_some(self.delay + 0.8)
+    }
+}
+
+#[cfg(test)]
+mod hatch_tests {
+    use super::{
+        super::{preview, Theme},
+        Component, Ctx, Hatch, Prepare,
+    };
+
+    #[test]
+    fn cached_strokes_preserve_frame_output() {
+        let theme = Theme::default();
+        let assets = preview::host();
+        let ctx = Ctx {
+            width: 400.0,
+            height: 300.0,
+            fps: 60.0,
+            theme: &theme,
+            assets,
+        };
+
+        for style in ["stipple", "crosshatch"] {
+            let mut cached = Hatch {
+                style: style.into(),
+                boil: 8.0,
+                draw: 1.0,
+                ..Default::default()
+            };
+            cached.prepare().unwrap();
+
+            for t in [0.0, 0.3, 0.5, 1.2, 0.3] {
+                let actual = cached.eval(t, &ctx);
+                let mut fresh = Hatch {
+                    style: style.into(),
+                    boil: 8.0,
+                    draw: 1.0,
+                    ..Default::default()
+                };
+                fresh.prepare().unwrap();
+                let expected = fresh.eval(t, &ctx);
+                assert_eq!(actual, expected, "style {style:?} at t={t}");
+            }
+        }
     }
 }
