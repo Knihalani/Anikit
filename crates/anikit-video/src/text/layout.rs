@@ -54,7 +54,7 @@ pub struct TextStyle {
     pub features: Option<String>,
     /// Variable-font axis coordinates, e.g. `[("wdth", 125.0), ("SOFT", 100.0)]`.
     /// Without an explicit `opsz`, faces with an optical-size axis get
-    /// `opsz` = the font size in px (CSS `font-optical-sizing: auto`), except Inter.
+    /// `opsz` = the font size in pt (px × 0.75), except Inter.
     pub axes: Vec<(String, f32)>,
     /// Outline the glyphs (`{ "width": 0.03, "hollow": true }`; width in em).
     pub outline: Option<Outline>,
@@ -1094,7 +1094,7 @@ fn variations(fam: &(String, bool), axes: &[(String, f32)], size: f32) -> Vec<pa
         if fam.1 {
             css.push_str("\"opsz\" 32");
         } else if !(fam.0.starts_with("\"Inter") || fam.0.starts_with("sans-serif") || fam.0.starts_with("system-ui")) {
-            let _ = write!(css, "\"opsz\" {size}");
+            let _ = write!(css, "\"opsz\" {}", size * 0.75);
         }
     }
     parley::FontVariation::parse_css_list(&css).filter_map(Result::ok).collect()
