@@ -45,6 +45,9 @@ Other entry points:
 | `aq_strength` | `-0.5` (auto) | Adaptive quantisation: smooth macroblocks (fades, lit floors) get a lower QP, −(4 + up to 7)·strength, with a wide AC dead zone; busy ones keep `qp`. ≥ 0 is used as given. Negative is automatic per frame: \|value\| on frames dominated by smooth textured content (3D renders, video), 0 on UI and motion graphics. |
 | `ssim_floor` | `0.985` | Per-frame quality floor. After each frame the luma SSIM of the reconstruction is estimated; while it is below the floor the next frames use a lower slice QP (`slice_qp_delta`), and an IDR below the floor is coded a second time at the estimated QP. The QP comes back up towards `qp` when there is margin. It is deterministic: it depends only on frames already coded in the stream or chunk. 0 = constant QP. Content above the floor (all UI, text and motion-graphics clips tested), and frames already above 45 dB PSNR-Y, are bit-identical to constant QP. |
 | `ssim_max_drop` | `8` | Lowest QP the floor may use, as an offset below `qp`. It bounds the size on content where SSIM rises slowly with bits, such as per-frame film grain. |
+| `bframes` | `0` (anikit-video: 1) | Non-reference B pictures between reference pictures (CABAC, `threads == 1`). Output is delayed: call `Encoder::flush()` at the end of a stream (the chunk encoders do). anikit-video uses 1 for its CABAC qualities. See "B-frames" below. |
+| `transform8` | `true` | 8×8 transform for inter macroblocks (High profile; CABAC only). |
+| `partitions` | `false` | 16×8, 8×16 and 8×8 P partitions. About 1.5% smaller at equal SSIM, for about 1.5× the encode instructions, so off. |
 | `skip_threshold` | `0` | Perceptual skip: code a changed macroblock as a copy when every sample is within this distance of the reconstructed reference. Off by default (see the measurements below). |
 | `threads` | 1 | Slices per frame for `encode()`. Chunk-parallel modes ignore it. |
 | `full_range` | `false` | Signals the colour range (BT.709 primaries/matrix are always signalled). |
@@ -553,12 +556,100 @@ The floor removes the visible loss on `shader` for 3.8× the bytes. It stops low
 
 The same compensation applied to grain-free `shader` still reads 0.975 at QP 23, so real detail loss is still caught. Synthesising the grain at playback, or rendering it with a fixed pattern, would be far cheaper than encoding it.
 
+### Motion search, B-frames and the 8×8 transform
+
+Measured with `examples/bd.rs`: five 1080p clips (launch, tutorial, shader, post,
+tern; 90–240 frames), QPs 19/23/27, BD-rate at equal SSIM-Y (negative = smaller
+at the same quality), with the anikit-video settings (CABAC, deblocking,
+quarter-pel; AQ and the SSIM floor off so that QP alone sets quality).
+
+| Change | launch | tutorial | shader | post | tern | mean |
+|---|---|---|---|---|---|---|
+| Motion search: rings + hexagon | −3.4% | −2.9% | −26.4% | +1.8% | −32.1% | −12.6% |
+| + one B picture (quality guard, adaptive QP offset) | −12.2% | −13.6% | −19.8% | +3.3% | +8.2% | −6.8% |
+| + 8×8 transform | −0.3% | +0.2% | −5.6% | −0.2% | −1.5% | −1.5% |
+| + B direct early exit | −0.3% | −1.7% | −0.1% | 0.0% | −0.9% | −0.5% |
+| **All, vs the encoder before** | | | | | | **≈ −20%** |
+
+- **Motion search.** Candidates (zero, skip and predicted vectors, renderer
+  hints, neighbours), then rings at radius 4, 8, 12 and 16 around the best,
+  hexagon steps, and an iterated square refine.
+  - The old 1-pel diamond lost any motion that no predictor pointed to, and
+    those macroblocks were coded intra. On tern with references three frames
+    apart, P-frame bytes drop 69%.
+  - Positions already evaluated are not evaluated again. Candidates are read
+    through one bounds check per search.
+- **B pictures.** One non-reference B picture between P pictures, coded with
+  - 16×16 L0, L1 and bi-predicted macroblocks;
+  - spatial direct and B_Skip (direct is used only over an unpartitioned
+    co-located macroblock);
+  - intra 16×16;
+  - QP +2 (adaptive), and no deblocking in the encoder (B pictures are never
+    referenced; the decoder deblocks them).
+
+  Searches are seeded with the direct vectors and the co-located P vector
+  scaled by temporal distance, without long-range rings. Macroblocks whose
+  direct prediction is already good (SAD ≤ 64λ) are coded direct without a
+  search.
+
+  A **quality guard** recodes a B picture at the P QP when its SSIM estimate is
+  more than 0.001 below the following P picture's. Without the guard,
+  `particles` failed qbench's delivered-SSIM gate on B-frame minima. Each
+  recode lowers the next B picture's starting offset, and B pictures that
+  match their P picture raise it again.
+
+  There are no B pictures on frames with a grain hint. The MP4 muxer writes
+  `ctts` and an edit list from the slice POCs (POC type 0 when B-frames are
+  on).
+- **8×8 transform.** For inter macroblocks, used when the residual's 8×8
+  Hadamard cost is below its 4×4 SATD (x264's rule, SSE2). It includes CABAC
+  category-5 residuals, `transform_size_8x8_flag` (coded as 0 for I4×4
+  macroblocks), and no luma deblocking inside 8×8 blocks. Smooth macroblocks
+  under AQ keep the 4×4 transform: its wide dead zone is what stops them
+  coding noise. The SPS is profile 100 and the `avcC` carries the High-profile
+  fields.
+
+Everything above decodes bit-exactly in ffmpeg (tests in `tests/decode.rs` and
+`tests/mp4.rs`, with and without B-frames, deblocking and partitions).
+
+**qbench `--gate`** (the default render path, delivered quality checked
+against the baseline) passes. File sizes against the encoder before these
+changes, at equal or better delivered SSIM:
+
+| spec | ui | text | explainer | backdrop | particles | launch | scene3d | shader-hero | shader | post | audio |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| size | −4.4% | −23.4% | −19.1% | −3.7% | −7.5% | −10.2% | −6.2% | −10.3% | −22.0% | −0.8% | −9.8% |
+
+(The backdrop and shader figures are from before the smooth-AQ fix to the 8×8
+transform, which makes both smaller.)
+
+**Speed.** Encode instructions for 30 frames of launch at QP 23 (callgrind,
+five repetitions) were 13.8G before these changes and are 15.7G now (+13%).
+The stronger search costs more; B pictures and the direct early exit win part
+of it back.
+
+**Tried and rejected** (BD-rate at equal SSIM):
+- An intra penalty in P frames: helps tern, costs 37% on post.
+- An early skip trial: +12% mean.
+- IDR at QP −3.
+- SATD instead of SAD for sub-pel candidates: 0%.
+- A quick B search with no hexagon: +5.9%.
+- A larger P quick-exit bound: +3.4%.
+- A quarter-resolution lookahead and a measured-cost feedback loop for the
+  B-or-P decision: neither separated tern, where B loses, from the clips where
+  it wins.
+
+**Known limits.**
+- tern loses with B pictures (+8%): its shader backdrop evolves, so a P
+  picture two frames from its reference costs much more.
+- HEVC/AV1 are not implemented.
+
 ## Limitations and next steps
 
-- P frames only: no B-frames, one reference, 16×16 partitions only. B-frames and
-  smaller partitions would cut size on busy content, at a cost in speed.
+- One reference; B pictures are 16×16 (L0/L1/bi/direct) and never referenced;
+  P partitions are opt-in.
 - There is no rate control, only constant QP (CRF-like). A `target_bitrate` mode
   would need a per-frame QP loop.
 - Brightness fades are coded as intra. Weighted prediction (as x264 uses) would
   make them nearly free.
-- No 8×8 transform or High profile.
+- No intra 8×8 (the 8×8 transform is used for inter macroblocks only).

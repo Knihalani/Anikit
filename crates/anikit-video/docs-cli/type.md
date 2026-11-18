@@ -27,6 +27,10 @@ condensed, wide, blackletter, script, hand, stencil, mono, pixel, display). Each
 - **Animate axes** with `"axes.TAG"` in `animate` (in `from`/`to`/`keyframes`). The text is laid out again each frame, so
   width and weight changes reflow and stay centred on the box. An axis named only in `animate` starts at the face's default.
   `letterSpacing` in `animate` (px) also reflows now: a tracking-out over a 2–4 s hold is the classic title move.
+- **Per-glyph axes** (a weight wave): the text `animator` takes `axes`, the values at full selection:
+  `"animator": {"by": "char", "axes": {"wght": 900, "SOFT": 100}, "start": 0, "end": 0.25, "smooth": 0.3, "offset": "=-0.3 + 1.6*fract(t/2.5)"}`.
+  Advances are compensated so heavier letters push their neighbours, and the line stays aligned.
+  Combine it with the animator's `x`/`y`/`scale`/`color` for a wave that rises as it thickens.
 - **Optical size is automatic.** On faces with an `opsz` axis (Fraunces, Bodoni Moda, Playfair, Newsreader, Literata, Source
   Serif 4, Big Shoulders, Bricolage Grotesque, DM Sans, Roboto Flex, Texturina…), `opsz` follows the font size in px. A
   200 px headline gets the hairline display cut and a 24 px caption gets the sturdy text cut. Set `axes.opsz` to override it.
@@ -34,26 +38,5 @@ condensed, wide, blackletter, script, hand, stencil, mono, pixel, display). Each
   serif text), `"smcp"` / `"c2sc"` (small caps), `"case"` (punctuation for all-caps), `"ss01"`–`"ss20"` (stylistic sets),
   `"dlig"`, `"zero"` and `"-liga"` (turn one off). Separate them with spaces or commas; `ss02=1` and the CSS form also work.
 
-## Choosing (from docs/video/craft/typography.md)
-
-- Give a reason in one sentence ("compressed gothic because it's sport and the frame is wide"). One family in 2 weights plus
-  one accent face beats three families. Make contrast with size first, then weight, then face.
-- Size contrast in motion is 10:1 to 25:1: a headline at 30–60 vh beside a caption at 2.2–3 vh. 9 vh over 3 vh reads as a slide.
-- Set text flush left on a grid. Centre only one word, a date or a logo.
-- Track display lowercase −0.01 to −0.05 em; track caps and small labels +0.05 to +0.12 em. Leading: display 0.85–1.0, text 1.25–1.45.
-- Hold time ≈ 0.5 s + 0.3 s per word.
-| Brief | Faces (try) |
-|---|---|
-| Swiss / corporate-modern | Inter Tight, Instrument Sans, Archivo (wdth), Schibsted Grotesk + IBM Plex Mono |
-| Editorial / fashion | Bodoni Moda or Playfair (opsz) + Jost or Darker Grotesque |
-| Documentary / news | Newsreader + Schibsted Grotesk |
-| Sport / energy | Big Shoulders, Anton, Barlow Condensed italic, Saira (wdth 50–125) |
-| Warm / 70s | Fraunces (SOFT 100), Young Serif, Shrikhand, Corben |
-| Brutalist / art-school | Archivo Black, Syne 800, Anybody (wdth 50→150), Six Caps |
-| Tech / terminal | Martian Mono (wdth), Space Mono, VT323, Recursive (MONO/CASL) |
-| Luxury / whisper | Cormorant Garamond light, tracked +0.2em caps, Mrs Saint Delafield |
-| Gothic / metal | UnifrakturCook, Grenze Gotisch (wght), Pirata One |
-| Retro computing | Sixtyfour / Workbench (animate SCAN, BLED), Silkscreen, Press Start 2P |
-| Playful | Kablammo (animate MORF), Shantell Sans (BNCE), Gluten, Bagel Fat One |
-| Fake 3D | Tilt Warp / Prism / Neon: animate XROT, YROT ±45 |
-Colour fonts (Nabla, Honk, Bungee Spice) draw their own palette; `color` doesn't tint them.
+Next: `anikit-video docs type-craft` (choosing faces by brief, scale and tracking numbers, gradient fills, type as a window onto footage or shaders).
+Research with sources: docs/video/craft/typography.md.

@@ -363,8 +363,12 @@ pub(crate) struct Node {
     pub glow: Option<Filter>,
     /// Image treatments (tone map, halftone), applied first.
     pub treat: Vec<Filter>,
+    /// Brush stroke: the outline drawn as a variable-width ribbon.
+    pub brush: Option<Arc<graphic::Brush>>,
     /// A pattern whose `field` reads `t`: regenerated every frame (pattern, box size).
     pub live_pattern: Option<Arc<(graphic::Pat, [f64; 2])>>,
+    /// Ink texture follows the layer (its wear moves with it) rather than the frame.
+    pub ink_follow: bool,
     /// First of 5 animatable slots for the treatments (toneAmount, halftone cell/angle/gain, ink amount); 0 = none.
     pub treat_slot: u8,
     /// Stepped time in fps (0 = smooth): the layer animates "on twos" etc.
@@ -418,6 +422,8 @@ pub(crate) struct TransC {
     /// `reveal` shape (0 circle, 1 diamond, 2 square, 3 star, 4 blob); `blinds` bar count.
     pub shape: u8,
     pub count: u32,
+    /// Shared elements: layer ids carried from the old scene's layout to the new one's.
+    pub carry: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -478,6 +484,22 @@ pub(crate) fn collecting_scales() -> bool {
     COMP_SCALE.with(|c| matches!(&*c.borrow(), Some((true, _))))
 }
 
+/// Run `f` outside any composition-scale pass of this thread. A composition
+/// rendered on its own (as a 3D texture) must emit its shader layers even when
+/// the frame that asked for it is in the scale-collecting pass; otherwise the
+/// texture cache stores an empty list and the texture stays blank.
+pub(crate) fn outside_scale_pass<R>(f: impl FnOnce() -> R) -> R {
+    let saved = COMP_SCALE.with(|c| c.borrow_mut().take());
+    let r = f();
+    COMP_SCALE.with(|c| *c.borrow_mut() = saved);
+    r
+}
+
+thread_local! {
+    /// Layer ids to leave out while emitting scenes (shared elements during a transition).
+    static SKIP: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
 thread_local! {
     static TAGS: std::cell::RefCell<Option<Vec<OpTag>>> = const { std::cell::RefCell::new(None) };
 }
@@ -502,6 +524,8 @@ pub struct Evaluator {
     pub audio: Vec<crate::audio::Track>,
     /// Generated music (the spec's `music`), rendered when the audio is mixed.
     pub music: Option<Arc<crate::music::MusicCue>>,
+    /// Sound design (the spec's `sound` and layers' `sfx`), mixed with the audio.
+    pub sound: Option<Arc<crate::audio::design::spec::SoundPlan>>,
     /// Fonts and images, shared with the renderers.
     pub assets: Arc<SharedAssets>,
     pub(crate) easings: Vec<Easing>,
@@ -675,6 +699,32 @@ impl Evaluator {
         }
     }
 
+    /// Collisions reported by component layers (physics in `scene3d`), as
+    /// `(layer tag, video seconds, impact)`; `aspect(tag)` is the layer box's
+    /// width / height on screen.
+    pub(crate) fn component_impacts(&self, aspect: &dyn Fn(u32) -> f32) -> Vec<(u32, f32, crate::components::Impact)> {
+        fn walk(nodes: &[Node], t0: f32, until: f32, aspect: &dyn Fn(u32) -> f32, out: &mut Vec<(u32, f32, crate::components::Impact)>) {
+            for n in nodes {
+                let start = t0 + n.start;
+                match &n.kind {
+                    Kind::Component(c, _) => {
+                        let local = (until.min(t0 + n.end) - start).max(0.0);
+                        for i in c.impacts(local, aspect(n.tag)) {
+                            out.push((n.tag, start + i.t, i));
+                        }
+                    }
+                    Kind::Group { children } | Kind::Box { children, .. } => walk(children, start, until, aspect, out),
+                    _ => {}
+                }
+            }
+        }
+        let mut out = Vec::new();
+        for s in &self.scenes {
+            walk(&s.layers, s.start, s.start + s.dur, aspect, &mut out);
+        }
+        out
+    }
+
     /// The display list at time `t` (seconds).
     pub fn eval(&self, t: f32) -> DisplayList {
         let mut dl = DisplayList::default();
@@ -801,7 +851,11 @@ impl Evaluator {
         let (cam, v, panning) = self.scene_cam(s, t, xf);
         let (cxp, cyp, rot, zoom) = (v[0], v[1], v[2], v[3]);
         let (focus, aperture) = (v[4], v[5]);
+        let skip = SKIP.with(|s| !s.borrow().is_empty());
         for (li, n) in s.layers.iter().enumerate() {
+            if skip && n.id.as_deref().is_some_and(|id| SKIP.with(|s| s.borrow().iter().any(|x| x == id))) {
+                continue;
+            }
             let is_bg = li < s.bg_layers;
             if (is_bg && part & PART_BG == 0) || (!is_bg && part & PART_FG == 0) {
                 continue;
@@ -867,6 +921,58 @@ impl Evaluator {
     }
 
     fn emit_transition(&self, a: &SceneC, b: &SceneC, t: f32, p: f32, e: f32, out: &mut Vec<Op>) {
+        if b.trans.carry.is_empty() {
+            return self.emit_transition_inner(a, b, t, p, e, out);
+        }
+        SKIP.with(|s| *s.borrow_mut() = b.trans.carry.clone());
+        self.emit_transition_inner(a, b, t, p, e, out);
+        SKIP.with(|s| s.borrow_mut().clear());
+        for id in &b.trans.carry {
+            self.emit_carried(a, b, id, t, e, out);
+        }
+    }
+
+    /// Frame-space centre and size of a top-level layer of `s` at time `t`.
+    fn layer_frame(&self, s: &SceneC, n: &Node, t: f32) -> ([f32; 2], f32) {
+        let (cam, _, _) = self.scene_cam(s, t, &dl::IDENTITY);
+        let cx = Cx { ev: self, scene_t: t - s.start, gt: t, dof: 0.0, amul: 1.0 };
+        let mut v = [0.0f32; prop::N];
+        self.props(n, &cx, (t - s.start - n.start).max(0.0), &mut v);
+        let (w, h) = (v[prop::W].max(1.0), v[prop::H].max(1.0));
+        let f = dl::mul(&cam, &local_xf(&v, n.anchor, w, h));
+        let c = [f[0] * w * 0.5 + f[2] * h * 0.5 + f[4], f[1] * w * 0.5 + f[3] * h * 0.5 + f[5]];
+        (c, (f[0] * f[3] - f[1] * f[2]).abs().sqrt() * (w * w + h * h).sqrt())
+    }
+
+    /// A shared element: the old scene's copy travels to the new layout while fading out, the new
+    /// scene's copy travels from the old layout while fading in.
+    fn emit_carried(&self, a: &SceneC, b: &SceneC, id: &str, t: f32, e: f32, out: &mut Vec<Op>) {
+        fn find<'a>(s: &'a SceneC, id: &str) -> Option<&'a Node> {
+            s.layers.iter().find(|n| n.id.as_deref() == Some(id))
+        }
+        let (Some(na), Some(nb)) = (find(a, id), find(b, id)) else { return };
+        let (ca, sa) = self.layer_frame(a, na, t);
+        let (cb, sb) = self.layer_frame(b, nb, t);
+        let c = [ca[0] + (cb[0] - ca[0]) * e, ca[1] + (cb[1] - ca[1]) * e];
+        let sz = sa + (sb - sa) * e;
+        // Move a scene's copy (centre `c0`, size `s0`) to the interpolated centre and size.
+        let to = |c0: [f32; 2], s0: f32| {
+            let k = sz / s0.max(1e-3);
+            dl::mul(&translate(c[0], c[1]), &dl::mul(&scale(k, k), &translate(-c0[0], -c0[1])))
+        };
+        // The old copy stays solid until halfway while the new one fades in on top: the element never goes see-through.
+        let (aa, ab) = ((2.0 - 2.0 * e).clamp(0.0, 1.0), (2.0 * e).clamp(0.0, 1.0));
+        for (s, n, c0, s0, alpha) in [(a, na, ca, sa, aa), (b, nb, cb, sb, ab)] {
+            if alpha <= 0.002 {
+                continue;
+            }
+            let (cam, _, _) = self.scene_cam(s, t, &to(c0, s0));
+            let cx = Cx { ev: self, scene_t: t - s.start, gt: t, dof: 0.0, amul: alpha };
+            self.emit_node(n, &cx, &cam, [self.width as f32, self.height as f32], 1.0, out);
+        }
+    }
+
+    fn emit_transition_inner(&self, a: &SceneC, b: &SceneC, t: f32, p: f32, e: f32, out: &mut Vec<Op>) {
         let (w, h) = (self.width as f32, self.height as f32);
         let tr = &b.trans;
         let id = dl::IDENTITY;
@@ -1315,7 +1421,8 @@ impl Evaluator {
                         if a <= 0.002 {
                             continue;
                         }
-                        let ts = tk + r.stagger * i as f32;
+                        let rank = r.ranks.get(i as usize).copied().unwrap_or(i);
+                        let ts = tk + r.stagger * rank as f32;
                         let c = Cx { scene_t: cx.scene_t - ts, gt: cx.gt - ts, amul: cx.amul * a, ..*cx };
                         let px = dl::mul(parent, &r.xf(i, ctr));
                         self.emit_node_inner(n, &c, &px, psize, po, out);
@@ -1396,6 +1503,15 @@ impl Evaluator {
         let mut alpha = opacity;
         if needs_layer {
             let mut filters = n.treat.clone();
+            if n.ink_follow {
+                // Wear locked to the object: the noise origin rides with the layer's position.
+                for f in filters.iter_mut() {
+                    if let Filter::Ink { ox, oy, .. } = f {
+                        *ox = -xf[4];
+                        *oy = -xf[5];
+                    }
+                }
+            }
             if n.treat_slot != 0 {
                 let b = n.treat_slot as usize;
                 for f in filters.iter_mut() {
@@ -1486,7 +1602,14 @@ impl Evaluator {
                     }
                 }
                 let along = n.fx.as_deref().and_then(|f| f.along.as_ref());
-                if let (Some(_), Some(al)) = (stroke, along) {
+                if let (Some(s), Some(b)) = (stroke, n.brush.as_deref()) {
+                    if sw > 0.0 && v[prop::TRIM1] > v[prop::TRIM0] {
+                        let paint = self.paint(&s.paint, &v, prop::STROKE, [w, h], alpha);
+                        let mut p = take_path();
+                        b.build(sw, v[prop::TRIM0], v[prop::TRIM1], &mut p);
+                        out.push(Op::Fill { path: p, paint, rule: dl::FillRule::NonZero, transform: xf });
+                    }
+                } else if let (Some(_), Some(al)) = (stroke, along) {
                     // Gradient along the path: each chunk carries its slice of the colours (and of the trim).
                     let (t0, t1) = (v[prop::TRIM0].clamp(0.0, 1.0), v[prop::TRIM1].clamp(0.0, 1.0));
                     if sw > 0.0 && t1 > t0 {
@@ -1543,12 +1666,27 @@ impl Evaluator {
                 let oy = (h - lsize[1]) * 0.5;
                 let bxf = if ox.abs() > 0.01 || oy.abs() > 0.01 { dl::mul(&xf, &translate(ox, oy)) } else { xf };
                 if let Some(k) = kinetic {
+                    // Gradient fills: draw the fill, keep it only where the
+                    // kinetic glyphs are (their animated alpha included).
+                    let grad = !matches!(paint, PaintC::Solid);
+                    if grad {
+                        out.push(Op::PushLayer { opacity: alpha, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
+                        let p = self.paint(paint, &v, prop::FILL, lsize, 1.0);
+                        // Oversized so units flying in from outside the box are filled too.
+                        let (mx, my) = (lsize[0].max(64.0), lsize[1].max(64.0));
+                        out.push(Op::RoundRect { x: -mx, y: -my, w: lsize[0] + 2.0 * mx, h: lsize[1] + 2.0 * my, radius: 0.0, paint: p, transform: bxf });
+                        out.push(Op::PushLayer { opacity: 1.0, blend: Blend::DestIn, filters: Vec::new(), clip: None, cache_key: None });
+                    }
                     let at = out.len();
                     k.ops(lt, bxf, out);
-                    if alpha < 1.0 {
+                    if alpha < 1.0 && !grad {
                         for op in &mut out[at..] {
                             retransform(op, &dl::IDENTITY, alpha);
                         }
+                    }
+                    if grad {
+                        out.push(Op::PopLayer);
+                        out.push(Op::PopLayer);
                     }
                 } else {
                     let fill = (!*run_colors).then(|| self.paint(paint, &v, prop::FILL, lsize, alpha));
@@ -1571,6 +1709,45 @@ impl Evaluator {
                             let (lo, hi) = (v[prop::RANGE0] + off, v[prop::RANGE1] + off);
                             let nu = units.len().max(1) as f32;
                             let base_c = [v[prop::FILL], v[prop::FILL + 1], v[prop::FILL + 2], v[prop::FILL + 3]];
+                            // Axis animators change advances: shift each unit by the growth of the units
+                            // before it on its line, re-aligning the line (left/centre/right).
+                            let shifts: Vec<f32> = if an.axes.is_empty() {
+                                Vec::new()
+                            } else {
+                                let fonts = &self.assets.fonts;
+                                let mut deltas = Vec::with_capacity(units.len());
+                                for (u, unit) in units.iter().enumerate() {
+                                    let rank = an.order.get(u).map_or(u as f32, |r| *r as f32);
+                                    let a = an.amount((rank + 0.5) / nu, lo, hi);
+                                    let mut d = 0.0;
+                                    if a > 0.001 {
+                                        for gi in unit.glyphs.clone() {
+                                            let g = layout.glyphs[gi as usize];
+                                            let r = &layout.runs[g.run as usize];
+                                            let gid = r.glyphs[g.index as usize].id;
+                                            let nf = fonts.toward_axes(r.font, &an.axes, a);
+                                            d += fonts.advance(nf, gid, r.size) - fonts.advance(r.font, gid, r.size);
+                                        }
+                                    }
+                                    deltas.push((unit.rect[1], d));
+                                }
+                                let mut out_s = vec![0.0; deltas.len()];
+                                let mut i = 0;
+                                while i < deltas.len() {
+                                    let mut j = i;
+                                    while j < deltas.len() && (deltas[j].0 - deltas[i].0).abs() < 1.0 {
+                                        j += 1;
+                                    }
+                                    let total: f32 = deltas[i..j].iter().map(|x| x.1).sum();
+                                    let mut acc = -total * an.align;
+                                    for k in i..j {
+                                        out_s[k] = acc;
+                                        acc += deltas[k].1;
+                                    }
+                                    i = j;
+                                }
+                                out_s
+                            };
                             for (u, unit) in units.iter().enumerate() {
                                 let rank = an.order.get(u).map_or(u as f32, |r| *r as f32);
                                 let a = an.amount((rank + 0.5) / nu, lo, hi);
@@ -1582,6 +1759,11 @@ impl Evaluator {
                                 let (cxu, cyu) = (x0 + uw * 0.5, y0 + uh * 0.5);
                                 let s = 1.0 + (an.scale - 1.0) * a;
                                 let m = dl::mul(&translate(cxu + an.dx * a, cyu + an.dy * a), &dl::mul(&rotate(an.rot * a), &dl::mul(&scale(s, s), &translate(-cxu, -cyu))));
+                                let m = match shifts.get(u) {
+                                    // Glyphs grow rightwards from their pen position: move by the growth before them.
+                                    Some(sh) => dl::mul(&translate(*sh, 0.0), &m),
+                                    None => m,
+                                };
                                 let uxf = dl::mul(&bxf, &m);
                                 let f2 = match (an.color, &fill) {
                                     (Some(c), Some(Paint::Solid(_))) => {
@@ -1603,7 +1785,15 @@ impl Evaluator {
                                 if ublur > 0.05 {
                                     out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::Blur(ublur)], clip: None, cache_key: None });
                                 }
+                                let at = out.len();
                                 emit_glyphs(out, layout, unit.glyphs.clone(), limit, f2.as_ref(), alpha * ua, &uxf);
+                                if !an.axes.is_empty() && a > 0.001 {
+                                    for op in &mut out[at..] {
+                                        if let Op::Glyphs { font, .. } = op {
+                                            *font = self.assets.fonts.toward_axes(*font, &an.axes, a);
+                                        }
+                                    }
+                                }
                                 if ublur > 0.05 {
                                     out.push(Op::PopLayer);
                                 }
@@ -1904,7 +2094,11 @@ pub(crate) fn scale_filters(ops: &mut [Op], s: f32) {
                     }
                     Filter::Glow { radius, .. } => *radius *= s,
                     Filter::Halftone(h) => h.cell *= s,
-                    Filter::Ink { scale, .. } => *scale *= s,
+                    Filter::Ink { scale, ox, oy, .. } => {
+                        *scale *= s;
+                        *ox *= s;
+                        *oy *= s;
+                    }
                     Filter::ColorMatrix(_) | Filter::Tone(_) => {}
                 }
             }

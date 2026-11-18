@@ -55,7 +55,10 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - or an object: `{ "preset": "cyc", "color": "#EEEBE5", "key": [-0.55, 1, 0.45], "haze": 0.0015 }`.
 - **`lights`:** `[{ "dir": [x, y, z], "size": [w°, h°], "color", "intensity": 4, "roll", "key": true }]`. These are extra softboxes or strips. They light the scene and show as crisp shapes in chrome. `key` casts the traced shadows.
 - **Local lights** (in `lights`, given a `pos`): a point light `{ "pos": [x, y, z], "color", "intensity": 10 }`, or a spot when it also has a `target`, `angle` (degrees) and `penumbra` (0–1). They fall off with the inverse square and cast hard traced shadows (`"shadow": false` turns them off). Use them for light pools on the floor, LEDs and practicals.
-- **`fog`:** a density per metre, or `{ "density", "color", "shafts": true }`. `shafts` adds volumetric light: spot cones and god rays from the key, with object shadows cut into them. Use density 0.02–0.08 with a dark fog colour at night.
+  - `pos`, `target` and `intensity` take `"=expressions"` of `t`: a searchlight that sweeps (`"pos": "=[2.2*sin(t*0.9), 3.2, 1+1.2*cos(t*0.9)]"`), a spot that tracks, a sign that flickers (`"intensity": "=1.2+max(0,sin(t*7))"`).
+  - Proof: `docs/video/shots/3d-lights/searchlight.jpg` (two moments of the same shot).
+  - Texture prints (compositions on panes, planes and text) are lit by local lights too, like matte paper: a sodium lamp pools on a brick-textured wall and a sign spills its colour onto a textured facade. Each shadowed light costs one shadow ray per textured pixel (a street with 20 shadowed lamps and many textured panes roughly doubles the trace time); set `"shadow": false` on fill lights.
+- **`fog`:** a density per metre, or `{ "density", "color", "shafts": true, "height", "base" }`. `height` makes it height fog: dense at `base` (default 0, the floor) and thinning by e every `height` metres. That gives ground mist, a valley fog, or a set that dissolves into haze. It's integrated exactly along each camera ray (one `exp`), and the layer meets the sky softly. Proof: `docs/video/shots/3d-fog/ground-mist.jpg` (`{ "density": 0.9, "height": 0.25 }`). `shafts` adds volumetric light: spot cones and god rays from the key, with object shadows cut into them. Use density 0.02–0.08 with a dark fog colour at night.
 - **`camera`:**
   - presets: `push`, `reveal`, `flyby`, `orbit` (all 5 s by default), `dolly`, `crane`, `static`; or `{ "preset", "duration", "degrees", "height", "shake" }`;
   - keys: `{ "interp": "smooth"|"linear", "keys": [ { "t", "pos", "target", "focal": 35, "fstop": 2.8, "focus", "shutter": 0.5 } ] }`. A dense per-frame list with linear interpolation works too. `shutter: 0` turns motion blur off.
@@ -66,6 +69,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - animation: `keys: [{ t, pos, rot, scale, ease }]`, `spin`, `start`/`end`;
   - instances: `count` and `lanes`;
   - `texture`: `"#comp"`, `{ "composition", "frame": "=i", "face": "front|back|both" }`, or a list of these (one per face);
+    compositions can contain shader layers (including ones that read text channels), so a 3D sign, screen or poster can carry an animated GLSL treatment (proof: `deliverables/ceiling1/proof_shader_texture_3d.png`, top row as 2D layers, bottom row on 3D panes);
   - `material`: a name or an object;
   - flags: `camera: false` (a reflector card), `shadow`, `thin`.
 - **`materials`:**
@@ -81,7 +85,7 @@ You are not limited to the preset shapes. These types build a mesh from your des
 
 - **`extrude`:** any SVG path, as a solid with a rounded bevel. It stands on y = 0, `height` tall. Use it for logos, icons and signs. Inner subpaths cut holes.
   `{ "type": "extrude", "d": "M0 0 L40 0 L40 10 L10 10 L10 30 L0 30 Z", "height": 0.6, "depth": 0.15, "bevel": 0.01, "material": "gold" }`
-- **`lathe`:** a profile `[[radius, y], ...]` revolved about Y. Use it for vases, bottles, lenses, columns and chess pieces. `segments` defaults to 96.
+- **`lathe`:** a profile `[[radius, y], ...]` revolved about Y. Use it for vases, bottles, lenses, columns and chess pieces. `segments` defaults to 96. The profile is smoothed through the points (Catmull-Rom); `"smooth": false` keeps hard corners.
   `{ "type": "lathe", "points": [[0, 0], [0.22, 0.02], [0.3, 0.25], [0.12, 0.6], [0.16, 0.85], [0, 0.86]], "material": "ceramic" }`
 - **`tube`:** a circle swept along a path, for cables, neon, springs and paths through space.
   - The path is `points` `[[x, y, z], ...]` (smoothed) or `path`, an expression of `s` (0→1).
@@ -95,7 +99,7 @@ You are not limited to the preset shapes. These types build a mesh from your des
 - **`mesh`:** raw `vertices` `[[x, y, z], ...]` and `faces` (triangles, polygons or a flat index list). Normals are smoothed unless `"flat": true`.
   `{ "type": "mesh", "vertices": [[0, 0.8, 0], [-0.25, 0.1, -0.25], [0.25, 0.1, -0.25], [0, 0.1, 0.25]], "faces": [[0, 2, 1], [0, 3, 2], [0, 1, 3], [1, 2, 3]], "flat": true }`
 
-Shapes whose expressions use `t` (seconds) are rebuilt every frame: waves, growing tubes, morphing surfaces (`examples/video/lookdev/wave.json`). This costs about 44 ms per frame for a 160² heightfield plus a 300-segment tube, and turns off the baked floor. Shapes without `t` are built once. Motion blur follows object motion, not deformation. To generate many objects, put `{ "script": "..." }` in `objects`; it expands to the items it returns. Cost: tracing a mesh costs about the same as the preset shapes of similar screen size. A 160×32 surface or a 128² heightfield adds under 5 ms to scene build, and render time is set by pixels covered, not by triangle count.
+Proof of animated open geometry in an abstract piece: `docs/video/shots/3d-abstract/ribbon.mp4` (5 s, 1080p30, rendered in about 105 s on 4 cores; a flowing surface ribbon, a growing tube and a bouncing sphere on a yellow sweep). Shapes whose expressions use `t` (seconds) are rebuilt every frame: waves, growing tubes, morphing surfaces (`examples/video/lookdev/wave.json`). This costs about 44 ms per frame for a 160² heightfield plus a 300-segment tube, and turns off the baked floor. Shapes without `t` are built once. Motion blur follows object motion, not deformation. To generate many objects, put `{ "script": "..." }` in `objects`; it expands to the items it returns. Cost: tracing a mesh costs about the same as the preset shapes of similar screen size. A 160×32 surface or a 128² heightfield adds under 5 ms to scene build, and render time is set by pixels covered, not by triangle count.
 
 ## Imperfections
 
@@ -109,6 +113,21 @@ They stick to the object (object space), are deterministic, and show mostly wher
 
 Cost: measured on the comparison scene (3 objects, 1080p, 4 cores), trace went from 0.76 s to 1.02 s at 0.6, because uneven highlights get more edge samples. Proof: `docs/video/shots/3d-imperfections/compare.jpg` (clean vs `imperfections: 0.6`, with 100% crops).
 
+## Machined finishes
+
+Watches, cameras, audio gear and tools are defined by their machined surfaces. `pattern` adds one as bump on any material (`patternScale` is the period in metres, `patternStrength` defaults to 1):
+- `brushed`: fine parallel grooves (along the object's X);
+- `sunburst`: radial lines from the object's Y axis (dials);
+- `guilloche`: engine-turned waves (rings whose radius ripples with angle);
+- `clous-de-paris`: a hobnail grid of small pyramids;
+- `knurl`: crossed helical grooves (grips and crowns, on the sides of cylinders).
+
+Grooves need about six pixels per period to resolve. Below that they fade into extra roughness (sheen) instead of aliasing, so frame them close: a 100 mm `macro` at f/8–11.
+
+`{ "extends": "aluminium", "base": "#E4E6E9", "roughness": 0.15, "pattern": "guilloche", "patternScale": 0.012 }`
+
+Recipe: `anikit-video recipes precision-macro` (a knurled knob with a sunburst cap on a brushed plate, a strip sweep and a rack focus; still `docs/video/shots/3d-patterns/precision-macro.jpg`). Proof: `docs/video/shots/3d-patterns/dials.jpg` (a 100 mm macro on two dials, guilloché and clous de Paris; trace about 0.7 s at 1080p). Known limit: very fine guilloché can still moiré near the centre of the rings.
+
 ## Sets
 
 Build a stage, not a void. `set` adds a designed set around the subject as ordinary objects, so materials, keys and expressions still apply. It takes a name, `{ "preset", "color", "material", "size", "shape", "density" }`, or a list of these.
@@ -121,10 +140,11 @@ Build a stage, not a void. `set` adds a designed set around the subject as ordin
 | `field` | An abstract field of columns with noise heights, rising with distance, with a clearing for the subject (`density` 0.25–3). |
 | `arches` | A receding corridor of half-buried rings. |
 | `terrain` | Rolling fBm ground that flattens near the subject (replaces the floor). |
+| `landscape` | Terrain plus about 70 boulders and 90 stylised trees standing on it (placed with the same height function), outside a clearing. Pair it with `rig: { "preset": "golden", "gobo": false }` and a light height fog. |
 
 `{ "env": "cyc", "rig": "rembrandt", "look": "clay", "set": { "preset": "sweep", "color": "#C8664A" }, "objects": [ ... ] }`
 
-Stills (each with its spec): `docs/video/shots/3d-sets/`. Measured 1080p traces on 4 cores: 0.52–0.82 s (`field` has 784 instanced columns).
+Stills (each with its spec): `docs/video/shots/3d-sets/` (`landscape.jpg`: 1080p trace 0.8 s and object build 0.3 s, on 4 cores). Measured 1080p traces on 4 cores: 0.52–0.82 s (`field` has 784 instanced columns).
 
 ## Camera language
 
@@ -179,6 +199,8 @@ Tune it with an object: `{ "preset": "rembrandt", "ratio": 6, "rim": 1.5, "key":
 Stills (one scene, six rigs) and `sweep.mp4` (3 s, 1080p30, rendered in 43 s on 4 cores): `docs/video/shots/3d-rigs/`. Rigs cost nothing extra: a rig is a few softboxes, the same as an env. Gobos add one pattern lookup per shaded point. Measured 1080p traces on 4 cores: 0.62–0.79 s.
 Why and how studios light: `docs/video/craft/3d-design.md`.
 
+All of it together: `docs/video/shots/3d-showcase/showcase.mp4` (15.5 s, five shots: a macro reveal, an abstract field, a clay sweep, window light and the hero logo; `contact.jpg`; spec beside it).
+
 ## Looks and worlds beyond the studio
 
 Not every shot should be a chrome product on a white cyc. One word changes the whole style:
@@ -227,6 +249,17 @@ Stills (spec beside each in `examples/video/asset-library/`): `docs/video/shots/
 - Static layouts bake a noise-free floor once per spec (1.5–2.5 s). The bake is cached in `$ANIKIT_CACHE/sim` (`ANIKIT_CACHE=off` disables it), so re-renders and parallel chunks of the same spec skip it.
 - `ANIKIT_SCENE3D_PROFILE=1` prints per-stage ms and ray counts; `=2` adds micro-benchmarks of the building blocks.
 - `ANIKIT_SCENE3D_DEBUG=refl|col|diffuse` shows one buffer.
+- `anikit-video check spec.json` also flags the craft tells that make CG read cheap (`docs/video/craft/3d-design.md` §6), from the spec alone:
+  - default lighting with no `rig`;
+  - an orbit over 20°/s;
+  - a linear camera that starts and stops dead;
+  - a locked-off camera with no `shake`;
+  - f/1.4 or wider, or a lens under 20 mm;
+  - bloom over 0.15;
+  - a floating sphere;
+  - more than three hues;
+  - chrome on a white cyc with no flag;
+  - warm metals under sunset or neon.
 - Errors name the exact field with a "did you mean" suggestion: ``objects[2].material: unknown material `crome`; did you mean `chrome`?``.
 
 Reference: `docs/video/components.md#scene3d`. Code: `crates/anikit-video/src/scene3d/`.
@@ -240,8 +273,21 @@ The hot parts live in `scene3d/kernel/`:
   and Möller–Trumbore kernels picked at run time (`ANIKIT_NO_AVX2=1` forces
   the baseline). Both paths compute the same bits as the portable reference
   (unit tested).
+- `sbvh.rs`: the mesh hierarchy build. Binned SAH over all three axes with
+  spatial splits: a node straddled by long thin triangles (extruded text,
+  slabs, bevel strips) is cut at a plane, and those triangles go to both
+  sides with clipped boxes, so siblings stop overlapping. Duplicated
+  references are capped at 1× the triangle count. Same hits, about 1.8×
+  faster rays on text and slabs (`bvh_bench`: text 238 → 128 ns, slab
+  151 → 84 ns). Large meshes build in parallel (650k triangles: 1.3 s).
 - `post.rs`: the post stack on structure-of-arrays planes, row-parallel,
   hot loops in `simd_fn!` kernels (AVX2 + baseline, same bits).
+- Volumetric shafts (`Scene::volumetrics`) march at half resolution with an
+  R2 low-discrepancy offset per pixel, so the separable 5×5 binomial blur
+  cancels the banding (white-noise offsets left sandy grain in bright
+  beams), and each local light's scattering fades out over the outer 40% of
+  its reach (no visible sphere where the march stops). Before/after:
+  `docs/video/shots/rtk/shafts-before-after.jpg`.
 - `envk.rs`: environment softboxes evaluated eight lanes at a time (same
   bits as `Softbox::eval`).
 - `pool.rs`: frame-sized buffers reused across frames (fresh 100+ MB

@@ -1,0 +1,520 @@
+{
+  "name": "c-event",
+  "tags": [
+    "event-promo",
+    "music-video",
+    "kinetic-type",
+    "vertical"
+  ],
+  "refs": [
+    "kurzgesagt-short",
+    "xk-studio-offfmx-2025-main-titles",
+    "studio-river-motion-plus-design-tokyo-2024"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 5,
+      "composition": 4,
+      "typography": 4,
+      "colour": 3,
+      "light_texture": 3,
+      "motion": 3,
+      "craft": 5,
+      "originality": 3
+    },
+    "overall": 3.75,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Take the power-station idea literally into image and material: real switchgear, sparks, light that the type itself emits.",
+      "Choreograph the reveal. Give the type changes of scale and camera moves instead of fading names into one fixed grid.",
+      "Replace the single-accent dark palette and stock texture with lit, tactile frames that each work as a poster.",
+      "Build the actual world of the idea: the material, light and scale of a decommissioned power station, as A and C build theirs, instead of a dark UI panel",
+      "Give the type a point of view. Let the vertical SUBSTATION interact with the switches, voltage or space rather than sitting as a static column beside a list",
+      "Vary the choreography: camera moves, scale changes and surprise between frames, instead of one locked layout with rows lighting up",
+      "Build from the actual place: real industrial texture, light and sound-driven motion, not a black void",
+      "Develop a typographic point of view, with custom or expressive type, hierarchy and scale, integrated with the image",
+      "Choreograph distinct frames instead of one layout with elements toggling on"
+    ],
+    "tells": [
+      "Dark ground, a small tracked monospace caps label ('TWO NIGHTS IN AN OLD POWER STATION') and a single red accent: the generic tasteful-AI formula",
+      "Three of the four frames are the same layout with names fading in one by one. It builds like a slide, and very little happens.",
+      "Condensed bold grotesk lineup set as a default list. The circuit-diagram 'F01' labels are the only typographic idea and they are tiny.",
+      "The opening 50 Hz sine wave is an effect with no subject. Lighting is flat and the dust particles are generic.",
+      "The textbook 'tasteful AI' kit: near-black ground, tiny tracked mono caps label ('TWO NIGHTS IN AN OLD POWER STATION'), heavy condensed grotesk headline, single red accent (the ticket pill)",
+      "The same composition repeats across three of four frames. The only change is names going from dim to lit, so the motion amounts to an opacity reveal down a list",
+      "The opener is a glowing sine wave with '50 Hz / 198 kV' microlabels: effect with little subject",
+      "The breaker-switch/circuit metaphor is a reasonable idea, but it is rendered as thin lines and arrow glyphs, a diagram of the concept",
+      "No real light, material or texture to evoke an old power station, only faint grain specks",
+      "The generic 'tasteful AI' formula: dark ground, a tiny tracked mono caps label ('TWO NIGHTS IN AN OLD POWER STATION'), a bold condensed-sans headline, a single red accent",
+      "The same composition repeats across three of four frames, with only names fading in; it's a slide-deck reveal",
+      "Default-feeling condensed grotesk for the lineup with no scale contrast between headliners and others",
+      "The opening sine-wave frame (50 Hz / 198 kV) is an effect with no subject; the breaker-diagram lineup is a literal, obvious metaphor",
+      "No texture, material or light suggesting a real power station; faint specks are the only atmosphere"
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-short": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 8,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "studio-river-motion-plus-design-tokyo-2024": {
+      "overall": 7.25,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.25,
+  "delta": -3.5,
+  "trials": [
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "kurzgesagt-short",
+        "C": "candidate",
+        "D": "xk-studio-offfmx-2025-main-titles"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Main-title credit ('NAHUEL SALCEDO') set small and kept to one side of the frame, the way film title credits are placed",
+              "Art-directed bodily world in one colour (flesh, iris, vascular branching, a cellular ripple) with fluid sims, subsurface scattering and macro depth of field",
+              "The scale travels from cells to vessels to an eye, which suggests a planned arc across the sequence",
+              "Real material texture: the tissue is porous, the liquid splash is lit, the iris has fibres"
+            ],
+            "gaps": [
+              "The 'inside the body in red' idea has been done many times in title sequences. It needs a concept specific to this film, not just a mood.",
+              "The credit type is a default-looking light grotesk in two colours and never touches the image. Let the type sit inside the anatomy or be lit by it.",
+              "Palette is all red, so there is no counterpoint. Add a second temperature or a lighting change between frames, the way D varies its palettes."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Consistent, characterful flat-vector house style: designed characters, a bird mascot, a mammoth with stylised fur bands",
+              "Bold, saturated palette that is controlled and distinct in every frame (violet control room, cyan/orange table, magenta-lilac ice)",
+              "A different staged scene in each frame, so it reads as an edited explainer and not a repeated layout",
+              "Burned-in social captions in a generic sans, centred low, platform-default"
+            ],
+            "gaps": [
+              "Captions are platform defaults and fight the illustration. Design the subtitles as part of the system or drop them.",
+              "Flat lighting with no texture. Add grain, rim light or atmosphere to give it the depth D has.",
+              "The explainer idea is literal (ice age, so a mammoth). Find a visual metaphor that only this story could have."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 5,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "Dark ground, a small tracked monospace caps label ('TWO NIGHTS IN AN OLD POWER STATION') and a single red accent: the generic tasteful-AI formula",
+              "Three of the four frames are the same layout with names fading in one by one. It builds like a slide, and very little happens.",
+              "Condensed bold grotesk lineup set as a default list. The circuit-diagram 'F01' labels are the only typographic idea and they are tiny.",
+              "The opening 50 Hz sine wave is an effect with no subject. Lighting is flat and the dust particles are generic."
+            ],
+            "gaps": [
+              "Take the power-station idea literally into image and material: real switchgear, sparks, light that the type itself emits.",
+              "Choreograph the reveal. Give the type changes of scale and camera moves instead of fading names into one fixed grid.",
+              "Replace the single-accent dark palette and stock texture with lit, tactile frames that each work as a poster."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Strange, specific 3D worlds (a hand cradling a coral heart, a landscape erupting with light, a fabric-and-fibre jungle, a glass-and-chrome knot around beads) that read as several artists and one curated piece",
+              "Deliberate, unusual palettes that change per segment: pale lilac against rust, monochrome against violet, sage against blush, bottle green against ice blue",
+              "Excellent material work: mesh fabric, hair-like fibres, translucent resin, subsurface glow, atmospheric depth",
+              "Studio credits ('Boldtron', 'Medusa Lab') name the contributor of each section, as a festival or collective opener would"
+            ],
+            "gaps": [
+              "Credit type is a default bold sans placed like a label. Give it a point of view and let it interact with the 3D.",
+              "Each segment stands alone, so a unifying visual thread would help it read as one film and not a compilation.",
+              "Some compositions are dense to the point of clutter (the Medusa Lab frame). It needs a clearer focal hierarchy."
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 29.1,
+        "cost_usd": 0.1409302,
+        "tokens": 70093,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "kurzgesagt-short",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Strong macro-biological CG world: fibrous muscle tissue, a liquid-metal splash, branching capillaries, a cellular surface rippling outward in rings. Each one is a deliberate material study.",
+              "Monochrome blood-red palette held across every frame, with lighting motivated by subsurface scattering and specular wetness",
+              "The eye with a reflection in the pupil reads as a narrative turn: we move from inside the body to a gaze",
+              "Credit ('NAHUEL SALCEDO', two-weight red/white caps) sits cleanly in negative space. That is title-sequence convention, but it is generic",
+              "Framing shifts from macro texture to a tight portrait and then to a top-down radial shot, which implies a camera journey rather than repeated layouts"
+            ],
+            "gaps": [
+              "The 'journey through the body in red' concept is a well-worn title-sequence trope. It needs one specific conceptual hook tied to the show's subject",
+              "Typography is a default credit treatment. It never interacts with the tissue, liquid or light the way C's labels sit inside its world",
+              "The palette is so monochrome that frames start to merge. A counter-colour or value shift would give the sequence a structural beat"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "A mature, consistent house illustration system: chunky rounded characters, saturated complementary palettes, flat colour with soft gradient depth. It reads as an established explainer studio, not clip art",
+              "Varied staging: villain at a control room, birds at a memory-card game as a metaphor for a 'misconception', a mammoth for the ice age. Each frame is a distinct visual metaphor",
+              "Title card with a heat-map Europe and outlined bold rounded type integrated into the map",
+              "Burned-in social captions ('completely due', 'ice age,') are small, centred and default. They work for the format but lack craft",
+              "Vertical short-form explainer. Metaphors are fairly literal (mammoth = ice age)"
+            ],
+            "gaps": [
+              "The ideas illustrate the script literally. It needs one surprising visual metaphor that carries the whole argument",
+              "Caption typography is a default overlay. It should be designed into the frame, or given the same personality as the title card",
+              "Flat-vector finish with little texture or light. The best entries make material and lighting part of the meaning"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Dense, layered and strange 3D worlds: a translucent jade hand cradling a coral-pink sponge heart over a rusted mountain range, a monochrome erupting landscape, mesh/fabric/hair growths, glassy interlocking tubes around a cluster of red berries",
+              "An unusual, deliberate palette (celadon, pale jade, coral, olive bronze, dusk violet) that changes per scene but stays one family",
+              "Rich material simulation: gauze, fibre, hair, subsurface glass, iridescent metal. Lighting is motivated and varies per world",
+              "Every frame works as a poster. Compositions run from figure-on-horizon to full-bleed tangle",
+              "Collaborator labels (Boldtron, Medusa Lab) are small bold sans, functional rather than expressive"
+            ],
+            "gaps": [
+              "Typography is an afterthought label. A collaborative-reel identity deserves a typographic system",
+              "The individual worlds feel like separate contributions. Clearer choreography or transitions between them would make it one film",
+              "The conceptual through-line (what connects hand, volcano, growth, knot) is implied rather than stated. A sharper premise would lift the idea score"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 4,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' kit: near-black ground, tiny tracked mono caps label ('TWO NIGHTS IN AN OLD POWER STATION'), heavy condensed grotesk headline, single red accent (the ticket pill)",
+              "The same composition repeats across three of four frames. The only change is names going from dim to lit, so the motion amounts to an opacity reveal down a list",
+              "The opener is a glowing sine wave with '50 Hz / 198 kV' microlabels: effect with little subject",
+              "The breaker-switch/circuit metaphor is a reasonable idea, but it is rendered as thin lines and arrow glyphs, a diagram of the concept",
+              "No real light, material or texture to evoke an old power station, only faint grain specks"
+            ],
+            "gaps": [
+              "Build the actual world of the idea: the material, light and scale of a decommissioned power station, as A and C build theirs, instead of a dark UI panel",
+              "Give the type a point of view. Let the vertical SUBSTATION interact with the switches, voltage or space rather than sitting as a static column beside a list",
+              "Vary the choreography: camera moves, scale changes and surprise between frames, instead of one locked layout with rows lighting up"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.7,
+        "cost_usd": 0.14355059999999997,
+        "tokens": 70232,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "kurzgesagt-short",
+        "C": "studio-river-motion-plus-design-tokyo-2024",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Dense, tactile 3D material work: translucent waxy hand, coral-like growth, frayed mesh and textile, glossy olive tubing with glass petals and beaded clusters",
+              "Unusual, deliberate palettes vary by piece (dusty rose over rust terrain, sage/flesh/cream, bottle green with ice blue and garnet), yet each frame holds together",
+              "Motivated light: rim and backlight on the mountain, subsurface scattering on the hand, specular hits on the tubes",
+              "Asymmetric compositions crowded with organic detail, nothing primitive or default",
+              "Studio credits (Boldtron, Medusa Lab) mark it as a curated showcase reel"
+            ],
+            "gaps": [
+              "Reads as a compilation of studio pieces, not one authored idea; it needs a single concept running through it",
+              "Type is a minimal bold-sans credit dropped in the corner, with no relationship to the image",
+              "Cuts between unrelated worlds show no choreography between frames; it needs transitions or a visual rhyme"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent, ownable illustration system: rounded characters, a saturated non-default palette, consistent line weight and soft glows",
+              "Varied scenes (villain at a control desk, birds playing a memory-card game, heat-map Europe, mammoth) show real storyboarding and visual metaphor",
+              "The title is integrated with the map and given a dimensional outline treatment",
+              "Character acting and props suggest choreographed explainer animation"
+            ],
+            "gaps": [
+              "The house style is well established, so there's little surprise; it reads as series output, not a standout piece",
+              "Burned-in captions are small default-looking text sitting over the art, with no typographic idea",
+              "Light is flat and graphic; it lacks the material depth and atmosphere of A and C"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A coherent title-sequence concept: a macro journey through the body (flesh terrain, splashing fluid, iris, vascular roots, cellular ripple)",
+              "Committed monochrome red palette with tonal variation, not a single flat accent",
+              "Real light and texture: fluid caustics, iris fibres with a reflection in the pupil, depth of field on the veins, granular surface",
+              "The name credit uses a two-tone treatment placed inside the image, the way title-sequence credits are set",
+              "Varied scale, from extreme close-up to landscape-like, implies a choreographed camera journey"
+            ],
+            "gaps": [
+              "The visceral body-macro language (eye close-up, veins) is a familiar title-sequence trope; it needs a more surprising image",
+              "Credit type is a generic tracked sans with only a colour split; it should be integrated with the anatomy",
+              "The palette never breaks; one counterpoint colour or a light shift would add rhythm"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 4,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The generic 'tasteful AI' formula: dark ground, a tiny tracked mono caps label ('TWO NIGHTS IN AN OLD POWER STATION'), a bold condensed-sans headline, a single red accent",
+              "The same composition repeats across three of four frames, with only names fading in; it's a slide-deck reveal",
+              "Default-feeling condensed grotesk for the lineup with no scale contrast between headliners and others",
+              "The opening sine-wave frame (50 Hz / 198 kV) is an effect with no subject; the breaker-diagram lineup is a literal, obvious metaphor",
+              "No texture, material or light suggesting a real power station; faint specks are the only atmosphere"
+            ],
+            "gaps": [
+              "Build from the actual place: real industrial texture, light and sound-driven motion, not a black void",
+              "Develop a typographic point of view, with custom or expressive type, hierarchy and scale, integrated with the image",
+              "Choreograph distinct frames instead of one layout with elements toggling on"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 26.8,
+        "cost_usd": 0.13858720000000002,
+        "tokens": 69991,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "The 9.1s middle shot is one action repeated eight times: a breaker flips and a name lights. The spacing between flips is the same each time, with no build in tempo or scale.",
+        "In the vertical SUBSTATION entrance, ghosted names sit behind the wordmark and collide with it (frame 2). The overlap reads as muddy layering, not a designed reveal.",
+        "The peak flash washes the whole frame to beige at low contrast. Names and the wordmark become nearly unreadable, so the peak frame is weak.",
+        "The opening 50 Hz waveform is static and sparse for about 2s, the strongest dead air in the piece. The flat noise riser under it does not resolve into the next shot.",
+        "The ending only adds the date and the TICKETS FRIDAY block to the panel already on screen. There is no new move, and nothing calls back to the waveform opening.",
+        "Small details are slightly soft. The red F01\u2013F08 labels and the monospace tagline are thin and low contrast at 100%, and a stray light rectangle on the bus bar near F04 looks like a leftover artifact."
+      ],
+      "gaps": [
+        "Motion has no weight or variety. The switches snap linearly with no overshoot or settle, the camera never moves, nothing moves in depth, and the eight closures do not speed up. A top studio would compress the sequence, cascade the last switches together and let the system visibly power up: current running along the bus, light spilling outward, the frame shaking.",
+        "The sound sits in a sparse middle. One identical, pitch-swept click sample repeats eight times with silence between, framed by a noise riser at the start and a dense loop at the end. There is no low-end build, hum or electrical sound design that grows as each circuit closes.",
+        "Transitions and the overall structure are weak. The wave-to-wordmark cut and the white flash are blunt hard switches. The idea (a lineup shown as feeders closing on a breaker panel) is good, but it stays a single lock-off with no shot change, and it lacks a payoff that returns to the 50 Hz wave."
+      ]
+    },
+    "meta": {
+      "seconds": 23.4,
+      "cost_usd": 0.1691604,
+      "tokens": 74916,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 15.0s, 6 shots, median 1.18s, longest 9.13s\nper-second change: [2.8, 45.4, 5.3, 58.7, 5.9, 5.8, 8.9, 8.3, 9.5, 7.5, 46.8, 40.0, 0.9, 0.9]\nPACE: FAIL \u2014 longest shot 9.1s > 2.5s; 6/14 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 5,
+    "composition": 4,
+    "typography": 4,
+    "colour": 3,
+    "light_texture": 3,
+    "motion": 4.0,
+    "craft": 6.0,
+    "originality": 3,
+    "sound": 5
+  },
+  "full_overall": 4.11,
+  "cost_usd": 0.592,
+  "judge_seconds": 109.0,
+  "verdict": "FAIL"
+}

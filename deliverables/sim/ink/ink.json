@@ -1,0 +1,84 @@
+{
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "music": {
+    "style": "piano",
+    "bpm": 72,
+    "key": "Dm",
+    "mood": "calm intimate",
+    "end": "ring"
+  },
+  "scenes": [
+    {
+      "duration": 7,
+      "layers": [
+        {
+          "component": "fluid",
+          "props": {
+            "look": "ink",
+            "background": "#ece6dc",
+            "text": {
+              "text": "INK",
+              "size": 0.34,
+              "pos": [
+                0.5,
+                0.48
+              ],
+              "color": "#0c1630",
+              "amount": 0.45,
+              "weight": 900
+            },
+            "sources": [
+              {
+                "pos": [
+                  0.08,
+                  0.78
+                ],
+                "to": [
+                  0.5,
+                  0.62
+                ],
+                "angle": -20,
+                "speed": 0.9,
+                "radius": 0.035,
+                "color": "#8a1238",
+                "amount": 1.0,
+                "start": 0.6,
+                "end": 2.6
+              },
+              {
+                "pos": [
+                  0.95,
+                  0.2
+                ],
+                "angle": 160,
+                "speed": 0.7,
+                "radius": 0.03,
+                "color": "#0b3d6b",
+                "amount": 0.8,
+                "start": 1.2,
+                "end": 3.0
+              }
+            ],
+            "vorticity": 0.5,
+            "stir": 0.05
+          }
+        },
+        {
+          "text": "Ideas don\u2019t stay *put*.",
+          "font": "Instrument Serif",
+          "size": "6.5vh",
+          "color": "#1b1a22",
+          "x": "7%",
+          "y": "88%",
+          "anchor": "left",
+          "start": 4.6,
+          "enter": "mask by line up"
+        }
+      ]
+    }
+  ]
+}

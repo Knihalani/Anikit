@@ -1,0 +1,346 @@
+{
+  "refs": [
+    "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+    "blender-studio-charge-2022",
+    "calibration-simon-vpro-idents-2010"
+  ],
+  "candidate": {
+    "motion": 3,
+    "judged_professional": "1/3",
+    "gaps": [
+      "There is no acceleration, overshoot or settle anywhere",
+      "Nothing hands off: the whole field changes at once or individual tiles flip in isolation",
+      "There is no weight, staging or transition design compared with C",
+      "No easing or overshoot; it reads as a keyframed or procedural scale",
+      "No choreography: everything moves together or nothing moves",
+      "No transition design or payoff; the ripple starts and ends without intent",
+      "The first strip is a single uniform scale move with no overlap or secondary action",
+      "The tile wave runs on an even, linear-looking phase, without weight or overshoot",
+      "There are no cuts, camera language or hand-offs, and the field reads as one global transform"
+    ]
+  },
+  "refs_summary": {
+    "calibration-simon-vpro-idents-2010": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The last 4\u20135 frames before the white end card are a nearly dead hold with only small ray movement",
+        "There is one main motion idea, and almost nothing moves independently or overlaps it",
+        "There is no camera language beyond scaling, so there is little sense of depth or weight",
+        "The last 4 frames of strip 2 are a near-static hold before the end card",
+        "The motion vocabulary is limited to scale plus rotation of one element",
+        "The cut back to white is a hard pop with no transitional build",
+        "The last strip holds on a small logo for about four frames with only slight blade movement",
+        "Everything happens in one plane with no camera language",
+        "Choreography rests on a single gesture (burst and retract) with limited secondary action"
+      ]
+    },
+    "blender-studio-charge-2022": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The second strip's action is partly hidden by heavy blur, so the choreography is hard to read",
+        "There are fewer graphic transitions such as morphs or match cuts; it relies on straight cuts",
+        "Some frames in the robot shot repeat the pose for a moment",
+        "Strip 1 is mostly a held close-up; the energy comes from the sparks, not the choreography",
+        "The face holds fairly static after the cut, with little performance arc in 10 frames",
+        "The cut into strip 2 hides the action in a blur frame instead of building a designed match",
+        "The cut into the robot shot is a hard action cut with no designed transition",
+        "Some frames in the second strip are motion-blurred to the point of illegibility, so the staging of the impact gets muddy",
+        "Framing during the close-up shot is fairly static and depends on the particles for life"
+      ]
+    },
+    "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained": {
+      "motion": 6,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The second half is close to a hold, with only a slow drift of the planets and labels",
+        "The diagram elements move mostly one at a time, with little overlap or follow-through",
+        "The flash transition is a generic bloom, not a match cut or morph between the two scenes",
+        "The diagram section is mostly a slow drift; there are long low-energy stretches",
+        "The flare transition is a stock-feeling bloom wipe rather than a designed match or morph",
+        "Little weight or overshoot; the elements fade or scale rather than act physically",
+        "The second strip settles into a near-hold, with only small orbital drift and type that does not move",
+        "The flare whiteout runs several frames with almost no readable motion, so it plays as a dead hold",
+        "Elements move on flat diagram logic, with little weight, overshoot or follow-through compared with B"
+      ]
+    }
+  },
+  "ref_mean": 7.33,
+  "trials": [
+    {
+      "key": {
+        "A": "calibration-simon-vpro-idents-2010",
+        "B": "candidate",
+        "C": "blender-studio-charge-2022",
+        "D": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "Starburst rays rotate and scale up together with the wordmark, then contract back with clear easing",
+              "The logo punches toward camera and overshoots its frame before settling back to its resting size",
+              "Hard cuts between the white and black versions are timed to the beats and read as intentional",
+              "The rays sweep out like a wipe as the mark resolves"
+            ],
+            "gaps": [
+              "The last 4\u20135 frames before the white end card are a nearly dead hold with only small ray movement",
+              "There is one main motion idea, and almost nothing moves independently or overlaps it",
+              "There is no camera language beyond scaling, so there is little sense of depth or weight"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "motion": 3,
+            "tells": [
+              "A uniform, steady zoom-out of a repeating tile pattern with no visible easing",
+              "Change is procedural: tiles swap in place and nothing has follow-through",
+              "No focal point, no choreography and no camera intent; it looks like a generated loop",
+              "The second strip is almost static apart from small motif flips"
+            ],
+            "gaps": [
+              "There is no acceleration, overshoot or settle anywhere",
+              "Nothing hands off: the whole field changes at once or individual tiles flip in isolation",
+              "There is no weight, staging or transition design compared with C"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "The spark particles have believable ballistics, motion blur and depth of field, so every frame is alive",
+              "The camera has handheld energy, with whip moves and a rack between foreground and background",
+              "The robot moves with mass: there is anticipation before the strike and impact blur",
+              "Cuts happen in the middle of the action and keep momentum, which is cinematic continuity"
+            ],
+            "gaps": [
+              "The second strip's action is partly hidden by heavy blur, so the choreography is hard to read",
+              "There are fewer graphic transitions such as morphs or match cuts; it relies on straight cuts",
+              "Some frames in the robot shot repeat the pose for a moment"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "motion": 6,
+            "tells": [
+              "The light-bloom whiteout acts as a motivated transition from the title into the diagram",
+              "Text writes on word by word, and the labels fade in sequence",
+              "The camera pulls back from the Earth\u2013Mars line to the whole solar system with eased scale",
+              "Planets keep orbiting slowly, so the long tail is not fully static"
+            ],
+            "gaps": [
+              "The second half is close to a hold, with only a slow drift of the planets and labels",
+              "The diagram elements move mostly one at a time, with little overlap or follow-through",
+              "The flash transition is a generic bloom, not a match cut or morph between the two scenes"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 21.6,
+        "cost_usd": 0.1278794,
+        "tokens": 68427,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "candidate",
+        "C": "calibration-simon-vpro-idents-2010",
+        "D": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Spark particles have varied velocities, motion blur and arcing trajectories, so every frame has life",
+              "A handheld camera micro-drifts and refocuses on the face; nothing is locked off",
+              "Strip 2: whip-pan or fast cut into a robot arm swing with heavy motion blur, then the frame settles on the follow-through",
+              "The robot head shows weight and follow-through: a lagging secondary swing as the arm passes",
+              "The dark motion-blur frame acts as a deliberate impact transition"
+            ],
+            "gaps": [
+              "Strip 1 is mostly a held close-up; the energy comes from the sparks, not the choreography",
+              "The face holds fairly static after the cut, with little performance arc in 10 frames",
+              "The cut into strip 2 hides the action in a blur frame instead of building a designed match"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "motion": 3,
+            "tells": [
+              "The zoom-out has uniform, near-linear spacing between frames, with no ease-in or ease-out",
+              "The whole tile field scales as one locked layer; there is no stagger, overlap or offset between tiles",
+              "Strip 2: a wave ripple sweeps through the tiles like a procedural displacement, uniform and without accent",
+              "There are long near-identical frames (dead holds) at the end of strip 2",
+              "No camera language beyond a 2D scale; no depth, parallax or weight"
+            ],
+            "gaps": [
+              "No easing or overshoot; it reads as a keyframed or procedural scale",
+              "No choreography: everything moves together or nothing moves",
+              "No transition design or payoff; the ripple starts and ends without intent"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "A white-to-black cut with a snap-in starburst that grows from the wordmark, a clear anticipation then burst",
+              "The wordmark scales up with overshoot past frame and then settles back to rest size: proper ease and settle",
+              "The star blades rotate and retract with staggered timing, overlapping the logo's scale move",
+              "A clean bookend: it resolves back to the white logo card with the cyan accent, a matched start and end",
+              "Graphic rhythm with deliberate accelerations; the holds read as intentional beats"
+            ],
+            "gaps": [
+              "The last 4 frames of strip 2 are a near-static hold before the end card",
+              "The motion vocabulary is limited to scale plus rotation of one element",
+              "The cut back to white is a hard pop with no transitional build"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "motion": 6,
+            "tells": [
+              "A light-flare whiteout transition from the title to the diagram, with an intentional bloom carrying the cut",
+              "Type builds on word by word ('IT' then 'TAKES'), with eased opacity",
+              "Strip 2: a camera pull-back from the Earth\u2013Mars line out to the solar system, with eased deceleration as planets enter",
+              "Planets keep orbiting slowly during the holds, so the frame is never fully dead",
+              "Label ('NEPTUNE') type-on synced to the camera arriving at rest"
+            ],
+            "gaps": [
+              "The diagram section is mostly a slow drift; there are long low-energy stretches",
+              "The flare transition is a stock-feeling bloom wipe rather than a designed match or morph",
+              "Little weight or overshoot; the elements fade or scale rather than act physically"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 23.3,
+        "cost_usd": 0.1303262,
+        "tokens": 68535,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+        "B": "blender-studio-charge-2022",
+        "C": "calibration-simon-vpro-idents-2010",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 7,
+            "tells": [
+              "Title push-in hands off to a flare whiteout that wipes into the diagram with intent",
+              "The Earth and Moon build in on time: labels and type are staggered",
+              "The Earth\u2013Mars line pulls back into the solar-system orbit view, which works as a match-cut transition",
+              "Orbiting bodies keep secondary motion going under the static headline"
+            ],
+            "gaps": [
+              "The second strip settles into a near-hold, with only small orbital drift and type that does not move",
+              "The flare whiteout runs several frames with almost no readable motion, so it plays as a dead hold",
+              "Elements move on flat diagram logic, with little weight, overshoot or follow-through compared with B"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 8,
+            "tells": [
+              "Spark particles follow believable ballistic arcs with motion blur and change in every frame",
+              "A handheld-style camera with micro-shake and rack focus gives a physical camera language",
+              "The robot strike carries weight, with anticipation, impact smear and recoil",
+              "Foreground and background act at the same time, so no frame is dead"
+            ],
+            "gaps": [
+              "The cut into the robot shot is a hard action cut with no designed transition",
+              "Some frames in the second strip are motion-blurred to the point of illegibility, so the staging of the impact gets muddy",
+              "Framing during the close-up shot is fairly static and depends on the particles for life"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "The logo scales up with overshoot and settles back with clear eased spacing",
+              "Star blades rotate and burst outward in a stagger, then retract, which reads as clean follow-through",
+              "The ident loops back to the white logo card, so the transition is built with intent",
+              "Blade gradients and type move overlapping rather than one at a time"
+            ],
+            "gaps": [
+              "The last strip holds on a small logo for about four frames with only slight blade movement",
+              "Everything happens in one plane with no camera language",
+              "Choreography rests on a single gesture (burst and retract) with limited secondary action"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "motion": 6,
+            "tells": [
+              "A continuous zoom-out across the tiling with smooth easing",
+              "In the second strip, a wave of tile motifs rotates and travels across the grid",
+              "The motion looks procedural and pattern-driven, so it could be generative"
+            ],
+            "gaps": [
+              "The first strip is a single uniform scale move with no overlap or secondary action",
+              "The tile wave runs on an even, linear-looking phase, without weight or overshoot",
+              "There are no cuts, camera language or hand-offs, and the field reads as one global transform"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 21.1,
+        "cost_usd": 0.1273502,
+        "tokens": 68391,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.386
+}

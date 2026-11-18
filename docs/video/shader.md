@@ -94,9 +94,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 | colour | `ak_palette(t, a, b, c, d)` cosine palette, `ak_linear`/`ak_srgb`, `ak_tonemap(hdr)` (ACES fit + sRGB), `ak_oklab`/`ak_oklab_inv`, `ak_mix(a, b, t)` perceptual mix, `ak_iridescence(cosTheta, thickness)` thin film |
 | 2D shapes | `ak_circle`, `ak_box(vec2, vec2)`, `ak_segment`, `ak_fill(d)` anti-aliased fill of a distance |
 | 3D shapes | `ak_sphere`, `ak_box(vec3, vec3)`, `ak_torus`, `ak_capsule`, `ak_smin`/`ak_smax` (smooth union/subtraction), `ak_ray(ro, ta, uv, zoom)` camera ray |
+| drawn and painted | `ak_px(fragCoord)` (pixels of a 1080-high frame at any render size), `ak_paper(p)` tooth and fibre height, `ak_paper_shade(col, p, amount)`, `ak_dry(d, paper, rough)` dry-brush edge of any distance, `ak_brush(p, a, b, r, seed)` one stroke (pressure taper, wobble, bristles, dry tail), `ak_stipple(p, tone, size)` dots whose area follows tone, `ak_hatch(p, dir, tone, spacing)` short hand strokes along a direction field that cross in the shadows, `ak_wedge(p, o, dir, spread, len, soft)` a designed light shape (use it as tone for stipple or hatch), `ak_boil(p, amount, rate)` line boil redrawn `rate` times a second |
 | finishing | `ak_grain(col, fragCoord, amount)` luma-weighted animated grain, `ak_vignette(col, uv, amount)` |
 
-The source is [`crates/anikit-shader/src/ak.glsl`](../../crates/anikit-shader/src/ak.glsl): about 170 lines, readable and commented.
+The drawn blocks return coverage 0..1: `col = mix(col, ink, ak_hatch(…))`. They make texture follow form. Give `ak_hatch` the surface's direction, and give tone from your lighting so stroke density tracks value. Pass object coordinates instead of `ak_px(fragCoord)` to lock paper and strokes to a moving object. Add `ak_boil` for hand-drawn life on twos. The `drawn` recipe ([still](shots/generative/drawn.jpg)) uses each of them in about 30 lines.
+
+The source is [`crates/anikit-shader/src/ak.glsl`](../../crates/anikit-shader/src/ak.glsl): about 270 lines, readable and commented.
 
 ## How it works
 
@@ -134,7 +137,7 @@ The JIT was built directly; there is no interpreter step. The masking optimisati
 | `iAudio` | `vec4` | the music now, 0..1: (level, bass, mid, treble), fast attack, 150 ms release |
 | `iBeat` | `vec4` | (pulse: 1 on each beat decaying to 0, phase 0..1 through the beat, beat number from 1, bar pulse) |
 
-`iAudio` and `iBeat` follow the spec's music: the first top-level `audio` cue with a `src` that isn't a voice-over, the same track `"@beat12"` markers use. It is analysed once, and only if a shader reads them. Without music they are 0 and a warning says so.
+`iAudio` and `iBeat` follow the spec's music. Generated `music` comes first: `iBeat` uses its exact beat grid, the same one expressions' `beat` and `bar` use, and `iAudio` is measured from its rendered mix. Otherwise they follow the first top-level `audio` cue with a `src` that isn't a voice-over, the same track `"@beat12"` markers use. The music is analysed once, and only if a shader reads them. Without music they are 0 and a warning says so.
 
 ### Uniforms
 
@@ -250,6 +253,8 @@ Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) ->
 | `flow-lines` | layer | curves grow from scattered seeds along a swirling flow field and draw themselves on paper, in a weighted palette (60/30/10). Each pixel traces the flow, so any moment renders directly ([still](shots/generative/flow-lines.jpg)). Heavy (~0.45 s/frame). `density`, `width`, `speed`, `scale`, `length`, `color1`, `color2`, `accent`, `paper` |
 | `ink` | layer | a drop of ink blooming in backlit water: billows tear into tendrils, the pigment absorbs per channel (Beer–Lambert) so colours stay rich, and a second ink can curl through ([still](shots/generative/ink.jpg)). ~0.3 s/frame. `ink`, `ink2`, `mixing`, `water`, `speed`, `size`, `center`, `turbulence` |
 | `soap-film` | layer | macro of a draining soap film: thickness swirls and drains under gravity, and six wavelengths of thin-film interference give Newton's real colour sequence (not a rainbow palette) ([still](shots/generative/soap-film.jpg)). ~0.1 s/frame. `speed`, `swirl`, `drain`, `thickness`, `background` |
+| `sky` | layer | golden-hour sky seen from the ground: low billowing clouds lit from the sun's side with warm, shadowed bases, high cirrus streaks, horizon haze and a dark ground strip for type or silhouettes ([still](shots/generative/sky.jpg)). ~0.22 s/frame. `sun` (0 afternoon … 1 sunset), `coverage`, `speed`, `warmth`, `cirrus`, `horizon` |
+| `drawn` | layer | a landscape drawn only with the `ak_` drawing blocks: brush-stroke washes, a dry-brushed sun, a stippled beam, a hill hatched along its slope with crossing strokes in shadow, an inked ridge, paper tooth and line boil on twos ([still](shots/generative/drawn.jpg)). Read it as an example and copy it. ~0.45 s/frame anti-aliased (0.22 s at 1 spp). `paper`, `ink`, `sun`, `sky`, `sky2`, `boil`, `hatch` |
 | `caustics` | layer | pool-floor caustics; ray density from the refraction map's derivatives. `speed`, `depth`, `tint` |
 | `flow-ink` | layer | two inks marbled by a curl-noise flow field. `speed`, `ink`, `ink2`, `paper` |
 | `light-shafts` | layer | sun through a window into a hazy room: pane-shaped beams, mullion shadows, leaves outside, drifting haze, dust glinting in the light. `angle`, `spread` (0 parallel … 1 fanning), `panes`, `color`, `intensity`, `haze`, `dust`, `speed` |
@@ -282,7 +287,7 @@ One line turns everything below into a distinct, printed or photographed look. P
 | `halftone` | CMYK dot screens at classic angles, or one black screen | `size`, `mono`, `angle`, `paper`, `contrast` | 29 |
 | `risograph` | two or three spot inks, off register, stencil grain | `ink1`, `ink2`, `ink3`, `use3`, `offset`, `grain`, `paper` | 28 |
 | `linocut` | carved block print: solid ink, tone-following gouges, bold outlines | `ink`, `paper`, `threshold`, `lines`, `edge` | 19 |
-| `watercolour` | washes that bleed and pool dark at their edges, paper granulation | `bleed`, `edges`, `granulation`, `paper`, `wash` | 34 |
+| `watercolour` | washes that bleed and pool dark at their edges, paper granulation | `bleed`, `edges`, `granulation`, `paper`, `wash` | 32 |
 | `crosshatch` | pen or pencil hatching, more directions for darker tones | `ink`, `paper`, `spacing`, `pencil`, `edge` | 25 |
 | `film` | photochemical stock: filmic curve, lifted blacks, red halation, gate weave, midtone grain | `stock`, `halation`, `grain`, `weave`, `fade` | 25 |
 | `dither` | ordered Bayer dither into a 2- or 3-colour palette | `pixel`, `dark`, `light`, `mid`, `levels` | 18 |
@@ -328,7 +333,7 @@ Compiling is a one-off. Kernels are cached process-wide by source and uniform se
 
 End to end through the video pipeline (evaluate, render, composite text, H.264 encode): the 18 s [`shaders.json`](examples/shaders.json) showcase, with every built-in and seven shader transitions, is 537 frames in 215 s (400 ms per frame). `{"shader": "sdf-scene"}` alone is 90 frames in 32.2 s.
 
-**Know the cost before you render.** `anikit-video still spec.json` prints each shader layer's measured ms/frame, scaled to full size, and flags anything over 200 ms (`--json` adds a `"shaders"` list). `still --scale 0.5` renders shaders at half size too, about 4× cheaper, so quick looks stay quick. `still --watch` keeps compiled kernels between edits: only a changed shader recompiles.
+**Know the cost before you render.** `anikit-video still spec.json` prints each shader layer's measured ms/frame, scaled to full size, and flags anything over 200 ms (`--json` adds a `"shaders"` list). `still --scale 0.5` renders shaders at half size too, about 4× cheaper, so quick looks stay quick. A preview stays faithful: the shader sees the final render's `fragCoord` and `iResolution` (one sample per 2×2 block), so cell sizes, grain and line widths match the downscaled final instead of shrinking. Shaders that use `texelFetch`, and layers with buffers, run at preview size instead, because texel addresses depend on the real channel size. **NaN and Inf** (a division by zero, `sqrt`/`log`/`pow` of a negative, `normalize(vec3(0))`) render as black. `still` and `render` warn with the layer and the first fragCoord where one appeared, and `still --json` reports it as `"nan_at"`. `still --watch` keeps compiled kernels between edits: only a changed shader recompiles.
 
 What costs time is pixels × work per pixel:
 

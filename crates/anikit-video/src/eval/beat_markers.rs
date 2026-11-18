@@ -71,6 +71,9 @@ fn along(grid: &[f64], t: f64) -> f64 {
     }
 }
 
+/// Generated music for shaders: (mono samples, rate, beats, bars, timeline start).
+pub(crate) type Generated = (Vec<f32>, u32, Vec<f64>, Vec<f64>, f64);
+
 impl Music {
     /// Seconds per beat and per bar.
     pub fn lengths(&self) -> (f64, f64) {
@@ -168,6 +171,24 @@ impl BeatMarkers {
         let rms = if level { envelope(&pcm.mono(), pcm.rate, (trim * pcm.rate as f64) as usize) } else { Vec::new() };
         let shift = |v: &Vec<f64>| v.iter().map(|t| t - trim + at).collect::<Vec<f64>>();
         Ok(std::sync::Arc::new(Music { beats: shift(&b.beats), bars: shift(&b.downbeats), bpm: b.bpm, level: rms, start: at }))
+    }
+
+    /// Generated `music` rendered to mono, with its exact beat and bar grid
+    /// (relative to the first sample) and its timeline start: for `iAudio`/`iBeat`.
+    /// `None` when the spec has no generated music.
+    pub(crate) fn generated(&self) -> Option<Result<Generated, String>> {
+        let m = self.music.as_ref()?;
+        Some((|| {
+            let (g, at) = m.clone()?;
+            let Some((spec, base)) = &self.music_spec else { return Err("generated music has no score".to_string()) };
+            let opts = anikit_music::RenderOpts { video_length: Some(self.length), base_dir: Some(base.clone()), rate: crate::audio::DEFAULT_RATE, stems: false };
+            let r = anikit_music::render(spec, &opts)?;
+            let mono: Vec<f32> = r.l.iter().zip(&r.r).map(|(a, b)| 0.5 * (a + b)).collect();
+            let n = (mono.len() as f64 / r.rate.max(1) as f64 * g.bpm / 60.0) as usize + 2;
+            let beats: Vec<f64> = (0..n).map(|k| g.secs(k as f64)).collect();
+            let bars: Vec<f64> = beats.iter().step_by(g.beats_per_bar.max(1.0) as usize).copied().collect();
+            Ok((mono, r.rate, beats, bars, at))
+        })())
     }
 
     /// The music: (file, timeline `at`, `trimStart`).

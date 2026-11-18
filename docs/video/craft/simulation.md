@@ -88,3 +88,20 @@ list what Anikit still lacks.
 - [Simulating thin ink with Houdini (Lester Banks)](https://lesterbanks.com/2021/09/tips-and-tricks-for-simulating-thin-ink-with-houdini/); [pepefx: ink in water](https://pepefx.blogspot.com/2014/07/ink-in-water.html).
 - [Node Fest titles 2018, particle breakdown (Jason Poley)](https://jasonpoley.myportfolio.com/node-fest-titles-2018-particle-breakdown).
 - [Creating renderable particle trails in C4D (Novedge)](https://novedge.com/blogs/design-news/cinema-4d-tip-creating-renderable-particle-trails-with-tracer-and-sweep-in-cinema-4d); [INSYDIUM case studies](https://insydium.ltd/news/case-studies/star-trek-discovery).
+
+
+## Notes from building it (2026-11-18)
+
+- **Tracer particles as ink filaments: not yet.**
+  - Tracers carried by a stable-fluids grid (1.5 M at 1080p) read as stipple, then as straight hatching with long streaks. Neither looks like ink.
+  - Two causes:
+    1. Interpolated grid velocity isn't divergence-free below the cell scale, so tracers drift into 2–4 px clumps. Moving them by the curl of an interpolated stream function fixes this part.
+    2. More than one tracer per pixel is needed before filaments read as continuous (about 10 per pixel), or each tracer must draw its own curved path history rather than a straight streak.
+  - The dye field hides both, because of its numerical diffusion.
+- **MacCormack on the velocity grid** sheared the fine dye into axis-aligned
+  steps. MacCormack on dye only, with velocity first-order, keeps the sharp
+  filaments without the artefacts.
+- **Sub-grid noise at the grid's Nyquist** (2 dye cells) aliases into
+  sawtooth edges; keep the finest turbulence octave at 4+ cells.
+- **Motion-streak sample spacing** in the particle splatter: 0.5 px is
+  needed. At 0.7 and 1.0 px the reference gate fails (ΔE p99.9 2.80 and 4.55 vs 2.3).

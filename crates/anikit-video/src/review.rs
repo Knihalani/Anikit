@@ -62,7 +62,7 @@ impl Pace {
         match self {
             Pace::Calm => Limits { longest: f32::INFINITY, median: f32::INFINITY, same: 0.85, dead_air: 3.0 },
             Pace::Steady => Limits { longest: 6.0, median: 3.5, same: 0.45, dead_air: 2.0 },
-            Pace::Fast => Limits { longest: 2.5, median: 1.5, same: 0.2, dead_air: 1.0 },
+            Pace::Fast => Limits { longest: 3.0, median: 2.0, same: 0.2, dead_air: 1.0 },
             Pace::Frantic => Limits { longest: 1.2, median: 0.7, same: 0.1, dead_air: 0.5 },
         }
     }
@@ -245,8 +245,10 @@ pub fn time_axis(ev: &Evaluator, s: &Samples, intent: &Intent, beats: Option<&[f
     if dur >= 3.0 {
         // Pace against intent.
         let mut slow = Vec::new();
-        if tl.longest > lim.longest {
-            slow.push(format!("longest shot {:.1} s > {:.1} s", tl.longest, lim.longest));
+        // The last shot may hold on purpose (a lockup, an end card).
+        let body_longest = if tl.shots.len() > 2 { tl.shots[..tl.shots.len() - 1].iter().copied().fold(0.0f32, f32::max) } else { tl.longest };
+        if body_longest > lim.longest {
+            slow.push(format!("longest shot {:.1} s > {:.1} s", body_longest, lim.longest));
         }
         if tl.median > lim.median {
             slow.push(format!("median shot {:.1} s > {:.1} s", tl.median, lim.median));
@@ -259,7 +261,10 @@ pub fn time_axis(ev: &Evaluator, s: &Samples, intent: &Intent, beats: Option<&[f
                 Pace::Fast | Pace::Frantic => "cut or make a major change on the beat every 0.5–1.5 s (\"@beat17\"): whips, snaps, speed ramps, impacts, match cuts; 1–4 words per shot",
                 _ => "shorten the longest holds, or give them a change (a camera move, a reveal, light), or declare a calmer \"intent\"",
             };
-            note("warning", "pace", format!("timeline ({} shots, median {:.1} s)", tl.shots.len(), tl.median), format!("slower than the {} intent ({}): {}", intent.pace.name(), intent.source, slow.join("; ")), fix);
+            // Shot lengths are advice (holds can be deliberate); static seconds,
+            // where nothing changes, are the stronger signal.
+            let sev = if tl.same > lim.same { "warning" } else { "tip" };
+            note(sev, "pace", format!("timeline ({} shots, median {:.1} s)", tl.shots.len(), tl.median), format!("slower than the {} intent ({}): {}", intent.pace.name(), intent.source, slow.join("; ")), fix);
         }
         // Too fast for a calm or steady film.
         if matches!(intent.pace, Pace::Calm | Pace::Steady) && tl.median < 0.6 && tl.shots.len() >= 6 {
@@ -545,7 +550,10 @@ pub fn composition(ev: &Evaluator, s: &Samples, tl: &Timeline) -> (Vec<Note>, Ve
         });
     }
     // Centred headline over a smooth backdrop (BAR #1–2), at pixels.
-    let slide: Vec<&(f32, Layout)> = lays.iter().filter(|(_, l)| l.occupied < 0.2 && ((l.bbox[0] + l.bbox[2]) / 2.0 - 0.5).abs() < 0.08).collect();
+    // Only shots with words on screen: a small centred image (an eye, an
+    // object) in a wordless film is a composition choice, not a slide.
+    let has_text = |t: f32| ev.eval(t).ops.iter().any(|o| matches!(o, crate::dl::Op::Glyphs { .. }));
+    let slide: Vec<&(f32, Layout)> = lays.iter().filter(|(t, l)| l.occupied < 0.2 && ((l.bbox[0] + l.bbox[2]) / 2.0 - 0.5).abs() < 0.08 && has_text(*t)).collect();
     if !slide.is_empty() {
         let (t, l) = slide[0];
         worst.push(("slide".into(), *t, l.bbox));
@@ -626,47 +634,40 @@ pub fn write_pack(dir: &std::path::Path, p: &crate::preview::Preview, tl: &Timel
     Ok(files)
 }
 
-/// Audio levels of the final mix: approximate loudness (gated RMS, ≈ LUFS), peak and clipping.
+/// Audio of the final mix (music, voice, cues and sound design, exactly as the
+/// render mixes it): BS.1770 integrated loudness, true peak, clipping, and
+/// whether a moving film with music has any sound design.
 pub fn audio(ev: &Evaluator, base: &std::path::Path) -> (Option<String>, Vec<Note>) {
-    if ev.audio.is_empty() && ev.music.is_none() {
+    let _ = base;
+    if ev.audio.is_empty() && ev.music.is_none() && ev.sound.is_none() {
         return (None, Vec::new());
     }
-    // Generated music is rendered to a temporary file and measured with the rest.
-    let mut tracks = ev.audio.clone();
-    let tmp = std::env::temp_dir().join(format!("anikit-review-{}.music.wav", std::process::id()));
-    if let Some(m) = &ev.music {
-        if let Ok(t) = crate::music::render_track(m, ev.duration as f64, &tmp, !ev.audio.is_empty()) {
-            tracks.push(t);
-        }
-    }
-    let mixed = crate::audio::mix(&tracks, ev.duration as f64, 24_000, Some(base));
-    let _ = std::fs::remove_file(&tmp);
-    let Ok(pcm) = mixed else { return (None, Vec::new()) };
-    let mono: Vec<f32> = pcm.samples.chunks(2).map(|c| (c[0] + c.get(1).copied().unwrap_or(c[0])) * 0.5).collect();
-    let peak = pcm.samples.iter().fold(0.0f32, |m, x| m.max(x.abs()));
+    let wav = std::env::temp_dir().join(format!("anikit-review-{}-{:p}.wav", std::process::id(), ev));
+    let pcm = match crate::pipeline::mix_audio(ev, 0.0, ev.duration, &wav) {
+        Ok(Some(p)) => crate::audio::decode_file(&p).ok(),
+        _ => None,
+    };
+    let _ = std::fs::remove_file(&wav);
+    let Some(pcm) = pcm else { return (None, Vec::new()) };
+    let (l, r): (Vec<f32>, Vec<f32>) = pcm.samples.chunks_exact(2).map(|c| (c[0], c[1])).unzip();
+    let m = anikit_music::dsp::loudness::measure(&l, &r, pcm.rate as f32);
+    let (lufs, tp) = (m.integrated, m.true_peak);
     let clipped = pcm.samples.iter().filter(|x| x.abs() >= 0.999).count();
-    // 400 ms blocks, gated at −70 dB absolute and −10 dB relative (BS.1770-style, unweighted).
-    let blk = (pcm.rate as usize * 2) / 5;
-    let ms: Vec<f64> = mono.chunks(blk).filter(|c| c.len() == blk).map(|c| c.iter().map(|x| (*x as f64).powi(2)).sum::<f64>() / c.len() as f64).collect();
-    let db = |m: f64| -0.691 + 10.0 * m.max(1e-12).log10();
-    let abs: Vec<f64> = ms.iter().copied().filter(|m| db(*m) > -70.0).collect();
-    let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len().max(1) as f64;
-    let rel = db(mean(&abs)) - 10.0;
-    let gated: Vec<f64> = abs.iter().copied().filter(|m| db(*m) > rel).collect();
-    let lufs = if gated.is_empty() { -70.0 } else { db(mean(&gated)) };
-    let peak_db = 20.0 * (peak.max(1e-9) as f64).log10();
     let mut notes = Vec::new();
     if clipped > 0 {
-        notes.push(Note { severity: "error", check: "audio", path: "audio".into(), message: format!("{clipped} clipped samples (peak {peak_db:.1} dBFS)"), fix: "lower the loudest cue's volume, or let the music engine master it (\"music\")".into() });
-    } else if peak_db > -1.0 {
-        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("peak {peak_db:.1} dBFS leaves no headroom (true peak may clip after encoding)"), fix: "keep peaks under −1 dBFS".into() });
+        notes.push(Note { severity: "error", check: "audio", path: "audio".into(), message: format!("{clipped} clipped samples (true peak {tp:.1} dBTP)"), fix: "lower the loudest cue's volume, or add \"sound\": \"auto\" (it masters to −14 LUFS / −1 dBTP)".into() });
+    } else if tp > -1.0 {
+        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("true peak {tp:.1} dBTP leaves no headroom (it may clip after AAC encoding)"), fix: "keep true peaks under −1 dBTP (\"sound\" masters to that)".into() });
     }
     if lufs < -20.0 && lufs > -69.0 {
-        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("quiet: ≈{lufs:.0} LUFS (web and social normalise to about −14)"), fix: "raise the music/voice volume towards −14 LUFS".into() });
+        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("quiet: {lufs:.1} LUFS (web and social normalise to about −14)"), fix: "raise the music/voice volume towards −14 LUFS, or add \"sound\" (loudness −14)".into() });
     } else if lufs > -9.0 {
-        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("very loud: ≈{lufs:.0} LUFS (platforms will turn it down and it may sound crushed)"), fix: "lower the volume towards −14 LUFS".into() });
+        notes.push(Note { severity: "warning", check: "audio", path: "audio".into(), message: format!("very loud: {lufs:.1} LUFS (platforms will turn it down and it may sound crushed)"), fix: "lower the volume towards −14 LUFS".into() });
     }
-    (Some(format!("audio: ≈{lufs:.1} LUFS, peak {peak_db:.1} dBFS")), notes)
+    if ev.music.is_some() && ev.sound.is_none() && ev.audio.iter().all(|t| matches!(t.src, crate::audio::Source::File(_))) {
+        notes.push(Note { severity: "tip", check: "sound", path: "sound".into(), message: "music but no sound design: moves, landings and reveals are silent".into(), fix: "add \"sound\": \"auto\" (or a palette like \"luxury\"); `anikit-video sound plan` lists what it would add".into() });
+    }
+    (Some(format!("audio: {lufs:.1} LUFS, true peak {tp:.1} dBTP, LRA {:.1} LU", m.lra)), notes)
 }
 
 /// One line on intent versus what was measured.
@@ -756,6 +757,10 @@ mod tests {
         let loud = ev(json!({ "size": [320, 180], "audio": [ { "sfx": "impact", "at": 0.5, "volume": 12 } ], "scenes": [ { "duration": 2, "layers": [] } ] }));
         let (line, n) = audio(&loud, std::path::Path::new("."));
         assert!(line.is_some() && n.iter().any(|x| x.check == "audio"), "{line:?} {n:?}");
+        // Sound design masters: no level warnings, and the line reports real LUFS.
+        let ok = ev(json!({ "size": [320, 180], "sound": { "design": "off", "cues": [ { "sfx": "impact", "at": 0.5 } ] }, "scenes": [ { "duration": 2, "layers": [] } ] }));
+        let (line, n) = audio(&ok, std::path::Path::new("."));
+        assert!(line.as_deref().is_some_and(|l| l.contains("LUFS")) && !n.iter().any(|x| x.check == "audio"), "{line:?} {n:?}");
     }
 
     #[test]

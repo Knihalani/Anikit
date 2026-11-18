@@ -33,4 +33,5 @@ pub mod envk;
 pub mod par;
 pub mod pool;
 pub mod post;
+pub mod sbvh;
 pub mod wide;

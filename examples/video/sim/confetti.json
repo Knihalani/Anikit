@@ -1,0 +1,90 @@
+{
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "scenes": [
+    {
+      "duration": 5,
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "studio",
+            "rig": "rembrandt",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    0,
+                    1.5,
+                    5.5
+                  ],
+                  "target": [
+                    0,
+                    1.4,
+                    0
+                  ],
+                  "focal": 40,
+                  "fstop": 2.8,
+                  "focus": 5.0
+                },
+                {
+                  "t": 5,
+                  "pos": [
+                    0.6,
+                    1.4,
+                    5.0
+                  ],
+                  "target": [
+                    0,
+                    1.2,
+                    0
+                  ],
+                  "focal": 42,
+                  "fstop": 2.8,
+                  "focus": 4.6
+                }
+              ]
+            },
+            "objects": [
+              {
+                "type": "particles",
+                "count": 4000,
+                "seed": 9,
+                "emit": {
+                  "pos": "=[0.2*cos(rand(i)*6.2832)*sqrt(rand(i+5)), 0.3, 0.2*sin(rand(i)*6.2832)*sqrt(rand(i+5))]",
+                  "vel": "=[2.4*sqrt(rand(i+3))*cos(rand(i+1)*6.2832), 4.6 + 1.8*(rand(i+2)*2 - 1), 2.4*sqrt(rand(i+3))*sin(rand(i+1)*6.2832)]"
+                },
+                "spread": 0,
+                "gravity": -3.0,
+                "drag": 1.0,
+                "size": 0.03,
+                "size_var": 0.3,
+                "color": [
+                  "#ff3d6e",
+                  "#ffd23d",
+                  "#3dd6ff",
+                  "#7cff6b",
+                  "#ffffff",
+                  "#b06bff"
+                ],
+                "color_by": "random",
+                "blend": "over",
+                "lit": true,
+                "sprite": "confetti",
+                "glint": {
+                  "amount": 2,
+                  "sharpness": 40
+                },
+                "force": "=[0.9*sin(t*2.7+i*1.7), 0, 0.9*cos(t*2.1+i*0.9)]"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

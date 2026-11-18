@@ -1,0 +1,524 @@
+{
+  "name": "hf-g-titles",
+  "tags": [
+    "kinetic-type",
+    "title-sequence"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "thank-you-for-smoking",
+    "xk-studio-offfmx-2025-main-titles"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 4,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 2,
+      "motion": 3,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 3.38,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Build a real idea in place of a literal pun: let the azulejo tiling grow into Lisbon's material reality (glazed ceramic, crazing, real light raking across fa\u00e7ades) the way B grows its world",
+      "Give the typography craft and a point of view: a custom or carefully chosen face that is built from the tile system itself, with scale contrast and integration, instead of default bold sans plus a drop shadow and mono labels",
+      "Choreograph change: every frame should be a distinct poster with progression and surprise, not one layout reused with the words and pattern swapped",
+      "Replace the literal pun with a real idea, for example building the type from the Lisbon tile system itself and using actual glazed ceramic material, light and imperfection",
+      "Develop the typography: a custom or characterful face, expressive scale and integration with the pattern, not a centred headline over an information table",
+      "Choreograph a real arc with varied compositions and camera, instead of tile, pattern, pattern, slide, slide",
+      "Find an idea beyond the pun: treat real Lisbon azulejos as the subject, with glaze, crazing, hand-painted irregularity and light raking across ceramic, as B does with brass and wood",
+      "Give the type a point of view: replace the default grotesk and drop shadow with a custom or tile-derived letterform that is built from or broken by the pattern",
+      "Choreograph actual change: vary scale, camera and composition between frames, avoid ending on duplicate holds, and let the pattern build the title rather than cut to a slide"
+    ],
+    "tells": [
+      "The textbook 'tasteful AI' system: a cream ground, a single cobalt accent with a tomato secondary, small monospace corner labels ('offset / 27', coordinates, 'opening titles', 'keynote 01 follows')",
+      "A default bold grotesk headline with a literal drop shadow labelled '\u2198 offset: 14px', which is the product name illustrated by a pun on itself",
+      "A slide-deck info row ('01 / what', '02 / where', '03 / when') set in generic sans, which reads as placeholder UI",
+      "The last two frames are almost identical, and the sequence shows one tile, two pattern fills and a static title card, so there is little choreography",
+      "Flat vector shapes with no light, texture or depth; the Truchet/azulejo tile is a reasonable nod to Lisbon but is executed as a generative default",
+      "Dimension callouts ('120', 'tile / 01') are a decorative 'design-systems' affectation with no payoff",
+      "The textbook 'tasteful AI' look: cream ground, a single cobalt accent plus a token red, and tiny monospace corner labels ('offset / 27', coordinates, 'opening titles', 'keynote 01 follows')",
+      "The idea is literal and obvious: the conference is called 'offset', so the headline gets a 14px drop shadow annotated '\u2198 offset: 14px'. It is a pun spelled out with a callout",
+      "Default typography: a generic heavy grotesk headline and an Inter-like info row in a numbered '01 / what, 02 / where, 03 / when' slide layout with a hairline rule",
+      "Frames repeat: the last two frames are near-identical, and the two pattern frames are the same quarter-circle tile grid reshuffled, so very little happens",
+      "Flat vector, no light, texture or depth; the azulejo reference is reduced to a clip-art tile with dimension callouts",
+      "The textbook generic look: cream ground, a single cobalt accent plus one coral highlight, small monospace corner labels ('offset / 27', coordinates, 'opening titles', 'keynote 01 follows')",
+      "Default typography: a heavy generic grotesk wordmark with a literal 14px drop shadow, Inter-like info row, and mono metadata, set like a slide",
+      "Literal idea: the word 'offset' illustrated with an offset shadow and a tile with dimension callouts ('120', 'tile / 01'); the 'what / where / when' table is placeholder event-template structure",
+      "The last two frames are almost identical and the two pattern frames are near-duplicates, so little happens across the sequence",
+      "Flat vector shapes with no light, texture or depth; the azulejo nod to Lisbon is the only specific idea and it is reduced to quarter-circle primitives"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "thank-you-for-smoking": {
+      "overall": 8.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.38,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 8.42,
+  "delta": -5.04,
+  "trials": [
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "thank-you-for-smoking"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, tactile CG: translucent hand forms, coral-like growths, fibres, gauze, knitted tubes, glassy organic sculpture, each with its own material behaviour",
+              "A deliberate, unusual palette that changes from frame to frame (dusty rose over rust terrain, violet dusk volcano, sky-blue backlight, pistachio/flesh, bottle green with teal glass)",
+              "Motivated light: rim-lit glass against a blue sky, glowing emissive cores, volumetric plume over the peak",
+              "Each frame is a different world and composition, which suggests choreographed shot variety and not a repeated template",
+              "Artist-name supers sit on top of the image like small bold-sans labels with little typographic idea, but the custom OFFF MX wordmark fits the festival-identity context"
+            ],
+            "gaps": [
+              "Give the typography a real role: the artist supers are default bold-sans tags placed in the corner and never interact with the 3D worlds the way B's credits sit inside the map",
+              "Find one connecting idea: it plays as a showreel of strong individual frames ('organic-synthetic surrealism') instead of one specific concept that only this piece could have, like B's clockwork map or D's packaging",
+              "Shape the sequence: nothing in the frames points to a narrative or build towards a payoff, so the order of shots could be shuffled"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, ownable idea: the world drawn as a clockwork map that builds itself, so the credits work as geography and as a guide to the story",
+              "Real material and light: an engraved bronze astrolabe band, sunburst flare, wood, brass and bone-like cogs, aged parchment map, shallow depth of field on miniatures",
+              "Typography with a point of view: a flared classical serif with the house sigil beside each credit, set in perspective into the scene; the main title is locked into the astrolabe emblem",
+              "Clear choreography and structure: it opens on the astrolabe, travels across the map with growing mechanisms, and closes on the title, which bookends the sequence",
+              "A restrained warm palette of bronze, parchment and slate, broken by the blown-out sun core"
+            ],
+            "gaps": [
+              "The title card leans on a heavy glow and lens-flare clich\u00e9 that is less refined than the map sequence",
+              "The credit type is small and partly lost against busy detail in some frames (e.g. the Michelle Fairley credit)",
+              "The palette is closed and warm-brown overall, with few colour accents to mark separate locations"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' system: a cream ground, a single cobalt accent with a tomato secondary, small monospace corner labels ('offset / 27', coordinates, 'opening titles', 'keynote 01 follows')",
+              "A default bold grotesk headline with a literal drop shadow labelled '\u2198 offset: 14px', which is the product name illustrated by a pun on itself",
+              "A slide-deck info row ('01 / what', '02 / where', '03 / when') set in generic sans, which reads as placeholder UI",
+              "The last two frames are almost identical, and the sequence shows one tile, two pattern fills and a static title card, so there is little choreography",
+              "Flat vector shapes with no light, texture or depth; the Truchet/azulejo tile is a reasonable nod to Lisbon but is executed as a generative default",
+              "Dimension callouts ('120', 'tile / 01') are a decorative 'design-systems' affectation with no payoff"
+            ],
+            "gaps": [
+              "Build a real idea in place of a literal pun: let the azulejo tiling grow into Lisbon's material reality (glazed ceramic, crazing, real light raking across fa\u00e7ades) the way B grows its world",
+              "Give the typography craft and a point of view: a custom or carefully chosen face that is built from the tile system itself, with scale contrast and integration, instead of default bold sans plus a drop shadow and mono labels",
+              "Choreograph change: every frame should be a distinct poster with progression and surprise, not one layout reused with the words and pattern swapped"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, ownable conceit: every credit is designed as a period cigarette pack, so the idea is inseparable from the film's subject and its irony",
+              "Typography with real range and point of view: a banner-ribbon slab, brush script, a classical serif paired with spaced caps ('LIGHTS'), Art Deco caps, retro script over a condensed bold sans; each one is matched to its pack",
+              "Real printed-ephemera texture: foil gold, paper grain, halftone engraving (hound, eagle, crown crest), scalloped borders, a tax stamp",
+              "A deliberate palette per pack (royal blue/gold, orange/cream, red/white/blue, menthol green, Marlboro-ish red with filter-tip orange)",
+              "Pun-level wit integrated into the design ('David Koechner LIGHTS', 'UNDERAGE SALE PROHIBITED', 'HONEY-TOASTED')"
+            ],
+            "gaps": [
+              "The frames suggest mostly flat macro pans across 2D surfaces, so camera choreography and spatial depth vary less than in B",
+              "There is less dimensional light: the packs read as scanned flats more than lit physical objects in space",
+              "The structure is one repeated device (one pack per credit), which is cohesive but risks becoming predictable without the escalation B's build gives it"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.8,
+        "cost_usd": 0.1606986,
+        "tokens": 72083,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "thank-you-for-smoking",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, tactile 3D material work: translucent silicone hand, coral-like growths, knitted mesh, fibres, glass and liquid tubes, all lit with motivated rim and subsurface light",
+              "A deliberate, unusual palette that shifts between frames (dusty pink dusk, violet night, sky blue, lime/fleshy, deep green) while staying coherent",
+              "Each frame is a fresh composition with a strong silhouette and real depth layering, so the motion varies from frame to frame instead of repeating",
+              "Weakness: the typography is just small wordmarks/studio names dropped into a corner, with no integration. It reads like a festival ident or sponsor reel with a loose biomorphic theme rather than one sharp idea"
+            ],
+            "gaps": [
+              "Give it a single governing idea that ties the organic sculptures together into a story, instead of a run of beautiful but interchangeable vignettes",
+              "Integrate the type with the image (have it occluded, deformed or lit by the material world) rather than corner-placing logos",
+              "Choreograph transitions between the scenes, such as match cuts on form or material, so the piece builds to a payoff the way B's map-to-logo arc does"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "Specific, ownable idea: the world is a clockwork map that builds itself, so the title sequence works as orientation for the story's geography",
+              "Real material and light: carved wood, brass gears, engraved astrolabe band with dragon reliefs, and volumetric sunburst, all with tangible texture and depth of field",
+              "Clear choreography: macro astrolabe, then a city rising, then mechanical detail, then a top-down map with a pin, then a lockup that resolves the opening band, so it is cyclical and builds",
+              "Credits set in a carefully chosen period serif with heraldic sigil bullets, tucked into the miniature world; the final logotype has scale contrast (small 'of') and sits within the astrolabe ring"
+            ],
+            "gaps": [
+              "Credit type is small and fairly conventional against the richness of the image, and it could interact more physically with the mechanism",
+              "The warm amber grade is quite uniform; a bolder palette shift per region could add contrast across the sequence",
+              "The flare-heavy bookends lean on glow; tighter control there would match the precision of the middle section"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A sharp, satirical concept only this film could have: every credit is a fictional cigarette pack, so the subject becomes the typographic system",
+              "Typography with a real point of view: a different period-correct face per pack (arched slab on a banner, brush script, Clarendon-ish 'LIGHTS', Art Deco caps, script plus bold sans), each matched to packaging vernacular",
+              "A deliberate, varied mid-century palette (royal blue/gold, orange/cream, Americana red-white-blue, menthol green, Marlboro-like red) with printed-paper texture, foil and halftone feel",
+              "Every frame is a poster; ornament details (eagle, crown crest, hound, airplane, scalloped edge, the cigarette row) are witty and specific"
+            ],
+            "gaps": [
+              "The camera grammar is fairly uniform (close crops panning across flat packs), so the motion has less spatial variety and weight than B",
+              "Light is mostly flat scan-like illumination; real foil glints, cellophane and dimensional packs could add depth",
+              "Transitions between packs could be more choreographed (unfolding, sliding out of cartons) to build an arc rather than a sequence of equal beats"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook 'tasteful AI' look: cream ground, a single cobalt accent plus a token red, and tiny monospace corner labels ('offset / 27', coordinates, 'opening titles', 'keynote 01 follows')",
+              "The idea is literal and obvious: the conference is called 'offset', so the headline gets a 14px drop shadow annotated '\u2198 offset: 14px'. It is a pun spelled out with a callout",
+              "Default typography: a generic heavy grotesk headline and an Inter-like info row in a numbered '01 / what, 02 / where, 03 / when' slide layout with a hairline rule",
+              "Frames repeat: the last two frames are near-identical, and the two pattern frames are the same quarter-circle tile grid reshuffled, so very little happens",
+              "Flat vector, no light, texture or depth; the azulejo reference is reduced to a clip-art tile with dimension callouts"
+            ],
+            "gaps": [
+              "Replace the literal pun with a real idea, for example building the type from the Lisbon tile system itself and using actual glazed ceramic material, light and imperfection",
+              "Develop the typography: a custom or characterful face, expressive scale and integration with the pattern, not a centred headline over an information table",
+              "Choreograph a real arc with varied compositions and camera, instead of tile, pattern, pattern, slide, slide"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.1,
+        "cost_usd": 0.15571459999999998,
+        "tokens": 71829,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "game-of-thrones",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea that only fits this film: every credit is set as a different fake cigarette-pack design, so the credits themselves make the film's satirical point about tobacco branding",
+              "Typography has a real point of view and changes on every card: banner-ribbon slab caps, a brush script ('Cameron Bright'), an engraved serif with a 'LIGHTS' sub-brand, deco caps, and a script-plus-bold-sans director card, each matched to a mid-century packaging style",
+              "Real printed-material texture: foil gold, worn cardstock, slightly off-register red and blue stripes, and engraved heraldry (crown, eagle, hound) instead of clip-art",
+              "Deliberate period palettes that change per pack (navy and gold, orange and cream, Americana red, white and blue, menthol green) yet still read as one system",
+              "Tight crops and the pull-back to a row of filters in the final frame suggest a camera choreographed across the surface of the packs, not static slides",
+              "Small jokes add depth: 'UNDERAGE SALE PROHIBITED', 'HONEY-TOASTED TOBACCO LIGHTS', 'PREMIUM BLEND', 'MENTHOL CIGARETTES'"
+            ],
+            "gaps": [
+              "Inferred motion is fairly flat (lateral pans across 2D artwork); a few moments of depth, like a pack lid opening or foil catching light, would add weight against B's dimensional camera",
+              "The format repeats (crop of pack plus name); a mid-sequence break in rhythm or scale would add surprise",
+              "Light is scanned and flat; raking light on the embossing and foil would bring it closer to B's material richness"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, memorable idea: the world map as a clockwork model that builds itself, which works as story orientation, a political argument and a brand at once",
+              "Real light and material: a central sun-like light source on an engraved armillary band, aged brass, carved wood, parchment terrain, and atmospheric haze with shallow depth of field",
+              "The frames clearly imply choreography: a sweeping macro camera, mechanisms unfolding (cogs, the antler-like spire, Winterfell's machinery), then a flight down to the map and a pull-back to the title",
+              "Typography is carefully chosen and placed: a small tracked Trajan-style credit with a house sigil sitting inside the 3D scene, building to a lit, metallic title lockup",
+              "Restrained, motivated palette of bronze, slate and moss; every frame works as a poster"
+            ],
+            "gaps": [
+              "Credit typography is conventional epic-fantasy Trajan; it is well placed but not as inventive as A's per-card type ideas",
+              "The burnt-orange bloom on the band and title is close to genre clich\u00e9",
+              "The low-angle tabletop framing repeats in the middle frames; more variety in scale or viewpoint there would add surprise"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, tactile 3D with real material work: subsurface skin, coral-like growths, mesh fabric, glass, hair fibres and brass-like tubes, with considered rim and back light",
+              "Each frame has its own unusual palette (dusty pink over rust, violet dusk, cyan sky, sage and peach, bottle green), which suggests several artists' segments, like a festival title sequence",
+              "A recurring landscape horizon and organic, writhing forms tie the segments together, and each segment appears to have a different choreography",
+              "Craft is high and the textures are not stock primitives"
+            ],
+            "gaps": [
+              "Typography is an afterthought: small bold-sans artist names dropped into the corner like captions, with no integration into the images, unlike A's type-as-object or B's in-scene credits",
+              "No single unifying idea; it reads as a collection of beautiful renders in the current organic-surreal 3D vocabulary rather than a concept only this piece could have",
+              "Compositions are mostly a centred hero object on a horizon; there is little sense of authored transitions or one camera move linking the parts, compared with B"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook generic look: cream ground, a single cobalt accent plus one coral highlight, small monospace corner labels ('offset / 27', coordinates, 'opening titles', 'keynote 01 follows')",
+              "Default typography: a heavy generic grotesk wordmark with a literal 14px drop shadow, Inter-like info row, and mono metadata, set like a slide",
+              "Literal idea: the word 'offset' illustrated with an offset shadow and a tile with dimension callouts ('120', 'tile / 01'); the 'what / where / when' table is placeholder event-template structure",
+              "The last two frames are almost identical and the two pattern frames are near-duplicates, so little happens across the sequence",
+              "Flat vector shapes with no light, texture or depth; the azulejo nod to Lisbon is the only specific idea and it is reduced to quarter-circle primitives"
+            ],
+            "gaps": [
+              "Find an idea beyond the pun: treat real Lisbon azulejos as the subject, with glaze, crazing, hand-painted irregularity and light raking across ceramic, as B does with brass and wood",
+              "Give the type a point of view: replace the default grotesk and drop shadow with a custom or tile-derived letterform that is built from or broken by the pattern",
+              "Choreograph actual change: vary scale, camera and composition between frames, avoid ending on duplicate holds, and let the pattern build the title rather than cut to a slide"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.3,
+        "cost_usd": 0.16245160000000003,
+        "tokens": 72181,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "About 5 s of dead air (8\u201313 s): the title card holds with almost no change (0.5\u20131.8 change/s), so the back third of the piece is a static slide",
+        "During the tile-to-title transition the 'offset' fill passes through a muddy near-black or navy before settling on blue. It reads as a crossfade blend, not a designed colour move",
+        "Stray tile fragments and pixel specks are left floating in the empty field during the tile dissolve (pairs row 2), so the clear-out looks unfinished",
+        "Tile seams in the crop show uneven hairline grout lines and faint misregistration between neighbouring tiles. Some arcs stop short at tile edges",
+        "The info row comes in with a heavy generic blur-fade ('Design' blurred in frame 3), which is the stock text-reveal preset",
+        "The last second jumps abruptly (48 change/s) after the long hold, so the exit is a cut-out with no settled ending",
+        "Flat vector fills with no grain, light or falloff, even though the subject is ceramic azulejo tile"
+      ],
+      "gaps": [
+        "Choreography peaks too early (the tile flood around 5\u20136 s, about 40%) and then stops. Top studios would let the tiles assemble the wordmark, push to a peak at 60\u201380% and leave a shorter, active hold with secondary motion such as tile ripples, a breathing offset shadow or the pattern drifting",
+        "The 'offset' idea (a 14px shadow on the type, tiles shifted in the pattern) is labelled but not animated. The offset value should drive the motion, for example tiles sliding by the offset or the shadow springing into register on an audio hit, so the device carries the film rather than being an annotation",
+        "Finish and sound are competent, not distinctive. Flat tiles with no glaze, light or texture and seam artefacts at 100%. The soundtrack has good tick-sync and a riser into the reveal, but after the 8 s impact it sits on a static bed with no development and no designed ending to match the picture"
+      ]
+    },
+    "meta": {
+      "seconds": 22.3,
+      "cost_usd": 0.15630899999999998,
+      "tokens": 71438,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 15.0s, 1 shots, median 15.00s, longest 15.00s\nper-second change: [2.4, 18.0, 34.9, 34.4, 36.9, 67.4, 57.7, 19.3, 1.8, 1.2, 0.7, 1.2, 0.5, 48.0]\nPACE: FAIL \u2014 longest shot 15.0s > 2.5s; median shot 15.0s > 1.5s; 6/14 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 4,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 2,
+    "motion": 4.0,
+    "craft": 5.0,
+    "originality": 3,
+    "sound": 5
+  },
+  "full_overall": 3.78,
+  "cost_usd": 0.635,
+  "judge_seconds": 118.5,
+  "verdict": "FAIL"
+}

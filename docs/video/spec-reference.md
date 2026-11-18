@@ -128,6 +128,8 @@ That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the 
 | `label` | `$body` | `1.8vh` | 600 | `$muted` (uppercase, letterSpacing 0.08em) |
 | `code` | `$mono` | `2.6vh` | 400 | `$text` |
 
+
+`"palette": "#e4572e split"` (schemes `mono analogous complement split triad`, plus `dark`) generates `ink paper mid accent accent2 tint` and the roles `bg text primary secondary muted surface` from one seed in OKLCH. Explicit `colors` win. Preview it with `anikit-video palette "<seed> <scheme>"`. Any colour can be a riso ink: `"riso:fluorescent-pink"` (`anikit-video palette riso` lists 19).
 ## Grid
 
 `"grid": { "columns": 12, "rows": 8, "margin": 96, "gutter": 24, "baseline": 12, "areas": { "head": "1-8/1-3" }, "show": false }` on the video, a scene (replaces it) or a group (for its children). Layers snap to it with `cell`. `margin` takes 1, 2 (`[v, h]`) or 4 lengths (default 5% of the short side); `gutter` 1 or 2 (default 2%). With `baseline`, text in a cell gets leading in whole baseline units. `show: true` tints the fields and baselines over the scene; `show: "under"` draws the field edges as hairlines beneath the layers (`color` sets them). Guide: `anikit-video docs graphic`.
@@ -166,6 +168,7 @@ That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the 
 | `reveal` | The new scene grows out of a shape | `shape`: `circle` `diamond` `square` `star` `blob`; `amount` (spin °); `origin` |
 | `blinds` | Staggered bars open onto the new scene | `count` (8), `direction` |
 | `split` | The old frame splits in two and the halves part | `direction`: `left`/`right` part sideways, `up`/`down` vertically |
+| *(any)* + `carry: ["id", …]` | Shared elements: each layer with that `id` in both scenes travels from its old place and size to its new one during the transition (a match move between layouts) | needs a duration |
 | `whip` | Whip pan: both scenes travel a frame, blurred and stretched by speed | `direction`, `amount` (extra blur). 0.35 s |
 
 Defaults: duration 0.5 s (glitch 0.3 s), ease `inOutCubic` (`reveal`, `blinds`, `split`, `whip`: `inOutExpo`).
@@ -209,6 +212,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `shadow` | shadow | none | `{ "x": 0, "y": 12, "blur": 32, "color": "#0008" }` or `true` for a soft default. |
 | `cell` | area name, `"1-6/2-4"`, `[col, row, cols, rows]` | none | Place the layer in a field of the scene's `grid` (sets x, y, width; height except for text). `anchor` picks the cell point (default `topLeft`). See `anikit-video docs graphic`. |
 | `duotone`, `gradientMap` | `[dark, light]`, `[c1, c2, …]` | none | Map the layer's luma to inks (OKLab). `toneRange: [black, white]` pre-stretches, `posterize: N` steps, `toneAmount` mixes. |
+| `print` | `photocopy` `newsprint` `engraving` `riso` `screenprint` | none | One-word print treatment: starting values for `duotone`/`gradientMap`/`posterize`/`toneRange`/`halftone`/`inkTexture` (your keys win). |
 | `halftone` | px or `{cell, angle, shape, ink, paper, gain}` | none | Print screen over the layer (dot/line/square; ink `"source"` keeps colours; fixed to the frame). |
 | `cutout` | `"torn"`, `"scissor"`, `"clean"` or `{edge, amount, rim, rimColor, shadow, seed}` | none | Collage piece: cut edge, paper rim, printed shadow (needs numeric width/height or a cell). |
 | `inkTexture` | 0..1 or `{amount, scale, seed}` | none | Uneven ink coverage fixed to the frame (riso, screenprint). |
@@ -241,6 +245,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `letterSpacing` | length or `"0.05em"` | `0` | |
 | `uppercase` | bool | `false` | |
 | `maxLines` | integer | none | Truncates with an ellipsis. |
+| `textBoxTrim` | bool | `false` (`true` in a grid `cell`) | Align by cap height and last baseline instead of the line box (CSS `text-box: cap alphabetic`). |
 | `fit` | bool | `false` | `true` shrinks the size (never grows it) so the widest line fits `width` (default 85% of the parent), keeping your line breaks. Use it for big kinetic words on 9:16. |
 | `stroke` | colour or stroke | none | Outlined text: `"#000"` or `{ "color": "$accent", "width": 3 }` (px). Drawn under the fill; with `"color": "none"` only the outline shows. |
 | `split` | `chars` / `words` / `lines` | none | Splits the text into units so `enter`/`exit` presets stagger across them (kinetic type). |
@@ -268,6 +273,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `d` | SVG path string | | `path` data (`"M0 0 C 50 -40 …"`), local px. |
 | `headSize` | px | `4 × strokeWidth` | `arrow` head size. |
 | `trimStart`, `trimEnd` | 0..1 | `0`, `1` | Draw part of the outline (animate for draw-on; see the `drawOn` preset). |
+| `brush` | `true` or `{taper, pressure, dry, seed}` | none | Paint the stroke as a brush: tapered, pressure-varied, dry bristles; paints on with `trimEnd`. |
 
 ### `image` and `video`
 
@@ -416,7 +422,7 @@ Three layers of control, from simplest to most precise.
 
 **Animatable properties:** `x`, `y`, `width`, `height`, `scale`, `scaleX`, `scaleY`, `rotation`, `skewX`, `skewY`, `opacity`, `blur`, `radius`, `fill`/`color` (interpolated in OKLab), `stroke`(colour), `strokeWidth`, `trimStart`, `trimEnd`, `reveal`, `value`, `wipe`, `depth`, `pathOffset`, `dashOffset`, `rangeStart`/`rangeEnd`/`rangeOffset` (text animator); camera: `zoom`, `focus`, `aperture`.
 
-**Easings:** `linear`, `ease`, `easeIn`, `easeOut`, `easeInOut`; Penner names as `in`/`out`/`inOut` + `Sine`, `Quad`, `Cubic`, `Quart`, `Quint`, `Expo`, `Circ`, `Back`, `Elastic`, `Bounce` (e.g. `outCubic`, `inOutBack`; `easeOutCubic` also works); `cubicBezier(0.2, 0, 0, 1)` or an array `"ease": [0.2, 0, 0, 1]`; `steps(4)`; GSAP-style `back.out(1.7)`, `elastic.out(1, 0.3)`; springs `gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy`.
+**Easings:** `linear`, `ease`, `easeIn`, `easeOut`, `easeInOut`; Penner names as `in`/`out`/`inOut` + `Sine`, `Quad`, `Cubic`, `Quart`, `Quint`, `Expo`, `Circ`, `Back`, `Elastic`, `Bounce` (e.g. `outCubic`, `inOutBack`; `easeOutCubic` also works); `cubicBezier(0.2, 0, 0, 1)` or an array `"ease": [0.2, 0, 0, 1]`; `steps(4)`; GSAP-style `back.out(1.7)`, `elastic.out(1, 0.3)`; springs `gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy` (~8% overshoot), `springy` (~39%, the old `bouncy`).
 
 ### 3. Expressions
 

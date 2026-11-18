@@ -26,4 +26,8 @@ Every frame can be striking as a still, and every second worth hearing, and "inc
 - Trend looks people recognise instantly: indigo gradients and glass, cream paper + editorial serif + terracotta, a UI screenshot beside copy, "UI on dark with one accent", chrome on a studio floor. They read as defaults, not choices.
 - Constant tempo, one easing everywhere, fade-and-rise on every element, and wall-to-wall stock beds. Without contrast, the attention fades.
 
+**What the blind judge keeps saying** (all 11 round-1 pieces failed; `docs/video/craft/judge-r1-review.md`): the idea was the brand name drawn or the feature diagrammed (11/11); one layout with the words swapped (11/11); glow instead of light (10/11); texture as a filter (10/11); stock presets (10/11); a tiny tracked-caps label over a generic headline (9/11).
+
 **Check before shipping:** pause on 3 random frames at 100% and look at the `critique --pack` strip; listen once muted and once audio-only. Would a senior motion designer stop scrolling for it? If you can name the trend it resembles, consider another direction. `critique` measures the checkable parts and gives advice, not verdicts.
+
+**Graphic design (2D, print, editorial, identity):** craft notes with numbers and eight style recipes in `docs/video/craft/graphic-design.md`; the tools (grid cells, patterns and custom tiles, duotone, halftone, riso inks, cutouts, op-art fields) in `anikit-video docs graphic`. Print-derived looks come across as crafted when the physics is right: real overprint (multiply), 2–3 inks, a frame-fixed screen, misregistration of a few px, and type that stays crisp.
