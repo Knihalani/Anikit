@@ -59,11 +59,19 @@ pub struct Material {
     /// 2 sunburst, 3 guilloché, 4 clous de Paris, 5 knurl), period in metres,
     /// strength.
     pub pattern: (u8, f32, f32),
+    /// Anisotropy 0..1: highlights stretch across the grain of the pattern
+    /// (brushed: along X; sunburst: radial; spun: around Y).
+    pub aniso: f32,
+    /// Progressive engraving: how much of the pattern is cut (0..1 of a sweep
+    /// around Y, or a radius in metres), the mode (1 sweep, 2 radial), and the
+    /// expression that drives it (evaluated once per frame).
+    pub reveal: (f32, u8),
+    pub reveal_expr: Option<super::spec::Num>,
 }
 
 impl Material {
     pub fn chrome() -> Material {
-        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0, imperf: [0.0; 4], pattern: (0, 0.01, 0.0) }
+        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0, imperf: [0.0; 4], pattern: (0, 0.01, 0.0), aniso: 0.0, reveal: (1.0, 0), reveal_expr: None }
     }
 }
 
@@ -1401,10 +1409,23 @@ impl Scene {
         }
         // Sub-pixel machining reads as sheen: the faded bump becomes roughness.
         let mut pat_rough = 0.0;
-        if m.pattern.0 != 0 && m.pattern.2 > 0.0 {
+        // Engraving reveal: the uncut part is plain; a bright edge marks the tool.
+        let mut cut = 1.0;
+        let mut glint = 0.0;
+        if m.reveal.1 != 0 && m.pattern.0 != 0 {
+            let q = ob.xf.point_inv(s.p);
+            let (x, edge) = match m.reveal.1 {
+                1 => ((-q.x).atan2(-q.z) / std::f32::consts::TAU + 0.5, 0.012),
+                _ => ((q.x * q.x + q.z * q.z).sqrt(), m.pattern.1 * 1.5),
+            };
+            let r = m.reveal.0;
+            cut = 1.0 - smoothstep(r - edge, r, x);
+            glint = if r > 0.0 && r < 0.9999 * if m.reveal.1 == 1 { 1.0 } else { 1e9 } { (1.0 - ((x - r) / edge).abs()).max(0.0).powi(3) } else { 0.0 };
+        }
+        if m.pattern.0 != 0 && m.pattern.2 > 0.0 && cut > 0.0 {
             let (pn, pr) = self.pattern_normal(m, ob, s.p, n, s.t);
-            n = pn;
-            pat_rough = pr;
+            n = if cut >= 1.0 { pn } else { norm(lerp3(n, pn, cut)) };
+            pat_rough = pr * cut;
         }
         let v = scale(d, -1.0);
         let mut nv = dot(n, v);
@@ -1412,7 +1433,8 @@ impl Scene {
             n = norm(madd(n, v, 0.02 - nv));
             nv = dot(n, v).max(1e-4);
         }
-        let mut out = v3(0.0, 0.0, 0.0);
+        // The cutting edge glows (a tool catching the light).
+        let mut out = if glint > 0.0 { scale(m.base, 6.0 * glint) } else { v3(0.0, 0.0, 0.0) };
         let mut cover = 0.0;
         if let Some(t) = self.print(ob, s) {
             out = self.print_light(t, s.p, n, m.tex_glow);
@@ -1459,7 +1481,8 @@ impl Scene {
             return self.shade_style(m, s, n, v, nv, keep, out);
         }
         let (dr, dust) = if m.imperf == [0.0; 4] { (0.0, 0.0) } else { self.imperfect(m, ob.xf.point_inv(s.p), n) };
-        let rough = (m.roughness + dr + pat_rough).clamp(0.02, 1.0);
+        // (Anisotropic streaks also soften: the grain scatters across itself.)
+        let rough = (m.roughness + dr + pat_rough + if m.pattern.0 != 0 { m.aniso * 0.14 } else { 0.0 }).clamp(0.02, 1.0);
         let f0 = lerp3(v3(0.04 * m.specular, 0.04 * m.specular, 0.04 * m.specular), m.base, m.metallic);
         let f0 = scale(f0, 1.0 - dust);
         let ab = env_brdf(rough, nv);
@@ -1474,7 +1497,10 @@ impl Scene {
         // Specular: trace the reflection; the pre-filtered environment takes
         // over for rough surfaces. On primary hits the environment part is
         // occluded later by the denoised AO (so rough metal stays clean).
-        let mut r = reflect(d, n);
+        // Anisotropic metal (brushed, spun, sunburst): bend the reflection normal
+        // toward the plane of the grain, so highlights stretch across it.
+        let n_spec = if m.aniso > 0.0 && m.pattern.0 != 0 { self.aniso_normal(m, ob, s.p, n, v) } else { n };
+        let mut r = reflect(d, n_spec);
         let rg = dot(r, ng);
         if rg < 0.01 {
             r = norm(madd(r, ng, 0.01 - rg));
@@ -1539,6 +1565,34 @@ impl Scene {
         Some((mm, ss))
     }
 
+    /// The bent normal for anisotropic reflection (the common split-sum
+    /// approximation): grain direction `t` from the pattern, in world space.
+    fn aniso_normal(&self, m: &Material, ob: &Inst, p: V3, n: V3, v: V3) -> V3 {
+        let q = ob.xf.point_inv(p);
+        let t_obj = match m.pattern.0 {
+            2 => norm(v3(q.x, 0.0, q.z)),
+            6 => norm(v3(-q.z, 0.0, q.x)),
+            _ => v3(1.0, 0.0, 0.0),
+        };
+        let t = ob.xf.rot(t_obj);
+        let t = sub(t, scale(n, dot(t, n)));
+        if dot(t, t) < 1e-8 {
+            return n;
+        }
+        let t = norm(t);
+        let at = cross(t, v);
+        let an = cross(at, t);
+        if dot(an, an) < 1e-8 {
+            return n;
+        }
+        let bent = norm(lerp3(n, norm(an), (m.aniso * 0.85).min(0.9)));
+        if dot(bent, n) < 0.05 {
+            n
+        } else {
+            bent
+        }
+    }
+
     /// Machined patterns as bump: the height field's gradient (object space,
     /// finite differences) tilts the shading normal. Patterns finer than about
     /// two pixels fade out instead of aliasing.
@@ -1568,6 +1622,8 @@ impl Scene {
                     // The ripple fades in from the centre, where it would be denser than the rings.
                     (((r + period * 0.6 * smoothstep(0.0, 12.0 * period, r) * (a * 18.0).sin()) / period) * tau).sin()
                 }
+                // Spun: concentric fine grooves around Y (speaker caps, dial centres).
+                6 => ((q.x * q.x + q.z * q.z).sqrt() / period * tau).sin() * 0.5 + (vnoise(v3((q.x * q.x + q.z * q.z).sqrt() / period * 0.37, 0.0, 0.0)) - 0.5) * 0.6,
                 // Clous de Paris: a grid of small pyramids (diagonal).
                 4 => {
                     let (u, w) = ((q.x + q.z) / period, (q.x - q.z) / period);

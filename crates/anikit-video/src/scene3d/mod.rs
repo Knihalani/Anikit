@@ -488,6 +488,7 @@ impl Prepare for Scene3d {
             // Keep the env's key level so exposure and the look stay calibrated.
             let level = es.env.key_box().map(|k| luma(k.radiance) * es.env.key_solid_angle * (1.0 - k.falloff / 3.0) / std::f32::consts::PI).unwrap_or(1.0).max(0.2);
             let (e, g) = r.apply(&es.env, view, level);
+            local_lights.extend(r.spots(bounds.0, bounds.1, view, level));
             if r.anim != 0 {
                 rig_anim_base = Some((es.env.clone(), view, level));
             }
@@ -1143,7 +1144,14 @@ impl Scene3d {
             Some(ra) => ra.0.apply_at(&ra.1, ra.2, ra.3, t).0,
             None => p.env.clone(),
         };
-        let mut scene = Scene::new(shapes, p.mats.clone(), Vec::new(), env_t, p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
+        // Materials driven by time (an engraving that cuts itself) update per frame.
+        let mut mats = p.mats.clone();
+        for m in &mut mats {
+            if let Some(e) = &m.reveal_expr {
+                m.reveal.0 = e.at(&crate::eval::expr::Vars { t: t as f64, gt: t as f64, ..Default::default() });
+            }
+        }
+        let mut scene = Scene::new(shapes, mats, Vec::new(), env_t, p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
         scene.backdrop = p.backdrop;
         scene.glow = p.glow;
         scene.haze = p.haze;
@@ -1741,6 +1749,17 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        let e = spec::material(&json!({ "extends": "aluminium", "pattern": "guilloche", "pattern_reveal": "=clamp(t/3,0,1)", "reveal_mode": "sweep" }), &HashMap::new(), "m").unwrap();
+        assert_eq!(e.reveal, (0.0, 1));
+        assert!(e.reveal_expr.is_some());
+        let pin = rig::parse(&json!("pinspot"), "rig").unwrap();
+        let sp = pin.spots(v3(0.0, 0.5, 0.0), 1.0, v3(0.0, 0.0, -1.0), 1.0);
+        assert_eq!(sp.len(), 1);
+        assert!(sp[0].pos.y > 4.0 && sp[0].dir.y < -0.9, "a pinspot hangs above, pointing down");
+        let b = spec::material(&json!({ "extends": "aluminium", "pattern": "spun" }), &HashMap::new(), "m").unwrap();
+        assert_eq!((b.pattern.0, b.aniso), (6, 0.6));
+        let c = spec::material(&json!({ "extends": "aluminium", "pattern": "brushed", "anisotropy": 0.9 }), &HashMap::new(), "m").unwrap();
+        assert_eq!(c.aniso, 0.9);
         let (o, l) = practicals(vec![json!({ "type": "practical", "shape": "tube", "pos": [0, 2, 0], "intensity": 9 }), json!({ "type": "box" })]).unwrap();
         assert_eq!((o.len(), l.len()), (2, 3));
         scene(json!({ "objects": [ { "type": "practical", "shape": "bulb", "pos": [0, 1, 0], "intensity": "=3+sin(t*5)" }, { "type": "practical", "shape": "panel", "pos": [0, 2.5, 0] } ] })).unwrap();
