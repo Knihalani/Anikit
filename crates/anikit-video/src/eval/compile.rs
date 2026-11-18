@@ -330,7 +330,7 @@ impl Evaluator {
         let (theme, bad) = Theme::resolve(spec.theme.as_ref());
         c.theme = theme;
         for (k, v) in bad {
-            c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}'")));
+            c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}' ({COLOUR_FORMS})")));
         }
         c.load_fonts(spec);
         if let Some(m) = &spec.markers {
@@ -535,6 +535,8 @@ impl Evaluator {
     }
 }
 
+const COLOUR_FORMS: &str = "use \"#ff5a1f\", \"#f51\", \"#ff5a1f80\" (with alpha), a name like \"white\", a theme token like \"$accent\", \"rgb(255, 90, 31)\", \"hsl(20, 100, 56)\", \"oklch(0.7, 0.19, 40)\", or a per-frame expression \"=mix($primary, $accent, p)\"";
+
 fn any_on_notes(ls: &[Layer]) -> bool {
     ls.iter().any(|l| l.on_notes.is_some() || l.layers.as_deref().is_some_and(any_on_notes) || l.children.as_deref().is_some_and(any_on_notes))
 }
@@ -651,6 +653,27 @@ impl C<'_> {
                 if let Some(t) = self.musical(s, path) {
                     return (t, None);
                 }
+                // `"=1.2 + 0.1 * 3"`: an expression, worked out once (a time can't change per frame).
+                if let Some(e) = s.strip_prefix('=') {
+                    return match Expr::compile(e, 1.0, self.w as f64, self.h as f64) {
+                        Ok(x) if !x.dynamic => (x.eval(&super::expr::Vars { w: self.w as f64, h: self.h as f64, fps: self.fps as f64, ..Default::default() }) as f32, None),
+                        Ok(x) => match x.constant() {
+                            Some(v) => (v as f32, None),
+                            None if x.music => {
+                                self.d.push(Diagnostic::error(path, format!("'{s}': a time is fixed when the spec loads, so it can't read beat/bar/level; use a marker (\"@beat17\", \"@bar5+0.25\") or a musical length (\"2 beats\")")));
+                                (0.0, None)
+                            }
+                            None => {
+                                self.d.push(Diagnostic::error(path, format!("'{s}': a time is fixed when the spec loads, so it can't use t/gt/p/frame (w, h, fps and maths are fine, e.g. \"=12 / fps\")")));
+                                (0.0, None)
+                            }
+                        },
+                        Err(m) => {
+                            self.d.push(Diagnostic::error(path, format!("time expression '{s}': {m}")));
+                            (0.0, None)
+                        }
+                    };
+                }
                 if let Some(m) = s.strip_prefix('@') {
                     let (name, off) = match m.find(['+', '-']) {
                         Some(i) => (&m[..i], m[i..].parse::<f32>().ok()),
@@ -691,7 +714,7 @@ impl C<'_> {
                 match num.trim().parse::<f32>() {
                     Ok(v) => (v * mul, None),
                     Err(_) => {
-                        self.d.push(Diagnostic::error(path, format!("invalid time '{s}' (use 1.5, \"1.5s\", \"500ms\", \"12f\" or \"@marker\")")));
+                        self.d.push(Diagnostic::error(path, format!("invalid time '{s}' (use seconds 1.5, \"1.5s\", \"500ms\", frames \"12f\", a marker \"@intro\" / \"@beat17\" / \"@bar5+0.25\", music \"2 beats\", or arithmetic \"=12 / fps\")")));
                         (0.0, None)
                     }
                 }
@@ -758,7 +781,7 @@ impl C<'_> {
                         None => {
                             self.d.push(Diagnostic::error(
                                 path,
-                                format!("invalid value '{s}' (use a number, \"50%\", \"10vw\", \"8vh\" or an expression \"=…\")"),
+                                format!("invalid value '{s}' (use a number like 960, \"50%\" of the parent, \"10vw\" / \"8vh\" / \"5vmin\", \"24px\", \"1.5em\", or an expression like \"=w / 2 + 100 * sin(t)\")"),
                             ));
                             V::C(0.0)
                         }
@@ -1051,6 +1074,26 @@ impl C<'_> {
 
     // ---------- paint ----------
 
+    /// A colour function written without `=`: `oklch(0.7, 0.15, 30)`, CSS's `oklch(70% 0.15 30 / 0.5)`, `hsl(…)`, `mix(…)`.
+    fn color_fn(&self, s: &str) -> Option<Rgba> {
+        let s = s.trim();
+        let open = s.find('(')?;
+        if !s.ends_with(')') {
+            return None;
+        }
+        let inner = &s[open + 1..s.len() - 1];
+        let args = if inner.contains(',') {
+            inner.to_string()
+        } else {
+            // CSS level 4: spaces between channels, `/ alpha`, percentages.
+            inner.replace('/', " ").split_whitespace().map(|a| a.trim_end_matches('%').to_string()).collect::<Vec<_>>().join(", ")
+        };
+        let src = format!("{}({args})", &s[..open]);
+        let theme = &self.theme;
+        let e = super::expr::ColorExpr::compile(&src, &mut |x: &str| theme.color(x).map(|c| c.0)).ok()?;
+        Some(Rgba(e.eval(&super::expr::Vars::default())))
+    }
+
     fn color(&mut self, s: &str, path: &str) -> Option<Rgba> {
         match self.theme.color(s) {
             Some(c) => Some(c),
@@ -1058,8 +1101,10 @@ impl C<'_> {
                 if let Some(t) = s.trim().strip_prefix('$') {
                     let names: Vec<&String> = self.theme.colors.keys().collect();
                     self.d.push(Diagnostic::error(path, format!("unknown colour token '${t}'")).suggest(suggest(t, &names).map(|x| format!("${x}"))));
+                } else if let Some(c) = self.color_fn(s) {
+                    return Some(c);
                 } else {
-                    self.d.push(Diagnostic::error(path, format!("invalid colour '{s}'")));
+                    self.d.push(Diagnostic::error(path, format!("invalid colour '{s}' ({COLOUR_FORMS})")));
                 }
                 None
             }
@@ -2134,7 +2179,7 @@ impl C<'_> {
                     m
                 }
                 Err(e) => {
-                    me.d.push(Diagnostic::error(format!("{path}.{key}"), format!("invalid SVG path: {e}")));
+                    me.d.push(Diagnostic::error(format!("{path}.{key}"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                     None
                 }
             }
@@ -3207,7 +3252,7 @@ impl C<'_> {
                             Some(d) => match Path::from_svg(d) {
                                 Ok(p) => Some(p),
                                 Err(e) => {
-                                    self.d.push(Diagnostic::error(format!("{pp}.tile"), format!("invalid SVG path: {e}")));
+                                    self.d.push(Diagnostic::error(format!("{pp}.tile"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                                     None
                                 }
                             },
@@ -3297,7 +3342,7 @@ impl C<'_> {
                 let bp = match Path::from_svg(d) {
                     Ok(p) => p,
                     Err(e) => {
-                        self.d.push(Diagnostic::error(format!("{path}.d"), format!("invalid SVG path: {e}")));
+                        self.d.push(Diagnostic::error(format!("{path}.d"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                         Path::new()
                     }
                 };
@@ -3816,7 +3861,7 @@ impl C<'_> {
                 match Path::from_svg(d) {
                     Ok(b) => bp = b,
                     Err(e) => {
-                        self.d.push(Diagnostic::error(format!("{p}.d"), format!("invalid SVG path: {e}")));
+                        self.d.push(Diagnostic::error(format!("{p}.d"), format!("invalid SVG path: {e} (SVG path data like \"M0 0 L100 0 L50 80 Z\" or \"M10 80 C40 10 65 10 95 80\")")));
                         continue;
                     }
                 }
@@ -4666,7 +4711,7 @@ impl C<'_> {
     }
 
     fn bad_val(&mut self, path: &str, s: &str) -> Option<ValS> {
-        self.d.push(Diagnostic::error(path, format!("invalid value {s} (use a number, a unit string, \"+40\", \"-40\" or \"*1.5\")")));
+        self.d.push(Diagnostic::error(path, format!("invalid value {s} (use a number like 120, a unit string like \"50%\" or \"10vw\", a relative change \"+40\" / \"-40\" / \"*1.5\", or a colour for fill/stroke)")));
         None
     }
 
