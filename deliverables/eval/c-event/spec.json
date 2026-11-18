@@ -1,0 +1,1020 @@
+{
+ "size": "9:16",
+ "fps": 30,
+ "intent": {
+  "pace": "fast"
+ },
+ "post": {
+  "bloom": 0.35,
+  "bloomThreshold": 0.7,
+  "halation": 0.25,
+  "grain": 0.045,
+  "vignette": 0.35,
+  "contrast": 1.08
+ },
+ "music": {
+  "bpm": 128,
+  "key": "Gm",
+  "length": "15s",
+  "seed": 7,
+  "followCuts": false,
+  "define": {
+   "hum": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "saw",
+       "level": 0.5
+      },
+      {
+       "wave": "sine",
+       "level": 0.8
+      }
+     ],
+     "filter": {
+      "type": "lp",
+      "cutoff": 260,
+      "res": 0.2
+     },
+     "amp": [
+      0.4,
+      0.2,
+      1,
+      0.8
+     ]
+    }
+   },
+   "rumble": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "saw",
+       "voices": 2,
+       "detune": 8
+      }
+     ],
+     "sub": 0.6,
+     "filter": {
+      "type": "ladder",
+      "cutoff": 180,
+      "res": 0.3,
+      "drive": 2.5,
+      "env": 1.2
+     },
+     "fenv": [
+      0.001,
+      0.12,
+      0,
+      0.05
+     ],
+     "amp": [
+      0.002,
+      0.18,
+      0.3,
+      0.06
+     ],
+     "mono": true
+    }
+   },
+   "acid": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "square",
+       "pw": 0.45
+      },
+      {
+       "wave": "saw",
+       "voices": 2,
+       "detune": 9,
+       "level": 0.5
+      }
+     ],
+     "filter": {
+      "type": "ladder",
+      "cutoff": 400,
+      "res": 0.7,
+      "drive": 2.2,
+      "env": 2.5
+     },
+     "fenv": [
+      0.002,
+      0.16,
+      0.0,
+      0.1
+     ],
+     "amp": [
+      0.002,
+      0.22,
+      0.55,
+      0.07
+     ],
+     "mono": true,
+     "glide": 0.03
+    }
+   }
+  },
+  "tracks": [
+   {
+    "inst": "hum",
+    "notes": "o1 G1/1 | G1/1 | G1/1 | G1/1 | G1/1 | G1/1 | G1/1 | G1/1",
+    "gain": -9,
+    "automate": {
+     "lp": [
+      [
+       0,
+       120
+      ],
+      [
+       "@bar2",
+       400
+      ],
+      [
+       "@bar7",
+       900
+      ],
+      [
+       "@bar8",
+       300
+      ]
+     ]
+    }
+   },
+   {
+    "inst": "drums:techno",
+    "at": "@bar2",
+    "bars": 5,
+    "drums": {
+     "kick": "x...x...x...x...",
+     "hat": "..x...x...x...x.",
+     "shaker": "x.xxx.xxx.xxx.xx"
+    },
+    "fx": [
+     {
+      "type": "comp",
+      "threshold": -14,
+      "ratio": 4
+     }
+    ]
+   },
+   {
+    "inst": "drums:techno",
+    "at": "@bar4",
+    "bars": 3,
+    "drums": {
+     "clap": "....x.......x...",
+     "ohh": "..x...x...x...x."
+    },
+    "gain": -3
+   },
+   {
+    "inst": "drums:techno",
+    "at": "@bar7",
+    "bars": 1,
+    "drums": {
+     "kick": "x...x...........",
+     "hat": "..x...x.........",
+     "clap": "....x..........."
+    }
+   },
+   {
+    "inst": "drums:techno",
+    "at": "@bar8",
+    "bars": 1,
+    "drums": {
+     "kick": "x...x...x...x...",
+     "crash": "x...............",
+     "hat": "..x...x...x...x.",
+     "clap": "....x.......x..."
+    }
+   },
+   {
+    "inst": "rumble",
+    "at": "@bar2",
+    "notes": "o1 l16 (r G1 G1 r r G1 G1 r r G1 G1 r r G1 G1 r)x5",
+    "duck": 8,
+    "gain": -2
+   },
+   {
+    "inst": "rumble",
+    "at": "@bar8",
+    "notes": "o1 l16 (r G1 G1 r r G1 G1 r r G1 G1 r r G1 G1 r)x1",
+    "duck": 8,
+    "gain": -2
+   },
+   {
+    "inst": "acid",
+    "at": "@bar4",
+    "notes": "o2 l16 (G2 G2 G3 G2 Bb2 G2 F2 G2^ G2 D3 G2 G2 C3 Bb2 G2 F2)x3",
+    "duck": 5,
+    "gain": -5,
+    "automate": {
+     "synth.cutoff": [
+      [
+       "@bar4",
+       350
+      ],
+      [
+       "@bar7",
+       2600
+      ]
+     ]
+    },
+    "fx": [
+     {
+      "type": "delay",
+      "note": "1/8d",
+      "feedback": 0.35,
+      "wet": 0.2
+     },
+     {
+      "type": "saturate",
+      "drive": 0.3
+     }
+    ]
+   },
+   {
+    "inst": "acid",
+    "at": "@bar8",
+    "notes": "o2 l16 (G2 G2 G3 G2 Bb2 G2 F2 G2^ G2 D3 G2 G2 C3 Bb2 G2 F2)x1",
+    "duck": 5,
+    "gain": -5,
+    "automate": {
+     "synth.cutoff": [
+      [
+       "@bar8",
+       2200
+      ],
+      [
+       31.5,
+       600
+      ]
+     ]
+    },
+    "fx": [
+     {
+      "type": "delay",
+      "note": "1/8d",
+      "feedback": 0.35,
+      "wet": 0.25
+     },
+     {
+      "type": "saturate",
+      "drive": 0.3
+     }
+    ]
+   }
+  ],
+  "sfx": [
+   {
+    "sfx": "zap",
+    "at": 0.05,
+    "gain": -6
+   },
+   {
+    "sfx": "zap",
+    "at": 0.9375
+   },
+   {
+    "sfx": "riser",
+    "at": "@bar2",
+    "gain": -6
+   },
+   {
+    "sfx": "zap",
+    "at": 1.875,
+    "gain": -4
+   },
+   {
+    "sfx": "zap",
+    "at": 2.8125,
+    "gain": -8
+   },
+   {
+    "sfx": "zap",
+    "at": 3.75,
+    "gain": -8
+   },
+   {
+    "sfx": "zap",
+    "at": 4.6875,
+    "gain": -8
+   },
+   {
+    "sfx": "zap",
+    "at": 5.625,
+    "gain": -8
+   },
+   {
+    "sfx": "zap",
+    "at": 6.5625,
+    "gain": -8
+   },
+   {
+    "sfx": "zap",
+    "at": 7.5,
+    "gain": -8
+   },
+   {
+    "sfx": "zap",
+    "at": 8.4375,
+    "gain": -8
+   },
+   {
+    "sfx": "impact",
+    "at": 9.375,
+    "gain": -4
+   },
+   {
+    "sfx": "riser",
+    "at": "@bar8"
+   },
+   {
+    "sfx": "impact",
+    "at": "@bar8"
+   },
+   {
+    "sfx": "sub-drop",
+    "at": "@bar8"
+   }
+  ],
+  "end": "ring"
+ },
+ "defs": {
+  "strike": {
+   "font": "Big Shoulders Stencil",
+   "weight": 900,
+   "anchor": "left",
+   "opacity": "=t<0.035?1:(t<0.08?0.08:(t<0.11?0.85:(t<0.18?0.2:1)))"
+  },
+  "flash": {
+   "shape": "rect",
+   "x": "50%",
+   "y": "50%",
+   "width": 1080,
+   "height": 1920,
+   "fill": "#FFF6EA",
+   "blend": "add",
+   "opacity": "=max(0, 0.85 - t*9)"
+  }
+ },
+ "scenes": [
+  {
+   "duration": 1.875,
+   "background": "#000000",
+   "layers": [
+    {
+     "id": "arc",
+     "type": "shader",
+     "src": "arc.glsl",
+     "uniforms": {
+      "power": "=0.12 + 0.9*smoothstep(0.1, 0.95, t) + 0.6*step(0.9375,t)*max(0,1-(t-0.9375)*3)",
+      "y0": 0.06,
+      "y1": 0.94,
+      "xc": 0.5,
+      "spread": 1.0,
+      "bg": 1.0
+     }
+    },
+    {
+     "use": "strike",
+     "id": "sub",
+     "text": "SUB",
+     "size": 560,
+     "anchor": "center",
+     "x": "50%",
+     "y": 640,
+     "color": "#EFE8DC",
+     "start": 0.9375
+    },
+    {
+     "use": "strike",
+     "id": "station",
+     "text": "STATION",
+     "size": 330,
+     "fit": true,
+     "width": 980,
+     "anchor": "center",
+     "x": "50%",
+     "y": 1150,
+     "color": "#EFE8DC",
+     "start": 0.9375
+    },
+    {
+     "use": "flash",
+     "start": 0.9375
+    }
+   ]
+  },
+  {
+   "duration": 7.5,
+   "background": "#000000",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.06
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 7.5,
+      "ease": "outCubic"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "type": "shader",
+     "src": "arc.glsl",
+     "uniforms": {
+      "power": "=0.05*pow(1-fract(beat),3)",
+      "y0": 0.0,
+      "y1": 0.0,
+      "xc": 0.5,
+      "spread": 0.0,
+      "bg": 1.0
+     }
+    },
+    {
+     "text": "SUBSTATION",
+     "font": "Big Shoulders Stencil",
+     "weight": 900,
+     "size": 150,
+     "x": 70,
+     "anchor": "left",
+     "y": 300,
+     "color": "#EFE8DC"
+    },
+    {
+     "shape": "rect",
+     "x": 70,
+     "anchor": "left",
+     "y": 390,
+     "width": 940,
+     "height": 3,
+     "fill": "#EFE8DC"
+    },
+    {
+     "text": "LINE-UP",
+     "font": "Martian Mono",
+     "weight": 500,
+     "size": 28,
+     "letterSpacing": "0.1em",
+     "x": 1010,
+     "anchor": "right",
+     "y": 440,
+     "color": "#A39B8F"
+    },
+    {
+     "shape": "rect",
+     "repeat": 8,
+     "x": 70,
+     "anchor": "left",
+     "y": "=600 + $i*128",
+     "width": 940,
+     "height": 2,
+     "fill": "#2B2825"
+    },
+    {
+     "text": "Q{value}",
+     "value": "=$i+1",
+     "repeat": 8,
+     "font": "Martian Mono",
+     "weight": 600,
+     "size": 26,
+     "x": 70,
+     "anchor": "left",
+     "y": "=540 + $i*128",
+     "color": "=T > $i*0.9375 ? #FF7A26 : #4A4540"
+    },
+    {
+     "shape": "circle",
+     "repeat": 8,
+     "width": 22,
+     "height": 22,
+     "x": 1000,
+     "y": "=540 + $i*128",
+     "fill": "#26231F"
+    },
+    {
+     "shape": "circle",
+     "repeat": 8,
+     "width": 22,
+     "height": 22,
+     "x": 1000,
+     "y": "=540 + $i*128",
+     "fill": "#FF7A26",
+     "start": "=$i*0.9375",
+     "glow": {
+      "radius": 18,
+      "intensity": 0.7,
+      "color": "#FF7A26"
+     }
+    },
+    {
+     "shape": "rect",
+     "repeat": 8,
+     "anchor": "left",
+     "x": 70,
+     "y": "=600 + $i*128",
+     "height": 3,
+     "start": "=$i*0.9375+0.234",
+     "width": "=940*min(1, t/0.14)",
+     "fill": "#FFE2C2",
+     "glow": {
+      "radius": 30,
+      "intensity": 1,
+      "color": "#FF7A26"
+     },
+     "opacity": "=max(0, 1 - max(0,t-0.12)/0.35)"
+    },
+    {
+     "shape": "rect",
+     "x": 70,
+     "anchor": "left",
+     "y": 1500,
+     "width": 940,
+     "height": 3,
+     "fill": "#EFE8DC"
+    },
+    {
+     "text": "12—13 JUNE · TWO NIGHTS",
+     "font": "Martian Mono",
+     "weight": 500,
+     "size": 32,
+     "letterSpacing": "0.06em",
+     "x": 70,
+     "anchor": "left",
+     "y": 1545,
+     "color": "#A39B8F"
+    },
+    {
+     "use": "strike",
+     "text": "ANCIENT METHODS",
+     "size": 118,
+     "fit": true,
+     "width": 830,
+     "x": 130,
+     "y": 540,
+     "start": 0.234,
+     "color": "=t<0.9 ? #FF7A26 : #EFE8DC"
+    },
+    {
+     "use": "strike",
+     "text": "PAULA TEMPLE",
+     "size": 118,
+     "fit": true,
+     "width": 830,
+     "x": 130,
+     "y": 668,
+     "start": 1.1715,
+     "color": "=t<0.9 ? #FF7A26 : #EFE8DC"
+    },
+    {
+     "use": "strike",
+     "text": "DVS1",
+     "size": 118,
+     "fit": true,
+     "width": 830,
+     "x": 130,
+     "y": 796,
+     "start": 2.109,
+     "color": "=t<0.9 ? #FF7A26 : #EFE8DC"
+    },
+    {
+     "use": "strike",
+     "text": "HÉCTOR OAKS",
+     "size": 118,
+     "fit": true,
+     "width": 830,
+     "x": 130,
+     "y": 924,
+     "start": 3.0465,
+     "color": "=t<0.9 ? #FF7A26 : #EFE8DC"
+    },
+    {
+     "use": "strike",
+     "text": "RROSE",
+     "size": 118,
+     "fit": true,
+     "width": 830,
+     "x": 130,
+     "y": 1052,
+     "start": 3.984,
+     "color": "=t<0.9 ? #FF7A26 : #EFE8DC"
+    },
+    {
+     "use": "strike",
+     "text": "PHASE FATALE",
+     "size": 118,
+     "fit": true,
+     "width": 830,
+     "x": 130,
+     "y": 1180,
+     "start": 4.9215,
+     "color": "=t<0.9 ? #FF7A26 : #EFE8DC"
+    },
+    {
+     "use": "strike",
+     "text": "KIA",
+     "size": 118,
+     "fit": true,
+     "width": 830,
+     "x": 130,
+     "y": 1308,
+     "start": 5.859,
+     "color": "=t<0.9 ? #FF7A26 : #EFE8DC"
+    },
+    {
+     "use": "strike",
+     "text": "IDA ENGBERG",
+     "size": 118,
+     "fit": true,
+     "width": 830,
+     "x": 130,
+     "y": 1436,
+     "start": 6.7965,
+     "color": "=t<0.9 ? #FF7A26 : #EFE8DC"
+    },
+    {
+     "shape": "rect",
+     "x": "50%",
+     "y": "50%",
+     "width": 1080,
+     "height": 1920,
+     "fill": "#000000",
+     "start": 0,
+     "end": 0.234
+    },
+    {
+     "text": "ANCIENT METHODS",
+     "font": "Big Shoulders Stencil",
+     "weight": 900,
+     "size": 520,
+     "fit": true,
+     "width": 960,
+     "x": "50%",
+     "y": "=960 + 40*(1-min(1,t/0.234))",
+     "color": "#FF7A26",
+     "start": 0,
+     "end": 0.234,
+     "scale": "=1.12 - 0.12*min(1,t/0.234)"
+    },
+    {
+     "shape": "rect",
+     "x": "50%",
+     "y": "50%",
+     "width": 1080,
+     "height": 1920,
+     "fill": "#000000",
+     "start": 0.9375,
+     "end": 1.1715
+    },
+    {
+     "text": "PAULA TEMPLE",
+     "font": "Big Shoulders Stencil",
+     "weight": 900,
+     "size": 520,
+     "fit": true,
+     "width": 960,
+     "x": "50%",
+     "y": "=960 + 40*(1-min(1,t/0.234))",
+     "color": "#FFF1E2",
+     "start": 0.9375,
+     "end": 1.1715,
+     "scale": "=1.12 - 0.12*min(1,t/0.234)"
+    },
+    {
+     "shape": "rect",
+     "x": "50%",
+     "y": "50%",
+     "width": 1080,
+     "height": 1920,
+     "fill": "#000000",
+     "start": 1.875,
+     "end": 2.109
+    },
+    {
+     "text": "DVS1",
+     "font": "Big Shoulders Stencil",
+     "weight": 900,
+     "size": 520,
+     "fit": true,
+     "width": 960,
+     "x": "50%",
+     "y": "=960 + 40*(1-min(1,t/0.234))",
+     "color": "#FF7A26",
+     "start": 1.875,
+     "end": 2.109,
+     "scale": "=1.12 - 0.12*min(1,t/0.234)"
+    },
+    {
+     "shape": "rect",
+     "x": "50%",
+     "y": "50%",
+     "width": 1080,
+     "height": 1920,
+     "fill": "#000000",
+     "start": 2.8125,
+     "end": 3.0465
+    },
+    {
+     "text": "HÉCTOR OAKS",
+     "font": "Big Shoulders Stencil",
+     "weight": 900,
+     "size": 520,
+     "fit": true,
+     "width": 960,
+     "x": "50%",
+     "y": "=960 + 40*(1-min(1,t/0.234))",
+     "color": "#FFF1E2",
+     "start": 2.8125,
+     "end": 3.0465,
+     "scale": "=1.12 - 0.12*min(1,t/0.234)"
+    },
+    {
+     "shape": "rect",
+     "x": "50%",
+     "y": "50%",
+     "width": 1080,
+     "height": 1920,
+     "fill": "#000000",
+     "start": 3.75,
+     "end": 3.984
+    },
+    {
+     "text": "RROSE",
+     "font": "Big Shoulders Stencil",
+     "weight": 900,
+     "size": 520,
+     "fit": true,
+     "width": 960,
+     "x": "50%",
+     "y": "=960 + 40*(1-min(1,t/0.234))",
+     "color": "#FF7A26",
+     "start": 3.75,
+     "end": 3.984,
+     "scale": "=1.12 - 0.12*min(1,t/0.234)"
+    },
+    {
+     "shape": "rect",
+     "x": "50%",
+     "y": "50%",
+     "width": 1080,
+     "height": 1920,
+     "fill": "#000000",
+     "start": 4.6875,
+     "end": 4.9215
+    },
+    {
+     "text": "PHASE FATALE",
+     "font": "Big Shoulders Stencil",
+     "weight": 900,
+     "size": 520,
+     "fit": true,
+     "width": 960,
+     "x": "50%",
+     "y": "=960 + 40*(1-min(1,t/0.234))",
+     "color": "#FFF1E2",
+     "start": 4.6875,
+     "end": 4.9215,
+     "scale": "=1.12 - 0.12*min(1,t/0.234)"
+    },
+    {
+     "shape": "rect",
+     "x": "50%",
+     "y": "50%",
+     "width": 1080,
+     "height": 1920,
+     "fill": "#000000",
+     "start": 5.625,
+     "end": 5.859
+    },
+    {
+     "text": "KIA",
+     "font": "Big Shoulders Stencil",
+     "weight": 900,
+     "size": 520,
+     "fit": true,
+     "width": 960,
+     "x": "50%",
+     "y": "=960 + 40*(1-min(1,t/0.234))",
+     "color": "#FF7A26",
+     "start": 5.625,
+     "end": 5.859,
+     "scale": "=1.12 - 0.12*min(1,t/0.234)"
+    },
+    {
+     "shape": "rect",
+     "x": "50%",
+     "y": "50%",
+     "width": 1080,
+     "height": 1920,
+     "fill": "#000000",
+     "start": 6.5625,
+     "end": 6.7965
+    },
+    {
+     "text": "IDA ENGBERG",
+     "font": "Big Shoulders Stencil",
+     "weight": 900,
+     "size": 520,
+     "fit": true,
+     "width": 960,
+     "x": "50%",
+     "y": "=960 + 40*(1-min(1,t/0.234))",
+     "color": "#FFF1E2",
+     "start": 6.5625,
+     "end": 6.7965,
+     "scale": "=1.12 - 0.12*min(1,t/0.234)"
+    },
+    {
+     "use": "flash",
+     "start": 0,
+     "opacity": "=max(0, 0.5 - t*6)"
+    }
+   ]
+  },
+  {
+   "duration": 3.75,
+   "background": "#000000",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.12
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 0.6,
+      "ease": "outExpo"
+     }
+    ],
+    "shake": {
+     "amount": 10,
+     "at": 0
+    }
+   },
+   "layers": [
+    {
+     "type": "shader",
+     "src": "arc.glsl",
+     "uniforms": {
+      "power": "=t<0.3 ? 0 : (0.75 + 0.35*pow(1-fract(beat),4) + 0.8*smoothstep(2.8,3.7,t))",
+      "y0": 0.22,
+      "y1": 0.65,
+      "xc": 0.5,
+      "spread": 0.75,
+      "bg": 1.0
+     }
+    },
+    {
+     "use": "strike",
+     "text": "12",
+     "size": 400,
+     "anchor": "center",
+     "x": "50%",
+     "y": 255,
+     "color": "#EFE8DC",
+     "start": 0
+    },
+    {
+     "use": "strike",
+     "text": "13",
+     "size": 400,
+     "anchor": "center",
+     "x": "50%",
+     "y": 1395,
+     "color": "#EFE8DC",
+     "start": 0.46875
+    },
+    {
+     "use": "strike",
+     "text": "TWO",
+     "size": 130,
+     "anchor": "left",
+     "x": 70,
+     "y": 820,
+     "color": "#FF7A26",
+     "start": 0.9375
+    },
+    {
+     "use": "strike",
+     "text": "NIGHTS",
+     "size": 130,
+     "anchor": "right",
+     "x": 1010,
+     "y": 820,
+     "color": "#FF7A26",
+     "start": 1.40625
+    },
+    {
+     "use": "strike",
+     "text": "JUNE",
+     "size": 150,
+     "anchor": "center",
+     "x": "50%",
+     "y": 1640,
+     "color": "#EFE8DC",
+     "start": 0.9375
+    },
+    {
+     "use": "flash",
+     "start": 0
+    },
+    {
+     "use": "flash",
+     "start": 0.3,
+     "opacity": "=max(0, 0.6 - t*8)"
+    }
+   ]
+  },
+  {
+   "duration": 1.875,
+   "background": "#000000",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.18
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 0.5,
+      "ease": "outExpo"
+     }
+    ],
+    "shake": {
+     "amount": 14,
+     "at": 0
+    }
+   },
+   "layers": [
+    {
+     "type": "shader",
+     "src": "arc.glsl",
+     "uniforms": {
+      "power": "=0.06 + 0.12*pow(1-fract(beat),3)",
+      "y0": 0.0,
+      "y1": 0.0,
+      "xc": 0.5,
+      "spread": 0.0,
+      "bg": 1.0
+     }
+    },
+    {
+     "text": "SUBSTATION",
+     "font": "Big Shoulders Stencil",
+     "weight": 900,
+     "size": 150,
+     "x": "50%",
+     "y": 470,
+     "color": "#EFE8DC"
+    },
+    {
+     "use": "strike",
+     "text": "TICKETS",
+     "size": 330,
+     "fit": true,
+     "width": 940,
+     "anchor": "center",
+     "x": "50%",
+     "y": 860,
+     "color": "#FF7A26",
+     "start": 0
+    },
+    {
+     "use": "strike",
+     "text": "FRIDAY",
+     "size": 330,
+     "fit": true,
+     "width": 940,
+     "anchor": "center",
+     "x": "50%",
+     "y": 1170,
+     "color": "#EFE8DC",
+     "start": 0.46875
+    },
+    {
+     "text": "12—13 JUNE · AN OLD POWER STATION",
+     "font": "Martian Mono",
+     "weight": 500,
+     "size": 32,
+     "letterSpacing": "0.06em",
+     "x": "50%",
+     "y": 1420,
+     "color": "#A39B8F",
+     "start": 0.9,
+     "enter": "fadeUp"
+    },
+    {
+     "use": "flash",
+     "start": 0
+    }
+   ]
+  }
+ ]
+}

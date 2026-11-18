@@ -1,0 +1,1 @@
+{"cmd": "anikit-video render deliverables/eval/c-event/spec.json -o deliverables/eval/c-event/final.mp4 --sheet deliverables/eval/c-event/contact.png", "exit": 0, "wall_s": 52.86, "peak_rss_mb": 455.8}
