@@ -233,5 +233,38 @@
    "generative",
    "kinetic-type"
   ]
+ },
+ {
+  "name": "mograph_lumen-light",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-mograph:deliverables/mograph/lumen-light.mp4",
+  "tags": [
+   "event-promo",
+   "kinetic-type",
+   "title-sequence"
+  ]
+ },
+ {
+  "name": "mograph_velo-snap",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-mograph:deliverables/mograph/velo-snap.mp4",
+  "tags": [
+   "product-launch",
+   "kinetic-type"
+  ]
+ },
+ {
+  "name": "mograph_atlas-precision",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-mograph:deliverables/mograph/atlas-precision.mp4",
+  "tags": [
+   "product-launch",
+   "motion-design"
+  ]
+ },
+ {
+  "name": "mograph_rainwell-fluid",
+  "src": "git:claude/epic-ramanujan-qe7x4w-v-mograph:deliverables/mograph/rainwell-fluid.mp4",
+  "tags": [
+   "brand-idents",
+   "motion-design"
+  ]
  }
 ]
