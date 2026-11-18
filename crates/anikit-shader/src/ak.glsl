@@ -100,6 +100,32 @@ vec3 ak_voronoi(vec2 p) {
     }
     return vec3(d1, d2, id);
 }
+// Exact distance to the nearest Voronoi cell border (x, cell units) and to
+// the nearest cell point (y). Use x for crisp walls, veins and networks:
+// unlike d2 - d1 it has no wedge-shaped smears where two points nearly meet.
+vec2 ak_voronoi_edge(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 mg = vec2(0.0), mr = vec2(0.0);
+    float md = 8.0;
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            vec2 g = vec2(float(x), float(y));
+            vec2 r = g + ak_hash2(i + g) - f;
+            float d = dot(r, r);
+            if (d < md) { md = d; mr = r; mg = g; }
+        }
+    }
+    float e = 8.0;
+    for (int y = -2; y <= 2; y++) {
+        for (int x = -2; x <= 2; x++) {
+            vec2 g = mg + vec2(float(x), float(y));
+            vec2 r = g + ak_hash2(i + g) - f;
+            vec2 dr = r - mr;
+            if (dot(dr, dr) > 1e-5) e = min(e, dot(0.5 * (mr + r), dr / length(dr)));
+        }
+    }
+    return vec2(e, sqrt(md));
+}
 
 // ---- colour
 // Cosine palette: a + b·cos(2π(c·t + d)) (four vec3s pick the look).

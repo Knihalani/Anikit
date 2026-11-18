@@ -1728,7 +1728,9 @@ impl Scene {
                     if entering {
                         inside_since = Some(dist);
                     } else {
-                        let inside = inside_since.map(|t0| dist - t0).unwrap_or(s.t);
+                        // An exit with no entry (an open shell seen from its back):
+                        // a nominal 2 mm wall, not the whole ray length.
+                        let inside = inside_since.map(|t0| dist - t0).unwrap_or(0.002);
                         tthr = mul(tthr, absorb(m.absorb, inside));
                         inside_since = None;
                     }

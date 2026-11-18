@@ -90,7 +90,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 |---|---|
 | coordinates | `ak_uv(fragCoord)` (centred, −1..1 vertically), `ak_uv01(fragCoord)`, `ak_rot(angle)` (mat2) |
 | hashes | `ak_hash(float\|vec2\|vec3)`, `ak_hash2(vec2)`, `ak_hash3(vec3)`: arithmetic, no `sin` |
-| noise | `ak_noise(vec2\|vec3)` value noise, `ak_gnoise(vec2)` gradient noise, `ak_fbm(p, octaves)` (vec2 or vec3), `ak_ridged(p, octaves)`, `ak_warp(p, amount)` domain warp, `ak_curl(p)` divergence-free flow, `ak_voronoi(p)` → (nearest, second, cell id) |
+| noise | `ak_noise(vec2\|vec3)` value noise, `ak_gnoise(vec2)` gradient noise, `ak_fbm(p, octaves)` (vec2 or vec3), `ak_ridged(p, octaves)`, `ak_warp(p, amount)` domain warp, `ak_curl(p)` divergence-free flow, `ak_voronoi(p)` → (nearest, second, cell id), `ak_voronoi_edge(p)` → (exact distance to the nearest cell border, distance to the nearest point): crisp walls and veins, without the wedge-shaped smears of `d2 − d1` |
 | colour | `ak_palette(t, a, b, c, d)` cosine palette, `ak_linear`/`ak_srgb`, `ak_tonemap(hdr)` (ACES fit + sRGB), `ak_oklab`/`ak_oklab_inv`, `ak_mix(a, b, t)` perceptual mix, `ak_iridescence(cosTheta, thickness)` thin film |
 | 2D shapes | `ak_circle`, `ak_box(vec2, vec2)`, `ak_segment`, `ak_fill(d)` anti-aliased fill of a distance |
 | 3D shapes | `ak_sphere`, `ak_box(vec3, vec3)`, `ak_torus`, `ak_capsule`, `ak_smin`/`ak_smax` (smooth union/subtraction), `ak_ray(ro, ta, uv, zoom)` camera ray |

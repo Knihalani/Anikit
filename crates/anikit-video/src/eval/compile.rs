@@ -549,6 +549,14 @@ impl Evaluator {
 
 const COLOUR_FORMS: &str = "use \"#ff5a1f\", \"#f51\", \"#ff5a1f80\" (with alpha), a name like \"white\", a theme token like \"$accent\", \"rgb(255, 90, 31)\", \"hsl(20, 100, 56)\", \"oklch(0.7, 0.19, 40)\", or a per-frame expression \"=mix($primary, $accent, p)\"";
 
+/// `"transparent"` / `"none"` as a background: fully clear (not opaque black).
+fn clear_bg(p: spec::Paint) -> spec::Paint {
+    match &p {
+        spec::Paint::Css(c) if c.trim().eq_ignore_ascii_case("transparent") || c.trim().eq_ignore_ascii_case("none") => spec::Paint::Css("#00000000".into()),
+        _ => p,
+    }
+}
+
 fn any_on_notes(ls: &[Layer]) -> bool {
     ls.iter().any(|l| l.on_notes.is_some() || l.layers.as_deref().is_some_and(any_on_notes) || l.children.as_deref().is_some_and(any_on_notes))
 }
@@ -1403,6 +1411,7 @@ impl C<'_> {
             Some(b) => (b, format!("{path}.background")),
             None => (default_bg, "background".to_string()),
         };
+        let bp = &clear_bg(bp.clone());
         let (bg, bg_color) = self.paint(bp, &bpath).unwrap_or((PaintC::Solid, Rgba([0.0, 0.0, 0.0, 1.0])));
         let bg_color = match &bg {
             PaintC::Solid => bg_color,
@@ -3759,8 +3768,11 @@ impl C<'_> {
         l.kind = Some("shape".into());
         let pc = PCtx { size: box_, t0: 0.0, end: f32::INFINITY, delay: 0.0, index: 0, count: 1, in_box: false };
         let n = self.layer(&l, path, pc)?;
-        if !n.tracks.is_empty() || !n.exprs.is_empty() {
-            self.d.push(Diagnostic::warning(path, "clip shapes are static; their animation is ignored"));
+        if !n.tracks.is_empty() || !n.exprs.is_empty() || l.loop_.is_some() || l.update.is_some() {
+            self.d.push(Diagnostic::warning(
+                path,
+                "a mask / clip shape is a static, hard-edged clip, so its animation (animate, presets, loop, expressions, update) is ignored. For an animated or soft mask, use a track matte: give the mask its own sibling layer with an \"id\" and set \"matte\": { \"layer\": \"that-id\" } on this layer (the matte uses the parent's coordinates and animates like any layer)",
+            ));
         }
         let (w, h) = (n.base[prop::W], n.base[prop::H]);
         let mut p = match &n.kind {
@@ -3886,7 +3898,7 @@ impl C<'_> {
         let sub = Spec {
             size: cdef.size.clone().or(Some(spec::Size::Wh([self.w as u32, self.h as u32]))),
             fps: Some(self.fps as f64),
-            background: Some(cdef.background.clone().unwrap_or(spec::Paint::Css("#00000000".into()))),
+            background: Some(clear_bg(cdef.background.clone().unwrap_or(spec::Paint::Css("#00000000".into())))),
             theme: self.spec_theme.clone(),
             scenes,
             transition: cdef.transition.clone(),
