@@ -93,7 +93,7 @@ const PROBE_EXCLUDED = new Set([
   'name',
   'for',
 ]);
-type StyleCache = WeakMap<Element, { vals: string[]; text: string }>;
+type StyleCache = WeakMap<Element, { vals: string[]; text: string; key: string }>;
 type StylePathCache = WeakMap<Element, boolean>;
 type ProbeAttribute = { name: string; namespace: string | null; value: string };
 type ProbeInfo = { key: string; namespace: string; localName: string; attributes: ProbeAttribute[] };
@@ -231,8 +231,10 @@ function cloneWithStyles(
     FULL_ELEMENTS.has(src.localName) ||
     src instanceof HTMLCanvasElement ||
     !!cssText;
+  const info = full ? null : probeInfo(src);
+  const key = info ? info.key : '';
   const previous = cache?.get(src);
-  const same = sameValues(vals, previous?.vals);
+  const same = sameValues(vals, previous?.vals) && previous?.key === key;
   const changed = parentChanged || !same || pathCache?.get(src) !== full;
 
   if (src instanceof HTMLCanvasElement) {
@@ -250,8 +252,7 @@ function cloneWithStyles(
   if (previous && same && !parentChanged && pathCache?.get(src) === full && (!cssText || previous.text === cssText)) text = previous.text;
   else if (cssText) text = cssText;
   else if (full) text = styleText(names, vals);
-  else {
-    const info = probeInfo(src);
+  else if (info) {
     const defaults = defaultStyles.get(info.key);
     if (defaults) text = textWithDefaults(names, vals, parentVals, defaults);
     else {
@@ -261,7 +262,7 @@ function cloneWithStyles(
   }
   if (text !== undefined) {
     clone.setAttribute('style', text);
-    cache?.set(src, { vals, text });
+    cache?.set(src, { vals, text, key });
     pathCache?.set(src, full);
   }
 
@@ -292,7 +293,7 @@ function finishDeferred(deferred: DeferredStyle[], results: Map<string, (string 
     const defaults = results.get(item.key) ?? defaultStyles.get(item.key) ?? item.names.map(() => null);
     const text = forceFull ? styleText(item.names, item.vals) : textWithDefaults(item.names, item.vals, item.parentVals, defaults);
     item.clone.setAttribute('style', text);
-    item.cache?.set(item.src, { vals: item.vals, text });
+    item.cache?.set(item.src, { vals: item.vals, text, key: forceFull ? '' : item.key });
     item.pathCache?.set(item.src, forceFull);
   }
 }
