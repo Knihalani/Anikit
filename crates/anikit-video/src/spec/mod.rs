@@ -562,6 +562,10 @@ pub struct Scene {
     pub post: Option<serde_json::Value>,
     /// Times relative to the scene start.
     pub markers: Option<BTreeMap<String, Num>>,
+    /// Speed ramp / time remap: an expression giving the scene's content time from real scene time `t`
+    /// (and progress `p`): `"=t < 0.6 ? t : 0.6 + (t - 0.6) * 0.2"` slows to 20% after 0.6 s, `"=min(t, 1.2)"` freezes.
+    /// Transitions and audio keep real time.
+    pub time_remap: Option<String>,
     /// Lay out the scene's free-floating layers (no `x`/`y`) as one centred column:
     /// `true`, a gap in px, or `{ "gap": 24, "align": "start|center|end" }`. Expanded at load.
     #[serde(default, skip_serializing_if = "Option::is_none")]

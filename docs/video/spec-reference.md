@@ -452,6 +452,7 @@ Render-time, per layer (examples: `examples/video/mograph/`):
 | `matte: "id"` or `{layer, mode}` | Track matte through a sibling layer (`alpha`, `alphaInverted`, `luma`, `lumaInverted`); the matte layer is not drawn itself. |
 | `inertia: true \| "soft" \| "bouncy" \| "tight" \| "heavy" \| {stiffness, damping, mass, props}` | Follow-through: a spring (simulated once at 240 Hz, deterministic) chases the layer's own `x`, `y`, `scaleX`, `scaleY`, `rotation` (or `props`), so every move overshoots and settles. |
 | `drag: 0.04` (group) | Overlapping action: child i follows the group's own motion i × drag seconds later, so parts trail and land one after another. |
+| `timeRemap: "=expr"` (scene) | Speed ramp / time remap: the scene's content time from real scene time `t` (and progress `p`). Slow-mo, freezes and reversals; transitions and audio keep real time. |
 | `extrude: {angle, length, color, fade}` | Solid extrusion or long shadow: the silhouette stepped back along `angle` (0 = right, 90 = down) for `length` px in one colour, behind the layer; `fade: 1` fades it out. About length/1.5 copies, in one tinted layer. |
 | `motionBlur: true \| {shutter}` (layer) | Motion blur on this layer only (sub-frame copies averaged additively, ~4 px apart, up to 64), only on frames where it moves. |
 | `smear: true \| strength` | Stretch along the direction of travel in proportion to speed (volume kept); still frames are untouched. |
