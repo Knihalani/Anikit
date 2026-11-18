@@ -1,0 +1,517 @@
+{
+  "name": "graphic_pieces_paper-weekend",
+  "tags": [
+    "event-promo",
+    "illustration"
+  ],
+  "refs": [
+    "xk-studio-offfmx-2025-main-titles",
+    "tintin-titles",
+    "nexus-smith-foulkes-honda-grrr-2004"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 4,
+      "typography": 4,
+      "colour": 6,
+      "light_texture": 4,
+      "motion": 3,
+      "craft": 5,
+      "originality": 3
+    },
+    "overall": 4.12,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a real concept for a small-press fair, such as paper being folded, printed, layered or registered on screen, instead of event facts on cards. D's titles tell a chase story through silhouettes.",
+      "The typography needs scale contrast and real craft: a chosen or custom face, overprint that interacts with the shapes, and type that moves as ink rather than sitting as text.",
+      "Choreography: the frames should change composition and build from one to the next. As it stands it reads as four static posters with swapped words.",
+      "Find a concept tied to the subject. C turns its story into a chase; D could make the printing process itself the motion (ink passes layering live, paper feeding, misregistration as choreography)",
+      "Break the template layout: vary scale, crop and camera across frames the way C changes viewpoint every shot, instead of reusing headline top-left and blob right",
+      "Make the material real: scanned riso grain, true ink overprint and paper fibre, with type that has a custom or characterful voice rather than a default heavy grotesk",
+      "It needs a central idea about paper, print or small presses that drives the motion (e.g. real riso passes building up, paper physically folding or feeding), not cards that swap",
+      "The typography needs a point of view: scale contrast, custom or carefully chosen faces, and type that interacts with the printed shapes instead of sitting in fixed slots",
+      "Real material and light are missing: actual paper texture, ink overlap, misregistration and depth, plus choreographed transitions between frames"
+    ],
+    "tells": [
+      "It is built like a slide deck. Frames 1 and 4 share the same layout (headline top left, blob on the right, mono microcopy bottom left), and frames 2 and 3 are single-fact cards ('120 tables', '2\u20133 MAY').",
+      "The riso look comes from a filter: halftone dots and a misregistered shadow on a generic heavy grotesk, with a default monospace for the details. It is the effect without the risograph's actual limits on inks or overprint.",
+      "There are generic blob shapes and pattern swatches (waves, checkerboard, squiggle tiles) with no subject. The idea is literal: event name plus date plus number of tables.",
+      "There is a cream ground, small mono labels and sparse layout, which is close to the generic 'tasteful AI' poster template.",
+      "Textbook 'tasteful AI' event poster: cream ground, heavy grotesk headline top-left, tiny monospace caption bottom-left, one blob shape filling the right side",
+      "Slide-deck structure: frames 1 and 4 are the same layout with a different blob, and frames 2 and 3 are standalone info cards ('120 tables', '2\u20133 MAY')",
+      "The riso is simulated as a surface effect: uniform halftone fill and a slight misregistration offset on the type, with no real ink overlap, paper show-through or print imperfection",
+      "Generic pattern swatches (waves, checkerboard, squiggle truchet) look like default pattern presets on tilted cards",
+      "The idea is literal: 'paper fair' becomes paper sheets plus the date and table count, with nothing a viewer would remember",
+      "Uses the generic 'tasteful' template: cream ground, a heavy grotesk headline top left, small monospace metadata at the bottom, one blob shape",
+      "The opening and closing frames use almost the same layout with shapes swapped, which is a slide-deck structure with little motion between cards",
+      "The risograph look is applied as a halftone filter on vector blobs and stock patterns (waves, checkerboard, truchet tiles) rather than real ink misregistration and paper",
+      "Literal idea: event name, number of tables, date, venue, as a sequence of information cards",
+      "A typing-cursor artefact ('zi|') and default-feeling monospace suggest a code-generated or automated layout"
+    ]
+  },
+  "refs_summary": {
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "tintin-titles": {
+      "overall": 8.62,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "nexus-smith-foulkes-honda-grrr-2004": {
+      "overall": 6.38,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    }
+  },
+  "ref_mean": 7.33,
+  "delta": -3.21,
+  "trials": [
+    {
+      "key": {
+        "A": "nexus-smith-foulkes-honda-grrr-2004",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "candidate",
+        "D": "tintin-titles"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "The sickly-sweet utopia is deliberate. The kitsch (rainbows, swans, peacock, balancing seals) is set up so that rusty, grimy engines can intrude and get blasted away, and that clash of material is the joke.",
+              "Each frame builds its type out of the world in a different way: topiary letters, letters on a peacock's tail, CHANGE spelled on balls balanced by seals. That is a typographic idea, not a caption.",
+              "The scenes are dense and full of characters. A flamingo swings a bat, a dog throws, a flock of engines flies off. Each frame shows a different gag, which points to real choreography and comic timing.",
+              "The dirty, photoreal engines against the glossy cartoon world show material contrast that someone directed on purpose."
+            ],
+            "gaps": [
+              "Much of the frame is generic CG landscape (stock-feeling trees, clouds and water). D gets more out of every single frame with a tightly controlled graphic language.",
+              "The palette is the saturated rainbow clich\u00e9 it is parodying. A more pointed grade could keep the satire and still show authorship.",
+              "The render finish varies from shot to shot (the dog and seals look cheaper than the engines). Lighting and shading need to hold together across the cast."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 4,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The materials are worked hard: translucent sculpted hands, glowing coral, mesh and fibre, glassy tubes, wiry hair. Each surface is layered and textured, not a stock primitive.",
+              "The palettes are unusual and specific to each frame: rust ridge on pale pink, monochrome volcanic terrain with a magenta plume, sage on blue, bottle green with cyan.",
+              "Light motivates the frames: subsurface glow, a volcanic flare, specular sheen on the tubes."
+            ],
+            "gaps": [
+              "There is no single idea. It plays like a reel or compilation of studio vignettes, each a different organic 3D sculpture, with no line through it. D has one concept carried through every shot.",
+              "The type is default sans name-tags ('Boldtron', 'Medusa Lab') dropped in the corner with no relationship to the image. It needs typography integrated into the world.",
+              "The 'organic-tech' maximal 3D look is close to current festival trends. It needs an image that only this piece could make."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 3,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "It is built like a slide deck. Frames 1 and 4 share the same layout (headline top left, blob on the right, mono microcopy bottom left), and frames 2 and 3 are single-fact cards ('120 tables', '2\u20133 MAY').",
+              "The riso look comes from a filter: halftone dots and a misregistered shadow on a generic heavy grotesk, with a default monospace for the details. It is the effect without the risograph's actual limits on inks or overprint.",
+              "There are generic blob shapes and pattern swatches (waves, checkerboard, squiggle tiles) with no subject. The idea is literal: event name plus date plus number of tables.",
+              "There is a cream ground, small mono labels and sparse layout, which is close to the generic 'tasteful AI' poster template."
+            ],
+            "gaps": [
+              "It needs a real concept for a small-press fair, such as paper being folded, printed, layered or registered on screen, instead of event facts on cards. D's titles tell a chase story through silhouettes.",
+              "The typography needs scale contrast and real craft: a chosen or custom face, overprint that interacts with the shapes, and type that moves as ink rather than sitting as text.",
+              "Choreography: the frames should change composition and build from one to the next. As it stands it reads as four static posters with swapped words."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "One idea runs through every frame: a silhouette chase that moves through worlds (park gate, alley seen from above, a vortex of spirals, a rooftop with a rocket). Each credit is staged as an event in the chase.",
+              "The type lives inside the scene. The director's name sits on the park gate's arch, ANDY SERKIS is lit on the pavement by a doorway's light cone, and the editor credit sits on the horizon. Every credit has its own placement.",
+              "Each scene has its own deliberate palette (dusty pink, aubergine and green, acid yellow-green, teal with oxblood figures), and flat graphic light still models depth with cast shadows and light pools.",
+              "The camera language varies widely (frontal, steep top-down, graphic spiral, wide horizon), which points to real choreography and pacing. Every frame works as a poster."
+            ],
+            "gaps": [
+              "The 1960s Saul Bass/Pink Panther-style silhouette credits are a known reference, so it scores slightly lower on originality than on execution.",
+              "The typography is a single display caps style, consistent but conservative. More scale play between credits could push it further.",
+              "Some backgrounds (the trees in frame 1) are simpler than the figure animation. Texture could be more consistent across every layer."
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 32.3,
+        "cost_usd": 0.14575500000000002,
+        "tokens": 70343,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "nexus-smith-foulkes-honda-grrr-2004",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "tintin-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 6,
+              "originality": 7
+            },
+            "tells": [
+              "Deliberate, self-aware kitsch: a saccharine rainbow paradise invaded by rusty, photoreal engine blocks. The clash is the idea and reads as satire, not as a lack of taste",
+              "Lettering is built from the world itself (topiary letters, peacock-feather eyes spelling a word, seals balancing 'CHANGE' balls), so the type is integrated into the image rather than laid on top of it",
+              "A clear story across the frames: idyll, intrusion (a flamingo swinging a bat at an engine), a swarm of engines, a dog reacting. That is choreography and escalation, not one repeated layout",
+              "Mixed materials (photographic grime on the engines against glossy toy-like CG) are a deliberate contrast",
+              "Holding it back: dated mid-2000s CG finish, flat sky-dome lighting, busy compositions with no clear hierarchy"
+            ],
+            "gaps": [
+              "Commit to a graphic system: C reduces every frame to a few flat silhouettes and one dominant shape. A's frames scatter the eye across a dozen props",
+              "Light it with intent: the bright, even sky light flattens everything. Use motivated key light and shadow to stage the engines' arrival as a threat",
+              "Give the type a real typographic voice. The novelty letterforms (balls, hedges) are gags, not a designed face with scale contrast the way C sets its credits inside the action"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 6,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, tactile simulation: fibres, mesh, fabric and ruffled membranes, translucent glass-like tubes, a beaded red core. The materials are specific, not stock primitives",
+              "An unusual, deliberate palette: bone white against coral, moss green with pale ice blue, and a black terrain under a mauve dusk",
+              "Real lighting: subsurface scattering on the hand, rim light on the tubes, an atmospheric volcanic plume",
+              "It reads as a showcase reel: studio names ('Boldtron', 'Medusa Lab') in a small default bold sans, top-left. The type is a label, not a design",
+              "Frames are separate vignettes. Mood and texture are consistent but there is no evidence of a through-line"
+            ],
+            "gaps": [
+              "Find an idea, not just an aesthetic: C has a narrative chase that builds frame to frame, while B's vignettes could be shuffled without loss",
+              "Typography: replace the small generic sans label with type that lives in the material world (embedded, deformed, lit) or drop it",
+              "Choreograph the transitions: let one form morph or cut into the next (hand to terrain, membrane to tubes) so the sequence has rhythm and payoff"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific idea only this film could have: a silhouette chase in the style of 1960s Saul Bass and Herg\u00e9, staging the plot's archetypes as the credits roll",
+              "Credits are integrated into the world: set into a gate sign, stencilled on the cobbles in a pool of lamplight, set beside a spiral vortex, set against the night sky with the rocket",
+              "A bold, shifting palette per scene: dusty rose park, violet alley, acid-green spiral, teal night with red figures. Each frame is a poster",
+              "Camera variety (eye-level wide, steep top-down, flat graphic plane, horizon silhouette) shows deliberate choreography and escalation",
+              "Paper grain and spot-light pools give texture and staged lighting inside a flat graphic language"
+            ],
+            "gaps": [
+              "Typography is a well-chosen period-appropriate sans but not custom. A bespoke credit face would push it further",
+              "Some frames lean on homage (Bass spiral, Catch Me If You Can cadence), so originality is high but not absolute",
+              "Texture could go further: a stronger print or film-grain layer would unify the 2D/3D seam in the alley shot"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Textbook 'tasteful AI' event poster: cream ground, heavy grotesk headline top-left, tiny monospace caption bottom-left, one blob shape filling the right side",
+              "Slide-deck structure: frames 1 and 4 are the same layout with a different blob, and frames 2 and 3 are standalone info cards ('120 tables', '2\u20133 MAY')",
+              "The riso is simulated as a surface effect: uniform halftone fill and a slight misregistration offset on the type, with no real ink overlap, paper show-through or print imperfection",
+              "Generic pattern swatches (waves, checkerboard, squiggle truchet) look like default pattern presets on tilted cards",
+              "The idea is literal: 'paper fair' becomes paper sheets plus the date and table count, with nothing a viewer would remember"
+            ],
+            "gaps": [
+              "Find a concept tied to the subject. C turns its story into a chase; D could make the printing process itself the motion (ink passes layering live, paper feeding, misregistration as choreography)",
+              "Break the template layout: vary scale, crop and camera across frames the way C changes viewpoint every shot, instead of reusing headline top-left and blob right",
+              "Make the material real: scanned riso grain, true ink overprint and paper fibre, with type that has a custom or characterful voice rather than a default heavy grotesk"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.4,
+        "cost_usd": 0.1485138,
+        "tokens": 70469,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "tintin-titles",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "nexus-smith-foulkes-honda-grrr-2004",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Credits are part of the scene's world: the director's credit sits on a wrought-iron park gate, a name is cast as a pool of light on the cobbles under a lamp, another sits in the curve of a hypnotic spiral",
+              "A silhouette chase runs through every frame, so each card moves the story on instead of repeating a layout",
+              "Each scene has its own palette (dusty pink park, purple-green noir alley, acid green spiral, teal night rooftop) while the silhouette language stays the same",
+              "Camera angles change a lot, from a flat stage view to a steep overhead alley shot to a graphic flat plane, which implies choreographed transitions",
+              "Paper grain, drop shadows and light cones give a flat graphic style real depth and a sense of time period",
+              "Period bold condensed caps with tracking, chosen to suit 1950s-60s caper-title style"
+            ],
+            "gaps": [
+              "The type style is good but stays fairly similar from card to card, and only some credits are fully built into the scene",
+              "The pastiche of Saul Bass / Herg\u00e9 era graphics is very well done, but the idea comes from a known tradition rather than being new",
+              "A few compositions (the teal rooftop) are less dense than the strongest frames"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Strong material work: translucent subsurface hand, woven mesh, frayed fibres, glassy and metallic tubes, coral-like clusters, each lit to show what it is made of",
+              "The palette is unusual and deliberate: fleshy pink on a mauve dusk, sage green against coral and pale aqua",
+              "Organic, tangled, asymmetric forms with fine details (hairs, threads, beads) that a stock primitive or a generic AI render would not include",
+              "The changes in scale between frames (a macro hand, a mountain range erupting, an extreme close-up on fibres) suggest an edited, choreographed sequence"
+            ],
+            "gaps": [
+              "The type is only small default-looking sans labels ('Boldtron', 'Medusa Lab') placed like captions with no relationship to the image; it needs a typographic idea",
+              "It reads as an anthology or showreel of beautiful renders rather than one specific idea that carries through the film",
+              "Some frames (the tube knot) slip toward familiar 'abstract 3D studio' territory; there is no narrative surprise to match the narrative in A"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "A specific, deliberate kitsch idea: a saccharine rainbow paradise invaded by greasy, dirty engines that shatter into pieces, which reads as a commissioned ad concept",
+              "The type is built from objects in the scene: topiary letters, a peacock's tail spelling 'CREATE', seals balancing letter balls that spell 'CHANGE'",
+              "There is real choreography and gags (a flamingo swinging a bat, engines exploding, a dog reacting), and the frames progress as a story",
+              "The real-looking metal textures on the engines are meant to clash with the plastic candy world"
+            ],
+            "gaps": [
+              "Flat, sunny CG lighting and a rainbow palette that is meant to look kitschy but gives little sense of authorship; it needs a tighter palette and more motivated light",
+              "Composition is cluttered and centred; frames don't hold up as posters the way A's do",
+              "The typography gag (objects arranged into letters) is a familiar ad trope; it needs an idea only this piece could have"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "Uses the generic 'tasteful' template: cream ground, a heavy grotesk headline top left, small monospace metadata at the bottom, one blob shape",
+              "The opening and closing frames use almost the same layout with shapes swapped, which is a slide-deck structure with little motion between cards",
+              "The risograph look is applied as a halftone filter on vector blobs and stock patterns (waves, checkerboard, truchet tiles) rather than real ink misregistration and paper",
+              "Literal idea: event name, number of tables, date, venue, as a sequence of information cards",
+              "A typing-cursor artefact ('zi|') and default-feeling monospace suggest a code-generated or automated layout"
+            ],
+            "gaps": [
+              "It needs a central idea about paper, print or small presses that drives the motion (e.g. real riso passes building up, paper physically folding or feeding), not cards that swap",
+              "The typography needs a point of view: scale contrast, custom or carefully chosen faces, and type that interacts with the printed shapes instead of sitting in fixed slots",
+              "Real material and light are missing: actual paper texture, ink overlap, misregistration and depth, plus choreographed transitions between frames"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.9,
+        "cost_usd": 0.1442234,
+        "tokens": 70272,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 5,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": true,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": false
+      },
+      "defects": [
+        "The end card's info block is set in a tiny monospace, about 10px cap height at 1080p. It reads as fine print and won't survive mobile or festival projection.",
+        "The 'ink on ink' Venn overlap is not a true overprint. Yellow and blue already make green, and then a separate muddy brown disc is dropped on top. That breaks the riso logic the film is selling, and the white label on it is low-contrast and generic.",
+        "The secondary column ('risograph / 3 inks / 120 tables') fades in at near-zero opacity, so in mid-transition frames it reads as a ghost or rendering error rather than a deliberate build.",
+        "The final ~2s is almost static (change/s 20.7 then 1.2), and the longest shot is 2.9s. The lockup holds without a reason beyond the music tail.",
+        "The halftone is a perfectly regular digital dot grid with uniform dot gain and no screen-angle variation between inks. It looks like a filter, not a print, and risks moir\u00e9 on downscale.",
+        "The type misregistration (a pink offset behind the purple) is identical in every shot. It's a fixed drop-shadow, not live registration drift."
+      ],
+      "gaps": [
+        "Motion lacks physical weight and the print metaphor. Sheets and shapes slide or drop in with generic easing. There's no drum feed, no ink laydown, no layer-by-layer registration build, so the riso process is pictured but never enacted in the movement. Transitions are hard wipes and pattern cuts, not handoffs where one ink layer becomes the next shot.",
+        "The sound is a static, looping synth bed: an evenly spaced transient grid every ~0.28s, the same few stacked harmonics bar after bar, flat dynamics, and one crash tail at ~7.8s. There's no paper or printer sound design (drum whir, sheet slaps, roller clicks), no drop-out before the reveal, and no clear hit landing on the date or title card beyond the beat grid.",
+        "The finish stays flat and digital. There's no paper tooth, uneven ink density, edge bleed or light falloff, and type properties carry no meaning: weight, offset and size never encode anything like ink count or layering. Top studio work would make the misregistration, overprint colour mixing and grain the actual storytelling device and keep the ending alive instead of holding a static card."
+      ]
+    },
+    "meta": {
+      "seconds": 29.7,
+      "cost_usd": 0.17079339999999998,
+      "tokens": 72505,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "paper-weekend.mp4: 9.2s, 7 shots, median 1.37s, longest 2.89s\nper-second change: [66.1, 83.6, 60.3, 92.8, 68.2, 118.8, 20.7, 1.2]\nPACE: FAIL \u2014 longest shot 2.9s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 4,
+    "typography": 4,
+    "colour": 6,
+    "light_texture": 4,
+    "motion": 4.5,
+    "craft": 6.0,
+    "originality": 3,
+    "sound": 5
+  },
+  "full_overall": 4.5,
+  "cost_usd": 0.609,
+  "judge_seconds": 126.3,
+  "verdict": "FAIL"
+}

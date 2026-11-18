@@ -16,7 +16,7 @@ A scene string is a title card (`"Title | subtitle"`); a layer string is centred
 
 | Kind | Write |
 |---|---|
-| time | `1.5` · `"1.5s"` · `"500ms"` · `"12f"` · `"@marker"` · `"@marker+0.2"` |
+| time | `1.5` · `"1.5s"` · `"500ms"` · `"12f"` · `"@marker"` · `"@marker+0.2"` · `"@beat17"` `"@bar5+0.25"` · `"2 beats"` · arithmetic `"=12 / fps"` (fixed at load: no `t`) |
 | length | `120` (px) · `"50%"` (of parent) · `"10vw"` · `"8vh"` · `"5vmin"` |
 | colour | `"#7c5cff"` · `"#fff8"` · `"oklch(70% 0.15 250)"` · `"$primary"` · `"linear-gradient(135deg, $primary, $accent)"` |
 | expression | `"=960 + 300 * sin(t * 2)"` (vars `t T gt p i n w h fps frame beat bar level bpm`; `c ? a : b`, `&& ||`; `sin mix remap smoothstep ease noise rand …`). Colours too: `"=hsl(t * 60, 70, 55)"`, `"=mix($primary, $accent, level)"`. See [`authoring.md`](authoring.md) |
@@ -43,7 +43,7 @@ Camera: `{ "zoom": 1, "x": 0, "y": 0, "rotation": 0, "focus": 0, "aperture": 0, 
 
 `type` is inferred: `text` → text, `shape` → shape, `src` → image/video, `children` → box, `layers` → group, `component` → component.
 
-Every layer: `x y` (default centre; relative to an earlier sibling: `"y": "=title.bottom + 24"`, `"x": "=card.right + 40"`, with `left right top bottom cx cy width height`) · `anchor` (`center`, `topLeft`, …) · `width height` · `scale rotation skewX skewY opacity blur` · `blend` · `shadow` (`true` or `{x, y, blur, color}`) · `glow` · `clip` · `mask` · `depth` · `start end duration` (half-open: visible from `start` up to, not including, `end`) · `frames` (`12` = only frame 12, `[12, 18]` = frames 12–17, counted in the scene) · `enter exit loop animate` · `stagger`.
+Every layer: `x y` (default centre; relative to an earlier sibling: `"y": "=title.bottom + 24"`, `"x": "=card.right + 40"`, with `left right top bottom cx cy width height`) · `anchor` (`center`, `topLeft`, …, `[0.5, 0]`, CSS `"50% 0%"` / `"top left"`; alias `transformOrigin`) · `width height` · `scale rotation skewX skewY opacity blur` · `blend` · `shadow` (`true` or `{x, y, blur, color}`) · `glow` · `clip` · `mask` · `depth` · `start end duration` (half-open: visible from `start` up to, not including, `end`) · `frames` (`12` = only frame 12, `[12, 18]` = frames 12–17, counted in the scene) · `enter exit loop animate` · `stagger`.
 
 | Type | Keys |
 |---|---|

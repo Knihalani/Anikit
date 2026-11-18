@@ -12,11 +12,12 @@
 //!   for the subject.
 //! - `arches`: a receding corridor of half-buried rings.
 //! - `terrain`: rolling ground (fBm noise) that flattens near the subject.
+//! - `landscape`: terrain with scattered boulders and stylised trees sitting on it.
 
 use super::spec::{check_keys, f, Res};
 use serde_json::{json, Value};
 
-pub const SETS: &[&str] = &["plinth", "podium", "steps", "sweep", "field", "arches", "terrain"];
+pub const SETS: &[&str] = &["plinth", "podium", "steps", "sweep", "field", "arches", "terrain", "landscape"];
 
 /// The objects for `set`, and the floor height it needs (if it changes it).
 pub struct Built {
@@ -129,17 +130,49 @@ pub fn build(v: &Value, path: &str, fit: Option<f32>) -> Res<Built> {
                     "material": mat("#D9D3C8", 0.55)
                 }));
             }
-            "terrain" => {
-                let e = format!(
-                    "=({a}*noise2(x*0.13,z*0.13)+{b}*noise2(x*0.41+3.1,z*0.41)+{c}*noise2(x*1.3+7.7,z*1.3)+{a})*smoothstep({r0},{r1},hypot(x,z))",
-                    a = 0.9 * size,
-                    b = 0.3 * size,
-                    c = 0.08 * size,
-                    r0 = 2.2 * size,
-                    r1 = 7.0 * size
-                );
-                out.objects.push(json!({ "type": "heightfield", "expr": e, "size": [60.0 * size, 60.0 * size], "res": 220, "material": mat("#59613F", 0.9) }));
+            "terrain" | "landscape" => {
+                // One height function, used for the ground and to stand things on it.
+                let hf = |x: &str, z: &str| {
+                    format!(
+                        "(({a}*noise2(({x})*0.13,({z})*0.13)+{b}*noise2(({x})*0.41+3.1,({z})*0.41)+{c}*noise2(({x})*1.3+7.7,({z})*1.3)+{a})*smoothstep({r0},{r1},hypot({x},{z})))",
+                        a = 0.9 * size,
+                        b = 0.3 * size,
+                        c = 0.08 * size,
+                        r0 = 2.2 * size,
+                        r1 = 7.0 * size
+                    )
+                };
+                out.objects.push(json!({ "type": "heightfield", "expr": format!("={}", hf("x", "z")), "size": [60.0 * size, 60.0 * size], "res": 220, "material": mat("#59613F", 0.9) }));
                 out.no_floor = true;
+                if name == "landscape" {
+                    // Scatter on a ring outside the clearing (radius 3–22 m), seeded by `i`.
+                    let rx = |r: &str, a: &str| -> (String, String) { (format!("({r})*cos({a})"), format!("({r})*sin({a})")) };
+                    let place = |n: i64, r0: f32, r1: f32, seed: f32| {
+                        let r = format!("{r0}+{}*sqrt(rand2(i,{seed}))", r1 - r0);
+                        let a = format!("6.2832*rand2(i,{})", seed + 7.0);
+                        let (x, z) = rx(&r, &a);
+                        (n, x, z)
+                    };
+                    let (n, x, z) = place(70, 3.2 * size, 22.0 * size, 1.0);
+                    out.objects.push(json!({
+                        "type": "sphere", "count": n, "radius": 0.5,
+                        "pos": format!("=[{x}, {}-0.08, {z}]", hf(&x, &z)),
+                        "scale": format!("=[{s}*(0.6+0.8*rand2(i,3)), {s}*(0.35+0.3*rand2(i,4)), {s}*(0.6+0.8*rand2(i,5))]", s = 0.9 * size),
+                        "rot": "=[0, 360*rand2(i,6), 8*rand2(i,9)]",
+                        "material": json!({ "extends": "matte", "base": "#8A877F", "roughness": 0.85 })
+                    }));
+                    let (n, x, z) = place(90, 4.5 * size, 26.0 * size, 11.0);
+                    let tree_s = format!("{}*(0.7+0.6*rand2(i,13))", size);
+                    out.objects.push(json!({
+                        "type": "lathe", "count": n, "smooth": false,
+                        "points": [[0.0, 0.0], [0.07, 0.0], [0.07, 0.35], [0.55, 0.35], [0.0, 2.2]],
+                        "segments": 10,
+                        "pos": format!("=[{x}, {}-0.05, {z}]", hf(&x, &z)),
+                        "scale": format!("=[{tree_s}, {tree_s}*(0.8+0.5*rand2(i,14)), {tree_s}]"),
+                        "rot": "=[0, 360*rand2(i,15), 0]",
+                        "material": mat("#3E5B3A", 0.8)
+                    }));
+                }
             }
             o => {
                 let hint = crate::components::style::closest(o, SETS).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();

@@ -116,6 +116,28 @@ moved, exact `f32`. A later `still` or render of the same physics reads the
 frames instead of simulating: a cold 1080p still of the 10k cascade at 5 s
 goes from 9.9 s to 3.0 s, with identical pixels.
 
+## Cloth: `{ "type": "cloth" }` in `objects`
+
+A grid of particles held by distance constraints (Verlet with position-based
+constraints): stretch along the grid, shear across diagonals, bend across two
+cells. It's solved serially in a fixed order, so it's deterministic, and cached
+with checkpoints, so frames render in any order. The mesh is rebuilt for every
+frame and renders two-sided.
+
+| Key | Default | |
+|---|---|---|
+| `hang` | `vertical` | `vertical`: a curtain or flag in the XY plane at `center`. `horizontal`: a sheet lying flat (drop it onto things). |
+| `size`, `res` | `[2, 1.5]`, `48` | Metres; grid cells along the width (2–160; height follows the aspect). |
+| `center` | `[0, 1.5, 0]` | World position of the cloth's centre (cloth lives in world space; leave `pos` unset). |
+| `pin` | `top` for vertical, `none` for horizontal | `top`, `corners`, `left`, `none`. |
+| `colliders` | none | Spheres `[{ "pos", "radius" }]` it drapes over (match them to your scene objects). `floor`: `true` (y = 0), a height, or `false`. |
+| `wind`, `gust` | `[0,0,0]`, `0.5` | Wind (m/s) and noise gusts as a fraction of it; wind pushes along the surface normal, so the cloth billows. |
+| `stiffness`, `bend`, `damping` | `1`, `0.15`, `0.01` | Stretch resistance; folding resistance (0.03 silk, 0.3 canvas); velocity loss per step. |
+| `friction`, `thickness` | `0.5`, `0.01` | Contact friction; collision offset (m). |
+| `iterations`, `seed` | `8`, `1` | Constraint passes per step (more: less stretch); gust noise seed. |
+
+Cost: 240 steps per second, serial; about 3.7 ms per step at `res` 64 (4,225 points), so a 4 s drape simulates in 3.6 s once and is cached after. `res` 32 is 4× cheaper.
+
 ## Particles: `{ "type": "particles" }` in `objects`
 
 ```json
@@ -144,6 +166,8 @@ goes from 9.9 s to 3.0 s, with identical pixels.
 | `layers` | none | Depth layers in one emitter: an array of `{ "share", ...any particle keys }`. Each layer gets its share of `count` and its own seed, and overrides the base keys (`emit` merges key by key). The studio recipe for snow, dust or embers: a few big, soft foreground flakes with parallax, a crisp mid layer, and a dense, faint far haze (examples/video/sim/snow.json). |
 | `scatter` | `0` | Lit particles: Henyey–Greenstein phase g (-0.95..0.95). Positive is forward scattering, so particles between the camera and the key light glow (backlit snow, dust in a beam). `0` keeps the diffuse sphere phase. Rendering only. |
 | `glint` | none | Lit particles: a tumbling facet per particle that flashes when it mirrors the key light into the camera. `amount`, or `{ "amount": 1, "sharpness": 60 }`. Rendering only. |
+| `sprite` | none | Each particle is a flat shape that tumbles (confetti, petals, paper, leaves) instead of a round dot. Use `confetti`, `square`, `triangle`/`petal`, `paper`, or `{ "shape": "quad"\|"triangle", "aspect": 0.5, "tumble": 1.2, "translucency": 0.35 }`. `size` is the half-width, `aspect` the height over width, `tumble` turns per second (±40% per particle). It's shaded by its real normal (two-sided, light through the paper, `glint` flashes) and drawn with an anti-aliased outline and motion blur. Strongly defocused sprites fall back to disc bokeh. Best up to ~50 k. |
+| `liquid` | none | The particles render as one smooth liquid surface instead of dots (screen-space fluid rendering): sphere depth and thickness per particle, bilateral depth smoothing, normals from the smoothed depth, and the thickness's iso-level as the outline. Use `true` or `{ "color", "opacity": 0–1 (0 clear, 1 opaque body: paint, chocolate, milk), "metal": 0–1 (liquid metal), "roughness": 0.08, "density": 4 (clear liquids: colour per metre), "radius": 2 (surface radius × size), "smooth": 1 }`. Shading: Fresnel reflection of the environment's sky/ground and the key highlight, then Beer–Lambert colour or the opaque body. Opaque and metal liquids read best. Clear liquids have no refraction yet, so they read as tinted glass over the background. The particles have no pressure, so pools pile up rather than spread (use `bounce` and `friction: 0` to slide). Known artefact: faint axis-aligned seams where the surface overlaps itself. About 1 s per 1080p frame for 40 k particles. |
 | `color` | `#ffffff` | A colour or a gradient (array), picked by `colorBy`: `random`, `age`, `speed` (over `speedRange` `[0, 2]` m/s), `height`, `source` (image emitters' pixels, the default for them). |
 | `opacity` | `1` | |
 | `emissive` | `1` for `add`, `0` for `over` | Emitted light. |

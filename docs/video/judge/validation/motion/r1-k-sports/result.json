@@ -1,0 +1,348 @@
+{
+  "refs": [
+    "blender-studio-charge-2022",
+    "nasa-year-in-the-life-of-co2-2014",
+    "calibration-blender-sprite-fright-2021"
+  ],
+  "candidate": {
+    "motion": 5,
+    "judged_professional": "0/3",
+    "gaps": [
+      "Easing is close to linear, with no overshoot or settle and no weight in the type moves.",
+      "Elements arrive one after another instead of overlapping, and there are long static holds on the logo and the end card.",
+      "The match-cut idea (colon to center circle) is weakened by plain wipes and fades that look like stock transitions.",
+      "Holds with nothing alive; no secondary motion or follow-through while the type sits",
+      "Elements animate one at a time instead of overlapping; no hand-offs with weight",
+      "Flat 2D with no camera language or physical spacing; easing feels like preset curves",
+      "No easing personality or overshoot: elements arrive linearly or ease in generically and then freeze",
+      "One element moves at a time with no overlap or follow-through between the logo, the scoreboard, the pitch and the names",
+      "No camera language or depth, and long dead holds on the logo and end cards"
+    ]
+  },
+  "refs_summary": {
+    "calibration-blender-sprite-fright-2021": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Strip 2 has a few near-static insert frames where only small hand moves carry the shot.",
+        "The cuts are clean, but there are no match cuts or morph transitions with real design intent.",
+        "The very dark frames make the blur-heavy whip in strip 1 less clear to read.",
+        "Second strip briefly settles into a more static insert hold than D's continuous energy",
+        "Camera language is energetic but less physically weighted than D's handheld/impact work",
+        "Some frames blur so heavily that spacing reads as smear more than designed arcs",
+        "The middle of the hand-insert sequence sits close to a held pose for several frames",
+        "The cut from insert to wide is a plain cut rather than a built transition",
+        "Less sense of physical force and camera energy than A's action peak"
+      ]
+    },
+    "nasa-year-in-the-life-of-co2-2014": {
+      "motion": 2,
+      "judged_professional": "0/3",
+      "gaps": [
+        "There is no authored timing, easing or emphasis anywhere.",
+        "There is no camera language and no shot or transition design.",
+        "Nothing in the motion tells a story or has hierarchy. Every region moves the same way.",
+        "No designed easing, anticipation or overshoot; motion is uniform data playback",
+        "No camera moves, staging or cuts to direct the eye",
+        "No hierarchy or hand-off between elements; the whole field changes evenly and the graphics stay static",
+        "No designed spacing or easing: time advances at a constant rate",
+        "No camera language, staging or focal choreography",
+        "No transitions or structure; it is automated visualization output, not motion design"
+      ]
+    },
+    "blender-studio-charge-2022": {
+      "motion": 9,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The impact frame is so blurred that it partly hides the contact beat.",
+        "The cuts are hard action cuts, and there are no designed transitions.",
+        "Strip 1 sits on one idea (sparks on a face) for most of its length.",
+        "Some close-up frames lean on the spark FX while the character barely moves",
+        "The cut into the action beat is chaotic for a moment, briefly losing a clear read",
+        "The robot's settle in the last frames is a little stiff next to the energy before it",
+        "The close-up face beat leans on particles while the character's performance is fairly static",
+        "The impact cut relies on blur rather than a designed match or hand-off",
+        "Readability drops in the darkest blurred frames, so the action peak is muddy"
+      ]
+    }
+  },
+  "ref_mean": 6.33,
+  "trials": [
+    {
+      "key": {
+        "A": "calibration-blender-sprite-fright-2021",
+        "B": "candidate",
+        "C": "nasa-year-in-the-life-of-co2-2014",
+        "D": "blender-studio-charge-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 8,
+            "tells": [
+              "Strip 1: a fast handheld-feel tracking pan through the characters. The figures are staggered so they enter on overlapping beats, with clear smear and motion blur during the whip.",
+              "The camera lags and catches up with the action. The boombox character enters with anticipation, and nothing holds still for a frame.",
+              "Strip 2: a close-up of a hand and a mechanism with small continuous push and pull. The tension builds, then it cuts to a reaction two-shot that pays the beat off.",
+              "Hair, clothing and expressions keep moving while the main action reads. That is secondary action and follow-through at feature-animation level."
+            ],
+            "gaps": [
+              "Strip 2 has a few near-static insert frames where only small hand moves carry the shot.",
+              "The cuts are clean, but there are no match cuts or morph transitions with real design intent.",
+              "The very dark frames make the blur-heavy whip in strip 1 less clear to read."
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "motion": 5,
+            "tells": [
+              "The lighthouse logo sits as a dead hold for about 6 frames. The only motion is a faint beam and wave drift, then a dissolve out.",
+              "The dot-matrix numbers fill in one character at a time, in even steps that read as a linear reveal.",
+              "There is one intentional idea: the colon of 19:45 becomes the center-circle and ball. A green stripe wipe then splits the pitch into team halves.",
+              "After the split, the team names and the league labels pop or fade on one at a time while everything else freezes. Nothing overlaps or overshoots."
+            ],
+            "gaps": [
+              "Easing is close to linear, with no overshoot or settle and no weight in the type moves.",
+              "Elements arrive one after another instead of overlapping, and there are long static holds on the logo and the end card.",
+              "The match-cut idea (colon to center circle) is weakened by plain wipes and fades that look like stock transitions."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "motion": 2,
+            "tells": [
+              "This is a scientific simulation time-lapse played back at a constant rate. The motion is driven entirely by the data, not authored.",
+              "The camera is locked and there are no cuts, transitions or choreography. The date stamp simply ticks over.",
+              "Frame to frame the change is a uniform, slow flow field. There are no accents and no easing.",
+              "The overlay (logo, legend and date bar) is completely static."
+            ],
+            "gaps": [
+              "There is no authored timing, easing or emphasis anywhere.",
+              "There is no camera language and no shot or transition design.",
+              "Nothing in the motion tells a story or has hierarchy. Every region moves the same way."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Strip 1: grinder sparks with believable ballistic arcs, plus motion blur and rack-focus depth. The shot pushes from the spark source onto the face, a deliberate change of framing.",
+              "The sparks scatter differently in every frame, the face shifts subtly, and the camera drifts. Nothing is dead.",
+              "Strip 2: a heavy mechanical arm swing with real mass. It accelerates hard into a smash, follows through with a blurred impact frame, then cuts.",
+              "The robot hand settles with weight, the actor's head and the camera keep moving, and the debris is staggered."
+            ],
+            "gaps": [
+              "The impact frame is so blurred that it partly hides the contact beat.",
+              "The cuts are hard action cuts, and there are no designed transitions.",
+              "Strip 1 sits on one idea (sparks on a face) for most of its length."
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 26.4,
+        "cost_usd": 0.1296506,
+        "tokens": 68298,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "nasa-year-in-the-life-of-co2-2014",
+        "B": "candidate",
+        "C": "calibration-blender-sprite-fright-2021",
+        "D": "blender-studio-charge-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 2,
+            "tells": [
+              "Automated scientific simulation render: the fluid moves at a constant rate driven by the data, with no authored timing",
+              "The camera is locked equirectangular with no camera language at all",
+              "No cuts, transitions or easing; the date counter ticks linearly",
+              "Overlays (logo, legend, date bar) are frozen for the whole film",
+              "Lots of fine motion in every frame, but none of it is choreographed"
+            ],
+            "gaps": [
+              "No designed easing, anticipation or overshoot; motion is uniform data playback",
+              "No camera moves, staging or cuts to direct the eye",
+              "No hierarchy or hand-off between elements; the whole field changes evenly and the graphics stay static"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "motion": 4,
+            "tells": [
+              "Long dead hold on the lighthouse/wordmark card (about 6 frames) with only faint wave drift",
+              "The dot-matrix '19:45' builds one digit at a time, a stock reveal pattern",
+              "The cross-dissolve into the pitch has some intent (centre-circle match), but the green column wipe is a mechanical linear slide",
+              "Team names and the league line pop or slide in, then freeze; little overshoot or settle",
+              "Final frames are mostly static lockups with only small text additions"
+            ],
+            "gaps": [
+              "Holds with nothing alive; no secondary motion or follow-through while the type sits",
+              "Elements animate one at a time instead of overlapping; no hand-offs with weight",
+              "Flat 2D with no camera language or physical spacing; easing feels like preset curves"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 8,
+            "tells": [
+              "Whip pan with heavy motion blur that hands off from character to character inside one move",
+              "Strong character acting: anticipation, startled takes, the boombox prop entering on an arc",
+              "The insert close-up of a hand gripping the flashlight has follow-through in the fingers and torch",
+              "The cut to the two-shot reaction keeps continuity of action",
+              "Something is alive in every frame: foliage, glow, secondary motion in hair and props"
+            ],
+            "gaps": [
+              "Second strip briefly settles into a more static insert hold than D's continuous energy",
+              "Camera language is energetic but less physically weighted than D's handheld/impact work",
+              "Some frames blur so heavily that spacing reads as smear more than designed arcs"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Particle sparks with believable physics (streaks, falloff, depth-of-field bokeh) that keep every frame alive",
+              "Rack focus and push-in from the grinder to the face: a deliberate camera transition",
+              "Robot impact has real weight: shake, smear frames and a hard cut on the action",
+              "Mechanical arms and the head move with overlapping action and settle after impact",
+              "Cinematic handheld micro-motion even in the near-held close-ups"
+            ],
+            "gaps": [
+              "Some close-up frames lean on the spark FX while the character barely moves",
+              "The cut into the action beat is chaotic for a moment, briefly losing a clear read",
+              "The robot's settle in the last frames is a little stiff next to the energy before it"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "C",
+          "B",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 25.5,
+        "cost_usd": 0.12777919999999998,
+        "tokens": 68214,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "nasa-year-in-the-life-of-co2-2014",
+        "C": "calibration-blender-sprite-fright-2021",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 9,
+            "tells": [
+              "Spark particles follow physically plausible arcs with motion-blurred streaks that change density from frame to frame",
+              "Handheld camera drift and shake that reacts to impact, plus rack-focus from the grinder to the face",
+              "The robot strike reads as having mass: a fast whip with motion blur, then a heavy settle, with a smeared impact frame acting as the transition",
+              "Secondary motion keeps going during the character beats (sparks, debris, the robot's servo adjustments), so no frame is dead"
+            ],
+            "gaps": [
+              "The close-up face beat leans on particles while the character's performance is fairly static",
+              "The impact cut relies on blur rather than a designed match or hand-off",
+              "Readability drops in the darkest blurred frames, so the action peak is muddy"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "motion": 8,
+            "tells": [
+              "Character animation at feature level: anticipation, smear and drag on hair and clothing during the whip-pan, and overlapping action between the characters",
+              "Camera pans with the action and hands focus from one character to the next with motion-blurred backgrounds",
+              "The insert close-up of the hand and vine shows weighted grab-and-pull with follow-through, then cuts back to a reaction shot that is still settling",
+              "Holds are moving holds (breathing, eye darts, the glow flickering)"
+            ],
+            "gaps": [
+              "The middle of the hand-insert sequence sits close to a held pose for several frames",
+              "The cut from insert to wide is a plain cut rather than a built transition",
+              "Less sense of physical force and camera energy than A's action peak"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "motion": 5,
+            "tells": [
+              "The opening logo card is a dead hold for about 0.6 s, with only faint wave and light-beam movement",
+              "The dot-matrix scoreboard fills in step by step, a stock 'type-on' effect",
+              "The 19:45 crossfades into the pitch centre circle, which is a reasonable graphic match but is done as a dissolve rather than a morph",
+              "The vertical wipe splits the screen into team colours, then the team names slide in and lock still; the supers fade or slide on one at a time while everything else freezes",
+              "The end card is static for about 0.5 s apart from small text pops"
+            ],
+            "gaps": [
+              "No easing personality or overshoot: elements arrive linearly or ease in generically and then freeze",
+              "One element moves at a time with no overlap or follow-through between the logo, the scoreboard, the pitch and the names",
+              "No camera language or depth, and long dead holds on the logo and end cards"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 2,
+            "tells": [
+              "The motion is entirely procedural, coming from a fluid simulation of data, with nothing authored or eased",
+              "The date counter ticks mechanically, and the frame is locked off with no camera move",
+              "There are no cuts, transitions or choreography; the busiest moment looks just like every other moment",
+              "It is alive in every frame, but only as uniform field advection with no hierarchy or focal point"
+            ],
+            "gaps": [
+              "No designed spacing or easing: time advances at a constant rate",
+              "No camera language, staging or focal choreography",
+              "No transitions or structure; it is automated visualization output, not motion design"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 29.2,
+        "cost_usd": 0.1317988,
+        "tokens": 68407,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.389
+}

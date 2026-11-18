@@ -37,7 +37,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 const KEYS: &[&str] = &[
-    "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch", "shadows", "force", "trail", "size_dist", "scatter", "glint",
+    "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch", "shadows", "force", "trail", "size_dist", "scatter", "glint", "sprite", "liquid",
 ];
 const EMIT_KEYS: &[&str] = &["shape", "pos", "position", "radius", "size", "surface", "axis", "image", "composition", "frame", "threshold", "rot", "rotation"];
 
@@ -116,6 +116,13 @@ pub struct Def {
     /// flashing the key light; amount and sharpness).
     scatter: f32,
     glint: (f32, f32),
+    /// Sprites: each particle is a flat, tumbling shape (confetti, petals,
+    /// paper): corners (unit square or triangle) scaled by (1, aspect),
+    /// tumble (turns per second) and two-sided translucency.
+    sprite: Option<Sprite>,
+    /// Liquid: the particles render as one smooth surface (screen-space
+    /// fluid rendering) instead of dots.
+    liquid: Option<Liquid>,
     colors: Vec<V3>,
     color_by: ColorBy,
     speed_range: (f32, f32),
@@ -339,6 +346,8 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
             Some(_) => return Err(format!("{path}.size_dist: expected {{ \"min\", \"max\", \"power\" }} (p(size) ∝ size^-power)")),
         },
         scatter: gf(m, "scatter", 0.0, path)?.clamp(-0.95, 0.95),
+        sprite: sprite(m.get("sprite"), path)?,
+        liquid: liquid(m.get("liquid"), path)?,
         glint: match m.get("glint") {
             None | Some(Value::Null) => (0.0, 0.0),
             Some(Value::Object(o)) => {
@@ -502,6 +511,89 @@ impl Def {
             None => self.size * (1.0 + self.size_var * (u - 0.5) * 2.0),
         }
     }
+}
+
+#[derive(Clone, Copy)]
+pub struct Liquid {
+    /// Absorbance per metre (linear RGB) from the colour and `density`.
+    absorb: V3,
+    /// Diffuse colour (opaque liquids: paint, milk), mixed by `opacity`.
+    color: V3,
+    opacity: f32,
+    metal: f32,
+    roughness: f32,
+    /// Surface radius per particle (× size) and depth smoothing (× that radius, px).
+    radius: f32,
+    smooth: f32,
+}
+
+fn liquid(v: Option<&Value>, path: &str) -> Res<Option<Liquid>> {
+    let p = format!("{path}.liquid");
+    let o = match v {
+        None | Some(Value::Null) | Some(Value::Bool(false)) => return Ok(None),
+        Some(Value::Bool(true)) => Map::new(),
+        Some(Value::Object(o)) => o.clone(),
+        Some(_) => return Err(format!("{p}: expected true or {{ \"color\", \"density\", \"opacity\", \"metal\", \"roughness\", \"radius\", \"smooth\" }}")),
+    };
+    spec::check_keys(&o, &["color", "density", "opacity", "metal", "roughness", "radius", "smooth"], &p)?;
+    let c = o.get("color").map(|x| spec::color(x, &format!("{p}.color"))).transpose()?.unwrap_or(v3(0.55, 0.8, 0.95));
+    let dens = gf(&o, "density", 4.0, &p)?.max(0.0);
+    // A colour's absorbance: what a metre of it removes per channel.
+    let ab = |x: f32| -(x.clamp(0.002, 1.0)).ln() * dens;
+    Ok(Some(Liquid {
+        absorb: v3(ab(c.x), ab(c.y), ab(c.z)),
+        color: c,
+        opacity: gf(&o, "opacity", 0.0, &p)?.clamp(0.0, 1.0),
+        metal: gf(&o, "metal", 0.0, &p)?.clamp(0.0, 1.0),
+        roughness: gf(&o, "roughness", 0.08, &p)?.clamp(0.01, 1.0),
+        radius: gf(&o, "radius", 2.0, &p)?.clamp(0.5, 8.0),
+        smooth: gf(&o, "smooth", 1.0, &p)?.clamp(0.0, 4.0),
+    }))
+}
+
+#[derive(Clone, Copy)]
+pub struct Sprite {
+    tri: bool,
+    aspect: f32,
+    tumble: f32,
+    translucency: f32,
+}
+
+fn sprite(v: Option<&Value>, path: &str) -> Res<Option<Sprite>> {
+    let p = format!("{path}.sprite");
+    let mut s = Sprite { tri: false, aspect: 0.5, tumble: 1.2, translucency: 0.35 };
+    match v {
+        None | Some(Value::Null) | Some(Value::Bool(false)) => return Ok(None),
+        Some(Value::Bool(true)) => {}
+        Some(Value::String(x)) => match x.as_str() {
+            "confetti" | "quad" => {}
+            "square" => s.aspect = 1.0,
+            "petal" | "triangle" | "tri" => {
+                s.tri = true;
+                s.aspect = 0.8;
+            }
+            "paper" => {
+                s.aspect = 0.75;
+                s.tumble = 0.4;
+            }
+            o => return Err(format!("{p}: unknown `{o}` (confetti, square, triangle, petal, paper, or {{ \"shape\", \"aspect\", \"tumble\", \"translucency\" }})")),
+        },
+        Some(Value::Object(o)) => {
+            spec::check_keys(o, &["shape", "aspect", "tumble", "translucency"], &p)?;
+            if let Some(x) = o.get("shape") {
+                s.tri = match x.as_str() {
+                    Some("quad") => false,
+                    Some("triangle") | Some("tri") => true,
+                    _ => return Err(format!("{p}.shape: `quad` or `triangle`")),
+                };
+            }
+            s.aspect = gf(o, "aspect", s.aspect, &p)?.clamp(0.02, 50.0);
+            s.tumble = gf(o, "tumble", s.tumble, &p)?;
+            s.translucency = gf(o, "translucency", s.translucency, &p)?.clamp(0.0, 1.0);
+        }
+        Some(_) => return Err(format!("{p}: expected a name (confetti, petal, paper…) or {{ \"shape\", \"aspect\", \"tumble\" }}")),
+    }
+    Ok(Some(s))
 }
 
 /// Expands `"layers"` on a particle object into one object per layer: each
@@ -1430,6 +1522,8 @@ pub struct Layer {
     pub eo: Option<usize>,
     pub ab: Option<usize>,
     pub buf: Vec<f32>,
+    /// Liquid surfaces: per pixel, transmittance (rgb) and added light (rgb).
+    pub liquid: Option<Vec<[f32; 6]>>,
 }
 
 impl Layer {
@@ -1437,6 +1531,13 @@ impl Layer {
     #[inline]
     pub fn apply(&self, i: usize, c: [f32; 3]) -> [f32; 3] {
         let b = &self.buf[i * self.c..(i + 1) * self.c];
+        let c = match &self.liquid {
+            Some(lq) => {
+                let q = lq[i];
+                [c[0] * q[0] + q[3], c[1] * q[1] + q[4], c[2] * q[2] + q[5]]
+            }
+            None => c,
+        };
         let mut o = c;
         if let Some(a) = self.ab {
             let od = b[a + 3];
@@ -2084,6 +2185,285 @@ fn streak_gap() -> f32 {
     *G.get_or_init(|| std::env::var("ANIKIT_STREAK_GAP").ok().and_then(|v| v.parse().ok()).unwrap_or(0.5))
 }
 
+/// Screen-space fluid rendering (after van der Laan et al. 2009): each
+/// particle writes a sphere's depth and thickness, the depth is smoothed
+/// with a bilateral filter (blobs merge, separate layers don't), normals come
+/// from the smoothed depth, and the surface is shaded: Fresnel reflection of
+/// the environment and key light, Beer–Lambert colour through its thickness,
+/// or a diffuse body for opaque liquids. Banded and per-pixel: identical at
+/// any thread count.
+fn render_liquid(systems: &[(&Sim, &Arc<Snap>)], v: &View, t: f32) -> Vec<[f32; 6]> {
+    use rayon::prelude::*;
+    let (w, h) = (v.w, v.h);
+    let pj = Proj::new(v.cam, w, h);
+    let mut out = vec![[1.0, 1.0, 1.0, 0.0, 0.0, 0.0]; w * h];
+    for (sim, snap) in systems {
+        let d = &sim.def;
+        let lq = d.liquid.unwrap();
+        let n = snap.pos.len();
+        // Project once: screen position, depth, world and screen radius.
+        let pts: Vec<(f32, f32, f32, f32, f32)> = (0..n)
+            .into_par_iter()
+            .with_min_len(1 << 12)
+            .map(|j| {
+                let i = snap.id[j] as usize;
+                if sim.age(i, t) < 0.0 {
+                    return (0.0, 0.0, -1.0, 0.0, 0.0);
+                }
+                let p = v3(snap.pos[j][0], snap.pos[j][1], snap.pos[j][2]);
+                let (sx, sy, z) = pj.at(p);
+                let rw = d.size_of(i) * lq.radius;
+                (sx, sy, z, rw, rw * pj.k / z.max(1e-3))
+            })
+            .collect();
+        // 1. Depth (nearest sphere surface) and thickness, in 64-row bands.
+        const BAND: usize = 64;
+        let mut depth = vec![f32::INFINITY; w * h];
+        let mut thick = vec![0.0f32; w * h];
+        depth.par_chunks_mut(BAND * w).zip(thick.par_chunks_mut(BAND * w)).enumerate().for_each(|(b, (dr, tr))| {
+            let (y0, y1) = ((b * BAND) as f32, ((b * BAND) + dr.len() / w) as f32);
+            for &(sx, sy, z, rw, r) in &pts {
+                if z < 0.05 || r < 0.3 || sy + r < y0 || sy - r > y1 || sx + r < 0.0 || sx - r > w as f32 {
+                    continue;
+                }
+                let (xa, xb) = ((sx - r).floor().max(0.0) as usize, ((sx + r).ceil() as usize).min(w - 1));
+                let (ya, yb) = ((sy - r).floor().max(y0) as usize, ((sy + r).ceil() as usize).min(y1 as usize - 1));
+                for yy in ya..=yb {
+                    for xx in xa..=xb {
+                        let (dx, dy) = ((xx as f32 + 0.5 - sx) / r, (yy as f32 + 0.5 - sy) / r);
+                        let q = 1.0 - dx * dx - dy * dy;
+                        if q <= 0.0 {
+                            continue;
+                        }
+                        let s = q.sqrt();
+                        let k = (yy - b * BAND) * w + xx;
+                        let zs = z - rw * s;
+                        if zs < dr[k] {
+                            dr[k] = zs;
+                        }
+                        // Back surface (the far side of the furthest sphere).
+                        let zb = z + rw * s;
+                        if zb > tr[k] {
+                            tr[k] = zb;
+                        }
+                    }
+                }
+            }
+        });
+        // 2. Bilateral smoothing of depth (separable, twice): blobs merge into
+        // one surface; neighbours more than a sphere's depth apart don't mix.
+        let rs: f32 = {
+            let (sum, cnt) = pts.iter().filter(|p| p.2 > 0.05).fold((0.0f64, 0usize), |(a, c), p| (a + p.4 as f64, c + 1));
+            (sum / cnt.max(1) as f64) as f32
+        };
+        // About one particle radius of blur: smaller leaves the discs' scallops.
+        let rad = ((rs * lq.smooth * 2.0).round() as i32).clamp(1, 64);
+        let sig = rad as f32 * 0.5 + 0.5;
+        let zgap = pts.iter().filter(|p| p.2 > 0.05).map(|p| p.3).fold(0.0f32, f32::max) * 2.0;
+        // One sphere's thickness through its centre: the surface's edge is an
+        // iso-level of the blurred thickness (metaballs), not the discs' union.
+        let tref = {
+            let (sum, cnt) = pts.iter().filter(|p| p.2 > 0.05).fold((0.0f64, 0usize), |(a, c), p| (a + p.3 as f64, c + 1));
+            (2.0 * sum / cnt.max(1) as f64) as f32
+        };
+        let gw: Vec<f32> = (-rad..=rad).map(|k| (-(k * k) as f32 / (2.0 * sig * sig)).exp()).collect();
+        // Normalised convolution: empty pixels are filled from their
+        // neighbours (so the iso-level, not the discs, sets the outline), and
+        // a soft range weight keeps separate layers apart without the
+        // streaks a hard cut leaves in a separable filter.
+        let pass = |src: &[f32], horiz: bool| -> Vec<f32> {
+            let mut o = vec![f32::INFINITY; w * h];
+            o.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+                for x in 0..w {
+                    let c = src[y * w + x];
+                    let (mut acc, mut ws) = (0.0f32, 0.0f32);
+                    // The reference depth: the centre, or (empty centre) the nearest valid neighbour's.
+                    let mut cref = c;
+                    if !c.is_finite() {
+                        let mut best = i32::MAX;
+                        for k in 0..gw.len() {
+                            let o = k as i32 - rad;
+                            let (xx, yy) = if horiz { (x as i32 + o, y as i32) } else { (x as i32, y as i32 + o) };
+                            if xx < 0 || yy < 0 || xx >= w as i32 || yy >= h as i32 {
+                                continue;
+                            }
+                            let s = src[yy as usize * w + xx as usize];
+                            if s.is_finite() && o.abs() < best {
+                                best = o.abs();
+                                cref = s;
+                            }
+                        }
+                        if !cref.is_finite() {
+                            continue;
+                        }
+                    }
+                    for (k, g) in gw.iter().enumerate() {
+                        let o = k as i32 - rad;
+                        let (xx, yy) = if horiz { (x as i32 + o, y as i32) } else { (x as i32, y as i32 + o) };
+                        if xx < 0 || yy < 0 || xx >= w as i32 || yy >= h as i32 {
+                            continue;
+                        }
+                        let s = src[yy as usize * w + xx as usize];
+                        if !s.is_finite() {
+                            continue;
+                        }
+                        let dz = (s - cref) / zgap.max(1e-6);
+                        let wgt = g * (-dz * dz).exp();
+                        acc += s * wgt;
+                        ws += wgt;
+                    }
+                    if ws > 1e-12 {
+                        row[x] = acc / ws;
+                    }
+                }
+            });
+            o
+        };
+        for k in 0..w * h {
+            thick[k] = if depth[k].is_finite() { (thick[k] - depth[k]).max(0.0) } else { 0.0 };
+        }
+        let mut zs = depth;
+        for _ in 0..2 {
+            zs = pass(&pass(&zs, true), false);
+        }
+        // Thickness: back minus front, then a plain blur (it tints, and its iso-level is the edge).
+        let tb = {
+            let blur = |src: &[f32], horiz: bool| -> Vec<f32> {
+                let mut o = vec![0.0f32; w * h];
+                o.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+                    for x in 0..w {
+                        let mut acc = 0.0;
+                        let mut ws = 0.0;
+                        for (k, g) in gw.iter().enumerate() {
+                            let o = k as i32 - rad;
+                            let (xx, yy) = if horiz { (x as i32 + o, y as i32) } else { (x as i32, y as i32 + o) };
+                            if xx < 0 || yy < 0 || xx >= w as i32 || yy >= h as i32 {
+                                continue;
+                            }
+                            acc += src[yy as usize * w + xx as usize] * g;
+                            ws += g;
+                        }
+                        row[x] = acc / ws;
+                    }
+                });
+                o
+            };
+            blur(&blur(&thick, true), false)
+        };
+        // 3. Shade.
+        let wp = |x: f32, y: f32, z: f32| -> V3 {
+            let d = add(add(pj.f, scale(pj.r, (x - pj.cx) / pj.k)), scale(pj.u, -(y - pj.cy) / pj.k));
+            madd(pj.pos, d, z)
+        };
+        let (keyd, keyc) = v.key;
+        let (sky, ground) = v.amb;
+        let f0 = lerp3(v3(0.02, 0.02, 0.02), lq.color, lq.metal);
+        let shin = 2.0 / (lq.roughness * lq.roughness) - 2.0;
+        // Normals from the smoothed depth (zero where there's none), then a
+        // few isotropic 3×3 passes: the separable depth filter leaves
+        // axis-aligned seams the highlights would show.
+        let mut nb: Vec<V3> = (0..w * h)
+            .into_par_iter()
+            .with_min_len(4096)
+            .map(|k| {
+                let (x, y) = (k % w, k / w);
+                let z = zs[k];
+                if !z.is_finite() {
+                    return v3(0.0, 0.0, 0.0);
+                }
+                let at = |xx: usize, yy: usize| -> Option<V3> {
+                    let q = zs[yy * w + xx];
+                    // Across a layer boundary is not a neighbour.
+                    (q.is_finite() && (q - z).abs() < zgap * 0.25).then(|| wp(xx as f32 + 0.5, yy as f32 + 0.5, q))
+                };
+                let p = wp(x as f32 + 0.5, y as f32 + 0.5, z);
+                let pick = |a: Option<V3>, b: Option<V3>| -> Option<V3> {
+                    match (a.map(|q| sub(p, q)), b.map(|q| sub(q, p))) {
+                        (Some(x), Some(y)) => Some(scale(add(x, y), 0.5)),
+                        (x, y) => x.or(y),
+                    }
+                };
+                let dx = pick(if x > 0 { at(x - 1, y) } else { None }, if x + 1 < w { at(x + 1, y) } else { None });
+                let dy = pick(if y > 0 { at(x, y - 1) } else { None }, if y + 1 < h { at(x, y + 1) } else { None });
+                let (Some(dx), Some(dy)) = (dx, dy) else { return v3(0.0, 0.0, 0.0) };
+                let n = norm(cross(dy, dx));
+                let vv = norm(sub(v.cam.pos, p));
+                if dot(n, vv) < 0.0 {
+                    scale(n, -1.0)
+                } else {
+                    n
+                }
+            })
+            .collect();
+        for _ in 0..((rad / 2).clamp(2, 12)) {
+            let src = nb.clone();
+            nb.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+                for x in 0..w {
+                    let k = y * w + x;
+                    let z = zs[k];
+                    if dot(src[k], src[k]) == 0.0 {
+                        continue;
+                    }
+                    let mut acc = v3(0.0, 0.0, 0.0);
+                    for yy in y.saturating_sub(1)..(y + 2).min(h) {
+                        for xx in x.saturating_sub(1)..(x + 2).min(w) {
+                            let q = yy * w + xx;
+                            if dot(src[q], src[q]) > 0.0 && (zs[q] - z).abs() < zgap * 0.25 {
+                                acc = add(acc, src[q]);
+                            }
+                        }
+                    }
+                    row[x] = norm(acc);
+                }
+            });
+        }
+        out.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+            for x in 0..w {
+                let k = y * w + x;
+                let z = zs[k];
+                // Coverage: an iso-level of the blurred thickness, softened over a band.
+                let iso = ((tb[k] / tref.max(1e-6) - 0.22) / 0.2).clamp(0.0, 1.0);
+                let a = iso * iso * (3.0 - 2.0 * iso);
+                if !z.is_finite() || a <= 0.0 {
+                    continue;
+                }
+                if v.depth[k] < z {
+                    continue;
+                }
+                let nrm = nb[k];
+                if dot(nrm, nrm) == 0.0 {
+                    continue;
+                }
+                let p = wp(x as f32 + 0.5, y as f32 + 0.5, z);
+                let vv = norm(sub(v.cam.pos, p));
+                let ndv = dot(nrm, vv).clamp(0.0, 1.0);
+                let fr = add(f0, scale(sub(v3(1.0, 1.0, 1.0), f0), (1.0 - ndv).powi(5)));
+                // Reflection: the environment's sky/ground gradient, and the key light's highlight.
+                let rd = sub(scale(nrm, 2.0 * dot(nrm, vv)), vv);
+                let env = lerp3(ground, sky, (0.5 + 0.5 * rd.y).clamp(0.0, 1.0));
+                let hv = norm(add(vv, keyd));
+                let spec = dot(nrm, hv).max(0.0).powf(shin) * (shin + 8.0) / (8.0 * std::f32::consts::PI) * dot(nrm, keyd).max(0.0);
+                let refl = add(scale(env, 1.0), scale(keyc, spec));
+                // Body: Beer–Lambert transmission through the thickness, or an opaque diffuse body.
+                let th = tb[k];
+                let trn = v3((-lq.absorb.x * th).exp(), (-lq.absorb.y * th).exp(), (-lq.absorb.z * th).exp());
+                let diff = add(scale(keyc, dot(nrm, keyd).max(0.0) / std::f32::consts::PI), lerp3(ground, sky, 0.5 + 0.5 * nrm.y));
+                let body = v3(lq.color.x * diff.x, lq.color.y * diff.y, lq.color.z * diff.z);
+                let o = lq.opacity.max(lq.metal);
+                let one = v3(1.0, 1.0, 1.0);
+                let tcol = v3((1.0 - fr.x) * trn.x * (1.0 - o), (1.0 - fr.y) * trn.y * (1.0 - o), (1.0 - fr.z) * trn.z * (1.0 - o));
+                let add_l = add(v3(fr.x * refl.x, fr.y * refl.y, fr.z * refl.z), v3((1.0 - fr.x) * body.x * o * (1.0 - lq.metal), (1.0 - fr.y) * body.y * o * (1.0 - lq.metal), (1.0 - fr.z) * body.z * o * (1.0 - lq.metal)));
+                let q = &mut row[x];
+                // Over what's already there (earlier liquids).
+                let tt = lerp3(one, tcol, a);
+                let al = scale(add_l, a);
+                *q = [q[0] * tt.x, q[1] * tt.y, q[2] * tt.z, q[3] * tt.x + al.x, q[4] * tt.y + al.y, q[5] * tt.z + al.z];
+            }
+        });
+    }
+    out
+}
+
 /// One splat with the kernel picked for a footprint (`kk`, blend `lw`; see `render`).
 #[inline(always)]
 #[allow(clippy::too_many_arguments)]
@@ -2217,6 +2597,10 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
     let mut pyrs: Vec<Pyr> = Vec::new();
     for (sim, snap) in systems {
         let d = &sim.def;
+        if d.liquid.is_some() {
+            // Drawn as a surface (render_liquid), not as dots.
+            continue;
+        }
         let n = snap.pos.len();
         let ch = std::time::Instant::now();
         let hist = history(sim, snap);
@@ -2250,7 +2634,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
                     // A preview particle stands for `stride` of them: spread it over about that many pixels.
                     let foot = (r_px * r_px + coc * coc + spread2).sqrt();
-                    let margin = foot + 4.0;
+                    let margin = foot.max(d.sprite.map(|sp| r_px * (1.0 + sp.aspect * sp.aspect).sqrt()).unwrap_or(0.0)) + 4.0;
                     if tr.is_some() {
                         let mut pts = [(0.0f32, 0.0f32, 0.0f32); TRAIL_MAX + 1];
                         let m = trail_points(sim, &hist, j, i, t, (sx, sy, z), &pj, &mut pts);
@@ -2275,7 +2659,9 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     let vel = snap.vel(j);
                     let back = madd(p, vel, -v.shutter * sim.dt * d.stretch);
                     let by = if v.shutter > 0.0 { pp.at(back).1 } else { sy };
-                    let reach = foot + 7.0 + (sy - by).abs() * 0.5;
+                    // Sprites reach their corners (and sweep along their motion).
+                    let spr = d.sprite.map(|sp| r_px * (1.0 + sp.aspect * sp.aspect).sqrt() + (sy - by).abs() * 0.5).unwrap_or(0.0);
+                    let reach = (foot + 7.0 + (sy - by).abs() * 0.5).max(spr + 3.0);
                     let lo = ((sy - reach).max(0.0) as usize / BAND).min(nb - 1);
                     let hi = (((sy + reach).max(0.0) as usize) / BAND).min(nb - 1);
                     (lo as u8, hi as u8)
@@ -2306,7 +2692,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
                 // A preview particle stands for `stride` of them: spread it over about that many pixels.
                 let foot = (r_px * r_px + coc * coc + spread2).sqrt();
-                let margin = foot + 4.0;
+                let margin = foot.max(d.sprite.map(|sp| r_px * (1.0 + sp.aspect * sp.aspect).sqrt()).unwrap_or(0.0)) + 4.0;
                 let mut head = !(sx < -margin || sy < -margin || sx > w as f32 + margin || sy > h as f32 + margin);
                 // Depth test against the scene at the particle's centre.
                 let (ix, iy) = (sx as i32, sy as i32);
@@ -2385,6 +2771,130 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 } else {
                     col
                 };
+                // Sprites: a flat shape, tumbling, drawn with its real outline and normal.
+                if let (Some(sp), true) = (d.sprite, head && coc < (2.0f32).max(r_px * 0.5)) {
+                    let (h1, h2, h3, h4) = (hu(d.seed, i as u32, 71), hu(d.seed, i as u32, 72), hu(d.seed, i as u32, 73), hu(d.seed, i as u32, 74));
+                    // A random tumble axis and phase, and a rate within ±40% of `tumble`.
+                    let (az, el) = (h1 * std::f32::consts::TAU, (h2 * 2.0 - 1.0).asin());
+                    let ax = v3(el.cos() * az.cos(), el.sin(), el.cos() * az.sin());
+                    let rate = sp.tumble * (0.6 + 0.8 * h3) * std::f32::consts::TAU;
+                    // Two fixed directions perpendicular to the axis, rotated about it.
+                    let up = if ax.y.abs() < 0.9 { v3(0.0, 1.0, 0.0) } else { v3(1.0, 0.0, 0.0) };
+                    let b1 = norm(cross(ax, up));
+                    let b2 = cross(ax, b1);
+                    let half = size;
+                    let ns = if v.shutter > 0.0 { ((ml / r_px.max(0.5)).ceil() as usize).clamp(1, 8) } else { 1 };
+                    let to_cam = norm(sub(v.cam.pos, p));
+                    let vis = v.shadow.map(|m| m.trans(p)).unwrap_or(1.0);
+                    let keyc = scale(v.key.1, vis);
+                    let k = sim.stride.max(1) as f32;
+                    let banded = py.band != (0, i32::MAX);
+                    for q in 0..ns {
+                        let u = if ns == 1 { 0.0 } else { (q as f32 + 0.5) / ns as f32 - 0.5 };
+                        let tq = t + u * v.shutter * sim.dt;
+                        let ang = h4 * std::f32::consts::TAU + rate * tq;
+                        let (ca, sa) = (ang.cos(), ang.sin());
+                        // The sheet's axes: e1 along the tumble axis, e2 turning about it.
+                        let e2 = add(scale(b1, ca), scale(b2, sa));
+                        let e1 = ax;
+                        let nrm = cross(e1, e2);
+                        let pc = madd(p, vel, u * v.shutter * sim.dt * d.stretch);
+                        let (w1, w2) = (half, half * sp.aspect);
+                        let corners: [V3; 4] = if sp.tri {
+                            [madd(pc, e1, w1), madd(madd(pc, e1, -w1), e2, w2), madd(madd(pc, e1, -w1), e2, -w2), madd(pc, e1, w1)]
+                        } else {
+                            [madd(madd(pc, e1, w1), e2, w2), madd(madd(pc, e1, -w1), e2, w2), madd(madd(pc, e1, -w1), e2, -w2), madd(madd(pc, e1, w1), e2, -w2)]
+                        };
+                        let sc = corners.map(|c| pj.at(c));
+                        if sc.iter().any(|c| c.2 < 0.05) {
+                            continue;
+                        }
+                        // Shading: two-sided Lambert, light through the paper, a specular flash.
+                        let n = if dot(nrm, to_cam) < 0.0 { scale(nrm, -1.0) } else { nrm };
+                        let ndl = dot(n, v.key.0);
+                        let amb = lerp3(v.amb.1, v.amb.0, 0.5 + 0.5 * n.y);
+                        // Lambert for a flat card (radiance = albedo · E · cos / π, as the sphere phase).
+                        let mut l = add(scale(keyc, (ndl.max(0.0) + (-ndl).max(0.0) * sp.translucency) / std::f32::consts::PI), amb);
+                        if d.glint.0 > 0.0 {
+                            let hv = norm(add(to_cam, v.key.0));
+                            let s = dot(n, hv).max(0.0).powf(d.glint.1);
+                            l = add(l, scale(keyc, s * d.glint.0 * (d.glint.1 + 2.0) * 0.125 / std::f32::consts::PI));
+                        }
+                        let lc = if d.lit { [col[0] * l.x, col[1] * l.y, col[2] * l.z] } else { col };
+                        // Coverage per pixel: distance to the outline's edges (anti-aliased).
+                        let pts: [(f32, f32); 4] = [(sc[0].0, sc[0].1), (sc[1].0, sc[1].1), (sc[2].0, sc[2].1), (sc[3].0, sc[3].1)];
+                        let area2: f32 = (0..4).map(|e| pts[e].0 * pts[(e + 1) % 4].1 - pts[(e + 1) % 4].0 * pts[e].1).sum();
+                        if area2.abs() < 1e-6 {
+                            // Edge-on: a thin line, drawn as a point of its area (≈ 0).
+                            continue;
+                        }
+                        let sgn = area2.signum();
+                        let mut edges = [(0.0f32, 0.0f32, 0.0f32); 4];
+                        let mut ne = 0;
+                        for e in 0..4 {
+                            let (a0, a1) = (pts[e], pts[(e + 1) % 4]);
+                            let (ex, ey) = (a1.0 - a0.0, a1.1 - a0.1);
+                            let l = (ex * ex + ey * ey).sqrt();
+                            if l < 1e-5 {
+                                continue;
+                            }
+                            // Inside is where the signed distance is positive.
+                            let (nx, ny) = (-ey / l * sgn, ex / l * sgn);
+                            edges[ne] = (nx, ny, -(nx * a0.0 + ny * a0.1));
+                            ne += 1;
+                        }
+                        let (x0, x1) = (pts.iter().map(|q| q.0).fold(f32::MAX, f32::min).floor() as i32 - 1, pts.iter().map(|q| q.0).fold(f32::MIN, f32::max).ceil() as i32 + 1);
+                        let (y0, y1) = (pts.iter().map(|q| q.1).fold(f32::MAX, f32::min).floor() as i32 - 1, pts.iter().map(|q| q.1).fold(f32::MIN, f32::max).ceil() as i32 + 1);
+                        let (x0, x1) = (x0.max(0), x1.min(w as i32 - 1));
+                        let (mut y0, mut y1) = (y0.max(0), y1.min(h as i32 - 1));
+                        if banded {
+                            y0 = y0.max(py.band.0);
+                            y1 = y1.min(py.band.1 - 1);
+                        }
+                        let wq = 1.0 / ns as f32;
+                        for yy in y0..=y1 {
+                            for xx in x0..=x1 {
+                                let (cx, cy) = (xx as f32 + 0.5, yy as f32 + 0.5);
+                                let mut dmin = f32::MAX;
+                                for &(nx, ny, c0) in &edges[..ne] {
+                                    dmin = dmin.min(nx * cx + ny * cy + c0);
+                                }
+                                let cov = (dmin + 0.5).clamp(0.0, 1.0);
+                                if cov <= 0.0 {
+                                    continue;
+                                }
+                                // Depth against the scene.
+                                if v.depth[yy as usize * w + xx as usize] < z - size * 2.0 {
+                                    continue;
+                                }
+                                let wv = cov * a * wq * k;
+                                let mut pv = [0.0f32; 8];
+                                match d.blend {
+                                    Blend::Add => {
+                                        let o = eo.unwrap_or(0);
+                                        for c in 0..3 {
+                                            pv[o + c] = lc[c] * d.emissive * wv;
+                                        }
+                                    }
+                                    Blend::Over => {
+                                        let o = ab.unwrap_or(0);
+                                        for c in 0..3 {
+                                            pv[o + c] = lc[c] * wv;
+                                        }
+                                        pv[o + 3] = wv;
+                                        if let Some(o) = eo {
+                                            for c in 0..3 {
+                                                pv[o + c] = col[c] * d.emissive * wv;
+                                            }
+                                        }
+                                    }
+                                }
+                                py.splat(0, cx, cy, &pv);
+                            }
+                        }
+                    }
+                    continue;
+                }
                 let mut val = [0.0f32; 8];
                 match d.blend {
                     Blend::Add => {
@@ -2569,7 +3079,18 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
         eprintln!("  splat: points {:.0} ms, reduce {:.0} ms, bins {:.0} ms, collapse {:.0} ms", t_splat.as_secs_f64() * 1e3, (t_reduce - t_splat).as_secs_f64() * 1e3, (t_bins - t_reduce).as_secs_f64() * 1e3, (clock.elapsed() - t_bins).as_secs_f64() * 1e3);
     }
     let buf = std::mem::take(&mut acc.lv[0].2);
-    Layer { w, h, c, eo, ab, buf }
+    let liquid = {
+        let lq: Vec<(&Sim, &Arc<Snap>)> = systems.iter().filter(|(s, _)| s.def.liquid.is_some()).map(|(s, q)| (*s, q)).collect();
+        (!lq.is_empty()).then(|| {
+            let c = std::time::Instant::now();
+            let out = render_liquid(&lq, v, t);
+            if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
+                eprintln!("  liquid: {:.0} ms", c.elapsed().as_secs_f64() * 1e3);
+            }
+            out
+        })
+    };
+    Layer { w, h, c, eo, ab, buf, liquid }
 }
 
 #[cfg(test)]
@@ -2660,6 +3181,39 @@ mod tests {
         let p = sim(spec(false));
         let dots = render(&[(&p, p.at(t))], &v, t).emitted();
         assert!(one.emitted() > dots * 3.0, "trail {} vs dots {dots}", one.emitted());
+    }
+
+    #[test]
+    fn sprites_are_identical_at_any_thread_count() {
+        // Big tumbling quads crossing band edges, with motion blur and glints.
+        let s = sim(serde_json::json!({ "count": 400, "emit": { "shape": "ball", "radius": 0.5, "pos": [0, 1, 0] }, "size": 0.06, "velocity": [0.5, 0.8, 0], "spread": 1, "gravity": 0, "blend": "over", "lit": true, "sprite": "confetti", "glint": 1.5 }));
+        let snap = s.at(0.4);
+        let (w, h) = (320usize, 180usize);
+        let depth = vec![1e9f32; w * h];
+        let cam = Camera { pos: v3(0.0, 1.0, 3.0), target: v3(0.0, 1.0, 0.0), fov: 40.0, focus: 3.0, aperture: 0.0, roll: 0.0, shutter: 0.5 };
+        let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: 3.0, aperture: 0.0, shutter: 0.5, key: (v3(0.3, 0.9, 0.3), v3(3.0, 3.0, 3.0)), amb: (v3(0.2, 0.2, 0.2), v3(0.1, 0.1, 0.1)), shadow: None, draft: false };
+        let one = rayon::ThreadPoolBuilder::new().num_threads(1).build().unwrap().install(|| render(&[(&s, snap.clone())], &v, 0.4).buf);
+        let many = std::thread::scope(|sc| sc.spawn(|| render(&[(&s, snap.clone())], &v, 0.4).buf).join().unwrap());
+        assert!(rayon::current_num_threads() < 2 || one.iter().zip(&many).all(|(a, b)| a.to_bits() == b.to_bits()), "sprites differ between thread counts");
+        // Coverage: an opaque sprite covers about its projected area.
+        assert!(one.iter().any(|x| *x > 0.5), "nothing drawn");
+    }
+
+    #[test]
+    fn liquid_is_identical_at_any_thread_count_and_covers_the_stream() {
+        let s = sim(serde_json::json!({ "count": 3000, "emit": { "shape": "ball", "radius": 0.3, "pos": [0, 1, 0] }, "size": 0.02, "spread": 0.2, "gravity": 0, "blend": "over", "liquid": { "color": "#5a2e14", "opacity": 1 } }));
+        let snap = s.at(0.2);
+        let (w, h) = (320usize, 180usize);
+        let depth = vec![1e9f32; w * h];
+        let cam = Camera { pos: v3(0.0, 1.0, 3.0), target: v3(0.0, 1.0, 0.0), fov: 40.0, focus: 3.0, aperture: 0.0, roll: 0.0, shutter: 0.0 };
+        let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: 3.0, aperture: 0.0, shutter: 0.0, key: (v3(0.3, 0.9, 0.3), v3(3.0, 3.0, 3.0)), amb: (v3(0.2, 0.2, 0.2), v3(0.1, 0.1, 0.1)), shadow: None, draft: false };
+        let one = rayon::ThreadPoolBuilder::new().num_threads(1).build().unwrap().install(|| render(&[(&s, snap.clone())], &v, 0.2).liquid.unwrap());
+        let many = std::thread::scope(|sc| sc.spawn(|| render(&[(&s, snap.clone())], &v, 0.2).liquid.unwrap()).join().unwrap());
+        assert!(one.iter().zip(&many).all(|(a, b)| a.iter().zip(b).all(|(x, y)| x.to_bits() == y.to_bits())), "liquid differs between thread counts");
+        // The blob's centre is covered and opaque; a corner is untouched.
+        let c = one[(h / 2) * w + w / 2];
+        assert!(c[0] < 0.05, "centre transmits {}", c[0]);
+        assert_eq!(one[0], [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]);
     }
 
     #[test]

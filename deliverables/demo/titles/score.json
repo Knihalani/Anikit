@@ -1,0 +1,82 @@
+{
+ "brief": "g-titles",
+ "baselines": {
+  "r1": 3.62,
+  "r2": 3.88
+ },
+ "noise": 0.4,
+ "trials": 3,
+ "runs": [
+  {
+   "pass": "pass 1: CMY plates, running-bond wall, cobalt lockup (Archivo)",
+   "overall": 4.5,
+   "scores": {
+    "idea": 5,
+    "composition": 5,
+    "typography": 5,
+    "colour": 5,
+    "light_texture": 3,
+    "motion": 5,
+    "craft": 5,
+    "originality": 3
+   },
+   "critic": {
+    "motion": 6,
+    "sound": 5,
+    "craft": 7
+   },
+   "judged_pro": "0/3",
+   "ref_mean": 8.41
+  },
+  {
+   "pass": "pass 2: + print-offset texture, no corner labels/marks, letters resolve to one token, off-centre lockup",
+   "overall": 4.12,
+   "scores": {
+    "idea": 4,
+    "composition": 5,
+    "typography": 4,
+    "colour": 5,
+    "light_texture": 3,
+    "motion": 4,
+    "craft": 5,
+    "originality": 3
+   },
+   "critic": {
+    "motion": 6,
+    "sound": 6,
+    "craft": 7
+   },
+   "judged_pro": "0/3",
+   "ref_mean": 8.46
+  },
+  {
+   "pass": "pass 3 (final): Bricolage Grotesque at opsz 12 (ink traps), plates snap with overshoot, token change ripples down the wall, varied row speeds",
+   "overall": 4.12,
+   "scores": {
+    "idea": 4,
+    "composition": 5,
+    "typography": 4,
+    "colour": 5,
+    "light_texture": 3,
+    "motion": 4,
+    "craft": 5,
+    "originality": 3
+   },
+   "critic": {
+    "motion": 6,
+    "sound": 6,
+    "craft": 6
+   },
+   "judged_pro": "0/3",
+   "ref_mean": 8.46
+  }
+ ],
+ "final": "pass 3",
+ "render": {
+  "wall_s": 42.6,
+  "peak_rss_mb": 569,
+  "r2_wall_s": 1156.6,
+  "r2_peak_rss_mb": 5037
+ },
+ "defects": "clean (scripts/defects.py)"
+}

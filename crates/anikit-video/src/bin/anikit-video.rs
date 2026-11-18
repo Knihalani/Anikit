@@ -17,17 +17,19 @@ use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::Instant;
 
-const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|beats|music|docs|recipes|new|templates|looks|prompt|critique|preview|mcp|--version> [spec.json|spec.yaml] [options]
+const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|beats|music|sound|docs|recipes|new|templates|looks|prompt|critique|preview|mcp|--version> [spec.json|spec.yaml] [options]
   render spec.json -o out.mp4   [--quality draft|good|best] [--crf 0-51] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
                                 [--from S] [--to S] [--scale K] [--no-audio] [--sheet contact.png]
   still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
   sheet  spec.json -o sheet.png [--frames N | --cols 4 --rows 3] [--width 480]
   check  spec.json              validate; print errors, warnings and timing
-  set    spec.json <path> <value> [--delete]   patch one value in place (e.g. scenes.0.layers.1.text Hi)
+  set    spec.json <path> <value> [--delete]   patch one value in place (e.g. scenes.0.layers.1.text Hi);
+         spec.json a.b=1 c.d=x …     several at once (a list index or a layer id works as a path step)
   info   [--components] [--shaders]  version, encoders, component and shader catalogue
   schema [-o file]              print the JSON Schema of the spec
   beats  music.wav|spec.json    tempo, beats and bars (use them as \"@beat17\", \"@bar5\"); a spec gives its exact grid
   music  spec.json -o out.wav   generate a mastered soundtrack (anikit-video docs music)
+  sound  plan|mix|render|list   sound design: cues from the picture, foley, beds (anikit-video docs sound)
   analyze ref.mp4 [-o analysis.json] [--sheet sheet.jpg] [--spec draft.json]
   board  refs/ [-o board.json] [--sheet board.jpg]   palette, value, texture, composition → theme tokens (docs board)
                                 reverse-engineer a reference video (anikit-video docs analyze)
@@ -174,6 +176,15 @@ fn resolve_time(ev: &Evaluator, s: &str) -> Result<f32, String> {
 /// `id` of an item (`scenes.intro.layers.title.text`). The value is JSON, or else a
 /// string. A missing final key is added; `--delete` removes it instead.
 fn set_cmd(args: &[String]) -> Result<(), String> {
+    // Several changes in one call: `set s.json a.b=1 scenes.2.duration=3`.
+    let is_pair = |a: &String| a.split_once('=').is_some_and(|(k, _)| !k.is_empty() && !k.contains(' ') && !k.starts_with('-'));
+    if args.len() >= 2 && args[1..].iter().all(is_pair) && !args.iter().any(|a| a == "--delete") {
+        for a in &args[1..] {
+            let (k, v) = a.split_once('=').unwrap();
+            set_cmd(&[args[0].clone(), k.to_string(), v.to_string()])?;
+        }
+        return Ok(());
+    }
     let delete = args.iter().any(|a| a == "--delete");
     let pos: Vec<&String> = args.iter().filter(|a| *a != "--delete").collect();
     let (file, path) = match pos.as_slice() {
@@ -290,6 +301,9 @@ fn main() -> ExitCode {
     if let Some(code) = anikit_video::assetlib::run(&raw) {
         return ExitCode::from(code as u8);
     }
+    if let Some(code) = anikit_video::audio::design::cli::run(&raw) {
+        return ExitCode::from(code as u8);
+    }
     if let Some(code) = anikit_video::music::run(&raw) {
         return ExitCode::from(code as u8);
     }
@@ -369,6 +383,30 @@ fn need_input(a: &Args) -> Result<&str, String> {
 
 fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
     match a.cmd.as_str() {
+        "palette" => {
+            use anikit_video::eval::theme;
+            let hex = |c: anikit_video::dl::Rgba| format!("#{:02X}{:02X}{:02X}", (c.0[0] * 255.0).round() as u8, (c.0[1] * 255.0).round() as u8, (c.0[2] * 255.0).round() as u8);
+            let arg = a.input.clone().unwrap_or_default();
+            if arg.is_empty() || arg == "riso" {
+                if arg.is_empty() {
+                    println!("anikit-video palette \"<seed> [mono|analogous|complement|split|triad] [dark]\"   (theme: \"palette\": \"#e4572e split\")");
+                    println!("anikit-video palette riso   (ink names for \"riso:<name>\")\n");
+                }
+                println!("Riso inks (use \"riso:<name>\" anywhere a colour goes):");
+                for (n, v) in theme::RISO_INKS {
+                    println!("  riso:{n:<20} {v}");
+                }
+                return Ok(ExitCode::SUCCESS);
+            }
+            let toks = theme::palette(&arg)?;
+            let get = |k: &str| toks.iter().find(|(n, _)| n == k).map(|x| x.1).unwrap();
+            println!("\"theme\": {{ \"palette\": \"{arg}\" }}  →");
+            for (k, c) in &toks {
+                println!("  ${k:<10} {}", hex(*c));
+            }
+            println!("contrast: text/bg {:.1}:1 · accent/bg {:.1}:1 · accent2/bg {:.1}:1 · muted/bg {:.1}:1", theme::contrast(get("text"), get("bg")), theme::contrast(get("accent"), get("bg")), theme::contrast(get("accent2"), get("bg")), theme::contrast(get("muted"), get("bg")));
+            Ok(ExitCode::SUCCESS)
+        }
         "schema" => {
             let s = spec::schema_json();
             match a.get("-o") {
@@ -470,7 +508,7 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                         let shaders: Vec<_> = ev
                             .shader_stats()
                             .into_iter()
-                            .map(|s| serde_json::json!({ "layer": s.label, "ms": s.ms, "ms_full_size": s.ms * full, "width": s.width, "height": s.height, "supersample": s.supersample }))
+                            .map(|s| serde_json::json!({ "layer": s.label, "ms": s.ms, "ms_full_size": s.ms * full, "width": s.width, "height": s.height, "supersample": s.supersample, "nan_at": s.nonfinite.map(|(x, y)| [x, y]) }))
                             .collect();
                         if json {
                             println!("{}", serde_json::json!({ "ok": true, "output": out, "at": t, "width": w, "height": h, "ms": ms, "shaders": shaders, "warnings": d }));
@@ -494,6 +532,9 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                                     ""
                                 };
                                 eprintln!("  shader {}: ≈ {f:.0} ms/frame at full size{}{note}", s.label, if s.supersample { ", supersampled" } else { "" });
+                                if let Some((x, y)) = s.nonfinite {
+                                    eprintln!("  warning: shader {} produced NaN/Inf (drawn black), first at fragCoord ({x}, {y}) of its {}×{} render: look for a division by zero, sqrt/log/pow of a negative, or normalize(vec3(0))", s.label, s.width, s.height);
+                                }
                             }
                         }
                     }
@@ -716,6 +757,11 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                     s.render_fps,
                     s.bytes as f32 / 1024.0
                 );
+                for st in ev.shader_stats() {
+                    if let Some((x, y)) = st.nonfinite {
+                        eprintln!("  warning: shader {} produced NaN/Inf (drawn black), first at fragCoord ({x}, {y}): look for a division by zero, sqrt/log/pow of a negative, or normalize(vec3(0))", st.label);
+                    }
+                }
             }
             // `--sheet f.png`: a contact sheet of the final (one cell per second,
             // 480 px), so nobody tiles frames out of the MP4 by hand.

@@ -1,0 +1,530 @@
+{
+  "name": "graphic_grid-choreography",
+  "tags": [
+    "kinetic-type",
+    "motion-design"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "fitc-tokyo-2015",
+    "mad-men"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 3,
+      "typography": 2,
+      "colour": 4,
+      "light_texture": 2,
+      "motion": 3,
+      "craft": 2,
+      "originality": 2
+    },
+    "overall": 2.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Needs a real subject and idea; the title 'Raster in Bewegung' (grids in motion) is illustrated literally with nothing a viewer would remember",
+      "Typography needs a point of view: expressive scale, interplay between letterforms and the grid, and deliberate layering instead of default text that gets clipped by accident",
+      "Needs choreography and variety: new forms, scale shifts, camera and rhythm, and material or texture, instead of reshuffling the same three primitives",
+      "It needs an actual idea beyond 'the grid moves': a subject, a story or a transformation that only this piece could have",
+      "The type needs a point of view: scale contrast, letterforms that interact with the grid, and deliberate rather than accidental cropping",
+      "Each frame should be a new composition with real choreography, depth and texture, not the same four shapes swapped around",
+      "It needs an idea beyond 'Swiss shapes move': give the grid a subject or narrative the way C uses a building grid to tell a fall",
+      "The type needs to become the material (scale, cropping, type locking into the grid) and the text must never collide by accident; build real choreography between states instead of reshuffling them",
+      "Introduce texture, print materiality or light (registration, paper, ink) and a less predictable palette so frames read as posters, not slides"
+    ],
+    "tells": [
+      "The same composition repeats across all frames: one red circle, one black rectangle, one hatched rectangle and the same two-line headline, only shuffled",
+      "Default bold grotesk headline set like a slide, with no scale contrast or typographic idea, and the same words in every frame",
+      "Collisions with no apparent purpose: 'Bewegung' is clipped by the black block in frames 2\u20133, and the headline is half-covered by the circle in frames 4\u20135, which reads as an accident rather than intent",
+      "Generic 'Bauhaus' pastiche: cream ground, a single red accent, stock primitives on a faint grid, effect with no subject",
+      "Flat, textureless fills with no light, material or depth",
+      "Frames 2/3 and 4/5 are nearly identical, so little is happening; motion is a shape-shuffle template",
+      "The same composition repeats in every frame: a red circle, a black rectangle, a hatched rectangle and a two-line headline, just reshuffled on a grid, like a slide deck",
+      "Frames 2/3 and 4/5 are nearly identical, so little happens over the film",
+      "The headline 'Raster in Bewegung' ('grid in motion') is set in a default bold grotesk at one size throughout, and it gets clipped or overlapped by shapes ('Bewegun'). That reads as a collision, not a typographic decision",
+      "It is a literal, obvious idea: a Swiss/Bauhaus pastiche of stock primitives on a cream ground with a single red accent",
+      "Flat fills, no light, no material and no depth; the hatched texture is a stock pattern fill",
+      "The same Swiss-pastiche kit (red circle, black rectangle, hatched rectangle, a two-line headline) is reshuffled in every frame; it is one composition with its elements moved around",
+      "Default bold grotesk with no scale contrast and no typographic idea; the headline 'Raster in Bewegung' is the literal subject, saying 'grid in motion' over a grid that is moving",
+      "Craft failures: the headline is clipped by and collides with the black block and the red circle ('in Bewegun'), which is the kind of overlap errors automated tools produce, not deliberate overprint",
+      "Frames 2/3 and 4/5 are nearly identical, so little happens between samples and there is no build or payoff",
+      "Flat cream ground and flat fills, with no light, texture or depth; a faint background grid is the only detail",
+      "This is the generic 'tasteful' look: cream ground, a single red accent, an empty-ish frame, and a Bauhaus reference with no point of view"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.12,
+      "judged_professional": "3/3",
+      "mean_rank": 1.33
+    },
+    "fitc-tokyo-2015": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "mad-men": {
+      "overall": 9,
+      "judged_professional": "3/3",
+      "mean_rank": 1.67
+    }
+  },
+  "ref_mean": 8.58,
+  "delta": -5.96,
+  "trials": [
+    {
+      "key": {
+        "A": "mad-men",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "fitc-tokyo-2015"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A specific narrative idea: a flat black silhouette walks into an office that dissolves, then falls past skyscraper facades covered in period advertising, and finally sits back in a pose that answers the fall",
+              "Flat graphic silhouettes are set against mid-century illustration and tinted ad imagery seen through curtain-wall grids, so the frames are layered and full of meaning",
+              "Restrained two-colour credits (red first name, black surname) carry the period voice and sit within the negative space of each composition",
+              "Strong choreography: a foot steps in, the figure tumbles at several scales, and the closing hero pose reframes the opening shot from behind",
+              "Muted cream, black and red palette with paper grain and ad imagery, deliberately of its era",
+              "Every frame works as a poster; the silhouette shot from the closing frame is iconic and widely remembered"
+            ],
+            "gaps": [
+              "The type is a fairly plain grotesk; a more distinctive or custom face could add another layer",
+              "The light is largely flat by design, so the office plates have less atmospheric depth than B",
+              "Little contrast in scale between credit cards; the type rarely interacts with the image physically"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific world-building idea: a clockwork map in which cities unfold mechanically, so the title doubles as orientation for the viewer",
+              "Rich material rendering of carved metal, wood and brass gears, with a filmic sun-flare inside an astrolabe and real depth of field",
+              "Dramatic motivated light: a burning central sun and warm bounce against a cool, smoky map",
+              "Carefully chosen classical serif in letter-spaced small caps, with custom house sigils beside each credit and a forged, embossed title lockup",
+              "Choreography varies from macro detail to a sweeping map flyover to the band of the astrolabe; each frame is distinct",
+              "High finish and consistency across every shot"
+            ],
+            "gaps": [
+              "Credits are small and can get lost against busy textured plates",
+              "The warm, sepia-gold palette leans toward fantasy convention rather than anything unexpected",
+              "The title card is more conventional (glowing logo, flare burst) than the inventive body sequence"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "Typography is the subject: Latin and katakana glyphs are deconstructed into modular strokes and reassemble into 'TOKYO', a clear typographic idea",
+              "Unusual, deliberate palette: hot pink, mint cyan, acid lime, violet and red on near-black and pale grey",
+              "Dense, layered frames with pixel grids, scanline and print texture, misregistration and overlapping frames, with no empty slide space",
+              "Each frame uses a different system (a big stencil letter, a striped band, a framed glyph field, a diagonal cascade, dot-matrix letters, a collage resolve), which implies real choreography",
+              "A glitch build that resolves into a title is a familiar trope, but the execution is specific and considered"
+            ],
+            "gaps": [
+              "The glitch/cyber-Tokyo aesthetic is a well-worn genre; it needs a more specific idea beyond 'letters assembling' to be memorable",
+              "Less material depth or motivated light than B; texture reads as an overlay rather than a physical surface",
+              "The hierarchy is sometimes chaotic, and the final resolve is less legible and less of a single poster image than the closing frames of A or B"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 2,
+              "originality": 1
+            },
+            "tells": [
+              "The same composition repeats across all frames: one red circle, one black rectangle, one hatched rectangle and the same two-line headline, only shuffled",
+              "Default bold grotesk headline set like a slide, with no scale contrast or typographic idea, and the same words in every frame",
+              "Collisions with no apparent purpose: 'Bewegung' is clipped by the black block in frames 2\u20133, and the headline is half-covered by the circle in frames 4\u20135, which reads as an accident rather than intent",
+              "Generic 'Bauhaus' pastiche: cream ground, a single red accent, stock primitives on a faint grid, effect with no subject",
+              "Flat, textureless fills with no light, material or depth",
+              "Frames 2/3 and 4/5 are nearly identical, so little is happening; motion is a shape-shuffle template"
+            ],
+            "gaps": [
+              "Needs a real subject and idea; the title 'Raster in Bewegung' (grids in motion) is illustrated literally with nothing a viewer would remember",
+              "Typography needs a point of view: expressive scale, interplay between letterforms and the grid, and deliberate layering instead of default text that gets clipped by accident",
+              "Needs choreography and variety: new forms, scale shifts, camera and rhythm, and material or texture, instead of reshuffling the same three primitives"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 29.5,
+        "cost_usd": 0.15545160000000002,
+        "tokens": 71831,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "mad-men",
+        "B": "game-of-thrones",
+        "C": "fitc-tokyo-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "One clear, memorable idea: a flat black silhouette falls through a Madison Avenue world of ad imagery and glass towers, so the image itself tells the story of the show",
+              "The flat vector silhouette is set against photographic, half-transparent vintage ads reflected in curtain-wall grids, which gives real layering and depth",
+              "Choreography runs across the frames: back view, then a close crop of the feet, then the fall, then landing back in the relaxed sofa pose. It reads as a loop with an ending, not a series of slides",
+              "Credits work in a period style: red first name, black surname in a condensed grotesk, matching the title card, and placed in the space the figure leaves free",
+              "A restrained, warm off-white palette with grain, red as a deliberate period accent, and ad copy ('Enjoy the best America has to offer') working as both texture and irony"
+            ],
+            "gaps": [
+              "The credit typography is consistent but conventional, and it never plays with scale against the image",
+              "The office opening shot is flatter and more diagrammatic than the dense reflection frames that follow",
+              "Within each frame, red is the only colour idea; the palette could go further"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific concept only this piece could have: a clockwork map of the world, with an astrolabe sun, mechanical cities and engraved bands telling the history",
+              "Real material and light throughout: aged brass, carved wood, engraved metal, low-angle sun, haze and shallow depth of field",
+              "The camera visibly travels, from the engraved band to the city flyover, the gears turning, the map and back to the sun. That is a single choreographed journey",
+              "Credits come with small house sigils and a classical serif with spaced caps, set into the space of the 3D scene",
+              "The title lockup comes back to the opening ring motif, so the piece closes in a circle"
+            ],
+            "gaps": [
+              "The serif credits are small and close to a default 'fantasy' face, with no expressive scale",
+              "The palette is almost entirely warm sepia, so the frames are monotone next to A's controlled red accent",
+              "Heavy bloom on the sun frames tips toward effect over drawing"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Typography is the subject: modular, stencil-cut Latin letters break up into katakana-like fragments and resolve to 'TOKYO', so the type does carry an idea",
+              "A deliberate, unusual neon palette (salmon pink, cyan, acid lime, violet) on near-black, changed per section rather than one accent throughout",
+              "Dense, layered frames with print-like grain, LED-dot matrices and misregistered blocks, which give it texture instead of flat vectors",
+              "Each frame uses a different structure (centred band, framed grid, diagonal cut, dot matrix, collage), which implies varied choreography"
+            ],
+            "gaps": [
+              "The glitch and signage vocabulary is a familiar look for 'Tokyo' motion pieces, so the idea is more style than concept",
+              "There is no human or physical subject to anchor the system, unlike A's silhouette or B's clockwork world",
+              "Several frames edge toward visual noise, and the hierarchy of where to look is weaker than in B's every-frame-a-poster compositions"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeats in every frame: a red circle, a black rectangle, a hatched rectangle and a two-line headline, just reshuffled on a grid, like a slide deck",
+              "Frames 2/3 and 4/5 are nearly identical, so little happens over the film",
+              "The headline 'Raster in Bewegung' ('grid in motion') is set in a default bold grotesk at one size throughout, and it gets clipped or overlapped by shapes ('Bewegun'). That reads as a collision, not a typographic decision",
+              "It is a literal, obvious idea: a Swiss/Bauhaus pastiche of stock primitives on a cream ground with a single red accent",
+              "Flat fills, no light, no material and no depth; the hatched texture is a stock pattern fill"
+            ],
+            "gaps": [
+              "It needs an actual idea beyond 'the grid moves': a subject, a story or a transformation that only this piece could have",
+              "The type needs a point of view: scale contrast, letterforms that interact with the grid, and deliberate rather than accidental cropping",
+              "Each frame should be a new composition with real choreography, depth and texture, not the same four shapes swapped around"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.1,
+        "cost_usd": 0.15236680000000002,
+        "tokens": 71668,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "fitc-tokyo-2015",
+        "B": "game-of-thrones",
+        "C": "mad-men",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Custom modular/stencil letterforms that break apart into katakana-like fragments: a real typographic system, not default type",
+              "Unusual acid palette (hot pink, mint, lime, violet on near-black) that stays consistent across very different frames",
+              "Each frame has a different structure (macro letter crop, horizontal band, framed glyph field, diagonal scatter, dot-matrix, dense collage), which suggests choreographed transitions rather than one layout with the words swapped",
+              "Layered print-like grain, halftone dot grids and misregistration give it texture and depth",
+              "Builds to a 'TOKYO' lockup, so the type idea has somewhere to go"
+            ],
+            "gaps": [
+              "The idea of a glitchy, cyber, Japanese-typography Tokyo is a well-worn genre; it needs a more specific concept to match B's narrative world-building",
+              "No real light or materiality: it reads as flat 2D compositing next to B's lit physical miniatures",
+              "Some frames (the dot-matrix one) get busy enough to become decoration; it needs stronger hierarchy and calmer moments between peaks"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea only this show could have: a clockwork map that builds the world's cities, so the opening works as both orientation and story",
+              "Real, motivated light: a central sun/astrolabe light source, warm bloom, deep shadow, metal and wood materials with patina",
+              "Engraved bands carry the lore as relief illustration, so the backstory sits inside the object",
+              "Credits set in a considered Trajan-like titling serif with small-cap roles and heraldic sigils, placed in the space the camera leaves rather than slapped on",
+              "Varied shots: macro on the ring, a crane over the miniature city, mechanical growth, an armillary sphere, a top-down map, then the emblem lockup; this shows camera choreography and payoff"
+            ],
+            "gaps": [
+              "(Benchmark entry.) The credit type is sometimes small and fights the busy mid-tones over the miniatures",
+              "The palette leans on warm sepia/teal throughout, so there are few colour surprises",
+              "The final logo lockup is more conventional than the mechanism before it"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A single, memorable, Saul Bass-inspired idea: a silhouette falling past skyscraper fa\u00e7ades made of mid-century advertising, with a full narrative arc from walking in, falling, and landing back on the sofa with a cigarette",
+              "Bold scale contrast: extreme crop on the shoes, a tiny falling figure against the glass grid, a heroic close-up silhouette",
+              "Restrained palette of black, warm grey and red, with red used only on the cast names and the title, which is a deliberate system",
+              "Collaged period ads reflected in the curtain-wall grid add a second layer of meaning (desire and the American dream)",
+              "Simple, confident typography with a red/black two-weight name treatment that comes back in the 'MAD MEN' lockup"
+            ],
+            "gaps": [
+              "Flat silhouettes and posterized grounds give less material richness and lighting than B",
+              "The credit type is a fairly plain sans and is functional rather than expressive",
+              "The background ad collages are soft and translucent in places, so they lose some of the punch of the silhouettes"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 2,
+              "originality": 2
+            },
+            "tells": [
+              "The same Swiss-pastiche kit (red circle, black rectangle, hatched rectangle, a two-line headline) is reshuffled in every frame; it is one composition with its elements moved around",
+              "Default bold grotesk with no scale contrast and no typographic idea; the headline 'Raster in Bewegung' is the literal subject, saying 'grid in motion' over a grid that is moving",
+              "Craft failures: the headline is clipped by and collides with the black block and the red circle ('in Bewegun'), which is the kind of overlap errors automated tools produce, not deliberate overprint",
+              "Frames 2/3 and 4/5 are nearly identical, so little happens between samples and there is no build or payoff",
+              "Flat cream ground and flat fills, with no light, texture or depth; a faint background grid is the only detail",
+              "This is the generic 'tasteful' look: cream ground, a single red accent, an empty-ish frame, and a Bauhaus reference with no point of view"
+            ],
+            "gaps": [
+              "It needs an idea beyond 'Swiss shapes move': give the grid a subject or narrative the way C uses a building grid to tell a fall",
+              "The type needs to become the material (scale, cropping, type locking into the grid) and the text must never collide by accident; build real choreography between states instead of reshuffling them",
+              "Introduce texture, print materiality or light (registration, paper, ink) and a less predictable palette so frames read as posters, not slides"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.7,
+        "cost_usd": 0.1554398,
+        "tokens": 71832,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": null,
+        "craft": 5
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": false,
+        "sync": null
+      },
+      "defects": [
+        "Title collides with the black slab in mid-film frames: 'in Bewegung' is cut to 'in Bewegun' by a hard edge that looks unintended, so the headline is clipped.",
+        "In one transition frame the headline sits on top of the red disc and the hatched block, so black type lands on red and on stripes. Legibility collapses during the move.",
+        "The circle reads slightly taller than wide in several frames. Either the disc is non-uniformly scaled or the aspect ratio is wrong, and it shows on a pure geometric shape.",
+        "Large displacements between frames 1/6 s apart with no motion blur, so moves strobe and step instead of reading as weighted travel.",
+        "The change curve alternates (80 / 9 / 89 / 10 / 102): the piece moves in bursts and then sits nearly still for about a second each time. The holds read as dead air, not as considered rests.",
+        "The fine 45\u00b0 hatch is at risk of moir\u00e9 and shimmer when it moves and is compressed. Its edges are crisp but the pattern is too dense for the frame size.",
+        "The hairline background grid is barely visible. The device the film is named after hardly reads.",
+        "The end frame is just another rearrangement. Nothing locks up, and it doesn't rhyme with the opening composition."
+      ],
+      "gaps": [
+        "Choreography is one move repeated: every 2 s all the blocks reshuffle to new grid slots at once and then hold. There's no overlap or follow-through, no lead element handing off to the next, and no build to a peak. Top studio work would stagger the elements, let one shape drive the others, and escalate in tempo toward a final lock-up.",
+        "Weight and spacing are generic. Moves are fast snaps with no blur and no anticipation or settle that you can see, so the black slabs and the red disc all feel equally weightless. Mass isn't differentiated (heavy slab vs light disc), and the type has no motion behaviour of its own.",
+        "Finish and concept are thin. Flat vector fills with no texture or light, a clipped and occluded headline, a near-invisible grid and a possibly squashed circle. 'Raster in Bewegung' is stated in the title but never made visible: the grid lines never move, flex or govern the cut, so the film reads as a template Swiss-poster shuffle, not an idea."
+      ]
+    },
+    "meta": {
+      "seconds": 20.8,
+      "cost_usd": 0.1491936,
+      "tokens": 70580,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "grid-choreography.mp4: 6.0s, 1 shots, median 6.00s, longest 6.00s\nper-second change: [80.2, 8.8, 88.9, 9.6, 102.1]\nPACE: FAIL \u2014 longest shot 6.0s > 2.5s; median shot 6.0s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 2,
+    "colour": 4,
+    "light_texture": 2,
+    "motion": 3.5,
+    "craft": 3.5,
+    "originality": 2
+  },
+  "full_overall": 2.88,
+  "cost_usd": 0.612,
+  "judge_seconds": 108.1,
+  "verdict": "FAIL"
+}

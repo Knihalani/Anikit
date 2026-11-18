@@ -1,0 +1,350 @@
+{
+  "refs": [
+    "calibration-simon-vpro-idents-2010",
+    "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+    "blender-studio-charge-2022"
+  ],
+  "candidate": {
+    "motion": 3,
+    "judged_professional": "0/3",
+    "gaps": [
+      "No easing, overshoot or follow-through on the flap cycle or the exit",
+      "Only one element moves at a time; there is no overlapping action or environmental reaction",
+      "No camera language, and the transition is just a cut to black",
+      "There is no secondary or follow-through motion: the feathers and body stay rigid and nothing else in the scene reacts.",
+      "The spacing is mechanical, with no flight-path arc, no ease and no settle.",
+      "There are long dead holds and the cuts carry no intent.",
+      "Flap has no ease, no overlapping feathers, and no lift on the body",
+      "Nothing else in the scene moves; there is no secondary motion",
+      "No camera move or real transition, just a hold and a cut to black"
+    ]
+  },
+  "refs_summary": {
+    "blender-studio-charge-2022": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Cutting is chaotic, with a blurry transition frame where the read is briefly lost",
+        "Strip 2 settles into a fairly static two-shot after the impact",
+        "Choreography leans on camera shake and blur more than on designed hand-offs",
+        "It relies on live-action camera grammar more than designed choreography, with no graphic match cuts or morphs.",
+        "The frames in the transition are muddy and hard to read, which loses clarity at the busiest moment.",
+        "Little interplay of elements beyond the main action (the character mostly holds while the arm moves).",
+        "The face close-up holds fairly static under the particles",
+        "Cuts are functional action cuts, not crafted transitions",
+        "One frame is dark and muddy, so the motion is hard to read there"
+      ]
+    },
+    "calibration-simon-vpro-vrije-geluiden-program-leader-2015": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The letter type-on is fairly linear, character by character, compared with the fluid blob work",
+        "The final frames come close to a hold, with only the dots moving",
+        "The scale and contrast range is restrained, so the moves have less impact than A's",
+        "The letters type on one at a time with even timing, so they feel mechanical next to the organic blob.",
+        "The ring settles into a near-static hold at the end of strip 1.",
+        "There is no camera language; it is a flat 2D stage throughout.",
+        "The type itself comes on letter by letter with a typewriter-style pop instead of an animated build",
+        "Little camera language; it is all flat 2D",
+        "The vinyl hits a brief static hold before the second phase starts"
+      ]
+    },
+    "calibration-simon-vpro-idents-2010": {
+      "motion": 7,
+      "judged_professional": "3/3",
+      "gaps": [
+        "Long near-static holds on the small black-background logo in the second strip",
+        "The scale changes pop between frames instead of easing smoothly",
+        "The burst blades move rigidly as one unit, with little drag or follow-through between them",
+        "The logo holds nearly static for about 5 frames while only the shadow shifts, a dead hold.",
+        "The rotation of the burst looks fairly uniform and linear, with little acceleration or settle.",
+        "The letterforms themselves never deform or overlap in their timing; the type moves as one rigid block.",
+        "Long dead hold at the end; nothing secondary keeps it alive",
+        "Scale-up and snap-back read as a near-linear zoom, with little overshoot or settle",
+        "The star and the type move as one block; they don't hand off to each other"
+      ]
+    }
+  },
+  "ref_mean": 7.67,
+  "trials": [
+    {
+      "key": {
+        "A": "blender-studio-charge-2022",
+        "B": "candidate",
+        "C": "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+        "D": "calibration-simon-vpro-idents-2010"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "Sparks follow particle physics: they streak, scatter and fall at different speeds, and they overlap the character's moving face",
+              "Handheld camera drift with rack-focus and depth-of-field shifts, so no frame is a dead hold",
+              "Whip-pan and blur transition into the robot sequence, used to drive the action",
+              "The robot arm has weight: it winds up, swings through with motion blur and settles",
+              "Secondary motion from the background mechanics and the character's head keeps the frame alive"
+            ],
+            "gaps": [
+              "Cutting is chaotic, with a blurry transition frame where the read is briefly lost",
+              "Strip 2 settles into a fairly static two-shot after the impact",
+              "Choreography leans on camera shake and blur more than on designed hand-offs"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 3,
+            "tells": [
+              "The wing flap is a mechanical 3-pose loop that repeats identically every 5 frames, with no variation",
+              "The bird stays locked in screen position: no lift or drift from the wingbeats, so it has no weight",
+              "Grass, sun and sky are completely static, so nothing has secondary motion",
+              "The exit is a linear shrink and drop behind the grass, with no anticipation or arc",
+              "Dead holds on the empty sun, then a hard cut to black"
+            ],
+            "gaps": [
+              "No easing, overshoot or follow-through on the flap cycle or the exit",
+              "Only one element moves at a time; there is no overlapping action or environmental reaction",
+              "No camera language, and the transition is just a cut to black"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 9,
+            "tells": [
+              "A liquid blob stretches, squashes and tapers with clear easing and follow-through on its tail",
+              "The morph turns the drop into a record or speaker shape, a transition built with intent",
+              "The blue swoosh hands off to the type: it sweeps through and the letters type on in its wake",
+              "Small dots drift and blur through the hold frames, so the frame never goes dead",
+              "Arcs keep elements moving into, through and out of the frame"
+            ],
+            "gaps": [
+              "The letter type-on is fairly linear, character by character, compared with the fluid blob work",
+              "The final frames come close to a hold, with only the dots moving",
+              "The scale and contrast range is restrained, so the moves have less impact than A's"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "The logo cuts from white to black and the starburst rotates and opens with a strong scale push",
+              "The burst blades rotate while the wordmark scales and drifts, so the two motions overlap",
+              "The burst collapses back into the swoosh of the logo, a deliberate morph back to the resting mark",
+              "Hard cuts on the beat between scales show editorial intent"
+            ],
+            "gaps": [
+              "Long near-static holds on the small black-background logo in the second strip",
+              "The scale changes pop between frames instead of easing smoothly",
+              "The burst blades move rigidly as one unit, with little drag or follow-through between them"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 19.6,
+        "cost_usd": 0.1260632,
+        "tokens": 68358,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+        "B": "candidate",
+        "C": "blender-studio-charge-2022",
+        "D": "calibration-simon-vpro-idents-2010"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "The liquid blob squashes and stretches, and its mass carries through the arcs.",
+              "The teardrop narrows to a tail and the tail is pulled into the dot, which settles into a ring with clear anticipation and settle.",
+              "The second strip hands off well: the swoosh sweeps across and the letters type on in its wake, while the small dots keep drifting so no frame is dead.",
+              "Spacing changes from frame to frame (fast through the middle of a move, cushioned at the ends), not linear."
+            ],
+            "gaps": [
+              "The letters type on one at a time with even timing, so they feel mechanical next to the organic blob.",
+              "The ring settles into a near-static hold at the end of strip 1.",
+              "There is no camera language; it is a flat 2D stage throughout."
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "motion": 3,
+            "tells": [
+              "The wing flap is a 2-pose loop (up, flat, up, flat) that repeats exactly across about 13 frames, with no in-betweens or variation.",
+              "The sun and grass are fully frozen, with no parallax, wind or atmosphere.",
+              "The bird does not travel while it flaps; it hangs in place, then shrinks and drops out of frame with no arc or weight.",
+              "Strip 2 ends on dead holds (an empty sun for 3 frames) and then a hard cut to black with no built transition."
+            ],
+            "gaps": [
+              "There is no secondary or follow-through motion: the feathers and body stay rigid and nothing else in the scene reacts.",
+              "The spacing is mechanical, with no flight-path arc, no ease and no settle.",
+              "There are long dead holds and the cuts carry no intent."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "The sparks scatter with believable physics, have motion blur and change from frame to frame.",
+              "A handheld-style camera with rack focus and shifting depth of field keeps every frame alive.",
+              "The robot arm swing carries weight and impact, and the motion blur sells the speed.",
+              "The cuts go into action on the beat of the strike, as cinematic coverage."
+            ],
+            "gaps": [
+              "It relies on live-action camera grammar more than designed choreography, with no graphic match cuts or morphs.",
+              "The frames in the transition are muddy and hard to read, which loses clarity at the busiest moment.",
+              "Little interplay of elements beyond the main action (the character mostly holds while the arm moves)."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "The starburst rotates and scales behind the logotype, which pushes in with an eased scale overshoot.",
+              "The white-to-black inversion is used as a deliberate graphic cut.",
+              "The rays retract and collapse back into the logo's blue accent, a purposeful morph back to the brand mark.",
+              "Both the open and the close return to a clean white-card logo."
+            ],
+            "gaps": [
+              "The logo holds nearly static for about 5 frames while only the shadow shifts, a dead hold.",
+              "The rotation of the burst looks fairly uniform and linear, with little acceleration or settle.",
+              "The letterforms themselves never deform or overlap in their timing; the type moves as one rigid block."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 22.1,
+        "cost_usd": 0.13204680000000002,
+        "tokens": 68654,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-simon-vpro-idents-2010",
+        "B": "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+        "C": "blender-studio-charge-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "Hard cut from white logo card to black, then the shard star bursts out from behind the wordmark",
+              "Wordmark and star scale up together with a push-in, then snap back to small",
+              "Star rotates as the logo grows, so there is some layering",
+              "Shards pull back into the logo's blue slash, which links the end to the start",
+              "Second strip: about 4 near-identical frames of the logo before the cut to white"
+            ],
+            "gaps": [
+              "Long dead hold at the end; nothing secondary keeps it alive",
+              "Scale-up and snap-back read as a near-linear zoom, with little overshoot or settle",
+              "The star and the type move as one block; they don't hand off to each other"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "Liquid blob stretches and squashes, with a tail that follows through",
+              "Blob changes shape into a dot, then a vinyl record: a morph built with intent",
+              "Blue arc sweeps across and writes the type, handing off to the letters as they appear",
+              "Small dots keep drifting through the type section, so no frame is dead",
+              "Arc thins out and trails off as it leaves frame, with clear easing"
+            ],
+            "gaps": [
+              "The type itself comes on letter by letter with a typewriter-style pop instead of an animated build",
+              "Little camera language; it is all flat 2D",
+              "The vinyl hits a brief static hold before the second phase starts"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 9,
+            "tells": [
+              "Sparks have real physics: they streak with motion blur and spray in different directions",
+              "Handheld camera drift and rack focus on the close-up",
+              "Robot arm swings with weight and a motion-blur smear across the cut",
+              "Action is continuous across the cut, with the arm motion carrying the edit",
+              "Something moves in every frame: sparks, smoke, the character's face"
+            ],
+            "gaps": [
+              "The face close-up holds fairly static under the particles",
+              "Cuts are functional action cuts, not crafted transitions",
+              "One frame is dark and muddy, so the motion is hard to read there"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "motion": 2,
+            "tells": [
+              "Wing flap is an exact 2-pose loop repeating every 2 frames, a mechanical cycle",
+              "The bird's body doesn't move up or down and its position doesn't change while it flaps",
+              "Sun, grass and sky are completely frozen, with no parallax",
+              "The bird shrinks and drops out of frame with a linear slide",
+              "The ending is dead frames on the empty sun, then a cut to black"
+            ],
+            "gaps": [
+              "Flap has no ease, no overlapping feathers, and no lift on the body",
+              "Nothing else in the scene moves; there is no secondary motion",
+              "No camera move or real transition, just a hold and a cut to black"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 20.8,
+        "cost_usd": 0.127942,
+        "tokens": 68440,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.386
+}

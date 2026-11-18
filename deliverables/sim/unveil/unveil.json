@@ -1,0 +1,133 @@
+{
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "music": {
+    "style": "cinematic-hybrid",
+    "bpm": 80,
+    "key": "Cm",
+    "mood": "dark anticipation",
+    "hits": [
+      "@1.0"
+    ],
+    "end": "ring"
+  },
+  "scenes": [
+    {
+      "duration": 7,
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "studio",
+            "rig": "rembrandt",
+            "camera": {
+              "keys": [
+                {
+                  "t": 0,
+                  "pos": [
+                    2.2,
+                    1.5,
+                    3.6
+                  ],
+                  "target": [
+                    0,
+                    0.75,
+                    0
+                  ],
+                  "focal": 50
+                },
+                {
+                  "t": 7,
+                  "pos": [
+                    1.5,
+                    1.15,
+                    3.9
+                  ],
+                  "target": [
+                    0,
+                    0.6,
+                    0
+                  ],
+                  "focal": 52
+                }
+              ],
+              "shake": "breath"
+            },
+            "objects": [
+              {
+                "type": "sphere",
+                "radius": 0.55,
+                "pos": [
+                  0,
+                  0.55,
+                  0
+                ],
+                "material": "black"
+              },
+              {
+                "type": "cloth",
+                "hang": "horizontal",
+                "size": 2.2,
+                "res": 64,
+                "center": [
+                  0,
+                  1.8,
+                  0
+                ],
+                "colliders": [
+                  {
+                    "pos": [
+                      0,
+                      0.55,
+                      0
+                    ],
+                    "radius": 0.55
+                  }
+                ],
+                "bend": 0.05,
+                "damping": 0.02,
+                "wind": [
+                  0.3,
+                  0,
+                  0
+                ],
+                "gust": 0.4,
+                "thickness": 0.012,
+                "material": {
+                  "base": "#c8342e",
+                  "roughness": 0.55,
+                  "specular": 0.4
+                }
+              }
+            ]
+          }
+        },
+        {
+          "text": "Something new is coming.",
+          "font": "Instrument Serif",
+          "size": "7vh",
+          "color": "#f1ece4",
+          "x": "50%",
+          "y": "9%",
+          "start": 3.6,
+          "enter": "mask by line up"
+        },
+        {
+          "text": "11 \u00b7 18",
+          "font": "Inter",
+          "weight": 500,
+          "size": "2.2vh",
+          "letterSpacing": "0.4em",
+          "color": "#c8342e",
+          "x": "50%",
+          "y": "15.5%",
+          "start": 4.6,
+          "enter": "fade up"
+        }
+      ]
+    }
+  ]
+}

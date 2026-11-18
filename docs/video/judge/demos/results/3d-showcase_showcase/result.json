@@ -1,0 +1,527 @@
+{
+  "name": "3d-showcase_showcase",
+  "tags": [
+    "cg-3d",
+    "product-launch"
+  ],
+  "refs": [
+    "morph-studio-xreal-1s-2025",
+    "found-devialet-opera-de-paris-2022",
+    "osko-launch"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 4,
+      "typography": 2,
+      "colour": 4,
+      "light_texture": 4,
+      "motion": 3,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 3,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs an actual idea or subject: the primitives say nothing about whatever ANIKIT is",
+      "Replace the chrome-on-podium logo reveal and default type with a custom typographic treatment built into the world",
+      "Develop materials, set dressing and a coherent palette and lighting world across shots, as D does with its sculpted cream, gold and red set",
+      "Build a concept with a real subject and narrative instead of a primitive still life; B and C each turn a product into a world",
+      "Replace default primitives and materials with modelled, textured objects that have wear, imperfection and specific surfaces",
+      "Drop the chrome-logo-on-podium ending and design custom typography integrated into the scene",
+      "There is no concept. It needs a reason to exist beyond being a lighting and material demo",
+      "The typography is a template chrome extrusion on a podium. It needs a designed wordmark and an integrated type moment",
+      "There are no bespoke assets, layering or material storytelling. Replace the primitives with designed objects and a built world, as A does"
+    ],
+    "tells": [
+      "Stock 3D primitives throughout: cube, sphere, untextured bottle and extruded box-city blocks",
+      "The ends on chrome extruded 'ANIKIT' lettering on a stacked cylinder podium, a textbook logo-reveal template",
+      "Default typeface with chrome bevel; no typographic idea, scale contrast or integration",
+      "Each frame is a lighting exercise with no subject or story; the window-gobo shadow is the only lighting idea",
+      "The terracotta still-life frame is clean but reads as a Blender tutorial render",
+      "The frames do not connect into any choreography; it reads as unrelated render tests",
+      "Stock 3D primitives throughout: a default bottle, cube, sphere and chrome ball, plus a city of untextured extruded boxes",
+      "No subject or idea; effect with no subject. It reads as a lighting and material test reel",
+      "Closing frame is the textbook template: chrome extruded wordmark 'ANIKIT' on a stacked black podium with a glass ball, in a default wide sans",
+      "Same still-life arrangement repeated in different colourways (orange ground, dark window gobo), like a slide deck with the background swapped",
+      "Flat, plasticky materials with no surface detail; the gobo shadow is the only lighting idea and it is a preset look",
+      "Stock 3D primitives are the whole content: a cube, a sphere, a bottle and an extruded block city, with no subject or idea beyond showing render settings",
+      "It ends on chrome extruded 'ANIKIT' text on a black cylindrical podium, the canonical logo-reveal template",
+      "Generic bold grotesk extruded with a default chrome material, with no typographic idea",
+      "The same still-life (bottle, cube, sphere) is repeated with only background colour and gobo light swapped, so it is one layout reused",
+      "The light is plausible in places (the window-gobo shadows, the sweep rim on the bottle) but serves an exercise and not a piece"
+    ]
+  },
+  "refs_summary": {
+    "morph-studio-xreal-1s-2025": {
+      "overall": 7.25,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "found-devialet-opera-de-paris-2022": {
+      "overall": 8,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "osko-launch": {
+      "overall": 5.75,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 7.0,
+  "delta": -4.0,
+  "trials": [
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "candidate",
+        "D": "found-devialet-opera-de-paris-2022"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "The I.O.U. sticky note on an empty fridge shelf is a real narrative gag with a payoff: the fridge opens and the light spills into the reflection",
+              "The fridge shot has motivated practical light and a plausible floor reflection, which is deliberate staging",
+              "The golfer is a three-pose sequence (address, swing, head in hands) that reads as timed character animation, not a single pose",
+              "Four unrelated styles (night 3D van, stylised CG fridge, flat vector golfer, emoji-grade icon grid) make this read as a reel or sticker pack rather than one authored film",
+              "The icon grid (coffee, beer, flying money, heart, gift) is generic sticker-set work on a flat dark ground",
+              "The only type is the handwritten I.O.U. It fits the gag, but there is no wider typographic idea"
+            ],
+            "gaps": [
+              "Commit to one visual world: unify the van, fridge, golfer and icons under one material and lighting language, as D does with its red, cream and gold",
+              "Replace the flat, symmetrical icon grid with staged objects that have texture and light, so every frame works as a poster",
+              "Build a through-line idea that connects the vignettes (the I.O.U. gift concept could run through the whole film) instead of a list of unrelated moments"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The glasses are formed from, and dissolve into, a liquid, cellular, organic substance, which ties the product to 'EVOLUTION' as a material metaphor",
+              "Complex fluid and caustic simulation with refraction, internal bubbles and fibrous structures shows real lookdev and sim investment",
+              "Scale and camera vary a lot from frame to frame (macro fluid, hero product, extreme close-up of the gel, bubble field), which implies choreographed transitions",
+              "The single-blue palette is committed, but it is the expected cold blue of tech launches",
+              "Type is thin and sparing: the XREAL / 1S split around the product and a widely tracked 'EVOLUTION'. Competent, but close to the default tracked-caps tech-launch look"
+            ],
+            "gaps": [
+              "Typography has no point of view: the widely tracked thin caps over a blurred background are the category default, so the lettering should be integrated into the fluid material",
+              "The palette is the expected tech blue; an unexpected accent or temperature shift would make it ownable, as D's red and gold does",
+              "Several frames are effect-led abstraction with the subject barely readable; anchor more beats in a clear product or human moment"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Stock 3D primitives throughout: cube, sphere, untextured bottle and extruded box-city blocks",
+              "The ends on chrome extruded 'ANIKIT' lettering on a stacked cylinder podium, a textbook logo-reveal template",
+              "Default typeface with chrome bevel; no typographic idea, scale contrast or integration",
+              "Each frame is a lighting exercise with no subject or story; the window-gobo shadow is the only lighting idea",
+              "The terracotta still-life frame is clean but reads as a Blender tutorial render",
+              "The frames do not connect into any choreography; it reads as unrelated render tests"
+            ],
+            "gaps": [
+              "It needs an actual idea or subject: the primitives say nothing about whatever ANIKIT is",
+              "Replace the chrome-on-podium logo reveal and default type with a custom typographic treatment built into the world",
+              "Develop materials, set dressing and a coherent palette and lighting world across shots, as D does with its sculpted cream, gold and red set"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The Devialet speakers sit in a bespoke architectural set (arches, ribbon sweeps, slatted gold screens) whose design language echoes the products' own curves",
+              "Deliberate, unusual palette: lacquer red against cream stone and brushed gold, a clear seasonal and luxury cue",
+              "Real material work: stone texture on the plinths, gold inlay edges, matte ceramic speaker shells and soft directional light with believable shadow",
+              "The top-down reveal of watch-movement gears beneath a plinth is a surprise that links the product to haute horlogerie craftsmanship",
+              "Camera grammar varies (wide hero, ribbon close-up, overhead mechanism, frontal portrait, three-quarter group), which implies a planned move through the set",
+              "Type is limited to the engraved logo on the product. That serves the luxury restraint, but there is no typographic statement"
+            ],
+            "gaps": [
+              "Typography is nearly absent; an end card or integrated lettering with the same craftsmanship would complete the piece",
+              "Product-on-plinth staging is a known luxury-CG convention; the gear reveal is the one real surprise and could be pushed further",
+              "The motion implied between frames is elegant but safe camera orbiting; more physical choreography (the ribbons or mechanism driving the reveal) would add weight"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "B",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.7,
+        "cost_usd": 0.15931859999999998,
+        "tokens": 72014,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "osko-launch",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.62,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "Has a real narrative device: the hand-lettered 'I.O.U.' Post-it moves from a pantry shelf close-up to a lit fridge interior. That kind of recurring gag needs a written concept.",
+              "Deliberate mix of styles (a moody 3D VW bus under moonlight, a flat-shaded golfer drawn in three poses, an emoji-like icon grid) reads as chapters of a brief about owing someone, not as one template",
+              "The golfer sequence (address, follow-through, head in hands) shows real character animation with timing and comedy",
+              "The fridge door opening with light spilling onto a reflective floor is motivated light, staged with intent",
+              "Against it: the icon grid of coffee, beer, money and gift is close to stock emoji and centred like a slide; there is almost no type beyond the Post-it; the styles do not fully hold together"
+            ],
+            "gaps": [
+              "Unify the different styles with one shared art-direction thread (palette, grain or a framing device) so the shifts feel authored, as C's red/gold/ivory system does",
+              "Replace the stock-feeling emoji grid with custom illustrated objects that are layered and lit, so no frame drops to slide level",
+              "Give the type a role: the I.O.U. lettering could carry through as a typographic system rather than appearing once as a prop"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The XREAL 1S glasses are rebuilt as liquid and glass: a hero shot of the glasses dripping translucent strands, refractive membranes and bubble clusters. This is hard simulation and shading work",
+              "Real material depth: caustics, subsurface translucency, chromatic fringing on the opening particle burst, shallow depth of field",
+              "Clear choreography: explosion, product reveal, liquid hero, macro of the material, then a cellular 'EVOLUTION' world. The camera moves from wide to macro",
+              "Weaknesses: the monochrome electric blue is a familiar tech-launch clich\u00e9; 'XREAL' and '1S' sit flatly in the frame; 'EVOLUTION' set as tracked caps is the generic move"
+            ],
+            "gaps": [
+              "Give the type a point of view: integrate it with the fluid (refracted, submerged, formed from droplets) instead of laying a grotesk over the image",
+              "Break the all-blue palette with one unexpected accent or temperature contrast so frames are more than a tech-blue mood",
+              "Sharpen the idea beyond 'liquid = evolution' into a concept specific to AR glasses that a viewer would remember"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Specific idea: Devialet speakers in a Lunar New Year world, with lacquer red, gold inlay and ivory stone. Moon-gate arches, ribbon forms echoing cloud motifs and pleated screens make it culturally specific, not generic",
+              "Rich material storytelling: travertine-like plinths with gold seams, satin ceramic shells, and a cutaway revealing watch-like gears beneath the speaker (engineering as craft)",
+              "Every frame works as a poster: layered foreground ribbons, mid-ground plinths, red architectural backdrop, and soft directional light with real contact shadows",
+              "Choreography from an ensemble wide to an overhead mechanism reveal to a Dione front-on hero and back to the group suggests designed camera beats",
+              "Type is minimal (the logo on the product only). Its absence suits the object-led piece, though nothing typographic stands out"
+            ],
+            "gaps": [
+              "Add a typographic moment such as a custom bilingual title or seal integrated into the set to lift the piece from product film to title-level work",
+              "Push the motion surprise: frames suggest elegant but expected orbits. One transformation (the ribbons becoming sound waves, the gears driving the set) would add a memorable beat",
+              "Vary the scale contrast more. Most shots sit at medium-close product distance; one extreme macro or vast wide would add rhythm"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 4,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Stock 3D primitives throughout: a default bottle, cube, sphere and chrome ball, plus a city of untextured extruded boxes",
+              "No subject or idea; effect with no subject. It reads as a lighting and material test reel",
+              "Closing frame is the textbook template: chrome extruded wordmark 'ANIKIT' on a stacked black podium with a glass ball, in a default wide sans",
+              "Same still-life arrangement repeated in different colourways (orange ground, dark window gobo), like a slide deck with the background swapped",
+              "Flat, plasticky materials with no surface detail; the gobo shadow is the only lighting idea and it is a preset look"
+            ],
+            "gaps": [
+              "Build a concept with a real subject and narrative instead of a primitive still life; B and C each turn a product into a world",
+              "Replace default primitives and materials with modelled, textured objects that have wear, imperfection and specific surfaces",
+              "Drop the chrome-logo-on-podium ending and design custom typography integrated into the scene"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.6,
+        "cost_usd": 0.16179,
+        "tokens": 72128,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "found-devialet-opera-de-paris-2022",
+        "B": "morph-studio-xreal-1s-2025",
+        "C": "osko-launch",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A product world built for this brand: the ivory-and-gold vocabulary of the speakers carries into the plinths, the ribbon arcs and the arches, so the set reads as an extension of the object",
+              "The exposed watch-movement gears under the turntable (frame 3) say 'precision engineering' as an image instead of a diagram. It is a specific idea that viewers will remember.",
+              "A deliberate palette: lacquer red against cream, travertine and brushed gold, with warm directional light and believable materials (stone grain, metal edges, fluted glass)",
+              "Clear choreography: an establishing hero shot, then the ribbons wrapping around the object, then an overhead mechanical reveal, then a single-product portrait, then a family line-up that rhymes with the opening",
+              "Every frame is layered in depth, with foreground ribbons, midground plinths and background columns, and holds up as a poster"
+            ],
+            "gaps": [
+              "There is almost no typography. The brand is present only as the product's own wordmark, so add an end-frame or a type system that matches the set's gold-inlay language",
+              "The red-and-gold seasonal palette is close to standard luxury holiday CGI. Push one more unexpected material or colour so it can't be mistaken for any premium festive spot",
+              "The opening and closing line-ups are compositionally similar. Change the scale or camera height on the final hero so the ending lands harder"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Real fluid and caustic simulation work: the glasses form out of liquid glass, with internal bubbles, refraction and fibrous networks that need substantial FX craft",
+              "There is a transformation arc across the frames, from a shattering spiral through product emergence to a macro organic 'evolution' world, so the frames are choreographed and not repeated",
+              "Strong macro texture and rim light give the material real presence (frames 3 and 4)",
+              "The typography is generic: a bold grotesk wordmark split across the frame, and tracked-caps 'E V O L U T I O N' floated centred over the image. This is the weakest element"
+            ],
+            "gaps": [
+              "The type has no point of view. It is default tracked caps placed like a slide, so it needs an integrated typographic idea (type refracted through the liquid, or type that shares the material)",
+              "The palette is a single blue throughout, which is the expected 'tech glow' choice. A second deliberate colour or temperature shift would give the piece contrast and an arc",
+              "The 'liquid glass evolution' metaphor is a familiar product-launch trope. It needs one image only this product could own, as A's watch-movement reveal is for A"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "The 'I.O.U.' gag carries through as a narrative: a note on a tub on the fridge shelf, then the fridge door opening to the same note, so there is a written idea and a punchline structure",
+              "The handwritten 'I.O.U.' is legible and consistent between shots, with a believable fridge interior glow and floor reflection, which argues against automated output",
+              "The golfer is a three-pose sequence (address, swing, facepalm), a sign of character-animation timing",
+              "The style is inconsistent across frames (dark stylised 3D van, glossy 3D fridge, flat vector golfer, emoji-style icon grid), which reads like an explainer for a gifting or tipping product made by several hands, or like a reel",
+              "The icon grid (coffee, beer, money, heart, gift) is close to stock emoji and is the weakest, most template-like moment"
+            ],
+            "gaps": [
+              "There is no unifying visual language. Commit to one art direction (material, light, line) so the piece feels authored and not assembled",
+              "The icon grid is placeholder-level. Replace it with designed objects that live in the same world as the fridge and the van",
+              "Lighting and texture are generic (default soft studio, flat vector fills). It needs A's material specificity and motivated light"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 4,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Stock 3D primitives are the whole content: a cube, a sphere, a bottle and an extruded block city, with no subject or idea beyond showing render settings",
+              "It ends on chrome extruded 'ANIKIT' text on a black cylindrical podium, the canonical logo-reveal template",
+              "Generic bold grotesk extruded with a default chrome material, with no typographic idea",
+              "The same still-life (bottle, cube, sphere) is repeated with only background colour and gobo light swapped, so it is one layout reused",
+              "The light is plausible in places (the window-gobo shadows, the sweep rim on the bottle) but serves an exercise and not a piece"
+            ],
+            "gaps": [
+              "There is no concept. It needs a reason to exist beyond being a lighting and material demo",
+              "The typography is a template chrome extrusion on a podium. It needs a designed wordmark and an integrated type moment",
+              "There are no bespoke assets, layering or material storytelling. Replace the primitives with designed objects and a built world, as A does"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.8,
+        "cost_usd": 0.1606986,
+        "tokens": 72083,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 3,
+        "sound": null,
+        "craft": 5
+      },
+      "checks": {
+        "idea": false,
+        "invariant": false,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": false,
+        "restraint": true,
+        "material": true,
+        "sync": null
+      },
+      "defects": [
+        "Dead air: the window-light still-life holds almost unchanged for about 2 s (3.6, 4.1, 3.3, 3.2 change per second). The pairs 1/6 s apart differ only by a slight camera drift.",
+        "The movement is almost all slow, linear camera drift or push-in. Nothing in frame moves with weight, anticipation or settle, so there is no visible spacing or easing to judge.",
+        "The transitions are plain cuts or flash spikes (70.8, 65.5, 78.4) with no match-move or shape handoff between shots. The bottle, cube and sphere motif is never used to bridge them.",
+        "End card: the chrome sphere intersects the 'T' of the logo. It reads as a collision or placement error, not a designed lockup.",
+        "The chrome bevel type and the stepped podium are a stock 'logo reveal' preset look. The logo's reflections are mostly black and white, with no environment that ties them to earlier shots.",
+        "The orange shot is matte, flat-lit clay that clashes with the glossy, low-key look of every other shot. The tone breaks with no motivated reason.",
+        "The city shot's buildings are uniform extruded boxes. Fog hides the background, but the foreground blocks look procedurally scattered and untextured.",
+        "The opening bottle close-up is a flat black silhouette with only rim light. The label area is an empty dark rectangle."
+      ],
+      "gaps": [
+        "Choreography: no object performs. Top studio work would have the sphere roll, the cube drop and the bottle tilt with real weight, overlap and settle, and would vary scale and speed. This piece has one speed of camera drift throughout.",
+        "Structure and transitions: five separate looks (black bottle, chrome city, orange clay, window-light, chrome logo) are cut together without a rule or match-cut. Energy stays flat, the peak at 60-80% falls on a static still-life, and the logo ending does not rhyme with the bottle opening.",
+        "Finish and design intent: the lighting and materials are competent but generic (stock chrome, default podium, a flat clay pass). There is no grade or texture system across shots, and the end-card intersection undercuts the final frame."
+      ]
+    },
+    "meta": {
+      "seconds": 21.0,
+      "cost_usd": 0.14856819999999998,
+      "tokens": 70633,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "showcase.mp4: 15.5s, 5 shots, median 3.00s, longest 3.50s\nper-second change: [13.2, 19.0, 70.8, 12.8, 14.4, 65.5, 3.6, 4.1, 78.4, 3.3, 3.2, 27.3, 8.4, 23.5, 15.1]\nPACE: FAIL \u2014 longest shot 3.5s > 2.5s; median shot 3.0s > 1.5s; 4/15 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 2,
+    "composition": 4,
+    "typography": 2,
+    "colour": 4,
+    "light_texture": 4,
+    "motion": 3.0,
+    "craft": 4.0,
+    "originality": 2
+  },
+  "full_overall": 3.12,
+  "cost_usd": 0.63,
+  "judge_seconds": 117.1,
+  "verdict": "FAIL"
+}

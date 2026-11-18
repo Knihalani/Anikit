@@ -1,0 +1,347 @@
+{
+  "refs": [
+    "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+    "calibration-simon-vpro-idents-2010",
+    "calibration-simon-vpro-vrije-geluiden-program-leader-2015"
+  ],
+  "candidate": {
+    "motion": 4,
+    "judged_professional": "0/3",
+    "gaps": [
+      "Nothing moves with weight: no squash, overshoot or follow-through",
+      "No choreography: one layer changes at a time while the logo stays dead still",
+      "The transitions are hard color cuts and fades, not intentional morphs or match cuts",
+      "No spatial motion or camera; the brand mark never moves, overshoots or settles",
+      "Dead holds: several consecutive frames are identical (white with the logo)",
+      "Transitions are hard swaps with no morph or match logic",
+      "No spatial motion, scale, or easing on the main element: one thing changes while everything else holds",
+      "Transitions are hard colour cuts rather than morphs or match cuts",
+      "Several frames repeat identically (dead holds), with no follow-through or secondary action"
+    ]
+  },
+  "refs_summary": {
+    "calibration-simon-vpro-vrije-geluiden-program-leader-2015": {
+      "motion": 9,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The end card settles into a near-static hold, with only the small dots moving",
+        "The camera is flat throughout: no depth or parallax",
+        "The type write-on is a fairly mechanical left-to-right reveal compared with the blob animation",
+        "The type reveal is a fairly mechanical left-to-right typewriter build",
+        "The last 2\u20133 frames of each strip are close to a settled hold",
+        "Little camera language; it's all flat 2D on the frame plane",
+        "The type-on is a fairly mechanical cursor reveal next to the organic blob",
+        "The end layout settles a little abruptly once the blob exits",
+        "There is no camera move; it is all flat 2D, with no depth language"
+      ]
+    },
+    "calibration-simon-vpro-idents-2010": {
+      "motion": 8,
+      "judged_professional": "3/3",
+      "gaps": [
+        "It relies on scale pulses, with less secondary or follow-through motion than A",
+        "There are several near-static black frames before the end card",
+        "The motion is mostly radial and 2D, with little sense of weight or camera",
+        "The end of the second strip settles into a near-static held logo for about 4 frames",
+        "Burst blades are rigid shapes with gradients; there's no secondary deformation or drag",
+        "The overall arc is one push-in and pull-back, with less choreographic variety than C",
+        "The second half sits mostly on the small logo with only a sliver of blade motion, close to a hold",
+        "The final cut to the white card is a hard pop, not a built transition",
+        "The wordmark moves as one rigid block; individual letters get no follow-through"
+      ]
+    },
+    "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained": {
+      "motion": 6,
+      "judged_professional": "3/3",
+      "gaps": [
+        "The second half is mostly slow drift and long holds while the labels fade in",
+        "There is little overshoot, snap or weight; everything is uniformly gentle",
+        "The whiteout runs long and washes out several frames",
+        "Spacing is mostly linear: slow drifts and fades without accents or overshoot",
+        "Long near-dead stretches where only small planets creep a few pixels",
+        "The whiteout transition hides the cut instead of building it as a match or morph",
+        "The last strip is close to a hold: only slow orbital drift and a label sliding on, with no secondary action",
+        "The whiteout runs about 4 frames of near-blank screen, so the transition does the work instead of choreography",
+        "Elements cross-fade or dissolve rather than hand off with overlap and follow-through like C's blob-to-type chain"
+      ]
+    }
+  },
+  "ref_mean": 7.67,
+  "trials": [
+    {
+      "key": {
+        "A": "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+        "B": "candidate",
+        "C": "calibration-simon-vpro-idents-2010",
+        "D": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 8,
+            "tells": [
+              "Liquid blob squashes, stretches and overshoots, then its tail whips and follows through as it collapses",
+              "The blob morphs into a dot and ring, a match-style shape transition with intent",
+              "The swoosh sweeps through the wordmark while the type writes on, so the elements overlap and hand off",
+              "The small dots keep drifting after the type lands, so the end card never fully freezes",
+              "Clear acceleration into each shape change and deceleration out of it"
+            ],
+            "gaps": [
+              "The end card settles into a near-static hold, with only the small dots moving",
+              "The camera is flat throughout: no depth or parallax",
+              "The type write-on is a fairly mechanical left-to-right reveal compared with the blob animation"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.55,
+            "motion": 4,
+            "tells": [
+              "The logo stays locked in position and scale across almost every frame",
+              "Change comes mostly from background fades and color-flash swaps, not from movement",
+              "Streaks and fills slide across with fairly linear spacing",
+              "The color pops in and out on cuts with no transition built",
+              "Only the late radial texture fill inside the letters shows any internal life"
+            ],
+            "gaps": [
+              "Nothing moves with weight: no squash, overshoot or follow-through",
+              "No choreography: one layer changes at a time while the logo stays dead still",
+              "The transitions are hard color cuts and fades, not intentional morphs or match cuts"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "A hard cut to black, then the star blades burst out and rotate with a strong ease-out",
+              "The wordmark scales up and overshoots, then settles back in a punchy rhythm",
+              "The blades and the type move with offset timing, so the layers overlap",
+              "The blades contract and collapse back into the logo's swoosh, a purposeful resolve",
+              "The cut back to white is timed on a beat"
+            ],
+            "gaps": [
+              "It relies on scale pulses, with less secondary or follow-through motion than A",
+              "There are several near-static black frames before the end card",
+              "The motion is mostly radial and 2D, with little sense of weight or camera"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "motion": 6,
+            "tells": [
+              "The title flares out into a light-burst whiteout that resolves into the diagram, a motivated transition",
+              "The Earth\u2013Mars line collapses into a smooth pull-back to a solar-system scale",
+              "Planets keep orbiting, so the frames are never completely dead",
+              "The text builds word by word with a fade",
+              "Easing is soft but present on the zoom-out"
+            ],
+            "gaps": [
+              "The second half is mostly slow drift and long holds while the labels fade in",
+              "There is little overshoot, snap or weight; everything is uniformly gentle",
+              "The whiteout runs long and washes out several frames"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 21.2,
+        "cost_usd": 0.12846280000000002,
+        "tokens": 68578,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-simon-vpro-idents-2010",
+        "B": "candidate",
+        "C": "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+        "D": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "motion": 8,
+            "tells": [
+              "Wordmark scale-punches toward camera and settles back with clear ease-in/ease-out; it doesn't scale linearly",
+              "Star burst rotates and unfolds while the type pushes in, so two layers move with offset timing",
+              "Burst blades collapse and sweep out as the type recedes, so the exit follows through",
+              "Sharp black-to-white flash cuts land on beats"
+            ],
+            "gaps": [
+              "The end of the second strip settles into a near-static held logo for about 4 frames",
+              "Burst blades are rigid shapes with gradients; there's no secondary deformation or drag",
+              "The overall arc is one push-in and pull-back, with less choreographic variety than C"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.5,
+            "motion": 4,
+            "tells": [
+              "The logo stays locked in place and at one size across almost every frame; only the background or fill changes",
+              "Background changes are full-frame colour pops and linear grey fades with no easing",
+              "Diagonal light streaks fade out linearly, like a stock light-leak overlay",
+              "The late hatch and starburst fill swaps inside the letters read as preset texture swaps, not animated transitions"
+            ],
+            "gaps": [
+              "No spatial motion or camera; the brand mark never moves, overshoots or settles",
+              "Dead holds: several consecutive frames are identical (white with the logo)",
+              "Transitions are hard swaps with no morph or match logic"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 9,
+            "tells": [
+              "The liquid blob squashes, stretches and tapers with organic follow-through, and its tail lags behind the body",
+              "The blob morphs into a dot, then a ring, then a record or eye, so the transition is built as a morph",
+              "In the second strip the blob sweeps through as the wipe that writes 'geluide', so elements hand off to each other",
+              "Small dots keep drifting and blinking during the type build, so every frame has something alive"
+            ],
+            "gaps": [
+              "The type reveal is a fairly mechanical left-to-right typewriter build",
+              "The last 2\u20133 frames of each strip are close to a settled hold",
+              "Little camera language; it's all flat 2D on the frame plane"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "motion": 6,
+            "tells": [
+              "The title pushes through a full-frame solar flare whiteout into the next scene, a deliberate but generic light-bloom transition",
+              "The Earth\u2013Mars bar collapses as the camera pulls out to the solar system, a decent scale-change cut",
+              "Orbits drift slowly and evenly, with labels typing on",
+              "Most frames in the second strip are a slow linear pull-back with little change"
+            ],
+            "gaps": [
+              "Spacing is mostly linear: slow drifts and fades without accents or overshoot",
+              "Long near-dead stretches where only small planets creep a few pixels",
+              "The whiteout transition hides the cut instead of building it as a match or morph"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 21.5,
+        "cost_usd": 0.1304994,
+        "tokens": 68687,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calibration-nasa-how-far-away-is-voyager-1-one-light-day-explained",
+        "B": "calibration-simon-vpro-idents-2010",
+        "C": "calibration-simon-vpro-vrije-geluiden-program-leader-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "motion": 7,
+            "tells": [
+              "Light-flare whiteout used as a deliberate transition from title to diagram, with a smooth ramp up and down",
+              "The Earth\u2013Mars line collapses and the camera pulls back into the orbit view, so the scale change carries the idea",
+              "Planets keep drifting on their orbits during the text beats, so the frame never goes fully dead",
+              "Type builds word by word with eased opacity"
+            ],
+            "gaps": [
+              "The last strip is close to a hold: only slow orbital drift and a label sliding on, with no secondary action",
+              "The whiteout runs about 4 frames of near-blank screen, so the transition does the work instead of choreography",
+              "Elements cross-fade or dissolve rather than hand off with overlap and follow-through like C's blob-to-type chain"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "motion": 8,
+            "tells": [
+              "Gradient starburst blades rotate and spread from behind the wordmark, which gives it volume and parallax",
+              "The logo makes an aggressive scale push that overshoots past the frame edge, then snaps back down to rest size",
+              "The blades retract and fold into the logo's swoosh accent, a shape morph with a clear purpose",
+              "Overall tempo is fast-slow-fast with a settle before the hard cut back to the white end card"
+            ],
+            "gaps": [
+              "The second half sits mostly on the small logo with only a sliver of blade motion, close to a hold",
+              "The final cut to the white card is a hard pop, not a built transition",
+              "The wordmark moves as one rigid block; individual letters get no follow-through"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "motion": 9,
+            "tells": [
+              "A liquid blob squashes, stretches and whips with real inertia and a tapering tail",
+              "The blob contracts into a dot, which becomes a black ring: a continuous morph and match into the next element",
+              "The blue form sweeps around the wordmark and leaves dots behind, overlapping the typing of 'geluide'",
+              "Small dots jitter and reposition in every frame with no dead holds, and the secondary action keeps going while the type resolves"
+            ],
+            "gaps": [
+              "The type-on is a fairly mechanical cursor reveal next to the organic blob",
+              "The end layout settles a little abruptly once the blob exits",
+              "There is no camera move; it is all flat 2D, with no depth language"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.55,
+            "motion": 4,
+            "tells": [
+              "The logo stays locked in place in every frame while the background and fill colours hard-swap",
+              "A diagonal light streak fades out linearly, and the background steps grey to white with even spacing",
+              "Cuts to a blue or black background are pops with no build",
+              "The texture fills inside the letters (lines, sunburst) look like stock swaps, with no motion carried between states"
+            ],
+            "gaps": [
+              "No spatial motion, scale, or easing on the main element: one thing changes while everything else holds",
+              "Transitions are hard colour cuts rather than morphs or match cuts",
+              "Several frames repeat identically (dead holds), with no follow-through or secondary action"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 22.6,
+        "cost_usd": 0.12879400000000002,
+        "tokens": 68581,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.388
+}

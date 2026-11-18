@@ -67,8 +67,10 @@ pub(crate) mod prop {
     pub const RANGE0: usize = 35;
     pub const RANGE1: usize = 36;
     pub const RANGE_OFF: usize = 37;
+    /// Camera dolly: travel through depth (layers at depth 0 sit 1 unit away).
+    pub const DOLLY: usize = 38;
     /// Shader uniforms: `UNIFORM_SLOTS` floats, mapped per layer by name.
-    pub const U0: usize = 38;
+    pub const U0: usize = 39;
     pub const N: usize = U0 + super::shader::UNIFORM_SLOTS;
 
     /// Default values.
@@ -121,6 +123,7 @@ pub(crate) mod prop {
             "rangeStart" => (RANGE0, 1),
             "rangeEnd" => (RANGE1, 1),
             "rangeOffset" => (RANGE_OFF, 1),
+            "dolly" => (DOLLY, 1),
             "fill" | "color" => (FILL, 4),
             "stroke" => (STROKE, 4),
             _ => return None,
@@ -367,6 +370,8 @@ pub(crate) struct Node {
     pub brush: Option<Arc<graphic::Brush>>,
     /// A pattern whose `field` reads `t`: regenerated every frame (pattern, box size).
     pub live_pattern: Option<Arc<(graphic::Pat, [f64; 2])>>,
+    /// Ink texture follows the layer (its wear moves with it) rather than the frame.
+    pub ink_follow: bool,
     /// First of 5 animatable slots for the treatments (toneAmount, halftone cell/angle/gain, ink amount); 0 = none.
     pub treat_slot: u8,
     /// Stepped time in fps (0 = smooth): the layer animates "on twos" etc.
@@ -420,6 +425,8 @@ pub(crate) struct TransC {
     /// `reveal` shape (0 circle, 1 diamond, 2 square, 3 star, 4 blob); `blinds` bar count.
     pub shape: u8,
     pub count: u32,
+    /// Shared elements: layer ids carried from the old scene's layout to the new one's.
+    pub carry: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -480,6 +487,22 @@ pub(crate) fn collecting_scales() -> bool {
     COMP_SCALE.with(|c| matches!(&*c.borrow(), Some((true, _))))
 }
 
+/// Run `f` outside any composition-scale pass of this thread. A composition
+/// rendered on its own (as a 3D texture) must emit its shader layers even when
+/// the frame that asked for it is in the scale-collecting pass; otherwise the
+/// texture cache stores an empty list and the texture stays blank.
+pub(crate) fn outside_scale_pass<R>(f: impl FnOnce() -> R) -> R {
+    let saved = COMP_SCALE.with(|c| c.borrow_mut().take());
+    let r = f();
+    COMP_SCALE.with(|c| *c.borrow_mut() = saved);
+    r
+}
+
+thread_local! {
+    /// Layer ids to leave out while emitting scenes (shared elements during a transition).
+    static SKIP: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
 thread_local! {
     static TAGS: std::cell::RefCell<Option<Vec<OpTag>>> = const { std::cell::RefCell::new(None) };
 }
@@ -504,6 +527,8 @@ pub struct Evaluator {
     pub audio: Vec<crate::audio::Track>,
     /// Generated music (the spec's `music`), rendered when the audio is mixed.
     pub music: Option<Arc<crate::music::MusicCue>>,
+    /// Sound design (the spec's `sound` and layers' `sfx`), mixed with the audio.
+    pub sound: Option<Arc<crate::audio::design::spec::SoundPlan>>,
     /// Fonts and images, shared with the renderers.
     pub assets: Arc<SharedAssets>,
     pub(crate) easings: Vec<Easing>,
@@ -653,9 +678,8 @@ impl Evaluator {
     /// it emitted (ranges nest: a group's range contains its children's), so tools like
     /// critique can tell user text from component text. `layer == u32::MAX` is captions.
     pub fn eval_tagged(&self, t: f32) -> (DisplayList, Vec<OpTag>) {
-        TAGS.with(|tg| *tg.borrow_mut() = Some(Vec::new()));
-        let dl = self.eval(t);
-        let tags = TAGS.with(|tg| tg.borrow_mut().take()).unwrap_or_default();
+        let mut dl = DisplayList::default();
+        let tags = self.eval_scoped(t, &mut dl, Some(Vec::new())).unwrap_or_default();
         (dl, tags)
     }
 
@@ -677,6 +701,32 @@ impl Evaluator {
         }
     }
 
+    /// Collisions reported by component layers (physics in `scene3d`), as
+    /// `(layer tag, video seconds, impact)`; `aspect(tag)` is the layer box's
+    /// width / height on screen.
+    pub(crate) fn component_impacts(&self, aspect: &dyn Fn(u32) -> f32) -> Vec<(u32, f32, crate::components::Impact)> {
+        fn walk(nodes: &[Node], t0: f32, until: f32, aspect: &dyn Fn(u32) -> f32, out: &mut Vec<(u32, f32, crate::components::Impact)>) {
+            for n in nodes {
+                let start = t0 + n.start;
+                match &n.kind {
+                    Kind::Component(c, _) => {
+                        let local = (until.min(t0 + n.end) - start).max(0.0);
+                        for i in c.impacts(local, aspect(n.tag)) {
+                            out.push((n.tag, start + i.t, i));
+                        }
+                    }
+                    Kind::Group { children } | Kind::Box { children, .. } => walk(children, start, until, aspect, out),
+                    _ => {}
+                }
+            }
+        }
+        let mut out = Vec::new();
+        for s in &self.scenes {
+            walk(&s.layers, s.start, s.start + s.dur, aspect, &mut out);
+        }
+        out
+    }
+
     /// The display list at time `t` (seconds).
     pub fn eval(&self, t: f32) -> DisplayList {
         let mut dl = DisplayList::default();
@@ -686,6 +736,26 @@ impl Evaluator {
 
     /// The display list at time `t`, reusing `out`'s allocations.
     pub fn eval_into(&self, t: f32, out: &mut DisplayList) {
+        self.eval_scoped(t, out, None);
+    }
+
+    /// [`Self::eval_into`] inside a frame scope: this thread's frame state
+    /// (composition scales, tags, shader frame state) is saved, started
+    /// fresh and restored after. With rayon, a worker waiting inside one
+    /// frame may evaluate another on top of it; the scope keeps them apart.
+    /// Returns the op tags when `tags` is given.
+    fn eval_scoped(&self, t: f32, out: &mut DisplayList, tags: Option<Vec<OpTag>>) -> Option<Vec<OpTag>> {
+        let saved_comp = COMP_SCALE.with(|c| c.borrow_mut().take());
+        let saved_tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), tags));
+        let saved_shader = shader::begin_frame();
+        self.eval_frame(t, out);
+        let tags = TAGS.with(|tg| std::mem::replace(&mut *tg.borrow_mut(), saved_tags));
+        COMP_SCALE.with(|c| *c.borrow_mut() = saved_comp);
+        shader::end_frame(saved_shader);
+        tags
+    }
+
+    fn eval_frame(&self, t: f32, out: &mut DisplayList) {
         out.width = self.width;
         out.height = self.height;
         recycle(&mut out.ops);
@@ -802,8 +872,12 @@ impl Evaluator {
         let cx = Cx { ev: self, scene_t: lt, gt: t, dof: 0.0, amul: 1.0 };
         let (cam, v, panning) = self.scene_cam(s, t, xf);
         let (cxp, cyp, rot, zoom) = (v[0], v[1], v[2], v[3]);
-        let (focus, aperture) = (v[4], v[5]);
+        let (focus, aperture, dolly) = (v[4], v[5], v[6]);
+        let skip = SKIP.with(|s| !s.borrow().is_empty());
         for (li, n) in s.layers.iter().enumerate() {
+            if skip && n.id.as_deref().is_some_and(|id| SKIP.with(|s| s.borrow().iter().any(|x| x == id))) {
+                continue;
+            }
             let is_bg = li < s.bg_layers;
             if (is_bg && part & PART_BG == 0) || (!is_bg && part & PART_FG == 0) {
                 continue;
@@ -817,9 +891,18 @@ impl Evaluator {
             let lt = (lt - n.start).max(0.0);
             self.props(n, &cx, lt, &mut lv);
             let d = lv[prop::DEPTH];
-            let lcam = if panning && d != 0.0 {
-                let k = 1.0 / (1.0 + d.max(-0.9));
-                let m = dl::mul(&translate(w * 0.5, h * 0.5), &dl::mul(&rotate(rot), &dl::mul(&scale(zoom, zoom), &translate(-w * 0.5 - cxp * k, -h * 0.5 - cyp * k))));
+            // Perspective: a layer at depth d sits 1 + d from the camera at dolly 0. A dolly moves the
+            // camera forward, so near layers grow faster than far ones; pans move near layers more.
+            let dist = 1.0 + d.max(-0.9);
+            let rel = dist - dolly;
+            if rel <= 0.02 {
+                continue; // the camera has passed it
+            }
+            let lcam = if (panning && d != 0.0) || dolly != 0.0 {
+                // Scale zoom·dist/rel; pan cxp/dist in layer space = zoom·cxp/rel on screen (perspective).
+                let z = zoom * dist / rel;
+                let k = 1.0 / dist;
+                let m = dl::mul(&translate(w * 0.5, h * 0.5), &dl::mul(&rotate(rot), &dl::mul(&scale(z, z), &translate(-w * 0.5 - cxp * k, -h * 0.5 - cyp * k))));
                 dl::mul(xf, &m)
             } else {
                 cam
@@ -831,7 +914,7 @@ impl Evaluator {
 
     /// A scene's camera transform at global time `t` (after `xf`), with
     /// `[x, y, rotation, zoom, focus, aperture]` and whether it pans.
-    fn scene_cam(&self, s: &SceneC, t: f32, xf: &Affine) -> (Affine, [f32; 6], bool) {
+    fn scene_cam(&self, s: &SceneC, t: f32, xf: &Affine) -> (Affine, [f32; 7], bool) {
         let (w, h) = (self.width as f32, self.height as f32);
         let lt = t - s.start;
         let cx = Cx { ev: self, scene_t: lt, gt: t, dof: 0.0, amul: 1.0 };
@@ -865,10 +948,62 @@ impl Evaluator {
         };
         let (focus, aperture) = (v[prop::FOCUS], v[prop::APERTURE].max(0.0));
         let panning = cxp != 0.0 || cyp != 0.0;
-        (cam, [cxp, cyp, rot, zoom, focus, aperture], panning)
+        (cam, [cxp, cyp, rot, zoom, focus, aperture, v[prop::DOLLY]], panning)
     }
 
     fn emit_transition(&self, a: &SceneC, b: &SceneC, t: f32, p: f32, e: f32, out: &mut Vec<Op>) {
+        if b.trans.carry.is_empty() {
+            return self.emit_transition_inner(a, b, t, p, e, out);
+        }
+        SKIP.with(|s| *s.borrow_mut() = b.trans.carry.clone());
+        self.emit_transition_inner(a, b, t, p, e, out);
+        SKIP.with(|s| s.borrow_mut().clear());
+        for id in &b.trans.carry {
+            self.emit_carried(a, b, id, t, e, out);
+        }
+    }
+
+    /// Frame-space centre and size of a top-level layer of `s` at time `t`.
+    fn layer_frame(&self, s: &SceneC, n: &Node, t: f32) -> ([f32; 2], f32) {
+        let (cam, _, _) = self.scene_cam(s, t, &dl::IDENTITY);
+        let cx = Cx { ev: self, scene_t: t - s.start, gt: t, dof: 0.0, amul: 1.0 };
+        let mut v = [0.0f32; prop::N];
+        self.props(n, &cx, (t - s.start - n.start).max(0.0), &mut v);
+        let (w, h) = (v[prop::W].max(1.0), v[prop::H].max(1.0));
+        let f = dl::mul(&cam, &local_xf(&v, n.anchor, w, h));
+        let c = [f[0] * w * 0.5 + f[2] * h * 0.5 + f[4], f[1] * w * 0.5 + f[3] * h * 0.5 + f[5]];
+        (c, (f[0] * f[3] - f[1] * f[2]).abs().sqrt() * (w * w + h * h).sqrt())
+    }
+
+    /// A shared element: the old scene's copy travels to the new layout while fading out, the new
+    /// scene's copy travels from the old layout while fading in.
+    fn emit_carried(&self, a: &SceneC, b: &SceneC, id: &str, t: f32, e: f32, out: &mut Vec<Op>) {
+        fn find<'a>(s: &'a SceneC, id: &str) -> Option<&'a Node> {
+            s.layers.iter().find(|n| n.id.as_deref() == Some(id))
+        }
+        let (Some(na), Some(nb)) = (find(a, id), find(b, id)) else { return };
+        let (ca, sa) = self.layer_frame(a, na, t);
+        let (cb, sb) = self.layer_frame(b, nb, t);
+        let c = [ca[0] + (cb[0] - ca[0]) * e, ca[1] + (cb[1] - ca[1]) * e];
+        let sz = sa + (sb - sa) * e;
+        // Move a scene's copy (centre `c0`, size `s0`) to the interpolated centre and size.
+        let to = |c0: [f32; 2], s0: f32| {
+            let k = sz / s0.max(1e-3);
+            dl::mul(&translate(c[0], c[1]), &dl::mul(&scale(k, k), &translate(-c0[0], -c0[1])))
+        };
+        // The old copy stays solid until halfway while the new one fades in on top: the element never goes see-through.
+        let (aa, ab) = ((2.0 - 2.0 * e).clamp(0.0, 1.0), (2.0 * e).clamp(0.0, 1.0));
+        for (s, n, c0, s0, alpha) in [(a, na, ca, sa, aa), (b, nb, cb, sb, ab)] {
+            if alpha <= 0.002 {
+                continue;
+            }
+            let (cam, _, _) = self.scene_cam(s, t, &to(c0, s0));
+            let cx = Cx { ev: self, scene_t: t - s.start, gt: t, dof: 0.0, amul: alpha };
+            self.emit_node(n, &cx, &cam, [self.width as f32, self.height as f32], 1.0, out);
+        }
+    }
+
+    fn emit_transition_inner(&self, a: &SceneC, b: &SceneC, t: f32, p: f32, e: f32, out: &mut Vec<Op>) {
         let (w, h) = (self.width as f32, self.height as f32);
         let tr = &b.trans;
         let id = dl::IDENTITY;
@@ -1245,9 +1380,26 @@ impl Evaluator {
         if n.matte.is_some() {
             out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
         }
+        if let Some((dx, dy, steps, fade, m)) = n.fx.as_deref().and_then(|f| f.extrude) {
+            // One tinted layer holding the silhouette stepped back along the direction (far end first).
+            out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::ColorMatrix(m)], clip: None, cache_key: None });
+            let at = out.len();
+            for k in (1..=steps).rev() {
+                let a = 1.0 - fade * (k as f32 - 1.0) / steps as f32;
+                let c = Cx { amul: cx.amul * a, ..*cx };
+                let px = dl::mul(&translate(dx * k as f32, dy * k as f32), parent);
+                self.emit_node_inner(n, &c, &px, psize, po, out);
+            }
+            if out.len() == at {
+                out.pop();
+            } else {
+                out.push(Op::PopLayer);
+            }
+        }
         let body = out.len();
         match n.fx.as_deref() {
             Some(fx) if fx.repeat.is_some() || fx.echo.is_some() => self.emit_fx(n, fx, cx, parent, psize, po, out),
+            Some(fx) if fx.mblur.is_some() => self.emit_mblur(n, fx.mblur.unwrap(), cx, parent, psize, po, out),
             _ => self.emit_node_inner(n, cx, parent, psize, po, out),
         }
         if let Some(m) = n.matte.as_deref() {
@@ -1285,6 +1437,36 @@ impl Evaluator {
                 }
             });
         }
+    }
+
+    /// Per-layer motion blur: sub-frame copies across the shutter, each added at 1/N inside an isolated
+    /// layer (an exact average, also where copies don't overlap). Frames where the layer is still draw once.
+    #[allow(clippy::too_many_arguments)]
+    fn emit_mblur(&self, n: &Node, (shutter, samples): (f32, u32), cx: &Cx, parent: &Affine, psize: [f32; 2], po: f32, out: &mut Vec<Op>) {
+        let span = shutter / self.fps.max(1.0);
+        let lt = cx.scene_t - n.start;
+        let (mut a, mut b) = ([0.0f32; prop::N], [0.0f32; prop::N]);
+        self.props(n, cx, lt, &mut a);
+        let pc = Cx { scene_t: cx.scene_t - span, gt: cx.gt - span, ..*cx };
+        self.props(n, &pc, lt - span, &mut b);
+        let moved = [prop::X, prop::Y, prop::SX, prop::SY, prop::ROT].iter().any(|&s| (a[s] - b[s]).abs() > 0.25 * if s == prop::SX || s == prop::SY { 0.002 } else { 1.0 });
+        if !moved || samples < 2 {
+            return self.emit_node_inner(n, cx, parent, psize, po, out);
+        }
+        // Enough samples that consecutive copies overlap (~4 px apart), so the streak doesn't strobe.
+        let travel = ((a[prop::X] - b[prop::X]).powi(2) + (a[prop::Y] - b[prop::Y]).powi(2)).sqrt()
+            + (a[prop::ROT] - b[prop::ROT]).abs() * 2.0
+            + ((a[prop::SX] - b[prop::SX]).abs() + (a[prop::SY] - b[prop::SY]).abs()) * (a[prop::W] + a[prop::H]) * 0.5;
+        let samples = ((travel / 4.0).ceil() as u32).clamp(samples, 64);
+        out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
+        for i in 0..samples {
+            let dt = span * (1.0 - i as f32 / (samples - 1) as f32);
+            let c = Cx { scene_t: cx.scene_t - dt, gt: cx.gt - dt, amul: cx.amul / samples as f32, ..*cx };
+            out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Add, filters: Vec::new(), clip: None, cache_key: None });
+            self.emit_node_inner(n, &c, parent, psize, po, out);
+            out.push(Op::PopLayer);
+        }
+        out.push(Op::PopLayer);
     }
 
     /// Repeater and echo: the same node re-emitted at other times and transforms.
@@ -1399,6 +1581,15 @@ impl Evaluator {
         let mut alpha = opacity;
         if needs_layer {
             let mut filters = n.treat.clone();
+            if n.ink_follow {
+                // Wear locked to the object: the noise origin rides with the layer's position.
+                for f in filters.iter_mut() {
+                    if let Filter::Ink { ox, oy, .. } = f {
+                        *ox = -xf[4];
+                        *oy = -xf[5];
+                    }
+                }
+            }
             if n.treat_slot != 0 {
                 let b = n.treat_slot as usize;
                 for f in filters.iter_mut() {
@@ -1867,9 +2058,9 @@ impl Evaluator {
                     Some((false, m)) => m.get(&key).copied().unwrap_or(0.0).max(want),
                     None => want,
                 });
-                shader::set_preview_scale(inner);
+                shader::set_frame_scale(inner);
                 ev.emit_frame(ct, true, out);
-                shader::set_preview_scale(ps);
+                shader::set_frame_scale(ps);
                 TAGS.with(|tg| *tg.borrow_mut() = tags);
                 crate::components::transform_ops(&mut out[start..], &m);
                 if (k - 1.0).abs() > 1e-4 {
@@ -1981,7 +2172,11 @@ pub(crate) fn scale_filters(ops: &mut [Op], s: f32) {
                     }
                     Filter::Glow { radius, .. } => *radius *= s,
                     Filter::Halftone(h) => h.cell *= s,
-                    Filter::Ink { scale, .. } => *scale *= s,
+                    Filter::Ink { scale, ox, oy, .. } => {
+                        *scale *= s;
+                        *ox *= s;
+                        *oy *= s;
+                    }
                     Filter::ColorMatrix(_) | Filter::Tone(_) => {}
                 }
             }
