@@ -1,0 +1,1338 @@
+{
+ "size": "9:16",
+ "fps": 30,
+ "intent": {
+  "pace": "fast"
+ },
+ "post": {
+  "bloom": 0.3,
+  "bloomThreshold": 0.6,
+  "halation": 0.25,
+  "grain": 0.045,
+  "vignette": 0.35,
+  "aberration": 0.08,
+  "contrast": 1.08
+ },
+ "scenes": [
+  {
+   "duration": 15.0,
+   "background": "#050607",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.04
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 11.25,
+      "ease": "inOutSine"
+     },
+     {
+      "to": {
+       "zoom": 1.025
+      },
+      "at": 11.25,
+      "duration": 0.08,
+      "ease": "outExpo"
+     },
+     {
+      "to": {
+       "zoom": 1.0
+      },
+      "at": 11.33,
+      "duration": 1.6,
+      "ease": "outExpo"
+     }
+    ],
+    "shake": {
+     "amount": 14,
+     "at": 11.25,
+     "duration": 0.5
+    }
+   },
+   "layers": [
+    {
+     "id": "wall",
+     "shader": "\nfloat h(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nfloat vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);\n  return mix(mix(h(i),h(i+vec2(1,0)),f.x), mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x), f.y); }\nfloat fbm(vec2 p){ float a=0.5, s=0.0; for(int k=0;k<5;k++){ s+=a*vn(p); p*=2.03; a*=0.5; } return s; }\nvoid mainImage(out vec4 o, in vec2 f){\n  vec2 q = vec2(f.x, iResolution.y - f.y);           // top-down px\n  float rows[8] = float[8](575.0,705.0,835.0,965.0,1095.0,1225.0,1355.0,1485.0);\n  float st[8]  = float[8](3.7500,4.6875,5.6250,6.5625,7.5000,8.4375,9.3750,10.3125);\n  // board-marked concrete: horizontal planks, grain along the board\n  float plank = floor(q.y / 96.0);\n  float seam = smoothstep(2.5, 0.0, abs(mod(q.y, 96.0) - 1.0));\n  float grain = fbm(vec2(q.x*0.004 + plank*7.3, q.y*0.045));\n  float blot = fbm(q*0.006 + 3.0);\n  float pores = step(0.985, h(floor(q/2.0)));\n  float tone = 0.55 + 0.35*grain + 0.4*(blot-0.5) + 0.06*h(vec2(plank, 1.0)) - 0.25*seam - 0.2*pores;\n  // light from each lit tube row (soft band, left-heavy like the fixtures)\n  float L = 0.0;\n  for(int k=0;k<8;k++){\n    float on = step(st[k], iTime);\n    float fl = (iTime < st[k] + 0.3) ? step(0.42, h(vec2(floor(iTime*26.0) + float(k), 9.0))) : 1.0;\n    float d = (q.y - rows[k]) / 150.0;\n    L += on * fl * exp(-d*d) * (0.75 + 0.25*exp(-q.x/700.0));\n  }\n  // the sign at the top, and the red lamp at the end\n  float sd = (q.y - 250.0)/190.0;\n  L += step(0.8187, iTime) * 1.1 * exp(-sd*sd);\n  float rd = (q.y - 1650.0)/170.0;\n  float red = step(12.1000, iTime) * exp(-rd*rd);\n  // the surge: whole hall flashes\n  float surge = exp(-max(iTime - 11.2500, 0.0)*5.0) * step(11.2500, iTime);\n  vec3 base = vec3(0.020, 0.022, 0.025);\n  vec3 lit = vec3(0.55, 0.68, 0.80) * 0.13 * L * tone;\n  vec3 rl = vec3(0.9, 0.18, 0.08) * 0.16 * red * tone;\n  vec3 c = base * (0.6 + tone) + lit + rl + vec3(0.6,0.75,0.9)*0.35*surge*tone;\n  o = vec4(c, 1.0);\n}\n"
+    },
+    {
+     "text": "SUBSTATION",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 900
+     },
+     "uppercase": true,
+     "letterSpacing": "0.02em",
+     "size": 184,
+     "x": "50%",
+     "y": 245,
+     "anchor": "center",
+     "color": "#08090A",
+     "stroke": {
+      "color": "#3B434B",
+      "width": 2.5
+     }
+    },
+    {
+     "text": "SUBSTATION",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 900
+     },
+     "uppercase": true,
+     "letterSpacing": "0.02em",
+     "size": 184,
+     "x": "50%",
+     "y": 245,
+     "anchor": "center",
+     "color": "#F3F9FF",
+     "glow": {
+      "color": "#78C8FF",
+      "radius": 40,
+      "intensity": 0.9
+     },
+     "opacity": "=(gt < 0.4688 ? 0 : (gt < 1.3188 ? (rand(floor(gt*26) + 11) > 0.42 ? 1 : 0.12) : 1)) * ((gt > 11.2500 && gt < 11.6700) ? (rand(floor(gt*30) + 80) > 0.5 ? 1 : 0.25) : 1)"
+    },
+    {
+     "text": "12—13 JUNE   TWO NIGHTS   THE OLD POWER STATION",
+     "font": "JetBrains Mono",
+     "size": 27,
+     "weight": 500,
+     "color": "#C9D3DC",
+     "letterSpacing": "0.08em",
+     "x": "50%",
+     "y": 370,
+     "anchor": "center",
+     "opacity": "=(gt < 1.8750 ? 0 : (gt < 2.0750 ? (rand(floor(gt*26) + 5) > 0.42 ? 1 : 0.12) : 1))"
+    },
+    {
+     "shape": "rect",
+     "width": 900,
+     "height": 2,
+     "fill": "#56616B",
+     "x": "50%",
+     "y": 430,
+     "anchor": "center",
+     "animate": [
+      {
+       "from": {
+        "scaleX": 0
+       },
+       "to": {
+        "scaleX": 1
+       },
+       "at": 1.875,
+       "duration": 1.6,
+       "ease": "inOutExpo"
+      }
+     ]
+    },
+    {
+     "text": "Ancient Methods",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 575,
+     "anchor": "left",
+     "color": "#08090A",
+     "stroke": {
+      "color": "#3B434B",
+      "width": 2
+     }
+    },
+    {
+     "text": "Ancient Methods",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 575,
+     "anchor": "left",
+     "color": "#F3F9FF",
+     "glow": {
+      "color": "#6FC3FF",
+      "radius": 26,
+      "intensity": 0.75
+     },
+     "opacity": "=(gt < 3.7500 ? 0 : (gt < 4.0500 ? (rand(floor(gt*26) + 20) > 0.42 ? 1 : 0.12) : 1)) * ((gt > 11.2500 && gt < 11.6700) ? (rand(floor(gt*30) + 143) > 0.5 ? 1 : 0.25) : 1) * (0.94 + 0.06*rand(floor(gt*12)+0))"
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 575,
+     "anchor": "center",
+     "fill": "#1B1F23",
+     "stroke": {
+      "color": "#3A424A",
+      "width": 2
+     }
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 575,
+     "anchor": "center",
+     "fill": "#FF4A26",
+     "glow": {
+      "color": "#FF3B1F",
+      "radius": 18,
+      "intensity": 0.9
+     },
+     "opacity": "=gt < 3.7500 ? 0 : 1"
+    },
+    {
+     "shape": "rect",
+     "width": 1080,
+     "height": 3,
+     "x": 0,
+     "y": 575,
+     "anchor": "left",
+     "fill": "#FFFFFF",
+     "glow": {
+      "color": "#9AD6FF",
+      "radius": 30,
+      "intensity": 1
+     },
+     "start": 3.73,
+     "end": 4.05,
+     "animate": [
+      {
+       "from": {
+        "scaleX": 0,
+        "opacity": 1
+       },
+       "to": {
+        "scaleX": 1
+       },
+       "duration": 0.12,
+       "ease": "outExpo"
+      },
+      {
+       "to": {
+        "opacity": 0,
+        "scaleY": 0.3
+       },
+       "at": 0.1,
+       "duration": 0.18
+      }
+     ]
+    },
+    {
+     "text": "Paula Temple",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 705,
+     "anchor": "left",
+     "color": "#08090A",
+     "stroke": {
+      "color": "#3B434B",
+      "width": 2
+     }
+    },
+    {
+     "text": "Paula Temple",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 705,
+     "anchor": "left",
+     "color": "#F3F9FF",
+     "glow": {
+      "color": "#6FC3FF",
+      "radius": 26,
+      "intensity": 0.75
+     },
+     "opacity": "=(gt < 4.6875 ? 0 : (gt < 4.9875 ? (rand(floor(gt*26) + 21) > 0.42 ? 1 : 0.12) : 1)) * ((gt > 11.2500 && gt < 11.6700) ? (rand(floor(gt*30) + 150) > 0.5 ? 1 : 0.25) : 1) * (0.94 + 0.06*rand(floor(gt*12)+13))"
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 705,
+     "anchor": "center",
+     "fill": "#1B1F23",
+     "stroke": {
+      "color": "#3A424A",
+      "width": 2
+     }
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 705,
+     "anchor": "center",
+     "fill": "#FF4A26",
+     "glow": {
+      "color": "#FF3B1F",
+      "radius": 18,
+      "intensity": 0.9
+     },
+     "opacity": "=gt < 4.6875 ? 0 : 1"
+    },
+    {
+     "shape": "rect",
+     "width": 1080,
+     "height": 3,
+     "x": 0,
+     "y": 705,
+     "anchor": "left",
+     "fill": "#FFFFFF",
+     "glow": {
+      "color": "#9AD6FF",
+      "radius": 30,
+      "intensity": 1
+     },
+     "start": 4.6675,
+     "end": 4.9875,
+     "animate": [
+      {
+       "from": {
+        "scaleX": 0,
+        "opacity": 1
+       },
+       "to": {
+        "scaleX": 1
+       },
+       "duration": 0.12,
+       "ease": "outExpo"
+      },
+      {
+       "to": {
+        "opacity": 0,
+        "scaleY": 0.3
+       },
+       "at": 0.1,
+       "duration": 0.18
+      }
+     ]
+    },
+    {
+     "text": "DVS1",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 835,
+     "anchor": "left",
+     "color": "#08090A",
+     "stroke": {
+      "color": "#3B434B",
+      "width": 2
+     }
+    },
+    {
+     "text": "DVS1",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 835,
+     "anchor": "left",
+     "color": "#F3F9FF",
+     "glow": {
+      "color": "#6FC3FF",
+      "radius": 26,
+      "intensity": 0.75
+     },
+     "opacity": "=(gt < 5.6250 ? 0 : (gt < 5.9250 ? (rand(floor(gt*26) + 22) > 0.42 ? 1 : 0.12) : 1)) * ((gt > 11.2500 && gt < 11.6700) ? (rand(floor(gt*30) + 157) > 0.5 ? 1 : 0.25) : 1) * (0.94 + 0.06*rand(floor(gt*12)+26))"
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 835,
+     "anchor": "center",
+     "fill": "#1B1F23",
+     "stroke": {
+      "color": "#3A424A",
+      "width": 2
+     }
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 835,
+     "anchor": "center",
+     "fill": "#FF4A26",
+     "glow": {
+      "color": "#FF3B1F",
+      "radius": 18,
+      "intensity": 0.9
+     },
+     "opacity": "=gt < 5.6250 ? 0 : 1"
+    },
+    {
+     "shape": "rect",
+     "width": 1080,
+     "height": 3,
+     "x": 0,
+     "y": 835,
+     "anchor": "left",
+     "fill": "#FFFFFF",
+     "glow": {
+      "color": "#9AD6FF",
+      "radius": 30,
+      "intensity": 1
+     },
+     "start": 5.605,
+     "end": 5.925,
+     "animate": [
+      {
+       "from": {
+        "scaleX": 0,
+        "opacity": 1
+       },
+       "to": {
+        "scaleX": 1
+       },
+       "duration": 0.12,
+       "ease": "outExpo"
+      },
+      {
+       "to": {
+        "opacity": 0,
+        "scaleY": 0.3
+       },
+       "at": 0.1,
+       "duration": 0.18
+      }
+     ]
+    },
+    {
+     "text": "Héctor Oaks",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 965,
+     "anchor": "left",
+     "color": "#08090A",
+     "stroke": {
+      "color": "#3B434B",
+      "width": 2
+     }
+    },
+    {
+     "text": "Héctor Oaks",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 965,
+     "anchor": "left",
+     "color": "#F3F9FF",
+     "glow": {
+      "color": "#6FC3FF",
+      "radius": 26,
+      "intensity": 0.75
+     },
+     "opacity": "=(gt < 6.5625 ? 0 : (gt < 6.8625 ? (rand(floor(gt*26) + 23) > 0.42 ? 1 : 0.12) : 1)) * ((gt > 11.2500 && gt < 11.6700) ? (rand(floor(gt*30) + 164) > 0.5 ? 1 : 0.25) : 1) * (0.94 + 0.06*rand(floor(gt*12)+39))"
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 965,
+     "anchor": "center",
+     "fill": "#1B1F23",
+     "stroke": {
+      "color": "#3A424A",
+      "width": 2
+     }
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 965,
+     "anchor": "center",
+     "fill": "#FF4A26",
+     "glow": {
+      "color": "#FF3B1F",
+      "radius": 18,
+      "intensity": 0.9
+     },
+     "opacity": "=gt < 6.5625 ? 0 : 1"
+    },
+    {
+     "shape": "rect",
+     "width": 1080,
+     "height": 3,
+     "x": 0,
+     "y": 965,
+     "anchor": "left",
+     "fill": "#FFFFFF",
+     "glow": {
+      "color": "#9AD6FF",
+      "radius": 30,
+      "intensity": 1
+     },
+     "start": 6.5425,
+     "end": 6.8625,
+     "animate": [
+      {
+       "from": {
+        "scaleX": 0,
+        "opacity": 1
+       },
+       "to": {
+        "scaleX": 1
+       },
+       "duration": 0.12,
+       "ease": "outExpo"
+      },
+      {
+       "to": {
+        "opacity": 0,
+        "scaleY": 0.3
+       },
+       "at": 0.1,
+       "duration": 0.18
+      }
+     ]
+    },
+    {
+     "text": "Rrose",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 1095,
+     "anchor": "left",
+     "color": "#08090A",
+     "stroke": {
+      "color": "#3B434B",
+      "width": 2
+     }
+    },
+    {
+     "text": "Rrose",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 1095,
+     "anchor": "left",
+     "color": "#F3F9FF",
+     "glow": {
+      "color": "#6FC3FF",
+      "radius": 26,
+      "intensity": 0.75
+     },
+     "opacity": "=(gt < 7.5000 ? 0 : (gt < 7.8000 ? (rand(floor(gt*26) + 24) > 0.42 ? 1 : 0.12) : 1)) * ((gt > 11.2500 && gt < 11.6700) ? (rand(floor(gt*30) + 171) > 0.5 ? 1 : 0.25) : 1) * (0.94 + 0.06*rand(floor(gt*12)+52))"
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 1095,
+     "anchor": "center",
+     "fill": "#1B1F23",
+     "stroke": {
+      "color": "#3A424A",
+      "width": 2
+     }
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 1095,
+     "anchor": "center",
+     "fill": "#FF4A26",
+     "glow": {
+      "color": "#FF3B1F",
+      "radius": 18,
+      "intensity": 0.9
+     },
+     "opacity": "=gt < 7.5000 ? 0 : 1"
+    },
+    {
+     "shape": "rect",
+     "width": 1080,
+     "height": 3,
+     "x": 0,
+     "y": 1095,
+     "anchor": "left",
+     "fill": "#FFFFFF",
+     "glow": {
+      "color": "#9AD6FF",
+      "radius": 30,
+      "intensity": 1
+     },
+     "start": 7.48,
+     "end": 7.8,
+     "animate": [
+      {
+       "from": {
+        "scaleX": 0,
+        "opacity": 1
+       },
+       "to": {
+        "scaleX": 1
+       },
+       "duration": 0.12,
+       "ease": "outExpo"
+      },
+      {
+       "to": {
+        "opacity": 0,
+        "scaleY": 0.3
+       },
+       "at": 0.1,
+       "duration": 0.18
+      }
+     ]
+    },
+    {
+     "text": "Phase Fatale",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 1225,
+     "anchor": "left",
+     "color": "#08090A",
+     "stroke": {
+      "color": "#3B434B",
+      "width": 2
+     }
+    },
+    {
+     "text": "Phase Fatale",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 1225,
+     "anchor": "left",
+     "color": "#F3F9FF",
+     "glow": {
+      "color": "#6FC3FF",
+      "radius": 26,
+      "intensity": 0.75
+     },
+     "opacity": "=(gt < 8.4375 ? 0 : (gt < 8.7375 ? (rand(floor(gt*26) + 25) > 0.42 ? 1 : 0.12) : 1)) * ((gt > 11.2500 && gt < 11.6700) ? (rand(floor(gt*30) + 178) > 0.5 ? 1 : 0.25) : 1) * (0.94 + 0.06*rand(floor(gt*12)+65))"
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 1225,
+     "anchor": "center",
+     "fill": "#1B1F23",
+     "stroke": {
+      "color": "#3A424A",
+      "width": 2
+     }
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 1225,
+     "anchor": "center",
+     "fill": "#FF4A26",
+     "glow": {
+      "color": "#FF3B1F",
+      "radius": 18,
+      "intensity": 0.9
+     },
+     "opacity": "=gt < 8.4375 ? 0 : 1"
+    },
+    {
+     "shape": "rect",
+     "width": 1080,
+     "height": 3,
+     "x": 0,
+     "y": 1225,
+     "anchor": "left",
+     "fill": "#FFFFFF",
+     "glow": {
+      "color": "#9AD6FF",
+      "radius": 30,
+      "intensity": 1
+     },
+     "start": 8.4175,
+     "end": 8.7375,
+     "animate": [
+      {
+       "from": {
+        "scaleX": 0,
+        "opacity": 1
+       },
+       "to": {
+        "scaleX": 1
+       },
+       "duration": 0.12,
+       "ease": "outExpo"
+      },
+      {
+       "to": {
+        "opacity": 0,
+        "scaleY": 0.3
+       },
+       "at": 0.1,
+       "duration": 0.18
+      }
+     ]
+    },
+    {
+     "text": "Kia",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 1355,
+     "anchor": "left",
+     "color": "#08090A",
+     "stroke": {
+      "color": "#3B434B",
+      "width": 2
+     }
+    },
+    {
+     "text": "Kia",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 1355,
+     "anchor": "left",
+     "color": "#F3F9FF",
+     "glow": {
+      "color": "#6FC3FF",
+      "radius": 26,
+      "intensity": 0.75
+     },
+     "opacity": "=(gt < 9.3750 ? 0 : (gt < 9.6750 ? (rand(floor(gt*26) + 26) > 0.42 ? 1 : 0.12) : 1)) * ((gt > 11.2500 && gt < 11.6700) ? (rand(floor(gt*30) + 185) > 0.5 ? 1 : 0.25) : 1) * (gt > 12.6 && gt < 13.4 ? (rand(floor(gt*22)+6) > 0.35 ? 1 : 0.1) : 1)"
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 1355,
+     "anchor": "center",
+     "fill": "#1B1F23",
+     "stroke": {
+      "color": "#3A424A",
+      "width": 2
+     }
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 1355,
+     "anchor": "center",
+     "fill": "#FF4A26",
+     "glow": {
+      "color": "#FF3B1F",
+      "radius": 18,
+      "intensity": 0.9
+     },
+     "opacity": "=gt < 9.3750 ? 0 : 1"
+    },
+    {
+     "shape": "rect",
+     "width": 1080,
+     "height": 3,
+     "x": 0,
+     "y": 1355,
+     "anchor": "left",
+     "fill": "#FFFFFF",
+     "glow": {
+      "color": "#9AD6FF",
+      "radius": 30,
+      "intensity": 1
+     },
+     "start": 9.355,
+     "end": 9.675,
+     "animate": [
+      {
+       "from": {
+        "scaleX": 0,
+        "opacity": 1
+       },
+       "to": {
+        "scaleX": 1
+       },
+       "duration": 0.12,
+       "ease": "outExpo"
+      },
+      {
+       "to": {
+        "opacity": 0,
+        "scaleY": 0.3
+       },
+       "at": 0.1,
+       "duration": 0.18
+      }
+     ]
+    },
+    {
+     "text": "Ida Engberg",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 1485,
+     "anchor": "left",
+     "color": "#08090A",
+     "stroke": {
+      "color": "#3B434B",
+      "width": 2
+     }
+    },
+    {
+     "text": "Ida Engberg",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 820
+     },
+     "uppercase": true,
+     "letterSpacing": "0.005em",
+     "size": 118,
+     "x": 165,
+     "y": 1485,
+     "anchor": "left",
+     "color": "#F3F9FF",
+     "glow": {
+      "color": "#6FC3FF",
+      "radius": 26,
+      "intensity": 0.75
+     },
+     "opacity": "=(gt < 10.3125 ? 0 : (gt < 10.6125 ? (rand(floor(gt*26) + 27) > 0.42 ? 1 : 0.12) : 1)) * ((gt > 11.2500 && gt < 11.6700) ? (rand(floor(gt*30) + 192) > 0.5 ? 1 : 0.25) : 1) * (0.94 + 0.06*rand(floor(gt*12)+91))"
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 1485,
+     "anchor": "center",
+     "fill": "#1B1F23",
+     "stroke": {
+      "color": "#3A424A",
+      "width": 2
+     }
+    },
+    {
+     "shape": "circle",
+     "width": 22,
+     "height": 22,
+     "x": 105,
+     "y": 1485,
+     "anchor": "center",
+     "fill": "#FF4A26",
+     "glow": {
+      "color": "#FF3B1F",
+      "radius": 18,
+      "intensity": 0.9
+     },
+     "opacity": "=gt < 10.3125 ? 0 : 1"
+    },
+    {
+     "shape": "rect",
+     "width": 1080,
+     "height": 3,
+     "x": 0,
+     "y": 1485,
+     "anchor": "left",
+     "fill": "#FFFFFF",
+     "glow": {
+      "color": "#9AD6FF",
+      "radius": 30,
+      "intensity": 1
+     },
+     "start": 10.2925,
+     "end": 10.6125,
+     "animate": [
+      {
+       "from": {
+        "scaleX": 0,
+        "opacity": 1
+       },
+       "to": {
+        "scaleX": 1
+       },
+       "duration": 0.12,
+       "ease": "outExpo"
+      },
+      {
+       "to": {
+        "opacity": 0,
+        "scaleY": 0.3
+       },
+       "at": 0.1,
+       "duration": 0.18
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": 1080,
+     "height": 1920,
+     "x": "50%",
+     "y": "50%",
+     "anchor": "center",
+     "fill": "#E9F5FF",
+     "blend": "screen",
+     "start": 11.25,
+     "end": 11.75,
+     "animate": [
+      {
+       "from": {
+        "opacity": 0.9
+       },
+       "to": {
+        "opacity": 0
+       },
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "width": 900,
+     "height": 2,
+     "fill": "#56616B",
+     "x": "50%",
+     "y": 1560,
+     "anchor": "center",
+     "animate": [
+      {
+       "from": {
+        "scaleX": 0
+       },
+       "to": {
+        "scaleX": 1
+       },
+       "at": 11.35,
+       "duration": 0.9,
+       "ease": "inOutExpo"
+      }
+     ]
+    },
+    {
+     "text": "TICKETS FRIDAY",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 900
+     },
+     "uppercase": true,
+     "letterSpacing": "0.015em",
+     "size": 150,
+     "x": "50%",
+     "y": 1650,
+     "anchor": "center",
+     "color": "#08090A",
+     "stroke": {
+      "color": "#3A2420",
+      "width": 2
+     },
+     "start": 11.35,
+     "enter": {
+      "preset": "fade",
+      "duration": 0.3
+     }
+    },
+    {
+     "text": "TICKETS FRIDAY",
+     "font": "Archivo",
+     "axes": {
+      "wdth": 62,
+      "wght": 900
+     },
+     "uppercase": true,
+     "letterSpacing": "0.015em",
+     "size": 150,
+     "x": "50%",
+     "y": 1650,
+     "anchor": "center",
+     "color": "#FFD9CF",
+     "glow": {
+      "color": "#FF3B1F",
+      "radius": 40,
+      "intensity": 1.0
+     },
+     "opacity": "=(gt < 11.8000 ? 0 : (gt < 12.2500 ? (rand(floor(gt*26) + 77) > 0.42 ? 1 : 0.12) : 1))"
+    }
+   ]
+  }
+ ],
+ "music": {
+  "bpm": 128,
+  "key": "Gm",
+  "length": "8 bars",
+  "end": "ring",
+  "master": {
+   "lufs": -14,
+   "ceiling": -1
+  },
+  "define": {
+   "hum": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "sine",
+       "level": 0.9
+      },
+      {
+       "wave": "saw",
+       "level": 0.08
+      }
+     ],
+     "filter": {
+      "type": "lp",
+      "cutoff": 260,
+      "res": 0.1
+     },
+     "amp": [
+      0.3,
+      0.1,
+      1,
+      1.5
+     ],
+     "lfo": {
+      "rate": 6.25,
+      "trem": 0.15
+     }
+    }
+   },
+   "rumble": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "saw",
+       "voices": 2,
+       "detune": 8,
+       "level": 0.8
+      }
+     ],
+     "sub": 0.5,
+     "filter": {
+      "type": "ladder",
+      "cutoff": 220,
+      "res": 0.35,
+      "drive": 2.2,
+      "env": 1.5
+     },
+     "amp": [
+      0.002,
+      0.18,
+      0.0,
+      0.08
+     ],
+     "fenv": [
+      0.001,
+      0.12,
+      0.0,
+      0.05
+     ],
+     "mono": true
+    }
+   },
+   "stab": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "square",
+       "voices": 2,
+       "detune": 14,
+       "level": 0.6
+      },
+      {
+       "wave": "saw",
+       "semis": 12,
+       "level": 0.3
+      }
+     ],
+     "filter": {
+      "type": "lp4",
+      "cutoff": 900,
+      "res": 0.5,
+      "env": 3
+     },
+     "amp": [
+      0.001,
+      0.22,
+      0.0,
+      0.25
+     ],
+     "fenv": [
+      0.001,
+      0.1,
+      0.0,
+      0.1
+     ]
+    }
+   }
+  },
+  "tracks": [
+   {
+    "inst": "hum",
+    "notes": "o1 G1/1 | G1/1 | G1/1 | G1/1 | G1/1 | G1/1 | G1/1 | G1/1",
+    "gain": -8,
+    "automate": {
+     "volume": [
+      [
+       0,
+       0.5
+      ],
+      [
+       24,
+       0.6
+      ],
+      [
+       24.1,
+       0.15
+      ],
+      [
+       32,
+       0.15
+      ]
+     ]
+    }
+   },
+   {
+    "inst": "drums:techno",
+    "at": "@bar2",
+    "drums": {
+     "hat": "..x...x...x.x.xx",
+     "rim": "........x......."
+    },
+    "bars": 1,
+    "gain": -4
+   },
+   {
+    "inst": "drums:techno",
+    "at": "@bar3",
+    "drums": {
+     "kick": "x...x...x...x...",
+     "hat": "..x...x...x...x.",
+     "rim": "...x......x....."
+    },
+    "bars": 2
+   },
+   {
+    "inst": "drums:techno",
+    "at": "@bar5",
+    "drums": {
+     "kick": "x...x...x...x...",
+     "hat": "x.x.x.x.x.x.x.x.",
+     "clap": "....x.......x...",
+     "ohh": "..x...x...x...x."
+    },
+    "bars": 2
+   },
+   {
+    "inst": "drums:techno",
+    "at": "@bar7",
+    "drums": {
+     "kick": "X...x...x...x...",
+     "hat": "xxxxxxxxxxxxxxxx",
+     "clap": "....x.......x...",
+     "ohh": "..x...x...x...x.",
+     "crash": "x..............."
+    },
+    "bars": 1
+   },
+   {
+    "inst": "drums:techno",
+    "at": "@bar8",
+    "drums": {
+     "kick": "x...x...x.......",
+     "hat": "x.x.x.x.x.......",
+     "clap": "....x..........."
+    },
+    "bars": 1
+   },
+   {
+    "inst": "rumble",
+    "at": "@bar3",
+    "notes": "o1 (r16 G1/16 G1/16 G1/16)x4 | (r16 G1/16 G1/16 G1/16)x4 | (r16 G1/16 G1/16 Bb1/16)x4 | (r16 G1/16 G1/16 G1/16)x4 | (r16 G1/16 G1/16 G1/16)x4 | (r16 F1/16 F1/16 F1/16)x2 (r16 G1/16 G1/16 G1/16)x2 | (r16 G1/16 G1/16 G1/16)x3 r4",
+    "gain": -3
+   },
+   {
+    "inst": "stab",
+    "at": "@bar3",
+    "notes": "o4 [G3 Bb3 D4]/8! r8 r4 [G3 Bb3 D4]/8 r8 r4 | [F3 A3 C4]/8! r8 r4 [F3 A3 D4]/8 r8 r4 | [G3 Bb3 D4]/8! r8 r4 [G3 Bb3 Eb4]/8 r8 r4 | [A3 C4 Eb4]/8! r8 r4 [Bb3 D4 F4]/8! r8 r4 | [G3 Bb3 D4 G4]/8! r8 r4 r2 | r1 | [G3 Bb3 D4]/2~ r2",
+    "gain": -7,
+    "reverb": 0.35,
+    "delay": 0.2
+   }
+  ],
+  "sfx": [
+   {
+    "sfx": "riser",
+    "at": "@bar7",
+    "gain": -4
+   },
+   {
+    "sfx": "impact",
+    "at": "@bar7",
+    "gain": -2
+   },
+   {
+    "sfx": "sub-drop",
+    "at": "@bar7",
+    "gain": -3
+   },
+   {
+    "sfx": "zap",
+    "at": 0.4688,
+    "gain": -6
+   },
+   {
+    "sfx": "zap",
+    "at": 11.8,
+    "gain": -6
+   },
+   {
+    "sfx": "zap",
+    "at": 3.75,
+    "gain": -12
+   },
+   {
+    "sfx": "zap",
+    "at": 4.6875,
+    "gain": -12
+   },
+   {
+    "sfx": "zap",
+    "at": 5.625,
+    "gain": -12
+   },
+   {
+    "sfx": "zap",
+    "at": 6.5625,
+    "gain": -12
+   },
+   {
+    "sfx": "zap",
+    "at": 7.5,
+    "gain": -12
+   },
+   {
+    "sfx": "zap",
+    "at": 8.4375,
+    "gain": -12
+   },
+   {
+    "sfx": "zap",
+    "at": 9.375,
+    "gain": -12
+   },
+   {
+    "sfx": "zap",
+    "at": 10.3125,
+    "gain": -12
+   }
+  ]
+ }
+}
