@@ -33,10 +33,11 @@ Rendered with `ANIKIT_RENDER_CACHE=0` in about 5.6 min. `scripts/defects.py` rep
 | 3 | moon, boats, bulb warm-up and failure, quay-lamp hook; sand shot | 4.00 | 0/3 | 4 / 5 / 5 |
 | 4 | Ultra slab face; tide-surge shot; drum clicks removed | 3.75 | 0/3 | 4 / 6 / 6 |
 | 5 | back to Archivo; slower ignition; last light | 4.38 | 1/3 | 5 / 6 / 6 |
-| 6 (final) | no orphan lights, even glyphs, glints, structured "gone"; defects clean | 4.25 | 0/3 | 4 / 6 / 6 |
+| 6 | no orphan lights, even glyphs, glints, structured "gone"; defects clean | 4.25 | 0/3 | 4 / 6 / 6 |
 | 5 vs 6, 6 trials | tie | 4.31 / 4.31 | 1/6 each | 5 / 6 / 6 each |
+| **7 (final), 6 trials** | composition varies per shot: line 2 right-aligned over the boats, line 3 drifting diagonally out to sea (JUDGE's gap) | **4.62** | **2/6** | see `judge/pass7-t6` |
 
-Pass 6 is the final because it ties pass 5 over 6 trials and is defect-free. The score plateaued at about 4.3 (+0.56 over r2).
+Pass 7 is the final: it scores 4.62 over 6 trials with 2/6 judged pro (+0.87 over r2), and it is defect-free. JUDGE's paired run of pass 6 gave 4.25, agreeing with ours.
 
 The remaining gaps the jury names:
 - lettering native to the lamp grid, rather than a dot-filled grotesk;

@@ -20,6 +20,17 @@ def row(words, scene_start, size, x0, y, gap):
         prev = wid
     return out
 
+def row_right(words, scene_start, size, x1, y, gap):
+    """A row whose right edge sits at x1 (words chained leftward)."""
+    out, nxt = [], None
+    for text, beat in reversed(words):
+        wid = f"r{abs(hash((text, beat))) % 10**8}"
+        l = word(wid, text, beat, scene_start, size, x1 if nxt is None else f"={nxt}.left - {gap}", y)
+        l["anchor"] = "right"
+        out.append(l)
+        nxt = wid
+    return out
+
 def mask(layers):
     return {"layers": [{"shape": "rect", "width": 1920, "height": 1080, "fill": "#000000"}] + layers}
 
@@ -45,7 +56,7 @@ scenes.append({"duration": round(d0, 4), "layers": [shader(s0, d0, w1,
 # 2 · when the harbour lights are gone — night falls, the tide is out, wide over the mud.
 s1, d1 = 10 * B, 6.5 * B
 beacon2 = dict(beacon, width=80, height=80, x=150, y=730, opacity="=0.8 + 0.2 * sin(t * 2.6)")
-w2 = [beacon2] + row([("when", 10), ("the", 10.5), ("harbour", 11)], s1, 190, 230, 430, 46) + row([("lights", 12), ("are", 13), ("gone", 13.5)], s1, 190, 230, 640, 46)
+w2 = [beacon2] + row_right([("when", 10), ("the", 10.5), ("harbour", 11)], s1, 190, 1760, 420, 46) + row_right([("lights", 12), ("are", 13), ("gone", 13.5)], s1, 190, 1760, 630, 46)
 scenes.append({"duration": round(d1, 4), "layers": [shader(s1, d1, w2,
     {"mode": 0, "horizon": 0.25, "pitch": 12, "panx": "=90 - 160 * t / 4.64", "tideout": 1.0, "warmth": 0.15, "night": "=min(0.72, 0.4 + 0.5 * t / 4.6)", "zoom": "=1.12 - 0.08 * t / 4.6",
      "glowk": "=1 + 2.2 * exp(-max(0, t - 1.43) * 3) * (t > 1.43 ? 1 : 0)", "fade": 1,
@@ -53,8 +64,8 @@ scenes.append({"duration": round(d1, 4), "layers": [shader(s1, d1, w2,
 
 # 3 · we were never meant to stay — cold lamps in the water, seen from above; the tide surges back and takes "stay".
 s2, d2 = 16.5 * B, 6 * B
-w3 = (row([("we", 16.5), ("were", 17)], s2, 200, 170, 230, 50) + row([("never", 17.5), ("meant", 18.5)], s2, 200, 170, 470, 50)
-      + row([("to", 19.5), ("stay", 20)], s2, 300, 170, 760, 60))
+w3 = (row([("we", 16.5), ("were", 17)], s2, 190, 150, 210, 50) + row([("never", 17.5), ("meant", 18.5)], s2, 190, 520, 450, 50)
+      + row([("to", 19.5), ("stay", 20)], s2, 300, 900, 760, 60))
 scenes.append({"duration": round(d2, 4), "layers": [shader(s2, d2, w3,
     {"mode": 2, "horizon": 1.2, "pitch": 11, "warmth": 0.0, "night": 0.55, "zoom": "=1.1 - 0.08 * t / 4.3", "panx": "=-50 + 100 * t / 4.3",
      "wash": "=-150 + 650 * smoothstep(3.0, 4.2, t)", "glowk": 1.2, "fade": "=t < 3.93 ? 1 : 0.6"})]})
