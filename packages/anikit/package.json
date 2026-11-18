@@ -74,6 +74,7 @@
     "bench": "node scripts/bench.mjs",
     "bench:physics": "node scripts/bench-physics.mjs",
     "bench:dom": "node scripts/bench-dom.mjs",
+    "bench:capture": "node scripts/bench-capture.mjs",
     "bench:3d": "node scripts/bench-3d.mjs",
     "record": "node bin/anikit-record.mjs",
     "bench:cloud": "node scripts/bench-cloud.mjs",

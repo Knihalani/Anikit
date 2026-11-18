@@ -22,6 +22,8 @@ use serde_json::Value;
 use std::path::Path;
 use std::sync::Arc;
 
+const AUTO_STEP: usize = 32;
+
 // ───────────────────────────── instruments ─────────────────────────────
 
 fn num(v: &Value, what: &str) -> Result<f32, String> {
@@ -387,14 +389,18 @@ impl Automation {
         }
     }
 
-    /// Sample the curve every 32 frames and interpolate linearly: `out[i]` at frame i.
+    /// Control points for the curve, sampled every `AUTO_STEP` frames.
+    pub fn points(&self, frames: usize, rate: u32) -> Vec<f64> {
+        (0..=frames / AUTO_STEP + 1).map(|k| self.at((k * AUTO_STEP) as f64 / rate as f64)).collect()
+    }
+
+    /// Sample the curve every `AUTO_STEP` frames and interpolate linearly: `out[i]` at frame i.
     pub fn render(&self, frames: usize, rate: u32) -> Vec<f32> {
-        const STEP: usize = 32;
-        let pts: Vec<f64> = (0..=frames / STEP + 1).map(|k| self.at((k * STEP) as f64 / rate as f64)).collect();
+        let pts = self.points(frames, rate);
         (0..frames)
             .map(|i| {
-                let k = i / STEP;
-                let f = (i % STEP) as f64 / STEP as f64;
+                let k = i / AUTO_STEP;
+                let f = (i % AUTO_STEP) as f64 / AUTO_STEP as f64;
                 (pts[k] + (pts[k + 1] - pts[k]) * f) as f32
             })
             .collect()
@@ -733,16 +739,31 @@ struct AutoPan {
     phase: f64,
     depth: f32,
 }
+
+#[inline]
+fn sin_cos_small(x: f64) -> (f64, f64) {
+    let x2 = x * x;
+    let sin = x * (1.0 + x2 * (-1.0 / 6.0 + x2 * (1.0 / 120.0 + x2 * (-1.0 / 5040.0 + x2 / 362_880.0))));
+    let cos = 1.0 + x2 * (-1.0 / 2.0 + x2 * (1.0 / 24.0 + x2 * (-1.0 / 720.0 + x2 * (1.0 / 40_320.0 - x2 / 3_628_800.0))));
+    (sin, cos)
+}
+
 impl Processor for AutoPan {
     fn process(&mut self, l: &mut [f32], r: &mut [f32]) {
-        for (a, b) in l.iter_mut().zip(r.iter_mut()) {
-            // θ = π/4 · (1 + depth·sin φ): centre at φ = 0, √2 so the centre is unity.
-            let th = std::f32::consts::FRAC_PI_4 * (1.0 + self.depth * (self.phase as f32).sin());
-            *a *= std::f32::consts::SQRT_2 * th.cos();
-            *b *= std::f32::consts::SQRT_2 * th.sin();
-            self.phase += self.step;
-            if self.phase > std::f64::consts::TAU {
-                self.phase -= std::f64::consts::TAU;
+        let (step_sin, step_cos) = self.step.sin_cos();
+        for (cl, cr) in l.chunks_mut(AUTO_STEP).zip(r.chunks_mut(AUTO_STEP)) {
+            let (mut phase_sin, mut phase_cos) = self.phase.sin_cos();
+            for (a, b) in cl.iter_mut().zip(cr.iter_mut()) {
+                let x = std::f64::consts::FRAC_PI_4 * self.depth as f64 * phase_sin;
+                let (sin_x, cos_x) = sin_cos_small(x);
+                *a *= (cos_x - sin_x) as f32;
+                *b *= (cos_x + sin_x) as f32;
+
+                (phase_sin, phase_cos) = (phase_sin * step_cos + phase_cos * step_sin, phase_cos * step_cos - phase_sin * step_sin);
+                self.phase += self.step;
+                if self.phase > std::f64::consts::TAU {
+                    self.phase -= std::f64::consts::TAU;
+                }
             }
         }
     }
@@ -849,19 +870,23 @@ impl TrackAuto {
     pub fn apply(&self, l: &mut [f32], r: &mut [f32], rate: u32) {
         let n = l.len();
         if let Some(v) = &self.volume {
-            let e = v.render(n, rate);
-            for i in 0..n {
-                let g = 10f32.powf(e[i] / 20.0);
-                l[i] *= g;
-                r[i] *= g;
+            let pts = v.points(n, rate);
+            for (k, (cl, cr)) in l.chunks_mut(AUTO_STEP).zip(r.chunks_mut(AUTO_STEP)).enumerate() {
+                let mut g = 10f64.powf(pts[k] / 20.0) as f32;
+                let ratio = 10f64.powf((pts[k + 1] - pts[k]) / (20.0 * AUTO_STEP as f64)) as f32;
+                for (x, y) in cl.iter_mut().zip(cr.iter_mut()) {
+                    *x *= g;
+                    *y *= g;
+                    g *= ratio;
+                }
             }
         }
         for (auto, mode) in [(&self.lp, dsp::SvfMode::LowPass), (&self.hp, dsp::SvfMode::HighPass)] {
             if let Some(a) = auto {
                 let e = a.render(n, rate);
                 let mut f = dsp::Svf::new(rate as f32, mode, e.first().copied().unwrap_or(1000.0).clamp(20.0, 20_000.0), 0.707);
-                for (k, (cl, cr)) in l.chunks_mut(32).zip(r.chunks_mut(32)).enumerate() {
-                    f.set(e[k * 32].clamp(20.0, 20_000.0), 0.707);
+                for (k, (cl, cr)) in l.chunks_mut(AUTO_STEP).zip(r.chunks_mut(AUTO_STEP)).enumerate() {
+                    f.set(e[k * AUTO_STEP].clamp(20.0, 20_000.0), 0.707);
                     for (x, y) in cl.iter_mut().zip(cr.iter_mut()) {
                         *x = f.tick(0, *x);
                         *y = f.tick(1, *y);
@@ -870,12 +895,29 @@ impl TrackAuto {
             }
         }
         if let Some(p) = &self.pan {
-            let e = p.render(n, rate);
-            let s = std::f32::consts::SQRT_2;
-            for i in 0..n {
-                let (gl, gr) = crate::voice::pan_gains(e[i]);
-                l[i] *= gl * s;
-                r[i] *= gr * s;
+            let pts = p.points(n, rate);
+            let sqrt2 = std::f64::consts::SQRT_2;
+            for (k, (cl, cr)) in l.chunks_mut(AUTO_STEP).zip(r.chunks_mut(AUTO_STEP)).enumerate() {
+                let p0 = pts[k];
+                let p1 = pts[k + 1];
+                if (-1.0..=1.0).contains(&p0) && (-1.0..=1.0).contains(&p1) {
+                    let a0 = (p0 + 1.0) * std::f64::consts::FRAC_PI_4;
+                    let a1 = (p1 + 1.0) * std::f64::consts::FRAC_PI_4;
+                    let (mut s, mut c) = a0.sin_cos();
+                    let (sd, cd) = ((a1 - a0) / AUTO_STEP as f64).sin_cos();
+                    for (x, y) in cl.iter_mut().zip(cr.iter_mut()) {
+                        *x *= (c * sqrt2) as f32;
+                        *y *= (s * sqrt2) as f32;
+                        (c, s) = (c * cd - s * sd, s * cd + c * sd);
+                    }
+                } else {
+                    for (j, (x, y)) in cl.iter_mut().zip(cr.iter_mut()).enumerate() {
+                        let e_i = (p0 + (p1 - p0) * (j as f64 / AUTO_STEP as f64)) as f32;
+                        let (gl, gr) = crate::voice::pan_gains(e_i);
+                        *x *= gl * std::f32::consts::SQRT_2;
+                        *y *= gr * std::f32::consts::SQRT_2;
+                    }
+                }
             }
         }
     }
@@ -884,6 +926,144 @@ impl TrackAuto {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn sine_input(n: usize) -> (Vec<f32>, Vec<f32>) {
+        let l = (0..n).map(|i| (std::f32::consts::TAU * 997.0 * i as f32 / 48_000.0).sin()).collect();
+        let r = (0..n).map(|i| (std::f32::consts::TAU * 431.0 * i as f32 / 48_000.0 + 0.3).sin()).collect();
+        (l, r)
+    }
+
+    fn max_diff(a: &[f32], b: &[f32]) -> f32 {
+        a.iter().zip(b).map(|(x, y)| (x - y).abs()).fold(0.0, f32::max)
+    }
+
+    fn old_render(auto: &Automation, frames: usize, rate: u32) -> Vec<f32> {
+        let pts: Vec<f64> = (0..=frames / AUTO_STEP + 1).map(|k| auto.at((k * AUTO_STEP) as f64 / rate as f64)).collect();
+        (0..frames)
+            .map(|i| {
+                let k = i / AUTO_STEP;
+                let f = (i % AUTO_STEP) as f64 / AUTO_STEP as f64;
+                (pts[k] + (pts[k + 1] - pts[k]) * f) as f32
+            })
+            .collect()
+    }
+
+    #[test]
+    fn render_matches_the_original_interpolation() {
+        let grid = Grid { bpm: 120.0, ..Default::default() };
+        let autos = [
+            Automation::parse(&serde_json::json!([[0, -40], [1, 6], [2, -12]]), &grid, "t").unwrap(),
+            Automation::parse(&serde_json::json!("=1.5*sin(beat)"), &grid, "t").unwrap(),
+        ];
+        for auto in autos {
+            let want = old_render(&auto, 120_013, 48_000);
+            assert_eq!(auto.render(120_013, 48_000), want);
+            let points: Vec<f64> = (0..=120_013 / AUTO_STEP + 1).map(|k| auto.at((k * AUTO_STEP) as f64 / 48_000.0)).collect();
+            assert_eq!(auto.points(120_013, 48_000), points);
+        }
+    }
+
+    #[test]
+    fn volume_automation_matches_per_sample_gains() {
+        let n = 120_013;
+        let (src_l, src_r) = sine_input(n);
+        for volume in [
+            Automation::Keys(vec![(0.0, -40.0), (1.0, 6.0), (2.0, -12.0)]),
+            Automation::Keys(vec![(0.0, -8.0)]),
+        ] {
+            let auto = TrackAuto { volume: Some(volume.clone()), pan: None, lp: None, hp: None, reverb: None, delay: None, per_note: Vec::new() };
+            let mut got_l = src_l.clone();
+            let mut got_r = src_r.clone();
+            auto.apply(&mut got_l, &mut got_r, 48_000);
+
+            let envelope = volume.render(n, 48_000);
+            let mut want_l = src_l.clone();
+            let mut want_r = src_r.clone();
+            for i in 0..n {
+                let g = 10f32.powf(envelope[i] / 20.0);
+                want_l[i] *= g;
+                want_r[i] *= g;
+            }
+            assert!(max_diff(&got_l, &want_l) < 1e-5, "left diff {}", max_diff(&got_l, &want_l));
+            assert!(max_diff(&got_r, &want_r) < 1e-5, "right diff {}", max_diff(&got_r, &want_r));
+        }
+    }
+
+    #[test]
+    fn pan_automation_matches_per_sample_gains_with_and_without_clamp() {
+        let n = 120_013;
+        let grid = Grid { bpm: 120.0, ..Default::default() };
+        let (src_l, src_r) = sine_input(n);
+        let autos = [
+            Automation::parse(&serde_json::json!([[0, -1], [5, 1]]), &grid, "t").unwrap(),
+            Automation::parse(&serde_json::json!("=1.5*sin(beat)"), &grid, "t").unwrap(),
+        ];
+        for pan in autos {
+            let auto = TrackAuto { volume: None, pan: Some(pan.clone()), lp: None, hp: None, reverb: None, delay: None, per_note: Vec::new() };
+            let mut got_l = src_l.clone();
+            let mut got_r = src_r.clone();
+            auto.apply(&mut got_l, &mut got_r, 48_000);
+
+            let envelope = old_render(&pan, n, 48_000);
+            let mut want_l = src_l.clone();
+            let mut want_r = src_r.clone();
+            for i in 0..n {
+                let (gl, gr) = crate::voice::pan_gains(envelope[i]);
+                want_l[i] *= gl * std::f32::consts::SQRT_2;
+                want_r[i] *= gr * std::f32::consts::SQRT_2;
+            }
+            assert!(max_diff(&got_l, &want_l) < 1e-5, "left diff {}", max_diff(&got_l, &want_l));
+            assert!(max_diff(&got_r, &want_r) < 1e-5, "right diff {}", max_diff(&got_r, &want_r));
+        }
+    }
+
+    #[test]
+    fn autopan_matches_the_original_formula_across_irregular_chunks() {
+        let n = 240_013;
+        let (src_l, src_r) = sine_input(n);
+        for (hz, depth) in [(0.5, 0.3), (0.5, 1.0), (40.0, 0.3), (40.0, 1.0)] {
+            let mut chain = fx_chain(&serde_json::json!([{ "type": "autopan", "rate": hz, "depth": depth }]), 48_000, 120.0, "fx").unwrap();
+            let (mut got_l, mut got_r) = (src_l.clone(), src_r.clone());
+            let Fx::Proc(processor) = &mut chain[0] else { panic!("autopan must be a processor") };
+            let mut start = 0;
+            for size in [7, 300, 33, 4096] {
+                let end = (start + size).min(n);
+                processor.process(&mut got_l[start..end], &mut got_r[start..end]);
+                start = end;
+            }
+            processor.process(&mut got_l[start..], &mut got_r[start..]);
+
+            let step = std::f64::consts::TAU * hz / 48_000.0;
+            let mut phase = 0.0f64;
+            let mut want_l = src_l.clone();
+            let mut want_r = src_r.clone();
+            for i in 0..n {
+                let theta = std::f32::consts::FRAC_PI_4 * (1.0 + depth * (phase as f32).sin());
+                want_l[i] *= std::f32::consts::SQRT_2 * theta.cos();
+                want_r[i] *= std::f32::consts::SQRT_2 * theta.sin();
+                phase += step;
+                if phase > std::f64::consts::TAU {
+                    phase -= std::f64::consts::TAU;
+                }
+            }
+            let max_l = (0..n).max_by(|&a, &b| (got_l[a] - want_l[a]).abs().total_cmp(&(got_l[b] - want_l[b]).abs())).unwrap();
+            let max_r = (0..n).max_by(|&a, &b| (got_r[a] - want_r[a]).abs().total_cmp(&(got_r[b] - want_r[b]).abs())).unwrap();
+            assert!(
+                (got_l[max_l] - want_l[max_l]).abs() < 1e-5,
+                "{hz} Hz depth {depth} left diff {} at {max_l}: {} != {}",
+                (got_l[max_l] - want_l[max_l]).abs(),
+                got_l[max_l],
+                want_l[max_l]
+            );
+            assert!(
+                (got_r[max_r] - want_r[max_r]).abs() < 1e-5,
+                "{hz} Hz depth {depth} right diff {} at {max_r}: {} != {}",
+                (got_r[max_r] - want_r[max_r]).abs(),
+                got_r[max_r],
+                want_r[max_r]
+            );
+        }
+    }
 
     #[test]
     fn gated_reverb_cuts_the_tail_after_hold() {
