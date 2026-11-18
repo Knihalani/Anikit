@@ -1,8 +1,7 @@
 # Assets: CC0 HDRIs, materials, models, LUTs on demand
 
-Reference professional, freely licensed (CC0) assets by name. They download once
-(pinned URL + checksum) into `~/.cache/anikit/assets` (`ANIKIT_ASSET_CACHE` to move it)
-and are reused from then on. Nothing is bundled in the binary.
+CC0 assets by name, downloaded once (pinned URL + checksum) into `~/.cache/anikit/assets`
+(`ANIKIT_ASSET_CACHE` moves it) and reused from then on. Nothing is bundled in the binary.
 
 ## Find one (don't browse: search)
 
@@ -47,8 +46,9 @@ Any Poly Haven slug or ambientCG id works live; the curated ~230 are pinned and 
   `roughness`/`metallic` still override. Triplanar mapped, so no UVs are needed.
 - `"floor": {"texture": "ambientcg:WoodFloor051", "scale": 1}`: the same on the ground.
 - `"src": "polyhaven:model/…"` on a model object: any glTF from the library.
-- 2D image layers: `{"type": "image", "src": "polyhaven:texture/concrete_wall_008"}` uses the
-  albedo map (a texture, paper, plaster, fabric background).
+- 2D image layers: a texture ref uses its albedo (paper, plaster, fabric backgrounds); an HDRI
+  ref is a **photo**: `"src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58"` (a lens view
+  of its 8k panorama; `w`/`h` set the size). 70 real places, any angle.
 - Grade: `"post": {"preset": "cinematic", "lut": "anikit:lut/teal-orange", "lutMix": 0.8}`;
   a `.cube` path works too.
 

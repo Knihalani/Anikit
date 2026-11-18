@@ -106,6 +106,10 @@ def ph_hdris():
             h = f["hdri"].get(r, {}).get("hdr")
             if h:
                 res[r] = [{"path": f"{k}_{r}.hdr", "url": h["url"], "size": h["size"], "md5": h["md5"]}]
+        t = f.get("tonemapped")
+        if t:
+            # An 8k tonemapped JPEG: 2D layers reproject a view of it as a photo backplate.
+            res["photo"] = [{"path": f"{k}_tonemapped.jpg", "url": t["url"], "size": t["size"], "md5": t["md5"], "role": "photo"}]
         sun = "sun" in info.get("tags", []) or info.get("attributes", {}).get("weather") == "clear"
         e = {
             "id": f"polyhaven:hdri/{k}", "type": "hdri", "name": info["name"],
