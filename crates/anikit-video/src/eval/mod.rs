@@ -128,6 +128,38 @@ pub(crate) mod prop {
     }
 }
 
+/// Text whose layout depends on animated values (variable axes in uniform
+/// slots, letter spacing in `prop::LS`).
+pub(crate) struct DynText {
+    pub spec: crate::text::TextSpec,
+    /// Axis tag and its slot (`prop::U0 + i`).
+    pub axes: Vec<(String, usize)>,
+    /// Base letter spacing in px (`prop::LS`).
+    pub ls: f32,
+}
+
+impl DynText {
+    /// The layout for the current values, or `None` when they match the base.
+    fn relayout(&self, fonts: &crate::text::FontStore, v: &[f32; prop::N]) -> Option<Arc<TextLayout>> {
+        let q = |x: f32| (x * 10.0).round() / 10.0;
+        let ls_changed = (v[prop::LS] - self.ls).abs() > 0.01;
+        let ax_changed = self.axes.iter().any(|(t, slot)| self.spec.style.axes.iter().any(|(t2, b)| t2 == t && (q(v[*slot]) - q(*b)).abs() > 1e-4));
+        if !ls_changed && !ax_changed {
+            return None;
+        }
+        let mut sp = self.spec.clone();
+        for (t, slot) in &self.axes {
+            if let Some(a) = sp.style.axes.iter_mut().find(|a| &a.0 == t) {
+                a.1 = q(v[*slot]);
+            }
+        }
+        if ls_changed {
+            sp.style.letter_spacing = (v[prop::LS] * 20.0).round() / 20.0 / sp.style.size.max(1.0);
+        }
+        Some(fonts.layout(&sp))
+    }
+}
+
 /// One interpolation segment of a property track.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Seg {
@@ -254,6 +286,8 @@ pub(crate) enum Kind {
         split: Option<SplitC>,
         counter: Option<Counter>,
         kinetic: Option<KineticPlan>,
+        /// Animated variable axes / tracking: re-laid out per frame.
+        dynamic: Option<Box<DynText>>,
     },
     Shape {
         shape: ShapeKind,
@@ -329,6 +363,14 @@ pub(crate) struct Node {
     pub glow: Option<Filter>,
     /// Image treatments (tone map, halftone), applied first.
     pub treat: Vec<Filter>,
+    /// A pattern whose `field` reads `t`: regenerated every frame (pattern, box size).
+    pub live_pattern: Option<Arc<(graphic::Pat, [f64; 2])>>,
+    /// First of 5 animatable slots for the treatments (toneAmount, halftone cell/angle/gain, ink amount); 0 = none.
+    pub treat_slot: u8,
+    /// Stepped time in fps (0 = smooth): the layer animates "on twos" etc.
+    pub step: f32,
+    /// Boil: `[px, degrees, fps, seed]` seeded jitter.
+    pub boil: Option<[f32; 4]>,
     /// Clip children to the box (with radius).
     pub clip: bool,
     /// A clip path in the layer's local box (clip shapes, shape masks).
@@ -533,7 +575,7 @@ impl CompTime {
             t.rem_euclid(dur)
         } else {
             // Hold the last frame (layers end exclusively at the duration).
-            t.clamp(0.0, (dur - 1e-4).max(0.0))
+            t.clamp(0.0, (dur - 5e-4).max(0.0))
         }
     }
 }
@@ -1349,12 +1391,35 @@ impl Evaluator {
 
     fn emit_node_inner(&self, n: &Node, cx: &Cx, parent: &Affine, psize: [f32; 2], _po: f32, out: &mut Vec<Op>) {
         let st = cx.scene_t;
-        if st < n.start || st >= n.end {
+        // Half-open [start, end), with both edges nudged by 0.1 ms so float noise in
+        // `start + 1/fps` can't show a one-frame layer on two frames.
+        if st < n.start - 1e-4 || st >= n.end - 1e-4 {
             return;
         }
+        // Stepped time ("on twos"): this layer and its children see time held at `step` fps.
+        let stepped;
+        let cx = if n.step > 0.0 {
+            let lt = st - n.start;
+            let held = (lt * n.step + 1e-4).floor() / n.step;
+            let d = lt - held;
+            stepped = Cx { scene_t: st - d, gt: cx.gt - d, ..*cx };
+            &stepped
+        } else {
+            cx
+        };
+        let st = cx.scene_t;
         let lt = st - n.start;
         let mut v = [0.0f32; prop::N];
         self.props(n, cx, lt, &mut v);
+        if let Some([amt, rot, fps, seed]) = n.boil {
+            // Boil: a seeded jitter re-drawn `fps` times a second (hand-drawn / misregistered plates).
+            let k = ((cx.gt * fps) + 1e-4).floor() as i64 as u32;
+            let sd = seed as u32;
+            let r = |j: u32| (graphic::rnd(sd, k.wrapping_mul(3).wrapping_add(j)) as f32 - 0.5) * 2.0;
+            v[prop::X] += r(0) * amt;
+            v[prop::Y] += r(1) * amt;
+            v[prop::ROT] += r(2) * rot;
+        }
         let opacity = (v[prop::OPACITY] * cx.amul).clamp(0.0, 1.0);
         if opacity <= 0.0005 {
             return;
@@ -1395,6 +1460,26 @@ impl Evaluator {
         let mut alpha = opacity;
         if needs_layer {
             let mut filters = n.treat.clone();
+            if n.treat_slot != 0 {
+                let b = n.treat_slot as usize;
+                for f in filters.iter_mut() {
+                    match f {
+                        Filter::Tone(t) => {
+                            let a = v[b].clamp(0.0, 1.0);
+                            if (a - t.amount).abs() > 1e-4 {
+                                *t = Arc::new(dl::ToneLut { amount: a, ..(**t).clone() });
+                            }
+                        }
+                        Filter::Halftone(h) => {
+                            h.cell = v[b + 1].max(2.0);
+                            h.angle = v[b + 2];
+                            h.gain = v[b + 3].max(0.05);
+                        }
+                        Filter::Ink { amount, .. } => *amount = v[b + 4].clamp(0.0, 1.0),
+                        _ => {}
+                    }
+                }
+            }
             if blur > 0.05 {
                 filters.push(Filter::Blur(blur));
             }
@@ -1426,8 +1511,12 @@ impl Evaluator {
         }
         match &n.kind {
             Kind::Shape { shape, fill, stroke, path } => {
-                let wiggled = match n.fx.as_deref() {
-                    Some(fx::Fx { wiggle: Some(w), wiggle_src, .. }) => {
+                let wiggled = match (n.fx.as_deref(), n.live_pattern.as_deref()) {
+                    (_, Some((pat, [pw, ph]))) => {
+                        let pt = graphic::Pat { t: lt as f64, ..pat.clone() };
+                        Some(graphic::pattern(*pw, *ph, &pt))
+                    }
+                    (Some(fx::Fx { wiggle: Some(w), wiggle_src, .. }), None) => {
                         let mut p = take_path();
                         fx::wiggle_into(wiggle_src, *w, lt, &mut p);
                         Some(p)
@@ -1496,26 +1585,49 @@ impl Evaluator {
                     give_path(p);
                 }
             }
-            Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic } => {
+            Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic, dynamic } => {
                 let owned;
                 let layout = if let Some(c) = counter {
                     owned = self.layout_counter(c, v[prop::VALUE]);
+                    &owned
+                } else if let Some(l) = dynamic.as_ref().and_then(|d| d.relayout(&self.assets.fonts, &v)) {
+                    owned = l;
                     &owned
                 } else {
                     layout
                 };
                 let lsize = [wrap.unwrap_or(layout.width), layout.height];
                 // Centre the block in the layer box (it may differ when the box is wider).
-                let ox = (w - lsize[0]) * 0.5;
+                // Re-laid-out text (animated axes / tracking) keeps its aligned edge.
+                let ox = match dynamic.as_ref().map(|d| d.spec.align) {
+                    Some(crate::text::Align::Left) => 0.0,
+                    Some(crate::text::Align::Right) => w - lsize[0],
+                    _ => (w - lsize[0]) * 0.5,
+                };
                 let oy = (h - lsize[1]) * 0.5;
                 let bxf = if ox.abs() > 0.01 || oy.abs() > 0.01 { dl::mul(&xf, &translate(ox, oy)) } else { xf };
                 if let Some(k) = kinetic {
+                    // Gradient fills: draw the fill, keep it only where the
+                    // kinetic glyphs are (their animated alpha included).
+                    let grad = !matches!(paint, PaintC::Solid);
+                    if grad {
+                        out.push(Op::PushLayer { opacity: alpha, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
+                        let p = self.paint(paint, &v, prop::FILL, lsize, 1.0);
+                        // Oversized so units flying in from outside the box are filled too.
+                        let (mx, my) = (lsize[0].max(64.0), lsize[1].max(64.0));
+                        out.push(Op::RoundRect { x: -mx, y: -my, w: lsize[0] + 2.0 * mx, h: lsize[1] + 2.0 * my, radius: 0.0, paint: p, transform: bxf });
+                        out.push(Op::PushLayer { opacity: 1.0, blend: Blend::DestIn, filters: Vec::new(), clip: None, cache_key: None });
+                    }
                     let at = out.len();
                     k.ops(lt, bxf, out);
-                    if alpha < 1.0 {
+                    if alpha < 1.0 && !grad {
                         for op in &mut out[at..] {
                             retransform(op, &dl::IDENTITY, alpha);
                         }
+                    }
+                    if grad {
+                        out.push(Op::PopLayer);
+                        out.push(Op::PopLayer);
                     }
                 } else {
                     let fill = (!*run_colors).then(|| self.paint(paint, &v, prop::FILL, lsize, alpha));
@@ -1538,6 +1650,45 @@ impl Evaluator {
                             let (lo, hi) = (v[prop::RANGE0] + off, v[prop::RANGE1] + off);
                             let nu = units.len().max(1) as f32;
                             let base_c = [v[prop::FILL], v[prop::FILL + 1], v[prop::FILL + 2], v[prop::FILL + 3]];
+                            // Axis animators change advances: shift each unit by the growth of the units
+                            // before it on its line, re-aligning the line (left/centre/right).
+                            let shifts: Vec<f32> = if an.axes.is_empty() {
+                                Vec::new()
+                            } else {
+                                let fonts = &self.assets.fonts;
+                                let mut deltas = Vec::with_capacity(units.len());
+                                for (u, unit) in units.iter().enumerate() {
+                                    let rank = an.order.get(u).map_or(u as f32, |r| *r as f32);
+                                    let a = an.amount((rank + 0.5) / nu, lo, hi);
+                                    let mut d = 0.0;
+                                    if a > 0.001 {
+                                        for gi in unit.glyphs.clone() {
+                                            let g = layout.glyphs[gi as usize];
+                                            let r = &layout.runs[g.run as usize];
+                                            let gid = r.glyphs[g.index as usize].id;
+                                            let nf = fonts.toward_axes(r.font, &an.axes, a);
+                                            d += fonts.advance(nf, gid, r.size) - fonts.advance(r.font, gid, r.size);
+                                        }
+                                    }
+                                    deltas.push((unit.rect[1], d));
+                                }
+                                let mut out_s = vec![0.0; deltas.len()];
+                                let mut i = 0;
+                                while i < deltas.len() {
+                                    let mut j = i;
+                                    while j < deltas.len() && (deltas[j].0 - deltas[i].0).abs() < 1.0 {
+                                        j += 1;
+                                    }
+                                    let total: f32 = deltas[i..j].iter().map(|x| x.1).sum();
+                                    let mut acc = -total * an.align;
+                                    for k in i..j {
+                                        out_s[k] = acc;
+                                        acc += deltas[k].1;
+                                    }
+                                    i = j;
+                                }
+                                out_s
+                            };
                             for (u, unit) in units.iter().enumerate() {
                                 let rank = an.order.get(u).map_or(u as f32, |r| *r as f32);
                                 let a = an.amount((rank + 0.5) / nu, lo, hi);
@@ -1549,6 +1700,11 @@ impl Evaluator {
                                 let (cxu, cyu) = (x0 + uw * 0.5, y0 + uh * 0.5);
                                 let s = 1.0 + (an.scale - 1.0) * a;
                                 let m = dl::mul(&translate(cxu + an.dx * a, cyu + an.dy * a), &dl::mul(&rotate(an.rot * a), &dl::mul(&scale(s, s), &translate(-cxu, -cyu))));
+                                let m = match shifts.get(u) {
+                                    // Glyphs grow rightwards from their pen position: move by the growth before them.
+                                    Some(sh) => dl::mul(&translate(*sh, 0.0), &m),
+                                    None => m,
+                                };
                                 let uxf = dl::mul(&bxf, &m);
                                 let f2 = match (an.color, &fill) {
                                     (Some(c), Some(Paint::Solid(_))) => {
@@ -1570,7 +1726,15 @@ impl Evaluator {
                                 if ublur > 0.05 {
                                     out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::Blur(ublur)], clip: None, cache_key: None });
                                 }
+                                let at = out.len();
                                 emit_glyphs(out, layout, unit.glyphs.clone(), limit, f2.as_ref(), alpha * ua, &uxf);
+                                if !an.axes.is_empty() && a > 0.001 {
+                                    for op in &mut out[at..] {
+                                        if let Op::Glyphs { font, .. } = op {
+                                            *font = self.assets.fonts.toward_axes(*font, &an.axes, a);
+                                        }
+                                    }
+                                }
                                 if ublur > 0.05 {
                                     out.push(Op::PopLayer);
                                 }
@@ -1871,6 +2035,7 @@ pub(crate) fn scale_filters(ops: &mut [Op], s: f32) {
                     }
                     Filter::Glow { radius, .. } => *radius *= s,
                     Filter::Halftone(h) => h.cell *= s,
+                    Filter::Ink { scale, .. } => *scale *= s,
                     Filter::ColorMatrix(_) | Filter::Tone(_) => {}
                 }
             }
@@ -1887,7 +2052,7 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
         return true; // invisible throughout
     }
     let (la, lb) = (a - n.start, b - n.start);
-    if n.update.is_some() || n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
+    if n.boil.is_some() || n.live_pattern.is_some() || n.update.is_some() || n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
         return false;
     }
     match &n.kind {

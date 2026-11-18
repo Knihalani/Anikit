@@ -61,6 +61,7 @@ pub(super) fn run(raw: &Value, spec: &Value, cx: &mut Ctx) {
     easing(spec, cx);
     motion_tells(spec, cx);
     copy(spec, cx);
+    world(raw, spec, cx);
 }
 
 /// A static `blur`, or keyframes that end blurred, on a text layer.
@@ -350,6 +351,52 @@ fn copy(spec: &Value, cx: &mut Ctx) {
     }
 }
 
+/// The spec's declared world rules (`"world": {"palette": [...], "fonts": [...]}`): colours and
+/// faces used in the scenes that the art direction didn't declare. Drift from a declared world is
+/// how a designed piece slides back into defaults.
+fn world(raw: &Value, spec: &Value, cx: &mut Ctx) {
+    let Some(w) = raw.get("world") else { return };
+    let list = |k: &str| w.get(k).and_then(|x| x.as_array()).map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect::<Vec<_>>());
+    if let Some(pal) = list("palette") {
+        let declared: Vec<color::C> = pal.iter().filter_map(|h| cx.color(&Value::String(h.clone()))).collect();
+        let mut used = Vec::new();
+        colours(spec.get("scenes").unwrap_or(&Value::Null), cx, &mut used);
+        let mut off: Vec<String> = used
+            .iter()
+            .filter(|c| c[3] > 0.05)
+            .filter(|c| declared.iter().all(|d| (0..3).map(|i| (c[i] - d[i]).powi(2)).sum::<f64>().sqrt() > 0.12))
+            .map(|c| color::to_hex(*c))
+            .collect();
+        off.sort();
+        off.dedup();
+        if !off.is_empty() && !declared.is_empty() {
+            cx.note("tip", "world", "world.palette", format!("{} colour{} outside the declared world palette: {}", off.len(), if off.len() == 1 { "" } else { "s" }, off.iter().take(6).cloned().collect::<Vec<_>>().join(", ")),
+                "either add them to `world.palette` on purpose, or bring them back to the world's colours (docs/video/craft/art-direction.md §2.6)");
+        }
+    }
+    if let Some(fonts) = list("fonts") {
+        let mut used = std::collections::BTreeSet::new();
+        fn walk(v: &Value, out: &mut std::collections::BTreeSet<String>) {
+            match v {
+                Value::Object(m) => {
+                    if let Some(Value::String(f)) = m.get("font") {
+                        out.insert(f.clone());
+                    }
+                    m.values().for_each(|x| walk(x, out));
+                }
+                Value::Array(a) => a.iter().for_each(|x| walk(x, out)),
+                _ => {}
+            }
+        }
+        walk(spec.get("scenes").unwrap_or(&Value::Null), &mut used);
+        let off: Vec<String> = used.into_iter().filter(|f| !fonts.iter().any(|d| d.eq_ignore_ascii_case(f))).collect();
+        if !off.is_empty() {
+            cx.note("tip", "world", "world.fonts", format!("faces outside the declared world: {}", off.join(", ")),
+                "either declare them in `world.fonts`, or set the type in the world's faces (docs/video/craft/art-direction.md §2.6)");
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -414,5 +461,14 @@ mod tests {
         assert!(checks(json!({ "scenes": sc })).contains(&("copy", "tip")));
         let plain = json!([ { "duration": 3, "layers": [ { "text": "Renders 4K in 9 seconds" } ] } ]);
         assert!(!checks(json!({ "scenes": plain })).iter().any(|c| c.0 == "copy" || c.0 == "motion"));
+    }
+
+    #[test]
+    fn world_rules_flag_drift() {
+        let sc = json!([ { "duration": 3, "layers": [ { "text": "Hi", "font": "JetBrains Mono", "color": "#f2b92e" }, { "shape": "rect", "fill": "#2b6cff", "width": 10, "height": 10 } ] } ]);
+        let c = checks(json!({ "world": { "palette": ["#0e1712", "#f2b92e"], "fonts": ["JetBrains Mono"] }, "scenes": sc.clone() }));
+        assert!(c.contains(&("world", "tip")), "{c:?}");
+        let ok = checks(json!({ "world": { "palette": ["#0e1712", "#f2b92e", "#2b6cff"], "fonts": ["jetbrains mono"] }, "scenes": sc }));
+        assert!(!ok.iter().any(|c| c.0 == "world"), "{ok:?}");
     }
 }

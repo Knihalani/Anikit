@@ -108,7 +108,8 @@ Synthesised from Clair's and Williams's process and from treatment guides. Willi
 - **The treatment and style-frame workflow already exists in pieces; name it.**
   - `still --at` renders a style frame and `sheet` the set; the skills only ask for a `concept.txt`.
   - A treatment (§2.6) with world rules plus 3–5 style frames, judged by §2.7, would put an AD's checkpoint before the full render. That also makes it the cheapest place to catch "boring".
-- **World rules can't be declared, so they can't be checked.**
+- **World rules can now be declared (`"world": {"palette", "fonts"}`), and `critique` flags drift from them.** What's still missing is camera verbs and "never" rules, which only a person or an LLM critic can judge.
+- *(was)* **World rules can't be declared, so they can't be checked.**
   - A spec has no place to say "palette roles, the type that's allowed, camera verbs, what's never allowed".
   - A `"world": {…}` block that `critique` audits (§5.6) would turn the art bible into feedback.
 - **Point of view needs a hand.**

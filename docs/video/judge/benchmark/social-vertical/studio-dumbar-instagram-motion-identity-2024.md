@@ -22,6 +22,11 @@ anikit_features: [text, image, video, camera, mask, transitions, motionBlur, aud
 awards: ["European Design Awards 2025 Gold, Motion Graphics (Instagram — Motion Identity System, Studio Dumbar/DEPT®)"]
 stills:
   - https://i.vimeocdn.com/video/1812870425-92457d993482a1ba31312abc8a308b8dda9670bb0443711ba9d3605eddc1e533-d_1280
+  - https://www.dept.global/wp-content/uploads/2024/04/Cover_Instagram_Motion-Identity-System_Motion-Sizzle_1920x1080-1-1.jpg
+  - https://m.itsnicethat.com/original_images/studio-dumbar-instagram-digital-itsnicethat-1.gif
+  - https://m.itsnicethat.com/original_images/studio-dumbar-instagram-digital-itsnicethat-2.gif
+  - https://m.itsnicethat.com/original_images/studio-dumbar-instagram-digital-itsnicethat-3.gif
+  - https://m.itsnicethat.com/original_images/studio-dumbar-instagram-digital-itsnicethat-4.gif
 measured: null
 ---
 

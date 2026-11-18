@@ -78,6 +78,23 @@ pub fn image<T: Pod + Default>(w: usize, h: usize, f: impl Fn(usize, &mut [T]) +
     v
 }
 
+/// Run `f` (which may use rayon) on scene3d's own render pool, from a scoped
+/// thread the caller joins. The caller is usually a pipeline worker in the
+/// middle of evaluating a frame (frame-scoped thread-locals set, maybe a
+/// cache cell being initialised): waiting on its own pool it would steal other
+/// frames' tasks and run them on top of that state. Blocked on a plain join it
+/// can't. Render-pool threads only ever run scene3d's trace and post work,
+/// which touches no evaluator state, so their stealing is harmless. Same
+/// thread count as the global pool; results don't depend on scheduling.
+pub fn isolated<R: Send>(f: impl FnOnce() -> R + Send) -> R {
+    if !parallel() {
+        return f();
+    }
+    static P: std::sync::OnceLock<rayon::ThreadPool> = std::sync::OnceLock::new();
+    let pool = P.get_or_init(|| rayon::ThreadPoolBuilder::new().num_threads(rayon::current_num_threads()).thread_name(|i| format!("anikit-render-{i}")).build().expect("scene3d: can't start the render thread pool"));
+    std::thread::scope(|s| s.spawn(|| pool.install(f)).join().unwrap_or_else(|e| std::panic::resume_unwind(e)))
+}
+
 /// `f(y)` for every row `0..h` (a few rows per task).
 pub fn each_row(h: usize, f: impl Fn(usize) + Sync + Send) {
     if parallel() {

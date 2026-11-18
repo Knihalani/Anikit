@@ -217,6 +217,10 @@ pub(crate) struct AnimatorC {
     pub blur: f32,
     /// Target colour (OKLab + alpha).
     pub color: Option<[f32; 4]>,
+    /// Variable-font axis targets at full selection.
+    pub axes: Vec<(String, f32)>,
+    /// Line alignment for axis-driven advance changes: 0 left, 0.5 centre, 1 right.
+    pub align: f32,
     pub smooth: f32,
     /// Rank of each unit in selection order (empty = in order).
     pub order: Vec<u32>,
@@ -274,11 +278,14 @@ pub(crate) fn order_ranks(n: usize, order: &str, seed: f64) -> Vec<u32> {
     rank
 }
 
+/// One chunk of a path-following stroke gradient: (chunk path, start point, end point, start fraction, end fraction, start colour, end colour).
+pub(crate) type AlongChunk = (Path, [f32; 2], [f32; 2], f32, f32, crate::dl::Rgba, crate::dl::Rgba);
+
 /// A stroke gradient that follows the path.
 #[derive(Clone, Debug, PartialEq, Default)]
 pub(crate) struct AlongC {
     /// (chunk path, start point, end point, start fraction, end fraction, start colour, end colour).
-    pub chunks: Vec<(Path, [f32; 2], [f32; 2], f32, f32, crate::dl::Rgba, crate::dl::Rgba)>,
+    pub chunks: Vec<AlongChunk>,
 }
 
 impl AlongC {
@@ -776,7 +783,7 @@ mod tests {
 
     #[test]
     fn animator_selection() {
-        let a = AnimatorC { by: Default::default(), dx: 0.0, dy: 0.0, rot: 0.0, scale: 1.0, opacity: 0.0, blur: 0.0, color: None, smooth: 0.0, order: vec![], auto: None };
+        let a = AnimatorC { by: Default::default(), dx: 0.0, dy: 0.0, rot: 0.0, scale: 1.0, opacity: 0.0, blur: 0.0, color: None, axes: vec![], align: 0.5, smooth: 0.0, order: vec![], auto: None };
         assert_eq!(a.amount(0.5, 0.0, 1.0), 1.0);
         assert_eq!(a.amount(0.5, 0.6, 1.6), 0.0);
         let r = order_ranks(10, "random", 3.0);
