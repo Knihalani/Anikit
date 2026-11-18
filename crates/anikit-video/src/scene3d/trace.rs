@@ -508,7 +508,7 @@ pub struct Quality {
 
 impl Default for Quality {
     fn default() -> Self {
-        Quality { edge_spp: 6, ao_rays: 1, shadow_rays: 1, max_depth: 3, max_glass: 10, contrast: 0.06, secondary_rays: 0, full: false }
+        Quality { edge_spp: 9, ao_rays: 1, shadow_rays: 1, max_depth: 3, max_glass: 10, contrast: 0.06, secondary_rays: 0, full: false }
     }
 }
 

@@ -1,0 +1,531 @@
+{
+  "name": "k-sports",
+  "tags": [
+    "broadcast-sports",
+    "motion-design",
+    "3d-cg",
+    "kinetic-type"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "drive-studio-fox-world-cup-2026",
+    "xk-studio-offfmx-2025-main-titles"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 4,
+      "typography": 4,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 4,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 3.75,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a real idea specific to this fixture or these clubs (place, history, fans) instead of generic stadium iconography",
+      "Replace the flat vector assets and overlay light with real texture, material and depth: wet turf, haze, lens behaviour, crowd",
+      "Give the type a point of view (custom or chosen faces, expressive scale, type interacting with the scene) and show choreography between shots rather than a sequence of slides",
+      "It needs a specific idea about this club, city or match, rather than generic football signifiers (floodlights, rain, centre circle), to match the conceptual specificity of B's map-as-machine",
+      "The typeface is a default condensed grotesk with tracked caps; commissioning or customising a display face with scale contrast and integrating it with the image would close the gap with B's sigil-marked serif credits set within the scene",
+      "Light and texture should be built for real (volumetric floodlight beams, wet pitch, grain, depth) and the vector-flat cards replaced with layered, materially rich frames that move continuously from one to the next",
+      "Find a concept specific to this fixture or club (place, history, rivalry) instead of generic football iconography, the way B builds its world from the story's map",
+      "Replace default condensed sans and tracked-caps labels with a typographic system that has scale contrast and is integrated with the image (built into the stadium, lit by the floodlights)",
+      "Give it real light and material: volumetric floodlights through actual rain, wet grass texture, camera moves that connect frames instead of cuts between flat centred cards"
+    ],
+    "tells": [
+      "The idea is literal and obvious: floodlights, rain, a ball, team name, kick-off time; it is the brief simply illustrated",
+      "Clip-art vector assets: a symmetrical stock ball, flat floodlight rigs, a thin-line bridge icon",
+      "Generic condensed-grotesk caps with small tracked labels ('CITY', 'TONIGHT', 'WOMEN'S SUPER LEAGUE') placed like slides; the type has no idea behind it",
+      "Centred, symmetric layouts with a mostly empty ground and flat vignettes; the light is a generic soft cone overlay with digital rain streaks",
+      "Fictional teams ('Northbridge City', 'Harbour Athletic') and a template-style matchday card; the dot-matrix '19:45' is the only mild flourish",
+      "Little happens between frames beyond swapping the background colour and the words",
+      "Fictional placeholder teams (Northbridge City v Harbour Athletic) in a generic 'Women's Super League' framing, with no real client context",
+      "Tracked-caps micro labels (CITY, KICK-OFF, TONIGHT, WOMEN'S SUPER LEAGUE) above and below a condensed bold-sans headline, the textbook template hierarchy",
+      "Flat vector-default illustration: a clip-art floodlight, a line-art bridge on a flat red ground, and a stock football icon",
+      "The most interesting move (floodlight-dot numerals forming 19:45) is a literal and obvious gimmick",
+      "Inconsistent frame sizes and aspect ratios, a centred symmetrical split-screen end card, and a faint vignette standing in for lighting",
+      "Little choreography is implied: each frame is a separate slide-like scene",
+      "Generic fictional clubs ('Northbridge City', 'Harbour Athletic') and a literal treatment: floodlights, ball, centre circle, kick-off time",
+      "Default condensed grotesk throughout with small tracked caps above and below ('KICK-OFF', 'TONIGHT', 'WOMEN'S SUPER LEAGUE'), centred like a slide",
+      "Flat vector illustration: clip-art floodlights, stock ball icon, a bridge arc drawn as a line icon on a flat red field",
+      "Fake light: a soft gradient cone and uniform rain streaks with no real material or depth",
+      "Inconsistent frame aspect and cropping between samples, and the composition repeats the centred-circle layout",
+      "The one idea (floodlight bulbs as dot-matrix digits for 19:45) is pleasant but obvious"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9.5,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "drive-studio-fox-world-cup-2026": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    }
+  },
+  "ref_mean": 8.29,
+  "delta": -4.54,
+  "trials": [
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "drive-studio-fox-world-cup-2026"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Dense, layered 3D sculptures that mix very different materials in one object: frosted translucent skin, coral-like sponge, glass, chrome tubing, mesh fabric, fur fibres",
+              "Lighting is motivated and differs from shot to shot: backlit sky gradient, volumetric eruption on a dark ridge, deep green studio glow",
+              "The palette moves on purpose (dusty pink, violet, cerulean, sage, bottle green) but the material language stays consistent, which reads as a festival-titles system",
+              "Small artist/studio name tags plus the OFFF MX mark point to festival-title structure, with each segment worldbuilt by a different hand",
+              "Each frame shows a new world, not one layout with the words swapped"
+            ],
+            "gaps": [
+              "The type is just small bold-sans labels dropped on top of the image; letterforms should be built from the same materials as the image, the way B's title is made from the world itself",
+              "There's no single narrative thread across the segments, so it reads as a sequence of showcase vignettes rather than one choreographed journey",
+              "The 'surreal organic 3D' look is common in festival titles; it needs a stranger conceptual hook to set it apart from that genre"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "The idea belongs only to this piece: a clockwork map of the world that builds itself, so the title sequence also works as a geography lesson",
+              "Real material reasoning in every frame: engraved bronze astrolabe band, wood-and-brass mechanical cities, parchment map with inked rivers",
+              "Bright, flaring sun-core light contrasts with grounded tabletop key light in the city shots",
+              "The serif credits carry a small house sigil and are tucked into the world, not dropped on as overlays; the title lockup has matching lion and dragon ornaments and a custom-feeling inscriptional face",
+              "Clear choreography: the band turns, the camera flies from city to city, gears rise up, and it ends on the emblem framed by the sun"
+            ],
+            "gaps": [
+              "Benchmark entry; the only weakness is that the credit type is small and conventional inside the map frames",
+              "The final lockup leans on a heavy glow and bevel that is close to period fantasy clich\u00e9",
+              "The palette is mostly sepia, so it has fewer colour shifts than it could"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The idea is literal and obvious: floodlights, rain, a ball, team name, kick-off time; it is the brief simply illustrated",
+              "Clip-art vector assets: a symmetrical stock ball, flat floodlight rigs, a thin-line bridge icon",
+              "Generic condensed-grotesk caps with small tracked labels ('CITY', 'TONIGHT', 'WOMEN'S SUPER LEAGUE') placed like slides; the type has no idea behind it",
+              "Centred, symmetric layouts with a mostly empty ground and flat vignettes; the light is a generic soft cone overlay with digital rain streaks",
+              "Fictional teams ('Northbridge City', 'Harbour Athletic') and a template-style matchday card; the dot-matrix '19:45' is the only mild flourish",
+              "Little happens between frames beyond swapping the background colour and the words"
+            ],
+            "gaps": [
+              "It needs a real idea specific to this fixture or these clubs (place, history, fans) instead of generic stadium iconography",
+              "Replace the flat vector assets and overlay light with real texture, material and depth: wet turf, haze, lens behaviour, crowd",
+              "Give the type a point of view (custom or chosen faces, expressive scale, type interacting with the scene) and show choreography between shots rather than a sequence of slides"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A coherent broadcast system: the extruded '26' mark repeats as a carved concentric relief, re-skinned in each nation's flag and folk patterns",
+              "Typography has character by country: an ornate hand-lettered 'DIE NATIONALELF' over Germanic flourishes; heavy extruded italic 'ARGENTINA' over Argentine fileteado-style swirls",
+              "Layered frames: a player cut-out, kinetic stacked type, a waving flag and a set extension in one composition",
+              "The palette is driven by each flag but handled with depth (shaded relief, bevels, cast shadows)",
+              "The end lockup resolves the system: the trophy inside the '26' on red relief"
+            ],
+            "gaps": [
+              "The player-hero frame falls back on the standard sports-broadcast look (cut-out athlete, slab type, sponsor wordmark) and loses the graphic idea",
+              "Light and material are clean CG with little atmosphere or tactile surprise, below B's level of tangible craft",
+              "The idea is a strong system, not a story; it needs an emotional or narrative turn that viewers would remember beyond the toolkit"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.8,
+        "cost_usd": 0.1552094,
+        "tokens": 71826,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "xk-studio-offfmx-2025-main-titles",
+        "B": "game-of-thrones",
+        "C": "drive-studio-fox-world-cup-2026",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Dense, layered organic 3D forms with real material variety: translucent hands, coral, knitted mesh, glass tubes, fibres and hair simulation",
+              "Physically plausible light: subsurface scattering on the hands, refraction in the glass sculpture, rim-lit volcanic terrain",
+              "Each frame has its own palette (dusk pink, violet night, sky blue, sage/peach, bottle green), but the material language holds them together",
+              "The OFFF MX lockup is integrated as a festival ident; the small sans studio credits fit the conventions of a titles reel",
+              "Sculptures change from frame to frame (volcano, then mesh field, then tube knot), which points to continuous growth and morphing choreography"
+            ],
+            "gaps": [
+              "Typography is minimal and generic (small bold-sans credits over the image) and never interacts with the 3D world the way B's title lockup grows out of the astrolabe",
+              "The idea is a mood (organic-synthetic hybrids) with no narrative spine; B's mechanical map tells you where the story is set and who holds power",
+              "There is no single signature, memorable image comparable to B's clockwork cities rising out of the map, so the sequence reads as a collection of beautiful renders"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific, ownable idea: the world map as a clockwork mechanism, with cities that unfold from gears and the story geography shown as a machine",
+              "Carved, engraved metal astrolabe band with narrative bas-reliefs, rich in material detail",
+              "A warm sunlit core (literally a sun inside the armillary) against a desaturated parchment-and-pewter world, so the light is motivated",
+              "Credit typography is a considered Trajan-like serif with a sigil glyph, placed in the 3D space beside the mechanisms instead of laid on like a slide",
+              "The frames show clear camera choreography: band, flyover, rising tower, map, title lockup on the band"
+            ],
+            "gaps": [
+              "Benchmark entry; the remaining gaps are minor",
+              "Map frames are flatter and less lit than the mechanical close-ups",
+              "The title lockup relies on a conventional bloom and lens-flare burst"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent system: the '26' numeral is extruded into concentric relief tunnels that take on each nation's flag, which carries a broadcast package across many teams",
+              "Expressive custom display type: italic 3D-bevelled ARGENTINA, a hand-drawn ornamental DIE NATIONALELF lettering on a textile-like ground, and kinetic stacked type behind the player cut-out",
+              "Culturally specific graphic treatments for each nation (German folk-pattern linework, Argentine sun swirls) rather than a recoloured template",
+              "Studio watermark and the FIFA/FOX lockup indicate a real commissioned broadcast package"
+            ],
+            "gaps": [
+              "The flag-into-numeral relief recurs, so some frames read as one layout with the colours swapped, unlike B's continuous single world",
+              "The player cut-out frame is busy and generic sports-broadcast compositing that falls below the rest of the system",
+              "Light and material are clean CG with little atmosphere and nothing comparable to B's tactile, aged metal and wood"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Fictional placeholder teams (Northbridge City v Harbour Athletic) in a generic 'Women's Super League' framing, with no real client context",
+              "Tracked-caps micro labels (CITY, KICK-OFF, TONIGHT, WOMEN'S SUPER LEAGUE) above and below a condensed bold-sans headline, the textbook template hierarchy",
+              "Flat vector-default illustration: a clip-art floodlight, a line-art bridge on a flat red ground, and a stock football icon",
+              "The most interesting move (floodlight-dot numerals forming 19:45) is a literal and obvious gimmick",
+              "Inconsistent frame sizes and aspect ratios, a centred symmetrical split-screen end card, and a faint vignette standing in for lighting",
+              "Little choreography is implied: each frame is a separate slide-like scene"
+            ],
+            "gaps": [
+              "It needs a specific idea about this club, city or match, rather than generic football signifiers (floodlights, rain, centre circle), to match the conceptual specificity of B's map-as-machine",
+              "The typeface is a default condensed grotesk with tracked caps; commissioning or customising a display face with scale contrast and integrating it with the image would close the gap with B's sigil-marked serif credits set within the scene",
+              "Light and texture should be built for real (volumetric floodlight beams, wet pitch, grain, depth) and the vector-flat cards replaced with layered, materially rich frames that move continuously from one to the next"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.1,
+        "cost_usd": 0.1543292,
+        "tokens": 71778,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "drive-studio-fox-world-cup-2026",
+        "B": "game-of-thrones",
+        "C": "xk-studio-offfmx-2025-main-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A single system carries the whole piece: the '26' numeral is extruded into concentric layered relief and used as architecture for every nation's flag (Mexico, Argentina, the red final lockup)",
+              "Each nation gets its own graphic language: German blackletter-adjacent condensed caps over a red/gold ornamental engraving, swirled Argentine sun motifs, a Brazil player cut-out with a stacked type wall and cloth flag",
+              "Heavy, broadcast-grade italic sans with bevel and drop shadow, tied into the 3D set rather than laid over it",
+              "Real material and light: paper or relief depth, cloth sim on the flag, rim light on the trophy",
+              "The sequence moves from nation, to player, to identity and resolves on the trophy inside the '26' lockup, which is clear broadcast choreography"
+            ],
+            "gaps": [
+              "Built inside broadcast-package conventions (flag, player cut-out, logo sting), so it surprises less than B",
+              "The typography is muscular but generic sports-broadcast; it has less period specificity than B's engraved title",
+              "The idea is a strong system rather than a narrative or a world, and it does not reach B's conceptual depth (the world as a mechanism)"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific, memorable idea: the story's map is a clockwork world that builds itself, which could only belong to this show",
+              "Real light and texture: a burning sun core, brass and wood material, an engraved astrolabe band with heraldic dragons, aged parchment map",
+              "Typography with a point of view: a custom flared roman title with a small 'of', and credits set in spaced small caps with sigil bullets that sit inside the scene",
+              "A restrained warm and cool palette of bronze, verdigris and parchment that is consistent and period-true",
+              "Choreography is evident: the camera travels over the map, mechanisms unfold, and it resolves on the astrolabe band and title card"
+            ],
+            "gaps": [
+              "Nothing material; at most, a couple of sampled frames are dark and muddy, so a little more value contrast would help",
+              "The credit type is very small against busy texture in places",
+              "The final title card is the most conventional frame of the piece"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A festival-titles anthology structure (OFFF MX), with each contributor credited by a small bold sans label, which is a typical title-sequence credit convention",
+              "Rich, specific 3D materials: translucent sculpted hands, coral growth, glassy biomorphic figures, fabric/mesh and hair sims, tangled chrome-and-jelly tubes",
+              "An unusual palette shift per segment: dusty rose, violet dusk, sky blue, acid green",
+              "Considered light: backlit rim on the glass figure, volumetric plume on the peak"
+            ],
+            "gaps": [
+              "The idea is a loose theme (organic/synthetic mutation) rather than a single specific concept; it reads as a reel of segments",
+              "The type is a minimal label placed in the top left with no integration or scale play; the OFFF mark is the only typographic moment",
+              "There is less narrative choreography between frames than in B; segments cut rather than build"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "Generic fictional clubs ('Northbridge City', 'Harbour Athletic') and a literal treatment: floodlights, ball, centre circle, kick-off time",
+              "Default condensed grotesk throughout with small tracked caps above and below ('KICK-OFF', 'TONIGHT', 'WOMEN'S SUPER LEAGUE'), centred like a slide",
+              "Flat vector illustration: clip-art floodlights, stock ball icon, a bridge arc drawn as a line icon on a flat red field",
+              "Fake light: a soft gradient cone and uniform rain streaks with no real material or depth",
+              "Inconsistent frame aspect and cropping between samples, and the composition repeats the centred-circle layout",
+              "The one idea (floodlight bulbs as dot-matrix digits for 19:45) is pleasant but obvious"
+            ],
+            "gaps": [
+              "Find a concept specific to this fixture or club (place, history, rivalry) instead of generic football iconography, the way B builds its world from the story's map",
+              "Replace default condensed sans and tracked-caps labels with a typographic system that has scale contrast and is integrated with the image (built into the stadium, lit by the floodlights)",
+              "Give it real light and material: volumetric floodlights through actual rain, wet grass texture, camera moves that connect frames instead of cuts between flat centred cards"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.7,
+        "cost_usd": 0.1540822,
+        "tokens": 71776,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 3,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": false,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Northbridge\u2192Harbour transition is a plain cross-dissolve: the lighthouse and HARBOUR ghost over the bridge card, which looks like a muddy double exposure, not a designed handoff",
+        "The final lockup holds about 3.2 s with almost no change (6.3 change/s), so the ending sits as dead air instead of settling with intent",
+        "The whip into the final card is directional blur on flat type (NORTHBRIDGE CITY smears off-frame); it looks like a stock blur preset, not real camera motion",
+        "The ball's cross-shaped shadow is the same static X shape in every pitch shot; it doesn't respond to the ball's height or the light direction",
+        "The opening floodlight frames are mostly empty dark field with thin rain streaks, and they read as unfinished",
+        "Grain is a uniform overlay at the same strength over flat fills; at 100% the edges are clean but the surfaces have no real depth",
+        "Soundtrack is filtered white-noise risers and sweeps over a low drone, with click transients; there are no tonal or musical partials"
+      ],
+      "gaps": [
+        "Choreography: shots link by dissolves and blur whips rather than match-cuts on the material already there (floodlight bulb \u2192 digit dot \u2192 ball \u2192 centre spot). Energy peaks around 40\u201350% and then flatlines into a static hold, with no build and release at 60\u201380%",
+        "Sound: generic noise-riser and swoosh design with no music, rhythm or tonal identity. Crowd, rain, studs or floodlight-relay foley would give the piece weight and place; as it is, the risers only roughly frame the cuts",
+        "Finish and weight: the ball travels and the cards land without convincing ease, squash or follow-through, and the lighting doesn't interact with the elements. The flat vector look with a grain overlay is tidy but under the depth, lighting and texture of top sports-broadcast packages"
+      ]
+    },
+    "meta": {
+      "seconds": 25.6,
+      "cost_usd": 0.1662708,
+      "tokens": 72290,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "r1-final.mp4: 10.0s, 6 shots, median 1.23s, longest 3.23s\nper-second change: [36.7, 27.7, 42.1, 78.0, 101.2, 66.2, 6.3, 27.3, 10.8]\nPACE: FAIL \u2014 longest shot 3.2s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 4,
+    "typography": 4,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 4.5,
+    "craft": 5.0,
+    "originality": 3,
+    "sound": 3
+  },
+  "full_overall": 3.83,
+  "cost_usd": 0.63,
+  "judge_seconds": 113.2,
+  "verdict": "FAIL"
+}

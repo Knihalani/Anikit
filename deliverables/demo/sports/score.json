@@ -1,0 +1,53 @@
+{
+ "command": "python3 scripts/judge.py brief k-sports <mp4> (pinned refs, seed 7, 3 trials; -v-judge @ 05:00 UTC)",
+ "final.mp4": {
+  "what": "r1 original (rendered in r1), re-judged now",
+  "overall": 3.75,
+  "scores": {
+   "idea": 4,
+   "composition": 4,
+   "typography": 4,
+   "colour": 4,
+   "light_texture": 3,
+   "motion": 4,
+   "craft": 4,
+   "originality": 3
+  },
+  "judged_pro": "0/3"
+ },
+ "pass1.mp4": {
+  "what": "rebuild pass 1: bulb device escalated per beat, lockup halves slam and lock, 19:45 board as payoff, slow-mo on the bulb hit",
+  "overall": 3.5,
+  "scores": {
+   "idea": 4,
+   "composition": 4,
+   "typography": 3,
+   "colour": 4,
+   "light_texture": 3,
+   "motion": 4,
+   "craft": 3,
+   "originality": 3
+  },
+  "judged_pro": "0/3"
+ },
+ "pass2.mp4": {
+  "what": "pass 2: lockup decluttered and shortened, final beat pushes into the bulb clock",
+  "overall": 3.5,
+  "scores": {
+   "idea": 4,
+   "composition": 4,
+   "typography": 3,
+   "colour": 4,
+   "light_texture": 3,
+   "motion": 4,
+   "craft": 3,
+   "originality": 3
+  },
+  "judged_pro": "0/3"
+ },
+ "recorded": {
+  "r1": 4.5,
+  "r2": 3.12
+ },
+ "conclusion": "Same-day pairing puts r1 at 3.75 against 4.5 on record, so the judge drift/noise is ~0.75. Both rebuild passes (3.5) are within noise of r1, so final.mp4 stays the r1 original. The jury's gaps are art direction: real material and light (wet turf, haze), a typographic voice with scale contrast, and a specific idea about these clubs."
+}

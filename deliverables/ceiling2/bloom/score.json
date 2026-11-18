@@ -1,0 +1,21 @@
+{
+  "bpm": 124, "key": "Fm", "length": "10.6s", "seed": 7, "end": "ring",
+  "master": {"lufs": -14, "reverb": "room"},
+  "define": {
+    "glass": {"synth": {"osc": [{"wave": "sine"}, {"wave": "tri", "semis": 12, "level": 0.35}], "filter": {"type": "lp", "cutoff": 5200, "res": 0.1},
+                         "amp": [0.001, 0.22, 0.0, 0.25]}},
+    "cell": {"synth": {"osc": [{"wave": "sine"}], "pitch": [24, 0.03], "amp": [0.001, 0.06, 0.0, 0.05], "noise": 0.15,
+                        "filter": {"type": "bp", "cutoff": 1800, "res": 0.5}}}
+  },
+  "tracks": [
+    {"inst": "drums:909", "drums": {"kick": "x.......x....... | x...x...x...x... | x...x...x...x... | x...x...x...x... | x..............."}, "gain": -1},
+    {"inst": "drums:909", "drums": {"hat": "................ | ..x...x...x...xx | x.xxx.x.x.xxx.x3 | x.xxx.x.x.xxx.x3 | ................", "clap": "................ | ....x.......x... | ....x.......x... | ....x.......x..x | ................"}, "gain": -7},
+    {"inst": "glass", "notes": "o5 l16 (F5 Ab5 C6 Eb6 G6 Eb6 C6 Ab5)x2 (Db5 F5 Ab5 C6 Eb6 C6 Ab5 F5)x2 | (F5 Ab5 C6 Eb6 G6 Eb6 C6 Ab5)x2 (Db5 F5 Ab5 C6 Eb6 C6 Ab5 F5)x2 | (F5 C6 G6 C6)x4 (Db5 Ab5 Eb6 Ab5)x4 | (F5 C6 G6 C6)x4 (Eb5 Bb5 F6 Bb5)x4 | [F5 Ab5 C6 G6]/1", "gain": -8, "reverb": 0.35, "pan": 0.2,
+     "fx": [{"type": "delay", "note": "1/8d", "feedback": 0.3, "wet": 0.22}]},
+    {"inst": "cell", "notes": "o6 l16 r/1 | r/1 | (C6 r r C7 r r C6 r)x4 | (C6 r r C7 r r Eb6 r)x4 | r/1", "gain": -12, "pan": -0.3},
+    {"inst": "bass-808", "notes": "o1 r/1 | r/1 | F1/4. F1/8 r/4 F1/8 F1/8 Db1/4. Db1/8 r/4 Db1/8 Db1/8 | F1/4. F1/8 r/4 F1/8 F1/8 Eb1/4. Eb1/8 r/4 Eb1/8 Eb1/8 | F1/1", "gain": -4},
+    {"inst": "pad-glass", "notes": "o4 l1 [F3 C4 Ab4 Eb5] | [Db3 Ab3 F4 C5] | [F3 C4 Ab4 Eb5] | [Eb3 Bb3 G4 D5] | [F3 C4 G4 Ab4 C5]", "gain": -12, "reverb": 0.5,
+     "automate": {"lp": [[0, 900], [7.5, 3000], [8, 7000], [16, 3000], [17, 9000]]}}
+  ],
+  "sfx": [{"sfx": "riser", "at": "@bar3"}, {"sfx": "impact", "at": "@bar3"}, {"sfx": "sub-drop", "at": "@bar5"}, {"sfx": "reverse-cymbal", "at": "@bar5"}]
+}

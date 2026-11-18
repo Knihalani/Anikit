@@ -10,9 +10,6 @@
   "pace": "steady",
   "feeling": "hushed wonder, then awe"
  },
- "fonts": {
-  "Fraunces 72pt SuperSoft Wonky": "fonts/Fraunces-SoftItalic.ttf"
- },
  "music": {
   "bpm": 72,
   "key": "Dm",
@@ -393,23 +390,189 @@
      ]
     },
     {
-     "text": "*The Hill That Woke*",
-     "font": "Fraunces 72pt SuperSoft Wonky",
-     "size": "7.6vh",
-     "color": "#E9E4FF",
-     "letterSpacing": "-0.01em",
-     "x": "7%",
-     "y": "17%",
+     "text": "The",
+     "font": "Fraunces",
+     "size": "10vh",
+     "color": "#ECE8FF",
+     "letterSpacing": "-0.03em",
+     "axes": {
+      "wght": 560,
+      "SOFT": 0,
+      "WONK": 1,
+      "opsz": 144
+     },
+     "italic": true,
+     "x": "6%",
+     "y": "15%",
      "anchor": "left",
-     "start": 1.85,
+     "start": 1.55,
      "animate": [
       {
        "from": {
         "opacity": 0,
-        "y": "+18",
-        "blur": 6
+        "y": "+40",
+        "axes.SOFT": 0,
+        "axes.wght": 300
        },
-       "duration": 1.1,
+       "to": {
+        "axes.SOFT": 100,
+        "axes.wght": 560
+       },
+       "duration": 0.9,
+       "ease": "outCubic"
+      },
+      {
+       "to": {
+        "letterSpacing": 2
+       },
+       "at": 0.9,
+       "duration": 1.0,
+       "ease": "linear"
+      }
+     ]
+    },
+    {
+     "text": "Hill",
+     "font": "Fraunces",
+     "size": "10vh",
+     "color": "#ECE8FF",
+     "letterSpacing": "-0.03em",
+     "axes": {
+      "wght": 560,
+      "SOFT": 0,
+      "WONK": 1,
+      "opsz": 144
+     },
+     "italic": true,
+     "x": "15.2%",
+     "y": "15%",
+     "anchor": "left",
+     "start": 1.77,
+     "animate": [
+      {
+       "from": {
+        "opacity": 0,
+        "y": "+40",
+        "axes.SOFT": 0,
+        "axes.wght": 300
+       },
+       "to": {
+        "axes.SOFT": 100,
+        "axes.wght": 560
+       },
+       "duration": 0.9,
+       "ease": "outCubic"
+      },
+      {
+       "to": {
+        "letterSpacing": 2
+       },
+       "at": 0.9,
+       "duration": 1.0,
+       "ease": "linear"
+      }
+     ]
+    },
+    {
+     "text": "That",
+     "font": "Fraunces",
+     "size": "10vh",
+     "color": "#ECE8FF",
+     "letterSpacing": "-0.03em",
+     "axes": {
+      "wght": 560,
+      "SOFT": 0,
+      "WONK": 1,
+      "opsz": 144
+     },
+     "italic": true,
+     "x": "25.2%",
+     "y": "15%",
+     "anchor": "left",
+     "start": 1.99,
+     "animate": [
+      {
+       "from": {
+        "opacity": 0,
+        "y": "+40",
+        "axes.SOFT": 0,
+        "axes.wght": 300
+       },
+       "to": {
+        "axes.SOFT": 100,
+        "axes.wght": 560
+       },
+       "duration": 0.9,
+       "ease": "outCubic"
+      },
+      {
+       "to": {
+        "letterSpacing": 2
+       },
+       "at": 0.9,
+       "duration": 1.0,
+       "ease": "linear"
+      }
+     ]
+    },
+    {
+     "text": "Woke",
+     "font": "Fraunces",
+     "size": "10vh",
+     "color": "#ECE8FF",
+     "letterSpacing": "-0.03em",
+     "axes": {
+      "wght": 560,
+      "SOFT": 0,
+      "WONK": 1,
+      "opsz": 144
+     },
+     "italic": true,
+     "x": "36.0%",
+     "y": "15%",
+     "anchor": "left",
+     "start": 2.21,
+     "animate": [
+      {
+       "from": {
+        "opacity": 0,
+        "y": "+40",
+        "axes.SOFT": 0,
+        "axes.wght": 300
+       },
+       "to": {
+        "axes.SOFT": 100,
+        "axes.wght": 560
+       },
+       "duration": 0.9,
+       "ease": "outCubic"
+      },
+      {
+       "to": {
+        "letterSpacing": 2
+       },
+       "at": 0.9,
+       "duration": 1.0,
+       "ease": "linear"
+      }
+     ]
+    },
+    {
+     "text": "a story told by the snow",
+     "font": "Caveat",
+     "size": "3.6vh",
+     "color": "#B9BDE8",
+     "x": "6.3%",
+     "y": "25.5%",
+     "anchor": "left",
+     "start": 2.5,
+     "animate": [
+      {
+       "from": {
+        "opacity": 0,
+        "x": "-20"
+       },
+       "duration": 0.7,
        "ease": "outCubic"
       }
      ]

@@ -1,0 +1,525 @@
+{
+  "name": "ev2",
+  "tags": [
+    "event-promo",
+    "music-video",
+    "kinetic-type",
+    "vertical"
+  ],
+  "refs": [
+    "kurzgesagt-short",
+    "blanc-festival-2015",
+    "game-of-thrones"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 4,
+      "typography": 4,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 3,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 3.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find a non-literal idea for 'substation' (e.g. real industrial typography, cable choreography or physical light) rather than glow plus a hazard sign",
+      "Replace the default condensed sans and outer-glow with a typographic point of view: custom or modified letterforms, scale tension and type interacting with image",
+      "Build dense, lit, textured frames with real depth, and vary the composition so motion is choreography rather than text swaps",
+      "Needs a real idea from the venue: actual industrial textures, filmed light, scale and space instead of a glow filter on type",
+      "Typography needs scale contrast and integration with image; the default condensed grotesk with outer glow should give way to a typeface or lettering with a point of view",
+      "Frames need choreography and variety; break the single repeated layout and give each beat its own composition, like A's continuous camera journey",
+      "It needs a real visual idea beyond the name pun. In C, the conceit generates the imagery; here the type stands alone on a black field",
+      "Light and texture: build actual lit environments or materials (concrete, cabling, transformer hum) instead of an outer glow on flat type",
+      "Typography and composition need a point of view: custom or modified letterforms, scale contrast, interaction with image, and varied layouts instead of one template"
+    ],
+    "tells": [
+      "A textbook 'tasteful AI' setup: a dark ground, a generic condensed grotesk headline with an outer-glow effect, a small tracked-caps info line, and a single orange accent rule",
+      "The same layout repeats with the words swapped (festival name, then artist name, then a 'DANGER' sign), giving a slide-deck structure",
+      "The power-station theme is handled literally: glowing letters for electricity, a warning sign, a spark between cables",
+      "The glow is a layer style, not real light; there is no texture or material, and the backgrounds are empty",
+      "The final frame shrinks earlier frames into a thin vertical strip, an odd generated-feeling device with no real compositional logic",
+      "The generic 'tasteful AI' recipe: dark ground, one orange accent rule on the left edge, glowing condensed grotesk headlines, mostly empty frame",
+      "The same layout repeats with the words swapped (festival name, then an artist name in the same glow treatment): slide-deck structure",
+      "The literal and obvious idea for a power-station venue: electricity spark, outer glow, a hazard sign for a track called 'PHASE FATALE'",
+      "The outer-glow effect stands in for light, with no real environment or material",
+      "The end card is a tiny strip of thumbnails in a vast black field with a stock 'TICKETS FRIDAY' bar",
+      "Textbook 'tasteful AI' formula: a near-black ground, one orange accent (a vertical rule plus glow), and a generic condensed grotesk headline with a small tracked-caps info line",
+      "Slide-deck structure: the same left-rule layout and big-condensed-word composition repeats with the words swapped (SUBSTATION, H\u00c9CTOR OAKS, PHASE FATALE)",
+      "The concept is literal: power-station festival \u2192 outer glow on the type, a cable spark, a 'DANGER' warning sign. Each is an obvious pun on the name",
+      "The glow is a default outer-glow effect with no light source or material, and the backgrounds are flat or blurred",
+      "The final frame is a broken-looking thin strip of tiny thumbnails floating in a black field above a 'TICKETS FRIDAY' pill, which suggests automated layout rather than a designed end card"
+    ]
+  },
+  "refs_summary": {
+    "kurzgesagt-short": {
+      "overall": 6.25,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "blanc-festival-2015": {
+      "overall": 7.88,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "game-of-thrones": {
+      "overall": 9,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.71,
+  "delta": -4.09,
+  "trials": [
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "kurzgesagt-short",
+        "C": "candidate",
+        "D": "blanc-festival-2015"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea: the world is a clockwork orrery, and each frame ties to the show's lore (engraved band of dragon reliefs, armillary sphere, gear-driven tree rising from the map)",
+              "Real material rendering with engraved bronze, carved wood and worn brass, plus motivated volumetric light from the central sun and bloom bursting through the bands",
+              "Credits set in a period-appropriate small-caps serif with a heraldic glyph, sitting quietly inside the 3D space instead of being slapped on top",
+              "The frames show clear choreography: a macro on the band, a mechanism unfolding, a camera passing through the rings, and an end lockup where the band resolves into the emblem",
+              "Every frame is dense and layered, with depth of field, haze and practical-looking light falloff"
+            ],
+            "gaps": [
+              "It is the benchmark here; the warm sepia-gold grade is close to monochrome and could take one stronger counter-accent",
+              "The end-card wordmark is more conventional than the sequence before it",
+              "Credit placement is a little timid against the scale of the imagery"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A cheeky, specific concept: voyeurism told through cut-paper Matisse-like foliage, keyhole peeping and a melon double entendre",
+              "Hand-drawn and custom lettering: a 'Melones' script with a drop-shadow offset, and a neon sign whose letterforms are drawn as tube bends",
+              "A bold, deliberate palette (jade, coral, cobalt, mustard), applied consistently and inverted for the neon night finale",
+              "Riso-style grain on the flat shapes gives texture to work that would otherwise be vector",
+              "Each frame is a different composition building to the title reveal, so this is not a template"
+            ],
+            "gaps": [
+              "Light and depth stay flat apart from the neon; it has none of A's dimensional, motivated light",
+              "The frames suggest limited camera movement, so choreography reads as scene cuts rather than continuous transformation",
+              "The opening foliage frame is decorative pattern and could carry more narrative intent"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "A polished, established house illustration style: consistent flat vector with soft gradients, rim shading and well-built characters (villain at the control desk, birds playing a memory game, mammoth)",
+              "A varied staging per beat, so the visual metaphors (a STOP button, a 'They're the same!' matching game) carry the explainer narration",
+              "Saturated palette that is controlled and on-brand",
+              "Yet the typography is utilitarian: auto-caption subtitles and a stacked rounded-sans title with a default-looking outline/shadow",
+              "The format is a channel explainer short; competent and repeatable rather than award-level"
+            ],
+            "gaps": [
+              "The idea is a visual explainer of narration, not an image-led concept; it needs one memorable through-line motif like A's orrery",
+              "The type is captions plus a generic stroked title; it needs a typographic system integrated with the illustration",
+              "The light is decorative gradient rather than motivated, and depth and texture are minimal compared with A's materiality"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "A textbook 'tasteful AI' setup: a dark ground, a generic condensed grotesk headline with an outer-glow effect, a small tracked-caps info line, and a single orange accent rule",
+              "The same layout repeats with the words swapped (festival name, then artist name, then a 'DANGER' sign), giving a slide-deck structure",
+              "The power-station theme is handled literally: glowing letters for electricity, a warning sign, a spark between cables",
+              "The glow is a layer style, not real light; there is no texture or material, and the backgrounds are empty",
+              "The final frame shrinks earlier frames into a thin vertical strip, an odd generated-feeling device with no real compositional logic"
+            ],
+            "gaps": [
+              "Find a non-literal idea for 'substation' (e.g. real industrial typography, cable choreography or physical light) rather than glow plus a hazard sign",
+              "Replace the default condensed sans and outer-glow with a typographic point of view: custom or modified letterforms, scale tension and type interacting with image",
+              "Build dense, lit, textured frames with real depth, and vary the composition so motion is choreography rather than text swaps"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 32.3,
+        "cost_usd": 0.1411486,
+        "tokens": 70123,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "kurzgesagt-short",
+        "C": "blanc-festival-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific world-building idea: an astrolabe whose bands are engraved with the story's history, and a clockwork map that builds itself; only this show could have it",
+              "Real material and light: tooled metal and carved wood, a hot sun-core blooming behind the bands, lens glare and a vignette",
+              "Each frame changes scale and viewpoint (a macro shot of an engraved band, a top-down clockwork city, the spinning armillary rings, the frontal logo lockup), which implies a continuous camera move",
+              "Credits are set in small spaced Trajan-style caps with a sigil, placed inside the 3D space rather than laid over it",
+              "The final logo lockup with heraldic beasts pays off the band motif seen in the first frame"
+            ],
+            "gaps": [
+              "Gaps measured against itself: the credits could interact more with the mechanism instead of sitting as overlays",
+              "The amber/umber grade is the same in every frame; a cold counter-palette for other regions would add range",
+              "The flared-sun logo reveal is a familiar epic-title convention, less surprising than the clockwork city"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A witty, adult idea (a voyeur club and peeping through a keyhole) told through a strong authored illustration style",
+              "Bold Matisse-like cut-out foliage with grain texture and a deliberate saturated palette of red, cobalt, mint and mustard",
+              "Type has a point of view: a script 'Melones' with a drop-shadow stack and a final neon-sign lockup whose leaf shapes repeat the opening jungle motifs",
+              "Varied compositions (an all-over pattern, a striped awning, a figure diptych, a black neon ground) show choreography rather than one repeated layout",
+              "Visual puns, such as the melons doubling as a bottom, reward a second look"
+            ],
+            "gaps": [
+              "Light is mostly flat graphic; the neon end card shows that glow and depth could be pushed further through the other frames",
+              "The neon lockup's sans-serif 'BLANC' is plainer than the script work; it needs the same custom touch",
+              "Little sense of camera or space; the figures could get more weight and interaction with the environment to match A's choreography"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A consistent, well-made flat-vector house style with confident character design (the villain at a STOP button, birds playing a memory game, a mammoth)",
+              "Each frame is a new scene with its own palette, so choreography is implied",
+              "A heat-map rendering of Europe makes a bold, legible title card",
+              "Caption subtitles in a plain sans are functional, not designed; the title uses a stacked white-outlined bold-rounded sans"
+            ],
+            "gaps": [
+              "The house style is very recognisable but formulaic: rounded vector shapes and soft gradients with no new visual idea specific to this film",
+              "Typography is utilitarian; the burned-in captions and stock-feeling title type need a typographic concept integrated with the image",
+              "Light and texture are uniform gradient shading; real material, grain or lighting changes would add the depth A has"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The generic 'tasteful AI' recipe: dark ground, one orange accent rule on the left edge, glowing condensed grotesk headlines, mostly empty frame",
+              "The same layout repeats with the words swapped (festival name, then an artist name in the same glow treatment): slide-deck structure",
+              "The literal and obvious idea for a power-station venue: electricity spark, outer glow, a hazard sign for a track called 'PHASE FATALE'",
+              "The outer-glow effect stands in for light, with no real environment or material",
+              "The end card is a tiny strip of thumbnails in a vast black field with a stock 'TICKETS FRIDAY' bar"
+            ],
+            "gaps": [
+              "Needs a real idea from the venue: actual industrial textures, filmed light, scale and space instead of a glow filter on type",
+              "Typography needs scale contrast and integration with image; the default condensed grotesk with outer glow should give way to a typeface or lettering with a point of view",
+              "Frames need choreography and variety; break the single repeated layout and give each beat its own composition, like A's continuous camera journey"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.8,
+        "cost_usd": 0.13869180000000003,
+        "tokens": 69989,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "blanc-festival-2015",
+        "B": "kurzgesagt-short",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A specific, cheeky idea: the voyeur/keyhole conceit runs from the jungle foliage through to the 'Melones' shopfront and the peeping figures, then resolves in a neon club sign",
+              "Lettering has a point of view and varies with each scene: retro drop-shadow script for 'Melones', hand-built neon monoline for 'BLANC VOYEUR club', and the neon recolours the foliage motifs from frame 1",
+              "A deliberate high-chroma palette (teal, coral, cobalt, mustard) with grain texture on the flat shapes, which avoids the vector-default look",
+              "Strong choreography: an organic jungle opens onto a graphic striped frame, then figure and ground in the keyhole scene, then a dark neon finale. Each frame is a different composition but they all share one visual system",
+              "The blue and red figures pressed against the door are a memorable, shareable image with real character in the poses"
+            ],
+            "gaps": [
+              "Flat 2D lighting: the neon finale glows, but the earlier scenes have no light design, so there is less atmosphere than in C",
+              "Matisse-cutout foliage is a well-worn editorial-illustration idiom; the piece needs a more personal graphic signature",
+              "Scale and depth range is narrow (all flat planes); compare C's camera moves through dimensional space"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Consistent, well-drawn character and world design (villain at the control desk, birds playing a memory game, mammoth) with rim light and gradient shading: real studio-level finish",
+              "Vivid saturated palette held consistently across a heat-map globe and the scenes",
+              "But it is a vertical explainer format: burned-in single-word captions, a centred title card ('Europe's Next Ice Age') in a rounded bold sans with an outline, and illustrations that literally depict each sentence of the voiceover",
+              "The house style is efficient and recognisable rather than specific to this piece; each frame is a centred subject on a gradient backdrop"
+            ],
+            "gaps": [
+              "Typography is functional caption-setting with no integration into the image; it needs designed type moments like C's title lock-up",
+              "The idea illustrates a voiceover rather than generating an image of its own; it needs one visual conceit that carries the whole film",
+              "Compositions repeat (a centred character on a gradient); it needs more variation in scale, camera and framing"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A singular idea: the astrolabe/clockwork world-map conceit, with engraved bands carrying the story's history and mechanical cities rising from the map. Only this piece could have it",
+              "Real light and material: a sun-core bloom blowing out the frame, chased bronze relief, aged wood, lens haze. Every frame is lit with intent",
+              "Typography integrated with the world: small-caps Trajan-like credits placed in 3D space beside the objects, and a final title lock-up set on the bronze band with heraldic beasts",
+              "Dense, layered frames with choreography from frame to frame: the camera moves across the band, pushes into the clockwork city, pulls back through the armillary rings and resolves on the emblem",
+              "A restrained warm-sepia palette fixed by the light source, with consistent world-building throughout"
+            ],
+            "gaps": [
+              "This is the benchmark entry; the remaining gaps are minor",
+              "The warm amber grading is heavily applied and could flatten tonal variety across a longer sequence",
+              "The final logo frame is more conventional and symmetrical than the inventive interior shots"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "Textbook 'tasteful AI' formula: a near-black ground, one orange accent (a vertical rule plus glow), and a generic condensed grotesk headline with a small tracked-caps info line",
+              "Slide-deck structure: the same left-rule layout and big-condensed-word composition repeats with the words swapped (SUBSTATION, H\u00c9CTOR OAKS, PHASE FATALE)",
+              "The concept is literal: power-station festival \u2192 outer glow on the type, a cable spark, a 'DANGER' warning sign. Each is an obvious pun on the name",
+              "The glow is a default outer-glow effect with no light source or material, and the backgrounds are flat or blurred",
+              "The final frame is a broken-looking thin strip of tiny thumbnails floating in a black field above a 'TICKETS FRIDAY' pill, which suggests automated layout rather than a designed end card"
+            ],
+            "gaps": [
+              "It needs a real visual idea beyond the name pun. In C, the conceit generates the imagery; here the type stands alone on a black field",
+              "Light and texture: build actual lit environments or materials (concrete, cabling, transformer hum) instead of an outer glow on flat type",
+              "Typography and composition need a point of view: custom or modified letterforms, scale contrast, interaction with image, and varied layouts instead of one template"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.2,
+        "cost_usd": 0.144591,
+        "tokens": 70280,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 4,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": false,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Longest shot is 5.9 s. The closing pull-back to the filmstrip of all the posters is held far too long, and change per second falls to 17, 20 and then 1.1 over the last three seconds.",
+        "The pair frames are nearly identical (PAULA TEMPLE, RROSE). Some shots are held posters with only a texture or arc flickering, with no transform in the type or the layout.",
+        "The capacitor-disc stack on PAULA TEMPLE is flat, low-detail CG with plain shading. It blocks the artist name and makes the main type unreadable.",
+        "The KIA / IDA ENGBERG frame shows two half-panels, with IDA ENGBERG cropped off the bottom. This reads as a transition caught mid-move, not a composed frame.",
+        "The cable shot (H\u00c9CTOR OAKS) puts its small orange squares and spark in a weak corner, and the large dead area above the name has no tension.",
+        "Glow bloom is uniform across every title. It is a filter look with no light source, and the same halo appears on every word.",
+        "The first ~1.8 s of audio is almost silent (low drone only) while the picture is already cutting. The opening has no sonic hook."
+      ],
+      "gaps": [
+        "Motion: most shots are static posters swapped on the beat. Top studio work would carry continuous transforms across cuts: the rail, the arc and the current should travel from shot to shot and drive each reveal. Elements need easing, overshoot and weight, and the final pull-back needs to be compressed to under 2 s with a hard button.",
+        "Sound: the track is a sparse kick-and-click grid plus one white-noise riser, with a near-empty 11\u201313 s gap. There are few tonal partials, no bespoke electrical sound design (hum, arcing, relay clunks) tied to each artist's object, and no mix depth. It reads as generated, not produced.",
+        "Finish and design: the per-artist metaphors (capacitor, cable, plasma, danger sign, bulbs) don't share one material language or one lighting model. Type is often obscured or cropped, and the type itself does no work: weight, width and timing are never mapped to the current or voltage idea."
+      ]
+    },
+    "meta": {
+      "seconds": 28.5,
+      "cost_usd": 0.1877468,
+      "tokens": 75106,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 15.0s, 15 shots, median 0.53s, longest 5.90s\nper-second change: [72.9, 64.7, 55.7, 92.4, 26.7, 76.8, 80.2, 110.7, 66.4, 38.4, 60.4, 17.6, 20.4, 1.1]\nPACE: FAIL \u2014 longest shot 5.9s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 4,
+    "typography": 4,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 4.0,
+    "craft": 5.0,
+    "originality": 3,
+    "sound": 4
+  },
+  "full_overall": 3.89,
+  "cost_usd": 0.612,
+  "judge_seconds": 125.8,
+  "verdict": "FAIL"
+}

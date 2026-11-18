@@ -256,3 +256,20 @@ The arithmetic is the same, in the same order. Rust never fuses multiply-adds, s
 | `examples/video/pulse` (warm disk cache) | 165 ms | 33 ms |
 
 The cost was `particle-text` placing its target dots: it tests a jittered grid of candidate points (3 passes of about count points per word) for being inside the glyph outlines, and `kurbo`'s winding number re-splits every outline segment at its extrema for every point. A segment whose control points' y-range (padded for rounding) excludes the point contributes exactly 0, so the index (`particle_text::Winding`) tests only the segments that can matter, each as a one-segment path through the same kurbo code. The result is identical: `winding_index_matches_kurbo` checks 120k points, including points on segment ends, and qbench's audio MP4 (pulse) is byte-identical.
+
+## Agent deliverables and eval round 1: where the time goes
+
+Full renders on 4 vCPU, cache off, after this night's changes (`render --profile`):
+
+| spec | length | wall | fps | CPU ms/frame (render) | where | owner |
+|---|---:|---:|---:|---:|---|---|
+| eval-r1 l-generative | 20 s | ~1056 s on the eval box | 1 | ~5300 | `signal.glsl`: 8 lines × 2 `lineDisp` (noise, sines, exps, a texture tap) per pixel, adaptive AA; 2.56 s per frame on one thread | SHADER |
+| eval-r1 i-explainer | 30 s | 346 s | 3 | 1437 | `air.glsl`, about 1 CPU-s per frame with adaptive AA | SHADER |
+| eval-r1 j-music | 20 s | 296 s | 2 | 1854 | `harbour.glsl`, about 2.5 CPU-s per frame with adaptive AA | SHADER |
+| blind-ak2 swell | 15 s | 580 s | 1 | 4649 | `ridge.glsl` scene: 3.6 s per frame (56-iteration loop of transcendentals); 80k expression-driven particles: eval 1.45 s per frame | SHADER, 3D |
+| div-f calibre9 | 12 s | 75 s | 5 | 764 | `dial.glsl` (about 187 ms per frame wall) | SHADER |
+| div-g offset2027 | 15 s | 78 s | 6 | 558 | `tiles.glsl` (about 140 ms per frame wall) | SHADER |
+
+What users write is shader-bound: every slow deliverable spends almost all of its time in its own GLSL, and adaptive AA roughly doubles it. `examples/file_cost.rs` times a shader file alone, and `examples/shader_runs.rs` gives runs and mean cost per shader layer inside a real render. A still's shader estimate is for that moment only: a shader whose work grows over time (l-generative draws one line before 5 s and eight after) can cost several times more later.
+
+Memory on these renders peaks at 0.9–1.35 GiB. In flight, each shader frame holds a float frame, a contrast map and flags for adaptive AA (about 51 MiB at 1080p) plus the renderer's buffers. The pipeline now trims the heap after each chunk (`memstat::trim()`): j-music 5–11 s peaked at 971 MiB before and 899 MiB after, with the same time.

@@ -125,21 +125,8 @@ void mainImage(out vec4 o, in vec2 fc){
     col = mix(col, hex(255.,236.,190.)*flick, cov(glass + 0.006*fh, px)*lamp);
     col += hex(255.,200.,120.)*lamp*exp(-ld*90.0)*0.8;
 
-    // ---- snow in the air: flakes near the lantern catch the warm light
-    for(int l=0;l<3;l++){
-        float fl = float(l);
-        float sc = 8.0 + fl*9.0;
-        vec2 q = sp*sc + vec2((camx*(0.9 + fl*0.3) + iTime*0.15)*sc, iTime*(0.8 + fl*0.25)*sc*0.12);
-        q.x += 0.3*sin(q.y*0.5 + fl*2.0 + iTime*0.6);
-        vec2 gi = floor(q);
-        vec2 ff = fract(q) - 0.5 - (h22(gi + fl*17.0) - 0.5)*0.6;
-        float on = step(0.72, h21(gi*1.3 + fl));
-        float r = 0.07 + 0.05*h21(gi + 2.0);
-        float soft = l == 0 ? 0.7 : 0.3;
-        float flake = (1.0 - smoothstep(r*(1.0 - soft), r, length(ff)))*on;
-        vec3 fcol = mix(hex(150.,158.,230.), hex(255.,214.,150.), exp(-ld*3.5));
-        col = mix(col, fcol*(1.0 + 0.6*exp(-ld*6.0)), flake*(0.35 + 0.2*fl));
-    }
+    // ---- snow: four depths, near flakes smeared and soft, warm near the lantern
+    col = snowfall(col, sp, camx, lanW, lamp, hex(214.,218.,250.), hex(255.,214.,150.), 0.7);
 
     // ---- foreground: a near trunk sweeps through, and blurred grass at the bottom
     float nx = sp.x + camx*1.9;

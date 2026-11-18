@@ -25,7 +25,8 @@ Fonts: `fonts/` holds 27 OFL families downloaded for these pieces (the engine bu
 | LAST LIGHT | v3: + the dust settles into orbits around the record after the drop (current) | 4.00 | 7.29 | −3.29 | 0/3 | the 6 sampled frames rarely catch the orbit; same critique (model detail, one mood) |
 | OCTAVA | v1 | 4.00 | 7.87 | −3.87 | 0/3 | |
 | OCTAVA | v2: risograph print material, composer list cut | **5.12** | 7.63 | −2.51 | 0/3 | print material |
-| OCTAVA | v3: layered outline wordmark, typographic lockup (current MP4) | 4.25 | 7.71 | −3.46 | 0/3 | same critique as v2; the spread is judge noise |
+| OCTAVA | v3: layered outline wordmark, typographic lockup | 4.25 | 7.71 | −3.46 | 0/3 | same critique as v2; the spread is judge noise |
+| OCTAVA | v4: custom modular lettering (squares, quarter-rounds, diagonals); the notes fly off the stave to build it (an idea-led transition); colour arc cobalt → vermilion → ink (current MP4) | 4.75 | 7.75 | −3.00 | 0/3 | critic motion 6 / sound 5 / craft 7 (best yet); plateau at 4.25–5.12, so iteration stopped |
 
 Raw judge results (JSON, no images) are in `judge_results/`.
 

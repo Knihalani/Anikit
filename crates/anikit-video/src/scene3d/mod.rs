@@ -1485,8 +1485,102 @@ impl Scene3d {
                 out.push(crate::components::Impact { t, strength: (dv / 2.5 * size.sqrt()).clamp(0.0, 1.0), x, material: material.unwrap_or("wood") });
             }
         }
+        out.extend(self.animated_impacts(until, aspect));
         out.sort_by(|a, b| a.t.total_cmp(&b.t));
         out
+    }
+
+    /// Contacts of keyframed / expression-driven objects (mechanisms,
+    /// escapements, hand-animated dominoes): sampled at 60 Hz, a contact is a
+    /// sudden loss of more than 35 % of an instance's speed, or a reversal
+    /// of its motion, counting rotation as well as translation (a tipping
+    /// piece often only rotates).
+    fn animated_impacts(&self, until: f32, aspect: f32) -> Vec<crate::components::Impact> {
+        let p = self.p();
+        if !p.objs.iter().any(|o| o.phys.is_none()) {
+            return Vec::new();
+        }
+        let animated: Vec<ObjDef> = p.objs.iter().filter(|o| o.phys.is_none()).cloned().collect();
+        let dt = 1.0 / 60.0;
+        type Key = (u32, u32, u32);
+        // (position, rotation columns, previous velocity [v, ω·0.3], last hit, previous |Δv|)
+        let mut state: HashMap<Key, (V3, [V3; 3], Option<[f32; 6]>, f32, f32)> = HashMap::new();
+        let mut out = Vec::new();
+        let mut t = 0.0f32;
+        while t <= until && out.len() < 20_000 {
+            let mut seen = std::collections::HashSet::new();
+            for inst in instances(&animated, t, 0.0) {
+                let key = (inst.obj, inst.i, inst.lane);
+                if !seen.insert(key) {
+                    continue; // one entry per instance, not per part
+                }
+                let (pos, rot) = (inst.xf.t, inst.xf.r);
+                let size = (inst.xf.s.x.abs() + inst.xf.s.y.abs() + inst.xf.s.z.abs()) / 3.0;
+                let Some((p0, r0, v0, last, prev_raw)) = state.get(&key).copied() else {
+                    state.insert(key, (pos, rot, None, f32::NEG_INFINITY, 0.0));
+                    continue;
+                };
+                let v = scale(sub(pos, p0), 1.0 / dt);
+                // Angular velocity from R1·R0ᵀ (small-angle axis·angle).
+                let m = |i: usize, j: usize| {
+                    let c = |r: &[V3; 3], row: usize, col: usize| match row { 0 => r[col].x, 1 => r[col].y, _ => r[col].z };
+                    (0..3).map(|k| c(&rot, i, k) * c(&r0, j, k)).sum::<f32>()
+                };
+                let w = [0.5 * (m(2, 1) - m(1, 2)) / dt, 0.5 * (m(0, 2) - m(2, 0)) / dt, 0.5 * (m(1, 0) - m(0, 1)) / dt];
+                let lever = 0.3 * size.max(0.05);
+                let v1 = [v.x, v.y, v.z, w[0] * lever, w[1] * lever, w[2] * lever];
+                let mut hit = None;
+                let mut raw_now = 0.0;
+                if let Some(v0) = v0 {
+                    let s0 = v0.iter().map(|x| x * x).sum::<f32>().sqrt();
+                    let s1 = v1.iter().map(|x| x * x).sum::<f32>().sqrt();
+                    let dotp: f32 = v0.iter().zip(&v1).map(|(a, b)| a * b).sum();
+                    let lost = if s0 > 1e-6 { 1.0 - s1 / s0 } else { 0.0 };
+                    let raw = v0.iter().zip(&v1).map(|(a, b)| (a - b) * (a - b)).sum::<f32>().sqrt();
+                    raw_now = raw;
+                    // Sudden: a contact changes velocity far more than the frame before
+                    // did (an eased stop or the top of a throw changes it smoothly).
+                    let sudden = raw > 3.0 * prev_raw + 0.05;
+                    let contact = s0 > 0.08 && raw > 0.12 && sudden && (lost > 0.35 || dotp < -0.25 * s0 * s1);
+                    if contact && t - last > 0.08 {
+                        hit = Some(raw.max(0.8 * lost.max(0.0)));
+                    }
+                }
+                let mut last = last;
+                if let Some(dv) = hit {
+                    last = t;
+                    let cam = p.camera.at(t, aspect, p.default_aperture);
+                    let (f, r, _) = cam.basis();
+                    let rel = sub(p0, cam.pos);
+                    let z = dot(rel, f).max(1e-3);
+                    let half = (cam.fov.to_radians() * 0.5).tan() * aspect;
+                    let x = (0.5 + 0.5 * dot(rel, r) / (z * half)).clamp(-0.2, 1.2);
+                    let on_screen = (-0.1..=1.1).contains(&x) && dot(rel, f) > 0.0;
+                    if on_screen {
+                        let material = p.mats.get(inst.mat as usize).map(|m| mat_sound(m, size)).unwrap_or("wood");
+                        out.push(crate::components::Impact { t: t - dt, strength: (dv / 2.5 * size.clamp(0.05, 4.0).sqrt()).clamp(0.0, 1.0), x, material });
+                    }
+                }
+                state.insert(key, (pos, rot, Some(v1), last, raw_now));
+            }
+            t += dt;
+        }
+        out
+    }
+}
+
+/// The sound family of a surface.
+fn mat_sound(m: &Material, size: f32) -> &'static str {
+    if m.transmission > 0.5 {
+        "glass"
+    } else if m.metallic > 0.5 {
+        "metal"
+    } else if m.roughness < 0.25 {
+        "ceramic"
+    } else if size > 1.5 {
+        "stone"
+    } else {
+        "wood"
     }
 }
 
