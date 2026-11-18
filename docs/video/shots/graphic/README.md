@@ -22,3 +22,4 @@ The data in *The Street Ledger* is illustrative (a fictional city) and is labell
 More feature proofs: `tiles-animated.jpg` (custom `tile` motifs, `turns`, `stagger`, `ramp`, and a halftone whose cell and angle animate), `op-art.jpg` / `op-art.mp4` (pattern `field`s driven by distance and time, live at 46 fps with three regenerated patterns).
 `brush.jpg` / `brush.mp4`: `brush` strokes (ensō with dry bristles, a pressure swash and a tapered rule) painting on with `trimEnd`, at 415 fps.
 `photo-treatments.jpg`: the treatments on a real photo (`polyhaven:hdri/venice_sunset` backplate): the original, a duotone with a pre-curve, a 5 px line screen (engraving), and a two-plate riso of the same photo (blue duotone plus pink halftone, multiply, offset 6 px).
+`palettes.jpg`: `theme.palette` from five seeds and schemes (`anikit-video palette "<seed> <scheme>"`): value-structured ink, paper, mid, accent, accent2, tint, muted and surface.

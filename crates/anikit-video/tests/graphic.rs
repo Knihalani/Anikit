@@ -160,3 +160,13 @@ fn brush_strokes_fill_and_paint_on() {
     let ev2 = Evaluator::new(&w.spec, Options::default()).unwrap();
     assert!(ev2.diagnostics.iter().any(|d| d.to_string().contains("brush")));
 }
+
+#[test]
+fn theme_palette_and_riso_inks() {
+    let e = ev(r##"{ "theme": { "palette": "#3255a4 split", "colors": { "accent": "riso:fluorescent-pink" } },
+        "scenes": [ { "layers": [ { "shape": "rect", "width": 10, "height": 10, "fill": "$accent2" }, { "shape": "rect", "width": 10, "height": 10, "fill": "$accent" } ] } ] }"##);
+    let _ = e.eval(0.5);
+    let bad = parse_json(r##"{ "theme": { "palette": "#3255a4 sideways" }, "scenes": [ { "layers": [] } ] }"##).unwrap();
+    let err = Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string();
+    assert!(err.contains("theme.palette") && err.contains("split"), "{err}");
+}

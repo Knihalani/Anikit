@@ -49,6 +49,9 @@
 - **Stepped time** `"step": "twos"` (or `"threes"`, or fps like `8`): the layer and its children animate held, like
   stop-motion or hand-pulled print, while the rest stays smooth. **Boil** `"boil": 2` or `{amount, rotate, fps, seed}`:
   a seeded jitter re-drawn `fps` (12) times a second; on a `multiply` ink layer it reads as plates out of register.
+- **Colour** `"theme": {"palette": "#e4572e split"}` builds a value-structured set from one seed (ink L 0.19, paper 0.97,
+  mid, accent, accent2 by `mono analogous complement split triad`, `dark` swaps grounds); `colors` override. Preview with
+  `anikit-video palette "#e4572e split"`. Real riso inks anywhere a colour goes: `"riso:fluorescent-pink"` (`palette riso`).
 - **Overprint**: two ink layers with `"blend": "multiply"` mix like spot inks; offset one 3–6 px for misregistration.
   Whole-frame print looks (risograph, screenprint, linocut, print-offset…) are shader filters: `docs shader`.
 

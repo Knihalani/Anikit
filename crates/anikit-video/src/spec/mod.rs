@@ -441,7 +441,12 @@ pub struct Composition {
 #[serde(rename_all = "camelCase")]
 pub struct Theme {
     /// Colour tokens: `primary`, `secondary`, `accent`, `bg`, `surface`, `text`, `muted`, or your own.
+    /// Any colour may be a riso ink: `"riso:fluorescent-pink"` (`anikit-video palette --riso` lists them).
     pub colors: Option<BTreeMap<String, String>>,
+    /// A value-structured palette from a seed: `"#e4572e split"` (schemes `mono analogous complement split triad`,
+    /// add `dark` for ink grounds). Sets `ink paper mid accent accent2 tint` and the roles `bg text primary secondary
+    /// muted surface`; `colors` still override. `anikit-video palette "#e4572e split"` previews it.
+    pub palette: Option<String>,
     /// Font roles: `heading`, `body`, `mono`.
     pub fonts: Option<BTreeMap<String, String>>,
     /// Default corner radius for boxes.

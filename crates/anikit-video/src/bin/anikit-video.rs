@@ -369,6 +369,30 @@ fn need_input(a: &Args) -> Result<&str, String> {
 
 fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
     match a.cmd.as_str() {
+        "palette" => {
+            use anikit_video::eval::theme;
+            let hex = |c: anikit_video::dl::Rgba| format!("#{:02X}{:02X}{:02X}", (c.0[0] * 255.0).round() as u8, (c.0[1] * 255.0).round() as u8, (c.0[2] * 255.0).round() as u8);
+            let arg = a.input.clone().unwrap_or_default();
+            if arg.is_empty() || arg == "riso" {
+                if arg.is_empty() {
+                    println!("anikit-video palette \"<seed> [mono|analogous|complement|split|triad] [dark]\"   (theme: \"palette\": \"#e4572e split\")");
+                    println!("anikit-video palette riso   (ink names for \"riso:<name>\")\n");
+                }
+                println!("Riso inks (use \"riso:<name>\" anywhere a colour goes):");
+                for (n, v) in theme::RISO_INKS {
+                    println!("  riso:{n:<20} {v}");
+                }
+                return Ok(ExitCode::SUCCESS);
+            }
+            let toks = theme::palette(&arg)?;
+            let get = |k: &str| toks.iter().find(|(n, _)| n == k).map(|x| x.1).unwrap();
+            println!("\"theme\": {{ \"palette\": \"{arg}\" }}  →");
+            for (k, c) in &toks {
+                println!("  ${k:<10} {}", hex(*c));
+            }
+            println!("contrast: text/bg {:.1}:1 · accent/bg {:.1}:1 · accent2/bg {:.1}:1 · muted/bg {:.1}:1", theme::contrast(get("text"), get("bg")), theme::contrast(get("accent"), get("bg")), theme::contrast(get("accent2"), get("bg")), theme::contrast(get("muted"), get("bg")));
+            Ok(ExitCode::SUCCESS)
+        }
         "schema" => {
             let s = spec::schema_json();
             match a.get("-o") {

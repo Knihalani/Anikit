@@ -324,7 +324,11 @@ impl Evaluator {
         let (theme, bad) = Theme::resolve(spec.theme.as_ref());
         c.theme = theme;
         for (k, v) in bad {
-            c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}'")));
+            if k == "palette" {
+                c.d.push(Diagnostic::error("theme.palette", v));
+            } else {
+                c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}'")));
+            }
         }
         c.load_fonts(spec);
         if let Some(m) = &spec.markers {
