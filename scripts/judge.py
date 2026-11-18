@@ -39,6 +39,7 @@ PACE = ROOT / "docs/video/quality/pace.py"
 DIMS = ["idea", "composition", "typography", "colour", "light_texture", "motion", "craft", "originality"]
 CRITIC_DIMS = ["motion", "sound", "craft"]
 N_FRAMES = 6
+MOTION_FLOOR = 4  # PASS/PRO need the jury's median motion >= this (controls: 5-8)
 MIN_FRAMES = int(os.environ.get("JUDGE_MIN_FRAMES", 4))  # refs need this many real frames
 CELL = (480, 300)
 MODEL = os.environ.get("JUDGE_MODEL", "claude-opus-5-5")
@@ -553,6 +554,8 @@ def verdict(cand, delta):
     """PASS: indistinguishable from the style-matched refs. PRO: passes as real studio work but below the refs.
     FAIL: the jury can tell. Thresholds come from controls (held-out pro refs): every control is PRO or PASS."""
     pro = cand.get("pro_rate", 0) >= 0.6
+    if pro and (cand.get("scores", {}).get("motion") or 0) < MOTION_FLOOR:
+        return "FAIL"  # a well-made still is not a film: every control scores motion >= 5
     if pro and delta is not None and delta >= -1.0:
         return "PASS"
     if pro and (cand.get("overall") or 0) >= 5.0:
