@@ -345,9 +345,14 @@ traversal is 45–60% of trace CPU (camera rays 40–65% of that; glass panes
 re-trace per interface), shadow/AO rays are negligible, refinement covers
 3–6% of pixels but edge samples cost ~2.6× a centre sample, and post is
 140–175 ms (floor reflection, denoise, depth of field, motion blur, bloom
-~20–45 ms each). The cheapest quality lever is edge samples: standard's 6
-→ 9 costs ~6% CPU on cyc and takes ΔE p99.9 14.8 → 10.3, flicker 42 → 29
-(chrome flicker 10 → 5.3); 12 costs ~22% for ΔE 7.4, flicker 21.
+~20–45 ms each).
+
+Standard quality takes 9 edge samples (was 6): +7–17% CPU for ΔE p99.9
+cyc 14.8 → 10.2, chrome 4.4 → 2.5, and flicker cyc 43 → 29, chrome 9 → 5.6,
+studio 10 → 6.1 (4 frames vs the 25-spp references). Variance-driven
+stopping (checkpoints after 3 and 6 samples, stopping where they agree, also
+at id edges) kept the 6-sample cost but only reached flicker 38 on cyc:
+most of the gain comes from pixels that need every sample.
 
 Measure every change:
 
