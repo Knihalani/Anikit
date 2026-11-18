@@ -122,6 +122,13 @@ def _stats(rd, bid):
     return wall, rss, render_s
 
 
+def fmt_motion(r):
+    m = r.get("motion_blind")
+    if not m or not m.get("candidate"):
+        return "–"
+    return f"{m['candidate']['motion']} / {m['ref_mean']}, {m['candidate']['judged_professional']}"
+
+
 def fmt_tok(u):
     return f"{u['tokens'] / 1e6:.1f}" if u.get("tokens") else "?"
 
@@ -131,8 +138,8 @@ def cmd_table(a):
     rd.mkdir(parents=True, exist_ok=True)
     usage = json.loads((rd / "usage.json").read_text()) if (rd / "usage.json").exists() else {}
     lines = [f"## Round {a.round}", "",
-             "| Brief | Category | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens (M) | Cost ($) | Final render (s) | Peak RSS render (MB) |",
-             "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+             "| Brief | Category | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens (M) | Cost ($) | Motion blind (cand / refs, pro) | Final render (s) | Peak RSS render (MB) |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     gaps_by = {}
     scores = []
     rows = []
@@ -145,14 +152,14 @@ def cmd_table(a):
         wall, rss, render_s = _stats(rd, name)
         u = usage.get(name, {})
         if not p.exists():
-            lines.append(f"| {name} | {b.get('category','')} | no output | | | | | | {wall or ''} | {fmt_tok(u)} | {u.get('cost_usd', '')} | {render_s or ''} | {rss or ''} |")
+            lines.append(f"| {name} | {b.get('category','')} | no output | | | | | | {wall or ''} | {fmt_tok(u)} | {u.get('cost_usd', '')} | | {render_s or ''} | {rss or ''} |")
             continue
         r = json.loads(p.read_text())
         c = r["candidate"]
         if not name.startswith("hf-"):
             scores.append(c.get("overall") or 0)
         lines.append(f"| {name} | {b.get('category','')} | {r['verdict']} | {c.get('judged_professional')} | {c.get('overall')} | {r['ref_mean']} | {r['delta']} | "
-                     f"{r.get('full_overall', '–')} | {wall or '?'} | {fmt_tok(u)} | {u.get('cost_usd', '?')} | {render_s or '?'} | {rss or '?'} |")
+                     f"{r.get('full_overall', '–')} | {wall or '?'} | {fmt_tok(u)} | {u.get('cost_usd', '?')} | {fmt_motion(r)} | {render_s or '?'} | {rss or '?'} |")
         gaps_by[name] = c.get("gaps", [])[:3] + (r.get("critic", {}).get("answer", {}).get("gaps", [])[:1])
     if scores:
         lines += ["", f"Mean blind score (Anikit rows) {statistics.mean(scores):.2f}. hf-* rows are HyperFrames on the same brief, same refs and seed. Pass = judged professional in ≥ half the trials and Δ ≥ −1.0 (RUBRIC.md)."]
