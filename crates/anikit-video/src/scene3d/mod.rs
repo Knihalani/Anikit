@@ -1608,7 +1608,7 @@ impl Component for Scene3d {
         let t = frame / fps;
         let key = fnv(&[&p.key.to_le_bytes(), &frame.to_bits().to_le_bytes(), &fps.to_bits().to_le_bytes(), &w.to_le_bytes(), &h.to_le_bytes()]);
         let assets = ctx.assets;
-        let image = ctx.assets.image(key, w, h, &mut || self.render(t, 1.0 / fps, w as usize, h as usize, Some(assets)));
+        let image = ctx.assets.frame_image(key, w, h, &mut || self.render(t, 1.0 / fps, w as usize, h as usize, Some(assets)));
         vec![Op::Image { image, dst: [0.0, 0.0, ctx.width, ctx.height], opacity: 1.0, transform: crate::dl::IDENTITY }]
     }
 }

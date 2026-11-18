@@ -1036,7 +1036,7 @@ impl Component for Fluid {
         let frame = (t * fps).round().max(0.0) as u64;
         let s = self.sim(aspect);
         let key = self.frame_key(frame, fps, w, h);
-        let image = ctx.assets.image(key, w as u32, h as u32, &mut || {
+        let image = ctx.assets.frame_image(key, w as u32, h as u32, &mut || {
             let fr = self.frame(s, frame, fps);
             self.render(s, &fr, w, h)
         });

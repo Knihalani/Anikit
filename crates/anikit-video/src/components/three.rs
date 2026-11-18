@@ -337,7 +337,7 @@ impl Component for Model {
         let (mat, light) = self.look(base, dark);
         let cull = self.cull;
         let mesh = &self.mesh;
-        let image = ctx.assets.image(key, iw, ih, &mut || render(mesh, &inst, &vp, eye, &mat, &light, cull, iw as usize, ih as usize));
+        let image = ctx.assets.frame_image(key, iw, ih, &mut || render(mesh, &inst, &vp, eye, &mat, &light, cull, iw as usize, ih as usize));
         out.push(Op::Image { image, dst: [x0, y0, rw, rh], opacity, transform: crate::dl::IDENTITY });
         out
     }
