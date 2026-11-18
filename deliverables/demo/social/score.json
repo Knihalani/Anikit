@@ -1,0 +1,75 @@
+{
+ "brief": "a-social",
+ "pass": 3,
+ "overall": 3.88,
+ "full_overall": 4.33,
+ "scores": {
+  "idea": 4,
+  "composition": 4,
+  "typography": 3,
+  "colour": 5,
+  "light_texture": 5,
+  "motion": 3,
+  "craft": 4,
+  "originality": 3
+ },
+ "judged_pro": "0/3",
+ "refs": [
+  "kurzgesagt-short",
+  "new-yorker-festival",
+  "hermes-buck"
+ ],
+ "baseline": {
+  "r1": 3.25,
+  "r2": 3.38,
+  "r1_full": 3.78,
+  "r2_full": 3.89
+ },
+ "history": {
+  "pass1": 3.0,
+  "pass2": 2.88,
+  "pass3": 3.88
+ },
+ "gaps": [
+  "Make the type physical: carve, steam, pour or stain it so it shares light and perspective with the scene",
+  "Replace the repeated top-down bowl shot with a choreographed sequence (pour, bloom, macro grain, pull-back) built around a specific idea",
+  "Choose a typeface with a point of view, build a real scale and layout system, and proof every glyph",
+  "Find an idea specific to this coffee (origin, process, aroma) and build the visuals around it rather than placing a word under a cup",
+  "Give the typography a point of view: a custom or characterful face, scale contrast, and real integration with the wood or liquid (inlay, steam, reflection)",
+  "Choreograph change between frames (camera, light, pouring, motion) and keep the props consistent instead of the same top-down template",
+  "Replace 'product shot plus tasting-note word' with a specific visual idea, such as showing bergamot or black tea through material, light or transformation the way C builds a world of objects",
+  "The typography needs a point of view: a custom or carefully chosen face, real scale contrast, and type that physically lives in the scene (carved, poured, steamed) and not overlaid",
+  "Break the repeated top-down layout. Vary camera, crop and staging between beats so there is choreography and not word-swapping"
+ ],
+ "critic": {
+  "scores": {
+   "motion": 5,
+   "sound": 6,
+   "craft": 6
+  },
+  "checks": {
+   "idea": true,
+   "invariant": true,
+   "arc": true,
+   "type_meaning": false,
+   "freeze_frame": false,
+   "ending": true,
+   "restraint": true,
+   "material": true,
+   "sync": true
+  },
+  "defects": [
+   "Within-shot motion is close to static: the 1/6 s pairs show almost no change in the camera or the bowl, so most of each 2.5\u20135 s shot is slow drift with no point of interest.",
+   "Words are cropped by the frame edge in a way that reads as a mistake ('ashe', 'peach', 'Ethiopia' cut off by the spoon and blur), not as a deliberate composition, so mid-shot frames don't work as posters.",
+   "Type is laid onto the wood as a flat projection: at 100% the 'Guji' edges are soft and mushy, with no shift in parallax or light as the camera moves, so the effect reads as a composite rather than light falling on the surface.",
+   "The 'HALDE & SONS' wordmark in the end frame is so small and low-contrast that it nearly disappears on a phone; the tagline sits in a second, generic text style unrelated to the projected type.",
+   "Mirrored or upside-down 'peach' is unclear: it doesn't read as an intentional device and is never paid off.",
+   "Lighting and the window reflection in the coffee change between shots (reflection in shots 4\u20135, none in 1\u20133), which breaks continuity."
+  ],
+  "gaps": [
+   "Choreography: each shot is a single slow push or drift plus a word fading in, repeated five times. No shot is driven by a physical action (steam, a ripple, the spoon moving, light sweeping across the grain to write the word), so nothing hands energy from one shot to the next and the cuts are hard cuts on a fixed 2.5 s grid.",
+   "Pace and dead air: the median shot is 2.5 s and the longest 5 s, with near-static holds. Top work would compress the tasting-note shots to about 1 s, let the word arrive as an event (light flaring into the grain), and save the long hold for the 'Guji' reveal only.",
+   "Integration of type and sound: the projected type has no light behaviour (no bloom, no falloff varying with the grain, no occlusion by steam), and nothing about the type is mapped to meaning (note intensity, origin). The percussive score has clear transients and a good drop-out at about 9.7 s, but the picture doesn't use that drop for a visual beat, and the score's 20 kHz ceiling and repeating hit pattern suggest a library loop rather than bespoke sound design (no pour, clink or room tone)."
+  ]
+ }
+}
