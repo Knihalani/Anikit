@@ -1,0 +1,488 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "intent": {
+  "pace": "medium"
+ },
+ "music": {
+  "bpm": 60,
+  "key": "A",
+  "length": "31s",
+  "seed": 3,
+  "end": "ring",
+  "define": {
+   "engine": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "saw",
+       "voices": 3,
+       "detune": 18,
+       "level": 0.8
+      },
+      {
+       "wave": "square",
+       "pw": 0.4,
+       "semis": -12,
+       "level": 0.5
+      }
+     ],
+     "sub": 0.5,
+     "noise": 0.22,
+     "filter": {
+      "type": "ladder",
+      "cutoff": 320,
+      "res": 0.25,
+      "drive": 2.2,
+      "env": 0,
+      "track": 0
+     },
+     "amp": [
+      1.2,
+      0.2,
+      1.0,
+      0.6
+     ],
+     "lfo": {
+      "rate": 6.5,
+      "trem": 0.22,
+      "cutoff": 0.15
+     },
+     "mono": true
+    }
+   },
+   "airhiss": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "sine",
+       "level": 0.0
+      }
+     ],
+     "noise": 1.0,
+     "filter": {
+      "type": "bp",
+      "cutoff": 900,
+      "res": 0.2
+     },
+     "amp": [
+      2.0,
+      0.2,
+      1.0,
+      1.0
+     ],
+     "lfo": {
+      "rate": 0.4,
+      "cutoff": 0.4
+     }
+    }
+   }
+  },
+  "tracks": [
+   {
+    "inst": "engine",
+    "notes": "o1 A1:19",
+    "gain": -2,
+    "automate": {
+     "volume": [
+      [
+       0,
+       -48
+      ],
+      [
+       0.5,
+       -20
+      ],
+      [
+       3.5,
+       0
+      ],
+      [
+       14.6,
+       0
+      ],
+      [
+       16.5,
+       -10
+      ],
+      [
+       18.3,
+       -60
+      ],
+      [
+       31,
+       -60
+      ]
+     ],
+     "lp": [
+      [
+       0,
+       300
+      ],
+      [
+       3.5,
+       1400
+      ],
+      [
+       14.6,
+       1400
+      ],
+      [
+       18.3,
+       200
+      ]
+     ]
+    }
+   },
+   {
+    "inst": "engine",
+    "notes": "o2 E2:19",
+    "gain": -12,
+    "automate": {
+     "volume": [
+      [
+       0,
+       -48
+      ],
+      [
+       1.0,
+       -20
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       14.6,
+       0
+      ],
+      [
+       16.5,
+       -12
+      ],
+      [
+       18.2,
+       -60
+      ],
+      [
+       31,
+       -60
+      ]
+     ]
+    }
+   },
+   {
+    "inst": "airhiss",
+    "notes": "o4 A4:19",
+    "gain": -16,
+    "automate": {
+     "volume": [
+      [
+       0,
+       -40
+      ],
+      [
+       1.0,
+       -6
+      ],
+      [
+       4,
+       0
+      ],
+      [
+       14.6,
+       0
+      ],
+      [
+       18.2,
+       -60
+      ],
+      [
+       31,
+       -60
+      ]
+     ]
+    }
+   },
+   {
+    "inst": "celesta",
+    "notes": "r:5.3 E6/8 r/8 E6/16 r/16 r:3.5 r:2.4 E5/8 A5/8 C#6/8 E6/4 r/8 E6/8 C#6/8 A5/8 E5/4",
+    "gain": -8,
+    "reverb": 0.5
+   },
+   {
+    "inst": "piano",
+    "notes": "o3 r:19.6 [A2 E3 A3 C#4 E4]/1 [F#2 C#3 A3 E4]/2 [D2 A2 F#3 D4 F#4]/2 [A2 E3 C#4 E4 A4]/1",
+    "gain": -7,
+    "reverb": 0.55
+   },
+   {
+    "inst": "pad-glass",
+    "notes": "o4 r:20.2 [A3 E4 A4]/1 [F#3 C#4 A4]/2 [D4 F#4 A4]/2 [E4 A4 C#5]/1",
+    "gain": -14,
+    "reverb": 0.6
+   }
+  ],
+  "master": {
+   "lufs": -14,
+   "ceiling": -1,
+   "reverb": "hall"
+  }
+ },
+ "sound": {
+  "design": "off",
+  "space": "room",
+  "cues": [
+   {
+    "sfx": "tick",
+    "at": 5.3,
+    "x": 0.68,
+    "gain": -6
+   },
+   {
+    "sfx": "blip",
+    "at": 9.05,
+    "x": 0.68,
+    "gain": -8
+   },
+   {
+    "sfx": "swish",
+    "at": 11.8,
+    "x": 0.3,
+    "gain": -10
+   },
+   {
+    "sfx": "click",
+    "at": 14.0,
+    "x": 0.75,
+    "gain": -8
+   }
+  ]
+ },
+ "fonts": {},
+ "scenes": [
+  {
+   "duration": 30,
+   "background": "#07090C",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.3,
+       "x": -120
+      },
+      "to": {
+       "zoom": 1.0,
+       "x": 0
+      },
+      "duration": 3.4,
+      "ease": "outCubic"
+     },
+     {
+      "to": {
+       "zoom": 1.04
+      },
+      "at": 3.4,
+      "duration": 26.6,
+      "ease": "linear"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "id": "field",
+     "type": "shader",
+     "src": "field.glsl",
+     "width": "100%",
+     "height": "100%",
+     "uniforms": {
+      "front": "=450 + 760*gt",
+      "cupOn": "=smoothstep(3.9, 5.3, gt)",
+      "micOn": "=smoothstep(5.2, 5.6, gt) * (1 - smoothstep(9.0, 9.6, gt))",
+      "trace": "=clamp((gt - 9.0) / 1.1, 0, 1)",
+      "graphOn": "=smoothstep(5.8, 7.4, gt) * (1 - smoothstep(24.0, 25.0, gt))",
+      "antiOn": "=smoothstep(9.6, 10.8, gt)",
+      "antiAmp": "=1 - 2*smoothstep(11.2, 12.6, gt)",
+      "spkOn": "=smoothstep(13.8, 14.3, gt)",
+      "cancelR": "=440*smoothstep(14.4, 18.4, gt)",
+      "merge": "=smoothstep(15.0, 18.4, gt)",
+      "scrim": 1
+     }
+    },
+    {
+     "text": "Noise is air, shoved into waves.",
+     "font": "Newsreader",
+     "size": 66,
+     "color": "#EDE7DC",
+     "x": 140,
+     "y": 112,
+     "anchor": "topLeft",
+     "start": 1.3,
+     "end": 4.4,
+     "enter": "mask by line up",
+     "exit": "fade"
+    },
+    {
+     "text": "A microphone on the cup\nhears it coming.",
+     "font": "Newsreader",
+     "size": 66,
+     "color": "#EDE7DC",
+     "lineHeight": 1.1,
+     "x": 140,
+     "y": 112,
+     "anchor": "topLeft",
+     "start": 4.7,
+     "end": 8.8,
+     "enter": "mask by line up",
+     "exit": "fade"
+    },
+    {
+     "text": "A chip flips the wave\n*upside down.*",
+     "font": "Newsreader",
+     "size": 66,
+     "color": "#EDE7DC",
+     "lineHeight": 1.1,
+     "x": 140,
+     "y": 112,
+     "anchor": "topLeft",
+     "start": 9.0,
+     "end": 13.5,
+     "enter": "mask by line up",
+     "exit": "fade"
+    },
+    {
+     "text": "The speaker plays the flip.\nCrest meets trough.",
+     "font": "Newsreader",
+     "size": 66,
+     "color": "#EDE7DC",
+     "lineHeight": 1.1,
+     "x": 140,
+     "y": 112,
+     "anchor": "topLeft",
+     "start": 13.8,
+     "end": 18.6,
+     "enter": "mask by line up",
+     "exit": "fade"
+    },
+    {
+     "text": "Two waves add up\nto *silence.*",
+     "font": "Newsreader",
+     "size": 96,
+     "color": "#F4F0E8",
+     "lineHeight": 1.02,
+     "letterSpacing": "-0.01em",
+     "x": 140,
+     "y": 104,
+     "anchor": "topLeft",
+     "start": 19.4,
+     "end": 24.4,
+     "enter": "mask by line up",
+     "exit": "fade"
+    },
+    {
+     "text": "Anti-noise.",
+     "font": "Newsreader",
+     "size": 150,
+     "color": "#F4F0E8",
+     "letterSpacing": "-0.02em",
+     "x": 140,
+     "y": 720,
+     "anchor": "topLeft",
+     "start": 25.0,
+     "end": 30,
+     "enter": "mask by line up"
+    },
+    {
+     "text": "Best against steady hums: engines, trains, air-con.",
+     "font": "Newsreader",
+     "size": 42,
+     "color": "#B9C6D2",
+     "x": 146,
+     "y": 900,
+     "anchor": "topLeft",
+     "start": 25.8,
+     "end": 30,
+     "enter": "fadeUp"
+    },
+    {
+     "text": "*mic*",
+     "font": "Newsreader",
+     "size": 38,
+     "color": "#FFB58A",
+     "x": 1262,
+     "y": 540,
+     "anchor": "right",
+     "start": 5.4,
+     "end": 9.4,
+     "enter": "fade",
+     "exit": "fade"
+    },
+    {
+     "text": "*chip*",
+     "font": "Newsreader",
+     "size": 38,
+     "color": "#9EDCFF",
+     "x": 1392,
+     "y": 500,
+     "anchor": "bottom",
+     "start": 9.4,
+     "end": 13.6,
+     "enter": "fade",
+     "exit": "fade"
+    },
+    {
+     "text": "*speaker*",
+     "font": "Newsreader",
+     "size": 38,
+     "color": "#9EDCFF",
+     "x": 1482,
+     "y": 436,
+     "anchor": "bottom",
+     "start": 13.9,
+     "end": 18.6,
+     "enter": "fade",
+     "exit": "fade"
+    },
+    {
+     "text": "*noise \u2014 what the mic hears*",
+     "font": "Newsreader",
+     "size": 34,
+     "color": "#FF9A6A",
+     "x": 160,
+     "y": 726,
+     "anchor": "topLeft",
+     "start": 6.4,
+     "end": 16.0,
+     "enter": "fade",
+     "exit": "fade"
+    },
+    {
+     "text": "*anti-noise \u2014 the flipped copy*",
+     "font": "Newsreader",
+     "size": 34,
+     "color": "#8FD3FF",
+     "x": 1040,
+     "y": 726,
+     "anchor": "topRight",
+     "start": 10.0,
+     "end": 16.0,
+     "enter": "fade",
+     "exit": "fade"
+    },
+    {
+     "text": "*together: flat*",
+     "font": "Newsreader",
+     "size": 34,
+     "color": "#F4F0E8",
+     "x": 160,
+     "y": 726,
+     "anchor": "topLeft",
+     "start": 17.2,
+     "end": 24.0,
+     "enter": "fade",
+     "exit": "fade"
+    }
+   ]
+  }
+ ]
+}
