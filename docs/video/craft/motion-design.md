@@ -179,6 +179,19 @@ A transition is an *idea* when it says that A *becomes* B or A *causes* B. It is
 10. **Per-layer frame rate ("on 2s").** `fps: 12` or `posterize` on a layer or group while the camera and other layers stay on 1s ([BLOOP-SV], [GS12]). Designed imperfection: boiling lines and stroke jitter on 2s ([ST]).
 11. **Critique checks for motion tells.** Flag symmetric curves, linear spatial moves, uniform staggers, more than N layers starting on the same frame, overshoot over 10% on non-cartoon pieces, holds with zero motion over 2 s, and cuts on every beat. These extend TASTE's ⚙ checks with the numbers above.
 
+### Status (overnight build, MOGRAPH)
+
+Built (`anikit-video docs mograph`, `docs/video/spec-reference.md` → Motion graphics):
+- **1 (partly):** `inertia` (a spring that chases any layer's own motion; presets `soft`/`bouncy`/`tight`/`heavy`) and group `drag` (child i follows the group i × drag s later). `velocity`/`valueAt` in expressions are still open.
+- **2 (partly):** `zoomThrough` (fly into a layer of the outgoing scene, the next scene shows through its shape), shape `reveal` (circle/diamond/square/star/blob + spin), `blinds`, `split`, `whip`, and track mattes (`matte`) inside a scene. Carry-over/shared elements and a match-cut helper are still open.
+- **3:** `smear` (speed-proportional stretch along the travel, volume kept). Per-layer motion blur is still open.
+- **4 (partly):** named curves `glide`, `snap`, `land`, `launch`, `material`, `emphasizedDecelerate/Accelerate`, `productive`, `expressive`, `expressiveEntrance/Exit`, and `"ease": [x1, y1, x2, y2]` with per-keyframe ease. Not yet retuned: `popIn`/`bounceIn` overshoot (a change to shared presets, flagged for the parent).
+- **8 (partly):** repeater stagger `order` (`center`, `reverse`, `random` + seed) and the text `animator` range selector.
+- **10:** `posterizeTime` on a layer or group (plus `wigglePath` for boiling lines).
+- **11 (partly):** critique tips for linear spatial moves, four or more layers starting on one frame, and no follow-through anywhere.
+
+Proof pieces in four registers: `examples/video/motion/` (velo-snap, rainwell-fluid, noodle-handmade, atlas-precision; full-size stills in `stills/`).
+
 ---
 
 ## Sources

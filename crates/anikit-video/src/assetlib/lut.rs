@@ -267,6 +267,85 @@ fn film(name: &str) -> Option<Film> {
     })
 }
 
+/// Film parameters a spec may set (`"lut": {"base": …, …}`), camelCase or snake_case.
+pub const FILM_KEYS: &[&str] = &[
+    "base", "contrast", "pivot", "fade", "roll", "sat", "saturation", "highSat", "high_sat", "shadows", "highs", "highlights", "gamma", "tealOrange", "teal_orange", "bleach", "mono", "night", "size",
+];
+
+/// A LUT from a spec value: a name/ref/path string, or `{"base": "<look>", …film parameters}`
+/// (every look is just a set of these numbers: start from one and change any of them).
+pub fn load_value(v: &serde_json::Value) -> Result<Arc<Lut>, String> {
+    use serde_json::Value;
+    let m = match v {
+        Value::String(s) => return load(s),
+        Value::Object(m) => m,
+        _ => return Err("expected a LUT name, ref, .cube path, or an object of film parameters".into()),
+    };
+    static CACHE: OnceLock<Mutex<HashMap<String, Arc<Lut>>>> = OnceLock::new();
+    let key = v.to_string();
+    if let Some(l) = CACHE.get_or_init(Default::default).lock().unwrap().get(&key) {
+        return Ok(l.clone());
+    }
+    for k in m.keys() {
+        if !FILM_KEYS.contains(&k.as_str()) {
+            let hint = crate::templates::suggest(k, FILM_KEYS.iter().copied()).map(|s| format!(" (did you mean `{s}`?)")).unwrap_or_default();
+            return Err(format!("unknown film parameter `{k}`{hint}; parameters: {}", FILM_KEYS.join(", ")));
+        }
+    }
+    let mut f = match m.get("base").and_then(|b| b.as_str()) {
+        Some(b) => film(b.strip_prefix("anikit:lut/").unwrap_or(b)).ok_or_else(|| format!("unknown base look `{b}`"))?,
+        None => NEUTRAL,
+    };
+    let num = |k: &[&str]| -> Result<Option<f32>, String> {
+        match k.iter().find_map(|k| m.get(*k)) {
+            None => Ok(None),
+            Some(x) => x.as_f64().map(|x| Some(x as f32)).ok_or_else(|| format!("`{}` must be a number", k[0])),
+        }
+    };
+    let rgb = |k: &[&str]| -> Result<Option<[f32; 3]>, String> {
+        match k.iter().find_map(|k| m.get(*k)) {
+            None => Ok(None),
+            Some(Value::Array(a)) if a.len() == 3 => Ok(Some([0, 1, 2].map(|i| a[i].as_f64().unwrap_or(0.0) as f32))),
+            Some(Value::Number(n)) => Ok(Some([n.as_f64().unwrap_or(0.0) as f32; 3])),
+            _ => Err(format!("`{}` must be [r, g, b] or a number", k[0])),
+        }
+    };
+    for (keys, slot) in [
+        (&["contrast"][..], &mut f.contrast),
+        (&["pivot"], &mut f.pivot),
+        (&["fade"], &mut f.fade),
+        (&["roll"], &mut f.roll),
+        (&["sat", "saturation"], &mut f.sat),
+        (&["highSat", "high_sat"], &mut f.high_sat),
+        (&["tealOrange", "teal_orange"], &mut f.teal_orange),
+        (&["bleach"], &mut f.bleach),
+        (&["night"], &mut f.night),
+    ] {
+        if let Some(x) = num(keys)? {
+            *slot = x;
+        }
+    }
+    if let Some(x) = rgb(&["shadows"])? {
+        f.shadows = x;
+    }
+    if let Some(x) = rgb(&["highs", "highlights"])? {
+        f.highs = x;
+    }
+    if let Some(x) = rgb(&["gamma"])? {
+        f.gamma = x.map(|g| g.max(0.05));
+    }
+    match m.get("mono") {
+        None => {}
+        Some(Value::Bool(false)) | Some(Value::Null) => f.mono = None,
+        Some(Value::Bool(true)) => f.mono = Some([1.0; 3]),
+        Some(_) => f.mono = rgb(&["mono"])?,
+    }
+    let n = num(&["size"])?.map(|n| n.clamp(9.0, 65.0) as usize).unwrap_or(33);
+    let lut = Arc::new(Lut::generate("custom", n, |c| f.eval(c)));
+    CACHE.get_or_init(Default::default).lock().unwrap().insert(key, lut.clone());
+    Ok(lut)
+}
+
 /// A generated look as a 33³ LUT.
 pub fn generated(name: &str) -> Option<Lut> {
     let f = film(name)?;
