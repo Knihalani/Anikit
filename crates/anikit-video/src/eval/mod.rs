@@ -363,6 +363,8 @@ pub(crate) struct Node {
     pub glow: Option<Filter>,
     /// Image treatments (tone map, halftone), applied first.
     pub treat: Vec<Filter>,
+    /// Brush stroke: the outline drawn as a variable-width ribbon.
+    pub brush: Option<Arc<graphic::Brush>>,
     /// A pattern whose `field` reads `t`: regenerated every frame (pattern, box size).
     pub live_pattern: Option<Arc<(graphic::Pat, [f64; 2])>>,
     /// First of 5 animatable slots for the treatments (toneAmount, halftone cell/angle/gain, ink amount); 0 = none.
@@ -1487,7 +1489,14 @@ impl Evaluator {
                     }
                 }
                 let along = n.fx.as_deref().and_then(|f| f.along.as_ref());
-                if let (Some(_), Some(al)) = (stroke, along) {
+                if let (Some(s), Some(b)) = (stroke, n.brush.as_deref()) {
+                    if sw > 0.0 && v[prop::TRIM1] > v[prop::TRIM0] {
+                        let paint = self.paint(&s.paint, &v, prop::STROKE, [w, h], alpha);
+                        let mut p = take_path();
+                        b.build(sw, v[prop::TRIM0], v[prop::TRIM1], &mut p);
+                        out.push(Op::Fill { path: p, paint, rule: dl::FillRule::NonZero, transform: xf });
+                    }
+                } else if let (Some(_), Some(al)) = (stroke, along) {
                     // Gradient along the path: each chunk carries its slice of the colours (and of the trim).
                     let (t0, t1) = (v[prop::TRIM0].clamp(0.0, 1.0), v[prop::TRIM1].clamp(0.0, 1.0));
                     if sw > 0.0 && t1 > t0 {

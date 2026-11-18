@@ -25,6 +25,8 @@ cargo run --release -p anikit-video --example qbench -- --only ui,post --runs 1 
 3. **Render fidelity.** The default pipeline's frames are tapped exactly as they go into the encoder (`pipeline::render_ak264_tap`) and compared with the reference. This isolates what the renderer's fast paths cost.
 4. **Delivered fidelity.** The decoded MP4 is compared with the reference, encoder loss included, against `qbench/baseline.json`.
 5. **Determinism.** A second default render of the clip must produce the same frames.
+6. **Render cache.** Timed runs always render everything: qbench sets `ANIKIT_RENDER_CACHE=0` itself. Then, for every entry without a `runs` override, it renders the clip twice more with the cache on, into a scratch cache directory: once cold (filling it) and once warm (splicing cached chunks). Both MP4s must equal the uncached MP4 byte for byte, or the entry FAILs ("render cache … differs"). `--no-cache-check` skips this.
+7. **Memory.** The `RSS MiB: start · peak` column is the process's resident memory when the timed render started and its peak while frames rendered and encoded (`StageProfile.mem_*`, from `memstat`). qbench holds earlier entries' results, so for a clean number per spec use `examples/mem_probe.rs` (below).
 
 ## Metrics and thresholds
 
@@ -176,7 +178,8 @@ Open items, with their owners (all messaged with numbers):
 ## Tools
 
 - `examples/post_cost.rs`: one frame's cost by stage (render, post, motion blur). `OPS=1` gives the cost of each top-level op (or layer subtree) by cumulative prefixes. `FIELD=1` gives the share of the gradient field.
-- `anikit-video render … --profile`: stage profile of a real render.
+- `anikit-video render … --profile`: stage profile of a real render, with a memory line: resident MiB at start, peak while rendering and encoding, the encoded stream's size, and peak while muxing.
+- `examples/mem_probe.rs spec.json [runs] [from] [to]`: renders a spec repeatedly in one process and prints resident memory after build, after render and after dropping the evaluator, plus the process peak. Use it to catch memory that a long-lived process (MCP server, preview) keeps between renders.
 - `cargo test -p anikit-video --lib upscale_timing -- --ignored --nocapture` and `blur_timing`: kernel timings.
 
 ## Incremental re-render (render cache)
@@ -198,3 +201,17 @@ Measured on the Tern launch spec (20 s, 1080p30, 4 vCPU):
 | unchanged spec again | **1.7 s** (16/16 chunks reused) | 15becf74… |
 | one font size changed in the last scene | **32.8 s** (13/16 reused) | 2b3ea57d… |
 | the same edit, full render, cache off | 148.2 s | 2b3ea57d… |
+
+## Memory
+
+Measured with `mem_probe` (2 s of each spec, 4 renders in one process, 4 vCPU, 1080p). The peak while rendering is about the same before and after; what changed is what a process keeps afterwards.
+
+| spec | peak rendering | kept after render 4, before | kept after render 4, after |
+|---|---:|---:|---:|
+| particles | 211–215 MiB | 157 MiB (growing) | 45 MiB |
+| post | 270 MiB | 347 MiB (growing) | 23 MiB |
+| backdrop | 438–450 MiB | 621 MiB (526 after dropping the evaluator) | 69 MiB |
+
+Two causes:
+- **glibc arenas.** Each rayon thread frees its frame buffers into its own malloc arena, and glibc keeps them. The pipeline now calls `memstat::trim()` (`malloc_trim(0)`) once, when the frames are done. That took a few milliseconds, too little to show in timing. mimalloc was tried as the global allocator: it was ~3% faster but kept more (peak +15–20%), so it was not adopted.
+- **The per-frame image ring.** Component fields, rays and particle text live in a 96-slot ring of full-frame pixmaps (`SharedAssets` volatile ring), which stayed alive with the evaluator: about 250 MiB for backdrop. `SharedAssets::release_frame_images()` drops it when a render finishes. It resets the sequence too, so a later render uses the same ids as a fresh evaluator. Output is byte-identical: every qbench MP4 matched main's.

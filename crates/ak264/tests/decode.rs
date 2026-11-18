@@ -511,6 +511,22 @@ fn roundtrip_b(cfg: EncoderConfig, frames: &[YuvBuffer], name: &str) -> (Vec<u8>
 }
 
 #[test]
+fn partitions_decode_bit_exact() {
+    let s = Scene::new(176, 144);
+    let frames: Vec<_> = (0..10).map(|t| s.frame(t)).collect();
+    for deblock in [false, true] {
+        let c = EncoderConfig { partitions: true, deblock, ..cfg(176, 144) };
+        let (st, p) = roundtrip(c, &frames, &format!("part{}", deblock as u8));
+        let c = EncoderConfig { partitions: true, bframes: 1, deblock, ..cfg(176, 144) };
+        let (stb, pb) = roundtrip_b(c, &frames, &format!("partb{}", deblock as u8));
+        eprintln!("partitions deblock {deblock}: {} bytes psnr {p:.2}; with B {} bytes psnr {pb:.2}", st.len(), stb.len());
+        if have_ffmpeg() {
+            assert!(p > 38.0 && pb > 38.0);
+        }
+    }
+}
+
+#[test]
 fn bframes_decode_bit_exact() {
     let s = Scene::new(176, 144);
     let frames: Vec<_> = (0..14).map(|t| s.frame(t)).collect();
@@ -525,6 +541,39 @@ fn bframes_decode_bit_exact() {
                     assert!(p > 38.0, "psnr {p}");
                 }
             }
+        }
+    }
+}
+
+#[test]
+fn transform8_decode_bit_exact() {
+    // Smooth moving texture: the 8×8 transform is chosen for many macroblocks
+    // (the stream differs from a 4×4-only one) and ffmpeg decodes it exactly.
+    let (w, h) = (176u32, 112u32);
+    let frames: Vec<YuvBuffer> = (0..8u32)
+        .map(|t| {
+            let mut b = YuvBuffer::new(w, h);
+            for y in 0..h as usize {
+                for x in 0..w as usize {
+                    let (fx, fy) = (x as f64 + 1.7 * t as f64, y as f64 + 0.6 * t as f64);
+                    let v = 128.0 + 50.0 * (fx * 0.21).sin() * (fy * 0.17).cos() + 20.0 * ((fx + fy) * 0.05).sin();
+                    b.y[y * w as usize + x] = v as u8;
+                }
+            }
+            b.u.fill(120);
+            b.v.fill(136);
+            b
+        })
+        .collect();
+    for deblock in [false, true] {
+        let base = EncoderConfig { deblock, qp: 30, ..cfg(w, h) };
+        let (s4, _) = roundtrip(EncoderConfig { transform8: false, ..base.clone() }, &frames, &format!("t4{}", deblock as u8));
+        let (s8, p8) = roundtrip(EncoderConfig { transform8: true, ..base.clone() }, &frames, &format!("t8{}", deblock as u8));
+        let (s8b, p8b) = roundtrip_b(EncoderConfig { transform8: true, bframes: 1, ..base }, &frames, &format!("t8b{}", deblock as u8));
+        assert_ne!(s4, s8);
+        eprintln!("t8 deblock {deblock}: {} vs 4x4 {} bytes, psnr {p8:.2}; B {} bytes psnr {p8b:.2}", s8.len(), s4.len(), s8b.len());
+        if have_ffmpeg() {
+            assert!(p8 > 35.0 && p8b > 35.0);
         }
     }
 }

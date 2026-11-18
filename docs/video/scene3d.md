@@ -55,7 +55,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - or an object: `{ "preset": "cyc", "color": "#EEEBE5", "key": [-0.55, 1, 0.45], "haze": 0.0015 }`.
 - **`lights`:** `[{ "dir": [x, y, z], "size": [w°, h°], "color", "intensity": 4, "roll", "key": true }]`. These are extra softboxes or strips. They light the scene and show as crisp shapes in chrome. `key` casts the traced shadows.
 - **Local lights** (in `lights`, given a `pos`): a point light `{ "pos": [x, y, z], "color", "intensity": 10 }`, or a spot when it also has a `target`, `angle` (degrees) and `penumbra` (0–1). They fall off with the inverse square and cast hard traced shadows (`"shadow": false` turns them off). Use them for light pools on the floor, LEDs and practicals.
-- **`fog`:** a density per metre, or `{ "density", "color", "shafts": true }`. `shafts` adds volumetric light: spot cones and god rays from the key, with object shadows cut into them. Use density 0.02–0.08 with a dark fog colour at night.
+- **`fog`:** a density per metre, or `{ "density", "color", "shafts": true, "height", "base" }`. `height` makes it height fog: dense at `base` (default 0, the floor) and thinning by e every `height` metres. That gives ground mist, a valley fog, or a set that dissolves into haze. It's integrated exactly along each camera ray (one `exp`), and the layer meets the sky softly. Proof: `docs/video/shots/3d-fog/ground-mist.jpg` (`{ "density": 0.9, "height": 0.25 }`). `shafts` adds volumetric light: spot cones and god rays from the key, with object shadows cut into them. Use density 0.02–0.08 with a dark fog colour at night.
 - **`camera`:**
   - presets: `push`, `reveal`, `flyby`, `orbit` (all 5 s by default), `dolly`, `crane`, `static`; or `{ "preset", "duration", "degrees", "height", "shake" }`;
   - keys: `{ "interp": "smooth"|"linear", "keys": [ { "t", "pos", "target", "focal": 35, "fstop": 2.8, "focus", "shutter": 0.5 } ] }`. A dense per-frame list with linear interpolation works too. `shutter: 0` turns motion blur off.
@@ -179,6 +179,8 @@ Tune it with an object: `{ "preset": "rembrandt", "ratio": 6, "rim": 1.5, "key":
 Stills (one scene, six rigs) and `sweep.mp4` (3 s, 1080p30, rendered in 43 s on 4 cores): `docs/video/shots/3d-rigs/`. Rigs cost nothing extra: a rig is a few softboxes, the same as an env. Gobos add one pattern lookup per shaded point. Measured 1080p traces on 4 cores: 0.62–0.79 s.
 Why and how studios light: `docs/video/craft/3d-design.md`.
 
+All of it together: `docs/video/shots/3d-showcase/showcase.mp4` (15.5 s, five shots: a macro reveal, an abstract field, a clay sweep, window light and the hero logo; `contact.jpg`; spec beside it).
+
 ## Looks and worlds beyond the studio
 
 Not every shot should be a chrome product on a white cyc. One word changes the whole style:
@@ -251,6 +253,13 @@ The hot parts live in `scene3d/kernel/`:
   and Möller–Trumbore kernels picked at run time (`ANIKIT_NO_AVX2=1` forces
   the baseline). Both paths compute the same bits as the portable reference
   (unit tested).
+- `sbvh.rs`: the mesh hierarchy build. Binned SAH over all three axes with
+  spatial splits: a node straddled by long thin triangles (extruded text,
+  slabs, bevel strips) is cut at a plane, and those triangles go to both
+  sides with clipped boxes, so siblings stop overlapping. Duplicated
+  references are capped at 1× the triangle count. Same hits, about 1.8×
+  faster rays on text and slabs (`bvh_bench`: text 238 → 128 ns, slab
+  151 → 84 ns). Large meshes build in parallel (650k triangles: 1.3 s).
 - `post.rs`: the post stack on structure-of-arrays planes, row-parallel,
   hot loops in `simd_fn!` kernels (AVX2 + baseline, same bits).
 - `envk.rs`: environment softboxes evaluated eight lanes at a time (same
