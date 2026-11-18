@@ -101,7 +101,7 @@ See `docs/video/overnight/DEMOS.md` for all paths. Pooled blind scores:
 **Determinism and correctness fixes:**
 - a work-stealing race;
 - the render cache (file-content keys, no storing after errors, `--no-cache`);
-- a shader-job eviction that caused random blank frames, which needs PERF's repeat-render confirmation;
+- a shader-job eviction that caused random blank frames, confirmed fixed: 3 full renders of the data demo are byte-identical, 0 of 900 frames differ;
 - a stale-layer bug under a moving camera;
 - glyph-atlas drops;
 - several crashes.
