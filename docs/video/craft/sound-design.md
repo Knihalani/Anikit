@@ -85,7 +85,7 @@ Breaking glass layers the strike transient (1–3 ms, broadband), several short 
 ### 1.6 Magic and sparkle, glitch, swells
 
 - **Sparkle/shimmer:** Poisson-triggered sine "grains" at 20–60/s, with pitches drawn from a pentatonic set of the music's key in octaves 6–8 (1–8 kHz). Each grain has a 2 ms attack and 30–200 ms decay and gets a random pan, all through a bright reverb (2–4 s, pre-delay 20–40 ms) **(rule of thumb)**.
-- **Glitch:** stutter retriggers of 1/32–1/16 slices (20–60 ms), bit-crush (4–8 bits), sample-rate reduction (2–8 kHz), and 1–5 ms digital clicks. Lock it to the edit grid (frame or beat), never free-run.
+- **Glitch:** stutter retriggers of 1/32–1/16 slices (20–60 ms), bit-crush (4–8 bits), sample-rate reduction (2–8 kHz), and 1–5 ms digital clicks. It tends to read as intended when it is locked to the edit grid (frame or beat); free-running glitch tends to sound like a fault.
 - **Swell:** a reversed tonal pad or cymbal, 1–3 s, peaking on the reveal. It is a gentler riser.
 
 ### 1.7 Ambience beds
@@ -110,7 +110,7 @@ Beds make space continuous across cuts. Their levels sit well under the foregrou
 - **Time slotting:** the transient leads (0 ms), the body comes 0–5 ms later, the tail swells over 50–200 ms. Offset the layers by a few ms so the attack stays sharp and doesn't flam. More than about 10 ms between attacks starts to read as two events **(rule of thumb)**.
 - **Subtract:** "We can better focus on the important layers by removing less essential ones" ([Krotos interview, via search](https://www.krotosaudio.com/?p=1068840)). Mute each layer in turn and keep only the ones you miss.
 - **Mono sources, stereo placement:** Ryan Hobler (Gramercy Park Studios) "used mostly mono sounds so he could move many elements around the stereo field" ([Krotos/Hobler](https://krotos.studio/blog/sound-effects-motion-graphics-tips)).
-- **Variation and round-robin against the "machine gun":** repeated identical samples (typing, counters, staggered list reveals, particles) give themselves away. Per instance, randomise the pitch by ±0.5–2 semitones (±3–12 %), the gain by ±1–3 dB, the start offset by 0–10 ms, and the filter cutoff by ±10–20 %. Rotate 3–8 variants and never play the same one twice in a row. SOS alternates two tracks for footsteps so each one tails out ([SOS](https://www.soundonsound.com/techniques/sound-design-visual-media-radio)). Game audio varies footsteps "by surface… to avoid repetition" (same).
+- **Variation and round-robin against the "machine gun":** repeated identical samples (typing, counters, staggered list reveals, particles) give themselves away. Per instance, randomise the pitch by ±0.5–2 semitones (±3–12 %), the gain by ±1–3 dB, the start offset by 0–10 ms, and the filter cutoff by ±10–20 %. Rotating 3–8 variants so the same one rarely plays twice in a row keeps it from sounding mechanical. SOS alternates two tracks for footsteps so each one tails out ([SOS](https://www.soundonsound.com/techniques/sound-design-visual-media-radio)). Game audio varies footsteps "by surface… to avoid repetition" (same).
 - **Glue:** a shared short reverb or room on all layers of one event, then light bus compression (2:1–4:1, 10–30 ms attack so the transient passes, 100–200 ms release) and limiting at the end ([Ableton](https://www.ableton.com/en/blog/learn-how-to-make-high-impact-sounds-for-movies-and-trailers/): "compress individual elements, then limit the overall mix").
 
 ---
@@ -130,7 +130,7 @@ Beds make space continuous across cuts. Their levels sit well under the foregrou
 Sources: [ITU-R BT.1359-1](https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.1359-1-199811-I!!PDF-E.pdf), with the summary table in [Fora Soft](https://www.forasoft.com/learn/audio-for-video/articles-audio/lip-sync-itu-r-bt-1359-tolerance-windows) and background in [TV Technology](https://www.tvtechnology.com/opinions/av-synchronization-how-bad-is-bad). Late sound is tolerated about 2.7× more than early sound, because in the real world sound travels slower than light. One frame is 41.7 ms at 24 fps, 40 ms at 25 fps and 33.3 ms at 30 fps.
 
 **What this means for an engine:**
-- **Never let a transient land more than about 1 frame (33–42 ms) before its visual event.** That is already near the 45 ms detection limit. Prefer 0 to +1 frame late. Sample-accurate placement on the contact frame is ideal. Sound On Sound: audio "two or three frames adrift of the visual edit will look and sound sloppy" ([SOS](https://www.soundonsound.com/techniques/sound-design-visual-media-radio)).
+- **A transient that lands more than about 1 frame (33–42 ms) before its visual event tends to read as wrong**, because that is already near the 45 ms detection limit. Prefer 0 to +1 frame late. Sample-accurate placement on the contact frame is ideal. Sound On Sound: audio "two or three frames adrift of the visual edit will look and sound sloppy" ([SOS](https://www.soundonsound.com/techniques/sound-design-visual-media-radio)).
 - Editors disagree on placing hits a frame early "to feel responsive" ([search summary of editing guides](https://sfxengine.com/blog/sound-design-tips-for-video-editors)). The standards above argue against going more than 1 frame early. Default to 0 frames.
 - Include the encoder's audio priming (AAC adds about 1024–2112 samples of delay). Measure the end-to-end offset in the MP4 and correct it, or every hit ships 20–45 ms late on top of any intentional offset **(engineering note)**.
 
@@ -153,7 +153,7 @@ Sources: [ITU-R BT.1359-1](https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.
 - **Density budget (rule of thumb):**
   - 1 hero hit per 4–8 s of a 15–60 s spot, plus 1 hero moment per spot (the logo or product reveal);
   - no more than 2–3 distinct SFX onsets per second, even in fast montage;
-  - staggered reveals of N items: sound the group, or sound 1 of every 2–4 items, never all N;
+  - staggered reveals of N items: sound the group, or sound 1 of every 2–4 items (sounding all N tends to become a machine gun);
   - leave 30–50 % of animated elements unsounded;
   - if the music has an accent on the cut, either drop the whoosh or tune it to the music.
 - **Hard cuts:** "change most of your content at the same point. Avoid overlaps, which weaken the transition" ([SOS](https://www.soundonsound.com/techniques/sound-design-visual-media-radio)).
@@ -311,10 +311,10 @@ These follow Andy Farnell's *Designing Sound* (MIT Press, 2010), which treats so
 ### 8.1 Distilled principles
 
 1. **Sound only what matters.** Leave 30–50 % of motion silent. One hero moment per spot; no more than 2–3 SFX onsets/s.
-2. **Peak on the event:** transients on the contact frame (0 to +1 frame late, never more than 1 frame early; detection starts at 45 ms early, 125 ms late). Whoosh peak on the cut (pre-roll ≈ 0.6 × length). Riser end on the hit.
+2. **Peak on the event:** transients on the contact frame (0 to +1 frame late; more than 1 frame early tends to read as wrong; detection starts at 45 ms early, 125 ms late). Whoosh peak on the cut (pre-roll ≈ 0.6 × length). Riser end on the hit.
 3. **Silence before the hit:** dip everything 10–20 dB for 80–300 ms.
 4. **Layer by band:** sub 30–60 Hz (dry, one owner), body 100–500 Hz, transient 2–8 kHz, tail. Two to four layers for heroes, one or two for the rest.
-5. **Never repeat a sample exactly:** ±0.5–2 semitones, ±1–3 dB, 3–8 variants, round-robin.
+5. **Vary repeats:** an exact repeat tends to sound like a machine gun; ±0.5–2 semitones, ±1–3 dB, 3–8 variants, round-robin.
 6. **Tune tonal SFX to the music's key** and quantise rhythmic SFX to its grid.
 7. **One space per scene:** shared reverb send, dry/wet by distance, sub kept out of the reverb.
 8. **Pan with the picture** at ≈ ±0.6 of the frame, equal-power. Keep lows below 150 Hz mono.
