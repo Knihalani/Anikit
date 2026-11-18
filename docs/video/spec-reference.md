@@ -432,7 +432,7 @@ Any numeric property (static or inside `to`/`from`) can be an expression string 
 { "shape": "circle", "x": "=960 + 300 * sin(t * 2)", "y": "=540 + 300 * cos(t * 2)", "rotation": "=t * 90" }
 ```
 
-Variables: `t` (seconds since the layer's start), `T` (seconds since the scene's start), `gt` (global time), `p` (layer progress 0..1), `i` (index within the parent), `n` (sibling count), `w`, `h` (frame size), `fps`, `frame`. Functions: `sin cos tan asin acos atan atan2 abs min max floor ceil round sqrt pow exp log clamp(x, a, b) mix(a, b, f) smoothstep(a, b, x) noise(x) noise(x, y) rand(i) pi`. Expressions are compiled once and are cheap.
+Variables: `vx`, `vy` (the layer's own velocity in px/s from its tweens and motion path; for secondary motion such as `"rotation": "=vx*0.01"`), `t` (seconds since the layer's start), `T` (seconds since the scene's start), `gt` (global time), `p` (layer progress 0..1), `i` (index within the parent), `n` (sibling count), `w`, `h` (frame size), `fps`, `frame`. Functions: `sin cos tan asin acos atan atan2 abs min max floor ceil round sqrt pow exp log clamp(x, a, b) mix(a, b, f) smoothstep(a, b, x) noise(x) noise(x, y) rand(i) pi`. Expressions are compiled once and are cheap.
 
 ### Stagger
 

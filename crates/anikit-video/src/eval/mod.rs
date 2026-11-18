@@ -1285,6 +1285,14 @@ impl Evaluator {
                 fps: self.fps as f64,
                 ..Default::default()
             };
+            let vars = if n.exprs.iter().any(|(_, e)| e.vel) {
+                // The layer's own velocity from its tracks (and motion path), central difference over 1/120 s.
+                let h = 1.0 / 240.0;
+                let (a, b) = (self.track_xy(n, lt - h), self.track_xy(n, lt + h));
+                Vars { vx: ((b[0] - a[0]) / (2.0 * h)) as f64, vy: ((b[1] - a[1]) / (2.0 * h)) as f64, ..vars }
+            } else {
+                vars
+            };
             let vars = match &self.groove {
                 Some(m) if n.exprs.iter().any(|(_, e)| e.music) || n.cexprs.iter().any(|(_, e)| e.music) => {
                     let (beat, bar, level, bpm) = m.at(cx.gt as f64);
@@ -1327,6 +1335,19 @@ impl Evaluator {
             self.run_update(ast, n, cx, lt, v);
         }
         apply_path(n, v);
+    }
+
+    /// x, y from the layer's base and tracks only (plus its motion path), for `vx`/`vy`.
+    fn track_xy(&self, n: &Node, lt: f32) -> [f32; 2] {
+        let mut v = n.base;
+        for tr in &n.tracks {
+            let s = tr.slot as usize;
+            if s == prop::X || s == prop::Y || s == prop::PROGRESS {
+                v[s] = tr.sample(lt, v[s], &self.easings);
+            }
+        }
+        apply_path(n, &mut v);
+        [v[prop::X], v[prop::Y]]
     }
 
     /// Apply a layer's `update` script: its returned props win for this frame.

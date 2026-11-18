@@ -196,3 +196,13 @@ fn layer_motion_blur_only_when_moving() {
     assert!(rects(0.25) >= 8, "{}", rects(0.25));
     assert_eq!(rects(1.5), 1, "still frames draw once");
 }
+
+#[test]
+fn expressions_see_the_layers_velocity() {
+    let e = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "x": 0, "width": 10, "height": 10, "rotation": "=vx/100",
+        "animate": { "to": { "x": 1000 }, "duration": 1, "ease": "linear" } } ] } ] }"#);
+    let rot = |t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::RoundRect { transform, .. } = o { Some(transform[1].atan2(transform[0]).to_degrees()) } else { None }).unwrap();
+    // 1000 px/s → 10°; at rest → 0°.
+    assert!((rot(0.5) - 10.0).abs() < 0.2, "{}", rot(0.5));
+    assert!(rot(1.5).abs() < 1e-3);
+}
