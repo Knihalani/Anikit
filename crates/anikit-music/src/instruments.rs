@@ -153,12 +153,21 @@ pub fn pack_defaults(name: &str) -> &'static [&'static str] {
         "pick-bass" | "picked-bass" => &["picked-bass-yr"],
         "nylon-guitar" | "classical-guitar" | "spanish-guitar" => &["nylon-guitar-fp"],
         "clean-guitar" | "electric-guitar" | "jazz-guitar" => &["clean-guitar-fsbs"],
+        "strings" | "slow-strings" | "string-ensemble" | "strings-section" | "string-section" => &["vsco-strings-section"],
+        "pizzicato" | "pizzicato-strings" | "pizz" | "strings-pizz" => &["vsco-strings-pizz"],
+        "tremolo-strings" | "strings-tremolo" => &["vsco-strings-tremolo"],
+        "spiccato" | "strings-spiccato" | "spiccato-strings" => &["vsco-strings-spiccato"],
+        "violin" => &["vsco-violin"],
+        "viola" => &["vsco-violas"],
+        "cello" => &["vsco-cellos"],
+        "contrabass" | "double-bass" => &["vsco-contrabass"],
         _ => &[],
     }
 }
 
 fn pack_cached(friendly: &str) -> bool {
-    crate::sf2::packs::INSTRUMENTS.iter().find(|x| x.0 == friendly).is_some_and(|x| crate::sf2::packs::is_cached(x.1))
+    let known = crate::sf2::packs::INSTRUMENTS.iter().any(|x| x.0 == friendly) || crate::sf2::packs::SECTIONS.iter().any(|x| x.0 == friendly);
+    known && crate::sf2::pack_instrument(friendly).is_some()
 }
 
 /// `"synth"`, `"synth-kit"`, `"physical"`, `"sampled"`, `"sampled-kit"`, `"pack"` or `"unknown"`.
