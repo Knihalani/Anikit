@@ -271,7 +271,11 @@ fn spot_radius(shape: u8, k: f32) -> f32 {
 #[inline(always)]
 fn halftone(h: &Halftone, buf: &mut [u8], w: usize) {
     if h.cmyk {
-        return halftone_cmyk(h, buf, w);
+        return match h.shape {
+            1 => halftone_cmyk::<1>(h, buf, w),
+            2 => halftone_cmyk::<2>(h, buf, w),
+            _ => halftone_cmyk::<0>(h, buf, w),
+        };
     }
     match h.shape {
         1 => halftone_s::<1>(h, buf, w),
@@ -282,47 +286,65 @@ fn halftone(h: &Halftone, buf: &mut [u8], w: usize) {
 
 /// CMYK separation: under-colour removal to K, four screens at the press angles, the inks multiplied
 /// on the paper (subtractive), the layer's coverage kept.
-fn halftone_cmyk(h: &Halftone, buf: &mut [u8], w: usize) {
+#[inline(always)]
+fn halftone_cmyk<const SHAPE: u8>(h: &Halftone, buf: &mut [u8], w: usize) {
     let rt: [f32; 257] = std::array::from_fn(|i| spot_radius(h.shape, (i as f32 / 256.0 * h.gain).min(1.0)));
     const INKS: [[f32; 3]; 4] = [[0.0, 0.68, 0.94], [0.93, 0.0, 0.55], [1.0, 0.95, 0.0], [0.14, 0.12, 0.13]];
     const ANG: [f32; 4] = [15.0, 75.0, 0.0, 45.0];
     let paper = if h.paper.0[3] > 0.0 { [h.paper.0[0], h.paper.0[1], h.paper.0[2]] } else { [1.0, 1.0, 1.0] };
     let inv = 1.0 / h.cell;
+    let cell = h.cell;
     let rot: [(f32, f32); 4] = std::array::from_fn(|k| (h.angle + ANG[k]).to_radians().sin_cos());
+    // Row scratch: per plane spot radius, then coverage.
+    let mut rad = vec![[0f32; 4]; w];
+    let mut cov = vec![0f32; w];
+    let mut acc = vec![[0f32; 3]; w];
     for (y, row) in buf.chunks_exact_mut(w * 4).enumerate() {
         let fy = y as f32 + 0.5 + h.oy;
-        for (x, p) in row.chunks_exact_mut(4).enumerate() {
-            let a = p[3] as u32;
-            if a == 0 {
-                continue;
-            }
-            let sa = a as f32 / 255.0;
+        // Pass 1: separation (skeleton black) → spot radius per plane.
+        for (r, p) in rad.iter_mut().zip(row.chunks_exact(4)) {
+            let sa = (p[3] as f32 / 255.0).max(1e-6);
             let rgb = [p[0] as f32 / 255.0 / sa, p[1] as f32 / 255.0 / sa, p[2] as f32 / 255.0 / sa].map(|v| v.min(1.0));
-            // Skeleton black: K only takes over past 25% darkness; CMY carry the midtones.
             let k = ((1.0 - rgb[0].max(rgb[1]).max(rgb[2]) - 0.25) / 0.75).max(0.0);
             let d = (1.0 - k).max(1e-4);
             let tones = [((1.0 - rgb[0] - k) / d).max(0.0), ((1.0 - rgb[1] - k) / d).max(0.0), ((1.0 - rgb[2] - k) / d).max(0.0), k];
-            let fx = x as f32 + 0.5 + h.ox;
-            let mut col = paper;
-            for pl in 0..4 {
-                let (sn, cs) = rot[pl];
-                let u = (fx * cs + fy * sn) * inv + 1024.0;
-                let v = (-fx * sn + fy * cs) * inv + 1024.0;
-                let (du, dv) = (u - u.floor() - 0.5, v - v.floor() - 0.5);
-                let dist = match h.shape {
+            *r = tones.map(|t| rt[((t.clamp(0.0, 1.0) * 256.0) as usize).min(256)]);
+        }
+        for a in acc.iter_mut() {
+            *a = paper;
+        }
+        let fx0 = 0.5 + h.ox;
+        for pl in 0..4 {
+            let (sn, cs) = rot[pl];
+            let u0 = (fx0 * cs + fy * sn) * inv + 1024.0;
+            let v0 = (-fx0 * sn + fy * cs) * inv + 1024.0;
+            let (du_dx, dv_dx) = (cs * inv, -sn * inv);
+            // Pass 2: coverage of this plane (branch-free, vectorises).
+            for (i, (c, r)) in cov.iter_mut().zip(&rad).enumerate() {
+                let uu = u0 + i as f32 * du_dx;
+                let vv = v0 + i as f32 * dv_dx;
+                let du = uu - uu.floor() - 0.5;
+                let dv = vv - vv.floor() - 0.5;
+                let dist = match SHAPE {
                     1 => dv.abs(),
                     2 => du.abs().max(dv.abs()),
                     _ => (du * du + dv * dv).sqrt(),
                 };
-                let rad = rt[((tones[pl].clamp(0.0, 1.0) * 256.0) as usize).min(256)];
-                let cov = ((rad - dist) * h.cell + 0.5).clamp(0.0, 1.0);
-                for c in 0..3 {
-                    col[c] *= 1.0 - cov * (1.0 - INKS[pl][c]);
-                }
+                *c = ((r[pl] - dist) * cell + 0.5).clamp(0.0, 1.0);
             }
-            for c in 0..3 {
-                p[c] = (col[c] * sa * 255.0 + 0.5) as u8;
+            // Pass 3: multiply the ink onto the paper.
+            let ink = INKS[pl];
+            for (a, &c) in acc.iter_mut().zip(&cov) {
+                a[0] *= 1.0 - c * (1.0 - ink[0]);
+                a[1] *= 1.0 - c * (1.0 - ink[1]);
+                a[2] *= 1.0 - c * (1.0 - ink[2]);
             }
+        }
+        for (p, a) in row.chunks_exact_mut(4).zip(&acc) {
+            let sa = p[3] as f32;
+            p[0] = (a[0] * sa + 0.5) as u8;
+            p[1] = (a[1] * sa + 0.5) as u8;
+            p[2] = (a[2] * sa + 0.5) as u8;
         }
     }
 }
