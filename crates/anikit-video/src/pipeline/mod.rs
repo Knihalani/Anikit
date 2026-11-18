@@ -872,11 +872,21 @@ impl AudioJob {
 /// the soundtrack in parallel with the video frames.
 pub fn audio_job(ev: &Evaluator, t0: f32, dur: f32, wav: &std::path::Path) -> Option<AudioJob> {
     use crate::audio::{self, Role, Source};
-    if ev.audio.is_empty() && ev.music.is_none() {
+    if ev.audio.is_empty() && ev.music.is_none() && ev.sound.is_none() {
         return None;
     }
     let cues = ev.audio.clone();
     let music = ev.music.clone();
+    // Sound design: cues come from the picture, so derive them here (cheap:
+    // display lists only, no pixels); synthesis and the mix run in the job.
+    let design = ev.sound.as_ref().map(|plan| {
+        let mut c = audio::design::auto::plan_cues(ev, plan);
+        for x in &mut c {
+            x.at -= t0 as f64;
+        }
+        c.retain(|x| x.at > -2.0);
+        (plan.clone(), c)
+    });
     let video_len = ev.duration as f64;
     let out = wav.to_path_buf();
     let run = move || -> Result<(), String> {
@@ -905,7 +915,28 @@ pub fn audio_job(ev: &Evaluator, t0: f32, dur: f32, wav: &std::path::Path) -> Op
             }
             tracks.push(t);
         }
-        let pcm = audio::mix(&tracks, dur as f64, audio::DEFAULT_RATE, None);
+        let pcm = match &design {
+            None => audio::mix(&tracks, dur as f64, audio::DEFAULT_RATE, None),
+            Some((plan, cues)) => {
+                let opts = audio::design::BusOpts {
+                    target_lufs: plan.target_lufs,
+                    true_peak: plan.spec.true_peak,
+                    space: plan.space.clone(),
+                    ambience: plan.ambience.clone().map(|(n, l)| (n, l, plan.spec.seed)),
+                    sfx_db: plan.spec.level,
+                    duck: plan.spec.duck,
+                };
+                audio::design::mix_design(&tracks, cues, &opts, dur as f64, audio::DEFAULT_RATE, None).map(|(p, rep)| {
+                    if std::env::var_os("ANIKIT_SOUND_REPORT").is_some() {
+                        eprintln!("sound: {} cues, {:.1} LUFS, {:.1} dBTP, music ducked up to {:.1} dB, mixed in {:.0} ms", rep.cues, rep.integrated_lufs, rep.true_peak_dbtp, rep.max_music_duck_db, rep.millis);
+                        for c in cues {
+                            eprintln!("  {:7.3}s  {:<22} {}", c.at + t0 as f64, c.name, c.why);
+                        }
+                    }
+                    p
+                })
+            }
+        };
         if music.is_some() {
             let _ = std::fs::remove_file(&music_wav);
         }

@@ -46,6 +46,7 @@ fn main() {
                 aq_strength: env("AQ", 0.0),
                 ssim_floor: env("SSIM", 0.0),
                 bframes: env("BF", 0.0) as u8,
+                transform8: env("T8", 1.0) > 0.0,
                 ..Default::default()
             };
             let t = Instant::now();

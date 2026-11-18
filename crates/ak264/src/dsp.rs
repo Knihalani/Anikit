@@ -1,11 +1,5 @@
 //! Pixel kernels: SAD, SATD, block compare. Scalar reference versions; SIMD in `simd`.
 
-/// SAD of a 16×16 block: `a` (stride sa) vs `b` (stride sb).
-#[inline]
-pub fn sad16(a: &[u8], sa: usize, b: &[u8], sb: usize) -> u32 {
-    crate::simd::sad16(a, sa, b, sb)
-}
-
 /// SATD (sum of |4×4 Hadamard| / 2) of a w×h block, contiguous rows of width `w`.
 #[inline]
 pub fn satd(a: &[u8], b: &[u8], w: usize, h: usize) -> u32 {
