@@ -137,6 +137,14 @@ Watches, cameras, audio gear and tools are defined by their machined surfaces. `
 - `knurl`: crossed helical grooves (grips and crowns, on the sides of cylinders);
 - `spun`: concentric fine grooves around Y (speaker caps, dial centres, lens rings).
 
+**Engraving that cuts itself.** `patternReveal` is an expression of `t`. The pattern exists only where it has been "cut" so far, and a bright cutting edge marks the tool.
+- `revealMode: "sweep"` (default): 0–1 around the object's Y axis, like a hand.
+- `radial`: a radius in metres, growing from the centre.
+
+`{ "extends": "aluminium", "pattern": "guilloche", "patternScale": 0.012, "patternReveal": "=clamp(t/3,0,1)" }`
+
+Let the cut drive the film (the reveal, a transition, the type). Proof: `docs/video/shots/3d-patterns/engrave.jpg` (two moments).
+
 **Anisotropy.** Brushed, sunburst and spun metal stretch their highlights across the grain: brushed gives a broad sheen, spun the turned-metal bowtie, and sunburst a bar through the centre. This is on by default (`anisotropy` 0.6; 0–1 sets it, 0 turns it off). Without it, flat machined metal often reflects nothing toward the camera and reads black. Proof: `docs/video/shots/3d-patterns/anisotropy.jpg` (top row 0, bottom row 0.85).
 
 Grooves need about six pixels per period to resolve. Below that they fade into extra roughness (sheen) instead of aliasing, so frame them close: a 100 mm `macro` at f/8–11.

@@ -1144,7 +1144,14 @@ impl Scene3d {
             Some(ra) => ra.0.apply_at(&ra.1, ra.2, ra.3, t).0,
             None => p.env.clone(),
         };
-        let mut scene = Scene::new(shapes, p.mats.clone(), Vec::new(), env_t, p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
+        // Materials driven by time (an engraving that cuts itself) update per frame.
+        let mut mats = p.mats.clone();
+        for m in &mut mats {
+            if let Some(e) = &m.reveal_expr {
+                m.reveal.0 = e.at(&crate::eval::expr::Vars { t: t as f64, gt: t as f64, ..Default::default() });
+            }
+        }
+        let mut scene = Scene::new(shapes, mats, Vec::new(), env_t, p.floor.as_ref().map(|f| make_floor(f, p.floor_vis.clone())));
         scene.backdrop = p.backdrop;
         scene.glow = p.glow;
         scene.haze = p.haze;
@@ -1648,6 +1655,9 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        let e = spec::material(&json!({ "extends": "aluminium", "pattern": "guilloche", "pattern_reveal": "=clamp(t/3,0,1)", "reveal_mode": "sweep" }), &HashMap::new(), "m").unwrap();
+        assert_eq!(e.reveal, (0.0, 1));
+        assert!(e.reveal_expr.is_some());
         let pin = rig::parse(&json!("pinspot"), "rig").unwrap();
         let sp = pin.spots(v3(0.0, 0.5, 0.0), 1.0, v3(0.0, 0.0, -1.0), 1.0);
         assert_eq!(sp.len(), 1);

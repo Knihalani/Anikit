@@ -62,11 +62,16 @@ pub struct Material {
     /// Anisotropy 0..1: highlights stretch across the grain of the pattern
     /// (brushed: along X; sunburst: radial; spun: around Y).
     pub aniso: f32,
+    /// Progressive engraving: how much of the pattern is cut (0..1 of a sweep
+    /// around Y, or a radius in metres), the mode (1 sweep, 2 radial), and the
+    /// expression that drives it (evaluated once per frame).
+    pub reveal: (f32, u8),
+    pub reveal_expr: Option<super::spec::Num>,
 }
 
 impl Material {
     pub fn chrome() -> Material {
-        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0, imperf: [0.0; 4], pattern: (0, 0.01, 0.0), aniso: 0.0 }
+        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0, imperf: [0.0; 4], pattern: (0, 0.01, 0.0), aniso: 0.0, reveal: (1.0, 0), reveal_expr: None }
     }
 }
 
@@ -1404,10 +1409,23 @@ impl Scene {
         }
         // Sub-pixel machining reads as sheen: the faded bump becomes roughness.
         let mut pat_rough = 0.0;
-        if m.pattern.0 != 0 && m.pattern.2 > 0.0 {
+        // Engraving reveal: the uncut part is plain; a bright edge marks the tool.
+        let mut cut = 1.0;
+        let mut glint = 0.0;
+        if m.reveal.1 != 0 && m.pattern.0 != 0 {
+            let q = ob.xf.point_inv(s.p);
+            let (x, edge) = match m.reveal.1 {
+                1 => ((-q.x).atan2(-q.z) / std::f32::consts::TAU + 0.5, 0.012),
+                _ => ((q.x * q.x + q.z * q.z).sqrt(), m.pattern.1 * 1.5),
+            };
+            let r = m.reveal.0;
+            cut = 1.0 - smoothstep(r - edge, r, x);
+            glint = if r > 0.0 && r < 0.9999 * if m.reveal.1 == 1 { 1.0 } else { 1e9 } { (1.0 - ((x - r) / edge).abs()).max(0.0).powi(3) } else { 0.0 };
+        }
+        if m.pattern.0 != 0 && m.pattern.2 > 0.0 && cut > 0.0 {
             let (pn, pr) = self.pattern_normal(m, ob, s.p, n, s.t);
-            n = pn;
-            pat_rough = pr;
+            n = if cut >= 1.0 { pn } else { norm(lerp3(n, pn, cut)) };
+            pat_rough = pr * cut;
         }
         let v = scale(d, -1.0);
         let mut nv = dot(n, v);
@@ -1415,7 +1433,8 @@ impl Scene {
             n = norm(madd(n, v, 0.02 - nv));
             nv = dot(n, v).max(1e-4);
         }
-        let mut out = v3(0.0, 0.0, 0.0);
+        // The cutting edge glows (a tool catching the light).
+        let mut out = if glint > 0.0 { scale(m.base, 6.0 * glint) } else { v3(0.0, 0.0, 0.0) };
         let mut cover = 0.0;
         if let Some(t) = self.print(ob, s) {
             out = self.print_light(t, s.p, n, m.tex_glow);
