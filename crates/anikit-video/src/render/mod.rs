@@ -14,6 +14,7 @@ pub mod blur;
 pub mod diff;
 pub mod filter;
 pub mod glyphs;
+mod gradient;
 pub mod post;
 pub mod incremental;
 mod grain;
@@ -145,6 +146,11 @@ struct State {
     sprites: HashMap<u64, CacheEntry>,
     text: HashMap<u64, CacheEntry>,
     scaled: HashMap<u64, CacheEntry>,
+    /// Large gradient fills as dithered bitmaps.
+    grads: HashMap<u64, CacheEntry>,
+    /// Pixels of new gradient bitmaps made in frame `grad_frame`.
+    grad_built: i64,
+    grad_frame: u64,
     seen: HashMap<u64, u64>,
     resample_buf: Vec<u8>,
     /// Smooth cubic upscaling for enlarged images (standard quality and up).
@@ -186,6 +192,9 @@ pub struct Renderer {
     /// Motion-blur accumulator (linear RGB).
     motion_acc: Vec<f32>,
     motion_tmp: Vec<f32>,
+    /// Clip coverage masks for motion-blurred wipes.
+    mask_ctx: Option<RenderContext>,
+    mask_pix: Pixmap,
     grain: Vec<grain::Grain>,
     /// The background colour as a 2×2 backdrop (RGBA8), reused while it stays.
     bg_pix: Option<([u8; 4], Arc<Pixmap>)>,
@@ -226,6 +235,8 @@ impl Renderer {
             pp: Default::default(),
             motion_acc: Vec::new(),
             motion_tmp: Vec::new(),
+            mask_ctx: None,
+            mask_pix: Pixmap::new(1, 1),
             grain: Vec::new(),
             bg_pix: None,
             motion_brute: false,
@@ -245,6 +256,9 @@ impl Renderer {
                 sprites: HashMap::new(),
                 text: HashMap::new(),
                 scaled: HashMap::new(),
+                grads: HashMap::new(),
+                grad_built: 0,
+                grad_frame: 0,
                 seen: HashMap::new(),
                 resample_buf: Vec::new(),
                 cubic: true,
@@ -754,6 +768,20 @@ impl Renderer {
         }
         if full || st.scaled.len() > 64 {
             st.scaled.retain(|_, e| e.last_used + 2 >= now);
+        }
+        if full || st.grads.len() > 64 {
+            // Evicted gradient bitmaps go back to the pool (no 8 MB allocations per frame).
+            let (grads, pool) = (&mut st.grads, &mut st.pix_pool);
+            let old: Vec<u64> = grads.iter().filter(|(_, e)| e.last_used + 2 < now).map(|(k, _)| *k).collect();
+            for k in old {
+                if let Some(e) = grads.remove(&k) {
+                    if let Ok(p) = Arc::try_unwrap(e.pix) {
+                        if pool.len() < 16 {
+                            pool.push(p);
+                        }
+                    }
+                }
+            }
         }
         st.seen.retain(|_, &mut f| f + 2 >= now);
         if st.sprites.len() > 256 {
@@ -1521,6 +1549,98 @@ fn stops(stops: &[(f32, Rgba)]) -> ColorStops {
     ColorStops::from(stops.iter().map(|(o, c)| ColorStop::from((*o, color(*c)))).collect::<Vec<_>>().as_slice())
 }
 
+/// A large Linear/Radial gradient fill as a float-evaluated, dithered bitmap
+/// (no 8-bit banding; cached while paint and placement stay). Sets the paint
+/// and returns true, or false to use vello's gradient.
+fn set_gradient_bitmap(st: &mut State, ctx: &mut RenderContext, paint: &Paint, t: Affine, local: Rect) -> bool {
+    if st.reference {
+        return false;
+    }
+    let (Paint::Linear { stops, .. } | Paint::Radial { stops, .. }) = paint else { return false };
+    if stops.len() < 2 {
+        return false;
+    }
+    // Only smooth gradients (≤ 4 levels per device pixel): those are the ones
+    // that band, and placing their bitmap at a whole-pixel offset (below)
+    // moves them by under ½ px, invisible on a slope that gentle.
+    let k = t.as_coeffs();
+    let scale = (k[0] * k[3] - k[1] * k[2]).abs().sqrt();
+    let len = match paint {
+        Paint::Linear { p0, p1, .. } => ((p1[0] - p0[0]).hypot(p1[1] - p0[1])) as f64,
+        Paint::Radial { r, .. } => *r as f64,
+        _ => 0.0,
+    } * scale;
+    let mut sorted: Vec<&(f32, Rgba)> = stops.iter().collect();
+    sorted.sort_by(|a, b| a.0.total_cmp(&b.0));
+    let steep = sorted.windows(2).any(|w| {
+        let dc = (0..4).map(|i| (w[1].1 .0[i] * w[1].1 .0[3].min(1.0) - w[0].1 .0[i] * w[0].1 .0[3].min(1.0)).abs()).fold(0.0f32, f32::max) as f64 * 255.0;
+        dc > 0.5 && dc / ((w[1].0 - w[0].0) as f64 * len).max(1e-9) > 4.0
+    });
+    if steep {
+        return false;
+    }
+    // The bitmap is made in the gradient's own frame (its centre or start at
+    // the origin, no translation), so a gradient that only moves is a cache
+    // hit, blitted at a whole-pixel offset.
+    let (canon, o) = match paint {
+        Paint::Linear { p0, p1, stops } => (Paint::Linear { p0: [0.0, 0.0], p1: [p1[0] - p0[0], p1[1] - p0[1]], stops: stops.clone() }, *p0),
+        Paint::Radial { c, r, stops } => (Paint::Radial { c: [0.0, 0.0], r: *r, stops: stops.clone() }, *c),
+        _ => return false,
+    };
+    let paint = &canon;
+    // The shape keeps its transform; the paint maps into its local space.
+    let shape_inv = t.inverse();
+    let t = t * Affine::translate((o[0] as f64, o[1] as f64));
+    let local = local - kurbo::Vec2::new(o[0] as f64, o[1] as f64);
+    let k = t.as_coeffs();
+    let lin = Affine::new([k[0], k[1], k[2], k[3], 0.0, 0.0]);
+    let r0 = lin.transform_rect_bbox(local);
+    let r0 = [r0.x0.floor() as i64, r0.y0.floor() as i64, r0.x1.ceil() as i64, r0.y1.ceil() as i64];
+    let (bw, bh) = (r0[2] - r0[0], r0[3] - r0[1]);
+    let visible = t.transform_rect_bbox(local).intersect(Rect::new(0.0, 0.0, ctx.width() as f64, ctx.height() as f64));
+    // Panels and cards, not frame-sized washes: drawing a bitmap costs vello
+    // more than its own gradient, so the area is kept to a quarter frame.
+    // (The frame, not the context: region renders draw into smaller contexts.)
+    let quarter = 0.25 * st.frame_size.0 as f64 * st.frame_size.1 as f64;
+    if visible.width() <= 0.0 || visible.height() <= 0.0 || visible.area() < gradient::MIN_AREA || (bw * bh) as f64 > quarter.max(gradient::MIN_AREA) {
+        return false;
+    }
+    let key = gradient::key(paint, lin, r0, (0, 0));
+    let now = st.frame_no;
+    let pix = match st.grads.get_mut(&key) {
+        Some(e) => {
+            e.last_used = now;
+            e.pix.clone()
+        }
+        None => {
+            // A budget of new bitmaps per frame (~8% of its pixels): gradients
+            // that change every frame at scale stay with vello's (cheaper) fill;
+            // static ones are made once, over a few frames if need be.
+            if st.grad_frame != now {
+                (st.grad_frame, st.grad_built) = (now, 0);
+            }
+            let budget = 0.08 * st.frame_size.0 as f64 * st.frame_size.1 as f64;
+            if (st.grad_built + bw * bh) as f64 > budget.max(gradient::MIN_AREA) {
+                return false;
+            }
+            st.grad_built += bw * bh;
+            // Dither anchored to the bitmap: static gradients keep a fixed pattern.
+            let Some(pm) = gradient::render(paint, lin, r0[0], r0[1], bw as usize, bh as usize, (-r0[0] as i32, -r0[1] as i32), Some(&mut st.pix_pool)) else { return false };
+            let pix = Arc::new(pm);
+            st.grads.insert(key, CacheEntry { pix: pix.clone(), x: 0, y: 0, last_used: now });
+            pix
+        }
+    };
+    let (ix, iy) = (k[4].round(), k[5].round());
+    ctx.reset_paint_transform();
+    ctx.set_paint(Image {
+        image: ImageSource::Pixmap(pix),
+        sampler: ImageSampler { x_extend: Extend::Pad, y_extend: Extend::Pad, quality: ImageQuality::Low, alpha: 1.0 },
+    });
+    ctx.set_paint_transform(shape_inv * Affine::translate((r0[0] as f64 + ix, r0[1] as f64 + iy)));
+    true
+}
+
 /// Set `paint` on `ctx`. Returns false when there is nothing to draw.
 fn set_paint(ctx: &mut RenderContext, assets: &View, paint: &Paint) -> bool {
     ctx.reset_paint_transform();
@@ -1696,7 +1816,7 @@ fn draw_op(st: &mut State, assets: &View, ctx: &mut RenderContext, op: &Op, base
     }
     match op {
         Op::Fill { path, paint, rule, transform } => {
-            if !set_paint(ctx, assets, paint) {
+            if !set_gradient_bitmap(st, ctx, paint, base * affine(transform), path.bounding_box()) && !set_paint(ctx, assets, paint) {
                 return;
             }
             ctx.set_transform(base * affine(transform));
@@ -1772,7 +1892,11 @@ fn draw_op(st: &mut State, assets: &View, ctx: &mut RenderContext, op: &Op, base
             ctx.stroke_path(p);
         }
         Op::RoundRect { x, y, w, h, radius, paint, transform } => {
-            if *w <= 0.0 || *h <= 0.0 || !set_paint(ctx, assets, paint) {
+            if *w <= 0.0 || *h <= 0.0 {
+                return;
+            }
+            let local = Rect::new(*x as f64, *y as f64, (*x + *w) as f64, (*y + *h) as f64);
+            if !set_gradient_bitmap(st, ctx, paint, base * affine(transform), local) && !set_paint(ctx, assets, paint) {
                 return;
             }
             ctx.set_transform(base * affine(transform));

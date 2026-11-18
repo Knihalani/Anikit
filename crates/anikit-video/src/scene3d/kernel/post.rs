@@ -304,15 +304,15 @@ fn fetch(img: &[[f32; 3]], w: usize, h: usize, x: f32, y: f32) -> [f32; 3] {
 /// interpolates between the two levels around its own blur σ. Returns the
 /// reflection to add (fade and haze applied).
 fn floor_reflection(pl: &Planes, w: usize, h: usize, s: f32) -> Option<Img> {
-    if !pl.cov.iter().any(|&c| c > 0.0) {
+    if !par::any(&pl.cov, |&c| c > 0.0) {
         return None;
     }
     // The radius field comes from one ray per pixel and can alternate
     // between rows (hit / miss); a 9×9 box average keeps the blur coherent.
     let rad0: Buf<[f32; 1]> = par::map(w * h, |i| [if pl.cov[i] > 0.0 { pl.rad[i] * s } else { 0.0 }]);
     let rad = box_cols(&box_rows(&rad0, w, h, 4), w, h, 4);
-    let gap = (0..w * h).any(|i| pl.refl[i][3] < pl.cov[i] * 0.5);
-    let maxr = (rad.iter().fold(0.0f32, |m, v| m.max(v[0])) * 0.5 * 1.35).max(if gap { 2.6 } else { 0.0 });
+    let gap = par::any_index(w * h, |i| pl.refl[i][3] < pl.cov[i] * 0.5);
+    let maxr = (par::max(&rad, |v| v[0]) * 0.5 * 1.35).max(if gap { 2.6 } else { 0.0 });
     struct Lvl {
         sig: f32,
         w: usize,
@@ -383,7 +383,7 @@ fn denoise_vis(pl: &Planes, w: usize, h: usize, passes: u32) -> (Buf<f32>, Buf<f
     let mut ao = pl.ao.clone();
     let mut vk = pl.vk.clone();
     // Checkerboard gaps need at least one pass to be filled.
-    let gaps = pl.vw.iter().any(|&v| v < 1.0);
+    let gaps = par::any(&pl.vw, |&v| v < 1.0);
     let passes = if gaps { passes.max(1) } else { passes };
     if passes == 0 {
         return (ao, vk);
@@ -391,7 +391,7 @@ fn denoise_vis(pl: &Planes, w: usize, h: usize, passes: u32) -> (Buf<f32>, Buf<f
     // Per-centre depth tolerance (reciprocal).
     let inv_tol: Buf<f32> = par::map(w * h, |i| 1.0 / (pl.depth[i] * 0.02 + 1e-3));
     // Rows with nothing lit pass through untouched.
-    let row_lit: Vec<bool> = (0..h).map(|y| pl.lit[y * w..y * w + w].iter().any(|&l| l > 0.0)).collect();
+    let row_lit: Vec<bool> = par::rows_any(&pl.lit, w, |&l| l > 0.0);
     // lit × validity, for the first pass when there are gaps.
     let gw: Buf<f32> = if gaps { par::map(w * h, |i| pl.lit[i] * pl.vw[i]) } else { Buf::uninit(0) };
     let k = [0.25f32, 0.5, 0.25];
@@ -768,7 +768,7 @@ fn motion_blur(hdr: &mut Img, vel: &[[f32; 2]], w: usize, h: usize, shutter: f32
         let (vx, vy) = (v[0] * shutter, v[1] * shutter);
         vx * vx + vy * vy >= 0.35 * 0.35
     };
-    if !vel.iter().any(moving) {
+    if !par::any(vel, moving) {
         return;
     }
     let src = hdr.clone();

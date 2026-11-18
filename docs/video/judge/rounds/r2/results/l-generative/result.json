@@ -1,0 +1,526 @@
+{
+  "name": "l-generative",
+  "tags": [
+    "generative",
+    "motion-design",
+    "3d-cg",
+    "music-video"
+  ],
+  "refs": [
+    "weirdcore-aphex-twin-t69-collapse-2018",
+    "game-of-thrones",
+    "netflix-ribbon-logo-2019"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 4,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 4,
+      "motion": 4,
+      "craft": 5,
+      "originality": 3
+    },
+    "overall": 3.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a subject and a world. D builds a physical, crafted universe, while C only applies an effect to a word.",
+      "The type needs a custom or expressive treatment that interacts with the image, not a centred default bold sans with a filter on it.",
+      "It needs real material and light (texture, depth, a motivated light source) and a palette chosen for the piece instead of black, cream and one red.",
+      "It needs a specific subject or world, something that is actually transmitting or receiving, rather than an abstract shader standing in for the word 'signal'",
+      "The typography needs a point of view: a custom or chosen face that is built from the interference itself, scale contrast, and a layout that breaks the centred-slide convention",
+      "It needs real material and light (a physical medium such as water, metal, CRT phosphor or paper) and a palette beyond grey-plus-one-red, so that the frames read as designed posters and not as parameter sweeps",
+      "Find an idea beyond the dictionary definition of 'signal'. A builds a whole mechanical world as a metaphor for its subject",
+      "Give the type a role. Integrate it into the interference field or have it emerge from it in a structural way, instead of a centred wordmark with a filter on it",
+      "Bring in a subject, material and real light. Every A frame has physical objects, texture and depth, and these frames are procedural texture only"
+    ],
+    "tells": [
+      "The idea is literal: the word 'SIGNAL' is illustrated with noise, ripples and a waveform line. Name plus diagram.",
+      "The palette is the generic 'tasteful AI' set: near-black ground, cream/white, one red accent line.",
+      "The end card is a centred heavy grotesk headline on a blurred concentric gradient, with the same scanline filter on the type. The typography has no layout or scale idea.",
+      "The same scanline-filter treatment is laid over every frame. Noise, interference rings and blobs are stock procedural effects with no subject.",
+      "Frames 2 and 3 are near-identical compositions, and the flat line frame is mostly empty. Little actually happens.",
+      "The idea is literal and obvious: the title is 'SIGNAL', so the film shows noise, then interference ripples, then a waveform line, then the word. It is a diagram of the word",
+      "It shows the generic 'tasteful AI' formula: dark ground, monochrome, a single red accent line, and a centred bold extended grotesk headline at the end",
+      "The procedural effect has no subject: shader-default concentric ripples and Moir\u00e9 interference, with a uniform scanline overlay on every frame",
+      "The same visual treatment (horizontal scanlines over a radial pattern) is repeated across frames, and the variation is only in parameters",
+      "The typography is a default heavy wide sans with a stock scanline cut-through, has no relationship of scale or layout to the image, and is centred like a slide",
+      "The light and texture are flat and procedural, with no material, depth or physical light",
+      "It has the generic 'tasteful AI' look: a dark ground, a single red accent line and mostly empty frames",
+      "The idea is literal. The word 'SIGNAL' is illustrated with noise, ripple interference patterns and a waveform, and the product name plus a diagram of the concept is the whole piece",
+      "The typography is a default heavy grotesk, centred on its own with a scanline mask applied. It shows no scale contrast, layout idea or interplay with the image beyond the effect",
+      "The scanline and interference pattern is a stock shader effect with no subject. Frames 2 and 3 are the same effect at different parameters, so little happens",
+      "There is no material, depth or motivated light, only a procedural 2D pattern"
+    ]
+  },
+  "refs_summary": {
+    "weirdcore-aphex-twin-t69-collapse-2018": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "game-of-thrones": {
+      "overall": 9.62,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "netflix-ribbon-logo-2019": {
+      "overall": 7.88,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 8.0,
+  "delta": -4.38,
+  "trials": [
+    {
+      "key": {
+        "A": "netflix-ribbon-logo-2019",
+        "B": "weirdcore-aphex-twin-t69-collapse-2018",
+        "C": "candidate",
+        "D": "game-of-thrones"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The logo is built from ribbons of light that split into a full-spectrum tunnel. The mark has its own story, so this is more than a logo sting.",
+              "Clear choreography across frames: the solid N splits into ribbons, then flat vertical stripes, a vanishing-point fly-through, and back to a resolved N. Scale and perspective change from shot to shot.",
+              "Red is held back and opened into a wide spectrum at the climax, so the colour change carries the story.",
+              "The light has real glow, falloff and motion-blur streaking. Faint stars in the tunnel frame add depth.",
+              "The opening and closing frames are a centred mark on black. That is right for an ident, but on its own it is a quiet composition."
+            ],
+            "gaps": [
+              "The bookend frames are a plain centred mark on black. They need the layered, poster-like density that D has in every frame.",
+              "Apart from the wordmark there is no typography, and nothing carries the image as D's credits do.",
+              "The spectrum tunnel recalls stock 'speed of light' imagery. The idea needs a less familiar visual metaphor in the middle section."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 6,
+              "originality": 8
+            },
+            "tells": [
+              "The point-cloud and photogrammetry street scenes are deliberately broken: kaleidoscopic building rings and melting terrain. This is an authored aesthetic, not a default effect.",
+              "A specific idea links the frames: one captured place is rebuilt, inverted and turned into code or text. The lettered point-cloud frame ties the type to the space.",
+              "There is a lot of variety: tunnel view, sky view looking up, a mangled landscape, a monochrome text field. The camera behaviour implies real choreography.",
+              "The finish is rough and the palette is noisy (hot red and yellow against grey and blue). It reads as experimental music-video or art work rather than polished studio work."
+            ],
+            "gaps": [
+              "The colour has no discipline. The saturated red/yellow grading fights the image, while D holds one controlled warm palette throughout.",
+              "The text frame is monospace scattered over the geometry with no hierarchy or legibility. The type needs a deliberate point of view.",
+              "The finish is uneven: smeared meshes and blown highlights look accidental rather than designed. Glitch frames need the same compositional control as D's strongest frames."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The idea is literal: the word 'SIGNAL' is illustrated with noise, ripples and a waveform line. Name plus diagram.",
+              "The palette is the generic 'tasteful AI' set: near-black ground, cream/white, one red accent line.",
+              "The end card is a centred heavy grotesk headline on a blurred concentric gradient, with the same scanline filter on the type. The typography has no layout or scale idea.",
+              "The same scanline-filter treatment is laid over every frame. Noise, interference rings and blobs are stock procedural effects with no subject.",
+              "Frames 2 and 3 are near-identical compositions, and the flat line frame is mostly empty. Little actually happens."
+            ],
+            "gaps": [
+              "It needs a subject and a world. D builds a physical, crafted universe, while C only applies an effect to a word.",
+              "The type needs a custom or expressive treatment that interacts with the image, not a centred default bold sans with a filter on it.",
+              "It needs real material and light (texture, depth, a motivated light source) and a palette chosen for the piece instead of black, cream and one red."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A distinctive idea that belongs to this piece alone: a clockwork map of the world that builds itself, telling the geography and politics of the series with tactile miniatures.",
+              "Every frame is a poster. The engraved astrolabe band, the cities rising out of gears, and the parchment map with an inked river all have dense, layered detail and shallow depth of field.",
+              "Real light and material: a warm sun-flare core, aged metal, wood and parchment, and a consistent amber-and-umber palette.",
+              "The typography fits the world: a classical serif with small caps, credits tucked into the scene next to heraldic sigils, and a dragon-flanked title lockup.",
+              "The movement is choreographed: a crane over the map, mechanisms unfolding, and the title resolving in the central sun. The variety of shots is held together by one system."
+            ],
+            "gaps": [
+              "The credit type is very small and sometimes gets lost in busy, detailed backgrounds. It could hold more contrast against them.",
+              "The end-title lockup is centred and symmetrical, more conventional than the inventive map sequences before it.",
+              "The heavy warm grade and blooming flare flatten some midtones. A slightly wider tonal range would bring out more of the material detail."
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.8,
+        "cost_usd": 0.1557478,
+        "tokens": 71845,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "netflix-ribbon-logo-2019",
+        "B": "weirdcore-aphex-twin-t69-collapse-2018",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The logo is a real object: the N's ribbon breaks into light strands, and frame 2 shows its stem already splitting into fibres before the dive",
+              "Choreography carries over between frames: a tight logo becomes a full-frame flight through vertical bands, which opens into a perspective tunnel of coloured light, which pulls back to the reformed N, so the shot loops back on itself",
+              "The palette is planned: the red-on-black brand colours open into a broad spectrum (magenta, cyan, violet, amber) only in the middle of the piece and then close back to red",
+              "The light strands have glow, depth fog and a faint star field behind them, so there is real light and depth here, not flat gradient bars",
+              "There is no headline type, because the mark itself does the typographic work, and the custom N carries the whole piece"
+            ],
+            "gaps": [
+              "The opening and closing frames sit on plain black with a centred mark. That is correct for a logo ident, but it leaves no frame-level texture or setting at the bookends",
+              "As a brand sting it is built around a logo rather than a story, so it gives less to read than C's narrative world-building",
+              "The colour-spectrum tunnel is a familiar light-streak idea, and it is the execution rather than the concept that lifts it"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 6,
+              "originality": 8
+            },
+            "tells": [
+              "It works with photogrammetry and point-cloud data in a specific, deliberate way: scanned brick streets are turned inside out, folded into an Inception-style ring of houses around a radial blade structure, and pushed into a spiky displaced terrain",
+              "Frame 4 builds monospace text into the point-cloud architecture. It reads as a fragment of a monologue about point clouds and simulation, so the type is part of the concept and is not a caption",
+              "The frames vary a great deal: a red thermal-style alley, a crushed landscape under a sky, an upward fish-eye shot of a vortex against a fire-lit sky, a black void of text, then a return to the alley. That suggests a camera path through one connected scanned world",
+              "Experimental, art-video sensibility; nothing about it is template-like"
+            ],
+            "gaps": [
+              "Its finish is rough on purpose but uneven: the red alleys are muddy and lack hierarchy, while C makes every frame read as a poster",
+              "Colour feels like a by-product of the data rather than a designed palette (saturated red/yellow artifacts vs. a muted earthy world), so a controlled grade would unify it",
+              "The text treatment in frame 4 has a concept but no typographic finish (default-looking monospace, random scale), so it needs a considered face and a rhythm for the layout"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "It has an idea only this piece could have: the show's geography is a clockwork map whose cities unfold mechanically, a world-model that also acts as an orrery",
+              "Its materials are tactile: engraved bronze, wood, bone-like spires, gears and parchment, all with real specular light, shallow depth of field and atmospheric haze",
+              "The astrolabe band in the first and last frames is lit by a blazing sun inside the sphere, and engraved reliefs on it tell the backstory, so the bookends rhyme",
+              "Credits are integrated into the world: small Trajan-like caps placed beside each sigil, scaled to sit in the set rather than over it",
+              "The title lockup is a custom, beautifully set cartouche in which the 'OF' is set small between the two words, with rich bevel and glow that suits the period",
+              "The palette is restrained (warm bronze, ivory, slate, parchment green), and the frames move from macro to aerial map to mechanism, which shows choreographed camera language"
+            ],
+            "gaps": [
+              "It is the benchmark entry here, so it has no major gaps",
+              "Credits are small and low-contrast against busy detail in places (frame 2), which costs some legibility",
+              "The final lockup is a little more conventional and glossy than the inventiveness of the mechanical sequences before it"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The idea is literal and obvious: the title is 'SIGNAL', so the film shows noise, then interference ripples, then a waveform line, then the word. It is a diagram of the word",
+              "It shows the generic 'tasteful AI' formula: dark ground, monochrome, a single red accent line, and a centred bold extended grotesk headline at the end",
+              "The procedural effect has no subject: shader-default concentric ripples and Moir\u00e9 interference, with a uniform scanline overlay on every frame",
+              "The same visual treatment (horizontal scanlines over a radial pattern) is repeated across frames, and the variation is only in parameters",
+              "The typography is a default heavy wide sans with a stock scanline cut-through, has no relationship of scale or layout to the image, and is centred like a slide",
+              "The light and texture are flat and procedural, with no material, depth or physical light"
+            ],
+            "gaps": [
+              "It needs a specific subject or world, something that is actually transmitting or receiving, rather than an abstract shader standing in for the word 'signal'",
+              "The typography needs a point of view: a custom or chosen face that is built from the interference itself, scale contrast, and a layout that breaks the centred-slide convention",
+              "It needs real material and light (a physical medium such as water, metal, CRT phosphor or paper) and a palette beyond grey-plus-one-red, so that the frames read as designed posters and not as parameter sweeps"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.0,
+        "cost_usd": 0.1627668,
+        "tokens": 72188,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "weirdcore-aphex-twin-t69-collapse-2018",
+        "C": "netflix-ribbon-logo-2019",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea that belongs only to this piece: the map of the world is a clockwork machine, and the cities build themselves out of gears. It tells you the show is about the politics of the world",
+              "Real material and light: tooled leather and engraved brass, with the astrolabe band blown out by sunburst light. Wood, bone and metal all carry patina and texture",
+              "The typography has a point of view. It is a custom-feeling inscriptional serif in spaced caps, with a heraldic sigil icon beside each credit, and the credits are set into the 3D world instead of laid over it",
+              "Choreography carries across the frames: astrolabe, then the city rising, then the mechanism, then the map with the plumb line, then the logo framed back in the astrolabe. The piece is a loop, and the macro and wide shots vary its rhythm",
+              "Every frame works as a poster. The warm, desaturated parchment-and-bronze palette is deliberate and consistent"
+            ],
+            "gaps": [
+              "Its relationship to the best entry is the reverse: it is the benchmark. A few credit placements, such as the map credit, sit somewhat arbitrarily in negative space",
+              "The end card, a logo on a sunburst, is more conventional than the mechanical world before it",
+              "The muted map frame is a little flat next to the sculpted city shots"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 5,
+              "originality": 7
+            },
+            "tells": [
+              "It looks like an experimental photogrammetry and point-cloud piece. The broken scans of houses and streets, inside-out camera flights and a city wrapped into a kaleidoscopic tunnel show a medium being pushed on purpose, not a preset",
+              "The camera language varies from shot to shot: a corridor fly-through, a mesh landscape, an upward view of a radial house tower with a fire sky, and a text-mapped point-cloud alley. The changes in perspective suggest choreography",
+              "The monospace text projected into the space works as a conceptual layer, with lines like 'point cloud', 'midi' and 'take for ever', though the setting is rough",
+              "Against it: the pink and red colour treatments look like raw software output, and the finish is uneven and chaotic. It reads as an artist or lab piece rather than polished studio work, which is why confidence is low"
+            ],
+            "gaps": [
+              "Fix the colour into a deliberate palette. The pink-red-yellow false colour looks accidental next to A's controlled bronze world",
+              "Set the projected text as typography, with hierarchy, scale and legibility, instead of scattered default monospace",
+              "Give the frames a clear compositional anchor and finish. Several frames are visual noise with no subject or focal point"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The brand mark is deconstructed into its own content. The N's ribbon breaks into a spectrum of light strands, which reads as the many stories inside the platform, then rebuilds. The idea is specific and fits the brand",
+              "The motion arc is clear: a flat logo turns into dimensional ribbon strips, falls into a macro tunnel of colour bands and resolves back to the mark. The scale changes move between intimate and immersive",
+              "The palette grows from brand red into a controlled rainbow spectrum and returns to red, which is deliberate",
+              "The finish on the strand rendering and the motion-blurred colour bars is clean and high-end",
+              "Against it: three of the five frames are a centred logo on black, so the compositions are sparse by design. It is an ident, not a world"
+            ],
+            "gaps": [
+              "There is little compositional variety. Centred logo on black repeats three times, against A's constantly changing staging",
+              "Light and texture stay at glossy, digital, abstract streaks. Nothing has a tactile material quality like A's brass, leather and wood",
+              "The idea, a logo made of light ribbons, is strong for an ident but narrow. There is no narrative layer or world-building beyond the mark"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 5,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "It has the generic 'tasteful AI' look: a dark ground, a single red accent line and mostly empty frames",
+              "The idea is literal. The word 'SIGNAL' is illustrated with noise, ripple interference patterns and a waveform, and the product name plus a diagram of the concept is the whole piece",
+              "The typography is a default heavy grotesk, centred on its own with a scanline mask applied. It shows no scale contrast, layout idea or interplay with the image beyond the effect",
+              "The scanline and interference pattern is a stock shader effect with no subject. Frames 2 and 3 are the same effect at different parameters, so little happens",
+              "There is no material, depth or motivated light, only a procedural 2D pattern"
+            ],
+            "gaps": [
+              "Find an idea beyond the dictionary definition of 'signal'. A builds a whole mechanical world as a metaphor for its subject",
+              "Give the type a role. Integrate it into the interference field or have it emerge from it in a structural way, instead of a centred wordmark with a filter on it",
+              "Bring in a subject, material and real light. Every A frame has physical objects, texture and depth, and these frames are procedural texture only"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.6,
+        "cost_usd": 0.1624066,
+        "tokens": 72166,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": true,
+        "sync": true
+      },
+      "defects": [
+        "Effectively one 17.6s continuous procedural shot: the pace FAIL comes from a single simulation evolving, not from directed shots. The 0.17s median comes from flicker in the noise, not from cuts.",
+        "The opening noise field (frame 1) and the near-empty flat-line frame (frame 5) are visually dead: low information, and neither works as a held image.",
+        "The fine horizontal line raster sits close to pixel pitch, so moir\u00e9 and shimmer are likely on downscale or compression; the pairs frames already show beating in the ring regions.",
+        "Red accent peaks are soft additive blobs pasted onto the lines rather than light the lines catch. Their placement looks random, not choreographed.",
+        "SIGNAL lockup: the slatted letterforms are a stock 'type through scanlines' treatment, and the grey ring ghost behind them reads muddy and low-contrast.",
+        "Audio: the first ~6s is three near-identical filtered noise bursts separated by hard gaps, so it is static and repetitive. The riser is a plain exponential noise sweep, and the tail ticks decay mechanically."
+      ],
+      "gaps": [
+        "Motion has no authored timing: the wave field morphs at a constant, sim-driven rate with no anticipation, holds or accents. Top work would choreograph the noise\u2192interference\u2192order transition in beats, with distinct shots, camera or scale changes, and a hard, designed handoff from the waveform to the wordmark.",
+        "Sound is thin generated design: white-noise bursts, a textbook riser and one broadband hit, with almost no tonal or harmonic content and no layered foley for the line material. A top studio would build a produced score whose partials resolve from noise to pitch alongside the picture.",
+        "Finish and image-making: the moir\u00e9-prone raster, flat black field without lighting, glow-blob accents and a generic slatted end title fall short of poster-grade frames. It needs real light falloff on the lines, controlled line density versus resolution, and a final lockup that grows from the system instead of being stamped over it."
+      ]
+    },
+    "meta": {
+      "seconds": 24.5,
+      "cost_usd": 0.1640808,
+      "tokens": 72266,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 20.0s, 14 shots, median 0.17s, longest 17.57s\nper-second change: [16.9, 24.4, 24.6, 21.0, 20.9, 20.5, 15.0, 17.3, 21.8, 22.4, 22.2, 30.5, 33.3, 35.2, 8.8, 9.9, 8.9, 4.2, 5.3]\nPACE: FAIL \u2014 longest shot 17.6s > 2.5s"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 3,
+    "colour": 3,
+    "light_texture": 4,
+    "motion": 4.5,
+    "craft": 5.5,
+    "originality": 3,
+    "sound": 5
+  },
+  "full_overall": 3.89,
+  "cost_usd": 0.645,
+  "judge_seconds": 122.9,
+  "verdict": "FAIL"
+}

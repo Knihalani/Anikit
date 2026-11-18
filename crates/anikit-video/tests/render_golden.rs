@@ -792,6 +792,18 @@ fn motion_blur_matches_brute_force() {
             ])
         }),
         Box::new(move |t| list(vec![bg(), Op::RoundRect { x: -20.0, y: -6.0, w: 40.0, h: 12.0, radius: 2.0, paint: solid(1.0, 1.0, 1.0), transform: moved(48.0, 48.0, 30.0 * t) }])),
+        // An iris: a growing circular clip over a still card (the wipe path).
+        Box::new(move |t| {
+            let r = 10.0 + 900.0 * t as f64;
+            let clip = kurbo::Circle::new((48.0, 48.0), r).to_path(0.1);
+            list(vec![
+                bg(),
+                layer(1.0, Blend::Normal, vec![], Some((clip, IDENTITY)), None),
+                Op::RoundRect { x: 0.0, y: 0.0, w: 96.0, h: 96.0, radius: 0.0, paint: solid(0.9, 0.6, 0.2), transform: IDENTITY },
+                card(30.0, 40.0, 36.0, 16.0, solid(1.0, 1.0, 1.0)),
+                Op::PopLayer,
+            ])
+        }),
         Box::new(move |t| {
             let mut ops = vec![bg()];
             if t > 0.05 {
@@ -953,4 +965,69 @@ fn solid_background_backdrop_matches_clear() {
     exact.render_yuv(&l, &mut b);
     let worst = a.y.iter().zip(&b.y).chain(a.u.iter().zip(&b.u)).chain(a.v.iter().zip(&b.v)).map(|(p, q)| p.abs_diff(*q)).max().unwrap();
     assert!(worst <= 1, "max YUV diff {worst}");
+}
+
+/// Change tracking follows image content, not allocation: the same pixels
+/// re-made in a new `Arc` (a cache refilled) are no change, so which regions
+/// redraw (and so the output) never depends on cache timing.
+#[test]
+fn same_pixels_in_a_new_allocation_are_unchanged() {
+    use anikit_video::render::incremental::Update;
+    use anikit_video::render::{MbMap, YuvFrame};
+    let frame = |v: u8| {
+        let mut p = vello_cpu::Pixmap::new(32, 32);
+        p.data_as_u8_slice_mut().chunks_mut(4).for_each(|c| c.copy_from_slice(&[v, v / 2, 255 - v, 255]));
+        Arc::new(p)
+    };
+    let l = DisplayList {
+        width: 96,
+        height: 64,
+        background: rgba(0.1, 0.1, 0.1, 1.0),
+        ops: vec![Op::Image { image: ImageId(5), dst: [4.0, 4.0, 40.0, 40.0], opacity: 1.0, transform: IDENTITY }],
+    };
+    let mut r = Renderer::new(Arc::new(Assets::default()));
+    let (mut yuv, mut changed) = (YuvFrame::default(), MbMap::default());
+    r.set_frame_image(ImageId(5), frame(40));
+    assert_eq!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Full);
+    r.set_frame_image(ImageId(5), frame(40));
+    assert_eq!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Unchanged);
+    r.set_frame_image(ImageId(5), frame(41));
+    assert!(matches!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Partial { .. }));
+}
+
+/// Large gradients are evaluated in float and dithered: within a level of
+/// vello's gradient, but without its 8-bit bands.
+#[test]
+fn large_gradients_are_dithered_not_banded() {
+    use anikit_video::render::Quality;
+    let assets = Arc::new(Assets::default());
+    // A dark, slow ramp across a 300 × 60 card (a panel, under a quarter of the
+    // frame): 8-bit steps would be ~25 px wide bands.
+    let l = DisplayList {
+        width: 1280,
+        height: 720,
+        background: rgba(0.0, 0.0, 0.0, 1.0),
+        // A sharp op first: the gradient is drawn over content, not as a
+        // leading backdrop (which has its own float field).
+        ops: vec![card(2.0, 2.0, 6.0, 6.0, solid(1.0, 1.0, 1.0)), Op::RoundRect {
+            x: 0.0,
+            y: 0.0,
+            w: 300.0,
+            h: 60.0,
+            radius: 0.0,
+            paint: Paint::Linear { p0: [0.0, 0.0], p1: [300.0, 0.0], stops: vec![(0.0, rgba(0.02, 0.03, 0.05, 1.0)), (1.0, rgba(0.07, 0.08, 0.12, 1.0))] },
+            transform: IDENTITY,
+        }],
+    };
+    let got = Renderer::new(assets.clone()).render(&l).data_as_u8_slice().to_vec();
+    let mut vr = Renderer::new(assets.clone());
+    vr.set_quality(Quality::Reference);
+    let vello = vr.render(&l).data_as_u8_slice().to_vec();
+    let worst = got.iter().zip(&vello).map(|(a, b)| a.abs_diff(*b)).max().unwrap();
+    assert!(worst <= 2, "max diff vs vello {worst}");
+    // Column averages follow the exact ramp; vello's 8-bit steps don't.
+    let col_mean = |px: &[u8], x: usize| (0..60).map(|y| px[(y * 1280 + x) * 4 + 2] as f64).sum::<f64>() / 60.0;
+    let ideal = |x: usize| (0.05 + (0.12 - 0.05) * (x as f64 + 0.5) / 300.0) * 255.0;
+    let err = |px: &[u8]| (0..300).map(|x| (col_mean(px, x) - ideal(x)).abs()).fold(0.0, f64::max);
+    assert!(err(&got) < 0.3 && err(&vello) > 0.4, "dithered {:.2}, vello {:.2}", err(&got), err(&vello));
 }

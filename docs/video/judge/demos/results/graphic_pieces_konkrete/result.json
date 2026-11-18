@@ -1,0 +1,523 @@
+{
+  "name": "graphic_pieces_konkrete",
+  "tags": [
+    "event-promo",
+    "kinetic-type"
+  ],
+  "refs": [
+    "xk-studio-offfmx-2025-main-titles",
+    "studio-river-motion-plus-design-tokyo-2024",
+    "game-of-thrones"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 5,
+      "typography": 4,
+      "colour": 4,
+      "light_texture": 2,
+      "motion": 3,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 3.38,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find an idea beyond quoting the movement's look, for example motion that enacts concrete-art systems (rules, permutations, grids) rather than illustrating them",
+      "Build real typographic craft: a chosen or custom face, kerning tension with the forms, and type that interacts physically with the shapes rather than sitting over them",
+      "Add choreography and variety: every frame should be a distinct poster, with material, print texture or light to give it A's depth",
+      "It needs a specific idea beyond 'Swiss poster that moves': for example, the circle or ring geometry should construct the letterforms, or the motion should follow the systematic rules of concrete art",
+      "Introduce material and depth (print texture, overprint, misregistration, real paper) so frames feel made rather than exported",
+      "Vary scale and composition far more between frames and build real choreography and transformation between states rather than a repeated title layout",
+      "There is no concept beyond quoting Konkrete Kunst; it needs a specific idea, as C has with its clockwork map, such as letterforms that are built from the works' own construction rules and visibly assemble",
+      "The film has almost no choreography (the end frames are identical); it needs layered transformations between states rather than slide cuts",
+      "Typography and image need depth and craft: a chosen or drawn face, real print texture or material, and a palette decision beyond red, black and cream"
+    ],
+    "tells": [
+      "A pastiche of Swiss/Bauhaus 'Konkrete Kunst' posters: red circle, black heavy grotesk, cream ground; the most clich\u00e9d possible take on the subject",
+      "Generic heavy grotesk (Archivo/Inter-Black style) with small tracked meta labels in the corners, the template 'exhibition poster' formula",
+      "The last two frames are identical and the first repeats the same layout, so very little happens and the structure is slide-deck-like",
+      "Flat vector fills with no light, texture or material; the single hatched rectangle is the only texture",
+      "Literal idea: the word 'Kreis, Bogen, Ring.' next to a drawing of a circle, an arc and a ring",
+      "A textbook 'tasteful AI' system: cream ground, one red accent, black, small two-column metadata labels in the corners, and a big bold grotesk headline",
+      "The last two frames are virtually identical and the first frame shares their layout, so it is a slide-deck structure with little happening and a static end card",
+      "Swiss/Concrete-art pastiche (circle, arc, ring, a big K, hatched square) that illustrates the subject literally ('Kreis, Bogen, Ring.') instead of reinterpreting it",
+      "The type is a default heavy grotesk (Archivo Black territory) with no custom handling; the headline overlapping the circle is the only layering",
+      "Completely flat vector with no light, texture or material, even though concrete art invites print grain, ink or paper",
+      "Numbered section labels ('02 \u2014 Form', '03 \u2014 Zeichen') read as auto-generated scaffolding",
+      "This is the textbook generated 'Swiss revival' look: a cream ground, one red accent plus black, tiny metadata labels in the corners, and a heavy grotesk headline",
+      "The type is a default heavy grotesk (Archivo/Inter-Black-like) at tight tracking, with no custom letterform or typographic invention beyond a giant K",
+      "The last two frames are essentially identical and the first repeats the same layout, so it is one slide with words swapped and little motion to infer",
+      "There is no light, texture, or material at all; the shapes are flat vector primitives (circle, arc, ring, hatched rectangle)",
+      "The idea is literal: an exhibition about circles and form shows circles and forms, and 'Kreis, Bogen, Ring.' just captions the shapes",
+      "The German placeholder copy reads like generated content (generic hall name, 'Ausstellung Nr. 01', 'Zwanzig Positionen')"
+    ]
+  },
+  "refs_summary": {
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "studio-river-motion-plus-design-tokyo-2024": {
+      "overall": 6.88,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "game-of-thrones": {
+      "overall": 9.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.92,
+  "delta": -4.54,
+  "trials": [
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "candidate",
+        "D": "studio-river-motion-plus-design-tokyo-2024"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific world-building idea: a mechanical clockwork map that unfolds into cities, which only this piece could own",
+              "Real material: engraved bronze astrolabe band with dragon reliefs, brass gears, wooden bases, aged parchment map",
+              "Motivated warm light from a central sun-source with blooming flares; shallow depth of field on the miniatures",
+              "Credits set in a carved-feeling Trajan-like capital face with a small sigil, placed in the 3D space beside the objects rather than over them",
+              "Choreography across frames: band, then camera fly-over, then towers growing, then the map pin, then the title lockup back on the band, so the end rhymes with the opening",
+              "Title lockup with a scale-contrasted 'of' and heraldic beasts is built into the object"
+            ],
+            "gaps": [
+              "The burnt orange and teal-grey grade is safe for the genre; a more surprising palette would raise it further",
+              "The credit typography stays conventional prestige-drama serif, with no typographic surprise",
+              "The map frame is flatter and less lit than the mechanical frames, so it dips in density"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Dense, layered organic and synthetic 3D: translucent subsurface-scattered hands, coral-like growths, wire filaments, knitted and mesh textiles, glossy tubing",
+              "A deliberate, unusual palette that changes per segment (dusty pink, violet dusk, sky blue, sage green) and still feels like one family",
+              "Studio and festival lockups (Boldtron, Medusa Lab, OFFF MX) point to a real multi-studio festival title piece",
+              "Material realism with real light: backlit glass, caustics, rim light on a volcanic terrain",
+              "Every frame is visually different, which implies several authors and segments"
+            ],
+            "gaps": [
+              "Type is a plain bold grotesk label dropped top-left and not integrated with the image, unlike A's credits that live inside the world",
+              "No connecting narrative or through-line idea: a showcase of segments, not one thought, so it reads as a reel",
+              "Compositions often centre a single hero object, with less choreographed camera language between frames than A"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "A coherent blood-red, visceral monochrome world: flesh-like terrain, liquid metal splashes, a macro iris reflecting a city, an organic ring pattern",
+              "Credits for real people placed in the middle ground of the 3D scene, with a red/white two-tone name treatment",
+              "Visual transitions are implied: the eye's reflection leads into the neon alley, and the ring echoes the iris",
+              "Rendered texture and volumetric haze are well finished"
+            ],
+            "gaps": [
+              "The cyberpunk neon alley with a lone figure is a stock genre trope; it needs one image only this film could have",
+              "Credit type is a generic condensed sans with no point of view; it should be integrated with the material the way A's sits in its world",
+              "The all-red grade flattens the frames into sameness; it needs value contrast and a counter colour"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 3,
+              "composition": 5,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "A pastiche of Swiss/Bauhaus 'Konkrete Kunst' posters: red circle, black heavy grotesk, cream ground; the most clich\u00e9d possible take on the subject",
+              "Generic heavy grotesk (Archivo/Inter-Black style) with small tracked meta labels in the corners, the template 'exhibition poster' formula",
+              "The last two frames are identical and the first repeats the same layout, so very little happens and the structure is slide-deck-like",
+              "Flat vector fills with no light, texture or material; the single hatched rectangle is the only texture",
+              "Literal idea: the word 'Kreis, Bogen, Ring.' next to a drawing of a circle, an arc and a ring"
+            ],
+            "gaps": [
+              "Find an idea beyond quoting the movement's look, for example motion that enacts concrete-art systems (rules, permutations, grids) rather than illustrating them",
+              "Build real typographic craft: a chosen or custom face, kerning tension with the forms, and type that interacts physically with the shapes rather than sitting over them",
+              "Add choreography and variety: every frame should be a distinct poster, with material, print texture or light to give it A's depth"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 27.9,
+        "cost_usd": 0.1533856,
+        "tokens": 71707,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "studio-river-motion-plus-design-tokyo-2024",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "The concept is specific to this piece: the map is the world, and clockwork cities rise out of it, so the title also shows the viewer where things are",
+              "Real material and light: engraved metal on the astrolabe band, wood and brass machinery, and blown-out sun flares that motivate the warm palette",
+              "Choreography can be read across the frames: an astrolabe overture, a fly-over of the mechanical cities, a map push-in, then a return to the astrolabe for the title card, so the sequence closes a loop",
+              "Credits are set in a period serif with small caps and a house sigil next to each name, quiet and sitting inside the world rather than over it",
+              "The title card treatment, with the band, the beasts and the radiant light, is a poster-grade lockup"
+            ],
+            "gaps": [
+              "Credit type is small and sometimes fights busy backgrounds (the Michelle Fairley card sits low against the miniature city)",
+              "The map frame is flatter and less dense than the miniature frames, a softer beat in an otherwise rich sequence",
+              "The palette stays in one warm sepia band all the way through, so a cooler contrasting beat (Winterfell or the Wall) would sharpen the rhythm"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Dense, hand-directed 3D surrealism: glassy hands, coral organs, knitted and meshed fabrics, chrome tubing, fibres and hair, with strong material variety in every frame",
+              "A deliberate, unusual palette that changes per frame: chalky lilac against rust earth, violet dusk, sky blue, sage and pistachio, bottle green and pink",
+              "The OFFF-style identity mark and festival speaker-name supers point to real festival-title work",
+              "Each frame is a different world with its own lighting setup, not one layout repeated"
+            ],
+            "gaps": [
+              "The names are set as plain default-weight bold grotesk dropped in a corner, with no typographic idea, scale play or integration with the forms",
+              "It is a sequence of beautiful vignettes with no unifying conceit or narrative thread, so it reads as a showcase of the 3D-festival genre rather than a singular idea",
+              "The transitions between worlds are not evident, so there is no proof of choreography linking the frames the way A's camera move does"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A committed monochrome blood-red system that runs through macro flesh, liquid metal, an iris and a neon alley, so the palette is the idea",
+              "Material simulation (fluids, viscous splash, cellular textures) with motivated rim light and depth",
+              "Visual rhymes across frames (the iris, then the concentric rings in the final texture) suggest planned match-cut choreography",
+              "Credits use a condensed sans with a colour-split name, a title-sequence convention handled competently"
+            ],
+            "gaps": [
+              "The images are genre-familiar (an iris macro, a rainy cyberpunk alley with katakana neon, liquid splashes) and lean on stock sci-fi title tropes rather than an idea of its own",
+              "Typography is a generic condensed sans centred over imagery, with no scale, layout or integration idea",
+              "Frame-to-frame unity depends on the colour grade alone; the alley frame in particular breaks the material logic set up by the macro shots"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 4,
+              "composition": 6,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "A textbook 'tasteful AI' system: cream ground, one red accent, black, small two-column metadata labels in the corners, and a big bold grotesk headline",
+              "The last two frames are virtually identical and the first frame shares their layout, so it is a slide-deck structure with little happening and a static end card",
+              "Swiss/Concrete-art pastiche (circle, arc, ring, a big K, hatched square) that illustrates the subject literally ('Kreis, Bogen, Ring.') instead of reinterpreting it",
+              "The type is a default heavy grotesk (Archivo Black territory) with no custom handling; the headline overlapping the circle is the only layering",
+              "Completely flat vector with no light, texture or material, even though concrete art invites print grain, ink or paper",
+              "Numbered section labels ('02 \u2014 Form', '03 \u2014 Zeichen') read as auto-generated scaffolding"
+            ],
+            "gaps": [
+              "It needs a specific idea beyond 'Swiss poster that moves': for example, the circle or ring geometry should construct the letterforms, or the motion should follow the systematic rules of concrete art",
+              "Introduce material and depth (print texture, overprint, misregistration, real paper) so frames feel made rather than exported",
+              "Vary scale and composition far more between frames and build real choreography and transformation between states rather than a repeated title layout"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.4,
+        "cost_usd": 0.1572902,
+        "tokens": 71907,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "studio-river-motion-plus-design-tokyo-2024",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.82,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A single, committed blood-red palette carries across very different worlds (flesh landscape, glassy liquid splash, macro iris, neon alley, a cellular ring), and the grade stays consistent throughout",
+              "Real material rendering: subsurface flesh, refractive liquid droplets, and wet specular highlights in the iris and the rain-soaked street",
+              "Every frame is a different scene with its own scale (macro eye, wide city, top-down texture), which points to edited choreography rather than one repeated layout",
+              "The credits are set in a small, plain grotesk, which is a professional title-sequence habit but has no typographic idea"
+            ],
+            "gaps": [
+              "The type is a generic small-caps grotesk dropped on top of the image; it should be built into the material the way C's credits sit inside the world (etched, embossed, lit by the scene)",
+              "The links between scenes feel associative rather than written (flesh, then eye, then cyberpunk alley); it needs one governing device, like C's clockwork map, that turns the montage into a single idea",
+              "The neon-Tokyo alley with a lone figure is a stock genre image and breaks the otherwise organic world; replace it with something only this film could show"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "An unusual, deliberate palette that shifts per scene (dusty pink, mauve dusk, sky blue, sage, bottle green) without losing coherence",
+              "Very rich materials: translucent skin-like hands, mesh fabric, fibres, glass, metallic tubes, and beaded clusters, all lit with soft studio light and believable depth",
+              "Each frame stands on its own as a poster, with a different contributing-studio identity per section (Boldtron, Medusa Lab, OFFF MX), which reads like festival-titles collaboration practice",
+              "The OFFF MX logotype is custom, while the studio name tags are plain bold sans set small in the corner"
+            ],
+            "gaps": [
+              "The studio-name type is set as a default bold sans tag in the top-left; give it the scale and material treatment the 3D gets, or build it into the forms",
+              "The handoffs between sections look like separate commissions; they need a connecting motion idea or one recurring object so it reads as one film rather than a reel",
+              "The 'organic-tech sculpture' look is close to current festival-titles convention; it needs one surprise beyond rendering quality"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific, ownable idea: the world map as a clockwork mechanism whose cities wind up out of the ground, which also works as narrative orientation",
+              "The credits are integrated into the world: small serif caps with heraldic sigils, placed in perspective on the map surface",
+              "Real material and light: an engraved metal astrolabe band, wood and brass gears, a parchment map, and a sun-flare light source that motivates the warm grade",
+              "Clear choreography: an opening flare on the band, camera travel over the map, a mechanism close-up, a top-down map view, and a closing title lockup that returns to the opening motif"
+            ],
+            "gaps": [
+              "This is the reference standard; any gap is minor",
+              "The palette stays within an expected warm-sepia fantasy range; a less predictable accent could sharpen it",
+              "The main title lockup is more conventional than the credit integration elsewhere"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 3,
+              "composition": 5,
+              "typography": 4,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "This is the textbook generated 'Swiss revival' look: a cream ground, one red accent plus black, tiny metadata labels in the corners, and a heavy grotesk headline",
+              "The type is a default heavy grotesk (Archivo/Inter-Black-like) at tight tracking, with no custom letterform or typographic invention beyond a giant K",
+              "The last two frames are essentially identical and the first repeats the same layout, so it is one slide with words swapped and little motion to infer",
+              "There is no light, texture, or material at all; the shapes are flat vector primitives (circle, arc, ring, hatched rectangle)",
+              "The idea is literal: an exhibition about circles and form shows circles and forms, and 'Kreis, Bogen, Ring.' just captions the shapes",
+              "The German placeholder copy reads like generated content (generic hall name, 'Ausstellung Nr. 01', 'Zwanzig Positionen')"
+            ],
+            "gaps": [
+              "There is no concept beyond quoting Konkrete Kunst; it needs a specific idea, as C has with its clockwork map, such as letterforms that are built from the works' own construction rules and visibly assemble",
+              "The film has almost no choreography (the end frames are identical); it needs layered transformations between states rather than slide cuts",
+              "Typography and image need depth and craft: a chosen or drawn face, real print texture or material, and a palette decision beyond red, black and cream"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.7,
+        "cost_usd": 0.15594200000000003,
+        "tokens": 71838,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 7
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": true,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": false
+      },
+      "defects": [
+        "The end card holds for about 2 s of dead air: change per second drops to 0.8 and then 0.0 over the last two seconds, and the pairs show identical frames.",
+        "The halftone sphere / 'Raster ist Ordnung' shot is also static across a 1/6 s pair, so a rule-based idea is shown as a still slide.",
+        "There is a transitional frame with a cropped 'FI' glyph in a red box over a halftone gradient. As a freeze it reads as a broken mid-wipe and is the only frame that fails as a composition.",
+        "Shot lengths are lopsided: a median of 1.3 s, then a 3.5 s hold. The rhythm runs fast cuts and then stops, instead of moving inside each shot.",
+        "The 100% crop is clean flat vector with even stroke edges. The faint softness on the curves looks like compression, not a rendering fault. There is no banding, but also no material.",
+        "The soundtrack is a tonal synth bed with a fixed harmonic stack (evenly spaced, static partials) plus broadband tick and whoosh transients. The mid section (~2.6\u20133.6 s) is a dense click roll that reads as a generated texture, not a designed one."
+      ],
+      "gaps": [
+        "Motion choreography: the piece is a series of strong Swiss-style posters joined by cuts and wipes, and the in-shot motion is minimal. Top studios would let the primitives (circle, arc, ring, the diagonal of the K, the 45\u00b0 grid) build, split and hand off from one into the next. Making the geometric rules perform is the whole thesis of Konkrete Kunst, and here they are mostly stated as text.",
+        "Arc and ending: energy peaks early (seconds 0, 2, 5\u20136) and then flatlines into a ~2 s static end card. There is no build to a peak at 60\u201380% and no designed settle. The final lockup should resolve from the last move, for example the circle halving into the split disc on a final hit, rather than being a held still.",
+        "Sound design: a static synth pad with a stock click and riser vocabulary, no clear low-end impacts tied to the shape events, and no dynamic shaping toward the end. Top-tier work would score each primitive (circle, ring, grid) with its own sound motif and land the final lockup on a single decisive transient followed by a decay."
+      ]
+    },
+    "meta": {
+      "seconds": 24.0,
+      "cost_usd": 0.1643056,
+      "tokens": 72220,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "konkrete.mp4: 10.0s, 7 shots, median 1.30s, longest 3.47s\nper-second change: [138.0, 21.4, 132.9, 75.9, 16.9, 149.2, 116.1, 0.8, 0.0]\nPACE: FAIL \u2014 longest shot 3.5s > 2.5s; 2/9 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 5,
+    "typography": 4,
+    "colour": 4,
+    "light_texture": 2,
+    "motion": 4.0,
+    "craft": 5.5,
+    "originality": 2,
+    "sound": 5
+  },
+  "full_overall": 3.83,
+  "cost_usd": 0.631,
+  "judge_seconds": 113.0,
+  "verdict": "FAIL"
+}

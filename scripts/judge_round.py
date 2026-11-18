@@ -122,6 +122,13 @@ def _stats(rd, bid):
     return wall, rss, render_s
 
 
+def fmt_motion(r):
+    m = r.get("motion_blind")
+    if not m or not m.get("candidate"):
+        return "–"
+    return f"{m['candidate']['motion']} / {m['ref_mean']}, {m['candidate']['judged_professional']}"
+
+
 def fmt_tok(u):
     return f"{u['tokens'] / 1e6:.1f}" if u.get("tokens") else "?"
 
@@ -131,8 +138,8 @@ def cmd_table(a):
     rd.mkdir(parents=True, exist_ok=True)
     usage = json.loads((rd / "usage.json").read_text()) if (rd / "usage.json").exists() else {}
     lines = [f"## Round {a.round}", "",
-             "| Brief | Category | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens (M) | Cost ($) | Final render (s) | Peak RSS render (MB) |",
-             "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+             "| Brief | Category | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens (M) | Cost ($) | Motion blind (cand / refs, pro) | Final render (s) | Peak RSS render (MB) |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     gaps_by = {}
     scores = []
     rows = []
@@ -144,15 +151,17 @@ def cmd_table(a):
         p = rd / "results" / name / "result.json"
         wall, rss, render_s = _stats(rd, name)
         u = usage.get(name, {})
+        if not p.exists() and name not in usage:
+            continue  # brief not in this round
         if not p.exists():
-            lines.append(f"| {name} | {b.get('category','')} | no output | | | | | | {wall or ''} | {fmt_tok(u)} | {u.get('cost_usd', '')} | {render_s or ''} | {rss or ''} |")
+            lines.append(f"| {name} | {b.get('category','')} | no output | | | | | | {wall or ''} | {fmt_tok(u)} | {u.get('cost_usd', '')} | | {render_s or ''} | {rss or ''} |")
             continue
         r = json.loads(p.read_text())
         c = r["candidate"]
         if not name.startswith("hf-"):
             scores.append(c.get("overall") or 0)
         lines.append(f"| {name} | {b.get('category','')} | {r['verdict']} | {c.get('judged_professional')} | {c.get('overall')} | {r['ref_mean']} | {r['delta']} | "
-                     f"{r.get('full_overall', '–')} | {wall or '?'} | {fmt_tok(u)} | {u.get('cost_usd', '?')} | {render_s or '?'} | {rss or '?'} |")
+                     f"{r.get('full_overall', '–')} | {wall or '?'} | {fmt_tok(u)} | {u.get('cost_usd', '?')} | {fmt_motion(r)} | {render_s or '?'} | {rss or '?'} |")
         gaps_by[name] = c.get("gaps", [])[:3] + (r.get("critic", {}).get("answer", {}).get("gaps", [])[:1])
     if scores:
         lines += ["", f"Mean blind score (Anikit rows) {statistics.mean(scores):.2f}. hf-* rows are HyperFrames on the same brief, same refs and seed. Pass = judged professional in ≥ half the trials and Δ ≥ −1.0 (RUBRIC.md)."]
@@ -176,12 +185,40 @@ def cmd_table(a):
     print(section)
 
 
+def cmd_paired(a):
+    """Per-brief score change vs an earlier round (same tags + seed + ref set => same refs; checked per row)."""
+    rd, bd = J / "rounds" / a.round, J / "rounds" / a.base
+    L = [f"# {a.round} vs {a.base}: paired by brief", "",
+         "Same tags, seed and reference set, so the same 3 refs per brief ('same refs' column checks it). "
+         "Judge test-retest spread is up to about 0.5 per piece, so treat |Δ| < 0.75 as a tie.", "",
+         f"| Brief | {a.base} | {a.round} | Δ | Full {a.base} → {a.round} | Judged pro | Same refs |", "|---|---|---|---|---|---|---|"]
+    ds = []
+    for b in briefs():
+        for pre in ("", "hf-"):
+            n = pre + b["id"]
+            p0, p1 = bd / "results" / n / "result.json", rd / "results" / n / "result.json"
+            if not (p0.exists() and p1.exists()):
+                continue
+            r0, r1 = json.loads(p0.read_text()), json.loads(p1.read_text())
+            s0, s1 = r0["candidate"]["overall"], r1["candidate"]["overall"]
+            d = round(s1 - s0, 2)
+            if not pre:
+                ds.append(d)
+            L.append(f"| {n} | {s0} | {s1} | {d:+} | {r0.get('full_overall')} → {r1.get('full_overall')} | "
+                     f"{r0['candidate']['judged_professional']} → {r1['candidate']['judged_professional']} | {'yes' if r0['refs'] == r1['refs'] else 'NO'} |")
+    if ds:
+        L += ["", f"Mean Δ (Anikit rows): {statistics.mean(ds):+.2f} over {len(ds)} briefs; {sum(1 for d in ds if d >= 0.75)} up beyond noise, "
+                  f"{sum(1 for d in ds if d <= -0.75)} down beyond noise."]
+    (rd / "PAIRED.md").write_text("\n".join(L) + "\n")
+    print("\n".join(L))
+
+
 def cmd_demos(a):
     """Rank every judged output (rounds/*/results, demos/results) by blind score within its category -> DEMO-CANDIDATES.md."""
     cats = {}
     cat_of = {b["id"]: b["category"] for b in briefs()}
     cat_of_tag = {b["tags"][0]: b["category"] for b in briefs()}
-    for p in sorted(J.glob("rounds/*/results/*/result.json")) + sorted(J.glob("demos/results/*/result.json")):
+    for p in sorted(J.glob("rounds/*/results/*/result.json")) + sorted(J.glob("demos/*/*/result.json")):
         r = json.loads(p.read_text())
         rnd = p.parts[-4] if p.parts[-4] != "demos" else "demo"
         if rnd == "r0-div":
@@ -211,6 +248,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("demos")
+    pp = sub.add_parser("paired")
+    pp.add_argument("--round", required=True)
+    pp.add_argument("--base", required=True)
     for n in ("prompts", "collect", "table"):
         p = sub.add_parser(n)
         p.add_argument("--round", required=True)
@@ -219,7 +259,7 @@ def main():
         p.add_argument("--skip-done", action="store_true")
         p.add_argument("--no-sync", action="store_true", help="don't re-fetch REFS's benchmark stills")
     a = ap.parse_args()
-    {"prompts": cmd_prompts, "collect": cmd_collect, "table": cmd_table, "demos": cmd_demos}[a.cmd](a)
+    {"prompts": cmd_prompts, "collect": cmd_collect, "table": cmd_table, "demos": cmd_demos, "paired": cmd_paired}[a.cmd](a)
 
 
 if __name__ == "__main__":

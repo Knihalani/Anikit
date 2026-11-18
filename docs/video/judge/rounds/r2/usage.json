@@ -1,0 +1,74 @@
+{
+ "a-social": {
+  "tokens": 2439392,
+  "output_tokens": 16331,
+  "cost_usd": 1.392,
+  "session_wall_min": 4.3
+ },
+ "b-launch": {
+  "tokens": 3997746,
+  "output_tokens": 37608,
+  "cost_usd": 2.357,
+  "session_wall_min": 9.1
+ },
+ "c-event": {
+  "tokens": 1938459,
+  "output_tokens": 16171,
+  "cost_usd": 1.583,
+  "session_wall_min": 4.7
+ },
+ "d-illustration": {
+  "tokens": 10339597,
+  "output_tokens": 57024,
+  "cost_usd": 4.425,
+  "session_wall_min": 17.0
+ },
+ "e-data": {
+  "tokens": 3929540,
+  "output_tokens": 28219,
+  "cost_usd": 1.987,
+  "session_wall_min": 14.6
+ },
+ "f-3d": {
+  "tokens": 10034035,
+  "output_tokens": 46237,
+  "cost_usd": 4.078,
+  "session_wall_min": 22.9
+ },
+ "g-titles": {
+  "tokens": 6806466,
+  "output_tokens": 37021,
+  "cost_usd": 3.011,
+  "session_wall_min": 27.1
+ },
+ "h-ident": {
+  "tokens": 3833628,
+  "output_tokens": 28489,
+  "cost_usd": 2.055,
+  "session_wall_min": 6.2
+ },
+ "i-explainer": {
+  "tokens": 3877744,
+  "output_tokens": 33016,
+  "cost_usd": 2.185,
+  "session_wall_min": 10.9
+ },
+ "j-music": {
+  "tokens": 4290695,
+  "output_tokens": 44846,
+  "cost_usd": 2.654,
+  "session_wall_min": 14.6
+ },
+ "k-sports": {
+  "tokens": 4939184,
+  "output_tokens": 34793,
+  "cost_usd": 2.485,
+  "session_wall_min": 7.6
+ },
+ "l-generative": {
+  "tokens": 2976303,
+  "output_tokens": 15684,
+  "cost_usd": 1.462,
+  "session_wall_min": 11.9
+ }
+}

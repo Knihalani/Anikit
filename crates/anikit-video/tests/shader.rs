@@ -193,6 +193,25 @@ fn audio_and_beat_uniforms_follow_the_music() {
 }
 
 #[test]
+fn audio_and_beat_uniforms_follow_generated_music() {
+    // Generated music: iBeat uses its exact grid (120 bpm: beat n starts at n / 2 s)
+    // and iAudio its rendered mix.
+    let src = r#"{ "size": [16, 8], "music": { "style": "house", "bpm": 120, "seed": 2 }, "scenes": [ { "duration": 6, "layers": [
+        { "shader": "void mainImage(out vec4 c, in vec2 p) { c = vec4(iAudio.x, iBeat.z / 255.0, iBeat.y, 1.0); }" } ] } ] }"#;
+    assert!(diags(src).iter().all(|m| !m.contains("need music")), "{:?}", diags(src));
+    let ev = build(src);
+    let mut levels = Vec::new();
+    for i in 0..48 {
+        let t = 0.05 + i as f32 * 0.125;
+        let p = px(&ev, t, 0, 0);
+        levels.push(p[0]);
+        // Beat number: beats at 0, 0.5, 1.0… so n = floor(2t) + 1 beats have started.
+        assert_eq!(p[1] as i32, (2.0 * t).floor() as i32 + 1, "beat number at {t}");
+    }
+    assert!(levels.iter().max().unwrap() - levels.iter().min().unwrap() > 40, "level should move with the music: {levels:?}");
+}
+
+#[test]
 fn audio_uniforms_without_music_warn() {
     let d = diags(r#"{ "size": [16, 8], "scenes": [ { "duration": 1, "layers": [ { "shader": "void mainImage(out vec4 c, in vec2 p) { c = vec4(iBeat.x); }" } ] } ] }"#);
     assert!(d.iter().any(|m| m.contains("need music")), "{d:?}");
@@ -253,4 +272,71 @@ fn composition_shaders_render_at_displayed_size() {
     render_rgba(&both, 0.5, 1.0);
     let s = &both.shader_stats()[0];
     assert_eq!((s.width, s.height, s.renders), (400, 200, 1), "{s:?}");
+}
+
+/// Tagged evaluation (used by the render estimate) gives op ranges inside the
+/// list for a shader reading a named composition, frame after frame (a crash
+/// in an agent's final render: a tag past the end of the list).
+#[test]
+fn tagged_eval_with_a_composition_channel_stays_in_range() {
+    let ev = build(
+        r##"{ "size": [160, 90], "compositions": { "word": { "size": [160, 90], "duration": 2, "layers": [ { "text": "SIGNAL", "size": 30 } ] } },
+            "scenes": [ { "duration": 2, "layers": [
+              { "shader": "void mainImage(out vec4 c, in vec2 p) { c = texture(iChannel0, p / iResolution.xy); }", "channels": ["#word"] },
+              { "text": "over", "size": 20, "y": 70 } ] } ] }"##,
+    );
+    for f in 0..6 {
+        let (dl, tags) = ev.eval_tagged(f as f32 * 0.3);
+        assert!(!tags.is_empty());
+        for t in &tags {
+            assert!(t.ops.start < t.ops.end && t.ops.end <= dl.ops.len(), "frame {f}: {:?} of {} ops", t.ops, dl.ops.len());
+        }
+        // Rendering in between (the estimate does) leaves the next tagged eval intact.
+        render_rgba(&ev, f as f32 * 0.3, 1.0);
+    }
+}
+
+#[test]
+fn many_static_uniforms_leave_slots_for_animated_ones() {
+    // 16 static floats (more than the animation slots) and one animated uniform
+    // declared last: no warning, the static values apply, and k animates.
+    let mut decl = String::new();
+    let mut sum = String::from("0.0");
+    let mut given = Vec::new();
+    for i in 0..16 {
+        decl += &format!("uniform float s{i};\n");
+        sum += &format!(" + s{i}");
+        given.push(format!("\"s{i}\": 0.01"));
+    }
+    let src = format!(
+        r#"{{ "size": [8, 8], "scenes": [ {{ "duration": 2, "layers": [ {{ "shader": "{decl}uniform float k;\nvoid mainImage(out vec4 c, in vec2 p) {{ c = vec4({sum}, k, 0.0, 1.0); }}", "uniforms": {{ {} }}, "animate": [ {{ "to": {{ "k": 1.0 }}, "duration": 2, "ease": "linear" }} ] }} ] }} ] }}"#,
+        given.join(", ")
+    )
+    .replace('\n', "\\n");
+    let d = diags(&src);
+    assert!(d.iter().all(|m| !m.contains("can't be animated")), "{d:?}");
+    let ev = build(&src);
+    let a = px(&ev, 0.0, 4, 4);
+    let b = px(&ev, 1.5, 4, 4);
+    assert!((a[0] as i32 - 41).abs() <= 1, "16 × 0.01 = 0.16 → 41: {a:?}");
+    assert!(b[1] > a[1] + 100, "k animates: {a:?} → {b:?}");
+}
+
+/// A shader with a `{layers: […]}` channel: the channel's layers are emitted
+/// into their own list and must not add tags to the frame's (they made the
+/// render estimate panic).
+#[test]
+fn tagged_eval_with_a_layers_channel_stays_in_range() {
+    let ev = build(
+        r##"{ "size": [160, 90], "scenes": [ { "duration": 2, "layers": [
+              { "shader": "void mainImage(out vec4 c, in vec2 p) { c = texture(iChannel0, p / iResolution.xy); }",
+                "channels": [ { "layers": [ { "text": "K", "size": 40 }, { "shape": "rect", "width": 40, "height": 20, "fill": "#ff0000" } ] } ] } ] } ] }"##,
+    );
+    for f in 0..4 {
+        let (dl, tags) = ev.eval_tagged(f as f32 * 0.4);
+        assert!(!tags.is_empty());
+        for t in &tags {
+            assert!(t.ops.start < t.ops.end && t.ops.end <= dl.ops.len(), "frame {f}: {:?} of {} ops", t.ops, dl.ops.len());
+        }
+    }
 }

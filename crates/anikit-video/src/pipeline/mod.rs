@@ -247,7 +247,11 @@ pub fn scale_list(dl: &mut DisplayList, s: f32) {
                     }
                     dl::Filter::Glow { radius, .. } => *radius *= s,
                     dl::Filter::Halftone(h) => h.cell *= s,
-                    dl::Filter::Ink { scale, .. } => *scale *= s,
+                    dl::Filter::Ink { scale, ox, oy, .. } => {
+                        *scale *= s;
+                        *ox *= s;
+                        *oy *= s;
+                    }
                     dl::Filter::ColorMatrix(_) | dl::Filter::Tone(_) => {}
                 }
             }
@@ -288,6 +292,28 @@ fn with_worker<R>(f: impl FnOnce(&mut Worker) -> R) -> R {
     })
 }
 
+/// Drop every thread's worker (renderer, frame buffers, layer caches): the
+/// video pipeline renders with fresh per-chunk workers, so after an estimate or
+/// a finished render they would only hold memory (hundreds of MiB at 1080p).
+/// Output never depends on it: a later call makes a new worker.
+pub fn release_workers() {
+    let clear = || {
+        WORKER.with(|c| {
+            if let Ok(mut w) = c.try_borrow_mut() {
+                *w = new_worker();
+            }
+        })
+    };
+    rayon::broadcast(|_| clear());
+    clear();
+}
+
+/// Images a renderer asked for and didn't get (an evicted per-frame image, a
+/// failed component or shader image): the frame drew without that layer. A
+/// render during which this moves stores nothing in the render cache, so a
+/// glitch can't be spliced into later renders.
+static IMAGE_MISSES: AtomicU64 = AtomicU64::new(0);
+
 /// Create (or re-create, when fonts were added) this worker's renderer.
 fn ensure_renderer(ev: &Evaluator, w: &mut Worker) {
     // Only new font faces need new assets; images come from a live source. New faces are
@@ -300,7 +326,13 @@ fn ensure_renderer(ev: &Evaluator, w: &mut Worker) {
         _ => {
             let mut r = Renderer::new(ev.assets.snapshot_fonts());
             let a = ev.assets.clone();
-            r.set_image_source(Arc::new(move |id| a.pixmap(id)));
+            r.set_image_source(Arc::new(move |id| {
+                let p = a.pixmap(id);
+                if p.is_none() {
+                    IMAGE_MISSES.fetch_add(1, Ordering::Relaxed);
+                }
+                p
+            }));
             w.renderer = Some(r);
             w.store = ev.assets.clone();
             w.last = None;
@@ -432,6 +464,7 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
             done.fetch_add((k.1 - k.0) as u64, Ordering::Relaxed);
         }
     }
+    let misses0 = IMAGE_MISSES.load(Ordering::Relaxed);
     let parts = ak264::encode_ranges_select(cfg, ranges.clone(), &skip, |k, buf, hints| {
         let t = Instant::now();
         let c = chunk_start(k);
@@ -544,11 +577,16 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
         eprintln!();
     }
     let mut out = Vec::new();
+    // Any frame that drew without one of its images: keep nothing from this render.
+    let clean = IMAGE_MISSES.load(Ordering::Relaxed) == misses0;
+    if !clean && cache_keys.iter().any(|k| k.is_some()) && (opts.progress || opts.profile) {
+        eprintln!("render cache: an image was missing while rendering; nothing stored from this render");
+    }
     for ((part, hit), key) in parts.into_iter().zip(cached).zip(&cache_keys) {
         match (hit, part) {
             (Some(bytes), _) => out.extend_from_slice(&bytes),
             (None, Some(bytes)) => {
-                if let Some(k) = key {
+                if let Some(k) = key.as_ref().filter(|_| clean) {
                     crate::diskcache::put(k, &bytes);
                 }
                 out.extend_from_slice(&bytes);
@@ -557,9 +595,27 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
         }
     }
     if cache_keys.iter().any(|k| k.is_some()) && (opts.progress || opts.profile) {
-        eprintln!("render cache: reused {reused}/{} chunks", ranges.len());
+        eprintln!("render cache: reused {reused}/{} chunks (--no-cache renders everything)", ranges.len());
     }
     out
+}
+
+/// A face's identity independent of its id: font ids are handed out in the order
+/// threads first use a face, so they differ between runs of the same spec.
+fn font_key(ev: &Evaluator, id: dl::FontId, memo: &std::sync::Mutex<std::collections::HashMap<u32, u64>>) -> u64 {
+    if let Some(k) = memo.lock().unwrap().get(&id.0) {
+        return *k;
+    }
+    let f = ev.assets.fonts.face(id);
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    f.data.data.as_ref().hash(&mut h);
+    f.data.index.hash(&mut h);
+    f.coords.hash(&mut h);
+    f.embolden.hash(&mut h);
+    f.skew.map(f32::to_bits).hash(&mut h);
+    let k = h.finish();
+    memo.lock().unwrap().insert(id.0, k);
+    k
 }
 
 /// Cache keys for each chunk (`None`: not cacheable, e.g. an image whose content
@@ -569,6 +625,7 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
 fn chunk_keys(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, f0: usize, ranges: &[(usize, usize)]) -> Vec<Option<String>> {
     use std::collections::hash_map::DefaultHasher;
     let memo: std::sync::Mutex<std::collections::HashMap<u32, u64>> = Default::default();
+    let font_memo: std::sync::Mutex<std::collections::HashMap<u32, u64>> = Default::default();
     let n = ranges.last().map_or(0, |r| r.1);
     let frames: Vec<Option<u64>> = (0..n)
         .into_par_iter()
@@ -577,6 +634,12 @@ fn chunk_keys(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, 
             let mut dl = DisplayList::default();
             eval_frame(ev, i, opts.scale, &mut dl);
             let mut keys = Vec::new();
+            for op in &mut dl.ops {
+                if let Op::Glyphs { font, .. } = op {
+                    keys.push(font_key(ev, *font, &font_memo));
+                    *font = dl::FontId(0);
+                }
+            }
             let mut ok = true;
             let mut id_key = |id: &mut dl::ImageId| {
                 let stored = !crate::eval::shader::ShaderJobs::owns(*id) && id.0 < crate::eval::assets::VOLATILE_BASE;
@@ -627,11 +690,11 @@ fn chunk_keys(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, 
         .enumerate()
         .map(|(ci, &(a, b))| {
             let mut h = DefaultHasher::new();
-            ("anikit-chunk-1", format!("{exe:?}"), format!("{cfg:?}"), opts.scale.to_bits(), format!("{:?}", opts.quality), ci, b - a, ranges.len()).hash(&mut h);
+            ("anikit-chunk-2", format!("{exe:?}"), format!("{cfg:?}"), opts.scale.to_bits(), format!("{:?}", opts.quality), ci, b - a, ranges.len(), ev.inputs_key).hash(&mut h);
             for f in &frames[a..b] {
                 f.as_ref()?.hash(&mut h);
             }
-            Some(format!("chunk1-{:016x}", h.finish()))
+            Some(format!("chunk2-{:016x}", h.finish()))
         })
         .collect()
 }
@@ -644,10 +707,16 @@ pub fn still_key(ev: &Evaluator, t: f32, scale: f32) -> Option<String> {
     if std::env::var_os("ANIKIT_RENDER_CACHE").is_some_and(|v| v == "0") {
         return None;
     }
-    let mut dl = ev.eval(t);
-    scale_list(&mut dl, scale);
+    let mut dl = eval_scaled(ev, t, scale);
     let mut keys = Vec::new();
     let mut ok = true;
+    let font_memo = Default::default();
+    for op in &mut dl.ops {
+        if let Op::Glyphs { font, .. } = op {
+            keys.push(font_key(ev, *font, &font_memo));
+            *font = dl::FontId(0);
+        }
+    }
     let mut id_key = |id: &mut dl::ImageId| {
         match ev.assets.content_key(*id) {
             Some(k) => keys.push(k),
@@ -673,11 +742,11 @@ pub fn still_key(ev: &Evaluator, t: f32, scale: f32) -> Option<String> {
     }
     let exe = std::env::current_exe().ok().and_then(|p| std::fs::metadata(p).ok()).map(|m| (m.len(), m.modified().ok()));
     let mut h = DefaultHasher::new();
-    ("anikit-still-1", format!("{exe:?}"), scale.to_bits(), t.to_bits()).hash(&mut h);
+    ("anikit-still-2", format!("{exe:?}"), scale.to_bits(), t.to_bits(), ev.inputs_key).hash(&mut h);
     hash_list(&dl).hash(&mut h);
     keys.hash(&mut h);
     format!("{:?}{}", ev.post_at(t), ev.needs_blur(t, false)).hash(&mut h);
-    Some(format!("still1-{:016x}", h.finish()))
+    Some(format!("still2-{:016x}", h.finish()))
 }
 
 /// Default chunk length for `n` frames: up to 16 chunks of 30–300 frames, or, when the
@@ -716,18 +785,38 @@ pub fn frame_look(ev: &Evaluator, q: Quality, i: u32) -> (Option<crate::render::
 /// Render frame `i` with motion blur into `yuv` (a full frame), leaving the
 /// renderer ready for a full incremental render next.
 fn render_blurred(ev: &Evaluator, r: &mut Renderer, i: u32, scale: f32, yuv: &mut YuvFrame) {
-    let mut eval = |t: f32| {
-        let mut d = ev.eval(t);
-        scale_list(&mut d, scale);
-        d
-    };
+    let mut eval = |t: f32| eval_scaled(ev, t, scale);
     r.render_yuv_motion_blur(&mut eval, frame_time(ev, i), ev.shutter, yuv);
     r.invalidate();
 }
 
+/// Run `f` with shaders rendering at output `scale` (their preview scale),
+/// so a scaled render shades only the pixels it shows; faithful shaders still
+/// see final-size coordinates. Restores full size afterwards.
+fn at_scale<R>(scale: f32, f: impl FnOnce() -> R) -> R {
+    struct Reset;
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            crate::eval::set_preview_scale(1.0);
+        }
+    }
+    let _reset = Reset;
+    crate::eval::set_preview_scale(scale);
+    f()
+}
+
+/// The display list at `t`, at output `scale`.
+fn eval_scaled(ev: &Evaluator, t: f32, scale: f32) -> DisplayList {
+    at_scale(scale, || {
+        let mut dl = ev.eval(t);
+        scale_list(&mut dl, scale);
+        dl
+    })
+}
+
 /// Evaluate frame `i` into `out` at `scale`.
 pub fn eval_frame(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) {
-    ev.eval_into(frame_time(ev, i), out);
+    at_scale(scale, || ev.eval_into(frame_time(ev, i), out));
     scale_list(out, scale);
 }
 
@@ -1036,6 +1125,7 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     // buffers back to the OS before muxing (long-lived processes otherwise keep them).
     ev.assets.release_frame_images();
     crate::scene3d::kernel::pool::release();
+    release_workers();
     crate::memstat::trim();
     let mem_stream = annexb.len() as u64;
     let peaks = crate::memstat::reset_peak();
@@ -1382,8 +1472,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
     // Quick look first: one full frame in the middle. Most renders stop here (a few ms).
     let mid = f0 + n / 2;
     let t = Instant::now();
-    let mut dl = ev.eval(frame_time(ev, mid));
-    scale_list(&mut dl, opts.scale);
+    let dl = eval_scaled(ev, frame_time(ev, mid), opts.scale);
     with_renderer(ev, |r, _| {
         r.set_quality(render_quality(opts.quality));
         r.render(&dl);
@@ -1392,6 +1481,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
     // A full frame is an upper bound for an incremental one, and other frames render alongside.
     let quick = quick_ms * changing as f64 / threads as f64 / 1e3 + 0.3;
     if quick < heavy_after * 0.5 {
+        release_workers();
         return Estimate { secs: quick, frame_ms: quick_ms, changing, threads, heaviest: None };
     }
     // Render one sample frame per thread, concurrently, as the pipeline does: layers that
@@ -1406,8 +1496,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
             // the second is the typical cost of a changing frame.
             let next = (i + 1).min(f1.saturating_sub(1));
             with_worker(|w| {
-                let mut dl = ev.eval(frame_time(ev, i));
-                scale_list(&mut dl, opts.scale);
+                let dl = eval_scaled(ev, frame_time(ev, i), opts.scale);
                 ensure_renderer(ev, w);
                 let Worker { renderer, yuv, map, .. } = w;
                 let r = renderer.as_mut().unwrap();
@@ -1415,8 +1504,7 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
                 r.invalidate();
                 r.render_yuv_incremental(&dl, yuv, map);
                 let t = Instant::now();
-                let mut dl = ev.eval(frame_time(ev, next));
-                scale_list(&mut dl, opts.scale);
+                let dl = eval_scaled(ev, frame_time(ev, next), opts.scale);
                 ensure_renderer(ev, w);
                 let Worker { renderer, yuv, map, last, .. } = w;
                 renderer.as_mut().unwrap().render_yuv_incremental(&dl, yuv, map);
@@ -1445,7 +1533,9 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
             // A layer's cost: its share of the render plus its eval work (shader / 3D images are
             // made while evaluating, so re-time those by forcing a fresh evaluation of the frame).
             for tag in &tags {
-                let sub = DisplayList { width: dl.width, height: dl.height, background: dl.background, ops: dl.ops[tag.ops.clone()].to_vec() };
+                // Layers inside shader channels tag their own (nested) lists, not this one.
+                let Some(ops) = dl.ops.get(tag.ops.clone()) else { continue };
+                let sub = DisplayList { width: dl.width, height: dl.height, background: dl.background, ops: ops.to_vec() };
                 let t = Instant::now();
                 with_renderer(ev, |r, _| {
                     r.invalidate();
@@ -1463,6 +1553,9 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
         }
         _ => None,
     };
+    // The sampled frames left renderers and frame buffers on every thread.
+    release_workers();
+    crate::memstat::trim();
     Estimate { secs, frame_ms, changing, threads, heaviest }
 }
 /// Seconds between progress reports: twice a second on a terminal, every 15 s

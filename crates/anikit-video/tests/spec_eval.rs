@@ -667,3 +667,86 @@ fn friction_forms_from_agent_runs() {
     assert!(e.iter().any(|m| m.contains("invalid colour 'blurple'") && m.contains("oklch(")), "{e:?}");
     assert!(e.iter().any(|m| m.contains("invalid value 'lots'") && m.contains("like 960")), "{e:?}");
 }
+
+#[test]
+fn natural_forms_round_two() {
+    // A shader map, CSS fontStyle, transformOrigin (CSS values too): no warnings, and they take effect.
+    let p = parse_json(r##"{ "scenes": [ { "layers": [
+        { "shader": { "code": "void mainImage(out vec4 c, in vec2 f) { c = vec4(1.0); }", "uniforms": { "k": 1 } } },
+        { "text": "a", "fontStyle": "italic" },
+        { "shape": "rect", "transformOrigin": "50% 0%" },
+        { "shape": "rect", "transformOrigin": "top left" } ] } ] }"##).unwrap();
+    assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+    let ls = &p.spec.scenes[0].layers;
+    assert!(ls[0].shader.as_deref().is_some_and(|s| s.contains("mainImage")) && ls[0].uniforms.is_some());
+    assert_eq!(ls[1].italic, Some(true));
+    assert!(matches!(ls[2].anchor, Some(anikit_video::spec::Anchor::Xy([a, b])) if a == 0.5 && b == 0.0));
+    assert!(matches!(ls[3].anchor, Some(anikit_video::spec::Anchor::Xy([a, b])) if a == 0.0 && b == 0.0));
+    // Hex colours in ternaries and gradient strings in fills already work.
+    let ev = build(r##"{ "size": [64, 64], "scenes": [ { "layers": [ { "shape": "rect", "width": 64, "height": 64, "fill": "=t > 1 ? #ff0000 : #00ff00" } ] } ] }"##);
+    let (w, _, px) = anikit_video::pipeline::render_rgba(&ev, 2.0, 1.0);
+    let i = ((32 * w + 32) * 4) as usize;
+    assert_eq!(&px[i..i + 3], &[255, 0, 0]);
+    assert!(errors(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "fill": "linear-gradient(90deg, #f00, #00f)" }, { "shape": "rect", "fill": "radial-gradient(circle, #f00, #00f)" } ] } ] }"##).is_empty());
+    // Very big specs get advice.
+    let big = format!(r##"{{ "scenes": [ {{ "layers": [ {} ] }} ] }}"##, vec![r##"{ "shape": "circle", "width": 4, "x": 100, "y": 100, "fill": "#ffffff" }"##; 16_000].join(","));
+    let p = parse_json(&big).unwrap();
+    assert!(p.warnings.iter().any(|w| w.to_string().contains("repeat")), "{:?}", p.warnings.len());
+}
+
+#[test]
+fn animated_masks_say_how_to_animate() {
+    for m in [r#"{"shape":"circle","width":100,"loop":"pulse"}"#, r#"{"shape":"circle","width":100,"enter":"popIn"}"#, r#"{"shape":"circle","x":"=t*100"}"#] {
+        let e = errors(&format!(r#"{{ "scenes": [ {{ "layers": [ {{ "shape": "rect", "width": 400, "height": 400, "mask": {m} }} ] }} ] }}"#));
+        assert!(e.iter().any(|x| x.contains("track matte") && x.contains("\"matte\"")), "{m}: {e:?}");
+    }
+}
+
+#[test]
+fn fade_sugar_and_transparent_composition_backgrounds() {
+    let p = parse_json(r##"{ "scenes": [ { "layers": [ { "text": "a", "fadeIn": 0.5, "fadeOut": 0.4 } ] } ] }"##).unwrap();
+    assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+    let l = &p.spec.scenes[0].layers[0];
+    assert!(l.enter.is_some() && l.exit.is_some());
+    let ev = build(r##"{ "size": [64, 64], "scenes": [ { "duration": 3, "layers": [ { "shape": "rect", "width": 64, "height": 64, "fill": "#ffffff", "fadeIn": 1 } ] } ] }"##);
+    let lum = |t: f32| {
+        let (w, _, px) = anikit_video::pipeline::render_rgba(&ev, t, 1.0);
+        px[((32 * w + 32) * 4) as usize]
+    };
+    assert!(lum(0.0) < 40 && lum(0.5) > 40 && lum(0.5) < 230 && lum(1.5) > 240, "{} {} {}", lum(0.0), lum(0.5), lum(1.5));
+    for bg in ["transparent", "none"] {
+        let ev = build(&format!(r##"{{ "size": [64, 64], "background": "#ff0000", "compositions": {{ "c": {{ "size": [64, 64], "duration": 2, "background": "{bg}",
+            "layers": [ {{ "shape": "circle", "width": 10, "fill": "#fff" }} ] }} }}, "scenes": [ {{ "layers": [ {{ "composition": "c", "width": 64, "height": 64 }} ] }} ] }}"##));
+        let (_, _, px) = anikit_video::pipeline::render_rgba(&ev, 1.0, 1.0);
+        let i = ((3 * 64 + 3) * 4) as usize;
+        assert_eq!(&px[i..i + 3], &[255, 0, 0], "{bg}: the composition's background shows through");
+    }
+}
+
+#[test]
+fn fade_sugar_leaves_audio_alone() {
+    let p = parse_json(r##"{ "audio": [ { "src": "a.mp3", "fadeIn": 1, "fadeOut": 2 } ], "scenes": [ { "layers": [ "a" ] } ] }"##).unwrap();
+    let a = &p.spec.audio.as_ref().unwrap()[0];
+    assert_eq!((a.fade_in, a.fade_out), (Some(1.0), Some(2.0)));
+}
+
+#[test]
+fn a_repeated_grid_driven_by_one_array() {
+    // 12 cells; each flips (scaleY to 0 and back) at its own time from one table, and holds a per-cell value.
+    let ev = build(r##"{ "size": [480, 360], "scenes": [ { "duration": 4, "layers": [
+        { "shape": "rect", "repeat": 12, "anchor": "topLeft", "width": 100, "height": 100,
+          "x": "=($i % 4) * 120", "y": "=floor($i / 4) * 120",
+          "opacity": "=t >= [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 0.25, 0.75, 1.25, 1.75][$i] ? 1 : 0.2",
+          "height": "=steps([0, 2], [100, 60], t)",
+          "fill": "#ffffff" } ] } ] }"##);
+    let alpha = |t: f32| -> Vec<bool> {
+        ev.eval(t).ops.iter().filter_map(|o| match o { Op::RoundRect { paint: anikit_video::dl::Paint::Solid(c), .. } => Some(c.0[3] > 0.5), _ => None }).collect()
+    };
+    let at1 = alpha(1.1);
+    assert_eq!(at1.len(), 12);
+    // Cells whose time ≤ 1.1: 0, 0.5, 1, 0.25, 0.75 → indices 0, 1, 2, 8, 9.
+    let on: Vec<usize> = at1.iter().enumerate().filter(|(_, &b)| b).map(|(k, _)| k).collect();
+    assert_eq!(on, vec![0, 1, 2, 8, 9]);
+    let h = |t: f32| ev.eval(t).ops.iter().find_map(|o| match o { Op::RoundRect { h, .. } => Some(*h), _ => None }).unwrap();
+    assert_eq!((h(1.0), h(2.5)), (100.0, 60.0), "steps holds each value until the next time");
+}

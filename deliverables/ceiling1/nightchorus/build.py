@@ -52,9 +52,10 @@ card(B, [rect("#F2E600"), fxlayer(HALFTONE, {"TINT":"vec3(0.02)","CELL":"16.0"},
 # 5 · ISAK LINDQVIST — chroma split on cobalt
 card(B, [rect("#1531FF"), fxlayer(CHROMA, {"TINT":"vec3(1.0)","OFF":"14.0"}, chan("ISAK\nLINDQVIST","Bebas Neue",h=980,lh=0.82))])
 # 6 · RENATA SOLÉ — blackletter on bone with red
-card(B, [rect("#EFE7DA"),
+PAPER = """ float m=0.0; float n=hash(floor(f/1.5)); float n2=hash(floor(f/7.0)+3.1); vec3 c=vec3(0.937,0.906,0.855)*(0.94+0.06*n)*(0.97+0.03*n2); float v=length(uv-0.5); c*=1.0-0.35*v*v; o=vec4(c,1.0); """
+card(B, [{"shader":shader(PAPER)},
   {"text":"Renata Solé","font":"UnifrakturMaguntia","size":400,"width":1900,"scale":"=1+0.05*t","color":"#C8102E","stroke":{"color":"#111","width":6},"shadow":{"x":8,"y":8,"blur":0,"color":"#111"}},
-  label("with", "24%", color="#111", size=40)])
+  label("with", "8%", color="#111", size=40)])
 # 7 · CASTING · KENJI ARAMAKI — extruded block
 card(B, [rect("#0B0B0B"), fxlayer(EXTRUDE, {"TINT":v3("#F5EBDD"),"TINT2":v3("#E0261B"),"DIR":"vec2(-1.0,1.0)"}, chan("KENJI\nARAMAKI","Archivo Black",w=1600,h=860,lh=0.9)),
   label("casting", "8%", color="#F5EBDD", size=36)], cam={"animate":[{"from":{"zoom":1.0},"to":{"zoom":1.06},"duration":B}]})
@@ -68,6 +69,8 @@ card(B, [rect("#0A0A0A"), fxlayer(STRIPES, {"TINT":v3("#FFFFFF"),"TINT2":v3("#FF
 # 10 · CINEMATOGRAPHY · LEV ANSARI — Bodoni italic gold on green
 card(B, [rect("radial-gradient(#0E4A33, #031A12)"),
   {"text":"*Lev Ansari*","font":"Bodoni Moda","weight":900,"size":300,"width":1800,"color":"linear-gradient(180deg, #FFF1B8, #D9A441 55%, #8A5A12)","shadow":{"x":0,"y":10,"blur":40,"color":"#000a"}},
+  {"text":"*Lev Ansari*","font":"Bodoni Moda","weight":900,"size":300,"width":1800,"color":"#fff","id":"levm"},
+  {"shape":"rect","width":360,"height":700,"rotation":18,"fill":"linear-gradient(90deg, #FFF8E000, #FFFDF2 50%, #FFF8E000)","x":"=-200+t*5200","blend":"screen","matte":"levm"},
   label("cinematography", "20%", color="#E8C979", size=36)], cam={"animate":[{"from":{"zoom":1.14},"to":{"zoom":1.0},"duration":0.3,"ease":"outExpo"}]})
 # 11 · MUSIC · HAZE & CINDER — cyan neon
 card(B, [rect("#020407"), fxlayer(NEON, {"TINT":v3("#26E0FF"),"SEED":"7.0","ON":"1.0"}, chan("HAZE &\nCINDER","Anton",w=1400,h=700,lh=0.92,y="56%")),

@@ -1,0 +1,12 @@
+{
+ "start_utc": "2026-11-18T03:26:27Z",
+ "end_utc": "2026-11-18T03:32:35Z",
+ "renders": [
+  {
+   "cmd": "anikit-video render deliverables/eval/h-ident/spec.json -o deliverables/eval/h-ident/final.mp4 --sheet deliverables/eval/h-ident/contact.png",
+   "exit": 0,
+   "wall_s": 72.71,
+   "peak_rss_mb": 1419.4
+  }
+ ]
+}

@@ -116,7 +116,7 @@ pub fn shorthand(mut v: Value) -> Value {
 }
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig", "set",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig", "set", "gobo",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -149,6 +149,7 @@ struct Prepared {
     glow: (V3, V3, f32),
     haze: (f32, V3),
     haze_height: (f32, f32),
+    haze_drift: (f32, f32, V3),
     lights: Vec<trace::Light>,
     /// Local lights animated by expressions of `t`.
     light_anims: Vec<spec::LightAnim>,
@@ -301,6 +302,18 @@ impl Prepare for Scene3d {
                 return Err(Error(format!("look: unknown look `{o}`{hint}")));
             }
         };
+        // `practical` objects: a visible source (bulb, tube, panel) plus the
+        // matching local light(s), so motivated light is one object.
+        let (objs_v, practical_lights) = practicals(objs_v).map_err(Error)?;
+        if !practical_lights.is_empty() {
+            let (_, loc, an) = spec::lights(&Value::Array(practical_lights), &es.env, "objects (practical)").map_err(Error)?;
+            let base = local_lights.len();
+            local_lights.extend(loc);
+            light_anims.extend(an.into_iter().map(|mut a| {
+                a.idx += base;
+                a
+            }));
+        }
         let objs_v: Vec<Value> = match look_mat {
             Some(lm) => objs_v
                 .into_iter()
@@ -481,6 +494,11 @@ impl Prepare for Scene3d {
             es.env = e;
             gobo = g;
         }
+        // `gobo`: a word cut out of a card in front of the key (see `rig::TextGobo`).
+        if let Some(gv) = m.get("gobo") {
+            let dir = es.env.key_box().map(|k| k.c).ok_or_else(|| Error("gobo: needs a key light (an HDRI with a sun, a rig, or a `lights` entry with `\"key\": true`)".into()))?;
+            gobo = rig::text_gobo(gv, dir, "gobo").map_err(Error)?;
+        }
         if let Some(n) = &camera.target_obj {
             if !objs.iter().any(|o| o.name.as_deref() == Some(n)) {
                 let names: Vec<&str> = objs.iter().filter_map(|o| o.name.as_deref()).collect();
@@ -557,19 +575,28 @@ impl Prepare for Scene3d {
         // `fog`: { "density": per metre, "color", "shafts" } overrides the env's haze.
         let mut shafts = false;
         let mut haze_height = (0.0f32, 0.0f32);
+        let mut haze_drift = (0.0f32, 2.5f32, v3(0.0, 0.0, 0.0));
         let haze = match m.get("fog") {
             None => haze,
             Some(Value::Number(d)) => (d.as_f64().unwrap_or(0.0) as f32, haze.1),
             Some(Value::Object(f)) => {
                 for k in f.keys() {
-                    if !["density", "color", "shafts", "height", "base"].contains(&k.as_str()) {
-                        return Err(Error(format!("fog: unknown key `{k}` (density, color, shafts, height, base)")));
+                    if !["density", "color", "shafts", "height", "base", "drift", "scale", "wind"].contains(&k.as_str()) {
+                        return Err(Error(format!("fog: unknown key `{k}` (density, color, shafts, height, base, drift, scale, wind)")));
                     }
                 }
                 shafts = f.get("shafts").and_then(|x| x.as_bool()).unwrap_or(false);
                 if let Some(h) = f.get("height") {
                     let h = h.as_f64().filter(|h| *h > 0.0).ok_or_else(|| Error("fog.height: expected a falloff height in metres (> 0)".into()))? as f32;
                     haze_height = (h, num_or(f, "base", 0.0).map_err(Error)?);
+                }
+                if let Some(a) = f.get("drift") {
+                    let a = a.as_f64().ok_or_else(|| Error("fog.drift: expected 0–1".into()))? as f32;
+                    let w = match f.get("wind").and_then(|w| w.as_array()) {
+                        Some(w) if w.len() == 3 => v3(w[0].as_f64().unwrap_or(0.0) as f32, w[1].as_f64().unwrap_or(0.0) as f32, w[2].as_f64().unwrap_or(0.0) as f32),
+                        _ => v3(0.25, 0.0, 0.05),
+                    };
+                    haze_drift = (a.clamp(0.0, 1.0), num_or(f, "scale", 2.5).map_err(Error)?, w);
                 }
                 let d = num_or(f, "density", haze.0).map_err(Error)?;
                 let c = f.get("color").map(|c| spec::color(c, "fog.color")).transpose().map_err(Error)?.unwrap_or(haze.1);
@@ -662,6 +689,7 @@ impl Prepare for Scene3d {
             glow,
             haze,
             haze_height,
+            haze_drift,
             lights: local_lights,
             light_anims,
             caustics,
@@ -916,6 +944,75 @@ fn outlines(out: &mut [u8], px: &post::Planes, w: usize, h: usize, width: f32, i
     }
 }
 
+/// Expand `{ "type": "practical", "shape": "bulb"|"tube"|"panel", "pos",
+/// "color", "intensity", "size" }` into an emissive object and its lights.
+fn practicals(objs: Vec<Value>) -> Result<(Vec<Value>, Vec<Value>), String> {
+    let mut out = Vec::with_capacity(objs.len());
+    let mut lights = Vec::new();
+    for (i, o) in objs.into_iter().enumerate() {
+        if o.get("type").and_then(|t| t.as_str()) != Some("practical") {
+            out.push(o);
+            continue;
+        }
+        let p = format!("objects[{i}]");
+        let m = o.as_object().unwrap();
+        spec::check_keys(m, &["type", "shape", "pos", "color", "intensity", "size", "name", "shadow"], &p)?;
+        let pos = m.get("pos").cloned().unwrap_or(serde_json::json!([0, 1, 0]));
+        let at = |k: usize| pos.get(k).and_then(|x| x.as_f64()).unwrap_or(0.0);
+        let color = m.get("color").cloned().unwrap_or(Value::String("#FFD9A8".into()));
+        let k = m.get("intensity").cloned().unwrap_or(serde_json::json!(6.0));
+        let size = m.get("size").and_then(|x| x.as_f64()).unwrap_or(0.0);
+        let shadow = m.get("shadow").and_then(|x| x.as_bool()).unwrap_or(true);
+        // The glow of the geometry tracks the light: radiance ~ intensity / area.
+        let glow = |area: f64| -> Value {
+            let kk = k.as_f64().unwrap_or(6.0);
+            serde_json::json!({ "base": "#111111", "metallic": 0, "roughness": 0.5, "emissive": color, "emissive_strength": (kk / (area * 40.0)).clamp(2.0, 60.0) })
+        };
+        let mut obj = serde_json::json!({ "pos": pos, "shadow": false });
+        if let Some(n) = m.get("name") {
+            obj["name"] = n.clone();
+        }
+        match m.get("shape").and_then(|x| x.as_str()).unwrap_or("bulb") {
+            "bulb" => {
+                let r = if size > 0.0 { size } else { 0.05 };
+                obj["type"] = "sphere".into();
+                obj["radius"] = r.into();
+                obj["material"] = glow(4.0 * std::f64::consts::PI * r * r);
+                lights.push(serde_json::json!({ "pos": pos, "color": color, "intensity": k, "shadow": shadow }));
+            }
+            "tube" => {
+                // A horizontal tube along X, lit by three points along it.
+                let l = if size > 0.0 { size } else { 1.2 };
+                obj["type"] = "cylinder".into();
+                obj["radius"] = 0.018.into();
+                obj["height"] = l.into();
+                obj["rot"] = serde_json::json!([0, 0, 90]);
+                obj["material"] = glow(std::f64::consts::PI * 0.036 * l);
+                let kk = match &k {
+                    Value::Number(n) => serde_json::json!(n.as_f64().unwrap_or(6.0) / 3.0),
+                    Value::String(e) => Value::String(format!("=({})/3", e.trim_start_matches('='))),
+                    _ => serde_json::json!(2.0),
+                };
+                for f in [-0.35, 0.0, 0.35] {
+                    lights.push(serde_json::json!({ "pos": [at(0) + f * l, at(1), at(2)], "color": color, "intensity": kk, "shadow": shadow }));
+                }
+            }
+            "panel" => {
+                // A ceiling panel facing down, with a wide soft spot under it.
+                let w = if size > 0.0 { size } else { 0.6 };
+                obj["type"] = "plane".into();
+                obj["size"] = serde_json::json!([w, w]);
+                obj["rot"] = serde_json::json!([90, 0, 0]);
+                obj["material"] = glow(w * w);
+                lights.push(serde_json::json!({ "pos": [at(0), at(1) - 0.02, at(2)], "target": [at(0), at(1) - 3.0, at(2)], "angle": 150, "penumbra": 0.8, "color": color, "intensity": k, "shadow": shadow }));
+            }
+            o => return Err(format!("{p}.shape: unknown `{o}` (bulb, tube, panel)")),
+        }
+        out.push(obj);
+    }
+    Ok((out, lights))
+}
+
 /// Where simulations are cached: `$ANIKIT_CACHE/sim` (default
 /// `$XDG_CACHE_HOME/anikit/sim` or `~/.cache/anikit/sim`); `ANIKIT_CACHE=off`
 /// disables caching.
@@ -1051,12 +1148,14 @@ impl Scene3d {
         scene.glow = p.glow;
         scene.haze = p.haze;
         scene.haze_height = p.haze_height;
+        scene.haze_drift = p.haze_drift;
         scene.lights = p.lights.clone();
         for a in &p.light_anims {
             a.apply(&mut scene.lights[a.idx], t);
         }
         scene.caustics = p.caustics;
         scene.gobo = p.gobo;
+        scene.gobo.t = t;
         scene.time = t;
         // One pixel's angle: picks texture mips (vertical fov over output rows).
         scene.texel_angle = (2.0 * (cam.fov.to_radians() * 0.5).tan() / h.max(1) as f32).max(1e-5);
@@ -1193,7 +1292,7 @@ impl Scene3d {
                     (trace::tsc() - c) as f64 / t.elapsed().as_secs_f64() / 1e6
                 });
                 let cy: Vec<f64> = trace::CYCLES.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed) as f64 / hz / 1e3).collect();
-                eprintln!("  cpu (thread-sum): closest-hit traversal {:.0} ms, shadow/AO traversal {:.0} ms", cy[0], cy[1]);
+                eprintln!("  cpu (thread-sum): closest-hit traversal {:.0} ms (camera rays {:.0} ms), shadow/AO traversal {:.0} ms", cy[0] + cy[2], cy[2], cy[1]);
             }
             let r: Vec<u64> = trace::RAYS.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
             eprintln!("  rays: {:.2}M closest ({:.2}M radiance, {:.2}M floor reflections), {:.2}M shadow/AO, {:.2} primary samples per pixel", r[0] as f64 / 1e6, r[3] as f64 / 1e6, r[4] as f64 / 1e6, r[1] as f64 / 1e6, r[2] as f64 / (w * h) as f64);
@@ -1447,6 +1546,44 @@ mod tests {
         assert!(min < 0.45, "objects should show, min {min}");
     }
 
+    /// A composition stub for texture tests: every frame is flat mid-grey.
+    struct GreyComp(crate::components::text::StubAssets);
+    impl Assets for GreyComp {
+        fn image(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> crate::dl::ImageId { self.0.image(key, w, h, make) }
+        fn media(&self, src: &str, t: f32) -> Option<(crate::dl::ImageId, u32, u32)> { self.0.media(src, t) }
+        fn text(&self, s: &str, st: &crate::components::TextStyle, x: f32, y: f32) -> (Vec<Op>, f32) { self.0.text(s, st, x, y) }
+        fn measure(&self, s: &str, st: &crate::components::TextStyle) -> f32 { self.0.measure(s, st) }
+        fn composition_info(&self, _name: &str) -> Option<crate::components::CompInfo> {
+            Some(crate::components::CompInfo { width: 64, height: 64, fps: 30.0, duration: 1.0, looped: false })
+        }
+        fn composition_frame(&self, _name: &str, _t: f32, _lod: u8) -> Option<std::sync::Arc<vello_cpu::Pixmap>> {
+            let mut pm = vello_cpu::Pixmap::new(64, 64);
+            for px in pm.data_as_u8_slice_mut().chunks_exact_mut(4) {
+                px.copy_from_slice(&[128, 128, 128, 255]);
+            }
+            Some(std::sync::Arc::new(pm))
+        }
+    }
+
+    #[test]
+    fn textured_prints_are_lit_by_local_lights() {
+        // A grey textured wall with a spot pooled on its left half: the print must
+        // be brighter there (local lights reach prints, not only env + key).
+        let s = scene(json!({
+            "env": "night", "quality": "draft", "floor": false,
+            "camera": { "keys": [ { "t": 0, "pos": [0, 0, 6], "target": [0, 0, 0], "focal": 35 } ] },
+            "objects": [ { "type": "pane", "size": [6, 3.4], "pos": [0, 0, 0], "texture": "#wall", "material": { "base": "#ffffff", "roughness": 0.9 } } ],
+            "lights": [ { "pos": [-1.6, 0, 2.5], "target": [-1.6, 0, 0], "angle": 20, "penumbra": 0.2, "intensity": 20, "shadow": false } ]
+        }))
+        .unwrap();
+        let assets = GreyComp(Default::default());
+        let (w, h) = (96usize, 54usize);
+        let px = s.render(0.0, 1.0 / 30.0, w, h, Some(&assets));
+        let lum = |x: usize, y: usize| { let p = &px[(y * w + x) * 4..]; p[0] as f32 + p[1] as f32 + p[2] as f32 };
+        let (lit, dark) = (lum(w / 2 - 20, h / 2), lum(w / 2 + 20, h / 2));
+        assert!(lit > dark * 1.2, "spot pool on a textured print: lit {lit} vs unlit {dark}");
+    }
+
     #[test]
     fn lookdev_props_still_work() {
         let s = scene(json!({ "text": "ANIKIT", "quality": "draft", "primitives": false })).unwrap();
@@ -1499,10 +1636,38 @@ mod tests {
         }
         sc.haze_height = (0.0, 0.0);
         assert!((sc.fog_depth(v3(0.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), 5.0) - 1.0).abs() < 1e-6);
+        // Drifting fog: deterministic, and it moves with time.
+        sc.haze_drift = (0.9, 2.0, v3(1.0, 0.0, 0.0));
+        let (o, d) = (v3(0.0, 1.0, 0.0), norm(v3(1.0, 0.0, 0.3)));
+        let a = sc.fog_depth(o, d, 10.0);
+        assert_eq!(a.to_bits(), sc.fog_depth(o, d, 10.0).to_bits());
+        sc.time = 2.0;
+        assert!((sc.fog_depth(o, d, 10.0) - a).abs() > 1e-4);
     }
 
     #[test]
     fn errors_suggest_fixes() {
+        let (o, l) = practicals(vec![json!({ "type": "practical", "shape": "tube", "pos": [0, 2, 0], "intensity": 9 }), json!({ "type": "box" })]).unwrap();
+        assert_eq!((o.len(), l.len()), (2, 3));
+        scene(json!({ "objects": [ { "type": "practical", "shape": "bulb", "pos": [0, 1, 0], "intensity": "=3+sin(t*5)" }, { "type": "practical", "shape": "panel", "pos": [0, 2.5, 0] } ] })).unwrap();
+        assert!(practicals(vec![json!({ "type": "practical", "shape": "blub" })]).is_err());
+        let e = spec::camera(&json!({ "keys": [ { "t": 0, "pos": [0, 1, 10], "target": [0, 0, 0] }, { "t": 1, "pos": [0, 1, 0], "target": [0, 0, -5], "ease": "outExpo" } ] }), (v3(0.0, 0.5, 0.0), 1.0), "camera").unwrap();
+        assert!(e.at(0.5, 16.0 / 9.0, 0.0).pos.z < 0.5, "outExpo is 97% there at half time");
+        let st = spec::camera(&json!({ "keys": [ { "t": 0, "pos": [0, 1, 10], "target": [0, 0, 0] }, { "t": 1, "pos": [0, 1, 0], "target": [0, 0, -5], "ease": "settle" } ] }), (v3(0.0, 0.5, 0.0), 1.0), "camera").unwrap();
+        assert!((0..20).any(|k| st.at(0.5 + k as f32 * 0.025, 16.0 / 9.0, 0.0).pos.z < 0.0), "settle overshoots a little");
+        assert!(spec::camera(&json!({ "keys": [ { "t": 0, "pos": [0, 1, 10], "target": [0, 0, 0], "ease": "outExp" } ] }), (v3(0.0, 0.5, 0.0), 1.0), "camera").err().unwrap().contains("did you mean `outExpo`"));
+        for pr in ["slide", "arc", "rise", "topdown"] {
+            let c = spec::camera(&json!(pr), (v3(0.0, 0.5, 0.0), 1.0), "camera").unwrap();
+            for k in 0..=10 {
+                let cam = c.at(k as f32 * 0.5, 16.0 / 9.0, 0.0);
+                assert!(cam.pos.x.is_finite() && cam.target.y.is_finite() && len(sub(cam.target, cam.pos)) > 0.5, "{pr}");
+            }
+        }
+        let d = spec::material(&json!("decal"), &HashMap::new(), "m").unwrap();
+        assert!(d.transmission == 1.0 && d.ior == 1.0);
+        let m = spec::material(&json!({ "extends": "aluminium", "pattern": "guilloche", "pattern_scale": 0.002 }), &HashMap::new(), "m").unwrap();
+        assert_eq!(m.pattern, (3, 0.002, 1.0));
+        assert!(spec::material(&json!({ "extends": "aluminium", "pattern": "guiloche" }), &HashMap::new(), "m").err().unwrap().contains("did you mean `guilloche`"));
         let e0 = env::Env::preset_tinted("studio", v3(1.0, 0.0, 0.0), v3(0.0, 0.0, 1.0), v3(1.0, 1.0, 1.0), v3(0.0, 1.0, 0.0)).unwrap();
         let (_, mut ls, an) = spec::lights(&json!([ { "pos": "=[cos(t), 2, sin(t)]", "target": [0, 0, 0], "intensity": "=10+5*sin(t*3)" } ]), &e0, "lights").unwrap();
         assert_eq!(an.len(), 1);
@@ -1511,7 +1676,7 @@ mod tests {
         let m = spec::material(&json!({ "extends": "chrome", "imperfections": 0.5, "dust": 0.2 }), &HashMap::new(), "m").unwrap();
         assert_eq!(m.imperf, [0.5, 0.3, 0.25, 0.2]);
         scene(json!({ "objects": [ { "type": "box", "material": { "extends": "lacquer", "smudges": 0.8, "scratches": 0.5 } } ] })).unwrap();
-        for set in ["plinth", "podium", "steps", "sweep", "field", "arches", "terrain"] {
+        for set in ["plinth", "podium", "steps", "sweep", "field", "arches", "terrain", "landscape"] {
             scene(json!({ "set": set, "objects": [ { "type": "sphere", "radius": 0.3, "pos": [0, 0.3, 0] } ] })).unwrap();
         }
         let e = scene(json!({ "set": "plint", "objects": [] })).err().unwrap();

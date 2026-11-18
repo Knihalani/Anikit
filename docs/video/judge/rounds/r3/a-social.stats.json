@@ -1,0 +1,12 @@
+{
+ "start_utc": "2026-11-18T03:26:48Z",
+ "end_utc": "2026-11-18T03:34:45Z",
+ "renders": [
+  {
+   "cmd": "anikit-video render deliverables/eval/a-social/spec.json -o deliverables/eval/a-social/final.mp4 --sheet deliverables/eval/a-social/contact.png",
+   "exit": 0,
+   "wall_s": 84.45,
+   "peak_rss_mb": 1128.4
+  }
+ ]
+}

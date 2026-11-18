@@ -43,7 +43,7 @@ Camera: `{ "zoom": 1, "x": 0, "y": 0, "rotation": 0, "focus": 0, "aperture": 0, 
 
 `type` is inferred: `text` → text, `shape` → shape, `src` → image/video, `children` → box, `layers` → group, `component` → component.
 
-Every layer: `x y` (default centre; relative to an earlier sibling: `"y": "=title.bottom + 24"`, `"x": "=card.right + 40"`, with `left right top bottom cx cy width height`) · `anchor` (`center`, `topLeft`, …) · `width height` · `scale rotation skewX skewY opacity blur` · `blend` · `shadow` (`true` or `{x, y, blur, color}`) · `glow` · `clip` · `mask` · `depth` · `start end duration` (half-open: visible from `start` up to, not including, `end`) · `frames` (`12` = only frame 12, `[12, 18]` = frames 12–17, counted in the scene) · `enter exit loop animate` · `stagger`.
+Every layer: `x y` (default centre; relative to an earlier sibling: `"y": "=title.bottom + 24"`, `"x": "=card.right + 40"`, with `left right top bottom cx cy width height`) · `anchor` (`center`, `topLeft`, …, `[0.5, 0]`, CSS `"50% 0%"` / `"top left"`; alias `transformOrigin`) · `width height` · `scale rotation skewX skewY opacity blur` · `blend` · `shadow` (`true` or `{x, y, blur, color}`) · `glow` · `clip` · `mask` · `depth` · `start end duration` (half-open: visible from `start` up to, not including, `end`) · `frames` (`12` = only frame 12, `[12, 18]` = frames 12–17, counted in the scene) · `enter exit loop animate` · `stagger`.
 
 | Type | Keys |
 |---|---|
@@ -97,7 +97,7 @@ Edit in place instead of rewriting: `anikit-video set spec.json scenes.intro.lay
 anikit-video check  spec.json [--json]          errors and warnings with paths and "did you mean"
 anikit-video still  spec.json --at 2.5 -o f.png [--width 640] [--watch]
 anikit-video sheet  spec.json -o sheet.png [--frames 12]
-anikit-video render spec.json -o out.mp4 [--quality draft|standard|high] [--from 2 --to 5] [--profile]
+anikit-video render spec.json -o out.mp4 [--quality draft|standard|high] [--from 2 --to 5] [--profile] [--no-cache]
 anikit-video beats  music.wav|spec.json [--json] tempo, beat and bar times ("@beatN" / "@barN"); a spec gives its score's exact grid
 ```
 

@@ -23,6 +23,7 @@
 //! * **Haze:** exponential fog towards the haze colour.
 
 use super::bvh::{Bvh, Tlas};
+use super::kernel::wide::{Near, TriHit, NEAR_K};
 use super::env::Env;
 use super::math::*;
 use std::sync::Arc;
@@ -54,11 +55,15 @@ pub struct Material {
     /// Surface imperfections (0..1 each): roughness variation, smudges
     /// (fingerprints and wipes), micro-scratches, dust on up-facing surfaces.
     pub imperf: [f32; 4],
+    /// Machined surface pattern (bump only): kind (0 none, 1 brushed,
+    /// 2 sunburst, 3 guilloché, 4 clous de Paris, 5 knurl), period in metres,
+    /// strength.
+    pub pattern: (u8, f32, f32),
 }
 
 impl Material {
     pub fn chrome() -> Material {
-        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0, imperf: [0.0; 4] }
+        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0, imperf: [0.0; 4], pattern: (0, 0.01, 0.0) }
     }
 }
 
@@ -236,6 +241,28 @@ impl Shape {
                 norm(scale(sub(scale(tr.e1, dv2), scale(tr.e2, dv1)), 1.0 / det))
             }
             Shape::Sphere => norm(cross(v3(0.0, 1.0, 0.0), n)),
+        }
+    }
+
+    /// Merge the nearest hits in `(tmin, tmax)` into `near` (see [`Near`]).
+    fn nearest(&self, o: V3, d: V3, tmin: f32, tmax: f32, near: &mut Near<TriHit>) {
+        match self {
+            Shape::Mesh(b) => b.nearest(o, d, tmin, tmax, near),
+            Shape::Sphere => {
+                // Both roots, as successive closest-hit queries find them.
+                let a = dot(d, d);
+                let b = dot(o, d);
+                let c = dot(o, o) - 1.0;
+                let disc = b * b - a * c;
+                if disc >= 0.0 {
+                    let sq = disc.sqrt();
+                    for t in [(-b - sq) / a, (-b + sq) / a] {
+                        if t > tmin && t < tmax {
+                            near.insert(t, TriHit { t, tri: 0, u: 0.0, v: 0.0 });
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -433,6 +460,8 @@ pub struct Scene {
     /// Height fog: falloff height in metres (0 = uniform) and base height.
     /// Density is `haze.0 · e^{-(y - base)/falloff}` above the base.
     pub haze_height: (f32, f32),
+    /// Drifting fog: noise amplitude (0..1), feature size (m), wind (m/s).
+    pub haze_drift: (f32, f32, V3),
     /// Local point and spot lights.
     pub lights: Vec<Light>,
     /// Per instance: world → object transform as three rows of
@@ -441,6 +470,9 @@ pub struct Scene {
     inv: Vec<[V3; 4]>,
     /// Ambient and unshadowed key diffuse light for an upward normal (the floor).
     up_light: (V3, V3),
+    /// Camera rays continuing through thin glass take the next hits from
+    /// one multi-hit query (there is thin glass and no cut-out object).
+    glass_near: bool,
     /// Underwater caustics on the key light (0 = off) and the time they animate with.
     pub caustics: f32,
     pub time: f32,
@@ -553,7 +585,11 @@ impl Scene {
                         dv = dv.min(depth[sy * w + sx]);
                     }
                     let tmax = (dv / dot(d, f).max(1e-3)).min(60.0);
-                    let jit = u01(hash2(x as u32 * 7 + 3, y as u32 * 13 + 1));
+                    // March offset from the R2 sequence over pixels: every
+                    // 5×5 neighbourhood covers [0, 1) evenly, so the blur
+                    // below cancels the banding instead of leaving the clumps
+                    // of white noise (sandy grain in bright beams).
+                    let jit = (0.5 + x as f32 * 0.754_877_7 + y as f32 * 0.569_840_3).fract();
                     let mut acc = v3(0.0, 0.0, 0.0);
                     // The key (directional) lights the whole ray.
                     if let Some((kd, kl)) = key {
@@ -590,7 +626,9 @@ impl Scene {
                             let d2 = dot(to, to).max(1e-3);
                             let dist = d2.sqrt();
                             let ld = scale(to, 1.0 / dist);
-                            let mut k = 1.0 / d2;
+                            // Fade to zero at the edge of the light's reach (no
+                            // visible sphere where the march stops).
+                            let mut k = (1.0 - smoothstep(0.6 * reach, reach, dist)) / d2;
                             if l.cos_outer > -1.0 {
                                 k *= smoothstep(l.cos_outer, l.cos_inner.max(l.cos_outer + 1e-4), dot(scale(ld, -1.0), l.dir));
                             }
@@ -610,32 +648,45 @@ impl Scene {
         use rayon::prelude::*;
         let rows: Vec<Vec<[f32; 3]>> = if !super::kernel::par::parallel() { (0..hh).map(row).collect() } else { (0..hh).into_par_iter().map(row).collect() };
         let raw: Vec<[f32; 3]> = rows.into_iter().flatten().collect();
-        // Two 5×5 binomial passes remove the jitter (shafts are smooth).
-        let mut out = raw.clone();
-        let mut raw = raw;
+        // Two 5×5 binomial passes remove the jitter (shafts are smooth);
+        // separable and row-parallel (borders renormalise over the taps inside).
+        const B: [f32; 5] = [1.0, 4.0, 6.0, 4.0, 1.0];
+        let mut out = raw;
         for _pass in 0..2 {
-        for y in 0..hh {
-            for x in 0..hw {
-                let mut a = [0.0f32; 3];
-                let mut ws = 0.0;
-                for dy in -2i32..=2 {
-                    for dx in -2i32..=2 {
-                        let (sx, sy) = (x as i32 + dx, y as i32 + dy);
-                        if sx < 0 || sy < 0 || sx >= hw as i32 || sy >= hh as i32 {
-                            continue;
+            let src = out;
+            let horiz = super::kernel::par::image(hw, hh, |y, row: &mut [[f32; 3]]| {
+                for (x, o) in row.iter_mut().enumerate() {
+                    let (mut a, mut ws) = ([0.0f32; 3], 0.0);
+                    for (j, wt) in B.iter().enumerate() {
+                        let sx = x as i32 + j as i32 - 2;
+                        if sx >= 0 && sx < hw as i32 {
+                            let v = src[y * hw + sx as usize];
+                            for k in 0..3 {
+                                a[k] += v[k] * wt;
+                            }
+                            ws += wt;
                         }
-                        let wt = [1.0, 4.0, 6.0, 4.0, 1.0][(dx + 2) as usize] * [1.0, 4.0, 6.0, 4.0, 1.0][(dy + 2) as usize];
-                        let v = raw[sy as usize * hw + sx as usize];
-                        for k in 0..3 {
-                            a[k] += v[k] * wt;
-                        }
-                        ws += wt;
                     }
+                    *o = a.map(|v| v / ws);
                 }
-                out[y * hw + x] = a.map(|v| v / ws);
-            }
-        }
-        raw.clone_from(&out);
+            });
+            let vert = super::kernel::par::image(hw, hh, |y, row: &mut [[f32; 3]]| {
+                for (x, o) in row.iter_mut().enumerate() {
+                    let (mut a, mut ws) = ([0.0f32; 3], 0.0);
+                    for (j, wt) in B.iter().enumerate() {
+                        let sy = y as i32 + j as i32 - 2;
+                        if sy >= 0 && sy < hh as i32 {
+                            let v = horiz[sy as usize * hw + x];
+                            for k in 0..3 {
+                                a[k] += v[k] * wt;
+                            }
+                            ws += wt;
+                        }
+                    }
+                    *o = a.map(|v| v / ws);
+                }
+            });
+            out = vert.to_vec();
         }
         out
     }
@@ -678,9 +729,9 @@ fn count(k: usize) {
         });
     }
 }
-/// Profiling: CPU time in closest-hit (0) and shadow/AO (1) traversal, in
+/// Profiling: CPU time in closest-hit (0; camera rays: 2) and shadow/AO (1) traversal, in
 /// TSC ticks (`ANIKIT_SCENE3D_PROFILE`; a few ns of overhead per ray).
-pub static CYCLES: [std::sync::atomic::AtomicU64; 2] = [const { std::sync::atomic::AtomicU64::new(0) }; 2];
+pub static CYCLES: [std::sync::atomic::AtomicU64; 3] = [const { std::sync::atomic::AtomicU64::new(0) }; 3];
 struct Cycles(usize, u64);
 impl Cycles {
     #[inline(always)]
@@ -692,7 +743,7 @@ impl Drop for Cycles {
     #[inline(always)]
     fn drop(&mut self) {
         let d = tsc().wrapping_sub(self.1);
-        thread_local!(static LOCAL: std::cell::Cell<[u64; 2]> = const { std::cell::Cell::new([0; 2]) });
+        thread_local!(static LOCAL: std::cell::Cell<[u64; 3]> = const { std::cell::Cell::new([0; 3]) });
         LOCAL.with(|c| {
             let mut v = c.get();
             v[self.0] += d;
@@ -712,6 +763,12 @@ pub fn tsc() -> u64 {
     return unsafe { std::arch::x86_64::_rdtsc() };
     #[cfg(not(target_arch = "x86_64"))]
     0
+}
+
+/// `ANIKIT_SCENE3D_GLASS_NEAR=0` turns the multi-hit glass walk off.
+fn glass_near_on() -> bool {
+    static C: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *C.get_or_init(|| std::env::var("ANIKIT_SCENE3D_GLASS_NEAR").as_deref() != Ok("0"))
 }
 
 /// Neighbour normals on a smooth specular object closer than this cosine
@@ -875,12 +932,14 @@ impl Scene {
             glow: (v3(0.0, 0.0, -1.0), v3(0.0, 0.0, 0.0), 0.1),
             haze: (0.0, v3(0.0, 0.0, 0.0)),
             haze_height: (0.0, 0.0),
+            haze_drift: (0.0, 2.0, v3(0.0, 0.0, 0.0)),
             lights: Vec::new(),
             inv: Vec::new(),
             caustics: 0.0,
             time: 0.0,
             gobo: super::rig::Gobo::default(),
             up_light: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)),
+            glass_near: false,
         };
         let up = v3(0.0, 1.0, 0.0);
         s.up_light = (s.env.diffuse(up), s.key_diffuse(up));
@@ -893,6 +952,51 @@ impl Scene {
         let boxes: Vec<(V3, V3)> = self.insts.iter().map(|i| self.world_box(i)).collect();
         self.tlas = Tlas::new(&boxes);
         self.inv = self.insts.iter().map(|i| [scale(i.xf.r[0], 1.0 / i.xf.s.x), scale(i.xf.r[1], 1.0 / i.xf.s.y), scale(i.xf.r[2], 1.0 / i.xf.s.z), i.xf.t]).collect();
+        let thin_glass = self.insts.iter().any(|i| i.thin && i.cam && self.mats.get(i.mat as usize).is_some_and(|m| m.transmission > 0.0));
+        self.glass_near = thin_glass && glass_near_on() && !self.insts.iter().any(|i| self.cutout(i).is_some());
+    }
+
+    /// The nearest [`NEAR_K`] camera-visible hits from `o` along `d` beyond
+    /// `EPS` (floor included): distance, (instance or `FLOOR`, hit). Each has
+    /// the distance and barycentrics [`Scene::trace_f`] would give for it.
+    fn trace_near(&self, o: V3, d: V3) -> Near<(u32, TriHit)> {
+        count(0);
+        let _c = Cycles::start(2);
+        let blank = TriHit { t: 0.0, tri: 0, u: 0.0, v: 0.0 };
+        let mut near = Near::new((u32::MAX, blank));
+        if let Some(f) = &self.floor {
+            if d.y < -1e-7 {
+                let t = (f.y - o.y) / d.y;
+                if t > EPS && t < 1e6 {
+                    near.insert(t, (FLOOR as u32, blank));
+                }
+            }
+        }
+        self.tlas.visit(o, d, EPS, near.far(1e6), |k, _| {
+            let ob = &self.insts[k as usize];
+            if ob.cam {
+                let (lo, ld) = self.to_object(k as usize, o, d);
+                let mut m = Near::new(blank);
+                self.shapes[ob.shape as usize].nearest(lo, ld, EPS, near.far(1e6), &mut m);
+                for e in &m.h[..m.n] {
+                    near.insert(e.0, (k, e.1));
+                }
+            }
+            near.far(1e6)
+        });
+        near
+    }
+
+    /// The surface of a [`Scene::trace_near`] hit at distance `t` from `o`.
+    fn near_surf(&self, o: V3, d: V3, t: f32, k: u32, h: TriHit) -> Surf {
+        let up = v3(0.0, 1.0, 0.0);
+        if k == FLOOR as u32 {
+            return Surf { t, p: madd(o, d, t), ng: up, ns: up, uv: [0.0; 2], on: up, obj: FLOOR, tri: 0 };
+        }
+        let ob = &self.insts[k as usize];
+        let (lo, ld) = self.to_object(k as usize, o, d);
+        let (t, sn, gn, uv) = self.shapes[ob.shape as usize].surface(lo, ld, (h.t, h.tri, h.u, h.v));
+        Surf { t, p: madd(o, d, t), ng: ob.xf.normal(gn), ns: ob.xf.normal(sn), uv, on: norm(gn), obj: k as usize, tri: h.tri }
     }
 
     /// A world ray in instance `k`'s object space (direction unnormalised,
@@ -956,7 +1060,7 @@ impl Scene {
     /// Closest hit; with `camera`, objects hidden from the camera (cards) are skipped.
     fn trace_f(&self, o: V3, d: V3, tmax: f32, camera: bool) -> Option<Surf> {
         count(0);
-        let _c = Cycles::start(0);
+        let _c = Cycles::start(if camera { 2 } else { 0 });
         let mut best: Option<Surf> = None;
         let mut tm = tmax;
         if let Some(f) = &self.floor {
@@ -1054,6 +1158,24 @@ impl Scene {
     /// height fog integrated in closed form (dense near the floor, thin above).
     #[inline]
     pub fn fog_depth(&self, o: V3, d: V3, dist: f32) -> f32 {
+        let tau = self.fog_depth_smooth(o, d, dist);
+        let (amp, size, wind) = self.haze_drift;
+        if amp <= 0.0 {
+            return tau;
+        }
+        // Patchy, drifting fog: density scaled by smooth noise sampled at three
+        // points along the (first 40 m of the) ray, moving with the wind.
+        let span = dist.min(40.0);
+        let off = scale(wind, self.time);
+        let mut k = 0.0;
+        for f in [0.2, 0.5, 0.8] {
+            let p = sub(madd(o, d, span * f), off);
+            k += vnoise(scale(p, 1.0 / size.max(0.05)));
+        }
+        tau * (1.0 + amp * (2.0 * k / 3.0 - 1.0) * 1.6).max(0.0)
+    }
+
+    fn fog_depth_smooth(&self, o: V3, d: V3, dist: f32) -> f32 {
         let (h, y0) = self.haze_height;
         if h <= 0.0 {
             return self.haze.0 * dist;
@@ -1242,11 +1364,16 @@ impl Scene {
             .map(|(t, _)| t.sample(s.uv[0], s.uv[1]))
     }
 
-    /// Radiance of a texture print: lit like paper plus its own glow.
+    /// Radiance of a texture print: lit like paper (environment, key and the
+    /// local point/spot lights at `p`) plus its own glow.
     #[inline]
-    fn print_light(&self, t: [f32; 4], n: V3, glow: f32) -> V3 {
+    fn print_light(&self, t: [f32; 4], p: V3, n: V3, glow: f32) -> V3 {
         let c = v3(t[0], t[1], t[2]);
-        let lit = add(self.env.diffuse(n), self.key_diffuse(n));
+        let mut lit = add(self.env.diffuse(n), self.key_diffuse(n));
+        if !self.lights.is_empty() && glow < 1.0 {
+            // Prints are matte: diffuse only (roughness 1, no specular).
+            lit = add(lit, self.local_lights(p, n, n, 1.0, v3(0.0, 0.0, 0.0)).0);
+        }
         add(scale(c, glow * 1.6), scale(mul(c, lit), 1.0 - glow))
     }
 
@@ -1272,6 +1399,13 @@ impl Scene {
         if dot(n, ng) < 0.0 {
             n = scale(n, -1.0);
         }
+        // Sub-pixel machining reads as sheen: the faded bump becomes roughness.
+        let mut pat_rough = 0.0;
+        if m.pattern.0 != 0 && m.pattern.2 > 0.0 {
+            let (pn, pr) = self.pattern_normal(m, ob, s.p, n, s.t);
+            n = pn;
+            pat_rough = pr;
+        }
         let v = scale(d, -1.0);
         let mut nv = dot(n, v);
         if nv < 0.02 {
@@ -1281,7 +1415,7 @@ impl Scene {
         let mut out = v3(0.0, 0.0, 0.0);
         let mut cover = 0.0;
         if let Some(t) = self.print(ob, s) {
-            out = self.print_light(t, n, m.tex_glow);
+            out = self.print_light(t, s.p, n, m.tex_glow);
             cover = t[3];
             if cover >= 0.999 {
                 return (add(out, m.emissive), Diffuse::default());
@@ -1325,7 +1459,7 @@ impl Scene {
             return self.shade_style(m, s, n, v, nv, keep, out);
         }
         let (dr, dust) = if m.imperf == [0.0; 4] { (0.0, 0.0) } else { self.imperfect(m, ob.xf.point_inv(s.p), n) };
-        let rough = (m.roughness + dr).clamp(0.02, 1.0);
+        let rough = (m.roughness + dr + pat_rough).clamp(0.02, 1.0);
         let f0 = lerp3(v3(0.04 * m.specular, 0.04 * m.specular, 0.04 * m.specular), m.base, m.metallic);
         let f0 = scale(f0, 1.0 - dust);
         let ab = env_brdf(rough, nv);
@@ -1403,6 +1537,62 @@ impl Scene {
             ss.ns = n;
         }
         Some((mm, ss))
+    }
+
+    /// Machined patterns as bump: the height field's gradient (object space,
+    /// finite differences) tilts the shading normal. Patterns finer than about
+    /// two pixels fade out instead of aliasing.
+    fn pattern_normal(&self, m: &Material, ob: &Inst, p: V3, n: V3, dist: f32) -> (V3, f32) {
+        let (kind, period, strength) = m.pattern;
+        let period = period.max(1e-5);
+        // Rough pixel footprint at this distance (1080p, ~40° field). Grooves
+        // need about 6 px per period to resolve; below that they fade into sheen.
+        let foot = dist * 0.0007;
+        let fade = smoothstep(4.0, 10.0, period / foot.max(1e-6));
+        let sheen = (1.0 - fade) * 0.12 * strength.min(1.5);
+        if fade <= 0.0 {
+            return (n, sheen);
+        }
+        let q = ob.xf.point_inv(p);
+        let tau = std::f32::consts::TAU;
+        let h = |q: V3| -> f32 {
+            match kind {
+                // Parallel grooves along X, with a little random depth.
+                1 => (q.z / period * tau).sin() * 0.5 + (vnoise(v3(q.z / period * 0.37, 0.0, q.x * 3.0)) - 0.5) * 0.6,
+                // Radial lines from the axis (Y), in the XZ plane: a sunburst dial.
+                2 => (q.z.atan2(q.x) * (std::f32::consts::TAU * 0.15 / period).round().max(24.0)).sin(),
+                // Engine-turned waves: rings whose radius ripples with angle.
+                3 => {
+                    let r = (q.x * q.x + q.z * q.z).sqrt();
+                    let a = q.z.atan2(q.x);
+                    // The ripple fades in from the centre, where it would be denser than the rings.
+                    (((r + period * 0.6 * smoothstep(0.0, 12.0 * period, r) * (a * 18.0).sin()) / period) * tau).sin()
+                }
+                // Clous de Paris: a grid of small pyramids (diagonal).
+                4 => {
+                    let (u, w) = ((q.x + q.z) / period, (q.x - q.z) / period);
+                    1.0 - 2.0 * (fract(u) - 0.5).abs().max((fract(w) - 0.5).abs())
+                }
+                // Knurl: crossed helical grooves around Y.
+                _ => {
+                    // Arc length around Y, so the diamonds keep their shape at any radius.
+                    let arc = q.z.atan2(q.x) * (q.x * q.x + q.z * q.z).sqrt();
+                    let (u, w) = ((arc + q.y) / period, (arc - q.y) / period);
+                    1.0 - 2.0 * (fract(u) - 0.5).abs().max((fract(w) - 0.5).abs())
+                }
+            }
+        };
+        let e = period * 0.08;
+        let h0 = h(q);
+        let g = v3((h(add(q, v3(e, 0.0, 0.0))) - h0) / e, (h(add(q, v3(0.0, e, 0.0))) - h0) / e, (h(add(q, v3(0.0, 0.0, e))) - h0) / e);
+        // Height amplitude ~ 4% of the period at strength 1.
+        let gl = len(g);
+        if gl < 1e-6 {
+            return (n, sheen);
+        }
+        let gw = scale(ob.xf.normal(g), gl * period * 0.04 * strength * fade);
+        let tangential = sub(gw, scale(n, dot(gw, n)));
+        (norm(sub(n, tangential)), sheen)
     }
 
     /// Surface imperfections at object-space point `p` (normal `n`, world):
@@ -1570,8 +1760,32 @@ impl Scene {
         let mut first: Option<(f32, V3, usize, (f32, f32))> = None;
         let mut inside_since: Option<f32> = None;
         let none = v3(0.0, 0.0, 0.0);
+        // Past a thin pane: the next hits from one multi-hit query (origin,
+        // camera distance of that origin, hits), refilled when used up.
+        let mut ahead: Option<(V3, f32, Near<(u32, TriHit)>)> = None;
+        // Camera distance of the current origin `o`.
+        let mut obase = 0.0f32;
         for layer in 0..=q.max_glass {
-            let Some(s) = self.trace_f(o, d, 1e6, true) else {
+            let hit = match &mut ahead {
+                None => self.trace_f(o, d, 1e6, true),
+                Some(a) => 'next: {
+                    loop {
+                        // Same rule as a fresh trace from `o`: beyond EPS.
+                        let need = obase + EPS;
+                        let (ao, ab, near) = (a.0, a.1, &a.2);
+                        if let Some(e) = near.h[..near.n].iter().find(|e| ab + e.0 > need) {
+                            let mut s = self.near_surf(ao, d, e.0, e.1 .0, e.1 .1);
+                            s.t = ab + e.0 - obase;
+                            break 'next Some(s);
+                        }
+                        if near.n < NEAR_K {
+                            break 'next None;
+                        }
+                        *a = (o, obase, self.trace_near(o, d));
+                    }
+                }
+            };
+            let Some(s) = hit else {
                 // Fog covers the backdrop too (as if it were 200 m away).
                 let bd = if self.haze.0 > 0.0 {
                     let mut k = 1.0 - (-self.fog_depth(cam.pos, d, 200.0)).exp();
@@ -1621,7 +1835,7 @@ impl Scene {
                     let fr = fresnel_dielectric(nv, 1.0 / m.ior);
                     let mut a = 0.0;
                     if let Some(t) = self.print(ob, &s) {
-                        col = add(col, scale(mul(self.print_light(t, n, m.tex_glow), thr), haze_f));
+                        col = add(col, scale(mul(self.print_light(t, s.p, n, m.tex_glow), thr), haze_f));
                         a = t[3];
                     }
                     let r = reflect(d, n);
@@ -1637,7 +1851,9 @@ impl Scene {
                     if entering {
                         inside_since = Some(dist);
                     } else {
-                        let inside = inside_since.map(|t0| dist - t0).unwrap_or(s.t);
+                        // An exit with no entry (an open shell seen from its back):
+                        // a nominal 2 mm wall, not the whole ray length.
+                        let inside = inside_since.map(|t0| dist - t0).unwrap_or(0.002);
                         tthr = mul(tthr, absorb(m.absorb, inside));
                         inside_since = None;
                     }
@@ -1647,12 +1863,20 @@ impl Scene {
                     }
                     o = madd(s.p, d, 1e-4);
                     travelled = dist;
+                    obase = dist + 1e-4;
+                    if self.glass_near && ahead.is_none() {
+                        ahead = Some((o, obase, self.trace_near(o, d)));
+                    }
                     continue;
                 }
             }
             // An opaque (or thick glass) surface: the primary hit proper.
             let haze_add = scale(self.haze.1, 1.0 - haze_f);
             if s.obj == FLOOR {
+                // Only a directly seen floor may skip its reflection ray: post
+                // fills that checkerboard while blurring the reflection plane,
+                // but a floor seen through glass goes straight into `col`.
+                let skip_refl = skip_refl && first.is_none();
                 let (mut dif, refl, fade, rdist) = weighted(luma(thr) * haze_f, || self.shade_floor(&s, d, 0, q, rot, false, skip_refl, skip_vis));
                 let bd = self.backdrop(d);
                 let keepf = (1.0 - fade) * haze_f;
@@ -1707,8 +1931,17 @@ impl Scene {
         let clock = std::time::Instant::now();
         let mut centre: Buf<Sample> = Buf::uninit(w * h);
         let mut tms: Buf<f32> = Buf::uninit(w * h);
-        let tp = par::Shared(tms.as_mut_ptr());
+        // What the refinement test reads of each centre sample (id, normal),
+        // compact so that pass doesn't stream the whole samples back in.
+        let mut ids: Buf<u32> = Buf::uninit(w * h);
+        let mut nrms: Buf<[f32; 3]> = Buf::uninit(w * h);
+        let (tp, ip, np) = (par::Shared(tms.as_mut_ptr()), par::Shared(ids.as_mut_ptr()), par::Shared(nrms.as_mut_ptr()));
         let rough_floor = self.floor.as_ref().is_some_and(|f| f.roughness >= 0.2);
+        assert_eq!(out.len(), w * h);
+        let wr = out.writer();
+        // Every pixel is resolved from its centre sample here, while the
+        // sample is in cache; the refinement pass rewrites only the pixels it
+        // supersamples.
         par::rows(&mut centre, w, |y, row| {
             for x in 0..w {
                 let hs = hash2(x as u32, y as u32);
@@ -1717,8 +1950,15 @@ impl Scene {
                 let odd = !q.full && (x + y) & 1 == 1;
                 let skip = if odd { (rough_floor as u8) | 2 } else { 0 };
                 let s = self.primary(rig, prev, x as f32 + 0.5, y as f32 + 0.5, q, rot, skip);
-                // SAFETY: pixel (x, y) belongs to this row's task only.
-                unsafe { *tp.at(y * w + x) = Self::contrast_luma(&s) };
+                let ci = y * w + x;
+                // SAFETY: pixel (x, y) belongs to this row's task only; `out` outlives the loop.
+                unsafe {
+                    *tp.at(ci) = Self::contrast_luma(&s);
+                    // Truncation keeps the sentinel ids (floor, sky: near usize::MAX) distinct.
+                    *ip.at(ci) = s.id as u32;
+                    *np.at(ci) = [s.nrm.x, s.nrm.y, s.nrm.z];
+                    put_resolved(&wr, ci, &s);
+                }
                 row[x] = s;
             }
         });
@@ -1726,9 +1966,7 @@ impl Scene {
         let snap = |a: &[std::sync::atomic::AtomicU64]| a.iter().map(|v| v.load(std::sync::atomic::Ordering::Relaxed)).collect::<Vec<u64>>();
         let (r0, c0) = (snap(&RAYS), snap(&CYCLES));
         let refined = std::sync::atomic::AtomicU64::new(0);
-        let (centre, tms) = (&centre, &tms);
-        assert_eq!(out.len(), w * h);
-        let wr = out.writer();
+        let (centre, tms, ids, nrms) = (&centre, &tms, &ids, &nrms);
         // Smooth metal: thin specular highlights (bevels) live inside
         // one object, so neighbours with the same id but turned normals also
         // get edge samples (otherwise the lines come out dotted and crawl).
@@ -1743,7 +1981,8 @@ impl Scene {
             let mut nref = 0u64;
             for x in 0..w {
                 let ci = y * w + x;
-                let c = &centre[ci];
+                let (cid, cn) = (ids[ci], nrms[ci]);
+                let shiny_c = (cid as usize) < shiny.len() && shiny[cid as usize];
                 let mut refine = q.full;
                 for (dx, dy) in [(-1i32, 0i32), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (-1, 1), (1, -1)] {
                     let (nx, ny) = (x as i32 + dx, y as i32 + dy);
@@ -1751,16 +1990,22 @@ impl Scene {
                         continue;
                     }
                     let ni = ny as usize * w + nx as usize;
-                    let n = &centre[ni];
-                    let turned = n.id == c.id && c.id < shiny.len() && shiny[c.id] && dot(n.nrm, c.nrm) < ncos;
-                    if n.id != c.id || (tms[ni] - tms[ci]).abs() > q.contrast || turned {
+                    let nid = ids[ni];
+                    let turned = shiny_c && nid == cid && {
+                        let nn = nrms[ni];
+                        dot(v3(nn[0], nn[1], nn[2]), v3(cn[0], cn[1], cn[2])) < ncos
+                    };
+                    if nid != cid || (tms[ni] - tms[ci]).abs() > q.contrast || turned {
                         refine = true;
                         break;
                     }
                 }
+                if !refine {
+                    continue;
+                }
                 samples.clear();
-                samples.push(*c);
-                if refine {
+                samples.push(centre[ci]);
+                {
                     nref += 1;
                     // Two stages: half the samples, then the rest only where they
                     // still disagree (object edges always get all of them).
@@ -1915,6 +2160,15 @@ impl Scene {
 /// Combine a pixel's samples with tone-mapped weights (bright highlights
 /// don't alias). AO and key visibility average weighted by albedo, so the
 /// denoiser can filter them as scalars.
+/// Resolve one sample into pixel `ci` (kept out of line: called from the
+/// AVX2-compiled centre pass, it must compute the same bits as the
+/// refinement pass's resolve).
+#[inline(never)]
+fn put_resolved(wr: &super::kernel::post::PlanesOut, ci: usize, s: &Sample) {
+    // SAFETY: the caller owns pixel `ci` (see `render_frame`).
+    unsafe { wr.put(ci, &resolve(std::slice::from_ref(s))) };
+}
+
 fn resolve(samples: &[Sample]) -> Px {
     let mut px = Px::default();
     let mut wsum = 0.0;

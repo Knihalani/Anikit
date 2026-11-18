@@ -1,0 +1,520 @@
+{
+  "name": "graphic_pieces_tempest-collage",
+  "tags": [
+    "illustration",
+    "event-promo"
+  ],
+  "refs": [
+    "xk-studio-offfmx-2025-main-titles",
+    "tintin-titles",
+    "nexus-smith-foulkes-honda-grrr-2004"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 4,
+      "typography": 3,
+      "colour": 5,
+      "light_texture": 4,
+      "motion": 3,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 3.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find an idea specific to The Tempest (Prospero's magic, the shipwreck, the island's spirits) and drive transformations from it, instead of collaging a seascape with an arbitrary polyhedron.",
+      "Replace the default condensed-sans-on-label and monospace info block with type that has a voice: custom or expressive lettering, dramatic scale contrast, and type that interacts with the storm.",
+      "Build real choreography between frames, with different set-ups, camera moves and scene changes, instead of cropping one static poster layout four times.",
+      "No storm or transformation: the motion never enacts the subject (a tempest, magic, a shipwreck), whereas C's motion is the story",
+      "The type needs a point of view, such as custom or broken letterforms that interact with the sea or collage, instead of a default condensed sans on a label",
+      "Build distinct, layered frames with real material light and an unexpected central image, rather than one composition cropped four ways",
+      "Needs an idea specific to The Tempest (storm, magic, the island, Prospero's book) instead of a sunset plus abstract shapes",
+      "Needs real choreography: the tape, paper and image should transform, tear or be revealed across shots instead of cropping into one fixed layout",
+      "Typography needs a point of view (scale contrast, interaction with the torn paper and water, a chosen or custom face) instead of a default condensed sans on a yellow strip"
+    ],
+    "tells": [
+      "One collage layout repeats across frames: a torn sea photo, a halftone polyhedron card, a red circle and a yellow title strip. It is reframed and cropped, not choreographed, which is slide-deck structure.",
+      "Generic type kit: a default condensed bold sans on a yellow label, plus monospace small text ('Harbour Theatre 12 Mar \u2014 30 Apr') and a tiny tracked-caps 'W. SHAKESPEARE' label. That is the stock 'tasteful' recipe.",
+      "The concept is literal and obvious: sea and moon for The Tempest. The polyhedron is a generic shape with no motivated link to the play.",
+      "The textures (halftone, torn paper, masking tape, grain) are applied as surface effects. The light is flat with no depth, and the composition is mostly empty cream ground.",
+      "Little happens across the length: a camera crop and the same assets sliding into position.",
+      "One collage layout reframed (zoom, crop, push-in) across all frames, which makes it a single poster rather than choreography",
+      "Template typography: a generic condensed grotesk on a yellow tape strip, small tracked mono caps label (W. SHAKESPEARE), and mono venue and date info in the corner",
+      "Generic 'tasteful' collage kit: torn paper edge, halftone overlay, faux tape, a red circle, cream ground with a single yellow accent",
+      "The pale polyhedron is a stock primitive with no clear link to the play; the idea is literal (sea + sunset = Tempest)",
+      "Flat, unmotivated light; texture is overlaid as a filter rather than built from the material",
+      "The same collage composition repeated across frames: the frames only crop or zoom into one layout (sea clipping, yellow tape label, halftone polygon, red circle)",
+      "Template typography: a condensed bold grotesk on a yellow tape strip, a tiny tracked-caps 'W. SHAKESPEARE' label and monospace date and venue text, which is the stock 'editorial collage' kit",
+      "Literal, generic imagery: a sun over the sea for The Tempest, plus an unmotivated faceted polygon and a red circle that mean nothing",
+      "Fake textures (torn edge, halftone, paper grain) laid on evenly as effects, not as material; flat light throughout",
+      "The layout is built like a theatre poster template with motion added, not a piece of motion design"
+    ]
+  },
+  "refs_summary": {
+    "xk-studio-offfmx-2025-main-titles": {
+      "overall": 7.12,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "tintin-titles": {
+      "overall": 8.62,
+      "judged_professional": "3/3",
+      "mean_rank": 1.33
+    },
+    "nexus-smith-foulkes-honda-grrr-2004": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.83,
+  "delta": -4.21,
+  "trials": [
+    {
+      "key": {
+        "A": "nexus-smith-foulkes-honda-grrr-2004",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "candidate",
+        "D": "tintin-titles"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, provocative idea: a saccharine storybook world (rainbows, swans, peacocks, seals) turned against grimy old mechanical engines, which are shown flying, being batted away and swarming. The tone carries the message.",
+              "Type is built into the world instead of laid on top of it. Letters appear as topiary, as eyes on a peacock's tail and as balls balanced by seals, so each word belongs to a different creature and staging.",
+              "Every frame has a different set-up, scale and camera: a wide establishing landscape, a mid shot with a flamingo swinging a bat, a frontal circus line-up, and a crowd scene with particles and smoke. That shows real choreography across the film.",
+              "The rendering deliberately clashes materials: soft, over-lit, candy-coloured pastoral against heavy, rusted, textured metal. The sickly-sweet palette is a choice, not a default.",
+              "Lots of character animation, including a bunny, a flamingo, seals and deer, with weight and comic timing implied across the frames."
+            ],
+            "gaps": [
+              "The pastoral is deliberately twee, but some background elements (trees, clouds) look stock. Pushing them to match the detail of the engines would raise the whole image.",
+              "Central compositions like the seal line-up are close to symmetrical and posed. One or two more dynamic, off-axis camera moves would help.",
+              "This is the benchmark entry. The gap left is only finish: the uniform bright light flattens depth in places where a stronger key light could sculpt the forms."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A title-sequence chase told in silhouette. The credits are staged inside the action: on an arch sign, painted on the ground in a pool of lamplight, and riding a vortex.",
+              "A bold palette that changes scene by scene: dusty rose, nocturnal violet and green, acid lime with a yellow spiral, and teal dusk. Each frame works as a poster.",
+              "Strong cinematic staging: an overhead dutch angle with a pool of light, deep perspective, and characters thrown across a hypnotic spiral. The editing clearly varies scale and point of view.",
+              "Typography with a period point of view: chunky slab and sans credits set in perspective, with lettering integrated into the image.",
+              "Paper grain and print-like texture give a deliberate retro-graphic finish."
+            ],
+            "gaps": [
+              "The vocabulary of silhouette-chase titles (Saul Bass, Catch Me If You Can) is well trodden. Compared with A, the core idea is homage rather than invention.",
+              "The credit type style changes from frame to frame (slab on the arch, flat sans elsewhere). A tighter typographic system would read as more authored.",
+              "The light is mostly flat graphic fills. The one frame with motivated lamplight is the strongest, and using that more widely would add depth."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Rich, tactile, bespoke 3D materials: translucent waxy hands, coral-like growths, green mesh fabric, hair-fine fibres, glassy tubes and beaded clusters. These are not stock primitives.",
+              "An unusual, deliberate palette: salmon and coral against icy blue, olive and bottle green, and a mauve dusk.",
+              "Each frame has a distinct world and scale, from a macro tangle to a volcanic landscape with an eruption.",
+              "The labels ('Boldtron', 'Medusa Lab') suggest an anthology or reel of artist segments, which explains the variety but weakens the through-line."
+            ],
+            "gaps": [
+              "No single idea ties the frames together. It reads as a reel of beautiful renders rather than a film with a concept like A's.",
+              "The type is small bold grotesk labels dropped in a corner with no relation to the image. They need integration, scale or a typographic idea.",
+              "Composition leans on dense, centred material spectacle. Clear focal hierarchy and choreography that links shot to shot are missing."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "One collage layout repeats across frames: a torn sea photo, a halftone polyhedron card, a red circle and a yellow title strip. It is reframed and cropped, not choreographed, which is slide-deck structure.",
+              "Generic type kit: a default condensed bold sans on a yellow label, plus monospace small text ('Harbour Theatre 12 Mar \u2014 30 Apr') and a tiny tracked-caps 'W. SHAKESPEARE' label. That is the stock 'tasteful' recipe.",
+              "The concept is literal and obvious: sea and moon for The Tempest. The polyhedron is a generic shape with no motivated link to the play.",
+              "The textures (halftone, torn paper, masking tape, grain) are applied as surface effects. The light is flat with no depth, and the composition is mostly empty cream ground.",
+              "Little happens across the length: a camera crop and the same assets sliding into position."
+            ],
+            "gaps": [
+              "Find an idea specific to The Tempest (Prospero's magic, the shipwreck, the island's spirits) and drive transformations from it, instead of collaging a seascape with an arbitrary polyhedron.",
+              "Replace the default condensed-sans-on-label and monospace info block with type that has a voice: custom or expressive lettering, dramatic scale contrast, and type that interacts with the storm.",
+              "Build real choreography between frames, with different set-ups, camera moves and scene changes, instead of cropping one static poster layout four times."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 34.6,
+        "cost_usd": 0.15221420000000002,
+        "tokens": 70662,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "nexus-smith-foulkes-honda-grrr-2004",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "tintin-titles",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 7,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 6,
+              "originality": 7
+            },
+            "tells": [
+              "The kitsch is deliberate: an idyllic rainbow world is invaded by a rusty, mechanical engine block, and the clash is the joke",
+              "Type is built from objects in the world: topiary letters, letters on a peacock's tail feathers, balloons balanced by seals spelling CHANGE",
+              "There is a narrative arc across frames, from paradise to the engine to a swarm of exploding engines, which shows choreography and escalation",
+              "Many custom characters (flamingo with a bat, seals, white dog) and varied staging; no frame repeats a layout"
+            ],
+            "gaps": [
+              "The CG finish is dated and flat (plasticky shading, generic sky domes), so the parody does not get the material richness C and B have",
+              "Compositions are busy but loosely staged; frames lack a strong focal hierarchy and poster quality",
+              "The palette is saccharine by design but monotonous; a controlled counterpoint colour for the intruding machinery would sharpen the idea"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Dense, layered material studies: translucent sculpted hand, fibrous coral, woven mesh, hair-like filaments, glossy and frosted tubing",
+              "The palette is deliberate and unusual (sage, coral, ice blue, bronze, bottle green), and the light differs from frame to frame",
+              "Each frame is a distinct world (hand over terrain, volcanic plume, textile wilderness, knotted tubes) and each reads as a poster",
+              "Type is small studio name tags; it labels the work rather than designing it, which is typical of a reel"
+            ],
+            "gaps": [
+              "No unifying idea or narrative across frames; it reads as a showcase of separate pieces, not one film with a point like C",
+              "Typography is minimal default-looking labels with no integration into the image",
+              "The motion story is not legible from the frames; there is no evident choreography linking one shot to the next"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific idea: a silhouette chase through the film's own world, with credits integrated into the scenes (a park gate arch, a light pool on the ground, alongside a vortex)",
+              "Credits are carried by the world itself: a sign arch, a shadow on the pavement, a pool of streetlight",
+              "Bold scene-specific palettes (dusty pink, aubergine/green noir, acid chartreuse spiral, teal night)",
+              "Choreography between frames: high-angle shots, Dutch tilts, a hypnotic spiral, a rooftop pursuit; the pursuit runs through every frame and shapes each new space",
+              "Paper grain and graphic shadow give texture without losing the flat silhouette language"
+            ],
+            "gaps": [
+              "The credit type is a consistent but fairly conventional slab/sans; there is room for more expressive scale play",
+              "The silhouette-chase title sequence is a well-trodden lineage (Saul Bass homage), which caps originality",
+              "Some frames (teal rooftop) are sparser and less inventive than the alley and spiral set pieces"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "One collage layout reframed (zoom, crop, push-in) across all frames, which makes it a single poster rather than choreography",
+              "Template typography: a generic condensed grotesk on a yellow tape strip, small tracked mono caps label (W. SHAKESPEARE), and mono venue and date info in the corner",
+              "Generic 'tasteful' collage kit: torn paper edge, halftone overlay, faux tape, a red circle, cream ground with a single yellow accent",
+              "The pale polyhedron is a stock primitive with no clear link to the play; the idea is literal (sea + sunset = Tempest)",
+              "Flat, unmotivated light; texture is overlaid as a filter rather than built from the material"
+            ],
+            "gaps": [
+              "No storm or transformation: the motion never enacts the subject (a tempest, magic, a shipwreck), whereas C's motion is the story",
+              "The type needs a point of view, such as custom or broken letterforms that interact with the sea or collage, instead of a default condensed sans on a label",
+              "Build distinct, layered frames with real material light and an unexpected central image, rather than one composition cropped four ways"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 27.2,
+        "cost_usd": 0.1391222,
+        "tokens": 70005,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "tintin-titles",
+        "B": "xk-studio-offfmx-2025-main-titles",
+        "C": "nexus-smith-foulkes-honda-grrr-2004",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Silhouette chase that carries a whole narrative through a mid-century, Saul Bass-style vocabulary, with each frame a new set piece (park gate, top-down alley, hypnotic spiral, rooftop with rocket)",
+              "Credits built into the world: a name painted across a pool of streetlight on the ground in perspective, and the director credit set into a wrought-iron gate sign",
+              "A different, deliberate palette in every scene (dusty pink, aubergine/green, acid chartreuse, teal/oxblood), all held together by consistent silhouette rules",
+              "Strong camera variety (eye level, steep overhead, flat graphic plane) points to real choreography and continuity of the characters across shots",
+              "Paper grain and cast shadows give the flat graphics depth and material"
+            ],
+            "gaps": [
+              "The credit lettering in some frames (spiral, rooftop) drops back to a fairly plain bold sans, which loses the integration seen in the gate and streetlight credits",
+              "The homage to 60s title design is obvious, so originality rests on execution more than on an invention",
+              "Some of the background illustration (the park trees and clouds) is softer and more generic than the silhouette work"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 9,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, memorable idea: dirty diesel engines are thrown out of a saccharine rainbow world, and the sugary look is clearly used ironically",
+              "Type made from objects in the scene (topiary letters, a peacock tail spelling the word, seals balancing lettered balls for CHANGE), so every word is a gag rather than a title card",
+              "A real narrative across frames: the engine lands, a flamingo attacks it, then a flock of engines is driven out, which shows escalation and choreography",
+              "The engines are rendered as real metal, a deliberate contrast with the plastic, candy-coloured world"
+            ],
+            "gaps": [
+              "The rainbow, pastel palette is crude on purpose, but as an image it is less refined and less authored than A's",
+              "The CG lighting is the flat, even look of its period, with little atmosphere or depth grading",
+              "Compositions are centred and illustrative, a series of tableaux rather than designed posters"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 4,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 6,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Dense, layered material work: translucent jelly hands, knitted mesh, coral-like growth, fibres and glossy tubes, all rendered with considered subsurface and specular light",
+              "An unusual palette (sage, coral, frosted cyan, bronze) changed deliberately from scene to scene",
+              "Small labels in a grotesk naming each scene ('Boldtron', 'Medusa Lab') suggest an anthology or studio showcase format",
+              "Some of the forms drift into the organic-surreal 3D look that could also come from AI tools, which lowers confidence"
+            ],
+            "gaps": [
+              "No central idea or narrative: it reads as a string of beautiful material studies, with nothing that only this piece could be",
+              "The typography is a default grotesk label dropped in a corner, with no relation to the image",
+              "Little evidence of choreography between frames; each shot stands alone instead of transforming into the next"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The same collage composition repeated across frames: the frames only crop or zoom into one layout (sea clipping, yellow tape label, halftone polygon, red circle)",
+              "Template typography: a condensed bold grotesk on a yellow tape strip, a tiny tracked-caps 'W. SHAKESPEARE' label and monospace date and venue text, which is the stock 'editorial collage' kit",
+              "Literal, generic imagery: a sun over the sea for The Tempest, plus an unmotivated faceted polygon and a red circle that mean nothing",
+              "Fake textures (torn edge, halftone, paper grain) laid on evenly as effects, not as material; flat light throughout",
+              "The layout is built like a theatre poster template with motion added, not a piece of motion design"
+            ],
+            "gaps": [
+              "Needs an idea specific to The Tempest (storm, magic, the island, Prospero's book) instead of a sunset plus abstract shapes",
+              "Needs real choreography: the tape, paper and image should transform, tear or be revealed across shots instead of cropping into one fixed layout",
+              "Typography needs a point of view (scale contrast, interaction with the torn paper and water, a chosen or custom face) instead of a default condensed sans on a yellow strip"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.1,
+        "cost_usd": 0.1420632,
+        "tokens": 70160,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 7
+      },
+      "checks": {
+        "idea": false,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": false,
+        "material": true,
+        "sync": false
+      },
+      "defects": [
+        "The last ~2 s (8\u201311 s, per-second change 4.2/3.9) is a near-static hold on the finished poster. Only the polyhedron keeps drifting, so the ending reads as dead air rather than a designed settle.",
+        "Intermediate frames are badly framed: 'MPEST' is cropped at the left edge, and the red disc and halftone card cover the moon mid-move. These are push-in states, not composed beats.",
+        "The halftone polyhedron's silhouette changes between frames that are 1/6 s apart. It reads as a randomly deforming lo-poly shape rather than a recognisable object (ship, island, cloud), so the eye has nowhere to land.",
+        "Motion runs in alternating bursts and lulls (75/6/64/67/15/64/10/60). Elements arrive one at a time on a slide-and-settle, with no overlap or follow-through between layers.",
+        "The audio's biggest moment, a broadband noise burst around 5.8\u20136.1 s, has no clearly matching visual impact. Per-second change in that window is no higher than in the earlier cuts.",
+        "Typography is a stock condensed grotesk on a yellow tape strip plus a mono credit line. It appears with a plain slide and carries no motion or meaning of its own.",
+        "The 3.5 s longest shot and 1.55 s median fail the pace benchmark. Both are dominated by holds, not by too many cuts."
+      ],
+      "gaps": [
+        "Choreography: top studios would build the collage as one continuous, overlapping physical gesture, with paper flutter, drop shadows that lift and land, and torn edges catching air, ideally with the sea turning to storm as the layers pile up. Here it is sequential slide-ins with linear-feeling camera pushes, and the tempest itself never appears.",
+        "Sound: there is a sustained low synth bed plus an accelerating tick riser into a white-noise swell, which is a stock build. Missing are paper and tape foley, wind and sea texture, and transients locked to each layer landing. The release after 6 s goes back to the static bed instead of resolving.",
+        "Finish and concept: the paper grain, torn deckle edges and clean halftone hold up at 100%, but the piece is a layout that assembles itself, not an idea. The ending hold, cropped intermediate frames, the meaningless polyhedron and type with no meaning keep it at good-template level rather than award level."
+      ]
+    },
+    "meta": {
+      "seconds": 26.7,
+      "cost_usd": 0.1670866,
+      "tokens": 72355,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "tempest-collage.mp4: 11.0s, 6 shots, median 1.55s, longest 3.51s\nper-second change: [75.9, 6.1, 64.5, 66.8, 15.5, 64.4, 9.6, 59.6, 4.2, 3.9]\nPACE: FAIL \u2014 longest shot 3.5s > 2.5s; median shot 1.6s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 3,
+    "colour": 5,
+    "light_texture": 4,
+    "motion": 4.0,
+    "craft": 5.5,
+    "originality": 3,
+    "sound": 5
+  },
+  "full_overall": 4.06,
+  "cost_usd": 0.6,
+  "judge_seconds": 117.6,
+  "verdict": "FAIL"
+}

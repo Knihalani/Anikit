@@ -1,0 +1,521 @@
+{
+  "name": "b-launch",
+  "tags": [
+    "product-launch",
+    "motion-design"
+  ],
+  "refs": [
+    "coinbase-system-update",
+    "jpmorgan-payments",
+    "morph-studio-xreal-1s-2025"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 4,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 4,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 3.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find a visual idea beyond diagramming the API. The rail metaphor needs physicality, scale or surprise, as B's ASCII world has",
+      "Typography needs a point of view: a chosen face, expressive scale, integration with the tracks, not default grotesk and mono labels",
+      "Vary composition and choreography between shots instead of zooming one diagram in and out, and give the world real light and texture",
+      "Find an idea beyond diagramming the API: make the railway physical (material, scale, light, weight of real track and signals) the way C makes payments tactile",
+      "Give the typography a point of view: a custom or characterful face, dramatic scale contrast, type that moves along the rails instead of captioning them",
+      "Break the single repeated composition. Vary camera, scale and framing so each frame is a distinct poster",
+      "The rail/switch metaphor is a decent seed but is used as a diagram; it needs physical expression (weight, steel, signal light, speed) the way A builds a material world",
+      "Typography needs a real system: custom or characterful faces, scale contrast, type that does something rather than labels on a slide",
+      "Each frame needs its own composition and choreography instead of one layout re-zoomed, and the palette needs more than one accent on black"
+    ],
+    "tells": [
+      "Literal idea: the product name 'Railyard' plus a diagram of the feature (rail track = API transfer flow) with the event names as labels",
+      "Dark ground, monospace small caps, a single green accent and a generic bold grotesk headline: the classic 'tasteful AI' explainer recipe",
+      "The end card is a slide: headline, diagram, and a one-line default-sans subtitle ('One API call moves money between bank accounts')",
+      "The same diagram repeats in nearly every frame, scaled or zoomed out; little actually changes",
+      "Flat, faintly glowing vector lines with no material, light or depth; placeholder-style UI (dot button, POST label)",
+      "Textbook 'tasteful AI' setup: near-black ground, tracked mono caps labels ('FROM ACCOUNT \u00b7\u00b7\u00b7\u00b74821'), a single accent green, mostly empty frame",
+      "A literal product explainer: the product name 'Railyard' plus a diagram of the API flow (transfer.created / submitted / settled). The railway metaphor is only a pun on the name",
+      "The same horizontal track layout repeats in almost every frame, with words swapped and scale changed, so it reads as a slide deck",
+      "Default typography: a generic heavy grotesk headline, a generic mono, and an Inter-like body line ('One API call moves money between bank accounts.') placed like a slide",
+      "Flat glow lines with no material, texture or real light. The background grid of tracks is decoration with no subject",
+      "Classic 'tasteful AI' setup: near-black ground, tracked-caps monospace labels, one green accent, a bold-sans headline ('Railyard', 'One call. Settled instantly.') set like a slide",
+      "The same composition repeats across frames: a horizontal dashed rail with three green branch-offs labelled transfer.created/submitted/settled, re-framed and re-scaled",
+      "Literal and obvious: product name plus a diagram of the feature (one API call moves money), with a one-line subtitle in default sans",
+      "Type sits at defaults (generic mono plus a generic grotesk) with no scale contrast or integration with the image; small body copy floats unanchored",
+      "The 'many rails' wide shot is the only change of scale, and it is just the same graphic tiled; flat light with a soft glow and no material"
+    ]
+  },
+  "refs_summary": {
+    "coinbase-system-update": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 1.33
+    },
+    "jpmorgan-payments": {
+      "overall": 7.5,
+      "judged_professional": "3/3",
+      "mean_rank": 1.67
+    },
+    "morph-studio-xreal-1s-2025": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    }
+  },
+  "ref_mean": 7.25,
+  "delta": -3.63,
+  "trials": [
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "coinbase-system-update",
+        "C": "candidate",
+        "D": "jpmorgan-payments"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Heavy simulation work: the glasses are formed from and dissolve into fluid, with refraction, caustics and particles, at a level templates and AI tools don't reach consistently",
+              "The product keeps its shape from shot to shot: the XREAL frame reads the same as liquid, as glass and as a hero render",
+              "Shot variety implies real choreography: an extreme close-up of the material, a hero reveal, a macro of the material, then a cellular 'evolution' world",
+              "Weaknesses: an all-blue palette that has become a clich\u00e9 of tech launches, a stock wide-tracked 'EVOLUTION' title, and a plain sans product lockup that sits on top of the image instead of being part of it"
+            ],
+            "gaps": [
+              "Break out of the single saturated blue. Introduce a second temperature or a darker, more unusual ground so the liquid idea stops looking like every water-sim launch film",
+              "Make the type part of the fluid world (refracted, formed or carried by the liquid) instead of a flat overlay lockup",
+              "Give the material transformation a sharper idea tied to what the product does (spatial display or vision), not just 'made of water / evolution'"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "One committed system: the whole world is made of ASCII and glyphs, so the type is the image itself",
+              "A bold, unusual palette: a single electric blue with white glyphs, held without compromise",
+              "Dense, layered frames with real variety: a running figure, a coin in a dollar-sign stream, an orbiting glyph planet, padlocks with code readouts, a grid of rotating coins",
+              "Character animation and rotating coins drawn in ASCII imply hand-built procedural choreography, not a filter laid over footage",
+              "Small label callouts ('Crypto is...', 'Faster') feel deliberate and editorial, not like slides"
+            ],
+            "gaps": [
+              "Use more light and depth inside the glyph system (density falloff, bloom, layering) so it gains atmosphere beyond a flat screen",
+              "The padlock and coin-grid frames lean on obvious crypto icons; replace one with a less literal image",
+              "Build stronger scale contrast between macro and micro glyph fields to sharpen the hierarchy in the busier frames"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Literal idea: the product name 'Railyard' plus a diagram of the feature (rail track = API transfer flow) with the event names as labels",
+              "Dark ground, monospace small caps, a single green accent and a generic bold grotesk headline: the classic 'tasteful AI' explainer recipe",
+              "The end card is a slide: headline, diagram, and a one-line default-sans subtitle ('One API call moves money between bank accounts')",
+              "The same diagram repeats in nearly every frame, scaled or zoomed out; little actually changes",
+              "Flat, faintly glowing vector lines with no material, light or depth; placeholder-style UI (dot button, POST label)"
+            ],
+            "gaps": [
+              "Find a visual idea beyond diagramming the API. The rail metaphor needs physicality, scale or surprise, as B's ASCII world has",
+              "Typography needs a point of view: a chosen face, expressive scale, integration with the tracks, not default grotesk and mono labels",
+              "Vary composition and choreography between shots instead of zooming one diagram in and out, and give the world real light and texture"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Strong art-directed light: hard window-light shadows raking across a warm paper ground, with believable shadows thrown through glass",
+              "A considered material language of gold-edged frosted glass that runs across the coin, phone, tablet, tiles and stacked coins",
+              "Every frame composes like a still-life poster, with deliberate diagonals and plenty of breathing room",
+              "UI typography on the tablet is set with care and matches the brand. The risk is that the icons (clock, cart, lock) are literal fintech symbols and the cream-and-gold look borders on the generic premium style"
+            ],
+            "gaps": [
+              "Push the idea past 'payments objects rendered in glass and gold'; the icon-on-coin metaphors (lock = security) are predictable",
+              "Give the type an expressive role in the film beyond UI on devices",
+              "Show stronger choreography between objects (transformations, match cuts) so it reads as one film rather than a set of beautiful stills"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "A",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 28.7,
+        "cost_usd": 0.1536952,
+        "tokens": 71740,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "coinbase-system-update",
+        "C": "jpmorgan-payments",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "High-end fluid and glass simulation: the glasses form out of liquid and the plastic shells are fully refracted, with caustics and suspended bubbles, which is difficult studio CG",
+              "Real variety between frames: a macro fly-through, a product reveal, a full frontal hero shot, an abstract cellular frame. That points to choreographed camera work, not one repeated layout",
+              "The type is weak and generic: a bold grotesk 'XREAL' with a thin '1S', and a widely tracked 'EVOLUTION' sitting on a busy plate with no integration",
+              "The all-blue liquid treatment is a familiar tech-launch clich\u00e9"
+            ],
+            "gaps": [
+              "Replace the monochrome electric blue with a palette that belongs only to this product. Right now it could be any tech launch",
+              "Build the type into the liquid world (refracted, submerged, formed by the sim) instead of laying stock caps over it",
+              "Give the 'liquid evolution' metaphor a sharper idea about what AR glasses do, beyond 'product made of water'"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 8,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A committed system: every image, including the figure, coins, padlocks and planet, is built from ASCII glyphs, so the typography is the image",
+              "Ultramarine with white is a bold single-palette choice that is held with discipline",
+              "The frames change a lot: a character walks, a coin streaks through flowing glyph fields, a planet is orbited by text, an unlocking sequence, a grid of coins spinning out of phase. That implies strong choreography",
+              "Small terminal-style captions ('Crypto is...', 'Faster') and code snippets add wit and layering",
+              "Some frames run into busy ASCII-filter territory, and the grid of coins is a little expected"
+            ],
+            "gaps": [
+              "Add one moment of real depth or light, such as glyph density used as a light source, to break the flat blue field and give it weight",
+              "Push the crypto narrative past the stock icons (dollar sign, bitcoin, padlock) to something more specific and surprising",
+              "Vary the scale contrast more. Most frames sit at the same glyph size and density"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Excellent motivated light: hard window-light shadows rake across a warm paper ground, glass gets gold-edged refractions, and the caustics on the device are physically believable",
+              "A deliberate palette of champagne, cream, brass and pale wood. It is a luxury-banking register chosen for J.P. Morgan Payments specifically",
+              "The UI is turned into physical glass objects: a chart as layered glass waves, a coin token that travels across the phone and tablet, a stack of coins with a lock icon. The 'coin' motif ties the frames together",
+              "The brand type is used sparingly and with restraint on the devices. The '$2.45M' UI type is crafted, not placeholder",
+              "The coin's recurring position and the motion-trail echoes show choreography from one frame to the next"
+            ],
+            "gaps": [
+              "The individual metaphors (lock = security, chart = growth) are still literal. One unexpected visual idea would lift it into award territory",
+              "The type is mostly confined to UI. An expressive typographic moment in the space would give it a voice",
+              "Each frame is a beautiful still life, but the arc between them, a sense of escalation or a payoff, is not evident"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Textbook 'tasteful AI' setup: near-black ground, tracked mono caps labels ('FROM ACCOUNT \u00b7\u00b7\u00b7\u00b74821'), a single accent green, mostly empty frame",
+              "A literal product explainer: the product name 'Railyard' plus a diagram of the API flow (transfer.created / submitted / settled). The railway metaphor is only a pun on the name",
+              "The same horizontal track layout repeats in almost every frame, with words swapped and scale changed, so it reads as a slide deck",
+              "Default typography: a generic heavy grotesk headline, a generic mono, and an Inter-like body line ('One API call moves money between bank accounts.') placed like a slide",
+              "Flat glow lines with no material, texture or real light. The background grid of tracks is decoration with no subject"
+            ],
+            "gaps": [
+              "Find an idea beyond diagramming the API: make the railway physical (material, scale, light, weight of real track and signals) the way C makes payments tactile",
+              "Give the typography a point of view: a custom or characterful face, dramatic scale contrast, type that moves along the rails instead of captioning them",
+              "Break the single repeated composition. Vary camera, scale and framing so each frame is a distinct poster"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.4,
+        "cost_usd": 0.1559316,
+        "tokens": 71855,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "jpmorgan-payments",
+        "B": "coinbase-system-update",
+        "C": "morph-studio-xreal-1s-2025",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Raking window-light shadows across a warm, paper-textured ground are art-directed and stay consistent from shot to shot; real caustics and refraction through the gold-rimmed glass objects",
+              "Consistent material language (champagne metal and frosted glass) carried across coin, phone, tablet, inlaid floor tiles and the lock stack, so it reads as one system rather than separate effects",
+              "Camera and scale vary a lot between frames (top-down floor grid, low three-quarter tablet, close coin stack), which suggests real choreography",
+              "Motion-trail echoes on the coin stack and the layered chart ribbons imply designed secondary motion",
+              "Brand type (J.P.Morgan wordmark, the $2.45M UI) is placed correctly inside the objects rather than laid over them"
+            ],
+            "gaps": [
+              "The idea is a premium-fintech-glass vocabulary (coin, phone, lock = security) that many banks share; it needs a concept only this client could own, the way B's ASCII world does",
+              "Typography is limited to diegetic UI and a wordmark; there is no expressive typographic moment to give the film a voice",
+              "The palette is beautiful but safe, a single warm-gold mood with no tonal turn or contrast beat across the sequence"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "One committed system: the whole world is built from typographic characters ($, 0/1, <, #), so the type is the image rather than a caption on top of it",
+              "A bold, deliberate palette of saturated International Klein-style blue with white glyphs and no compromise",
+              "High variety between frames: a running figure, a coin flying on flow-field streams, a planet of glyphs with a ring of binary, a lock-and-key matrix, a grid of rotating coins mid-turn. Each frame works as a poster and the choreography is clear",
+              "Dense layered detail: background glyph fields shift density and direction to create depth and fake light",
+              "Wit in the small label callouts ('<<Crypto is...', 'Faster') and the C-code block, with tongue-in-cheek tech copy integrated into the grid"
+            ],
+            "gaps": [
+              "The ASCII/terminal aesthetic is a known trend, so the system needs one more twist (colour inversion, a material break) to be unmistakably its own",
+              "Light is only implied by glyph density; one moment of real tonal depth or glow would add punch",
+              "The icon vocabulary (lock, coin, Bitcoin B, dollar) is still literal crypto shorthand; the subjects could be as inventive as the rendering"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.72,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "The fluid and glass simulations are complex, with the product hero rebuilt in liquid; the sim work has real cost and finish",
+              "Good scale shifts from macro to hero product to the organic 'evolution' tunnel imply a planned edit",
+              "Typography is weak: a generic bold grotesk 'XREAL' and '1S' split around the product, and a widely tracked thin 'E V O L U T I O N' over a busy background, which is the standard launch-film type treatment",
+              "The all-blue liquid-and-bubbles look is the default tech-launch spectacle, effect-led more than idea-led"
+            ],
+            "gaps": [
+              "Replace generic launch-film spectacle (liquid, bubbles, neural filaments) with a concept tied to what AR glasses actually do, such as seeing or overlaying",
+              "The type needs a point of view; tracked thin caps on a busy sim and a split wordmark are template moves",
+              "The monochrome blue palette flattens the frames; an accent or tonal counterpoint would give hierarchy and memorability"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 4,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "Classic 'tasteful AI' setup: near-black ground, tracked-caps monospace labels, one green accent, a bold-sans headline ('Railyard', 'One call. Settled instantly.') set like a slide",
+              "The same composition repeats across frames: a horizontal dashed rail with three green branch-offs labelled transfer.created/submitted/settled, re-framed and re-scaled",
+              "Literal and obvious: product name plus a diagram of the feature (one API call moves money), with a one-line subtitle in default sans",
+              "Type sits at defaults (generic mono plus a generic grotesk) with no scale contrast or integration with the image; small body copy floats unanchored",
+              "The 'many rails' wide shot is the only change of scale, and it is just the same graphic tiled; flat light with a soft glow and no material"
+            ],
+            "gaps": [
+              "The rail/switch metaphor is a decent seed but is used as a diagram; it needs physical expression (weight, steel, signal light, speed) the way A builds a material world",
+              "Typography needs a real system: custom or characterful faces, scale contrast, type that does something rather than labels on a slide",
+              "Each frame needs its own composition and choreography instead of one layout re-zoomed, and the palette needs more than one accent on black"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.3,
+        "cost_usd": 0.15763,
+        "tokens": 71920,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 6,
+        "sound": 6,
+        "craft": 6
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": true,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "Shot 1 runs about 9.7s as one continuous camera drift along the track. The movement keeps going but nothing changes in kind, so it reads like a scrolling UI tour rather than a choreographed sequence.",
+        "In the pull-back frames the hero diagram shrinks to roughly 5px type ('POST /v1/transfers', account numbers). It can't be read and turns into mush inside the dense line field.",
+        "The pairs show a smeary, doubled ghost on the monospace labels during the pan ('fer.created', 'transfer.submitted'). It looks like frame blending, not real motion blur.",
+        "Frame 1 crops 'transfer' at the frame edge and leaves the main track running off-frame, so the composition feels like it caught a moment in passing instead of being composed for it.",
+        "The 100% crop shows flat, uniform dashed strokes with a faint glow. There is no light falloff, depth or texture: it is vector lines on near-black.",
+        "The final frame holds about 2.5s with very little change (per-second change 4.9 and 3.5). The settle runs into dead air.",
+        "The background diagonal-tick pattern repeats evenly and looks procedural. It competes with the switch motif instead of supporting it."
+      ],
+      "gaps": [
+        "Edit and pacing: only two shots (median 7.5s). The best studio work would cut on the switch events and give each state change (created \u2192 submitted \u2192 settled) its own framed, timed beat, instead of covering everything with one long tracking move.",
+        "Weight and physicality: the switches and branch lines draw on with plain eased reveals. There is no mechanical anticipation, no snap or overshoot when a switch throws, and no secondary motion, so the rail metaphor never feels physical. The audio ticks hint at a mechanism the picture doesn't show.",
+        "Finish and sound depth: the lines have no material, no light, no depth of field and no layered falloff in the pull-back. The soundtrack is a competent but loop-like pulse with two near-identical risers (into 7.5s and 11.3s). It lacks dedicated sound design for each switch throw, and the dynamic contrast is mostly a wall of hats until the final hit."
+      ]
+    },
+    "meta": {
+      "seconds": 22.6,
+      "cost_usd": 0.15998040000000002,
+      "tokens": 72020,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "final.mp4: 15.0s, 2 shots, median 7.50s, longest 9.73s\nper-second change: [10.3, 14.3, 15.3, 14.5, 11.0, 8.2, 10.3, 16.3, 12.9, 14.7, 15.3, 19.2, 4.9, 3.5]\nPACE: FAIL \u2014 longest shot 9.7s > 2.5s; median shot 7.5s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 4,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 5.0,
+    "craft": 5.0,
+    "originality": 3,
+    "sound": 6
+  },
+  "full_overall": 4.11,
+  "cost_usd": 0.627,
+  "judge_seconds": 112.0,
+  "verdict": "FAIL"
+}
