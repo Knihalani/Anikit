@@ -620,9 +620,9 @@ fn idr_lookahead_codes_static_content_finer() {
 fn ssim_floor_bitrate_ceiling() {
     // Fresh noise every frame: SSIM rises slowly with bits, so the floor would
     // take the QP down by its full range. Above the bitrate ceiling (25 Mbit/s
-    // at 1080p30, scaled by area) it stops, so the stream stays near the
-    // constant-QP size.
-    let (w, h) = (320u32, 240u32);
+    // at 1080p30, scaled by area) it stops, gives the drop back and raises the
+    // QP (up to 4) until the stream is back under the ceiling.
+    let (w, h) = (640u32, 352u32);
     let mut s = 7u32;
     let frames: Vec<YuvBuffer> = (0..24)
         .map(|_| {
@@ -639,8 +639,9 @@ fn ssim_floor_bitrate_ceiling() {
         frames.iter().map(|f| e.encode(&f.frame(), &FrameHints::default()).len()).sum::<usize>()
     };
     let (flat, floor) = (enc(0.0), enc(0.985));
-    let budget = 25e6 / 8.0 / 30.0 * (w * h) as f64 / (1920.0 * 1080.0);
+    let budget = 25e6 / 8.0 / 30.0 * (640.0 * 360.0) / (1920.0 * 1080.0);
     eprintln!("noise: constant QP {flat} bytes, with floor {floor} (budget {budget:.0} bytes/frame)");
     assert!(flat as f64 / 24.0 > budget, "test content must exceed the ceiling");
-    assert!((floor as f64) < flat as f64 * 1.3, "{floor} vs {flat}");
+    // the floor's drop on the IDR is given back and the QP raised above `qp`
+    assert!(floor < flat, "{floor} vs {flat}");
 }
