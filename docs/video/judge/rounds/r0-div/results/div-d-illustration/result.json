@@ -1,0 +1,526 @@
+{
+  "name": "div-d-illustration",
+  "tags": [
+    "illustration",
+    "product-launch"
+  ],
+  "refs": [
+    "osko-launch",
+    "morph-studio-xreal-1s-2025",
+    "found-devialet-opera-de-paris-2022"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 3,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 2,
+      "motion": 3,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 2.88,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "No world-building or craft: replace flat vector defaults with a distinct illustration style that has texture, light and a picture-book sensibility (the subject begs for it)",
+      "Break the single repeated layout: let type and image interact (words becoming objects, the burrow digging through the text) and vary framing and scale shot to shot",
+      "Typography and end card need a point of view: a custom or characterful children's face, an integrated logo animation and no UI pills",
+      "Needs a real illustrative voice: textured, hand-made picture-book art with character design and staging instead of default vector shapes",
+      "Break the repeated caption-bar layout; integrate the type into the scene (words that dig, pop or glow) so the read-along mechanic becomes the visual idea",
+      "Motion should have weight and choreography, with the fox animated with personality, camera moves and transitions between pages, rather than elements simply appearing in a static frame",
+      "Give it a real illustrative voice with texture, hand-drawn line or picture-book materials, instead of default vector shapes",
+      "Remove the repeated slide layout. Let the text live inside the illustration and the scene transform with the reading, rather than a caption bar under a static backdrop",
+      "Design the typography with a point of view (a custom or carefully chosen face, scale play, words that act out their meaning) instead of a highlight pill on default type"
+    ],
+    "tells": [
+      "The same layout repeats in every frame (illustration band above a white caption bar with one highlighted word) like a slide deck; only the highlight and small elements change",
+      "Clip-art vector landscape: blob trees, lollipop flowers, symmetric clouds, flat brown soil band, with no texture or light",
+      "Default-feeling geometric sans set like UI subtitles, and a placeholder 'Reading' recording pill",
+      "The end card is a centred wordmark with a generic tagline and a yellow pill label on a flat gradient, the AI/template product-promo structure",
+      "The balloon frame is evenly spaced primary-colour balloons on a yellow gradient: effect without subject",
+      "The idea is literal (the app highlights words as you read, so the film shows words highlighted)",
+      "The same layout repeats in three frames (illustration on top, a white caption bar with the sentence, one highlighted word), which is slide-deck structure with the words swapped",
+      "Clip-art vector illustration: lollipop tree, blob clouds, dot flowers, symmetrical balloons in a row, and a flat gradient sky with no texture or depth",
+      "Placeholder UI: a 'Reading' pill with a fake waveform, a yellow 'Picture books for ages 4\u20137' pill and highlighter chips",
+      "The end card is a centred bold-sans wordmark, a swoosh underline, a tagline and a pill: the template app-promo formula",
+      "Literal idea: the product name plus a diagram of the feature (karaoke word highlighting), with nothing surprising",
+      "The same composition repeats across frames: an identical landscape with a white caption bar below, and only the highlighted word changes, like a slide deck",
+      "Placeholder UI: a 'Reading' recording pill with a fake waveform in the corner",
+      "Clip-art vector illustration: lollipop trees, blob clouds, a evenly spaced row of balloons, a flat yellow moon, and no texture, light or depth",
+      "Default-feeling type: a generic rounded grotesk, a yellow highlight pill, a centred wordmark with a swoosh underline, a tagline and a pill badge, which is the standard AI or template end card",
+      "The idea is literal: the product name plus a diagram of the feature (words highlight as they are read)"
+    ]
+  },
+  "refs_summary": {
+    "osko-launch": {
+      "overall": 6,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "morph-studio-xreal-1s-2025": {
+      "overall": 7.25,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "found-devialet-opera-de-paris-2022": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 1.33
+    }
+  },
+  "ref_mean": 6.96,
+  "delta": -4.08,
+  "trials": [
+    {
+      "key": {
+        "A": "found-devialet-opera-de-paris-2022",
+        "B": "osko-launch",
+        "C": "candidate",
+        "D": "morph-studio-xreal-1s-2025"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Built CGI world rather than a product on a seamless backdrop: pedestals, sweeping gilded ribbons, fluted glass screens and arches all repeat the speakers' cream-and-gold material language",
+              "A bold, deliberate palette of lacquer red against cream, white and brushed gold that feels luxurious and owned by the brand",
+              "Physically convincing materials: matte stone pedestals with fine gold inlay, soft GI bounce, accurate reflections on the glossy shells",
+              "A surprise reveal: the floor opens onto a watch-movement gear train under the speaker, an engineering metaphor only this product could carry",
+              "Real shot variety (wide hero group, tight macro through the ribbons, top-down into the mechanism, frontal portrait, low-angle group), showing a choreographed camera path",
+              "The only type is the debossed brand mark on the product, a confident choice for a luxury object film"
+            ],
+            "gaps": [
+              "The middle act's idea (gears = precision engineering) is a familiar luxury-watch trope; push it to something only sound could motivate, such as the set reacting to audio",
+              "The first and last frames are near-identical pedestal line-ups, so the structure is bookended rather than escalating; end on a stronger final image",
+              "No typographic layer to carry a line or the product names; a carefully set luxury serif or custom lockup would give the film a voice beyond the renders"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A clear transformation concept: the glasses are born from liquid, splash and organic membrane, so the product is presented as an 'evolution'",
+              "Complex fluid sims, caustics, refraction, subsurface glass and nerve-like filaments that suggest high-end sim and render work",
+              "Strong variety of scale and energy across frames: an explosive splash, a calm hero reveal, a macro liquid-glass form and a cellular close-up with depth of field",
+              "Monochrome electric-blue palette held with discipline"
+            ],
+            "gaps": [
+              "Typography is the weak link: a default bold grotesk 'XREAL' set apart from '1S', and a thin, widely tracked 'E V O L U T I O N' laid over the image with no integration, which is the generic tech-launch type tell",
+              "Single-hue blue-on-black liquid tech is a well-worn look; it needs a second colour idea or a material surprise to separate it from every other launch film",
+              "The liquid-to-glasses idea is visually rich but conceptually loose; tie the transformation to what the product actually does (AR, a display layer) rather than abstract 'evolution'"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "A witty narrative idea, the 'I.O.U.' sticky note in an empty fridge and on the leftovers, which is specific, human and memorable for a payments brand",
+              "A grab-bag of styles (night-time 3D van diorama, Pixar-ish fridge interior, flat-vector golfer sequence, 3D emoji icon grid) reads as an art-directed campaign or reel",
+              "The retro mint fridge with the warm light spilling from the open door and its floor reflection is a well-staged gag",
+              "The golfer swing-to-facepalm sequence shows character animation timing"
+            ],
+            "gaps": [
+              "No unifying visual language: the 3D, flat vector and emoji frames look like different jobs, which dilutes authorship; the best entry holds a single world throughout",
+              "Light and materials are generic: the shelf bottles look plasticky and the emoji grid is a centred icon row on black that is close to stock",
+              "The handwritten 'I.O.U.' is the only typography; build a typographic system around the handwritten note to give the piece a signature"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The same layout repeats in every frame (illustration band above a white caption bar with one highlighted word) like a slide deck; only the highlight and small elements change",
+              "Clip-art vector landscape: blob trees, lollipop flowers, symmetric clouds, flat brown soil band, with no texture or light",
+              "Default-feeling geometric sans set like UI subtitles, and a placeholder 'Reading' recording pill",
+              "The end card is a centred wordmark with a generic tagline and a yellow pill label on a flat gradient, the AI/template product-promo structure",
+              "The balloon frame is evenly spaced primary-colour balloons on a yellow gradient: effect without subject",
+              "The idea is literal (the app highlights words as you read, so the film shows words highlighted)"
+            ],
+            "gaps": [
+              "No world-building or craft: replace flat vector defaults with a distinct illustration style that has texture, light and a picture-book sensibility (the subject begs for it)",
+              "Break the single repeated layout: let type and image interact (words becoming objects, the burrow digging through the text) and vary framing and scale shot to shot",
+              "Typography and end card need a point of view: a custom or characterful children's face, an integrated logo animation and no UI pills"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 34.1,
+        "cost_usd": 0.156755,
+        "tokens": 71889,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "found-devialet-opera-de-paris-2022",
+        "B": "osko-launch",
+        "C": "morph-studio-xreal-1s-2025",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Product-led CGI with a real material system: travertine plinths, brushed-gold inlays, white ceramic speaker shells, all lit with soft, motivated key light and believable contact shadows",
+              "Deliberate palette: lacquer red, cream stone and gold are a luxury Chinese New Year look, with art direction matched to the brand and the season",
+              "Varied camera grammar: hero group wide, extreme close-up through ribbon arcs, top-down reveal of a watch-movement gear mechanism under the product, front-on detail",
+              "The clockwork reveal ties the speaker to precision engineering and haute horlogerie, which is a specific idea rather than a generic turntable",
+              "Type is nearly absent (only the logo on the product), and that suits a premium product showcase"
+            ],
+            "gaps": [
+              "The set-dressing idea (arches, ribbons, plinths) is close to the standard luxury-CGI vocabulary, and the clockwork beat is the only real surprise; it needs a bolder conceptual spine across the whole film",
+              "No typographic or graphic layer gives it an authored identity beyond product beauty",
+              "Wide shots repeat the same plinth-trio composition at the start and end; the bookend is safe rather than transformative"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A narrative conceit with wit: an 'I.O.U.' sticky note left in an empty tub, and later inside a retro fridge with a handwritten note and a floor reflection. That is a storytelling payoff a viewer would remember and share",
+              "Deliberate style-switching: stylised 3D dusk landscape with a camper van, toy-like 3D fridge interior, flat 2D character animation (golf swing in three poses with a fail beat), and 3D icon set. This reads as a directed brand film that uses several craft teams, not a template",
+              "Comic timing is implied by the frames: the golfer's sequence of address, swing and facepalm, and the fridge going from closed to open on the reveal",
+              "Handwritten I.O.U. lettering is integrated into the image as a prop, not overlaid as slide text"
+            ],
+            "gaps": [
+              "Mixing styles risks inconsistency; the icon grid frame is centred and generic and reads like a UI asset sheet",
+              "The palette is not unified across segments; the cyan, purple and pastel gradients feel off-the-shelf in places",
+              "Little authored typography; the film relies on props for its words rather than a typographic voice"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "High-end FX simulation: fluid and organic membrane sims form the glasses, caustics, refraction, bubbles and fibrous tendrils, with real depth of field and chromatic fringing",
+              "Clear choreography between frames: liquid explosion, then the product resolves, then a translucent organic shell of the glasses, then macro membrane, then a cellular 'EVOLUTION' field. The evolution concept is carried through the matter itself",
+              "Logo lockup 'XREAL ... 1S' is split across the frame around the product, which is a considered placement"
+            ],
+            "gaps": [
+              "The monochrome electric-blue palette is the most common tech-launch look; it needs a second colour or contrast to be memorable",
+              "Type is minimal and generic: widely tracked caps 'EVOLUTION' over a busy background is a clich\u00e9",
+              "The organic/liquid 'evolution' metaphor is well trodden in hardware launches, so originality is limited"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same layout repeats in three frames (illustration on top, a white caption bar with the sentence, one highlighted word), which is slide-deck structure with the words swapped",
+              "Clip-art vector illustration: lollipop tree, blob clouds, dot flowers, symmetrical balloons in a row, and a flat gradient sky with no texture or depth",
+              "Placeholder UI: a 'Reading' pill with a fake waveform, a yellow 'Picture books for ages 4\u20137' pill and highlighter chips",
+              "The end card is a centred bold-sans wordmark, a swoosh underline, a tagline and a pill: the template app-promo formula",
+              "Literal idea: the product name plus a diagram of the feature (karaoke word highlighting), with nothing surprising"
+            ],
+            "gaps": [
+              "Needs a real illustrative voice: textured, hand-made picture-book art with character design and staging instead of default vector shapes",
+              "Break the repeated caption-bar layout; integrate the type into the scene (words that dig, pop or glow) so the read-along mechanic becomes the visual idea",
+              "Motion should have weight and choreography, with the fox animated with personality, camera moves and transitions between pages, rather than elements simply appearing in a static frame"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.2,
+        "cost_usd": 0.15430660000000002,
+        "tokens": 71761,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "morph-studio-xreal-1s-2025",
+        "B": "osko-launch",
+        "C": "found-devialet-opera-de-paris-2022",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Coherent material language: the glasses are rebuilt as caustic, refractive liquid/glass with real subsurface and specular detail, not a stock 3D primitive",
+              "The frames progress (shattering bottle-like form \u2192 product hero \u2192 liquid cast of the glasses \u2192 macro membrane \u2192 cellular 'EVOLUTION' world), so the camera and simulation are choreographed across the film",
+              "Simulation work (fluid, splashes, fibrous growth) has specific detail and plausible physics",
+              "The type is restrained and integrated: XREAL and 1S are split across the product in the frame, and EVOLUTION is widely tracked and sits inside the organic structure",
+              "Weaknesses: a monochrome electric-blue tech palette and 'liquid evolution' are well-worn conventions in consumer-tech launch films"
+            ],
+            "gaps": [
+              "Break out of the all-blue tech-launch palette with a second, unexpected colour or material contrast so it feels less like a category default",
+              "The type is competent but generic (tracked caps, a standard grotesk). Give the wordmarks a typographic behaviour tied to the liquid idea, such as refracting, condensing or forming from droplets",
+              "Push the concept beyond the 'evolution = organic liquid' metaphor toward something only this product could claim"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A deliberate, unusual palette: lacquer red, travertine stone, brushed gold and ivory, which reads as a luxury/Lunar New Year edition built around the Devialet product line",
+              "Bespoke set design: the plinths are cut to echo the speaker forms, the gold-inlaid ribbons sweep around the Phantom, and the arched screens are fluted glass",
+              "Surprise reveal: the overhead shot opens on a watch-movement gear train beneath the speaker, a specific idea about precision engineering",
+              "Real material work in the stone grain, metal edges, soft area light and believable contact shadows",
+              "Composition varies between wide tableau, macro, top-down and hero close-up; the closing tableau bookends the opening one",
+              "Almost no type in the sampled frames beyond the product logo. That works for a luxury product film, but nothing typographic is added"
+            ],
+            "gaps": [
+              "Typography is nearly absent. An end card or title treatment with an editorial point of view would complete the piece",
+              "The 'product on plinths in a set' still-life is a familiar luxury-CGI convention. The gear-movement idea is the strongest moment and could drive the whole film",
+              "Motion seems mostly camera moves around static sets. More physical choreography (ribbons unwinding, sets transforming in response to sound) would add weight and surprise"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "There is a real narrative idea: an 'I.O.U.' note left in place of food in the fridge, which is a witty, human hook about owing friends money",
+              "Deliberate mixed-media approach: a stylised 3D van at night, cinematic 3D fridge interiors with motivated light spill and reflections, flat character animation (a golf-swing sequence) and emoji-style icons",
+              "The golf poses show a clear three-step character animation arc with comic timing",
+              "Against it: the styles are inconsistent from shot to shot, the icon grid is close to stock emoji, and the flat-vector golfer has a generic corporate-illustration look",
+              "Overall it reads as an agency fintech/social-payments spot of mid-level craft rather than a template"
+            ],
+            "gaps": [
+              "Unify the visual language. The jumps between 3D, flat vector and emoji feel like different vendors rather than a designed system",
+              "The icon-grid shot is close to default emoji; redesign it with the same material care as the fridge shots",
+              "Add a typographic idea. The handwritten I.O.U. is the only type with character, and could become the film's whole type system"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 3,
+              "composition": 2,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeats across frames: an identical landscape with a white caption bar below, and only the highlighted word changes, like a slide deck",
+              "Placeholder UI: a 'Reading' recording pill with a fake waveform in the corner",
+              "Clip-art vector illustration: lollipop trees, blob clouds, a evenly spaced row of balloons, a flat yellow moon, and no texture, light or depth",
+              "Default-feeling type: a generic rounded grotesk, a yellow highlight pill, a centred wordmark with a swoosh underline, a tagline and a pill badge, which is the standard AI or template end card",
+              "The idea is literal: the product name plus a diagram of the feature (words highlight as they are read)"
+            ],
+            "gaps": [
+              "Give it a real illustrative voice with texture, hand-drawn line or picture-book materials, instead of default vector shapes",
+              "Remove the repeated slide layout. Let the text live inside the illustration and the scene transform with the reading, rather than a caption bar under a static backdrop",
+              "Design the typography with a point of view (a custom or carefully chosen face, scale play, words that act out their meaning) instead of a highlight pill on default type"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.6,
+        "cost_usd": 0.15648659999999998,
+        "tokens": 71870,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 5,
+        "craft": 5
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": true,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": false,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "The opening fox/burrow shot runs about 10s and is mostly static: a single locked night scene where the only changes are a word highlight stepping along the line and a burrow and fox appearing.",
+        "The word highlight jumps from word to word with no easing, and its yellow pill changes width abruptly ('under' grows between frames 1/6s apart).",
+        "The whale shot opens on empty sea with the caption greyed out. That is dead air before the action, and the clouds and sun shift position without motivation.",
+        "The balloon pop is a stock radial confetti burst with heavy smear blur. The other balloons do not react: no recoil, no secondary motion, no weight.",
+        "Balloons hang rigid with straight-ish strings and no sway or bob, so they read as clip-art assets rather than animated objects.",
+        "The illustration is flat vector with no lighting or falloff. The sun and moon glow is a basic radial gradient, and the dirt speckle is uniform noise.",
+        "The caption bar is a flat white slab that cuts the frame in half, with no design link between the type area and the illustration.",
+        "The end card mixes a heavy condensed display face, a rounded sans and a pill badge. It is a generic app-promo layout, and the brush underline is a stock asset.",
+        "The 'Reading' waveform pill UI chrome sits over the art in every story shot and adds no value to the composition."
+      ],
+      "gaps": [
+        "Choreography and pacing: each beat is one isolated reveal (highlight, then the object appears) with dead holds between them. A top studio would overlap the read cadence with anticipation, secondary action and camera movement, and build the three vignettes toward a real climax instead of repeating the same move three times.",
+        "Weight and transitions: there is no squash and stretch, follow-through or settle on the whale, balloons or fox. Shots are joined by hard swaps rather than designed hand-offs (for example, the splash water wiping to the sky, or a balloon string leading into the end card).",
+        "Finish and sound: the flat template-vector look has no texture, light or depth. The soundtrack is busy and evenly dense, with regular transients and two stock whoosh/riser sweeps (around 9.5s and 13s) carrying the hits. It lacks dynamic contrast, Foley-level detail for splash and pop, and room to breathe on the end card."
+      ]
+    },
+    "meta": {
+      "seconds": 28.1,
+      "cost_usd": 0.16381659999999998,
+      "tokens": 72277,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "burrow.mp4: 20.0s, 5 shots, median 2.03s, longest 9.97s\nper-second change: [7.5, 4.7, 7.2, 7.7, 6.1, 4.9, 9.0, 2.3, 41.9, 101.4, 5.5, 81.8, 14.5, 81.5, 8.8, 124.8, 6.9, 1.2, 0.3]\nPACE: FAIL \u2014 longest shot 10.0s > 2.5s; median shot 2.0s > 1.5s; 6/19 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 2,
+    "motion": 3.5,
+    "craft": 4.0,
+    "originality": 2,
+    "sound": 5
+  },
+  "full_overall": 3.28,
+  "cost_usd": 0.631,
+  "judge_seconds": 126.0,
+  "verdict": "FAIL"
+}

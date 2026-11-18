@@ -54,6 +54,29 @@ pub fn sad16(a: &[u8], sa: usize, b: &[u8], sb: usize) -> u32 {
     }
 }
 
+/// 16×16 SAD from raw pointers.
+///
+/// # Safety
+/// `a` must be readable for 16 rows of 16 bytes at stride `sa`, and `b` at
+/// stride `sb`.
+#[inline(always)]
+pub unsafe fn sad16_ptr(a: *const u8, sa: usize, b: *const u8, sb: usize) -> u32 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        sad16_sse2(a, sa, b, sb)
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        let mut s = 0u32;
+        for y in 0..16 {
+            for x in 0..16 {
+                s += (*a.add(y * sa + x)).abs_diff(*b.add(y * sb + x)) as u32;
+            }
+        }
+        s
+    }
+}
+
 #[cfg(target_arch = "x86_64")]
 #[inline]
 unsafe fn sad16_sse2(a: *const u8, sa: usize, b: *const u8, sb: usize) -> u32 {

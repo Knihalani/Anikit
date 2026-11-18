@@ -169,7 +169,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         if direct_ok {
             self.pred_b(drefs, mbx, mby, dmv0, dmv1, &mut dpy, &mut dpc);
             let sad = crate::simd::sad16(src_y, 16, &dpy, 16);
-            if sad <= lambda * 16 {
+            // direct is good enough: no searches (cheaper, and searching here
+            // rarely finds a better prediction for its extra MV bits)
+            if sad <= lambda * 64 {
                 self.code_b(mbx, mby, src_y, src_c, BMode::Direct, drefs, dmv0, dmv1, &dpy, &dpc);
                 return;
             }
