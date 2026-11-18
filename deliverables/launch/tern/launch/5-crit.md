@@ -1,0 +1,20 @@
+# 5 · Outside critique (pass 1, contact sheet `pass1.png`, fresh subagent, critic prompt from review.md)
+
+## Verdict (pasted)
+1. **Idea:** "A dusk mountain range is a waveform — sound shapes the landscape, the device sits in it, the ridgeline resolves under the name. Survives without the product name but only as mood; 'sound as landscape' is a well-worn metaphor and Zoom/Tascam/Sony could put their name on it unchanged. The one owned idea — 'lift it and it's already listening' — appears as a caption (14–16) but is never dramatized."
+2. Checks: 1 NO (9–11 shift to navy) · 2 NO (11 abstract spikes, 12 smear, 14–16 product doesn't sit in terrain) · 3 NO (gradient wash + rim, no source; device unlit) · 4 NO (4/5, 9/10, 14–16, 18–20 same layouts) · 5 NO (1, 3, 6, 12, 13 no focal subject; 50–60% empty sky) · 6 YES weakly · 7 NO · 8 NO ("Nothing clips." captions 32-bit float; spec line 18–20) · 9 NO (all type over sky) · 10 NO (18–20 wordmark + tiny spec line + tagline) · 11 NO (spec list + CTA) · 12 YES glyphs; 11 clips spikes at top · 13 NO (17–20 one held card) · 14 NO (device vanishes; logo slide) · 15 NO (~5 set-ups per 15 s).
+3. Weakest: **11** (navy void, two clipped spikes, looks broken) · **12** (smeared horizon under 70% empty sky) · **19–20** (dead hold over a spec list).
+4. Biggest fix: "Rebuild around the owned truth — the moment of lifting it. The landscape is written by that sound in real time. Light it with a real low sun so the device and ridges share one key. End with the ridgeline resolving with the device into the wordmark."
+5. Cut: 9–11 navy spike sequence; 12–13 smear; the spec line and 2/3 of the end hold. Add set-ups that change scale (macro on the mic grille, a wide of the device on the ridge).
+
+## Changes for pass 2
+- **World/light (checks 1–3):** sky gradient and sun moved to screen space so every shot keeps the same dusk arc (no navy swap when the camera pulls back); the sun is a visible disc in frame — the source of the key; the device is lit from the same side (warm right edge, shadow falling left).
+- **Idea (6, 7, 14):** the lift becomes the turn of the film and the cause of the ending: a new macro shot of the mic grille lying still in the silence; the lift; the line ignites from its pip and writes the land; the device **stays** in the final wide, standing on the shore, its line running out of it and lifting the name. The swap test now hinges on a fact only this product has (it records the instant it's lifted).
+- **Cut (weakest third):** the navy summit close-up (11), the flat smear stop shot (12–13), the spec line on the end card, ~1.2 s of end hold. "Nothing clips." (a spec caption) → "Caught whole." (the promise).
+- **Type in the scene (9):** lines set lower so the ridges cut through their feet (the land in front of the words), still ≥ 4.5:1 on the sky.
+- **End (13, 14, 10, 11):** one line only — "Lift to record." — no wordmark/spec/tagline stack; the camera keeps moving and the land keeps breathing to the last frame.
+- Kept the drip hook (the critic suggested cutting the ripple, but it's the first sound the land hears — frame 0 now carries the falling drop over a lit sky).
+
+## Pass 2 check (on `contact.png`, frame numbers 1–20)
+1 YES — one dusk arc, no navy swap · 2 YES — one land/water material, device lit from the same right-hand sun · 3 YES — the sun disc is in frame in most shots, faces facing it catch light, the device has a warm right edge and a shadow falling left · 4 YES — drip macro / wide hills / low-horizon range / pull-back peak / grille macro / lift / name wide (end frames 16–20 share a layout but the camera pulls back and the land rises) · 5 mostly — 3 and 13 are the quietest frames (the stop) · 6 YES · 7 improved: the lift writing the land is this product's own fact · 8 YES — "Caught whole." is the promise, no spec line · 9 partial — the peak cuts through "whole", the name rises from behind the ridge · 10 YES · 11 YES · 12 YES · 13 YES — the land keeps rising under the name with a moving camera · 14 YES — the line runs out of the device and lifts the name · 15 ~7 set-ups in 20 s.
+Shipped after pass 2: a third pass would only be polish.

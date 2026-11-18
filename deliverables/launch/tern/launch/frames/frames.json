@@ -1,0 +1,15 @@
+{ "size": "16:9", "defs": {},
+  "scenes": [
+    { "duration": 1, "layers": [
+      { "src": "../../land.glsl", "uniforms": { "zoom": 1.6, "camY": 0.45, "sun": 0.15, "ev": 0.95, "evx": 0.45, "evw": 0.28, "evf": 34, "part": 1 } },
+      { "text": "Nothing clips.", "font": "Schibsted Grotesk", "weight": 800, "size": "17vh", "x": "7%", "y": "30%", "anchor": "left", "color": "#F1E6D6", "letterSpacing": "-0.03em" },
+      { "src": "../../land.glsl", "alpha": true, "uniforms": { "zoom": 1.6, "camY": 0.45, "sun": 0.15, "ev": 0.95, "evx": 0.45, "evw": 0.28, "evf": 34, "part": 2 } } ] },
+    { "duration": 1, "layers": [
+      { "src": "../../land.glsl", "uniforms": { "zoom": 1.6, "camY": 0.45, "sun": 0.85, "ev": 0.95, "evx": 0.45, "evw": 0.28, "evf": 34, "part": 1 } },
+      { "text": "Nothing clips.", "font": "Schibsted Grotesk", "weight": 800, "size": "17vh", "x": "7%", "y": "30%", "anchor": "left", "color": "#1A1612", "letterSpacing": "-0.03em" },
+      { "src": "../../land.glsl", "alpha": true, "uniforms": { "zoom": 1.6, "camY": 0.45, "sun": 0.85, "ev": 0.95, "evx": 0.45, "evw": 0.28, "evf": 34, "part": 2 } } ] },
+    { "duration": 1, "layers": [
+      { "src": "../../land.glsl", "uniforms": { "zoom": 1.6, "camY": 0.45, "sun": 0.5, "ev": 0.95, "evx": 0.45, "evw": 0.28, "evf": 34, "part": 1 } },
+      { "text": "Nothing clips.", "font": "Gloock", "size": "19vh", "x": "7%", "y": "30%", "anchor": "left", "color": "#F6EBDD" },
+      { "src": "../../land.glsl", "alpha": true, "uniforms": { "zoom": 1.6, "camY": 0.45, "sun": 0.5, "ev": 0.95, "evx": 0.45, "evw": 0.28, "evf": 34, "part": 2 } } ] }
+  ] }
