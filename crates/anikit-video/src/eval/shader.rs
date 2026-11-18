@@ -276,7 +276,42 @@ pub(crate) fn reset_sizes() {
 
 /// Set the output scale for evaluations on this thread (1 = full size).
 pub fn set_preview_scale(s: f32) {
-    PREVIEW_SCALE.with(|c| c.set(if s.is_finite() && s > 0.0 { s.min(1.0) } else { 1.0 }));
+    let s = if s.is_finite() && s > 0.0 { s.min(1.0) } else { 1.0 };
+    PREVIEW_SCALE.with(|c| c.set(s));
+    BASE_SCALE.with(|c| c.set(s));
+}
+
+thread_local! {
+    /// The scale set for this thread's evaluations; each frame starts from it.
+    static BASE_SCALE: Cell<f32> = const { Cell::new(1.0) };
+}
+
+/// Set the current frame's scale only (nested compositions, restored after).
+pub(crate) fn set_frame_scale(s: f32) {
+    PREVIEW_SCALE.with(|c| c.set(s));
+}
+
+/// This thread's frame-scoped shader state, saved when a frame starts so a
+/// frame evaluated on top of it (rayon work-stealing) can't disturb it.
+pub(crate) struct ShaderFrameState {
+    bg: Rgba,
+    scale: f32,
+    sizes: HashMap<u64, (f32, f32)>,
+}
+
+/// Save this thread's frame state and start a fresh frame.
+pub(crate) fn begin_frame() -> ShaderFrameState {
+    let saved = ShaderFrameState { bg: FRAME_BG.with(|b| b.get()), scale: preview_scale(), sizes: SIZES.with(|m| std::mem::take(&mut *m.borrow_mut())) };
+    FRAME_BG.with(|b| b.set(Rgba([0.0, 0.0, 0.0, 1.0])));
+    PREVIEW_SCALE.with(|c| c.set(BASE_SCALE.with(|b| b.get())));
+    saved
+}
+
+/// Restore the state saved by [`begin_frame`].
+pub(crate) fn end_frame(s: ShaderFrameState) {
+    FRAME_BG.with(|b| b.set(s.bg));
+    PREVIEW_SCALE.with(|c| c.set(s.scale));
+    SIZES.with(|m| *m.borrow_mut() = s.sizes);
 }
 
 pub(crate) fn preview_scale() -> f32 {
@@ -427,7 +462,9 @@ impl ShaderJobs {
         }
         // No lock is held while rendering: the shader and nested renders use rayon.
         let assets = self.assets.get().and_then(|w| w.upgrade());
-        let (pm, ms) = run(&e.job, assets.as_ref());
+        // Isolated: waiting on rayon here must not run other frames' work on
+        // this thread (it may be mid-frame, and `run` uses thread-local renderers).
+        let (pm, ms) = crate::scene3d::kernel::par::isolated(|| run(&e.job, assets.as_ref()));
         let pm = Arc::new(pm);
         {
             let j = &e.job;

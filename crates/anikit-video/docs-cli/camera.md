@@ -13,8 +13,9 @@
     { "text": "Far", "size": "10vh", "color": "#aaa", "x": "70%", "depth": 2 } ] } ] }
 ```
 
-- Camera keys: `zoom x y rotation focus aperture`, animated like layers; `shake { amount, at, duration }`.
+- Camera keys: `zoom x y rotation focus aperture dolly`, animated like layers; `shake { amount, at, duration }`.
 - **Whip:** move `x` across a frame in 0.15–0.25 s with `inExpo`/`outExpo`, cut at its fastest point; `motionBlur: true` (or `{ "shutter": 270 }`) smears it for real.
 - **Snap zoom:** `zoom` 1.3 → 1 in 0.2 s `outExpo` on a beat. **Speed ramp:** one long move with `inOutExpo`.
 - **Depth:** `depth` on layers (+ farther) gives parallax when the camera pans; `aperture` + animated `focus` = rack focus.
+- **Dolly (2.5D push):** `"dolly": "=t*0.3"` moves the camera *through* the depth layers: near ones grow faster than far ones and fly past the lens (unlike `zoom`, which scales everything alike). Layer depth 0 sits 1 unit away.
 - 3D cameras (dolly, crane, orbit, focal length, f-stop) live in `scene3d` (`docs 3d`).
