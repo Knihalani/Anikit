@@ -1,0 +1,1 @@
+{"cmd": "anikit-video render deliverables/eval/a-social/spec.json -o deliverables/eval/a-social/final.mp4 --sheet deliverables/eval/a-social/contact.png", "exit": 0, "wall_s": 33.87, "peak_rss_mb": 633.9}
