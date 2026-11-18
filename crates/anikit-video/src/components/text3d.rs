@@ -1332,10 +1332,13 @@ mod tests {
         assert!(build("text3d", &serde_json::json!({"text": "Hi"})).is_ok());
         let p = build("text-3d", &serde_json::json!({"text": "Hi", "delay": 0.5})).unwrap();
         assert!(p.eval(0.2, 320.0, 240.0, 30.0, &theme, assets).is_empty());
-        p.eval(2.0, 320.0, 240.0, 30.0, &theme, assets);
-        let n = assets.image_count();
-        p.eval(2.0, 320.0, 240.0, 30.0, &theme, assets);
-        assert_eq!(assets.image_count(), n, "same frame reuses the image");
+        // Compare image ids, not the shared host's image count (other tests add
+        // images to the same preview host concurrently).
+        let id = |ops: &[Op]| ops.iter().find_map(|o| if let Op::Image { image, .. } = o { Some(*image) } else { None });
+        let a = p.eval(2.0, 320.0, 240.0, 30.0, &theme, assets);
+        let b = p.eval(2.0, 320.0, 240.0, 30.0, &theme, assets);
+        assert!(id(&a).is_some());
+        assert_eq!(id(&a), id(&b), "same frame reuses the image");
     }
 
     #[test]

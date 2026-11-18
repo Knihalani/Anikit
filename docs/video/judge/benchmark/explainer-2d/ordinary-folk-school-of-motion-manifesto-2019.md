@@ -6,7 +6,7 @@ studio: "Ordinary Folk (CD: Jorge R. Canedo E.)"
 client: "School of Motion"
 year: 2019
 url: https://vimeo.com/360269073
-alt_urls: [https://www.ordinaryfolk.co/work/som-manifesto, https://youtu.be/Er04BDbtSIg]
+alt_urls: ["https://www.ordinaryfolk.co/work/som-manifesto", "https://youtu.be/Er04BDbtSIg"]
 length_s: 110
 verified: oembed
 aspect: "16:9"

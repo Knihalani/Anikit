@@ -63,3 +63,100 @@ fn treatments_become_layer_filters() {
         assert_eq!(cs[0], [0x10, 0x20, 0x40]);
     }
 }
+
+#[test]
+fn stepped_time_and_boil() {
+    let x_at = |e: &Evaluator, t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::RoundRect { transform, .. } = o { Some(transform[4]) } else { None }).unwrap();
+    let smooth = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "width": 10, "height": 10, "x": "=100 + t * 600" } ] } ] }"#);
+    let twos = ev(r#"{ "fps": 24, "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "width": 10, "height": 10, "x": "=100 + t * 600", "step": "twos" } ] } ] }"#);
+    assert!(x_at(&smooth, 0.50) != x_at(&smooth, 0.54));
+    // On twos at 24 fps: held for 1/12 s.
+    assert_eq!(x_at(&twos, 0.50), x_at(&twos, 0.53));
+    assert!(x_at(&twos, 0.50) != x_at(&twos, 0.59));
+    let boil = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "width": 10, "height": 10, "x": 500, "boil": { "amount": 4, "fps": 8, "seed": 3 } } ] } ] }"#);
+    let (a, b, c) = (x_at(&boil, 0.01), x_at(&boil, 0.05), x_at(&boil, 0.30));
+    assert_eq!(a, b, "held between redraws");
+    assert!(a != c && (a - 495.0).abs() <= 4.01 && (c - 495.0).abs() <= 4.01, "{a} {c}");
+    assert_eq!(x_at(&boil, 0.30), c, "deterministic");
+}
+
+#[test]
+fn cutout_wraps_the_layer_in_a_rimmed_clipped_piece() {
+    let e = ev(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "width": 400, "height": 300, "fill": "#123", "rotation": 5,
+        "cutout": { "edge": "torn", "rim": 8, "seed": 2 } } ] } ] }"##);
+    let ops = e.eval(0.5).ops;
+    // A rim (with its printed shadow) and the clipped content.
+    let shadows = ops.iter().filter(|o| matches!(o, Op::PushLayer { filters, .. } if filters.iter().any(|f| matches!(f, Filter::Shadow { .. })))).count();
+    let clips = ops.iter().filter(|o| matches!(o, Op::PushLayer { clip: Some(_), .. })).count();
+    assert_eq!((shadows, clips), (1, 1), "{ops:?}");
+    let bad = parse_json(r#"{ "scenes": [ { "layers": [ { "shape": "rect", "cutout": "ripped" } ] } ] }"#).unwrap();
+    assert!(Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string().contains("cutout"));
+}
+
+#[test]
+fn treatment_parameters_animate() {
+    let e = ev(r##"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "circle", "width": 300, "height": 300,
+        "duotone": ["#102040", "#ffd000"], "toneAmount": "=clamp(t, 0, 1)",
+        "halftone": { "cell": 8, "angle": "=t * 90" }, "inkTexture": 0.3,
+        "animate": [ { "to": { "halftoneCell": 24, "inkAmount": 0 }, "duration": 1 } ] } ] } ] }"##);
+    let at = |t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::PushLayer { filters, .. } = o { Some(filters.clone()) } else { None }).unwrap();
+    let (f0, f1) = (at(0.0), at(1.0));
+    let tone = |f: &[Filter]| f.iter().find_map(|x| if let Filter::Tone(t) = x { Some(t.amount) } else { None }).unwrap();
+    let ht = |f: &[Filter]| f.iter().find_map(|x| if let Filter::Halftone(h) = x { Some((h.cell, h.angle)) } else { None }).unwrap();
+    let ink = |f: &[Filter]| f.iter().find_map(|x| if let Filter::Ink { amount, .. } = x { Some(*amount) } else { None }).unwrap();
+    assert!(tone(&f0) < 0.01 && (tone(&f1) - 1.0).abs() < 1e-3, "{} {}", tone(&f0), tone(&f1));
+    assert_eq!(ht(&f0), (8.0, 0.0));
+    assert!((ht(&f1).0 - 24.0).abs() < 1e-3 && (ht(&f1).1 - 90.0).abs() < 1e-3, "{:?}", ht(&f1));
+    assert!((ink(&f0) - 0.3).abs() < 1e-4 && ink(&f1) < 1e-4);
+    // A shader layer keeps its own uniforms and still gets the treatment slots.
+    let s = ev(r##"{ "scenes": [ { "layers": [ { "shader": "void mainImage(out vec4 c, in vec2 p) { c = vec4(speed); }", "uniforms": { "speed": 0.5 },
+        "posterize": 3, "animate": [ { "to": { "speed": 1, "toneAmount": 0.5 }, "duration": 1 } ] } ] } ] }"##);
+    let _ = s.eval(0.5);
+}
+
+#[test]
+fn custom_tile_patterns() {
+    let e = ev(r#"{ "scenes": [ { "layers": [ { "pattern": { "tile": "M-8 -8 L8 -8 L0 9 Z", "spacing": 40, "turns": 4, "stagger": true, "seed": 3 }, "width": 400, "height": 300 } ] } ] }"#);
+    assert_eq!(e.eval(0.5).ops.iter().filter(|o| matches!(o, Op::Fill { .. })).count(), 1);
+    let bad = parse_json(r#"{ "scenes": [ { "layers": [ { "pattern": { "kind": "tile" }, "width": 100, "height": 100 } ] } ] }"#).unwrap();
+    assert!(Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string().contains("tile"));
+}
+
+#[test]
+fn pattern_fields() {
+    let path_at = |e: &Evaluator, t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::Fill { path, .. } = o { Some(path.clone()) } else { None }).unwrap();
+    let fixed = ev(r#"{ "scenes": [ { "layers": [ { "pattern": { "kind": "dots", "spacing": 20, "field": "u" }, "width": 400, "height": 200 } ] } ] }"#);
+    assert_eq!(path_at(&fixed, 0.1), path_at(&fixed, 0.9));
+    let live = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "pattern": { "kind": "lines", "spacing": 20, "field": "0.5 + 0.5 * sin(d * 10 - t * 3)" }, "width": 400, "height": 200 } ] } ] }"#);
+    assert_ne!(path_at(&live, 0.1), path_at(&live, 0.9));
+    assert_eq!(path_at(&live, 0.5), path_at(&live, 0.5));
+    // Field variables are only valid in fields.
+    let bad = parse_json(r#"{ "scenes": [ { "layers": [ { "shape": "rect", "x": "=u * 100" } ] } ] }"#).unwrap();
+    assert!(Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string().contains("field"));
+}
+
+#[test]
+fn near_grid_warning() {
+    let p = parse_json(r#"{ "grid": { "columns": 12, "rows": 8, "margin": [54, 96], "gutter": 24 }, "scenes": [ { "layers": [
+        { "shape": "rect", "x": 100, "y": 54, "width": 300, "height": 100, "anchor": "topLeft" },
+        { "shape": "rect", "x": 96, "y": 54, "width": 300, "height": 100, "anchor": "topLeft" },
+        { "shape": "rect", "x": 101, "y": 300, "width": 300, "height": 100, "anchor": "topLeft", "blend": "multiply" } ] } ] }"#).unwrap();
+    let e = Evaluator::new(&p.spec, Options::default()).unwrap();
+    let w: Vec<String> = e.diagnostics.iter().map(|d| d.to_string()).filter(|d| d.contains("almost on the grid")).collect();
+    assert_eq!(w.len(), 1, "{w:?}");
+    assert!(w[0].contains("layers[0]") && w[0].contains("x = 96"), "{w:?}");
+}
+
+#[test]
+fn brush_strokes_fill_and_paint_on() {
+    let e = ev(r##"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "path", "d": "M0 0 C100 -50 200 50 300 0", "fill": "none", "stroke": "#111", "strokeWidth": 20,
+        "brush": { "dry": 0.5, "seed": 2 }, "animate": [ { "from": { "trimEnd": 0 }, "duration": 1 } ] } ] } ] }"##);
+    let fills = |t: f32| e.eval(t).ops.iter().filter(|o| matches!(o, Op::Fill { .. })).count();
+    let strokes = e.eval(1.5).ops.iter().filter(|o| matches!(o, Op::Stroke { .. })).count();
+    assert_eq!(strokes, 0);
+    assert_eq!(fills(0.0), 0, "nothing painted yet");
+    assert_eq!(fills(1.5), 1);
+    let w = parse_json(r#"{ "scenes": [ { "layers": [ { "shape": "circle", "brush": true } ] } ] }"#).unwrap();
+    let ev2 = Evaluator::new(&w.spec, Options::default()).unwrap();
+    assert!(ev2.diagnostics.iter().any(|d| d.to_string().contains("brush")));
+}

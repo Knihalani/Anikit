@@ -1,0 +1,253 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "background": "#000000",
+ "scenes": [
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "hdri": "sky",
+       "rotate": 200,
+       "exposure": 0.2
+      },
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          3.3,
+          3.7,
+          6.6
+         ],
+         "target": [
+          0,
+          0.25,
+          0
+         ],
+         "focal": 40,
+         "fstop": 8
+        }
+       ]
+      },
+      "floor": {
+       "color": "#7FB069",
+       "roughness": 0.9,
+       "reflect": 0.0,
+       "y": -0.02
+      },
+      "objects": [
+       {
+        "type": "model",
+        "src": "kenney:city/building-small-a",
+        "pos": [
+         -1,
+         0,
+         -1
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/building-small-c",
+        "pos": [
+         0,
+         0,
+         -1
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/building-garage",
+        "pos": [
+         1,
+         0,
+         -1
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/grass-trees-tall",
+        "pos": [
+         -1,
+         0,
+         1
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/grass-trees",
+        "pos": [
+         0,
+         0,
+         1
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/pavement-fountain",
+        "pos": [
+         1,
+         0,
+         1
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/building-small-b",
+        "pos": [
+         -2,
+         0,
+         -1
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/building-small-d",
+        "pos": [
+         2,
+         0,
+         -1
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/grass-trees",
+        "pos": [
+         -2,
+         0,
+         1
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/pavement",
+        "pos": [
+         2,
+         0,
+         1
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/road-straight-lightposts",
+        "pos": [
+         -2,
+         0,
+         0
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/road-straight",
+        "pos": [
+         -1,
+         0,
+         0
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/road-straight-lightposts",
+        "pos": [
+         0,
+         0,
+         0
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/road-straight",
+        "pos": [
+         1,
+         0,
+         0
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:city/road-straight-lightposts",
+        "pos": [
+         2,
+         0,
+         0
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ]
+       },
+       {
+        "type": "model",
+        "src": "kenney:racing/vehicle-truck-red",
+        "pos": [
+         -0.6,
+         0.0,
+         0.18
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "scale": 0.3
+       },
+       {
+        "type": "model",
+        "src": "kenney:racing/vehicle-truck-yellow",
+        "pos": [
+         0.7,
+         0.0,
+         -0.18
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "scale": 0.3
+       }
+      ]
+     }
+    },
+    {
+     "text": "kenney:city \u00b7 kenney:racing  under env.hdri \"sky\"",
+     "font": "JetBrains Mono",
+     "size": "1.5vh",
+     "letterSpacing": "0.12em",
+     "uppercase": true,
+     "color": "#FFFFFFB3",
+     "x": "4%",
+     "y": "93%",
+     "anchor": "left"
+    }
+   ]
+  }
+ ]
+}

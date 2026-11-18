@@ -54,36 +54,41 @@ def cmd_prompts(a):
     print(json.dumps(out, indent=1))
 
 
+VARIANTS = (("", "eval"), ("hf-", "eval-hf"))  # Anikit, and HyperFrames comparisons on the same briefs
+
+
 def fetch(round_):
+    """{name: {...}} for every output on origin; name is the brief id, or hf-<id> for HyperFrames."""
     found = {}
     for b in briefs():
-        branch = f"{BASE}-v-eval-{round_}-{b['id']}"
-        r = subprocess.run(["git", "-C", str(ROOT), "fetch", "-q", "origin", f"{branch}:refs/remotes/origin/{branch}"], capture_output=True)
-        if r.returncode:
-            continue
-        ls = subprocess.run(["git", "-C", str(ROOT), "ls-tree", "-r", "--name-only", f"origin/{branch}", f"deliverables/eval/{b['id']}/"],
-                            capture_output=True, text=True).stdout.split()
-        mp4 = [p for p in ls if p.endswith("final.mp4")] or [p for p in ls if p.endswith(".mp4")]
-        if mp4:
-            found[b["id"]] = {"branch": branch, "mp4": mp4[0], "files": ls}
+        for pre, d in VARIANTS:
+            branch = f"{BASE}-v-eval-{round_}-{pre}{b['id']}"
+            r = subprocess.run(["git", "-C", str(ROOT), "fetch", "-q", "origin", f"{branch}:refs/remotes/origin/{branch}"], capture_output=True)
+            if r.returncode:
+                continue
+            ls = subprocess.run(["git", "-C", str(ROOT), "ls-tree", "-r", "--name-only", f"origin/{branch}", f"deliverables/{d}/{b['id']}/"],
+                                capture_output=True, text=True).stdout.split()
+            mp4 = [p for p in ls if p.endswith("final.mp4")] or [p for p in ls if p.endswith(".mp4")]
+            if mp4:
+                found[pre + b["id"]] = {"branch": branch, "mp4": mp4[0], "dir": f"deliverables/{d}/{b['id']}", "brief": b}
     return found
 
 
 def cmd_collect(a):
     rd = J / "rounds" / a.round
     rd.mkdir(parents=True, exist_ok=True)
-    subprocess.run([sys.executable, str(ROOT / "scripts/judge.py"), "sync-bench"])  # REFS's benchmark stills (not in git)
+    if not a.no_sync:
+        subprocess.run([sys.executable, str(ROOT / "scripts/judge.py"), "sync-bench"])  # REFS's benchmark stills (not in git)
     found = fetch(a.round)
     print(f"outputs found: {sorted(found)}", file=sys.stderr)
     manifest = []
-    for b in briefs():
-        f = found.get(b["id"])
-        if f:
-            manifest.append({"name": b["id"], "src": f"git:{f['branch']}:{f['mp4']}", "tags": b["tags"], "format": b["format"]})
-            stats = subprocess.run(["git", "-C", str(ROOT), "show", f"origin/{f['branch']}:deliverables/eval/{b['id']}/stats.json"],
-                                   capture_output=True, text=True).stdout
-            if stats:
-                (rd / f"{b['id']}.stats.json").write_text(stats)
+    for name, f in sorted(found.items()):
+        b = f["brief"]
+        manifest.append({"name": name, "src": f"git:{f['branch']}:{f['mp4']}", "tags": b["tags"], "format": b["format"]})
+        stats = subprocess.run(["git", "-C", str(ROOT), "show", f"origin/{f['branch']}:{f['dir']}/stats.json"],
+                               capture_output=True, text=True).stdout
+        if stats:
+            (rd / f"{name}.stats.json").write_text(stats)
     (rd / "manifest.json").write_text(json.dumps(manifest, indent=1))
     cmd = [sys.executable, str(ROOT / "scripts/judge.py"), "batch", str(rd / "manifest.json"), "--out", str(rd / "results"),
            "--trials", str(a.trials)]
@@ -115,27 +120,34 @@ def _stats(rd, bid):
 
 def cmd_table(a):
     rd = J / "rounds" / a.round
+    rd.mkdir(parents=True, exist_ok=True)
     usage = json.loads((rd / "usage.json").read_text()) if (rd / "usage.json").exists() else {}
     lines = [f"## Round {a.round}", "",
              "| Brief | Category | Verdict | Judged pro | Score (blind) | Refs mean | Δ | Full (+motion/sound) | Agent wall (min) | Tokens | Cost ($) | Peak RSS render (MB) |",
              "|---|---|---|---|---|---|---|---|---|---|---|---|"]
     gaps_by = {}
     scores = []
+    rows = []
     for b in briefs():
-        p = rd / "results" / b["id"] / "result.json"
-        wall, rss = _stats(rd, b["id"])
-        u = usage.get(b["id"], {})
+        rows.append((b["id"], b))
+        if (rd / "results" / f"hf-{b['id']}").exists() or f"hf-{b['id']}" in usage:
+            rows.append((f"hf-{b['id']}", b))
+    for name, b in rows:
+        p = rd / "results" / name / "result.json"
+        wall, rss = _stats(rd, name)
+        u = usage.get(name, {})
         if not p.exists():
-            lines.append(f"| {b['id']} | {b.get('category','')} | no output | | | | | | {wall or ''} | {u.get('tokens', '')} | {u.get('cost_usd', '')} | {rss or ''} |")
+            lines.append(f"| {name} | {b.get('category','')} | no output | | | | | | {wall or ''} | {u.get('tokens', '')} | {u.get('cost_usd', '')} | {rss or ''} |")
             continue
         r = json.loads(p.read_text())
         c = r["candidate"]
-        scores.append(c.get("overall") or 0)
-        lines.append(f"| {b['id']} | {b.get('category','')} | {r['verdict']} | {c.get('judged_professional')} | {c.get('overall')} | {r['ref_mean']} | {r['delta']} | "
+        if not name.startswith("hf-"):
+            scores.append(c.get("overall") or 0)
+        lines.append(f"| {name} | {b.get('category','')} | {r['verdict']} | {c.get('judged_professional')} | {c.get('overall')} | {r['ref_mean']} | {r['delta']} | "
                      f"{r.get('full_overall', '–')} | {wall or '?'} | {u.get('tokens', '?')} | {u.get('cost_usd', '?')} | {rss or '?'} |")
-        gaps_by[b["id"]] = c.get("gaps", [])[:3] + (r.get("critic", {}).get("answer", {}).get("gaps", [])[:1])
+        gaps_by[name] = c.get("gaps", [])[:3] + (r.get("critic", {}).get("answer", {}).get("gaps", [])[:1])
     if scores:
-        lines += ["", f"Mean blind score {statistics.mean(scores):.2f}. Pass = judged professional in ≥ half the trials and Δ ≥ −1.0 (RUBRIC.md)."]
+        lines += ["", f"Mean blind score (Anikit rows) {statistics.mean(scores):.2f}. hf-* rows are HyperFrames on the same brief, same refs and seed. Pass = judged professional in ≥ half the trials and Δ ≥ −1.0 (RUBRIC.md)."]
     lines += ["", "Top gaps per brief:", ""]
     for k, g in gaps_by.items():
         lines.append(f"- **{k}**: " + " · ".join(g))
@@ -163,6 +175,7 @@ def main():
         p.add_argument("--only")
         p.add_argument("--trials", type=int, default=3)
         p.add_argument("--skip-done", action="store_true")
+        p.add_argument("--no-sync", action="store_true", help="don't re-fetch REFS's benchmark stills")
     a = ap.parse_args()
     {"prompts": cmd_prompts, "collect": cmd_collect, "table": cmd_table}[a.cmd](a)
 

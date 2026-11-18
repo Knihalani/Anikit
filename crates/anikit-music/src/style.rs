@@ -496,9 +496,10 @@ pub static STYLES: &[StyleDef] = &[
         prog_minor: &["iim7b5 V7 i7 i7"],
         kit: "drums:jazz|drums:brush|drums",
         drums: [
-            &[("ride", "x..x.xx..x.xx..."), ("phh", "....x.......x...")],
-            &[("ride", "x..x.xx..x.xx..."), ("phh", "....x.......x..."), ("kick", "o.......o.......")],
-            &[("ride", "x..x.xx..x.xx..."), ("phh", "....x.......x..."), ("snare", "......o.......o."), ("kick", "o.......o.......")],
+            // The ride's "spang-a-lang": 1, 2, 2&, 3, 4, 4& (swung 8ths), hi-hat foot on 2 and 4.
+            &[("ride", "x...x.x.x...x.x."), ("phh", "....x.......x...")],
+            &[("ride", "x...x.x.x...x.x."), ("phh", "....x.......x..."), ("kick", "o.......o.......")],
+            &[("ride", "x...X.x.x...X.x."), ("phh", "....x.......x..."), ("snare", "......o.......o."), ("kick", "o.......o.......")],
         ],
         layers: &[
             Layer { humanize: 0.4, ..layer("bass", "contrabass|bass|fretless", Gen::Bass("walk", 2), 0.0, -1.0) },
@@ -844,6 +845,17 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                         drum_notes.push(Note { t: t0, len: 2.0, key: 49.0, vel: 0.75 });
                     }
                 }
+                // Trailer pulse: builds into a climax tick on a low tom whose subdivision
+                // doubles every third of the section (quarters → 8ths → 16ths), growing louder.
+                if st.name == "cinematic-hybrid" && into_bigger && crate::compose::Role::of(&s.name) == crate::compose::Role::Build && s.bars >= 3.0 {
+                    let span = (s.bars - 1.0) * bpb; // the last bar is the fill
+                    let mut t = 0.0;
+                    while t < span - 1e-9 {
+                        let f = t / span;
+                        drum_notes.push(Note { t: bar0 + t, len: 0.2, key: 41.0, vel: (0.3 + 0.45 * f) as f32 });
+                        t += if f < 1.0 / 3.0 { 1.0 } else if f < 2.0 / 3.0 { 0.5 } else { 0.25 };
+                    }
+                }
                 // Fill into a bigger section: snare roll accelerating over the last bar.
                 if next_e > s.energy + 0.15 && tier > 0 {
                     let t0 = bar0 + (s.bars - 1.0) * bpb;
@@ -875,6 +887,14 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 (None, Some(i)) => i.kit.to_string(),
                 (None, None) => st.kit.to_string(),
             };
+            // Synthwave's snare is the 80s gated one: its own track through a plate
+            // whose tail is cut a quarter second after each hit.
+            let gated = st.name == "synthwave" && inst_override.is_none();
+            let snare: Vec<Note> = if gated { drum_notes.iter().filter(|n| n.key == 38.0 || n.key == 40.0).cloned().collect() } else { Vec::new() };
+            if !snare.is_empty() {
+                drum_notes.retain(|n| n.key != 38.0 && n.key != 40.0);
+            }
+            let snare_inst = inst.clone();
             tracks.push(TrackPlan {
                 name: "drums".into(),
                 role: "drums".into(),
@@ -886,6 +906,21 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 fx: None,
                 automate: None,
             });
+            if !snare.is_empty() {
+                tracks.push(TrackPlan {
+                    name: "snare".into(),
+                    role: "drums".into(),
+                    inst: snare_inst,
+                    notes: snare,
+                    // Tracks are loudness-matched, so the snare alone sits 9 dB under the kit
+                    // (measured: the backbeat balance stays within 0.3 dB of the unsplit kit).
+                    mix: TrackMix { gain: -9.0, ..Default::default() },
+                    humanize: 0.0,
+                    straight: false,
+                    fx: Some(serde_json::json!([{ "type": "gated-reverb", "preset": "plate", "wet": 4.0, "hold": 0.22, "release": 0.025 }])),
+                    automate: None,
+                });
+            }
         }
         let level_of = |l: &Layer| l.level;
         for (li, l) in st.layers.iter().enumerate() {
@@ -978,6 +1013,11 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                         n.t += 0.02; // laid-back backbeat (≈ 15 ms at 82 bpm)
                     }
                 }
+                // Played kits sound in a room: a short stereo ambience gives them the
+                // width overheads and room mics give a real kit (panning alone leaves each drum mono).
+                if tr.fx.is_none() && !electronic {
+                    tr.fx = Some(serde_json::json!([{ "type": "reverb", "preset": "ambience", "wet": 0.25 }]));
+                }
                 continue;
             }
             let piano_like = ["piano", "rhodes", "epiano", "keys", "salamander"].iter().any(|p| tr.inst.contains(p));
@@ -1010,7 +1050,14 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
             // Rhodes and pad treatment) in styles whose parts are otherwise centre-heavy.
             if tr.fx.is_none() && !electronic && matches!(tr.role.as_str(), "keys" | "pad" | "comp" | "piano" | "strings" | "choir" | "picking") {
                 let mix = if tr.role == "keys" || tr.role == "comp" { 0.35 } else { 0.25 };
-                tr.fx = Some(serde_json::json!([{ "type": "chorus", "mode": "ensemble", "rate": 0.6, "depth": 2.5, "spread": 1.0, "mix": mix }]));
+                let chorus = serde_json::json!({ "type": "chorus", "mode": "ensemble", "rate": 0.6, "depth": 2.5, "spread": 1.0, "mix": mix });
+                // Electric pianos get their stereo tremolo (a mono sample panned stays mono).
+                let ep = ["wurli", "rhodes", "epiano", "cp80", "pianet"].iter().any(|p| tr.inst.contains(p));
+                tr.fx = Some(if ep {
+                    serde_json::json!([{ "type": "autopan", "note": "1/4", "depth": 0.55 }, chorus])
+                } else {
+                    serde_json::json!([chorus])
+                });
             }
             tr.mix.width = match tr.role.as_str() {
                 "pad" | "glass" | "choir" | "strings" => 1.5,
@@ -1090,6 +1137,32 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 }
             }
         }
+        // A false ending: a climax that falls into a break stops dead — a short hit on
+        // the last beat, then two beats of silence (only the reverb rings) before the
+        // break starts. With a reverse cymbal into the next drop this is the trailer
+        // "hole before act III".
+        if st.riser {
+            let holes: Vec<f64> = sections
+                .windows(2)
+                .filter(|w| crate::compose::Role::of(&w[0].name) == crate::compose::Role::Peak && w[0].energy >= 0.8 && crate::compose::Role::of(&w[1].name) == crate::compose::Role::Break && w[0].bars >= 2.0)
+                .map(|w| w[1].bar * bpb)
+                .collect();
+            for &p in &holes {
+                let (w0, w1) = (p - 1.0, p + 1.0);
+                for tr in tracks.iter_mut() {
+                    tr.notes.retain(|n| !(n.t >= w0 - 1e-9 && n.t < w1 - 1e-9));
+                    for n in tr.notes.iter_mut().filter(|n| n.t < w0 && n.t + n.len > w0) {
+                        n.len = (w0 - n.t).max(0.05);
+                    }
+                }
+                sfx.push(SfxPlan { name: "hit".into(), at: grid.secs(w0) - grid.offset, gain: -6.0, params: serde_json::json!({ "seed": seed }) });
+            }
+            if !holes.is_empty() {
+                if let Some(last) = sections.iter().rev().find(|s| crate::compose::Role::of(&s.name) == crate::compose::Role::Peak && s.bar * bpb > holes[0]) {
+                    sfx.push(SfxPlan { name: "reverse-cymbal".into(), at: grid.secs(last.bar * bpb) - grid.offset, gain: -9.0, params: serde_json::json!({ "seed": seed }) });
+                }
+            }
+        }
         // Picture cuts: a cymbal accent on the beat nearest each cut (≥ 2 bars apart).
         if spec.follow_cuts != Some(false) {
             if let Some(dr) = tracks.iter_mut().find(|t| t.role == "drums") {
@@ -1103,6 +1176,18 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                         }
                         last = b;
                     }
+                }
+            }
+        }
+        // A cut that opens a bigger section gets a reverse cymbal swelling into it
+        // (risers already cover drops in riser styles).
+        if spec.follow_cuts != Some(false) {
+            for (si, s) in sections.iter().enumerate().skip(1) {
+                let at = grid.secs(s.bar * bpb);
+                let rise = s.energy > sections[si - 1].energy + 0.15;
+                let riser_here = st.riser && s.energy >= 0.85 && sections[si - 1].energy < s.energy - 0.2;
+                if rise && !riser_here && spec.cuts.iter().any(|&c| (c - at).abs() <= 0.3 * grid.beat()) {
+                    sfx.push(SfxPlan { name: "reverse-cymbal".into(), at, gain: -12.0, params: serde_json::json!({ "seed": seed }) });
                 }
             }
         }
@@ -1135,6 +1220,21 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
             tracks.push(t);
         }
     }
+    // Explicit stops: silence before a section, in any style and on every track.
+    if !spec.sections.is_empty() {
+        for (sec, s) in sections.iter().zip(&spec.sections) {
+            let SectionSpec::Full(o) = s else { continue };
+            let Some(stop) = o.stop.filter(|&b| b > 0.0) else { continue };
+            let p = sec.bar * bpb;
+            let w0 = (p - stop).max(0.0);
+            for tr in tracks.iter_mut() {
+                tr.notes.retain(|n| !(n.t >= w0 - 1e-9 && n.t < p - 1e-9));
+                for n in tr.notes.iter_mut().filter(|n| n.t < w0 && n.t + n.len > w0) {
+                    n.len = (w0 - n.t).max(0.05);
+                }
+            }
+        }
+    }
     for c in &spec.sfx {
         let mut params = serde_json::Map::new();
         for (k, v) in &c.params {
@@ -1162,7 +1262,8 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
         let tonic = arrange::ChordAt { chord: crate::theory::Chord { root: key.tonic, intervals: if key.is_minor() { vec![0, 3, 7] } else { vec![0, 4, 7] }, bass: None }, t, len: 8.0 };
         for tr in tracks.iter_mut() {
             let tail: Vec<Note> = match tr.role.as_str() {
-                "drums" => vec![Note { t, len: 2.0, key: 36.0, vel: 0.9 }, Note { t, len: 4.0, key: 49.0, vel: 0.8 }],
+                "drums" if tr.name == "drums" => vec![Note { t, len: 2.0, key: 36.0, vel: 0.9 }, Note { t, len: 4.0, key: 49.0, vel: 0.8 }],
+                "drums" => continue,
                 "bass" | "808" | "low" | "basses" | "sub" => vec![Note { t, len: 6.0, key: (36 + key.tonic - if key.tonic > 7 { 12 } else { 0 }) as f32, vel: 0.8 }],
                 "lead" | "melody" | "right" => vec![Note { t, len: 4.0, key: (72 + key.tonic - if key.tonic > 7 { 12 } else { 0 }) as f32, vel: 0.75 }],
                 "bells" | "glock" | "pluck" | "arp" | "ostinato" | "timpani" | "counter" => continue,
@@ -1291,6 +1392,10 @@ fn explicit_sections(list: &[SectionSpec], total_bars: f64) -> Result<Vec<Sectio
 }
 
 /// Sections from the style's form, scaled to `bars`; the first hit (if any) starts the peak section.
+/// Three-act trailer form: act I (intro), act II (build → climax), a false
+/// ending (break), act III (rise → drop).
+const TRAILER_FORM: &[(&str, f64, f32)] = &[("intro", 0.16, 0.3), ("build", 0.2, 0.6), ("climax", 0.16, 0.85), ("break", 0.12, 0.2), ("rise", 0.12, 0.7), ("drop", 0.24, 1.0)];
+
 pub fn auto_sections(st: &StyleDef, bars: f64, hit_bars: &[f64]) -> Vec<Section> {
     if bars <= 0.0 {
         return Vec::new();
@@ -1317,9 +1422,12 @@ pub fn auto_sections(st: &StyleDef, bars: f64, hit_bars: &[f64]) -> Vec<Section>
             })
             .collect();
     }
+    // Long trailers (18+ bars, about 45 s at 100 bpm) get three acts: a first
+    // climax, a false ending that drops to a lone piano, then a bigger act III.
+    let form: &[(&str, f64, f32)] = if st.name == "cinematic-hybrid" && bars >= 18.0 { TRAILER_FORM } else { st.form };
     // Integer bars per section, at least 1, rounded to even counts when long enough.
-    let mut sizes: Vec<f64> = st.form.iter().map(|f| (f.1 * bars).round().max(1.0)).collect();
-    let peak = st.form.iter().enumerate().max_by(|a, b| a.1 .2.total_cmp(&b.1 .2)).map(|x| x.0).unwrap_or(0);
+    let mut sizes: Vec<f64> = form.iter().map(|f| (f.1 * bars).round().max(1.0)).collect();
+    let peak = form.iter().enumerate().max_by(|a, b| a.1 .2.total_cmp(&b.1 .2)).map(|x| x.0).unwrap_or(0);
     // Align the peak start to the first hit.
     if let Some(&h) = hit_bars.iter().find(|&&h| h >= 1.0 && h < bars) {
         let before: f64 = sizes[..peak].iter().sum();
@@ -1353,7 +1461,7 @@ pub fn auto_sections(st: &StyleDef, bars: f64, hit_bars: &[f64]) -> Vec<Section>
     }
     let mut out = Vec::new();
     let mut bar = 0.0;
-    for (f, &n) in st.form.iter().zip(&sizes) {
+    for (f, &n) in form.iter().zip(&sizes) {
         if n <= 0.0 {
             continue;
         }
@@ -1523,9 +1631,24 @@ mod cut_tests {
         assert!(a.sections.iter().any(|s| s.bar == 9.0 && s.name == "chorus"), "{:?}", a.sections);
         let d = a.tracks.iter().find(|t| t.role == "drums").unwrap();
         assert!(d.notes.iter().any(|n| n.t == 28.0 && n.key == 57.0), "cymbal on the beat nearest 13.9 s");
+        // Pop already has a riser into that chorus: no extra swell.
+        assert!(!a.sfx.iter().any(|x| x.name == "reverse-cymbal"));
         let off = MusicSpec::from_json(r#"{"style":"pop","bpm":120,"length":"40s","cuts":[13.9],"followCuts":false}"#).unwrap();
         let b = compose(&off, None).unwrap();
         assert!(!b.tracks.iter().find(|t| t.role == "drums").unwrap().notes.iter().any(|n| n.key == 57.0));
+    }
+
+    #[test]
+    fn cuts_into_bigger_sections_get_a_reverse_swell() {
+        let plain = compose(&MusicSpec::from_json(r#"{"style":"acoustic","bpm":120,"length":"40s"}"#).unwrap(), None).unwrap();
+        let bpb = plain.grid.beats_per_bar;
+        let w = plain.sections.windows(2).find(|w| w[1].energy > w[0].energy + 0.15).expect("a rising boundary");
+        let t = plain.grid.secs(w[1].bar * bpb);
+        let a = compose(&MusicSpec::from_json(&format!(r#"{{"style":"acoustic","bpm":120,"length":"40s","cuts":[{t}]}}"#)).unwrap(), None).unwrap();
+        assert!(a.sfx.iter().any(|x| x.name == "reverse-cymbal" && (x.at - t).abs() < 1e-6));
+        let off = compose(&MusicSpec::from_json(&format!(r#"{{"style":"acoustic","bpm":120,"length":"40s","cuts":[{t}],"followCuts":false}}"#)).unwrap(), None).unwrap();
+        assert!(!off.sfx.iter().any(|x| x.name == "reverse-cymbal"));
+        assert!(!plain.sfx.iter().any(|x| x.name == "reverse-cymbal"), "no cuts, no swell");
     }
 }
 
@@ -1540,5 +1663,70 @@ mod underscore_tests {
         assert!(full.tracks.iter().any(|t| t.role == "pluck" || t.role == "counter"));
         assert!(!under.tracks.iter().any(|t| matches!(t.role.as_str(), "pluck" | "lead" | "counter")));
         assert!(under.tracks.iter().any(|t| t.role == "drums") && under.tracks.iter().any(|t| t.role == "piano"));
+    }
+}
+
+#[cfg(test)]
+mod trailer_tests {
+    use super::*;
+
+    #[test]
+    fn long_trailers_have_three_acts_a_hole_and_a_pulse_ramp() {
+        let a = compose(&MusicSpec::from_json(r#"{"style":"cinematic-hybrid","length":"60s","seed":2}"#).unwrap(), None).unwrap();
+        let names: Vec<&str> = a.sections.iter().map(|s| s.name.as_str()).collect();
+        assert_eq!(names, ["intro", "build", "climax", "break", "rise", "drop"]);
+        let bpb = a.grid.beats_per_bar;
+        let brk = a.sections.iter().find(|s| s.name == "break").unwrap().bar * bpb;
+        // Two beats of silence around the climax → break boundary, a hit at its start.
+        for t in &a.tracks {
+            assert!(!t.notes.iter().any(|n| n.t >= brk - 1.0 && n.t < brk + 1.0), "{} plays in the hole", t.name);
+            assert!(!t.notes.iter().any(|n| n.t < brk - 1.0 && n.t + n.len > brk - 1.0 + 1e-6), "{} rings into the hole", t.name);
+        }
+        assert!(a.sfx.iter().any(|x| x.name == "hit" && (x.at - a.grid.secs(brk - 1.0)).abs() < 1e-6));
+        let drop = a.sections.iter().find(|s| s.name == "drop").unwrap().bar * bpb;
+        assert!(a.sfx.iter().any(|x| x.name == "reverse-cymbal" && (x.at - a.grid.secs(drop)).abs() < 1e-6));
+        // The build's pulse gets faster: first gap a beat, last a 16th.
+        let b = a.sections.iter().find(|s| s.name == "build").unwrap();
+        let mut pulse: Vec<f64> = a.tracks.iter().find(|t| t.role == "drums").unwrap().notes.iter().filter(|n| n.key == 41.0 && n.t >= b.bar * bpb && n.t < (b.bar + b.bars - 1.0) * bpb).map(|n| n.t).collect();
+        pulse.sort_by(f64::total_cmp);
+        assert!(pulse.len() > 8, "{pulse:?}");
+        assert!((pulse[1] - pulse[0] - 1.0).abs() < 1e-9 && (pulse[pulse.len() - 1] - pulse[pulse.len() - 2] - 0.25).abs() < 1e-9);
+        // Short cues keep the simple form.
+        let s = compose(&MusicSpec::from_json(r#"{"style":"cinematic-hybrid","length":"30s"}"#).unwrap(), None).unwrap();
+        assert!(!s.sections.iter().any(|x| x.name == "break"));
+    }
+
+    #[test]
+    fn explicit_section_stops_work_in_any_style() {
+        let j = r#"{"style":"piano","bpm":120,"sections":[{"name":"verse","bars":4},{"name":"chorus","bars":4,"stop":2}]}"#;
+        let a = compose(&MusicSpec::from_json(j).unwrap(), None).unwrap();
+        let p = 4.0 * a.grid.beats_per_bar;
+        assert!(a.tracks.iter().all(|t| !t.notes.iter().any(|n| n.t >= p - 2.0 && n.t < p)), "silent for 2 beats");
+        assert!(a.tracks.iter().all(|t| !t.notes.iter().any(|n| n.t < p - 2.0 && n.t + n.len > p - 2.0 + 1e-6)), "nothing rings in");
+        assert!(a.tracks.iter().any(|t| t.notes.iter().any(|n| (n.t - p).abs() < 1e-6)), "the chorus lands");
+        let b = compose(&MusicSpec::from_json(&j.replace(r#","stop":2"#, "")).unwrap(), None).unwrap();
+        assert!(b.tracks.iter().any(|t| t.notes.iter().any(|n| n.t >= p - 2.0 && n.t < p)));
+    }
+
+    #[test]
+    fn jazz_ride_plays_spang_a_lang() {
+        let a = compose(&MusicSpec::from_json(r#"{"style":"jazz","length":"30s"}"#).unwrap(), None).unwrap();
+        let d = a.tracks.iter().find(|t| t.role == "drums").unwrap();
+        // Ride (51) positions within the beat: on the beat or on the "and" only.
+        let offs: std::collections::BTreeSet<i64> = d.notes.iter().filter(|n| n.key == 51.0).map(|n| ((n.t - n.t.floor()) * 4.0).round() as i64 % 4).collect();
+        assert!(offs.iter().all(|&o| o == 0 || o == 2), "{offs:?}");
+    }
+
+    #[test]
+    fn synthwave_snare_is_gated_on_its_own_track() {
+        let a = compose(&MusicSpec::from_json(r#"{"style":"synthwave","length":"30s"}"#).unwrap(), None).unwrap();
+        let sn = a.tracks.iter().find(|t| t.name == "snare").expect("snare track");
+        assert!(sn.notes.iter().all(|n| n.key == 38.0 || n.key == 40.0) && !sn.notes.is_empty());
+        assert!(sn.fx.as_ref().unwrap().to_string().contains("gated-reverb"));
+        let kit = a.tracks.iter().find(|t| t.name == "drums").unwrap();
+        assert!(!kit.notes.iter().any(|n| n.key == 38.0 || n.key == 40.0));
+        // Other styles keep one drum track.
+        let p = compose(&MusicSpec::from_json(r#"{"style":"pop","length":"30s"}"#).unwrap(), None).unwrap();
+        assert_eq!(p.tracks.iter().filter(|t| t.role == "drums").count(), 1);
     }
 }

@@ -1,8 +1,7 @@
 # Assets: CC0 HDRIs, materials, models, LUTs on demand
 
-Reference professional, freely licensed (CC0) assets by name. They download once
-(pinned URL + checksum) into `~/.cache/anikit/assets` (`ANIKIT_ASSET_CACHE` to move it)
-and are reused from then on. Nothing is bundled in the binary.
+CC0 assets by name, downloaded once (pinned URL + checksum) into `~/.cache/anikit/assets`
+(`ANIKIT_ASSET_CACHE` moves it) and reused from then on. Nothing is bundled in the binary.
 
 ## Find one (don't browse: search)
 
@@ -11,22 +10,22 @@ and are reused from then on. Nothing is bundled in the binary.
     anikit-video assets search plant --type model
     anikit-video assets list --type lut          # all 16 film looks
     anikit-video assets info polyhaven:hdri/kloppenheim_06
+    anikit-video assets sheet sunset --type hdri -o pick.jpg   # look before choosing
 
-Each line: `id  type  one-line description  [tags]  size`. Types: `hdri texture model lut image`.
+Lines read `id  type  description  [tags]  size`; types `hdri texture model lut image`.
 
 ## Refs
 
 | ref | what |
 |---|---|
-| `polyhaven:hdri/<slug>` | HDRI environment (1k default; `@2k`, `@4k`) |
+| `polyhaven:hdri/<slug>` | HDRI environment (1k; 2k when the background is sharp; `@4k`) |
 | `polyhaven:texture/<slug>` | PBR set: albedo, normal, roughness, AO, displacement (2k; `@1k`) |
 | `ambientcg:<AssetId>` | PBR set from ambientCG (e.g. `ambientcg:Wood049`, 2k) |
 | `polyhaven:model/<slug>` | glTF model with its textures (1k; `@2k`) |
-| `khronos:<Name>` | CC0 glTF sample model (GLB) |
+| `khronos:<Name>` · `kenney:<kit>/<name>` | CC0 glTF sample model · stylised low-poly kits (city, racing, arena, platformer, fps) |
 | `anikit:lut/<name>` | film LUT, generated locally (no download) |
 
-Any Poly Haven slug or ambientCG id works even if it isn't in the curated index
-(looked up live). The curated ~230 are pinned and have descriptions.
+Any Poly Haven slug or ambientCG id works live; the curated ~230 are pinned and described.
 
 ## Use them
 
@@ -38,15 +37,18 @@ Any Poly Haven slug or ambientCG id works even if it isn't in the curated index
       ]
     }
 
+- Or a curated mood: `"hdri": "studio" | "studio-warm" | "studio-dark" | "sunrise" | "golden-hour" | "sunset" | "dramatic-sky" | "noon" | "park" | "overcast" | "sky" | "interior" | "night" | "night-city"`.
 - `env.hdri`: lighting, reflections and background from the HDRI. `rotate` (degrees, spins the
   world), `exposure` (stops), `background`: `true` (sharp), `"blur"` (soft, keeps focus on the
   subject), `false` (lighting only; the floor/backdrop stays). The sun in an outdoor HDRI becomes a
   real key light with traced shadows.
 - `material.texture`: a PBR set. `scale` = tiles per metre multiplier, `color` tints the albedo,
   `roughness`/`metallic` still override. Triplanar mapped, so no UVs are needed.
+- `"floor": {"texture": "ambientcg:WoodFloor051", "scale": 1}`: the same on the ground.
 - `"src": "polyhaven:model/…"` on a model object: any glTF from the library.
-- 2D image layers: `{"type": "image", "src": "polyhaven:texture/concrete_wall_008"}` uses the
-  albedo map (a texture, paper, plaster, fabric background).
+- 2D image layers: a texture ref uses its albedo (paper, plaster, fabric backgrounds); an HDRI
+  ref is a **photo**: `"src": "polyhaven:hdri/venice_sunset?yaw=96&pitch=4&fov=58"` (a lens view
+  of its 8k panorama; `w`/`h` set the size). 70 real places, any angle.
 - Grade: `"post": {"preset": "cinematic", "lut": "anikit:lut/teal-orange", "lutMix": 0.8}`;
   a `.cube` path works too.
 
@@ -55,4 +57,4 @@ Any Poly Haven slug or ambientCG id works even if it isn't in the curated index
 `assets get <ref…>` pre-fetches (prints paths). Offline, a missing asset fails with a clear
 message; `ANIKIT_OFFLINE=1` never touches the network. Downloads use the system `curl`.
 All CC0 1.0: Poly Haven (polyhaven.com/license), ambientCG (docs.ambientcg.com/license),
-CC0-only Khronos samples, anikit's own LUTs. `assets credits spec.json` lists what a spec uses.
+CC0-only Khronos samples, Kenney's starter-kit models, anikit's own LUTs. `assets credits spec.json` lists what a spec uses.

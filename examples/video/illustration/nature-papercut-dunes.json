@@ -1,0 +1,13 @@
+{
+  "size": "16:9",
+  "scenes": [
+    {
+      "duration": 6,
+      "layers": [
+        { "component": "landscape", "props": { "style": "papercut", "palette": "desert", "time": "golden", "terrain": ["mesas", "mesas", "dunes", "dunes", "dunes", "dunes"], "layers": 6, "horizon": 0.56, "depth": 0.9, "relief": 1.1, "mist": 0.12, "parallax": 20, "sun": [0.66, 0.3], "sunSize": 1.9, "light": 55, "seed": 7, "grain": 0.6 } },
+        { "component": "clouds", "props": { "style": "papercut", "palette": "desert", "look": "puffs", "count": 4, "band": [0.08, 0.26], "size": 300, "speed": 12, "light": 55, "seed": 12 } },
+        { "component": "plants", "props": { "style": "papercut", "palette": "desert", "species": ["bush", "bush", "grass"], "count": 5, "spread": [0.0, 0.9], "ground": 0.985, "size": 520, "depth": 0.4, "wind": 0.3, "onTwos": true, "light": 55, "seed": 4, "colors": { "foliage": ["#4d5a2a", "#7d8a3a", "#c2b25a"] } }, "x": 260, "y": 540, "width": 520, "height": 1080 }
+      ]
+    }
+  ]
+}

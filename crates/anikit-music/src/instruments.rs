@@ -49,6 +49,12 @@ const KITS: &[(&str, u8)] = &[
 fn resolve_one(name: &str, base: Option<&Path>) -> Result<Arc<dyn Instrument>, String> {
     use crate::sf2::{bank, sampler::SoundFont};
     let lower = name.to_ascii_lowercase();
+    // A real acoustic kit (Virtuosity Drums) stands in for the GM kits when cached.
+    if REAL_KIT_NAMES.contains(&lower.as_str()) {
+        if let Some(i) = crate::sf2::pack_instrument("virtuosity-kit") {
+            return Ok(i);
+        }
+    }
     if lower == "drums" || lower == "kit" {
         return Ok(bank::gm_drums(0));
     }
@@ -104,16 +110,10 @@ fn resolve_one(name: &str, base: Option<&Path>) -> Result<Arc<dyn Instrument>, S
     if let Some(i) = crate::sf2::pack_instrument(&lower) {
         return Ok(i);
     }
-    // Deeper samples by default when the pack is in the cache (`anikit-video music fetch salamander`).
-    if matches!(lower.as_str(), "piano" | "grand-piano" | "bright-piano") {
-        for p in ["salamander-piano", "splendid-piano"] {
-            if let Some(i) = crate::sf2::pack_instrument(p) {
-                return Ok(i);
-            }
-        }
-    }
-    if matches!(lower.as_str(), "wurli" | "wurlitzer") {
-        if let Some(i) = crate::sf2::pack_instrument("wurlitzer") {
+    // Recorded instruments from cached packs replace the GM samples by default
+    // (`anikit-video music fetch essentials`).
+    for p in pack_defaults(&lower) {
+        if let Some(i) = crate::sf2::pack_instrument(p) {
             return Ok(i);
         }
     }
@@ -140,10 +140,33 @@ fn resolve_one(name: &str, base: Option<&Path>) -> Result<Arc<dyn Instrument>, S
 }
 
 /// Where a name resolves (same order as [`resolve`], files excluded):
+/// Kit names the Virtuosity acoustic kit replaces when cached.
+const REAL_KIT_NAMES: &[&str] = &["drums", "kit", "drums:standard", "drums:room", "drums:rock", "drums:power", "drums:pop", "drums:lofi"];
+
+/// Pack instruments that stand in for a common name when their pack is
+/// cached, best first.
+pub fn pack_defaults(name: &str) -> &'static [&'static str] {
+    match name {
+        "piano" | "grand-piano" | "bright-piano" => &["salamander-piano", "splendid-piano"],
+        "wurli" | "wurlitzer" => &["wurlitzer"],
+        "bass" | "finger-bass" | "fingered-bass" | "electric-bass" | "bass-guitar" => &["finger-bass-yr"],
+        "pick-bass" | "picked-bass" => &["picked-bass-yr"],
+        "nylon-guitar" | "classical-guitar" | "spanish-guitar" => &["nylon-guitar-fp"],
+        "clean-guitar" | "electric-guitar" | "jazz-guitar" => &["clean-guitar-fsbs"],
+        _ => &[],
+    }
+}
+
+fn pack_cached(friendly: &str) -> bool {
+    crate::sf2::packs::INSTRUMENTS.iter().find(|x| x.0 == friendly).is_some_and(|x| crate::sf2::packs::is_cached(x.1))
+}
+
 /// `"synth"`, `"synth-kit"`, `"physical"`, `"sampled"`, `"sampled-kit"`, `"pack"` or `"unknown"`.
 pub fn source(name: &str) -> &'static str {
     for n in name.split('|').map(|n| n.trim().to_ascii_lowercase()) {
-        let kind = if n == "drums" || n == "kit" {
+        let kind = if REAL_KIT_NAMES.contains(&n.as_str()) && pack_cached("virtuosity-kit") {
+            "pack"
+        } else if n == "drums" || n == "kit" {
             "sampled-kit"
         } else if n.starts_with("phys:") {
             "physical"
@@ -159,7 +182,7 @@ pub fn source(name: &str) -> &'static str {
             }
         } else if n.starts_with("gm:") {
             "sampled"
-        } else if crate::sf2::packs::INSTRUMENTS.iter().any(|x| x.0 == n) && crate::sf2::packs::INSTRUMENTS.iter().find(|x| x.0 == n).is_some_and(|x| crate::sf2::packs::is_cached(x.1)) {
+        } else if pack_cached(&n) || pack_defaults(&n).iter().any(|p| pack_cached(p)) {
             "pack"
         } else if crate::synth::PRESETS.contains(&n.as_str()) {
             "synth"

@@ -61,3 +61,93 @@ fn deterministic_frames() {
     let (a, b) = (ev(src), ev(src));
     assert_eq!(format!("{:?}", a.eval(0.7).ops), format!("{:?}", b.eval(0.7).ops));
 }
+
+fn rect_x(e: &Evaluator, t: f32) -> f32 {
+    e.eval(t).ops.iter().find_map(|o| if let Op::RoundRect { transform, .. } = o { Some(transform[4]) } else { None }).expect("rect")
+}
+
+#[test]
+fn inertia_overshoots_and_settles() {
+    let src = |extra: &str| format!(r#"{{ "scenes": [ {{ "duration": 3, "layers": [ {{ "shape": "rect", "x": 100, "width": 10, "height": 10, {extra}
+        "animate": {{ "to": {{ "x": 1100 }}, "duration": 0.3, "ease": "linear" }} }} ] }} ] }}"#);
+    let plain = ev(&src(""));
+    let sprung = ev(&src(r#""inertia": "bouncy","#));
+    // Lags behind while moving, overshoots after, and comes to rest on the target.
+    assert!(rect_x(&sprung, 0.15) < rect_x(&plain, 0.15));
+    let peak = (30..90).map(|k| rect_x(&sprung, k as f32 / 60.0)).fold(f32::MIN, f32::max);
+    assert!(peak > rect_x(&plain, 1.0) + 20.0, "peak {peak}");
+    assert!((rect_x(&sprung, 2.9) - rect_x(&plain, 2.9)).abs() < 1.0);
+    // Deterministic: a fresh evaluator gives the same frame, in any order.
+    let again = ev(&src(r#""inertia": "bouncy","#));
+    assert_eq!(rect_x(&again, 0.7), rect_x(&sprung, 0.7));
+}
+
+#[test]
+fn smear_stretches_fast_moves_only() {
+    let e = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "x": 100, "width": 40, "height": 40, "smear": true,
+        "animate": { "to": { "x": 1800 }, "duration": 0.3, "ease": "linear" } } ] } ] }"#);
+    let sx = |t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::RoundRect { transform, .. } = o { Some(transform[0]) } else { None }).unwrap();
+    assert!(sx(0.15) > 1.5, "{}", sx(0.15));
+    assert!((sx(1.5) - 1.0).abs() < 1e-3);
+}
+
+#[test]
+fn idea_transitions_render_both_scenes() {
+    for tr in [
+        r#"{ "type": "zoomThrough", "layer": "w" }"#,
+        r#"{ "type": "reveal", "shape": "star", "amount": 90 }"#,
+        r#"{ "type": "reveal", "shape": "blob" }"#,
+        r#"{ "type": "blinds", "count": 6 }"#,
+        r#"{ "type": "split", "direction": "up" }"#,
+        r#"{ "type": "whip" }"#,
+    ] {
+        let src = format!(
+            r##"{{ "scenes": [ {{ "duration": 1, "background": "#123456", "layers": [ {{ "id": "w", "text": "ONE", "size": 200 }} ] }},
+                {{ "duration": 1, "background": "#654321", "transition": {tr}, "layers": [ {{ "text": "TWO", "size": 200 }} ] }} ] }}"##
+        );
+        let e = ev(&src);
+        // Mid-transition: glyphs from both scenes are in the frame.
+        let ops = e.eval(0.85).ops;
+        let glyphs = count(&ops, |o| matches!(o, Op::Glyphs { .. }));
+        assert!(glyphs >= 2, "{tr}: {glyphs} glyph runs");
+        let a = format!("{:?}", e.eval(0.85).ops);
+        assert_eq!(a, format!("{:?}", ev(&src).eval(0.85).ops), "{tr}: deterministic");
+    }
+    let bad = parse_json(r#"{ "scenes": [ { "layers": ["a"] }, { "transition": "zoomThrough", "layers": ["b"] } ] }"#).unwrap();
+    assert!(Evaluator::new(&bad.spec, Options::default()).is_err(), "zoomThrough without a layer is an error");
+}
+
+#[test]
+fn posterize_holds_poses_and_named_curves_parse() {
+    let e = ev(r#"{ "fps": 30, "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "x": 100, "width": 10, "height": 10, "posterizeTime": 10,
+        "animate": { "to": { "x": 1100 }, "duration": 1, "ease": "glide" } } ] } ] }"#);
+    // 10 poses per second: frames 0.30 and 0.3667 share a pose, 0.4 is the next one.
+    assert_eq!(rect_x(&e, 0.30), rect_x(&e, 0.3667));
+    assert!(rect_x(&e, 0.40) > rect_x(&e, 0.3667));
+    for name in ["snap", "land", "launch", "material", "emphasizedDecelerate", "productive", "expressive", "expressiveExit"] {
+        ev(&format!(r#"{{ "scenes": [ {{ "layers": [ {{ "text": "x", "animate": {{ "from": {{ "x": 0 }}, "ease": "{name}" }} }} ] }} ] }}"#));
+    }
+}
+
+#[test]
+fn group_drag_trails_children() {
+    let e = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "type": "group", "x": 960, "y": 540, "width": 1920, "height": 1080, "drag": 0.1,
+        "animate": { "to": { "x": 1460 }, "duration": 0.5, "ease": "linear" },
+        "layers": [ { "shape": "rect", "x": 100, "y": 100, "width": 10, "height": 10 }, { "shape": "rect", "x": 100, "y": 300, "width": 10, "height": 10 } ] } ] } ] }"#);
+    let xs = |t: f32| -> Vec<f32> { e.eval(t).ops.iter().filter_map(|o| if let Op::RoundRect { transform, .. } = o { Some(transform[4]) } else { None }).collect() };
+    let mid = xs(0.25);
+    assert!(mid[1] < mid[0] - 50.0, "second child lags: {mid:?}");
+    let end = xs(1.5);
+    assert!((end[1] - end[0]).abs() < 1e-3, "and catches up: {end:?}");
+}
+
+#[test]
+fn stroke_gradient_along_follows_trim() {
+    let src = |trim: f32| format!(r##"{{ "scenes": [ {{ "layers": [ {{ "shape": "path", "d": "M0 0 L1000 0", "fill": "none", "trimEnd": {trim},
+        "stroke": {{ "width": 10, "along": ["#f00", "#00f"] }} }} ] }} ] }}"##);
+    let strokes = |t: f32| count(&ev(&src(t)).eval(0.5).ops, |o| matches!(o, Op::Stroke { paint: anikit_video::dl::Paint::Linear { .. }, .. }));
+    let full = strokes(1.0);
+    assert!(full > 50, "{full}");
+    let half = strokes(0.5);
+    assert!(half < full * 2 / 3 && half > full / 3, "{half} of {full}");
+}

@@ -140,6 +140,10 @@ goes from 9.9 s to 3.0 s, with identical pixels.
 | `target` | none | Assemble into a shape: an emitter plus `from`/`to` seconds. Each particle springs to its own point on the target, the lowest arriving first. |
 | `collide`, `bounce`, `friction` | `true`, `0.3`, `0.3` | Collisions with the floor and with every scene object marked `"collide": true` (spheres exactly, other shapes as their oriented box; animated objects sweep particles along). |
 | `size`, `sizeVar` | `0.004`, `0.5` | Radius in metres, and random variation. |
+| `size_dist` | none | Power-law sizes instead: `{ "min", "max", "power" }`, p(size) ∝ size^-power (2–3 reads like real snow, dust and debris: many small, a few big). A particle's light and coverage grow with its projected area, so big near flakes keep their brightness. |
+| `layers` | none | Depth layers in one emitter: an array of `{ "share", ...any particle keys }`. Each layer gets its share of `count` and its own seed, and overrides the base keys (`emit` merges key by key). The studio recipe for snow, dust or embers: a few big, soft foreground flakes with parallax, a crisp mid layer, and a dense, faint far haze (examples/video/sim/snow.json). |
+| `scatter` | `0` | Lit particles: Henyey–Greenstein phase g (-0.95..0.95). Positive is forward scattering, so particles between the camera and the key light glow (backlit snow, dust in a beam). `0` keeps the diffuse sphere phase. Rendering only. |
+| `glint` | none | Lit particles: a tumbling facet per particle that flashes when it mirrors the key light into the camera. `amount`, or `{ "amount": 1, "sharpness": 60 }`. Rendering only. |
 | `color` | `#ffffff` | A colour or a gradient (array), picked by `colorBy`: `random`, `age`, `speed` (over `speedRange` `[0, 2]` m/s), `height`, `source` (image emitters' pixels, the default for them). |
 | `opacity` | `1` | |
 | `emissive` | `1` for `add`, `0` for `over` | Emitted light. |
@@ -147,6 +151,7 @@ goes from 9.9 s to 3.0 s, with identical pixels.
 | `lit` | `true` for `over` | Shade by the key light and environment, with a sphere phase function; particles that have arrived on a `target` shade like its surface. |
 | `shadows` | `true` for `over` | Absorbing particles shadow each other (dense clouds darken inside, like volumes) and cast soft shadows on the floor and objects. |
 | `stretch` | `1` | Motion streak length (× shutter). |
+| `trail` | none | Light trails through each particle's past positions (the real, curved path, not a velocity streak): seconds, or `{ "length": 0.3, "taper": 1, "opacity": 1 }`. The tail fades as (1 − u)^taper and keeps the head's surface brightness; trails stop where a particle was born or recycled, and are depth-tested against the scene. Rendering only: changing it reuses the cached simulation. Best with a few thousand `add` particles; cost grows with count × trail length on screen. |
 | `substeps` | `2` | Integration steps per frame. |
 | `start`, `end`, `seed` | `0`, ∞, `1` | |
 

@@ -6,7 +6,7 @@ studio: "FutureDeluxe (art direction and lead CG: Twistedpoly / Nejc Polovsak)"
 client: "Wacom"
 year: 2017
 url: https://vimeo.com/229537127
-alt_urls: [https://vimeo.com/229544853, http://futuredeluxe.co.uk/work/wacom, https://behance.net/gallery/57804951/WACOM-PLUME]
+alt_urls: ["https://vimeo.com/229544853", "http://futuredeluxe.co.uk/work/wacom", "https://behance.net/gallery/57804951/WACOM-PLUME"]
 length_s: 58
 verified: oembed
 aspect: "16:9"                      # est.
@@ -23,6 +23,11 @@ awards: []
 stills:
   - https://i.vimeocdn.com/video/649871889-e210e0afc10a2485a34b7bc7caf4bbd969874dd88eba008a9ceb4cc3fedd807d-d_1280?region=us
   - https://i.vimeocdn.com/video/649881493-085a75943e896adfc728b2d8c37a72d859e430443256245c9b26b2eb14554f5e-d_1280?region=us
+  - https://www.stashmedia.tv/wp-content/uploads/Wacom_01.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Wacom_08.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Wacom_09.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Wacom_10.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/wacom_rd_18.jpg
 measured: null
 ---
 

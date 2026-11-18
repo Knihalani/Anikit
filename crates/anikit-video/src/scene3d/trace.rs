@@ -51,11 +51,14 @@ pub struct Material {
     pub style: u8,
     /// PBR texture set (`super::pbr`), 0 = none.
     pub pbr: u32,
+    /// Surface imperfections (0..1 each): roughness variation, smudges
+    /// (fingerprints and wipes), micro-scratches, dust on up-facing surfaces.
+    pub imperf: [f32; 4],
 }
 
 impl Material {
     pub fn chrome() -> Material {
-        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0 }
+        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7, style: 0, pbr: 0, imperf: [0.0; 4] }
     }
 }
 
@@ -206,6 +209,19 @@ impl Shape {
             }),
         }
     }
+    /// Texture coordinates of a hit from [`Shape::hit_t`].
+    #[inline]
+    fn uv_at(&self, h: (f32, u32, f32, f32)) -> [f32; 2] {
+        match self {
+            Shape::Mesh(b) => {
+                let tr = &b.tris[h.1 as usize];
+                let w = 1.0 - h.2 - h.3;
+                [tr.uv[0][0] * w + tr.uv[1][0] * h.2 + tr.uv[2][0] * h.3, tr.uv[0][1] * w + tr.uv[1][1] * h.2 + tr.uv[2][1] * h.3]
+            }
+            Shape::Sphere => [0.0, 0.0],
+        }
+    }
+
     /// Object-space direction of +u on a triangle (spheres: around +y).
     fn tangent(&self, tri: u32, n: V3) -> V3 {
         match self {
@@ -325,6 +341,8 @@ pub struct Floor {
     /// pool centre (equal = never).
     pub fade: (f32, f32),
     pub vis: Option<Arc<FloorVis>>,
+    /// PBR texture set on the ground (`Material::pbr` numbering), 0 = none.
+    pub pbr: u32,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -412,6 +430,9 @@ pub struct Scene {
     pub glow: (V3, V3, f32),
     /// Exponential haze: density per metre, and colour (linear).
     pub haze: (f32, V3),
+    /// Height fog: falloff height in metres (0 = uniform) and base height.
+    /// Density is `haze.0 · e^{-(y - base)/falloff}` above the base.
+    pub haze_height: (f32, f32),
     /// Local point and spot lights.
     pub lights: Vec<Light>,
     /// Per instance: world → object transform as three rows of
@@ -657,6 +678,42 @@ fn count(k: usize) {
         });
     }
 }
+/// Profiling: CPU time in closest-hit (0) and shadow/AO (1) traversal, in
+/// TSC ticks (`ANIKIT_SCENE3D_PROFILE`; a few ns of overhead per ray).
+pub static CYCLES: [std::sync::atomic::AtomicU64; 2] = [const { std::sync::atomic::AtomicU64::new(0) }; 2];
+struct Cycles(usize, u64);
+impl Cycles {
+    #[inline(always)]
+    fn start(k: usize) -> Option<Cycles> {
+        PROFILE.load(std::sync::atomic::Ordering::Relaxed).then(|| Cycles(k, tsc()))
+    }
+}
+impl Drop for Cycles {
+    #[inline(always)]
+    fn drop(&mut self) {
+        let d = tsc().wrapping_sub(self.1);
+        thread_local!(static LOCAL: std::cell::Cell<[u64; 2]> = const { std::cell::Cell::new([0; 2]) });
+        LOCAL.with(|c| {
+            let mut v = c.get();
+            v[self.0] += d;
+            if v[self.0] > 1 << 24 {
+                CYCLES[self.0].fetch_add(v[self.0], std::sync::atomic::Ordering::Relaxed);
+                v[self.0] = 0;
+            }
+            c.set(v);
+        });
+    }
+}
+/// Time-stamp counter (0 off x86).
+#[inline(always)]
+pub fn tsc() -> u64 {
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: rdtsc has no preconditions.
+    return unsafe { std::arch::x86_64::_rdtsc() };
+    #[cfg(not(target_arch = "x86_64"))]
+    0
+}
+
 /// Neighbour normals on a smooth specular object closer than this cosine
 /// don't trigger edge samples (`ANIKIT_SCENE3D_NCOS` overrides; -2 = off).
 fn normal_cos() -> f32 {
@@ -806,7 +863,7 @@ fn refract(d: V3, n: V3, eta: f32) -> Option<V3> {
 impl Scene {
     pub fn new(shapes: Vec<Shape>, mats: Vec<Material>, insts: Vec<Inst>, env: Env, floor: Option<Floor>) -> Scene {
         let mut s = Scene {
-            pbr: if mats.iter().any(|m| m.pbr != 0) { super::pbr::snapshot() } else { Vec::new() },
+            pbr: if mats.iter().any(|m| m.pbr != 0) || floor.as_ref().is_some_and(|f| f.pbr != 0) { super::pbr::snapshot() } else { Vec::new() },
             texel_angle: 1.0 / 1000.0,
             shapes,
             mats,
@@ -817,6 +874,7 @@ impl Scene {
             backdrop: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)),
             glow: (v3(0.0, 0.0, -1.0), v3(0.0, 0.0, 0.0), 0.1),
             haze: (0.0, v3(0.0, 0.0, 0.0)),
+            haze_height: (0.0, 0.0),
             lights: Vec::new(),
             inv: Vec::new(),
             caustics: 0.0,
@@ -865,6 +923,32 @@ impl Scene {
         (lo, hi)
     }
 
+    /// The texture set whose alpha cuts this instance out, if any.
+    #[inline]
+    fn cutout(&self, ob: &Inst) -> Option<&super::pbr::PbrSet> {
+        let m = &self.mats[ob.mat as usize];
+        if m.pbr == 0 {
+            return None;
+        }
+        self.pbr.get(m.pbr as usize - 1).filter(|s| s.alpha.is_some()).map(|s| &**s)
+    }
+
+    /// Closest object-space hit, skipping cut-out texels (a few layers deep).
+    #[inline]
+    fn hit_obj(&self, ob: &Inst, lo: V3, ld: V3, tm: f32) -> Option<(f32, u32, f32, f32)> {
+        let shape = &self.shapes[ob.shape as usize];
+        let Some(set) = self.cutout(ob) else { return shape.hit_t(lo, ld, EPS, tm) };
+        let mut tmin = EPS;
+        for _ in 0..12 {
+            let h = shape.hit_t(lo, ld, tmin, tm)?;
+            if set.solid(shape.uv_at(h)) {
+                return Some(h);
+            }
+            tmin = h.0 + 1e-5 * (1.0 + h.0);
+        }
+        None
+    }
+
     fn trace(&self, o: V3, d: V3, tmax: f32) -> Option<Surf> {
         self.trace_f(o, d, tmax, false)
     }
@@ -872,6 +956,7 @@ impl Scene {
     /// Closest hit; with `camera`, objects hidden from the camera (cards) are skipped.
     fn trace_f(&self, o: V3, d: V3, tmax: f32, camera: bool) -> Option<Surf> {
         count(0);
+        let _c = Cycles::start(0);
         let mut best: Option<Surf> = None;
         let mut tm = tmax;
         if let Some(f) = &self.floor {
@@ -893,7 +978,7 @@ impl Scene {
                 return tm;
             }
             let (lo, ld) = self.to_object(k as usize, o, d);
-            if let Some(hh) = self.shapes[ob.shape as usize].hit_t(lo, ld, EPS, tm) {
+            if let Some(hh) = self.hit_obj(ob, lo, ld, tm) {
                 obj = Some((k, lo, ld, hh));
                 hh.0
             } else {
@@ -911,6 +996,7 @@ impl Scene {
     /// Light getting through along a segment (0 = blocked); glass lets most through.
     fn transmit(&self, o: V3, d: V3, tmax: f32, floor: bool) -> f32 {
         count(1);
+        let _c = Cycles::start(1);
         if floor {
             if let Some(f) = &self.floor {
                 if d.y < -1e-7 {
@@ -928,7 +1014,11 @@ impl Scene {
                 return tm;
             }
             let (lo, ld) = self.to_object(k as usize, o, d);
-            if self.shapes[ob.shape as usize].occluded(lo, ld, EPS, tm) {
+            let occ = match self.cutout(ob) {
+                Some(_) => self.hit_obj(ob, lo, ld, tm).is_some(),
+                None => self.shapes[ob.shape as usize].occluded(lo, ld, EPS, tm),
+            };
+            if occ {
                 let m = &self.mats[ob.mat as usize];
                 if m.transmission > 0.0 {
                     // Glass: about 85% through each pane (two interfaces).
@@ -958,6 +1048,28 @@ impl Scene {
         let base = lerp3(self.backdrop.0, self.backdrop.1, smoothstep(-0.05, 0.6, d.y));
         let (g, c, w) = self.glow;
         madd(base, c, (-(1.0 - dot(d, g)) / w.max(1e-4)).exp())
+    }
+
+    /// Fog optical depth along `o + d·t`, `t` in [0, dist]: uniform, or
+    /// height fog integrated in closed form (dense near the floor, thin above).
+    #[inline]
+    pub fn fog_depth(&self, o: V3, d: V3, dist: f32) -> f32 {
+        let (h, y0) = self.haze_height;
+        if h <= 0.0 {
+            return self.haze.0 * dist;
+        }
+        let e = |y: f32| (-(y - y0).max(0.0) / h).exp();
+        let (ya, yb) = (o.y, o.y + d.y * dist);
+        if d.y.abs() * dist < 1e-3 * h {
+            return self.haze.0 * e(ya) * dist;
+        }
+        // Below the base the density is constant: split the ray there.
+        let (lo, hi) = (ya.min(yb), ya.max(yb));
+        let per_y = dist / (yb - ya).abs();
+        let below = (y0.min(hi) - lo).max(0.0) * per_y;
+        let (a, b) = (lo.max(y0), hi.max(y0));
+        // ∫ e^{-(y-y0)/h} dt over the part above the base (y = ya + d.y t).
+        self.haze.0 * (below + h * (e(a) - e(b)) * per_y)
     }
 
     /// Haze between a ray origin and a hit at distance `t`.
@@ -1058,13 +1170,29 @@ impl Scene {
         let r2d = dx * dx + dz * dz;
         let pool = if f.pool.2 > 0.0 { (-r2d / (f.pool.2 * f.pool.2)).exp() } else { 1.0 };
         let (ll, _) = if self.lights.is_empty() { (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) } else { self.local_lights(p, up, scale(d, -1.0), 1.0, v3(0.0, 0.0, 0.0)) };
-        let dif = Diffuse { alb: f.color, amb: add(self.up_light.0, ll), key: scale(self.up_light.1, pool * self.caustic(p)), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
+        // A textured ground: albedo, AO, roughness (reflection strength) and
+        // normal-map shading of the key, planar in world x/z.
+        let (alb, key_k, refl_k) = match self.pbr.get((f.pbr as usize).wrapping_sub(1)).filter(|_| f.pbr != 0) {
+            Some(set) => {
+                let footprint = s.t * self.texel_angle / (-d.y).abs().max(0.08);
+                let x = set.sample(v3(p.x, 0.0, p.z), up, [0.0, 0.0], v3(1.0, 0.0, 0.0), footprint, |v| v);
+                let key_k = match (x.n, self.env.key_box()) {
+                    (Some(n), Some(k)) => (dot(n, k.c).max(0.0) / dot(up, k.c).max(0.05)).min(2.0),
+                    _ => 1.0,
+                };
+                // Rough patches reflect less (relative to the floor's own roughness).
+                let refl_k = x.rough.map(|r| ((1.0 - r) / (1.0 - f.roughness).max(0.05)).clamp(0.0, 1.5)).unwrap_or(1.0);
+                (scale(mul(f.color, x.base), x.ao), key_k, refl_k)
+            }
+            None => (f.color, 1.0, 1.0),
+        };
+        let dif = Diffuse { alb, amb: add(self.up_light.0, ll), key: scale(self.up_light.1, pool * self.caustic(p) * key_k), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
         let fade = if f.fade.1 > f.fade.0 { smoothstep(f.fade.0, f.fade.1, r2d.sqrt()) } else { 0.0 };
         // Reflection: Fresnel lacquer plus an optional mirror boost.
         let nv = (-d.y).clamp(1e-4, 1.0);
         let fr = 0.04 + 0.96 * (1.0 - nv).powi(5);
         // (The fade to backdrop is applied by the caller, after any blur.)
-        let k = (fr + f.mirror * (1.0 - fr)) * f.reflect;
+        let k = (fr + f.mirror * (1.0 - fr)) * f.reflect * refl_k;
         let mut refl = v3(0.0, 0.0, 0.0);
         let mut dist = 0.0;
         if k > 1e-3 {
@@ -1165,7 +1293,7 @@ impl Scene {
             // Dielectric interface.
             let eta = if entering { 1.0 / m.ior } else { m.ior };
             let fr = fresnel_dielectric(nv.min(1.0), if ob.thin { 1.0 / m.ior } else { eta });
-            let rough = m.roughness.clamp(0.0, 1.0);
+            let rough = if m.imperf == [0.0; 4] { m.roughness.clamp(0.0, 1.0) } else { (m.roughness + self.imperfect(m, ob.xf.point_inv(s.p), n).0).clamp(0.0, 1.0) };
             let r = reflect(d, n);
             // Only the first glass interface along a path traces its reflection:
             // otherwise reflection × transmission branching grows as 2^layers.
@@ -1196,11 +1324,14 @@ impl Scene {
         if m.style != 0 {
             return self.shade_style(m, s, n, v, nv, keep, out);
         }
-        let rough = m.roughness.clamp(0.02, 1.0);
+        let (dr, dust) = if m.imperf == [0.0; 4] { (0.0, 0.0) } else { self.imperfect(m, ob.xf.point_inv(s.p), n) };
+        let rough = (m.roughness + dr).clamp(0.02, 1.0);
         let f0 = lerp3(v3(0.04 * m.specular, 0.04 * m.specular, 0.04 * m.specular), m.base, m.metallic);
+        let f0 = scale(f0, 1.0 - dust);
         let ab = env_brdf(rough, nv);
         let spec_w = madd(scale(f0, ab.0), v3(1.0, 1.0, 1.0), ab.1);
-        let diff_col = scale(m.base, 1.0 - m.metallic);
+        // Dust is a grey diffuse layer, even on metal.
+        let diff_col = add(scale(m.base, (1.0 - m.metallic) * (1.0 - dust)), scale(v3(0.42, 0.4, 0.37), dust));
         let needs_diffuse = luma(diff_col) > 0.005;
         let rotp = (rot.1 * 0.37 + fract(s.p.x * 13.7), rot.0 * 0.61 + fract(s.p.z * 7.3));
         // Secondary hits (seen in reflections or through glass) aren't denoised:
@@ -1272,6 +1403,45 @@ impl Scene {
             ss.ns = n;
         }
         Some((mm, ss))
+    }
+
+    /// Surface imperfections at object-space point `p` (normal `n`, world):
+    /// (roughness offset, dust cover 0..1). They stick to the object.
+    #[inline]
+    fn imperfect(&self, m: &Material, p: V3, n: V3) -> (f32, f32) {
+        let [var, smudge, scratch, dust] = m.imperf;
+        let mut dr = 0.0;
+        if var > 0.0 {
+            // Broad, uneven sheen: ±0.08 at full strength.
+            dr += var * 0.09 * (vnoise(scale(p, 5.0)) * 0.75 + vnoise(scale(p, 17.0)) * 0.25 - 0.5);
+        }
+        if smudge > 0.0 {
+            // Fingerprint-sized blotches with ridged whorls, and soft wipes.
+            let blob = smoothstep(0.66, 0.82, vnoise(add(scale(p, 9.0), v3(3.1, 7.7, 1.3))));
+            let ridge = 0.7 + 0.3 * (vnoise(scale(p, 70.0)) * std::f32::consts::TAU).sin().abs();
+            let wipe = smoothstep(0.62, 0.9, vnoise(v3(p.x * 2.5 + p.y * 1.5, p.y * 14.0, p.z * 2.5))) * 0.6;
+            dr += smudge * 0.22 * (blob * ridge).max(wipe);
+        }
+        if scratch > 0.0 {
+            // Sparse patches of fine parallel scratches in three directions;
+            // they only show where a highlight crosses them.
+            let mut sc: f32 = 0.0;
+            for (k, d) in [v3(0.83, 0.2, 0.52), v3(-0.3, 0.9, 0.31), v3(0.4, -0.35, 0.85)].into_iter().enumerate() {
+                let patch = smoothstep(0.6, 0.75, vnoise(add(scale(p, 2.2), v3(k as f32 * 5.3, 1.7, 0.0))));
+                let u = dot(p, d) * 220.0 + vnoise(scale(p, 5.0)) * 9.0;
+                let line = 1.0 - smoothstep(0.0, 0.08, (fract(u) - 0.5).abs() * 2.0 - 0.9);
+                let fine = smoothstep(0.3, 0.7, vnoise(v3(u * 0.05, k as f32 * 9.1, 0.0)));
+                sc = sc.max(patch * line * fine);
+            }
+            dr += scratch * 0.35 * sc;
+        }
+        let mut d = 0.0;
+        if dust > 0.0 && n.y > 0.2 {
+            let up = smoothstep(0.2, 0.9, n.y);
+            d = (dust * up * (0.6 + 0.4 * smoothstep(0.35, 0.75, vnoise(scale(p, 18.0))))).min(0.85);
+            dr += d * 0.6;
+        }
+        (dr, d)
     }
 
     /// Underwater caustics: a bright, moving net of light (mean about 1).
@@ -1403,13 +1573,22 @@ impl Scene {
         for layer in 0..=q.max_glass {
             let Some(s) = self.trace_f(o, d, 1e6, true) else {
                 // Fog covers the backdrop too (as if it were 200 m away).
-                let bd = if self.haze.0 > 0.0 { lerp3(self.backdrop(d), self.haze.1, 1.0 - (-self.haze.0 * 200.0).exp()) } else { self.backdrop(d) };
+                let bd = if self.haze.0 > 0.0 {
+                    let mut k = 1.0 - (-self.fog_depth(cam.pos, d, 200.0)).exp();
+                    if self.haze_height.0 > 0.0 {
+                        // A fog layer seen from above meets the sky softly, not at a hard line.
+                        k = k.max(smoothstep(0.14, 0.0, d.y) * (1.0 - (-self.haze.0 * 60.0).exp()));
+                    }
+                    lerp3(self.backdrop(d), self.haze.1, k)
+                } else {
+                    self.backdrop(d)
+                };
                 let b = mul(bd, thr);
                 let (depth, nrm, id, vel) = first.unwrap_or((1e4, none, usize::MAX - 1, (0.0, 0.0)));
                 return Sample { col: add(col, b), dif: Diffuse::default(), refl: none, floor: 0, rad: 0.0, rf: 1.0, rw: 0.0, vw: 1.0, depth, vel, nrm, _pad: 0, id };
             };
             let dist = travelled + s.t;
-            let haze_f = if self.haze.0 > 0.0 { (-self.haze.0 * dist).exp() } else { 1.0 };
+            let haze_f = if self.haze.0 > 0.0 { (-self.fog_depth(cam.pos, d, dist)).exp() } else { 1.0 };
             let depth_v = dot(sub(s.p, cam.pos), f);
             let prev_p = if s.obj == FLOOR {
                 s.p
@@ -1544,6 +1723,8 @@ impl Scene {
             }
         });
         let t_centre = clock.elapsed();
+        let snap = |a: &[std::sync::atomic::AtomicU64]| a.iter().map(|v| v.load(std::sync::atomic::Ordering::Relaxed)).collect::<Vec<u64>>();
+        let (r0, c0) = (snap(&RAYS), snap(&CYCLES));
         let refined = std::sync::atomic::AtomicU64::new(0);
         let (centre, tms) = (&centre, &tms);
         assert_eq!(out.len(), w * h);
@@ -1622,6 +1803,8 @@ impl Scene {
             TIMES[0].fetch_add(t_centre.as_micros() as u64, Relaxed);
             TIMES[1].fetch_add((clock.elapsed() - t_centre).as_micros() as u64, Relaxed);
             TIMES[2].fetch_add(refined.load(Relaxed), Relaxed);
+            let (r1, c1) = (snap(&RAYS), snap(&CYCLES));
+            eprintln!("  refinement: {:.2}M closest rays ({:.2}M primary samples), {:.0}% of closest-hit traversal ticks", (r1[0] - r0[0]) as f64 / 1e6, (r1[2] - r0[2]) as f64 / 1e6, (c1[0] - c0[0]) as f64 * 100.0 / c1[0].max(1) as f64);
         }
     }
 

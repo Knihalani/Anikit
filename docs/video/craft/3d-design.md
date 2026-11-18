@@ -259,12 +259,36 @@ Why "daily" renders read as cliché:
 
 ## 8. Gap list against Anikit
 
+**Status (overnight, 3D DESIGN):**
+- **Built:**
+  - lighting rigs with ratios and gobos (1, 2);
+  - animated light, as rig `animate: sweep|reveal` (3, partly);
+  - the handheld/breath noise model (5);
+  - focus pulls onto named objects (6);
+  - lens presets (7);
+  - set builders: plinth, podium, steps, sweep, field, arches, terrain (9);
+  - surface imperfections (10);
+  - height fog (14, partly);
+  - the look linter in `check`, spec-level (15, partly).
+- **Open:**
+  - light linking;
+  - keys on individual `lights[]`;
+  - strip gradient profiles (4);
+  - anamorphic, blades and cat-eye bokeh (7, 8);
+  - a round-edge shader for meshes (12);
+  - LUTs (13);
+  - noise-modulated fog (14);
+  - render-based linting: a value study and a ratio meter (15).
+
+See `docs/video/scene3d.md` and the proofs in `docs/video/shots/3d-*`.
+
+
 What `scene3d` already has is listed in `../scene3d.md`. Each gap below is mapped to the engine. "In progress" means code exists in the working tree but is not documented or committed.
 
 | # | Gap | Why it matters (section) | Engine mapping / proposal | Priority |
 |---|---|---|---|---|
-| 1 | **Named lighting rigs with ratios** | §1.1–1.2: the most common slop tell is a missing ratio | **In progress:** `crates/anikit-video/src/scene3d/rig.rs` (uncommitted) has `rembrandt`, `loop`, `clamshell`, `product`/`edge`, `high-key`, `low-key`, `split`, `rim`, `golden`, `window`, `top` and `butterfly`, with `ratio`, `rim`, `angle` and `warmth`. To do: document it in `scene3d.md`, add light linking (rim on the hero only), and make `product` the default when chrome or glass is present. | P0 |
-| 2 | **Gobos and cookies** | §1.5 | **In progress** in `rig.rs` (`gobo`: blinds, window, leaves; `goboScale`, `softness`). To do: allow a gobo on any spot or `lights[]` entry (not only the rig key), irregular slats, and a projected texture (`#comp`) as a gobo. | P1 |
+| 1 | **Named lighting rigs with ratios** | §1.1–1.2: the most common slop tell is a missing ratio | **Built:** `crates/anikit-video/src/scene3d/rig.rs` has `rembrandt`, `loop`, `clamshell`, `product`/`edge`, `high-key`, `low-key`, `split`, `rim`, `golden`, `window`, `top` and `butterfly`, with `ratio`, `rim`, `angle` and `warmth`. To do: document it in `scene3d.md`, add light linking (rim on the hero only), and make `product` the default when chrome or glass is present. | P0 |
+| 2 | **Gobos and cookies** | §1.5 | **Built** in `rig.rs` (`gobo`: blinds, window, leaves; `goboScale`, `softness`). To do: allow a gobo on any spot or `lights[]` entry (not only the rig key), irregular slats, and a projected texture (`#comp`) as a gobo. | P1 |
 | 3 | **Animated lights** (`keys` on `lights[]`: dir, pos, intensity, colour) | §1.3: the light sweep, the edge-only reveal, the fill fade-in | Light specs accept no `keys` and no `=expr` (`spec.rs` light `check_keys`). Add the same key and expression support that objects have, plus rig-level `reveal` (edge only, then fill) and `sweep` presets. | **P0** |
 | 4 | **Strip-light shapes with a gradient profile** | §1.3: real strips have soft-edged gradient reflections | `lights[].size` makes uniform boxes. Add a `profile` (gradient falloff across the width, or a texture) so chrome highlights get the premium soft-edge-with-hot-core look. | P1 |
 | 5 | **Handheld and camera-noise model** | §3.4 | `camera.shake` exists, but it is a positional sum of sines in metres (`spec.rs` around line 993), with no rotation, no roll, fixed band ratios and no lens scaling. Replace it with rotational layered noise (three bands, low/mid/high Hz), amplitude as a fraction of the frame (independent of focal length), roll, and presets `breath`, `handheld`, `shoulder` and `run`. | P0 |
@@ -273,7 +297,7 @@ What `scene3d` already has is listed in `../scene3d.md`. Each gap below is mappe
 | 8 | **Anamorphic** | §3.1, §6 | The 2D `lensFlare` has `lens: anamorphic` and `lightLeak` has streaks. scene3d DOF lacks oval bokeh (2× squeeze) and horizontal highlight streaks tied to *3D* emissives. | P2 |
 | 9 | **Set builders** | §4 | Add types or scripts for `plinth` (cylinder or box with bevel and a reveal step), `steps`, `arch`, `sweep` (a cyc of any colour and size, not only the env preset), `field` (a column/tile/ribbon grid with jittered heights by expression), and `terrain` (a heightfield with fBm noise). All are possible today with `count` and expressions, but agents don't build them. | P1 |
 | 10 | **Surface imperfections** | §2 | Materials take one scalar `roughness` (`MAT_KEYS`). Add procedural `roughnessVariation`, `smudge` (fingerprint/wipe masks on glass and screens), `scratches` (anisotropic micro-scratches visible only in the highlight), `dust` (on up-facing surfaces) and `edgeWear`, plus `anisotropy` for brushed metal and `clearcoatRoughness`. Clay already has fingerprints (`trace.rs`). | **P0** |
-| 11 | **HDRI and PBR texture maps** | §1, §2 | Being added by another team. Also ship zebra-stripe and strip-studio HDR panels for lookdev (§2). | (other team) |
+| 11 | **HDRI and PBR texture maps** | §1, §2 | **Done** (ASSETS): `env.hdri`, `material.texture`, textured glTF, see `docs/video/craft/assets.md`. Still to do: zebra-stripe and strip-studio HDR panels for lookdev (§2). | done |
 | 12 | **Round-edge shader for imported meshes** | §2 | `extrude`, `text` and `box` have bevel/radius (box defaults to 6% of the smallest side). glTF/CAD `model`s have hard edges: add a ray-traced rounded-edge normal (`roundEdges: 0.002`). | P1 |
 | 13 | **Colour grading LUTs** | §6 | Post already has CDL lift/gamma/gain, white balance, halation, chromatic aberration, grain and presets (`render/post.rs`). Missing: `.cube` LUT import, hue-vs-sat/hue-vs-hue secondaries, and named film looks with a split tone (warm highlights, cool shadows). | P2 |
 | 14 | **Atmosphere with structure** | §1.6, §4 | Fog is uniform density. Add height fog (dense near the floor), noise-modulated haze that drifts, and distance-based atmospheric perspective on `cyc`/`studio`. | P1 |

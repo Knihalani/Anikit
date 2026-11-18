@@ -87,6 +87,13 @@ pub struct StageProfile {
     pub held: u64,
     pub partial: u64,
     pub full: u64,
+    /// Process memory (MiB, Linux; 0 elsewhere): resident when the render started
+    /// (spec, assets, caches), the peak while frames rendered and encoded, the
+    /// encoded stream held for muxing, and the peak while muxing.
+    pub mem_start_mb: f64,
+    pub mem_render_peak_mb: f64,
+    pub mem_stream_mb: f64,
+    pub mem_mux_peak_mb: f64,
 }
 
 /// Called with every frame exactly as it goes to the encoder (index within the range, tight 4:2:0 planes).
@@ -240,6 +247,7 @@ pub fn scale_list(dl: &mut DisplayList, s: f32) {
                     }
                     dl::Filter::Glow { radius, .. } => *radius *= s,
                     dl::Filter::Halftone(h) => h.cell *= s,
+                    dl::Filter::Ink { scale, .. } => *scale *= s,
                     dl::Filter::ColorMatrix(_) | dl::Filter::Tone(_) => {}
                 }
             }
@@ -628,6 +636,50 @@ fn chunk_keys(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, 
         .collect()
 }
 
+/// A cache key for a still at `t` (same inputs as the chunk cache: the evaluated frame,
+/// image contents, look, scale and this binary); `None` when the frame has images whose
+/// content can't be keyed. `ANIKIT_RENDER_CACHE=0` turns it off.
+pub fn still_key(ev: &Evaluator, t: f32, scale: f32) -> Option<String> {
+    use std::collections::hash_map::DefaultHasher;
+    if std::env::var_os("ANIKIT_RENDER_CACHE").is_some_and(|v| v == "0") {
+        return None;
+    }
+    let mut dl = ev.eval(t);
+    scale_list(&mut dl, scale);
+    let mut keys = Vec::new();
+    let mut ok = true;
+    let mut id_key = |id: &mut dl::ImageId| {
+        match ev.assets.content_key(*id) {
+            Some(k) => keys.push(k),
+            None => ok = false,
+        }
+        *id = dl::ImageId(0);
+    };
+    for op in &mut dl.ops {
+        let paint = match op {
+            Op::Image { image, .. } => {
+                id_key(image);
+                None
+            }
+            Op::Fill { paint, .. } | Op::Stroke { paint, .. } | Op::RoundRect { paint, .. } | Op::Glyphs { paint, .. } => Some(paint),
+            _ => None,
+        };
+        if let Some(dl::Paint::Image { image, .. }) = paint {
+            id_key(image);
+        }
+    }
+    if !ok {
+        return None;
+    }
+    let exe = std::env::current_exe().ok().and_then(|p| std::fs::metadata(p).ok()).map(|m| (m.len(), m.modified().ok()));
+    let mut h = DefaultHasher::new();
+    ("anikit-still-1", format!("{exe:?}"), scale.to_bits(), t.to_bits()).hash(&mut h);
+    hash_list(&dl).hash(&mut h);
+    keys.hash(&mut h);
+    format!("{:?}{}", ev.post_at(t), ev.needs_blur(t, false)).hash(&mut h);
+    Some(format!("still1-{:016x}", h.finish()))
+}
+
 /// Default chunk length for `n` frames: up to 16 chunks of 30–300 frames, or, when the
 /// spec has expensive layers (3D, shaders, video), chunks of 8+ frames (up to 16), so a
 /// short heavy clip keeps every core busy. Depends only on the spec, never the machine.
@@ -740,10 +792,34 @@ fn straight(pm: &crate::render::FrameRgba) -> (u32, u32, Vec<u8>) {
 /// Save straight RGBA8 as PNG.
 pub fn save_png(path: &std::path::Path, w: u32, h: u32, rgba: Vec<u8>) -> Result<(), String> {
     let img = image::RgbaImage::from_raw(w, h, rgba).ok_or("bad image buffer")?;
+    // JPEG has no alpha: write RGB (quality 92) when asked for .jpg.
+    if path.extension().is_some_and(|e| e.eq_ignore_ascii_case("jpg") || e.eq_ignore_ascii_case("jpeg")) {
+        let rgb = image::DynamicImage::ImageRgba8(img).to_rgb8();
+        let f = std::fs::File::create(path).map_err(|e| format!("can't write {}: {e}", path.display()))?;
+        let mut enc = image::codecs::jpeg::JpegEncoder::new_with_quality(std::io::BufWriter::new(f), 92);
+        return enc.encode_image(&rgb).map_err(|e| format!("can't write {}: {e}", path.display()));
+    }
     img.save(path).map_err(|e| format!("can't write {}: {e}", path.display()))
 }
 
 /// A contact sheet: `cols × rows` frames evenly spread over the video, each `cell_w` wide.
+/// A cache key for a contact sheet: its layout plus every cell's still key.
+pub fn sheet_key(ev: &Evaluator, cols: u32, rows: u32, cell_w: u32) -> Option<String> {
+    use std::collections::hash_map::DefaultHasher;
+    let n = cols * rows;
+    let scale = cell_w as f32 / ev.width as f32;
+    let cells: Option<Vec<String>> = (0..n)
+        .into_par_iter()
+        .map(|k| {
+            let t = if n > 1 { ev.duration * (k as f32 + 0.5) / n as f32 } else { ev.duration * 0.5 };
+            still_key(ev, t, scale)
+        })
+        .collect();
+    let mut h = DefaultHasher::new();
+    ("anikit-sheet-1", cols, rows, cell_w, cells?).hash(&mut h);
+    Some(format!("sheet1-{:016x}", h.finish()))
+}
+
 pub fn contact_sheet(ev: &Evaluator, cols: u32, rows: u32, cell_w: u32) -> (u32, u32, Vec<u8>) {
     let n = cols * rows;
     let scale = cell_w as f32 / ev.width as f32;
@@ -892,9 +968,13 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         subpel: opts.quality != Quality::Draft,
         // The encoder decides per frame (auto AQ: on for gradient-dominated frames, off on flat UI) unless the spec sets `encode.aq`.
         aq_strength: ev.encode_aq.unwrap_or(ak264::EncoderConfig::default().aq_strength),
+        // One B picture between references (CABAC qualities; the chunk encoder flushes, the muxer reorders).
+        bframes: if opts.quality != Quality::Draft { 1 } else { 0 },
         ..Default::default()
     };
     let prof = Profile::default();
+    let mem_start = crate::memstat::rss().unwrap_or(0);
+    let peaks = crate::memstat::reset_peak();
     // Encode the audio to AAC while the frames render, so the final mux is a stream copy.
     let m4a = audio.as_ref().map(|_| out.with_extension(format!("audio-{}.m4a", std::process::id())));
     let has_audio = audio.is_some();
@@ -917,6 +997,13 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     };
     let annexb = render_fused_tap(ev, opts, &cfg, &prof, tap);
     let t_enc = t0.elapsed();
+    let mem_render = if peaks { crate::memstat::peak().unwrap_or(0) } else { 0 };
+    // The frames are done: drop the per-frame images and give the workers' freed
+    // buffers back to the OS before muxing (long-lived processes otherwise keep them).
+    ev.assets.release_frame_images();
+    crate::memstat::trim();
+    let mem_stream = annexb.len() as u64;
+    let peaks = crate::memstat::reset_peak();
     let tm = Instant::now();
     match has_audio {
         false => std::fs::write(out, ak264::mp4::mux(&annexb, w, h, ev.fps as f64)).map_err(|e| format!("can't write {}: {e}", out.display()))?,
@@ -956,6 +1043,7 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         }
     }
     let t_mux = tm.elapsed();
+    let mem_mux = if peaks { crate::memstat::peak().unwrap_or(0) } else { 0 };
     let secs = t0.elapsed().as_secs_f32();
     let unchanged = prof.unchanged.load(Ordering::Relaxed) as u32;
     let per = |x: &AtomicU64| x.load(Ordering::Relaxed) as f64 / 1e6 / n.max(1) as f64;
@@ -977,16 +1065,24 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
         held: prof.held.load(Ordering::Relaxed),
         partial: prof.partial.load(Ordering::Relaxed),
         full: prof.full.load(Ordering::Relaxed),
+        mem_start_mb: crate::memstat::mib(mem_start),
+        mem_render_peak_mb: crate::memstat::mib(mem_render),
+        mem_stream_mb: crate::memstat::mib(mem_stream),
+        mem_mux_peak_mb: crate::memstat::mib(mem_mux),
     };
     if opts.profile {
         eprintln!(
-            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting, or nested parallel work in shaders/3D/post: not counted per stage)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
+            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting, or nested parallel work in shaders/3D/post: not counted per stage)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms\n  memory  {:.0} MiB at start, peak {:.0} MiB rendering, stream {:.1} MiB, peak {:.0} MiB muxing (resident)",
             unchanged,
             sp.held,
             sp.partial,
             sp.full,
             1000.0 / wall,
-            sp.mux_ms
+            sp.mux_ms,
+            sp.mem_start_mb,
+            sp.mem_render_peak_mb,
+            sp.mem_stream_mb,
+            sp.mem_mux_peak_mb
         );
     }
     Ok(Summary {
