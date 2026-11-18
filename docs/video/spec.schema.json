@@ -646,7 +646,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "`cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`. One of: cut, crossfade, fade, fadeBlack, fadeWhite, slide, push, zoom, wipe, iris, blur, glitch, morphCut, shader.",
+          "description": "`cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`, `zoomThrough`, `reveal`, `blinds`, `split`, `whip`. One of: cut, crossfade, fade, fadeBlack, fadeWhite, slide, push, zoom, wipe, iris, blur, glitch, morphCut, shader, zoomThrough, reveal, blinds, split, whip.",
           "type": [
             "string",
             "null"
@@ -665,7 +665,12 @@
             "blur",
             "glitch",
             "morphCut",
-            "shader"
+            "shader",
+            "zoomThrough",
+            "reveal",
+            "blinds",
+            "split",
+            "whip"
           ]
         },
         "duration": {
@@ -741,6 +746,29 @@
             "string",
             "null"
           ]
+        },
+        "layer": {
+          "description": "`zoomThrough`: the `id` of a layer in the outgoing scene to fly into (the new scene shows through its shape).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "shape": {
+          "description": "`reveal`: `circle`, `diamond`, `square`, `star`, `blob`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "count": {
+          "description": "`blinds`: number of bars (default 8).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
         },
         "uniforms": {
           "description": "Uniforms for a shader transition.",
@@ -1299,6 +1327,28 @@
             }
           ]
         },
+        "inertia": {
+          "description": "Follow-through: a spring chases the layer's own motion, so every move overshoots and settles.\n`true`, a preset (`soft`, `bouncy`, `tight`, `heavy`) or `{\"stiffness\": 170, \"damping\": 12, \"mass\": 1, \"props\": [\"x\", \"y\", \"rotation\", \"scale\"]}`."
+        },
+        "posterizeTime": {
+          "description": "Posterize time (After Effects style): this layer and its children move at this many frames per second\n(`12` animates \"on twos\" at 24 fps: a handmade, stop-motion feel). The video's frame rate is unchanged.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "drag": {
+          "description": "Group drag (overlapping action): child i follows the group's own motion i × drag seconds later,\nso a moving group trails and settles part by part. Pairs well with `inertia` on the group.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "smear": {
+          "description": "Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default)."
+        },
         "matte": {
           "description": "Track matte: another layer of the scene (by `id`) whose alpha or luma shows this one.",
           "anyOf": [
@@ -1532,12 +1582,15 @@
           "minimum": 0
         },
         "toneAmount": {
-          "description": "Strength of `duotone` / `gradientMap` / `posterize` (0..1). Default 1.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
+          "description": "Strength of `duotone` / `gradientMap` / `posterize` (0..1). Default 1. Animatable (`toneAmount`), or `\"=expr\"`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "toneRange": {
           "description": "Input luma range `[black, white]` (0..1) stretched to the full map before `duotone`/`gradientMap`:\nthe pre-curve a print designer sets so a flat source still spans ink to paper. Default `[0, 1]`.",
@@ -1557,6 +1610,42 @@
           "anyOf": [
             {
               "$ref": "#/$defs/HalftoneValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inkTexture": {
+          "description": "Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ \"amount\", \"scale\": px, \"seed\" }`.\nFixed to the frame like the paper, so moving shapes travel through it.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InkValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cutout": {
+          "description": "Collage cut-out: `\"torn\"`, `\"scissor\"` or `\"clean\"`, or `{ \"edge\", \"amount\": px, \"rim\": px, \"rimColor\", \"shadow\": bool, \"seed\" }`.\nCuts the layer's box with that edge, backs it with a paper rim and a printed shadow. Needs a numeric `width`/`height` (or a `cell`).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CutoutValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "step": {
+          "description": "Stepped time: the layer (and its children) animate at this many fps, or `\"twos\"`/`\"threes\"`/`\"fours\"`\nof the video's fps (stop-motion, hand-pulled print, cel looks) while the rest stays smooth."
+        },
+        "boil": {
+          "description": "Boil: a seeded jitter re-drawn a few times a second: px, or `{ \"amount\": px, \"rotate\": deg, \"fps\": 12, \"seed\": 1 }`.\nOn a `multiply` ink layer it reads as plates drifting out of register.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BoilValue"
             },
             {
               "type": "null"
@@ -1768,6 +1857,13 @@
             "null"
           ]
         },
+        "textBoxTrim": {
+          "description": "Trim the text box to the first line's cap height and the last line's baseline (CSS `text-box: cap alphabetic`),\nso `anchor` and grid cells align the letters, not the line box. Default on for text in a grid `cell`.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "maxLines": {
           "type": [
             "integer",
@@ -1775,6 +1871,17 @@
           ],
           "format": "uint32",
           "minimum": 0
+        },
+        "maxWidth": {
+          "description": "Text: wrap at this width (px, `\"40vw\"`, `\"60%\"`) without fixing the box\nwidth (`width` wraps *and* sets the box).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "split": {
           "description": "`chars`, `words`, `lines`. One of: chars, words, lines.",
@@ -1810,6 +1917,31 @@
         },
         "kinetic": {
           "description": "Kinetic text animation (TEXT module): shorthand like `\"pop by char from center 0.4s 30ms outBack\"`, or an object."
+        },
+        "axes": {
+          "description": "Variable-font axes: `{\"wght\": 720, \"wdth\": 125, \"opsz\": 144, \"SOFT\": 100}`\n(`anikit-video fonts NAME` lists a face's axes). Animate one with\n`\"axes.wght\"` in `animate`; the text re-lays out per frame.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "features": {
+          "description": "OpenType features: `\"ss01 tnum smcp -liga\"` (or CSS `\"\\\"ss01\\\" on\"`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "typeset": {
+          "description": "Typesetting pass (default on): curly quotes, `...` → …, ` -- ` → –,\n`---` → —, and no one-word last line. `false` keeps the text verbatim.",
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "shape": {
           "description": "`rect`, `circle`, `ellipse`, `line`, `arrow`, `polygon`, `star`, `path`. One of: rect, circle, ellipse, line, arrow, polygon, star, path, superellipse, squircle, blob, arc, pattern.",
@@ -1956,7 +2088,7 @@
           "format": "double"
         },
         "pattern": {
-          "description": "A generated pattern filling `width` × `height`: `\"dots\"`, `\"truchet 48\"`, or `{ \"kind\", \"spacing\", \"mark\", \"angle\", \"seed\", \"jitter\", \"ramp\" }`.",
+          "description": "A generated pattern filling `width` × `height`: `\"dots\"`, `\"truchet 48\"`, or `{ \"kind\", \"spacing\", \"mark\", \"angle\", \"seed\", \"jitter\", \"ramp\", \"tile\", \"tileStroke\", \"turns\", \"stagger\" }` (`tile`: your own SVG motif).",
           "anyOf": [
             {
               "$ref": "#/$defs/PatternValue"
@@ -2124,6 +2256,7 @@
             "dust",
             "particle-text",
             "morph",
+            "fluid",
             "metaballs",
             "god-rays",
             "lens-flare",
@@ -2158,7 +2291,7 @@
             "cutout",
             "lottie"
           ],
-          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, brush, sketch, hatch, paper, cutout, lottie."
+          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, fluid, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, brush, sketch, hatch, paper, cutout, lottie."
         },
         "props": true,
         "progress": {
@@ -2266,6 +2399,20 @@
         },
         "stagger": {
           "description": "Seconds of delay per copy (copy i plays i × stagger later).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "order": {
+          "description": "Stagger order: `forward` (default), `reverse`, `center` (middle first), `random` (with `seed`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "seed": {
           "type": [
             "number",
             "null"
@@ -2491,6 +2638,17 @@
             "string",
             "null"
           ]
+        },
+        "axes": {
+          "description": "Variable-font axis values at full selection, e.g. `{\"wght\": 900, \"wdth\": 125}`\n(a weight wave across the units). Spacing stays that of the base text.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          }
         },
         "start": {
           "description": "Range start / end as fractions of the units (0..1). Defaults 0 and 1. Animatable as `rangeStart` / `rangeEnd`.",
@@ -2727,20 +2885,26 @@
       "type": "object",
       "properties": {
         "cell": {
-          "description": "Screen pitch in px (distance between dot centres). Default 10.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
+          "description": "Screen pitch in px (distance between dot centres). Default 10. Animatable as `halftoneCell` (also `halftoneAngle`,\n`halftoneGain`), or `\"=expr\"`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "angle": {
           "description": "Screen angle in degrees. Default 45 (black ink); 15/75/0 for other plates.",
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "shape": {
           "description": "`dot` (default), `line` or `square`.",
@@ -2765,11 +2929,171 @@
         },
         "gain": {
           "description": "Dot gain: > 1 darkens (fatter dots), < 1 lightens. Default 1.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "InkValue": {
+      "description": "`inkTexture`: amount, or the full settings.",
+      "anyOf": [
+        {
+          "type": "number",
+          "format": "double"
+        },
+        {
+          "$ref": "#/$defs/InkSpec"
+        }
+      ]
+    },
+    "InkSpec": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "description": "How much ink thins out in the worst spots (0..1). Default 0.35. Animatable as `inkAmount`, or `\"=expr\"`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scale": {
+          "description": "Size of the blotches in px. Default 28.",
           "type": [
             "number",
             "null"
           ],
           "format": "double"
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "CutoutValue": {
+      "description": "`cutout`: an edge name or the full settings.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/CutoutSpec"
+        }
+      ]
+    },
+    "CutoutSpec": {
+      "type": "object",
+      "properties": {
+        "edge": {
+          "description": "`torn` (default), `scissor` or `clean`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "amount": {
+          "description": "How far the edge bites in, px. Default 14 (torn), 18 (scissor).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "rim": {
+          "description": "Paper rim around the cut, px. Default 8 for torn, 0 otherwise.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "rimColor": {
+          "description": "Rim colour. Default `\"#f4f1ea\"`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "shadow": {
+          "description": "A tight printed shadow under the piece. Default true.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "BoilValue": {
+      "description": "`boil`: px, or the full settings.",
+      "anyOf": [
+        {
+          "type": "number",
+          "format": "double"
+        },
+        {
+          "$ref": "#/$defs/BoilSpec"
+        }
+      ]
+    },
+    "BoilSpec": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "description": "Max offset in px. Default 2.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "rotate": {
+          "description": "Max rotation in degrees. Default 0.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "fps": {
+          "description": "New positions per second. Default 12.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
         }
       },
       "additionalProperties": false
@@ -3200,6 +3524,16 @@
             "null"
           ],
           "format": "double"
+        },
+        "along": {
+          "description": "Colours along the stroke, start to end: a gradient that follows the path (and its `trimEnd` write-on).",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -3219,8 +3553,9 @@
       "type": "object",
       "properties": {
         "kind": {
-          "description": "`dots`, `grid`, `lines`, `checker`, `triangles`, `diamonds`, `crosses`, `rings`, `waves`, `zigzag`, `truchet`, `arcs`, `scales`, `bricks`.",
-          "type": "string"
+          "description": "`dots`, `grid`, `lines`, `stripes`, `checker`, `triangles`, `diamonds`, `crosses`, `rings`, `waves`, `zigzag`, `truchet`, `arcs`,\n`scales`, `bricks`, or `tile` (your own `tile` motif; implied when `tile` is given).",
+          "type": "string",
+          "default": ""
         },
         "spacing": {
           "description": "Repeat distance in px. Default 40.",
@@ -3275,12 +3610,47 @@
           },
           "minItems": 2,
           "maxItems": 2
+        },
+        "tile": {
+          "description": "Your own motif for `kind: \"tile\"` (the default when `tile` is given): SVG path data in px, centred on 0,0,\ndrawn at every lattice point and scaled by `mark` (default 1) × `ramp`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "turns": {
+          "description": "Random rotation of each mark in steps of 360/turns degrees, seeded (`4` = quarter turns, Truchet-style).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "stagger": {
+          "description": "Shift every other row by half the spacing (brick / hexagonal lattice).",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "tileStroke": {
+          "description": "Stroke the `tile` motif at this width in px instead of filling it (open lines: squiggles, ticks, zigzags).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "field": {
+          "description": "Size of each mark as an expression (multiplies `mark` and `ramp`): `u`, `v` (0..1 across the box), `x`, `y`\n(px from the centre), `d` (0 centre … 1 corner), `a` (angle), `r` (random per mark), `t`, plus the usual functions.\nOn `lines`/`stripes` it sets the weight along each line (op art); on `waves`/`zigzag` the amplitude.\nUsing `t` regenerates the pattern every frame. E.g. `\"0.5 + 0.5 * sin(d * 18 - t * 3)\"`.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
-      "additionalProperties": false,
-      "required": [
-        "kind"
-      ]
+      "additionalProperties": false
     },
     "FitValue": {
       "description": "`fit`: an image mode (`\"cover\"`) or, on text, `true`. Derefs to the word\n(`\"true\"` / `\"false\"` for booleans) so callers match on strings.",

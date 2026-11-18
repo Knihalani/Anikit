@@ -24,6 +24,9 @@ pub struct Vars {
     pub bar: f64,
     pub level: f64,
     pub bpm: f64,
+    /// Pattern fields only: u, v (0..1 across the box), x, y (px from the centre), d (0 centre … 1 corner),
+    /// a (angle, radians), r (a random number per mark).
+    pub f: [f64; 7],
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -63,7 +66,9 @@ pub struct Expr {
     pub level: bool,
 }
 
-const VARS: &[&str] = &["t", "T", "gt", "p", "i", "n", "w", "h", "fps", "frame", "pi", "e", "tau", "beat", "bar", "level", "bpm"];
+const VARS: &[&str] = &["t", "T", "gt", "p", "i", "n", "w", "h", "fps", "frame", "pi", "e", "tau", "beat", "bar", "level", "bpm", "u", "v", "x", "y", "d", "a", "r"];
+/// Index of the first pattern-field variable (`u v x y d a r`), valid only in pattern `field`s.
+const FIELD_VAR0: usize = 17;
 const FUNCS: &[(&str, u8)] = &[
     ("sin", 1),
     ("cos", 1),
@@ -124,6 +129,8 @@ struct P<'a> {
     pct_ref: f64,
     w: f64,
     h: f64,
+    /// Allow the pattern-field variables.
+    field: bool,
 }
 
 impl P<'_> {
@@ -367,6 +374,9 @@ impl P<'_> {
                 Some(s) => format!("unknown variable '{name}', did you mean '{s}'?"),
                 None => format!("unknown variable '{name}' (use t, T, gt, p, i, n, w, h, fps, frame, beat, bar, level, bpm)"),
             })?;
+            if idx >= FIELD_VAR0 && !self.field {
+                return Err(format!("unknown variable '{name}' (u, v, x, y, d, a and r exist only in a pattern's \"field\")"));
+            }
             match name {
                 "pi" => self.out.push(Ins::Const(std::f64::consts::PI)),
                 "e" => self.out.push(Ins::Const(std::f64::consts::E)),
@@ -394,7 +404,16 @@ impl P<'_> {
 impl Expr {
     /// Compile `src` (without the leading `=`). `pct_ref` is what `100%` means.
     pub fn compile(src: &str, pct_ref: f64, w: f64, h: f64) -> Result<Expr, String> {
-        let mut p = P { s: src.as_bytes(), i: 0, out: Vec::new(), pct_ref, w, h };
+        Self::compile_inner(src, pct_ref, w, h, false)
+    }
+
+    /// Compile a pattern field: also sees `u v x y d a r` (see [`Vars::f`]).
+    pub fn compile_field(src: &str, w: f64, h: f64) -> Result<Expr, String> {
+        Self::compile_inner(src, 1.0, w, h, true)
+    }
+
+    fn compile_inner(src: &str, pct_ref: f64, w: f64, h: f64, field: bool) -> Result<Expr, String> {
+        let mut p = P { s: src.as_bytes(), i: 0, out: Vec::new(), pct_ref, w, h, field };
         p.expr()?;
         p.ws();
         if p.i != p.s.len() {
@@ -464,6 +483,7 @@ impl Expr {
                         14 => v.bar,
                         15 => v.level,
                         16 => v.bpm,
+                        17..=23 => v.f[i as usize - 17],
                         _ => (v.gt * v.fps).floor(),
                     };
                     sp += 1;

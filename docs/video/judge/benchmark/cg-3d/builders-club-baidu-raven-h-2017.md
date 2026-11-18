@@ -6,7 +6,7 @@ studio: "Builders Club (Jonas Hegi, Julien Simshauser)"
 client: "Raven Tech / Baidu (agency: Twelve)"
 year: 2017
 url: https://vimeo.com/244013457
-alt_urls: [https://vimeo.com/244659746, https://www.itsnicethat.com/articles/builders-club-raven-h-baidu-3d-film-151217]
+alt_urls: ["https://vimeo.com/244659746", "https://www.itsnicethat.com/articles/builders-club-raven-h-baidu-3d-film-151217"]
 length_s: 71
 verified: oembed
 aspect: "16:9"                      # est.
@@ -22,6 +22,11 @@ anikit_features: [scene3d, scene3d.physics, camera, post, motionBlur, audio, "GA
 awards: []
 stills:
   - https://i.vimeocdn.com/video/668298460-60a243c853658745dceb4e7915d31d215c957275d04fa1f7558dc273e19f9246-d_1280?region=us
+  - https://m.itsnicethat.com/original_images/5a32922c7fa44cce56001f72.jpg
+  - https://m.itsnicethat.com/original_images/5a3292457fa44cb457001691.jpg
+  - https://m.itsnicethat.com/original_images/5a3292437fa44c17fb0003e8.jpg
+  - https://m.itsnicethat.com/original_images/5a3292437fa44cb45700168e.jpg
+  - https://m.itsnicethat.com/original_images/5a3292427fa44c17e0000002.jpg
 measured: null
 ---
 

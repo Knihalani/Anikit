@@ -6,7 +6,7 @@ studio: "BUCK Amsterdam (CD: Richard Gray; ECD: Vincent Lammers; animation direc
 client: "GitHub"
 year: 2022
 url: https://www.youtube.com/watch?v=pBy1zgt0XPc
-alt_urls: [https://buck.co/work/github-what-is-github, https://awards.europeandesign.org/winner/258195]
+alt_urls: ["https://buck.co/work/github-what-is-github", "https://awards.europeandesign.org/winner/258195"]
 length_s: null
 verified: oembed
 aspect: "16:9"

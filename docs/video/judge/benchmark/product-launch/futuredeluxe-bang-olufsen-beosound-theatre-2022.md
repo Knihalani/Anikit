@@ -22,6 +22,11 @@ anikit_features: [scene3d, camera, motionBlur, post, audio, "GAP: photoreal huma
 awards: []
 stills:
   - https://i.vimeocdn.com/video/1501749959-950594fe79fc510f2fdd2aa7c33586fb81d00bc16e17b8820ca9ca237a925ed6-d_1280
+  - https://www.stashmedia.tv/wp-content/uploads/FutureDeluxe-Beosound-Theatre-Soundbar-Bang-Olufsen.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/FutureDeluxe-Beosound-Theatre-Soundbar-Bang-Olufsen2.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/FutureDeluxe-Beosound-Theatre-Soundbar-Bang-Olufsen4.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/FutureDeluxe-Beosound-Theatre-Soundbar-Bang-Olufsen6.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/FutureDeluxe-Beosound-Theatre-Soundbar-Bang-Olufsen7.jpg
 measured: null
 ---
 

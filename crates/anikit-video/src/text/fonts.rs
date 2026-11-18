@@ -71,6 +71,7 @@ pub(crate) struct Shaper {
 /// Fonts for one render: loaded once, shared read-only (`Arc<FontStore>`).
 pub struct FontStore {
     paths: Mutex<HashMap<(u32, u16, u32), Arc<kurbo::BezPath>>>,
+    files: Mutex<HashMap<std::path::PathBuf, Vec<String>>>,
     pub(crate) shaper: Mutex<Shaper>,
     faces: RwLock<Vec<Arc<Face>>>,
     index: Mutex<HashMap<FaceKey, FontId>>,
@@ -99,6 +100,7 @@ impl FontStore {
         let fcx = FontContext { collection, source_cache: SourceCache::default() };
         let store = FontStore {
             paths: Mutex::new(HashMap::new()),
+            files: Mutex::new(HashMap::new()),
             shaper: Mutex::new(Shaper { fcx, lcx: LayoutContext::new(), families: HashMap::new(), emoji: None, fallbacks: Vec::new() }),
             faces: RwLock::new(Vec::new()),
             index: Mutex::new(HashMap::new()),
@@ -176,9 +178,35 @@ impl FontStore {
         names
     }
 
-    /// Register a font file from disk.
+    /// Make a catalogue family (see [`super::library`]) available, fetching
+    /// it on first use. `Ok(false)`: already known or not a library family.
+    pub fn ensure_family(&self, name: &str) -> Result<bool, String> {
+        let mut s = self.shaper.lock().unwrap();
+        let r = load_library_locked(&mut s, name);
+        drop(s);
+        if r == Ok(true) {
+            self.cache.write().unwrap().clear();
+        }
+        r
+    }
+
+    /// Register a font file from disk (once per path; again returns its families).
     pub fn add_font_file(&self, path: impl AsRef<Path>) -> std::io::Result<Vec<String>> {
-        Ok(self.add_font_bytes(std::fs::read(path)?))
+        let path = path.as_ref().to_path_buf();
+        if let Some(n) = self.files.lock().unwrap().get(&path) {
+            return Ok(n.clone());
+        }
+        let names = self.add_font_bytes(std::fs::read(&path)?);
+        self.files.lock().unwrap().insert(path, names.clone());
+        Ok(names)
+    }
+
+    /// Make `alias` (case-insensitive) name the family `target`.
+    pub fn add_alias(&self, alias: &str, target: &str) {
+        let mut s = self.shaper.lock().unwrap();
+        s.families.insert(alias.trim().to_lowercase(), target.to_string());
+        drop(s);
+        self.cache.write().unwrap().clear();
     }
 
     /// Canonical family name for a user-supplied name or alias (case-insensitive).
@@ -236,6 +264,40 @@ impl FontStore {
             .map_or(0, |g| g.to_u32() as u16)
     }
 
+    /// The default value of variable axis `tag` in a face (`None` if it has no such axis).
+    pub fn axis_default(&self, id: FontId, tag: &str) -> Option<f32> {
+        use skrifa::MetadataProvider;
+        let face = self.face(id);
+        let f = skrifa::FontRef::from_index(face.data.data.as_ref(), face.data.index).ok()?;
+        let t = tag.as_bytes();
+        let ax = f.axes().iter().find(|a| a.tag().to_be_bytes() == [t[0], t[1], t[2], t[3]])?;
+        Some(ax.default_value())
+    }
+
+    /// The face `id` moved a fraction `t` (0..1) toward the axis values
+    /// `targets` (user units), interpolated in normalised space and quantised
+    /// to 1/128 so a sweep reuses a bounded set of instances.
+    pub fn toward_axes(&self, id: FontId, targets: &[(String, f32)], t: f32) -> FontId {
+        use skrifa::MetadataProvider;
+        let face = self.face(id);
+        let Ok(f) = skrifa::FontRef::from_index(face.data.data.as_ref(), face.data.index) else { return id };
+        let axes = f.axes();
+        if axes.is_empty() {
+            return id;
+        }
+        let mut coords: Vec<i16> = (0..axes.len()).map(|i| face.coords.get(i).copied().unwrap_or(0)).collect();
+        for (tag, target) in targets {
+            let tb = tag.as_bytes();
+            if let Some(ax) = axes.iter().find(|a| a.tag().to_be_bytes() == [tb[0], tb[1], tb[2], tb[3]]) {
+                let i = ax.index();
+                let to = ax.normalize(*target).to_bits() as f32;
+                let v = coords[i] as f32 + (to - coords[i] as f32) * t.clamp(0.0, 1.0);
+                coords[i] = ((v / 128.0).round() * 128.0).clamp(-16384.0, 16384.0) as i16;
+            }
+        }
+        self.intern(&face.data, &coords, face.embolden, face.skew)
+    }
+
     /// Horizontal advance of glyph `gid` at `size` px (variation-aware).
     pub fn advance(&self, id: FontId, gid: u16, size: f32) -> f32 {
         use skrifa::MetadataProvider;
@@ -248,6 +310,35 @@ impl FontStore {
             .advance_width(skrifa::GlyphId::new(gid as u32))
             .unwrap_or(0.0)
     }
+}
+
+/// Register a library family into a locked shaper (no-op if already known).
+pub(crate) fn load_library_locked(s: &mut Shaper, name: &str) -> Result<bool, String> {
+    let lower = name.trim().to_lowercase();
+    if s.families.contains_key(&lower) {
+        return Ok(false);
+    }
+    let Some(fam) = super::library::find(name).or_else(|| super::library::find_loose(name)) else { return Ok(false) };
+    if fam.bundled || s.families.contains_key(&fam.name.to_lowercase()) {
+        if let Some(t) = s.families.get(&fam.name.to_lowercase()).cloned() {
+            s.families.insert(lower, t);
+        }
+        return Ok(false);
+    }
+    let mut first = None;
+    for bytes in fam.load()? {
+        for (id, _) in s.fcx.collection.register_fonts(Blob::new(Arc::new(bytes)), None) {
+            if let Some(n) = s.fcx.collection.family_name(id) {
+                let n = n.to_string();
+                first.get_or_insert_with(|| n.clone());
+                s.families.entry(n.to_lowercase()).or_insert(n);
+            }
+        }
+    }
+    let target = first.ok_or_else(|| format!("font '{}': the files contain no usable face", fam.name))?;
+    s.families.entry(fam.name.to_lowercase()).or_insert_with(|| target.clone());
+    s.families.entry(lower).or_insert(target);
+    Ok(true)
 }
 
 struct PathPen<'a>(&'a mut kurbo::BezPath);

@@ -6,7 +6,7 @@ studio: "BUCK (CD: Ryan Honey; animation director: Steve Day; AD: Joe Mullen)"
 client: "Good Books (agency: String Theory)"
 year: 2012
 url: https://vimeo.com/52422865
-alt_urls: [https://buck.co/work/goodbooks, https://motionographer.com/2012/03/26/interview-buck-good-books-metamorphosis/]
+alt_urls: ["https://buck.co/work/goodbooks", "https://motionographer.com/2012/03/26/interview-buck-good-books-metamorphosis/"]
 length_s: 162
 verified: oembed
 aspect: "16:9"
@@ -23,6 +23,10 @@ awards: ["D&AD 2013 Pencil, Film Advertising Crafts (archive page shows Yellow a
 stills:
   - https://i.vimeocdn.com/video/361674922-b7138d5d0ac779e615aabdfcdc1faa6e2801e413ea901f00d0a8b66998ad2b07-d_1280
   - https://i0.wp.com/motionographer.com/wp-content/uploads/2015/04/GB01_2_slugs.jpg?resize=700%2C394&ssl=1
+  - https://cdn.sanity.io/images/uk7b627p/production/e155f200729ea1ca7b96e7f1757224a4fe377ef1-2266x1274.png
+  - https://cdn.sanity.io/images/uk7b627p/production/07f273b96e25a0b386e9ddd61f501488c813e6c4-2270x1274.png
+  - https://cdn.sanity.io/images/uk7b627p/production/986de9627ceea8eb441fb6171f89598c1d8e4180-2268x1274.png
+  - https://cdn.sanity.io/images/uk7b627p/production/1095d9760ffd16fcf478d53f8271d2b8a4dcb20c-2272x1274.png
 measured: null
 ---
 

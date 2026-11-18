@@ -18,13 +18,13 @@ fn tiny_render_decodes() {
         { "duration": 1, "transition": "crossfade", "layers": [ { "text": "Hi", "style": "title" } ] } ] }"##;
     let p = parse_json(src).unwrap();
     let ev = Evaluator::new(&p.spec, Options::default()).unwrap();
-    assert_eq!(ev.frames(), 15);
+    assert_eq!(ev.frames(), 20, "a transition never shortens the total (1 s + 1 s)");
     let dir = std::env::temp_dir().join(format!("akv-e2e-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let out = dir.join("t.mp4");
     let mut enc = FfmpegEncoder::new(&out, 160, 90, 10.0, Codec::H264, Quality::Draft, None).unwrap();
     let s = pipeline::render_video(&ev, &RenderOptions::default(), &mut enc).unwrap();
-    assert_eq!(s.frames, 15);
+    assert_eq!(s.frames, 20);
     assert!(s.bytes > 0);
     // Decode the 3rd frame (t = 0.2 s, mid pop-in) and the last, check colours.
     let o = Command::new("ffmpeg")
@@ -35,7 +35,7 @@ fn tiny_render_decodes() {
         .unwrap();
     assert!(o.status.success());
     let fsz = 160 * 90 * 3;
-    assert_eq!(o.stdout.len(), fsz * 15, "decoded frame count");
+    assert_eq!(o.stdout.len(), fsz * 20, "decoded frame count");
     let px = |f: usize, x: usize, y: usize| {
         let i = f * fsz + (y * 160 + x) * 3;
         [o.stdout[i] as i32, o.stdout[i + 1] as i32, o.stdout[i + 2] as i32]
