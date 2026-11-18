@@ -1466,7 +1466,8 @@ impl Scene {
                 3 => {
                     let r = (q.x * q.x + q.z * q.z).sqrt();
                     let a = q.z.atan2(q.x);
-                    (((r + period * 0.6 * (a * 18.0).sin()) / period) * tau).sin()
+                    // The ripple fades in from the centre, where it would be denser than the rings.
+                    (((r + period * 0.6 * smoothstep(0.0, 12.0 * period, r) * (a * 18.0).sin()) / period) * tau).sin()
                 }
                 // Clous de Paris: a grid of small pyramids (diagonal).
                 4 => {

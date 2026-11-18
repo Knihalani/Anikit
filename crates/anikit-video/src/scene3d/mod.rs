@@ -1541,6 +1541,15 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        for pr in ["slide", "arc", "rise", "topdown"] {
+            let c = spec::camera(&json!(pr), (v3(0.0, 0.5, 0.0), 1.0), "camera").unwrap();
+            for k in 0..=10 {
+                let cam = c.at(k as f32 * 0.5, 16.0 / 9.0, 0.0);
+                assert!(cam.pos.x.is_finite() && cam.target.y.is_finite() && len(sub(cam.target, cam.pos)) > 0.5, "{pr}");
+            }
+        }
+        let d = spec::material(&json!("decal"), &HashMap::new(), "m").unwrap();
+        assert!(d.transmission == 1.0 && d.ior == 1.0);
         let m = spec::material(&json!({ "extends": "aluminium", "pattern": "guilloche", "pattern_scale": 0.002 }), &HashMap::new(), "m").unwrap();
         assert_eq!(m.pattern, (3, 0.002, 1.0));
         assert!(spec::material(&json!({ "extends": "aluminium", "pattern": "guiloche" }), &HashMap::new(), "m").err().unwrap().contains("did you mean `guilloche`"));
