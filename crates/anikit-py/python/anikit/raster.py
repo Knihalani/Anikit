@@ -1260,34 +1260,40 @@ class Shards:
             ctr = cents.sum(axis=0) / max(1, nt) if nt else np.zeros(3)
         else:
             ctr = np.asarray(_v3(center, "center"))
-        motion = np.zeros((nt, 9), np.float32)
         # Deterministic per-shard randomness (the TypeScript generator, bit for bit).
         seed = (0x9E3779B9 ^ nt) & 0xFFFFFFFF
         j = self.spread
-        for t in range(nt):
-            vals = []
-            for _ in range(8):
-                seed = ((((seed ^ (seed >> 15)) * 0x2C1B3C6D) & 0xFFFFFFFF) + 0x6D2B79F5) & 0xFFFFFFFF
-                vals.append(seed / 4294967296.0)
-            ce = cents[t]
-            d = ce - ctr
-            dist = math.hypot(d[0], d[1], d[2])
-            dd = dist or 1.0
-            d = [d[0] / dd + (vals[0] - 0.5) * j, d[1] / dd + (vals[1] - 0.5) * j, d[2] / dd + (vals[2] - 0.5) * j]
-            dl = math.hypot(*d) or 1.0
-            ax = [vals[3] - 0.5, vals[4] - 0.5, vals[5] - 0.5]
-            al = math.hypot(*ax) or 1.0
-            motion[t] = (
-                d[0] / dl,
-                d[1] / dl,
-                d[2] / dl,
-                self.force * (1 - j / 2 + vals[6] * j),
-                ax[0] / al,
-                ax[1] / al,
-                ax[2] / al,
-                self.spin * (0.4 + vals[7] * 1.2),
+        values = []
+        append = values.append
+        multiplier, increment = 0x2C1B3C6D, 0x6D2B79F5
+        mask, scale = 0xFFFFFFFF, 4294967296.0
+        for _ in range(8 * nt):
+            seed = ((((seed ^ (seed >> 15)) * multiplier) & mask) + increment) & mask
+            append(seed)
+        vals = np.array(values, np.float64).reshape(nt, 8) / scale
+        d = cents - ctr
+        dist = np.sqrt(np.einsum("ij,ij->i", d, d))
+        dd = np.where(dist == 0, 1.0, dist)
+        dj = d / dd[:, None] + (vals[:, 0:3] - 0.5) * j
+        dl = np.sqrt(np.einsum("ij,ij->i", dj, dj))
+        dl = np.where(dl == 0, 1.0, dl)
+        ax = vals[:, 3:6] - 0.5
+        al = np.sqrt(np.einsum("ij,ij->i", ax, ax))
+        al = np.where(al == 0, 1.0, al)
+        motion = np.stack(
+            (
+                dj[:, 0] / dl,
+                dj[:, 1] / dl,
+                dj[:, 2] / dl,
+                self.force * (1 - j / 2 + vals[:, 6] * j),
+                ax[:, 0] / al,
+                ax[:, 1] / al,
+                ax[:, 2] / al,
+                self.spin * (0.4 + vals[:, 7] * 1.2),
                 (dist / 1000) * self.ripple,
-            )
+            ),
+            axis=1,
+        ).astype(np.float32)
         # Stored as float32 like the TypeScript buffers; maths in float64.
         self._base = base.astype(np.float64)
         self._motion = motion.astype(np.float64)
