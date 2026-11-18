@@ -45,14 +45,14 @@ Best per brief:
 | e-data | ~5.1 | GRAPHIC v11 (v9 scored ~5.4 but had a 9 vs 18 million km² contradiction) |
 | d-illustration | ~4.9 | COMPONENTS |
 | OCTAVA (event promo) | ~4.6 | CEILING-1 |
-| k-sports | 4.5 | r1 |
+| k-sports | ~4.2 | r1 (pooled 12 trials: 4.5 r1, 4.25 six-trial re-judge, 3.75 MOGRAPH re-judge); MOGRAPH rebuild passes 3.5 |
 | b-launch | ~4.4 | CEILING-2 |
 | j-music | ~4.4 | MUSIC |
 | g-titles | ~4.3 | TYPE |
 | i-explainer | ~4.0 | SOUND / r3 |
 | c-event | ~3.9 | CEILING-1 / r3 |
 | a-social | 3.94 | r3 |
-| f-3d | 3.62 | r2 |
+| f-3d | 3.62 | r2 (3D rebuild ties at 3.62 / 6 trials, typography 2) |
 | l-generative | 3.62 | r2 |
 | h-ident | ~3.4 | TASTE |
 
