@@ -1323,6 +1323,7 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
         let mut start = f0;
         while start < f1 {
             let end = (start + batch).min(f1);
+            let held = ev.assets.hold_frame_images();
             // Evaluate the batch (cheap) and hash for dedupe.
             let lists: Vec<(DisplayList, u64, (Option<crate::render::post::PostSettings>, bool))> = (start..end)
                 .into_par_iter()
@@ -1405,6 +1406,7 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
                 done += 1;
             }
             last_dl = lists.into_iter().last().map(|x| x.0);
+            drop(held);
             if tx.send(items).is_err() {
                 break; // the encoder failed; its error is reported below
             }
@@ -1587,3 +1589,46 @@ fn progress_line(s: &str) {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct TestEncoder {
+        frames: u32,
+    }
+
+    impl Encoder for TestEncoder {
+        fn write(&mut self, _: &YuvFrame, _: bool, _: Option<Vec<bool>>) -> Result<(), String> {
+            self.frames += 1;
+            Ok(())
+        }
+
+        fn finish(&mut self) -> Result<u64, String> {
+            Ok(0)
+        }
+
+        fn output(&self) -> &str {
+            "test"
+        }
+
+        fn name(&self) -> &str {
+            "test"
+        }
+    }
+
+    #[test]
+    fn render_video_holds_frame_images_until_the_batch_is_drawn() {
+        let src = r#"{ "size": [64, 36], "fps": 30, "scenes": [ { "duration": 2.5, "layers": [
+            { "component": "fluid", "props": { "look": "ink", "resolution": 8, "detail": 1, "seed": 1 } },
+            { "component": "fluid", "props": { "look": "smoke", "resolution": 8, "detail": 1, "seed": 2 } }
+        ] } ] }"#;
+        let spec = crate::spec::parse_json(src).unwrap();
+        let ev = Evaluator::new(&spec.spec, crate::eval::Options::default()).unwrap();
+        let mut enc = TestEncoder { frames: 0 };
+        let misses = IMAGE_MISSES.load(Ordering::Relaxed);
+        let summary = render_video(&ev, &RenderOptions::default(), &mut enc).unwrap();
+        assert_eq!(summary.frames, 75);
+        assert_eq!(enc.frames, 75);
+        assert_eq!(IMAGE_MISSES.load(Ordering::Relaxed), misses);
+    }
+}

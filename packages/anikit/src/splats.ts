@@ -514,9 +514,10 @@ function workerSorter(fallback: () => SortBackend): SortBackend {
     get busy() { return failed ? failed.busy : pending !== null; },
     centers(c, n, set) {
       if (failed) return failed.centers(c, n, set);
+      // The caller keeps `c` alive and current, so replay from it and transfer the copy.
       const copy = c.slice(0, n * 3);
-      replay[set] = [copy, n, set];
-      wk.postMessage({ centers: copy, n, set });
+      replay[set] = [c, n, set];
+      wk.postMessage({ centers: copy, n, set }, [copy.buffer]);
     },
     sort(v, mix, n, done) {
       if (failed) return failed.sort(v, mix, n, done);

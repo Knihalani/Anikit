@@ -21,6 +21,10 @@ import { addPass, created } from './profile';
 
 type V3 = [number, number, number];
 const STRIDE = 15;
+const patternIndices = { grid: 0, hex: 1, dots: 2, circuit: 3 } as const;
+const defaultGrid: [number, number] = [8, 8];
+const defaultPulseDir: V3 = [0, 0, 0];
+const defaultTextureRepeat: [number, number] = [1, 1];
 
 function rgb(c: string | V3 | undefined, d: V3 = [1, 1, 1]): V3 {
   if (!c) return d;
@@ -597,29 +601,73 @@ export class Renderer3D {
     const { matrix, eye } = scene.viewProjection();
     scene.width = sw; scene.height = sh;
     this.triangles = 0;
+    const pls = (o.lights ?? []).slice(0, 8);
+    const pointLights: number[] = [pls.length];
+    for (const pl of pls) pointLights.push(...pl.position, ...rgb(pl.color), pl.radius ?? 500, pl.intensity ?? 1);
+    const kc = rgb(o.keyColor), fc = rgb(o.fillColor, [0.25, 0.28, 0.35]), rc = rgb(o.rimColor);
+    const fog = o.fog ?? [0, 0], key = o.key ?? [0.4, 0.8, 0.6], fill = o.fill ?? [-0.6, -0.2, 0.4];
+    const fogc = rgb(o.fogColor, bg);
+    const sky = rgb(o.sky, [0.25, 0.3, 0.55]), horizon = rgb(o.horizon, [1, 0.85, 0.7]);
+    const ground = rgb(o.ground, [0.05, 0.05, 0.07]), strips = rgb(o.strips, [0, 0, 0]);
+    const vals = new Float64Array(84 + pointLights.length);
+    vals[24] = key[0]; vals[25] = key[1]; vals[26] = key[2];
+    vals[27] = kc[0]; vals[28] = kc[1]; vals[29] = kc[2];
+    vals[30] = fill[0]; vals[31] = fill[1]; vals[32] = fill[2];
+    vals[33] = fc[0]; vals[34] = fc[1]; vals[35] = fc[2];
+    vals[36] = rc[0]; vals[37] = rc[1]; vals[38] = rc[2];
+    vals[39] = fog[0]; vals[40] = fog[1];
+    vals[41] = fogc[0]; vals[42] = fogc[1]; vals[43] = fogc[2];
+    vals[48] = sky[0]; vals[49] = sky[1]; vals[50] = sky[2];
+    vals[51] = horizon[0]; vals[52] = horizon[1]; vals[53] = horizon[2];
+    vals[54] = ground[0]; vals[55] = ground[1]; vals[56] = ground[2];
+    vals[70] = strips[0]; vals[71] = strips[1]; vals[72] = strips[2];
+    vals[79] = o.groundFog?.bottom ?? 0;
+    vals[80] = o.groundFog?.top ?? 0;
+    vals[81] = o.groundFog?.range ?? 0;
+    for (let i = 0; i < pointLights.length; i++) vals[84 + i] = pointLights[i];
     const drawMesh = (it: DrawItem, mat: number[], ey: number[], extra: number, gloss = 0.5) => {
       if (it.mesh.freed) return; // its slot may already hold another mesh
       const inst = it.instances ?? this.single;
       const ptr = w.ak_raster_instances(this.id, inst.count);
       new Float32Array(W!.memory.buffer, ptr, inst.count * STRIDE).set(inst.data.subarray(0, inst.count * STRIDE));
       const m = it.material ?? {};
-      const kc = rgb(o.keyColor), fc = rgb(o.fillColor, [0.25, 0.28, 0.35]), rc = rgb(o.rimColor), fog = o.fog ?? [0, 0], fogc = rgb(o.fogColor, bg);
-      const vals = [...mat, ...ey, m.ambient ?? 0.22, m.diffuse ?? 0.85, m.specular ?? 0.5, m.shininess ?? 40, m.rim ?? 0.35,
-        ...(o.key ?? [0.4, 0.8, 0.6]), ...kc, ...(o.fill ?? [-0.6, -0.2, 0.4]), ...fc, ...rc, fog[0], fog[1], ...fogc,
-        m.emissive ?? 0, m.metal ?? 0, m.iridescence ?? 0, m.hue ?? 0, ...rgb(o.sky, [0.25, 0.3, 0.55]), ...rgb(o.horizon, [1, 0.85, 0.7]), ...rgb(o.ground, [0.05, 0.05, 0.07]),
-        m.lines ?? 0, ...rgb(m.lineColor, [1, 1, 1]), ...(m.grid ?? [8, 8]), m.lineWidth ?? 0.04,
-        m.pulse ?? 0, m.pulseCount ?? 1, m.pulsePhase ?? 0, ...(m.pulseDir ?? [0, 0, 0]), ...rgb(o.strips, [0, 0, 0]),
-        m.texture ? m.texture.id + 1 : 0, m.texture ? (m.textureMode === 'emissive' ? 2 : 1) + (m.textureFilter === 'aniso' ? 4 : 0) : 0, ...(m.textureRepeat ?? [1, 1]), m.textureGain ?? 1, gloss,
-        o.groundFog?.bottom ?? 0, o.groundFog?.top ?? 0, o.groundFog?.range ?? 0,
-        ({ grid: 0, hex: 1, dots: 2, circuit: 3 } as const)[m.pattern ?? 'grid'] ?? 0,
-        m.fog ?? 1,
-        ...pointLights];
+      for (let i = 0; i < 16; i++) vals[i] = mat[i];
+      vals[16] = ey[0]; vals[17] = ey[1]; vals[18] = ey[2];
+      vals[19] = m.ambient ?? 0.22;
+      vals[20] = m.diffuse ?? 0.85;
+      vals[21] = m.specular ?? 0.5;
+      vals[22] = m.shininess ?? 40;
+      vals[23] = m.rim ?? 0.35;
+      vals[44] = m.emissive ?? 0;
+      vals[45] = m.metal ?? 0;
+      vals[46] = m.iridescence ?? 0;
+      vals[47] = m.hue ?? 0;
+      vals[57] = m.lines ?? 0;
+      const lineColor = rgb(m.lineColor, [1, 1, 1]);
+      vals[58] = lineColor[0]; vals[59] = lineColor[1]; vals[60] = lineColor[2];
+      const grid = m.grid ?? defaultGrid;
+      vals[61] = grid[0]; vals[62] = grid[1];
+      vals[63] = m.lineWidth ?? 0.04;
+      vals[64] = m.pulse ?? 0;
+      vals[65] = m.pulseCount ?? 1;
+      vals[66] = m.pulsePhase ?? 0;
+      const pulseDir = m.pulseDir ?? defaultPulseDir;
+      vals[67] = pulseDir[0]; vals[68] = pulseDir[1]; vals[69] = pulseDir[2];
+      vals[73] = m.texture ? m.texture.id + 1 : 0;
+      vals[74] = m.texture ? (m.textureMode === 'emissive' ? 2 : 1) + (m.textureFilter === 'aniso' ? 4 : 0) : 0;
+      const textureRepeat = m.textureRepeat ?? defaultTextureRepeat;
+      vals[75] = textureRepeat[0]; vals[76] = textureRepeat[1];
+      vals[77] = m.textureGain ?? 1;
+      vals[78] = gloss;
+      vals[82] = patternIndices[m.pattern ?? 'grid'] ?? 0;
+      vals[83] = m.fog ?? 1;
       const at = f64Buf(vals.length); // may grow memory: reserve before touching F64
       F64.set(vals, at);
       const flags = (it.cull === false ? 0 : 1) | (it.blend === 'additive' ? 2 : 0) | extra;
       this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, flags, vals.length);
     };
     const meshes = items.filter((it): it is DrawItem => !('points' in it));
+    let itemIndices: Map<DrawItem | PointsItem, number> | undefined;
     /**
      * Opaque items in draw order: list order, or nearest first with `sort: 'near'`
      * (flag bit 4 + list index: the core resolves depth ties by list index, so the
@@ -628,9 +676,13 @@ export class Renderer3D {
     const ordered = (list: DrawItem[], ey: number[]): Array<[DrawItem, number]> => {
       const out = list.map((it): [DrawItem, number] => [it, 0]);
       if (o.sort !== 'near' || list.length < 2 || items.length >= 0xfffe) return out;
+      if (!itemIndices) {
+        itemIndices = new Map();
+        for (let i = 0; i < items.length; i++) if (!itemIndices.has(items[i])) itemIndices.set(items[i], i);
+      }
       const keys = new Map<DrawItem, number>();
       for (const it of list) keys.set(it, farSide(it, ey));
-      for (const e of out) e[1] = 16 | (items.indexOf(e[0]) << 8);
+      for (const e of out) e[1] = 16 | (itemIndices.get(e[0])! << 8);
       return out.sort((a, b) => keys.get(a[0])! - keys.get(b[0])!);
     };
     const farSide = (it: DrawItem, ey: number[]): number => {
@@ -647,9 +699,6 @@ export class Renderer3D {
       }
       return far;
     };
-    const pls = (o.lights ?? []).slice(0, 8);
-    const pointLights: number[] = [pls.length];
-    for (const pl of pls) pointLights.push(...pl.position, ...rgb(pl.color), pl.radius ?? 500, pl.intensity ?? 1);
     if (o.shadows) {
       pass('setup');
       // Orthographic light camera looking along −key at the centre.

@@ -418,14 +418,14 @@ fn process_track(l: &mut [f32], r: &mut [f32], m: &TrackMix, rate: u32, pump: Op
 }
 
 /// SFX are deterministic per (name, params, rate): cache renders in memory and on disk.
-fn cached_sfx(name: &str, raw: &serde_json::Value, p: &crate::sfx::SfxParams, rate: u32) -> Result<crate::sfx::Sfx, String> {
+fn cached_sfx(name: &str, raw: &serde_json::Value, p: &crate::sfx::SfxParams, rate: u32) -> Result<std::sync::Arc<crate::sfx::Sfx>, String> {
     use std::collections::HashMap;
-    use std::sync::{Mutex, OnceLock};
-    static MEM: OnceLock<Mutex<HashMap<String, crate::sfx::Sfx>>> = OnceLock::new();
+    use std::sync::{Arc, Mutex, OnceLock};
+    static MEM: OnceLock<Mutex<HashMap<String, Arc<crate::sfx::Sfx>>>> = OnceLock::new();
     let key = format!("{name}|{raw}|{rate}|sfx-v1");
     let mem = MEM.get_or_init(Default::default);
     if let Some(x) = mem.lock().unwrap().get(&key) {
-        return Ok(x.clone());
+        return Ok(Arc::clone(x));
     }
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
     for b in key.bytes() {
@@ -436,12 +436,12 @@ fn cached_sfx(name: &str, raw: &serde_json::Value, p: &crate::sfx::SfxParams, ra
         let v: Vec<f32> = b.chunks_exact(4).map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect();
         if !v.is_empty() && (v.len() - 1).is_multiple_of(2) {
             let n = (v.len() - 1) / 2;
-            let x = crate::sfx::Sfx { hit: v[0], l: v[1..1 + n].to_vec(), r: v[1 + n..].to_vec() };
-            mem.lock().unwrap().insert(key, x.clone());
+            let x = Arc::new(crate::sfx::Sfx { hit: v[0], l: v[1..1 + n].to_vec(), r: v[1 + n..].to_vec() });
+            mem.lock().unwrap().insert(key, Arc::clone(&x));
             return Ok(x);
         }
     }
-    let x = crate::sfx::sfx(name, p, rate)?;
+    let x = Arc::new(crate::sfx::sfx(name, p, rate)?);
     let bytes: Vec<u8> = std::iter::once(&x.hit).chain(&x.l).chain(&x.r).flat_map(|f| f.to_le_bytes()).collect();
     if std::fs::create_dir_all(file.parent().unwrap_or(std::path::Path::new("."))).is_ok() {
         let tmp = file.with_extension(format!("tmp{}", std::process::id()));
@@ -449,7 +449,7 @@ fn cached_sfx(name: &str, raw: &serde_json::Value, p: &crate::sfx::SfxParams, ra
             let _ = std::fs::rename(&tmp, &file);
         }
     }
-    mem.lock().unwrap().insert(key, x.clone());
+    mem.lock().unwrap().insert(key, Arc::clone(&x));
     Ok(x)
 }
 
@@ -460,7 +460,7 @@ fn render_sfx(a: &Arrangement, rate: u32, frames: usize) -> Result<Option<Stereo
     if a.sfx.is_empty() {
         return Ok(None);
     }
-    let rendered: Vec<(f64, f64, crate::sfx::Sfx)> = a
+    let rendered: Vec<(f64, f64, std::sync::Arc<crate::sfx::Sfx>)> = a
         .sfx
         .par_iter()
         .map(|s| {
