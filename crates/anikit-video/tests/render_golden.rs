@@ -792,6 +792,18 @@ fn motion_blur_matches_brute_force() {
             ])
         }),
         Box::new(move |t| list(vec![bg(), Op::RoundRect { x: -20.0, y: -6.0, w: 40.0, h: 12.0, radius: 2.0, paint: solid(1.0, 1.0, 1.0), transform: moved(48.0, 48.0, 30.0 * t) }])),
+        // An iris: a growing circular clip over a still card (the wipe path).
+        Box::new(move |t| {
+            let r = 10.0 + 900.0 * t as f64;
+            let clip = kurbo::Circle::new((48.0, 48.0), r).to_path(0.1);
+            list(vec![
+                bg(),
+                layer(1.0, Blend::Normal, vec![], Some((clip, IDENTITY)), None),
+                Op::RoundRect { x: 0.0, y: 0.0, w: 96.0, h: 96.0, radius: 0.0, paint: solid(0.9, 0.6, 0.2), transform: IDENTITY },
+                card(30.0, 40.0, 36.0, 16.0, solid(1.0, 1.0, 1.0)),
+                Op::PopLayer,
+            ])
+        }),
         Box::new(move |t| {
             let mut ops = vec![bg()];
             if t > 0.05 {

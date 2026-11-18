@@ -274,6 +274,28 @@ fn composition_shaders_render_at_displayed_size() {
     assert_eq!((s.width, s.height, s.renders), (400, 200, 1), "{s:?}");
 }
 
+/// Tagged evaluation (used by the render estimate) gives op ranges inside the
+/// list for a shader reading a named composition, frame after frame (a crash
+/// in an agent's final render: a tag past the end of the list).
+#[test]
+fn tagged_eval_with_a_composition_channel_stays_in_range() {
+    let ev = build(
+        r##"{ "size": [160, 90], "compositions": { "word": { "size": [160, 90], "duration": 2, "layers": [ { "text": "SIGNAL", "size": 30 } ] } },
+            "scenes": [ { "duration": 2, "layers": [
+              { "shader": "void mainImage(out vec4 c, in vec2 p) { c = texture(iChannel0, p / iResolution.xy); }", "channels": ["#word"] },
+              { "text": "over", "size": 20, "y": 70 } ] } ] }"##,
+    );
+    for f in 0..6 {
+        let (dl, tags) = ev.eval_tagged(f as f32 * 0.3);
+        assert!(!tags.is_empty());
+        for t in &tags {
+            assert!(t.ops.start < t.ops.end && t.ops.end <= dl.ops.len(), "frame {f}: {:?} of {} ops", t.ops, dl.ops.len());
+        }
+        // Rendering in between (the estimate does) leaves the next tagged eval intact.
+        render_rgba(&ev, f as f32 * 0.3, 1.0);
+    }
+}
+
 #[test]
 fn many_static_uniforms_leave_slots_for_animated_ones() {
     // 16 static floats (more than the animation slots) and one animated uniform
@@ -298,4 +320,23 @@ fn many_static_uniforms_leave_slots_for_animated_ones() {
     let b = px(&ev, 1.5, 4, 4);
     assert!((a[0] as i32 - 41).abs() <= 1, "16 × 0.01 = 0.16 → 41: {a:?}");
     assert!(b[1] > a[1] + 100, "k animates: {a:?} → {b:?}");
+}
+
+/// A shader with a `{layers: […]}` channel: the channel's layers are emitted
+/// into their own list and must not add tags to the frame's (they made the
+/// render estimate panic).
+#[test]
+fn tagged_eval_with_a_layers_channel_stays_in_range() {
+    let ev = build(
+        r##"{ "size": [160, 90], "scenes": [ { "duration": 2, "layers": [
+              { "shader": "void mainImage(out vec4 c, in vec2 p) { c = texture(iChannel0, p / iResolution.xy); }",
+                "channels": [ { "layers": [ { "text": "K", "size": 40 }, { "shape": "rect", "width": 40, "height": 20, "fill": "#ff0000" } ] } ] } ] } ] }"##,
+    );
+    for f in 0..4 {
+        let (dl, tags) = ev.eval_tagged(f as f32 * 0.4);
+        assert!(!tags.is_empty());
+        for t in &tags {
+            assert!(t.ops.start < t.ops.end && t.ops.end <= dl.ops.len(), "frame {f}: {:?} of {} ops", t.ops, dl.ops.len());
+        }
+    }
 }

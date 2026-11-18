@@ -891,6 +891,8 @@ pub struct CamKey {
     pub focus: Option<f32>,
     /// Focus on a named object instead (a rack focus between two keys).
     pub focus_obj: Option<String>,
+    /// Easing of the move *into* this key (`None`: the camera's default).
+    pub ease: Option<u8>,
     pub fstop: Option<f32>,
     /// Blur radius in px at 1080p for points at infinity (overrides `fstop`).
     pub aperture: Option<f32>,
@@ -916,7 +918,36 @@ pub struct CamSpec {
     pub noise: (f32, f32, f32, f32),
 }
 
-const CAM_KEYS: &[&str] = &["t", "at", "pos", "target", "fov", "focal", "focus", "fstop", "aperture", "shutter", "roll"];
+/// Camera eases: how a move arrives at a key.
+pub const CAM_EASES: &[&str] = &["linear", "in", "out", "inOut", "inExpo", "outExpo", "inOutExpo", "settle"];
+
+fn cam_ease(k: u8, x: f32) -> f32 {
+    let x = x.clamp(0.0, 1.0);
+    match k {
+        0 => x,
+        1 => x * x * x,
+        2 => 1.0 - (1.0 - x).powi(3),
+        3 => if x < 0.5 { 4.0 * x * x * x } else { 1.0 - (-2.0 * x + 2.0).powi(3) / 2.0 },
+        4 => if x <= 0.0 { 0.0 } else { 2f32.powf(10.0 * x - 10.0) },
+        5 => if x >= 1.0 { 1.0 } else { 1.0 - 2f32.powf(-10.0 * x) },
+        6 => {
+            if x <= 0.0 || x >= 1.0 {
+                x
+            } else if x < 0.5 {
+                2f32.powf(20.0 * x - 10.0) / 2.0
+            } else {
+                (2.0 - 2f32.powf(-20.0 * x + 10.0)) / 2.0
+            }
+        }
+        // Settle: out-cubic that lands with a ~1% overshoot, like a dolly braking.
+        _ => {
+            let c = 0.35;
+            1.0 + (c + 1.0) * (x - 1.0).powi(3) + c * (x - 1.0).powi(2)
+        }
+    }
+}
+
+const CAM_KEYS: &[&str] = &["t", "at", "pos", "target", "fov", "focal", "focus", "fstop", "aperture", "shutter", "roll", "ease"];
 
 fn cam_key(v: &Value, path: &str) -> Res<CamKey> {
     let m = v.as_object().ok_or_else(|| format!("{path}: expected a camera key object"))?;
@@ -936,6 +967,13 @@ fn cam_key(v: &Value, path: &str) -> Res<CamKey> {
         focal: of("focal")?,
         focus: if m.get("focus").is_some_and(|x| x.is_string()) { None } else { of("focus")? },
         focus_obj: m.get("focus").and_then(|x| x.as_str()).map(|x| x.to_string()),
+        ease: match m.get("ease").and_then(|e| e.as_str()) {
+            None => None,
+            Some(n) => Some(CAM_EASES.iter().position(|e| *e == n).ok_or_else(|| {
+                let hint = crate::components::style::closest(n, CAM_EASES).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+                format!("{path}.ease: unknown ease `{n}`{hint} ({})", CAM_EASES.join(", "))
+            })? as u8),
+        },
         fstop: of("fstop")?,
         aperture: of("aperture")?,
         shutter: of("shutter")?,
@@ -953,7 +991,7 @@ pub fn camera(v: &Value, bounds: (V3, f32), path: &str) -> Res<CamSpec> {
         let dist = r * 2.9;
         let tgt = c;
         let at = |ang: f32, d: f32, y: f32| v3(c.x + ang.to_radians().sin() * d, c.y + y, c.z + ang.to_radians().cos() * d);
-        let key = |t: f32, pos: V3| CamKey { t, pos, target: tgt, fov: Some(30.0), focal: None, focus: None, focus_obj: None, fstop: Some(4.0), aperture: None, shutter: None, roll: 0.0 };
+        let key = |t: f32, pos: V3| CamKey { t, pos, target: tgt, fov: Some(30.0), focal: None, focus: None, focus_obj: None, ease: None, fstop: Some(4.0), aperture: None, shutter: None, roll: 0.0 };
         let keys = match name {
             "orbit" => (0..=8).map(|k| k as f32 / 8.0).map(|u| key(u * dur, at(-amount * 0.5 + amount * u, dist, r * height))).collect(),
             "dolly" => vec![key(0.0, at(-8.0, dist * 1.25, r * height)), key(dur, at(4.0, dist * 0.85, r * height * 0.8))],
@@ -1126,6 +1164,11 @@ impl CamSpec {
         let a = &ks[i];
         let b = &ks[(i + 1).min(ks.len() - 1)];
         let s = if b.t > a.t { ((t - a.t) / (b.t - a.t)).clamp(0.0, 1.0) } else { 0.0 };
+        // A key's own ease shapes the move into it.
+        let s = match b.ease {
+            Some(e) => cam_ease(e, s),
+            None => s,
+        };
         let (pos, target) = if self.linear || ks.len() < 3 {
             (lerp3(a.pos, b.pos, s), lerp3(a.target, b.target, s))
         } else {
@@ -1137,7 +1180,7 @@ impl CamSpec {
             };
             (cr(pm.pos, a.pos, b.pos, pn.pos), cr(pm.target, a.target, b.target, pn.target))
         };
-        let ss = if self.linear { s } else { s * s * (3.0 - 2.0 * s) };
+        let ss = if self.linear || b.ease.is_some() { s } else { s * s * (3.0 - 2.0 * s) };
         let mix = |x: Option<f32>, y: Option<f32>| -> Option<f32> {
             match (x, y) {
                 (Some(x), Some(y)) => Some(x + (y - x) * ss),

@@ -95,5 +95,35 @@
   }
  },
  "final": "v3",
- "note": "v4 (wing flex, longer push, dusk, lighter grain) scored 3.25/3.61: inside the \u00b10.4 noise of v3, so the search stopped at a plateau. 3 trials each; a 6-trial re-judge decides."
+ "note": "v4 (wing flex, longer push, dusk, lighter grain) scored 3.25/3.61: inside the \u00b10.4 noise of v3, so the search stopped at a plateau. 3 trials each; a 6-trial re-judge decides.",
+ "rejudge_6_trials": {
+  "by": "JUDGE",
+  "blind": 3.31,
+  "full": 3.53,
+  "judged_pro": "0/6",
+  "pooled_9_trials_blind": 3.4,
+  "dims": {
+   "idea": 3,
+   "composition": 4,
+   "typography": 3,
+   "colour": 5,
+   "light_texture": 4,
+   "motion": 3,
+   "craft": 2.5,
+   "originality": 2
+  },
+  "strip_critic": {
+   "idea": true,
+   "invariant": true,
+   "arc": true,
+   "ending": true,
+   "type_meaning": false,
+   "freeze_frame": false,
+   "motion": 5,
+   "sound": 4,
+   "craft": 5
+  },
+  "results": "claude/epic-ramanujan-qe7x4w-v-judge:docs/video/judge/demos/rebuilds/h-ident-demo/",
+  "reading": "up vs r2 2.88 but inside the 0.75 tie band; with consecutive frames the critic sees the device; the gap is craft on the bird and type"
+ }
 }
