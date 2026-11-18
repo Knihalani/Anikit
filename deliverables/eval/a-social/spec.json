@@ -1,0 +1,980 @@
+{
+ "size": [
+  1080,
+  1920
+ ],
+ "fps": 30,
+ "background": "#FBFAF6",
+ "transition": "cut",
+ "fonts": {
+  "Brico": "fonts/BricolageGrotesque.ttf",
+  "Plex": "fonts/IBMPlexMono-Medium.ttf"
+ },
+ "theme": {
+  "colors": {
+   "paper": "#FBFAF6",
+   "yellow": "#FFE800",
+   "peach": "#FF7477",
+   "green": "#407060",
+   "ink": "#211C1A"
+  }
+ },
+ "post": {
+  "grain": 0.04,
+  "grainSize": 1.5,
+  "vignette": 0.12
+ },
+ "music": {
+  "style": "acoustic",
+  "bpm": 96,
+  "key": "D",
+  "mood": "bright warm",
+  "instruments": {
+   "lead": "marimba"
+  },
+  "hits": [
+   "@2.5",
+   "@8.125"
+  ],
+  "sfx": [
+   {
+    "sfx": "pop",
+    "at": 0.95
+   },
+   {
+    "sfx": "pop",
+    "at": 2.5
+   },
+   {
+    "sfx": "pop",
+    "at": 4.375
+   },
+   {
+    "sfx": "pop",
+    "at": 6.25
+   },
+   {
+    "sfx": "chime",
+    "at": 9.2
+   }
+  ],
+  "end": "ring",
+  "master": {
+   "lufs": -14,
+   "ceiling": -1
+  }
+ },
+ "defs": {
+  "plate": {
+   "shape": "circle",
+   "width": "$d",
+   "height": "$d",
+   "fill": "$c",
+   "blend": "multiply",
+   "step": "twos",
+   "inkTexture": {
+    "amount": 0.25,
+    "scale": 28,
+    "seed": 3
+   }
+  },
+  "headline": {
+   "text": "$w",
+   "font": "Brico",
+   "size": 190,
+   "weight": 800,
+   "lineHeight": 0.86,
+   "letterSpacing": "-0.045em",
+   "x": 84,
+   "y": 250,
+   "anchor": "topLeft",
+   "align": "left",
+   "color": "$ink"
+  },
+  "plateType": {
+   "text": "$w",
+   "font": "Brico",
+   "size": 190,
+   "weight": 800,
+   "lineHeight": 0.86,
+   "letterSpacing": "-0.045em",
+   "x": 91,
+   "y": 256,
+   "anchor": "topLeft",
+   "align": "left",
+   "color": "$c",
+   "blend": "multiply",
+   "inkTexture": {
+    "amount": 0.3,
+    "scale": 24,
+    "seed": 9
+   },
+   "boil": {
+    "amount": 3,
+    "fps": 8,
+    "seed": 4
+   }
+  }
+ },
+ "scenes": [
+  {
+   "id": "cup",
+   "duration": 2.5,
+   "layers": [
+    {
+     "shape": "circle",
+     "x": 540,
+     "y": 1180,
+     "width": 1000,
+     "height": 1000,
+     "fill": "$green",
+     "blend": "multiply",
+     "halftone": {
+      "cell": 11,
+      "angle": 45,
+      "ink": "$green",
+      "gain": 0.35
+     },
+     "step": "twos",
+     "animate": [
+      {
+       "from": {
+        "scale": 0.9
+       },
+       "to": {
+        "scale": 1
+       },
+       "duration": 2.5,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "x": 540,
+     "y": 1180,
+     "width": 800,
+     "height": 800,
+     "fill": "$paper",
+     "stroke": "$ink",
+     "strokeWidth": 8
+    },
+    {
+     "use": "plate",
+     "with": {
+      "d": 680,
+      "c": "$yellow"
+     },
+     "x": 546,
+     "y": 1176
+    },
+    {
+     "use": "plate",
+     "with": {
+      "d": 680,
+      "c": "$peach"
+     },
+     "x": 535,
+     "y": 1184
+    },
+    {
+     "use": "plate",
+     "with": {
+      "d": 680,
+      "c": "$green"
+     },
+     "x": 540,
+     "y": 1180
+    },
+    {
+     "shape": "circle",
+     "x": 540,
+     "y": 1180,
+     "width": 60,
+     "height": 60,
+     "fill": "none",
+     "stroke": "$paper",
+     "strokeWidth": 5,
+     "repeat": 3,
+     "start": "=0.95 + $i*0.22",
+     "end": "=2.5",
+     "animate": [
+      {
+       "from": {
+        "width": 30,
+        "height": 30,
+        "opacity": 0.9,
+        "strokeWidth": 9
+       },
+       "to": {
+        "width": 640,
+        "height": 640,
+        "opacity": 0,
+        "strokeWidth": 1
+       },
+       "duration": 1.4,
+       "ease": "outQuart"
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "x": 540,
+     "y": 1180,
+     "width": 46,
+     "height": 64,
+     "fill": "$yellow",
+     "end": 0.95,
+     "animate": [
+      {
+       "from": {
+        "y": -60
+       },
+       "to": {
+        "y": 1180
+       },
+       "duration": 0.75,
+       "at": 0.2,
+       "ease": "inQuad"
+      }
+     ]
+    },
+    {
+     "use": "headline",
+     "with": {
+      "w": "One cup."
+     },
+     "kinetic": "mask by line up 0.5s 80ms outExpo"
+    },
+    {
+     "use": "plateType",
+     "with": {
+      "w": "One cup.",
+      "c": "$peach"
+     },
+     "kinetic": "mask by line up 0.5s 80ms outExpo"
+    },
+    {
+     "text": "HALDE & SONS · NEW ROAST",
+     "font": "Plex",
+     "size": 34,
+     "letterSpacing": "0.08em",
+     "color": "$ink",
+     "x": 88,
+     "y": 470,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.3,
+      "delay": 0.4
+     },
+     "anchor": "topLeft",
+     "align": "left"
+    }
+   ]
+  },
+  {
+   "id": "bergamot",
+   "duration": 1.875,
+   "layers": [
+    {
+     "layers": [
+      {
+       "shape": "circle",
+       "width": 820,
+       "height": 820,
+       "fill": "$yellow",
+       "blend": "multiply",
+       "step": "twos",
+       "inkTexture": {
+        "amount": 0.25,
+        "scale": 28,
+        "seed": 5
+       }
+      },
+      {
+       "shape": "circle",
+       "x": 546,
+       "y": 955,
+       "width": 820,
+       "height": 820,
+       "fill": "$green",
+       "blend": "multiply",
+       "step": "twos",
+       "inkTexture": {
+        "amount": 0.25,
+        "scale": 28,
+        "seed": 6
+       }
+      },
+      {
+       "shape": "circle",
+       "width": 742,
+       "height": 742,
+       "fill": "$paper"
+      },
+      {
+       "shape": "arc",
+       "repeat": 10,
+       "width": 700,
+       "height": 700,
+       "startAngle": "=$i*36+2.5",
+       "endAngle": "=$i*36+33.5",
+       "innerRadius": 0.07,
+       "fill": "$yellow",
+       "blend": "multiply",
+       "inkTexture": {
+        "amount": 0.3,
+        "scale": 22,
+        "seed": 7
+       }
+      },
+      {
+       "shape": "arc",
+       "repeat": 10,
+       "width": 700,
+       "height": 700,
+       "startAngle": "=$i*36+6",
+       "endAngle": "=$i*36+30",
+       "innerRadius": 0.25,
+       "fill": "$yellow",
+       "blend": "multiply",
+       "halftone": {
+        "cell": 9,
+        "angle": 15,
+        "ink": "$peach",
+        "paper": "none",
+        "gain": 0.25
+       }
+      }
+     ],
+     "x": 540,
+     "y": 1180,
+     "rotation": "=t*6",
+     "animate": [
+      {
+       "from": {
+        "scale": 0.83,
+        "rotation": -50
+       },
+       "duration": 0.55,
+       "ease": "outBack"
+      }
+     ]
+    },
+    {
+     "use": "headline",
+     "with": {
+      "w": "Bergamot."
+     },
+     "kinetic": "pop by char 0.35s 22ms outBack"
+    },
+    {
+     "use": "plateType",
+     "with": {
+      "w": "Bergamot.",
+      "c": "$yellow"
+     },
+     "kinetic": "pop by char 0.35s 22ms outBack"
+    }
+   ]
+  },
+  {
+   "id": "peach",
+   "duration": 1.875,
+   "layers": [
+    {
+     "layers": [
+      {
+       "shape": "circle",
+       "x": 500,
+       "y": 910,
+       "width": 700,
+       "height": 700,
+       "fill": "$yellow",
+       "blend": "multiply",
+       "step": "twos",
+       "inkTexture": {
+        "amount": 0.25,
+        "scale": 28,
+        "seed": 11
+       }
+      },
+      {
+       "shape": "circle",
+       "width": 800,
+       "height": 780,
+       "fill": "$peach",
+       "blend": "multiply",
+       "step": "twos",
+       "inkTexture": {
+        "amount": 0.25,
+        "scale": 28,
+        "seed": 12
+       }
+      },
+      {
+       "shape": "circle",
+       "x": 560,
+       "y": 980,
+       "width": 800,
+       "height": 780,
+       "fill": "$peach",
+       "blend": "multiply",
+       "halftone": {
+        "cell": 12,
+        "angle": 75,
+        "ink": "$peach",
+        "paper": "none",
+        "gain": 0.3
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M0 0 C 120 220, 120 520, 10 760",
+       "anchor": "center",
+       "x": 580,
+       "y": 960,
+       "fill": "none",
+       "stroke": "$peach",
+       "strokeWidth": 18,
+       "cap": "round",
+       "blend": "multiply"
+      },
+      {
+       "shape": "path",
+       "d": "M180 0 C 330 70, 380 230, 330 330 C 200 300, 90 170, 180 0 Z",
+       "anchor": "center",
+       "x": 710,
+       "y": 560,
+       "rotation": 20,
+       "fill": "$green",
+       "blend": "multiply",
+       "step": "twos",
+       "inkTexture": {
+        "amount": 0.25,
+        "scale": 28,
+        "seed": 13
+       },
+       "animate": [
+        {
+         "from": {
+          "scale": 0,
+          "rotation": -30
+         },
+         "duration": 0.5,
+         "at": 0.12,
+         "ease": "outBack"
+        }
+       ]
+      },
+      {
+       "shape": "path",
+       "d": "M0 0 C 10 -40, 30 -80, 60 -100",
+       "anchor": "center",
+       "x": 580,
+       "y": 540,
+       "fill": "none",
+       "stroke": "$ink",
+       "strokeWidth": 16,
+       "cap": "round"
+      }
+     ],
+     "x": 540,
+     "y": 1200,
+     "animate": [
+      {
+       "from": {
+        "scale": 0.8,
+        "y": 1320
+       },
+       "duration": 0.5,
+       "ease": "outBack"
+      }
+     ]
+    },
+    {
+     "use": "headline",
+     "with": {
+      "w": "Peach."
+     },
+     "kinetic": "pop by char 0.35s 30ms outBack"
+    },
+    {
+     "use": "plateType",
+     "with": {
+      "w": "Peach.",
+      "c": "$peach"
+     },
+     "kinetic": "pop by char 0.35s 30ms outBack"
+    }
+   ]
+  },
+  {
+   "id": "tea",
+   "duration": 1.875,
+   "layers": [
+    {
+     "shape": "circle",
+     "x": 540,
+     "y": 1180,
+     "width": 800,
+     "height": 800,
+     "fill": "$ink",
+     "blend": "multiply",
+     "halftone": {
+      "cell": 10,
+      "angle": 30,
+      "shape": "line",
+      "ink": "$ink",
+      "paper": "none",
+      "gain": 0.45
+     },
+     "animate": [
+      {
+       "from": {
+        "scale": 0.86
+       },
+       "duration": 0.5,
+       "ease": "outBack"
+      }
+     ]
+    },
+    {
+     "layers": [
+      {
+       "shape": "path",
+       "d": "M210 0 C 430 190, 450 600, 210 900 C -30 600, -10 190, 210 0 Z",
+       "anchor": "center",
+       "fill": "$green",
+       "blend": "multiply",
+       "step": "twos",
+       "inkTexture": {
+        "amount": 0.25,
+        "scale": 28,
+        "seed": 15
+       }
+      },
+      {
+       "draw": [
+        {
+         "d": "M540 540 C 555 810, 550 1110, 540 1400",
+         "stroke": "$paper",
+         "width": 9,
+         "cap": "round"
+        },
+        {
+         "d": "M542 700 C 600 660, 650 640, 690 620",
+         "stroke": "$paper",
+         "width": 6,
+         "cap": "round"
+        },
+        {
+         "d": "M544 850 C 610 810, 670 780, 715 750",
+         "stroke": "$paper",
+         "width": 6,
+         "cap": "round"
+        },
+        {
+         "d": "M546 1000 C 620 960, 680 930, 725 900",
+         "stroke": "$paper",
+         "width": 6,
+         "cap": "round"
+        },
+        {
+         "d": "M544 1150 C 610 1110, 660 1080, 700 1055",
+         "stroke": "$paper",
+         "width": 6,
+         "cap": "round"
+        },
+        {
+         "d": "M540 710 C 480 670, 430 650, 390 630",
+         "stroke": "$paper",
+         "width": 6,
+         "cap": "round"
+        },
+        {
+         "d": "M538 860 C 470 820, 410 790, 365 760",
+         "stroke": "$paper",
+         "width": 6,
+         "cap": "round"
+        },
+        {
+         "d": "M536 1010 C 460 970, 400 940, 355 910",
+         "stroke": "$paper",
+         "width": 6,
+         "cap": "round"
+        },
+        {
+         "d": "M536 1160 C 470 1120, 420 1090, 380 1065",
+         "stroke": "$paper",
+         "width": 6,
+         "cap": "round"
+        }
+       ],
+       "enter": "draw"
+      }
+     ],
+     "x": 540,
+     "y": 1180,
+     "rotation": "=-28 + t*4",
+     "animate": [
+      {
+       "from": {
+        "scale": 0.4,
+        "rotation": -120
+       },
+       "duration": 0.6,
+       "ease": "outBack"
+      }
+     ]
+    },
+    {
+     "use": "headline",
+     "with": {
+      "w": "Black tea."
+     },
+     "kinetic": "pop by char 0.35s 22ms outBack"
+    },
+    {
+     "use": "plateType",
+     "with": {
+      "w": "Black tea.",
+      "c": "$green"
+     },
+     "kinetic": "pop by char 0.35s 22ms outBack"
+    }
+   ]
+  },
+  {
+   "id": "overprint",
+   "duration": 2.5,
+   "layers": [
+    {
+     "layers": [
+      {
+       "use": "plate",
+       "with": {
+        "d": 560,
+        "c": "$yellow"
+       }
+      },
+      {
+       "text": "bergamot",
+       "font": "Plex",
+       "size": 34,
+       "color": "$ink",
+       "y": 630,
+       "end": 0.95,
+       "x": 540
+      }
+     ],
+     "x": 540,
+     "y": 1180,
+     "animate": [
+      {
+       "from": {
+        "x": 330,
+        "y": 900
+       },
+       "to": {
+        "x": 330,
+        "y": 900
+       },
+       "duration": 0.01
+      },
+      {
+       "to": {
+        "x": 540,
+        "y": 1180
+       },
+       "at": 0.85,
+       "duration": 0.55,
+       "ease": "inOutExpo"
+      }
+     ]
+    },
+    {
+     "layers": [
+      {
+       "use": "plate",
+       "with": {
+        "d": 560,
+        "c": "$peach"
+       }
+      },
+      {
+       "text": "peach",
+       "font": "Plex",
+       "size": 34,
+       "color": "$ink",
+       "x": 540,
+       "y": 630,
+       "end": 0.95
+      }
+     ],
+     "x": 540,
+     "y": 1180,
+     "animate": [
+      {
+       "from": {
+        "x": 750,
+        "y": 900
+       },
+       "to": {
+        "x": 750,
+        "y": 900
+       },
+       "duration": 0.01
+      },
+      {
+       "to": {
+        "x": 544,
+        "y": 1185
+       },
+       "at": 0.85,
+       "duration": 0.55,
+       "ease": "inOutExpo"
+      }
+     ]
+    },
+    {
+     "layers": [
+      {
+       "use": "plate",
+       "with": {
+        "d": 560,
+        "c": "$green"
+       }
+      },
+      {
+       "text": "black tea",
+       "font": "Plex",
+       "size": 34,
+       "color": "$ink",
+       "y": 1290,
+       "end": 0.95,
+       "x": 540
+      }
+     ],
+     "x": 540,
+     "y": 1180,
+     "animate": [
+      {
+       "from": {
+        "x": 540,
+        "y": 1330
+       },
+       "to": {
+        "x": 540,
+        "y": 1330
+       },
+       "duration": 0.01
+      },
+      {
+       "to": {
+        "x": 537,
+        "y": 1176
+       },
+       "at": 0.85,
+       "duration": 0.55,
+       "ease": "inOutExpo"
+      }
+     ]
+    },
+    {
+     "text": "all in one cup.",
+     "font": "Plex",
+     "size": 40,
+     "color": "$ink",
+     "x": 540,
+     "y": 1505,
+     "start": 1.35,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.35
+     }
+    },
+    {
+     "use": "headline",
+     "with": {
+      "w": "Ethiopia\nGuji"
+     },
+     "y": 200,
+     "start": 1.1,
+     "kinetic": "mask by line up 0.55s 90ms outExpo"
+    },
+    {
+     "use": "plateType",
+     "with": {
+      "w": "Ethiopia\nGuji",
+      "c": "$yellow"
+     },
+     "y": 206,
+     "start": 1.1,
+     "kinetic": "mask by line up 0.55s 90ms outExpo"
+    }
+   ]
+  },
+  {
+   "id": "end",
+   "duration": 4.375,
+   "layers": [
+    {
+     "shape": "circle",
+     "x": 540,
+     "y": 1000,
+     "width": 660,
+     "height": 660,
+     "fill": "$green",
+     "blend": "multiply",
+     "halftone": {
+      "cell": 11,
+      "angle": 45,
+      "ink": "$green",
+      "gain": 0.35
+     },
+     "step": "twos"
+    },
+    {
+     "shape": "circle",
+     "x": 540,
+     "y": 1000,
+     "width": 540,
+     "height": 540,
+     "fill": "$paper",
+     "stroke": "$ink",
+     "strokeWidth": 7
+    },
+    {
+     "use": "plate",
+     "with": {
+      "d": 490,
+      "c": "$yellow"
+     },
+     "x": 545,
+     "y": 996,
+     "width": 455,
+     "height": 455
+    },
+    {
+     "use": "plate",
+     "with": {
+      "d": 490,
+      "c": "$peach"
+     },
+     "x": 536,
+     "y": 1004,
+     "width": 455,
+     "height": 455
+    },
+    {
+     "use": "plate",
+     "with": {
+      "d": 490,
+      "c": "$green"
+     },
+     "x": 540,
+     "y": 1000,
+     "width": 455,
+     "height": 455
+    },
+    {
+     "draw": [
+      {
+       "d": "M480 737 C 440 712, 520 695, 480 670 C 440 644, 520 628, 480 602",
+       "stroke": "$peach",
+       "width": 10,
+       "cap": "round"
+      },
+      {
+       "d": "M560 745 C 520 716, 600 699, 560 670 C 520 640, 600 623, 560 594",
+       "stroke": "$yellow",
+       "width": 10,
+       "cap": "round"
+      },
+      {
+       "d": "M630 737 C 590 712, 670 695, 630 670 C 590 644, 670 628, 630 607",
+       "stroke": "$green",
+       "width": 10,
+       "cap": "round"
+      }
+     ],
+     "blend": "multiply",
+     "boil": {
+      "amount": 3,
+      "fps": 8,
+      "seed": 2
+     },
+     "step": "twos",
+     "y": "=960-6*sin(t*2)",
+     "enter": {
+      "preset": "draw",
+      "duration": 0.9,
+      "delay": 0.2
+     }
+    },
+    {
+     "use": "headline",
+     "with": {
+      "w": "Out\nFriday."
+     },
+     "y": 225,
+     "size": 205,
+     "kinetic": "mask by line up 0.55s 90ms outExpo"
+    },
+    {
+     "use": "plateType",
+     "with": {
+      "w": "Out\nFriday.",
+      "c": "$peach"
+     },
+     "y": 231,
+     "size": 205,
+     "kinetic": "mask by line up 0.55s 90ms outExpo"
+    },
+    {
+     "text": "Ethiopia Guji · washed",
+     "font": "Plex",
+     "size": 34,
+     "color": "$ink",
+     "x": 540,
+     "y": 1370,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.3,
+      "delay": 0.6
+     }
+    },
+    {
+     "text": "HALDE & SONS",
+     "font": "Brico",
+     "size": 76,
+     "weight": 800,
+     "letterSpacing": "0.04em",
+     "color": "$ink",
+     "x": 540,
+     "y": 1450,
+     "enter": {
+      "preset": "fadeUp",
+      "duration": 0.4,
+      "delay": 0.9
+     }
+    },
+    {
+     "text": "COFFEE ROASTERS",
+     "font": "Plex",
+     "size": 26,
+     "letterSpacing": "0.3em",
+     "color": "$ink",
+     "x": 540,
+     "y": 1515,
+     "enter": {
+      "preset": "fadeIn",
+      "duration": 0.3,
+      "delay": 1.1
+     }
+    }
+   ]
+  }
+ ]
+}
