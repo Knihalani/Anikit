@@ -47,7 +47,13 @@ Everything here is a starting point, never a ceiling: anything the spec keys don
 
 ## Self-review, then ship gate (one more iteration here is worth it)
 
-Look at your contact sheet and answer, then fix and preview again: What is the one device, and does it escalate? Is the type a choice for this world, living in the scene? Does any layout repeat? Does motion have weight and a camera? Are the materials and the sound from the subject?
+Look at your contact sheet and answer, then fix and preview again. These are the questions the blind judge fails pieces on most:
+- **The device:** is it literal? Say the idea without the brand name and without the feature's mechanism; if nothing is left, it's the name drawn or the feature diagrammed. Does the one device *escalate* every beat, or does it play once?
+- **The poster test:** pause anywhere. Would that frame hold up as a poster (14 of 15 round-1 films failed this)? Does any layout repeat with the words swapped?
+- **The arc:** does energy build to a peak at about ⅔ and land (11 of 15 had a flat arc)? Is there one surprise?
+- **Material at 100%:** does a crop show material from the subject (grain, edge, light falloff), or flat vector and filter noise?
+- **Type and sound:** is the type a choice for this world, living in the scene rather than an eyebrow-plus-headline lockup? Do motion, camera and sound carry weight from the subject's own materials?
+`critique --render` flags the measurable ones (`layout`, `label`, `motion`, `arc`, `eye-trace`).
 
 ### Ship gate (before the one final render)
 
