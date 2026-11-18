@@ -67,4 +67,6 @@ Before locking the world, try things. Make **4–8 quick technique tests**, each
 2. In `tests/notes.md`, write which one made you stop, which looked stock, **which looked artificial or simulated** (drop those), and what you learned about the engine's limits.
 3. Build the world (step 3) around the strongest test.
 
+**The gate:** don't write `3-system.md` until `tests/sheet.png` shows at least 4 tests across 3 capabilities. In the v4 demos, the two films that made only 3 tests ended up with the thinnest worlds.
+
 A test that surprises you is worth more than a plan that sounded good. A technique that only looks "fine" won't carry a launch film.

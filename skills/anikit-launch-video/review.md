@@ -10,6 +10,7 @@ python3 scripts/judge.py run launch/pass1.mp4 --practice --trials 2 --format <16
 ```
 
 - **Style tags:** pick from `cg-3d`, `ui-product`, `illustration`, `kinetic-type`, `brand-idents`, `generative`, `explainer-2d`, `social-vertical`, `event-promo`, `music-video`, `data-story`.
+- **Pick tags whose references match your film type:** `ui-product` for a proof film, `cg-3d` for an object teaser, and `brand-idents` or `graphic` for an idea film. `kinetic-type` draws feature title sequences (*Vertigo*), which no 30 s launch film resembles.
 - **`--practice`:** keeps the references used for evaluation out, so your crit never trains on the test.
 - **What it does:** it shows your 6 frames and 2–3 professional films' frames, shuffled and unlabelled, to a fresh model, which ranks them, scores them and names gaps.
 - **Where the result goes:** `launch/crit1/<name>/result.json`. Read `candidate.overall`, `candidate.gaps`, and the gaps it names for the professional entries; those show what "better" looks like. The critic stage adds motion, sound and craft notes.
@@ -53,7 +54,7 @@ Paste the overall score, the ranking, and every gap verbatim. Then sort each gap
    - If crit 2 still has an IDEA gap and you have time for one more pass, replace the idea again.
    - Stop after 3 passes.
 
-## The 15 checks (also answer them yourself on the contact sheet, frame by frame)
+## The 17 checks (also answer them yourself on the contact sheet, frame by frame)
 
 **Hold constant:**
 1. One light logic and palette family in every frame (an arc is fine, a swap is not)?
@@ -77,12 +78,14 @@ Paste the overall score, the ranking, and every gap verbatim. Then sort each gap
 13. The last stretch is alive (no ≥ 2 s static card)?
 14. The ending resolves the device into the name?
 15. At least 6 shots or major changes per 15 s?
+16. Does the device escalate (≥ 3 distinct states, scales or media), with no single move used more than twice?
+17. Is every frame's ground a lit surface (falloff, material or shadow), not a flat fill or gradient?
 
 ## Fallback critic prompt (only if `judge.py` can't run)
 
 > You are the creative director of a top motion-design studio reviewing a junior team's launch film for [product]. You see only the contact sheet at [path]. Be blunt.
 > (1) What is the idea, in one sentence? Does it survive deleting the product name? Would it work for a competitor?
-> (2) Answer the 15 checks YES/NO with frame numbers.
+> (2) Answer the 17 checks YES/NO with frame numbers.
 > (3) Give the three weakest frames and why.
 > (4) Name the single change that would lift it most; if the idea or the world is the problem, say so.
 > (5) Which third would you cut?

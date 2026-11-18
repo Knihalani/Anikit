@@ -34,7 +34,7 @@ For launches whose truth is a feeling or a principle, and for products with no U
 
 ## Object teaser: a physical product
 
-For hardware and objects. Examples: Nothing, Apple product films, Teenage Engineering, Devialet, Bang & Olufsen.
+The default for hardware and objects. An idea film for a physical product still has to show the product, modelled and lit, by its last third: a film *about* a recorder that never shows the recorder failed as a launch. Examples: Nothing, Apple product films, Teenage Engineering, Devialet, Bang & Olufsen.
 
 - **The product is the only CG subject.** Use its real geometry, materials and finishes (scene3d PBR materials, machined finishes, decals). The surroundings are abstract forms driven by a product parameter, or a seamless studio, never a simulated real place.
 - **Light:**

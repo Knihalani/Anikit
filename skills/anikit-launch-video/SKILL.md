@@ -31,6 +31,11 @@ Read `skills/anikit-video/SKILL.md` for the spec, docs, previews and render. Thi
   - slide type;
   - flat light.
 - **The judge is not the bar.** A film it passed was rejected by the user as artificial. Ship only what a person would also call designed, not generated.
+- **Not artificial isn't enough** (v4 demos: no critic called them fake, yet all scored about 4.2 against professional films at about 6.5–8). Three new failures:
+  - **One trick for the whole film:** fireworks for 32 s, a clock-numeral mask used three times, 30 s on one pink form. The device must *escalate*: at least three distinct states, scales or media, and no single move used more than twice.
+  - **Flat light:** light and texture was the lowest score in every film (2–3.5 out of 10), because grounds were flat gradients or flat paper. Put the world on a lit surface: a `scene3d` plane with a raking key and real material, the screen as a lit object, or ink in the paper's tooth with a shadow.
+  - **The product never seen:** the hardware film showed a form about the recorder but never the recorder. A physical product appears, really modelled, by the end at the latest.
+- **Rushing:** these three were finished in about 20 minutes, with 3 technique tests where the skill asks for 4–8. A strong film takes 60–90 min: the research and the tests are where the idea comes from.
 
 ## The steps
 
@@ -103,4 +108,4 @@ Read `skills/anikit-video/SKILL.md` for the spec, docs, previews and render. Thi
 - **Honesty floor:** use only the brief's real facts, names, UI and output. No invented numbers, quotes, reviews, logos, customers or capabilities. No staged demos presented as live. No engagement bait.
 - **If the product makes media** (video, images, music, code, text), the film is its own proof: show real output it made, and say so.
 - **Vary across films, hold within one.** Don't repeat the last film's world (check `deliverables/launch*/`, `deliverables/demo/`).
-- **Cost:** keep a final render under ~5 min (check the `preview` estimate).
+- **Cost:** keep a final render under ~5 min (check the `preview` estimate). Spend time on research, tests and passes instead: about 60–90 min in all.
