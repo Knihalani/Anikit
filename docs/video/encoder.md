@@ -593,7 +593,7 @@ quarter-pel; AQ and the SSIM floor off so that QP alone sets quality).
   search.
 
   A **quality guard** recodes a B picture at the P QP when its SSIM estimate is
-  more than 0.0015 below the following P picture's. Without the guard,
+  more than 0.001 below the following P picture's. Without the guard,
   `particles` failed qbench's delivered-SSIM gate on B-frame minima. Each
   recode lowers the next B picture's starting offset, and B pictures that
   match their P picture raise it again.
@@ -615,17 +615,34 @@ quarter-pel; AQ and the SSIM floor off so that QP alone sets quality).
   - A flat IDR QP offset was tried first: −3 helped octava by 12% but cost
     `post` 8%.
 
-  Together with the B offset (QP +4, slack 0.0015 instead of +2, 0.001),
+  Together with the B offset (QP +4 instead of +2; the guard's slack stays
+  0.001: at 0.0015 `particles` fails qbench's delivered-PSNR gate),
   BD-rate (SSIM) at GOP 60 with B-frames:
 
   | launch | tutorial | shader | post | tern | octava (paper texture) | hill (grain) | mean |
   |---|---|---|---|---|---|---|---|
-  | −0.7% | −2.3% | −7.7% | −1.4% | −4.6% | −20.9% | +0.1% | −5.4% |
+  | −0.2% | −2.3% | −7.7% | −0.6% | −3.5% | −20.2% | +0.1% | −4.9% |
 
   At the pipeline's settings (QP 23, SSIM floor, 20-frame chunks), octava
-  goes from 31.1 MB / SSIM 0.988 to 24.4 MB / 0.982. x264 CRF 20 is
+  goes from 31.1 MB / SSIM 0.988 to 24.4 MB / 0.982 (18.2 MB / 0.972 with
+  the bitrate ceiling below). x264 CRF 20 is
   8.4 MB / 0.986: it puts I frames at QP 14 and B frames at QP 26 (macroblock
   tree), and gains 14% from partitions and 10% from extra references.
+- **SSIM floor bitrate ceiling.** The floor does not lower the QP while
+  reference pictures average more than 25 Mbit/s (at 1920×1080, scaled by
+  frame area and `fps`); above it, it gives back one QP step per frame. Texture
+  whose SSIM rises slowly with bits (grain, paper, halftone) used to take the
+  floor's full 8-QP drop. With 20-frame chunks:
+
+  | clip | before | with the ceiling | x264 |
+  |---|---|---|---|
+  | octava | 24.4 MB / SSIM 0.982 | 18.2 MB / 0.972 | 8.4 MB / 0.986 (CRF 20) |
+  | hill | 35.0 MB / 0.983 | 26.7 MB / 0.978 | 20.3 MB / 0.980 (CRF 21) |
+
+  On octava, the static paper texture is unchanged: the IDR lookahead codes it
+  once at the lower QP, and it keeps about 90% of the source's
+  horizontal-gradient energy (x264: 100%). The ceiling only touches the
+  moving parts.
 - **8×8 transform.** For inter macroblocks, used when the residual's 8×8
   Hadamard cost is below its 4×4 SATD (x264's rule, SSE2). It includes CABAC
   category-5 residuals, `transform_size_8x8_flag` (coded as 0 for I4×4

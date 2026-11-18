@@ -369,7 +369,7 @@ struct Held {
 
 /// A B picture whose SSIM estimate is this far below the following P
 /// picture's is coded again at the P QP.
-const B_SSIM_SLACK: f64 = 0.0015;
+const B_SSIM_SLACK: f64 = 0.001;
 
 /// QP of B pictures above the P pictures'.
 const B_QP_OFFSET: i32 = 4;
@@ -1766,6 +1766,10 @@ fn dc_flags(cd: &Coded, i16: bool) -> u8 {
 /// Luma PSNR (dB) above which the SSIM floor no longer lowers the QP.
 const FLOOR_PSNR_CAP: f64 = 45.0;
 
+/// Bitrate (Mbit/s at 1920×1080, scaled by area) above which the SSIM floor
+/// stops lowering the QP.
+const FLOOR_MAX_MBPS: f64 = 25.0;
+
 /// Bring the half-sample planes `hp` of reference luma `r` up to date in the
 /// macroblocks flagged in `dirty` (and the filter support around them).
 fn update_hpel(hp: &mut crate::mc::HpelPlanes, r: &crate::frame::Plane, dirty: &[bool], mbw: usize, mbh: usize) {
@@ -2320,6 +2324,8 @@ pub struct Encoder {
     qsets_smooth: Vec<QpSet>,
     /// Frame QP offset from the SSIM floor (≤ 0).
     qp_adj: i32,
+    /// Running average of reference-picture bytes (the SSIM floor's bitrate ceiling).
+    ref_bytes: f64,
     /// Grain hint of the frame being coded.
     grain: f32,
     level: u8,
@@ -2406,6 +2412,7 @@ impl Encoder {
             qsets,
             qsets_smooth,
             qp_adj: 0,
+            ref_bytes: 0.0,
             grain: 0.0,
             level,
             cur: Pic::new(mbw, mbh, 0),
@@ -3009,6 +3016,8 @@ impl Encoder {
                 let s = ssim_luma(&self.cur.y, &self.refp.y, w, h, self.grain);
                 self.p_ssim = s.0;
                 if self.cfg.ssim_floor > 0.0 {
+                    let b = (self.out.len() - out0) as f64;
+                    self.ref_bytes = if self.ref_bytes == 0.0 { b } else { 0.75 * self.ref_bytes + 0.25 * b };
                     self.floor_update(s, 400.0, 4);
                 }
             }
@@ -3048,6 +3057,14 @@ impl Encoder {
         let f = self.cfg.ssim_floor as f64 + 0.002;
         // Above ~45 dB the remaining error is not visible, however low SSIM
         // reads on fine texture: don't spend bits there (e.g. --crf 18).
+        // Bitrate ceiling: the floor doesn't lower the QP while reference pictures
+        // average more than FLOOR_MAX_MBPS (scaled to the frame size and rate),
+        // and gives back what it took. Texture that needs more is left at `qp`.
+        let budget = FLOOR_MAX_MBPS * 1e6 / 8.0 / self.cfg.fps.max(1.0) * (self.cfg.width as f64 * self.cfg.height as f64) / (1920.0 * 1080.0);
+        if self.ref_bytes > budget {
+            self.qp_adj = (self.qp_adj + 1).min(0);
+            return;
+        }
         if s < f && psnr < FLOOR_PSNR_CAP {
             self.qp_adj -= ((f - s) * gain).ceil().clamp(1.0, max_step as f64) as i32;
         } else if s > f + 0.004 {
