@@ -812,6 +812,7 @@ impl C<'_> {
         self.score = Some((|| {
             let mut cue = crate::music::parse_with_cuts(v, &self.o.base_dir, &cuts)?;
             cue.pinned = Some((t, voice));
+            self.beat_marks.pin(t);
             let notes = crate::music::score(&cue, t, voice)?;
             let bpb = anikit_music::beat_grid(&cue.spec)?.beats_per_bar;
             self.pinned_music = Some(Arc::new(cue));
