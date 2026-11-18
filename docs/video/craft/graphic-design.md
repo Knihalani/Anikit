@@ -313,6 +313,7 @@ Eight distinct graphic worlds. Each: palette (hex), type, grid, texture, motion.
 - **Grid**: 4×4 or 8×4 fields (§2.3); text hangs from field tops; arcs and bars snap to field edges.
 - **Texture**: none, or a very subtle offset-paper tone. The rigour is the texture.
 - **Motion**: concentric arcs and bars rotate or extend on the beat in 15° steps; type is placed, not animated in (hard cut on), or slides along its column. Easing: sharp out (`outExpo`, 0.25–0.4 s). Scene change = column count change.
+- **In Anikit**: `grid` with `areas` + `cell` (text trims to cap height on its own), `shape: arc` rings with `rotation` tweens, `"to": {"cell": …}` for re-arranging layouts, `transition: cut`. Recipe: `anikit-video recipes swiss-grid-poster`; piece: `examples/video/graphic/konkrete.json`.
 
 ### 9.2 Risograph zine
 
@@ -322,6 +323,7 @@ Eight distinct graphic worlds. Each: palette (hex), type, grid, texture, motion.
 - **Grid**: loose 2–3 column A4 page; elements rotated by ±1–3° as if pasted.
 - **Texture**: halftone photos (12–20 px cell at 45°), plate misregistration 4–7 px (A4 scale, §4.3), stochastic grain per plate, ink coverage modulated by paper.
 - **Motion**: stepped time (8–12 fps feel, held frames) for the print layers; plate offsets change per "pull"; pages flip and slap down; type stays still once it lands so it can be read.
+- **In Anikit**: inks as `riso:fluorescent-pink` etc.; every ink layer `blend: multiply`. Duplicate type 4–8 px apart for plates (`boil` for drift), `halftone` in the ink colour, `inkTexture` 0.2–0.3, and `step: "threes"` on print layers. Recipe: `riso-overprint`; piece: `paper-weekend.json`.
 
 ### 9.3 Corporate identity system (generative device)
 
@@ -331,6 +333,7 @@ Eight distinct graphic worlds. Each: palette (hex), type, grid, texture, motion.
 - **Grid**: Gerstner 58 at 30 px (§2.2); the device lives on the grid (stripe angle and width in grid units).
 - **Texture**: none; material only from the device's application (stripe on vehicle, building, page).
 - **Motion**: the device has one behaviour (it stretches, slopes, or wipes), and every transition is that behaviour. The device is the transition system; there are no other wipes.
+- **In Anikit**: build the device once in `defs` from `squircle`/`arc`/`superellipse` and `use` it everywhere. Make the pattern from the device (`pattern.tile` with your motif, or `arcs`) and set the palette with `theme.palette` (`anikit-video palette "<seed> split"`). `grid.show: "under"` gives the guidelines frame. Piece: `fold-identity.json`.
 
 ### 9.4 Editorial data story
 
@@ -340,6 +343,7 @@ Eight distinct graphic worlds. Each: palette (hex), type, grid, texture, motion.
 - **Grid**: 6-column (240 px columns, §2.2); charts span 4–6 columns; annotations in the remaining columns, aligned to data points.
 - **Texture**: none, or a halftone photograph as the "lead image" scene.
 - **Motion**: §7 reveal order; lines draw at constant speed; highlight colour arrives last on the beat; camera pushes into the annotated point (scale 1→2.5) and cuts to the human detail.
+- **In Anikit**: `line-chart`/`bar-chart` with `look: "editorial"`, `highlight`, `notes`, `compare`; a `draw` layer for a bespoke chart; `dots` for unit charts; Fraunces or a news serif for the title only. Piece: `street-ledger.json`.
 
 ### 9.5 Memphis
 
@@ -349,6 +353,7 @@ Eight distinct graphic worlds. Each: palette (hex), type, grid, texture, motion.
 - **Grid**: objects in perspective-free axonometric arrangement; shapes stacked like furniture (columns, half-discs, slabs).
 - **Texture**: flat; patterns (squiggles, terrazzo confetti, dot grids) as laminates on shapes [32].
 - **Motion**: objects assemble like a set being built: drop, bounce with 1 overshoot, settle; patterns slide inside their shapes (masked). Avoid "Corporate Memphis" figures entirely.
+- **In Anikit**: `pattern` with your own `tile` motifs (`tileStroke` for squiggles, `turns: 4`, `stagger`), `blob`, `arc` half-discs and `squircle` slabs. Patterns inside shapes go through a pattern layer with `matte`, and assembly uses `animate` with `outBack`. Still: `docs/video/shots/graphic/tiles-animated.jpg`.
 
 ### 9.6 Polish poster
 
@@ -358,6 +363,7 @@ Eight distinct graphic worlds. Each: palette (hex), type, grid, texture, motion.
 - **Grid**: none visible; one central image, lettering placed where the image leaves room.
 - **Texture**: brush texture in fills (dry edges), cut-paper edges, visible underdrawing.
 - **Motion**: stop-motion at 8–12 fps; strokes paint on; cut-paper pieces swap (Lenica's animation); "boil" (lines re-drawn every 2–3 frames with 1–2 px variation).
+- **In Anikit**: `brush` strokes (`dry`, `pressure`) painted on with `trimEnd`, `cutout` (torn/scissor) for paper pieces, `step: "twos"` + `boil` for the stop-motion feel, `inkTexture` on fills. Recipe: `torn-collage`; still: `brush.jpg`.
 
 ### 9.7 Brutalist (actual, not "neo-brutalist")
 
@@ -367,6 +373,7 @@ Eight distinct graphic worlds. Each: palette (hex), type, grid, texture, motion.
 - **Grid**: the document's own flow; tables with 1–2 px rules; dense.
 - **Texture**: none; screen pixels, scrollbars and cursors as found material.
 - **Motion**: no easing (linear or instant); hard cuts every 0.3–0.8 s; scrolling text at constant speed; elements appear in a single frame.
+- **In Anikit**: JetBrains Mono or system faces, `shape: line` rules, linear easing, `transition: cut`, `grid` with tight gutters; no `shadow`, no `radius`.
 
 ### 9.8 Op-art
 
@@ -376,6 +383,7 @@ Eight distinct graphic worlds. Each: palette (hex), type, grid, texture, motion.
 - **Grid**: a strict cell grid (e.g. 17×17 or 32×18 cells of 60 px at 1920×1080) or line fields at a fixed pitch (≥ 8 px, §4.6).
 - **Texture**: none; the pattern is the texture.
 - **Motion**: animate the modulation field (a sphere "swelling" through the grid; a wave travelling across line widths); moiré by rotating one line screen 1–3° against another. Check photosensitivity (§4.6).
+- **In Anikit**: `pattern` `field` expressions (`d`, `a`, `t`) on `lines`/`dots`/`waves`. Two rotated line patterns make moiré. Keep spacing ≥ 6 px. Recipe: `op-art-field`; clip: `op-art.mp4`.
 
 ---
 
