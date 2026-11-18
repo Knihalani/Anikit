@@ -1458,7 +1458,7 @@ mod tests {
         let m = spec::material(&json!({ "extends": "chrome", "imperfections": 0.5, "dust": 0.2 }), &HashMap::new(), "m").unwrap();
         assert_eq!(m.imperf, [0.5, 0.3, 0.25, 0.2]);
         scene(json!({ "objects": [ { "type": "box", "material": { "extends": "lacquer", "smudges": 0.8, "scratches": 0.5 } } ] })).unwrap();
-        for set in ["plinth", "podium", "steps", "sweep", "field", "arches", "terrain"] {
+        for set in ["plinth", "podium", "steps", "sweep", "field", "arches", "terrain", "landscape"] {
             scene(json!({ "set": set, "objects": [ { "type": "sphere", "radius": 0.3, "pos": [0, 0.3, 0] } ] })).unwrap();
         }
         let e = scene(json!({ "set": "plint", "objects": [] })).err().unwrap();

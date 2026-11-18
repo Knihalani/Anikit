@@ -123,10 +123,11 @@ Build a stage, not a void. `set` adds a designed set around the subject as ordin
 | `field` | An abstract field of columns with noise heights, rising with distance, with a clearing for the subject (`density` 0.25–3). |
 | `arches` | A receding corridor of half-buried rings. |
 | `terrain` | Rolling fBm ground that flattens near the subject (replaces the floor). |
+| `landscape` | Terrain plus about 70 boulders and 90 stylised trees standing on it (placed with the same height function), outside a clearing. Pair it with `rig: { "preset": "golden", "gobo": false }` and a light height fog. |
 
 `{ "env": "cyc", "rig": "rembrandt", "look": "clay", "set": { "preset": "sweep", "color": "#C8664A" }, "objects": [ ... ] }`
 
-Stills (each with its spec): `docs/video/shots/3d-sets/`. Measured 1080p traces on 4 cores: 0.52–0.82 s (`field` has 784 instanced columns).
+Stills (each with its spec): `docs/video/shots/3d-sets/` (`landscape.jpg`: 1080p trace 0.8 s and object build 0.3 s, on 4 cores). Measured 1080p traces on 4 cores: 0.52–0.82 s (`field` has 784 instanced columns).
 
 ## Camera language
 
