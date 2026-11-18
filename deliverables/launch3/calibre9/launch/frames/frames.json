@@ -1,0 +1,185 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "compositions": {
+  "printing": {
+   "layers": [
+    {
+     "text": "ATELIER VAUCLAIR",
+     "font": "Noto Serif Display",
+     "weight": 500,
+     "size": 40,
+     "letterSpacing": "0.16em",
+     "x": 960,
+     "y": 352,
+     "color": "#000"
+    },
+    {
+     "text": "CALIBRE 9",
+     "font": "Noto Serif Display",
+     "weight": 400,
+     "size": 30,
+     "letterSpacing": "0.32em",
+     "x": 960,
+     "y": 742,
+     "color": "#000"
+    }
+   ]
+  }
+ },
+ "scenes": [
+  {
+   "duration": 1,
+   "background": "#000",
+   "layers": [
+    {
+     "id": "dial",
+     "type": "shader",
+     "src": "/home/user/anikit/deliverables/launch3/calibre9/src/dial.glsl",
+     "channels": [
+      {
+       "layers": [
+        {
+         "composition": "printing"
+        }
+       ]
+      }
+     ],
+     "uniforms": {
+      "zoom": 1.45,
+      "cx": -0.95,
+      "cy": 0.05,
+      "rot": 0.0,
+      "T": 62.15,
+      "rate": 0,
+      "expo": 1.0,
+      "ink": 1.0,
+      "tone": 0
+     }
+    },
+    {
+     "text": "Monday.",
+     "font": "Noto Serif Display",
+     "weight": 300,
+     "size": "15vh",
+     "x": "7%",
+     "y": "44%",
+     "anchor": "left",
+     "color": "#EDE4D3"
+    },
+    {
+     "text": "Wound on Friday. 150 pieces.",
+     "font": "Noto Serif Display",
+     "weight": 400,
+     "size": "3.6vh",
+     "x": "7.4%",
+     "y": "58%",
+     "anchor": "left",
+     "color": "#CFC4B2"
+    }
+   ]
+  },
+  {
+   "duration": 1,
+   "background": "#000",
+   "layers": [
+    {
+     "id": "dial",
+     "type": "shader",
+     "src": "/home/user/anikit/deliverables/launch3/calibre9/src/dial.glsl",
+     "channels": [
+      {
+       "layers": [
+        {
+         "composition": "printing"
+        }
+       ]
+      }
+     ],
+     "uniforms": {
+      "zoom": 1.45,
+      "cx": -0.95,
+      "cy": 0.05,
+      "rot": 0.0,
+      "T": 62.15,
+      "rate": 0,
+      "expo": 1.0,
+      "ink": 1.0,
+      "tone": 1
+     }
+    },
+    {
+     "text": "Monday.",
+     "font": "Noto Serif Display",
+     "weight": 300,
+     "size": "15vh",
+     "x": "7%",
+     "y": "44%",
+     "anchor": "left",
+     "color": "#EDE4D3"
+    },
+    {
+     "text": "Wound on Friday. 150 pieces.",
+     "font": "Noto Serif Display",
+     "weight": 400,
+     "size": "3.6vh",
+     "x": "7.4%",
+     "y": "58%",
+     "anchor": "left",
+     "color": "#CFC4B2"
+    }
+   ]
+  },
+  {
+   "duration": 1,
+   "background": "#000",
+   "layers": [
+    {
+     "id": "dial",
+     "type": "shader",
+     "src": "/home/user/anikit/deliverables/launch3/calibre9/src/dial.glsl",
+     "channels": [
+      {
+       "layers": [
+        {
+         "composition": "printing"
+        }
+       ]
+      }
+     ],
+     "uniforms": {
+      "zoom": 1.45,
+      "cx": -0.95,
+      "cy": 0.05,
+      "rot": 0.0,
+      "T": 62.15,
+      "rate": 0,
+      "expo": 1.0,
+      "ink": 1.0,
+      "tone": 2
+     }
+    },
+    {
+     "text": "Monday.",
+     "font": "Noto Serif Display",
+     "weight": 300,
+     "size": "15vh",
+     "x": "7%",
+     "y": "44%",
+     "anchor": "left",
+     "color": "#EDE4D3"
+    },
+    {
+     "text": "Wound on Friday. 150 pieces.",
+     "font": "Noto Serif Display",
+     "weight": 400,
+     "size": "3.6vh",
+     "x": "7.4%",
+     "y": "58%",
+     "anchor": "left",
+     "color": "#CFC4B2"
+    }
+   ]
+  }
+ ]
+}

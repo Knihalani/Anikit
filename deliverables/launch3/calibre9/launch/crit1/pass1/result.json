@@ -1,0 +1,385 @@
+{
+  "name": "pass1",
+  "tags": [
+    "product-launch",
+    "cg-3d"
+  ],
+  "refs": [
+    "wealthsimple-trade",
+    "tiffany-holiday",
+    "da-vincis-demons"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 5.5,
+      "composition": 5.5,
+      "typography": 3.5,
+      "colour": 6.0,
+      "light_texture": 6.0,
+      "motion": 4.5,
+      "craft": 4.0,
+      "originality": 3.5
+    },
+    "overall": 4.81,
+    "judged_professional": "0/2",
+    "pro_rate": 0.0,
+    "mean_rank": 3,
+    "gaps": [
+      "Lock the dial lettering and model the engraving with real micro-geometry and anisotropic metal, as D does with its jewellery",
+      "Give the type a point of view (scale contrast, interaction with the light bands, a deliberate face) instead of a default serif placed like a slide",
+      "Vary the shots (movement close-ups, wrist or human context, a cut on the light change) so the sequence has choreography rather than one push-in",
+      "Build the typography as a system (a chosen face, scale contrast, a grid tied to the dial geometry) and do not drop captions at the edges",
+      "Render the dial printing and engraving as real material, with crisp transfer printing, reflective indices and lens behaviour, so the object earns the luxury claim",
+      "Vary the shots and the story beats (wrist, workshop, movement, light on a different surface) so the time-passing idea develops and does not repeat"
+    ],
+    "tells": [
+      "The text on the dial is unstable and garbled between frames ('AILLIER VAUCLAIR', 'CALIBRE 9' smearing and dropping letters), a typical generative-render tell",
+      "The guilloch\u00e9 reads as procedural moir\u00e9 rather than engraved metal; the pattern behaves like a texture map",
+      "The type is a generic editorial serif with a cropped word ('Frida') and a slide-like end card ('Monday. 150 pieces.') on black, with no layout idea",
+      "One move repeated: a slow push over the dial under slatted window-blind shadows, with a light swap from warm to blue and back; little variety",
+      "The blind shadows are the one good idea, but the idea is literal (time passing from Friday to Monday) and stays on the surface",
+      "The idea has some intelligence: window-blind shadows sweep across the dial from Friday to Monday, so time passes as light. It is still a familiar luxury-watch trope",
+      "The brand mark on the dial is mushy and inconsistent ('AVTILHER AUCLAIR' / 'ATELIER VAUCLAIR', 'CALIBRE 9' half legible). Real product renders have crisp, correct printing",
+      "The type is a default editorial serif placed like a slide caption. 'Frida' is cropped off the frame edge, and '150 pieces.' is tiny with no hierarchy or layout idea",
+      "Six frames are one object with the same hard-shadow gag and only the colour temperature changing. There is little choreography",
+      "The guilloch\u00e9 moir\u00e9 reads as procedural noise more than engraved metal, and the cutaway frames lack depth of field and dust or finish detail"
+    ]
+  },
+  "refs_summary": {
+    "wealthsimple-trade": {
+      "overall": 2.88,
+      "judged_professional": "0/2",
+      "mean_rank": 4
+    },
+    "tiffany-holiday": {
+      "overall": 7.38,
+      "judged_professional": "2/2",
+      "mean_rank": 2
+    },
+    "da-vincis-demons": {
+      "overall": 7.75,
+      "judged_professional": "2/2",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 6.0,
+  "delta": -1.19,
+  "trials": [
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "candidate",
+        "D": "tiffany-holiday"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The idea is specific to the subject: Leonardo's notebooks (Vitruvian Man, the codex mirror-writing, machine sketches, the Mona Lisa) are merged with painted figures, so the period's own drawings carry the story",
+              "Frames are dense and layered: ink lines, perspective construction rays, splatter, parchment grain and cloud painting are composited with real depth",
+              "The palette is unusual and controlled: bruised violet, sepia and umber, with lavender highlights moving through it",
+              "Credits are set in small caps with role/name hierarchy and placed in the negative space of each composition, not centred like a slide",
+              "Every frame is built differently (a full figure, architecture, a macro of a hand and pen, a split face and horizon, an upward-looking portrait, a weapon over blueprints), which points to real choreography between shots"
+            ],
+            "gaps": [
+              "The credit typeface is a fairly standard Trajan-like small-caps serif; the type could be worked into the ink and perspective lines instead of sitting on top of them",
+              "The grunge, splatter and texture overlay is a little period-typical (early-2010s title look) and pulls it toward a known style",
+              "The figure illustration (the upturned face, the cloaked rider) leans toward digital-painting clich\u00e9s, compared with D's photographic, fully lit world"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "It has a clear narrative device: a jewelled bird brooch flies through a city at night (past a clock, over a taxi corner, across a stage, over a dinner table), so the product is the main character",
+              "The light is real and motivated: practical candles, string lights, rack focus with bokeh, and a stage-light edge on the ballerina",
+              "The camera language varies a lot (a top-down god's-eye view, macro in front of a blurred clock, a wide balcony shot, a table at shallow depth), which shows planned camera moves",
+              "The palette is a deliberate teal and amber with a coherent colour grade across the city scenes"
+            ],
+            "gaps": [
+              "The final painterly desert-mesa frame breaks the visual system; the shift in style feels unearned and its render quality is softer",
+              "No typographic idea is visible; the end card and brand lockup would need to match the craft of the imagery",
+              "The holiday-luxury vocabulary (sparkle trails, a yellow cab, a ballerina) is familiar; it needs one image nobody has seen before"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 5,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The text on the dial is unstable and garbled between frames ('AILLIER VAUCLAIR', 'CALIBRE 9' smearing and dropping letters), a typical generative-render tell",
+              "The guilloch\u00e9 reads as procedural moir\u00e9 rather than engraved metal; the pattern behaves like a texture map",
+              "The type is a generic editorial serif with a cropped word ('Frida') and a slide-like end card ('Monday. 150 pieces.') on black, with no layout idea",
+              "One move repeated: a slow push over the dial under slatted window-blind shadows, with a light swap from warm to blue and back; little variety",
+              "The blind shadows are the one good idea, but the idea is literal (time passing from Friday to Monday) and stays on the surface"
+            ],
+            "gaps": [
+              "Lock the dial lettering and model the engraving with real micro-geometry and anisotropic metal, as D does with its jewellery",
+              "Give the type a point of view (scale contrast, interaction with the light bands, a deliberate face) instead of a default serif placed like a slide",
+              "Vary the shots (movement close-ups, wrist or human context, a cut on the light change) so the sequence has choreography rather than one push-in"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition repeats in every frame: one centred object on an empty pastel or cream ground",
+              "The subjects have nothing to do with each other (earbuds, a steering wheel with traffic icons, a cannabis bud, a plug in a portal, a retro chess monitor, a glowing sci-fi ring), so there is no idea or narrative",
+              "Generic 'tasteful AI' rendering: soft even studio light, plastic surfaces, placeholder icon pills orbiting the steering wheel",
+              "The style is inconsistent: the last frame jumps to a saturated blue tech-glow look, and the aspect ratios and crops vary",
+              "No type at all, and its absence leaves the viewer with nothing to read the piece by"
+            ],
+            "gaps": [
+              "Find one specific idea that links the objects and lets the sequence build, as A does with Leonardo's notebooks",
+              "Replace centred-object-on-flat-ground with designed, layered compositions that use depth, foreground and scale",
+              "Commit to one material, light and colour world with motivated light and real texture, instead of default soft-box renders that drift in style"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 32.0,
+        "cost_usd": 0.17231380000000002,
+        "tokens": 72046,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "da-vincis-demons",
+        "B": "wealthsimple-trade",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A specific concept: Leonardo's notebooks become the world. The Vitruvian Man sits in clouds, St Peter's is overlaid with perspective construction lines, and the Mona Lisa dissolves into a horizon with a rider and a wheel diagram",
+              "Dense, layered frames with real texture: ink spatter, parchment grain, mirror-script codex pages, and hand-drawn linework mixed with painted light",
+              "Deliberate palette of bruised violet, sepia and umber, held across every frame without going monochrome",
+              "Each composition is different: a figure in the sky, architecture, an extreme close-up of a pen nib, a split portrait and landscape, an upturned face framed by an arc, a crossbow in profile. That shows real choreography between scenes",
+              "Credits sit inside negative space in each composition and are not stamped in one fixed spot"
+            ],
+            "gaps": [
+              "The credit type is a stock classical small-caps face (Trajan-like) with no scale contrast. Make the type part of the codex world, for example in mirror script or ink-drawn, the way the image already is",
+              "Some frames are crowded with competing overlays (frame 6). Clean up the hierarchy so one gesture leads",
+              "The art is iconic and leans on the obvious Leonardo greatest hits (Vitruvian Man, Mona Lisa). Lesser-known notebook material would surprise more"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A clear narrative device: a jewelled bird carries a sparkle trail through a city, from a clock to a taxi corner, a stage, brownstones and a dinner table. That gives real continuity of motion from frame to frame",
+              "Varied camera language: macro shallow focus, a top-down overhead, a wide stage shot, an exterior dusk view and an interior tabletop",
+              "Motivated light: practical window glow, candlelight, stage footlights and bokeh. The materials are convincing (gem facets, cloth, glassware)",
+              "The style shift to a painted desert at the end suggests a deliberate move into an imagined world, not a generator drifting"
+            ],
+            "gaps": [
+              "No visible typography. The piece needs an end-card or brand mark with as much craft as the image",
+              "The idea is a familiar luxury-holiday trope (magic sparkle trail across a festive city). It needs a twist only this brand could own",
+              "The painted desert frame breaks the visual system without a clear bridge. Signal the transition between worlds so it reads as intended"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 3,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 4,
+              "craft": 4,
+              "originality": 4
+            },
+            "tells": [
+              "The idea has some intelligence: window-blind shadows sweep across the dial from Friday to Monday, so time passes as light. It is still a familiar luxury-watch trope",
+              "The brand mark on the dial is mushy and inconsistent ('AVTILHER AUCLAIR' / 'ATELIER VAUCLAIR', 'CALIBRE 9' half legible). Real product renders have crisp, correct printing",
+              "The type is a default editorial serif placed like a slide caption. 'Frida' is cropped off the frame edge, and '150 pieces.' is tiny with no hierarchy or layout idea",
+              "Six frames are one object with the same hard-shadow gag and only the colour temperature changing. There is little choreography",
+              "The guilloch\u00e9 moir\u00e9 reads as procedural noise more than engraved metal, and the cutaway frames lack depth of field and dust or finish detail"
+            ],
+            "gaps": [
+              "Build the typography as a system (a chosen face, scale contrast, a grid tied to the dial geometry) and do not drop captions at the edges",
+              "Render the dial printing and engraving as real material, with crisp transfer printing, reflective indices and lens behaviour, so the object earns the luxury claim",
+              "Vary the shots and the story beats (wrist, workshop, movement, light on a different surface) so the time-passing idea develops and does not repeat"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Every frame is the same composition: one centred object on a flat pastel or cream seamless ground with soft generic studio light",
+              "The objects are unrelated (earbuds, a steering wheel with UI pills, a cannabis bud, a charging port, a retro chess TV, a glowing reactor ring) with no throughline",
+              "There are generator artifacts and incoherence. The chess board has wrong pieces and layout, the plug feeds into a porthole with no logic, and road-sign icons float like placeholder UI badges",
+              "No type and no brand idea. Its absence serves nothing because the piece has no message to carry",
+              "The aspect ratios differ between frames, which suggests stitched-together outputs and not a designed film"
+            ],
+            "gaps": [
+              "Find a single idea that links the objects, a transformation or a reason they share one world, and stage transitions between them",
+              "Light with intent (motivated sources, cast shadows, contact, atmosphere) and break the centred-on-seamless default with considered framing",
+              "Add typography or a narrative layer that gives the viewer something to remember, and fix object logic so every detail holds up"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 34.0,
+        "cost_usd": 0.16462100000000002,
+        "tokens": 72291,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 4
+      },
+      "checks": {
+        "idea": true,
+        "invariant": true,
+        "arc": false,
+        "type_meaning": false,
+        "freeze_frame": false,
+        "ending": true,
+        "restraint": true,
+        "material": false,
+        "sync": true
+      },
+      "defects": [
+        "Heavy moir\u00e9 and aliasing on the guilloch\u00e9 dial pattern at 100%. It shimmers and crawls rather than reading as engraved metal, and it is worst in the dark blue macro shot and the wide brown shots.",
+        "The dial wordmark 'ATELIER VAUCLAIR' and 'CALIBRE 9' are broken. Letterforms are fragmented, the spacing is uneven and the text dissolves into the pattern, so it reads like an aliased texture rather than printed or engraved type.",
+        "The window-shadow gobo is too soft and too uniform. It lies on the dial like a flat multiply layer, with no proper occlusion or contact against the indices and hands.",
+        "Hands and indices look CG-clean, with no bevel highlights or polish falloff. The case edges have a plastic specular rim and no real metal reflection.",
+        "Dead air of about 1 s around second 8 (change 1.3/s): a near-static frame before the end card with no motivating beat.",
+        "The blue macro shot is underlit and muddy, with crushed blacks, a low-contrast pattern and visible banding in the gradient falloff.",
+        "End-card type ('Monday.' / '150 pieces.') is a generic Didone set with no hierarchy tension. The small line is undersized and sits awkwardly against the watch."
+      ],
+      "gaps": [
+        "Motion is a sequence of slow push-ins and light sweeps of the same weight. There is no escalation, no mechanical event (crown, movement or hand snap) used as a peak, and no shot that hands off to the next through a match cut, so the Friday-to-Monday time passage is told with captions instead of choreography.",
+        "Finish is far below luxury-watch standard. The guilloch\u00e9 needs proper texture filtering and supersampling, real anisotropic metal with environment reflections, and crisp, legible dial printing; at 100% the image currently reads as shimmering procedural noise.",
+        "The sound is sectional but simple: tick clicks over sustained, fairly static tonal pads with block cuts at about 2.4, 4.9, 7.3 and 9.7 s. There is no designed foley layer (escapement, crown, metal, room), and there is no dynamic build to a climax, just level plateaus and a hard drop, so the score doesn't carry the time-passing idea."
+      ]
+    },
+    "meta": {
+      "seconds": 21.4,
+      "cost_usd": 0.1594312,
+      "tokens": 71989,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "pass1.mp4: 12.0s, 5 shots, median 2.40s, longest 3.63s\nper-second change: [24.3, 51.6, 28.1, 25.6, 43.9, 41.3, 14.0, 19.7, 1.3, 35.3, 9.1]\nPACE: FAIL \u2014 longest shot 3.6s > 2.5s; median shot 2.4s > 2.0s"
+  },
+  "full_scores": {
+    "idea": 5.5,
+    "composition": 5.5,
+    "typography": 3.5,
+    "colour": 6.0,
+    "light_texture": 6.0,
+    "motion": 4.75,
+    "craft": 4.0,
+    "originality": 3.5,
+    "sound": 5
+  },
+  "full_overall": 4.86,
+  "cost_usd": 0.496,
+  "judge_seconds": 87.4,
+  "verdict": "FAIL"
+}
