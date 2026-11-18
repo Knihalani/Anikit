@@ -13,6 +13,7 @@
 - Forces: `flow` (curl noise), `attractors` (`pos`, `strength`, `swirl`), `gravity`, `drag`; `target` assembles particles into a shape between `from`/`to`.
 - Look: `blend: add` (glowing light) or `over` (dust, sand, smoke: lit, self-shadowed volumes); `colorBy: age|speed|height|source`; `stretch` streaks; `"trail": 0.6` (or `{ "length", "taper", "opacity" }`) draws light trails along each particle's real past path, best with 1–10 k `add` particles (examples/video/sim/trails.json).
 - Depth and scale, the studio way: `"layers": [{ "share": 0.0003, "emit": {...near}, "size_dist": {...big} }, { "share": 0.25 }, { "share": 0.75, "emit": {...far}, "opacity": 0.35 }]` splits one emitter into foreground bokeh, a crisp mid layer and far haze. `"size_dist": { "min", "max", "power": 2.5 }` gives power-law sizes. Lit particles take `"scatter": 0.6` (backlit forward glow) and `"glint": 1.5` (facet sparkle). See examples/video/sim/snow.json.
+- Shapes: `"sprite": "confetti"` (or `petal`, `paper`, `square`, `{ "shape", "aspect", "tumble", "translucency" }`) draws tumbling, lit flat pieces instead of dots. See examples/video/sim/confetti.json, which uses an `emit.vel` expression for a conical burst.
 - **Make anything: expressions** of `x y z vx vy vz t age i` (+ `sin noise rand mix clamp`…):
   - `"force": "=[-z*2, 0.4, x*2]"` is a custom acceleration field (a vortex here);
   - `"emit": { "pos": "=[cos(rand(i)*6.28), 0, sin(rand(i)*6.28)]", "vel": "=[0, 1, 0]" }` is a custom spawn rule;
