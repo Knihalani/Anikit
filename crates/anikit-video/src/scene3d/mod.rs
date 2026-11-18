@@ -301,6 +301,18 @@ impl Prepare for Scene3d {
                 return Err(Error(format!("look: unknown look `{o}`{hint}")));
             }
         };
+        // `practical` objects: a visible source (bulb, tube, panel) plus the
+        // matching local light(s), so motivated light is one object.
+        let (objs_v, practical_lights) = practicals(objs_v).map_err(Error)?;
+        if !practical_lights.is_empty() {
+            let (_, loc, an) = spec::lights(&Value::Array(practical_lights), &es.env, "objects (practical)").map_err(Error)?;
+            let base = local_lights.len();
+            local_lights.extend(loc);
+            light_anims.extend(an.into_iter().map(|mut a| {
+                a.idx += base;
+                a
+            }));
+        }
         let objs_v: Vec<Value> = match look_mat {
             Some(lm) => objs_v
                 .into_iter()
@@ -914,6 +926,75 @@ fn outlines(out: &mut [u8], px: &post::Planes, w: usize, h: usize, width: f32, i
             }
         }
     }
+}
+
+/// Expand `{ "type": "practical", "shape": "bulb"|"tube"|"panel", "pos",
+/// "color", "intensity", "size" }` into an emissive object and its lights.
+fn practicals(objs: Vec<Value>) -> Result<(Vec<Value>, Vec<Value>), String> {
+    let mut out = Vec::with_capacity(objs.len());
+    let mut lights = Vec::new();
+    for (i, o) in objs.into_iter().enumerate() {
+        if o.get("type").and_then(|t| t.as_str()) != Some("practical") {
+            out.push(o);
+            continue;
+        }
+        let p = format!("objects[{i}]");
+        let m = o.as_object().unwrap();
+        spec::check_keys(m, &["type", "shape", "pos", "color", "intensity", "size", "name", "shadow"], &p)?;
+        let pos = m.get("pos").cloned().unwrap_or(serde_json::json!([0, 1, 0]));
+        let at = |k: usize| pos.get(k).and_then(|x| x.as_f64()).unwrap_or(0.0);
+        let color = m.get("color").cloned().unwrap_or(Value::String("#FFD9A8".into()));
+        let k = m.get("intensity").cloned().unwrap_or(serde_json::json!(6.0));
+        let size = m.get("size").and_then(|x| x.as_f64()).unwrap_or(0.0);
+        let shadow = m.get("shadow").and_then(|x| x.as_bool()).unwrap_or(true);
+        // The glow of the geometry tracks the light: radiance ~ intensity / area.
+        let glow = |area: f64| -> Value {
+            let kk = k.as_f64().unwrap_or(6.0);
+            serde_json::json!({ "base": "#111111", "metallic": 0, "roughness": 0.5, "emissive": color, "emissive_strength": (kk / (area * 40.0)).clamp(2.0, 60.0) })
+        };
+        let mut obj = serde_json::json!({ "pos": pos, "shadow": false });
+        if let Some(n) = m.get("name") {
+            obj["name"] = n.clone();
+        }
+        match m.get("shape").and_then(|x| x.as_str()).unwrap_or("bulb") {
+            "bulb" => {
+                let r = if size > 0.0 { size } else { 0.05 };
+                obj["type"] = "sphere".into();
+                obj["radius"] = r.into();
+                obj["material"] = glow(4.0 * std::f64::consts::PI * r * r);
+                lights.push(serde_json::json!({ "pos": pos, "color": color, "intensity": k, "shadow": shadow }));
+            }
+            "tube" => {
+                // A horizontal tube along X, lit by three points along it.
+                let l = if size > 0.0 { size } else { 1.2 };
+                obj["type"] = "cylinder".into();
+                obj["radius"] = 0.018.into();
+                obj["height"] = l.into();
+                obj["rot"] = serde_json::json!([0, 0, 90]);
+                obj["material"] = glow(std::f64::consts::PI * 0.036 * l);
+                let kk = match &k {
+                    Value::Number(n) => serde_json::json!(n.as_f64().unwrap_or(6.0) / 3.0),
+                    Value::String(e) => Value::String(format!("=({})/3", e.trim_start_matches('='))),
+                    _ => serde_json::json!(2.0),
+                };
+                for f in [-0.35, 0.0, 0.35] {
+                    lights.push(serde_json::json!({ "pos": [at(0) + f * l, at(1), at(2)], "color": color, "intensity": kk, "shadow": shadow }));
+                }
+            }
+            "panel" => {
+                // A ceiling panel facing down, with a wide soft spot under it.
+                let w = if size > 0.0 { size } else { 0.6 };
+                obj["type"] = "plane".into();
+                obj["size"] = serde_json::json!([w, w]);
+                obj["rot"] = serde_json::json!([90, 0, 0]);
+                obj["material"] = glow(w * w);
+                lights.push(serde_json::json!({ "pos": [at(0), at(1) - 0.02, at(2)], "target": [at(0), at(1) - 3.0, at(2)], "angle": 150, "penumbra": 0.8, "color": color, "intensity": k, "shadow": shadow }));
+            }
+            o => return Err(format!("{p}.shape: unknown `{o}` (bulb, tube, panel)")),
+        }
+        out.push(obj);
+    }
+    Ok((out, lights))
 }
 
 /// Where simulations are cached: `$ANIKIT_CACHE/sim` (default
@@ -1541,6 +1622,10 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        let (o, l) = practicals(vec![json!({ "type": "practical", "shape": "tube", "pos": [0, 2, 0], "intensity": 9 }), json!({ "type": "box" })]).unwrap();
+        assert_eq!((o.len(), l.len()), (2, 3));
+        scene(json!({ "objects": [ { "type": "practical", "shape": "bulb", "pos": [0, 1, 0], "intensity": "=3+sin(t*5)" }, { "type": "practical", "shape": "panel", "pos": [0, 2.5, 0] } ] })).unwrap();
+        assert!(practicals(vec![json!({ "type": "practical", "shape": "blub" })]).is_err());
         let e = spec::camera(&json!({ "keys": [ { "t": 0, "pos": [0, 1, 10], "target": [0, 0, 0] }, { "t": 1, "pos": [0, 1, 0], "target": [0, 0, -5], "ease": "outExpo" } ] }), (v3(0.0, 0.5, 0.0), 1.0), "camera").unwrap();
         assert!(e.at(0.5, 16.0 / 9.0, 0.0).pos.z < 0.5, "outExpo is 97% there at half time");
         let st = spec::camera(&json!({ "keys": [ { "t": 0, "pos": [0, 1, 10], "target": [0, 0, 0] }, { "t": 1, "pos": [0, 1, 0], "target": [0, 0, -5], "ease": "settle" } ] }), (v3(0.0, 0.5, 0.0), 1.0), "camera").unwrap();
