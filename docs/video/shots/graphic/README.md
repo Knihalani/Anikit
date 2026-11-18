@@ -24,3 +24,4 @@ More feature proofs: `tiles-animated.jpg` (custom `tile` motifs, `turns`, `stagg
 `photo-treatments.jpg`: the treatments on a real photo (`polyhaven:hdri/venice_sunset` backplate): the original, a duotone with a pre-curve, a 5 px line screen (engraving), and a two-plate riso of the same photo (blue duotone plus pink halftone, multiply, offset 6 px).
 `palettes.jpg`: `theme.palette` from five seeds and schemes (`anikit-video palette "<seed> <scheme>"`): value-structured ink, paper, mid, accent, accent2, tint, muted and surface.
 `grid-choreography.{jpg,mp4}`: layers tweening between grid fields (`"to": {"cell": …}`) over `show: "under"` guides, at 257 fps.
+`editorial-charts.jpg`: `line-chart` and `bar-chart` with `"look": "editorial"`: a highlight series against grey context, direct labels, the unit on the top gridline, a leader-line note, and before/after ticks on ranked bars.

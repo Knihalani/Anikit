@@ -421,7 +421,8 @@ Status (updated after the GRAPHIC session's work; `anikit-video docs graphic`):
   - 9: `pattern` layers, 15 kinds with ramp and jitter. Inside text, use a pattern layer with `matte`.
   - 4, partly: `multiply` overprint, `boil` for drifting plates, `inkTexture` for uneven coverage.
   - 5, partly: `inkTexture` plus `post.grain`.
-- **Open:** 10 (torn cutout edges), 11 (photocopy), 12 (brush strokes), 13 (editorial chart defaults), 14 (op-art field-driven lines), 15 (critique checks: off-grid elements, pattern pitch, halftone on reading text. Compile-time warnings for pitch < 4 px and halftone on small text exist).
+- **Shipped later:** 10 (`cutout`), 12 (`brush`), 13 (`look: "editorial"` on line and bar charts), 14 (pattern `field`), and `theme.palette` plus `riso:` inks.
+- **Open:** 11 (photocopy: compose it as `posterize: 2` + `duotone` + `toneRange` + `inkTexture`), 15 (critique checks: off-grid elements, pattern pitch, halftone on reading text. Compile-time warnings for pitch < 4 px and halftone on small text exist).
 
 1. **Named modular grid.** A scene-level `grid` (columns, rows, unit, gutters, margins, baseline) with Gerstner-style multiple column counts on one unit, and layer placement by cell (`"cell": "B2:D3"`, `"col": "2/5"`), with baseline snapping of text. Moves that target grid lines.
 2. **Gradient map / duotone / tritone per layer and per group**, with a pre-curve (black point, white point, gamma) and posterise levels. (In progress as `Tone`.)

@@ -148,10 +148,17 @@ pub struct BarChart {
     /// Pinned callouts: `[{ "index": 5, "text": "+38%" }]`.
     pub notes: Vec<Note>,
     pub motion: Motion,
+    /// `"editorial"`: ranked horizontal rows, flat bars (the highlight in the accent, the rest grey), category
+    /// labels left, values at the bar ends in tabular figures, a baseline instead of a grid.
+    pub look: String,
+    /// Editorial: earlier values drawn as ticks on each row (before → after).
+    pub compare: Vec<f32>,
+    /// Editorial: labels for the two states, e.g. `["2016", "2026"]` (shown once, on the first row).
+    pub compare_labels: Vec<String>,
 }
 impl Default for BarChart {
     fn default() -> Self {
-        BarChart { values: Vec::new(), labels: Vec::new(), colors: Vec::new(), multicolor: false, horizontal: false, max: None, delay: 0.0, duration: 0.9, stagger: 0.08, values_shown: true, grid: true, highlight: None, format: Format::default(), bar_width: 0.62, font_size: 22.0, shape: "rounded".into(), fill: "gradient".into(), glow: false, dashed: false, notes: Vec::new(), motion: Motion::Smooth }
+        BarChart { values: Vec::new(), labels: Vec::new(), colors: Vec::new(), multicolor: false, horizontal: false, max: None, delay: 0.0, duration: 0.9, stagger: 0.08, values_shown: true, grid: true, highlight: None, format: Format::default(), bar_width: 0.62, font_size: 22.0, shape: "rounded".into(), fill: "gradient".into(), glow: false, dashed: false, notes: Vec::new(), motion: Motion::Smooth, look: String::new(), compare: Vec::new(), compare_labels: Vec::new() }
     }
 }
 impl Prepare for BarChart {
@@ -168,11 +175,74 @@ impl Prepare for BarChart {
         if !["gradient", "solid", "outline"].contains(&self.fill.as_str()) {
             return Err(Error(format!("bar-chart fill must be gradient, solid or outline, not {:?}", self.fill)));
         }
+        if !matches!(self.look.as_str(), "" | "default" | "editorial") {
+            return Err(Error(format!("bar-chart: unknown look `{}` (default, editorial)", self.look)));
+        }
+        if !self.compare.is_empty() && self.compare.len() != self.values.len() {
+            return Err(Error("bar-chart: `compare` needs one value per bar".into()));
+        }
         Ok(())
     }
 }
+impl BarChart {
+    /// Editorial bars: rows, flat fills, direct values, one highlight.
+    fn eval_editorial(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let th = ctx.theme;
+        let (w, h) = (ctx.width, ctx.height);
+        let fs = self.font_size;
+        let n = self.values.len();
+        let accent = colors(&self.colors, th, 0);
+        let grey = alpha(th.muted, 0.5);
+        let vmax = self.values.iter().chain(&self.compare).fold(0.0f32, |m, v| m.max(*v));
+        let hi = self.max.unwrap_or(vmax).max(1e-6);
+        let ls = TextStyle::new(Face::Sans, fs, 600, th.text);
+        let label_w = self.labels.iter().map(|l| ctx.assets.measure(l, &ls)).fold(0.0f32, f32::max) + fs * 1.2;
+        let vs = TextStyle::new(Face::Sans, fs * 0.9, 600, th.text).tabular();
+        let value_w = ctx.assets.measure(&self.format.fmt(vmax as f64), &vs) + fs * 1.2;
+        let top = if self.compare_labels.is_empty() { 0.0 } else { fs * 1.6 };
+        let (px, pw) = (label_w, (w - label_w - value_w).max(10.0));
+        let row = (h - top) / n as f32;
+        let bh = (row * self.bar_width).min(fs * 2.2);
+        let mut o = Vec::new();
+        let gi = ease_out(seg(t, self.delay - 0.2, 0.4));
+        // Baseline.
+        o.push(rect(px - 0.75, top, 1.5, h - top, 0.0, solid(alpha(th.text, 0.5 * gi))));
+        for (i, v) in self.values.iter().enumerate() {
+            let k = self.motion.ease(seg(t, self.delay + i as f32 * self.stagger, self.duration)).min(1.0);
+            let yc = top + row * (i as f32 + 0.5);
+            let hl = self.highlight.map_or(i == 0, |hh| hh == i);
+            let c = if hl { accent } else { grey };
+            if let Some(l) = self.labels.get(i) {
+                draw(&mut o, ctx.assets, l, &ls.clone().color(alpha(if hl { accent } else { th.text }, gi)), 0.0, yc + fs * 0.36, 0.0);
+            }
+            let bw = pw * (v / hi) * k;
+            if bw > 0.0 {
+                o.push(rect(px, yc - bh * 0.5, bw, bh, 0.0, solid(c)));
+            }
+            if let Some(cv) = self.compare.get(i) {
+                let a = ease_out(seg(t, self.delay + i as f32 * self.stagger + self.duration * 0.6, 0.3));
+                let x = px + pw * (cv / hi);
+                o.push(rect(x - 1.5, yc - bh * 0.5 - fs * 0.25, 3.0, bh + fs * 0.5, 0.0, solid(alpha(th.text, 0.9 * a))));
+                if i == 0 && self.compare_labels.len() >= 2 {
+                    let cs = small(th, fs * 0.72).tabular().color(alpha(th.muted, a));
+                    draw(&mut o, ctx.assets, &self.compare_labels[0], &cs, x, yc - bh * 0.5 - fs * 0.55, 0.5);
+                    draw(&mut o, ctx.assets, &self.compare_labels[1], &cs, px + pw * (v / hi), yc - bh * 0.5 - fs * 0.55, 0.5);
+                }
+            }
+            if self.values_shown && k > 0.05 {
+                let shown = v * k;
+                draw(&mut o, ctx.assets, &self.format.fmt(shown as f64), &vs.clone().color(alpha(if hl { accent } else { th.text }, gi)), px + bw + fs * 0.5, yc + fs * 0.32, 0.0);
+            }
+        }
+        o
+    }
+}
+
 impl Component for BarChart {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        if self.look == "editorial" {
+            return self.eval_editorial(t, ctx);
+        }
         let th = ctx.theme;
         let (w, h) = (ctx.width, ctx.height);
         let n = self.values.len();
@@ -348,10 +418,15 @@ pub struct LineChart {
     /// Vertical guide line following the drawing head.
     pub crosshair: bool,
     pub motion: Motion,
+    /// `"editorial"`: one highlighted series in the accent, the rest as grey context, direct labels at the line
+    /// ends (no legend, no pills), hairline grid with the unit on the top line, notes as leader lines.
+    pub look: String,
+    /// Editorial: the series to highlight (index). Default 0.
+    pub highlight: usize,
 }
 impl Default for LineChart {
     fn default() -> Self {
-        LineChart { series: Vec::new(), names: Vec::new(), labels: Vec::new(), colors: Vec::new(), area: None, dots: false, end_label: true, smooth: true, min: None, max: None, grid: true, delay: 0.0, duration: 1.6, stagger: 0.2, width: 4.0, format: Format::default(), font_size: 22.0, glow: false, dashed: false, notes: Vec::new(), crosshair: false, motion: Motion::Soft }
+        LineChart { series: Vec::new(), names: Vec::new(), labels: Vec::new(), colors: Vec::new(), area: None, dots: false, end_label: true, smooth: true, min: None, max: None, grid: true, delay: 0.0, duration: 1.6, stagger: 0.2, width: 4.0, format: Format::default(), font_size: 22.0, glow: false, dashed: false, notes: Vec::new(), crosshair: false, motion: Motion::Soft, look: String::new(), highlight: 0 }
     }
 }
 impl Prepare for LineChart {
@@ -359,11 +434,138 @@ impl Prepare for LineChart {
         if self.series.is_empty() || self.series.iter().any(|s| s.len() < 2) {
             return Err(Error("line-chart needs `series`: arrays of at least 2 numbers".into()));
         }
+        if !matches!(self.look.as_str(), "" | "default" | "editorial") {
+            return Err(Error(format!("line-chart: unknown look `{}` (default, editorial)", self.look)));
+        }
         Ok(())
     }
 }
+impl LineChart {
+    /// Editorial line chart (FT/Bloomberg-style): context in grey, one story line, direct labels.
+    fn eval_editorial(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let th = ctx.theme;
+        let (w, h) = (ctx.width, ctx.height);
+        let fs = self.font_size;
+        let all = self.series.iter().flatten();
+        let vmax = all.clone().fold(f32::MIN, |m, v| m.max(*v));
+        let vmin = all.fold(f32::MAX, |m, v| m.min(*v));
+        let lo = self.min.unwrap_or(if vmin >= 0.0 { 0.0 } else { vmin });
+        let (hi, step) = match self.max {
+            Some(m) => (m, (m - lo) / 4.0),
+            None => {
+                let (n, s) = nice(vmax - lo, 4);
+                (lo + n, s)
+            }
+        };
+        let hl = self.highlight.min(self.series.len() - 1);
+        let accent = colors(&self.colors, th, 0);
+        let grey = alpha(th.muted, 0.55);
+        // Room for direct labels on the right.
+        let lab = |si: usize| -> String {
+            let last = *self.series[si].last().unwrap_or(&0.0);
+            match self.names.get(si) {
+                Some(n) if si == hl => format!("{n}  {}", self.format.fmt(last as f64)),
+                Some(n) => n.clone(),
+                None => self.format.fmt(last as f64),
+            }
+        };
+        let hs = TextStyle::new(Face::Sans, fs, 700, accent).tabular();
+        let cs = small(th, fs * 0.82).color(alpha(th.muted, 0.95));
+        let right = (0..self.series.len()).map(|si| ctx.assets.measure(&lab(si), if si == hl { &hs } else { &cs })).fold(0.0f32, f32::max) + fs;
+        let (px, py, pw, ph) = (0.0, fs * 1.4, w - right, h - fs * 1.4 - if self.labels.is_empty() { fs * 0.5 } else { fs * 2.2 });
+        let mut o = Vec::new();
+        let gi = ease_out(seg(t, self.delay - 0.2, 0.5));
+        let yv = |v: f32| py + ph - ph * (v - lo) / (hi - lo);
+        // Hairline grid; the unit only on the top line; a stronger baseline.
+        if self.grid && gi > 0.0 {
+            let ticks = ((hi - lo) / step).round().max(1.0) as i32;
+            let mut g = Path::new();
+            let ls = small(th, fs * 0.78).tabular().color(alpha(th.muted, gi * 0.9));
+            for i in 0..=ticks {
+                let v = lo + i as f32 * step;
+                let y = yv(v).round() + 0.5;
+                if i == 0 {
+                    o.push(rect(px, y - 0.5, pw, 1.5, 0.0, solid(alpha(th.text, 0.55 * gi))));
+                } else {
+                    g.move_to((px as f64, y as f64));
+                    g.line_to(((px + pw) as f64, y as f64));
+                }
+                let txt = if i == ticks { self.format.fmt(v as f64) } else { Format { prefix: String::new(), suffix: String::new(), ..self.format.clone() }.fmt(v as f64) };
+                draw(&mut o, ctx.assets, &txt, &ls, px, y - fs * 0.3, 0.0);
+            }
+            o.push(Op::Stroke { path: g, paint: solid(alpha(th.text, 0.12 * gi)), stroke: line(1.0, [0.0, 1.0]), transform: IDENTITY });
+        }
+        let n = self.series[0].len();
+        let every = if n <= 8 { 1 } else { n.div_ceil(6) };
+        for (i, l) in self.labels.iter().enumerate().take(n) {
+            if i % every != 0 && i != n - 1 {
+                continue;
+            }
+            let x = px + pw * i as f32 / (n - 1).max(1) as f32;
+            let al = if i == 0 { 0.0 } else if i == n - 1 { 1.0 } else { 0.5 };
+            draw(&mut o, ctx.assets, l, &small(th, fs * 0.8).tabular().color(alpha(th.muted, gi)), x, py + ph + fs * 1.5, al);
+        }
+        // Context first, the story line last (on top).
+        let order: Vec<usize> = (0..self.series.len()).filter(|i| *i != hl).chain([hl]).collect();
+        let mut ends: Vec<(usize, f32, f32)> = Vec::new();
+        for (oi, &si) in order.iter().enumerate() {
+            let s = &self.series[si];
+            let story = si == hl;
+            let start = if story { self.delay + self.stagger * (order.len() - 1) as f32 } else { self.delay + oi as f32 * self.stagger * 0.3 };
+            let k = self.motion.ease(seg(t, start, if story { self.duration } else { self.duration * 0.7 })).min(1.0);
+            if k <= 0.0 {
+                continue;
+            }
+            let pts: Vec<(f32, f32)> = s.iter().enumerate().map(|(i, v)| (px + pw * i as f32 / (s.len() - 1) as f32, yv(*v))).collect();
+            let path = if self.smooth { smooth_path(&pts, 1.0) } else { poly(&pts) };
+            let (c, wd) = if story { (accent, self.width * 1.25) } else { (grey, self.width * 0.55) };
+            let clip = Some((rrect_path(px - 12.0, py - 40.0, pw * k + 12.0, ph + 52.0, 0.0), IDENTITY));
+            o.push(Op::PushLayer { opacity: 1.0, blend: crate::dl::Blend::Normal, filters: vec![], clip, cache_key: None });
+            o.push(stroke_op(path, solid(c), wd, [0.0, 1.0]));
+            o.push(Op::PopLayer);
+            if k >= 1.0 {
+                let e = *pts.last().unwrap();
+                ends.push((si, e.0, e.1));
+                if story {
+                    o.push(circle(e.0, e.1, wd * 1.6, solid(c)));
+                }
+            }
+            if story {
+                for note in self.notes.iter().filter(|nt| nt.index < s.len()) {
+                    let p = pts[note.index];
+                    let reached = note.index as f32 / (s.len() - 1) as f32;
+                    let a = ease_out(seg(t, start + self.duration * reached, 0.35));
+                    if a > 0.0 && k >= reached {
+                        // A leader up to the label, text right-aligned to the leader (reads into the line).
+                        let top = py + fs * 1.2;
+                        o.push(rect(p.0 - 0.75, top, 1.5, (p.1 - top - wd * 2.0).max(0.0) * a, 0.0, solid(alpha(th.text, 0.6 * a))));
+                        let ns = small(th, fs * 0.8).color(alpha(th.text, a));
+                        draw(&mut o, ctx.assets, &note.text, &ns, p.0 - fs * 0.4, top + fs * 0.6, 1.0);
+                    }
+                }
+            }
+        }
+        // Direct labels, nudged apart vertically.
+        ends.sort_by(|a, b| a.2.total_cmp(&b.2));
+        let mut last_y = f32::MIN;
+        for (si, x, y) in ends {
+            let story = si == hl;
+            let gap = if story { fs * 1.2 } else { fs * 0.95 };
+            let yy = y.max(last_y + gap);
+            last_y = yy;
+            let a = ease_out(seg(t, self.delay + self.duration * 0.9 + if story { self.stagger * (self.series.len() - 1) as f32 } else { 0.0 }, 0.3));
+            let st = if story { hs.clone().color(alpha(accent, a)) } else { cs.clone().color(alpha(th.muted, a)) };
+            draw(&mut o, ctx.assets, &lab(si), &st, x + fs * 0.6, yy + st.size * 0.35, 0.0);
+        }
+        o
+    }
+}
+
 impl Component for LineChart {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        if self.look == "editorial" {
+            return self.eval_editorial(t, ctx);
+        }
         let th = ctx.theme;
         let (w, h) = (ctx.width, ctx.height);
         let fs = self.font_size;

@@ -56,5 +56,5 @@
 - **Overprint**: two ink layers with `"blend": "multiply"` mix like spot inks; offset one 3–6 px for misregistration.
   Whole-frame print looks (risograph, screenprint, linocut, print-offset…) are shader filters: `docs shader`.
 
-Whole pieces to borrow from: `anikit-video recipes swiss-grid-poster | riso-overprint | torn-collage | op-art-field`.
-Taste, numbers and style recipes (Swiss, riso, identity, editorial data, Memphis, Polish poster, op-art): `docs/video/craft/graphic-design.md`.
+Charts with editorial polish: `line-chart`/`bar-chart` props `"look": "editorial"`, `highlight`, `notes`, `compare` (`docs component line-chart`).
+Pieces: `anikit-video recipes swiss-grid-poster | riso-overprint | torn-collage | op-art-field`; taste, numbers and 8 style recipes: `docs/video/craft/graphic-design.md`.
