@@ -699,6 +699,7 @@ impl Prepare for Cutout {
             check_one("cutout texture", t, &["paper", "kraft", "newsprint"])?;
         }
         self.path = parse_d(&self.d)?;
+        *self.edges.get_mut().unwrap_or_else(|e| e.into_inner()) = None;
         Ok(())
     }
 }
@@ -869,5 +870,22 @@ mod tests {
             assert_eq!(cutout.eval(t, &ctx), torn_cutout().eval(t, &ctx));
         }
         assert_eq!(cutout.eval(1.0, &resized_ctx), torn_cutout().eval(1.0, &resized_ctx));
+    }
+
+    #[test]
+    fn edges_refresh_after_reprepare() {
+        let theme = Theme::default();
+        let assets = preview::host();
+        let ctx = Ctx { width: 600.0, height: 400.0, fps: 30.0, theme: &theme, assets };
+        let mut cutout = torn_cutout();
+        cutout.eval(1.0, &ctx);
+
+        cutout.shape = "circle".into();
+        cutout.seed = 7;
+        cutout.prepare().unwrap();
+
+        let mut fresh = Cutout { torn: 0.8, shape: "circle".into(), seed: 7, ..Cutout::default() };
+        fresh.prepare().unwrap();
+        assert_eq!(cutout.eval(1.0, &ctx), fresh.eval(1.0, &ctx));
     }
 }
